@@ -225,6 +225,7 @@
                     + item('open-dashboard', t('bmStructureOpenDashboard', 'Open on the dashboard'))
                     + item('move-all', t('bmStructureMoveAll', 'Move all bookmarks to…'))
                     + proxy('duplicate', '[data-page-duplicate]', t('pageDuplicate', 'Duplicate'))
+                    + proxy('template', '[data-page-template]', t('pageTemplateMenu', 'Save as template…'))
                     + proxy('delete', '[data-page-delete]', t('bmStructureDeletePage', 'Delete page…'))
                 : proxy('show', '[data-structure-show]', t('bmStructureShowBookmarks', 'Show its bookmarks'))
                     + proxy('spread', '[data-cat-spread]', spreadOn

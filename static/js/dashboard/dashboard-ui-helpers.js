@@ -521,6 +521,16 @@ class DashboardUiHelpers {
             </div>
         `;
 
+        // Pages as files: under the slab, not on it -- the slab is the list.
+        const filesHtml = `
+            <div class="page-overview-modal-files">
+                ${d.isBookmarksView?.() ? `<button type="button" class="page-overview-modal-file" id="page-overview-share">${d.escapeHtml(
+                    this.formatDashboardLabel('pageSwitcherSharePage', {}, 'Share this page…'))}</button>` : ''}
+                <button type="button" class="page-overview-modal-file" id="page-overview-import">${d.escapeHtml(
+                    this.formatDashboardLabel('pageSwitcherImportPage', {}, 'Import a page…'))}</button>
+            </div>
+        `;
+
         /*
          * The filter, for the readers who have enough pages to need one.
          *
@@ -551,7 +561,7 @@ class DashboardUiHelpers {
          */
         return `${filterHtml}<div class="page-overview-modal-slab">`
             + `<ul class="page-overview-modal-list" role="listbox" aria-label="${d.escapeHtml(listLabel)}">${items}</ul>`
-            + `${newRow}</div>${footHtml}`;
+            + `${newRow}</div>${filesHtml}${footHtml}`;
     }
 
 
@@ -715,6 +725,14 @@ class DashboardUiHelpers {
             window.AppModal?.hide?.();
             await this.showPageOverlay();
         };
+
+        // Pages as files, where pages are chosen (page_template.go).
+        const fileAction = (id, run) => document.getElementById(id)?.addEventListener('click', () => {
+            window.AppModal?.hide?.();
+            void run();
+        });
+        fileAction('page-overview-share', () => d.config?.openPageTemplate?.('export', Number(d.currentPageId)));
+        fileAction('page-overview-import', () => d.config?.openPageTemplate?.('import'));
 
         listRoot.querySelectorAll('.page-overview-modal-delete').forEach((btn) => {
             btn.setAttribute('aria-pressed', 'false');

@@ -18346,6 +18346,7 @@ class DashboardConfig {
                     <button type="button" class="config-btn config-btn--small" data-page-move="up" data-id="${esc(p.id)}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
                     <button type="button" class="config-btn config-btn--small" data-page-move="down" data-id="${esc(p.id)}" ${i === pages.length - 1 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>`}
                     ${this.renderStructureRowExtras?.({ pageId: p.id }) || ''}
+                    <button type="button" class="config-btn config-btn--small" data-page-template="${esc(p.id)}" title="${esc(this.t('config.pageTemplateHint', 'Save this page as a file someone else can import'))}">${esc(this.t('config.pageTemplate', 'Template'))}</button>
                     <button type="button" class="config-btn config-btn--small" data-page-duplicate="${esc(p.id)}" title="${esc(this.t('config.pageDuplicateHint', 'Copy this page — with or without its bookmarks'))}">${esc(this.t('config.pageDuplicate', 'Duplicate'))}</button>
                     <button type="button" class="config-btn config-btn--small config-btn--danger" data-page-delete="${esc(p.id)}" ${isFirst ? 'disabled title="' + esc(this.t('config.pageDeleteFirstBlocked', 'The first page cannot be deleted')) + '"' : ''}>${esc(this.t('config.backupDelete', 'Delete'))}</button>
                 </div>
@@ -18359,6 +18360,7 @@ class DashboardConfig {
                 sorts: this.ptNameSorts(this.t('config.sortByManualPages', 'Tab order')),
                 addAttr: 'data-page-add',
                 addLabel: this.t('config.pageAdd', 'Add page'),
+                extra: `<button type="button" class="config-btn config-btn--small" data-page-template-import>${esc(this.t('config.pageTemplateImport', 'Import template'))}</button>`,
             })}
             ${this.renderPtReorderNote('pages')}
             ${this.renderStatSummary([
@@ -18392,6 +18394,10 @@ class DashboardConfig {
         });
         const addBtn = container.querySelector('[data-page-add]');
         if (addBtn) addBtn.addEventListener('click', () => void this.addPage());
+        container.querySelector('[data-page-template-import]')?.addEventListener('click', () => void this.importPageTemplate());
+        container.querySelectorAll('[data-page-template]').forEach((btn) => {
+            btn.addEventListener('click', () => void this.exportPageTemplate(Number(btn.getAttribute('data-page-template'))));
+        });
         container.querySelectorAll('[data-page-duplicate]').forEach((btn) => {
             btn.addEventListener('click', () => void this.duplicatePage(Number(btn.getAttribute('data-page-duplicate'))));
         });
@@ -18458,6 +18464,331 @@ class DashboardConfig {
         pages.push(newPage);
         await this.savePages();
         this.repaintPtBody();
+    }
+
+    /* ── Page templates ────────────────────────────────────────────────────── */
+
+    /**
+     * A dialog with a form in it: resolves with what onOk returns, or null on
+     * Cancel and Escape. onOk may answer undefined to keep the dialog open --
+     * a field that does not validate is marked, not lost.
+     */
+    formDialog({ id, title, bodyHtml, okLabel, onReady, onOk }) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        document.getElementById(id)?.remove();
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="${esc(id)}" class="modal-overlay" aria-hidden="false">
+                <div class="modal config-form-dialog" role="dialog" aria-modal="true" aria-labelledby="${esc(id)}-title">
+                    <div class="modal-header">
+                        <span class="modal-title" id="${esc(id)}-title">${esc(title)}</span>
+                    </div>
+                    <div class="modal-body">${bodyHtml}</div>
+                    <div class="modal-actions">
+                        <button type="button" class="modal-button" data-form-dialog="cancel">
+                            <span class="modal-button-name">${esc(this.t('config.confirmCancel', 'Cancel'))}</span>
+                        </button>
+                        <button type="button" class="modal-button" data-form-dialog="ok">
+                            <span class="modal-button-name">${esc(okLabel)}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>`);
+        const overlay = document.getElementById(id);
+        requestAnimationFrame(() => overlay.classList.add('show'));
+        const previouslyFocused = document.activeElement;
+        const okBtn = overlay.querySelector('[data-form-dialog="ok"]');
+        return new Promise((resolve) => {
+            let done = false;
+            const finish = (result) => {
+                if (done) return;
+                done = true;
+                window.removeEventListener('keydown', onKey, true);
+                window.removeEventListener('pointerdown', onPointer, true);
+                overlay.remove();
+                if (previouslyFocused?.isConnected) previouslyFocused.focus?.();
+                resolve(result);
+            };
+            const onKey = (e) => {
+                if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); finish(null); }
+                else if (e.key === 'Tab') window.FocusTrapUtils?.trapTabKey?.(e, overlay.querySelector('.modal') || overlay);
+            };
+            // On window, capturing: the config view's own Escape handling
+            // listens on document and would otherwise take the key first --
+            // with focus in a field it left the field and the dialog stayed.
+            window.addEventListener('keydown', onKey, true);
+            okBtn.addEventListener('click', async () => {
+                if (okBtn.disabled) return;
+                okBtn.disabled = true;
+                try {
+                    const result = await onOk(overlay);
+                    if (result !== undefined) finish(result);
+                } finally {
+                    if (!done) okBtn.disabled = false;
+                }
+            });
+            overlay.querySelector('[data-form-dialog="cancel"]').addEventListener('click', () => finish(null));
+            // A press anywhere outside the panel closes it, mouse or touch.
+            // Judged by where the press lands, not by e.target === overlay:
+            // Safari's hit-testing under the blurred scrim does not always
+            // name the overlay, and the click then went nowhere.
+            const panel = overlay.querySelector('.modal');
+            const onPointer = (e) => {
+                if (done || !overlay.isConnected) return;
+                const r = panel.getBoundingClientRect();
+                const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+                if (!inside && !panel.contains(e.target)) finish(null);
+            };
+            window.addEventListener('pointerdown', onPointer, true);
+            onReady?.(overlay, okBtn);
+            (overlay.querySelector('input, textarea') || okBtn).focus();
+        });
+    }
+
+    /**
+     * Save a page as a template file.
+     *
+     * The dialog is the list of addresses on the page: a private one is
+     * proposed as a variable the receiver fills in, a public one stays as it
+     * is, and the reader can change either. The server builds the file, so the
+     * same allowlist applies whatever asks for it (page_template.go).
+     */
+    async exportPageTemplate(pageId) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        let data;
+        try {
+            const res = await this.writeFetch(`/api/pages/${encodeURIComponent(pageId)}/template/hosts`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            data = await res.json();
+        } catch {
+            this.notify(this.t('config.pageTemplateExportError', 'Could not build the template'), 'error');
+            return;
+        }
+        const hosts = Array.isArray(data.hosts) ? data.hosts : [];
+        // Two lines a host: the address and its count, then -- while ticked --
+        // the name it becomes. Private addresses first and open; the public
+        // ones stay as they are unless ticked, so they wait folded below.
+        const row = (h, i) => `
+            <li class="config-tpl-host" data-tpl-host="${i}">
+                <label class="config-tpl-host-line">
+                    <input type="checkbox" data-tpl-var ${h.variable ? 'checked' : ''}>
+                    <span class="config-tpl-origin" title="${esc(h.origin)}">${esc(h.origin)}</span>
+                    <span class="config-tpl-count">${esc(this.t('config.pageTemplateLinks', '{count} link(s)').replace('{count}', String(h.count)))}</span>
+                </label>
+                <span class="config-tpl-host-key">
+                    <span>${esc(this.t('config.pageTemplateAs', 'as'))}</span>
+                    <code>{{</code><input type="text" class="config-text" data-tpl-key maxlength="40" value="${esc(h.key)}"
+                        aria-label="${esc(this.t('config.pageTemplateKeyLabel', 'Name for {origin}').replace('{origin}', h.origin))}"><code>}}</code>
+                </span>
+            </li>`;
+        const privateRows = hosts.map((h, i) => (h.private ? row(h, i) : '')).join('');
+        const publicCount = hosts.filter((h) => !h.private).length;
+        const publicRows = hosts.map((h, i) => (h.private ? '' : row(h, i))).join('');
+        const body = `
+            <p class="config-panel-note">${esc(this.t('config.pageTemplateExportIntro',
+                'Ticked addresses become a question for whoever imports the page: they fill in their own address once per service. Usage, health and sign-ins never go into the file.'))}</p>
+            ${privateRows
+                ? `<ul class="config-tpl-hosts">${privateRows}</ul>`
+                : (hosts.length ? `<p class="config-panel-note">${esc(this.t('config.pageTemplateNoPrivate', 'No addresses on your own network: every link goes as it is.'))}</p>` : '')}
+            ${publicCount ? `<details class="config-tpl-public">
+                <summary>${esc(this.t('config.pageTemplatePublicCount', '{count} public address(es) go as they are').replace('{count}', String(publicCount)))}</summary>
+                <ul class="config-tpl-hosts">${publicRows}</ul>
+            </details>` : ''}
+            ${hosts.length ? '' : `<p class="config-panel-empty">${esc(this.t('config.pageTemplateNoHosts', 'This page has no links yet.'))}</p>`}
+            ${data.hasNotes ? `<label class="config-tpl-option"><input type="checkbox" data-tpl-notes> ${esc(this.t('config.pageTemplateNotes', 'Include the text of notes'))}</label>` : ''}`;
+        const keyRE = /^[a-z0-9][a-z0-9-]{0,39}$/;
+        const picked = await this.formDialog({
+            id: 'config-template-export',
+            title: this.t('config.pageTemplateExportTitle', 'Export “{name}” as template').replace('{name}', data.name || ''),
+            bodyHtml: body,
+            okLabel: this.t('config.pageTemplateDownload', 'Download'),
+            onReady: (overlay) => {
+                overlay.querySelectorAll('[data-tpl-host]').forEach((row) => {
+                    const box = row.querySelector('[data-tpl-var]');
+                    const key = row.querySelector('[data-tpl-key]');
+                    const sync = () => { key.closest('.config-tpl-host-key').hidden = !box.checked; };
+                    box.addEventListener('change', sync);
+                    sync();
+                });
+            },
+            onOk: (overlay) => {
+                const seen = new Set();
+                let valid = true;
+                const chosen = hosts.map((h, i) => {
+                    const row = overlay.querySelector(`[data-tpl-host="${i}"]`);
+                    const variable = row.querySelector('[data-tpl-var]').checked;
+                    const input = row.querySelector('[data-tpl-key]');
+                    const key = input.value.trim().toLowerCase();
+                    const bad = variable && (!keyRE.test(key) || seen.has(key));
+                    input.setAttribute('aria-invalid', bad ? 'true' : 'false');
+                    if (bad) valid = false;
+                    if (variable) seen.add(key);
+                    return { origin: h.origin, variable, key, label: h.label };
+                });
+                if (!valid) {
+                    this.notify(this.t('config.pageTemplateKeyInvalid',
+                        'Each name needs lower-case letters, digits or dashes, and must be different.'), 'error');
+                    return undefined;
+                }
+                return { hosts: chosen, includeNotes: Boolean(overlay.querySelector('[data-tpl-notes]')?.checked) };
+            },
+        });
+        if (!picked) return;
+        try {
+            const res = await this.writeFetch(`/api/pages/${encodeURIComponent(pageId)}/template`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(picked),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const disposition = res.headers.get('Content-Disposition') || '';
+            const name = /filename="([^"]+)"/.exec(disposition)?.[1] || 'page.nextdash-page.json';
+            this.triggerDownload(await res.blob(), name);
+            window.nextdashTrack?.('page-template:export', { hosts: picked.hosts.filter((h) => h.variable).length });
+        } catch {
+            this.notify(this.t('config.pageTemplateExportError', 'Could not build the template'), 'error');
+        }
+    }
+
+    /**
+     * Read a template file -- chosen or pasted -- into a new page.
+     *
+     * Every change to the text asks the server what it would make (a dry run),
+     * so the variables to fill in are the ones the server will use, and a file
+     * that is not a template says so before anything is written.
+     */
+    async importPageTemplate({ text: initialText = '', intoPage = 0 } = {}) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const target = intoPage ? (this.dash.pages || []).find((p) => Number(p.id) === Number(intoPage)) : null;
+        let preview = null;
+        const values = {};
+        const body = `
+            <p class="config-panel-note">${esc(target
+                ? this.t('config.pageTemplateFillIntro', 'The template fills this empty page; nothing on your other pages changes.')
+                : this.t('config.pageTemplateImportIntro', 'A template becomes a new page; nothing on your other pages changes.'))}</p>
+            <div class="config-tpl-source">
+                <input type="file" accept=".json,application/json" data-tpl-file
+                    aria-label="${esc(this.t('config.pageTemplateChooseFile', 'Choose a template file'))}">
+                <textarea class="config-text config-tpl-text" rows="5" data-tpl-text spellcheck="false"
+                    placeholder="${esc(this.t('config.pageTemplatePaste', 'Or paste the template here'))}"></textarea>
+            </div>
+            <div class="config-tpl-preview" data-tpl-preview aria-live="polite"></div>`;
+        const renderPreview = (overlay, okBtn) => {
+            const host = overlay.querySelector('[data-tpl-preview]');
+            okBtn.disabled = !preview || Boolean(preview.error);
+            if (!preview) { host.innerHTML = ''; return; }
+            if (preview.error) {
+                host.innerHTML = `<p class="config-tpl-error" role="alert">${esc(preview.error)}</p>`;
+                return;
+            }
+            const vars = (preview.variables || []).map((v) => `
+                <li class="config-tpl-var">
+                    <label>
+                        <span>${esc(v.label || v.key)} <span class="config-tpl-count">${esc(this.t('config.pageTemplateLinks', '{count} link(s)').replace('{count}', String(v.count)))}</span></span>
+                        <input type="text" class="config-text" data-tpl-value="${esc(v.key)}" placeholder="http://192.168.1.10:8096" value="${esc(values[v.key] || '')}">
+                    </label>
+                </li>`).join('');
+            const skipped = preview.skipped || {};
+            const notes = [];
+            if (skipped.widgets?.length) notes.push(this.t('config.pageTemplateSkippedWidgets', 'Widgets this version does not know are left out: {list}').replace('{list}', skipped.widgets.join(', ')));
+            if (skipped.bookmarks) notes.push(this.t('config.pageTemplateSkippedLinks', '{count} link(s) with an address that is not allowed are left out').replace('{count}', String(skipped.bookmarks)));
+            host.innerHTML = `
+                <p class="config-tpl-summary"><strong>${esc(preview.name)}</strong> · ${esc(this.t('config.pageTemplateSummary', '{categories} categories, {widgets} widgets, {bookmarks} links')
+                    .replace('{categories}', String(preview.categories)).replace('{widgets}', String(preview.widgets))
+                    .replace('{bookmarks}', String(preview.bookmarks + (skipped.unfilled || 0))))}</p>
+                ${vars ? `<p class="config-panel-note">${esc(this.t('config.pageTemplateFillIn', 'Your own address for each service. Left empty, its links are skipped.'))}</p><ul class="config-tpl-vars">${vars}</ul>` : ''}
+                ${notes.map((n) => `<p class="config-panel-note">${esc(n)}</p>`).join('')}`;
+            host.querySelectorAll('[data-tpl-value]').forEach((input) => {
+                input.addEventListener('input', () => { values[input.getAttribute('data-tpl-value')] = input.value; });
+            });
+        };
+        let text = String(initialText || '');
+        const dryRun = async (overlay, okBtn) => {
+            const asked = text;
+            if (!asked.trim()) { preview = null; renderPreview(overlay, okBtn); return; }
+            try {
+                const res = await this.writeFetch('/api/pages/template?dryRun=1', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ template: asked, intoPage: target ? Number(target.id) : undefined }),
+                });
+                if (asked !== text) return;
+                const answer = await res.json().catch(() => ({}));
+                preview = res.ok ? answer : { error: answer.error || this.t('config.pageTemplateNotATemplate', 'This is not a page template') };
+            } catch {
+                preview = { error: this.t('config.pageTemplateNotATemplate', 'This is not a page template') };
+            }
+            renderPreview(overlay, okBtn);
+        };
+        const created = await this.formDialog({
+            id: 'config-template-import',
+            title: target
+                ? this.t('config.pageTemplateFillTitle', 'Start “{name}” from a template').replace('{name}', target.name || '')
+                : this.t('config.pageTemplateImportTitle', 'Import template'),
+            bodyHtml: body,
+            okLabel: target ? this.t('config.pageTemplateFill', 'Fill this page') : this.t('config.pageTemplateCreate', 'Create page'),
+            onReady: (overlay, okBtn) => {
+                okBtn.disabled = true;
+                const area = overlay.querySelector('[data-tpl-text]');
+                // A file dropped on the dashboard arrives already read.
+                if (text) {
+                    area.value = text;
+                    void dryRun(overlay, okBtn);
+                }
+                let timer = null;
+                area.addEventListener('input', () => {
+                    text = area.value;
+                    clearTimeout(timer);
+                    timer = setTimeout(() => void dryRun(overlay, okBtn), 300);
+                });
+                overlay.querySelector('[data-tpl-file]').addEventListener('change', async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    area.value = await file.text();
+                    text = area.value;
+                    await dryRun(overlay, okBtn);
+                });
+            },
+            onOk: async () => {
+                if (!preview || preview.error) return undefined;
+                try {
+                    const res = await this.writeFetch('/api/pages/template', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ template: text, values, intoPage: target ? Number(target.id) : undefined }),
+                    });
+                    const answer = await res.json().catch(() => ({}));
+                    if (!res.ok || !answer.pageId) throw new Error(answer.error || `HTTP ${res.status}`);
+                    return answer;
+                } catch {
+                    this.notify(this.t('config.pageTemplateImportError', 'Could not create the page'), 'error');
+                    return undefined;
+                }
+            },
+        });
+        if (!created) return;
+        window.nextdashTrack?.('page-template:import', { bookmarks: created.bookmarks, into: Boolean(target) });
+        if (target) {
+            await this.dash.refreshAfterBookmarkMutation?.({ pageId: Number(target.id), repaintActiveView: true });
+            void this.dash.data?.fetchAndStoreDataRevision?.();
+            return;
+        }
+        try {
+            const res = await fetch('/api/pages');
+            if (res.ok) this.dash.pages = await res.json();
+        } catch { /* the list catches up on the next revision check */ }
+        this.dash.pageNav?.renderPageNavigation?.();
+        this.repaintPtBody();
+        void this.dash.data?.fetchAndStoreDataRevision?.();
+        const skipped = created.skipped?.unfilled || 0;
+        const message = (skipped
+            ? this.t('config.pageTemplateCreatedSkipped', '“{name}” created; {count} link(s) without an address were skipped')
+            : this.t('config.pageTemplateCreated', '“{name}” created'))
+            .replace('{name}', created.name).replace('{count}', String(skipped));
+        this.notify(message, 'success', {
+            duration: 8000,
+            actionLabel: this.t('config.pageTemplateOpen', 'Open'),
+            onAction: () => { void this.dash.pageNav?.requestPageNavigation?.(created.pageId); },
+        });
     }
 
     /**

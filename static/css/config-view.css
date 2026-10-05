@@ -8319,3 +8319,27 @@ body.no-animations .unraid-wire-run,
 body.no-animations .unraid-mini-pulse,
 body.no-animations .unraid-mini-bar i { animation: none !important; }
 body.no-animations .unraid-wire-run { transform: translateX(50%); }
+
+/* Page templates: the export and import dialogs (Config -> Pages). */
+.modal.config-form-dialog { width: min(600px, calc(100vw - 32px)); max-width: min(600px, calc(100vw - 32px)); }
+.config-form-dialog .modal-body { max-height: min(70vh, 640px); overflow-y: auto; }
+.config-tpl-hosts,
+.config-tpl-vars { list-style: none; margin: var(--space-2, 0.5rem) 0; padding: 0; display: grid; gap: var(--space-3, 0.75rem); }
+.config-tpl-host { display: grid; gap: 4px; min-width: 0; }
+.config-tpl-host-line { display: flex; align-items: center; gap: var(--space-2, 0.5rem); min-width: 0; cursor: pointer; }
+.config-tpl-host-line input { flex: none; }
+.config-tpl-origin { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.config-tpl-host-key { display: flex; align-items: center; gap: 4px; padding-left: 1.6rem; color: var(--text-secondary); }
+.config-tpl-host-key[hidden] { display: none; }
+.config-tpl-host-key .config-text { flex: 0 1 12rem; width: 12rem; min-width: 6rem; }
+.config-tpl-host-key .config-text[aria-invalid="true"] { border-color: var(--danger, #d9534f); }
+.config-tpl-count { flex: none; font-size: 0.8em; color: var(--text-secondary); white-space: nowrap; }
+.config-tpl-public { margin-top: var(--space-3, 0.75rem); }
+.config-tpl-public > summary { cursor: pointer; color: var(--text-secondary); }
+.config-tpl-option { display: flex; align-items: center; gap: var(--space-2, 0.5rem); margin-top: var(--space-2, 0.5rem); }
+.config-tpl-source { display: grid; gap: var(--space-2, 0.5rem); }
+.config-tpl-text { width: 100%; font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.85em; resize: vertical; }
+.config-tpl-var label { display: grid; gap: 4px; }
+.config-tpl-var .config-text { width: 100%; }
+.config-tpl-summary { margin: var(--space-3, 0.75rem) 0 var(--space-1, 0.25rem); }
+.config-tpl-error { color: var(--danger, #d9534f); margin: var(--space-2, 0.5rem) 0 0; }

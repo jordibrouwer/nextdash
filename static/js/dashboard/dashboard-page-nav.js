@@ -4,6 +4,36 @@
 class DashboardPageNav {
     constructor(dashboard) {
         this.dash = dashboard;
+        this.bindPageTemplateDrop();
+    }
+
+    /**
+     * A page template dropped anywhere on the dashboard opens the import
+     * dialog with it. That is how a file from a forum post arrives: dragged
+     * out of the downloads bar. Only files that say they are a page template
+     * are taken; anything else is left alone, and a drop on a field is the
+     * field's.
+     */
+    bindPageTemplateDrop() {
+        if (typeof document === 'undefined' || document.documentElement.dataset.pageTemplateDrop) return;
+        document.documentElement.dataset.pageTemplateDrop = '1';
+        const carriesFiles = (e) => Array.from(e.dataTransfer?.types || []).includes('Files');
+        const onField = (e) => Boolean(e.target?.closest?.('input, textarea, [contenteditable="true"]'));
+        document.addEventListener('dragover', (e) => {
+            if (!carriesFiles(e) || onField(e) || e.defaultPrevented) return;
+            // Without this the browser opens the file in place of the dashboard.
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+        });
+        document.addEventListener('drop', async (e) => {
+            if (!carriesFiles(e) || onField(e) || e.defaultPrevented) return;
+            e.preventDefault();
+            const file = Array.from(e.dataTransfer.files || []).find((f) => /\.json$/i.test(f.name) || f.type === 'application/json');
+            if (!file || file.size > 2 * 1024 * 1024) return;
+            const text = await file.text().catch(() => '');
+            if (!/"nextdash"\s*:\s*"page-template"/.test(text)) return;
+            void this.dash.config?.openPageTemplate?.('import', { text });
+        });
     }
 
     async requestPageNavigation(pageId) {
@@ -1178,6 +1208,29 @@ class DashboardPageNav {
             d.showPageOverlay?.();
         });
         foot.appendChild(allRow);
+
+        // Pages as files: the place a page is thought about is where giving
+        // one away, or taking one in, is found -- not four levels into Config.
+        const templateRow = (cls, labelKey, fallback, run) => {
+            const row = document.createElement('button');
+            row.type = 'button';
+            row.className = `page-switcher-item ${cls}`;
+            row.setAttribute('role', 'menuitem');
+            row.innerHTML = `<span class="page-switcher-item-name">${this._escapeSwitcher(
+                d.formatDashboardLabel(labelKey, {}, fallback))}</span>`;
+            row.addEventListener('click', () => {
+                this.closePageSwitcherMenu();
+                void run();
+            });
+            foot.appendChild(row);
+        };
+        const sharedPageId = Number(d.currentPageId);
+        if (d.isBookmarksView() && Number.isFinite(sharedPageId) && sharedPageId > 0 && sharedPageId !== 999999) {
+            templateRow('page-switcher-share', 'pageSwitcherSharePage', 'Share this page…',
+                () => d.config?.openPageTemplate?.('export', sharedPageId));
+        }
+        templateRow('page-switcher-import', 'pageSwitcherImportPage', 'Import a page…',
+            () => d.config?.openPageTemplate?.('import'));
         menu.appendChild(foot);
 
         document.body.appendChild(menu);

@@ -2459,6 +2459,7 @@ body[data-density-mode="dense"] .config-bm-workbench {
 .config-structure-overlay [data-cat-move],
 .config-structure-overlay [data-block-move],
 .config-structure-overlay [data-page-duplicate],
+.config-structure-overlay [data-page-template],
 .config-structure-overlay [data-cat-duplicate],
 .config-structure-overlay [data-page-delete],
 .config-structure-overlay [data-cat-delete],
