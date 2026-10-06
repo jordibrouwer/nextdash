@@ -5321,6 +5321,8 @@
     "overviewNothingToDo": "Niets vraagt aandacht — alles is in orde.",
     "overviewTileLastEdited": "Laatst bewerkt",
     "overviewRunning": "Je draait {current}.",
+    "overviewVersionLine": "Je draait {version} van nextDash. Het volledige changelog vind je {changelog} en de handleiding {manual}.",
+    "overviewVersionHere": "hier",
     "overviewSentenceMonitors": "{n} monitors zijn nu offline.",
     "overviewSentenceInbox": "{n} ongesorteerde links wachten in de inbox.",
     "overviewSentenceDuplicates": "{n} dubbele URL's op je pagina's.",

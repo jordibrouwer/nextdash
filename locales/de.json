@@ -5321,6 +5321,8 @@
     "overviewNothingToDo": "Nichts zu tun — alles in Ordnung.",
     "overviewTileLastEdited": "Zuletzt bearbeitet",
     "overviewRunning": "Läuft {current}.",
+    "overviewVersionLine": "Du verwendest {version} von nextDash. Das vollständige Changelog findest du {changelog} und das Handbuch {manual}.",
+    "overviewVersionHere": "hier",
     "overviewSentenceMonitors": "{n} Monitore sind gerade ausgefallen.",
     "overviewSentenceInbox": "{n} nicht einsortierte Links warten im Posteingang.",
     "overviewSentenceDuplicates": "{n} doppelte URLs auf deinen Seiten.",

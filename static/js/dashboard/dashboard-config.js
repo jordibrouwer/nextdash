@@ -4547,7 +4547,29 @@ class DashboardConfig {
             go: { section: 'about', aboutTab: 'news' },
             goLabel: this.t('config.overviewAllNews', 'All news'),
             body: `<ul class="config-overview-news-list">${rows}</ul>`,
+            note: this.renderOverviewVersionLine(),
         });
+    }
+
+    /**
+     * "You're running v1.x.y of nextDash" with the changelog and the manual
+     * on GitHub, each opening in a new window. The translated sentence holds
+     * {changelog} and {manual} where the links go; the version is the running
+     * one from the update status.
+     */
+    renderOverviewVersionLine() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const current = this._updateStatus?.current;
+        if (!current) return '';
+        const base = 'https://github.com/jordibrouwer/nextdash/blob/main/';
+        const here = this.t('config.overviewVersionHere', 'here');
+        const link = (file) => `<a class="config-overview-version-link" href="${base}${file}" target="_blank" rel="noopener noreferrer">${esc(here)}</a>`;
+        const line = esc(this.t('config.overviewVersionLine',
+            'You\u2019re running {version} of nextDash. You can find the full changelog {changelog} and the manual {manual}.'))
+            .replace('{version}', esc(String(current)))
+            .replace('{changelog}', link('CHANGELOG.md'))
+            .replace('{manual}', link('MANUAL.md'));
+        return `<span class="config-overview-version">${line}</span>`;
     }
 
     /**
@@ -4574,9 +4596,7 @@ class DashboardConfig {
                 </li>`;
         }).join('');
 
-        const running = current
-            ? `<span>${esc(this.t('config.overviewRunning', 'Running {current}.').replace('{current}', String(current)))}</span>`
-            : '';
+        const running = '';
         return this.renderOverviewWidget({
             id: 'features',
             title: this.t('config.overviewNewFeaturesTitle', 'New in nextDash'),

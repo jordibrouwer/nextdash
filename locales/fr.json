@@ -5321,6 +5321,8 @@
     "overviewNothingToDo": "Rien à signaler — tout est en ordre.",
     "overviewTileLastEdited": "Dernière modification",
     "overviewRunning": "En cours d'exécution : {current}.",
+    "overviewVersionLine": "Vous utilisez {version} de nextDash. Vous trouverez le changelog complet {changelog} et le manuel {manual}.",
+    "overviewVersionHere": "ici",
     "overviewSentenceMonitors": "{n} moniteurs sont en panne en ce moment.",
     "overviewSentenceInbox": "{n} liens non classés attendent dans la boîte de réception.",
     "overviewSentenceDuplicates": "{n} URL en double sur vos pages.",
