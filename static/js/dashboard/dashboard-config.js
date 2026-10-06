@@ -7627,6 +7627,7 @@ class DashboardConfig {
                 // stack a second listener on every tab button.
                 body.innerHTML = this.renderDbTab();
                 this.bindDataBackupsActions(body);
+                this.syncSectionTabNote('data-backups', this.dbTab, body.parentElement);
             }
             this.syncSubTabStrip('data-db-tab', this.dbTab);
             // Fetched on open rather than with the section, so the other two
@@ -16478,6 +16479,30 @@ class DashboardConfig {
         const entry = DashboardConfig.SECTION_TAB_NOTES[section]?.[tab];
         if (!entry) return '';
         return `<p class="config-panel-note config-tab-note">${this.dash.escapeHtml(this.t(entry[0], entry[1]))}</p>`;
+    }
+
+    /**
+     * Point the line under the tab strip at the tab now open.
+     *
+     * A tab switch repaints only the body, so the note drawn with the section
+     * kept describing whichever tab the section opened on. `host` is the
+     * element the note sits in directly. A tab without a note drops the line,
+     * and one with a note puts it back under the strip (or first in the host,
+     * for Help, where it shares a row with the search).
+     */
+    syncSectionTabNote(section, tab, host) {
+        if (!host) return;
+        const note = host.querySelector(':scope > .config-tab-note');
+        const next = this.renderSectionTabNote(section, tab);
+        if (note) {
+            if (next) note.outerHTML = next;
+            else note.remove();
+            return;
+        }
+        if (!next) return;
+        const strip = host.querySelector(':scope > .config-subtabs');
+        if (strip) strip.insertAdjacentHTML('afterend', next);
+        else host.insertAdjacentHTML('afterbegin', next);
     }
 
     renderSectionTabStrip(section) {
@@ -26593,6 +26618,7 @@ class DashboardConfig {
             // The strip is not repainted with the body, so the active button has
             // to be moved by hand — the same call the other strips make.
             this.syncSubTabStrip('data-bm-tab', tab);
+            this.syncSectionTabNote('bookmarks', tab, body.parentElement);
             // The band carries View's changed-settings bar, and the count elsewhere.
             this.updateConfigShellHead();
         });
@@ -28457,11 +28483,7 @@ class DashboardConfig {
         const host = document.getElementById('config-stats-body');
         if (!host) { this.render(); return; }
         host.innerHTML = this.renderStatsBodySafe();
-        // The line under the tabs describes the open tab, so it follows it;
-        // left alone it kept describing whichever tab the section opened on.
-        const note = host.parentElement?.querySelector(':scope > .config-tab-note');
-        const nextNote = this.renderSectionTabNote('stats', this.statsTab);
-        if (note && nextNote) note.outerHTML = nextNote;
+        this.syncSectionTabNote('stats', this.statsTab, host.parentElement);
         // The stamp lives outside the body, so it would otherwise keep claiming
         // the time of the first render while the numbers under it were fresh.
         // The whole foot is replaced, not the line inside it: swapping the line
@@ -31458,6 +31480,7 @@ class DashboardConfig {
                 if (!body) { this.render(); return; }
                 body.innerHTML = this.renderHelpBody();
                 this.syncSubTabStrip('data-help-tab', this.helpTab);
+                this.syncSectionTabNote('help', this.helpTab, body.parentElement?.querySelector(':scope > .config-help-header'));
                 // The new body carries its own action buttons.
                 this.bindHelpActions(body);
             }
