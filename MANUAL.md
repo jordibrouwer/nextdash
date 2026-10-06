@@ -3377,12 +3377,6 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 
 **The dashboard tour.** Twenty steps with moving drawings, offered once after the quick-start card: it opens on what is new — web search, app icons, the theme editor and the Unraid widgets — then the theme browser, the backdrops and the looks, then walks pages and categories, search, shortcuts, the cursor, adding, link checks, the Bookmarks view, the inbox, Containers, widgets, the first keys to learn, Config and the cheat sheet. After an update to a version that changed it, every reader is offered it once more, after the release notes have been read. Replay it from the same Onboarding list or with `:tour`.
 
-<details>
-<summary>📷 Screenshot — Config → Overview, full page</summary>
-
-<p align="center"><img src="screenshots/manual.md/17-overview.jpg" alt="Config, Overview: what needs you, panels for bookmarks, the inbox, containers, health and statistics, and on the right Latest news, the Version panel and New in nextDash" width="860"></p>
-
-</details>
 
 <details>
 <summary>📷 Screenshot — Config → Help, full page</summary>
