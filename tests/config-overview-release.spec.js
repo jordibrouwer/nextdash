@@ -78,6 +78,27 @@ test.describe('the current release as the reader meets it', () => {
         await expect(panel.locator('.config-overview-version--behind a')).toHaveText('v1.4.0');
     });
 
+    // GitHub's hourly limit was why the check "did not work" for users, and
+    // "Could not reach GitHub" said nothing about it.
+    test('a failed check says why, and when it asks again', async ({ page }) => {
+        const retryAt = new Date(2026, 9, 6, 17, 11).getTime();
+        await page.route('**/api/update-status*', (route) => route.fulfill({
+            contentType: 'application/json',
+            body: JSON.stringify({
+                enabled: true, current: 'v1.3.3', checkedAt: Date.now(),
+                error: 'GitHub API rate limit reached (HTTP 403)', errorCode: 'rate-limited', retryAt,
+            }),
+        }));
+        await openOverview(page);
+
+        const reason = page.locator('.config-widget--version .config-overview-version-error');
+        const time = await page.evaluate((ms) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), retryAt);
+        await expect(reason).toContainText('hourly request limit', { timeout: 15_000 });
+        await expect(reason).toContainText(time);
+        await expect(reason).toContainText('Config → Containers');
+        await expect(page.locator('.config-widget--version .config-widget-dot')).not.toHaveClass(/--good|--crit/);
+    });
+
     test('the stream leads with the release and its new setting', async ({ page }) => {
         await openNews(page);
         const currentTag = String(await page.evaluate(() => window.NEXTDASH_WHATS_NEW_RELEASE)).replace(/^.*-v/, 'v');

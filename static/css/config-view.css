@@ -8455,6 +8455,13 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
     color: inherit;
 }
 
+/* The check failed: why, in a muted line under the version. */
+.config-overview-version-error {
+    margin: var(--space-2, 0.5rem) 0 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-muted, var(--text-secondary));
+}
+
 .config-overview-version-tag {
     font-weight: 600;
     font-variant-numeric: tabular-nums;

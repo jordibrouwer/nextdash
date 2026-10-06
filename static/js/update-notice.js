@@ -139,6 +139,36 @@
     }
 
     /**
+     * Why the check failed, from the server's errorCode. Most failures were
+     * GitHub's hourly limit for the address, which "try again later" does not
+     * explain: say when the next try goes out, and that a GitHub token lifts
+     * the limit when none is set.
+     */
+    function describeUpdateCheckError(status) {
+        const at = Number(status.retryAt) > 0
+            ? new Date(Number(status.retryAt)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : '';
+        switch (status.errorCode) {
+            case 'rate-limited': {
+                const base = at
+                    ? translate('config.updateCheckRateLimitedAt', 'GitHub’s hourly request limit for this address is used up. nextDash asks again at {time}.', { time: at })
+                    : translate('config.updateCheckRateLimited', 'GitHub’s hourly request limit for this address is used up. nextDash asks again later.');
+                return status.authenticated
+                    ? base
+                    : `${base} ${translate('config.updateCheckTokenHint', 'A GitHub token under Config → Containers raises the limit.')}`;
+            }
+            case 'local-limit':
+                return translate('config.updateCheckLocalLimit', 'nextDash paused its outgoing requests for a moment. It asks GitHub again within a minute.');
+            case 'unreachable':
+                return translate('config.updateCheckUnreachable', 'Could not reach GitHub. Check that the server can reach api.github.com.');
+            default:
+                return status.error
+                    ? translate('config.updateCheckFailedWith', 'GitHub did not answer as expected ({error}). Try again later.', { error: status.error })
+                    : translate('config.updateCheckFailed', 'Could not reach GitHub. Try again later.');
+        }
+    }
+
+    /**
      * Human-readable status for overview panel and what's-new modal bar.
      * @returns {{ tone: 'neutral'|'ok'|'warn'|'error'|'loading', message: string, releaseUrl?: string }}
      */
@@ -164,7 +194,7 @@
         if (status.error) {
             return {
                 tone: 'error',
-                message: translate('config.updateCheckFailed', 'Could not reach GitHub. Try again later.'),
+                message: describeUpdateCheckError(status),
             };
         }
         if (status.updateAvailable && status.latest && !isDismissed(status)) {

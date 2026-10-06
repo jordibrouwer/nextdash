@@ -4585,11 +4585,15 @@ class DashboardConfig {
             ? `<p class="config-overview-version config-overview-version--behind">${esc(this.t('config.updateCheckModalAvailable', '{latest} is available on GitHub.'))
                 .replace('{latest}', `<strong class="config-overview-version-tag">${latest}</strong>`)}</p>`
             : '';
+        // The check failed: say why, in the words the What's new bar uses.
+        const failed = status.error && window.nextdashUpdateCheckEnabled?.()
+            ? `<p class="config-overview-version-error">${esc(window.nextdashDescribeUpdateStatus?.(status, false)?.message || '')}</p>`
+            : '';
         return this.renderOverviewWidget({
             id: 'version',
             title: this.t('config.overviewVersionTitle', 'Version'),
             tone,
-            body: `<p class="config-overview-version">${line}</p>${newer}`,
+            body: `<p class="config-overview-version">${line}</p>${newer}${failed}`,
         });
     }
 

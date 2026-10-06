@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -259,6 +262,125 @@ func TestFetchGitHubLatestReleaseFallsBackWhenListingFails(t *testing.T) {
 	}
 	if info.Tag != "v1.3.0" {
 		t.Fatalf("tag = %q, want v1.3.0 from the fallback endpoint", info.Tag)
+	}
+}
+
+// pointUpdateCheckAt sends the check to srv, with no token unless one is set.
+func pointUpdateCheckAt(t *testing.T, srv *httptest.Server, token string) *Handlers {
+	t.Helper()
+	oldURL, oldToken := githubLatestReleaseURL, updateCheckGitHubToken
+	githubLatestReleaseURL = srv.URL + "/repos/jordibrouwer/nextdash/releases/latest"
+	updateCheckGitHubToken = func() string { return token }
+	t.Cleanup(func() { githubLatestReleaseURL, updateCheckGitHubToken = oldURL, oldToken })
+	globalOutboundLimiter.reset()
+
+	h := newPushTestHandlers(t, newFakePushService(t), nil)
+	settings := h.store.GetSettings()
+	settings.UpdateCheckEnabled = true
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatalf("SaveSettings: %v", err)
+	}
+	return h
+}
+
+// GitHub's hourly limit is the usual reason the check failed for users. It
+// must be named as such, wait for the reset GitHub gives, and not spend a
+// second request on the fallback or on Check now to hear the same answer.
+func TestUpdateCheckWaitsOutGitHubRateLimit(t *testing.T) {
+	reset := time.Now().Add(40 * time.Minute).Truncate(time.Second)
+	var calls atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		w.Header().Set("X-RateLimit-Remaining", "0")
+		w.Header().Set("X-RateLimit-Reset", strconv.FormatInt(reset.Unix(), 10))
+		http.Error(w, "API rate limit exceeded", http.StatusForbidden)
+	}))
+	defer srv.Close()
+	h := pointUpdateCheckAt(t, srv, "")
+
+	status := h.buildUpdateStatus(true)
+	if status.ErrorCode != "rate-limited" {
+		t.Fatalf("errorCode = %q (error %q), want rate-limited", status.ErrorCode, status.Error)
+	}
+	if status.RetryAt != reset.UnixMilli() {
+		t.Fatalf("retryAt = %d, want GitHub's reset %d", status.RetryAt, reset.UnixMilli())
+	}
+	if status.Authenticated {
+		t.Fatal("authenticated = true without a token")
+	}
+	if n := calls.Load(); n != 1 {
+		t.Fatalf("%d requests, want 1 -- the fallback is held to the same limit", n)
+	}
+
+	h.buildUpdateStatus(true)
+	if n := calls.Load(); n != 1 {
+		t.Fatalf("%d requests after Check now, want still 1 before the reset", n)
+	}
+}
+
+// A 304 on the listing keeps the answer and costs nothing against the limit.
+func TestUpdateCheckAsksConditionally(t *testing.T) {
+	var sawETag atomic.Value
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if inm := r.Header.Get("If-None-Match"); inm != "" {
+			sawETag.Store(inm)
+			if inm == `"abc"` {
+				w.WriteHeader(http.StatusNotModified)
+				return
+			}
+		}
+		w.Header().Set("ETag", `"abc"`)
+		_ = json.NewEncoder(w).Encode([]map[string]any{{"tag_name": "v1.2.0", "html_url": "https://x/one"}})
+	}))
+	defer srv.Close()
+	h := pointUpdateCheckAt(t, srv, "")
+
+	if status := h.buildUpdateStatus(true); status.Latest != "v1.2.0" {
+		t.Fatalf("first check: %+v", status)
+	}
+	status := h.buildUpdateStatus(true)
+	if got, _ := sawETag.Load().(string); got != `"abc"` {
+		t.Fatalf("If-None-Match = %q, want the listing's ETag", got)
+	}
+	if status.Error != "" || status.Latest != "v1.2.0" || status.ReleaseURL != "https://x/one" {
+		t.Fatalf("after 304: %+v, want the earlier answer kept", status)
+	}
+}
+
+// The Containers token lifts the limit; a token GitHub refuses must not take
+// the version check down with it.
+func TestUpdateCheckUsesTokenAndSurvivesARefusedOne(t *testing.T) {
+	var auths []string
+	var mu sync.Mutex
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		auth := r.Header.Get("Authorization")
+		mu.Lock()
+		auths = append(auths, auth)
+		mu.Unlock()
+		if auth == "Bearer revoked" {
+			http.Error(w, "Bad credentials", http.StatusUnauthorized)
+			return
+		}
+		_ = json.NewEncoder(w).Encode([]map[string]any{{"tag_name": "v1.2.0"}})
+	}))
+	defer srv.Close()
+
+	h := pointUpdateCheckAt(t, srv, "good")
+	if status := h.buildUpdateStatus(true); !status.Authenticated || status.Latest != "v1.2.0" {
+		t.Fatalf("with token: %+v", status)
+	}
+	if auths[0] != "Bearer good" {
+		t.Fatalf("Authorization = %q, want the Containers token", auths[0])
+	}
+
+	auths = nil
+	h = pointUpdateCheckAt(t, srv, "revoked")
+	status := h.buildUpdateStatus(true)
+	if status.Error != "" || status.Latest != "v1.2.0" || status.Authenticated {
+		t.Fatalf("refused token: %+v, want an answer asked without it", status)
+	}
+	if len(auths) != 2 || auths[1] != "" {
+		t.Fatalf("requests = %q, want the token once, then none", auths)
 	}
 }
 

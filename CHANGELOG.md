@@ -100,18 +100,23 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.17.5 — 6 October 2026
 
-Config → Overview names the running version in a panel of its own, with a dot that says whether it is the newest release.
+Config → Overview names the running version in a panel of its own, with a dot that says whether it is the newest release. The update check uses the Containers GitHub token, waits out GitHub's hourly limit and says why it failed.
 
 ### Config
 - **new — a Version panel on the overview.** It sits between **Latest news** and **New in nextDash** and reads *You're running v1.x.y of nextDash*, with links to the full changelog and the manual on GitHub, each opening in a new window. The text has the same size as the other panels. The panel appears once the update check knows the running version, also when the site's news is switched off (`renderOverviewVersionWidget` in `dashboard-config.js`, `config-view.css`).
 - **new — green or red for the running version.** The dot before the panel title is green on the newest release and red when a newer one is out, also after the update notice was dismissed; no dot when GitHub was not asked or could not be reached. When behind, a second line in red says which release is available, its tag a link to the release on GitHub.
 - **fix — the "Running vX" note under New in nextDash is gone;** the Version panel says it instead.
 
+### Update check
+- **fix — the check no longer runs into GitHub's hourly limit as often.** Without a token GitHub allows 60 requests an hour per public address, shared with the container changelogs, other tools on the network and, behind CGNAT, the neighbours; past it the check failed with "Could not reach GitHub". It now sends the GitHub token from **Config → Containers → Updates** when one is set (5000 an hour), and asks the release listing with `If-None-Match`, so an unchanged answer comes back as a `304` that does not count against the limit. A token GitHub refuses is dropped for that request instead of failing the check (`update_check.go`).
+- **fix — on GitHub's limit the check waits for the reset.** It reads `X-RateLimit-Reset` and tries again then, instead of every 15 minutes; **Check now** and the `/releases/latest` fallback no longer spend a request to hear the same answer. When nextDash's own outbound limiter turned the request down, it tries again after a minute.
+- **new — a failed check says why.** `/api/update-status` adds `errorCode` (`rate-limited`, `local-limit`, `unreachable`, `http`), `retryAt` and `authenticated`. The Version panel and the What's new bar name the reason: the hourly limit with the time of the next try and, without a token, where to set one; GitHub out of reach; or GitHub's own answer (`update-notice.js`, `dashboard-config.js`).
+
 ### Tests
-- **tests — `tests/config-overview-release.spec.js` and `tests/config-overview-blocks.spec.js`** read the version from the Version panel; the release spec covers the green and red dot and the behind line.
+- **tests — `update_check_test.go`** covers the rate-limit wait, the conditional request and the token with its fallback; `tests/config-overview-release.spec.js` reads the version from the Version panel and covers the behind line and the failure reason.
 
 ### Docs
-- **docs — locale keys** `overviewVersionLine` and `overviewVersionHere` in all six languages; `overviewVersionTitle` in English only for now, the other languages fall back to it. The behind line reuses the translated `updateCheckModalAvailable`. `go run scripts/gen-asset-hashes.go` refreshed `asset_hashes_gen.go`.
+- **docs — locale keys** `overviewVersionLine` and `overviewVersionHere` in all six languages; `overviewVersionTitle` in English only for now, the other languages fall back to it. The behind line reuses the translated `updateCheckModalAvailable`. The six update-check reasons (`updateCheckRateLimited`, `updateCheckRateLimitedAt`, `updateCheckTokenHint`, `updateCheckLocalLimit`, `updateCheckUnreachable`, `updateCheckFailedWith`) are in English only for now. `go run scripts/gen-asset-hashes.go` refreshed `asset_hashes_gen.go`.
 
 ---
 
