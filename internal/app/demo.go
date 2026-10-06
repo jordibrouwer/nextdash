@@ -171,6 +171,20 @@ func (h *Handlers) seedDemo(now time.Time) error {
 		}
 	}
 
+	// Kept: links taken out of the inbox to sort later, on the hidden
+	// Unsorted page, so the inbox's Keep and the Kept count show something.
+	if _, err := h.store.EnsureUnsortedPage(); err != nil {
+		return err
+	}
+	kept := []Bookmark{
+		{Name: "Homelab networking guide", URL: "https://www.servethehome.com/category/networking/", Tags: []string{"network"}, CreatedAt: now.Add(-50 * time.Hour).UnixMilli()},
+		{Name: "Docker security cheat sheet", URL: "https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html", Tags: []string{"docker", "security"}, CreatedAt: now.Add(-30 * time.Hour).UnixMilli()},
+		{Name: "Self-hosted photo apps compared", URL: "https://selfh.st/apps/?tag=photos", Tags: []string{"photos"}, CreatedAt: now.Add(-8 * time.Hour).UnixMilli()},
+	}
+	if err := h.store.SaveBookmarksByPage(unsortedPageID, kept); err != nil {
+		return err
+	}
+
 	settings := h.store.GetSettings()
 	settings.OnboardingCompleted = true
 	settings.CurrentPage = 1

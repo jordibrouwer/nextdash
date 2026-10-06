@@ -79,6 +79,9 @@ func TestDemoSeedsThreePagesOfPublicSites(t *testing.T) {
 	total := 0
 	tagged := 0
 	for _, page := range pages {
+		if page.Hidden {
+			continue // Unsorted, holding the kept links
+		}
 		names = append(names, page.Name)
 		for _, bookmark := range h.store.GetBookmarksByPage(page.ID) {
 			total++
@@ -119,6 +122,9 @@ func TestDemoSeedsThreePagesOfPublicSites(t *testing.T) {
 	}
 	if len(h.store.GetInboxItems()) == 0 {
 		t.Error("the inbox is empty")
+	}
+	if kept := h.store.GetBookmarksByPage(unsortedPageID); len(kept) != 3 {
+		t.Errorf("%d kept links, want 3", len(kept))
 	}
 	if len(h.store.GetFinders()) < 4 {
 		t.Errorf("%d finders", len(h.store.GetFinders()))
