@@ -116,21 +116,6 @@ func emptyDemoDir(dir string) error {
 	return nil
 }
 
-// demoWriteGate runs first in requireWriteAccess: during a reset a write is
-// refused rather than landing between the files, and every other write counts
-// as activity for the idle reset.
-func demoWriteGate(w http.ResponseWriter) bool {
-	if !demoMode() {
-		return true
-	}
-	if demo.resetting.Load() {
-		http.Error(w, "The demo is being reset; try again in a moment", http.StatusServiceUnavailable)
-		return false
-	}
-	demo.lastWrite.Store(time.Now().UnixMilli())
-	return true
-}
-
 // demoResetAt is when the next reset happens: the fixed round, or the idle
 // one if somebody wrote and then stopped, whichever comes first.
 func demoResetAt() int64 {

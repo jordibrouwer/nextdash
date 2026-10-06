@@ -84,6 +84,11 @@ func respondStorePersistError(w http.ResponseWriter, err error) bool {
 	if err == nil {
 		return true
 	}
+	// A demo limit is the visitor's answer, not a server fault.
+	if errors.Is(err, errDemoLimit) {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return false
+	}
 	http.Error(w, "Failed to save data", http.StatusInternalServerError)
 	return false
 }

@@ -1,0 +1,195 @@
+package app
+
+import (
+	"errors"
+	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"sync/atomic"
+	"time"
+)
+
+/*
+What the public demo keeps closed, in three layers.
+
+Outbound: the server reaches no other host. Every outbound client but two
+dials through ssrfSafeDialContext, which refuses in the demo; the install ping
+and browser push have their own client and refuse at their source. The one
+exception is the round at the first start that fetches the demo's favicons and
+the app-icon sets (demoOutboundOpen), before the demo is serving visitors for
+long. TestDemoKnowsEveryOutboundClient fails when a new client appears that is
+not on that list.
+
+Routes: every route that writes is either allowed or refused in the demo, and
+TestDemoClassifiesEveryWriteRoute fails when a new one is neither. Refused:
+what replaces or wipes the data, uploads, anything that sends or fetches on
+the visitor's behalf, and the secrets.
+
+Limits: writes per address per minute, bookmarks per page, and pages, so one
+visitor cannot fill the demo for the next before the reset clears it.
+*/
+
+var (
+	// demoOutboundOpen is the start-up round's window; closed the rest of
+	// the time.
+	demoOutboundOpen atomic.Bool
+	errDemoOutbound  = errors.New("outbound requests are off in the demo")
+	errDemoLimit     = errors.New("the demo holds no more than this")
+)
+
+const (
+	demoWritesPerMinute     = 120
+	demoMaxBookmarksPerPage = 150
+	demoMaxPages            = 20
+)
+
+// demoOutboundRefused says whether an outbound request must be refused now.
+func demoOutboundRefused() bool {
+	return demoMode() && !demoOutboundOpen.Load()
+}
+
+// demoDeniedWrites are the write routes refused in the demo, as main.go
+// registers them.
+var demoDeniedWrites = []string{
+	// Replacing or wiping what every visitor shares.
+	"/api/import", "/api/auto-backups/restore", "/api/reset", "/api/bookmarks/delete-all",
+	// Uploads land on the server's disk.
+	"/api/favicon", "/api/font", "/api/icon", "/api/icon/from-url",
+	// Sending or fetching on the visitor's behalf.
+	"/api/push/subscribe", "/api/push/unsubscribe", "/api/push/test",
+	"/api/webhooks", "/api/webhooks/test", "/api/health/test-notification",
+	"/api/widgets/custom/test", "/api/unraid/test", "/api/unraid/settings",
+	"/api/sources/{id}", "/api/sources/{id}/run", "/api/sources/{id}/forget",
+	"/api/feeds/poll", "/api/feeds/retry", "/api/previews/refresh", "/api/bookmarks/prefetch-icons",
+	"/api/health/retest-all", "/api/health/auto-heal-apply", "/api/health/check-url",
+	"/api/health/archive-save", "/api/health/archive-settings", "/api/archives/capture", "/api/archives/",
+	"/api/docker/updates/check", "/mcp",
+	// Secrets.
+	"/api/health/credentials", "/api/web-search/brave-key", "/api/docker/github-token",
+}
+
+// demoAllowedWrites work in the demo as they do anywhere: they change the
+// demo's own data, which the next reset puts back.
+var demoAllowedWrites = []string{
+	"/api/auto-backups", "/api/auto-backups/run",
+	"/api/bookmarks", "/api/bookmarks/add", "/api/bookmarks/delete", "/api/bookmarks/move",
+	"/api/bookmarks/import-browser", "/api/bookmarks/import-html",
+	"/api/categories", "/api/colors", "/api/colors/reset", "/api/finders",
+	"/api/docker/binds/measure", "/api/docker/containers/{id}/{action}", "/api/docker/prune/{kind}",
+	"/api/docker/updates/choice", "/api/docker/volumes/{name}",
+	"/api/health/accept-drift", "/api/health/cache-scan", "/api/health/check-mode", "/api/health/check-mode-all",
+	"/api/health/delete-bookmark", "/api/health/delete-bookmarks", "/api/health/expectations",
+	"/api/health/expectations-bulk", "/api/health/ignore", "/api/health/merge-duplicates",
+	"/api/health/open-broken", "/api/health/statuses", "/api/health/update-status",
+	"/api/icon-sets/adopt", "/api/icon-sets/match",
+	"/api/inbox", "/api/inbox/batch", "/api/logs", "/api/onboarding/template",
+	"/api/pages", "/api/pages/template", "/api/pages/{id:[0-9]+}", "/api/pages/{id:[0-9]+}/blocks",
+	"/api/pages/{id:[0-9]+}/template", "/api/previews/clear", "/api/previews/images/clear",
+	"/api/settings", "/api/tags/keywords/clear", "/api/tags/rewrite", "/api/tags/scan", "/api/tags/scan/reset",
+	"/api/track-clienterror", "/api/track-keys", "/api/track-nav", "/api/track-open", "/api/track-search",
+	"/api/track-session", "/api/trash", "/api/trash/restore",
+	"/api/widgets/notes/command", "/api/widgets/notes/render",
+}
+
+var muxVarRE = regexp.MustCompile(`\{[^}]+\}`)
+
+// demoRouteMatcher turns a route as main.go writes it into a matcher for a
+// request path. A pattern ending in "/" is a prefix, as PathPrefix is.
+func demoRouteMatcher(route string) *regexp.Regexp {
+	parts := muxVarRE.Split(route, -1)
+	for i := range parts {
+		parts[i] = regexp.QuoteMeta(parts[i])
+	}
+	expr := strings.Join(parts, `[^/]+`)
+	if strings.HasSuffix(route, "/") {
+		return regexp.MustCompile("^" + expr)
+	}
+	return regexp.MustCompile("^" + expr + "$")
+}
+
+var demoDeniedMatchers = func() []*regexp.Regexp {
+	out := make([]*regexp.Regexp, 0, len(demoDeniedWrites))
+	for _, route := range demoDeniedWrites {
+		out = append(out, demoRouteMatcher(route))
+	}
+	return out
+}()
+
+func isWriteMethod(method string) bool {
+	switch method {
+	case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
+		return true
+	}
+	return false
+}
+
+// demoWriteRefused says whether a request is one the demo refuses.
+func demoWriteRefused(r *http.Request) bool {
+	if r.URL.Path == "/mcp" {
+		return true
+	}
+	if !isWriteMethod(r.Method) {
+		return false
+	}
+	for _, matcher := range demoDeniedMatchers {
+		if matcher.MatchString(r.URL.Path) {
+			return true
+		}
+	}
+	return false
+}
+
+var demoWriteLimiter = newSlidingWindowLimiter(demoWritesPerMinute, time.Minute)
+
+/*
+demoGuard is the demo's middleware, around every route: no indexing, refused
+routes refused, writes counted per address, held during a reset, and noted for
+the idle reset. Outside the demo it passes everything through untouched.
+*/
+func demoGuard(next http.Handler) http.Handler {
+	if !demoMode() {
+		return next
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Robots-Tag", "noindex, nofollow")
+		if demoWriteRefused(r) {
+			http.Error(w, demoNotAvailable, http.StatusForbidden)
+			return
+		}
+		if isWriteMethod(r.Method) && strings.HasPrefix(r.URL.Path, "/api/") {
+			if demo.resetting.Load() {
+				http.Error(w, "The demo is being reset; try again in a moment", http.StatusServiceUnavailable)
+				return
+			}
+			if !demoWriteLimiter.allow(clientIP(r)) {
+				w.Header().Set("Retry-After", "60")
+				http.Error(w, "Too many changes in a minute; the demo is shared", http.StatusTooManyRequests)
+				return
+			}
+			demo.lastWrite.Store(time.Now().UnixMilli())
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+/*
+demoCheckPageWrite holds a page file to the demo's limits before it is
+written: no more than demoMaxBookmarksPerPage bookmarks on it, and no new page
+past demoMaxPages.
+*/
+func demoCheckPageWrite(path string, page PageWithBookmarks) error {
+	if len(page.Bookmarks) > demoMaxBookmarksPerPage {
+		return fmt.Errorf("%w: %d bookmarks on a page", errDemoLimit, demoMaxBookmarksPerPage)
+	}
+	if _, err := os.Stat(path); err == nil {
+		return nil
+	}
+	pages, _ := filepath.Glob(filepath.Join(filepath.Dir(path), "bookmarks-*.json"))
+	if len(pages) >= demoMaxPages {
+		return fmt.Errorf("%w: %d pages", errDemoLimit, demoMaxPages)
+	}
+	return nil
+}

@@ -396,7 +396,7 @@ func Run(files assetFS) {
 
 	srv := &http.Server{
 		Addr:              ":" + port,
-		Handler:           requestLogging(gzipMiddleware(securityHeaders(r))),
+		Handler:           requestLogging(gzipMiddleware(securityHeaders(demoGuard(r)))),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,

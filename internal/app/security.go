@@ -432,9 +432,6 @@ func hasWriteAccess(r *http.Request) bool {
 }
 
 func (h *Handlers) requireWriteAccess(w http.ResponseWriter, r *http.Request) bool {
-	if !demoWriteGate(w) {
-		return false
-	}
 	token := writeAccessToken()
 	if token == "" {
 		return true

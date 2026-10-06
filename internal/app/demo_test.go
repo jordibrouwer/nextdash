@@ -165,8 +165,11 @@ func TestDemoRefusesWritesDuringAReset(t *testing.T) {
 	t.Setenv("NEXTDASH_DEMO", "1")
 	demo.resetting.Store(true)
 	defer demo.resetting.Store(false)
+	reached := false
+	guard := demoGuard(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { reached = true }))
 	rec := httptest.NewRecorder()
-	if demoWriteGate(rec) || rec.Code != http.StatusServiceUnavailable {
+	guard.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/bookmarks/add", nil))
+	if reached || rec.Code != http.StatusServiceUnavailable {
 		t.Fatalf("write let through during a reset: %d", rec.Code)
 	}
 }

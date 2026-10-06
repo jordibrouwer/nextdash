@@ -97,6 +97,11 @@ func (fs *FileStore) noteDataMutation(pageID int) {
 
 func (fs *FileStore) writeStoreJSONFile(path string, v any, pageID int) error {
 	if demoMode() {
+		if page, ok := pageFileValue(v); ok {
+			if err := demoCheckPageWrite(path, page); err != nil {
+				return err
+			}
+		}
 		v = withoutDemoChecks(v)
 	}
 	if err := writeIndentJSONFile(path, v); err != nil {
@@ -172,13 +177,8 @@ asks to be checked would show a switch that is on and does nothing. Here,
 where every page write passes, rather than in each handler that can set it.
 */
 func withoutDemoChecks(v any) any {
-	var page PageWithBookmarks
-	switch typed := v.(type) {
-	case PageWithBookmarks:
-		page = typed
-	case *PageWithBookmarks:
-		page = *typed
-	default:
+	page, ok := pageFileValue(v)
+	if !ok {
 		return v
 	}
 	bookmarks := make([]Bookmark, len(page.Bookmarks))
@@ -189,4 +189,15 @@ func withoutDemoChecks(v any) any {
 	}
 	page.Bookmarks = bookmarks
 	return page
+}
+
+// pageFileValue is v as a page file, if it is one.
+func pageFileValue(v any) (PageWithBookmarks, bool) {
+	switch typed := v.(type) {
+	case PageWithBookmarks:
+		return typed, true
+	case *PageWithBookmarks:
+		return *typed, true
+	}
+	return PageWithBookmarks{}, false
 }

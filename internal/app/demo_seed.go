@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -241,6 +242,18 @@ func (h *Handlers) fetchDemoIconsOnce() {
 		return
 	}
 	go func() {
+		// The one window in which the demo reaches outside: the app-icon sets
+		// first, so the favicon round skips what they already draw, then the
+		// favicons. Closed again as soon as both are done.
+		demoOutboundOpen.Store(true)
+		defer demoOutboundOpen.Store(false)
+		if !iconSetsDisabled() && iconSetsFixtureDir() == "" {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			if err := refreshIconSets(ctx); err != nil {
+				logDebug("icon-sets", "demo refresh: %v", err)
+			}
+			cancel()
+		}
 		h.prefetchMu.Lock()
 		defer h.prefetchMu.Unlock()
 		for pageID := 1; pageID <= len(demoPages()); pageID++ {
