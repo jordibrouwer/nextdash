@@ -446,6 +446,7 @@ type Settings struct {
 	// every page file to strip images again.
 	PreviewImagesStrippedMigrated   bool   `json:"previewImagesStrippedMigrated,omitempty"`
 	CustomPercentGuessMigrated      bool   `json:"customPercentGuessMigrated,omitempty"`
+	NotesWidgetSeeded               bool   `json:"notesWidgetSeeded,omitempty"`               // one-time: notes widget on the first page; a field, or a settings save dropped it and a removed widget came back
 	ConfigButtonDefaultOnMigrated   bool   `json:"configButtonDefaultOnMigrated,omitempty"`   // one-time: restore config header icon after visibility fix
 	SurfaceDefaultsMigrated         bool   `json:"surfaceDefaultsMigrated,omitempty"`         // one-time: backdrop on, glow off, depth — the three Surfaces answers agreed on once
 	DepthDefaultFlatMigrated        bool   `json:"depthDefaultFlatMigrated,omitempty"`        // one-time: the depth default moved to flat
@@ -5171,6 +5172,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.ShortcutOpenModeInstantMigrated = settings.ShortcutOpenModeInstantMigrated || stored.ShortcutOpenModeInstantMigrated
 			settings.PreviewImagesStrippedMigrated = settings.PreviewImagesStrippedMigrated || stored.PreviewImagesStrippedMigrated
 			settings.CustomPercentGuessMigrated = settings.CustomPercentGuessMigrated || stored.CustomPercentGuessMigrated
+			settings.NotesWidgetSeeded = settings.NotesWidgetSeeded || stored.NotesWidgetSeeded
 			settings.HideEmptyCategoriesMigrated = settings.HideEmptyCategoriesMigrated || stored.HideEmptyCategoriesMigrated
 			settings.ShortcutDisplayAlwaysMigrated = settings.ShortcutDisplayAlwaysMigrated || stored.ShortcutDisplayAlwaysMigrated
 			settings.ConfigButtonDefaultOnMigrated = settings.ConfigButtonDefaultOnMigrated || stored.ConfigButtonDefaultOnMigrated
