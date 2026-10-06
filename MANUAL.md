@@ -699,7 +699,7 @@ Data is stored in `./data` next to the binary. `NEXTDASH_DATA_DIR` points it els
 
 ### 🚦 First launch
 
-1. **Quick-start card.** A small card asks for your language and dark mode, your column layout and your weather location. Skip it whenever you like; every setting stays in config. It then becomes a short checklist — add a bookmark, tag one, open config, see the cheat sheet — that closes itself when done.
+1. **Quick-start card.** A small checklist in the bottom-left corner with three first tasks: **Add your first bookmark** (`+` or paste a URL), **Open Config → Behavior** (language, theme and layout) and **See the keyboard shortcuts** (`!` or `F1`). Each ticks itself off as you do it, and the card closes itself when all three are done. Skip it with its × whenever you like; it asks nothing, and every setting is in config.
 2. **Example bookmarks.** A new install starts with a few example bookmarks and a Health widget, so there is something to try the keys on.
 3. **Your own bookmarks.** Import your browser's bookmark file under **Config → Data & backups** ([§19](#19-data-backups-and-import)), or add them with **+** and **&** ([§5](#5-adding-bookmarks)).
 4. **Config.** Press **`Shift + S`** or click the gear. Config is a view inside the dashboard; **`Escape`** takes you back.
@@ -1844,13 +1844,6 @@ A period select (today, 7, 14, 30 or 90 days) applies across the panel.
 - An Unsorted bookmark's side panel shows a primary **Promote** button in place of a page and category; the row menu has the same entry. Both open the bookmark form, titled **Promote bookmark**, on the last page of the dashboard — pick a page and category and **Save** files it there.
 - The **Unsorted widget** ([§15.1](#151-the-kinds)) also opens the Bookmarks view on Unsorted, with that bookmark's side panel already open.
 
-<details>
-<summary>📷 Screenshot — Unsorted with Promote, full page</summary>
-
-<p align="center"><img src="screenshots/manual.md/11-unsorted.jpg" alt="The Bookmarks view on Unsorted: four kept links without a page, and the side panel of one of them with Promote, Open and Edit" width="860"></p>
-
-</details>
-
 <a id="1112-pages-categories-modal"></a>
 
 ### 11.12 Pages & categories modal
@@ -2926,7 +2919,7 @@ Seven widgets read an Unraid server through its API: **Unraid**, **Unraid array*
 <details>
 <summary>📷 Screenshot — Config → Unraid after Test connection</summary>
 
-<p align="center"><img src="screenshots/manual.md/17-unraid.jpg" alt="Config, Unraid: the connection panel with the address, a saved API key, its three switches, and the answer to Test connection naming the server, its Unraid and API versions and yes for every area" width="860"></p>
+<p align="center"><img src="screenshots/manual.md/17-unraid.jpg" alt="Config, Unraid: What you get, with the seven widgets in miniature, then the connection panel with the address, a saved API key, its three switches, and the answer to Test connection naming the server, its Unraid and API versions and yes for every area" width="860"></p>
 
 </details>
 
@@ -3387,7 +3380,7 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 <details>
 <summary>📷 Screenshot — Config → Overview, full page</summary>
 
-<p align="center"><img src="screenshots/manual.md/17-overview.jpg" alt="Config, Overview: what needs you, panels for bookmarks, the inbox, containers, health and statistics, and on the right Latest news, the Version panel, New in nextDash and a tip" width="860"></p>
+<p align="center"><img src="screenshots/manual.md/17-overview.jpg" alt="Config, Overview: what needs you, panels for bookmarks, the inbox, containers, health and statistics, and on the right Latest news, the Version panel and New in nextDash" width="860"></p>
 
 </details>
 
@@ -3826,13 +3819,6 @@ nextDash adapts to touch screens (a touch device without a hover pointer) rather
 | **Quick-start card** | Skipped | Shown on first visit |
 
 A dismissible banner explains the limits once.
-
-<details>
-<summary>📷 Screenshot — the dashboard on a tablet</summary>
-
-<p align="center"><img src="screenshots/manual.md/22-tablet.jpg" alt="The dashboard on a tablet held upright: the full header, two columns of categories and widgets, and the action bar on the right edge" width="420"></p>
-
-</details>
 
 <a id="touch-gestures"></a>
 
@@ -4410,7 +4396,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 |---|---|---|
 | QR code | A bookmark's address drawn as a code to scan with a phone, from `Shift + J` or the row menu; drawn in the browser, so the address goes nowhere. | [§6](#qr-code) |
 | Quick add (`&`) | Press `&`, type a name, address and optional shortcut on one line, and press Enter. | [§5.1](#51-quick-add) |
-| Quick-start card | The small card on first launch that asks for language, dark mode, column layout and weather location, then becomes a short checklist. | [§2](#first-launch) |
+| Quick-start card | The small checklist on first launch — add your first bookmark, open Config → Behavior, see the keyboard shortcuts — that ticks itself off and closes when done. | [§2](#first-launch) |
 | Quiet hours | A window in which alerts are held and then summed up in one message when it ends; the downtime still counts. | [§12.5](#quiet-hours) |
 
 <a id="glossary-r"></a>
