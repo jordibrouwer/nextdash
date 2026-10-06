@@ -16,7 +16,7 @@ Run it on any machine or container, open it in your browser, organise bookmarks 
 
 Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by MatiasDesuu.
 
-📖 **[User manual (MANUAL.md)](MANUAL.md)** — how everything works, from the first launch to self-hosting.
+📖 **[User manual (MANUAL.md)](MANUAL.md)** — how everything works, from the first launch to self-hosting. · [Glossary](MANUAL.md#glossary)
 
 📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — every release, new and fix.
 
