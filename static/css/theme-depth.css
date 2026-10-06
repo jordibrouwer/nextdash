@@ -504,8 +504,16 @@ html[data-theme] ::selection {
  * scrollbar-color is the standard property and covers Firefox and current
  * Chromium; the -webkit rules below carry the ones that do not have it yet.
  */
+/*
+ * --hairline-strong is defined on body, and the page's own scrollbar is styled
+ * from html, where it does not exist: the property was invalid there, fell back
+ * to the browser's scrollbar, and with "always show scrollbars" that drew a
+ * white strip down the right edge of every dark theme. The same mix, from the
+ * border colour html does have, as the fallback; the track in the page colour.
+ */
 html[data-theme] {
-    scrollbar-color: var(--hairline-strong) transparent;
+    --page-scrollbar-thumb: var(--hairline-strong, color-mix(in srgb, var(--border-primary) 70%, transparent));
+    scrollbar-color: var(--page-scrollbar-thumb) var(--background-primary);
     scrollbar-width: thin;
 }
 
@@ -518,8 +526,12 @@ html[data-theme] ::-webkit-scrollbar-track {
     background: transparent;
 }
 
+html[data-theme]::-webkit-scrollbar-track {
+    background: var(--background-primary);
+}
+
 html[data-theme] ::-webkit-scrollbar-thumb {
-    background: var(--hairline-strong);
+    background: var(--hairline-strong, var(--page-scrollbar-thumb));
     border-radius: var(--radius-pill, 999px);
     /* Inset by a border rather than by width, so the thumb keeps the full
        track's hit area while looking narrower than it is. */
