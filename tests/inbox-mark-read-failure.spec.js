@@ -32,8 +32,13 @@ async function openInboxWithOneUnread(page) {
     // leave items behind. Rather than wiping shared state, everything below is
     // scoped to the id this returns — so the assertions describe one known row
     // regardless of what else is in the inbox.
+    //
+    // A read already on the wire is shared by the next caller (fetchItems
+    // keeps one in flight), and one that left before this POST cannot hold the
+    // row: the view would open on it and never ask again. So let it land first.
     const url = `https://mark-read-${Date.now()}.example.com`;
     const id = await page.evaluate(async (u) => {
+        await Promise.resolve(window.dashboardInstance.inbox._fetchPromise).catch(() => {});
         const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const res = await api('/api/inbox', {
             method: 'POST',
