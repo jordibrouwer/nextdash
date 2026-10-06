@@ -136,6 +136,8 @@ class DashboardData {
     async loadData(options = {}) {
         const d = this.dash;
         const { skipPageBookmarks = false } = options;
+        const writeSeqAtStart = d._settingsWriteSeq || 0;
+        const savingAtStart = (d._settingsSavesInFlight || 0) > 0;
         try {
             const [pagesRes, settingsRes, findersRes] = await Promise.all([
                 fetch('/api/pages'),
@@ -153,35 +155,54 @@ class DashboardData {
             
             // Load settings from server first
             const serverSettings = await settingsRes.json();
-            
-            // Load settings from localStorage or server based on device-specific flag
-            // isDeviceSpecificEnabled already reads the flag and survives a
-            // browser that refuses storage; the bare read behind it threw
-            // there and failed the whole dashboard load.
-            let deviceSpecific = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true;
-            if (!deviceSpecific && !window.DeviceSettingsMerge) {
-                try {
-                    deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
-                } catch (_error) {
-                    deviceSpecific = false;
-                }
-            }
-            if (deviceSpecific && window.DeviceSettingsMerge?.mergeServerAndDeviceSettings) {
-                const deviceSettings = window.DeviceSettingsMerge.getDeviceSettingsRaw?.();
-                d.settings = window.DeviceSettingsMerge.mergeServerAndDeviceSettings(serverSettings, deviceSettings);
-            } else if (deviceSpecific) {
-                const deviceSettings = localStorage.getItem('dashboardSettings');
-                if (deviceSettings) {
+
+            /*
+             * Unless this tab saved settings while the read was on the wire.
+             *
+             * The revision poll reloads settings when another device changed
+             * them. Change one here before that answer lands and the answer is
+             * from before your save: it replaced d.settings wholesale, so the
+             * header went back to the old style while the server held the new
+             * one -- and stayed back, because the save had already told the
+             * poll there was nothing left to fetch. The save sends the whole
+             * object, so what this tab holds is what the server holds now.
+             * Not on the first load: until then this tab holds only defaults.
+             */
+            const settingsOutrun = Boolean(d._settingsLoaded) && (savingAtStart
+                || (d._settingsSavesInFlight || 0) > 0
+                || (d._settingsWriteSeq || 0) !== writeSeqAtStart);
+
+            if (!settingsOutrun) {
+                // Load settings from localStorage or server based on device-specific flag
+                // isDeviceSpecificEnabled already reads the flag and survives a
+                // browser that refuses storage; the bare read behind it threw
+                // there and failed the whole dashboard load.
+                let deviceSpecific = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true;
+                if (!deviceSpecific && !window.DeviceSettingsMerge) {
                     try {
-                        d.settings = { ...serverSettings, ...JSON.parse(deviceSettings) };
-                    } catch {
+                        deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
+                    } catch (_error) {
+                        deviceSpecific = false;
+                    }
+                }
+                if (deviceSpecific && window.DeviceSettingsMerge?.mergeServerAndDeviceSettings) {
+                    const deviceSettings = window.DeviceSettingsMerge.getDeviceSettingsRaw?.();
+                    d.settings = window.DeviceSettingsMerge.mergeServerAndDeviceSettings(serverSettings, deviceSettings);
+                } else if (deviceSpecific) {
+                    const deviceSettings = localStorage.getItem('dashboardSettings');
+                    if (deviceSettings) {
+                        try {
+                            d.settings = { ...serverSettings, ...JSON.parse(deviceSettings) };
+                        } catch {
+                            d.settings = serverSettings;
+                        }
+                    } else {
                         d.settings = serverSettings;
                     }
                 } else {
                     d.settings = serverSettings;
                 }
-            } else {
-                d.settings = serverSettings;
+                d._settingsLoaded = true;
             }
             window.DiscoverabilityState?.init?.(d.settings.discoverabilityState);
             delete d.settings._sortMigratedPageIds;
@@ -1358,6 +1379,10 @@ class DashboardData {
 
     async saveSettings() {
         const d = this.dash;
+        // Counted for loadData: a settings read that overlaps a save here was
+        // answered from before it, and must not replace what this tab holds.
+        d._settingsWriteSeq = (d._settingsWriteSeq || 0) + 1;
+        d._settingsSavesInFlight = (d._settingsSavesInFlight || 0) + 1;
         try {
             let payload = typeof sanitizeSettingsForPersist === 'function'
                 ? sanitizeSettingsForPersist(d.settings)
@@ -1483,6 +1508,8 @@ class DashboardData {
             // to say something of its own can tell success from failure — the
             // swallowed rejection made every save look like it worked.
             return false;
+        } finally {
+            d._settingsSavesInFlight = Math.max(0, (d._settingsSavesInFlight || 1) - 1);
         }
     }
 }

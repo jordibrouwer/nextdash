@@ -48,19 +48,24 @@ async function openDashboard(page) {
     await page.waitForTimeout(300);
 }
 
+/*
+ * Through the dashboard's own save, then wait for the header to say so.
+ *
+ * This used to POST the settings by hand and sleep 300ms. In CI the dashboard
+ * was still settling from the reload before it -- its own save and a revision
+ * check were on the wire -- and the refresh that came back put the old style
+ * on the page after this had drawn the new one. The style is on the server
+ * either way, so wait for the header to show it rather than for a clock.
+ */
 async function chooseStyle(page, style) {
     await page.evaluate(async (value) => {
         const d = window.dashboardInstance;
         d.settings.headerButtonStyle = value;
-        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        await api('/api/settings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(d.settings),
-        });
+        await d.saveSettings();
         d.config?.applyChromeSettings?.();
     }, style);
-    await page.waitForTimeout(300);
+    await expect.poll(() => page.evaluate(
+        () => document.body.getAttribute('data-header-buttons')), { timeout: 5_000 }).toBe(style);
 }
 
 const drawn = (page) => page.evaluate(() => {
@@ -197,8 +202,8 @@ test('on a glass theme, plain controls stand on the band with nothing behind the
 
     // Each in its own box keeps the glass.
     await chooseStyle(page, 'plated');
-    const plated = await behind();
-    expect(plated.some((c) => c.filter !== 'none'), 'plated lost its glass').toBe(true);
+    await expect.poll(async () => (await behind()).some((c) => c.filter !== 'none'),
+        { message: 'plated lost its glass', timeout: 5_000 }).toBe(true);
 });
 
 test('plated leaves the actions and tabs in the header bare, hover included; a dock keeps its plate', async ({ page }) => {
