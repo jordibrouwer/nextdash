@@ -656,7 +656,7 @@ From a git checkout, `docker-compose.prod.yml` is the production file (only `./d
 
 **Never delete `./data` while the container runs.** `./data` is a bind mount: the folder disappears from your disk, but the container keeps writing into a directory that no longer exists, and the data is gone at the next restart. Nothing in the app shows it.
 
-- **Check.** If `docker ps` shows the container running while `./data` is gone on the host, copy the data back out first: `docker exec nextdash tar cf - -C /app data | tar xf - -C .`, then `docker compose up -d --force-recreate` so the mount points at the new folder. (`nextdash` is the `container_name` in the compose files that ship with nextDash; use the one in yours.)
+- **Check.** If `docker ps` shows the container running while `./data` is gone on the host, copy the data back out first: `docker exec nextDash tar cf - -C /app data | tar xf - -C .`, then `docker compose up -d --force-recreate` so the mount points at the new folder. (`nextDash` is the `container_name` in the snippet above; use the name in your own compose file.)
 - **Clean reset.** `docker compose down`, delete `./data`, then `docker compose up -d`. nextDash makes the folder and its default files again.
 
 <a id="build-from-source"></a>
@@ -1241,9 +1241,9 @@ The dashboard's search line is always listening. Letters narrow the list; **`Ent
 Results are grouped by why they matched. **Best matches** — a name, or a word in it, that starts with what you typed — stays open. **Contains “…”** (the letters sit in the middle of a word in the name) and **In tags, note or url** (the address, a tag, the note or the fetched description) fold behind a heading and a count; click a heading to open it. If only one kind matched there is no heading, and if every group is shut the strongest opens itself. An open group shows twelve rows and a *N more* row for the rest. The ranking also remembers which result you picked for the letters you typed, so a word you always type for one bookmark soon puts it first.
 
 <p align="center">
-  <img src="screenshots/manual.md/08-search.jpg" alt="The search panel with /Lib typed: a name search that lists two bookmarks" width="860">
+  <img src="screenshots/manual.md/08-search.jpg" alt="The search panel after typing lib and then /: a name search that lists two bookmarks" width="860">
 </p>
-<p align="center"><sub>Typing on the dashboard opens the search panel; here <code>/Lib</code>, a name search, finds two bookmarks.</sub></p>
+<p align="center"><sub>Typing on the dashboard opens the search panel; here <code>lib</code> and then <code>/</code>, which turns the same letters into a name search, finds two bookmarks.</sub></p>
 
 Links still waiting in the inbox that match a name search appear in their own group at the end of the results; snoozed ones stay out, as they do in the inbox's own list.
 
@@ -1257,7 +1257,7 @@ With the panel empty, your recent and saved searches show as chips (`←`/`→` 
 | **Open after a short pause** | The shortcut waits until you stop typing. |
 | **Press Enter to open** | Typing only narrows the list; the shortcut leads it. |
 
-**Switch search mode** (Behavior → Keyboard & search, or **`Shift + Q`**) decides whether bare letters look for a shortcut or a name. When one finds nothing and the other would, the panel adds a row that searches the other way.
+**Switch search mode** (Behavior → Keyboard & search, or **`Shift + Q`**) decides whether bare letters look for a shortcut or a name. When one finds nothing and the other would, the panel adds a row that searches the other way. With letters already typed, **`/`** does the same by hand and switches this one search; the letters stay where they are.
 
 **Behavior → Keyboard & search** also holds fuzzy suggestions for near-misses, *include finders in search*, *keep search open when empty* and the search hint. *Search unsorted bookmarks* (on by default) lets search reach links kept on **Bookmarks → Unsorted** ([§11.11](#1111-unsorted-and-promote)); they stay out of every other list.
 
@@ -1984,7 +1984,7 @@ On a bookmark's Health tab, **Find in Web Archive** reads the archive's index fo
 
 The inbox holds links you want to keep before you decide where they go. Items live in `data/inbox.json`.
 
-A link comes in one way and leaves in one of three:
+A link comes in from several places and leaves in one of three ways:
 
 ```mermaid
 flowchart LR
@@ -2124,7 +2124,7 @@ The first visit plays a five-step tour: the waiting room the inbox is, the three
 ## 14. 🐳 Containers
 
 > [!NOTE]
-> **In short:** the Containers view shows the Docker containers on this machine, with logs, updates and disk use. Looking needs the Docker socket; acting needs `NEXTDASH_DOCKER_CONTROL=1` and a write token.
+> **In short:** the Containers view shows the Docker containers on this machine, with logs, updates and disk use. Looking needs the Docker socket; acting needs `NEXTDASH_DOCKER_CONTROL=1`, and a write token as well if you set one.
 
 The **Containers view** shows the Docker containers on the machine nextDash runs on — the same connection the Containers widget and system widgets use. It needs the Docker socket ([§14.6](#146-what-it-needs)).
 
@@ -2768,7 +2768,7 @@ Press **Ask now** first. It shows the status and the answer, which is usually th
 - **"That address is not allowed."** The address is private and **Allow localhost & private-network bookmarks** is off, or it is not an `http`/`https` address. See [§23.3](#233-local-addresses-and-outgoing-requests).
 - **"No answer from that address."** Nothing answered within eight seconds, or the host could not be reached. Remember it is your server that asks, not your browser: in Docker, `localhost` is the container itself, so use the machine's address.
 - **"That address answered with a web page, not JSON."** The address names a web interface, often the host with no path. Add the path of the service's API; a preset does this for you.
-- **"That answer is not JSON."** or **"…answered with … not JSON."** The service sent XML, plain text or something else. An answer is also read only up to one megabyte; a bigger one is cut off and no longer parses, so point at a smaller endpoint, as several presets do with `?limit=1`.
+- **"That answer is not JSON."** or **"…answered with … not JSON."** The service sent XML, plain text or something else. An answer is also read only up to one megabyte; a bigger one is cut off and no longer parses, so point at a smaller endpoint, as the NZBHydra2, Komga, Jellystat and Gatus presets do with `?limit=1`, `?size=1` or `?pageSize=1`.
 - **"Could not sign in to that service."** The username and password were refused. A two-factor account cannot be used (Nginx Proxy Manager says so in its notice).
 - **"Nothing to show yet" or "no address yet".** The widget has no figure and no list, or no address. Add one and save.
 - **The tile did not change.** Changes wait for **Save changes**.
@@ -3064,7 +3064,7 @@ Each tab has a filter beside **Only changed**. When the filter — or **Only cha
 ## 17. ⚙️ Config
 
 > [!NOTE]
-> **In short:** Config is a view inside the dashboard, with a section for each part of nextDash. Open it with `Shift + S`, find any setting with `Ctrl/Cmd + Shift + K`, and every change saves the moment you make it.
+> **In short:** Config is a view inside the dashboard, with a section for each part of nextDash. Open it with `Shift + S`, find any setting with `Ctrl/Cmd + Shift + K`, and most Config changes save the moment you make them.
 
 Config is a **view inside the dashboard**: same tab, no page load.
 
