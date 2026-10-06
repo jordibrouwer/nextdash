@@ -773,14 +773,14 @@ This manual calls the page of categories and widgets the **dashboard grid**, to 
 
 ```
 ┌───────────────────────────────────────────────────────────────────────────┐
-│ It's 09:12 · Thursday          1  2  3  4  +5   ⌂  📚  📥  🐳  ⚙          │
-│ Leiden, rain, 16°C                                                        │
-│ main                                                                      │
+│ It's 09:12 · Thursday     1 2 3 +  home bookmarks inbox containers config │
+│ Leiden, rain, 16°C                          page switcher, then the views │
+│ Home                                                                      │
 ├───────────────────────────────────────────────────────────────────────────┤
-│ // today (15)        // other            // vps             // weather     │
-│   bookmark rows        bookmark rows       bookmark rows      widget       │
+│ // today (15)          // other              // weather                   │
+│    bookmark rows          bookmark rows         widget                    │
 │                                                                           │
-│                        [ + ] [ > ]   ← action buttons (dock)               │
+│                    [ + ] [ > ]  <- action buttons                         │
 └───────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -1815,21 +1815,15 @@ A period select (today, 7, 14, 30 or 90 days) applies across the panel.
 > [!NOTE]
 > **In short:** set a bookmark to **Off**, **Periodic** or **Monitor** and nextDash checks it for you. Expected response and drift catch pages that answer but are wrong, and alerts and maintenance windows decide who hears about it.
 
-The states a monitored bookmark moves through:
+How a monitored bookmark works, in short:
 
 ```mermaid
-stateDiagram-v2
-    [*] --> Up
-    Up --> Drift: page changed
-    Drift --> Up: accepted or back to baseline
-    Up --> Down: failed checks in a row
-    Down --> Up: recovers
-    Up --> Maintenance: fails inside a window
-    Maintenance --> Up: recovers
-    Maintenance --> Down: still failing after the window
-    Up --> Unknown: robot check or rate limit
-    Unknown --> Up: clear answer
+flowchart LR
+    Up["✅ Up<br>the page answers"] -->|"no answer, a few checks in a row"| Down["❌ Down<br>you get an alert"]
+    Down -->|"answers again"| Back["✅ Up again<br>you get a recovery alert"]
 ```
+
+During a maintenance window ([§12.5](#125-maintenance-windows)) nothing is sent. A page that still answers but changed what it says is flagged as drift ([§12.3](#123-drift)).
 
 <a id="121-availability-modes"></a>
 
