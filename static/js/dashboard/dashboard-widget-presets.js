@@ -215,6 +215,9 @@
             // qBittorrent 5.2 (Web API 2.14.1) takes an API key, which does not
             // expire and needs no sign-in at all.
             id: 'qbittorrent-key', name: 'qBittorrent (5.2+, API key)', group: 'media',
+            // A second way into the same service, so it is not a service of
+            // its own when the catalogue is counted.
+            variantOf: 'qbittorrent',
             sample: 'http://qbittorrent.local:8080',
             path: '/api/v2/transfer/info',
             auth: 'header', authName: 'Authorization', scheme: 'Bearer ',
@@ -804,9 +807,21 @@
         return { shape: field.shape, tone: field.tone || '' };
     }
 
+    /*
+     * How many services the picker offers, for the sentences that say so.
+     * PRESETS.length overcounts twice over: retired entries stay in the list so
+     * a widget started from one still shows its choice, and a service with two
+     * ways in (qBittorrent) has two entries.
+     */
+    function serviceCount() {
+        return PRESETS.filter((preset) => !preset.retired && !preset.variantOf).length;
+    }
+
     function byId(id) {
         return PRESETS.find((preset) => preset.id === String(id)) || null;
     }
 
-    window.DashboardWidgetPresets = { GROUPS, PRESETS, byId, configFor, addressFor, hasPath, shapeFor };
+    window.DashboardWidgetPresets = {
+        GROUPS, PRESETS, byId, configFor, addressFor, hasPath, shapeFor, serviceCount,
+    };
 })();

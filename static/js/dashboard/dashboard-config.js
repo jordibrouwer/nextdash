@@ -17084,7 +17084,7 @@ class DashboardConfig {
     renderCustomWidgetReference() {
         const esc = (v) => this.dash.escapeHtml(v);
         const t = (key, fallback) => esc(this.t(key, fallback));
-        const presets = window.DashboardWidgetPresets?.PRESETS?.length || 0;
+        const presets = window.DashboardWidgetPresets?.serviceCount?.() || 0;
 
         /*
          * Every string here is plain text and escaped; the examples are built
@@ -17137,7 +17137,7 @@ class DashboardConfig {
                     ${presets ? point(
                         t('config.widgetCustomRefPresetsTitle', 'Or start from a service already known'),
                         this.t('config.widgetCustomRefPresetsBody',
-                            'Filled in for you: the address, the figures worth reading, and the header its API wants. {count} services in four groups, and everything stays editable afterwards.')
+                            'Filled in for you: the address, the figures worth reading, and the header its API wants. {count} services in five groups, and everything stays editable afterwards.')
                             .split('{count}').map(esc).join(`<strong>${esc(String(presets))}</strong>`)) : ''}
                 </ul>
                 <p class="config-widget-custom-lead">${t('config.widgetCustomRefLimits',

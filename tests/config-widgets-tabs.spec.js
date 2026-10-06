@@ -73,6 +73,29 @@ test.describe('the Widgets section has tabs', () => {
         await expect(page.locator('[data-widget-catalogue]')).toHaveCount(0);
     });
 
+    test('the Custom section counts the services the picker offers', async ({ page }) => {
+        await openWidgets(page);
+        await page.locator('[data-widgets-tab="types"]').click();
+
+        /*
+         * PRESETS.length said 45: three retired services stay in the list so an
+         * old widget keeps its choice, and qBittorrent has two ways in. The
+         * count here is derived the long way round -- offered entries, one per
+         * name before its parenthesis -- so it does not just repeat the
+         * function it checks.
+         */
+        const catalogue = await page.evaluate(() => {
+            const { PRESETS, GROUPS } = window.DashboardWidgetPresets;
+            const names = PRESETS.filter((preset) => !preset.retired)
+                .map((preset) => preset.name.replace(/\s*\(.*\)$/, ''));
+            return { services: new Set(names).size, groups: GROUPS.length };
+        });
+        const point = page.locator('.config-widget-custom-point').filter({ hasText: 'groups' });
+        await expect(point.locator('strong')).toHaveText(String(catalogue.services));
+        expect(catalogue.groups).toBe(5);
+        await expect(point).toContainText('in five groups');
+    });
+
     test('the tab reaches the address bar, so it can be linked to', async ({ page }) => {
         await openWidgets(page);
         await page.locator('[data-widgets-tab="types"]').click();
