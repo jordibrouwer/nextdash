@@ -215,6 +215,9 @@ func (h *Handlers) writeDemoPages(now time.Time) error {
 			if ready {
 				bookmark.Icon = icons[canonicalBookmarkURLKey(link.url)]
 			}
+			if preview, ok := demoPreviews[link.url]; ok {
+				bookmark.PreviewTitle, bookmark.PreviewDesc = preview[0], preview[1]
+			}
 			bookmarks = append(bookmarks, bookmark)
 		}
 		meta := Page{ID: pageID, Name: page.name, Icon: page.icon}

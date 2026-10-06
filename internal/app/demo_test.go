@@ -88,6 +88,10 @@ func TestDemoSeedsThreePagesOfPublicSites(t *testing.T) {
 			if len(bookmark.Tags) > 0 {
 				tagged++
 			}
+			// Every working link has a preview; the two broken ones do not.
+			if bookmark.LastError == "" && !bookmarkHasPreviewMetadata(bookmark) {
+				t.Errorf("%s has no preview", bookmark.Name)
+			}
 			if !strings.HasPrefix(bookmark.URL, "https://") {
 				t.Errorf("%s: %s is not a public https address", page.Name, bookmark.URL)
 			}

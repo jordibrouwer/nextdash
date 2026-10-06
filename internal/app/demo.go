@@ -165,9 +165,9 @@ func (h *Handlers) seedDemo(now time.Time) error {
 		return err
 	}
 	kept := []Bookmark{
-		{Name: "Homelab networking guide", URL: "https://www.servethehome.com/category/networking/", Tags: []string{"network"}, CreatedAt: now.Add(-50 * time.Hour).UnixMilli()},
-		{Name: "Docker security cheat sheet", URL: "https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html", Tags: []string{"docker", "security"}, CreatedAt: now.Add(-30 * time.Hour).UnixMilli()},
-		{Name: "Self-hosted photo apps compared", URL: "https://selfh.st/apps/?tag=photos", Tags: []string{"photos"}, CreatedAt: now.Add(-8 * time.Hour).UnixMilli()},
+		{Name: "Homelab networking guide", PreviewTitle: "Networking - ServeTheHome", PreviewDesc: "Switches, NICs and network gear for the homelab, reviewed.", URL: "https://www.servethehome.com/category/networking/", Tags: []string{"network"}, CreatedAt: now.Add(-50 * time.Hour).UnixMilli()},
+		{Name: "Docker security cheat sheet", PreviewTitle: "Docker Security - OWASP Cheat Sheet Series", PreviewDesc: "Rules for running containers safely: users, capabilities, secrets and the socket.", URL: "https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html", Tags: []string{"docker", "security"}, CreatedAt: now.Add(-30 * time.Hour).UnixMilli()},
+		{Name: "Self-hosted photo apps compared", PreviewTitle: "Photos - selfh.st apps", PreviewDesc: "Self-hosted photo libraries side by side.", URL: "https://selfh.st/apps/?tag=photos", Tags: []string{"photos"}, CreatedAt: now.Add(-8 * time.Hour).UnixMilli()},
 	}
 	if err := h.store.SaveBookmarksByPage(unsortedPageID, kept); err != nil {
 		return err
