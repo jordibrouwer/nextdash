@@ -80,3 +80,66 @@ test('a setting saved while a refresh is on the wire stays on screen', async ({ 
     expect(await page.evaluate(() => window.dashboardInstance.settings.headerButtonStyle)).toBe('plated');
     expect(await page.evaluate(() => document.body.getAttribute('data-header-buttons'))).toBe('plated');
 });
+
+/*
+ * And the other way round: a save that had already reached the server when
+ * another device saved after it. The read that follows holds both, so it is
+ * the one to show -- keeping this tab's copy then left the other device's
+ * change off the screen while the server held it.
+ */
+test('a save that landed before the other device does not hide its change', async ({ page }) => {
+    await openDashboard(page);
+    await page.evaluate(() => window.dashboardInstance.data.refreshIfDataRevisionChanged());
+
+    // This tab's save reaches the server; its answer is held, so the save is
+    // still on the wire when the refresh reads.
+    let holdPost = true;
+    let landed = false;
+    let release = () => {};
+    const gate = new Promise((resolve) => { release = resolve; });
+    await page.route('**/api/settings', async (route) => {
+        if (!holdPost || route.request().method() !== 'POST') {
+            await route.continue();
+            return;
+        }
+        holdPost = false;
+        const response = await route.fetch();
+        landed = true;
+        await gate;
+        await route.fulfill({ response });
+    });
+
+    const before = await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        window.__save = d.saveSettings();
+        return d.settings.showTitle;
+    });
+    await expect.poll(() => landed, { timeout: 10_000 }).toBe(true);
+
+    // Another device, after that save: the title flips.
+    await page.evaluate(async (was) => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const current = await (await api('/api/settings')).json();
+        current.showTitle = !was;
+        await api('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(current),
+        });
+    }, before);
+
+    await page.evaluate(() => {
+        window.__refresh = window.dashboardInstance.data.refreshIfDataRevisionChanged();
+    });
+    await page.waitForTimeout(300);
+    release();
+    await page.evaluate(async () => { await window.__save; await window.__refresh; });
+
+    const seen = await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const server = (await (await api('/api/settings')).json()).showTitle;
+        return { client: window.dashboardInstance.settings.showTitle, server };
+    });
+    expect(seen.server).toBe(!before);
+    expect(seen.client).toBe(seen.server);
+});

@@ -137,7 +137,7 @@ class DashboardData {
         const d = this.dash;
         const { skipPageBookmarks = false } = options;
         const writeSeqAtStart = d._settingsWriteSeq || 0;
-        const savingAtStart = (d._settingsSavesInFlight || 0) > 0;
+        const writeOnTheWire = d._settingsWriteInFlight || null;
         try {
             const [pagesRes, settingsRes, findersRes] = await Promise.all([
                 fetch('/api/pages'),
@@ -154,23 +154,36 @@ class DashboardData {
             d.finders = await findersRes.json();
             
             // Load settings from server first
-            const serverSettings = await settingsRes.json();
+            let serverSettings = await settingsRes.json();
 
             /*
-             * Unless this tab saved settings while the read was on the wire.
+             * Unless a save from this tab crossed the read.
              *
              * The revision poll reloads settings when another device changed
-             * them. Change one here before that answer lands and the answer is
-             * from before your save: it replaced d.settings wholesale, so the
-             * header went back to the old style while the server held the new
-             * one -- and stayed back, because the save had already told the
-             * poll there was nothing left to fetch. The save sends the whole
-             * object, so what this tab holds is what the server holds now.
+             * them. Change one here while that read is on the wire and its
+             * answer may be from before your save: it replaced d.settings
+             * wholesale, so the header went back to the old style while the
+             * server held the new one -- and stayed back, because the save had
+             * already told the poll there was nothing left to fetch.
+             *
+             * Which way it went depends on when the write left. Sent after the
+             * read, it reached the server after whatever the read saw, and it
+             * carries the whole object: what this tab holds is what the server
+             * holds, so keep it. Already on its way when the read left, either
+             * could have landed first, so wait for the write and read again.
              * Not on the first load: until then this tab holds only defaults.
              */
-            const settingsOutrun = Boolean(d._settingsLoaded) && (savingAtStart
-                || (d._settingsSavesInFlight || 0) > 0
-                || (d._settingsWriteSeq || 0) !== writeSeqAtStart);
+            let settingsOutrun = false;
+            if (d._settingsLoaded) {
+                if ((d._settingsWriteSeq || 0) !== writeSeqAtStart) {
+                    settingsOutrun = true;
+                } else if (writeOnTheWire) {
+                    await writeOnTheWire;
+                    const again = await dashFetch('/api/settings');
+                    if (again.ok) serverSettings = await again.json();
+                    settingsOutrun = (d._settingsWriteSeq || 0) !== writeSeqAtStart;
+                }
+            }
 
             if (!settingsOutrun) {
                 // Load settings from localStorage or server based on device-specific flag
@@ -1379,10 +1392,6 @@ class DashboardData {
 
     async saveSettings() {
         const d = this.dash;
-        // Counted for loadData: a settings read that overlaps a save here was
-        // answered from before it, and must not replace what this tab holds.
-        d._settingsWriteSeq = (d._settingsWriteSeq || 0) + 1;
-        d._settingsSavesInFlight = (d._settingsSavesInFlight || 0) + 1;
         try {
             let payload = typeof sanitizeSettingsForPersist === 'function'
                 ? sanitizeSettingsForPersist(d.settings)
@@ -1407,13 +1416,27 @@ class DashboardData {
                     }
                 });
             }
-            const response = await dashFetch('/api/settings', {
+            /*
+             * Counted and kept for loadData, at the moment the write leaves.
+             *
+             * A settings read sent before this write and answered after it
+             * left cannot say whether it saw it; one sent after does. See the
+             * matching comment in loadData.
+             */
+            d._settingsWriteSeq = (d._settingsWriteSeq || 0) + 1;
+            const write = dashFetch('/api/settings', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(payload)
             });
+            const landed = write.then(() => {}, () => {});
+            d._settingsWriteInFlight = landed;
+            landed.then(() => {
+                if (d._settingsWriteInFlight === landed) d._settingsWriteInFlight = null;
+            });
+            const response = await write;
             
             if (!response.ok) {
                 throw new Error('Failed to save settings');
@@ -1508,8 +1531,6 @@ class DashboardData {
             // to say something of its own can tell success from failure — the
             // swallowed rejection made every save look like it worked.
             return false;
-        } finally {
-            d._settingsSavesInFlight = Math.max(0, (d._settingsSavesInFlight || 1) - 1);
         }
     }
 }
