@@ -137,7 +137,7 @@ test.describe('Data & backups → Webhooks', () => {
  * webhooks do — how another program reaches this install — from the other
  * direction.
  */
-test.describe('Data & backups → Webhooks → Assistant access', () => {
+test.describe('Data & backups → Webhooks → MCP access', () => {
     test('the endpoint is shut until the panel is ticked', async ({ page }) => {
         await openWebhooks(page);
         await openFold(page, 'mcp');

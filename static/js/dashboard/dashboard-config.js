@@ -5983,8 +5983,8 @@ class DashboardConfig {
     }
 
     /*
-     * The other direction a program can talk to this install: an assistant
-     * reading and adding bookmarks over MCP.
+     * The other direction a program can talk to this install: an MCP client
+     * reading and adding bookmarks.
      *
      * On this tab rather than a settings panel of its own because the question
      * it answers is the same one the webhooks above answer -- how does another
@@ -6000,19 +6000,19 @@ class DashboardConfig {
                 data-fold="mcp" ${this.foldIsOpen('mcp') ? 'open' : ''}>
                 <summary class="config-source-summary">
                     <span class="config-source-summary-text">
-                        <span class="config-panel-title">${esc(this.t('config.mcpTitle', 'Assistant access'))}</span>
+                        <span class="config-panel-title">${esc(this.t('config.mcpTitle', 'MCP access'))}</span>
                         <span class="config-source-summary-note">${esc(this.t('config.mcpSummary',
-                            'Let an AI assistant search your bookmarks and add new ones.'))}</span>
+                            'Let a script or another tool search your bookmarks and add new ones.'))}</span>
                     </span>
                 </summary>
                 <p class="config-panel-note">${esc(this.t('config.mcpNote',
-                    'An assistant that speaks MCP can search this collection, look one bookmark up and add another. It reads everything you have filed here, so it is off until you turn it on.'))}</p>
+                    'A tool that speaks MCP can search this collection, look one bookmark up and add another. It reads everything you have filed here, so it is off until you turn it on.'))}</p>
                 <label class="config-toggle">
                     <input type="checkbox" data-backup-toggle="mcpEnabled" ${on ? 'checked' : ''}>
-                    <span>${esc(this.t('config.mcpEnabledLabel', 'Answer assistants at this address'))}</span>
+                    <span>${esc(this.t('config.mcpEnabledLabel', 'Answer MCP clients at this address'))}</span>
                 </label>
                 ${on ? `
-                    <p class="config-field-note">${esc(this.t('config.mcpAddressLabel', 'Give the assistant this address:'))}</p>
+                    <p class="config-field-note">${esc(this.t('config.mcpAddressLabel', 'Give the tool this address:'))}</p>
                     <p class="config-field-note config-mcp-address">${esc(address)}</p>` : ''}
             </details>
         `;

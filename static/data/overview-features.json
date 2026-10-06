@@ -1190,9 +1190,9 @@
       "whatKey": "config.overviewNewFeatureWebhooksWhat",
       "whatFallback": "Everything nextDash talks to, it talks to on its own schedule, so anything built around it had to poll. Now a bookmark added, changed or removed — and a monitored link going down or coming back — is pushed to whatever you have built: an automation, a script, a home dashboard.",
       "howKey": "config.overviewNewFeatureWebhooksHow",
-      "howFallback": "Config → Data & backups → Webhooks. Name a receiver, give it an address, tick the events it should hear about. Every delivery is signed, so the receiver can tell it came from your install; the signing key is shown once, in the answer to the save that made it. On the same tab, an MCP endpoint lets an AI assistant search your bookmarks and add one.",
+      "howFallback": "Config → Data & backups → Webhooks. Name a receiver, give it an address, tick the events it should hear about. Every delivery is signed, so the receiver can tell it came from your install; the signing key is shown once, in the answer to the save that made it. On the same tab, an MCP endpoint lets a script or another tool search your bookmarks and add one.",
       "enableKey": "config.overviewNewFeatureWebhooksEnable",
-      "enableFallback": "Both off until you set them up. The assistant endpoint reads everything you have filed, which is why it starts closed.",
+      "enableFallback": "Both off until you set them up. The MCP endpoint reads everything you have filed, which is why it starts closed.",
       "ctaKey": "config.overviewNewFeatureWebhooksCta",
       "ctaFallback": "Open Webhooks →",
       "go": {

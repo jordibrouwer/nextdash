@@ -3825,7 +3825,7 @@ HTML pages send a strict Content-Security-Policy. `NEXTDASH_CSP=off` switches it
 
 ### 23.6 The MCP endpoint
 
-nextDash can answer MCP clients (the Model Context Protocol) at `/mcp`, for example `http://your-host:8080/mcp`. It is **off** until you tick **Answer assistants at this address** under **Data & backups → Webhooks**, which then shows the address.
+nextDash can answer MCP clients (the Model Context Protocol) at `/mcp`, for example `http://your-host:8080/mcp`. It is **off** until you tick **Answer MCP clients at this address** under **Data & backups → Webhooks**, which then shows the address.
 
 | Tool | What it does |
 |---|---|
