@@ -334,6 +334,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 - [A self-hosted service shows as broken](#a-self-hosted-service-shows-as-broken)
 - [The colours look wrong after the system switched to dark](#the-colours-look-wrong-after-the-system-switched-to-dark)
 - [A new release does not seem to have arrived](#a-new-release-does-not-seem-to-have-arrived)
+- [The update check fails](#the-update-check-fails)
 - [The quick-start card does not appear](#the-quick-start-card-does-not-appear)
 - [The weather does not show](#the-weather-does-not-show)
 - [The Calendar widget shows nothing](#the-calendar-widget-shows-nothing)
@@ -1719,7 +1720,7 @@ Beside it, the **Collection ▾** menu gathers what a whole-collection toolbar u
 - **Checks** — **Retest all**, **Open broken links…**, **Fetch previews…**, **Checking off…**.
 - **Export CSV**, **Refresh report** (`Shift + R`), and **Health settings**.
 
-An **ⓘ** beside the menu explains the view.
+An **ⓘ** beside the menu explains the view, and **Tour** next to it plays a ten-step walkthrough of it ([§17](#view-tours)).
 
 <a id="118-collection-health"></a>
 
@@ -2135,7 +2136,7 @@ The **Containers view** shows the Docker containers on the machine nextDash runs
 
 ### 14.1 Opening it
 
-Open it with **`Shift + Y`**, the Containers icon in the header, `:docker`, or `/#docker`. Search also finds containers by name, and the **Containers** widget's tile opens the view. Two tabs sit above the list: **Containers** and **Disk** ([§14.7](#147-disk)). The **ℹ** beside **Tour** in the header explains the view in five short parts: the list, acting on containers, the side panel, updates and Disk.
+Open it with **`Shift + Y`**, the Containers icon in the header, `:docker`, or `/#docker`. Search also finds containers by name, and the **Containers** widget's tile opens the view. Two tabs sit above the list: **Containers** and **Disk** ([§14.7](#147-disk)). The **ℹ** beside **Tour** in the header explains the view in five short parts: the list, acting on containers, the side panel, updates and Disk. **Tour** plays the fifteen-step walkthrough with moving drawings — offered once on your first visit, and once more after an upgrade that changed the view ([§17](#view-tours)).
 
 <a id="142-the-list"></a>
 
@@ -2155,7 +2156,7 @@ Open it with **`Shift + Y`**, the Containers icon in the header, `:docker`, or `
 
 **Group by status** folds the list under Updates, Running, Paused and Stopped, each band with its count (*Updates · 9*); **by network** under the network each container runs in (its network mode, else the first network it joined); **by image** under its image, whatever the tag; **group by project** folds it under each compose project, and a project's row has **Start**, **Stop** and **Restart** for the whole stack, and **Update (n)** for the *n* containers in it with an update waiting — not a skipped or held version, not an image no check has looked at. Stop and Update ask first, naming the containers, and they go one at a time.
 
-Each row shows its name, image, status, **CPU** and **RAM**, its **Size** — what the container wrote, with the size including its image on hover — a link to its web UI and its ports. A container with an update waiting has an orange **↑** in front of its name. Name and image stay on one line, cut short with the whole text on hover, and the image drops its registry host and a `:latest` tag (`lscr.io/linuxserver/sonarr:latest` reads `linuxserver/sonarr`). The first three published ports show in the row; more go behind **+N**, which opens a list of all of them with the port inside the container and tcp or udp. A port published for both counts once in the row. Sizes are measured in the background every half hour (the Docker daemon takes a while to work them out) and when Disk is refreshed; a container not measured yet shows —. CPU and RAM are the last reading, taken every 30 seconds; they are there while **Config → Containers → Keep the last hour of CPU and memory** is on. On a narrower screen the Image column goes first (below 1100 pixels), then CPU, RAM and Size (below 900). Click **Name**, **Status**, **CPU**, **RAM**, **Size** or **Restarts** to sort, and again to turn the order round; the sort menu also offers uptime, CPU, memory, size and restarts, highest first. A container without a figure — stopped, or not measured yet — goes last either way.
+Each row shows the container's app icon, its name, image, status, **CPU** and **RAM**, its **Size** — what the container wrote, with the size including its image on hover — a link to its web UI and its ports. The icon comes from the app icon sets, matched by the image and the name ([§19.4](#194-icons-previews)); a container the sets do not know — or an icon that fails to load — shows its first letter, and nextDash's own container shows the nextDash logo. A container with an update waiting has an orange **↑** in front of its name. Name and image stay on one line, cut short with the whole text on hover, and the image drops its registry host and a `:latest` tag (`lscr.io/linuxserver/sonarr:latest` reads `linuxserver/sonarr`). The first three published ports show in the row; more go behind **+N**, which opens a list of all of them with the port inside the container and tcp or udp. A port published for both counts once in the row. Sizes are measured in the background every half hour (the Docker daemon takes a while to work them out) and when Disk is refreshed; a container not measured yet shows —. CPU and RAM are the last reading, taken every 30 seconds; they are there while **Config → Containers → Keep the last hour of CPU and memory** is on. On a narrower screen the Image column goes first (below 1100 pixels), then CPU, RAM and Size (below 900). Click **Name**, **Status**, **CPU**, **RAM**, **Size** or **Restarts** to sort, and again to turn the order round; the sort menu also offers uptime, CPU, memory, size and restarts, highest first. A container without a figure — stopped, or not measured yet — goes last either way.
 
 **Columns** in the toolbar ticks which columns show: Image, Status, CPU, RAM, Size, **Restarts** (off at first: how often the container started again in the last 24 hours, from its timeline), Web UI and Ports. Name always shows. The choice is kept in this browser; **Reset columns** puts them back. CPU and RAM show only while the stats history is on, ticked or not.
 
@@ -2177,6 +2178,8 @@ The bookmark's own side panel says it back: **Details → Address → Runs in** 
 ### 14.3 The side panel
 
 Selecting a container opens its side panel, with four tabs. Its head shows the container's web UI address under the name, tagged **Custom** when it is one you set; the tag opens the Custom section. A click beside the panel closes it, one on another row moves it there (**Config → Containers → Close on a click beside it**).
+
+The **✎** on the icon in the panel's head chooses what the container shows: **Choose app icon…** opens the icon search, **Use letter** keeps the plain letter, and **Automatic** goes back to the icon the sets matched. The choice is kept per container name, so it survives an update. nextDash's own container has no pencil.
 
 - **Overview** — an accordion of **Details**, **Health**, **Updates**, **Timeline**, **Network**, **Custom**, **Bookmark**, **Volumes** and **Environment**. **Health**, for a container with a healthcheck, shows its status, how many checks failed in a row, the check it runs, and the last five checks — each a mark and a time, a failed one with its exit code and output. **Volumes** lists each mount by where it appears in the container, with where it comes from under it and a tag for its kind (bind, volume) and for read-only. **Updates** is [§14.5](#145-actions-and-updates). **Timeline** is what happened to the container, newest first: starts and stops (by you or by nextDash), crashes with their exit code, out-of-memory kills, a run of crashes as one *Kept restarting* line, health changes, pauses, updates and rollbacks. nextDash writes these down from Docker's own events, whatever the notices are set to — a hundred per container, for thirty days, from the moment this version runs. **Details** also gives its size (written, and with its image) and says whether its notices are on, muted or off. **Custom** holds the container's **Web UI address**: an `http://` or `https://` address of your own, where `[IP]` stands for this server. Empty uses the container's default. The address is used everywhere the web UI opens: the list, the Container list widget and `:docker <name> open`. **Back to the default** removes it. **Bookmark** shows the bookmark of its web UI — name, address, what its checks say and how it was found — with **Open in Bookmarks**, and **Linked bookmark** to choose: *Automatic* (naming what it found), *No bookmark*, or any bookmark by hand.
 - **Resources** — CPU, memory, size, **Network** (in and out) and **Disk I/O** (read and written), with four charts under them: CPU, memory, network and disk I/O over the last hour — one cursor across the four, a tooltip, a drag to zoom (double-click or `0` back), and the arrow keys to walk the points with the value read out. Network and disk are rates between two samples, so they show a dash until there are two. nextDash samples the running containers every 30 seconds and keeps the samples in memory, so a restart starts the charts again. **Config → Containers → Keep the last hour of CPU and memory** switches the sampling and the charts off.
@@ -2220,7 +2223,7 @@ The legend above the list names them; **Config → Containers → The key legend
 
 Starting, stopping, pausing, restarting, updating and removing a container are all behind **`NEXTDASH_DOCKER_CONTROL=1`**, on top of the write token if the install has one — read-only access to the socket is not enough by itself. Update and remove always ask first; **Config → Containers → Safety** can add the same confirmation to stop and restart.
 
-Image update checks run on request and on an interval (Config → Containers → Updates: off, 6, 12 or 24 hours), asking the image's registry whether a newer tag is available. An optional GitHub token (Config → Containers) raises the rate limit for images hosted there. The container nextDash itself runs in refuses stop, pause, restart, remove and update.
+Image update checks run on request and on an interval (Config → Containers → Updates: off, 6, 12 or 24 hours), asking the image's registry whether a newer tag is available. An optional GitHub token (Config → Containers → Updates) raises the rate limit for images hosted there, for release notes and for nextDash's own release check. The container nextDash itself runs in refuses stop, pause, restart, remove and update.
 
 The side panel's **Updates** part says where the image stands and keeps your say over it:
 
@@ -2414,7 +2417,7 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 | **UPS** | Charge, runtime and load; amber when the server runs on battery |
 | **Unraid notifications** | Unraid's unread notifications, newest first, the alerts in red; its settings choose how many rows |
 
-These read one server, set once under Config → Containers ([§15.6](#156-unraid-widgets)).
+These read one server, set once under Config → Unraid ([§15.6](#156-unraid-widgets)).
 
 *What is happening around you?*
 
@@ -3083,7 +3086,7 @@ Config reopens on the section and tab you left, for five minutes after you leave
 
 | Section | What lives there |
 |---------|------------------|
-| **Overview** | One line of what needs you, then **Your install** — panels for bookmarks, the inbox, containers, health and statistics — beside **From nextDash**: the newest posts, the newest features with the running version, and a tip of the day ([§17.8](#178-overview-help-and-about)). |
+| **Overview** | One line of what needs you, then **Your install** — panels for bookmarks, the inbox, containers, health and statistics — beside **From nextDash**: the newest posts, the version you run, the newest features and a tip of the day ([§17.8](#178-overview-help-and-about)). |
 | **Appearance** | Look · Background · Surface · Grid · Rows · Header · Action bar · Date & weather ([§16](#16-appearance)) |
 | **Bookmarks** | View · Tags · Tag suggestions · Your rules · Settings · Local copies ([§17.4](#174-config-bookmarks)) |
 | **Inbox** | Collecting · List · Panel & clicks · Header icon ([§17.6](#176-config-inbox)) |
@@ -3151,11 +3154,11 @@ The other tabs:
 
 | Tab | Settings |
 |---|---|
-| **General** | Language; remember where you were on a page; **Lock layout**; open links in a new tab; allow localhost and private-network bookmarks; **Hypr mode** |
+| **General** | Language; remember where you were on a page; **Lock layout**; open links in a new tab; allow localhost and private-network bookmarks; **Hypr mode**; **Notes widget → Notes are processed**, *On the server* (the default) or *In the browser*, which needs no requests while you type ([§15](#15-widgets)) |
 | **Keyboard & search** | Typing a bookmark shortcut, switch search mode, include finders, search unsorted bookmarks, fuzzy suggestions, prefer matches that start with the query, keep search open when empty, the search hint; **Web search** (engine, SearXNG address, Brave key, Test connection); and the keys: global shortcuts, shortcut hints on header links, the key legend under the grid |
 | **Fresh** | Show what is new since you last looked, mark rows that publish, find feeds now ([§12.6](#126-fresh)) |
 | **Status & alerts** | [§12.1](#121-availability-modes) |
-| **Privacy & sync** | Analytics, the daily release check, posts from nextdash.cc; **Keep settings on this device only**; onboarding (keyboard tips, review cards, tours, *Show quick-start card again*) |
+| **Privacy & sync** | **Count this install** (on by default, [§23.8](#238-analytics)), analytics, **Check GitHub for new releases**, posts from nextdash.cc; **Keep settings on this device only**; **Onboarding**: keyboard tips, the two review offers, every tour (replay it with its button), *Show quick-start card again*, and the list of corner cards — each **Answered** or **Not shown yet**, with **Show again** ([§4](#corner-cards)) |
 
 Paste-to-quick-add, the inbox and how a kept link is filed moved to **Config → Inbox** ([§17.6](#176-config-inbox)).
 
@@ -3180,7 +3183,7 @@ Four tabs, with the same strip, keys and memory as Config → Inbox. It opens on
 |---|---|
 | **Connection** | **Connection**: the Docker socket, actions, the write token and whether this is the container nextDash itself runs in, as the environment set them — nothing here is editable. **Safety**: also confirm stop and restart (update and remove always ask first) |
 | **View** | **View**: show the Containers view, refresh the list every 2, 5, 10 or 30 seconds, log lines to show (100, 200, 500 or 1000), keep the last hour of CPU and memory for the CPU and RAM columns and the charts, close the side panel on a click beside it, and the key legend: above the list, below it, or hidden. **Links**: the Docker host address that port and web UI links point at. **Hidden containers**: kept out of the view, search and the widget count — they keep running |
-| **Updates** | **Updates**: check for image updates: off, every 6, 12 or 24 hours; the window automatic updates run in, **from** and **until** a full hour (03:00 to 05:00 at first) ([§14.5](#145-actions-and-updates)). **GitHub**: a token that raises the rate limit for release notes and for images hosted on GHCR |
+| **Updates** | **Updates**: check for image updates: off, every 6, 12 or 24 hours; the window automatic updates run in, **from** and **until** a full hour (03:00 to 05:00 at first) ([§14.5](#145-actions-and-updates)). **GitHub**: a token that raises the rate limit for release notes, for images hosted on GHCR and for nextDash's own check for a new release ([§24](#the-update-check-fails)) |
 | **Alerts** | **Notifications**: notify about containers — on by default; also when one uses too much CPU or memory, with the CPU line (50–95 %), the memory line (70–95 %) and how long (5–30 minutes) ([§14.9](#149-notices)). **Muted containers**: where notices go, or that nothing receives them yet, and the containers you muted — × lets one back in |
 
 The Unraid server has a section of its own, **Config → Unraid**: the Containers view does not use it, only the Unraid widgets do ([§15.6](#156-unraid-widgets)). Their *Set up Unraid* row opens it. It opens with **How it works** — nextDash and the server drawn as two boxes with data running between them, and three steps (a Viewer key, the address and key tested and saved, a widget on a page) that are ticked off as they are done — and **What you get**: the seven widgets in miniature with example figures, each with an **Add…** that opens Widgets → Types on that kind.
@@ -3192,7 +3195,8 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 **Overview** is the page config opens on. A slim banner at the top links to the feature overview on nextdash.cc. At the top, one line says what needs you — broken links, monitors that are down, unread inbox items, duplicates, shortcut conflicts, links never checked, containers with an update — as chips that each go where the problem is fixed; with nothing to do it says so. Below it, two columns:
 
 - **Your install** — a panel per part of the app, each with a way in (**Open →**) and its own warning in the foot. **Bookmarks**: the count, pages, categories, tags, shortcuts, pins and when you last edited one. **Inbox**: unread, the links added per day over two weeks, how many wait and how long the oldest has. **Containers**: running, stopped, unhealthy and updates available, and which ones — shown only when nextDash can see Docker. **Health**: the healthy share as a ring and the four states (healthy, broken, monitor down, wrong content). **Statistics**: opens this week with two weeks of bars, the most-opened link, the busiest page and the **cleanup score** with what lowers it most. A panel for something switched off — the inbox, Containers — is left out.
-- **From nextDash** — the three newest posts on nextdash.cc (off with **Behavior → Privacy**), the three newest features with the release you run and **Show what's new**, and a **tip of the day** from Help → Tips, with ‹ › to step through the others.
+- **From nextDash** — four panels. **Latest news**: the three newest posts on nextdash.cc (off with **Behavior → Privacy**). **Version**: *You're running v1.x.y of nextDash*, with links to the full changelog and to this manual on GitHub. **New in nextDash**: the three newest features, each a way into what it changed, with **Show what's new**. Last, a **tip of the day** from Help → Tips, with ‹ › to step through the others.
+- **The Version panel** shows up as soon as the update check knows which release you run, also when the posts are switched off. A dot before its title says where you stand: **green** on the newest release, **red** when a newer one is out — a second line then names it, its tag a link to the release on GitHub — and **no dot** when GitHub was not asked or could not be reached. When the check failed, the panel says why ([§24](#the-update-check-fails)). The check is the one under Behavior → Privacy & sync → *Check GitHub for new releases*.
 
 **Help** covers Getting started, Tips, Configuring, Appearance, Structure & bookmarks, the **Bookmarks view**, Widgets, Search & keyboard, **Checks & health**, Monitoring, Inbox, **Containers**, Statistics, Data & hosting and Logs. The search above the tabs covers every tab and About. Each topic has a 🔗 button that copies a link to it. A topic about something that can be switched off says whether it is on for you, with a button to the setting. **Tips** lists every keyboard tip, grouped, with its own filter. **Saving a link from anywhere** (Inbox tab) builds a bookmarklet for this install.
 
@@ -3200,11 +3204,17 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 
 **The dashboard tour.** Twenty steps with moving drawings, offered once after the quick-start card: it opens on what is new — web search, app icons, the theme editor and the Unraid widgets — then the theme browser, the backdrops and the looks, then walks pages and categories, search, shortcuts, the cursor, adding, link checks, the Bookmarks view, the inbox, Containers, widgets, the first keys to learn, Config and the cheat sheet. After an update to a version that changed it, every reader is offered it once more, after the release notes have been read. Replay it from the same Onboarding list or with `:tour`.
 
+<a id="view-tours"></a>
+
+**The Bookmarks view and Containers tours.** Two more tours play as drawings in a window, offered once on your first visit to each view. A **Tour** button beside the **ℹ** at the top of the view plays it again whenever you want. The Bookmarks view tour has ten steps: the rail, the three ways to check a link, a failure that says why, pages that change, the charts for one bookmark, Collection health, alerts, clearing the backlog and the keys. The Containers tour has fifteen: the list, its state at a glance, acting on containers, the side panel, updates, Config, your columns, a web UI and its bookmark, updates at night with a rollback, app icons, the charts, logs and Disk. After an upgrade that changed Containers, the tour is offered once more; its first step says it is an update, and the new or changed steps carry a **New** mark. **Behavior → Privacy & sync → Onboarding** replays each tour, these two included.
+
 **About** has two tabs: **About nextDash** (what the project is, and links to nextdash.cc, GitHub, jordibrw.nl and Ko-fi) and **News & features** (every post from nextdash.cc, every release and every setting worth switching on, with source filters, and a button that bookmarks nextdash.cc so Fresh counts its posts).
 
 <a id="whats-new"></a>
 
 **What's new.** After an upgrade the release notes open once. After that, the **★** button, `:whatsnew`, or *See what's new* under Help open them, newest first, with up to 50 earlier releases. A small release can count towards the version number without appearing in this window; the [changelog](CHANGELOG.md) always has everything. With **Check GitHub for new releases** on (Behavior → Privacy & sync), a newer release adds a dot to ★ and a toast.
+
+The newest release comes first, with a one-line summary and how many things are *new* and how many are *fixes*. When it has both, the chips **All**, **New** and **Fixes** show only one kind; when it has several sections, a tab per section jumps to it. Each entry carries a *new* or *fix* mark — a long description folds behind **more** — and a section of keys lists each shortcut on its own key cap. At the end, a card says nextDash is made by one person and links to Ko-fi (a one-off gift, no account). Older releases open from the list below.
 
 <a id="179-config-keys"></a>
 
@@ -3593,13 +3603,14 @@ A dismissible banner explains the limits once.
 | Gesture | Action |
 |---|---|
 | Long-press a bookmark | Edit in place |
+| Drag the grip over a bookmark's icon | Move it; the rest of the row scrolls the page, so a swipe that starts on a row never grabs it |
 | Long-press a category header | Rename |
 | Swipe sideways | Change page |
 | Tap search | The search panel, with its mode tabs |
 
 <a id="install-as-an-app"></a>
 
-**Install as an app.** *Add to Home Screen* (or the install button in your browser) uses `/manifest.webmanifest`; the custom title and favicon from Branding are used for the app. Behavior → General shows install steps for your platform. **Hypr mode** makes a click open the bookmark in a browser tab and then close the app window.
+**Install as an app.** *Add to Home Screen* (or the install button in your browser) uses `/manifest.webmanifest`; the custom title and favicon from Branding are used for the app. Behavior → General shows install steps for your platform. **Long-pressing the installed app's icon** offers shortcuts to **Inbox** (only while the inbox is on), **Health** (the Bookmarks view on the broken ones) and **Config**, besides the dashboard. **Hypr mode** makes a click open the bookmark in a browser tab and then close the app window.
 
 <sub>[↑ Contents](#table-of-contents)</sub>
 
@@ -3734,7 +3745,7 @@ It starts closed because it answers questions about every bookmark. The `Origin`
 | What | When | Switch |
 |---|---|---|
 | Your bookmarks' sites | Checks, previews, icons, Fresh, archives | Per feature |
-| GitHub Releases API | Once a day, to see whether a newer release exists | Behavior → Privacy & sync → *Check GitHub for new releases*; `DISABLE_UPDATE_CHECK=true` for the whole server |
+| GitHub Releases API | Once a day, to see whether a newer release exists; with the Containers GitHub token when you set one; a failure is explained in [§24](#the-update-check-fails) | Behavior → Privacy & sync → *Check GitHub for new releases*; `DISABLE_UPDATE_CHECK=true` for the whole server |
 | nextdash.cc feed | Every 90 minutes, by the server, for News & features | Behavior → Privacy & sync → *Show posts from nextdash.cc*; `DISABLE_NEWS_FEED=true` |
 | Weather and calendar providers | For the header and widgets | Appearance → Date & weather |
 | Container image registries and GitHub | Image update checks, when switched on | Config → Containers → Updates |
@@ -3854,6 +3865,17 @@ Hard-refresh once (`Ctrl + Shift + R` / `Cmd + Shift + R`) to drop JavaScript fr
 ### A new release does not seem to have arrived
 
 An open tab keeps the files it loaded. Reload once.
+
+<a id="the-update-check-fails"></a>
+
+### The update check fails
+
+The **Version** panel on Config → Overview and the bar in the What's new window say why the check for a new release failed:
+
+- **GitHub's hourly request limit for this address is used up** — without a token GitHub allows 60 requests an hour per public address, shared with everything else on your network. nextDash waits for the reset and asks again at the time it names. Set a token under **Config → Containers → Updates → GitHub** and the limit becomes 5000 an hour; the check uses it automatically.
+- **nextDash paused its outgoing requests for a moment** — its own limit on outgoing requests; it asks again within a minute.
+- **Could not reach GitHub** — the server cannot reach `api.github.com`. Check its DNS, proxy or firewall.
+- **GitHub did not answer as expected** — followed by what GitHub said; try again later.
 
 <a id="the-quick-start-card-does-not-appear"></a>
 
