@@ -85,7 +85,16 @@
             const mark = input.checked ? 'x' : ' ';
             fresh[at] = fresh[at].replace(/\[( |x|X)\]/, `[${mark}]`);
             row.classList.toggle('dashboard-widget-note-done', input.checked);
-            if (!await save(dash, widget, fresh.join('\n'))) draw(body, widget, dash);
+            if (!await save(dash, widget, fresh.join('\n'))) {
+                draw(body, widget, dash);
+                return;
+            }
+            // The block now describes the line as saved. Saving does not redraw,
+            // so with the old raw a second click on the same box found no line,
+            // redrew, and the box jumped back with the click lost.
+            block.raw = currentText(dash, widget).split('\n')[at] ?? fresh[at];
+            block.index = at;
+            block.checked = input.checked;
         };
 
         window.NotesEngine.render(dash, text).then(({ blocks, stats }) => {

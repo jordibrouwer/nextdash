@@ -123,6 +123,7 @@ Config → Overview names the running version in a panel of its own, with a dot 
 
 ### Dashboard
 - **fix — with less motion, the pages and recents panels stay on the strip.** When the system asks for reduced motion, or **Animations** is off, the reduced-motion rule for every modal and the app-wide no-animations rule cleared `transform`, and with it the `translateX(-50%)` that centres a header sheet on the strip: the pages panel (`,`) ran off the right edge of the window and the recents panel (`*`) sat half its width to the right. The header sheets are left out of those rules and keep their centring; they still open without animation (`modal.css`, `dashboard.css`).
+- **fix — unticking a notes box right after ticking it is saved.** Ticking saves the line but does not redraw the tile, and the box kept the line as it was drawn; a second click on the same box found no such line, redrew the tile and lost the click, so the box jumped back. After a save the box now holds the line as saved (`onTask` in `dashboard-widget-notes.js`).
 
 ### Tests
 - **tests — `update_check_test.go`** covers the rate-limit wait, the conditional request and the token with its fallback; `tests/config-overview-release.spec.js` reads the version from the Version panel and covers the behind line and the failure reason.
@@ -131,6 +132,7 @@ Config → Overview names the running version in a panel of its own, with a dot 
 - **tests — `tests/header-sheet-reduced-motion.spec.js`** opens the pages and recents panels with their keys under reduced motion and with **Animations** off, and checks that each sits inside the window, on the strip's centre line, without an animation.
 - **tests — `tests/config-rail-sticky.spec.js`** opens Config → Behavior from the dashboard, scrolls it at 1440 and 800px wide, and checks that the rail starts below the band.
 - **tests — `settings_merge_test.go`** saves `smartFreshPageIds` through the store and reads it back, and loads an old settings file as an empty list; `tests/config-collection-scope.spec.js` ticks a Fresh page in Collection scope, reloads, and finds it still ticked.
+- **tests — `tests/dashboard-widget-notes.spec.js`** ticks a box and unticks it with two plain clicks, and checks both saves.
 
 ### Docs
 - **docs — MCP copy in all six languages:** `mcpTitle`, `mcpSummary`, `mcpNote`, `mcpEnabledLabel`, `mcpAddressLabel`, `overviewNewFeatureWebhooksHow` and `overviewNewFeatureWebhooksEnable` name a script or another tool.

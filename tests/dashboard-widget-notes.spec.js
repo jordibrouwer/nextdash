@@ -105,6 +105,29 @@ test.describe('the notes widget', () => {
         }
     });
 
+    // Saving does not redraw the tile, so the box keeps the block it was drawn
+    // with. Unticking right after ticking found no line and was lost.
+    test('ticking a box and unticking it again saves both', async ({ page }) => {
+        await open(page);
+        const pageId = await addNotes(page, '[ ] close port 8443\n[ ] replace disk');
+        try {
+            await page.reload();
+            await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+            const tile = page.locator('.dashboard-widget[data-widget-id="w_notes_e2e"]');
+            const box = tile.locator('input[type="checkbox"]').nth(0);
+            // Two plain clicks, as a misclick is put right. Not check() and
+            // uncheck(): those click again until the box agrees, which hid
+            // the lost click behind a second one.
+            await box.click();
+            await expect.poll(() => storedText(page, pageId)).toBe('[x] close port 8443\n[ ] replace disk');
+            await box.click();
+            await expect.poll(() => storedText(page, pageId)).toBe('[ ] close port 8443\n[ ] replace disk');
+            await expect(box).not.toBeChecked();
+        } finally {
+            await removeNotes(page, pageId);
+        }
+    });
+
     // The text can change under a drawn tile (another tab): ticking finds its
     // line by what it says, not by where it was.
     test('ticking after the text changed elsewhere ticks the same line', async ({ page }) => {
