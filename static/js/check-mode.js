@@ -243,6 +243,12 @@ const CheckMode = {
      */
     async apply({ pageId, index, url, mode, name, intervalMinutes }) {
         const d = window.dashboardInstance;
+        // The demo checks no site: every surface that offers the modes ends
+        // here, so this is where Periodic and Monitor are turned away.
+        if (window.DemoLock?.on && mode !== CheckMode.OFF) {
+            window.DemoLock.explain();
+            return 'refused';
+        }
         const target = String(url || '').trim();
         const page = Number(pageId);
         if (!target || !Number.isFinite(page) || !mode) return 'failed';

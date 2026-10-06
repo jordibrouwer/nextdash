@@ -16,6 +16,11 @@ func (h *Handlers) PingURL(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
+	if demoMode() {
+		w.WriteHeader(http.StatusForbidden)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"error": demoNotAvailable, "status": "unknown", "ping": nil})
+		return
+	}
 	if !h.requireStatusPingRateLimit(w, r) {
 		return
 	}

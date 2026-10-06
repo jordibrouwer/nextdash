@@ -43,6 +43,13 @@ func Run(files assetFS) {
 	if err := validateDataDirAtStartup(); err != nil {
 		log.Fatalf("%v", err)
 	}
+	// The demo empties its own data directory before the store opens it, and
+	// refuses one that holds a real install.
+	if demoMode() {
+		if err := prepareDemoDataDir(); err != nil {
+			log.Fatalf("%v", err)
+		}
+	}
 	// Mirror the log to a ring buffer (and a rotating file) for the in-app log
 	// viewer. Installed right after the data dir is known and before anything
 	// interesting is logged; stderr still receives every line, so `docker logs`
@@ -90,6 +97,13 @@ func Run(files assetFS) {
 	// address is this install's setting, not a decision webhooks.go can make on
 	// its own.
 	handlers.RegisterWebhookDelivery()
+	if demoMode() {
+		if err := handlers.resetDemo(); err != nil {
+			log.Fatalf("the demo could not be seeded: %v", err)
+		}
+		handlers.fetchDemoIconsOnce()
+		logInfo(logComponentServer, "demo mode: data resets every %s, and after %s without a change", demoResetEvery(), demoIdleAfter())
+	}
 
 	// Create router
 	r := mux.NewRouter()
@@ -152,6 +166,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/page-templates/bundled", handlers.BundledTemplates).Methods("GET")
 	r.HandleFunc("/api/page-templates/bundled/{id:[a-z-]+}", handlers.BundledTemplateFile).Methods("GET")
 	r.HandleFunc("/api/onboarding/template", handlers.ApplyOnboardingTemplate).Methods("POST")
+	r.HandleFunc("/api/demo", handlers.DemoStatus).Methods("GET")
 	r.HandleFunc("/api/data-revision", handlers.GetDataRevision).Methods("GET")
 	r.HandleFunc("/static/bundle/dashboard.js", handlers.ServeAssetBundle).Methods("GET")
 	r.HandleFunc("/static/bundle/dashboard.css", handlers.ServeAssetBundle).Methods("GET")
@@ -416,6 +431,8 @@ func Run(files assetFS) {
 	// Writes the preview cache out periodically. Beside the others rather than
 	// buried in NewHandlers, so it stops when they do.
 	handlers.StartPreviewCacheFlushScheduler(schedulerStop)
+	// Puts the public demo back to the start (NEXTDASH_DEMO=1 only).
+	handlers.StartDemoResetScheduler(schedulerStop)
 
 	go func() {
 		logInfo(logComponentServer, "starting on port %s", port)

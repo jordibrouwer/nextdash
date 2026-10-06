@@ -610,6 +610,10 @@ func (h *Handlers) PollAllFeeds(ctx context.Context) int {
 // pollFeeds is PollAllFeeds limited to the keys in only, when only is not nil.
 // A limited round is not the scheduled one, so it leaves LastPoll alone.
 func (h *Handlers) pollFeeds(ctx context.Context, only map[string]bool) int {
+	// Polling feeds is fetching from outside on a timer: not in the public demo.
+	if demoMode() {
+		return 0
+	}
 	feedStateMu.Lock()
 	state := readFeedStateFile()
 	targets := make(map[string]FeedState, len(state.Feeds))

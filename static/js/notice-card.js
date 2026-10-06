@@ -58,6 +58,9 @@
     function cornerIsFree(selfClass) {
         const d = dash();
         if (!d?.settings) return false;
+        // The public demo shows no corner cards: every visitor is new, and a
+        // stack of invitations is not the product.
+        if (global.DemoLock?.on) return false;
         if (global.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
         if (d.onboardingStartedInSession) return false;
         if (d.settings.onboardingCompleted === false) return false;

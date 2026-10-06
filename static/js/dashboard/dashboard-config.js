@@ -14025,6 +14025,7 @@ class DashboardConfig {
                 section: 'behavior',
                 tab: 'status',
                 title: t('config.statusBrowserChecksTitle', 'Checks in this browser'),
+                demoLocked: true,
                 note: t('config.statusBrowserChecksNote', 'How the dashboard tests the bookmarks on screen while you have it open. Applies to bookmarks set to Periodic or Monitor; a bookmark set to Off is never tested.'),
                 appliesTo: t('config.appliesToPeriodicMonitor', 'Periodic + Monitor'),
                 controls: [
@@ -14079,6 +14080,7 @@ class DashboardConfig {
                 section: 'behavior',
                 tab: 'status',
                 title: t('config.statusServerChecksTitle', 'Checks on the server'),
+                demoLocked: true,
                 note: t('config.statusServerChecksNote', 'Re-tests bookmarks on the server, so the Health view stays current without anyone having the dashboard open. On by default; it makes outbound requests, so switch it off if you would rather it did not.'),
                 appliesTo: t('config.appliesToPeriodicMonitor', 'Periodic + Monitor'),
                 controls: [
@@ -14137,6 +14139,7 @@ class DashboardConfig {
                 section: 'behavior',
                 tab: 'fresh',
                 title: t('config.feedsTitle', 'Fresh'),
+                demoLocked: true,
                 note: t('config.feedsNote', 'A bookmark whose page advertises a feed can say how much it has published since you last opened it — a small count on the row, and a Fresh collection. Switching it on looks for feeds on the pages you have saved, then asks each one, hourly, with a conditional request a quiet site answers in a few hundred bytes. Off by default, because it is the one feature here that talks to other people\'s servers on your behalf.'),
                 controls: [
                     { ...bool('feedsEnabled', 'config.feedsEnabledLabel', 'Show what is new since you last looked'), special: 'feeds' },
@@ -14554,15 +14557,21 @@ class DashboardConfig {
             // schema rather than matched on a field name here, so retiring it is
             // deleting one line where the setting is defined.
             const stars = panel.highlight ? this.renderNewFeaturesPanelStars() : '';
-            const bulk = (panel.bulk && !this.changedOnly) ? this.renderPanelBulkActions(panel, prefix) : '';
-            const reset = this.renderPanelResetAction(panel, changedFields);
+            // In the public demo a panel that reaches other sites stays on
+            // screen but cannot be changed: a disabled fieldset around its
+            // controls, and a chip that says why.
+            const locked = panel.demoLocked && window.DemoLock?.on;
+            const bulk = (panel.bulk && !this.changedOnly && !locked) ? this.renderPanelBulkActions(panel, prefix) : '';
+            const reset = locked ? '' : this.renderPanelResetAction(panel, changedFields);
+            const lockChip = locked ? window.DemoLock.chip() : '';
+            const body = controls.map(renderControl).join('');
             return `
-            <div class="config-panel${panel.highlight ? ' config-panel--animated' : ''}">
+            <div class="config-panel${panel.highlight ? ' config-panel--animated' : ''}${locked ? ' config-panel--demo-locked' : ''}">
                 ${stars}
-                <h3 class="config-panel-title">${esc(panel.title)}${badge}${reset}</h3>
+                <h3 class="config-panel-title">${esc(panel.title)}${badge}${reset}${lockChip}</h3>
                 ${note}
                 ${bulk}
-                ${controls.map(renderControl).join('')}
+                ${locked ? `<fieldset class="config-demo-lock" disabled>${body}</fieldset>` : body}
             </div>
         `;
         }).join('');

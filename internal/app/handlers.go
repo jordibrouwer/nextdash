@@ -1274,6 +1274,8 @@ type htmlPageData struct {
 	TelemetryLockedOff bool
 	// UpdateCheckLockedOff mirrors DISABLE_UPDATE_CHECK for the same reason.
 	UpdateCheckLockedOff bool
+	// DemoMode writes the meta tag demo-lock.js reads (NEXTDASH_DEMO=1).
+	DemoMode bool
 }
 
 // analyticsWebsiteID / analyticsScriptSrc are the project's shared Umami instance.
@@ -1316,6 +1318,7 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 		AnalyticsSnapshotsJSON: h.analyticsSnapshotsJSON(analyticsEnabled(settings)),
 		TelemetryLockedOff:     telemetryDisabledByEnv(),
 		UpdateCheckLockedOff:   updateCheckDisabledByEnv(),
+		DemoMode:               demoMode(),
 		LandingPageName:        h.landingPageName(),
 	}
 }
@@ -5003,6 +5006,10 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 	// but the answer never arrived, and the view said the re-check failed.
 	_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(retestAllMaxBookmarks*maxHealthCheckTimeout + time.Minute))
 
+	if demoMode() {
+		http.Error(w, demoNotAvailable, http.StatusForbidden)
+		return
+	}
 	scope := strings.TrimSpace(r.URL.Query().Get("scope"))
 	includeFlagged := strings.EqualFold(scope, "all")
 
@@ -5050,8 +5057,13 @@ type healthRetestResult struct {
 // stored error, so a broken row can be cleared. activitySource labels the batch in
 // the activity log.
 func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, activitySource string) (healthRetestResult, error) {
-	pages := h.store.GetPages()
 	var res healthRetestResult
+	// The demo checks no site; a run would only write "not available" over
+	// the seeded results.
+	if demoMode() {
+		return res, nil
+	}
+	pages := h.store.GetPages()
 	healthUpdates := make(map[string]HealthScanCache)
 	historyUpdates := make(map[string][]HealthSample)
 	// One sample per URL, from its first monitored copy as the monitor takes
@@ -5524,6 +5536,12 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	// Applying a fix checks the new address and fetches its title: both reach
+	// outside, which the demo does not.
+	if demoMode() {
+		http.Error(w, demoNotAvailable, http.StatusForbidden)
 		return
 	}
 

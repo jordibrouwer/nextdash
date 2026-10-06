@@ -76,6 +76,10 @@ func (h *Handlers) SetAllCheckModes(w http.ResponseWriter, r *http.Request) {
 	// Without one the request means "everything", and only off stays available —
 	// enabling checks collection-wide is exactly what the per-bookmark opt-in
 	// exists to prevent.
+	if demoMode() && !strings.EqualFold(strings.TrimSpace(req.Mode), "off") {
+		http.Error(w, demoNotAvailable, http.StatusForbidden)
+		return
+	}
 	if len(req.Targets) > 0 {
 		h.setCheckModeForTargets(w, req.Mode, req.Targets, req.MonitorIntervalMinutes)
 		return

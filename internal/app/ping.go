@@ -49,6 +49,12 @@ func (h *Handlers) pingURLDetailed(ctx context.Context, urlStr string) PingResul
 // A zero expectation behaves exactly like pingURLDetailed, so the common path is
 // unchanged — same request, no body read.
 func (h *Handlers) pingURLExpecting(ctx context.Context, urlStr string, expect expectation) PingResult {
+	// The public demo checks no site: visitors could otherwise turn its server
+	// into something that knocks on fifty addresses, or on any they add. One
+	// gate here covers the badge, the re-check buttons and both schedulers.
+	if demoMode() {
+		return PingResult{Status: "offline", ErrorDetail: demoNotAvailable}
+	}
 	if ctx == nil {
 		ctx = context.Background()
 	}

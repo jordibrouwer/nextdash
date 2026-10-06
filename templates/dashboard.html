@@ -12,6 +12,7 @@
     <meta name="nextdash-app-version" content="{{.AppVersion}}">
     {{if .TelemetryLockedOff}}<meta name="nextdash-telemetry-locked" content="1">{{end}}
     {{if .UpdateCheckLockedOff}}<meta name="nextdash-update-check-locked" content="1">{{end}}
+    {{if .DemoMode}}<meta name="nextdash-demo" content="1">{{end}}
     {{/* The same title dashboard-page-nav.js would set, so the first paint does
          not say "Dashboard" and then change its mind. A deep link to another
          page is corrected by the script, as it always was. */}}
@@ -546,6 +547,7 @@
     <script src="{{asset "js/shared/field-popover.js"}}" defer></script>
     <script src="{{asset "js/status.js"}}" defer></script>
     <!-- Before the health view and the context menu: both read window.CheckMode. -->
+    <script src="{{asset "js/shared/demo-lock.js"}}" defer></script>
     <script src="{{asset "js/check-mode.js"}}" defer></script>
     <script src="{{asset "js/keyboard-navigation.js"}}" defer></script>
     <script src="{{asset "js/swipe-navigation.js"}}" defer></script>

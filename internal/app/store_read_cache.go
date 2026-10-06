@@ -96,6 +96,9 @@ func (fs *FileStore) noteDataMutation(pageID int) {
 }
 
 func (fs *FileStore) writeStoreJSONFile(path string, v any, pageID int) error {
+	if demoMode() {
+		v = withoutDemoChecks(v)
+	}
 	if err := writeIndentJSONFile(path, v); err != nil {
 		return err
 	}
@@ -160,4 +163,30 @@ func (fs *FileStore) DataGeneration() uint64 {
 	fs.mutex.RLock()
 	defer fs.mutex.RUnlock()
 	return fs.dataGeneration
+}
+
+/*
+withoutDemoChecks switches checking off on every bookmark of a page file
+about to be written in the demo. The demo checks no site, so a bookmark that
+asks to be checked would show a switch that is on and does nothing. Here,
+where every page write passes, rather than in each handler that can set it.
+*/
+func withoutDemoChecks(v any) any {
+	var page PageWithBookmarks
+	switch typed := v.(type) {
+	case PageWithBookmarks:
+		page = typed
+	case *PageWithBookmarks:
+		page = *typed
+	default:
+		return v
+	}
+	bookmarks := make([]Bookmark, len(page.Bookmarks))
+	copy(bookmarks, page.Bookmarks)
+	for i := range bookmarks {
+		bookmarks[i].CheckStatus = false
+		bookmarks[i].Monitor = false
+	}
+	page.Bookmarks = bookmarks
+	return page
 }
