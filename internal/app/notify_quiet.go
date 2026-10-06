@@ -132,10 +132,13 @@ func quietEndsAt(s Settings, t time.Time) time.Time {
 	if !quietNow(s, t) {
 		return time.Time{}
 	}
+	// The zone once, not per step: time.LoadLocation reads the zone file each
+	// time, and quietNow per minute read it up to 2880 times a request.
+	loc := quietLocation(s)
 	const step = time.Minute
 	limit := t.Add(48 * time.Hour)
 	for at := t.Truncate(step).Add(step); at.Before(limit); at = at.Add(step) {
-		if !quietNow(s, at) {
+		if !inMaintenanceWindow(s.QuietHours, at.In(loc)) {
 			return at
 		}
 	}
