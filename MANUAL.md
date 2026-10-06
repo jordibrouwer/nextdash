@@ -23,33 +23,336 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 
 ## 📚 Table of contents
 
-🏠 **[Self-hosted guide: containers, bookmarks and health](#self-hosted-guide)** — start here if nextDash runs next to your own services.
+**Start here**
 
-1. [What is nextDash?](#1-what-is-nextdash)
-2. [Installation and first launch](#2-installation-and-first-launch)
-3. [Core concepts](#3-core-concepts)
-4. [The dashboard](#4-the-dashboard)
-5. [Adding bookmarks](#5-adding-bookmarks)
-6. [Opening and editing bookmarks](#6-opening-and-editing-bookmarks)
-7. [Keyboard](#7-keyboard)
-8. [Search, commands and finders](#8-search-commands-and-finders)
-9. [Pages, categories and collections](#9-pages-categories-and-collections)
-10. [Tags](#10-tags)
-11. [The Bookmarks view](#11-the-bookmarks-view)
-12. [Checks & health](#12-checks-health)
-13. [Inbox](#13-inbox)
-14. [Containers](#14-containers)
-15. [Widgets](#15-widgets)
-16. [Appearance](#16-appearance)
-17. [Config](#17-config)
-18. [Statistics](#18-statistics)
-19. [Data, backups and import](#19-data-backups-and-import)
-20. [Logs](#20-logs)
-21. [Browser extension and capture](#21-browser-extension-and-capture)
-22. [Phones, tablets and the installed app](#22-phones-tablets-and-the-installed-app)
-23. [Security and self-hosting](#23-security-and-self-hosting)
-24. [Troubleshooting](#24-troubleshooting)
-25. [Quick reference](#25-quick-reference)
+| If you… | Read | Then |
+|---|---|---|
+| 🆕 just installed nextDash | [2 · First launch](#first-launch) → [3 · Core concepts](#3-core-concepts) | [5 · Adding bookmarks](#5-adding-bookmarks) |
+| ⌨️ want to stop using the mouse | [7 · Keyboard](#7-keyboard) | [8 · Search, commands and finders](#8-search-commands-and-finders) |
+| 🏠 run it next to your own services | [Self-hosted guide](#self-hosted-guide) | [14 · Containers](#14-containers), [12 · Checks & health](#12-checks-health) |
+| 🎨 want it to look like yours | [16 · Appearance](#16-appearance) | [15 · Widgets](#15-widgets) |
+| 🔤 met a word you don't know | [Glossary](#glossary) | |
+
+**All chapters**
+
+<details>
+<summary><a href="#self-hosted-guide">Self-hosted guide: containers, bookmarks and health</a></summary>
+
+- [What it gives you](#sh-what-it-gives-you)
+- [Set it up in four steps](#sh-set-it-up)
+- [Link each web UI to a bookmark](#sh-link-bookmarks)
+- [Monitor it](#sh-monitor)
+- [Get told: alerts, push and notices](#sh-get-told)
+- [Keep it current](#sh-keep-current)
+- [Keep it tidy](#sh-keep-tidy)
+- [Unraid](#sh-unraid)
+- [A homelab page](#sh-homelab-page)
+- [A morning routine](#sh-morning-routine)
+- [Keys and commands for daily use](#sh-keys)
+
+</details>
+
+<details>
+<summary><b>1.</b> <a href="#1-what-is-nextdash">What is nextDash?</a></summary>
+
+- [What you can do](#what-you-can-do)
+- [What nextDash is not](#what-nextdash-is-not)
+
+</details>
+
+<details>
+<summary><b>2.</b> <a href="#2-installation-and-first-launch">Installation and first launch</a></summary>
+
+- [Docker Compose (recommended)](#docker-compose-recommended)
+- [Build from source](#build-from-source)
+- [Which branch to clone](#which-branch-to-clone)
+- [First launch](#first-launch)
+
+</details>
+
+<details>
+<summary><b>3.</b> <a href="#3-core-concepts">Core concepts</a></summary>
+
+- [Pages](#31-pages)
+- [Categories](#32-categories)
+- [Bookmarks](#33-bookmarks)
+- [The inbox](#34-the-inbox)
+- [Views](#35-views)
+
+</details>
+
+<details>
+<summary><b>4.</b> <a href="#4-the-dashboard">The dashboard</a></summary>
+
+- [The header](#the-header)
+- [The page switcher](#the-page-switcher)
+- [The action buttons](#the-action-buttons)
+- [The grid](#the-grid)
+- [The link preview card](#the-link-preview-card)
+
+</details>
+
+<details>
+<summary><b>5.</b> <a href="#5-adding-bookmarks">Adding bookmarks</a></summary>
+
+- [Quick add (`&`)](#51-quick-add)
+- [The full form (`+`, `Shift + B`, `Ctrl + Shift + A`)](#52-the-full-form-shift-b-ctrl-shift-a)
+- [Paste a URL (`Ctrl + V`)](#53-paste-a-url-ctrl-v)
+- [Other routes](#54-other-routes)
+- [A link you already have](#a-link-you-already-have)
+
+</details>
+
+<details>
+<summary><b>6.</b> <a href="#6-opening-and-editing-bookmarks">Opening and editing bookmarks</a></summary>
+
+- [With the mouse](#with-the-mouse)
+- [The right-click menu](#the-right-click-menu)
+- [Editing in place](#editing-in-place)
+- [Usage](#usage)
+- [Recent bookmarks (`*`)](#recent-bookmarks)
+- [Hypr mode](#hypr-mode)
+
+</details>
+
+<details>
+<summary><b>7.</b> <a href="#7-keyboard">Keyboard</a></summary>
+
+- [Views and panels](#71-views-and-panels)
+- [Moving on the grid](#72-moving-on-the-grid)
+- [Acting on a bookmark](#73-acting-on-a-bookmark)
+- [Acting on a category or widget](#74-acting-on-a-category-or-widget)
+- [Selecting several](#75-selecting-several)
+- [The cheat sheet](#76-the-cheat-sheet)
+
+</details>
+
+<details>
+<summary><b>8.</b> <a href="#8-search-commands-and-finders">Search, commands and finders</a></summary>
+
+- [Just type](#81-just-type)
+- [Filters](#82-filters)
+- [Beyond the current page](#83-beyond-the-current-page)
+  - [Searching the web](#searching-the-web)
+- [From the browser's address bar](#84-from-the-browsers-address-bar)
+- [Commands (`:`)](#85-commands)
+- [Finders (`?`)](#86-finders)
+
+</details>
+
+<details>
+<summary><b>9.</b> <a href="#9-pages-categories-and-collections">Pages, categories and collections</a></summary>
+
+- [Pages](#91-pages)
+- [Categories](#92-categories)
+- [Sorting and folding](#93-sorting-and-folding)
+- [Moving and reordering bookmarks](#94-moving-and-reordering-bookmarks)
+- [Spreading a category across columns](#95-spreading-a-category-across-columns)
+- [Smart collections](#96-smart-collections)
+- [Custom and tag collections](#97-custom-and-tag-collections)
+- [Page templates](#98-page-templates)
+
+</details>
+
+<details>
+<summary><b>10.</b> <a href="#10-tags">Tags</a></summary>
+
+- [Tags on a bookmark](#101-tags-on-a-bookmark)
+- [Filtering by tag](#102-filtering-by-tag)
+- [Managing tags](#103-managing-tags)
+- [Tag suggestions](#104-tag-suggestions)
+- [Notes](#105-notes)
+
+</details>
+
+<details>
+<summary><b>11.</b> <a href="#11-the-bookmarks-view">The Bookmarks view</a></summary>
+
+- [The rail](#111-the-rail)
+- [The toolbar and the list](#112-the-toolbar-and-the-list)
+- [The side panel](#113-the-side-panel)
+- [Selecting several](#114-selecting-several)
+- [The row menu](#115-the-row-menu)
+- [Keys](#116-keys)
+- [Work through and the header band](#117-work-through-and-the-header-band)
+- [Collection health](#118-collection-health)
+- [A bookmark's health in large](#119-a-bookmarks-health-in-large)
+- [Rot report](#1110-rot-report)
+- [Unsorted and Promote](#1111-unsorted-and-promote)
+- [Pages & categories modal](#1112-pages-categories-modal)
+- [Addresses](#1113-addresses)
+
+</details>
+
+<details>
+<summary><b>12.</b> <a href="#12-checks-health">Checks & health</a></summary>
+
+- [Availability modes](#121-availability-modes)
+- [Expected response](#122-expected-response)
+- [Drift](#123-drift)
+- [Alerts](#124-alerts)
+- [Maintenance windows](#125-maintenance-windows)
+- [Fresh](#126-fresh)
+- [Keeping a copy of a page](#127-keeping-a-copy-of-a-page)
+
+</details>
+
+<details>
+<summary><b>13.</b> <a href="#13-inbox">Inbox</a></summary>
+
+- [Getting links in](#131-getting-links-in)
+- [The view](#132-the-view)
+- [Acting on links](#133-acting-on-links)
+- [Triage](#134-triage)
+- [Keeping a link: Unsorted and Promote](#135-keeping-a-link-unsorted-and-promote)
+- [Settings](#136-settings)
+
+</details>
+
+<details>
+<summary><b>14.</b> <a href="#14-containers">Containers</a></summary>
+
+- [Opening it](#141-opening-it)
+- [The list](#142-the-list)
+- [The side panel](#143-the-side-panel)
+- [Keys](#144-keys)
+- [Actions and updates](#145-actions-and-updates)
+- [What it needs](#146-what-it-needs)
+- [Disk](#147-disk)
+- [The logs window](#148-the-logs-window)
+- [Notices](#149-notices)
+
+</details>
+
+<details>
+<summary><b>15.</b> <a href="#15-widgets">Widgets</a></summary>
+
+- [The kinds](#151-the-kinds)
+- [Adding and arranging](#152-adding-and-arranging)
+- [On the dashboard](#153-on-the-dashboard)
+- [System widgets and what they need](#154-system-widgets-and-what-they-need)
+- [The Custom widget](#155-the-custom-widget)
+- [Unraid widgets](#156-unraid-widgets)
+
+</details>
+
+<details>
+<summary><b>16.</b> <a href="#16-appearance">Appearance</a></summary>
+
+- [Themes](#161-themes)
+  - [The theme browser](#the-theme-browser)
+  - [Themes that catch the light](#themes-that-catch-the-light)
+- [Character](#162-character)
+- [Surfaces](#163-surfaces)
+- [Type and background](#164-type-and-background)
+- [Custom themes](#165-custom-themes)
+- [Grid and rows](#166-grid-and-rows)
+- [Header and action buttons](#167-header-and-action-buttons)
+- [Date and weather](#168-date-and-weather)
+- [Finding and resetting](#169-finding-and-resetting)
+
+</details>
+
+<details>
+<summary><b>17.</b> <a href="#17-config">Config</a></summary>
+
+- [The sections](#171-the-sections)
+- [Tabs and saving](#172-tabs-and-saving)
+- [Finding a setting](#173-finding-a-setting)
+- [Config → Bookmarks](#174-config-bookmarks)
+- [Behavior](#175-behavior)
+- [Config → Inbox](#176-config-inbox)
+- [Config → Containers](#177-config-containers)
+- [Overview, Help and About](#178-overview-help-and-about)
+- [Config keys](#179-config-keys)
+
+</details>
+
+**18.** [Statistics](#18-statistics)
+
+<details>
+<summary><b>19.</b> <a href="#19-data-backups-and-import">Data, backups and import</a></summary>
+
+- [Backups & data](#191-backups-data)
+- [Sources](#192-sources)
+- [Webhooks](#193-webhooks)
+- [Icons & previews](#194-icons-previews)
+- [Trash](#195-trash)
+- [Reset](#196-reset)
+
+</details>
+
+<details>
+<summary><b>20.</b> <a href="#20-logs">Logs</a></summary>
+
+- [Server logs](#201-server-logs)
+- [Activity trail](#202-activity-trail)
+
+</details>
+
+<details>
+<summary><b>21.</b> <a href="#21-browser-extension-and-capture">Browser extension and capture</a></summary>
+
+- [The extension](#211-the-extension)
+- [Capture without the extension](#212-capture-without-the-extension)
+
+</details>
+
+**22.** [Phones, tablets and the installed app](#22-phones-tablets-and-the-installed-app)
+
+<details>
+<summary><b>23.</b> <a href="#23-security-and-self-hosting">Security and self-hosting</a></summary>
+
+- [Production Docker](#231-production-docker)
+- [The write token](#232-the-write-token)
+- [Local addresses and outgoing requests](#233-local-addresses-and-outgoing-requests)
+- [CORS](#234-cors)
+- [Content-Security-Policy](#235-content-security-policy)
+- [The MCP endpoint](#236-the-mcp-endpoint)
+- [What nextDash contacts](#237-what-nextdash-contacts)
+- [Analytics](#238-analytics)
+- [Operations](#239-operations)
+
+</details>
+
+<details>
+<summary><b>24.</b> <a href="#24-troubleshooting">Troubleshooting</a></summary>
+
+- [The dashboard is empty after install](#the-dashboard-is-empty-after-install)
+- [The dashboard does not load](#the-dashboard-does-not-load)
+- [A change in another tab does not show](#a-change-in-another-tab-does-not-show)
+- [A shortcut does not open its bookmark](#a-shortcut-does-not-open-its-bookmark)
+- [Bookmarks seem to be missing](#bookmarks-seem-to-be-missing)
+- [An import says "0 new"](#an-import-says-0-new)
+- [A bookmark with a private address is refused](#a-bookmark-with-a-private-address-is-refused)
+- [A self-hosted service shows as broken](#a-self-hosted-service-shows-as-broken)
+- [The colours look wrong after the system switched to dark](#the-colours-look-wrong-after-the-system-switched-to-dark)
+- [A new release does not seem to have arrived](#a-new-release-does-not-seem-to-have-arrived)
+- [The quick-start card does not appear](#the-quick-start-card-does-not-appear)
+- [The weather does not show](#the-weather-does-not-show)
+- [The Calendar widget shows nothing](#the-calendar-widget-shows-nothing)
+- [The RSS widget shows nothing](#the-rss-widget-shows-nothing)
+- [A system widget shows no figures](#a-system-widget-shows-no-figures)
+- [Browser notifications do not arrive](#browser-notifications-do-not-arrive)
+- [The extension cannot save](#the-extension-cannot-save)
+- [The Containers view is missing or read-only](#the-containers-view-is-missing-or-read-only)
+
+</details>
+
+<details>
+<summary><b>25.</b> <a href="#25-quick-reference">Quick reference</a></summary>
+
+- [Most-used keys](#most-used-keys)
+- [Config](#config)
+- [Addresses](#addresses)
+- [Data location](#data-location)
+
+</details>
+
+**26.** [Glossary](#glossary)
+
+🔤 **[Glossary](#glossary)** — every nextDash term in one line, linked to where it is explained.
+📌 **[Quick reference](#25-quick-reference)** — the keys, config sections and addresses on one screen.
 
 ---
 
@@ -196,7 +499,7 @@ Because the bookmark is monitored too, an update that leaves the container runni
 - **The timeline** keeps thirty days of what happened to each container — useful after a night of automatic updates, or when a container *seemed* fine.
 - The **Containers** widget can show **reclaimable** space, so a filling disk shows up on the dashboard before it becomes a problem.
 
-<a id="sh-homelab-page"></a>
+<a id="sh-unraid"></a>
 
 ### Unraid
 
@@ -208,7 +511,7 @@ nextDash reads an Unraid server through its own API — Unraid 7.2, or an older 
 
 More is on the way: further Unraid integration is being worked on for future versions of nextDash.
 
-<a id="a-homelab-page"></a>
+<a id="sh-homelab-page"></a>
 
 ### A homelab page
 
@@ -3077,6 +3380,14 @@ Escape              close, then leave
 ### Data location
 
 Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binary: `./data` next to it, or `NEXTDASH_DATA_DIR`.
+
+<sub>[↑ Contents](#table-of-contents)</sub>
+
+---
+
+<a id="glossary"></a>
+
+## 26. 🔤 Glossary
 
 <sub>[↑ Contents](#table-of-contents)</sub>
 
