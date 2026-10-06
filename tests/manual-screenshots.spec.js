@@ -1683,17 +1683,6 @@ test('full 14 side panel', async ({ page }) => {
     await shot(page, '14-side-panel-full.jpg');
 });
 
-test('full 17 overview', async ({ page }) => {
-    await prepare(page);
-    await openConfig(page, 'overview');
-    await page.waitForTimeout(1_000);
-    // From the top, the config title and the view's head in the frame.
-    await page.mouse.move(700, 500);
-    await page.mouse.wheel(0, -5_000);
-    await page.waitForTimeout(600);
-    await shot(page, '17-overview.jpg');
-});
-
 for (const [section, name] of [['appearance', '17-appearance.jpg'], ['bookmarks', '17-bookmarks.jpg'],
     ['inbox', '17-inbox.jpg'], ['containers', '17-containers.jpg'], ['help', '17-help.jpg']]) {
     test(`full 17 ${section}`, async ({ page }) => {
