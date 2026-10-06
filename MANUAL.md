@@ -432,6 +432,17 @@ You probably have bookmarks for your services already. nextDash finds the one th
 
 Once linked, the container's row shows a small bookmark mark: green when its checks pass, red when it is broken or down, an outline when nothing checks it. A click opens the bookmark in the Bookmarks view. The other way round, the bookmark's row in the Bookmarks view carries a cube in the container's state ([§11.2](#112-the-toolbar-and-the-list)), and its side panel shows **Details → Address → Runs in**, a link to the container.
 
+The links, and what comes out of them:
+
+```mermaid
+flowchart LR
+    B[Bookmark<br>sonarr.lan] --- C[Container<br>sonarr]
+    B --- H[Check<br>up / down / drift]
+    C -->|update waiting| U[Orange ↑<br>badge and count]
+    C -->|stops · restarts · unhealthy| A[Alert or notice<br>push · webhook]
+    H -->|down · up · certificate| A
+```
+
 **When the guess is wrong** — two bookmarks on one port, a service behind a path rather than a subdomain — choose the bookmark by hand under the container's **Bookmark → Linked bookmark**, or *No bookmark*. A container without a bookmark at all is a hint: add one, so it shows on your dashboard and can be monitored.
 
 **When the web UI is somewhere else** — behind your reverse proxy, on another port — set it in the side panel's **Custom → Web UI address**. `[IP]` stands for this server. The list, the Container list widget, search and `:docker <name> open` all use it.
@@ -561,13 +572,13 @@ What a check of your setup can look like, all from the keyboard:
 
 | Key or command | Does |
 |---|---|
-| `Shift + Y` | Open the Containers view |
+| <kbd>Shift</kbd> + <kbd>Y</kbd> | Open the Containers view |
 | `:docker <name>` | Find a container from anywhere; add `open`, `logs`, `start`, `stop`, `restart`, `pause`, `update` or `remove` |
-| `s` · `r` · `p` · `u` | Start or stop, restart, pause, update the selected container |
-| `l` · `m` · `d` | Logs window, mute notices, Disk |
-| `x` · `Shift + X` · `Ctrl/Cmd + A` | Tick one, a run, everything the filter shows |
-| `/` | Search the containers |
-| `Shift + C` | Change a bookmark's availability (Off, Periodic, Monitor) on the dashboard |
+| <kbd>s</kbd> · <kbd>r</kbd> · <kbd>p</kbd> · <kbd>u</kbd> | Start or stop, restart, pause, update the selected container |
+| <kbd>l</kbd> · <kbd>m</kbd> · <kbd>d</kbd> | Logs window, mute notices, Disk |
+| <kbd>x</kbd> · <kbd>Shift</kbd> + <kbd>X</kbd> · <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>A</kbd> | Tick one, a run, everything the filter shows |
+| <kbd>/</kbd> | Search the containers |
+| <kbd>Shift</kbd> + <kbd>C</kbd> | Change a bookmark's availability (Off, Periodic, Monitor) on the dashboard |
 | `#docker?filter=updates` | The containers with an update waiting |
 | `#bookmarks?health=monitored` | Every monitored bookmark, with its uptime |
 
@@ -680,6 +691,9 @@ Data is stored in `./data` next to the binary. `NEXTDASH_DATA_DIR` points it els
 
 ## 3. 🧠 Core concepts
 
+> [!NOTE]
+> **In short:** everything is a page, a category on a page, or a bookmark in a category. Links you have not filed wait in the inbox, and five views share one browser tab.
+
 <a id="31-pages"></a>
 
 ### 3.1 Pages
@@ -730,6 +744,9 @@ This manual calls the page of categories and widgets the **dashboard grid**, to 
 <a id="4-the-dashboard"></a>
 
 ## 4. 🖥️ The dashboard
+
+> [!NOTE]
+> **In short:** the dashboard grid is your start page: a header with clock, weather and page switcher, then categories and widgets in columns. Bookmarks, Inbox, Containers and config are icons in the header.
 
 ```
 ┌───────────────────────────────────────────────────────────────────────────┐
@@ -867,6 +884,9 @@ The picture and the site icon are fetched **by your server** and stored under `d
 
 ## 5. ➕ Adding bookmarks
 
+> [!NOTE]
+> **In short:** add a bookmark with one line (`&`), the full form (`+`) or by pasting a URL. The extension, the share sheet and imports bring in more.
+
 <a id="51-quick-add"></a>
 
 ### 5.1 Quick add (`&`)
@@ -958,6 +978,9 @@ The form, quick add and the extension all ask. Imports skip duplicates and say h
 
 ## 6. 🔖 Opening and editing bookmarks
 
+> [!NOTE]
+> **In short:** click a bookmark or press its shortcut letters to open it; the right-click menu and editing in place change it. Usage and recent bookmarks show what you reach for.
+
 <a id="with-the-mouse"></a>
 
 ### 🖱️ With the mouse
@@ -1042,6 +1065,9 @@ A narrow panel with what you opened recently on this page: one row per bookmark,
 <a id="7-keyboard"></a>
 
 ## 7. ⌨️ Keyboard
+
+> [!NOTE]
+> **In short:** every action on a bookmark is `Shift` plus a letter, and the cheat sheet (`!` or `F1`) lists them all. This chapter is the full key map.
 
 Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to search until the cursor is on the grid, and then to the grid. The right-click menu shows each key, and the cheat sheet (**`!`** or **`F1`**) lists all of them.
 
@@ -1173,6 +1199,9 @@ While a panel is open, the grid behind it does not react. `Tab` stays inside the
 <a id="8-search-commands-and-finders"></a>
 
 ## 8. 🔎 Search, commands and finders
+
+> [!NOTE]
+> **In short:** one panel with three modes: type to search your bookmarks, `:` for commands, `?` for finders that search another site. Filters narrow it, and it can reach other pages and the web.
 
 Search, commands and finders are three modes of one panel.
 
@@ -1328,6 +1357,9 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 
 ## 9. 🗂️ Pages, categories and collections
 
+> [!NOTE]
+> **In short:** organise with pages, categories and collections: sort, fold and spread categories over columns, move bookmarks, and let smart, custom and tag collections gather links for you.
+
 <a id="91-pages"></a>
 
 ### 9.1 Pages
@@ -1447,6 +1479,9 @@ A file is at most 2 MB.
 
 ## 10. 🏷️ Tags
 
+> [!NOTE]
+> **In short:** tags are free labels, stored in lower case. Add them in the form or with `Shift + T`, filter by them, manage them in one place and accept suggestions. Notes are covered here too.
+
 <a id="101-tags-on-a-bookmark"></a>
 
 ### 10.1 Tags on a bookmark
@@ -1500,6 +1535,9 @@ Notes are plain text. Edit them in the form, the side panel or with `:note`. Sea
 <a id="11-the-bookmarks-view"></a>
 
 ## 11. 📚 The Bookmarks view
+
+> [!NOTE]
+> **In short:** the Bookmarks view is the library of every bookmark on every page: a rail of filters, a list and a side panel. It is also where health, uptime and drift are watched.
 
 The **Bookmarks view** is the library: every bookmark on every page, in one workbench with a rail of filters, a list and a side panel. It replaced Config → Bookmarks → List, and it is where availability checking, uptime and drift are watched.
 
@@ -1722,6 +1760,25 @@ A period select (today, 7, 14, 30 or 90 days) applies across the panel.
 
 ## 12. 💓 Checks & health
 
+> [!NOTE]
+> **In short:** set a bookmark to **Off**, **Periodic** or **Monitor** and nextDash checks it for you. Expected response and drift catch pages that answer but are wrong, and alerts and maintenance windows decide who hears about it.
+
+The states a monitored bookmark moves through:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Up
+    Up --> Drift: page changed
+    Drift --> Up: accepted or back to baseline
+    Up --> Down: failed checks in a row
+    Down --> Up: recovers
+    Up --> Maintenance: fails inside a window
+    Maintenance --> Up: recovers
+    Maintenance --> Down: still failing after the window
+    Up --> Unknown: robot check or rate limit
+    Unknown --> Up: clear answer
+```
+
 <a id="121-availability-modes"></a>
 
 ### 12.1 Availability modes
@@ -1885,7 +1942,21 @@ On a bookmark's Health tab, **Find in Web Archive** reads the archive's index fo
 
 ## 13. 📥 Inbox
 
+> [!NOTE]
+> **In short:** the inbox holds links you saved but have not filed. Triage them one key at a time, or keep them in Unsorted until they earn a category.
+
 The inbox holds links you want to keep before you decide where they go. Items live in `data/inbox.json`.
+
+A link comes in one way and leaves in one of three:
+
+```mermaid
+flowchart LR
+    X[Extension · share · paste · bookmarklet] --> I[Inbox]
+    I -->|promote| K[Category on a page]
+    I -->|keep for later| U[Unsorted]
+    U -->|promote| K
+    I -->|delete, undo in the toast| D[Gone from the inbox]
+```
 
 <a id="131-getting-links-in"></a>
 
@@ -2015,6 +2086,9 @@ The first visit plays a five-step tour: the waiting room the inbox is, the three
 
 ## 14. 🐳 Containers
 
+> [!NOTE]
+> **In short:** the Containers view shows the Docker containers on this machine, with logs, updates and disk use. Looking needs the Docker socket; acting needs `NEXTDASH_DOCKER_CONTROL=1` and a write token.
+
 The **Containers view** shows the Docker containers on the machine nextDash runs on — the same connection the Containers widget and system widgets use. It needs the Docker socket ([§14.6](#146-what-it-needs)).
 
 > [!IMPORTANT]
@@ -2136,6 +2210,9 @@ Updating by hand still works on a skipped or held image.
 > | `NEXTDASH_WRITE_TOKEN` | Keeping other sites and scripts out | Access to the socket is root on the host: `:ro` on the mount does not stop the Docker API from accepting writes. The token refuses requests that do not carry it — another website, a script that only knows the address. It is not a login: the dashboard gives it to every browser that opens the page. Keeping the actions yours also needs a gate in front — Tailscale, or a reverse proxy with authentication ([§23](#23-security-and-self-hosting)). |
 > | `NEXTDASH_RUN_AS_ROOT=1` | Only when the socket belongs to gid 0 | See below. |
 
+> [!WARNING]
+> With `NEXTDASH_DOCKER_CONTROL=1`, anyone who can open the dashboard can stop, update or remove your containers, and access to the Docker socket is root on the host. Put nextDash behind a gate first ([§23](#23-security-and-self-hosting)).
+
 **Why root is sometimes needed.** The container starts as root, fixes the ownership of `/app/data`, then drops to its own `nextdash` user. Before it does, it looks at the group that owns the socket and adds `nextdash` to it — the `docker` group, gid 281 on Unraid — so the unprivileged user can read the socket. When the socket is owned by root's own group (gid 0), as on Docker Desktop and some NAS systems, joining that group would amount to root anyway, so the entrypoint does not; the log then says `nextdash: /var/run/docker.sock is owned by gid 0; set NEXTDASH_RUN_AS_ROOT=1 to use it`, and Config → Containers shows **No access to the socket**. `NEXTDASH_RUN_AS_ROOT=1` keeps the whole app running as root. Set it only in that case.
 
 **Docker Compose:**
@@ -2234,6 +2311,9 @@ They go where Health's downtime alerts go: the alert webhook under **Behavior �
 <a id="15-widgets"></a>
 
 ## 15. 🧩 Widgets
+
+> [!NOTE]
+> **In short:** widgets are blocks beside your categories that show something other than links: health, feeds, system figures, a to-do list. The Custom widget reads figures from any service that answers in JSON.
 
 A page holds categories and, beside them, **widgets**: blocks that show something other than links. Categories and widgets share one order.
 
@@ -2686,6 +2766,9 @@ Seven widgets read an Unraid server through its API: **Unraid**, **Unraid array*
 
 ## 16. 🎨 Appearance
 
+> [!NOTE]
+> **In short:** Appearance changes how the dashboard looks: themes, background, surfaces, type, grid, rows, header and action bar. Pick, preview and apply, or build a theme of your own.
+
 **Config → Appearance** opens straight on its settings, on the tab you used last. Eight tabs: **Look**, **Background**, **Surface**, **Grid**, **Rows**, **Header**, **Action bar** and **Date & weather**. Every setting of a tab is on it, with a short line under each saying what it does.
 
 <p align="center">
@@ -2941,6 +3024,9 @@ Each tab has a filter beside **Only changed**. When the filter — or **Only cha
 
 ## 17. ⚙️ Config
 
+> [!NOTE]
+> **In short:** Config is a view inside the dashboard, with a section for each part of nextDash. Open it with `Shift + S`, find any setting with `Ctrl/Cmd + Shift + K`, and every change saves the moment you make it.
+
 Config is a **view inside the dashboard**: same tab, no page load.
 
 <p align="center">
@@ -3113,6 +3199,9 @@ Keys do not fire while you type in a field, except where a list says so. A legen
 
 ## 18. 📊 Statistics
 
+> [!NOTE]
+> **In short:** Statistics counts what you have and what you use, worked out from the data on your server.
+
 **Config → Statistics** counts what you have and what you use. Everything is worked out from the data on your server.
 
 <p align="center">
@@ -3144,6 +3233,9 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 <a id="19-data-backups-and-import"></a>
 
 ## 19. 📦 Data, backups and import
+
+> [!NOTE]
+> **In short:** back up everything or restore a backup, import and export bookmarks, feed in links from other services, set up webhooks, and keep or empty the trash. Reset is here too.
 
 **Config → Data & backups** has six tabs.
 
@@ -3278,7 +3370,8 @@ A restore that cannot go ahead is refused and the entry stays: a bookmark or cat
 - **Delete all bookmarks** — keeps pages, categories and settings. Asks once.
 - **Reset all data** — deletes pages, categories, bookmarks, finders, settings, custom themes, uploads, icons and caches, and brings back the example bookmarks and default settings. Asks twice; you type **RESET** (or the word in your language).
 
-Make a backup first — neither can be undone.
+> [!WARNING]
+> Neither can be undone. Make a backup first.
 
 <sub>[↑ Contents](#table-of-contents)</sub>
 
@@ -3287,6 +3380,9 @@ Make a backup first — neither can be undone.
 <a id="20-logs"></a>
 
 ## 20. 📜 Logs
+
+> [!NOTE]
+> **In short:** Logs shows what the server has been doing, without shell access, and keeps an activity trail, a machine-readable record of the events you choose.
 
 **Config → Logs** has two tabs.
 
@@ -3371,6 +3467,9 @@ Channel names: `mutate`, `status`, `security`, `health`, `sources`, `feeds`, `ar
 
 ## 21. 🔌 Browser extension and capture
 
+> [!NOTE]
+> **In short:** the extension saves the current tab to a page or the inbox. Without it, the share sheet, a bookmarklet and a `/add` address do the same.
+
 <a id="211-the-extension"></a>
 
 ### 21.1 The extension
@@ -3427,6 +3526,9 @@ Use `--data-urlencode`: an address with its own `?a=1&b=2` breaks a hand-built q
 
 ## 22. 📱 Phones, tablets and the installed app
 
+> [!NOTE]
+> **In short:** nextDash adapts to touch screens, with its own layout, gestures and long-press editing. Add it to the home screen to install it as an app and share links to it.
+
 nextDash adapts to touch screens (a touch device without a hover pointer) rather than to window width alone.
 
 <p align="center">
@@ -3468,6 +3570,9 @@ A dismissible banner explains the limits once.
 <a id="23-security-and-self-hosting"></a>
 
 ## 23. 🔐 Security and self-hosting
+
+> [!NOTE]
+> **In short:** nextDash has no user accounts: put it behind a private network or an authenticating proxy. The write token, local-address rules and a short list of what it contacts are covered here.
 
 nextDash has **no user accounts**. Anyone who can reach the address can read your bookmarks and change them, unless you put something in front of it.
 
@@ -3512,6 +3617,9 @@ Before it listens, the server checks that `PORT` is valid and that the data dire
 ### 23.2 The write token
 
 Set `NEXTDASH_WRITE_TOKEN` and every write or destructive API call — saves, imports, deletes, uploads, resets, backups, retests, preview fetches, container actions — needs the header `X-NextDash-Token`. The dashboard supplies it automatically for pages served by the same install. Unset, nothing needs a token.
+
+> [!WARNING]
+> The token is not a login. Every browser that opens nextDash receives it, so anyone who can reach the address can still read and change everything. Keep nextDash behind a private network or a proxy that asks who you are.
 
 **What it stops, and what it does not.** The dashboard gets the token from the page it loads, so every browser that opens nextDash has it. The token keeps out requests that do not come from that page: another website firing requests at your network from a tab you have open, and scripts or scanners that only know the address. It does not keep out a person who can open the dashboard — that is what Tailscale or a reverse proxy with authentication is for. With container actions on, put one in front.
 
@@ -3643,6 +3751,9 @@ Every count is rounded into a band. **Never recorded:** bookmark names, URLs, se
 <a id="24-troubleshooting"></a>
 
 ## 24. 🛠️ Troubleshooting
+
+> [!NOTE]
+> **In short:** find the symptom, read the cause and the fix. The list runs from an empty dashboard to widgets that show nothing.
 
 <a id="the-dashboard-is-empty-after-install"></a>
 
@@ -3776,27 +3887,41 @@ They need HTTPS in Safari and on iPhone and iPad, and nextDash on the home scree
 
 ### Most-used keys
 
-```
-type        search              Enter       open top result
->  :  ?     search · commands · finders     @  all pages
-+  &        add · quick add     Ctrl+V      paste a URL
-1-9  ,      pages · pages panel             *  recent   /  tags   !  cheat sheet
-arrows j k  move                Esc         back / home
-Shift+E edit   Shift+M move   Shift+T tags   Shift+D delete   Shift+C checking
-Shift+H bookmarks (broken)   Shift+U bookmarks (unsorted)   Shift+I inbox   Shift+Y containers   Shift+S config   Shift+A themes
-```
+| Keys | What they do |
+|---|---|
+| Just type | Search |
+| <kbd>Enter</kbd> | Open the top result |
+| <kbd>&gt;</kbd> · <kbd>:</kbd> · <kbd>?</kbd> | Search · commands · finders |
+| <kbd>@</kbd> | Search all pages |
+| <kbd>+</kbd> · <kbd>&amp;</kbd> | Add · quick add |
+| <kbd>Ctrl</kbd> + <kbd>V</kbd> | Paste a URL |
+| <kbd>1</kbd>–<kbd>9</kbd> · <kbd>,</kbd> | Pages · pages panel |
+| <kbd>&#42;</kbd> · <kbd>/</kbd> · <kbd>!</kbd> | Recent · tags · cheat sheet |
+| <kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd> · <kbd>j</kbd> <kbd>k</kbd> | Move |
+| <kbd>Esc</kbd> | Back, or home |
+| <kbd>Shift</kbd> + <kbd>E</kbd> | Edit |
+| <kbd>Shift</kbd> + <kbd>M</kbd> | Move |
+| <kbd>Shift</kbd> + <kbd>T</kbd> | Tags |
+| <kbd>Shift</kbd> + <kbd>D</kbd> | Delete |
+| <kbd>Shift</kbd> + <kbd>C</kbd> | Availability checking |
+| <kbd>Shift</kbd> + <kbd>H</kbd> | Bookmarks view (broken) |
+| <kbd>Shift</kbd> + <kbd>U</kbd> | Bookmarks view (Unsorted) |
+| <kbd>Shift</kbd> + <kbd>I</kbd> | Inbox |
+| <kbd>Shift</kbd> + <kbd>Y</kbd> | Containers |
+| <kbd>Shift</kbd> + <kbd>S</kbd> | Config |
+| <kbd>Shift</kbd> + <kbd>A</kbd> | Themes |
 
 <a id="config"></a>
 
 ### Config
 
-```
-Shift+S or <        open or close config
-Ctrl/Cmd+Shift+K    find a setting
-j / k               previous / next section
-Alt+← / →  or [ ]   previous / next tab
-Escape              close, then leave
-```
+| Keys | What they do |
+|---|---|
+| <kbd>Shift</kbd> + <kbd>S</kbd> or <kbd>&lt;</kbd> | Open or close config |
+| <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd> | Find a setting |
+| <kbd>j</kbd> / <kbd>k</kbd> | Previous / next section |
+| <kbd>Alt</kbd> + <kbd>←</kbd> / <kbd>→</kbd> or <kbd>[</kbd> <kbd>]</kbd> | Previous / next tab |
+| <kbd>Esc</kbd> | Close, then leave |
 
 <a id="addresses"></a>
 
