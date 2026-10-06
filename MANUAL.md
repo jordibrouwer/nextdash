@@ -471,7 +471,7 @@ There is one place where bad news goes, and both halves use it.
 
 **Where it goes.** Set it up once under **Behavior → Status & alerts**:
 
-- **Downtime alerts** — Slack, Discord, Telegram, Gotify, **ntfy**, **Pushover** or your own JSON receiver. **Send test alert** proves the route. ntfy alerts carry **Open link** and **Health** buttons, and failures go out at a higher priority than recoveries.
+- **Downtime alerts** — Slack, Discord, Telegram, Gotify, **ntfy**, **Pushover**, **Apprise** (which passes an alert on to mail, Matrix, Signal and more — [§12.4](#124-alerts)) or your own JSON receiver. **Send test alert** proves the route. ntfy alerts carry **Open link** and **Health** buttons, and failures go out at a higher priority than recoveries.
 - **Browser notifications** — push to your phone, tablet or desktop, even with nextDash closed. Press **Enable on this device** on each device. On iPhone and iPad, add nextDash to the home screen first, and serve it over HTTPS ([§22](#22-phones-tablets-and-the-installed-app)).
 
 **What arrives there:**
@@ -486,7 +486,7 @@ There is one place where bad news goes, and both halves use it.
 
 For containers on your phone, also switch on **Notify when a container stops, keeps restarting or turns unhealthy** under the browser notifications.
 
-**Keeping it quiet.** nextDash leaves out what you did yourself: a stop you asked for is not a notice, nor is a crash the restart policy fixes within 30 seconds. One incident is one notice; four or more at once become one message, and a host that takes many bookmarks down together sends one downtime alert. Mute what you do not care about — a container with `m` or its row menu, a bookmark with **Do not alert me about this bookmark** — and it still shows its state on screen. **Config → Containers → Muted containers** says where container notices go, and **Hidden containers** keeps test containers out of the view and the widget count altogether.
+**Keeping it quiet.** nextDash leaves out what you did yourself: a stop you asked for is not a notice, nor is a crash the restart policy fixes within 30 seconds. One incident is one notice; four or more at once become one message, and a host that takes many bookmarks down together sends one downtime alert. Mute what you do not care about — a container with `m` or its row menu, a bookmark with **Do not alert me about this bookmark** — and it still shows its state on screen. **Config → Containers → Muted containers** says where container notices go, and **Hidden containers** keeps test containers out of the view and the widget count altogether. To hold notices overnight, or to be reminded of an outage that goes on, use **Quiet hours** and **Reminders** ([§12.5](#125-maintenance-windows)).
 
 **For other programs.** Outgoing webhooks send `health.down`, `health.up` and `health.cert-expiring`, signed, to anything that listens — Home Assistant, n8n, a script ([§19.3](#193-webhooks)).
 
@@ -653,6 +653,12 @@ Open `http://localhost:8080`.
 
 From a git checkout, `docker-compose.prod.yml` is the production file (only `./data` is mounted; the assets are built into the binary) and `docker-compose.yml` is for development (it mounts `./static`, `./locales` and `./templates`). The development file ships with `NEXTDASH_DOCKER_CONTROL=0` and `NEXTDASH_RUN_AS_ROOT=0` and the Docker socket commented out. Put your own mounts and variables in a `docker-compose.override.yml` beside it: Compose reads that file on its own, and your changes stay out of the checkout.
 
+**Never delete `./data` while the container runs.** `./data` is a bind mount: the folder disappears from your disk, but the container keeps writing into a directory that no longer exists, and the data is gone at the next restart. Nothing in the app shows it. In a checkout, three `make` targets deal with it:
+
+- `make doctor` — says whether the container runs while `./data` is missing on the host.
+- `make rescue-data` — copies the data back out of the running container into `./data`; then run `docker compose up -d --force-recreate` so the mount points at the new folder.
+- `make reset-data` — wipes `./data` the safe way (it asks first, stops the container, removes the folder, starts again) and leaves you with fresh default files.
+
 <a id="build-from-source"></a>
 
 ### 🧱 Build from source
@@ -804,7 +810,7 @@ The header has three zones.
 | Commands | `:` | The command palette |
 | Finders | `?` | Finders |
 | Tag cloud | `/` | The tag cloud |
-| Recent | `*` | Recent bookmarks |
+| Recent | `*` | Recent bookmarks — from every view |
 | Pages | `,` | The pages panel |
 | Fold all | `.` | Folds or unfolds every category and widget |
 | Cheat sheet | `!` | The cheat sheet |
@@ -851,7 +857,18 @@ A bookmark row shows its icon, name, optional tags, the shortcut letters and, wh
 
 <a id="corner-cards"></a>
 
-**Corner cards** offer things once, one card at a time: a round of link review, a round of tag suggestions, browser notifications, the theme browser, Fresh, spreading a category, and once you have eight bookmarks a pointer to the feature overview on nextdash.cc, which opens in a new tab. Each can be dismissed, and each review card has a switch under Behavior → Privacy & sync → Onboarding. The same place lists every card with **Answered** or **Not shown yet**, and **Show again** brings an answered one back the next time its moment arrives.
+**Corner cards** offer things once, one card at a time, in the bottom-left corner. Each can be dismissed with the **×**.
+
+- **Link review** — *10 links to review* once five or more bookmarks need a decision. **Start** runs a session over the worst ten ([§11.7](#117-work-through-and-the-header-band)); **Not today** brings it back tomorrow; **Remind me in 30 days** puts it away for a month.
+- **Kept links** — ten or more links you kept have waited over a month in **Unsorted**. **Open Unsorted** shows them; the card never files or deletes anything.
+- **Checking** — once 20 or more bookmarks are not checked, an offer to switch them to **Periodic** ([§12.1](#121-availability-modes)).
+- **Tag suggestions** — a round of tag review when there is something worth accepting ([§10.4](#104-tag-suggestions)).
+- **Widgets layout** — an invitation to try the **Widgets** layout, which draws every category as a card. **Try it** applies it at once, and the same card puts the old layout back.
+- **Clock and weather** — asks for a town, a clock and a unit when no location is set.
+- **Install count** — says once that the daily count of installs is on, what leaves the server, and offers **Turn it off** ([§23.7](#237-what-nextdash-contacts)).
+- **Others** — browser notifications, the theme browser, Fresh, spreading a category, the tour of what moved, and once you have eight bookmarks a pointer to the feature overview on nextdash.cc, which opens in a new tab.
+
+Each review card has a switch under Behavior → Privacy & sync → Onboarding. The same place lists every card with **Answered** or **Not shown yet**, and **Show again** brings an answered one back the next time its moment arrives.
 
 <a id="the-link-preview-card"></a>
 
@@ -918,7 +935,7 @@ The form is one column, in the order you fill it in: **address**, **name**, the 
 
 **One read of the page.** When you leave the address field, the page is read once, and that one read fills in the rest:
 
-- **The icon** — with a **✎** on it for **Upload…**, **Fetch again** and **Clear**. An icon you uploaded, or one the bookmark already had, is kept when the address changes; a fetched one is replaced.
+- **The icon** — with a **✎** on it. **Choose app icon…** heads its menu and opens a search over the app icon sets ([§19.4](#194-icons-previews)); under it come **Upload…**, **Fetch again** and **Clear**. When the sets know the app, up to three suggested icons also show under the address — one click chooses one. An icon you chose or uploaded, or one the bookmark already had, is kept when the address changes; a fetched one is replaced.
 - **A name** — left empty, the name field shows the page's own title, *Suggested from the page · Clear*; a name you typed stays, with *Page: … · Use* under it to take the page's title instead.
 - **The card** — the page's host, its own line and its picture. It says **Reading the page…** while a slow site answers, and **No preview** with **Try again** when the page could not be read; the bookmark saves fine without one.
 - **Suggested tags** — chips under the tags field, from the same sources as Tag suggestions ([§10.4](#104-tag-suggestions)). **+** adds one, **✕** turns it down for that site everywhere, and **↻** asks again. Editing a bookmark shows its suggestions straight away, from the words stored for it.
@@ -927,7 +944,7 @@ Change the address and the whole read starts again; only the latest one counts.
 
 - **Page › category** is one field. It opens the same list as **Move to…** (`Shift + M`), with a filter at the top: type to narrow it, arrows and `Enter` to pick. Its first rows are **New category on …** and **New page…**; after a new page, the form asks for its first category.
 - **ⓘ** beside **Tags**, **Shortcut** and the checking choice explains each one.
-- **Availability** is the same **Off / Periodic / Monitor** choice as everywhere, with the interval for Monitor.
+- **Availability** is the same **Off / Periodic / Monitor** choice as everywhere, with the interval for Monitor. A new bookmark starts on **Periodic**; change that under Config → Bookmarks → **New bookmarks → Availability** (an install that still had Off from before was moved to Periodic once).
 - The **shortcut** field warns when a shortcut is taken, and says which letters the grid itself uses.
 - **Save** or **`Ctrl + Enter`** saves. **Create + New** saves and clears the form for the next one, keeping page and category.
 - **Before it saves**, the form asks: with no page it says a bookmark needs one; with no category it asks **Save without** or **Choose a category**; a link already on another page is named, with **Save anyway**; a link already on the same page is refused, naming the bookmark that has it.
@@ -1085,10 +1102,10 @@ Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to 
 | `Shift + Y` | Containers |
 | `Shift + S` or `<` | Config (and back) |
 | `Shift + A` | The theme browser |
-| `>` `:` `?` | Search, commands, finders |
+| `>` `:` `?` | Search, commands, finders — from every view |
 | `+` · `Shift + B` · `&` | Full bookmark form · from anywhere · quick add |
 | `/` | Tag cloud |
-| `*` | Recent bookmarks |
+| `*` | Recent bookmarks — from every view |
 | `,` | Pages panel (`n` there makes a new page) |
 | `!` or `F1` | Cheat sheet |
 | `.` | Fold or unfold every category and widget |
@@ -1099,6 +1116,8 @@ Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to 
 | `Esc` | Close the panel; on a bare grid, go to the first page; on the first page, open search |
 
 The Containers view opens with `Shift + Y`, its header icon or `:docker`.
+
+`>` `:` `?` and `*` work in every view — the Bookmarks view, the inbox, Containers and config too — not only on the dashboard. A view that uses one of these keys for itself keeps it. Quick add (`&`) and the full form (`+`) stay with the bookmark grid.
 
 <a id="72-moving-on-the-grid"></a>
 
@@ -1175,7 +1194,7 @@ The arrow keys walk into a widget and through its rows; `Enter` does what clicki
 | `Delete` | Delete the selection (one confirmation, undo in the toast) |
 | `Esc` | Clear the selection |
 
-A toolbar appears with **Move**, **Tags**, **Pin**, **Checking**, **Open**, **Copy links** and **Delete**. The tag picker shows a **✓** for tags the whole selection has and *on 2 of 3* for tags only some have. Above them, **Suggested** lists up to three tags the selection is likely to want ([§10.4](#104-tag-suggestions)); a suggestion that fits only some of the rows says *on 1 of 3*, and choosing it tags only those rows. While a selection is open, a plain click clears it instead of opening a bookmark. A bulk change can be undone from its toast for eight seconds, and deleted bookmarks stay in the trash for 30 days.
+A toolbar appears with **Move**, **Tags**, **Pin**, **Checking**, **Open**, **Copy links**, **Re-check**, **Fetch icons**, **Fetch previews**, **Export CSV** and **Delete**, and **Clear selection** to leave. **Fetch icons** and **Fetch previews** read the icon and the page card of every selected bookmark, with a progress bar, and wait when a site asks them to slow down. The tag picker shows a **✓** for tags the whole selection has and *on 2 of 3* for tags only some have. Above them, **Suggested** lists up to three tags the selection is likely to want ([§10.4](#104-tag-suggestions)); a suggestion that fits only some of the rows says *on 1 of 3*, and choosing it tags only those rows. While a selection is open, a plain click clears it instead of opening a bookmark. A bulk change can be undone from its toast for eight seconds, and deleted bookmarks stay in the trash for 30 days.
 
 <a id="76-the-cheat-sheet"></a>
 
@@ -1218,6 +1237,8 @@ Search, commands and finders are three modes of one panel.
 ### 8.1 Just type
 
 The dashboard's search line is always listening. Letters narrow the list; **`Enter`** opens the top result, **`↑`/`↓`** pick another, **`Ctrl/Cmd + Enter`** opens in a new tab, **`Esc`** closes. Results are ranked by match and by how often you open them. The panel also searches notes and the description nextDash fetched from each page.
+
+Results are grouped by why they matched. **Best matches** — a name, or a word in it, that starts with what you typed — stays open. **Contains “…”** (the letters sit in the middle of a word in the name) and **In tags, note or url** (the address, a tag, the note or the fetched description) fold behind a heading and a count; click a heading to open it. If only one kind matched there is no heading, and if every group is shut the strongest opens itself. An open group shows twelve rows and a *N more* row for the rest. The ranking also remembers which result you picked for the letters you typed, so a word you always type for one bookmark soon puts it first.
 
 <p align="center">
   <img src="screenshots/manual.md/08-search.jpg" alt="The search panel with /Lib typed: a name search that lists two bookmarks" width="860">
@@ -1297,7 +1318,7 @@ With web search on ([§8.3](#83-beyond-the-current-page)), nextDash offers a sec
 
 ### 8.5 Commands (`:`)
 
-A lone **`:`** lists every command in five groups — Bookmarks, Search & navigate, Look & layout, Smart collections, Settings & tools — with your recent commands on top. Commands with an argument complete as you type. A toggle keeps the palette open and shows its new state.
+A lone **`:`** lists every command in five groups — Bookmarks, Search & navigate, Look & layout, Smart collections, Settings & tools — with your recent commands on top. Commands with an argument complete as you type. A toggle keeps the palette open and shows its new state; a setting command such as `:density`, `:columns` or `:theme` lists its choices with the one in force tinted and marked *current*.
 
 | Command | What it does |
 |---------|--------------|
@@ -1345,9 +1366,11 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 
 ### 8.6 Finders (`?`)
 
-`?shortcut query` sends the query to another site: `?g nextdash` searches Google. A fresh install has DuckDuckGo on `du`. `?w` without a query opens the site's own search page.
+`?shortcut query` sends the query to another site: `?g nextdash` searches Google. A fresh install has DuckDuckGo on `du` and Brave Search on `b` (an install that already existed was given Brave Search once; delete it and it stays deleted). `?w` without a query opens the site's own search page.
 
 **Structure → Finders** manages them: a name, a shortcut and a URL with `%s` where the query goes (for example `https://github.com/search?q=%s`). Names and shortcuts must be unique. Rows can be dragged or moved with `↑`/`↓`, carry tags, and show how often each finder was used. **Include finders in search** (Behavior → Keyboard & search) shows them among ordinary results.
+
+With that setting on (it is by default), a search that matches nothing lists your three most-used finders under the *no matches* line — **Search on …**, with what you typed already filled in. Click one, or reach it with `↓`, to ask that site instead.
 
 <sub>[↑ Contents](#table-of-contents)</sub>
 
@@ -1455,7 +1478,17 @@ Editing or deleting a bookmark inside a collection changes the real bookmark.
 
 ### 9.7 Custom and tag collections
 
-**Custom collections** (Structure → Collections) take a name, an icon and rules on tag, category or shortcut, combined with AND or OR, including *excludes*. The value fields suggest what is already in use.
+**Custom collections** (Structure → Collections) take a name, an icon and rules, combined with AND or OR. A rule picks a field:
+
+| Field | Matches |
+|---|---|
+| **Tag**, **Category**, **Shortcut** | A bookmark that has (*includes*) or lacks (*excludes*) the value you give. The value fields suggest what is already in use |
+| **Pinned** | Pinned bookmarks. No value to fill in |
+| **Has no tags** | Bookmarks without a tag. No value to fill in |
+| **Not opened in (days)** | Bookmarks not opened for that many days, or never |
+| **Changed within (days)** | Bookmarks you edited in the last that many days |
+
+For example, *Has no tags* AND *Not opened in 90 days* gathers what you saved and forgot.
 
 **Tag collections** turn each tag used by enough bookmarks into its own group; raise the minimum to keep one-off tags out.
 
@@ -1675,6 +1708,8 @@ Re-check stays in the row beside the main button when that button is Open. Keep 
 
 **3. The end of a pile.** Work through counts what the run did — fixed, deleted, kept, snoozed — and offers the next pile that still has bookmarks (**Start: …**), or **Back to the list**.
 
+**Ten links, two minutes.** When five or more bookmarks need a decision, a card in the corner says *10 links to review* and names what is waiting — for instance how many are broken or never opened. **Start** runs a session over the worst ten in this same view. It ends with a count of what you dealt with — skipping is not handling — and offers **Another ten** while more are waiting. **Done for today** puts the offer away until tomorrow; **Not today** on the card does the same, and **Remind me in 30 days** puts it away for a month without touching any bookmark. **Offer to review links** under Behavior → Privacy & sync → Onboarding switches the card off; link checking itself stays on.
+
 When the row has a preview nextDash could fetch but the bookmark does not store, its reason reads *"Preview fetched, not saved yet"* and a **Save preview** button (**`s`**) writes it onto the bookmark.
 
 Beside it, the **Collection ▾** menu gathers what a whole-collection toolbar used to hold, in groups:
@@ -1809,6 +1844,8 @@ Set the mode in the bookmark form, the Bookmarks view's side panel, the right-cl
 
 **What a check records.** A failure stores its cause — DNS, timeout, refused, TLS, redirect, content or an HTTP status. A failed check is tried again five seconds later and only counts if that fails too. A page that asks *are you a robot*, a rate limit or anything else unclear reads as **unknown**, not broken. Certificates are read from every HTTPS check.
 
+**How long it has been failing.** The first failure of a run is kept, and the next check that passes clears it. A failing row says *failing for 3 weeks*, and hovering shows the day it first failed; a monitored bookmark says how long it has been down instead. When the site only refused our checks (a 403, a bot check), the row says *not answering us for…* rather than calling the page dead. The side panel's Health tab (*Broken · 3w*), the link preview card, the **Rot report** ([§11.10](#1110-rot-report)) and the Statistics figure *longest-standing break* ([§18](#18-statistics)) draw on the same date.
+
 **Services behind a sign-in.** On a bookmark's Health tab, **Expected response** offers:
 
 - **Address to check instead** — for example a status endpoint, while the bookmark keeps its own address.
@@ -1894,7 +1931,7 @@ They need a secure context: Safari and every browser on iPhone and iPad require 
 
 ### 12.5 Maintenance windows
 
-A window is a recurring period when downtime is expected — days, a start and an end. An end before the start runs past midnight. Windows apply to every monitor.
+A window is a recurring period when downtime is expected — days, a start and an end. An end before the start runs past midnight. The times are in **your** time zone: the browser's zone is saved with the windows when you change them, so a window you set for 02:00 is 02:00 where you are, even when the container itself runs on UTC. Windows apply to every monitor. Quiet hours use the same clock.
 
 Inside a window, checks still run and the heartbeat still records them, but a failure opens no incident, does not count against uptime or toward the failures an alert waits for, and sends no alert. A failure that continues after the window raises the alarm as usual.
 
@@ -3105,7 +3142,7 @@ The other tabs:
 
 - **Tags** — rename or delete a tag everywhere ([§10.3](#103-managing-tags)).
 - **Tag suggestions** and **Your rules** — [§10.4](#104-tag-suggestions).
-- **Settings** — what a new bookmark starts with (checking mode, monitor interval), when bulk actions ask first, the stale threshold, and the archive used for *See an old copy*.
+- **Settings** — what a new bookmark starts with (**Availability**, which is **Periodic** unless you change it; pinned; monitor interval), when bulk actions ask first, the stale threshold, and the archive used for *See an old copy*.
 - **Local copies** — [§12.7](#127-keeping-a-copy-of-a-page).
 
 <a id="175-behavior"></a>
