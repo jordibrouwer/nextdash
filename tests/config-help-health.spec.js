@@ -242,21 +242,19 @@ test.describe('config help — inbox', () => {
         const body = page.locator('#config-help-body');
 
         await expect(body).toContainText(/Enable the inbox/i);
-        await expect(body).toContainText(/500/);
-        await expect(body).toContainText(/silently dropped/i);
         await expect(body).toContainText(/[Dd]eduplicat/);
     });
 
-    // The cap and undo interact in a way that is not guessable: a restored link
-    // carries its original timestamp, which is exactly what the cap trims by.
-    test('explains that undo still works at the cap', async ({ page }) => {
+    // The inbox lost its cap of 500: Help says so, and no longer tells the
+    // reader that links are dropped to make room.
+    test('says the inbox has no limit', async ({ page }) => {
         await openInboxHelp(page);
         const body = page.locator('#config-help-body');
 
-        await expect(body).toContainText(/undo still works/i);
-        await expect(body).toContainText(/oldest of the others makes way/i);
-        // And that a genuine refusal is reported rather than faked.
-        await expect(body).toContainText(/says the inbox is full/i);
+        await expect(body).toContainText(/has no limit/i);
+        await expect(body).not.toContainText(/inboxMaxItems/);
+        await expect(body).not.toContainText(/silently dropped/i);
+        await expect(body).not.toContainText(/makes way/i);
     });
 });
 
