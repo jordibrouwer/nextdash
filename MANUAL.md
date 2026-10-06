@@ -1043,12 +1043,7 @@ Editing or deleting a bookmark inside a collection changes the real bookmark.
 
 **Tag collections** turn each tag used by enough bookmarks into its own group; raise the minimum to keep one-off tags out.
 
-<sub>[↑ Contents](#table-of-contents)</sub>
-
----
-
-<a id="10-tags"></a>
-
+<a id="98-page-templates"></a>
 
 ### 9.8 Page templates
 
@@ -1059,6 +1054,13 @@ A page can be saved as a **template file** and imported on another install, or k
 - **Start from a template.** An empty page offers **Start from a template…**: the template fills that page instead of making another.
 
 A file is at most 2 MB.
+
+<sub>[↑ Contents](#table-of-contents)</sub>
+
+---
+
+<a id="10-tags"></a>
+
 ## 10. 🏷️ Tags
 
 <a id="101-tags-on-a-bookmark"></a>
