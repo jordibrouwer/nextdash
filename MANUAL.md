@@ -274,7 +274,12 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 
 </details>
 
-**18.** [Statistics](#18-statistics)
+<details>
+<summary><b>18.</b> <a href="#18-statistics">Statistics</a></summary>
+
+- [The tabs: Overview, Usage, Collection, Inbox and Health](#18-statistics)
+
+</details>
 
 <details>
 <summary><b>19.</b> <a href="#19-data-backups-and-import">Data, backups and import</a></summary>
@@ -304,7 +309,14 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 
 </details>
 
-**22.** [Phones, tablets and the installed app](#22-phones-tablets-and-the-installed-app)
+<details>
+<summary><b>22.</b> <a href="#22-phones-tablets-and-the-installed-app">Phones, tablets and the installed app</a></summary>
+
+- [What changes on a phone or tablet](#22-phones-tablets-and-the-installed-app)
+- [Touch gestures](#touch-gestures)
+- [Install as an app](#install-as-an-app)
+
+</details>
 
 <details>
 <summary><b>23.</b> <a href="#23-security-and-self-hosting">Security and self-hosting</a></summary>
@@ -356,7 +368,12 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 
 </details>
 
-**26.** [Glossary](#glossary)
+<details>
+<summary><b>26.</b> <a href="#glossary">Glossary</a></summary>
+
+- [A](#glossary-a) · [B](#glossary-b) · [C](#glossary-c) · [D](#glossary-d) · [E](#glossary-e) · [F](#glossary-f) · [H](#glossary-h) · [I](#glossary-i) · [L](#glossary-l) · [M](#glossary-m) · [N](#glossary-n) · [P](#glossary-p) · [Q](#glossary-q) · [R](#glossary-r) · [S](#glossary-s) · [T](#glossary-t) · [U](#glossary-u) · [V](#glossary-v) · [W](#glossary-w)
+
+</details>
 
 🔤 **[Glossary](#glossary)** — 100 key terms, one line each, linked to where it is explained.
 📌 **[Quick reference](#25-quick-reference)** — the keys, config sections and addresses on one screen.
@@ -3596,6 +3613,8 @@ nextDash adapts to touch screens (a touch device without a hover pointer) rather
 | **Quick-start card** | Skipped | Shown on first visit |
 
 A dismissible banner explains the limits once.
+
+<a id="touch-gestures"></a>
 
 **Touch gestures:**
 
