@@ -5,6 +5,19 @@
   "modalLead": "Config → Overview names the <strong>version you run</strong> and says when a newer one is out, a widget <strong>moves to another page</strong> from its settings, and a long round of fixes.",
   "sections": [
     {
+      "title": "First start",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A new install asks what you run.</strong> Pick Homelab, Media server or Developer, type the address your services run on, and the first page fills with them on their usual ports. Or keep the starter links."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The same three templates</strong> are in Import a page…, with one address that fills in every service."
+        }
+      ]
+    },
+    {
       "title": "Config",
       "items": [
         {
@@ -47,6 +60,10 @@
         {
           "badge": "fix",
           "text": "<strong>Retry on a stopped feed answers straight away</strong> instead of fetching every feed first."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A Notes widget you removed stays removed</strong> after a restart."
         }
       ]
     },
