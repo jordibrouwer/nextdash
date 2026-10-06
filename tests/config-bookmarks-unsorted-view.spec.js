@@ -237,8 +237,15 @@ test('Delete on a selection in the Unsorted view deletes it', async ({ page }) =
     await page.locator('#config-bm-search').fill('cfg-del');
     await expect.poll(async () => (await configView(page)).visible.length, { timeout: 10_000 }).toBe(2);
     await clearSelection(page);
-    await page.locator('#config-bm-list [data-bm-key*="cfg-delone.example"]').hover();
-    await page.locator('#config-bm-list [data-bm-key*="cfg-delone.example"] input[type="checkbox"]').check();
+    // The tick shows on hover, and the list can still repaint once after the
+    // search settles: a row drawn anew is not under the pointer any more, and
+    // CI waited thirty seconds on a checkbox that stayed hidden. Hover again
+    // until the tick takes.
+    const row = page.locator('#config-bm-list [data-bm-key*="cfg-delone.example"]');
+    await expect(async () => {
+        await row.hover();
+        await row.locator('input[type="checkbox"]').check({ timeout: 2_000 });
+    }).toPass({ timeout: 15_000 });
     await page.locator('#config-bm-list [data-bm-key*="cfg-deltwo.example"] input[type="checkbox"]').check();
 
     await page.locator('[data-bm-selbar-action="delete"]').click();
