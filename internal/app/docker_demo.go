@@ -1,8 +1,10 @@
 package app
 
 import (
+	"crypto/sha256"
 	"embed"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -42,18 +44,104 @@ type demoDocker struct {
 	containers map[string]*demoContainer
 	order      []string
 	seq        int
+	// images is what each tag points at now; byID keeps every image, the
+	// ones a pull left behind included; newer is what the registry would
+	// hand out for a tag that has a newer image than the one pulled.
+	images map[string]*demoImage
+	byID   map[string]*demoImage
+	newer  map[string]*demoImage
+}
+
+// demoImage is one image: its id, the digest the registry knows it by, and
+// the labels the drawer's changelog reads.
+type demoImage struct {
+	ID, Digest, Version, Source string
+}
+
+// demoImageInfo is each tag's running version and source, and the version a
+// newer image would bring ("" when the tag is up to date).
+var demoImageInfo = map[string][3]string{
+	"jellyfin/jellyfin:10.10":                       {"10.10.3", "https://github.com/jellyfin/jellyfin", "10.10.4"},
+	"lscr.io/linuxserver/sonarr:4":                  {"4.0.11", "https://github.com/linuxserver/docker-sonarr", "4.0.12"},
+	"lscr.io/linuxserver/radarr:5":                  {"5.16.3", "https://github.com/linuxserver/docker-radarr", ""},
+	"lscr.io/linuxserver/prowlarr:1":                {"1.28.2", "https://github.com/linuxserver/docker-prowlarr", ""},
+	"lscr.io/linuxserver/qbittorrent:5":             {"5.0.3", "https://github.com/linuxserver/docker-qbittorrent", ""},
+	"lscr.io/linuxserver/bazarr:1":                  {"1.4.5", "https://github.com/linuxserver/docker-bazarr", ""},
+	"ghcr.io/immich-app/immich-server:v1.120":       {"v1.120.1", "https://github.com/immich-app/immich", "v1.120.2"},
+	"tensorchord/pgvecto-rs:pg16-v0.2":              {"pg16-v0.2.0", "https://github.com/tensorchord/pgvecto.rs", ""},
+	"vaultwarden/server:1.32":                       {"1.32.5", "https://github.com/dani-garcia/vaultwarden", ""},
+	"louislam/uptime-kuma:1":                        {"1.23.15", "https://github.com/louislam/uptime-kuma", ""},
+	"ghcr.io/home-assistant/home-assistant:2024.12": {"2024.12.1", "https://github.com/home-assistant/core", "2024.12.2"},
+	"pihole/pihole:2024.07":                         {"2024.07.0", "https://github.com/pi-hole/docker-pi-hole", ""},
+	"traefik:v3.2":                                  {"v3.2.1", "https://github.com/traefik/traefik", "v3.2.2"},
+	"ghcr.io/jordibrouwer/nextdash:latest":          {"v1.17.5", "https://github.com/jordibrouwer/nextDash", ""},
+}
+
+func demoImageFor(ref, version, source string) *demoImage {
+	return &demoImage{ID: "sha256:" + demoID(ref+"@"+version), Digest: "sha256:" + demoID("digest "+ref+"@"+version), Version: version, Source: source}
+}
+
+// repoOf is a reference without its tag, as RepoDigests name it.
+func repoOf(ref string) string {
+	if at := strings.LastIndex(ref, ":"); at > strings.LastIndex(ref, "/") {
+		return ref[:at]
+	}
+	return ref
+}
+
+// demoRemoteDigest is what the demo's registry answers for a tag: the newer
+// image's digest when there is one, otherwise the pulled one's.
+func demoRemoteDigest(ref imageRef) string {
+	d := demoDockerEngine
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	for tag, img := range d.images {
+		parsed, ok := parseImageRef(tag)
+		if !ok || parsed.key() != ref.key() {
+			continue
+		}
+		if next, ok := d.newer[tag]; ok {
+			return next.Digest
+		}
+		return img.Digest
+	}
+	return ""
+}
+
+// demoReleases is the changelog the demo's GitHub would give: the running
+// version and, for a tag with a newer image, the one after it.
+func demoReleases(owner, repo string) []dockerGithubRelease {
+	d := demoDockerEngine
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	source := "https://github.com/" + owner + "/" + repo
+	var out []dockerGithubRelease
+	for tag, img := range d.images {
+		if img.Source != source {
+			continue
+		}
+		url := source + "/releases"
+		if next, ok := d.newer[tag]; ok {
+			out = append(out, dockerGithubRelease{Tag: next.Version, Name: next.Version, URL: url,
+				Published: time.Now().Add(-26 * time.Hour).UTC().Format(time.RFC3339),
+				Body:      "Sample release notes in the nextDash demo.\n\n- Fixes and small improvements\n- Updated dependencies"})
+		}
+		out = append(out, dockerGithubRelease{Tag: img.Version, Name: img.Version, URL: url,
+			Published: time.Now().Add(-20 * 24 * time.Hour).UTC().Format(time.RFC3339),
+			Body:      "Sample release notes in the nextDash demo: the version this container runs."})
+		break
+	}
+	return out
 }
 
 var demoDockerEngine = &demoDocker{}
 
 var demoVersionPrefix = regexp.MustCompile(`^/v[0-9]+\.[0-9]+`)
 
+// demoID is a stable 64-character id for a name, as the daemon's ids look.
 func demoID(name string) string {
-	id := fmt.Sprintf("%x", name)
-	for len(id) < 64 {
-		id += "0"
-	}
-	return id[:64]
+	sum := sha256.Sum256([]byte(name))
+	return hex.EncodeToString(sum[:])
 }
 
 // reset puts the containers back to the demo's start.
@@ -93,11 +181,23 @@ func (d *demoDocker) reset(now time.Time) {
 			Logs: []string{"INFO server starting on port 8080", "INFO server demo mode"}},
 	}
 	d.containers = map[string]*demoContainer{}
+	d.images, d.byID, d.newer = map[string]*demoImage{}, map[string]*demoImage{}, map[string]*demoImage{}
 	d.order = d.order[:0]
+	for ref, info := range demoImageInfo {
+		img := demoImageFor(ref, info[0], info[1])
+		d.images[ref], d.byID[img.ID] = img, img
+		if info[2] != "" {
+			d.newer[ref] = demoImageFor(ref, info[2], info[1])
+		}
+	}
 	for i := range list {
 		c := list[i]
 		c.ID = demoID(c.Name)
-		c.ImageID = "sha256:" + demoID(c.Image)
+		if img, ok := d.images[c.Image]; ok {
+			c.ImageID = img.ID
+		} else {
+			c.ImageID = "sha256:" + demoID(c.Image)
+		}
 		d.containers[c.ID] = &c
 		d.order = append(d.order, c.ID)
 	}
@@ -207,19 +307,31 @@ func (d *demoDocker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		d.serveInspect(w, strings.TrimSuffix(strings.TrimPrefix(path, "/containers/"), "/json"))
 	case r.Method == http.MethodGet && path == "/images/json":
 		out := []map[string]any{}
-		for _, c := range d.containers {
-			out = append(out, map[string]any{"Id": c.ImageID, "RepoTags": []string{c.Image}})
+		for ref, img := range d.images {
+			out = append(out, map[string]any{"Id": img.ID, "RepoTags": []string{ref}})
 		}
 		demoJSON(w, http.StatusOK, out)
 	case r.Method == http.MethodGet && strings.HasPrefix(path, "/images/") && strings.HasSuffix(path, "/json"):
 		ref := strings.TrimSuffix(strings.TrimPrefix(path, "/images/"), "/json")
-		for _, c := range d.containers {
-			if c.Image == ref || c.ImageID == ref {
-				demoJSON(w, http.StatusOK, map[string]any{"Id": c.ImageID, "RepoDigests": []string{}, "Config": map[string]any{"Labels": map[string]string{}}})
-				return
+		// By tag, or by id for an image a pull left behind; the tag it was
+		// pulled under is the one its source belongs to.
+		img, tag := d.images[ref], ref
+		if img == nil {
+			if img = d.byID[ref]; img != nil {
+				for t, info := range demoImageInfo {
+					if info[1] == img.Source {
+						tag = t
+					}
+				}
 			}
 		}
-		demoJSON(w, http.StatusNotFound, map[string]string{"message": "no such image"})
+		if img == nil {
+			demoJSON(w, http.StatusNotFound, map[string]string{"message": "no such image"})
+			return
+		}
+		demoJSON(w, http.StatusOK, map[string]any{"Id": img.ID, "RepoDigests": []string{repoOf(tag) + "@" + img.Digest},
+			"Config": map[string]any{"Labels": map[string]string{
+				"org.opencontainers.image.version": img.Version, "org.opencontainers.image.source": img.Source}}})
 	case r.Method == http.MethodGet && strings.HasPrefix(path, "/containers/") && strings.HasSuffix(path, "/stats"):
 		d.serveStats(w, strings.TrimSuffix(strings.TrimPrefix(path, "/containers/"), "/stats"), now)
 	case r.Method == http.MethodPost && strings.HasPrefix(path, "/containers/") && path != "/containers/create":
@@ -232,8 +344,20 @@ func (d *demoDocker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case r.Method == http.MethodPost && path == "/containers/create":
 		d.serveCreate(w, r, now)
 	case r.Method == http.MethodPost && path == "/images/create":
+		// A pull moves the tag to the newer image, when the registry has one;
+		// the old one stays, by id, for the containers still on it.
+		ref := r.URL.Query().Get("fromImage")
+		if tag := r.URL.Query().Get("tag"); tag != "" {
+			ref += ":" + tag
+		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte("{\"status\":\"Pulling\"}\n{\"status\":\"Image is up to date\"}\n"))
+		if next, ok := d.newer[ref]; ok {
+			d.images[ref], d.byID[next.ID] = next, next
+			delete(d.newer, ref)
+			_, _ = w.Write([]byte("{\"status\":\"Pulling from " + repoOf(ref) + "\"}\n{\"status\":\"Downloaded newer image for " + ref + "\"}\n"))
+			return
+		}
+		_, _ = w.Write([]byte("{\"status\":\"Pulling\"}\n{\"status\":\"Image is up to date for " + ref + "\"}\n"))
 	case r.Method == http.MethodPost && strings.HasPrefix(path, "/networks/"):
 		w.WriteHeader(http.StatusOK)
 	case r.Method == http.MethodGet && path == "/system/df":
@@ -254,8 +378,14 @@ func (d *demoDocker) serveList(w http.ResponseWriter, now time.Time) {
 		if !ok {
 			continue
 		}
+		// As the daemon does: once the tag points at another image than the
+		// one the container runs, the list names the image by its id.
+		image := c.Image
+		if img, ok := d.images[c.Image]; ok && img.ID != c.ImageID {
+			image = c.ImageID
+		}
 		out = append(out, map[string]any{
-			"Id": c.ID, "Names": []string{"/" + c.Name}, "Image": c.Image, "ImageID": c.ImageID,
+			"Id": c.ID, "Names": []string{"/" + c.Name}, "Image": image, "ImageID": c.ImageID,
 			"State": c.State, "Status": c.status(now), "Created": c.Created, "Labels": c.labels(),
 			"Ports": c.ports(), "HostConfig": map[string]any{"NetworkMode": c.Project + "_default"},
 			"NetworkSettings": map[string]any{"Networks": c.networks()}, "Mounts": []any{},
@@ -362,6 +492,10 @@ func (d *demoDocker) serveCreate(w http.ResponseWriter, r *http.Request, now tim
 		}
 	}
 	base.Name, base.State, base.Created = name, "created", now.Unix()
+	base.Image = body.Image
+	if img, ok := d.images[body.Image]; ok {
+		base.ImageID = img.ID
+	}
 	base.ID = demoID(fmt.Sprintf("%s-%d", name, d.seq))
 	if len(d.containers) >= 40 {
 		demoJSON(w, http.StatusConflict, map[string]string{"message": "the demo holds no more containers"})

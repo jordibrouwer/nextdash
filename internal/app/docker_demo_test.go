@@ -68,3 +68,46 @@ func TestDemoUnraidAnswersFromTheFixture(t *testing.T) {
 		t.Fatalf("answer %s, %v", raw, err)
 	}
 }
+
+// Updates, all within the demo's daemon: the registry knows newer images for
+// a few tags, a pull moves the tag, and the changelog names the new version.
+func TestDemoDockerUpdatesAreItsOwn(t *testing.T) {
+	t.Setenv("NEXTDASH_DEMO", "1")
+	t.Setenv("NEXTDASH_DOCKER_SOCKET", "")
+	t.Setenv("NEXTDASH_DOCKER_CONTROL", "")
+	h := newTestHandlers(t)
+	if err := startDemoDocker(); err != nil {
+		t.Skipf("unix sockets unavailable here: %v", err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	store, err := h.runDockerUpdateCheck(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	available := map[string]bool{}
+	for image, u := range store.Images {
+		if u.Status == "available" {
+			available[image] = true
+		}
+	}
+	if !available["jellyfin/jellyfin:10.10"] || available["lscr.io/linuxserver/radarr:5"] || len(available) != 5 {
+		for image, u := range store.Images {
+			t.Logf("%s: %+v", image, *u)
+		}
+		t.Fatalf("updates available: %v", available)
+	}
+	if releases := demoReleases("jellyfin", "jellyfin"); len(releases) != 2 || releases[0].Tag != "10.10.4" {
+		t.Errorf("changelog: %+v", releases)
+	}
+
+	api, _ := newDockerAPI()
+	if err := api.pullImage(ctx, "jellyfin/jellyfin:10.10"); err != nil {
+		t.Fatalf("pull: %v", err)
+	}
+	store, _ = h.runDockerUpdateCheck(ctx)
+	if u := store.Images["jellyfin/jellyfin:10.10"]; u == nil || u.Status != "current" {
+		t.Errorf("after the pull: %+v", u)
+	}
+	demoDockerEngine.reset(time.Now())
+}

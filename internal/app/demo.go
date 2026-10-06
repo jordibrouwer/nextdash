@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -240,6 +241,15 @@ func (h *Handlers) resetDemo() error {
 		return err
 	}
 	demoDockerEngine.reset(time.Now())
+	// The update badges, from the demo's own registry: a check asks nobody
+	// outside, so it runs at once rather than on the hourly round.
+	if api, _ := newDockerAPI(); api != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		if _, err := h.runDockerUpdateCheck(ctx); err != nil {
+			logWarn(logComponentServer, "the demo's update check failed (%v)", err)
+		}
+		cancel()
+	}
 	h.invalidateHealthReportCache()
 	applyRuntimeSettings(h.store.GetSettings())
 	demo.lastWrite.Store(0)

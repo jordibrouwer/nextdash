@@ -66,9 +66,9 @@ var demoDeniedWrites = []string{
 	"/api/feeds/poll", "/api/feeds/retry", "/api/previews/refresh", "/api/bookmarks/prefetch-icons",
 	"/api/health/retest-all", "/api/health/auto-heal-apply", "/api/health/check-url",
 	"/api/health/archive-save", "/api/health/archive-settings", "/api/archives/capture", "/api/archives/",
-	"/api/docker/updates/check", "/mcp",
+	"/mcp",
 	// Secrets.
-	"/api/health/credentials", "/api/web-search/brave-key", "/api/docker/github-token",
+	"/api/health/credentials", "/api/web-search/brave-key",
 }
 
 // demoAllowedWrites work in the demo as they do anywhere: they change the
@@ -80,6 +80,9 @@ var demoAllowedWrites = []string{
 	"/api/categories", "/api/colors", "/api/colors/reset", "/api/finders",
 	"/api/docker/binds/measure", "/api/docker/containers/{id}/{action}", "/api/docker/prune/{kind}",
 	"/api/docker/updates/choice", "/api/docker/volumes/{name}",
+	// Docker is the demo's own daemon, registry and changelog (docker_demo.go):
+	// checking for updates asks nobody outside, and the token is never sent.
+	"/api/docker/updates/check", "/api/docker/github-token",
 	"/api/health/accept-drift", "/api/health/cache-scan", "/api/health/check-mode", "/api/health/check-mode-all",
 	"/api/health/delete-bookmark", "/api/health/delete-bookmarks", "/api/health/expectations",
 	"/api/health/expectations-bulk", "/api/health/ignore", "/api/health/merge-duplicates",
