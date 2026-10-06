@@ -233,6 +233,11 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 - [On the dashboard](#153-on-the-dashboard)
 - [System widgets and what they need](#154-system-widgets-and-what-they-need)
 - [The Custom widget](#155-the-custom-widget)
+  - [Step by step](#custom-widget-step-by-step)
+  - [Sign-in](#custom-widget-sign-in)
+  - [Paths and shapes](#custom-widget-paths)
+  - [Presets](#custom-widget-presets)
+  - [When it shows nothing](#custom-widget-troubleshooting)
 - [Unraid widgets](#156-unraid-widgets)
 
 </details>
@@ -2261,36 +2266,245 @@ Then name `/mnt/user` and `/mnt/cache` in the Disks widget. A user share reports
 
 ### 15.5 The Custom widget
 
-The Custom widget reads figures from any service that answers with JSON.
+The Custom widget reads figures from any service that answers with JSON — the queue in Sonarr, blocked queries in Pi-hole, a sensor in Home Assistant, or something you run yourself. It only reads. Your server makes the request, so a key never reaches the browser, and a machine on your network is reachable as long as **Allow localhost & private-network bookmarks** is on ([§23.3](#233-local-addresses-and-outgoing-requests)), which it is by default.
 
-- **Address and method** — any `http`/`https` endpoint, `GET` or `POST`. Your server makes the request, so a machine on your network is reachable and no key reaches the browser. The widget only reads.
-- **Sign-in** — an API key in a header, a key in the address (the stored address keeps a `YOUR_KEY` placeholder), a username and password, a session sign-in for services such as qBittorrent, or a sign-in that hands out a token (Nginx Proxy Manager, Pi-hole v6, Duplicati, Beszel), which nextDash keeps and renews; a password-only sign-in asks for no username. Secrets are stored in their own file and left out of backups unless you include stored tokens. A saved key shows as *Set*; the eye button reveals it. Stored sign-ins can also be used by health checks ([§12.1](#121-availability-modes)).
-- **Paths** — `server.disk[0].used` walks objects and arrays; `sensor.p1_meter` finds a list entry by its own name; `[entity_id=sensor.p1_meter].state` is the explicit form. A `#` at the end counts: `list#` is the length of a list, `list[state=failed]#` the entries that match; `[-1]` is the last entry. Up to eight figures. A path that stops matching is marked, not shown as zero.
-- **Shape** — *Count*, *Size* (bytes), *Data size* (with the unit the service counts in), *Speed* (bits per second, `1.046 Gbps`), *Power* (`4.5 kW`), *Temperature* (in the unit set for the weather; not converted), *Percentage (0–100)*, *Percentage from a share (0–1)* (a service that reports 43% as `0.43`), *Duration*, *Milliseconds*, *Time ago* or *Text*.
-- **Decimals** — *Auto* or 0–3, also for numbers the service sends as text.
-- **Size** — *Normal*, *Large*, *Small*, or *Bar* for a percentage.
-- **Or a list** — point at an array and the tile shows up to twenty rows.
-- **Refresh every** — 30 seconds to 24 hours, five minutes by default. One answer is shared by everyone viewing the dashboard.
+Start from one of the 42 presets ([Presets](#custom-widget-presets)) or from an empty widget. The parts, in the order you meet them:
 
-**Try it.** **Ask now** makes the request as the panel stands — including a key you only just typed — and shows the answer (with a search box), what the tile would show, and the request's method, host, status, time, size and whether a sign-in was sent. The **Found** column shows what each path read. **Keep watching** repeats the request every 5–60 seconds for up to five minutes. Nothing is saved by asking.
+- [Step by step](#custom-widget-step-by-step) — from an empty widget to a working tile.
+- [Sign-in](#custom-widget-sign-in) — the ways to prove who you are to a service.
+- [Paths and shapes](#custom-widget-paths) — how a figure is found in the answer and how it is written.
+- [Presets](#custom-widget-presets) — every service that comes filled in.
+- [When it shows nothing](#custom-widget-troubleshooting) — what each message means.
 
-**Refresh now** — right-click the tile's title to skip the cache. It needs the write token if the install has one.
+<a id="custom-widget-step-by-step"></a>
 
-An answer has eight seconds to arrive and is read up to one megabyte. There is no arithmetic.
+#### 🪜 Step by step
 
-**Forty-one services come filled in** (qBittorrent twice: with its sign-in, and with the API key of 5.2 and later):
+1. Open **Config → Widgets** and press **Add a widget**. Choose **Custom**, under *And anything else: the Custom widget*. The widget lands at the end of the page with its settings open.
+2. Under **Start from a service**, pick one in **Service** — or leave it empty for a service that is not in the list. A preset fills in the address, the figures, the sign-in type and the refresh interval, and a notice says what is still left to do. See [Presets](#custom-widget-presets).
+3. Under **Where to read from**, type the **Address to read**. If a preset put a sample address there (`*.local`), replace the host and leave the path. A word such as `YOUR_NODE` in the address or the figures is a placeholder for something of your own; the panel says which. **How to ask** is `GET`, or `POST` for the few services that only answer that. Nothing is sent with either.
+4. Still there, **Refresh every (seconds)** takes 30 seconds to 24 hours; empty means five minutes. **List from (path, optional)** points at an array to show as rows instead of figures, up to twenty.
+5. **Sign in with** picks how nextDash proves itself: nothing, an API key, a username and password, or a sign-in nextDash keeps. Paste the key or type the password; a saved one shows as *Set*, and the eye button reveals it. See [Sign-in](#custom-widget-sign-in).
+6. Under **Figures to read**, press **Add a figure** for each reading, up to eight. Each row has a **Path**, a **Label**, **Show as**, **Decimals** and a **Size**. A preset has already filled these in. See [Paths and shapes](#custom-widget-paths).
+7. Under **Try it**, press **Ask now**. nextDash makes the request with what is in the panel right now — including a key you only just typed — and shows three things: **What came back** (with a **Find a key…** search box), **What the tile would show**, and the request's method, host, status, time, size and whether a sign-in was sent. Nothing is saved by asking.
+8. Read the **Found** column. Each row shows what its path read, or *not found*. Fix a path, press **Ask now** again, and repeat until every row reads what you expect. **Keep watching** repeats the request every 5, 10, 30 or 60 seconds for up to five minutes, which helps when you are watching a figure move.
+9. Under **On the dashboard**, choose the **Width** — one column or two. Press **Save changes**. Until you do, the tile does not change.
 
-| Group | Services |
-|---|---|
-| **Media & downloads** | Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr (Overseerr / Jellyseerr), Tautulli, Jellyfin / Emby, Plex, Immich, qBittorrent (login), qBittorrent (5.2+, API key), SABnzbd, NZBGet, Whisparr, LazyLibrarian, NZBHydra2, Komga, PhotoPrism, Jellystat, Mylar3 |
-| **Network** | Pi-hole (v6), AdGuard Home, Traefik, Speedtest Tracker, Nginx Proxy Manager, Tailscale |
-| **System** | Proxmox VE, Glances, Syncthing, Duplicati |
-| **Monitoring** | Beszel, Netdata, Gatus, Uptime Kuma, Scrutiny, Healthchecks |
-| **Apps** | Nextcloud, Paperless-ngx, Home Assistant, Grafana, ntfy |
+**Refresh now.** Right-click the tile's title to skip the cache. It needs the write token if the install has one.
 
-Retired presets — Readarr, Pi-hole v5 and TrueNAS, whose APIs are gone — are no longer offered; a widget started from one keeps working. Every preset is tested against its service's recorded answer.
+**Shared by everyone.** One answer is kept for everyone looking at the dashboard, and the tile refreshes itself on its interval while the tab is visible. A failed request is remembered for 30 seconds, so a service that is down is not asked again by every open dashboard in between.
 
-A preset fills in a sample address, the useful path, the figures with labels and shapes, and the sign-in type, and says where to find the key. Where a header needs a word before the token (`Bearer `, `Token `), the preset puts it in the box. Everything stays editable.
+<a id="custom-widget-sign-in"></a>
+
+#### 🔑 Sign-in
+
+**Sign in with** offers up to six choices, depending on the widget:
+
+- **Nothing — ask anonymously** — for a service that answers without a credential.
+- **An API key** — a **Header** name and the **API key**. When the header is `Authorization`, most services want a word before the token (`Bearer `, `Token `); a preset starts the box with that word, and you paste the token after it.
+- **A key in the address** — for services that take their key as a parameter (SABnzbd, Plex, LazyLibrarian, Mylar3). The stored address keeps a `YOUR_KEY` placeholder, and nextDash puts the key in on each request, so it stays out of the widget's file. It is offered once a preset has chosen it.
+- **A sign-in that nextDash keeps** — you give the username and password (a service that signs in with a password alone, such as Pi-hole v6 or Duplicati, asks for no username) and nextDash signs in itself, keeps the session or token, and signs in again when it expires. This is how qBittorrent (login), Nginx Proxy Manager, Pi-hole v6, Duplicati and Beszel work. It is offered once a preset has chosen it.
+- **A username and password** — plain basic sign-in, sent with every request.
+- **A sign-in saved elsewhere** — appears once a sign-in is already stored, by another widget for instance, so you pick it instead of typing it again. Health checks can use the same stored sign-ins ([§12.1](#121-availability-modes)).
+
+Secrets are stored in their own file, readable only by the account nextDash runs as, and left out of backups unless you include stored tokens ([§19.1](#191-backups-data)); the widget itself keeps only a reference. A sign-in is not sent along when the service redirects the request to a different host.
+
+<a id="custom-widget-paths"></a>
+
+#### 🧭 Paths and shapes
+
+A **path** names one value in the answer. Dots walk into objects, `[0]` picks a list entry by position, and the figure is shown the way **Show as** says.
+
+Take this answer, from a made-up service:
+
+```json
+{
+  "server": {
+    "name": "nas",
+    "cpu": 0.43,
+    "disk": [ { "used": 412000000000 }, { "used": 98000000000 } ]
+  },
+  "jobs": [
+    { "name": "backup", "state": "ok" },
+    { "name": "sync",   "state": "failed" },
+    { "name": "scrub",  "state": "failed" }
+  ]
+}
+```
+
+| Path | Gives | What it does |
+|---|---|---|
+| `server.name` | `nas` | Walks into objects. |
+| `server.disk[0].used` | `412000000000` | `[0]` is the first entry of a list. |
+| `server.disk[-1].used` | `98000000000` | A negative position counts from the end: `[-1]` is the last. |
+| `jobs[-1].name` | `scrub` | The last entry — where a growing list keeps the newest. |
+| `jobs#` | `3` | A `#` at the end counts: the length of a list (or the number of keys of an object). |
+| `jobs[state=failed]#` | `2` | A `[key=value]` filter followed by `#` counts the entries that match. |
+| `jobs[state=failed].name` | `sync` | Without `#`, a filter picks the first entry that matches. |
+| `jobs.sync.state` | `failed` | A name against a list finds the entry that calls itself that (by its `entity_id`, `id`, `name`, `key` or `slug`). |
+| `server.gpu` | *not found* | Not in the answer: the **Found** column says so, and the tile shows a dash, not a zero. |
+
+Some services answer with a list at the top, and Home Assistant answers with every sensor in one:
+
+```json
+[
+  { "entity_id": "sensor.p1_meter", "state": "431", "attributes": { "friendly_name": "P1 meter" } },
+  { "entity_id": "sensor.boiler",   "state": "58.2" }
+]
+```
+
+| Path | Gives | What it does |
+|---|---|---|
+| `[entity_id=sensor.p1_meter].state` | `431` | The explicit form: the entry whose `entity_id` is that, then its `state`. |
+| `sensor.p1_meter` | `431` | The short form. A dotted name is read as one entry, and on its own it gives its `state`. |
+| `sensor.p1_meter.attributes.friendly_name` | `P1 meter` | Anything after the name is walked into the entry. |
+| `[1].state` | `58.2` | A position at the top of the answer. It moves when a device is added, so a name is safer. |
+| `#` | `2` | The number of entries in the answer. |
+
+A path names exactly one value: the first match wins, nothing fans out, and there is no arithmetic — no adding, no dividing, no "free space as a share". A path is at most 200 characters, a label at most 60.
+
+**Show as** chooses how the value is written:
+
+| Show as | Reads | Looks like |
+|---|---|---|
+| Count | A number, rounded to whole, thousands apart | `1 049 808` |
+| Size | Bytes | `130.8 MB` |
+| Data size | A number counted in the unit you pick under **Counted in** (Bytes, KB, MB, GB, TB) — for services that already did the arithmetic | `3342.67` counted in GB shows `3.3 TB` |
+| Speed | Bits per second | `1.046 Gbps` |
+| Power | Watts | `4.5 kW`, `-1.1 kW` |
+| Temperature | A number, with the weather unit's suffix; it is not converted | `21.5 °C` |
+| Percentage (0–100) | A number already on a 0–100 scale | `43.7%` |
+| Percentage from a share (0–1) | A number on a 0–1 scale | `0.43` shows `43%` |
+| Duration | Seconds | `3h`, `5d` — the largest whole unit |
+| Milliseconds | **Seconds**, written as milliseconds | `0.0052` shows `5` |
+| Time ago | A date or a Unix time | `3h` |
+| Text | Whatever is there, cut at 120 characters | `ok` |
+
+Sizes step by 1024, speeds and power by 1000. A field saved before the two percentage choices existed may still say *Percentage (guessed)*, which reads 0 to 1 as a share; it stays until you change it. A value that is not a number is shown as text.
+
+**Decimals** is *Auto* or 0 to 3, and works on every number — also on one a service sends as text, such as `"0.00"`. For *Data size* the box turns into **Counted in**; *Duration* and *Time ago* have no decimals.
+
+**Size** is how the figure is drawn: *Normal*, *Large* (the one that matters), *Small* (context), or *Bar* — a filled bar, offered only for a percentage. Presets choose the sizes for you, including whether a full bar is good news or bad.
+
+<a id="custom-widget-presets"></a>
+
+#### 📚 Presets
+
+**42 presets come filled in** — 41 services, because qBittorrent has two: one for its sign-in, one for the API key of version 5.2 and later. They are in five groups, in the order the **Service** list offers them. Every preset puts in:
+
+- a sample address and the path the service answers on;
+- the figures worth reading, with labels and sizes;
+- the sign-in type, with the word before a token where the header wants one (`Bearer `, `Token `, `PVEAPIToken=`);
+- the refresh interval, five minutes unless the service moves faster or slower;
+- a notice that says where to find the key.
+
+If the widget already has an address, the host you typed is kept and only the path is replaced, so moving a tile from Sonarr to Radarr on the same machine is one choice. Everything stays editable afterwards. A `YOUR_…` word in an address or a figure is a placeholder for something of your own.
+
+Under **Reads** are the figures' labels, in order; **Sign-in** is what to choose under **Sign in with**.
+
+<details>
+<summary><b>Media &amp; downloads</b> — 21 presets</summary>
+
+| Service | Sample address | Reads | Sign-in | Where the key is |
+|---|---|---|---|---|
+| Sonarr | `http://sonarr.local:8989` + `/api/v3/queue/status` | in queue · matched · unknown | API key, header `X-Api-Key` | Settings → General → API Key. |
+| Radarr | `http://radarr.local:7878` + `/api/v3/queue/status` | in queue · matched · unknown | API key, header `X-Api-Key` | Settings → General → API Key. |
+| Lidarr | `http://lidarr.local:8686` + `/api/v1/queue/status` | in queue · matched | API key, header `X-Api-Key` | Settings → General → API Key. |
+| Prowlarr | `http://prowlarr.local:9696` + `/api/v1/system/status` | version · up since | API key, header `X-Api-Key` | Settings → General → API Key. |
+| Bazarr | `http://bazarr.local:6767` + `/api/badges` | episodes wanted · movies wanted · throttled | API key, header `X-API-KEY` | Settings → General → API Key. |
+| Seerr (Overseerr / Jellyseerr) | `http://seerr.local:5055` + `/api/v1/request/count` | pending · processing · available · requests | API key, header `X-Api-Key` | Settings → General → API Key. |
+| Tautulli | `http://tautulli.local:8181` + `/api/v2?cmd=get_activity` | streams · transcoding · kbps · kbps remote | API key, header `X-Api-Key` | Settings → Web Interface → API key. |
+| Jellyfin / Emby | `http://jellyfin.local:8096` + `/Items/Counts` | films · series · episodes | API key, header `X-Emby-Token` | Dashboard → API Keys. |
+| Plex | `http://plex.local:32400` + `/status/sessions` | streams now | Key in the address (`X-Plex-Token`) | The `X-Plex-Token` from any Plex URL. Plex answers XML unless asked otherwise, so nextDash sends the `Accept` header for you. |
+| Immich | `http://immich.local:2283` + `/api/server/statistics` | photos · videos · stored | API key, header `x-api-key` | Account Settings → API Keys. The statistics are an admin's: the key must belong to an admin and include the `server.statistics` permission. |
+| qBittorrent (login) | `http://qbittorrent.local:8080` + `/api/v2/transfer/info` | down/s · up/s · downloaded | Session: username and password, signed in by nextDash | The username and password you sign in to the Web UI with. |
+| qBittorrent (5.2+, API key) | `http://qbittorrent.local:8080` + `/api/v2/transfer/info` | down/s · up/s · connection | API key, header `Authorization` (`Bearer <key>`) | Tools → Options → Web UI → API key. On an older version, choose qBittorrent (login). |
+| SABnzbd | `http://sabnzbd.local:8080` + `/api?mode=queue&output=json` | in queue · speed · MB left · time left | Key in the address (`apikey`) | Config → General → API Key. |
+| NZBGet | `http://nzbget.local:6789` + `/jsonrpc/status` | down/s · MB left | Username and password | The control username and password. Works with the maintained nzbgetcom/nzbget as well as the original. |
+| Whisparr | `http://whisparr.local:6969` + `/api/v3/queue/status` | in queue · matched | API key, header `X-Api-Key` | Settings → General → API Key. |
+| LazyLibrarian | `http://lazylibrarian.local:5299` + `/api?cmd=showStats&json=1` | books · wanted · authors | Key in the address (`apikey`) | Config → Interface → API key (the read-only one is enough), with the API switched on. |
+| NZBHydra2 | `http://nzbhydra.local:5076` + `/externalapi/v1/history/downloads?limit=1` | downloads · last grab | API key, header `X-Api-Key` | Config → Main → API key. A wrong key answers 404, not 401. |
+| Komga | `http://komga.local:25600` + `/api/v1/series?size=1` | series | API key, header `X-API-Key` | Account settings → API keys. |
+| PhotoPrism | `http://photoprism.local:2342` + `/api/v1/config` | photos · videos · to review | API key, header `Authorization` (`Bearer <key>`) | An app password (Settings → Account → Apps and Devices). If every figure reads 0, the password was not accepted: PhotoPrism then answers with its public settings. |
+| Jellystat | `http://jellystat.local:3000` + `/stats/getPlaybackActivity?size=1` | plays logged · last played · played | API key, header `x-api-token` | Settings → API Keys. Counts the plays Jellystat has logged. |
+| Mylar3 | `http://mylar.local:8090` + `/api?cmd=getIndex` | series | Key in the address (`apikey`) | Settings → Web Interface → API key, with the API switched on. |
+
+</details>
+
+<details>
+<summary><b>Network</b> — 6 presets</summary>
+
+| Service | Sample address | Reads | Sign-in | Where the key is |
+|---|---|---|---|---|
+| Pi-hole (v6) | `http://pi.hole` + `/api/stats/summary` | queries · blocked · blocked % · on the list | Session: password only, signed in by nextDash | The web interface password, or an app password from Settings → Web interface / API. |
+| AdGuard Home | `http://adguard.local:3000` + `/control/stats` | queries · blocked · avg ms | Username and password | The web interface username and password. |
+| Traefik | `http://traefik.local:8080` + `/api/overview` | routers · services · router errors · middlewares | None | No credential when the API is exposed on the internal network. |
+| Speedtest Tracker | `http://speedtest.local:8080` + `/api/v1/results/latest` | down · up · ping ms · healthy · last test | API key, header `Authorization` (`Bearer <key>`) | An API token with the `results:read` ability. |
+| Nginx Proxy Manager | `http://npm.local:81` + `/api/reports/hosts` | proxy hosts · redirects · 404 hosts | Session: email address and password, signed in by nextDash | The email address and password you sign in with. An account with two-factor sign-in cannot be used here. |
+| Tailscale | `https://api.tailscale.com` + `/api/v2/tailnet/-/devices` | devices · need an update | API key, header `Authorization` (`Bearer <key>`) | An API access token from the admin console (Settings → Keys). These tokens expire after at most 90 days. |
+
+</details>
+
+<details>
+<summary><b>System</b> — 4 presets</summary>
+
+| Service | Sample address | Reads | Sign-in | Where the key is |
+|---|---|---|---|---|
+| Proxmox VE | `https://proxmox.local:8006` + `/api2/json/nodes/YOUR_NODE/status` | uptime · cpu · ram used | API key, header `Authorization` (`PVEAPIToken=<key>`) | An API token. Replace `YOUR_NODE` in the address with your node's name — it is in the left-hand tree of the Proxmox web interface. |
+| Glances | `http://glances.local:61208` + `/api/4/quicklook` | cpu · memory · swap · load | None | No credential unless the web server was started with a password; then choose basic auth under Sign-in. |
+| Syncthing | `http://syncthing.local:8384` + `/rest/db/completion` | in sync · to sync · to transfer | API key, header `X-API-Key` | Actions → Settings → API Key. |
+| Duplicati | `http://duplicati.local:8200` + `/api/v1/serverstate` | state · status · error | Session: password only, signed in by nextDash | The password of the Duplicati web interface. |
+
+</details>
+
+<details>
+<summary><b>Monitoring</b> — 6 presets</summary>
+
+| Service | Sample address | Reads | Sign-in | Where the key is |
+|---|---|---|---|---|
+| Beszel | `http://beszel.local:8090` + `/api/collections/systems/records?perPage=200` | systems · down · paused | Session: email address and password, signed in by nextDash | The email address and password of a Beszel user (a read-only one is enough) that can see the systems. |
+| Netdata | `http://netdata.local:19999` + `/api/v1/info` | critical · warning · version | None | No credential on a default agent. |
+| Gatus | `http://gatus.local:8080` + `/api/v1/endpoints/statuses?pageSize=1` | down · endpoints | None | No credential unless Gatus is set up with basic security; then choose basic auth under Sign-in. |
+| Uptime Kuma | `http://uptime-kuma.local:3001` + `/api/status-page/heartbeat/YOUR_SLUG` | monitors | None | Reads a published status page, without a credential. Replace `YOUR_SLUG` in the address with its slug. One monitor's latest ping is `heartbeatList.<id>[-1].ping`, with the id from the monitor's own address. |
+| Scrutiny | `http://scrutiny.local:8080` + `/api/summary` | drives · status · temp | None | No credential on a default install. Replace `YOUR_WWN` in the figures with a drive's WWN, shown on its detail page (0x…). |
+| Healthchecks | `https://healthchecks.io` + `/badge/YOUR_BADGE` | status · down · late · checks | None | Paste the JSON badge address (the `json3` one, from Settings → Badges) into the address in place of the sample. The address itself is the key. |
+
+</details>
+
+<details>
+<summary><b>Apps</b> — 5 presets</summary>
+
+| Service | Sample address | Reads | Sign-in | Where the key is |
+|---|---|---|---|---|
+| Nextcloud | `https://nextcloud.local` + `/ocs/v2.php/apps/serverinfo/api/v1/info?format=json` | files · users · active today · free | API key, header `NC-Token`, plus `OCS-APIRequest` that nextDash adds | The token from Administration settings → System (Monitoring). |
+| Paperless-ngx | `http://paperless.local:8000` + `/api/statistics/` | documents · in the inbox · characters · tags | API key, header `Authorization` (`Token <key>`) | An API token. |
+| Home Assistant | `http://homeassistant.local:8123` + `/api/states` | now · sensor · updated | API key, header `Authorization` (`Bearer <key>`) | A long-lived access token from your profile page. Then replace `YOUR_SENSOR` in each figure with an entity of your own — Developer tools → States lists them. |
+| Grafana | `http://grafana.local:3000` + `/api/health` | database · version | None | The health route answers without a credential. |
+| ntfy | `http://ntfy.local:8080` + `/v1/stats` | messages · per second | None | The stats route answers without a credential. |
+
+</details>
+
+**Retired.** Three presets are no longer offered because the service or its API is gone: Readarr, Pi-hole v5 and TrueNAS. A widget that was started from one keeps working and still shows its choice, but a new widget cannot pick it, and they are not part of the 42.
+
+Every preset above is tested against a recorded answer of its service, through the same request, sign-in, path and formatting that **Ask now** uses: a figure that reads nothing fails the test. A service that changes its API is one line in the preset, so a figure that suddenly reads a dash is worth a look at **What came back** before anything else.
+
+<a id="custom-widget-troubleshooting"></a>
+
+#### 🩺 When it shows nothing
+
+Press **Ask now** first. It shows the status and the answer, which is usually the whole explanation.
+
+- **The figure reads a dash and *Found* says *not found*.** The path does not match the answer. Paths are case-sensitive. Search **What came back** for the value you want and copy its path; a service that renamed a field after an update shows up this way. A path that stops matching is marked, never shown as zero.
+- **The status is 401 or 403, or the tile says the service answered with an error.** The sign-in was refused. Check the key, the header name and the word before the token (`Bearer `, `Token `). **Ask now** says whether a sign-in was sent at all; if it did not, nothing is chosen under **Sign in with**. A few services answer a wrong key differently: NZBHydra2 with 404, PhotoPrism with its public settings, so every figure reads 0.
+- **"That address is not allowed."** The address is private and **Allow localhost & private-network bookmarks** is off, or it is not an `http`/`https` address. See [§23.3](#233-local-addresses-and-outgoing-requests).
+- **"No answer from that address."** Nothing answered within eight seconds, or the host could not be reached. Remember it is your server that asks, not your browser: in Docker, `localhost` is the container itself, so use the machine's address.
+- **"That address answered with a web page, not JSON."** The address names a web interface, often the host with no path. Add the path of the service's API; a preset does this for you.
+- **"That answer is not JSON."** or **"…answered with … not JSON."** The service sent XML, plain text or something else. An answer is also read only up to one megabyte; a bigger one is cut off and no longer parses, so point at a smaller endpoint, as several presets do with `?limit=1`.
+- **"Could not sign in to that service."** The username and password were refused. A two-factor account cannot be used (Nginx Proxy Manager says so in its notice).
+- **"Nothing to show yet" or "no address yet".** The widget has no figure and no list, or no address. Add one and save.
+- **The tile did not change.** Changes wait for **Save changes**.
+
+**Limits.** Eight figures, or one list of up to twenty rows. An answer has eight seconds to arrive and is read up to one megabyte. Refresh every 30 seconds to 24 hours. There is no arithmetic, and a tile cannot change anything on the service.
 
 <a id="156-unraid-widgets"></a>
 
@@ -3600,7 +3814,9 @@ Every word nextDash gives a meaning of its own, in one line, with a link to wher
 | Page | A separate set of categories and bookmarks, such as Work or Home. | [§9.1](#91-pages) |
 | Page switcher | The control in the header that moves between pages; its look is a setting. | [§4](#the-page-switcher) |
 | Page template | A page saved as a file, with its layout, categories, widgets and links, to import on another install. | [§9.8](#98-page-templates) |
+| Path | The route to one value in a service's answer, such as `server.disk[0].used`; a Custom widget reads one figure per path. | [§15.5](#custom-widget-paths) |
 | Pin | Keeps a bookmark at the top of its category, whatever the sort. | [§3.3](#33-bookmarks) |
+| Preset | A Custom widget filled in for one service: its address, figures, sign-in type and refresh interval. 42 are included. | [§15.5](#custom-widget-presets) |
 | Promote | Move an Unsorted bookmark onto a real page, with a page and category, through the bookmark form. | [§11.11](#1111-unsorted-and-promote) |
 | Push notification | Same as Browser notifications. | [§12.4](#browser-notifications) |
 
