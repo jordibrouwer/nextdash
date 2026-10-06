@@ -41,6 +41,10 @@ var (
 )
 
 const (
+	// demoMaxBody bounds every write's body: some handlers read theirs whole,
+	// which is fine at home and is a way to fill the demo's memory.
+	demoMaxBody             = 4 << 20
+	demoInboxCap            = 200
 	demoWritesPerMinute     = 120
 	demoMaxBookmarksPerPage = 150
 	demoMaxPages            = 20
@@ -173,6 +177,7 @@ func demoGuard(next http.Handler) http.Handler {
 				return
 			}
 			demo.lastWrite.Store(time.Now().UnixMilli())
+			r.Body = http.MaxBytesReader(w, r.Body, demoMaxBody)
 		}
 		next.ServeHTTP(w, r)
 	})
@@ -195,4 +200,13 @@ func demoCheckPageWrite(path string, page PageWithBookmarks) error {
 		return fmt.Errorf("%w: %d pages", errDemoLimit, demoMaxPages)
 	}
 	return nil
+}
+
+// demoInboxLimit is the inbox's limit in the demo, where the inbox otherwise
+// has none: the oldest link makes room, as it did before the limit was lifted.
+func demoInboxLimit(maxItems int) int {
+	if demoMode() && (maxItems == 0 || maxItems > demoInboxCap) {
+		return demoInboxCap
+	}
+	return maxItems
 }

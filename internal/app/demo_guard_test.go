@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -196,5 +198,38 @@ func TestDemoHoldsPagesToItsLimits(t *testing.T) {
 	}
 	if created == 0 {
 		t.Error("no new page could be made at all")
+	}
+}
+
+// A write's body is bounded in the demo, whatever the handler reads.
+func TestDemoBoundsWriteBodies(t *testing.T) {
+	t.Setenv("NEXTDASH_DEMO", "1")
+	demoWriteLimiter.reset()
+	read := 0
+	guard := demoGuard(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		data, err := io.ReadAll(r.Body)
+		read = len(data)
+		if err != nil {
+			http.Error(w, "too large", http.StatusRequestEntityTooLarge)
+		}
+	}))
+	rec := httptest.NewRecorder()
+	guard.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/settings", strings.NewReader(strings.Repeat("x", demoMaxBody+1))))
+	if rec.Code != http.StatusRequestEntityTooLarge || read > demoMaxBody {
+		t.Errorf("read %d bytes, status %d", read, rec.Code)
+	}
+	demoWriteLimiter.reset()
+}
+
+// The inbox has a limit in the demo; the oldest link makes room.
+func TestDemoInboxHasALimit(t *testing.T) {
+	h := newDemoHandlers(t)
+	for i := 0; i < demoInboxCap+10; i++ {
+		if _, _, err := h.store.AddInboxLink(InboxLink{URL: fmt.Sprintf("https://example.com/%d", i), AddedAt: int64(i + 1)}, true, 0); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if n := len(h.store.GetInboxItems()); n != demoInboxCap {
+		t.Errorf("%d inbox items, want %d", n, demoInboxCap)
 	}
 }

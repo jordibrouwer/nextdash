@@ -1,0 +1,68 @@
+# The public demo at demo.nextdash.cc.
+#
+# The ordinary image with NEXTDASH_DEMO=1: seeded data that resets every 30
+# minutes (and 10 minutes after the last change), its own fake Docker and
+# Unraid, no outbound requests after the start-up favicon round, and the routes
+# that replace data, upload or send refused. See internal/app/demo*.go.
+#
+# Behind the existing reverse proxy, on its network; nothing is published on
+# the host. The data directory lives in memory and is emptied on every start
+# and reset, so nothing on the host is ever written.
+#
+#   docker compose -f deploy/demo/docker-compose.yml up -d
+services:
+  nextdash-demo:
+    image: ghcr.io/jordibrouwer/nextdash:latest
+    container_name: nextdash-demo
+    restart: unless-stopped
+
+    # Nothing in the image may change; the two places that are written are
+    # memory, and small.
+    read_only: true
+    tmpfs:
+      # The demo's data: seeded on start, emptied on every reset.
+      - /app/data:size=64m,mode=0755
+      # The fake Docker socket and the Unraid fixture (os.MkdirTemp).
+      - /tmp:size=8m,mode=1777
+
+    environment:
+      - NEXTDASH_DEMO=1
+      # Required in demo mode: the directory it empties.
+      - NEXTDASH_DATA_DIR=/app/data
+      # Optional; these are the defaults.
+      # - NEXTDASH_DEMO_RESET_MINUTES=30
+      # - NEXTDASH_DEMO_IDLE_MINUTES=10
+      # The proxy's address, so the per-visitor write limit counts visitors
+      # rather than the proxy. Set it to the proxy network's range.
+      - NEXTDASH_TRUSTED_PROXIES=172.16.0.0/12
+      # A demo instance is not an install: no install count, no release check,
+      # no news feed. (The demo refuses outbound requests anyway.)
+      - DISABLE_TELEMETRY=true
+      - DISABLE_UPDATE_CHECK=true
+      - DISABLE_NEWS_FEED=true
+      - TZ=America/New_York
+      # No NEXTDASH_DOCKER_SOCKET and no socket mount: the demo starts its own
+      # fake daemon and points itself at it.
+
+    # Bounds for a public instance.
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 128
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # The entrypoint chowns the data directory and drops to the nextdash user.
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+
+    expose:
+      - "8080"
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
