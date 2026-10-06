@@ -32,13 +32,8 @@ async function openInboxWithOneUnread(page) {
     // leave items behind. Rather than wiping shared state, everything below is
     // scoped to the id this returns — so the assertions describe one known row
     // regardless of what else is in the inbox.
-    //
-    // A read already on the wire is shared by the next caller (fetchItems
-    // keeps one in flight), and one that left before this POST cannot hold the
-    // row: the view would open on it and never ask again. So let it land first.
     const url = `https://mark-read-${Date.now()}.example.com`;
     const id = await page.evaluate(async (u) => {
-        await Promise.resolve(window.dashboardInstance.inbox._fetchPromise).catch(() => {});
         const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const res = await api('/api/inbox', {
             method: 'POST',
@@ -46,6 +41,18 @@ async function openInboxWithOneUnread(page) {
             body: JSON.stringify({ url: u, title: 'Unread probe' }),
         });
         const body = await res.json();
+        /*
+         * Read the list again before the view opens on it.
+         *
+         * The row went to the server, not through this tab, and the dashboard
+         * reads the inbox on its own while the page settles. A read that left
+         * before this POST is shared by the next caller (fetchItems keeps one
+         * in flight), so the view could open on a list without the row and wait
+         * ten seconds for it. Freshness is not what this file is about.
+         */
+        const inbox = window.dashboardInstance.inbox;
+        await Promise.resolve(inbox._fetchPromise).catch(() => {});
+        await inbox.loadItems();
         return body?.item?.id || '';
     }, url);
     expect(id).toBeTruthy();
