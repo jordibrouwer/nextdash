@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 	"unicode/utf8"
 
@@ -389,5 +390,37 @@ func TestTemplateLabelsAreCutByCharacter(t *testing.T) {
 	}
 	if !utf8.ValidString(hosts[0].Label) || utf8.RuneCountInString(hosts[0].Label) != templateMaxLabelLength {
 		t.Fatalf("label %q is not %d whole characters", hosts[0].Label, templateMaxLabelLength)
+	}
+}
+
+// Imports at the same moment each get a page of their own.
+func TestConcurrentImportsMakeSeparatePages(t *testing.T) {
+	h := newTestHandlers(t)
+	seedTemplatePage(t, h)
+	_, raw := exportTemplate(t, h, 5, TemplateExportOptions{})
+
+	const n = 4
+	ids := make(chan int, n)
+	var wg sync.WaitGroup
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			body, _ := json.Marshal(map[string]any{"template": json.RawMessage(raw)})
+			rec := httptest.NewRecorder()
+			templateTestRouter(h).ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/pages/template", bytes.NewReader(body)))
+			var result TemplateImportResult
+			_ = json.Unmarshal(rec.Body.Bytes(), &result)
+			ids <- result.PageID
+		}()
+	}
+	wg.Wait()
+	close(ids)
+	seen := map[int]bool{}
+	for id := range ids {
+		if id == 0 || seen[id] {
+			t.Fatalf("import got page id %d twice or not at all (seen %v)", id, seen)
+		}
+		seen[id] = true
 	}
 }

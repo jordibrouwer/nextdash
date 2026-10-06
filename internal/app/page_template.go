@@ -39,6 +39,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -788,6 +789,9 @@ func (h *Handlers) freeTemplatePageName(name string) string {
 	}
 }
 
+// pageTemplateImportMu holds an import's id choice and writes together.
+var pageTemplateImportMu sync.Mutex
+
 // nextTemplatePageID is one past every page id in use, the trash's included:
 // a restored page writes its old id back.
 func (h *Handlers) nextTemplatePageID() int {
@@ -1038,6 +1042,12 @@ func (h *Handlers) ImportPageTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	plan := h.planPageTemplate(tpl, req.Values)
+	// One import at a time, from the checks to the last write: a new page's
+	// id is read before it is written, and an empty page is checked before
+	// it is filled, so two imports at once (two tabs) took the same id or
+	// filled the same page, the second overwriting the first.
+	pageTemplateImportMu.Lock()
+	defer pageTemplateImportMu.Unlock()
 	if req.IntoPage != 0 {
 		target, ok := h.emptyTemplateTarget(req.IntoPage)
 		if !ok {
