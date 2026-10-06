@@ -5321,6 +5321,8 @@
     "overviewNothingToDo": "没有需要处理的——一切正常。",
     "overviewTileLastEdited": "上次编辑",
     "overviewRunning": "正在运行 {current}。",
+    "overviewVersionLine": "你正在运行 nextDash {version}。完整更新日志见{changelog}，使用手册见{manual}。",
+    "overviewVersionHere": "这里",
     "overviewSentenceMonitors": "现在有 {n} 个监控离线。",
     "overviewSentenceInbox": "收件箱里有 {n} 个链接还没归档。",
     "overviewSentenceDuplicates": "你的页面里有 {n} 个重复网址。",

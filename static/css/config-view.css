@@ -8437,3 +8437,19 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
     .config-overview-banner-star,
     .config-overview-banner-go { animation: none; }
 }
+
+/* Version line under Latest news: the running release, with changelog and manual links. */
+.config-overview-version {
+    font-size: var(--font-size-small, 0.68rem);
+    color: var(--text-muted, var(--text-secondary));
+}
+
+.config-overview-version-link {
+    color: inherit;
+    text-decoration: underline;
+}
+
+.config-overview-version-link:hover,
+.config-overview-version-link:focus-visible {
+    color: var(--accent-primary);
+}
