@@ -793,6 +793,9 @@ This manual calls the page of categories and widgets the **dashboard grid**, to 
 
 ### 🧭 The header
 
+<p align="center"><img src="screenshots/manual.md/04-header.jpg" alt="The header: the time, date and weather on the left with the page name under them, and the page numbers and destination icons on the right" width="860"></p>
+<p align="center"><sub>The header: clock, weather and page name on the left; the page switcher and the destinations on the right.</sub></p>
+
 The header has three zones.
 
 - **Left — clock, weather and name.** The time and date, the weather line, and the name of the page or view (*main*, *config*). Click the date for a week overview; a **Calendar URL** (Appearance → Date & weather) adds an *Open calendar* link. **Clock and weather** chooses where they stand: beside the view name (the default), in a column of their own, or on their own line with the name underneath.
@@ -811,6 +814,8 @@ The header has three zones.
 | **One segmented control** | The pages as one joined control |
 | **Plain text, underlined** | The page names as tabs |
 | **One button with a list** | The current page, with a list of the rest |
+
+<img src="screenshots/manual.md/04-page-switcher.jpg" alt="The page switcher: the page numbers 1 to 3, then the Dashboard, Bookmarks, Inbox, Containers and config icons, two of them with a count badge" width="343" align="right">
 
 **Page tabs shown before "+N"** (3–9, default 4) sets how many pages show before the rest fold into a **+N** list. Every page keeps its digit key. **Show page names in tabs** and **Show the dashboard title** sit in the same group. Double-click a page tab to rename it and give it an emoji and a colour dot.
 
@@ -843,6 +848,8 @@ Every button is on to begin with. Switch the ones you do not want off under **Co
 | **In the header** | Beside the destinations. **Action buttons shown before "+N"** (default 2) folds the rest behind one control whose menu lists each action with its key. |
 | **Behind one menu in the header** | One control; every action is in its menu. |
 
+<img src="screenshots/manual.md/04-action-buttons.jpg" alt="The action buttons in a column along the right edge, each with its key on a small chip" width="89" align="right">
+
 **A bar that slides away.** **Slide a docked bar away after** takes *always in view*, 2 (default), 5, 10 or 30 seconds, and applies to the three docked positions. The bar comes back when the pointer touches that edge or when focus moves into it, and then slides away again after the delay. Brought back with **`'`** or **`Shift + O`** it stays until you press the key again, or until the pointer has passed over it and left — from then on the delay runs as usual. Switching page or view leaves it where it is. A bar in use — the pointer over it, the keyboard in it, or a menu of its own open — never leaves while you are using it.
 
 While it is away, a small **handle** stands on that edge, so the place it came from stays visible. It grows and brightens as the pointer comes near, and a click on it brings the bar back. There is no handle for a bar in the header or behind the menu, and none on a touch screen, where nothing hovers.
@@ -853,18 +860,15 @@ While it is away, a small **handle** stands on that edge, so the place it came f
 
 The **★** button in the bottom-right corner opens the release notes. It is left out on a window as narrow as a phone; `:whatsnew` and Help still open them.
 
-<details>
-<summary>📷 Screenshot — the action buttons, each with its key</summary>
-
-<p align="center"><img src="screenshots/manual.md/04-action-buttons.jpg" alt="The action buttons in a column, each with its key on a small chip" width="89"></p>
-
-</details>
-
 <a id="the-grid"></a>
 
 ### 🗂️ The grid
 
+<img src="screenshots/manual.md/04-category-header.jpg" alt="A category header: the // mark, an icon and the name, then the ⋯ sort menu, the count of 3 bookmarks, the fold arrow and a + for a new category" width="364" align="right">
+
 Categories and widgets stand in columns — as many as **Columns per row** allows and the window has room for, and one on a phone held upright. Each category header shows `//`, its icon and name, a count, and chips for sorting (manual, **A–Z**, **Recent**), a **+** to add a category and a **⋯** menu. Click the header to fold the category. A spread category shows **↔ N** with the number of columns it takes. Smart collections (*Today*, *Recently opened*, …) and custom collections appear as groups among your categories.
+
+<img src="screenshots/manual.md/04-bookmark-row.jpg" alt="A bookmark row: the site icon, the name Encyclopedia and its shortcut WIKI on a chip" width="360" align="right">
 
 A bookmark row shows its icon, name, optional tags, the shortcut letters and, when checked, its status and ping. How the row looks is set under **Appearance → Rows** ([§16](#16-appearance)).
 
@@ -897,18 +901,13 @@ Hovering a bookmark — or pressing **`Shift + V`** on the selected row — open
 2. **What it says** — image, description, publisher, author and date where the page declares them, your note and tags. A bookmark that is a video — YouTube, Vimeo, Dailymotion, or a file that ends in `.mp4` — carries a small **▶** on the corner of its icon (beside the name when icons are off), and the card opens on the thumbnail with a play button over it.
 3. **What you know about it** — last check and ping, uptime, certificate expiry, the Fresh count, opens and last opened, shortcut and location.
 
+<img src="screenshots/manual.md/04-preview-card.jpg" alt="The link preview card of a bookmark: picture, description, a tag, when it was last opened, its shortcut and where it lives" width="408" align="right">
+
 A row with nothing to say is left out. **Config → Appearance → Rows → Link preview cards** offers **Off**, **On hover** (default) and **Keyboard only**, a hover delay, and a checklist of rows — the player is the **Video player** row in that list. `Shift + V` works in every mode and keeps the card open with **Copy**, **Refresh** and **Edit**.
 
 **Playing a video.** Nothing reaches YouTube or Vimeo while you hover: the poster is the picture your own server already fetched, and the player is built when you press it. From the keyboard, `Shift + V` puts the cursor on the play button and `Enter` starts it. `Esc` closes the card and ends the video, and so do the **✕** over the player and a click anywhere else — a click inside the player hands the keyboard to the provider, so `Esc` only works again once your pointer leaves the card.
 
 The picture and the site icon are fetched **by your server** and stored under `data/preview-images/`, so hovering never tells the site you looked. The first hover shows the text at once and the picture a moment later. Untick **Image** and no picture is fetched or stored; set the cards to **Off** and nothing is fetched for them at all. **Data & backups → Icons & previews** caps the stored pictures at 50, 200 or 500 MB and can remove them all. Pictures are left out of backups; they are fetched again when needed.
-
-<details>
-<summary>📷 Screenshot — the link preview card</summary>
-
-<p align="center"><img src="screenshots/manual.md/04-preview-card.jpg" alt="The link preview card of a bookmark: picture, description, a tag, when it was last opened, its shortcut and where it lives" width="408"></p>
-
-</details>
 
 <sub>[↑ Contents](#table-of-contents)</sub>
 
@@ -982,6 +981,9 @@ This same form, titled **Promote bookmark**, is how an Unsorted bookmark from th
 ### 5.3 Paste a URL (`Ctrl + V`)
 
 With no field active, paste a URL on the dashboard. A dialog offers **Save to Inbox** (`1`) or **Add bookmark** (`2`). Set a fixed answer under **Config → Inbox → Collecting → Paste destination** — *Ask each time*, *Always add bookmark* or *Always save to Inbox*.
+
+<p align="center"><img src="screenshots/manual.md/05-paste-prompt.jpg" alt="The Save this link dialog after pasting an address: the address, the choices Add bookmark and Save to Inbox with their number keys, Remember my choice and Cancel" width="408"></p>
+<p align="center"><sub>Pasting an address on the dashboard asks where it goes: the full form, or the inbox.</sub></p>
 
 <a id="54-other-routes"></a>
 
@@ -1057,23 +1059,25 @@ The form, quick add and the extension all ask. Imports skip duplicates and say h
 
 The menu also opens with **`Shift + F10`** or the **Menu** key, beside the row.
 
+<p align="center"><img src="screenshots/manual.md/06-context-menu.jpg" alt="The right-click menu on a bookmark: open in new tab, copy URL, QR code, edit, pin, tags, move, checking, show in Health, select and delete, each with its key" width="304"></p>
+<p align="center"><sub>The right-click menu on a bookmark, each action with its key.</sub></p>
+
 <a id="qr-code"></a>
 
 > [!TIP]
 > **A link on your phone.** Select the bookmark and press **`Shift + J`**, or pick **QR code** in this menu, then scan the code with the phone's camera. On an inbox row the code holds the item's own link, as Share does. The code is drawn in the browser, so the address is not sent anywhere.
 
-<details>
-<summary>📷 Screenshot — the right-click menu</summary>
-
-<p align="center"><img src="screenshots/manual.md/06-context-menu.jpg" alt="The right-click menu on a bookmark: open in new tab, copy URL, QR code, edit, pin, tags, move, checking, show in Health, select and delete, each with its key" width="304"></p>
-
-</details>
+<p align="center"><img src="screenshots/manual.md/06-qr-code.jpg" alt="The QR code window for the Encyclopedia bookmark: the code, the address under it and a Copy URL button" width="392"></p>
+<p align="center"><sub>A bookmark as a QR code (<kbd>Shift</kbd> + <kbd>J</kbd>), ready for the phone's camera.</sub></p>
 
 <a id="editing-in-place"></a>
 
 ### ✏️ Editing in place
 
 **`Shift + E`**, a long press, or **Edit** opens the bookmark form over the row, with the page dimmed behind it. **Save** or **`Ctrl + Enter`** writes it; **`Esc`** or a click outside closes it, asking first when something changed. While it is open, the grid keys, swiping and paste are paused. Deleting from the form asks first and offers undo.
+
+<p align="center"><img src="screenshots/manual.md/06-edit-in-place.jpg" alt="The edit bookmark form over the dashboard with the cursor in the address field: name, preview card, tags, page and category, shortcut, checking, pinned and note, with Delete, Cancel and Save" width="628"></p>
+<p align="center"><sub>Editing in place: the bookmark's own form, opened with <kbd>Shift</kbd> + <kbd>E</kbd>.</sub></p>
 
 <a id="usage"></a>
 
@@ -1086,6 +1090,9 @@ Every open — from the grid, search, the recent panel or the Bookmarks view —
 ### 🕘 Recent bookmarks (`*`)
 
 A narrow panel with what you opened recently on this page: one row per bookmark, with its category, when and how often. The arrow keys move, `Enter` opens. `:open last 5` opens several at once.
+
+<p align="center"><img src="screenshots/manual.md/06-recent.jpg" alt="The recent bookmarks panel: eight bookmarks in three columns, each with its shortcut, category, when it was opened and how often, and buttons to open all of them or the last five" width="860"></p>
+<p align="center"><sub>Recent bookmarks (<kbd>*</kbd>): what you opened last, and how often.</sub></p>
 
 <a id="hypr-mode"></a>
 
@@ -1157,6 +1164,9 @@ The Containers view opens with `Shift + Y`, its header icon or `:docker`.
 
 With the cursor on a row, a bookmark's own **shortcut** opens it. The letters the grid uses — `g`, `j`, `k`, `t`, `x` — keep their grid meaning; reach a bookmark with such a shortcut through search.
 
+<p align="center"><img src="screenshots/manual.md/07-focus.jpg" alt="The Today collection with the keyboard cursor on its second row, which is lit and outlined" width="384"></p>
+<p align="center"><sub>The keyboard cursor on a row; the first arrow key puts it there.</sub></p>
+
 <a id="73-acting-on-a-bookmark"></a>
 
 ### 7.3 Acting on a bookmark
@@ -1212,6 +1222,9 @@ The arrow keys walk into a widget and through its rows; `Enter` does what clicki
 | `Esc` | Clear the selection |
 
 A toolbar appears with **Move**, **Tags**, **Pin**, **Checking**, **Open**, **Copy links**, **Re-check**, **Fetch icons**, **Fetch previews**, **Export CSV** and **Delete**, and **Clear selection** to leave. **Fetch icons** and **Fetch previews** read the icon and the page card of every selected bookmark, with a progress bar, and wait when a site asks them to slow down. The tag picker shows a **✓** for tags the whole selection has and *on 2 of 3* for tags only some have. Above them, **Suggested** lists up to three tags the selection is likely to want ([§10.4](#104-tag-suggestions)); a suggestion that fits only some of the rows says *on 1 of 3*, and choosing it tags only those rows. While a selection is open, a plain click clears it instead of opening a bookmark. A bulk change can be undone from its toast for eight seconds, and deleted bookmarks stay in the trash for 30 days.
+
+<p align="center"><img src="screenshots/manual.md/07-selection-bar.jpg" alt="The selection toolbar: 3 selected, then Move, Tags, Pin, Checking, Open, Copy links, Re-check, Fetch icons, Fetch previews, Export CSV, Delete 3 and Clear selection" width="860"></p>
+<p align="center"><sub>Three rows ticked: the toolbar acts on all of them at once.</sub></p>
 
 <a id="76-the-cheat-sheet"></a>
 
@@ -1308,6 +1321,9 @@ Filters combine with each other and with plain words: `tag:dev -status:pinned ap
 
 With an engine set, the search panel also searches the web. Nothing leaves the server while you type: the last row, **Search the web: …**, waits for **`Shift + Enter`** (or a click). Then the results appear under **From the web**, below your own bookmarks.
 
+<p align="center"><img src="screenshots/manual.md/08-web-search.jpg" alt="The search panel after typing maps and pressing Shift + Enter: the bookmark matches on top, then From the web with the Web, News, Videos and IT categories and three results, the first marked In your bookmarks: Maps" width="840"></p>
+<p align="center"><sub><kbd>Shift</kbd> + <kbd>Enter</kbd> asks the engine; its results come under your own bookmarks.</sub></p>
+
 - **The engine** — Behavior → Keyboard & search → **Web search**: **Off** (the default), **SearXNG** with the address of your own instance, or the **Brave Search API** with a key from api.search.brave.com. SearXNG must have `json` under `search.formats` in its `settings.yml`. **Test connection** runs a search for *test* and says how many results came back, or why not.
 - **Private by design** — the server asks the engine, so the engine sees your server and never your browser. A result loads nothing until you open it: no favicons, no thumbnails. Web searches are not written to the activity log, and the server keeps no record of them.
 - **Categories** — Web, News, Video, and IT with SearXNG. **`Shift + ←`/`→`** steps between them.
@@ -1385,6 +1401,9 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 
 `?shortcut query` sends the query to another site: `?g nextdash` searches Google. A fresh install has DuckDuckGo on `du` and Brave Search on `b` (an install that already existed was given Brave Search once; delete it and it stays deleted). `?w` without a query opens the site's own search page.
 
+<p align="center"><img src="screenshots/manual.md/08-finders.jpg" alt="The search panel on its finders tab: a question mark typed, and the two finders Brave Search and DuckDuckGo with their shortcuts" width="840"></p>
+<p align="center"><sub><kbd>?</kbd> lists the finders with their shortcuts.</sub></p>
+
 **Structure → Finders** manages them: a name, a shortcut and a URL with `%s` where the query goes (for example `https://github.com/search?q=%s`). Names and shortcuts must be unique. Rows can be dragged or moved with `↑`/`↓`, carry tags, and show how often each finder was used. **Include finders in search** (Behavior → Keyboard & search) shows them among ordinary results.
 
 With that setting on (it is by default), a search that matches nothing lists your three most-used finders under the *no matches* line — **Search on …**, with what you typed already filled in. Click one, or reach it with `↓`, to ask that site instead.
@@ -1423,6 +1442,9 @@ Page names are unique. Each row in Structure → Pages shows how many bookmarks 
 - **Reorder** — drag the `//` in the title, `Alt + ←/→` on the header, or Structure → Categories.
 - **Delete** — `Delete` on the header, the right-click menu, or Structure → Categories. The bookmarks are kept and lose their category; the category goes to the trash.
 - **Duplicate** — on the row in Structure → Categories, with its width, icon and sort, and optionally its bookmarks.
+
+<p align="center"><img src="screenshots/manual.md/09-category-menu.jpg" alt="The right-click menu on the Development category header: Rename, Spread across columns, Icon, Add category and Delete, with their keys" width="285"></p>
+<p align="center"><sub>Right-click a category header for its menu.</sub></p>
 
 A category you just created stays visible even with *hide empty categories* on, until you leave the page.
 
@@ -1484,12 +1506,8 @@ The column count of the grid is the ceiling. Spreading needs a limit on items pe
 
 Editing or deleting a bookmark inside a collection changes the real bookmark.
 
-<details>
-<summary>📷 Screenshot — the Today smart collection on the grid</summary>
-
 <p align="center"><img src="screenshots/manual.md/09-smart-collections.jpg" alt="The Today smart collection on the grid: the eight bookmarks you tend to open at this time" width="392"></p>
-
-</details>
+<p align="center"><sub>The Today collection on the grid.</sub></p>
 
 <a id="97-custom-and-tag-collections"></a>
 
@@ -1549,6 +1567,9 @@ A file is at most 2 MB.
 - `t` on a selected bookmark filters by its tag.
 - `tag:work` in search narrows results without changing the dashboard.
 
+<p align="center"><img src="screenshots/manual.md/08-tag-cloud.jpg" alt="The tag cloud: every tag in use, the most used ones largest, and the total of 21 tags" width="520"></p>
+<p align="center"><sub>The tag cloud (<kbd>/</kbd>): the more a tag is used, the larger it is.</sub></p>
+
 <a id="103-managing-tags"></a>
 
 ### 10.3 Managing tags
@@ -1569,6 +1590,9 @@ A file is at most 2 MB.
 Each row names its source and its count. The count opens the group, so single bookmarks can be left out. **Apply** tags the rest (undo in the toast); **No thanks** stops the proposal from coming back, and refusals are listed with a way back. At most 25 rows show at a time. **Forget the scanned keywords** (here or under Data & backups → Icons & previews) clears what *Read their pages* kept.
 
 The same proposals appear, one bookmark at a time, in the bookmark form, the Bookmarks view's side panel, `Shift + T` and the selection's tag picker ([§10.1](#101-tags-on-a-bookmark)). Turning one down there counts as **No thanks** here, and the list on this tab follows.
+
+<p align="center"><img src="screenshots/manual.md/10-tag-suggestions.jpg" alt="The tags field of the bookmark form with one suggested tag, #dev, under it, and a cross to turn it down" width="586"></p>
+<p align="center"><sub>In the bookmark form a suggestion waits under the tags field: click it to add it, × to turn it down.</sub></p>
 
 A corner card offers a round when ten proposals are waiting; it can be switched off under Behavior → Privacy & sync → Onboarding.
 
@@ -1614,11 +1638,17 @@ A summary at the top shows the score, the trend, the broken count and uptime ove
 
 Active filters show as removable tokens above the groups, with **Clear filters** to drop them all at once.
 
+<p align="center"><img src="screenshots/manual.md/11-rail.jpg" alt="The top of the Bookmarks view rail: the summary with score, trend, uptime and how many are not checked, then the Views and Health groups with their counts" width="196"></p>
+<p align="center"><sub>The top of the rail: the summary, then the Views and Health filters with their counts.</sub></p>
+
 <a id="112-the-toolbar-and-the-list"></a>
 
 ### 11.2 The toolbar and the list
 
 The toolbar sits above the list: a **search** field (`/`) that matches name, URL, category, note, shortcut and tags; a count of what is shown; **Group** (No groups, Page, Category, Site, Status, Tag); **Sort** (Page order, Name A–Z, URL, Category, Recently added, Last opened, Most opened, Pinned first, Tags, Shortcut, Usage, Health score); the row-density toggle shared with the other list views; and **Add bookmark**, which opens the full form on the page the list is filtered to.
+
+<p align="center"><img src="screenshots/manual.md/11-toolbar.jpg" alt="The Bookmarks view toolbar: the search field with its / key, the count of 29 bookmarks, a button to check the unchecked ones, Group, Sort, the density toggle and Add Bookmark" width="860"></p>
+<p align="center"><sub>The toolbar above the list.</sub></p>
 
 Rows show icon, name, host, tags, open count and last opened, plus a score column and status glow once Health has joined in. Only the rows near the screen are drawn, so thousands of bookmarks stay fast.
 
@@ -1645,12 +1675,8 @@ Closed with the mouse — **×** or a click beside it — the row lets go as wel
 
 On a narrow window the rail becomes a drawer and the side panel a sheet. What you filtered to is kept in the address, so a filtered list is a link.
 
-<details>
-<summary>📷 Screenshot — the side panel on Details</summary>
-
 <p align="center"><img src="screenshots/manual.md/11-side-panel.jpg" alt="The side panel of a bookmark with the Details, Health and Usage tabs and the edit section open" width="384"></p>
-
-</details>
+<p align="center"><sub>A bookmark's side panel, on Details.</sub></p>
 
 <a id="114-selecting-several"></a>
 
@@ -1663,6 +1689,9 @@ Tick rows (`x` / `X` for the whole page shown, or **Select all** in the ⋯ menu
 ### 11.5 The row menu
 
 The row menu (right-click, `Shift + F10`, or `m`) offers open, copy URL, share, **Promote…** (only on an Unsorted bookmark), edit, checking, health details, **Health charts…** (the bookmark's health in large, [§11.9](#119-a-bookmarks-health-in-large)), **Merge…** on a duplicate, filters (only this category, page or tag), and delete.
+
+<p align="center"><img src="screenshots/manual.md/11-row-menu.jpg" alt="The row menu on the Maps bookmark: open in new tab, copy URL, copy name and URL, QR code, edit, checking, health details, health charts, three filters and delete" width="260"></p>
+<p align="center"><sub>The row menu (right-click, <kbd>m</kbd> or <kbd>Shift</kbd> + <kbd>F10</kbd>).</sub></p>
 
 <a id="116-keys"></a>
 
@@ -1695,6 +1724,9 @@ The row menu (right-click, `Shift + F10`, or `m`) offers open, copy URL, share, 
 ### 11.7 Work through and the header band
 
 Above the list, **Work through** (**`f`**) takes you through the bookmarks that need a decision, one at a time.
+
+<p align="center"><img src="screenshots/manual.md/11-header-band.jpg" alt="The header band of the Bookmarks view: the title and its line, Work through with its f key, the Collection menu, Tour, the info button and the bookmark count" width="860"></p>
+<p align="center"><sub>The header band: Work through, the Collection menu and Tour.</sub></p>
 
 **1. Choose a pile.** It opens on a list of piles, each with its count and a line on what it holds. The pile that needs you most comes first:
 
@@ -1792,6 +1824,9 @@ A period select (today, 7, 14, 30 or 90 days) applies across the panel.
 
 **`Shift + P`** / **`Shift + C`**, **Manage** beside Pages or Categories in the rail, or **Pages & categories** in the Collection menu opens a modal over the list for dragging, moving, merging and tidying pages and categories without leaving the Bookmarks view.
 
+<p align="center"><img src="screenshots/manual.md/11-pages-categories.jpg" alt="The Pages and categories modal on its Categories tab: a search, the sort, the page Home, Add category, and the categories and widgets of that page with their bookmark counts and drag handles" width="840"></p>
+<p align="center"><sub>Pages &amp; categories, on the Categories tab.</sub></p>
+
 <a id="1113-addresses"></a>
 
 ### 11.13 Addresses
@@ -1857,6 +1892,9 @@ Set the mode in the bookmark form, the Bookmarks view's side panel, the right-cl
 
 **How long it has been failing.** The first failure of a run is kept, and the next check that passes clears it. A failing row says *failing for 3 weeks*, and hovering shows the day it first failed; a monitored bookmark says how long it has been down instead. When the site only refused our checks (a 403, a bot check), the row says *not answering us for…* rather than calling the page dead. The side panel's Health tab (*Broken · 3w*), the link preview card, the **Rot report** ([§11.10](#1110-rot-report)) and the Statistics figure *longest-standing break* ([§18](#18-statistics)) draw on the same date.
 
+<p align="center"><img src="screenshots/manual.md/12-health-tab.jpg" alt="A monitored bookmark's side panel on its Health tab: the score, the checking mode and interval, a bar for each of the last checks at 100 % with the response time, and the sections Why, Score breakdown, Checking, Monitor & history and Expectations" width="384"></p>
+<p align="center"><sub>The Health tab of a monitored bookmark, its last checks drawn as bars.</sub></p>
+
 **Services behind a sign-in.** On a bookmark's Health tab, **Expected response** offers:
 
 - **Address to check instead** — for example a status endpoint, while the bookmark keeps its own address.
@@ -1873,6 +1911,9 @@ On a monitored bookmark, **Expected response** opens a panel:
 - **Status codes that count as healthy** — `200`, `200-299`, `200,301,401`. By default anything below 500 counts. A code that cannot be read is ignored.
 - **Watch for redirects, retitling and rewrites** — drift ([§12.3](#123-drift)).
 - **Do not alert me about this bookmark** — muting ([§12.4](#124-alerts)).
+
+<p align="center"><img src="screenshots/manual.md/12-expected-response.jpg" alt="The Expectations section open: address to check instead, sign in with, accept a certificate, text the page must contain, status codes that count as healthy, watch for redirects and do not alert me, with Save and Cancel" width="358"></p>
+<p align="center"><sub>Expected response, in the Expectations section of the Health tab.</sub></p>
 
 Failures of these tests go to the **Content** filter, not Broken. Clearing both test fields clears the failure.
 
@@ -1891,6 +1932,9 @@ Failures of these tests go to the **Content** filter, not Broken. Clearing both 
 - **Content drift** — the text became a different page.
 
 One finding per check, in that order. The row badge reads *Moved*, *Retitled* or *Changed*; the **Drift** filter (reached from Collection health → what is wrong, by kind, or `#bookmarks?health=drift`) lists them. A page that returns to its baseline clears itself. **Accept drift** on selected rows clears the finding and drops the baseline, so the next check records the page as it is now. Drift reads the page body, so it is opt-in and for monitored bookmarks only.
+
+<p align="center"><img src="screenshots/manual.md/12-drift.jpg" alt="A Work through card for a retitled page: the bookmark Wiki with a yellow Retitled badge, its description, Why it is here: The page changed, and Re-check now, Fix the address, Delete and Skip" width="552"></p>
+<p align="center"><sub>A page that changed, met in Work through; the badge says which kind of drift.</sub></p>
 
 <a id="124-alerts"></a>
 
@@ -1944,11 +1988,17 @@ They need a secure context: Safari and every browser on iPhone and iPad require 
 
 A window is a recurring period when downtime is expected — days, a start and an end. An end before the start runs past midnight. The times are in **your** time zone: the browser's zone is saved with the windows when you change them, so a window you set for 02:00 is 02:00 where you are, even when the container itself runs on UTC. Windows apply to every monitor. Quiet hours use the same clock.
 
+<p align="center"><img src="screenshots/manual.md/12-maintenance.jpg" alt="The Maintenance windows panel: the days of the week, a window from 02:00 to 03:00 with room for a note, and Add window" width="860"></p>
+<p align="center"><sub>A maintenance window every night from two to three.</sub></p>
+
 Inside a window, checks still run and the heartbeat still records them, but a failure opens no incident, does not count against uptime or toward the failures an alert waits for, and sends no alert. A failure that continues after the window raises the alarm as usual.
 
 <a id="quiet-hours"></a>
 
 **Quiet hours.** Under **Behavior → Status & alerts → Quiet hours**, **Hold notices during quiet hours** holds alerts from monitors, containers, Unraid and backups while a window is open — the same editor as maintenance windows. When the hours end, one summary says what is still going on and what recovered by itself. Unlike a maintenance window the downtime still counts. **Always let through** lists the kinds that break the quiet: an expired certificate, a mass outage (several at once) and a failed backup by default, and a container that stops or restarts if you tick it. A line under the list says whether it is quiet now, until when, and how many notices are held. Outgoing webhooks ([§19.3](#193-webhooks)) are outside it and get every event. A muted bookmark or container never raises a notice, and a maintenance window drops it before the quiet hours would hold it.
+
+<p align="center"><img src="screenshots/manual.md/12-quiet-hours.jpg" alt="The Quiet hours panel: Hold notices during quiet hours ticked, a window from 02:00 to 03:00 on every day, and Always let through with an expired certificate, a mass outage and a failed backup ticked" width="860"></p>
+<p align="center"><sub>Quiet hours, and the kinds of notice that always get through.</sub></p>
 
 <a id="reminders"></a>
 
@@ -2060,6 +2110,9 @@ Open it with **`Shift + I`**, the inbox icon or `:inbox`. The icon's tooltip say
 | `R` | Reload |
 | `Esc` | Clear the selection, then back to the queue, then back to the bookmarks |
 
+<p align="center"><img src="screenshots/manual.md/13-inbox-row.jpg" alt="An inbox row with its right-click menu: open in new tab, copy URL, copy name and URL, QR code, promote, keep, mark read, snooze, note, tags, copy link and delete" width="629"></p>
+<p align="center"><sub>Right-click an inbox row for everything you can do with it.</sub></p>
+
 - **Read** — a link is unread until opened or marked read. `u`, or the right-click menu, marks it unread again.
 - **Snooze** — three hours, tomorrow, the weekend, next week, or a date (waking at 09:00). A snoozed link is left out of every count; a line under the list says how many are asleep. **Wake now** brings one back.
 - **Notes and tags** — plain-text notes; tags from the capture show as chips in the side panel's Tags section, and can be edited from there or the right-click menu.
@@ -2168,6 +2221,9 @@ Open it with **`Shift + Y`**, the Containers icon in the header, `:docker`, or `
 
 Each row shows the container's app icon, its name, image, status, **CPU** and **RAM**, its **Size** — what the container wrote, with the size including its image on hover — a link to its web UI and its ports. The icon comes from the app icon sets, matched by the image and the name ([§19.4](#194-icons-previews)); a container the sets do not know — or an icon that fails to load — shows its first letter, and nextDash's own container shows the nextDash logo. A container with an update waiting has an orange **↑** in front of its name. Name and image stay on one line, cut short with the whole text on hover, and the image drops its registry host and a `:latest` tag (`lscr.io/linuxserver/sonarr:latest` reads `linuxserver/sonarr`). The first three published ports show in the row; more go behind **+N**, which opens a list of all of them with the port inside the container and tcp or udp. A port published for both counts once in the row. Sizes are measured in the background every half hour (the Docker daemon takes a while to work them out) and when Disk is refreshed; a container not measured yet shows —. CPU and RAM are the last reading, taken every 30 seconds; they are there while **Config → Containers → Keep the last hour of CPU and memory** is on. On a narrower screen the Image column goes first (below 1100 pixels), then CPU, RAM and Size (below 900). Click **Name**, **Status**, **CPU**, **RAM**, **Size** or **Restarts** to sort, and again to turn the order round; the sort menu also offers uptime, CPU, memory, size and restarts, highest first. A container without a figure — stopped, or not measured yet — goes last either way.
 
+<p align="center"><img src="screenshots/manual.md/14-container-row.jpg" alt="One row of the Containers view: an orange update arrow, the icon and the name sonarr, its image, Up 6 days (healthy), CPU, RAM, size and its port links" width="860"></p>
+<p align="center"><sub>A container row; the orange ↑ says an update is waiting.</sub></p>
+
 **Columns** in the toolbar ticks which columns show: Image, Status, CPU, RAM, Size, **Restarts** (off at first: how often the container started again in the last 24 hours, from its timeline), Web UI and Ports. Name always shows. The choice is kept in this browser; **Reset columns** puts them back. CPU and RAM show only while the stats history is on, ticked or not.
 
 The web UI link is the address you set in the side panel's **Custom** section, else the one the container's own labels offer (Unraid's template), else its first published TCP port. A local address shows as its port (`:8123`), another as its host. A port link goes to the host you opened nextDash on unless **Config → Containers → Docker host address** names the server — its LAN address or name only, without `http://` or a port, for example `192.168.1.10` or `tower.local`, so port 8080 opens `http://192.168.1.10:8080`. A line under the field checks what you type and cuts a full `http://…:8080` down to its host when it is saved; opened through a domain — a reverse proxy — that is rarely right. While the address is empty the view says where port links point, above the list, with a button to that setting and one to dismiss the note; an address of your own has a dot in front of it, and a long one is cut short, with the whole address on hover.
@@ -2196,12 +2252,8 @@ The **✎** on the icon in the panel's head chooses what the container shows: **
 - **Logs** — the last lines, with **Refresh** and **Open logs window** ([§14.8](#148-the-logs-window)).
 - **What’s new** — the release notes behind an available update.
 
-<details>
-<summary>📷 Screenshot — a container's side panel</summary>
-
 <p align="center"><img src="screenshots/manual.md/14-side-panel.jpg" alt="The side panel of a container with Overview, Resources, Logs and What's new tabs and the Details section open" width="384"></p>
-
-</details>
+<p align="center"><sub>A container's side panel, on Overview.</sub></p>
 
 <a id="144-keys"></a>
 
@@ -2350,6 +2402,9 @@ When a container **stops unexpectedly**, **keeps restarting** (three crashes in 
 
 They go where Health's downtime alerts go: the alert webhook under **Behavior → Status & alerts → Downtime alerts** (with its presets), and browser notifications with **Notify when a container stops, keeps restarting or turns unhealthy** switched on. **Config → Containers → Notifications** switches them off. Mute a single container from its row menu, its side panel's ⋯ menu, or `m`; **Muted containers** lists them and says where notices go. Hidden containers and nextDash's own raise nothing.
 
+<p align="center"><img src="screenshots/manual.md/14-notice.jpg" alt="Config, Containers, Alerts: Notify about containers and Also when one uses too much CPU or memory ticked, with CPU above 90 %, Memory above 90 % and For at least 10 minutes" width="860"></p>
+<p align="center"><sub>Container notices are switched under Config → Containers → Alerts.</sub></p>
+
 **Running hot.** **Also when one uses too much CPU or memory** (on by default) sends a notice when a container stays above a line for a while — **CPU above** 90 % of every core, **Memory above** 90 % of its limit (the host's memory when it has none), **For at least** 10 minutes, each adjustable — and one when it is back under both. It reads the stats history, so it needs **Keep the last hour of CPU and memory** on. One notice per spell; the same mutes apply.
 
 **Automatic updates** send a notice when one went through, when one was rolled back and why, and when one could not be done.
@@ -2385,6 +2440,9 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 | **Certificates** | Certificates close to expiry, per host |
 | **Health trend** | How the collection's health has moved, drawn like the summary in Collection health |
 
+<p align="center"><img src="screenshots/manual.md/15-uptime.jpg" alt="The Uptime tile: five monitored addresses, worst first, each with its uptime and a heartbeat bar, and 2 more" width="380"></p>
+<p align="center"><sub>The Uptime tile.</sub></p>
+
 *What is arriving?*
 
 | Kind | Shows |
@@ -2415,6 +2473,9 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 | **Containers** | Running and total containers, failing healthchecks and recent restarts; opens the Containers view, and its update figure links to `#docker?filter=updates`. The figures you tick can add **updates waiting** (a skipped or held one does not count), **reclaimable** disk space — what the Disk tab last measured, measured again in the background once it is six hours old, a dash before the first — and **incidents** in the last 24 hours (crashes and turns unhealthy, from the timeline). **Name the three busiest by CPU** lists them under the figures. Nothing ticked means every figure. |
 | **Container list** | The containers themselves, one row each: one column on a narrow tile, two on a wide one. Its settings choose **running only** or **all**, the order (**problems first**, name, longest or shortest uptime, CPU or memory — busiest first), what stands on the right of a row (uptime, the image tag, CPU and memory, or nothing) and where a click goes: the container in the Containers view, or its web UI. A problem — unhealthy, stopped, an update — replaces the uptime on its row. |
 
+<p align="center"><img src="screenshots/manual.md/15-container-list.jpg" alt="The Container list tile: 7 of 7 running, immich-server unhealthy, sonarr with an update, and the rest with their uptime" width="380"></p>
+<p align="center"><sub>The Container list tile; a problem takes the place of the uptime.</sub></p>
+
 *How is the Unraid server doing?*
 
 | Kind | Shows |
@@ -2437,6 +2498,9 @@ These read one server, set once under Config → Unraid ([§15.6](#156-unraid-wi
 | **Calendar** | What is coming up, from the **Calendar feed URL (.ics)** under Appearance → Date & weather |
 | **RSS** | The newest articles from up to ten feed addresses set on the widget, merged newest first |
 | **Notes** | A text of your own, read as Markdown, with checkboxes you tick on the tile; up to 6,000 characters |
+
+<p align="center"><img src="screenshots/manual.md/15-weather.jpg" alt="The Weather tile: rain at 16 °C in Leiden and the next five days" width="380"> <img src="screenshots/manual.md/15-rss.jpg" alt="The RSS tile: five headlines, newest first, each with its age" width="380"></p>
+<p align="center"><sub>The Weather and RSS tiles.</sub></p>
 
 And the **Custom** widget, which reads any service that answers with JSON ([§15.5](#155-the-custom-widget)).
 
@@ -2467,6 +2531,8 @@ Widgets are ordered with the categories under **Structure → Categories**, or d
 
 **RSS** — your server fetches each feed and caches it for 15 minutes. A headline shows the feed's summary on hover or focus. Rows past the row count fold into a **more** row. A feed that fails does not empty the tile.
 
+<img src="screenshots/manual.md/15-notes.jpg" alt="The Notes tile: a short checklist with two items ticked and struck through, and Edit and Open large" width="380" align="right">
+
 **Notes** — headings (`#` to `###`), bullet and numbered lists, quotes, tables, code blocks, **bold**, *italic*, `code` and links are drawn as such; a line that starts with `[ ]` is a checkbox, and ticking it on the tile saves at once. **Edit** opens a plain editor (`Ctrl/Cmd + Enter` saves, `Esc` cancels); typing `/` there offers commands: `/date`, `/time`, `/uuid`, `/upper`, `/lower`, `/title`, `/todo`, `/h1`, `/code` and `/table`. **Open large** shows the text beside a preview with a toolbar (heading, bold, italic, code, link, list, task, quote, table, and `/` for the commands). A tile drawn wide adds the length and how many tasks are done. **Config → Behavior → General → Notes widget → Notes are processed** chooses where the Markdown and the commands are worked out: **On the server** (the default) or **In the browser**, which needs no request while you type. If the server cannot be reached, the tile shows the plain text.
 
 <a id="154-system-widgets-and-what-they-need"></a>
@@ -2474,6 +2540,9 @@ Widgets are ordered with the categories under **Structure → Categories**, or d
 ### 15.4 System widgets and what they need
 
 Processor, Memory, Disks, Containers and Container list report on the machine nextDash runs on. The Containers view shares the same connection. Running the binary directly needs no setup. In a container:
+
+<p align="center"><img src="screenshots/manual.md/15-system.jpg" alt="The Processor, Memory and Disks tiles side by side: 14 % in use, 11.4 of 32.0 GiB in use, and 5.1 TiB free of 13.7 TiB over the array and the cache" width="860"></p>
+<p align="center"><sub>Processor, Memory and Disks.</sub></p>
 
 **Processor and Memory** usually work as they are — `/proc` is not namespaced. Mount it only to be explicit:
 
@@ -2871,12 +2940,8 @@ The theme browser lies over the right of the dashboard, so every change shows on
 - **Use this theme's look**, above the grid, appears once a theme of your own carries a look. Off, picking such a theme leaves the look on screen as it is.
 - **Save as theme…** turns what is on screen into a new theme of your own: a name (it suggests "‹theme› — mine"), **Bring this look along**, and **Make the light/dark half too** when the theme has two. It is saved at once and opens in the editor; picking it still waits for **Apply**, so **Cancel** keeps the new theme and puts the old one back on screen.
 
-<details>
-<summary>📷 Screenshot — the theme browser, Themes tab</summary>
-
 <p align="center"><img src="screenshots/manual.md/16-theme-browser.jpg" alt="The top of the theme browser: its tabs, the search box, filters, the theme in use and the first theme cards" width="490"></p>
-
-</details>
+<p align="center"><sub>The top of the Themes tab: search, segments, character chips and the first cards.</sub></p>
 
 <a id="looks"></a>
 
@@ -2896,6 +2961,9 @@ The theme browser lies over the right of the dashboard, so every change shows on
 | **Terminal** | Scanlines, solid cards, bare labels |
 | **Neon** | Bright prisms, see-through cards, group cards |
 | **Plain** | No backdrop, solid cards, label headers |
+
+<p align="center"><img src="screenshots/manual.md/16-looks.jpg" alt="The Looks tab of the theme browser: a short explanation, then the first looks, each with a picture, a line, what it sets and a Use button" width="489"></p>
+<p align="center"><sub>The Looks tab; Use shows a look on the page at once.</sub></p>
 
 <a id="themes-that-catch-the-light"></a>
 
@@ -2929,6 +2997,9 @@ kind of surface a theme draws, which is the part a palette cannot say.
 
 The chips in the theme browser filter on it, and searching finds an archetype
 by name — or a word from the line each family carries.
+
+<p align="center"><img src="screenshots/manual.md/16-character-chips.jpg" alt="The character chips in the theme browser: All, Lacquer, Glass, Frost, Aurora, Neon, Velvet, Enamel, Brushed, Carbon, Paper, Terminal and Ink" width="481"></p>
+<p align="center"><sub>The character chips filter the theme cards.</sub></p>
 
 A theme's character is editable in the theme editor, for packaged themes as
 well as your own: the archetype, the grain's angle and strength, the shine, the
@@ -2983,6 +3054,9 @@ Type is on the **Look** tab; everything behind the bookmarks is on the **Backgro
   Like depth and glow, the choice belongs to the theme you are on unless **Use these for every theme** is on ([§16.3](#163-surfaces)). `:backdrop` turns it on or off from the command palette.
 - **Backdrop settings** — **Intensity**, **Scale** and **Variant** (with **🎲** for a new one) change the theme's backdrop; **Blur**, **Brightness**, **Saturation** and **Theme tint** soften it and your own background image alike. Only the backdrop blurs, never the bookmarks. **Back to the defaults** resets all seven.
 - **Pattern over it** — **Follow the theme**, **Dots**, **Grid**, **Lines**, **Hatch** or **None**: a texture drawn over the backdrop. Left to the theme, there is none while a backdrop is shown; with the backdrop off, most themes ask for dots.
+
+<p align="center"><img src="screenshots/manual.md/16-backdrops.jpg" alt="The Backdrop tab of the theme browser: Theme backdrop on Follow the theme, which draws scanlines, and the backdrop settings intensity, scale, variant and blur" width="489"></p>
+<p align="center"><sub>The Backdrop tab: the backdrop the theme draws, and its settings.</sub></p>
 
 <a id="165-custom-themes"></a>
 
@@ -3125,11 +3199,17 @@ Old addresses still land in the right place — for example `/#config/pages-tags
 - **↺** puts one setting back to its default; **Reset panel** puts a whole group back (it asks first).
 - **Only changed** hides settings that are still on their default; the filter beside it narrows the tab by label, hint or option. Both name the other tabs of the section where they find something, and a click goes there.
 
+<p align="center"><img src="screenshots/manual.md/17-only-changed.jpg" alt="The head of a config section: its name and line, Only changed, a note that everything on the tab is at its default, and the Filter settings field" width="860"></p>
+<p align="center"><sub>Only changed and the filter, at the head of the section.</sub></p>
+
 <a id="173-finding-a-setting"></a>
 
 ### 17.3 Finding a setting
 
 **`Ctrl/Cmd + Shift + K`** — or **Find settings** below the section rail — searches every section, tab, setting and help topic. It also finds settings by related words (*uptime*, *wallpaper*, *hotkey*) and by their current value (*8099*, *Monitor*), and shows that value beside the result.
+
+<p align="center"><img src="screenshots/manual.md/17-find-settings.jpg" alt="Find settings with quiet typed: one result, Hold notices during quiet hours, under Behavior › Status & alerts, with its value Off" width="840"></p>
+<p align="center"><sub>Find settings shows where a setting lives and what it is set to.</sub></p>
 
 **Settings per device.** Settings live on the server, so every browser shows the same dashboard. **Keep settings on this device only** (Behavior → Privacy & sync) keeps appearance and layout in this browser instead. The few settings that stay shared — such as the custom favicon and font, collections, the action bar position, web search and container icons — carry an **all devices** mark.
 
@@ -3195,6 +3275,9 @@ Four tabs, with the same strip, keys and memory as Config → Inbox. It opens on
 | **View** | **View**: show the Containers view, refresh the list every 2, 5, 10 or 30 seconds, log lines to show (100, 200, 500 or 1000), keep the last hour of CPU and memory for the CPU and RAM columns and the charts, close the side panel on a click beside it, and the key legend: above the list, below it, or hidden. **Links**: the Docker host address that port and web UI links point at. **Hidden containers**: kept out of the view, search and the widget count — they keep running |
 | **Updates** | **Updates**: check for image updates: off, every 6, 12 or 24 hours; the window automatic updates run in, **from** and **until** a full hour (03:00 to 05:00 at first) ([§14.5](#145-actions-and-updates)). **GitHub**: a token that raises the rate limit for release notes, for images hosted on GHCR and for nextDash's own check for a new release ([§24](#the-update-check-fails)) |
 | **Alerts** | **Notifications**: notify about containers — on by default; also when one uses too much CPU or memory, with the CPU line (50–95 %), the memory line (70–95 %) and how long (5–30 minutes) ([§14.9](#149-notices)). **Muted containers**: where notices go, or that nothing receives them yet, and the containers you muted — × lets one back in |
+
+<p align="center"><img src="screenshots/manual.md/14-connection.jpg" alt="The Connection panel under Config, Containers: Docker socket Connected, Actions On, Write token Not set with a warning, and This container nextdash" width="860"></p>
+<p align="center"><sub>Config → Containers → Connection: what the environment set, read only.</sub></p>
 
 The Unraid server has a section of its own, **Config → Unraid**: the Containers view does not use it, only the Unraid widgets do ([§15.6](#156-unraid-widgets)). Their *Set up Unraid* row opens it. It opens with **How it works** — nextDash and the server drawn as two boxes with data running between them, and three steps (a Viewer key, the address and key tested and saved, a widget on a page) that are ticked off as they are done — and **What you get**: the seven widgets in miniature with example figures, each with an **Add…** that opens Widgets → Types on that kind.
 
@@ -3368,6 +3451,9 @@ The **Web Archive** and **Local copies** panels live on this tab too ([§12.7](#
 
 Webhooks tell another program the moment something happens here. Add a receiver with a name and an address and tick its events; nothing ticked means all.
 
+<p align="center"><img src="screenshots/manual.md/19-webhooks.jpg" alt="The Add a receiver panel: a name, the address to post to, the events to send it, Send to this receiver and Save" width="860"></p>
+<p align="center"><sub>Adding a receiver: a name, an address and its events.</sub></p>
+
 | Event | When |
 |---|---|
 | `bookmark.added` | A bookmark is added, from any route |
@@ -3411,6 +3497,9 @@ The MCP endpoint is switched on from this tab as well — see [§23.6](#236-the-
 
 Deleted **bookmarks, pages and categories** stay in the trash for **30 days** (at most 500 entries). `:trash` opens it. Every route into the trash — the dashboard, the Bookmarks view, `:remove`, single or bulk — lands here.
 
+<p align="center"><img src="screenshots/manual.md/19-trash.jpg" alt="The trash with two deleted bookmarks, each with its address, when it was deleted and from which page, and Restore and Delete forever; under them Select all, Restore selected and Empty trash" width="860"></p>
+<p align="center"><sub>The trash: restore one, a few, or empty it.</sub></p>
+
 - **Search** by name, URL, tag, category or page.
 - **Restore** puts a bookmark back on its page, at its old position.
 - A deleted **page** is one entry (*Page · 12 bookmarks*) and comes back with its categories and bookmarks, in its old place.
@@ -3448,6 +3537,9 @@ A restore that cannot go ahead is refused and the entry stays: a bookmark or cat
 ### 20.1 Server logs
 
 What the server has been doing — background jobs, imports, checks and every request — without shell access. Tiles show the number of lines, warnings and errors, and how long lines are kept.
+
+<p align="center"><img src="screenshots/manual.md/20-server-logs.jpg" alt="The Server log panel: Show, a line filter, Follow, Record server log, refresh, Copy, Download, Clear and settings, a note on what is recorded, and numbered request lines with their times, one 404 in amber" width="860"></p>
+<p align="center"><sub>The server log while it records; a 404 stands out in amber.</sub></p>
 
 ```
 INFO   health   checked 110 bookmarks, 2 failed, 1.4s
@@ -3588,10 +3680,8 @@ Use `--data-urlencode`: an address with its own `?a=1&b=2` breaks a hand-built q
 
 nextDash adapts to touch screens (a touch device without a hover pointer) rather than to window width alone.
 
-<p align="center">
-  <img src="screenshots/manual.md/22-phone.jpg" alt="The dashboard on a phone: one column with the page name, the Today and Fresh categories and the Health widget" width="300">
-</p>
-<p align="center"><sub>The dashboard on a phone, in one column.</sub></p>
+<p align="center"><img src="screenshots/manual.md/22-phone.jpg" alt="The dashboard on a phone: one column with the page name, the Today and Fresh categories and the Health widget" width="300"> <img src="screenshots/manual.md/22-phone-bookmarks.jpg" alt="The Bookmarks view on a phone: the header band, the search, a Filters button for the rail, Group and Sort, and the list of bookmarks with their scores" width="300"></p>
+<p align="center"><sub>The dashboard in one column, and the Bookmarks view with its rail behind <b>Filters</b>.</sub></p>
 
 | | Phone | Tablet and desktop |
 |---|---|---|
