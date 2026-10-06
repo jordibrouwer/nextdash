@@ -72,6 +72,15 @@
       ]
     },
     {
+      "title": "Inbox",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The inbox keeps every link.</strong> It used to hold 500 and quietly drop the oldest when a new one came in; now nothing is pushed out, and an import adds every link."
+        }
+      ]
+    },
+    {
       "title": "Bookmarks",
       "items": [
         {

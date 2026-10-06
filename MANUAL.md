@@ -2092,6 +2092,8 @@ flowchart LR
 
 A URL already in the inbox is not added again: a toast says *Already in Inbox* and the view jumps to it.
 
+The inbox has no limit. It keeps every link until you deal with it, nothing is dropped to make room, and an import adds every link that is not there yet.
+
 <a id="132-the-view"></a>
 
 ### 13.2 The view
