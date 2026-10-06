@@ -170,7 +170,14 @@ func (h *Handlers) seedDemo(now time.Time) error {
 		return err
 	}
 
+	// One Unraid server, answered from the embedded fixture. Its key lives in
+	// the data directory, so it is written again after every reset.
+	if err := saveUnraidAPIKey(demoUnraidServerID, "demo"); err != nil {
+		return err
+	}
+
 	settings := h.store.GetSettings()
+	settings.UnraidServers = []UnraidServer{{ID: demoUnraidServerID, Name: "Tower", BaseURL: "http://tower.local", Enabled: true}}
 	settings.OnboardingCompleted = true
 	settings.CurrentPage = 1
 	settings.QuickStart.Dismissed = true
@@ -227,6 +234,7 @@ func (h *Handlers) resetDemo() error {
 	if err := h.seedDemo(time.Now()); err != nil {
 		return err
 	}
+	demoDockerEngine.reset(time.Now())
 	h.invalidateHealthReportCache()
 	applyRuntimeSettings(h.store.GetSettings())
 	demo.lastWrite.Store(0)

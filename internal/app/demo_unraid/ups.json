@@ -1,0 +1,3 @@
+{"data":{"upsDevices":[{"name":"ups","model":"Back-UPS 1500","status":"ONLINE",
+ "battery":{"chargeLevel":100,"estimatedRuntime":3240},
+ "power":{"loadPercentage":18,"currentPower":112}}]}}

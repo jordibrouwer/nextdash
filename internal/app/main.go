@@ -49,6 +49,13 @@ func Run(files assetFS) {
 		if err := prepareDemoDataDir(); err != nil {
 			log.Fatalf("%v", err)
 		}
+		// A daemon and an Unraid server of its own, before anything asks.
+		if err := startDemoDocker(); err != nil {
+			log.Fatalf("the demo's Docker could not start: %v", err)
+		}
+		if err := startDemoUnraid(); err != nil {
+			log.Fatalf("the demo's Unraid could not start: %v", err)
+		}
 	}
 	// Mirror the log to a ring buffer (and a rotating file) for the in-app log
 	// viewer. Installed right after the data dir is known and before anything
