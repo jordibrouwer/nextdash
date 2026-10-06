@@ -196,6 +196,65 @@ function tidyDemoData(dir, patch) {
         'w_m00000000005', 'w_b00000000004', 'w_b00000000005'];
     writeJSON(labFile, lab);
 
+    const patches = String(patch || '').split(',');
+    const settingsPatch = {
+        // The category header with its count beside the name.
+        catcount: { showCategoryCount: true },
+        // A web search engine to ask; the answers are mocked in the shot.
+        websearch: { webSearchEngine: 'searxng', webSearchSearxngUrl: 'http://searx.lab.example' },
+        // The server log recording from the start, so the boot is in it.
+        serverlog: { serverLogEnabled: true },
+    };
+    for (const name of patches) {
+        if (!settingsPatch[name]) continue;
+        const s = readJSON(settingsFile);
+        writeJSON(settingsFile, { ...s, ...settingsPatch[name] });
+    }
+
+    // One shot only: the wiki on Homelab watched for drift, and retitled.
+    if (patches.includes('drift')) {
+        const labNow = readJSON(labFile);
+        const wiki = (labNow.bookmarks || []).find((b) => b.url === 'https://wiki.lab.example/');
+        Object.assign(wiki, {
+            watchDrift: true,
+            driftUrl: 'https://wiki.lab.example/',
+            driftTitle: 'Wiki',
+            driftNoticed: 'title-parked',
+            driftSince: now - 2 * 86_400_000,
+            driftReason: 'Page title now reads "Domain for sale"',
+            previewDesc: 'The homelab wiki: how every service here is set up, and how to bring it back.',
+        });
+        writeJSON(labFile, labNow);
+    }
+
+    // One shot only: two pages of tiles -- the machine's three in one row on
+    // the first, the weather and a feed on the second.
+    if (patches.includes('widgets')) {
+        // Today stays on the other pages and Fresh is off, so the tiles lead
+        // these. (The server keeps no page list for Fresh.)
+        const s = readJSON(settingsFile);
+        writeJSON(settingsFile, { ...s, smartTodayPageIds: [1, 2, 3], feedsEnabled: false });
+        const pages = readJSON(path.join(dir, 'pages.json'));
+        pages.order = [...(pages.order || []), 4, 5];
+        writeJSON(path.join(dir, 'pages.json'), pages);
+        const tilePage = (id, name, widgets) => writeJSON(path.join(dir, `bookmarks-${id}.json`), {
+            page: { id, name },
+            categories: [],
+            widgets,
+            blockOrder: widgets.map((w) => w.id),
+            bookmarks: [],
+        });
+        tilePage(4, 'Server', [
+            { id: 'w_s00000000001', type: 'cpu' },
+            { id: 'w_s00000000002', type: 'memory' },
+            { id: 'w_s00000000003', type: 'disks' },
+        ]);
+        tilePage(5, 'Outside', [
+            { id: 'w_s00000000004', type: 'weather' },
+            { id: 'w_s00000000005', type: 'rss', config: { feedUrls: ['https://blog.reading.example/feed.xml', 'https://news.lab.example/rss'] } },
+        ]);
+    }
+
     // One shot only: a page of the seven Unraid widgets.
     if (patch === 'unraid') {
         const pages = readJSON(path.join(dir, 'pages.json'));
@@ -373,7 +432,7 @@ async function shot(page, name) {
  * shows nothing. Full frames are for shots where the page is the subject.
  */
 async function crop(page, locator, name, pad = 24, maxHeight = Infinity) {
-    const box = await locator.boundingBox();
+    const box = await boxAround(Array.isArray(locator) ? locator : [locator]);
     if (!box) throw new Error(`${name}: nothing to crop`);
     const view = page.viewportSize() || DESKTOP;
     const x = Math.max(0, Math.floor(box.x - pad));
@@ -385,6 +444,32 @@ async function crop(page, locator, name, pad = 24, maxHeight = Infinity) {
     };
     fs.mkdirSync(OUT, { recursive: true });
     await page.screenshot({ path: path.join(OUT, name), type: 'jpeg', quality: 82, clip });
+}
+
+/** The one box around several elements -- a row and the menu it opened. */
+async function boxAround(locators) {
+    const boxes = (await Promise.all(locators.map((l) => l.boundingBox()))).filter(Boolean);
+    if (!boxes.length) return null;
+    const x = Math.min(...boxes.map((b) => b.x));
+    const y = Math.min(...boxes.map((b) => b.y));
+    return {
+        x, y,
+        width: Math.max(...boxes.map((b) => b.x + b.width)) - x,
+        height: Math.max(...boxes.map((b) => b.y + b.height)) - y,
+    };
+}
+
+/*
+ * A close crop of one element: a narrow margin, so the element fills the
+ * picture, the pointer parked away from it, and focus let go -- unless the
+ * focus is the subject (keepFocus).
+ */
+async function snap(page, locator, name, { pad = 12, maxHeight = Infinity, keepFocus = false } = {}) {
+    const view = page.viewportSize() || DESKTOP;
+    await page.mouse.move(5, view.height - 5);
+    if (!keepFocus) await page.evaluate(() => document.activeElement?.blur?.());
+    await page.waitForTimeout(300);
+    await crop(page, locator, name, pad, maxHeight);
 }
 
 /** The dashboard on a page, everything drawn. */
@@ -904,5 +989,463 @@ test.describe('phone', () => {
         await page.locator('h1').first().click().catch(() => {});
         await page.waitForTimeout(800);
         await shot(page, '22-phone.jpg');
+    });
+});
+
+/*
+ * Close crops of single elements, set beside the text that names them.
+ *
+ * Each one is reached the way a reader reaches it -- a key, a click, a
+ * right-click -- and cropped tight with snap(), so the element fills the
+ * picture and no hover glow, focus ring or toast is left in it.
+ */
+
+test.describe('category count', () => {
+    test.use({ dataPatch: 'catcount' });
+    test('04 header and grid parts', async ({ page }) => {
+        await prepare(page);
+        await openDashboard(page);
+        await snap(page, page.locator('.dashboard-section.section-controls .header-top'), '04-header.jpg');
+        await snap(page, [page.locator('.header-track'), page.locator('.header-destinations')], '04-page-switcher.jpg');
+        await snap(page, row(page, 'Encyclopedia'), '04-bookmark-row.jpg', { pad: 8 });
+        const header = page.locator('#category-title-utilities');
+        await scrollToTop(page, header, 300);
+        await snap(page, header, '04-category-header.jpg', { pad: 10 });
+    });
+});
+
+test('05 paste prompt', async ({ page }) => {
+    await prepare(page);
+    await openDashboard(page);
+    // A paste with no field active, as Ctrl + V on the dashboard sends it.
+    await page.evaluate(() => {
+        const data = new DataTransfer();
+        data.setData('text/plain', 'https://jellyfin.lab.example/web/');
+        document.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true }));
+    });
+    const dialog = page.locator('#paste-choice-modal .paste-choice-modal');
+    await dialog.waitFor({ state: 'visible' });
+    await page.waitForTimeout(600);
+    await snap(page, dialog, '05-paste-prompt.jpg', { pad: 4 });
+});
+
+test('06 qr code', async ({ page }) => {
+    await prepare(page);
+    await openDashboard(page);
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Shift+J');
+    await page.locator('#app-modal.show .bookmark-qr-modal').waitFor();
+    await page.waitForTimeout(800);
+    await snap(page, modal(page), '06-qr-code.jpg', { pad: 4 });
+});
+
+test.describe('header sheets', () => {
+    // The sheet that hangs from the header is centred by a transform, which
+    // the reduced-motion rule in modal.css takes away (it then runs off the
+    // right edge); the shot shows it as most readers see it.
+    test.use({ reducedMotion: 'no-preference' });
+    test('06 recent', async ({ page }) => {
+        await prepare(page);
+        await openDashboard(page);
+        await page.keyboard.press('*');
+        await page.locator('#app-modal.show .recent-bookmarks-modal').waitFor();
+        await page.waitForTimeout(1_000);
+        await snap(page, modal(page), '06-recent.jpg', { pad: 4 });
+    });
+});
+
+test('06 edit in place', async ({ page }) => {
+    await prepare(page);
+    await openDashboard(page);
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Shift+E');
+    const form = page.getByRole('dialog', { name: 'Edit Bookmark' });
+    await form.waitFor();
+    await page.waitForTimeout(1_200);
+    // The form opens with the cursor in the address field; that stays.
+    await snap(page, form, '06-edit-in-place.jpg', { pad: 4, keepFocus: true });
+});
+
+test('07 focus and selection', async ({ page }) => {
+    await prepare(page);
+    await openDashboard(page);
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await page.waitForTimeout(500);
+    const today = page.locator('#dashboard-layout .category[data-smart-collection="true"]').first();
+    await snap(page, today, '07-focus.jpg', { keepFocus: true });
+    // x ticks the row and moves on.
+    await page.keyboard.press('x');
+    await page.keyboard.press('x');
+    await page.keyboard.press('x');
+    const bar = page.locator('.multi-select-toolbar');
+    await bar.waitFor({ state: 'visible' });
+    await page.waitForTimeout(500);
+    await snap(page, bar, '07-selection-bar.jpg', { pad: 8 });
+});
+
+test('08 finders', async ({ page }) => {
+    await prepare(page);
+    await openDashboard(page);
+    await page.keyboard.press('?');
+    await page.waitForTimeout(800);
+    await snap(page, page.locator('#shortcut-search .search-container'), '08-finders.jpg', { pad: 4, keepFocus: true });
+});
+
+test('08 tag cloud', async ({ page }) => {
+    await prepare(page);
+    await openDashboard(page);
+    await page.keyboard.press('/');
+    const cloud = page.locator('#tag-cloud-modal.is-open');
+    await cloud.waitFor();
+    await page.waitForTimeout(800);
+    await snap(page, cloud, '08-tag-cloud.jpg', { pad: 4 });
+});
+
+const WEB_RESULTS = [
+    { title: 'Maps of the world - OpenStreetMap', url: 'https://www.openstreetmap.org/', snippet: 'OpenStreetMap is a map of the world, created by people like you and free to use.', domain: 'openstreetmap.org' },
+    { title: 'Topographic maps for hiking', url: 'https://topo.maps.example/', snippet: 'Contour lines, trails and huts, for every country in Europe.', domain: 'topo.maps.example' },
+    { title: 'A short history of maps', url: 'https://history.maps.example/short', snippet: 'From clay tablets to satellites: how people drew the world they knew.', domain: 'history.maps.example' },
+];
+
+test.describe('web search', () => {
+    test.use({ dataPatch: 'websearch' });
+    test('08 web search', async ({ page }) => {
+        await prepare(page);
+        await page.route('**/api/web-search/status', (r) => r.fulfill({ json: { engine: 'searxng', configured: true, categories: ['web', 'news', 'videos', 'it'] } }));
+        await page.route('**/api/web-search?**', (r) => r.fulfill({ json: { engine: 'searxng', results: WEB_RESULTS } }));
+        await openDashboard(page);
+        await page.keyboard.press('>');
+        await page.waitForTimeout(400);
+        await page.keyboard.type('maps', { delay: 60 });
+        await page.waitForTimeout(800);
+        await page.keyboard.press('Shift+Enter');
+        await page.locator('#search-matches .search-web-result').first().waitFor();
+        await page.waitForTimeout(800);
+        await snap(page, page.locator('#shortcut-search .search-container'), '08-web-search.jpg', { pad: 4, keepFocus: true });
+    });
+});
+
+test('09 category menu', async ({ page }) => {
+    await prepare(page);
+    await openDashboard(page);
+    await page.locator('#category-title-dev').click({ button: 'right' });
+    const menu = page.locator('.bookmark-context-menu').first();
+    await menu.waitFor({ state: 'visible' });
+    await page.waitForTimeout(400);
+    await snap(page, menu, '09-category-menu.jpg', { pad: 2, keepFocus: true });
+});
+
+test('10 tag suggestions', async ({ page }) => {
+    await prepare(page);
+    await openDashboard(page);
+    await page.keyboard.press('+');
+    await page.getByRole('dialog', { name: 'Create New Bookmark' }).waitFor();
+    await page.waitForTimeout(400);
+    // A second page on a site whose bookmark carries #dev: the form offers it.
+    await page.keyboard.type('https://github.com/jellyfin/jellyfin', { delay: 10 });
+    await page.keyboard.press('Tab');
+    const chips = page.locator('.tag-suggest-chips');
+    await chips.waitFor({ state: 'visible' });
+    await page.waitForTimeout(600);
+    await snap(page, page.locator('.bookmark-inline-field', { has: chips }), '10-tag-suggestions.jpg');
+});
+
+test('11 rail, toolbar and header band', async ({ page }) => {
+    await prepare(page);
+    await openBookmarksView(page);
+    await snap(page, page.locator('.config-view--library .lvs-header'), '11-header-band.jpg', { pad: 8 });
+    await snap(page, page.locator('.config-bm-toolbar'), '11-toolbar.jpg', { pad: 8 });
+    // The summary, Views and Health; Pages, Categories and Tags follow below.
+    // The crop stops where Health ends, before the next heading.
+    const railTop = [page.locator('#config-bm-rail .config-bm-health-summary'), page.locator('#config-bm-rail .config-bm-rail-group').nth(1)];
+    const railBox = await boxAround(railTop);
+    await snap(page, railTop, '11-rail.jpg', { pad: 10, maxHeight: Math.floor(railBox.height) + 10 });
+});
+
+test('11 row menu', async ({ page }) => {
+    await prepare(page);
+    await openBookmarksView(page);
+    await page.locator('#config-bm-list .config-bm-row', { hasText: 'openstreetmap.org' }).first().click({ button: 'right' });
+    const menu = page.locator('.config-bm-context-menu').first();
+    await menu.waitFor({ state: 'visible' });
+    await page.waitForTimeout(400);
+    await snap(page, menu, '11-row-menu.jpg', { pad: 2, keepFocus: true });
+});
+
+test('11 pages and categories', async ({ page }) => {
+    await prepare(page);
+    await openBookmarksView(page);
+    // Manage, beside Categories in the rail.
+    await page.locator('#config-bm-rail [data-bm-manage="categories"]').click();
+    const structure = page.locator('.modal.config-structure-modal');
+    await structure.waitFor({ state: 'visible' });
+    await page.waitForTimeout(1_000);
+    await snap(page, structure, '11-pages-categories.jpg', { pad: 4 });
+});
+
+/** A monitored bookmark's side panel, on its Health tab. */
+async function openHealthTab(page, host) {
+    await openBookmarksView(page);
+    await page.locator('#config-bm-list .config-bm-row', { hasText: host }).first().click();
+    const panel = page.locator('[data-lvs-drawer-panel]').first();
+    await panel.waitFor({ state: 'visible' });
+    await page.keyboard.press('2');
+    await page.waitForTimeout(1_200);
+    return panel;
+}
+
+test('12 health tab', async ({ page }) => {
+    await prepare(page);
+    const panel = await openHealthTab(page, 'media.lab.example');
+    await snap(page, panel, '12-health-tab.jpg', { pad: 0, maxHeight: 560 });
+});
+
+test('12 expected response', async ({ page }) => {
+    await prepare(page);
+    const panel = await openHealthTab(page, 'media.lab.example');
+    const section = panel.locator('details.config-bm-acc', { hasText: 'Expectations' }).first();
+    await section.locator('summary').click();
+    await page.waitForTimeout(600);
+    await section.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(400);
+    await snap(page, section, '12-expected-response.jpg', { pad: 8 });
+});
+
+test.describe('drift', () => {
+    test.use({ dataPatch: 'drift' });
+    test('12 drift', async ({ page }) => {
+        await prepare(page);
+        await openBookmarksView(page);
+        await page.locator('#config-bm-list').click({ position: { x: 5, y: 5 } });
+        // Work through, on the pile of pages that changed.
+        await page.keyboard.press('f');
+        await page.locator('.health-focus-pile', { hasText: 'Changed or wrong content' }).click();
+        const card = page.locator('.health-focus-overlay .health-focus-card').first();
+        await card.locator('.health-drift-badge').waitFor();
+        await page.waitForTimeout(800);
+        await snap(page, card, '12-drift.jpg', { pad: 4 });
+    });
+});
+
+test('12 maintenance and quiet hours', async ({ page }) => {
+    await prepare(page);
+    await openConfig(page, 'behavior');
+    await subtab(page, 'Status & alerts').click();
+    const panel = (title) => page.locator('.config-panel', { has: page.locator('.config-panel-title', { hasText: title }) }).first();
+    const windows = panel(/^Maintenance windows/);
+    await scrollToTop(page, windows, 120);
+    await snap(page, windows, '12-maintenance.jpg', { pad: 10 });
+    const quiet = panel(/^Quiet hours/);
+    await scrollToTop(page, quiet, 120);
+    await quiet.getByText('Hold notices during quiet hours').click();
+    await waitOutNotice(page);
+    await quiet.getByRole('button', { name: /Add window/ }).click();
+    await waitOutNotice(page);
+    await page.waitForTimeout(600);
+    await scrollToTop(page, quiet, 120);
+    await snap(page, quiet, '12-quiet-hours.jpg', { pad: 10 });
+});
+
+test('13 inbox row', async ({ page }) => {
+    await prepare(page);
+    await openInbox(page);
+    const item = page.locator('.inbox-item', { hasText: 'Field notes on quokkas' }).first();
+    await item.locator('.inbox-item-title').click({ button: 'right' });
+    const menu = page.locator('.bookmark-context-menu').first();
+    await menu.waitFor({ state: 'visible' });
+    await page.waitForTimeout(400);
+    await snap(page, [item.locator('.inbox-item-check'), item.locator('.inbox-item-title'), menu], '13-inbox-row.jpg', { pad: 4, keepFocus: true });
+});
+
+test('14 container row', async ({ page }) => {
+    await prepare(page);
+    await openContainers(page);
+    await snap(page, page.locator('[data-docker-row]', { hasText: 'sonarr' }).first(), '14-container-row.jpg', { pad: 8 });
+});
+
+test('14 config panels', async ({ page }) => {
+    await prepare(page);
+    await openConfig(page, 'containers');
+    const panel = (title) => page.locator('.config-panel', { has: page.locator('.config-panel-title', { hasText: title }) }).first();
+    await snap(page, panel(/^Connection/), '14-connection.jpg', { pad: 10 });
+    await subtab(page, 'Alerts').click();
+    await page.waitForTimeout(800);
+    await snap(page, panel(/^Notifications/), '14-notice.jpg', { pad: 10 });
+});
+
+test('15 widget tiles', async ({ page }) => {
+    await prepare(page);
+    await openDashboard(page);
+    await snap(page, page.locator('[data-widget-type="notes"]').first(), '15-notes.jpg', { pad: 10 });
+    await page.keyboard.press('2');
+    await page.locator('[data-widget-type="uptime"]').first().waitFor();
+    await settle(page);
+    await page.waitForTimeout(1_500);
+    for (const [type, name] of [['uptime', '15-uptime.jpg'], ['containers', '15-container-list.jpg']]) {
+        const tile = page.locator(`[data-widget-type="${type}"]`).first();
+        await scrollToTop(page, tile, 120);
+        await snap(page, tile, name, { pad: 10 });
+    }
+});
+
+const RSS_ITEMS = [
+    { title: 'Notes on small software', link: 'https://blog.reading.example/small-software', source: 'blog.reading.example', publishedAt: NOW.getTime() - 3 * 3_600_000 },
+    { title: 'The router that ran for nine years', link: 'https://news.lab.example/router', source: 'news.lab.example', publishedAt: NOW.getTime() - 26 * 3_600_000 },
+    { title: 'Why plain text lasts', link: 'https://blog.reading.example/plain-text', source: 'blog.reading.example', publishedAt: NOW.getTime() - 2 * 86_400_000 },
+    { title: 'A quieter fan curve for the NAS', link: 'https://news.lab.example/fan-curve', source: 'news.lab.example', publishedAt: NOW.getTime() - 3 * 86_400_000 },
+    { title: 'Backups you have tried to restore', link: 'https://blog.reading.example/restore', source: 'blog.reading.example', publishedAt: NOW.getTime() - 5 * 86_400_000 },
+];
+
+test.describe('widget page', () => {
+    test.use({ dataPatch: 'widgets' });
+    test('15 weather, feed and system tiles', async ({ page }) => {
+        await prepare(page);
+        await page.route('**/api/widgets/rss?**', (r) => r.fulfill({ json: { items: RSS_ITEMS } }));
+        await openDashboard(page, '#4');
+        await page.waitForTimeout(1_000);
+        await snap(page, [page.locator('[data-widget-type="cpu"]'), page.locator('[data-widget-type="memory"]'), page.locator('[data-widget-type="disks"]')], '15-system.jpg', { pad: 10 });
+        await page.keyboard.press('5');
+        await page.locator('[data-widget-type="weather"]').first().waitFor();
+        await settle(page);
+        await page.waitForTimeout(1_500);
+        for (const [type, name] of [['weather', '15-weather.jpg'], ['rss', '15-rss.jpg']]) {
+            await snap(page, page.locator(`[data-widget-type="${type}"]`).first(), name, { pad: 10 });
+        }
+    });
+});
+
+test('16 theme browser parts', async ({ page }) => {
+    await prepare(page);
+    await openDashboard(page);
+    await page.keyboard.press('Shift+A');
+    await page.locator('[data-look-studio] [data-theme-id]').first().waitFor();
+    await page.waitForTimeout(1_200);
+    await snap(page, page.locator('[data-look-studio] .theme-browser-characters').first(), '16-character-chips.jpg', { pad: 8 });
+    const pane = page.locator('#look-studio-pane');
+    // Each cut where a row or a card ends, so nothing stands half in it.
+    for (const [tab, name, height] of [['backdrop', '16-backdrops.jpg', 596], ['looks', '16-looks.jpg', 585]]) {
+        await page.locator(`#look-studio-tab-${tab}`).click();
+        await page.waitForTimeout(1_200);
+        await snap(page, pane, name, { pad: 0, maxHeight: height });
+    }
+});
+
+test('17 find settings and only changed', async ({ page }) => {
+    await prepare(page);
+    await openConfig(page, 'appearance');
+    const head = page.locator('.config-view > .config-view-head').first();
+    const headBox = await head.boundingBox();
+    // Down to the head's own edge: the tabs start right under it.
+    await snap(page, head, '17-only-changed.jpg', { pad: 6, maxHeight: Math.floor(headBox.height) + 6 });
+    await page.keyboard.press('ControlOrMeta+Shift+K');
+    const finder = page.locator('#app-modal.show .config-settings-jump-modal');
+    await finder.waitFor();
+    await finder.locator('input').first().click();
+    await page.keyboard.type('quiet', { delay: 60 });
+    await page.waitForTimeout(800);
+    await snap(page, finder, '17-find-settings.jpg', { pad: 4, keepFocus: true });
+});
+
+test('19 trash', async ({ page }) => {
+    await prepare(page);
+    // The server stamps a deletion with its own time; the shots' clock stands
+    // at 09:12, so the two are put a little before it.
+    await page.route('**/api/trash', async (route) => {
+        if (route.request().method() !== 'GET') return route.fallback();
+        const response = await route.fetch();
+        const body = await response.json();
+        (body.items || []).forEach((item, i) => { item.deletedAt = NOW.getTime() - (i + 1) * 40 * 60_000; });
+        return route.fulfill({ response, json: body });
+    });
+    await openBookmarksView(page);
+    // Two bookmarks deleted the ordinary way, so the trash has something in it.
+    for (const host of ['deepl.com', 'imdb.com']) {
+        await page.locator('#config-bm-list .config-bm-row', { hasText: host }).first().click();
+        await page.waitForTimeout(400);
+        await page.keyboard.press('Escape');
+        await page.keyboard.press('d');
+        await page.locator('#config-confirm-modal [data-confirm="ok"]').click();
+        await page.waitForTimeout(800);
+    }
+    await page.locator('.config-link-anchor').click();
+    await page.locator('[data-config-section="data-backups"]').click();
+    await subtab(page, 'Trash').click();
+    await waitOutNotice(page);
+    const panel = page.locator('.config-panel', { has: page.locator('.config-panel-title', { hasText: 'Deleted items' }) }).first();
+    await panel.waitFor();
+    await page.waitForTimeout(600);
+    await snap(page, panel, '19-trash.jpg', { pad: 10 });
+});
+
+test('19 webhooks', async ({ page }) => {
+    await prepare(page);
+    await openConfig(page, 'data-backups');
+    await subtab(page, 'Webhooks').click();
+    await page.waitForTimeout(800);
+    const receiver = page.locator('.config-panel, details', { hasText: 'Add a receiver' }).last();
+    await receiver.getByText('Add a receiver').first().click();
+    await page.waitForTimeout(800);
+    await scrollToTop(page, receiver, 120);
+    await snap(page, receiver, '19-webhooks.jpg', { pad: 10 });
+});
+
+/*
+ * The server log as the shots' clock would have it: request lines from the
+ * last few minutes. A live server writes the real time of day, which would
+ * stand ten hours from the 09:12 everywhere else.
+ */
+const SERVER_LOG = [
+    ['09:10:02', 'GET /api/pages 200 1204B 2.1ms'],
+    ['09:10:02', 'GET /api/settings 200 9822B 3.4ms'],
+    ['09:10:03', 'GET /api/bookmarks?page=1 200 18310B 6.8ms'],
+    ['09:10:03', 'GET /api/bookmark-health 200 41228B 13.4ms'],
+    ['09:10:03', 'GET /api/inbox 200 3120B 1.9ms'],
+    ['09:10:04', 'GET /api/docker/status 200 186B 0.9ms'],
+    ['09:10:04', 'GET /api/widgets/rss?pageId=2 200 2210B 41.0ms'],
+    ['09:10:31', 'POST /api/health/check-url 200 212B 188.2ms'],
+    ['09:11:05', 'GET /api/update-status 200 186B 1.2ms'],
+    ['09:11:40', 'GET /data/icons/missing-icon.png 404 19B 0.4ms', 'warn'],
+    ['09:11:52', 'POST /api/bookmarks 200 98B 7.7ms'],
+    ['09:12:00', 'GET /api/system/metrics 200 1402B 4.6ms'],
+].map(([time, msg, level], seq) => ({
+    seq,
+    level: level || 'info',
+    source: 'request',
+    time: new Date(`2026-10-06T${time}`).toISOString(),
+    message: `${(0x5a17c0de + seq * 0x1f3d).toString(16).padStart(8, '0')}${(0x9e3779b9 * (seq + 1) >>> 0).toString(16).padStart(8, '0')} ${msg}`,
+}));
+
+test.describe('server log', () => {
+    test.use({ dataPatch: 'serverlog' });
+    test('20 server logs', async ({ page }) => {
+        await prepare(page);
+        await page.route('**/api/logs?**', (route) => {
+            if (route.request().method() !== 'GET') return route.fallback();
+            return route.fulfill({ json: { epoch: 'manual', entries: SERVER_LOG, nextSeq: SERVER_LOG.length, capacity: 2000, stats: { total: SERVER_LOG.length, warn: 1, error: 0 } } });
+        });
+        await openConfig(page, 'logs');
+        await subtab(page, 'Server logs').click();
+        await page.waitForTimeout(1_500);
+        const panel = page.locator('.config-panel', { has: page.locator('.config-panel-title', { hasText: /^Server log/ }) }).first();
+        await scrollToTop(page, panel, 120);
+        await snap(page, panel, '20-server-logs.jpg', { pad: 10, maxHeight: 620 });
+    });
+});
+
+test.describe('phone bookmarks', () => {
+    test.use({ viewport: PHONE, isMobile: true, hasTouch: true });
+    test('22 phone bookmarks', async ({ page }) => {
+        await prepare(page);
+        await openDashboard(page);
+        const note = page.getByRole('button', { name: 'Dismiss' }).first();
+        if (await note.isVisible().catch(() => false)) await note.click();
+        // The header leaves the Bookmarks icon out at this width; the view's
+        // own address opens it.
+        await page.goto('/#bookmarks');
+        await page.locator('#config-bm-list .config-bm-row').first().waitFor();
+        await settle(page);
+        await page.waitForTimeout(1_000);
+        await shot(page, '22-phone-bookmarks.jpg');
     });
 });
