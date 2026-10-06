@@ -706,6 +706,13 @@ Data is stored in `./data` next to the binary. `NEXTDASH_DATA_DIR` points it els
 
 **The first hour.** Split your bookmarks across a few pages, give the ten you open daily a shortcut, and switch on link checking under Config → Behavior → Status & alerts. Everything else can wait until you know what you want.
 
+<details>
+<summary>📷 Screenshot — a new install on its first launch, full page</summary>
+
+<p align="center"><img src="screenshots/manual.md/02-first-launch.jpg" alt="A new install on its first launch: example bookmarks in Today, Development, Search, Social and Media, a Health widget, and the Quick start card in the bottom-left corner with its three first tasks" width="860"></p>
+
+</details>
+
 <sub>[↑ Contents](#table-of-contents)</sub>
 
 ---
@@ -1432,6 +1439,13 @@ With that setting on (it is by default), a search that matches nothing lists you
 
 Page names are unique. Each row in Structure → Pages shows how many bookmarks the page holds.
 
+<details>
+<summary>📷 Screenshot — another page, full page</summary>
+
+<p align="center"><img src="screenshots/manual.md/09-second-page.jpg" alt="The Reading page chosen in the page switcher: its own Articles and Tutorials categories beside Today, Fresh and an Unsorted widget" width="860"></p>
+
+</details>
+
 <a id="92-categories"></a>
 
 ### 9.2 Categories
@@ -1789,6 +1803,13 @@ It fits one screen, and steps its cards down on a small window.
 
 </details>
 
+<details>
+<summary>📷 Screenshot — the Bookmarks view filtered on Broken, full page</summary>
+
+<p align="center"><img src="screenshots/manual.md/11-broken.jpg" alt="The Bookmarks view filtered on Broken: three bookmarks with their errors (DNS lookup failed, HTTP 502, HTTP 404), Broken chosen in the rail, and the side panel of one of them" width="860"></p>
+
+</details>
+
 <a id="119-a-bookmarks-health-in-large"></a>
 
 ### 11.9 A bookmark's health in large
@@ -1799,6 +1820,13 @@ It fits one screen, and steps its cards down on a small window.
 - **Checks** — checks by hour as a heatmap, the certificate, **Kept copies** (how long checks are retained), checks in the last 24 hours, and **Every check**: every check in the period with a search, **Only failures**, and **Export CSV**.
 
 A period select (today, 7, 14, 30 or 90 days) applies across the panel.
+
+<details>
+<summary>📷 Screenshot — one bookmark's health in large, Overview tab</summary>
+
+<p align="center"><img src="screenshots/manual.md/11-health-large.jpg" alt="Health in large for one monitored bookmark: its score, the period select, uptime, response time over 30 days, HTTP answers, uptime per day, incidents and the score breakdown" width="860"></p>
+
+</details>
 
 <a id="1110-rot-report"></a>
 
@@ -1815,6 +1843,13 @@ A period select (today, 7, 14, 30 or 90 days) applies across the panel.
 - Opening the Unsorted view swaps the pool: the filters, the search box and the bulk actions work on it exactly as they do on the filed library.
 - An Unsorted bookmark's side panel shows a primary **Promote** button in place of a page and category; the row menu has the same entry. Both open the bookmark form, titled **Promote bookmark**, on the last page of the dashboard — pick a page and category and **Save** files it there.
 - The **Unsorted widget** ([§15.1](#151-the-kinds)) also opens the Bookmarks view on Unsorted, with that bookmark's side panel already open.
+
+<details>
+<summary>📷 Screenshot — Unsorted with Promote, full page</summary>
+
+<p align="center"><img src="screenshots/manual.md/11-unsorted.jpg" alt="The Bookmarks view on Unsorted: four kept links without a page, and the side panel of one of them with Promote, Open and Edit" width="860"></p>
+
+</details>
 
 <a id="1112-pages-categories-modal"></a>
 
@@ -2251,6 +2286,13 @@ The **✎** on the icon in the panel's head chooses what the container shows: **
 - **Logs** — the last lines, with **Refresh** and **Open logs window** ([§14.8](#148-the-logs-window)).
 - **What’s new** — the release notes behind an available update.
 
+<details>
+<summary>📷 Screenshot — the Containers view with the side panel open, full page</summary>
+
+<p align="center"><img src="screenshots/manual.md/14-side-panel-full.jpg" alt="The Containers view with one container chosen: the list on the left and its side panel on the right, on Overview with Details open and the other parts folded" width="860"></p>
+
+</details>
+
 <a id="144-keys"></a>
 
 ### 14.4 Keys
@@ -2293,6 +2335,13 @@ The side panel's **Updates** part says where the image stands and keeps your say
 Updating by hand still works on a skipped or held image.
 
 **Update automatically** — a switch in the same part, or the selection bar for several — lets nextDash update the container on its own, in the nightly window set in **Config → Containers → Updates** (03:00 to 05:00 until you change it; a window past midnight, 22 to 4, works too). Inside it, every five minutes, a container with this switch on and an update waiting — as the last check found it; not skipped, not held, never nextDash's own — is updated as the Update button would, one at a time, and tried once per night for a given image. It is then watched for five minutes: if it stops, starts again on its own or turns unhealthy, it is rolled back to the image it had, started again, and that version is skipped. A stop or restart you make yourself during those five minutes is left alone. A container that was not running is updated and left stopped, without the watch. Each update, rollback or failure sends a notice ([§14.9](#149-notices)). It needs `NEXTDASH_DOCKER_CONTROL=1`, and the update check switched on — that is what finds a newer image.
+
+<details>
+<summary>📷 Screenshot — the Containers view filtered on Updates, full page</summary>
+
+<p align="center"><img src="screenshots/manual.md/14-updates.jpg" alt="The Containers view filtered on Updates: three containers with an update arrow, and Updates 3 in the rail and the summary" width="860"></p>
+
+</details>
 
 <a id="146-what-it-needs"></a>
 
@@ -2874,6 +2923,13 @@ Seven widgets read an Unraid server through its API: **Unraid**, **Unraid array*
 
 </details>
 
+<details>
+<summary>📷 Screenshot — Config → Unraid after Test connection</summary>
+
+<p align="center"><img src="screenshots/manual.md/17-unraid.jpg" alt="Config, Unraid: the connection panel with the address, a saved API key, its three switches, and the answer to Test connection naming the server, its Unraid and API versions and yes for every area" width="860"></p>
+
+</details>
+
 <sub>[↑ Contents](#table-of-contents)</sub>
 
 ---
@@ -3111,6 +3167,13 @@ Small drawings beside the shape settings show what a value looks like.
 | **Category header** | How a category's name reads above its bookmarks. **Style**: Follow the theme (default), Clean, Underlined (optionally in the accent colour), Boxed, Label or Group card, which wraps the category and its bookmarks in one pane. **Size**: Small, Medium or Large. **Show the category icon** — the icon is chosen per category, from its menu. **Show how many bookmarks it holds** puts the count on the right |
 | **Link preview cards** | Off · On hover (default) · Keyboard only, a hover delay (Fast, Balanced, Calm) and **What the card shows**: image, site, author & date, video player, description, your note, tags, status & uptime, opens, Fresh count, shortcut & location ([§4](#4-the-dashboard)) |
 
+<details>
+<summary>📷 Screenshot — the Compact layout preset at Dense density, full page</summary>
+
+<p align="center"><img src="screenshots/manual.md/04-density.jpg" alt="The Home page with the Compact layout preset and Dense density: lower rows and less space between the categories, in three columns" width="860"></p>
+
+</details>
+
 <a id="167-header-and-action-buttons"></a>
 
 ### 16.7 Header and action buttons
@@ -3183,6 +3246,13 @@ Config reopens on the section and tab you left, for five minutes after you leave
 
 Old addresses still land in the right place — for example `/#config/pages-tags` opens Structure, `/#config/data-backups/logs` opens Logs, and `/#config/behavior/fresh` opens Behavior → Fresh. The tab ids in addresses did not always change when tabs were renamed: Look is `general`, Grid `layout`, Rows `display`, Action bar `buttonbar`.
 
+<details>
+<summary>📷 Screenshot — Config → Appearance, full page</summary>
+
+<p align="center"><img src="screenshots/manual.md/17-appearance.jpg" alt="Config, Appearance on its Look tab: the theme select with Browse, Quick mode, Follow system dark mode, Random theme and the theme editor, with a small preview on the right" width="860"></p>
+
+</details>
+
 <a id="172-tabs-and-saving"></a>
 
 ### 17.2 Tabs and saving
@@ -3234,6 +3304,13 @@ The other tabs:
 - **Settings** — what a new bookmark starts with (**Availability**, which is **Periodic** unless you change it; pinned; monitor interval), when bulk actions ask first, the stale threshold, and the archive used for *See an old copy*.
 - **Local copies** — [§12.7](#127-keeping-a-copy-of-a-page).
 
+<details>
+<summary>📷 Screenshot — Config → Bookmarks, full page</summary>
+
+<p align="center"><img src="screenshots/manual.md/17-bookmarks.jpg" alt="Config, Bookmarks on its View tab: a live preview of two rows with the key legend and a side panel, and the list settings below it" width="860"></p>
+
+</details>
+
 <a id="175-behavior"></a>
 
 ### 17.5 Behavior
@@ -3259,6 +3336,13 @@ Paste-to-quick-add, the inbox and how a kept link is filed moved to **Config →
 | **Panel & clicks** | The rail open or folded, side panel width, close on a click beside it, a click opens the panel or only selects, a double click opens the link or edits the note — with a live preview |
 | **Header icon** | A count on the Inbox icon, and whether it shows what is unread or everything awake |
 
+<details>
+<summary>📷 Screenshot — Config → Inbox, full page</summary>
+
+<p align="center"><img src="screenshots/manual.md/17-inbox.jpg" alt="Config, Inbox on its Collecting tab: enable the inbox, show it in the header, quick-add a pasted URL, keep links without filing them, file a kept link where its neighbours are, and the paste destination" width="860"></p>
+
+</details>
+
 <a id="177-config-containers"></a>
 
 ### 17.7 Config → Containers
@@ -3277,6 +3361,13 @@ Four tabs, with the same strip, keys and memory as Config → Inbox. It opens on
 
 The Unraid server has a section of its own, **Config → Unraid**: the Containers view does not use it, only the Unraid widgets do ([§15.6](#156-unraid-widgets)). Their *Set up Unraid* row opens it. It opens with **How it works** — nextDash and the server drawn as two boxes with data running between them, and three steps (a Viewer key, the address and key tested and saved, a widget on a page) that are ticked off as they are done — and **What you get**: the seven widgets in miniature with example figures, each with an **Add…** that opens Widgets → Types on that kind.
 
+<details>
+<summary>📷 Screenshot — Config → Containers, full page</summary>
+
+<p align="center"><img src="screenshots/manual.md/17-containers.jpg" alt="Config, Containers on its Connection tab: the Connection panel with the Docker socket, actions, the write token and this container, and the Safety panel" width="860"></p>
+
+</details>
+
 <a id="178-overview-help-and-about"></a>
 
 ### 17.8 Overview, Help and About
@@ -3292,6 +3383,20 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 **Guided tours.** Six walkthroughs run over the real page rather than a picture of it: *What has changed*, *First steps*, *Inbox*, *Fresh*, *Widgets* and *Spreading a category*. Replay any of them from **Behavior → Privacy & sync → Onboarding**, or by name from the command palette — `:changes` opens the first. *What has changed* is the one offered by a card in the corner after an upgrade that moved things: its steps say where things now are, and where a default changed the step hands the old arrangement back in one click. The release notes stay separate — see *What's new* below.
 
 **The dashboard tour.** Twenty steps with moving drawings, offered once after the quick-start card: it opens on what is new — web search, app icons, the theme editor and the Unraid widgets — then the theme browser, the backdrops and the looks, then walks pages and categories, search, shortcuts, the cursor, adding, link checks, the Bookmarks view, the inbox, Containers, widgets, the first keys to learn, Config and the cheat sheet. After an update to a version that changed it, every reader is offered it once more, after the release notes have been read. Replay it from the same Onboarding list or with `:tour`.
+
+<details>
+<summary>📷 Screenshot — Config → Overview, full page</summary>
+
+<p align="center"><img src="screenshots/manual.md/17-overview.jpg" alt="Config, Overview: what needs you, panels for bookmarks, the inbox, containers, health and statistics, and on the right Latest news, the Version panel, New in nextDash and a tip" width="860"></p>
+
+</details>
+
+<details>
+<summary>📷 Screenshot — Config → Help, full page</summary>
+
+<p align="center"><img src="screenshots/manual.md/17-help.jpg" alt="Config, Help on Getting started: the guide's tabs, a Shortcuts PDF link and a filter, the release this install runs with See what's new, and the start of Getting started" width="860"></p>
+
+</details>
 
 <a id="view-tours"></a>
 
@@ -3361,6 +3466,20 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 - Each tab has a 🔗 to copy a link to it.
 - At the top: when the figures were worked out, **Refresh**, and **Export CSV** for every tab. The export fetches the inbox and health figures itself.
 - A category is counted per page: the same name on two pages is two categories.
+
+<details>
+<summary>📷 Screenshot — Statistics, Usage tab, full page</summary>
+
+<p align="center"><img src="screenshots/manual.md/18-usage.jpg" alt="Statistics on its Usage tab: six figures, bookmarks used over time with period and measure switches, when you open bookmarks, and how concentrated your use is" width="860"></p>
+
+</details>
+
+<details>
+<summary>📷 Screenshot — Statistics, Health tab, full page</summary>
+
+<p align="center"><img src="screenshots/manual.md/18-health.jpg" alt="Statistics on its Health tab: six figures, status now and over time, uptime per period, and the monitors with the most downtime" width="860"></p>
+
+</details>
 
 <sub>[↑ Contents](#table-of-contents)</sub>
 
@@ -3440,6 +3559,13 @@ A **source** is a service bookmarks keep arriving from. Each panel asks for its 
 nextDash only reads from these services. Tokens are stored in `sources.json` with owner-only permissions and left out of backups unless you include tokens. The **Sources** widget shows the last result of each.
 
 The **Web Archive** and **Local copies** panels live on this tab too ([§12.7](#127-keeping-a-copy-of-a-page)).
+
+<details>
+<summary>📷 Screenshot — Data & backups → Sources, full page</summary>
+
+<p align="center"><img src="screenshots/manual.md/19-sources.jpg" alt="Config, Data and backups on its Sources tab: panels for GitHub stars, Raindrop.io, Hacker News favorites, YouTube channel and Mastodon bookmarks, none of them set up yet" width="860"></p>
+
+</details>
 
 <a id="193-webhooks"></a>
 
@@ -3560,6 +3686,13 @@ Every line carries its own sequence number from the server. With **Refresh** off
 Lines are kept in memory and in `server.log` in the data directory (2 MB, two rotated copies). The same lines go to stderr.
 
 > Anyone who can open config can read this log, including full webhook addresses where they were logged.
+
+<details>
+<summary>📷 Screenshot — Logs → Server logs, full page</summary>
+
+<p align="center"><img src="screenshots/manual.md/20-server-logs-full.jpg" alt="Config, Logs on Server logs: tiles for lines, warnings and errors, then the Server log panel with its controls, the note that the view does not refresh by itself, and the first request lines" width="860"></p>
+
+</details>
 
 <a id="202-activity-trail"></a>
 
@@ -3693,6 +3826,13 @@ nextDash adapts to touch screens (a touch device without a hover pointer) rather
 | **Quick-start card** | Skipped | Shown on first visit |
 
 A dismissible banner explains the limits once.
+
+<details>
+<summary>📷 Screenshot — the dashboard on a tablet</summary>
+
+<p align="center"><img src="screenshots/manual.md/22-tablet.jpg" alt="The dashboard on a tablet held upright: the full header, two columns of categories and widgets, and the action bar on the right edge" width="420"></p>
+
+</details>
 
 <a id="touch-gestures"></a>
 
