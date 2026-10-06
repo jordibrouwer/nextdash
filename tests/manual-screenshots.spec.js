@@ -46,6 +46,9 @@ const unraidAnswer = (name) => JSON.parse(fs.readFileSync(path.join(__dirname, '
 const NOW = new Date('2026-10-06T09:12:00');
 const DESKTOP = { width: 1440, height: 900 };
 const PHONE = { width: 390, height: 844 };
+const TABLET = { width: 820, height: 1180 };
+/** The demo data's own theme, given to a new install as well. */
+const DEMO_THEME = 'matrix-bluepill-dark';
 
 /** A port nothing else is on (never 8080: the OS hands out a free one). */
 function freePort() {
@@ -272,7 +275,51 @@ function tidyDemoData(dir, patch) {
             bookmarks: [],
         });
     }
+
+    // One shot only: Utilities on Home grown past the fifteen a column holds,
+    // so spreading it gives it a second column.
+    if (patches.includes('spread')) {
+        const homeNow = readJSON(homeFile);
+        const tools = [
+            ['Unit converter', 'units'], ['Time zones', 'zones'], ['Colour picker', 'colours'],
+            ['Regex tester', 'regex'], ['JSON formatter', 'json'], ['Base64 decoder', 'base64'],
+            ['Password generator', 'passwords'], ['QR maker', 'qr'], ['Calendar weeks', 'weeks'],
+            ['Package tracking', 'parcels'], ['Speed test', 'speed'], ['Sunrise and sunset', 'sun'],
+            ['Image resizer', 'resize'], ['Diff checker', 'diff'],
+        ];
+        tools.forEach(([name, slug], i) => homeNow.bookmarks.push({
+            name, url: `https://${slug}.tools.example/`, pageId: 1, shortcut: '', category: 'utilities',
+            checkStatus: false, icon: '', createdAt: now - (i + 3) * 86_400_000, tags: ['tools'],
+        }));
+        writeJSON(homeFile, homeNow);
+    }
+
+    // One shot only: three bookmarks whose last check failed, each its own way.
+    if (patches.includes('broken')) {
+        const failed = {
+            'https://gone.example/old-page': 'DNS lookup failed',
+            'https://kitchen.reading.example/slow': 'HTTP 404',
+            'https://backup.lab.example/': 'HTTP 502',
+        };
+        const cache = fs.existsSync(cacheFile) ? readJSON(cacheFile) : { cache: {} };
+        for (const file of fs.readdirSync(dir).filter((f) => /^bookmarks-\d+\.json$/.test(f))) {
+            const page = readJSON(path.join(dir, file));
+            (page.bookmarks || []).forEach((b) => {
+                if (!failed[b.url]) return;
+                b.lastError = failed[b.url];
+                b.brokenSince = now - 3 * 86_400_000;
+                b.lastChecked = now - 60_000;
+                const key = b.url.replace(/\/$/, '');
+                cache.cache[key] = { url: key, status: 'offline', pingMs: 0, lastScanned: now - 60_000, error: failed[b.url] };
+            });
+            writeJSON(path.join(dir, file), page);
+        }
+        writeJSON(cacheFile, cache);
+    }
 }
+
+/** The urls the 'broken' patch fails, as the status pings answer them. */
+const BROKEN_HOSTS = ['gone.example', 'kitchen.reading.example', 'backup.lab.example'];
 
 const test = base.test.extend({
     /** A change to the data for one shot only; see tidyDemoData. */
@@ -284,43 +331,70 @@ const test = base.test.extend({
             throw new Error('NEXTDASH_DATA_DIR must point at a copy of data-demo');
         }
         const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nextdash-manual-'));
-        fs.cpSync(source, dir, { recursive: true });
-        tidyDemoData(dir, dataPatch);
+        // 'empty' is a new install: no data at all, as the server first finds it.
+        if (dataPatch !== 'empty') {
+            fs.cpSync(source, dir, { recursive: true });
+            tidyDemoData(dir, dataPatch);
+        }
         const port = await freePort();
         const baseURL = `http://localhost:${port}`;
         if (!fs.existsSync(binaryPath())) {
             throw new Error(`no server binary at ${binaryPath()}: run with PW_WORKERS above 1, so global setup builds it`);
         }
-        const child = spawn(binaryPath(), [], {
-            cwd: ROOT,
-            env: {
-                ...process.env,
-                PORT: String(port),
-                NEXTDASH_DATA_DIR: dir,
-                NEXTDASH_DISABLE_PREFETCH: '1',
-                NEXTDASH_ICON_SETS_FIXTURE: path.join(ROOT, 'internal', 'app', 'testdata', 'icon-sets'),
-            },
-            stdio: 'ignore',
-        });
-        // A server that cannot start says so, rather than leaving the test to
-        // time out waiting for a port nothing will ever answer on.
-        const failed = new Promise((_, reject) => {
-            child.on('error', (error) => reject(new Error(`server binary failed to start: ${error.message}`)));
-            child.on('exit', (code) => {
-                if (code) reject(new Error(`server exited with code ${code} before it answered`));
+        const boot = async () => {
+            const child = spawn(binaryPath(), [], {
+                cwd: ROOT,
+                env: {
+                    ...process.env,
+                    PORT: String(port),
+                    NEXTDASH_DATA_DIR: dir,
+                    NEXTDASH_DISABLE_PREFETCH: '1',
+                    NEXTDASH_ICON_SETS_FIXTURE: path.join(ROOT, 'internal', 'app', 'testdata', 'icon-sets'),
+                },
+                stdio: 'ignore',
             });
-        });
-        failed.catch(() => {});
-        try {
-            await Promise.race([waitForServer(baseURL), failed]);
-            await use({ baseURL, dir });
-        } finally {
+            // A server that cannot start says so, rather than leaving the test to
+            // time out waiting for a port nothing will ever answer on.
+            const failed = new Promise((_, reject) => {
+                child.on('error', (error) => reject(new Error(`server binary failed to start: ${error.message}`)));
+                child.on('exit', (code) => {
+                    if (code) reject(new Error(`server exited with code ${code} before it answered`));
+                });
+            });
+            failed.catch(() => {});
+            try {
+                await Promise.race([waitForServer(baseURL), failed]);
+            } catch (error) {
+                await stop(child);
+                throw error;
+            }
+            return child;
+        };
+        const stop = (child) => {
             child.kill('SIGTERM');
-            await new Promise((resolve) => {
+            return new Promise((resolve) => {
                 if (child.exitCode !== null) return resolve(undefined);
                 const timer = setTimeout(() => { child.kill('SIGKILL'); resolve(undefined); }, 5_000);
                 child.on('exit', () => { clearTimeout(timer); resolve(undefined); });
             });
+        };
+        let child = null;
+        try {
+            child = await boot();
+            if (dataPatch === 'empty') {
+                // The first start writes a new install's settings; the demo's
+                // theme is then put in them, and the server started again on
+                // them, so this shot has the same look as the rest.
+                await fetch(`${baseURL}/api/settings`).catch(() => {});
+                await stop(child);
+                child = null;
+                const settingsFile = path.join(dir, 'settings.json');
+                writeJSON(settingsFile, { ...readJSON(settingsFile), theme: DEMO_THEME });
+                child = await boot();
+            }
+            await use({ baseURL, dir });
+        } finally {
+            if (child) await stop(child);
             fs.rmSync(dir, { recursive: true, force: true });
         }
     },
@@ -345,6 +419,11 @@ async function prepare(page) {
         try {
             localStorage.setItem('nextdash:search-flow-hint-v2', '1');
             localStorage.setItem('nextdash:inbox-tab-opened-v1', '1');
+            // ... and has seen the one-time notes on new config settings,
+            // which scroll their field into view and sit over the panel.
+            for (const id of ['random-theme-v2', 'bookmarks-page-filter-v1']) {
+                localStorage.setItem(`nextdash:config-setting-promo-seen-v1:${id}`, '1');
+            }
         } catch { /* storage off */ }
     });
 
@@ -1460,5 +1539,234 @@ test.describe('phone bookmarks', () => {
         await settle(page);
         await page.waitForTimeout(1_000);
         await shot(page, '22-phone-bookmarks.jpg');
+    });
+});
+
+/*
+ * Full pages, folded under their subsections: the whole window where the
+ * manual had no picture of it yet. The test names start with "full" and two
+ * digits, so the set can be taken on its own with --grep "full \d\d ".
+ *
+ * Not taken as full frames: the cheat sheet, triage and Pages & categories.
+ * Each is a modal of a fixed size over blurred haze, and at 1440 x 900 the
+ * haze is most of the frame; their crops above already show them at 1:1.
+ */
+
+test.describe('new install', () => {
+    test.use({ dataPatch: 'empty' });
+    test('full 02 first launch', async ({ page }) => {
+        await prepare(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 30_000 });
+        // The quick-start card is the subject; settle() would close it.
+        await page.locator('.quickstart-checklist').waitFor({ state: 'visible' });
+        await page.waitForTimeout(1_500);
+        await shot(page, '02-first-launch.jpg');
+    });
+});
+
+test('full 09 second page', async ({ page }) => {
+    await prepare(page);
+    await openDashboard(page);
+    // The page switcher's key: 3 is Reading.
+    await page.keyboard.press('3');
+    await page.locator('#category-title-articles').waitFor();
+    await settle(page);
+    await page.waitForTimeout(1_500);
+    await shot(page, '09-second-page.jpg');
+});
+
+test.describe('spread', () => {
+    test.use({ dataPatch: 'spread' });
+    // Parked: in a spread category the list's column gap falls between every
+    // track of a row, not only between the columns, and leaves each name a
+    // track of a few dozen pixels ("Weather r..."). A picture of that would
+    // teach the bug; take it once the layout is fixed.
+    test.fixme('full 09 spread across columns', async ({ page }) => {
+        await prepare(page);
+        await openDashboard(page);
+        await page.locator('#category-title-utilities').click({ button: 'right' });
+        const menu = page.locator('.bookmark-context-menu').first();
+        await menu.waitFor({ state: 'visible' });
+        await menu.getByText('Spread across columns').first().click();
+        await waitOutNotice(page);
+        await settle(page);
+        await page.waitForTimeout(800);
+        await scrollToTop(page, page.locator('#category-title-utilities'), 160);
+        await shot(page, '09-spread-columns.jpg');
+    });
+});
+
+test('full 04 density', async ({ page }) => {
+    await prepare(page);
+    await openConfig(page, 'appearance');
+    await subtab(page, 'Grid').click();
+    // The Compact preset alone changes little at the demo's row height; Dense
+    // beside it is what makes the page visibly tighter.
+    await page.locator('select[data-behavior-field="layoutPreset"]').selectOption('compact');
+    await waitOutNotice(page);
+    await page.locator('select[data-behavior-field="densityMode"]').selectOption('dense');
+    await waitOutNotice(page);
+    // Back to the dashboard the way config is left.
+    await page.keyboard.press('Escape');
+    await page.locator('.category').first().waitFor();
+    await settle(page);
+    // A corner card can arrive after the first settle.
+    await page.waitForTimeout(1_500);
+    await settle(page);
+    await shot(page, '04-density.jpg');
+});
+
+test.describe('broken', () => {
+    test.use({ dataPatch: 'broken' });
+    test('full 11 broken', async ({ page }) => {
+        await prepare(page);
+        await page.route('**/api/ping?**', (route) => {
+            const url = new URL(route.request().url()).searchParams.get('url') || '';
+            if (!BROKEN_HOSTS.some((h) => url.includes(h))) return route.fallback();
+            return route.fulfill({ json: { status: 'offline', ping: null, error: url.includes('gone') ? 'DNS lookup failed' : 'HTTP 404' } });
+        });
+        await openBookmarksView(page);
+        await page.locator('#config-bm-rail [data-bm-rail="health"][data-value="broken"]').click();
+        await page.waitForTimeout(800);
+        await page.locator('#config-bm-list .config-bm-row', { hasText: 'kitchen.reading.example' }).first().click();
+        await page.locator('[data-lvs-drawer-panel]').first().waitFor({ state: 'visible' });
+        await page.waitForTimeout(1_000);
+        await shot(page, '11-broken.jpg');
+    });
+});
+
+test('full 11 unsorted', async ({ page }) => {
+    await prepare(page);
+    await openBookmarksView(page);
+    await page.locator('#config-bm-rail [data-bm-rail="cleanup"][data-value="unsorted"]').click();
+    await page.locator('#config-bm-list .config-bm-row', { hasText: 'trails.kept.example' }).first().click();
+    const panel = page.locator('[data-lvs-drawer-panel]').first();
+    await panel.waitFor({ state: 'visible' });
+    await panel.getByRole('button', { name: 'Promote' }).first().waitFor();
+    await page.waitForTimeout(1_000);
+    await shot(page, '11-unsorted.jpg');
+});
+
+test('full 11 health in large', async ({ page }) => {
+    await prepare(page);
+    await openBookmarksView(page);
+    await page.locator('#config-bm-list .config-bm-row', { hasText: 'media.lab.example' }).first().click();
+    await page.waitForTimeout(400);
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Shift+H');
+    await page.locator('#app-modal.show .modal.bm-health-large').waitFor();
+    await page.waitForTimeout(2_000);
+    await shot(page, '11-health-large.jpg');
+});
+
+test('full 14 updates', async ({ page }) => {
+    const { docker } = await prepare(page);
+    // Three images with a newer version on offer, as an update check finds them.
+    for (const name of ['radarr', 'immich-server']) {
+        const c = docker.containers.find((x) => x.name === name);
+        if (c) c.update = { status: 'available', checkedAt: c.update?.checkedAt || NOW.getTime() - 3 * 3_600_000 };
+    }
+    await openContainers(page);
+    await page.locator('[data-docker-filter="updates"]').first().click();
+    await page.waitForTimeout(1_000);
+    await shot(page, '14-updates.jpg');
+});
+
+test('full 14 side panel', async ({ page }) => {
+    await prepare(page);
+    await openContainers(page);
+    await page.locator('[data-docker-row]', { hasText: 'sonarr' }).first().click();
+    await page.locator('[data-lvs-drawer-panel]').first().waitFor({ state: 'visible' });
+    await page.waitForTimeout(1_000);
+    await shot(page, '14-side-panel-full.jpg');
+});
+
+test('full 17 overview', async ({ page }) => {
+    await prepare(page);
+    await openConfig(page, 'overview');
+    await page.waitForTimeout(1_000);
+    await scrollToTop(page, page.locator('.config-overview-zone', { hasText: 'From nextDash' }).first(), 120);
+    await shot(page, '17-overview.jpg');
+});
+
+for (const [section, name] of [['appearance', '17-appearance.jpg'], ['bookmarks', '17-bookmarks.jpg'],
+    ['inbox', '17-inbox.jpg'], ['containers', '17-containers.jpg'], ['help', '17-help.jpg']]) {
+    test(`full 17 ${section}`, async ({ page }) => {
+        await prepare(page);
+        await openConfig(page, section);
+        await page.waitForTimeout(1_000);
+        await shot(page, name);
+    });
+}
+
+test.describe('unraid config', () => {
+    test.use({ dataPatch: 'unraid' });
+    test('full 17 unraid', async ({ page }) => {
+        await prepare(page);
+        await page.route('**/api/unraid/settings', (route) => {
+            if (route.request().method() !== 'GET') return route.fallback();
+            return route.fulfill({ json: { server: { id: 'u_1', name: 'tower', baseUrl: 'http://192.168.1.10', enabled: true, insecureTls: true, notify: true }, keySet: true, suggestedBaseUrl: '' } });
+        });
+        await page.route('**/api/unraid/area/info', (route) => route.fulfill({ json: { area: 'info', status: 'ok', data: { name: 'tower' } } }));
+        await page.route('**/api/unraid/test', (route) => route.fulfill({ json: {
+            ok: true, info: { name: 'tower', unraid: '7.2.1', api: '4.37.5', roles: ['VIEWER'] },
+            areas: { array: 'ok', parity: 'ok', shares: 'ok', vms: 'ok', ups: 'ok', notifications: 'ok' },
+        } }));
+        await openConfig(page, 'unraid');
+        await page.locator('[data-unraid-field="baseUrl"]').waitFor();
+        await page.waitForFunction(() => window.dashboardInstance?._configRefreshReady === true);
+        await page.locator('[data-unraid-test]').click();
+        await page.waitForTimeout(1_200);
+        // The connection and the test's answer, from the panel's top edge.
+        const connection = page.locator('.config-panel', { has: page.locator('[data-unraid-field="baseUrl"]') }).first();
+        await scrollToTop(page, connection, 120);
+        await shot(page, '17-unraid.jpg');
+    });
+});
+
+for (const [tab, name] of [['Usage', '18-usage.jpg'], ['Health', '18-health.jpg']]) {
+    test(`full 18 ${tab.toLowerCase()}`, async ({ page }) => {
+        await prepare(page);
+        await openConfig(page, 'stats');
+        await subtab(page, tab).click();
+        await page.waitForTimeout(2_000);
+        await shot(page, name);
+    });
+}
+
+test('full 19 sources', async ({ page }) => {
+    await prepare(page);
+    await openConfig(page, 'data-backups');
+    await subtab(page, 'Sources').click();
+    await page.waitForTimeout(1_200);
+    await shot(page, '19-sources.jpg');
+});
+
+test.describe('server log full', () => {
+    test.use({ dataPatch: 'serverlog' });
+    test('full 20 server logs', async ({ page }) => {
+        await prepare(page);
+        await page.route('**/api/logs?**', (route) => {
+            if (route.request().method() !== 'GET') return route.fallback();
+            return route.fulfill({ json: { epoch: 'manual', entries: SERVER_LOG, nextSeq: SERVER_LOG.length, capacity: 2000, stats: { total: SERVER_LOG.length, warn: 1, error: 0 } } });
+        });
+        await openConfig(page, 'logs');
+        await subtab(page, 'Server logs').click();
+        await page.waitForTimeout(1_500);
+        await shot(page, '20-server-logs-full.jpg');
+    });
+});
+
+test.describe('tablet', () => {
+    test.use({ viewport: TABLET, isMobile: true, hasTouch: true });
+    test('full 22 tablet', async ({ page }) => {
+        await prepare(page);
+        await openDashboard(page);
+        const note = page.getByRole('button', { name: 'Dismiss' }).first();
+        if (await note.isVisible().catch(() => false)) await note.click();
+        await page.locator('h1').first().click().catch(() => {});
+        await page.waitForTimeout(800);
+        await shot(page, '22-tablet.jpg');
     });
 });
