@@ -730,6 +730,7 @@ type Settings struct {
 	SmartRecentPageIds          []int                      `json:"smartRecentPageIds"`                // Page IDs where smart recent is enabled (empty = all)
 	SmartStalePageIds           []int                      `json:"smartStalePageIds"`                 // Page IDs where smart stale is enabled (empty = all)
 	SmartMostUsedPageIds        []int                      `json:"smartMostUsedPageIds"`              // Page IDs where smart most used is enabled (empty = all)
+	SmartFreshPageIds           []int                      `json:"smartFreshPageIds"`                 // Page IDs where Fresh is shown (empty = all)
 	Collections                 []Collection               `json:"collections,omitempty"`             // User-defined dynamic collections
 	TagRules                    []TagRule                  `json:"tagRules,omitempty"`                // Patterns you wrote that propose a tag
 	DismissedTagSuggestions     []string                   `json:"dismissedTagSuggestions,omitempty"` // Proposals you turned down, as "pattern|tag"
@@ -1790,6 +1791,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			SmartStalePageIds:               []int{},
 			SmartMostUsedPageIds:            []int{},
 			SmartAddedPageIds:               []int{},
+			SmartFreshPageIds:               []int{},
 			SmartAddedLimit:                 20,
 			RowTagsMax:                      2,
 			FaviconRefreshPolicy:            "on-save",
@@ -4254,6 +4256,7 @@ func (fs *FileStore) GetSettings() Settings {
 			SmartRecentPageIds:              []int{},
 			SmartStalePageIds:               []int{},
 			SmartAddedPageIds:               []int{},
+			SmartFreshPageIds:               []int{},
 			SmartAddedLimit:                 20,
 			RowTagsMax:                      2,
 			FaviconRefreshPolicy:            "on-save",
@@ -4634,6 +4637,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["smartAddedPageIds"]; !ok || settings.SmartAddedPageIds == nil {
 			settings.SmartAddedPageIds = []int{}
+		}
+		if _, ok := rawSettings["smartFreshPageIds"]; !ok || settings.SmartFreshPageIds == nil {
+			settings.SmartFreshPageIds = []int{}
 		}
 		if _, ok := rawSettings["faviconRefreshPolicy"]; !ok || (settings.FaviconRefreshPolicy != "manual" && settings.FaviconRefreshPolicy != "on-save") {
 			settings.FaviconRefreshPolicy = "on-save"

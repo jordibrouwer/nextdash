@@ -140,6 +140,7 @@ class Dashboard {
             smartRecentPageIds: [],
             smartStalePageIds: [],
             smartMostUsedPageIds: [],
+            smartFreshPageIds: [],
             dateFormat: 'short-slash',
             showWeatherWithDate: true,
             weatherSource: 'manual',

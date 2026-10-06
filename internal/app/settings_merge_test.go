@@ -100,3 +100,34 @@ func TestMergeSettingsFromBodyDiscoverabilityState(t *testing.T) {
 		t.Fatalf("theme = %q, want dark", merged.Theme)
 	}
 }
+
+// Fresh's page scope is written by the config view like every other smart
+// collection's. The field used to be missing from Settings, so the save quietly
+// dropped it and the scope reset to "all pages" on the next load.
+func TestSmartFreshPageIdsSurvivesSaveAndReload(t *testing.T) {
+	tmp := t.TempDir()
+	t.Chdir(tmp)
+	t.Setenv("NEXTDASH_DATA_DIR", tmp)
+
+	merged, err := mergeSettingsFromBody(NewStore().GetSettings(), []byte(`{"smartFreshPageIds":[2,3]}`))
+	if err != nil {
+		t.Fatalf("mergeSettingsFromBody: %v", err)
+	}
+	if err := NewStore().SaveSettings(merged); err != nil {
+		t.Fatalf("SaveSettings: %v", err)
+	}
+
+	got := NewStore().GetSettings().SmartFreshPageIds
+	if len(got) != 2 || got[0] != 2 || got[1] != 3 {
+		t.Fatalf("smartFreshPageIds after reload = %v, want [2 3]", got)
+	}
+}
+
+// A settings file from before the field existed loads as an empty list, not
+// null, so the client reads it as "every page".
+func TestSmartFreshPageIdsDefaultsToEmptyList(t *testing.T) {
+	settings := writeSettings(t, `{"currentPage":1}`)
+	if settings.SmartFreshPageIds == nil || len(settings.SmartFreshPageIds) != 0 {
+		t.Fatalf("smartFreshPageIds = %#v, want []int{}", settings.SmartFreshPageIds)
+	}
+}

@@ -18202,6 +18202,7 @@ class DashboardConfig {
         ['smartRecentPageIds', 'config.smartRecentScope', '“Recent” pages'],
         ['smartStalePageIds', 'config.smartStaleScope', '“Stale” pages'],
         ['smartMostUsedPageIds', 'config.smartMostUsedScope', '“Most used” pages'],
+        ['smartFreshPageIds', 'config.smartFreshScope', '“Fresh” pages'],
     ];
 
     renderCollectionScopes() {

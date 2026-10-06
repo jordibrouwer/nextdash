@@ -198,6 +198,9 @@ class DashboardData {
             if (!Array.isArray(d.settings.smartMostUsedPageIds)) {
                 d.settings.smartMostUsedPageIds = [];
             }
+            if (!Array.isArray(d.settings.smartFreshPageIds)) {
+                d.settings.smartFreshPageIds = [];
+            }
             if (typeof d.settings.showSmartRecentCollection === 'undefined') {
                 d.settings.showSmartRecentCollection = false;
             }

@@ -50,6 +50,7 @@ async function resetScopes(page) {
             body: JSON.stringify({
                 smartTodayPageIds: [], smartRecentPageIds: [],
                 smartStalePageIds: [], smartMostUsedPageIds: [],
+                smartFreshPageIds: [],
             }),
         });
         return res.status;
@@ -121,6 +122,27 @@ test.describe('config collection scope', () => {
             const res = await fetch('/api/settings');
             return (await res.json()).smartRecentPageIds;
         })).toEqual([]);
+    });
+
+    // Fresh's scope was read by the dashboard but had no field on the server,
+    // so the save dropped it and a reload put every box back to clear.
+    test('a Fresh scope survives a reload', async ({ page }) => {
+        await openCollections(page);
+        const box = page.locator('[data-scope-field="smartFreshPageIds"]').first();
+        const pageId = await box.getAttribute('data-scope-page');
+        await box.scrollIntoViewIfNeeded();
+        await box.check();
+        await expect(page.locator('#config-save-state.is-saved')).toBeAttached({ timeout: 10_000 });
+
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        expect(await page.evaluate(() => window.dashboardInstance.settings.smartFreshPageIds))
+            .toEqual([Number(pageId)]);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
+        await page.locator('[data-pt-tab="collections"]').click();
+        await expect(page.locator(`[data-scope-field="smartFreshPageIds"][data-scope-page="${pageId}"]`)).toBeChecked();
     });
 
     // _isSmartCollectionPageAllowed ("is the current page in scope") and
