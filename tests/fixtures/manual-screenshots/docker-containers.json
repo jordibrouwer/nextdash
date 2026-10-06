@@ -1,0 +1,65 @@
+[
+  {
+    "id": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2", "shortId": "a1b2c3d4e5f6",
+    "name": "sonarr", "image": "lscr.io/linuxserver/sonarr:latest", "tag": "latest",
+    "state": "running", "status": "Up 6 days (healthy)", "health": "healthy", "created": 1790000000,
+    "startedAt": 1790754000,
+    "ports": [{ "private": 8989, "public": 8989, "type": "tcp" }], "composeProject": "arr",
+    "usage": { "cpu": 2.4, "mem": 301989888 }, "size": { "rw": 25165824, "rootFs": 457179136 },
+    "update": { "status": "available", "checkedAt": 1791270000000 }
+  },
+  {
+    "id": "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3", "shortId": "b2c3d4e5f6a1",
+    "name": "radarr", "image": "lscr.io/linuxserver/radarr:latest", "tag": "latest",
+    "state": "running", "status": "Up 6 days (healthy)", "health": "healthy", "created": 1790000000,
+    "startedAt": 1790754000,
+    "ports": [{ "private": 7878, "public": 7878, "type": "tcp" }], "composeProject": "arr",
+    "usage": { "cpu": 1.1, "mem": 268435456 }, "size": { "rw": 20971520, "rootFs": 430964736 },
+    "update": { "status": "current", "checkedAt": 1791270000000 }
+  },
+  {
+    "id": "c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4", "shortId": "c3d4e5f6a1b2",
+    "name": "jellyfin", "image": "jellyfin/jellyfin:10.10.7", "tag": "10.10.7",
+    "state": "running", "status": "Up 12 days", "health": "", "created": 1789500000,
+    "startedAt": 1790230200,
+    "ports": [{ "private": 8096, "public": 8096, "type": "tcp" }, { "private": 7359, "public": 7359, "type": "udp" }], "composeProject": "media",
+    "usage": { "cpu": 17.6, "mem": 1395864371 }, "size": { "rw": 157286400, "rootFs": 1610612736 },
+    "update": { "status": "current", "checkedAt": 1791270000000 }
+  },
+  {
+    "id": "d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5", "shortId": "d4e5f6a1b2c3",
+    "name": "paperless", "image": "ghcr.io/paperless-ngx/paperless-ngx:2.14", "tag": "2.14",
+    "state": "running", "status": "Up 3 days (healthy)", "health": "healthy", "created": 1790600000,
+    "startedAt": 1791014400,
+    "ports": [{ "private": 8000, "public": 8010, "type": "tcp" }], "composeProject": "paperless",
+    "usage": { "cpu": 0.9, "mem": 734003200 }, "size": { "rw": 52428800, "rootFs": 1288490188 },
+    "update": { "status": "current", "checkedAt": 1791270000000 }
+  },
+  {
+    "id": "e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6", "shortId": "e5f6a1b2c3d4",
+    "name": "vaultwarden", "image": "vaultwarden/server:1.32.7", "tag": "1.32.7",
+    "state": "running", "status": "Up 12 days (healthy)", "health": "healthy", "created": 1789500000,
+    "startedAt": 1790230200,
+    "ports": [{ "private": 80, "public": 8086, "type": "tcp" }], "composeProject": "vault",
+    "usage": { "cpu": 0.1, "mem": 41943040 }, "size": { "rw": 4194304, "rootFs": 251658240 },
+    "update": { "status": "current", "checkedAt": 1791270000000 }
+  },
+  {
+    "id": "f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1", "shortId": "f6a1b2c3d4e5",
+    "name": "immich-server", "image": "ghcr.io/immich-app/immich-server:release", "tag": "release",
+    "state": "running", "status": "Up 2 hours (unhealthy)", "health": "unhealthy", "created": 1791200000,
+    "startedAt": 1791263100,
+    "ports": [{ "private": 2283, "public": 2283, "type": "tcp" }], "composeProject": "immich",
+    "usage": { "cpu": 4.8, "mem": 912261120 }, "size": { "rw": 31457280, "rootFs": 1932735283 },
+    "update": { "status": "current", "checkedAt": 1791270000000 }
+  },
+  {
+    "id": "f1e2d3c4b5a6f1e2d3c4b5a6f1e2d3c4b5a6f1e2d3c4b5a6f1e2d3c4b5a6f1e2", "shortId": "f1e2d3c4b5a6",
+    "name": "nextdash", "image": "ghcr.io/jordibrouwer/nextdash:latest", "tag": "latest",
+    "state": "running", "status": "Up 1 hour", "health": "", "created": 1791250000,
+    "startedAt": 1791267000,
+    "ports": [{ "private": 8080, "public": 8080, "type": "tcp" }], "self": true,
+    "usage": { "cpu": 0.3, "mem": 39845888 }, "size": { "rw": 1048576, "rootFs": 41943040 },
+    "update": { "status": "current", "checkedAt": 1791270000000 }
+  }
+]
