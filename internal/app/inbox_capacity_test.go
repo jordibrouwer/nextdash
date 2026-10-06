@@ -96,9 +96,10 @@ func TestTrimKeepingLeavesAnUnderfullListAlone(t *testing.T) {
 }
 
 // The end-to-end case the bug was reported from: delete an old item, let the
-// inbox refill while the undo toast is up, then press undo.
+// inbox fill up while the undo toast is up, then press undo. With no cap the
+// undo always has room.
 func TestUndoRestoresAnOldItemAtCapacity(t *testing.T) {
-	h, _ := healthRecheckTestHandlers(t, `{"inboxMaxItems":3}`)
+	h, _ := healthRecheckTestHandlers(t, `{}`)
 	now := time.Now().UnixMilli()
 
 	old := InboxLink{ID: "inl_old", URL: "https://old.example", AddedAt: now - 900000}
@@ -170,10 +171,10 @@ func TestRestoreReportsCapacityRatherThanFakingSuccess(t *testing.T) {
 	}
 }
 
-// Undo at capacity reports what it pushed out, and a restored item whose icon
+// Undo pushes nothing out (there is no cap), and a restored item whose icon
 // file went with the delete does not keep the dead name.
-func TestUndoReportsEvictionsAndDropsADeadIcon(t *testing.T) {
-	h, _ := healthRecheckTestHandlers(t, `{"inboxMaxItems":2}`)
+func TestUndoPushesNothingOutAndDropsADeadIcon(t *testing.T) {
+	h, _ := healthRecheckTestHandlers(t, `{}`)
 	now := time.Now().UnixMilli()
 	for i, u := range []string{"https://a.example", "https://b.example"} {
 		if _, _, err := h.store.AddInboxLink(InboxLink{URL: u, AddedAt: now - int64(i*1000)}, false, 2); err != nil {
@@ -192,8 +193,8 @@ func TestUndoReportsEvictionsAndDropsADeadIcon(t *testing.T) {
 		Item    InboxLink `json:"item"`
 	}
 	_ = json.Unmarshal(rec.Body.Bytes(), &out)
-	if out.Evicted != 1 {
-		t.Fatalf("evicted = %d, want 1: the undo pushed a link out", out.Evicted)
+	if out.Evicted != 0 || len(h.store.GetInboxItems()) != 3 {
+		t.Fatalf("evicted = %d, items = %d: the undo must keep every link", out.Evicted, len(h.store.GetInboxItems()))
 	}
 	if out.Item.Icon != "" {
 		t.Fatalf("icon = %q: the file is gone, the name must go too", out.Item.Icon)

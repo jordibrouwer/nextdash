@@ -70,10 +70,9 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 
 	settings := h.store.GetSettings()
 	dedupe := settings.InboxDedupeUrls
-	maxItems := settings.InboxMaxItems
-	if maxItems <= 0 {
-		maxItems = 500
-	}
+	// No cap: the inbox keeps every link until you deal with it. The store
+	// still takes a limit (0 = none), so nothing here drops an older link.
+	const maxItems = 0
 
 	link := InboxLink{
 		URL:    url,
@@ -364,11 +363,8 @@ func (h *Handlers) PutInboxItem(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	settings := h.store.GetSettings()
-	maxItems := settings.InboxMaxItems
-	if maxItems <= 0 {
-		maxItems = 500
-	}
+	// No cap, as on add: an undo always has room.
+	const maxItems = 0
 
 	restored, evicted, err := h.store.RestoreInboxLinkEvicting(request.Item, maxItems)
 	if err != nil {

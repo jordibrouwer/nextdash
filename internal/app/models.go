@@ -777,7 +777,6 @@ type Settings struct {
 	SearchUnsorted          bool   `json:"searchUnsorted"`          // Let search reach bookmarks kept in Unsorted; they stay out of every other surface
 	PasteDestination        string `json:"pasteDestination"`        // ask, bookmark, or inbox when pasting a URL
 	InboxDedupeUrls         bool   `json:"inboxDedupeUrls"`         // Skip duplicate URLs in inbox
-	InboxMaxItems           int    `json:"inboxMaxItems"`           // Max inbox items (0 = unlimited)
 	InboxShowInPageTabs     bool   `json:"inboxShowInPageTabs"`     // Show Inbox tab in page navigation
 	InboxDeleteAfterPromote bool   `json:"inboxDeleteAfterPromote"` // Remove inbox item after promote to bookmark
 	AllowLocalBookmarks     bool   `json:"allowLocalBookmarks"`     // Allow http(s) bookmarks to localhost and private hosts
@@ -1827,7 +1826,6 @@ func (fs *FileStore) initializeDefaultFiles() {
 			SearchUnsorted:                 true,
 			PasteDestination:               "ask",
 			InboxDedupeUrls:                true,
-			InboxMaxItems:                  500,
 			InboxShowInPageTabs:            true,
 			InboxDeleteAfterPromote:        true,
 			AllowLocalBookmarks:            true,
@@ -4315,7 +4313,6 @@ func (fs *FileStore) GetSettings() Settings {
 			SearchUnsorted:                  true,
 			PasteDestination:                "ask",
 			InboxDedupeUrls:                 true,
-			InboxMaxItems:                   500,
 			InboxShowInPageTabs:             true,
 			InboxDeleteAfterPromote:         true,
 			AllowLocalBookmarks:             true,
@@ -5069,9 +5066,6 @@ func (fs *FileStore) GetSettings() Settings {
 		settings.LinkPreviewParts = normalizeLinkPreviewParts(settings.LinkPreviewParts)
 		if _, ok := rawSettings["inboxDedupeUrls"]; !ok {
 			settings.InboxDedupeUrls = true
-		}
-		if _, ok := rawSettings["inboxMaxItems"]; !ok {
-			settings.InboxMaxItems = 500
 		}
 		if _, ok := rawSettings["inboxShowInPageTabs"]; !ok {
 			settings.InboxShowInPageTabs = true

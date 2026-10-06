@@ -43,7 +43,6 @@
         'feedsEnabled',
         'feedsMarkQuiet',
         'inboxEnabled',
-        'inboxMaxItems',
         'inboxDedupeUrls',
         'inboxDeleteAfterPromote',
         'detectSoftNotFound',

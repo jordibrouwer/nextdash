@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -174,8 +175,9 @@ func TestAddWithRoomReportsNoIconsToClean(t *testing.T) {
 	}
 }
 
-// The icon file is actually removed once the handler runs, not merely reported.
-func TestAddInboxItemDeletesEvictedIconFile(t *testing.T) {
+// The inbox has no cap: past the old limit of 500, an add through the handler
+// keeps every earlier link and its icon.
+func TestAddInboxItemNeverDropsAnOlderLink(t *testing.T) {
 	h := inboxTestHandlers(t)
 
 	dataDir := os.Getenv("NEXTDASH_DATA_DIR")
@@ -183,34 +185,46 @@ func TestAddInboxItemDeletesEvictedIconFile(t *testing.T) {
 	if err := os.MkdirAll(iconDir, 0o755); err != nil {
 		t.Fatalf("mkdir: %v", err)
 	}
-	iconPath := filepath.Join(iconDir, "doomed.ico")
+	iconPath := filepath.Join(iconDir, "oldest.ico")
 	if err := os.WriteFile(iconPath, []byte("x"), 0o644); err != nil {
 		t.Fatalf("write icon: %v", err)
 	}
 
-	// The handler takes the cap from settings, not from the seed call, so this
-	// is what actually makes the next add evict.
-	settings := h.store.GetSettings()
-	settings.InboxMaxItems = 1
-	if err := h.store.SaveSettings(settings); err != nil {
-		t.Fatalf("save settings: %v", err)
-	}
-
 	now := time.Now().UnixMilli()
 	if _, _, err := h.store.AddInboxLink(InboxLink{
-		URL: "https://doomed.example", Icon: "doomed.ico", AddedAt: now - 10_000,
-	}, false, 1); err != nil {
+		URL: "https://oldest.example", Icon: "oldest.ico", AddedAt: now - 10_000_000,
+	}, false, 0); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
+	for i := 0; i < 520; i++ {
+		if _, _, err := h.store.AddInboxLink(InboxLink{
+			URL: fmt.Sprintf("https://n%d.example", i), AddedAt: now - int64(i),
+		}, false, 0); err != nil {
+			t.Fatalf("seed %d: %v", i, err)
+		}
+	}
 
-	req := httptest.NewRequest(http.MethodPost, "/api/inbox", strings.NewReader(`{"url":"https://replacement.example"}`))
+	req := httptest.NewRequest(http.MethodPost, "/api/inbox", strings.NewReader(`{"url":"https://newest.example"}`))
 	rec := httptest.NewRecorder()
 	h.AddInboxItem(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
 	}
 
-	if _, err := os.Stat(iconPath); !os.IsNotExist(err) {
-		t.Errorf("evicted item's icon still on disk (err = %v)", err)
+	items := h.store.GetInboxItems()
+	if len(items) != 522 {
+		t.Fatalf("inbox holds %d items, want all 522", len(items))
+	}
+	found := false
+	for _, item := range items {
+		if item.URL == "https://oldest.example" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("the oldest link was dropped")
+	}
+	if _, err := os.Stat(iconPath); err != nil {
+		t.Errorf("the oldest link's icon is gone: %v", err)
 	}
 }

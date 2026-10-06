@@ -294,41 +294,34 @@ test.describe('what the view says in words', () => {
     });
 });
 
-test.describe('importing into a nearly full inbox', () => {
-    // The server keeps a new link at the cap by dropping the oldest other one,
-    // so the import went on and deleted the reader's own links in silence.
-    test('stops at the cap instead of pushing out existing links', async ({ page }) => {
+test.describe('importing into the inbox', () => {
+    // The inbox has no cap: an import adds every row, and the links already
+    // there all stay.
+    test('adds every row and keeps the links already there', async ({ page }) => {
         await openInbox(page);
-        await page.evaluate(async () => {
+        await seed(page, [['keep-a.example.com', 'Keep A'], ['keep-b.example.com', 'Keep B']]);
+        const before = await page.evaluate(async () => {
             const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-            await api('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ inboxMaxItems: 3 }) });
-            window.dashboardInstance.settings.inboxMaxItems = 3;
+            const body = await (await api('/api/inbox')).json();
+            return (Array.isArray(body) ? body : body.items || []).length;
         });
-        try {
-            await seed(page, [['keep-a.example.com', 'Keep A'], ['keep-b.example.com', 'Keep B']]);
-            await page.evaluate(() => {
-                const inbox = window.dashboardInstance.inbox;
-                inbox.confirm = async () => true;
-                const file = new File([JSON.stringify([
-                    { url: 'https://imp-1.example.com/a', title: 'Imp 1' },
-                    { url: 'https://imp-2.example.com/b', title: 'Imp 2' },
-                    { url: 'https://imp-3.example.com/c', title: 'Imp 3' },
-                ])], 'inbox.json', { type: 'application/json' });
-                return inbox.importFromFile(file);
-            });
-            const titles = await page.evaluate(async () => {
-                const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-                const body = await (await api('/api/inbox')).json();
-                return (Array.isArray(body) ? body : body.items || []).map((i) => i.title);
-            });
-            expect(titles).toEqual(expect.arrayContaining(['Keep A', 'Keep B']));
-            expect(titles).toHaveLength(3);
-        } finally {
-            await page.evaluate(async () => {
-                const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-                await api('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ inboxMaxItems: 500 }) });
-            });
-        }
+        await page.evaluate(() => {
+            const inbox = window.dashboardInstance.inbox;
+            inbox.confirm = async () => true;
+            const file = new File([JSON.stringify([
+                { url: 'https://imp-1.example.com/a', title: 'Imp 1' },
+                { url: 'https://imp-2.example.com/b', title: 'Imp 2' },
+                { url: 'https://imp-3.example.com/c', title: 'Imp 3' },
+            ])], 'inbox.json', { type: 'application/json' });
+            return inbox.importFromFile(file);
+        });
+        const titles = await page.evaluate(async () => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const body = await (await api('/api/inbox')).json();
+            return (Array.isArray(body) ? body : body.items || []).map((i) => i.title);
+        });
+        expect(titles).toEqual(expect.arrayContaining(['Keep A', 'Keep B', 'Imp 1', 'Imp 2', 'Imp 3']));
+        expect(titles).toHaveLength(before + 3);
     });
 });
 
