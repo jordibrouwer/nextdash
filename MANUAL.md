@@ -14,6 +14,7 @@
 | 💬 | **In-app help** | **Config → Help**, in English, Dutch, German, French, Spanish and Chinese |
 | 🎨 | **328 themes, one look studio** | 164 theme families in light and dark, twelve characters, 26 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§16 Appearance](#16-appearance) and [the theme browser](#the-theme-browser) |
 | 🏠 | **Self-hosting?** | The [Self-hosted guide](#self-hosted-guide) right below the contents — containers, bookmarks, health and push notifications working as one |
+| 🔤 | **Glossary** | [Every nextDash term](#glossary), linked to where it is explained |
 
 This manual describes nextDash as it is now. It follows the same topics as Config → Help and goes into more detail. What changed in which release is in the [changelog](CHANGELOG.md).
 
@@ -1730,6 +1731,8 @@ A window is a recurring period when downtime is expected — days, a start and a
 
 Inside a window, checks still run and the heartbeat still records them, but a failure opens no incident, does not count against uptime or toward the failures an alert waits for, and sends no alert. A failure that continues after the window raises the alarm as usual.
 
+<a id="quiet-hours"></a>
+
 **Quiet hours.** Under **Behavior → Status & alerts → Quiet hours**, **Hold notices during quiet hours** holds alerts from monitors, containers, Unraid and backups while a window is open — the same editor as maintenance windows. When the hours end, one summary says what is still going on and what recovered by itself. Unlike a maintenance window the downtime still counts. **Always let through** lists the kinds that break the quiet: an expired certificate, a mass outage (several at once) and a failed backup by default, and a container that stops or restarts if you tick it. A line under the list says whether it is quiet now, until when, and how many notices are held. Outgoing webhooks ([§19.3](#193-webhooks)) are outside it and get every event. A muted bookmark or container never raises a notice, and a maintenance window drops it before the quiet hours would hold it.
 
 **Reminders.** **Remind me about an outage that is still going** sends another message for a monitor or container that is still down: **Remind after** 15, 30 or 60 minutes, or 2 or 4 hours, **At most** 1, 2, 3 or 5 times. Not during quiet hours; the summary that ends them says what is still down.
@@ -2344,6 +2347,8 @@ The theme browser lies over the right of the dashboard, so every change shows on
 - **✎ Edit** on a card of your own, **✎ Recolour** on a packaged one, or **`e`** on a focused card opens the theme editor ([§16.5](#165-custom-themes)) in place of the grid; **← Themes** goes back. The other tabs have a link **✎ Edit ‹theme›** at the top. Colour changes show on the page and are kept on **Apply** like everything else; **Cancel** and **Compare** include them, and **Reset tab** in the editor puts the colours back.
 - **Use this theme's look**, above the grid, appears once a theme of your own carries a look. Off, picking such a theme leaves the look on screen as it is.
 - **Save as theme…** turns what is on screen into a new theme of your own: a name (it suggests "‹theme› — mine"), **Bring this look along**, and **Make the light/dark half too** when the theme has two. It is saved at once and opens in the editor; picking it still waits for **Apply**, so **Cancel** keeps the new theme and puts the old one back on screen.
+
+<a id="looks"></a>
 
 **Looks** set backdrop, surface, headers and type in one go, and leave the theme's colours alone. After using one, every part can still be tuned in its own tab.
 
@@ -3388,6 +3393,192 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 <a id="glossary"></a>
 
 ## 26. 🔤 Glossary
+
+Every word nextDash gives a meaning of its own, in one line, with a link to where the manual explains it.
+
+[A](#glossary-a) · [B](#glossary-b) · [C](#glossary-c) · [D](#glossary-d) · [E](#glossary-e) · [F](#glossary-f) · [H](#glossary-h) · [I](#glossary-i) · [L](#glossary-l) · [M](#glossary-m) · [N](#glossary-n) · [P](#glossary-p) · [Q](#glossary-q) · [R](#glossary-r) · [S](#glossary-s) · [T](#glossary-t) · [U](#glossary-u) · [V](#glossary-v) · [W](#glossary-w)
+
+<a id="glossary-a"></a>
+
+**A**
+
+| Term | Meaning | Explained in |
+|---|---|---|
+| Action buttons | The fixed buttons beside the grid: add, search, commands, finders and the rest, each with its key. | [§4](#the-action-buttons) |
+| Activity trail | A machine-readable record, one JSON line per event, kept apart from the readable log. | [§20.2](#202-activity-trail) |
+| Alert | A message posted when a monitored bookmark goes down and again when it recovers, with how long it was down. | [§12.4](#124-alerts) |
+| Availability mode | Off, Periodic or Monitor: how often, and by whom, a bookmark is checked. | [§12.1](#121-availability-modes) |
+
+<a id="glossary-b"></a>
+
+**B**
+
+| Term | Meaning | Explained in |
+|---|---|---|
+| Backdrop | What is drawn behind the bookmarks; every theme has one of its own, and you can pick any of 26. | [§16.4](#164-type-and-background) |
+| Baseline | The first check after drift watching is switched on; later checks are compared with it. | [§12.3](#123-drift) |
+| Bookmarklet | A button for your browser's bookmarks bar that saves the page you are on to nextDash, from any browser. | [§21.2](#212-capture-without-the-extension) |
+| Bookmarks view | The library: every bookmark on every page in one workbench, with a rail of filters, a list and a side panel. | [§11](#11-the-bookmarks-view) |
+
+<a id="glossary-c"></a>
+
+**C**
+
+| Term | Meaning | Explained in |
+|---|---|---|
+| Category | A named section on a page, with its own sort order and, if you like, an icon and several columns. | [§9.2](#92-categories) |
+| Character | One of twelve archetypes a theme names; it decides what kind of surface the theme draws, such as lacquer, glass or neon. | [§16.2](#162-character) |
+| Cheat sheet | A searchable list of keys and commands, opened with `!` or `F1`. | [§7.6](#76-the-cheat-sheet) |
+| Collection health | A modal with overview, monitors and certificates figures for the whole library, opened with `h` in the Bookmarks view. | [§11.8](#118-collection-health) |
+| Command (`:`) | A line typed after `:` in the command palette to change or open something. | [§8.5](#85-commands) |
+| Custom widget | A widget that reads figures from any service that answers with JSON. | [§15.5](#155-the-custom-widget) |
+
+<a id="glossary-d"></a>
+
+**D**
+
+| Term | Meaning | Explained in |
+|---|---|---|
+| Dashboard grid | The page of categories and widgets, as distinct from the Bookmarks view. | [§3.5](#35-views) |
+| Drift | A page that still answers but is no longer the page you saved: it redirects, has been retitled or was rewritten. | [§12.3](#123-drift) |
+
+<a id="glossary-e"></a>
+
+**E**
+
+| Term | Meaning | Explained in |
+|---|---|---|
+| Expected response | What a monitored page must say or return to count as healthy: a phrase, or status codes. | [§12.2](#122-expected-response) |
+
+<a id="glossary-f"></a>
+
+**F**
+
+| Term | Meaning | Explained in |
+|---|---|---|
+| Finder (`?`) | A shortcut that sends a query to another site, as in `?g nextdash`. | [§8.6](#86-finders) |
+| Fresh | Shows whether a bookmarked site has published something since you last opened it, through its RSS or Atom feed. | [§12.6](#126-fresh) |
+
+<a id="glossary-h"></a>
+
+**H**
+
+| Term | Meaning | Explained in |
+|---|---|---|
+| Hypr mode | A click opens the bookmark in a new browser tab and then closes the installed app's window. | [§6](#hypr-mode) |
+
+<a id="glossary-i"></a>
+
+**I**
+
+| Term | Meaning | Explained in |
+|---|---|---|
+| Inbox | Where links wait until you decide where they go; a list of its own, not a page. | [§13](#13-inbox) |
+
+<a id="glossary-l"></a>
+
+**L**
+
+| Term | Meaning | Explained in |
+|---|---|---|
+| Link preview card | The card that opens when you hover a bookmark or press `Shift + V`: what the page is, what it says, your note and tags. | [§4](#the-link-preview-card) |
+| Logs window | A window that follows a container's log as it is written, with search and filter. | [§14.8](#148-the-logs-window) |
+| Look | A ready-made combination of backdrop, surface, headers and type that leaves the theme's colours alone. | [§16.1](#looks) |
+| Look studio | The theme browser, tried live on your own page and kept only on Apply. | [§16.1](#the-theme-browser) |
+
+<a id="glossary-m"></a>
+
+**M**
+
+| Term | Meaning | Explained in |
+|---|---|---|
+| Maintenance window | A recurring period when downtime is expected: failures in it send no alert and do not count against uptime. | [§12.5](#125-maintenance-windows) |
+| MCP endpoint | An address at `/mcp` where MCP clients can search, read and add bookmarks; off until you switch it on. | [§23.6](#236-the-mcp-endpoint) |
+
+<a id="glossary-n"></a>
+
+**N**
+
+| Term | Meaning | Explained in |
+|---|---|---|
+| Notice | A message sent when a container stops unexpectedly, keeps restarting or turns unhealthy, and again when it recovers. | [§14.9](#149-notices) |
+
+<a id="glossary-p"></a>
+
+**P**
+
+| Term | Meaning | Explained in |
+|---|---|---|
+| Page | A separate set of categories and bookmarks, such as Work or Home. | [§9.1](#91-pages) |
+| Page switcher | The control in the header that moves between pages; its look is a setting. | [§4](#the-page-switcher) |
+| Page template | A page saved as a file, with its layout, categories, widgets and links, to import on another install. | [§9.8](#98-page-templates) |
+| Promote | Move an Unsorted bookmark onto a real page, with a page and category, through the bookmark form. | [§11.11](#1111-unsorted-and-promote) |
+
+<a id="glossary-q"></a>
+
+**Q**
+
+| Term | Meaning | Explained in |
+|---|---|---|
+| Quick add (`&`) | Press `&`, type a name, address and optional shortcut on one line, and press Enter. | [§5.1](#51-quick-add) |
+| Quiet hours | A window in which alerts are held and then summed up in one message when it ends; the downtime still counts. | [§12.5](#quiet-hours) |
+
+<a id="glossary-r"></a>
+
+**R**
+
+| Term | Meaning | Explained in |
+|---|---|---|
+| Recent bookmarks (`*`) | A narrow panel with what you opened recently on this page. | [§6](#recent-bookmarks) |
+| Rot report | A list of what has gone, moved, failed for over a month or broke this week. | [§11.10](#1110-rot-report) |
+
+<a id="glossary-s"></a>
+
+**S**
+
+| Term | Meaning | Explained in |
+|---|---|---|
+| Smart collection | A group nextDash fills for you from how you use your bookmarks, such as Today, Most used or Stale; switched on under Structure. | [§9.6](#96-smart-collections) |
+| Source | A service bookmarks keep arriving from, with its own token and an import that previews before it writes. | [§19.2](#192-sources) |
+
+<a id="glossary-t"></a>
+
+**T**
+
+| Term | Meaning | Explained in |
+|---|---|---|
+| Tag collection | A group nextDash makes of every tag that enough bookmarks use. | [§9.7](#97-custom-and-tag-collections) |
+| Tag suggestions | Proposals for one tag for a whole group of bookmarks, from your own rules and other sources. | [§10.4](#104-tag-suggestions) |
+| Theme browser | The panel beside the dashboard, opened with `Shift + A`, for themes, backdrops, surfaces, headers, type and looks. | [§16.1](#the-theme-browser) |
+| Trash | Deleted bookmarks, pages and categories stay here for 30 days. | [§19.5](#195-trash) |
+| Triage | Takes you through unread inbox links one at a time, in the same shape as Work through. | [§13.4](#134-triage) |
+
+<a id="glossary-u"></a>
+
+**U**
+
+| Term | Meaning | Explained in |
+|---|---|---|
+| Unsorted | A hidden page for bookmarks kept from the inbox with no page yet; they stay off the dashboard. | [§11.11](#1111-unsorted-and-promote) |
+
+<a id="glossary-v"></a>
+
+**V**
+
+| Term | Meaning | Explained in |
+|---|---|---|
+| View | One of five parts of the page: the dashboard grid, Bookmarks view, inbox, Containers view and config. | [§3.5](#35-views) |
+
+<a id="glossary-w"></a>
+
+**W**
+
+| Term | Meaning | Explained in |
+|---|---|---|
+| Webhook | A receiver that another program is told about the moment something happens here. | [§19.3](#193-webhooks) |
+| Widget | A block beside the categories that shows something other than links. | [§15](#15-widgets) |
+| Work through | Takes you through the bookmarks that need a decision, one pile at a time; `f` in the Bookmarks view. | [§11.7](#117-work-through-and-the-header-band) |
+| Write token | A secret in `NEXTDASH_WRITE_TOKEN` that every write or destructive API call must then carry. | [§23.2](#232-the-write-token) |
 
 <sub>[↑ Contents](#table-of-contents)</sub>
 
