@@ -654,11 +654,10 @@ Open `http://localhost:8080`.
 
 From a git checkout, `docker-compose.prod.yml` is the production file (only `./data` is mounted; the assets are built into the binary) and `docker-compose.yml` is for development (it mounts `./static`, `./locales` and `./templates`). The development file ships with `NEXTDASH_DOCKER_CONTROL=0` and `NEXTDASH_RUN_AS_ROOT=0` and the Docker socket commented out. Put your own mounts and variables in a `docker-compose.override.yml` beside it: Compose reads that file on its own, and your changes stay out of the checkout.
 
-**Never delete `./data` while the container runs.** `./data` is a bind mount: the folder disappears from your disk, but the container keeps writing into a directory that no longer exists, and the data is gone at the next restart. Nothing in the app shows it. In a checkout, three `make` targets deal with it:
+**Never delete `./data` while the container runs.** `./data` is a bind mount: the folder disappears from your disk, but the container keeps writing into a directory that no longer exists, and the data is gone at the next restart. Nothing in the app shows it.
 
-- `make doctor` — says whether the container runs while `./data` is missing on the host.
-- `make rescue-data` — copies the data back out of the running container into `./data`; then run `docker compose up -d --force-recreate` so the mount points at the new folder.
-- `make reset-data` — wipes `./data` the safe way (it asks first, stops the container, removes the folder, starts again) and leaves you with fresh default files.
+- **Check.** If `docker ps` shows the container running while `./data` is gone on the host, copy the data back out first: `docker exec nextdash tar cf - -C /app data | tar xf - -C .`, then `docker compose up -d --force-recreate` so the mount points at the new folder. (`nextdash` is the `container_name` in the compose files that ship with nextDash; use the one in yours.)
+- **Clean reset.** `docker compose down`, delete `./data`, then `docker compose up -d`. nextDash makes the folder and its default files again.
 
 <a id="build-from-source"></a>
 
@@ -2136,7 +2135,7 @@ The **Containers view** shows the Docker containers on the machine nextDash runs
 
 ### 14.1 Opening it
 
-Open it with **`Shift + Y`**, the Containers icon in the header, `:docker`, or `/#docker`. Search also finds containers by name, and the **Containers** widget's tile opens the view. Two tabs sit above the list: **Containers** and **Disk** ([§14.7](#147-disk)). The **ℹ** beside **Tour** in the header explains the view in five short parts: the list, acting on containers, the side panel, updates and Disk. **Tour** plays the fifteen-step walkthrough with moving drawings — offered once on your first visit, and once more after an upgrade that changed the view ([§17](#view-tours)).
+Open it with **`Shift + Y`**, the Containers icon in the header, `:docker`, or `/#docker`. Search also finds containers by name, and the **Containers** widget's tile opens the view. Two tabs sit above the list: **Containers** and **Disk** ([§14.7](#147-disk)). The **ℹ** beside **Tour** in the header gives a five-part reference: the list, acting on containers, the side panel, updates and Disk. **Tour** plays a fifteen-step walkthrough with moving drawings — offered once on your first visit, and once more after an upgrade that changed the view ([§17](#view-tours)).
 
 <a id="142-the-list"></a>
 
