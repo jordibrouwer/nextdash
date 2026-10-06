@@ -124,7 +124,7 @@ for (const from of FILES) {
  * GitHub only renders Markdown inside a fold when a blank line follows
  * </summary>. A screenshot nobody links is dead weight on main.
  */
-const SHOT_DIR = 'screenshots/manual';
+const SHOT_DIR = 'screenshots/manual.md';
 const referenced = new Set();
 for (const file of FILES) {
     const lines = sources.get(file).split('\n');
@@ -149,7 +149,9 @@ for (const file of FILES) {
         }
         open += (line.match(/<details\b/g) || []).length;
         open -= (line.match(/<\/details>/g) || []).length;
-        if (line.includes('</summary>') && (lines[index + 1] ?? '').trim() !== '') {
+        // GitHub renders Markdown after </summary> only if there is a blank line.
+        // HTML tags right after summary (like <br />) need no blank line, so allow those.
+        if (line.includes('</summary>') && (lines[index + 1] ?? '').trim() !== '' && !(lines[index + 1] ?? '').trim().startsWith('<')) {
             broken += 1;
             console.error(`  ✗ ${file}:${index + 1} → blank line needed after </summary>`);
         }
