@@ -132,11 +132,15 @@ Config → Overview names the running version in a panel of its own, with a dot 
 - **fix — template labels are cut by character.** A host label over 60 bytes was cut mid-character, which showed as `�` in the file and the import dialog; it is now cut at 60 characters (`truncateRunes`).
 - **fix — `/api/notify/quiet` loads the time zone once.** Working out when the quiet hours end read the zone file once per minute stepped, up to 2880 times a request (`quietEndsAt` in `notify_quiet.go`).
 
+### Bookmarks
+- **fix — Unsorted is called Unsorted, not 999999.** In **Bookmarks → Unsorted** grouped by page, the group header read *999999* and so did the location line in the side panel. Kept links live on a hidden page that is not in the page list, and `pageLabel` fell back to its id. It now returns **Unsorted** (`config.bmViewUnsorted`) for that page, which also fixes the row crumb, the Usage tab and the bulk category list for kept links (`dashboard-config.js`).
+
 ### Tests
 - **tests — `update_check_test.go`** covers the rate-limit wait, the conditional request and the token with its fallback; `tests/config-overview-release.spec.js` reads the version from the Version panel and covers the behind line and the failure reason.
 - **tests — `tests/config-widgets-tab.spec.js`** moves a widget through its Settings page select and checks it left the source page and landed, same id, on the other.
 - **tests — `tests/config-widgets-tabs.spec.js`** checks the Custom section's count against the offered presets, one per service name, and that it says five groups.
 - **tests — `tests/header-sheet-reduced-motion.spec.js`** opens the pages and recents panels with their keys under reduced motion and with **Animations** off, and checks that each sits inside the window, on the strip's centre line, without an animation.
+- **tests — `tests/unsorted-page-label.spec.js`** keeps a link from the inbox, opens `#unsorted`, groups by page and checks that the group header and the side panel's location say Unsorted.
 - **tests — `tests/config-rail-sticky.spec.js`** opens Config → Behavior from the dashboard, scrolls it at 1440 and 800px wide, and checks that the rail starts below the band.
 - **tests — `settings_merge_test.go`** saves `smartFreshPageIds` through the store and reads it back, and loads an old settings file as an empty list; `tests/config-collection-scope.spec.js` ticks a Fresh page in Collection scope, reloads, and finds it still ticked.
 - **tests — `tests/dashboard-widget-notes.spec.js`** ticks a box and unticks it with two plain clicks, and checks both saves.

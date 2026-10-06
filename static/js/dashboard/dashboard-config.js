@@ -1923,6 +1923,11 @@ class DashboardConfig {
     }
 
     pageLabel(pageId) {
+        // The kept page is never in d.pages, so the lookup below would print
+        // its id: group headers, crumbs and the panel's location read "999999".
+        if (window.UnsortedPage?.isUnsorted?.({ pageId })) {
+            return this.t('config.bmViewUnsorted', 'Unsorted');
+        }
         const page = (this.dash.pages || []).find((p) => String(p.id) === String(pageId));
         return page?.name || String(pageId ?? '');
     }
