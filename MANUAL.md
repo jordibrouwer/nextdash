@@ -3416,7 +3416,9 @@ Every word nextDash gives a meaning of its own, in one line, with a link to wher
 | Term | Meaning | Explained in |
 |---|---|---|
 | Backdrop | What is drawn behind the bookmarks; every theme has one of its own, and you can pick any of 26. | [§16.4](#164-type-and-background) |
+| Backup | A ZIP of the whole data directory, downloaded or stored on the server, by hand or on a schedule. | [§19.1](#191-backups-data) |
 | Baseline | The first check after drift watching is switched on; later checks are compared with it. | [§12.3](#123-drift) |
+| Bookmark | A saved link with a name, address, page and category, tags, an optional shortcut, a note and a pin. | [§3.3](#33-bookmarks) |
 | Bookmarklet | A button for your browser's bookmarks bar that saves the page you are on to nextDash, from any browser. | [§21.2](#212-capture-without-the-extension) |
 | Bookmarks view | The library: every bookmark on every page in one workbench, with a rail of filters, a list and a side panel. | [§11](#11-the-bookmarks-view) |
 
@@ -3429,8 +3431,12 @@ Every word nextDash gives a meaning of its own, in one line, with a link to wher
 | Category | A named section on a page, with its own sort order and, if you like, an icon and several columns. | [§9.2](#92-categories) |
 | Character | One of twelve archetypes a theme names; it decides what kind of surface the theme draws, such as lacquer, glass or neon. | [§16.2](#162-character) |
 | Cheat sheet | A searchable list of keys and commands, opened with `!` or `F1`. | [§7.6](#76-the-cheat-sheet) |
-| Collection health | A modal with overview, monitors and certificates figures for the whole library, opened with `h` in the Bookmarks view. | [§11.8](#118-collection-health) |
+| Collection health | A modal with Overview, Monitors and Trend tabs for the whole library, opened with `h` in the Bookmarks view. | [§11.8](#118-collection-health) |
 | Command (`:`) | A line typed after `:` in the command palette to change or open something. | [§8.5](#85-commands) |
+| Config | A view inside the dashboard, in the same tab, where every setting lives in sections. | [§17](#17-config) |
+| Container | A Docker container on the machine nextDash runs on, listed and managed in the Containers view. | [§14](#14-containers) |
+| Containers view | The view for those containers, opened with `Shift + Y` or `:docker`, with a Containers and a Disk tab. | [§14.1](#141-opening-it) |
+| Custom theme | A theme of your own, made or recoloured in the theme editor and listed beside the packaged ones. | [§16.5](#165-custom-themes) |
 | Custom widget | A widget that reads figures from any service that answers with JSON. | [§15.5](#155-the-custom-widget) |
 
 <a id="glossary-d"></a>
@@ -3440,6 +3446,10 @@ Every word nextDash gives a meaning of its own, in one line, with a link to wher
 | Term | Meaning | Explained in |
 |---|---|---|
 | Dashboard grid | The page of categories and widgets, as distinct from the Bookmarks view. | [§3.5](#35-views) |
+| Disk tab | Shows what images, volumes and the build cache take up, with clean-ups that ask first. | [§14.7](#147-disk) |
+| Docker control | `NEXTDASH_DOCKER_CONTROL=1`: lets nextDash start, stop, pause, restart, update and remove containers; off by default, so a mounted socket only reads. | [§14.5](#145-actions-and-updates) |
+| Docker host address | A Config → Containers setting that names the server, so a container's port links go there instead of to the host you opened nextDash on. | [§14.2](#142-the-list) |
+| Docker socket | How nextDash talks to Docker; without it the Containers view shows a setup card. | [§14.6](#146-what-it-needs) |
 | Drift | A page that still answers but is no longer the page you saved: it redirects, has been retitled or was rewritten. | [§12.3](#123-drift) |
 
 <a id="glossary-e"></a>
@@ -3449,6 +3459,7 @@ Every word nextDash gives a meaning of its own, in one line, with a link to wher
 | Term | Meaning | Explained in |
 |---|---|---|
 | Expected response | What a monitored page must say or return to count as healthy: a phrase, or status codes. | [§12.2](#122-expected-response) |
+| Extension | The nextDash Bookmark Saver for Chrome and Chromium, which saves the current tab to a page or the inbox. | [§21.1](#211-the-extension) |
 
 <a id="glossary-f"></a>
 
@@ -3473,6 +3484,7 @@ Every word nextDash gives a meaning of its own, in one line, with a link to wher
 
 | Term | Meaning | Explained in |
 |---|---|---|
+| Image update | A newer tag of a container's image, found by checks on request and on an interval; it can be skipped, held or applied automatically. | [§14.5](#145-actions-and-updates) |
 | Inbox | Where links wait until you decide where they go; a list of its own, not a page. | [§13](#13-inbox) |
 
 <a id="glossary-l"></a>
@@ -3482,6 +3494,8 @@ Every word nextDash gives a meaning of its own, in one line, with a link to wher
 | Term | Meaning | Explained in |
 |---|---|---|
 | Link preview card | The card that opens when you hover a bookmark or press `Shift + V`: what the page is, what it says, your note and tags. | [§4](#the-link-preview-card) |
+| Linked bookmark | The bookmark nextDash matches to a container's web UI, shown as a small mark beside the link. | [Guide](#sh-link-bookmarks) |
+| Local copy | A whole page saved as one file in your data directory. | [§12.7](#127-keeping-a-copy-of-a-page) |
 | Logs window | A window that follows a container's log as it is written, with search and filter. | [§14.8](#148-the-logs-window) |
 | Look | A ready-made combination of backdrop, surface, headers and type that leaves the theme's colours alone. | [§16.1](#looks) |
 | Look studio | The theme browser, tried live on your own page and kept only on Apply. | [§16.1](#the-theme-browser) |
@@ -3494,6 +3508,7 @@ Every word nextDash gives a meaning of its own, in one line, with a link to wher
 |---|---|---|
 | Maintenance window | A recurring period when downtime is expected: failures in it send no alert and do not count against uptime. | [§12.5](#125-maintenance-windows) |
 | MCP endpoint | An address at `/mcp` where MCP clients can search, read and add bookmarks; off until you switch it on. | [§23.6](#236-the-mcp-endpoint) |
+| Monitor | The availability mode where the server checks a bookmark on its own interval and keeps 30 days of history, uptime, outages and alerts. | [§12.1](#121-availability-modes) |
 
 <a id="glossary-n"></a>
 
@@ -3501,6 +3516,7 @@ Every word nextDash gives a meaning of its own, in one line, with a link to wher
 
 | Term | Meaning | Explained in |
 |---|---|---|
+| Note | Plain text on a bookmark; search matches it and the preview card shows it. | [§10.5](#105-notes) |
 | Notice | A message sent when a container stops unexpectedly, keeps restarting or turns unhealthy, and again when it recovers. | [§14.9](#149-notices) |
 
 <a id="glossary-p"></a>
@@ -3530,6 +3546,7 @@ Every word nextDash gives a meaning of its own, in one line, with a link to wher
 | Term | Meaning | Explained in |
 |---|---|---|
 | Recent bookmarks (`*`) | A narrow panel with what you opened recently on this page. | [§6](#recent-bookmarks) |
+| Rollback | Puts a container back on the image its last update replaced, while that image is still on the host. | [§14.5](#145-actions-and-updates) |
 | Rot report | A list of what has gone, moved, failed for over a month or broke this week. | [§11.10](#1110-rot-report) |
 
 <a id="glossary-s"></a>
@@ -3538,8 +3555,11 @@ Every word nextDash gives a meaning of its own, in one line, with a link to wher
 
 | Term | Meaning | Explained in |
 |---|---|---|
+| Shortcut | One or two letters on a bookmark that open it from the dashboard. | [§3.3](#33-bookmarks) |
 | Smart collection | A group nextDash fills for you from how you use your bookmarks, such as Today, Most used or Stale; switched on under Structure. | [§9.6](#96-smart-collections) |
 | Source | A service bookmarks keep arriving from, with its own token and an import that previews before it writes. | [§19.2](#192-sources) |
+| Statistics | Config → Statistics: counts of what you have and what you use, worked out from the data on your server. | [§18](#18-statistics) |
+| Structure | The Config section for categories, pages, finders and collections. | [§17.1](#171-the-sections) |
 
 <a id="glossary-t"></a>
 
@@ -3547,8 +3567,11 @@ Every word nextDash gives a meaning of its own, in one line, with a link to wher
 
 | Term | Meaning | Explained in |
 |---|---|---|
+| Tag | A free label on a bookmark, stored in lower case. | [§10.1](#101-tags-on-a-bookmark) |
+| Tag cloud | Every tag sized by use; pick several to show bookmarks with any of them. | [§10.2](#102-filtering-by-tag) |
 | Tag collection | A group nextDash makes of every tag that enough bookmarks use. | [§9.7](#97-custom-and-tag-collections) |
 | Tag suggestions | Proposals for one tag for a whole group of bookmarks, from your own rules and other sources. | [§10.4](#104-tag-suggestions) |
+| Theme | A colour scheme; 164 families each come in a light and a dark half, picked on the Look tab or in the theme browser. | [§16.1](#161-themes) |
 | Theme browser | The panel beside the dashboard, opened with `Shift + A`, for themes, backdrops, surfaces, headers, type and looks. | [§16.1](#the-theme-browser) |
 | Trash | Deleted bookmarks, pages and categories stay here for 30 days. | [§19.5](#195-trash) |
 | Triage | Takes you through unread inbox links one at a time, in the same shape as Work through. | [§13.4](#134-triage) |
@@ -3559,6 +3582,7 @@ Every word nextDash gives a meaning of its own, in one line, with a link to wher
 
 | Term | Meaning | Explained in |
 |---|---|---|
+| Unraid widgets | Seven read-only widgets that show an Unraid server through its API. | [§15.6](#156-unraid-widgets) |
 | Unsorted | A hidden page for bookmarks kept from the inbox with no page yet; they stay off the dashboard. | [§11.11](#1111-unsorted-and-promote) |
 
 <a id="glossary-v"></a>
@@ -3575,6 +3599,7 @@ Every word nextDash gives a meaning of its own, in one line, with a link to wher
 
 | Term | Meaning | Explained in |
 |---|---|---|
+| Web UI address | The link on a container's row: one you set, one its labels offer, or its first published port. | [§14.2](#142-the-list) |
 | Webhook | A receiver that another program is told about the moment something happens here. | [§19.3](#193-webhooks) |
 | Widget | A block beside the categories that shows something other than links. | [§15](#15-widgets) |
 | Work through | Takes you through the bookmarks that need a decision, one pile at a time; `f` in the Bookmarks view. | [§11.7](#117-work-through-and-the-header-band) |
