@@ -97,5 +97,86 @@
         }, true);
     }
 
+    /*
+     * The demo bar: a filled strip above the header, always there and not to
+     * be closed. It says the demo is shared and when it resets, counted down
+     * from /api/demo, and links to the install page. A reset itself needs no
+     * reload here: the data revision moves and the dashboard follows it.
+     */
+    const INSTALL_URL = 'https://nextdash.cc/install/';
+    let resetAt = 0;
+
+    function resetText() {
+        const left = resetAt - Date.now();
+        if (!resetAt) return '';
+        if (left <= 0) return t('barResetting', 'Resetting…');
+        const minutes = Math.ceil(left / 60000);
+        return minutes <= 1
+            ? t('barResetsSoon', 'Resets in under a minute')
+            : t('barResetsIn', 'Resets in {n} min').replace('{n}', String(minutes));
+    }
+
+    function renderBar() {
+        let bar = document.getElementById('demo-bar');
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.id = 'demo-bar';
+            bar.className = 'demo-bar';
+            bar.setAttribute('role', 'note');
+            bar.innerHTML = `<span class="demo-bar-label">${esc(t('barLabel', 'Demo'))}</span>
+                <span class="demo-bar-text"><span data-demo-reset></span><span class="demo-bar-shared"> · ${esc(t('barShared', 'what you change is shared with other visitors until then'))}</span></span>
+                <a class="demo-bar-install" href="${INSTALL_URL}" target="_blank" rel="noopener">${esc(t('barInstall', 'Install'))}<span class="demo-bar-install-name"> nextDash</span> →</a>`;
+            document.body.prepend(bar);
+        }
+        const reset = bar.querySelector('[data-demo-reset]');
+        if (reset) reset.textContent = resetText();
+    }
+
+    async function refreshResetAt() {
+        try {
+            const res = await fetch('/api/demo', { cache: 'no-store' });
+            const data = await res.json();
+            if (data?.demo) resetAt = Number(data.resetAt) || 0;
+        } catch { /* the bar keeps its last answer */ }
+        renderBar();
+    }
+
+    /*
+     * A refused action says why, as an ordinary notification: the demo's own
+     * answers (403, 429, 503) carry a sentence meant for the visitor, and the
+     * caller's own error toast would only say that something failed.
+     */
+    const DEMO_ANSWERS = [/not available in the demo/i, /demo holds no more/i, /the demo is shared/i, /demo is being reset/i];
+    function watchDemoAnswers() {
+        const original = global.fetch.bind(global);
+        global.fetch = async (...args) => {
+            const response = await original(...args);
+            if ([403, 429, 503].includes(response.status)) {
+                response.clone().text().then((body) => {
+                    const message = String(body || '').trim();
+                    if (message && DEMO_ANSWERS.some((re) => re.test(message))) {
+                        global.dashboardInstance?.showNotification?.(message.slice(0, 160), 'warning', { duration: 5000 });
+                    }
+                }).catch(() => {});
+            }
+            return response;
+        };
+    }
+
+    if (on) {
+        watchDemoAnswers();
+        const start = () => {
+            renderBar();
+            void refreshResetAt();
+            setInterval(renderBar, 15000);
+            setInterval(() => void refreshResetAt(), 30000);
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') void refreshResetAt();
+            });
+        };
+        if (document.body) start();
+        else document.addEventListener('DOMContentLoaded', start, { once: true });
+    }
+
     global.DemoLock = { on, explain, chip, text };
 })(window);

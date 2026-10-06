@@ -811,9 +811,18 @@
         }
     }
 
+    const onAbortOf = (options) => typeof options?.onAbort === 'function';
+
     window.__whatsNewOpen = function openWhatsNewModal(options) {
         options = options || {};
         const force = options.force === true;
+        // Never by itself in the public demo: every visitor is new there, and
+        // notes for a release they never ran would be the first thing they
+        // read. Opened on purpose (force), it still shows.
+        if (!force && window.DemoLock?.on) {
+            if (onAbortOf(options)) options.onAbort();
+            return;
+        }
         const markSeenOnConfirm = options.markSeenOnConfirm !== false;
         const onClose = typeof options.onClose === 'function' ? options.onClose : null;
         const onAbort = typeof options.onAbort === 'function' ? options.onAbort : null;

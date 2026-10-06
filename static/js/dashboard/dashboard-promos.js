@@ -223,6 +223,9 @@ class DashboardPromos {
 
     maybeShowWhatsNew() {
         const d = this.dash;
+        // Every demo visitor is new; release notes for a version they never
+        // ran would be the first thing they read.
+        if (window.DemoLock?.on) return;
         if (!this.canShowPostOnboardingPrompts() || !this.shouldShowWhatsNewPrompt()) return;
         this.showWhatsNewModal({ force: false });
     }
