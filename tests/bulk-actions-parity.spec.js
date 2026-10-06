@@ -113,6 +113,34 @@ test('Re-check on the dashboard probes each ticked row once', async ({ page }) =
         .toEqual([`https://${host}/a`, `https://${host}/b`]);
 });
 
+// A refused re-check is not a done one: the ping limit's 429 is waited out and
+// asked again, and a row that fails is not counted as re-checked.
+test('Re-check on the dashboard counts what each probe answered', async ({ page }) => {
+    const host = `recheck-count-${Date.now()}.example`;
+    const pinged = [];
+    await page.route('**/api/ping?*', (route) => {
+        const url = new URL(route.request().url()).searchParams.get('url');
+        if (!String(url).includes(host)) return route.fallback();
+        pinged.push(url);
+        if (url.endsWith('/a') && pinged.filter((u) => u === url).length === 1) {
+            return route.fulfill({ status: 429, headers: { 'Retry-After': '1' }, body: 'slow down' });
+        }
+        if (url.endsWith('/b')) return route.fulfill({ status: 502, body: 'bad gateway' });
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'online', ping: 5 }) });
+    });
+    const bar = await seedAndSelect(page, host);
+    await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        window.__notes = [];
+        const show = d.showNotification.bind(d);
+        d.showNotification = (msg, ...rest) => { window.__notes.push(String(msg)); return show(msg, ...rest); };
+    });
+    await bar.locator('[data-bulk-action="recheck"]').click();
+    await expect.poll(() => page.evaluate(() => window.__notes.find((m) => /Re-checked/.test(m)) || ''), { timeout: 20_000 })
+        .toBe('Re-checked 1 bookmark(s)');
+    expect(pinged.filter((u) => u.endsWith('/a'))).toHaveLength(2);
+});
+
 test('Copy links in the Bookmarks view puts the ticked addresses on the clipboard', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await openConfigBookmarks(page);

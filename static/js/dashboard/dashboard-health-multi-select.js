@@ -251,15 +251,17 @@ class DashboardHealthMultiSelect {
         window.nextdashTrack?.('health:bulk-recheck', { count: issues.length });
         // Sequential on purpose: each re-check is a network probe of someone
         // else's server, and firing twenty at once looks like a burst of traffic
-        // from one client.
-        for (const issue of issues) {
-            await this.health.recheckIssue(issue, { silent: true });
-        }
+        // from one client. BulkSweep counts what each re-check answered and
+        // waits out the ping limit; counting the selection said every row was
+        // re-checked when the limit had refused most of them.
+        await window.BulkSweep.run(issues, {
+            title: this.t('dashboard.bulkRecheckTitle', 'Re-checking…'),
+            run: async (issue) => (await this.health.recheckIssue(issue, { silent: true })) ?? 'failed',
+            done: (ok) => this.t('dashboard.healthBulkRecheckDone', 'Re-checked {count} bookmark(s)', { count: ok }),
+            t: (key, fallback) => this.t(key, fallback),
+            notify: (summary, type) => this.dash.showNotification(summary, type),
+        });
         await this.health.loadAndRender({ refresh: true });
-        this.dash.showNotification(
-            this.t('dashboard.healthBulkRecheckDone', 'Re-checked {count} bookmark(s)', { count: issues.length }),
-            'success'
-        );
     }
 
     /**

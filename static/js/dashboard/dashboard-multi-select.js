@@ -994,15 +994,14 @@ class DashboardMultiSelect {
         window.nextdashTrack?.('multi-select:recheck', { count: refs.length });
         const result = await window.BulkSweep.run(refs, {
             title: this.t('dashboard.bulkRecheckTitle', 'Re-checking…'),
-            run: async (ref) => {
-                await d.health.recheckIssue({
-                    url: ref.bookmark.url,
-                    pageId: ref.pageId,
-                    index: ref.index,
-                    name: ref.bookmark.name,
-                }, { silent: true });
-                return 'ok';
-            },
+            // The outcome, not 'ok' regardless: a re-check refused by the ping
+            // limit was counted as done and never retried.
+            run: async (ref) => (await d.health.recheckIssue({
+                url: ref.bookmark.url,
+                pageId: ref.pageId,
+                index: ref.index,
+                name: ref.bookmark.name,
+            }, { silent: true })) ?? 'failed',
             done: (ok) => this.t('dashboard.healthBulkRecheckDone', 'Re-checked {count} bookmark(s)')
                 .replace('{count}', String(ok)),
             t: (key, fallback) => this.t(key, fallback),
