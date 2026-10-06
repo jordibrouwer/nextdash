@@ -204,6 +204,8 @@ function tidyDemoData(dir, patch) {
         websearch: { webSearchEngine: 'searxng', webSearchSearxngUrl: 'http://searx.lab.example' },
         // The server log recording from the start, so the boot is in it.
         serverlog: { serverLogEnabled: true },
+        // Quiet hours held, as 12-quiet-hours sets them through the panel.
+        quiet: { quietHoursEnabled: true },
     };
     for (const name of patches) {
         if (!settingsPatch[name]) continue;
@@ -1099,7 +1101,13 @@ test('08 tag cloud', async ({ page }) => {
     const cloud = page.locator('#tag-cloud-modal.is-open');
     await cloud.waitFor();
     await page.waitForTimeout(800);
-    await snap(page, cloud, '08-tag-cloud.jpg', { pad: 4 });
+    // The cloud opens with its keyboard cursor on the first tag, a box that
+    // reads as a selection in a still picture; the shot leaves it off.
+    await page.evaluate(() => document.querySelectorAll('#tag-cloud-modal .is-keyboard-focused')
+        .forEach((el) => el.classList.remove('is-keyboard-focused')));
+    // Its bottom edge is see-through; the last pixels show the page below.
+    const cloudBox = await cloud.boundingBox();
+    await snap(page, cloud, '08-tag-cloud.jpg', { pad: 0, maxHeight: Math.floor(cloudBox.height) - 4 });
 });
 
 const WEB_RESULTS = [
@@ -1133,7 +1141,7 @@ test('09 category menu', async ({ page }) => {
     const menu = page.locator('.bookmark-context-menu').first();
     await menu.waitFor({ state: 'visible' });
     await page.waitForTimeout(400);
-    await snap(page, menu, '09-category-menu.jpg', { pad: 2, keepFocus: true });
+    await snap(page, menu, '09-category-menu.jpg', { pad: 0, keepFocus: true });
 });
 
 test('10 tag suggestions', async ({ page }) => {
@@ -1170,7 +1178,7 @@ test('11 row menu', async ({ page }) => {
     const menu = page.locator('.config-bm-context-menu').first();
     await menu.waitFor({ state: 'visible' });
     await page.waitForTimeout(400);
-    await snap(page, menu, '11-row-menu.jpg', { pad: 2, keepFocus: true });
+    await snap(page, menu, '11-row-menu.jpg', { pad: 0, keepFocus: true });
 });
 
 test('11 pages and categories', async ({ page }) => {
@@ -1250,12 +1258,14 @@ test('12 maintenance and quiet hours', async ({ page }) => {
 test('13 inbox row', async ({ page }) => {
     await prepare(page);
     await openInbox(page);
+    // A row carries no buttons of its own: its actions are in its menu (and
+    // the side panel). The crop is the whole row with the menu it opened.
     const item = page.locator('.inbox-item', { hasText: 'Field notes on quokkas' }).first();
     await item.locator('.inbox-item-title').click({ button: 'right' });
     const menu = page.locator('.bookmark-context-menu').first();
     await menu.waitFor({ state: 'visible' });
     await page.waitForTimeout(400);
-    await snap(page, [item.locator('.inbox-item-check'), item.locator('.inbox-item-title'), menu], '13-inbox-row.jpg', { pad: 4, keepFocus: true });
+    await snap(page, [item, menu], '13-inbox-row.jpg', { pad: 4, keepFocus: true });
 });
 
 test('14 container row', async ({ page }) => {
@@ -1331,20 +1341,23 @@ test('16 theme browser parts', async ({ page }) => {
     }
 });
 
-test('17 find settings and only changed', async ({ page }) => {
-    await prepare(page);
-    await openConfig(page, 'appearance');
-    const head = page.locator('.config-view > .config-view-head').first();
-    const headBox = await head.boundingBox();
-    // Down to the head's own edge: the tabs start right under it.
-    await snap(page, head, '17-only-changed.jpg', { pad: 6, maxHeight: Math.floor(headBox.height) + 6 });
-    await page.keyboard.press('ControlOrMeta+Shift+K');
-    const finder = page.locator('#app-modal.show .config-settings-jump-modal');
-    await finder.waitFor();
-    await finder.locator('input').first().click();
-    await page.keyboard.type('quiet', { delay: 60 });
-    await page.waitForTimeout(800);
-    await snap(page, finder, '17-find-settings.jpg', { pad: 4, keepFocus: true });
+test.describe('quiet hours on', () => {
+    test.use({ dataPatch: 'quiet' });
+    test('17 find settings and only changed', async ({ page }) => {
+        await prepare(page);
+        await openConfig(page, 'appearance');
+        const head = page.locator('.config-view > .config-view-head').first();
+        const headBox = await head.boundingBox();
+        // Down to the head's own edge: the tabs start right under it.
+        await snap(page, head, '17-only-changed.jpg', { pad: 6, maxHeight: Math.floor(headBox.height) + 6 });
+        await page.keyboard.press('ControlOrMeta+Shift+K');
+        const finder = page.locator('#app-modal.show .config-settings-jump-modal');
+        await finder.waitFor();
+        await finder.locator('input').first().click();
+        await page.keyboard.type('quiet', { delay: 60 });
+        await page.waitForTimeout(800);
+        await snap(page, finder, '17-find-settings.jpg', { pad: 4, keepFocus: true });
+    });
 });
 
 test('19 trash', async ({ page }) => {
