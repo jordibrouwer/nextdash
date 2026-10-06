@@ -126,6 +126,8 @@ Config → Overview names the running version in a panel of its own, with a dot 
 - **fix — unticking a notes box right after ticking it is saved.** Ticking saves the line but does not redraw the tile, and the box kept the line as it was drawn; a second click on the same box found no such line, redrew the tile and lost the click, so the box jumped back. After a save the box now holds the line as saved (`onTask` in `dashboard-widget-notes.js`).
 - **fix — Re-check on the selection bar counts what each check answered.** Every ticked row was counted as re-checked, also when the dashboard's own ping limit (`429`) or the network refused it, and a refused row was never asked again. `recheckIssue` now answers `ok`, `skipped`, `failed` or a rate limit with its `Retry-After`; the dashboard's bar and the Bookmarks view's bulk Re-check pass it to `BulkSweep`, which waits out the limit and asks once more (`dashboard-health.js`, `dashboard-multi-select.js`, `dashboard-health-multi-select.js`).
 
+### Server
+- **fix — Retry on a stopped feed fetches that feed only.** It reset the feed and then polled every feed on the install while the request waited, up to a minute; a limited round now takes only the reset feeds and leaves the scheduled round's time alone (`pollFeeds` and `RetryFeed` in `feeds.go`).
 ### Tests
 - **tests — `update_check_test.go`** covers the rate-limit wait, the conditional request and the token with its fallback; `tests/config-overview-release.spec.js` reads the version from the Version panel and covers the behind line and the failure reason.
 - **tests — `tests/config-widgets-tab.spec.js`** moves a widget through its Settings page select and checks it left the source page and landed, same id, on the other.
@@ -135,6 +137,7 @@ Config → Overview names the running version in a panel of its own, with a dot 
 - **tests — `settings_merge_test.go`** saves `smartFreshPageIds` through the store and reads it back, and loads an old settings file as an empty list; `tests/config-collection-scope.spec.js` ticks a Fresh page in Collection scope, reloads, and finds it still ticked.
 - **tests — `tests/dashboard-widget-notes.spec.js`** ticks a box and unticks it with two plain clicks, and checks both saves.
 - **tests — `tests/bulk-actions-parity.spec.js`** answers one re-check with a `429` and one with a `502`, and checks the first is asked again and the summary says one.
+- **tests — `feeds_retry_test.go`** retries one of two feeds and checks only that one is fetched and `LastPoll` stays.
 
 ### Docs
 - **docs — MCP copy in all six languages:** `mcpTitle`, `mcpSummary`, `mcpNote`, `mcpEnabledLabel`, `mcpAddressLabel`, `overviewNewFeatureWebhooksHow` and `overviewNewFeatureWebhooksEnable` name a script or another tool.

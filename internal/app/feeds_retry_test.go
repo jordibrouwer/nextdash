@@ -1,6 +1,12 @@
 package app
 
-import "testing"
+import (
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+)
 
 func TestResetRetiredFeedsTouchesOnlyRetiredOnes(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
@@ -13,7 +19,7 @@ func TestResetRetiredFeedsTouchesOnlyRetiredOnes(t *testing.T) {
 		t.Fatalf("write: %v", err)
 	}
 
-	if got := resetRetiredFeeds("https://a.example/feed"); got != 1 {
+	if got := len(resetRetiredFeeds("https://a.example/feed")); got != 1 {
 		t.Fatalf("reset %d feeds, want 1", got)
 	}
 	after := readFeedStateFile()
@@ -27,7 +33,44 @@ func TestResetRetiredFeedsTouchesOnlyRetiredOnes(t *testing.T) {
 		t.Errorf("c is not retired and must stay as it was: %+v", c)
 	}
 
-	if got := resetRetiredFeeds(""); got != 1 {
+	if got := len(resetRetiredFeeds("")); got != 1 {
 		t.Fatalf("an empty address reset %d feeds, want the one left (b)", got)
+	}
+}
+
+// Retry on one feed polls that feed only, and does not stand in for the
+// scheduled round.
+func TestRetryFeedPollsOnlyTheResetFeed(t *testing.T) {
+	hits := map[string]int{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits[r.URL.Path]++
+		_, _ = w.Write([]byte(`<rss><channel><item><pubDate>Mon, 02 Jun 2025 10:00:00 +0000</pubDate></item></channel></rss>`))
+	}))
+	defer server.Close()
+
+	h, _ := healthRecheckTestHandlers(t, `{"allowLocalBookmarks":true}`)
+	if err := h.store.SaveBookmarksByPage(1, []Bookmark{
+		{Name: "A", URL: "https://a.example/blog"},
+		{Name: "B", URL: "https://b.example/blog"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	keyA := canonicalBookmarkURLKey("https://a.example/blog")
+	keyB := canonicalBookmarkURLKey("https://b.example/blog")
+	if err := writeFeedStateFile(FeedStateFile{LastPoll: 42, Feeds: map[string]FeedState{
+		keyA: {FeedURL: server.URL + "/a", Failures: feedMaxFailures, TriedAt: time.Now().UnixMilli()},
+		keyB: {FeedURL: server.URL + "/b"},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/feeds/retry", strings.NewReader(`{"feedUrl":"`+server.URL+`/a"}`))
+	h.RetryFeed(httptest.NewRecorder(), req)
+
+	if hits["/a"] != 1 || hits["/b"] != 0 {
+		t.Fatalf("hits = %v, want only /a polled", hits)
+	}
+	if got := readFeedStateFile().LastPoll; got != 42 {
+		t.Fatalf("LastPoll = %d, a retry moved the scheduled round", got)
 	}
 }

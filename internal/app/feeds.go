@@ -604,6 +604,12 @@ func (h *Handlers) maybePollFeeds() {
 // leaves its state behind, and polling it would be talking to the internet on
 // behalf of something nobody has.
 func (h *Handlers) PollAllFeeds(ctx context.Context) int {
+	return h.pollFeeds(ctx, nil)
+}
+
+// pollFeeds is PollAllFeeds limited to the keys in only, when only is not nil.
+// A limited round is not the scheduled one, so it leaves LastPoll alone.
+func (h *Handlers) pollFeeds(ctx context.Context, only map[string]bool) int {
 	feedStateMu.Lock()
 	state := readFeedStateFile()
 	targets := make(map[string]FeedState, len(state.Feeds))
@@ -617,7 +623,7 @@ func (h *Handlers) PollAllFeeds(ctx context.Context) int {
 		if _, ok := live[key]; !ok {
 			continue
 		}
-		if feed.FeedURL == "" {
+		if feed.FeedURL == "" || (only != nil && !only[key]) {
 			continue
 		}
 		if feed.Failures >= feedMaxFailures && time.Since(time.UnixMilli(feed.TriedAt)) < feedRetiredRetry {
@@ -654,7 +660,9 @@ persist:
 		}
 		current.Feeds[key] = feed
 	}
-	current.LastPoll = time.Now().UnixMilli()
+	if only == nil {
+		current.LastPoll = time.Now().UnixMilli()
+	}
 	_ = writeFeedStateFile(current)
 
 	// What the round did. A poll of thirty feeds used to pass in silence.
@@ -814,12 +822,12 @@ func feedCoverage(state FeedStateFile, bookmarks []Bookmark) (checked int, withF
 // PollFeedsNow runs a round on demand — the config panel's "check now".
 // resetRetiredFeeds gives retired feeds another life: the failure count goes to
 // zero and the last try is forgotten, so the next poll takes them again. A
-// feed address picks one; empty picks every retired feed. Returns how many.
-func resetRetiredFeeds(feedURL string) int {
+// feed address picks one; empty picks every retired feed. Returns their keys.
+func resetRetiredFeeds(feedURL string) map[string]bool {
 	feedStateMu.Lock()
 	defer feedStateMu.Unlock()
 	state := readFeedStateFile()
-	reset := 0
+	reset := map[string]bool{}
 	for key, feed := range state.Feeds {
 		if feed.Failures < feedMaxFailures {
 			continue
@@ -830,9 +838,9 @@ func resetRetiredFeeds(feedURL string) int {
 		feed.Failures = 0
 		feed.TriedAt = 0
 		state.Feeds[key] = feed
-		reset++
+		reset[key] = true
 	}
-	if reset > 0 {
+	if len(reset) > 0 {
 		_ = writeFeedStateFile(state)
 	}
 	return reset
@@ -853,15 +861,17 @@ func (h *Handlers) RetryFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	reset := resetRetiredFeeds(strings.TrimSpace(body.FeedURL))
-	if reset > 0 {
+	if len(reset) > 0 {
 		ctx, cancel := context.WithTimeout(r.Context(), time.Minute)
 		defer cancel()
-		h.PollAllFeeds(ctx)
+		// Only what was reset. Polling every feed made one Retry fetch the
+		// whole page's feeds while the request waited.
+		h.pollFeeds(ctx, reset)
 	}
 	state := readFeedStateFile()
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
-		"reset": reset,
+		"reset": len(reset),
 		"feeds": freshnessForBookmarks(state, h.store.GetAllBookmarks()),
 	})
 }
