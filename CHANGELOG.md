@@ -128,6 +128,7 @@ Config → Overview names the running version in a panel of its own, with a dot 
 - **docs — locale keys** `overviewVersionLine` and `overviewVersionHere` in all six languages; `overviewVersionTitle` in English only for now, the other languages fall back to it. The behind line reuses the translated `updateCheckModalAvailable`. The six update-check reasons (`updateCheckRateLimited`, `updateCheckRateLimitedAt`, `updateCheckTokenHint`, `updateCheckLocalLimit`, `updateCheckUnreachable`, `updateCheckFailedWith`) are in English only for now. `go run scripts/gen-asset-hashes.go` refreshed `asset_hashes_gen.go`.
 - **docs — locale keys** `widgetPageNote`, `widgetMoved`, `widgetMoveDiscardBody` and `widgetMoveDiscardOk` are in English only for now; the label reuses the translated `widgetsPageLabel`.
 - **docs — preset counts in all six languages:** `widgetCustomRefPresetsBody` says five groups, and `widgetsTutorialStep5Title`, `widgetsTutorialStep5Body1` and `widgetsTutorialPresetsMore` give the new numbers and name monitoring.
+- **new — the manual is easier to find your way in.** Contents with start-here routes and every subsection, a glossary of 100 key terms linked into the text, "in short" notes per chapter, three diagrams and 33 screenshots beside the text they show, many folded away, the Custom widget section in full with all 42 presets, and the manual caught up with features up to v1.17.5.
 
 ---
 
