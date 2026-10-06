@@ -227,6 +227,9 @@ const test = base.test.extend({
         tidyDemoData(dir, dataPatch);
         const port = await freePort();
         const baseURL = `http://localhost:${port}`;
+        if (!fs.existsSync(binaryPath())) {
+            throw new Error(`no server binary at ${binaryPath()}: run with PW_WORKERS above 1, so global setup builds it`);
+        }
         const child = spawn(binaryPath(), [], {
             cwd: ROOT,
             env: {
@@ -238,8 +241,17 @@ const test = base.test.extend({
             },
             stdio: 'ignore',
         });
+        // A server that cannot start says so, rather than leaving the test to
+        // time out waiting for a port nothing will ever answer on.
+        const failed = new Promise((_, reject) => {
+            child.on('error', (error) => reject(new Error(`server binary failed to start: ${error.message}`)));
+            child.on('exit', (code) => {
+                if (code) reject(new Error(`server exited with code ${code} before it answered`));
+            });
+        });
+        failed.catch(() => {});
         try {
-            await waitForServer(baseURL);
+            await Promise.race([waitForServer(baseURL), failed]);
             await use({ baseURL, dir });
         } finally {
             child.kill('SIGTERM');
@@ -265,6 +277,15 @@ async function prepare(page) {
     // A browser that has been here before: this release's notes and the
     // one-time keyboard note already seen.
     await markWhatsNewSeen(page);
+    // ... has had the one-time search hint along the bottom, which would sit
+    // over whatever is lowest on the screen for six seconds, and has opened
+    // the inbox tab once, which ends the glow that invites a first visit.
+    await page.addInitScript(() => {
+        try {
+            localStorage.setItem('nextdash:search-flow-hint-v2', '1');
+            localStorage.setItem('nextdash:inbox-tab-opened-v1', '1');
+        } catch { /* storage off */ }
+    });
 
     const docker = await mockDocker(page, { containers: fixture('docker-containers.json'), usage: true });
     docker.disk = fixture('docker-disk.json');
@@ -331,9 +352,17 @@ async function settle(page) {
     }
 }
 
-async function shot(target, name) {
+/**
+ * A full frame. The pointer goes to a corner and focus is let go first, so no
+ * hover glow or focus ring is left on whatever was clicked to get here.
+ */
+async function shot(page, name) {
+    const view = page.viewportSize() || DESKTOP;
+    await page.mouse.move(5, view.height - 5);
+    await page.evaluate(() => document.activeElement?.blur?.());
+    await page.waitForTimeout(300);
     fs.mkdirSync(OUT, { recursive: true });
-    await target.screenshot({ path: path.join(OUT, name), type: 'jpeg', quality: 82 });
+    await page.screenshot({ path: path.join(OUT, name), type: 'jpeg', quality: 82 });
 }
 
 /*
@@ -343,7 +372,7 @@ async function shot(target, name) {
  * behind it is blurred, and a full frame of haze with a small box in it
  * shows nothing. Full frames are for shots where the page is the subject.
  */
-async function crop(page, locator, name, pad = 24) {
+async function crop(page, locator, name, pad = 24, maxHeight = Infinity) {
     const box = await locator.boundingBox();
     if (!box) throw new Error(`${name}: nothing to crop`);
     const view = page.viewportSize() || DESKTOP;
@@ -352,7 +381,7 @@ async function crop(page, locator, name, pad = 24) {
     const clip = {
         x, y,
         width: Math.min(view.width - x, Math.ceil(box.width + pad * 2)),
-        height: Math.min(view.height - y, Math.ceil(box.height + pad * 2)),
+        height: Math.min(view.height - y, Math.ceil(box.height + pad * 2), maxHeight),
     };
     fs.mkdirSync(OUT, { recursive: true });
     await page.screenshot({ path: path.join(OUT, name), type: 'jpeg', quality: 82, clip });
@@ -383,6 +412,13 @@ test('sh homelab', async ({ page }) => {
     await openDashboard(page, '#2');
     await shot(page, 'sh-homelab.jpg');
 });
+
+/** Let a toast that is on its way come and go (it lasts a few seconds). */
+async function waitOutNotice(page) {
+    const toast = page.locator('#app-notification.show');
+    await toast.waitFor({ state: 'visible', timeout: 3_000 }).catch(() => {});
+    await toast.waitFor({ state: 'hidden', timeout: 15_000 }).catch(() => {});
+}
 
 /** A bookmark row on the grid, by its name. */
 const row = (page, name) => page.locator('#dashboard-layout .category:not([data-smart-collection="true"]) .bookmark-link', { hasText: name }).first();
@@ -446,7 +482,7 @@ test('08 search', async ({ page }) => {
     await openDashboard(page);
     // Bare letters look for a shortcut first; / turns the same letters into a
     // name search, as the panel's own hint says.
-    await page.keyboard.type('doc', { delay: 120 });
+    await page.keyboard.type('lib', { delay: 120 });
     await page.keyboard.press('/');
     await page.waitForTimeout(800);
     await crop(page, page.locator('#shortcut-search .search-container'), '08-search.jpg');
@@ -517,6 +553,56 @@ async function scrollToTop(page, locator, offset = 140) {
     await page.mouse.move(700, 500);
     await page.mouse.wheel(0, box.y - offset);
     await page.waitForTimeout(500);
+    await settleScroll(page);
+}
+
+/*
+ * Nudge the scroll so no line of text is cut in half where the page meets
+ * the top of the window, or the bottom of a sticky header standing there.
+ * Tries a pixel at a time, nearest first, up to 30 either way.
+ */
+async function settleScroll(page) {
+    const nudge = await page.evaluate(() => {
+        const cx = Math.round(window.innerWidth / 2);
+        let edge = 0;
+        let sticky = null;
+        for (const x of [cx, 300, window.innerWidth - 300]) {
+            for (let el = document.elementFromPoint(x, 2); el && el !== document.body; el = el.parentElement) {
+                const pos = getComputedStyle(el).position;
+                if (pos === 'sticky' || pos === 'fixed') {
+                    const bottom = el.getBoundingClientRect().bottom;
+                    if (bottom > edge && bottom < window.innerHeight / 3) { edge = bottom; sticky = el; }
+                    break;
+                }
+            }
+        }
+        const boxes = [];
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+            if (!node.textContent.trim()) continue;
+            const el = node.parentElement;
+            if (!el || (sticky && sticky.contains(el))) continue;
+            const range = document.createRange();
+            range.selectNodeContents(node);
+            for (const r of range.getClientRects()) {
+                if (r.height > 0 && r.bottom > edge - 40 && r.top < edge + 40) boxes.push([r.top, r.bottom]);
+            }
+        }
+        document.querySelectorAll('input, select, textarea, button, img, svg').forEach((el) => {
+            if (sticky && sticky.contains(el)) return;
+            const r = el.getBoundingClientRect();
+            if (r.height > 0 && r.bottom > edge - 40 && r.top < edge + 40) boxes.push([r.top, r.bottom]);
+        });
+        const cut = (d) => boxes.some(([top, bottom]) => top - d < edge - 1 && bottom - d > edge + 1);
+        for (let i = 0; i <= 30; i += 1) {
+            for (const d of i ? [i, -i] : [0]) if (!cut(d)) return d;
+        }
+        return 0;
+    });
+    if (nudge) {
+        await page.mouse.wheel(0, nudge);
+        await page.waitForTimeout(400);
+    }
 }
 
 test('12 alerts', async ({ page }) => {
@@ -589,6 +675,8 @@ test('14 disk', async ({ page }) => {
     await page.keyboard.press('d');
     await page.getByText('Bind mounts').first().waitFor();
     await page.waitForTimeout(1_000);
+    // Down past the header, so the first bind mounts are in the frame.
+    await scrollToTop(page, page.getByText('Disk', { exact: true }).first(), 16);
     await shot(page, '14-disk.jpg');
 });
 
@@ -718,7 +806,7 @@ test('15 custom widget', async ({ page }) => {
         await page.locator('[data-custom-test]').last().click();
         await page.getByText('What came back').first().waitFor();
         // The preset's notice goes by itself; the figures are the subject here.
-        await page.locator('#app-notification.show').waitFor({ state: 'hidden', timeout: 15_000 }).catch(() => {});
+        await waitOutNotice(page);
         await page.waitForTimeout(1_000);
         await scrollToTop(page, page.locator('[data-custom-field="path"]').first(), 260);
         await shot(page, '15-custom-widget.jpg');
@@ -731,6 +819,8 @@ test('15 custom widget presets', async ({ page }) => {
     await prepare(page);
     const preset = await addCustomWidget(page);
     await preset.selectOption('sonarr');
+    // The preset's notice goes by itself; it would cover the figures.
+    await waitOutNotice(page);
     await page.waitForTimeout(800);
     const group = page.locator('.config-custom-group', { has: page.locator('[data-widget-preset]') }).last();
     await scrollToTop(page, group, 200);
@@ -756,9 +846,8 @@ test('16 look studio', async ({ page }) => {
     await page.locator('[data-look-studio] [data-theme-id]').first().waitFor();
     await page.waitForTimeout(1_200);
     await shot(page, '16-look-studio.jpg');
-    await page.locator('[data-studio-tab="looks"]').click();
-    await page.waitForTimeout(1_000);
-    await crop(page, studio, '16-theme-browser.jpg', 0);
+    // The Themes tab close up: search, segments, character chips, first cards.
+    await crop(page, studio, '16-theme-browser.jpg', 0, 560);
 });
 
 test('16 theme editor', async ({ page }) => {

@@ -1,7 +1,7 @@
 [
   {
     "id": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2", "shortId": "a1b2c3d4e5f6",
-    "name": "sonarr", "image": "lscr.io/linuxserver/sonarr:latest", "tag": "latest",
+    "name": "sonarr", "image": "linuxserver/sonarr:latest", "tag": "latest",
     "state": "running", "status": "Up 6 days (healthy)", "health": "healthy", "created": 1790000000,
     "startedAt": 1790754000,
     "ports": [{ "private": 8989, "public": 8989, "type": "tcp" }], "composeProject": "arr",
@@ -10,7 +10,7 @@
   },
   {
     "id": "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3", "shortId": "b2c3d4e5f6a1",
-    "name": "radarr", "image": "lscr.io/linuxserver/radarr:latest", "tag": "latest",
+    "name": "radarr", "image": "linuxserver/radarr:latest", "tag": "latest",
     "state": "running", "status": "Up 6 days (healthy)", "health": "healthy", "created": 1790000000,
     "startedAt": 1790754000,
     "ports": [{ "private": 7878, "public": 7878, "type": "tcp" }], "composeProject": "arr",
