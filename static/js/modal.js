@@ -429,11 +429,30 @@ class Modal {
             if (initialFocusSelector) {
                 const initialEl = this.modal.querySelector(initialFocusSelector);
                 if (initialEl && typeof initialEl.focus === 'function') {
-                    initialEl.focus();
-                    if (typeof initialEl.setSelectionRange === 'function' && typeof initialEl.value === 'string') {
-                        const len = initialEl.value.length;
-                        initialEl.setSelectionRange(len, len);
-                    }
+                    /*
+                     * Until it takes, as below. Opened again right after it
+                     * closed, the overlay is still fading back from
+                     * visibility: hidden two frames in, and a single focus()
+                     * did nothing: the pages panel reopened with the cursor
+                     * on no page at all.
+                     */
+                    let tries = 0;
+                    const attempt = () => {
+                        if (!this.modal?.classList.contains('show') || !initialEl.isConnected) return;
+                        initialEl.focus();
+                        if (document.activeElement !== initialEl) {
+                            if (tries < 6) {
+                                tries += 1;
+                                setTimeout(attempt, 50);
+                            }
+                            return;
+                        }
+                        if (typeof initialEl.setSelectionRange === 'function' && typeof initialEl.value === 'string') {
+                            const len = initialEl.value.length;
+                            initialEl.setSelectionRange(len, len);
+                        }
+                    };
+                    attempt();
                     return;
                 }
             }
