@@ -112,11 +112,17 @@ Config → Overview names the running version in a panel of its own, with a dot 
 - **fix — on GitHub's limit the check waits for the reset.** It reads `X-RateLimit-Reset` and tries again then, instead of every 15 minutes; **Check now** and the `/releases/latest` fallback no longer spend a request to hear the same answer. When nextDash's own outbound limiter turned the request down, it tries again after a minute.
 - **new — a failed check says why.** `/api/update-status` adds `errorCode` (`rate-limited`, `local-limit`, `unreachable`, `http`), `retryAt` and `authenticated`. The Version panel and the What's new bar name the reason: the hourly limit with the time of the next try and, without a token, where to set one; GitHub out of reach; or GitHub's own answer (`update-notice.js`, `dashboard-config.js`).
 
+### Widgets
+- **fix — the Custom widget counts the services it offers.** **Config → Widgets → Types** said 45 services in four groups: `PRESETS.length` counted the three retired presets (Readarr, Pi-hole v5, TrueNAS) and qBittorrent's two entries. It now says 41 services in five groups. `qbittorrent-key` carries `variantOf: 'qbittorrent'`, and a new `serviceCount()` in `dashboard-widget-presets.js` leaves out retired presets and variants.
+- **fix — the widgets tour's preset step said twenty-eight services.** It now says forty-one, names monitoring beside the other kinds, and its chips show Uptime Kuma instead of the retired TrueNAS, with "…and twenty-two more" after them (`widgets-tutorial.js`).
+
 ### Tests
 - **tests — `update_check_test.go`** covers the rate-limit wait, the conditional request and the token with its fallback; `tests/config-overview-release.spec.js` reads the version from the Version panel and covers the behind line and the failure reason.
+- **tests — `tests/config-widgets-tabs.spec.js`** checks the Custom section's count against the offered presets, one per service name, and that it says five groups.
 
 ### Docs
 - **docs — locale keys** `overviewVersionLine` and `overviewVersionHere` in all six languages; `overviewVersionTitle` in English only for now, the other languages fall back to it. The behind line reuses the translated `updateCheckModalAvailable`. The six update-check reasons (`updateCheckRateLimited`, `updateCheckRateLimitedAt`, `updateCheckTokenHint`, `updateCheckLocalLimit`, `updateCheckUnreachable`, `updateCheckFailedWith`) are in English only for now. `go run scripts/gen-asset-hashes.go` refreshed `asset_hashes_gen.go`.
+- **docs — preset counts in all six languages:** `widgetCustomRefPresetsBody` says five groups, and `widgetsTutorialStep5Title`, `widgetsTutorialStep5Body1` and `widgetsTutorialPresetsMore` give the new numbers and name monitoring.
 
 ---
 
