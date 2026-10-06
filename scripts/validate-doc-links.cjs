@@ -24,7 +24,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const root = path.join(__dirname, '..');
+const root = process.env.DOC_LINKS_ROOT || path.join(__dirname, '..');
 const FILES = ['README.md', 'MANUAL.md'];
 
 /*
@@ -75,6 +75,9 @@ function linksOf(source, ownFile) {
         for (const match of line.matchAll(/\]\((?:([\w.-]+\.md))?#([^)\s]+)\)/g)) {
             found.push({ file: match[1] || ownFile, anchor: match[2], line: index + 1 });
         }
+        for (const match of line.matchAll(/href="(?:([\w.-]+\.md))?#([^"\s]+)"/g)) {
+            found.push({ file: match[1] || ownFile, anchor: match[2], line: index + 1 });
+        }
     });
     return found;
 }
@@ -115,9 +118,59 @@ for (const from of FILES) {
     }
 }
 
+/*
+ * The manual's pictures and folds. An image that is not there renders as a
+ * broken icon; a <details> left open swallows the rest of the chapter; and
+ * GitHub only renders Markdown inside a fold when a blank line follows
+ * </summary>. A screenshot nobody links is dead weight on main.
+ */
+const SHOT_DIR = 'screenshots/manual';
+const referenced = new Set();
+for (const file of FILES) {
+    const lines = sources.get(file).split('\n');
+    const ids = new Map();
+    let open = 0;
+    lines.forEach((line, index) => {
+        for (const match of line.matchAll(/(?:src="|!\[[^\]]*\]\()([^")\s]+\.(?:jpg|jpeg|png|gif|svg|webp))/gi)) {
+            const target = match[1].split('?')[0];
+            if (/^https?:/.test(target)) continue;
+            referenced.add(path.normalize(target));
+            if (!fs.existsSync(path.join(root, target))) {
+                broken += 1;
+                console.error(`  ✗ ${file}:${index + 1} → image ${target} does not exist`);
+            }
+        }
+        const id = line.match(/^<a id="([^"]+)"><\/a>$/);
+        if (id) {
+            if (ids.has(id[1])) {
+                broken += 1;
+                console.error(`  ✗ ${file}:${index + 1} → anchor #${id[1]} also on line ${ids.get(id[1])}`);
+            } else ids.set(id[1], index + 1);
+        }
+        open += (line.match(/<details\b/g) || []).length;
+        open -= (line.match(/<\/details>/g) || []).length;
+        if (line.includes('</summary>') && (lines[index + 1] ?? '').trim() !== '') {
+            broken += 1;
+            console.error(`  ✗ ${file}:${index + 1} → blank line needed after </summary>`);
+        }
+    });
+    if (open !== 0) {
+        broken += 1;
+        console.error(`  ✗ ${file} → ${open > 0 ? open + ' <details> never closed' : -open + ' </details> too many'}`);
+    }
+}
+const shotDir = path.join(root, SHOT_DIR);
+if (fs.existsSync(shotDir)) {
+    for (const name of fs.readdirSync(shotDir)) {
+        if (!referenced.has(path.normalize(`${SHOT_DIR}/${name}`))) {
+            broken += 1;
+            console.error(`  ✗ ${SHOT_DIR}/${name} is not used in ${FILES.join(' or ')}`);
+        }
+    }
+}
+
 if (broken) {
-    console.error(`\n${broken} of ${checked} links point at a heading that is not there.`);
-    console.error('A reader clicking one lands at the top of the file, none the wiser.');
+    console.error(`\n${broken} problem(s) in the documents.`);
     process.exit(1);
 }
 console.log(`ok  ${checked} links across ${FILES.join(', ')} all resolve`);
