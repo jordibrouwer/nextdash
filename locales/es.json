@@ -4930,7 +4930,7 @@
     "collectionScopeSome": "Solo las páginas elegidas",
     "collectionScopesHint": "Deja una colección sin ninguna página marcada para que tome de todas.",
     "collectionScopesTitle": "Alcance de la colección",
-    "dataBackupsIntro": "Haz copias de tus datos, restaura una anterior o muévelos dentro y fuera de nextDash.",
+    "dataBackupsIntro": "Mantén tus datos a salvo, muévelos dentro y fuera de nextDash y gestiona lo que nextDash guarda en este disco.",
     "delete": "Eliminar",
     "deleteAllBookmarksBtn": "Eliminar solo todos los marcadores",
     "deleteAllBookmarksError": "No se pudieron eliminar los marcadores.",

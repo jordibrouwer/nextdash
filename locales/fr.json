@@ -4930,7 +4930,7 @@
     "collectionScopeSome": "Pages sélectionnées seulement",
     "collectionScopesHint": "Ne cochez aucune page pour qu'une collection se remplisse depuis toutes les pages.",
     "collectionScopesTitle": "Portée des collections",
-    "dataBackupsIntro": "Sauvegardez, restaurez un instantané antérieur, ou faites entrer et sortir vos données de nextDash.",
+    "dataBackupsIntro": "Gardez vos données en sécurité, faites-les entrer et sortir de nextDash, et gérez ce que nextDash stocke sur ce disque.",
     "delete": "Supprimer",
     "deleteAllBookmarksBtn": "Supprimer seulement tous les favoris",
     "deleteAllBookmarksError": "Impossible de supprimer les favoris.",

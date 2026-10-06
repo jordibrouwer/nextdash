@@ -4930,7 +4930,7 @@
     "collectionScopeSome": "仅所选页面",
     "collectionScopesHint": "一个合集一个页面都不勾，就是从所有页面取。",
     "collectionScopesTitle": "合集范围",
-    "dataBackupsIntro": "备份你的数据、恢复更早的快照，或者把数据搬进搬出 nextDash。",
+    "dataBackupsIntro": "保护好你的数据，把数据搬进搬出 nextDash，并管理 nextDash 在这块磁盘上存放的内容。",
     "delete": "删除",
     "deleteAllBookmarksBtn": "只删除所有书签",
     "deleteAllBookmarksError": "无法删除这些书签。",
