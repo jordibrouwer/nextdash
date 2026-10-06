@@ -1902,10 +1902,19 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
 
 /* Wider means more bookmarks side by side, not longer rows.
  *
- * The list is a three-track grid (four with ping times) whose rows span every
- * track, and each row is a subgrid of it — that is what keeps names and status
- * aligned down a column. Repeating the whole track pattern once per column and
- * letting a row span one pattern keeps all of that intact and fills row by row.
+ * A spread list is one plain track per column, and each row lays out its own
+ * icon, name, status and shortcut inside the column it lands in. Rows fill row
+ * by row, so the bookmarks flow left to right and then down.
+ *
+ * Not a subgrid of a repeated track pattern, which is what this used to be.
+ * The seam between two columns has to be a column gap, and a grid has one
+ * column gap for every track: it landed between icon and name and status as
+ * well, and the subgrid handed the difference to its items as margin, so the
+ * name track lost two seams' worth of width in every column and names a plain
+ * category shows in full came out "Weather r…". The tracks a subgrid shared
+ * across rows are lengths here instead: the status column always was one, and
+ * the shortcut column is measured across the whole list and pinned — see
+ * syncWideColumnTracks — so the rows of every column still line up.
  *
  * The launcher and list presets replace the list's display entirely, so these
  * declarations are inert there — their own wrapping already handles the width.
@@ -1915,11 +1924,7 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
  * from a packed band.
  */
 .dashboard-grid .category.category--wide .bookmarks-list {
-    grid-template-columns:
-        repeat(var(--category-span, 1),
-            var(--bookmark-lead-col, minmax(1.25rem, max-content))
-            minmax(0, 1fr)
-            var(--bookmark-shortcut-col, max-content));
+    grid-template-columns: repeat(var(--category-span, 1), minmax(0, 1fr));
     /* The grid gap plus the padding two neighbouring categories would each
        have contributed.
      *
@@ -1931,29 +1936,56 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
      * Only the column gap: the row gap belongs to the density setting, whose
      * rule sits further down this file and would otherwise win both. */
     column-gap: calc(var(--dashboard-column-gap, 1.5rem) + 2 * var(--category-inline-pad, 0.5rem));
+    /* Resolved here, on the list, where syncWideColumnTracks writes them: a row
+       sets --bookmark-lead-col on itself, so reading that name from the row
+       would get the row's own default and never the measured length. */
+    --wide-lead-col: var(--bookmark-lead-col, minmax(1.25rem, max-content));
+    --wide-shortcut-col: var(--bookmark-shortcut-col, max-content);
+    --wide-status-col: var(--bookmark-status-col, 3.35em);
 }
 
-/* The shortcut track is the one intrinsic column in the pattern, and repeating
-   the pattern sizes each copy to its own rows: odd rows land in the first
-   column, even rows in the second, so the two ended up different widths and
-   every column after the first drifted. It is measured across the whole list
-   and pinned — see syncWideColumnTracks — which makes the repeats identical
-   and the columns line up with the categories above and below. */
-.dashboard-grid .category--wide .bookmarks-list[data-show-ping="true"] {
-    grid-template-columns:
-        repeat(var(--category-span, 1),
-            var(--bookmark-lead-col, minmax(1.25rem, max-content))
-            minmax(0, 1fr)
-            var(--bookmark-status-col, 3.35em)
-            var(--bookmark-shortcut-col, max-content));
+/* A length, so the em in the status width resolves against the list, as it
+   does in a plain category's tracks. Left unregistered it would reach the row
+   as "3.35em" and be read against the row's larger bookmark font. */
+@property --wide-status-col {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
 }
 
 .dashboard-grid .category--wide .bookmarks-list > * {
-    grid-column: span 3;
+    grid-column: span 1;
 }
 
-.dashboard-grid .category--wide .bookmarks-list[data-show-ping="true"] > * {
-    grid-column: span 4;
+.dashboard-grid:not(.layout-list) .category--wide .bookmarks-list > .bookmark-link {
+    grid-template-columns: var(--wide-lead-col) minmax(0, 1fr) var(--wide-shortcut-col);
+}
+
+/* The status track gives back what a plain row's subgrid gives back. There the
+   tracks sit on the list's gap and the row's own, wider gap is made up as
+   margin on the items beside each one: invisible on the icon and shortcut,
+   whose tracks grow to hold it, but the status item comes out narrower than
+   its track by the difference, and the name gets that room. A row with its
+   own tracks keeps the full gap on both sides of the status column, so the
+   column is narrowed by the same difference and the name ends where a plain
+   one does. Without it "GitHub Pull Requests" fits in one column and not in
+   a spread one, by four pixels. */
+.dashboard-grid:not(.layout-list) .category--wide .bookmarks-list[data-show-ping="true"] > .bookmark-link {
+    grid-template-columns:
+        var(--wide-lead-col)
+        minmax(0, 1fr)
+        calc(var(--wide-status-col) - var(--bookmark-row-gap, 0px) + var(--bookmark-list-gap, 0px))
+        var(--wide-shortcut-col);
+}
+
+/* A status row is inset 4px further than the rest (dashboard-bookmark-row.css),
+   and in a plain category the shared lead track grows to take that in, so the
+   names still line up. Rows that lay out their own tracks have nothing shared
+   to grow: give the rows without the inset the same 4px after the icon, and
+   the names start at one place down the column again. */
+.dashboard-grid .category--wide .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]):has(> .bookmark-link:is(.status-online, .status-offline, .status-checking):not(.bookmark-inline-editing))
+    > .bookmark-link:not(:is(.status-online, .status-offline, .status-checking):not(.bookmark-inline-editing)) > .bookmark-lead {
+    padding-inline-end: 4px;
 }
 
 /* The "+ N more" toggle and the empty-category placeholders are not bookmarks:
@@ -2079,7 +2111,8 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
 }
 
 .dashboard-grid.layout-compact .bookmarks-list {
-    gap: var(--space-1, 0.25rem);
+    --bookmark-list-gap: var(--space-1, 0.25rem);
+    gap: var(--bookmark-list-gap);
 }
 
 .dashboard-grid.layout-compact .bookmark-link {
@@ -2099,7 +2132,8 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
 .dashboard-grid.density-dense .bookmark-link {
     min-height: 1.65rem;
     padding-block: var(--density-row-pad-dense, 0.2rem);
-    gap: var(--density-row-inner-gap-dense, 0.45rem);
+    --bookmark-row-gap: var(--density-row-inner-gap-dense, 0.45rem);
+    gap: var(--bookmark-row-gap);
 }
 
 /* auto: grid class density-auto had no row rules → smart vs normal drifted; align with compact baseline */
@@ -2110,16 +2144,20 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
 
 /* Inter-row gap scales with density for every bookmarks list (smart + reorderable). */
 .dashboard-grid.density-comfortable .bookmarks-list {
-    gap: var(--density-row-list-gap-comfortable, 0.42rem);
+    --bookmark-list-gap: var(--density-row-list-gap-comfortable, 0.42rem);
+    gap: var(--bookmark-list-gap);
 }
 .dashboard-grid.density-compact .bookmarks-list {
-    gap: var(--density-row-list-gap-compact, 0.3rem);
+    --bookmark-list-gap: var(--density-row-list-gap-compact, 0.3rem);
+    gap: var(--bookmark-list-gap);
 }
 .dashboard-grid.density-dense .bookmarks-list {
-    gap: var(--density-row-list-gap-dense, 0.18rem);
+    --bookmark-list-gap: var(--density-row-list-gap-dense, 0.18rem);
+    gap: var(--bookmark-list-gap);
 }
 .dashboard-grid.density-auto .bookmarks-list {
-    gap: var(--density-row-list-gap-compact, 0.3rem);
+    --bookmark-list-gap: var(--density-row-list-gap-compact, 0.3rem);
+    gap: var(--bookmark-list-gap);
 }
 
 .dashboard-grid.layout-cards {
@@ -2294,7 +2332,8 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
 .dashboard-grid.layout-terminal .bookmark-link {
     font-family: "Source Code Pro", monospace;
     letter-spacing: 0.01em;
-    gap: var(--space-1-5, 0.35rem);
+    --bookmark-row-gap: var(--space-1-5, 0.35rem);
+    gap: var(--bookmark-row-gap);
     padding-left: var(--space-4, 1rem);
     white-space: nowrap;
     overflow: hidden;
@@ -3321,7 +3360,8 @@ body.bookmark-dragging .bookmarks-list.reorder-container:not([data-smart-collect
     grid-column: 1 / -1;
     grid-auto-rows: auto;
     align-items: center;
-    column-gap: var(--space-2, 0.6rem);
+    --bookmark-row-gap: var(--space-2, 0.6rem);
+    column-gap: var(--bookmark-row-gap);
     text-decoration: none;
     font-size: var(--font-size-bookmark);
     font-weight: var(--font-weight-semibold);
@@ -5101,11 +5141,13 @@ body[data-show-note-icon="false"] .bookmark-note-badge {
 body[data-show-shortcuts="false"] .dashboard-grid.layout-terminal .bookmark-link,
 body[data-show-pin-icon="false"] .dashboard-grid.layout-terminal .bookmark-link,
 body[data-show-note-icon="false"] .dashboard-grid.layout-terminal .bookmark-link {
-    gap: var(--space-1, 0.28rem);
+    --bookmark-row-gap: var(--space-1, 0.28rem);
+    gap: var(--bookmark-row-gap);
 }
 
 body[data-show-shortcuts="false"][data-show-pin-icon="false"] .dashboard-grid.layout-terminal .bookmark-link {
-    gap: var(--space-1, 0.24rem);
+    --bookmark-row-gap: var(--space-1, 0.24rem);
+    gap: var(--bookmark-row-gap);
 }
 
 /* Recent bookmarks modal */

@@ -160,9 +160,10 @@ test.describe('spreading is a switch, the width follows from the content', () =>
         const after = await page.evaluate(layout, id);
         const span = (await stateOf(page, id)).span;
 
-        // The row's track pattern is repeated once per column, so the second
-        // bookmark lands beside the first rather than under it.
-        expect(after.tracks).toBe(before.tracks * span);
+        // One track per column, each row laying out its own icon, name and
+        // shortcut inside it, so the second bookmark lands beside the first
+        // rather than under it.
+        expect(after.tracks).toBe(span);
         expect(after.sameLine).toBe(true);
     });
 
