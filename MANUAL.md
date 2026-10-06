@@ -14,7 +14,7 @@
 | 💬 | **In-app help** | **Config → Help**, in English, Dutch, German, French, Spanish and Chinese |
 | 🎨 | **328 themes, one look studio** | 164 theme families in light and dark, twelve characters, 26 backdrops and twelve ready-made looks — tried live on your own page with **`Shift + A`**, saved only on Apply. See [§16 Appearance](#16-appearance) and [the theme browser](#the-theme-browser) |
 | 🏠 | **Self-hosting?** | The [Self-hosted guide](#self-hosted-guide) right below the contents — containers, bookmarks, health and push notifications working as one |
-| 🔤 | **Glossary** | [The hundred terms that matter](#glossary), each linked to where it is explained |
+| 🔤 | **Glossary** | [100 key terms](#glossary), each linked to where it is explained |
 
 This manual describes nextDash as it is now. It follows the same topics as Config → Help and goes into more detail. What changed in which release is in the [changelog](CHANGELOG.md).
 
@@ -357,7 +357,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 
 **26.** [Glossary](#glossary)
 
-🔤 **[Glossary](#glossary)** — the hundred terms that matter, one line each, linked to where it is explained.
+🔤 **[Glossary](#glossary)** — 100 key terms, one line each, linked to where it is explained.
 📌 **[Quick reference](#25-quick-reference)** — the keys, config sections and addresses on one screen.
 
 ---
@@ -2318,7 +2318,7 @@ They go where Health's downtime alerts go: the alert webhook under **Behavior �
 A page holds categories and, beside them, **widgets**: blocks that show something other than links. Categories and widgets share one order.
 
 <p align="center">
-  <img src="screenshots/manual.md/15-widgets.jpg" alt="A page with widgets among its bookmarks: processor, feeds, inbox, memory, certificates, disks and a to-do list" width="860">
+  <img src="screenshots/manual.md/15-widgets.jpg" alt="A page with widgets among its bookmarks: processor, feeds, inbox, certificates, disks and a to-do list" width="860">
 </p>
 <p align="center"><sub>Widgets stand beside the categories: processor, feeds, inbox, certificates, disks and a to-do list.</sub></p>
 
@@ -2771,11 +2771,6 @@ Seven widgets read an Unraid server through its API: **Unraid**, **Unraid array*
 
 **Config → Appearance** opens straight on its settings, on the tab you used last. Eight tabs: **Look**, **Background**, **Surface**, **Grid**, **Rows**, **Header**, **Action bar** and **Date & weather**. Every setting of a tab is on it, with a short line under each saying what it does.
 
-<p align="center">
-  <img src="screenshots/manual.md/16-look-studio.jpg" alt="The theme browser open beside the dashboard, with tabs for Themes, Backdrop, Surface, Headers, Layout and Looks and a grid of themes to pick from" width="860">
-</p>
-<p align="center"><sub>The theme browser opens beside the dashboard (<kbd>Shift</kbd> + <kbd>A</kbd>), so every change shows on the real page until you press Apply.</sub></p>
-
 **The preview.** Beside the settings stands a small drawing of your dashboard — header, grid, a few rows and the action dock. It follows every change as you make it, in your own theme and font, and marks the part the open tab is about: the grid on Grid, the rows on Rows, the header on Header, the clock on Date & weather, the buttons on Action bar. On a narrow window it moves above the settings.
 
 <a id="161-themes"></a>
@@ -2800,6 +2795,11 @@ nextDash ships **164 theme families**, each with a light and a dark half — 328
 #### 🪟 The theme browser
 
 The theme browser lies over the right of the dashboard, so every change shows on the real page while you make it. Nothing is stored until **Apply**; **Cancel**, the **×** at the top right, **Esc** or a click on the dashboard beside the panel puts everything back, in every tab. On a narrow window it becomes a sheet along the bottom.
+
+<p align="center">
+  <img src="screenshots/manual.md/16-look-studio.jpg" alt="The theme browser open beside the dashboard, with tabs for Themes, Backdrop, Surface, Headers, Layout and Looks and a grid of themes to pick from" width="860">
+</p>
+<p align="center"><sub>The theme browser opens beside the dashboard (<kbd>Shift</kbd> + <kbd>A</kbd>), so every change shows on the real page until you press Apply.</sub></p>
 
 **Wider.** Drag the panel's left edge to widen it, or focus the edge and use **`←`** / **`→`** (with **`Shift`** for bigger steps); a double-click gives the default width back. It never goes narrower than the default, where the six tabs fit, and always leaves 240 px of the page beside it. The width is kept per browser.
 
@@ -3958,7 +3958,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 
 ## 26. 🔤 Glossary
 
-The hundred words that matter most, each in one line with a link to where the manual explains it.
+100 key terms, each in one line with a link to where the manual explains it.
 
 [A](#glossary-a) · [B](#glossary-b) · [C](#glossary-c) · [D](#glossary-d) · [E](#glossary-e) · [F](#glossary-f) · [H](#glossary-h) · [I](#glossary-i) · [L](#glossary-l) · [M](#glossary-m) · [N](#glossary-n) · [P](#glossary-p) · [Q](#glossary-q) · [R](#glossary-r) · [S](#glossary-s) · [T](#glossary-t) · [U](#glossary-u) · [V](#glossary-v) · [W](#glossary-w)
 
@@ -4003,7 +4003,7 @@ The hundred words that matter most, each in one line with a link to where the ma
 | Config | A view inside the dashboard, in the same tab, where every setting lives in sections. | [§17](#17-config) |
 | Container | A Docker container on the machine nextDash runs on, listed and managed in the Containers view. | [§14](#14-containers) |
 | Containers view | The view for those containers, opened with `Shift + Y` or `:docker`, with a Containers and a Disk tab. | [§14.1](#141-opening-it) |
-| Corner card | A card in the corner that offers something once, such as a review round or browser notifications; one at a time, and each can be dismissed. | [§2](#corner-cards) |
+| Corner card | A card in the corner that offers something once, such as a review round or browser notifications; one at a time, and each can be dismissed. | [§4](#corner-cards) |
 | Custom theme | A theme of your own, made or recoloured in the theme editor and listed beside the packaged ones. | [§16.5](#165-custom-themes) |
 | Custom widget | A widget that reads figures from any service that answers with JSON. | [§15.5](#155-the-custom-widget) |
 
@@ -4027,6 +4027,7 @@ The hundred words that matter most, each in one line with a link to where the ma
 
 | Term | Meaning | Explained in |
 |---|---|---|
+| Environment variables | Settings the server reads from `NEXTDASH_…` variables before it starts, such as the data directory, the write token and Docker access; the full list is in the README. | [§23.1](#231-production-docker) |
 | Expected response | What a monitored page must say or return to count as healthy: a phrase, or status codes. | [§12.2](#122-expected-response) |
 | Extension | The nextDash Bookmark Saver for Chrome and Chromium, which saves the current tab to a page or the inbox. | [§21.1](#211-the-extension) |
 
@@ -4056,7 +4057,7 @@ The hundred words that matter most, each in one line with a link to where the ma
 | Term | Meaning | Explained in |
 |---|---|---|
 | Image update | A newer tag of a container's image, found by checks on request and on an interval; it can be skipped, held or applied automatically. | [§14.5](#145-actions-and-updates) |
-| Import | Reads a browser's bookmark file, other bookmark tools' exports or a CSV, showing a preview first and skipping duplicates; export goes the other way, as HTML, CSV or a backup. | [§19.1](#import-and-export-bookmarks) |
+| Import | Reads a browser's bookmark file, other bookmark tools' exports or a CSV, showing a preview first and skipping duplicates; export goes the other way, as HTML or CSV. | [§19.1](#import-and-export-bookmarks) |
 | Inbox | Where links wait until you decide where they go; a list of its own, not a page. | [§13](#13-inbox) |
 | Installed app | nextDash added to the home screen or installed from the browser, with the custom title and favicon; it also receives shared links. | [§22](#install-as-an-app) |
 
@@ -4156,7 +4157,7 @@ The hundred words that matter most, each in one line with a link to where the ma
 | Tag collection | A group nextDash makes of every tag that enough bookmarks use. | [§9.7](#97-custom-and-tag-collections) |
 | Tag suggestions | Proposals for one tag for a whole group of bookmarks, from your own rules and other sources. | [§10.4](#104-tag-suggestions) |
 | Theme | A colour scheme; 164 families each come in a light and a dark half, picked on the Look tab or in the theme browser. | [§16.1](#161-themes) |
-| Theme browser | The panel beside the dashboard, opened with `Shift + A`, for themes, backdrops, surfaces, headers, type and looks; also called the look studio. | [§16.1](#the-theme-browser) |
+| Theme browser | The panel beside the dashboard, opened with `Shift + A`, for themes, backdrops, surfaces, headers, type and looks. | [§16.1](#the-theme-browser) |
 | Theme editor | The page for recolouring a packaged theme or building a theme of your own, opened from the Look tab; not the theme browser. | [§16.5](#165-custom-themes) |
 | Timeline | A container's history in its side panel: crashes with exit code, out-of-memory kills, health changes, updates and rollbacks. | [§14.3](#143-the-side-panel) |
 | Trash | Deleted bookmarks, pages and categories stay here for 30 days. | [§19.5](#195-trash) |
@@ -4169,7 +4170,6 @@ The hundred words that matter most, each in one line with a link to where the ma
 | Term | Meaning | Explained in |
 |---|---|---|
 | Unraid | The server nextDash can read through its API: seven read-only widgets and alerts, set up once in Config. | [Guide](#sh-unraid), [§15.6](#156-unraid-widgets) |
-| Unraid widgets | Seven read-only widgets that show an Unraid server through its API. | [§15.6](#156-unraid-widgets) |
 | Unsorted | A hidden page for bookmarks kept from the inbox with no page yet; they stay off the dashboard. | [§11.11](#1111-unsorted-and-promote) |
 | Uptime | How much of the time a monitored bookmark answered, over 24 hours or 30 days; shown in the rail, Statistics, the Uptime widget and, if switched on, as a badge. | [§12.5](#uptime-badges) |
 | Usage | Every open adds one to a bookmark's open count and records the time; it feeds Recently opened, Most used, Stale and statistics. | [§6](#usage) |
