@@ -446,6 +446,7 @@ type Settings struct {
 	// every page file to strip images again.
 	PreviewImagesStrippedMigrated   bool   `json:"previewImagesStrippedMigrated,omitempty"`
 	CustomPercentGuessMigrated      bool   `json:"customPercentGuessMigrated,omitempty"`
+	NotesWidgetSeeded               bool   `json:"notesWidgetSeeded,omitempty"`               // one-time: notes widget on the first page; a field, or a settings save dropped it and a removed widget came back
 	ConfigButtonDefaultOnMigrated   bool   `json:"configButtonDefaultOnMigrated,omitempty"`   // one-time: restore config header icon after visibility fix
 	SurfaceDefaultsMigrated         bool   `json:"surfaceDefaultsMigrated,omitempty"`         // one-time: backdrop on, glow off, depth — the three Surfaces answers agreed on once
 	DepthDefaultFlatMigrated        bool   `json:"depthDefaultFlatMigrated,omitempty"`        // one-time: the depth default moved to flat
@@ -730,6 +731,7 @@ type Settings struct {
 	SmartRecentPageIds          []int                      `json:"smartRecentPageIds"`                // Page IDs where smart recent is enabled (empty = all)
 	SmartStalePageIds           []int                      `json:"smartStalePageIds"`                 // Page IDs where smart stale is enabled (empty = all)
 	SmartMostUsedPageIds        []int                      `json:"smartMostUsedPageIds"`              // Page IDs where smart most used is enabled (empty = all)
+	SmartFreshPageIds           []int                      `json:"smartFreshPageIds"`                 // Page IDs where Fresh is shown (empty = all)
 	Collections                 []Collection               `json:"collections,omitempty"`             // User-defined dynamic collections
 	TagRules                    []TagRule                  `json:"tagRules,omitempty"`                // Patterns you wrote that propose a tag
 	DismissedTagSuggestions     []string                   `json:"dismissedTagSuggestions,omitempty"` // Proposals you turned down, as "pattern|tag"
@@ -776,7 +778,6 @@ type Settings struct {
 	SearchUnsorted          bool   `json:"searchUnsorted"`          // Let search reach bookmarks kept in Unsorted; they stay out of every other surface
 	PasteDestination        string `json:"pasteDestination"`        // ask, bookmark, or inbox when pasting a URL
 	InboxDedupeUrls         bool   `json:"inboxDedupeUrls"`         // Skip duplicate URLs in inbox
-	InboxMaxItems           int    `json:"inboxMaxItems"`           // Max inbox items (0 = unlimited)
 	InboxShowInPageTabs     bool   `json:"inboxShowInPageTabs"`     // Show Inbox tab in page navigation
 	InboxDeleteAfterPromote bool   `json:"inboxDeleteAfterPromote"` // Remove inbox item after promote to bookmark
 	AllowLocalBookmarks     bool   `json:"allowLocalBookmarks"`     // Allow http(s) bookmarks to localhost and private hosts
@@ -1157,6 +1158,10 @@ type QuickStartState struct {
 	// How often the question has been put off, indexing a backoff schedule so
 	// each further hesitation waits longer than the last.
 	AnalyticsSnoozes int `json:"analyticsSnoozes,omitempty"`
+	// TemplatePicked is the first-start card's answer: a bundled template's
+	// id, or "keep" for the starter links. Empty means the card has not been
+	// answered and comes before the checklist.
+	TemplatePicked string `json:"templatePicked,omitempty"`
 	// Same three-part state for the browser-notification invitation: whether it
 	// was actually answered, how long it stays hidden after being left open, and
 	// how often that has happened. Registering a device is per browser, so this
@@ -1573,75 +1578,82 @@ func stampDefaultBookmarkCreatedAt(bookmarks []Bookmark, now time.Time) {
 	}
 }
 
+// defaultMainPage is the page a fresh install starts on. The first-start
+// card reads it too: main still equal to it means nobody has touched it, and
+// a template may take its place (isUntouchedMainPage).
+func defaultMainPage() PageWithBookmarks {
+	return PageWithBookmarks{
+		Page: Page{
+			ID:   1,
+			Name: "main",
+		},
+		Categories: []Category{
+			{ID: "development", Name: "Development"},
+			{ID: "media", Name: "Media"},
+			{ID: "social", Name: "Social"},
+			{ID: "search", Name: "Search"},
+			{ID: "utilities", Name: "Utilities"},
+		},
+		/*
+		 * A health widget, on the page from the first load.
+		 *
+		 * A page can hold something other than links, and nothing on a
+		 * fresh install said so: widgets were a config section you had to
+		 * go looking for, which is a poor way to learn that the thing
+		 * exists. One block, at the top, reporting the collection it sits
+		 * above.
+		 *
+		 * Health rather than any of the other twelve because it is the only
+		 * one that reads correctly on an install with no history: it counts
+		 * what the header badge has already fetched, so it says something
+		 * true on the first paint rather than "nothing recorded yet". An
+		 * inbox tile would be empty, uptime and trend have no samples, and
+		 * sources and feeds have nothing registered.
+		 *
+		 * Empty config on purpose: `show` absent means every figure, which
+		 * is what a reader who has not chosen wants. Deletable like any
+		 * other seeded row.
+		 */
+		Widgets: []Widget{
+			{ID: defaultHealthWidgetID, Type: WidgetTypeHealth, Config: map[string]any{}},
+			// Notes after the links it sits beside, with the example note:
+			// it shows what the widget does and is one Edit away from yours.
+			{ID: defaultNotesWidgetID, Type: WidgetTypeNotes, Config: notesStarterConfig()},
+		},
+		// The widget leads, then the categories in the order above. Without
+		// an explicit order the widget would fall wherever resolveBlockOrder
+		// put it, which is after every category it is meant to summarise.
+		BlockOrder: []string{
+			defaultHealthWidgetID,
+			"development", "media", "social", "search", "utilities",
+			defaultNotesWidgetID,
+		},
+		Bookmarks: []Bookmark{
+			// The project's own site, in the seed rather than only behind the
+			// "follow it from your own dashboard" button in About: it is the
+			// place a new install finds out what changed, it publishes a feed
+			// so Fresh has something to count on day one, and a bookmark
+			// dashboard whose own site is not on the dashboard is an odd
+			// advertisement for itself. Deletable like any other starter row.
+			{Name: "nextDash", URL: "https://nextdash.cc/", Shortcut: "N", Category: "development", CheckStatus: false, Tags: []string{"dev", "bookmarks", "self-hosted"}},
+			{Name: "GitHub", URL: "https://github.com", Shortcut: "G", Category: "development", CheckStatus: true, Tags: []string{"dev", "code"}},
+			{Name: "GitHub Issues", URL: "https://github.com/issues", Shortcut: "GI", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
+			{Name: "GitHub Pull Requests", URL: "https://github.com/pulls", Shortcut: "GP", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
+			{Name: "YouTube", URL: "https://youtube.com", Shortcut: "Y", Category: "media", CheckStatus: false, Tags: []string{"video", "entertainment"}},
+			{Name: "YouTube Studio", URL: "https://studio.youtube.com", Shortcut: "YS", Category: "media", CheckStatus: false, Tags: []string{"video", "creator"}},
+			{Name: "Bluesky", URL: "https://bsky.app", Shortcut: "B", Category: "social", CheckStatus: false, Tags: []string{"social"}},
+			{Name: "Google", URL: "https://google.com", Shortcut: "", Category: "search", CheckStatus: false, Tags: []string{"search"}},
+		},
+	}
+}
+
 func (fs *FileStore) initializeDefaultFiles() {
 	fs.ensureDataDir()
 
 	// Initialize bookmarks for main page if file doesn't exist
 	mainPageBookmarksFile := filepath.Join(fs.dataDir, "bookmarks-1.json")
 	if _, err := os.Stat(mainPageBookmarksFile); os.IsNotExist(err) {
-		defaultPageWithBookmarks := PageWithBookmarks{
-			Page: Page{
-				ID:   1,
-				Name: "main",
-			},
-			Categories: []Category{
-				{ID: "development", Name: "Development"},
-				{ID: "media", Name: "Media"},
-				{ID: "social", Name: "Social"},
-				{ID: "search", Name: "Search"},
-				{ID: "utilities", Name: "Utilities"},
-			},
-			/*
-			 * A health widget, on the page from the first load.
-			 *
-			 * A page can hold something other than links, and nothing on a
-			 * fresh install said so: widgets were a config section you had to
-			 * go looking for, which is a poor way to learn that the thing
-			 * exists. One block, at the top, reporting the collection it sits
-			 * above.
-			 *
-			 * Health rather than any of the other twelve because it is the only
-			 * one that reads correctly on an install with no history: it counts
-			 * what the header badge has already fetched, so it says something
-			 * true on the first paint rather than "nothing recorded yet". An
-			 * inbox tile would be empty, uptime and trend have no samples, and
-			 * sources and feeds have nothing registered.
-			 *
-			 * Empty config on purpose: `show` absent means every figure, which
-			 * is what a reader who has not chosen wants. Deletable like any
-			 * other seeded row.
-			 */
-			Widgets: []Widget{
-				{ID: defaultHealthWidgetID, Type: WidgetTypeHealth, Config: map[string]any{}},
-				// Notes after the links it sits beside, with the example note:
-				// it shows what the widget does and is one Edit away from yours.
-				{ID: defaultNotesWidgetID, Type: WidgetTypeNotes, Config: notesStarterConfig()},
-			},
-			// The widget leads, then the categories in the order above. Without
-			// an explicit order the widget would fall wherever resolveBlockOrder
-			// put it, which is after every category it is meant to summarise.
-			BlockOrder: []string{
-				defaultHealthWidgetID,
-				"development", "media", "social", "search", "utilities",
-				defaultNotesWidgetID,
-			},
-			Bookmarks: []Bookmark{
-				// The project's own site, in the seed rather than only behind the
-				// "follow it from your own dashboard" button in About: it is the
-				// place a new install finds out what changed, it publishes a feed
-				// so Fresh has something to count on day one, and a bookmark
-				// dashboard whose own site is not on the dashboard is an odd
-				// advertisement for itself. Deletable like any other starter row.
-				{Name: "nextDash", URL: "https://nextdash.cc/", Shortcut: "N", Category: "development", CheckStatus: false, Tags: []string{"dev", "bookmarks", "self-hosted"}},
-				{Name: "GitHub", URL: "https://github.com", Shortcut: "G", Category: "development", CheckStatus: true, Tags: []string{"dev", "code"}},
-				{Name: "GitHub Issues", URL: "https://github.com/issues", Shortcut: "GI", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
-				{Name: "GitHub Pull Requests", URL: "https://github.com/pulls", Shortcut: "GP", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
-				{Name: "YouTube", URL: "https://youtube.com", Shortcut: "Y", Category: "media", CheckStatus: false, Tags: []string{"video", "entertainment"}},
-				{Name: "YouTube Studio", URL: "https://studio.youtube.com", Shortcut: "YS", Category: "media", CheckStatus: false, Tags: []string{"video", "creator"}},
-				{Name: "Bluesky", URL: "https://bsky.app", Shortcut: "B", Category: "social", CheckStatus: false, Tags: []string{"social"}},
-				{Name: "Google", URL: "https://google.com", Shortcut: "", Category: "search", CheckStatus: false, Tags: []string{"search"}},
-			},
-		}
+		defaultPageWithBookmarks := defaultMainPage()
 		stampDefaultBookmarkCreatedAt(defaultPageWithBookmarks.Bookmarks, time.Now())
 		data, _ := json.MarshalIndent(defaultPageWithBookmarks, "", "  ")
 		writeFileAtomic(mainPageBookmarksFile, data, 0644)
@@ -1790,6 +1802,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			SmartStalePageIds:               []int{},
 			SmartMostUsedPageIds:            []int{},
 			SmartAddedPageIds:               []int{},
+			SmartFreshPageIds:               []int{},
 			SmartAddedLimit:                 20,
 			RowTagsMax:                      2,
 			FaviconRefreshPolicy:            "on-save",
@@ -1825,7 +1838,6 @@ func (fs *FileStore) initializeDefaultFiles() {
 			SearchUnsorted:                 true,
 			PasteDestination:               "ask",
 			InboxDedupeUrls:                true,
-			InboxMaxItems:                  500,
 			InboxShowInPageTabs:            true,
 			InboxDeleteAfterPromote:        true,
 			AllowLocalBookmarks:            true,
@@ -4254,6 +4266,7 @@ func (fs *FileStore) GetSettings() Settings {
 			SmartRecentPageIds:              []int{},
 			SmartStalePageIds:               []int{},
 			SmartAddedPageIds:               []int{},
+			SmartFreshPageIds:               []int{},
 			SmartAddedLimit:                 20,
 			RowTagsMax:                      2,
 			FaviconRefreshPolicy:            "on-save",
@@ -4312,7 +4325,6 @@ func (fs *FileStore) GetSettings() Settings {
 			SearchUnsorted:                  true,
 			PasteDestination:                "ask",
 			InboxDedupeUrls:                 true,
-			InboxMaxItems:                   500,
 			InboxShowInPageTabs:             true,
 			InboxDeleteAfterPromote:         true,
 			AllowLocalBookmarks:             true,
@@ -4634,6 +4646,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["smartAddedPageIds"]; !ok || settings.SmartAddedPageIds == nil {
 			settings.SmartAddedPageIds = []int{}
+		}
+		if _, ok := rawSettings["smartFreshPageIds"]; !ok || settings.SmartFreshPageIds == nil {
+			settings.SmartFreshPageIds = []int{}
 		}
 		if _, ok := rawSettings["faviconRefreshPolicy"]; !ok || (settings.FaviconRefreshPolicy != "manual" && settings.FaviconRefreshPolicy != "on-save") {
 			settings.FaviconRefreshPolicy = "on-save"
@@ -5064,9 +5079,6 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["inboxDedupeUrls"]; !ok {
 			settings.InboxDedupeUrls = true
 		}
-		if _, ok := rawSettings["inboxMaxItems"]; !ok {
-			settings.InboxMaxItems = 500
-		}
 		if _, ok := rawSettings["inboxShowInPageTabs"]; !ok {
 			settings.InboxShowInPageTabs = true
 		}
@@ -5171,6 +5183,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.ShortcutOpenModeInstantMigrated = settings.ShortcutOpenModeInstantMigrated || stored.ShortcutOpenModeInstantMigrated
 			settings.PreviewImagesStrippedMigrated = settings.PreviewImagesStrippedMigrated || stored.PreviewImagesStrippedMigrated
 			settings.CustomPercentGuessMigrated = settings.CustomPercentGuessMigrated || stored.CustomPercentGuessMigrated
+			settings.NotesWidgetSeeded = settings.NotesWidgetSeeded || stored.NotesWidgetSeeded
 			settings.HideEmptyCategoriesMigrated = settings.HideEmptyCategoriesMigrated || stored.HideEmptyCategoriesMigrated
 			settings.ShortcutDisplayAlwaysMigrated = settings.ShortcutDisplayAlwaysMigrated || stored.ShortcutDisplayAlwaysMigrated
 			settings.ConfigButtonDefaultOnMigrated = settings.ConfigButtonDefaultOnMigrated || stored.ConfigButtonDefaultOnMigrated

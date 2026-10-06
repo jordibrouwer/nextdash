@@ -265,7 +265,7 @@
         },
         {
           "badge": "new",
-          "text": "<strong>An assistant can search your bookmarks.</strong> On the same tab, and off until you switch it on: an AI assistant that speaks MCP can search your collection, look one bookmark up, list your tags and add a new bookmark. It reads everything you have filed, which is why it starts closed."
+          "text": "<strong>Other tools can search your bookmarks.</strong> On the same tab, and off until you switch it on: a script or another tool that speaks MCP can search your collection, look one bookmark up, list your tags and add a new bookmark. It reads everything you have filed, which is why it starts closed."
         }
       ]
     },

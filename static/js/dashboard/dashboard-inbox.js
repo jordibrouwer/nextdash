@@ -6289,28 +6289,12 @@ class DashboardInbox {
 
         this._trackAction('import', { size: this._countBucket(rows.length) });
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        /*
-         * The room left, counted before the first row. The server never
-         * refuses an add at capacity: it keeps the new link and drops the
-         * oldest other one, so the "at_capacity" answer below never came and an
-         * import of 200 into a nearly full inbox deleted the reader's own links
-         * without a word. An import stops at the cap instead.
-         */
-        await this.loadItems?.();
-        const maxItems = Number(this.dash.settings?.inboxMaxItems) > 0 ? Number(this.dash.settings.inboxMaxItems) : 500;
-        const room = Math.max(0, maxItems - (Array.isArray(this.items) ? this.items.length : 0));
         let added = 0;
         let duplicates = 0;
         let failed = 0;
-        let evicted = 0;
-        let full = false;
         for (const row of rows) {
-            if (added >= room) {
-                full = true;
-                break;
-            }
-            // One at a time and in order: there is no bulk endpoint, and the
-            // capacity cap means a later row can be the one that is refused.
+            // One at a time and in order: there is no bulk endpoint. The inbox
+            // has no cap, so every row that is not a duplicate is added.
             try {
                 const res = await this._inboxWrite('/api/inbox', {
                     method: 'POST',
@@ -6319,24 +6303,11 @@ class DashboardInbox {
                 });
                 if (res.ok) {
                     added += 1;
-                    // Something else filled the inbox meanwhile (the extension,
-                    // a share): stop rather than push out another link.
-                    const answer = await res.json().catch(() => ({}));
-                    const pushedOut = Number(answer?.evicted) || 0;
-                    if (pushedOut > 0) {
-                        evicted += pushedOut;
-                        full = true;
-                        break;
-                    }
                     continue;
                 }
                 const body = await res.json().catch(() => ({}));
                 if (body?.error === 'duplicate_url') {
                     duplicates += 1;
-                } else if (body?.error === 'at_capacity') {
-                    // Every row after this one would be refused too.
-                    full = true;
-                    break;
                 } else {
                     failed += 1;
                 }
@@ -6357,13 +6328,7 @@ class DashboardInbox {
         if (failed) {
             parts.push(this.t('dashboard.inboxImportFailed', '{count} failed', { count: failed }));
         }
-        if (full) {
-            parts.push(this.t('dashboard.inboxImportFull', 'inbox full — the rest was left out'));
-        }
-        if (evicted) {
-            parts.push(this.t('dashboard.inboxImportEvicted', '{count} older links pushed out', { count: evicted }));
-        }
-        this.dash.showNotification?.(parts.join(' · '), full || failed ? 'warning' : 'success');
+        this.dash.showNotification?.(parts.join(' · '), failed ? 'warning' : 'success');
     }
 
     highlightItem(id) {

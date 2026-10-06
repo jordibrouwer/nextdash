@@ -1,0 +1,179 @@
+{
+  "nextdash": "page-template",
+  "version": 1,
+  "name": "Homelab",
+  "icon": "⌂",
+  "color": "",
+  "variables": [
+    {
+      "key": "proxmox",
+      "label": "Proxmox",
+      "default": "https://{server}:8006"
+    },
+    {
+      "key": "nas",
+      "label": "NAS (Unraid, TrueNAS)",
+      "default": "http://{server}"
+    },
+    {
+      "key": "pihole",
+      "label": "Pi-hole",
+      "default": "http://{server}"
+    },
+    {
+      "key": "homeassistant",
+      "label": "Home Assistant",
+      "default": "http://{server}:8123"
+    },
+    {
+      "key": "portainer",
+      "label": "Portainer",
+      "default": "https://{server}:9443"
+    },
+    {
+      "key": "uptimekuma",
+      "label": "Uptime Kuma",
+      "default": "http://{server}:3001"
+    },
+    {
+      "key": "proxy",
+      "label": "Nginx Proxy Manager",
+      "default": "http://{server}:81"
+    },
+    {
+      "key": "router",
+      "label": "Router",
+      "default": "http://192.168.1.1"
+    }
+  ],
+  "categories": [
+    {
+      "id": "servers",
+      "name": "Servers"
+    },
+    {
+      "id": "network",
+      "name": "Network"
+    },
+    {
+      "id": "home",
+      "name": "Home"
+    },
+    {
+      "id": "links",
+      "name": "Links"
+    }
+  ],
+  "widgets": [
+    {
+      "id": "health",
+      "type": "health",
+      "config": {}
+    },
+    {
+      "id": "containers",
+      "type": "containers",
+      "config": {}
+    },
+    {
+      "id": "notes",
+      "type": "notes",
+      "config": {
+        "text": "# Homelab\n\nOne place for what runs where: a reboot schedule, the password manager entry to look up, the port you always forget.\n\nEdit this note to write your own."
+      }
+    }
+  ],
+  "blockOrder": [
+    "health",
+    "servers",
+    "network",
+    "home",
+    "containers",
+    "links",
+    "notes"
+  ],
+  "bookmarks": [
+    {
+      "name": "Proxmox",
+      "url": "{{proxmox}}/",
+      "category": "servers",
+      "tags": [
+        "hypervisor"
+      ],
+      "shortcut": "P"
+    },
+    {
+      "name": "NAS",
+      "url": "{{nas}}/",
+      "category": "servers",
+      "tags": [
+        "storage"
+      ],
+      "shortcut": "S"
+    },
+    {
+      "name": "Portainer",
+      "url": "{{portainer}}/",
+      "category": "servers",
+      "tags": [
+        "docker"
+      ],
+      "shortcut": "D"
+    },
+    {
+      "name": "Uptime Kuma",
+      "url": "{{uptimekuma}}/",
+      "category": "servers",
+      "tags": [
+        "monitoring"
+      ],
+      "shortcut": "U"
+    },
+    {
+      "name": "Pi-hole",
+      "url": "{{pihole}}/admin/",
+      "category": "network",
+      "tags": [
+        "dns"
+      ],
+      "shortcut": "H"
+    },
+    {
+      "name": "Nginx Proxy Manager",
+      "url": "{{proxy}}/",
+      "category": "network",
+      "tags": [
+        "proxy"
+      ],
+      "shortcut": "X"
+    },
+    {
+      "name": "Router",
+      "url": "{{router}}/",
+      "category": "network",
+      "tags": [
+        "network"
+      ],
+      "shortcut": "R"
+    },
+    {
+      "name": "Home Assistant",
+      "url": "{{homeassistant}}/",
+      "category": "home",
+      "tags": [
+        "home"
+      ],
+      "shortcut": "A"
+    },
+    {
+      "name": "nextDash",
+      "url": "https://nextdash.cc/",
+      "tags": [
+        "self-hosted",
+        "bookmarks"
+      ],
+      "shortcut": "N",
+      "category": "links"
+    }
+  ]
+}

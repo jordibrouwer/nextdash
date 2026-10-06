@@ -1,0 +1,29 @@
+{
+  "images": [
+    { "id": "sha256:2b7f9c41d0e3", "tags": ["ghcr.io/immich-app/immich-server:release"], "size": 1843396608, "usedBy": ["immich-server"], "dangling": false },
+    { "id": "sha256:8c1d52e7a9f0", "tags": ["jellyfin/jellyfin:10.10.7"], "size": 1453326336, "usedBy": ["jellyfin"], "dangling": false },
+    { "id": "sha256:51aa0e93c2b7", "tags": ["ghcr.io/paperless-ngx/paperless-ngx:2.14"], "size": 1236271104, "usedBy": ["paperless"], "dangling": false },
+    { "id": "sha256:9e0f3a6b1c25", "tags": ["linuxserver/sonarr:latest"], "size": 432013312, "usedBy": ["sonarr"], "dangling": false },
+    { "id": "sha256:3f9a1c0b7e2d", "tags": [], "size": 417333248, "usedBy": [], "dangling": true, "rollbackFor": ["sonarr"] },
+    { "id": "sha256:c47e8d2a6b13", "tags": ["linuxserver/radarr:latest"], "size": 410517504, "usedBy": ["radarr"], "dangling": false },
+    { "id": "sha256:7d2b0e5f84a9", "tags": ["postgres:14"], "size": 397410304, "usedBy": [], "dangling": false },
+    { "id": "sha256:e1c6f7a3d952", "tags": ["vaultwarden/server:1.32.7"], "size": 247463936, "usedBy": ["vaultwarden"], "dangling": false }
+  ],
+  "volumes": [
+    { "name": "pgdata_old", "driver": "local", "size": 2147483648, "usedBy": [] },
+    { "name": "paperless_data", "driver": "local", "size": 734003200, "usedBy": ["paperless"] },
+    { "name": "vw_data", "driver": "local", "size": 52428800, "usedBy": ["vaultwarden"] }
+  ],
+  "binds": [
+    { "source": "/mnt/user/appdata/sonarr", "usedBy": [{ "container": "sonarr", "destination": "/config" }] },
+    { "source": "/mnt/user/appdata/radarr", "usedBy": [{ "container": "radarr", "destination": "/config" }] },
+    { "source": "/mnt/user/media", "usedBy": [{ "container": "jellyfin", "destination": "/media" }, { "container": "radarr", "destination": "/movies" }, { "container": "sonarr", "destination": "/tv" }] },
+    { "source": "/mnt/user/photos", "usedBy": [{ "container": "immich-server", "destination": "/usr/src/app/upload" }] }
+  ],
+  "totals": {
+    "images": 6437332992, "imagesUnused": 814743552, "imagesUnusedCount": 2, "dangling": 417333248, "danglingCount": 1,
+    "buildCache": 0, "buildCacheCount": 0, "volumes": 2933915648, "volumesUnused": 2147483648, "volumesUnusedCount": 1,
+    "reclaimable": 2962227200, "containersStopped": 0, "containersStoppedCount": 0
+  },
+  "stopped": []
+}

@@ -1,0 +1,165 @@
+{
+  "nextdash": "page-template",
+  "version": 1,
+  "name": "Developer",
+  "icon": "</>",
+  "color": "",
+  "variables": [
+    {
+      "key": "gitea",
+      "label": "Gitea",
+      "default": "http://{server}:3000"
+    },
+    {
+      "key": "ci",
+      "label": "Woodpecker CI",
+      "default": "http://{server}:8000"
+    },
+    {
+      "key": "registry",
+      "label": "Container registry",
+      "default": "http://{server}:5000"
+    }
+  ],
+  "categories": [
+    {
+      "id": "code",
+      "name": "Code"
+    },
+    {
+      "id": "docs",
+      "name": "Docs"
+    },
+    {
+      "id": "self-hosted",
+      "name": "Self-hosted"
+    },
+    {
+      "id": "links",
+      "name": "Links"
+    }
+  ],
+  "widgets": [
+    {
+      "id": "health",
+      "type": "health",
+      "config": {}
+    },
+    {
+      "id": "feeds",
+      "type": "feeds",
+      "config": {}
+    },
+    {
+      "id": "notes",
+      "type": "notes",
+      "config": {
+        "text": "# Today\n\n- [ ] Review open pull requests\n- [ ] \n\nEdit this note to write your own."
+      }
+    }
+  ],
+  "blockOrder": [
+    "health",
+    "code",
+    "docs",
+    "self-hosted",
+    "feeds",
+    "notes",
+    "links"
+  ],
+  "bookmarks": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/",
+      "category": "code",
+      "tags": [
+        "code"
+      ],
+      "shortcut": "G"
+    },
+    {
+      "name": "Pull requests",
+      "url": "https://github.com/pulls",
+      "category": "code",
+      "tags": [
+        "code",
+        "review"
+      ],
+      "shortcut": "GP"
+    },
+    {
+      "name": "Issues",
+      "url": "https://github.com/issues",
+      "category": "code",
+      "tags": [
+        "code"
+      ],
+      "shortcut": "GI"
+    },
+    {
+      "name": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/",
+      "category": "docs",
+      "tags": [
+        "docs",
+        "web"
+      ],
+      "shortcut": "M"
+    },
+    {
+      "name": "Go packages",
+      "url": "https://pkg.go.dev/",
+      "category": "docs",
+      "tags": [
+        "docs",
+        "go"
+      ],
+      "shortcut": "GO"
+    },
+    {
+      "name": "Node.js docs",
+      "url": "https://nodejs.org/docs/latest/api/",
+      "category": "docs",
+      "tags": [
+        "docs",
+        "node"
+      ]
+    },
+    {
+      "name": "Gitea",
+      "url": "{{gitea}}/",
+      "category": "self-hosted",
+      "tags": [
+        "code"
+      ],
+      "shortcut": "T"
+    },
+    {
+      "name": "Woodpecker CI",
+      "url": "{{ci}}/",
+      "category": "self-hosted",
+      "tags": [
+        "ci"
+      ],
+      "shortcut": "C"
+    },
+    {
+      "name": "Container registry",
+      "url": "{{registry}}/v2/_catalog",
+      "category": "self-hosted",
+      "tags": [
+        "docker"
+      ]
+    },
+    {
+      "name": "nextDash",
+      "url": "https://nextdash.cc/",
+      "tags": [
+        "self-hosted",
+        "bookmarks"
+      ],
+      "shortcut": "N",
+      "category": "links"
+    }
+  ]
+}

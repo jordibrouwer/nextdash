@@ -1745,9 +1745,12 @@ body.no-animations .modal-button.danger.selected {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    /* Modal open/close → keep opacity fade, remove scale + translate */
-    .modal { transform: none !important; transition: opacity 0.15s ease !important; }
-    .modal-overlay.show .modal { transform: none !important; }
+    /* Modal open/close → keep opacity fade, remove scale + translate.
+       Not the header sheets: their transform is the translateX(-50%) that
+       centres them on the strip, not motion, and they drop their animation in
+       a block of their own (see .modal.header-sheet). */
+    .modal:not(.header-sheet) { transform: none !important; transition: opacity 0.15s ease !important; }
+    .modal-overlay.show .modal:not(.header-sheet) { transform: none !important; }
     .modal-button,
     .modal-button:hover,
     .modal-button.selected,
@@ -2053,6 +2056,12 @@ body:not([data-depth="flat"]) .wn-earlier {
 body.no-animations .modal-overlay.show .modal.header-sheet,
 body.no-animations .modal-overlay.show .modal.header-sheet.from-origin {
     animation: none;
+}
+
+/* theme.css clears every transform under no-animations; this one is the
+   centring, not motion, so it comes back. */
+body.no-animations .modal.header-sheet {
+    transform: translateX(-50%) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

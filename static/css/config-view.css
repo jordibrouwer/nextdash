@@ -126,8 +126,11 @@
     flex-direction: column;
     gap: var(--space-4);
     padding-top: var(--space-2);
+    /* Below the sticky band, not under it: the band is .lvs-header, sticky at
+       0, and at a flat 8px the rail's first row sat behind it. The height is
+       published by trackShellHeaderHeight() in dashboard-config.js. */
     position: sticky;
-    top: 8px;
+    top: calc(var(--lvs-header-height, 0px) + var(--space-2));
     align-self: start;
 }
 
@@ -8335,6 +8338,11 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
 .config-tpl-host-key .config-text[aria-invalid="true"] { border-color: var(--danger, #d9534f); }
 .config-tpl-count { flex: none; font-size: 0.8em; color: var(--text-secondary); white-space: nowrap; }
 .config-tpl-public { margin-top: var(--space-3, 0.75rem); }
+.config-tpl-bundled { margin: var(--space-2, 0.5rem) 0 0; color: var(--text-secondary); }
+.config-tpl-bundled[hidden] { display: none; }
+.config-tpl-bundled-btn { background: none; border: none; padding: 0; color: var(--accent-primary); font: inherit; cursor: pointer; }
+.config-tpl-bundled-btn:hover, .config-tpl-bundled-btn:focus-visible { text-decoration: underline; }
+.config-tpl-server { display: grid; gap: 4px; margin: var(--space-2, 0.5rem) 0; }
 .config-tpl-public > summary { cursor: pointer; color: var(--text-secondary); }
 .config-tpl-option { display: flex; align-items: center; gap: var(--space-2, 0.5rem); margin-top: var(--space-2, 0.5rem); }
 .config-tpl-source { display: grid; gap: var(--space-2, 0.5rem); }
@@ -8436,4 +8444,45 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
     .config-overview-banner::after,
     .config-overview-banner-star,
     .config-overview-banner-go { animation: none; }
+}
+
+/* Version panel: the running release, with changelog and manual links. */
+.config-overview-version {
+    margin: 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-primary);
+}
+
+/* Behind the newest release: the line saying which one is out. */
+.config-overview-version--behind {
+    margin-top: var(--space-2, 0.5rem);
+    color: var(--accent-error, #ef4444);
+}
+
+.config-overview-version--behind .config-overview-version-tag {
+    color: inherit;
+}
+
+/* The check failed: why, in a muted line under the version. */
+.config-overview-version-error {
+    margin: var(--space-2, 0.5rem) 0 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-muted, var(--text-secondary));
+}
+
+.config-overview-version-tag {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent-primary);
+}
+
+.config-overview-version-link {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.config-overview-version-link:hover,
+.config-overview-version-link:focus-visible {
+    color: var(--accent-primary);
 }

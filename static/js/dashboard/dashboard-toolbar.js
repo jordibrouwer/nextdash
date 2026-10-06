@@ -873,12 +873,14 @@ class DashboardToolbar {
         const d = this.dash;
         const el = document.getElementById('dashboard-mini-status');
         if (!el) return;
-        const dateLine = document.querySelector('.date-time-line')?.textContent?.trim() || '';
+        // No clock in here. The line sits in .header-top-primary beside the
+        // .date it used to copy, and the two are shown and hidden together, so
+        // on a tablet (coarse pointer, wider than 767px) it drew the time a
+        // second time under the clock it was quoting.
         const page = d.pages.find((p) => p.id === d.currentPageId);
         const pageName = page?.name || '';
         const badge = document.querySelector('.library-link a .health-badge');
         const parts = [];
-        if (dateLine) parts.push(dateLine);
         if (pageName) parts.push(pageName);
         if (badge) {
             const badgeText = badge.textContent.trim();

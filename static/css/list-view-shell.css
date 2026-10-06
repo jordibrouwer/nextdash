@@ -113,9 +113,9 @@
  * position the rail scrolled away and left a 200px empty gutter running down
  * the rest of the page.
  *
- * Config sticks at a flat 8px because config has no sticky header. This shell
- * does, so the rail stops below it: --lvs-header-height is published by the
- * shell (list-view-shell.js) and re-measured when the header collapses.
+ * The rail stops below the sticky header: --lvs-header-height is published by
+ * the shell (list-view-shell.js) and re-measured when the header collapses.
+ * Config wears the same band and publishes the same property itself.
  */
 .lvs-rail {
     grid-area: rail;

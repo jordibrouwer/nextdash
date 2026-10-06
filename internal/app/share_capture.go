@@ -130,10 +130,8 @@ func (h *Handlers) captureToInbox(rawURL, title, source string) (InboxLink, erro
 		return InboxLink{}, fmt.Errorf("invalid URL: too long")
 	}
 	settings := h.store.GetSettings()
-	maxItems := settings.InboxMaxItems
-	if maxItems <= 0 {
-		maxItems = 500
-	}
+	// No cap, as on every other way in (inbox_handlers.go).
+	const maxItems = 0
 	created, evicted, err := h.store.AddInboxLink(InboxLink{
 		URL:    rawURL,
 		Title:  title,

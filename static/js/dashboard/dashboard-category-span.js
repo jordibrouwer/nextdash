@@ -308,15 +308,12 @@
     /**
      * Pin the intrinsic columns of a spread category's bookmark list.
      *
-     * The list repeats one track pattern per column, and an intrinsic track
-     * sizes to the rows that happen to land in its copy: with rows flowing left
-     * to right, the odd ones size the first column and the even ones the
-     * second. A single wide shortcut on one side made that copy wider than the
-     * other, and every column after the first sat a few pixels off the
-     * categories above and below it.
+     * Each row of a spread list lays out its own tracks, so an intrinsic track
+     * sizes to that one row: a single wide shortcut moved the name and status
+     * of its own row and nobody else's, and the column stopped lining up.
      *
      * Measured across the whole list and written back as a length, so every
-     * copy of the pattern is identical. Safe to re-run: the elements measured
+     * row sizes it the same. Safe to re-run: the elements measured
      * are content-sized either way, so the value does not depend on the value
      * it produced last time.
      */
@@ -335,13 +332,16 @@
                 ? widest('.bookmark-link > .bookmark-shortcut:not(.is-empty)')
                 : 0;
             const lead = widest('.bookmark-link > .bookmark-reorder-handle, .bookmark-link > .bookmark-icon-slot');
+            // The width as measured, not rounded up: a plain category sizes
+            // this track to the fraction, and the half pixel a ceiling added
+            // came out of the name -- enough to cut off one that fits there.
             if (shortcut > 0) {
-                list.style.setProperty('--bookmark-shortcut-col', `${Math.ceil(shortcut)}px`);
+                list.style.setProperty('--bookmark-shortcut-col', `${shortcut}px`);
             } else {
                 list.style.removeProperty('--bookmark-shortcut-col');
             }
             if (lead > 0) {
-                list.style.setProperty('--bookmark-lead-col', `${Math.ceil(lead)}px`);
+                list.style.setProperty('--bookmark-lead-col', `${lead}px`);
             } else {
                 list.style.removeProperty('--bookmark-lead-col');
             }

@@ -1923,6 +1923,11 @@ class DashboardConfig {
     }
 
     pageLabel(pageId) {
+        // The kept page is never in d.pages, so the lookup below would print
+        // its id: group headers, crumbs and the panel's location read "999999".
+        if (window.UnsortedPage?.isUnsorted?.({ pageId })) {
+            return this.t('config.bmViewUnsorted', 'Unsorted');
+        }
         const page = (this.dash.pages || []).find((p) => String(p.id) === String(pageId));
         return page?.name || String(pageId ?? '');
     }
@@ -2127,6 +2132,25 @@ class DashboardConfig {
     }
 
     /**
+     * Publish the band's height on the view as --lvs-header-height, the name
+     * the list-view shell uses, so the sticky rail stops below the sticky band
+     * instead of sliding under it. The band grows and shrinks with the
+     * section's own line, which wraps on a narrower window, so it is watched
+     * rather than read once.
+     */
+    trackShellHeaderHeight(container) {
+        const view = container?.querySelector('.config-view');
+        const head = view?.querySelector('.config-view-head');
+        this._shellHeadObserver?.disconnect?.();
+        if (!view || !head) return;
+        const publish = () => view.style.setProperty('--lvs-header-height', `${Math.round(head.offsetHeight)}px`);
+        publish();
+        if (typeof ResizeObserver !== 'function') return;
+        this._shellHeadObserver = new ResizeObserver(publish);
+        this._shellHeadObserver.observe(head);
+    }
+
+    /**
      * Redraw the section without rebuilding the shell around it.
      *
      * Returns false when there is no shell yet — the first render, or a return
@@ -2156,6 +2180,7 @@ class DashboardConfig {
         // Created up front, not on first save: a live region has to be in the
         // document before its text changes, or the change is not announced.
         this.ensureSaveStateHost();
+        this.trackShellHeaderHeight(container);
         this.bindSectionNav(container);
         this.syncSectionNav(this.section);
         this.bindTileActions(container);
@@ -4187,6 +4212,7 @@ class DashboardConfig {
         const zone = (label) => `<h3 class="config-overview-zone">${esc(label)}</h3>`;
         const aside = [
             this.renderOverviewNewsWidget(),
+            this.renderOverviewVersionWidget(),
             this.renderOverviewFeaturesWidget(),
             this.renderOverviewTipWidget(),
         ].join('');
@@ -4551,6 +4577,52 @@ class DashboardConfig {
     }
 
     /**
+     * "You're running v1.x.y of nextDash" with the changelog and the manual
+     * on GitHub, each opening in a new window, in a panel of its own. The
+     * translated sentence holds {changelog} and {manual} where the links go;
+     * the version is the running one from the update status. No panel until
+     * that status is known; the title dot says whether it is the newest.
+     */
+    renderOverviewVersionWidget() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const current = this._updateStatus?.current;
+        if (!current) return '';
+        const base = 'https://github.com/jordibrouwer/nextdash/blob/main/';
+        const here = this.t('config.overviewVersionHere', 'here');
+        const link = (file) => `<a class="config-overview-version-link" href="${base}${file}" target="_blank" rel="noopener noreferrer">${esc(here)}</a>`;
+        const line = esc(this.t('config.overviewVersionLine',
+            'You\u2019re running {version} of nextDash. You can find the full changelog {changelog} and the manual {manual}.'))
+            .replace('{version}', `<strong class="config-overview-version-tag">${esc(String(current))}</strong>`)
+            .replace('{changelog}', link('CHANGELOG.md'))
+            .replace('{manual}', link('MANUAL.md'));
+        // Green on the newest release, red behind it -- also when the update
+        // notice was dismissed. No dot when GitHub was not asked or not reached.
+        const status = this._updateStatus;
+        const behind = !status.error && status.updateAvailable && status.latest;
+        const tone = status.error ? '' : behind ? 'crit' : status.latest ? 'good' : '';
+        // Behind: say which release is out, its tag a link to the release.
+        const latest = behind
+            ? (status.releaseUrl
+                ? `<a class="config-overview-version-link" href="${esc(status.releaseUrl)}" target="_blank" rel="noopener noreferrer">${esc(status.latest)}</a>`
+                : esc(status.latest))
+            : '';
+        const newer = behind
+            ? `<p class="config-overview-version config-overview-version--behind">${esc(this.t('config.updateCheckModalAvailable', '{latest} is available on GitHub.'))
+                .replace('{latest}', `<strong class="config-overview-version-tag">${latest}</strong>`)}</p>`
+            : '';
+        // The check failed: say why, in the words the What's new bar uses.
+        const failed = status.error && window.nextdashUpdateCheckEnabled?.()
+            ? `<p class="config-overview-version-error">${esc(window.nextdashDescribeUpdateStatus?.(status, false)?.message || '')}</p>`
+            : '';
+        return this.renderOverviewWidget({
+            id: 'version',
+            title: this.t('config.overviewVersionTitle', 'Version'),
+            tone,
+            body: `<p class="config-overview-version">${line}</p>${newer}${failed}`,
+        });
+    }
+
+    /**
      * The three newest features, each a way into what it changed.
      *
      * Only catalogue entries with a `since` -- the ones a release announced;
@@ -4574,9 +4646,7 @@ class DashboardConfig {
                 </li>`;
         }).join('');
 
-        const running = current
-            ? `<span>${esc(this.t('config.overviewRunning', 'Running {current}.').replace('{current}', String(current)))}</span>`
-            : '';
+        const running = '';
         return this.renderOverviewWidget({
             id: 'features',
             title: this.t('config.overviewNewFeaturesTitle', 'New in nextDash'),
@@ -5706,7 +5776,7 @@ class DashboardConfig {
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-db-body" data-db-tab="${esc(tab)}">${esc(this.dbTabLabel(tab))}</button>`;
         }).join('');
         return `
-            <p class="config-view-intro">${esc(this.t('config.dataBackupsIntro', 'Back up your data, restore an earlier snapshot, or move it in and out of nextDash.'))}</p>
+            <p class="config-view-intro">${esc(this.t('config.dataBackupsIntro', 'Keep your data safe, move it in and out, and manage what nextDash stores on this disk.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
             ${this.renderSectionTabNote('data-backups', this.dbTab)}
             <div id="config-db-body" role="tabpanel" tabindex="0">${this.renderDbTab()}</div>
@@ -5918,8 +5988,8 @@ class DashboardConfig {
     }
 
     /*
-     * The other direction a program can talk to this install: an assistant
-     * reading and adding bookmarks over MCP.
+     * The other direction a program can talk to this install: an MCP client
+     * reading and adding bookmarks.
      *
      * On this tab rather than a settings panel of its own because the question
      * it answers is the same one the webhooks above answer -- how does another
@@ -5935,19 +6005,19 @@ class DashboardConfig {
                 data-fold="mcp" ${this.foldIsOpen('mcp') ? 'open' : ''}>
                 <summary class="config-source-summary">
                     <span class="config-source-summary-text">
-                        <span class="config-panel-title">${esc(this.t('config.mcpTitle', 'Assistant access'))}</span>
+                        <span class="config-panel-title">${esc(this.t('config.mcpTitle', 'MCP access'))}</span>
                         <span class="config-source-summary-note">${esc(this.t('config.mcpSummary',
-                            'Let an AI assistant search your bookmarks and add new ones.'))}</span>
+                            'Let a script or another tool search your bookmarks and add new ones.'))}</span>
                     </span>
                 </summary>
                 <p class="config-panel-note">${esc(this.t('config.mcpNote',
-                    'An assistant that speaks MCP can search this collection, look one bookmark up and add another. It reads everything you have filed here, so it is off until you turn it on.'))}</p>
+                    'A tool that speaks MCP can search this collection, look one bookmark up and add another. It reads everything you have filed here, so it is off until you turn it on.'))}</p>
                 <label class="config-toggle">
                     <input type="checkbox" data-backup-toggle="mcpEnabled" ${on ? 'checked' : ''}>
-                    <span>${esc(this.t('config.mcpEnabledLabel', 'Answer assistants at this address'))}</span>
+                    <span>${esc(this.t('config.mcpEnabledLabel', 'Answer MCP clients at this address'))}</span>
                 </label>
                 ${on ? `
-                    <p class="config-field-note">${esc(this.t('config.mcpAddressLabel', 'Give the assistant this address:'))}</p>
+                    <p class="config-field-note">${esc(this.t('config.mcpAddressLabel', 'Give the tool this address:'))}</p>
                     <p class="config-field-note config-mcp-address">${esc(address)}</p>` : ''}
             </details>
         `;
@@ -7562,6 +7632,7 @@ class DashboardConfig {
                 // stack a second listener on every tab button.
                 body.innerHTML = this.renderDbTab();
                 this.bindDataBackupsActions(body);
+                this.syncSectionTabNote('data-backups', this.dbTab, body.parentElement);
             }
             this.syncSubTabStrip('data-db-tab', this.dbTab);
             // Fetched on open rather than with the section, so the other two
@@ -16073,6 +16144,9 @@ class DashboardConfig {
             // over.
             if (this.dash.settings?.quickStart && typeof this.dash.settings.quickStart === 'object') {
                 this.dash.settings.quickStart.dismissed = false;
+                // And the first-start card before it. An empty string, not a
+                // deleted key: the server keeps a field the save leaves out.
+                this.dash.settings.quickStart.templatePicked = '';
             }
         } else {
             window.DiscoverabilityState?.forgetTip?.(tour.id, { persist: false });
@@ -16413,6 +16487,30 @@ class DashboardConfig {
         const entry = DashboardConfig.SECTION_TAB_NOTES[section]?.[tab];
         if (!entry) return '';
         return `<p class="config-panel-note config-tab-note">${this.dash.escapeHtml(this.t(entry[0], entry[1]))}</p>`;
+    }
+
+    /**
+     * Point the line under the tab strip at the tab now open.
+     *
+     * A tab switch repaints only the body, so the note drawn with the section
+     * kept describing whichever tab the section opened on. `host` is the
+     * element the note sits in directly. A tab without a note drops the line,
+     * and one with a note puts it back under the strip (or first in the host,
+     * for Help, where it shares a row with the search).
+     */
+    syncSectionTabNote(section, tab, host) {
+        if (!host) return;
+        const note = host.querySelector(':scope > .config-tab-note');
+        const next = this.renderSectionTabNote(section, tab);
+        if (note) {
+            if (next) note.outerHTML = next;
+            else note.remove();
+            return;
+        }
+        if (!next) return;
+        const strip = host.querySelector(':scope > .config-subtabs');
+        if (strip) strip.insertAdjacentHTML('afterend', next);
+        else host.insertAdjacentHTML('afterbegin', next);
     }
 
     renderSectionTabStrip(section) {
@@ -17039,7 +17137,7 @@ class DashboardConfig {
     renderCustomWidgetReference() {
         const esc = (v) => this.dash.escapeHtml(v);
         const t = (key, fallback) => esc(this.t(key, fallback));
-        const presets = window.DashboardWidgetPresets?.PRESETS?.length || 0;
+        const presets = window.DashboardWidgetPresets?.serviceCount?.() || 0;
 
         /*
          * Every string here is plain text and escaped; the examples are built
@@ -17092,7 +17190,7 @@ class DashboardConfig {
                     ${presets ? point(
                         t('config.widgetCustomRefPresetsTitle', 'Or start from a service already known'),
                         this.t('config.widgetCustomRefPresetsBody',
-                            'Filled in for you: the address, the figures worth reading, and the header its API wants. {count} services in four groups, and everything stays editable afterwards.')
+                            'Filled in for you: the address, the figures worth reading, and the header its API wants. {count} services in five groups, and everything stays editable afterwards.')
                             .split('{count}').map(esc).join(`<strong>${esc(String(presets))}</strong>`)) : ''}
                 </ul>
                 <p class="config-widget-custom-lead">${t('config.widgetCustomRefLimits',
@@ -18137,6 +18235,7 @@ class DashboardConfig {
         ['smartRecentPageIds', 'config.smartRecentScope', '“Recent” pages'],
         ['smartStalePageIds', 'config.smartStaleScope', '“Stale” pages'],
         ['smartMostUsedPageIds', 'config.smartMostUsedScope', '“Most used” pages'],
+        ['smartFreshPageIds', 'config.smartFreshScope', '“Fresh” pages'],
     ];
 
     renderCollectionScopes() {
@@ -18692,6 +18791,11 @@ class DashboardConfig {
         const target = intoPage ? (this.dash.pages || []).find((p) => Number(p.id) === Number(intoPage)) : null;
         let preview = null;
         const values = {};
+        // The bundled templates propose an address per service on one server
+        // address; what the reader types in a field stops following it.
+        let server = '';
+        const edited = new Set();
+        const expand = (def) => window.FirstStartTemplates?.expandDefault?.(def, server) || '';
         const body = `
             <p class="config-panel-note">${esc(target
                 ? this.t('config.pageTemplateFillIntro', 'The template fills this empty page; nothing on your other pages changes.')
@@ -18702,6 +18806,7 @@ class DashboardConfig {
                 <textarea class="config-text config-tpl-text" rows="5" data-tpl-text spellcheck="false"
                     placeholder="${esc(this.t('config.pageTemplatePaste', 'Or paste the template here'))}"></textarea>
             </div>
+            <p class="config-tpl-bundled" data-tpl-bundled hidden></p>
             <div class="config-tpl-preview" data-tpl-preview aria-live="polite"></div>`;
         const renderPreview = (overlay, okBtn) => {
             const host = overlay.querySelector('[data-tpl-preview]');
@@ -18711,6 +18816,15 @@ class DashboardConfig {
                 host.innerHTML = `<p class="config-tpl-error" role="alert">${esc(preview.error)}</p>`;
                 return;
             }
+            const proposes = (preview.variables || []).some((v) => String(v.default || '').includes('{server}'));
+            (preview.variables || []).forEach((v) => {
+                if (!edited.has(v.key) && v.default) values[v.key] = expand(v.default);
+            });
+            const serverRow = proposes ? `
+                <label class="config-tpl-server">
+                    <span>${esc(this.t('config.pageTemplateServer', 'Where do these run?'))}</span>
+                    <input type="text" class="config-text" data-tpl-server placeholder="192.168.1.10" value="${esc(server)}">
+                </label>` : '';
             const vars = (preview.variables || []).map((v) => `
                 <li class="config-tpl-var">
                     <label>
@@ -18726,10 +18840,22 @@ class DashboardConfig {
                 <p class="config-tpl-summary"><strong>${esc(preview.name)}</strong> · ${esc(this.t('config.pageTemplateSummary', '{categories} categories, {widgets} widgets, {bookmarks} links')
                     .replace('{categories}', String(preview.categories)).replace('{widgets}', String(preview.widgets))
                     .replace('{bookmarks}', String(preview.bookmarks + (skipped.unfilled || 0))))}</p>
-                ${vars ? `<p class="config-panel-note">${esc(this.t('config.pageTemplateFillIn', 'Your own address for each service. Left empty, its links are skipped.'))}</p><ul class="config-tpl-vars">${vars}</ul>` : ''}
+                ${vars ? `<p class="config-panel-note">${esc(this.t('config.pageTemplateFillIn', 'Your own address for each service. Left empty, its links are skipped.'))}</p>${serverRow}<ul class="config-tpl-vars">${vars}</ul>` : ''}
                 ${notes.map((n) => `<p class="config-panel-note">${esc(n)}</p>`).join('')}`;
             host.querySelectorAll('[data-tpl-value]').forEach((input) => {
-                input.addEventListener('input', () => { values[input.getAttribute('data-tpl-value')] = input.value; });
+                input.addEventListener('input', () => {
+                    edited.add(input.getAttribute('data-tpl-value'));
+                    values[input.getAttribute('data-tpl-value')] = input.value;
+                });
+            });
+            host.querySelector('[data-tpl-server]')?.addEventListener('input', (event) => {
+                server = event.target.value;
+                (preview.variables || []).forEach((v) => {
+                    if (edited.has(v.key) || !v.default) return;
+                    values[v.key] = expand(v.default);
+                    const field = host.querySelector(`[data-tpl-value="${CSS.escape(v.key)}"]`);
+                    if (field) field.value = values[v.key];
+                });
             });
         };
         let text = String(initialText || '');
@@ -18771,6 +18897,34 @@ class DashboardConfig {
                     clearTimeout(timer);
                     timer = setTimeout(() => void dryRun(overlay, okBtn), 300);
                 });
+                // Or start from one of the three that ship with nextDash.
+                void (async () => {
+                    const row = overlay.querySelector('[data-tpl-bundled]');
+                    let list = [];
+                    try {
+                        const res = await fetch('/api/page-templates/bundled');
+                        if (res.ok) list = (await res.json()).templates || [];
+                    } catch { /* the row stays hidden */ }
+                    if (!list.length || !row.isConnected) return;
+                    row.innerHTML = `<span>${esc(this.t('config.pageTemplateStartFrom', 'Or start from:'))}</span> ${list.map((tpl) =>
+                        `<button type="button" class="config-tpl-bundled-btn" data-tpl-bundled-id="${esc(tpl.id)}">${esc(tpl.name)}</button>`).join(' · ')}`;
+                    row.hidden = false;
+                    row.addEventListener('click', async (event) => {
+                        const id = event.target.closest('[data-tpl-bundled-id]')?.getAttribute('data-tpl-bundled-id');
+                        if (!id) return;
+                        try {
+                            await window.LazyScript.loadScriptOnce('js/first-start-templates.js', 'firstStartTemplates',
+                                () => typeof window.FirstStartTemplates === 'function');
+                            const res = await fetch(`/api/page-templates/bundled/${encodeURIComponent(id)}`);
+                            if (!res.ok) return;
+                            area.value = await res.text();
+                        } catch { return; }
+                        text = area.value;
+                        edited.clear();
+                        Object.keys(values).forEach((key) => delete values[key]);
+                        await dryRun(overlay, okBtn);
+                    });
+                })();
                 overlay.querySelector('[data-tpl-file]').addEventListener('change', async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
@@ -19424,8 +19578,7 @@ class DashboardConfig {
      * from here, and a reader still has their widgets -- the other way round
      * loses them to a failed second request.
      */
-    async moveWidgetsToPage(targetPageId) {
-        const ids = this.selectedWidgetIds();
+    async moveWidgetsToPage(targetPageId, ids = this.selectedWidgetIds()) {
         const target = Number(targetPageId);
         if (!ids.length || !target || target === Number(this._widgetPageId)) return;
 
@@ -19489,15 +19642,50 @@ class DashboardConfig {
             return;
         }
 
-        this.widgetSelection.clear();
+        ids.forEach((id) => this.widgetSelection.delete(id));
+        // Indices shift once a row leaves, so an open panel would land on
+        // whichever widget slid into its place.
+        this._widgetSettingsOpen = null;
         const pageName = (this.dash.pages || [])
             .find((page) => Number(page.id) === target)?.name || target;
-        this.notify(this.t('config.widgetsMoved', '{n} widgets moved to {page}.')
-            .replace('{n}', String(ids.length)).replace('{page}', String(pageName)), 'success');
+        this.notify(moving.length === 1
+            ? this.t('config.widgetMoved', '{name} moved to {page}.')
+                .replace('{name}', this.widgetRowLabel(moving[0])).replace('{page}', String(pageName))
+            : this.t('config.widgetsMoved', '{n} widgets moved to {page}.')
+                .replace('{n}', String(moving.length)).replace('{page}', String(pageName)), 'success');
 
         this._widgetLoadedFor = null;
         await this.loadWidgetsEditor();
         await this.refreshDashboardBlocks();
+    }
+
+    /*
+     * Move one widget from its settings panel.
+     *
+     * An unsaved draft would not travel: the move carries what is stored, and
+     * the panel closes behind it. So that is asked first, and a refusal puts
+     * the select back where the widget still is.
+     */
+    async moveOneWidgetToPage(index, select) {
+        const block = (this._widgetBlocks || [])[index];
+        const previous = select.getAttribute('data-widget-current-page');
+        if (!block?.isWidget || !select.value || select.value === previous) return;
+
+        if (this.widgetDraftDirty(index)) {
+            const ok = await this.confirmAction(
+                this.t('config.widgetMoveDiscardBody',
+                    'This widget has unsaved changes. Moving it keeps what is saved and drops the rest.'),
+                {
+                    title: this.t('config.widgetsDiscardDraftsTitle', 'Discard unsaved changes?'),
+                    confirmLabel: this.t('config.widgetMoveDiscardOk', 'Move anyway'),
+                });
+            if (!ok) { select.value = previous; return; }
+        }
+        this.stopCustomProbeLive();
+        delete (this._widgetDrafts || {})[block.id];
+        await this.moveWidgetsToPage(select.value, [block.id]);
+        // A failed move leaves the widget where it was; say so in the select too.
+        if (select.isConnected) select.value = previous;
     }
 
     /** The one door to the catalogue. Same label wherever it appears. */
@@ -21543,7 +21731,8 @@ class DashboardConfig {
                 <div class="config-custom-group">
                     <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomOnTheGrid',
                         'On the dashboard'))}</h4>
-                    <div class="config-custom-grid">${this.renderWidgetWidth(widget, index)}</div>
+                    <div class="config-custom-grid">${this.renderWidgetPage(widget, index)}${
+                        this.renderWidgetWidth(widget, index)}</div>
                 </div>
                 ${this.renderWidgetSaveBar(index)}
             </div>`;
@@ -21558,7 +21747,34 @@ class DashboardConfig {
          * block, and needs nothing from the layout to be readable.
          */
         return `${this.renderWidgetSetupNote(widget.type)}<div class="config-widget-settings-body">${
-            this.renderWidgetWidth(widget, index)}${rows}${this.renderWidgetSaveBar(index)}</div>`;
+            this.renderWidgetPage(widget, index)}${this.renderWidgetWidth(widget, index)}${rows}${
+            this.renderWidgetSaveBar(index)}</div>`;
+    }
+
+    /*
+     * Which page the widget stands on, for every type.
+     *
+     * Not part of the draft: a widget lives in its page's file, so changing
+     * this is a move between two files rather than a setting Save writes. It
+     * goes through the same move the bulk bar uses, and happens on change.
+     */
+    renderWidgetPage(widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
+        if (pages.length < 2) return '';
+        const current = Number(this.isAllPagesView() ? widget.pageId : this._widgetPageId);
+        const id = `widget-${index}-page`;
+        const options = pages.map((page) =>
+            `<option value="${esc(page.id)}" ${Number(page.id) === current ? 'selected' : ''}>${
+                esc(page.name || page.id)}</option>`).join('');
+        return `
+            <div class="config-widget-field">
+                <label for="${id}">${esc(this.t('config.widgetsPageLabel', 'Page'))}</label>
+                <select id="${id}" class="config-select" data-widget-move-page="${index}"
+                    data-widget-current-page="${esc(current)}">${options}</select>
+                <span class="config-widget-note">${esc(this.t('config.widgetPageNote',
+                    'Choosing another page moves the widget there straight away, at the end of that page.'))}</span>
+            </div>`;
     }
 
     /*
@@ -22193,6 +22409,12 @@ class DashboardConfig {
                 // Back to the prompt: the select is a verb, not a stored value.
                 moveTo.value = '';
                 if (target_) void this.moveWidgetsToPage(target_);
+                return;
+            }
+
+            const movePage = target.closest('[data-widget-move-page]');
+            if (movePage) {
+                void this.moveOneWidgetToPage(indexOn(movePage, 'data-widget-move-page'), movePage);
                 return;
             }
 
@@ -26459,6 +26681,7 @@ class DashboardConfig {
             // The strip is not repainted with the body, so the active button has
             // to be moved by hand — the same call the other strips make.
             this.syncSubTabStrip('data-bm-tab', tab);
+            this.syncSectionTabNote('bookmarks', tab, body.parentElement);
             // The band carries View's changed-settings bar, and the count elsewhere.
             this.updateConfigShellHead();
         });
@@ -28323,11 +28546,7 @@ class DashboardConfig {
         const host = document.getElementById('config-stats-body');
         if (!host) { this.render(); return; }
         host.innerHTML = this.renderStatsBodySafe();
-        // The line under the tabs describes the open tab, so it follows it;
-        // left alone it kept describing whichever tab the section opened on.
-        const note = host.parentElement?.querySelector(':scope > .config-tab-note');
-        const nextNote = this.renderSectionTabNote('stats', this.statsTab);
-        if (note && nextNote) note.outerHTML = nextNote;
+        this.syncSectionTabNote('stats', this.statsTab, host.parentElement);
         // The stamp lives outside the body, so it would otherwise keep claiming
         // the time of the first render while the numbers under it were fresh.
         // The whole foot is replaced, not the line inside it: swapping the line
@@ -31324,6 +31543,7 @@ class DashboardConfig {
                 if (!body) { this.render(); return; }
                 body.innerHTML = this.renderHelpBody();
                 this.syncSubTabStrip('data-help-tab', this.helpTab);
+                this.syncSectionTabNote('help', this.helpTab, body.parentElement?.querySelector(':scope > .config-help-header'));
                 // The new body carries its own action buttons.
                 this.bindHelpActions(body);
             }

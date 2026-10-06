@@ -91,14 +91,63 @@
 
         start() {
             if (!this.shouldStart()) return;
+            // The first-start card comes first: what the page holds decides
+            // what the checklist can point at.
+            if (!this.state().templatePicked) {
+                this.showTemplateCard();
+                return;
+            }
             this.renderChecklist();
+        }
+
+        async showTemplateCard() {
+            try {
+                await window.LazyScript.loadScriptOnce('js/first-start-templates.js', 'firstStartTemplates',
+                    () => typeof window.FirstStartTemplates === 'function');
+            } catch {
+                this.renderChecklist();
+                return;
+            }
+            this.templateCard = new window.FirstStartTemplates(this.dash, { onDone: () => {
+                this.templateCard = null;
+                this.renderChecklist();
+            } });
+            this.templateCard.show();
         }
 
         // ---- Checklist ---------------------------------------------------------
 
+        /**
+         * After a bundled template, the first task is opening one of the
+         * reader's own services by its shortcut rather than adding a link: the
+         * page already holds them. The first link with a shortcut, in the
+         * template's order; the project's own link does not count.
+         */
+        templateService() {
+            const picked = this.state().templatePicked;
+            if (!picked || picked === 'keep') return null;
+            const d = this.dash;
+            // Main's links, wherever the reader is: the task should not change
+            // under them when they switch page.
+            const onMain = (d?.allBookmarks || []).filter((b) => Number(b?.pageId) === 1);
+            const rows = onMain.length ? onMain : (Array.isArray(d?.bookmarks) ? d.bookmarks : []);
+            return rows.find((b) => b?.shortcut && !/^https:\/\/nextdash\.cc\/?$/.test(String(b.url || ''))) || null;
+        }
+
         buildItems() {
+            const service = this.templateService();
+            const first = service ? {
+                id: 'bookmark',
+                label: this.t('itemOpenService', 'Open {name} from the dashboard').replace('{name}', service.name),
+                hint: this.t('itemOpenServiceHint', 'Type {key}').replace('{key}', String(service.shortcut).toLowerCase()),
+                done: (d) => {
+                    const url = service.url;
+                    const all = [...(d?.allBookmarks || []), ...(d?.bookmarks || [])];
+                    return all.some((b) => b?.url === url && Number(b.openCount) > 0);
+                },
+            } : null;
             return [
-                {
+                first || {
                     id: 'bookmark',
                     label: this.t('itemBookmark', 'Add your first bookmark'),
                     hint: this.t('itemBookmarkHint', 'Press + or paste a URL anywhere'),

@@ -156,13 +156,13 @@
                     'A path into a list works too, so an endpoint that returns items can be drawn as rows rather than figures. Nothing is hard-coded per service: if it speaks JSON over HTTP, it can be a tile.'))}</p>`,
             },
             {
-                title: t('widgetsTutorialStep5Title', 'Twenty-eight services already written down'),
+                title: t('widgetsTutorialStep5Title', 'Forty-one services already written down'),
                 visual: `<div class="widgets-tutorial-visual widgets-tutorial-visual--presets">
                     ${['Sonarr', 'Radarr', 'Plex', 'Jellyfin', 'Immich', 'qBittorrent', 'SABnzbd',
-                        'Pi-hole', 'AdGuard Home', 'Traefik', 'Proxmox VE', 'TrueNAS', 'Glances',
+                        'Pi-hole', 'AdGuard Home', 'Traefik', 'Proxmox VE', 'Uptime Kuma', 'Glances',
                         'Syncthing', 'Nextcloud', 'Paperless-ngx', 'Home Assistant', 'Grafana', 'ntfy']
                         .map((name) => chip(name)).join('')}
-                    ${chip(t('widgetsTutorialPresetsMore', '…and nine more'), ' is-quiet')}
+                    ${chip(t('widgetsTutorialPresetsMore', '…and twenty-two more'), ' is-quiet')}
                 </div>`,
                 body: `<p>${esc(t('widgetsTutorialStep5Body1',
                     'Pick a preset and the address shape, the fields and the labels arrive already written — media servers and downloaders, the network boxes, the machine itself, and the everyday apps. You edit it from there rather than starting at a blank form.'))}</p>

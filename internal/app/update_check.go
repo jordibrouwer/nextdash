@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -42,6 +43,14 @@ type UpdateStatusResponse struct {
 	CheckedAt       int64  `json:"checkedAt,omitempty"`
 	Source          string `json:"source,omitempty"`
 	Error           string `json:"error,omitempty"`
+	// ErrorCode says why the check failed, for the client to explain:
+	// rate-limited, local-limit, unreachable or http.
+	ErrorCode string `json:"errorCode,omitempty"`
+	// RetryAt is when the next try goes out after a failure, Unix ms.
+	RetryAt int64 `json:"retryAt,omitempty"`
+	// Authenticated is true when the check ran with the GitHub token from
+	// Config -> Containers, which lifts the hourly limit from 60 to 5000.
+	Authenticated bool `json:"authenticated,omitempty"`
 }
 
 type upstreamReleaseInfo struct {
@@ -54,6 +63,12 @@ type updateCheckCacheEntry struct {
 	info      upstreamReleaseInfo
 	fetchedAt time.Time
 	err       error
+	// etag is the release listing's ETag for info. Sent back as If-None-Match,
+	// GitHub answers 304 when nothing changed, and a 304 does not count
+	// against the hourly limit. Kept across failures, with info, so the next
+	// try can still ask conditionally.
+	etag          string
+	authenticated bool
 }
 
 // updateCheckDisabledByEnv reports whether DISABLE_UPDATE_CHECK switches the
@@ -159,6 +174,98 @@ func releaseTagParts(tag string) []int {
 // read tries again.
 const updateCheckErrorRetry = 15 * time.Minute
 
+// updateCheckLocalLimitRetry is the wait after nextDash's own outbound limiter
+// turned the request down: that window is a minute, not GitHub's hour.
+const updateCheckLocalLimitRetry = time.Minute
+
+// updateCheckGitHubToken is the token the check sends, when there is one: the
+// same one Config -> Containers stores for the changelogs. A variable so tests
+// can supply one without writing the secrets file.
+var updateCheckGitHubToken = dockerGitHubToken
+
+// githubAPIError is a GitHub answer other than 200 or 304.
+//
+// Users saw "Could not reach GitHub" whatever went wrong. Most of the time it
+// was GitHub's limit of 60 unauthenticated requests an hour per public
+// address -- shared with the container changelogs, other homelab tools and,
+// behind CGNAT, the neighbours -- which no amount of trying again fixes
+// before the hour turns. The code and the reset time let the check wait for
+// that and the client say so.
+type githubAPIError struct {
+	Status  int
+	Code    string    // rate-limited, auth-failed or http
+	ResetAt time.Time // rate-limited only: when GitHub lifts the limit
+}
+
+func (e *githubAPIError) Error() string {
+	if e.Code == "rate-limited" {
+		return fmt.Sprintf("GitHub API rate limit reached (HTTP %d)", e.Status)
+	}
+	return fmt.Sprintf("GitHub API HTTP %d", e.Status)
+}
+
+// githubErrorFromResponse classifies a non-OK answer.
+func githubErrorFromResponse(resp *http.Response) *githubAPIError {
+	e := &githubAPIError{Status: resp.StatusCode, Code: "http"}
+	limited := resp.StatusCode == http.StatusTooManyRequests ||
+		(resp.StatusCode == http.StatusForbidden && resp.Header.Get("X-RateLimit-Remaining") == "0")
+	switch {
+	case limited:
+		e.Code = "rate-limited"
+		if reset, err := strconv.ParseInt(strings.TrimSpace(resp.Header.Get("X-RateLimit-Reset")), 10, 64); err == nil && reset > 0 {
+			e.ResetAt = time.Unix(reset, 0)
+		} else if secs, err := strconv.Atoi(strings.TrimSpace(resp.Header.Get("Retry-After"))); err == nil && secs > 0 {
+			e.ResetAt = time.Now().Add(time.Duration(secs) * time.Second)
+		}
+	case resp.StatusCode == http.StatusUnauthorized, resp.StatusCode == http.StatusForbidden:
+		e.Code = "auth-failed"
+	}
+	return e
+}
+
+func isGitHubRateLimit(err error) bool {
+	var apiErr *githubAPIError
+	return errors.As(err, &apiErr) && apiErr.Code == "rate-limited"
+}
+
+// updateCheckErrorCode is the client-facing reason for a failed check.
+func updateCheckErrorCode(err error) string {
+	var apiErr *githubAPIError
+	switch {
+	case err == nil:
+		return ""
+	case errors.As(err, &apiErr):
+		if apiErr.Code == "rate-limited" {
+			return "rate-limited"
+		}
+		return "http"
+	case errors.Is(err, errOutboundRateLimited):
+		return "local-limit"
+	default:
+		var netErr interface{ Timeout() bool }
+		var urlErr *url.Error
+		if errors.As(err, &urlErr) || errors.As(err, &netErr) {
+			return "unreachable"
+		}
+		return "http"
+	}
+}
+
+// updateCheckRetryAt is when a failed entry is tried again: when GitHub lifts
+// its limit, a minute after the local limiter said no, otherwise after
+// updateCheckErrorRetry.
+func updateCheckRetryAt(entry updateCheckCacheEntry) time.Time {
+	var apiErr *githubAPIError
+	switch {
+	case errors.As(entry.err, &apiErr) && apiErr.Code == "rate-limited" && !apiErr.ResetAt.IsZero():
+		return apiErr.ResetAt
+	case errors.Is(entry.err, errOutboundRateLimited):
+		return entry.fetchedAt.Add(updateCheckLocalLimitRetry)
+	default:
+		return entry.fetchedAt.Add(updateCheckErrorRetry)
+	}
+}
+
 func (h *Handlers) getUpdateCheckCache() updateCheckCacheEntry {
 	h.updateCheckMu.RLock()
 	defer h.updateCheckMu.RUnlock()
@@ -188,20 +295,32 @@ func (h *Handlers) buildUpdateStatus(forceRefresh bool) UpdateStatusResponse {
 		// A failure is retried sooner than a day: a container that starts
 		// before its network is up failed its first check and showed that
 		// error, and no update notice, until the next day.
-		(entry.err != nil && time.Since(entry.fetchedAt) >= updateCheckErrorRetry)
-	if forceRefresh || stale {
+		(entry.err != nil && !time.Now().Before(updateCheckRetryAt(entry)))
+	// Check now asks again, except while GitHub's limit is still on: that
+	// answer is known until the reset, and asking only confirms it.
+	limited := entry.err != nil && isGitHubRateLimit(entry.err) && time.Now().Before(updateCheckRetryAt(entry))
+	if (forceRefresh && !limited) || stale {
 		ctx, cancel := context.WithTimeout(context.Background(), updateCheckRequestTimeout)
 		defer cancel()
-		info, err := h.fetchGitHubLatestRelease(ctx)
-		entry = updateCheckCacheEntry{info: info, fetchedAt: time.Now(), err: err}
+		info, etag, authenticated, err := h.fetchGitHubLatestReleaseConditional(ctx, entry.info, entry.etag)
+		if err != nil {
+			// Keep the last good answer's ETag, so the try after this one can
+			// still be a free 304.
+			entry = updateCheckCacheEntry{info: entry.info, etag: entry.etag, fetchedAt: time.Now(), err: err, authenticated: authenticated}
+		} else {
+			entry = updateCheckCacheEntry{info: info, etag: etag, fetchedAt: time.Now(), authenticated: authenticated}
+		}
 		h.setUpdateCheckCache(entry)
 	}
 
 	if !entry.fetchedAt.IsZero() {
 		status.CheckedAt = entry.fetchedAt.UnixMilli()
 	}
+	status.Authenticated = entry.authenticated
 	if entry.err != nil {
 		status.Error = entry.err.Error()
+		status.ErrorCode = updateCheckErrorCode(entry.err)
+		status.RetryAt = updateCheckRetryAt(entry).UnixMilli()
 		return status
 	}
 
@@ -223,33 +342,68 @@ type githubRelease struct {
 	Prerelease  bool   `json:"prerelease"`
 }
 
+// githubGet is one answer from the release endpoints.
+type githubGet struct {
+	etag          string
+	notModified   bool // 304: what the caller had is still current
+	authenticated bool // the answer came with the token
+}
+
 // getGitHubJSON performs the GET the two release endpoints share.
-func (h *Handlers) getGitHubJSON(ctx context.Context, url string, out any) error {
+//
+// With a token from Config -> Containers it asks with it first; a token GitHub
+// turns down (expired, revoked, mistyped) is not a reason for the version
+// check to stop, so that answer is asked again without one. ifNoneMatch, when
+// set, makes the request conditional.
+func (h *Handlers) getGitHubJSON(ctx context.Context, url, ifNoneMatch string, out any) (githubGet, error) {
+	token := strings.TrimSpace(updateCheckGitHubToken())
+	got, err := h.getGitHubJSONOnce(ctx, url, ifNoneMatch, token, out)
+	var apiErr *githubAPIError
+	if token != "" && errors.As(err, &apiErr) && apiErr.Code == "auth-failed" {
+		return h.getGitHubJSONOnce(ctx, url, ifNoneMatch, "", out)
+	}
+	return got, err
+}
+
+func (h *Handlers) getGitHubJSONOnce(ctx context.Context, url, ifNoneMatch, token string, out any) (githubGet, error) {
+	got := githubGet{authenticated: token != ""}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return err
+		return got, err
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("User-Agent", updateCheckUserAgent)
 	if tag := strings.TrimSpace(releaseTag()); tag != "" {
 		req.Header.Set("User-Agent", fmt.Sprintf("%s/%s", updateCheckUserAgent, tag))
 	}
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	if ifNoneMatch != "" {
+		req.Header.Set("If-None-Match", ifNoneMatch)
+	}
 
 	client := h.outboundHTTPClient(updateCheckRequestTimeout, 3)
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return got, err
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusNotModified && ifNoneMatch != "" {
+		got.etag = ifNoneMatch
+		got.notModified = true
+		return got, nil
+	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 256*1024))
 	if err != nil {
-		return err
+		return got, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("GitHub API HTTP %d", resp.StatusCode)
+		return got, githubErrorFromResponse(resp)
 	}
-	return json.Unmarshal(body, out)
+	got.etag = strings.TrimSpace(resp.Header.Get("ETag"))
+	return got, json.Unmarshal(body, out)
 }
 
 // fetchGitHubHighestRelease picks the highest release by version, not by
@@ -261,10 +415,20 @@ func (h *Handlers) getGitHubJSON(ctx context.Context, url string, out any) error
 // tag, which compareReleaseTags then correctly rejects as not newer. The real
 // release would never be announced. Ordering the listing ourselves makes the
 // check independent of the order releases happen to be published in.
-func (h *Handlers) fetchGitHubHighestRelease(ctx context.Context) (upstreamReleaseInfo, error) {
+//
+// With prev and its etag, the listing is asked conditionally and a 304 hands
+// prev back unchanged.
+func (h *Handlers) fetchGitHubHighestRelease(ctx context.Context, prev upstreamReleaseInfo, etag string) (upstreamReleaseInfo, githubGet, error) {
+	if prev.Tag == "" {
+		etag = ""
+	}
 	var releases []githubRelease
-	if err := h.getGitHubJSON(ctx, releaseListURL(), &releases); err != nil {
-		return upstreamReleaseInfo{}, err
+	got, err := h.getGitHubJSON(ctx, releaseListURL(), etag, &releases)
+	if err != nil {
+		return upstreamReleaseInfo{}, got, err
+	}
+	if got.notModified {
+		return prev, got, nil
 	}
 
 	var best githubRelease
@@ -277,39 +441,54 @@ func (h *Handlers) fetchGitHubHighestRelease(ctx context.Context) (upstreamRelea
 		}
 	}
 	if best.TagName == "" {
-		return upstreamReleaseInfo{}, errors.New("no published GitHub releases")
+		return upstreamReleaseInfo{}, got, errors.New("no published GitHub releases")
 	}
 	return upstreamReleaseInfo{
 		Tag:         strings.TrimSpace(best.TagName),
 		ReleaseURL:  strings.TrimSpace(best.HTMLURL),
 		PublishedAt: strings.TrimSpace(best.PublishedAt),
-	}, nil
+	}, got, nil
 }
 
-// fetchGitHubLatestRelease reads the highest published release, falling back to
-// GitHub's own /releases/latest when the listing cannot be read (a rate limit,
-// say) so the check degrades rather than going silent.
+// fetchGitHubLatestRelease reads the highest published release, unconditionally.
 func (h *Handlers) fetchGitHubLatestRelease(ctx context.Context) (upstreamReleaseInfo, error) {
-	if info, err := h.fetchGitHubHighestRelease(ctx); err == nil {
-		return info, nil
+	info, _, _, err := h.fetchGitHubLatestReleaseConditional(ctx, upstreamReleaseInfo{}, "")
+	return info, err
+}
+
+// fetchGitHubLatestReleaseConditional reads the highest published release,
+// falling back to GitHub's own /releases/latest when the listing cannot be
+// read so the check degrades rather than going silent. Not on GitHub's rate
+// limit: the fallback is held to the same limit and would only spend a second
+// request to hear it again.
+func (h *Handlers) fetchGitHubLatestReleaseConditional(ctx context.Context, prev upstreamReleaseInfo, etag string) (upstreamReleaseInfo, string, bool, error) {
+	info, got, err := h.fetchGitHubHighestRelease(ctx, prev, etag)
+	if err == nil {
+		return info, got.etag, got.authenticated, nil
+	}
+	if isGitHubRateLimit(err) || errors.Is(err, errOutboundRateLimited) {
+		return upstreamReleaseInfo{}, "", got.authenticated, err
 	}
 
 	var payload githubRelease
-	if err := h.getGitHubJSON(ctx, githubLatestReleaseURL, &payload); err != nil {
-		return upstreamReleaseInfo{}, err
+	got, err = h.getGitHubJSON(ctx, githubLatestReleaseURL, "", &payload)
+	if err != nil {
+		return upstreamReleaseInfo{}, "", got.authenticated, err
 	}
 	tag := strings.TrimSpace(payload.TagName)
 	if tag == "" {
-		return upstreamReleaseInfo{}, errors.New("GitHub release has no tag")
+		return upstreamReleaseInfo{}, "", got.authenticated, errors.New("GitHub release has no tag")
 	}
 	if payload.Draft || payload.Prerelease {
-		return upstreamReleaseInfo{}, errors.New("GitHub latest release is a draft or pre-release")
+		return upstreamReleaseInfo{}, "", got.authenticated, errors.New("GitHub latest release is a draft or pre-release")
 	}
+	// No ETag: it belongs to the other endpoint, and the next check starts
+	// from the listing again.
 	return upstreamReleaseInfo{
 		Tag:         tag,
 		ReleaseURL:  strings.TrimSpace(payload.HTMLURL),
 		PublishedAt: strings.TrimSpace(payload.PublishedAt),
-	}, nil
+	}, "", got.authenticated, nil
 }
 
 // GetUpdateStatus reports whether a newer release exists on GitHub. The check

@@ -1051,11 +1051,17 @@ class DashboardHealth {
         });
     }
 
+    /**
+     * Ask one bookmark again. Answers how it went, in BulkSweep's words: 'ok',
+     * 'skipped' (already being checked, or no address), 'failed', or
+     * { rateLimited, retryAfter } when the dashboard's own ping limit said
+     * no. Silent callers count with it; they used to count every row as done.
+     */
     async recheckIssue(issue, { silent = false } = {}) {
         const key = this.issueKey(issue);
-        if (this._busyKeys.has(key)) return;
+        if (this._busyKeys.has(key)) return 'skipped';
         const url = String(issue?.url || '').trim();
-        if (!url) return;
+        if (!url) return 'skipped';
         window.nextdashTrack?.('health:recheck');
         this._busyKeys.add(key);
         this.syncRowBusy(key, true);
@@ -1100,6 +1106,10 @@ class DashboardHealth {
             const row = Number.isFinite(Number(issue.pageId)) && Number.isFinite(Number(issue.index))
                 ? `&page=${encodeURIComponent(issue.pageId)}&index=${encodeURIComponent(issue.index)}` : '';
             const res = await fetcher(`/api/ping?url=${encodeURIComponent(url)}${row}`);
+            if (res.status === 429 && silent) {
+                const retryAfter = Number(res.headers?.get?.('Retry-After')) || 5;
+                return { rateLimited: true, retryAfter };
+            }
             if (!res.ok) {
                 throw new Error(`ping HTTP ${res.status}`);
             }
@@ -1109,7 +1119,7 @@ class DashboardHealth {
                 || (status === 'online' ? '' : this.t('dashboard.healthPingFailed', 'ping failed'));
             await persist(status, errorDetail, result.ping, result.httpStatus);
             if (silent) {
-                return;
+                return 'ok';
             }
             await this.loadAndRender({ refresh: true });
             d.updateHealthBadge?.();
@@ -1120,19 +1130,21 @@ class DashboardHealth {
                 status === 'online' ? 'success' : 'info',
                 { duration: 3000 }
             );
+            return 'ok';
         } catch (_error) {
             // Nothing is recorded: the check never ran. A 429 from the
             // dashboard's own ping limit, a proxy's 502 or a network blip was
             // saved as the bookmark's outage ("ping HTTP 429"), with a Down
             // sample on monitored ones that fed the alert count.
             if (silent) {
-                return;
+                return 'failed';
             }
             await this.loadAndRender({ refresh: true }).catch(() => { /* keep the stale view */ });
             d.showNotification(
                 this.t('dashboard.healthRecheckFailed', 'Could not re-check this bookmark'),
                 'error'
             );
+            return 'failed';
         } finally {
             this._busyKeys.delete(key);
             this.syncRowBusy(key, false);

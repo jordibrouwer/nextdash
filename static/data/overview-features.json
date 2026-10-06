@@ -2,6 +2,23 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureVersionPanelTitle",
+      "titleFallback": "Your version, and whether it is the newest",
+      "whatKey": "config.overviewNewFeatureVersionPanelWhat",
+      "whatFallback": "Which release you ran was a short line under New in nextDash, and when the check for a new release failed it only said that GitHub could not be reached.",
+      "howKey": "config.overviewNewFeatureVersionPanelHow",
+      "howFallback": "Config → Overview has a Version panel. A green dot means you run the newest release; a red one names the newer release, with a link to it. It links to the changelog and the manual, and when the check fails it says why: GitHub's hourly limit, with the time of the next try, or GitHub out of reach.",
+      "enableKey": "config.overviewNewFeatureVersionPanelEnable",
+      "enableFallback": "Nothing to switch on: the check is Behavior → Privacy & sync → Check GitHub for new releases. A GitHub token under Config → Containers → Updates keeps it clear of GitHub's hourly limit.",
+      "ctaKey": "config.overviewNewFeatureVersionPanelCta",
+      "ctaFallback": "Open Privacy & sync →",
+      "go": {
+        "section": "behavior",
+        "behaviorTab": "privacy"
+      },
+      "since": "v1.17.5"
+    },
+    {
       "titleKey": "config.overviewNewFeatureUnraidTitle",
       "titleFallback": "Your Unraid server on the dashboard",
       "whatKey": "config.overviewNewFeatureUnraidWhat",
@@ -1190,9 +1207,9 @@
       "whatKey": "config.overviewNewFeatureWebhooksWhat",
       "whatFallback": "Everything nextDash talks to, it talks to on its own schedule, so anything built around it had to poll. Now a bookmark added, changed or removed — and a monitored link going down or coming back — is pushed to whatever you have built: an automation, a script, a home dashboard.",
       "howKey": "config.overviewNewFeatureWebhooksHow",
-      "howFallback": "Config → Data & backups → Webhooks. Name a receiver, give it an address, tick the events it should hear about. Every delivery is signed, so the receiver can tell it came from your install; the signing key is shown once, in the answer to the save that made it. On the same tab, an MCP endpoint lets an AI assistant search your bookmarks and add one.",
+      "howFallback": "Config → Data & backups → Webhooks. Name a receiver, give it an address, tick the events it should hear about. Every delivery is signed, so the receiver can tell it came from your install; the signing key is shown once, in the answer to the save that made it. On the same tab, an MCP endpoint lets a script or another tool search your bookmarks and add one.",
       "enableKey": "config.overviewNewFeatureWebhooksEnable",
-      "enableFallback": "Both off until you set them up. The assistant endpoint reads everything you have filed, which is why it starts closed.",
+      "enableFallback": "Both off until you set them up. The MCP endpoint reads everything you have filed, which is why it starts closed.",
       "ctaKey": "config.overviewNewFeatureWebhooksCta",
       "ctaFallback": "Open Webhooks →",
       "go": {

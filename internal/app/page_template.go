@@ -39,6 +39,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -95,6 +96,10 @@ type PageTemplate struct {
 type TemplateVariable struct {
 	Key   string `json:"key"`
 	Label string `json:"label"`
+	// Default is the address a bundled template proposes, such as
+	// "http://{server}:8096", where {server} is the one address the
+	// first-start card asks for. An export never writes it.
+	Default string `json:"default,omitempty"`
 }
 
 // templateBookmark is everything of a bookmark that leaves the house.
@@ -225,9 +230,7 @@ func detectTemplateHosts(bookmarks []Bookmark, widgets []Widget) []TemplateHost 
 	out := make([]TemplateHost, 0, len(order))
 	for _, origin := range order {
 		host := byOrigin[origin]
-		if len(host.Label) > templateMaxLabelLength {
-			host.Label = host.Label[:templateMaxLabelLength]
-		}
+		host.Label = truncateRunes(host.Label, templateMaxLabelLength)
 		key := templateKeyFrom(host.Label)
 		used[key]++
 		if used[key] > 1 {
@@ -333,9 +336,8 @@ func buildPageTemplate(page PageWithBookmarks, options TemplateExportOptions, ic
 		if label == "" {
 			label = key
 		}
-		if len(label) > templateMaxLabelLength {
-			label = label[:templateMaxLabelLength]
-		}
+		// By runes: cut by bytes, a label in another script broke mid-character.
+		label = truncateRunes(label, templateMaxLabelLength)
 		tpl.Variables = append(tpl.Variables, TemplateVariable{Key: key, Label: label})
 	}
 
@@ -475,9 +477,10 @@ type TemplateImportResult struct {
 
 // TemplateVariableCount is a variable with how many links wait on it.
 type TemplateVariableCount struct {
-	Key   string `json:"key"`
-	Label string `json:"label"`
-	Count int    `json:"count"`
+	Key     string `json:"key"`
+	Label   string `json:"label"`
+	Default string `json:"default,omitempty"`
+	Count   int    `json:"count"`
 }
 
 // TemplateImportSkipped is what did not make it, and why.
@@ -563,6 +566,13 @@ writing anything: the dry run answers with its result, and the real import
 writes exactly what it planned.
 */
 func (h *Handlers) planPageTemplate(tpl PageTemplate, rawValues map[string]string) pageTemplatePlan {
+	return h.planPageTemplateReplacing(tpl, rawValues, 0)
+}
+
+// planPageTemplateReplacing plans a template that will take the place of
+// page replacing: that page's own shortcuts are not counted as taken, since
+// its bookmarks are about to go.
+func (h *Handlers) planPageTemplateReplacing(tpl PageTemplate, rawValues map[string]string, replacing int) pageTemplatePlan {
 	plan := pageTemplatePlan{icons: map[int][]byte{}}
 	plan.page = Page{
 		Name:  h.freeTemplatePageName(clampEntityName(tpl.Name)),
@@ -620,10 +630,12 @@ func (h *Handlers) planPageTemplate(tpl PageTemplate, rawValues map[string]strin
 			continue
 		}
 		label := strings.TrimSpace(variable.Label)
-		if len(label) > templateMaxLabelLength {
-			label = label[:templateMaxLabelLength]
-		}
-		plan.result.Variables = append(plan.result.Variables, TemplateVariableCount{Key: variable.Key, Label: label, Count: counts[variable.Key]})
+		// By runes: cut by bytes, a label in another script broke mid-character.
+		label = truncateRunes(label, templateMaxLabelLength)
+		plan.result.Variables = append(plan.result.Variables, TemplateVariableCount{
+			Key: variable.Key, Label: label, Count: counts[variable.Key],
+			Default: truncateRunes(strings.TrimSpace(variable.Default), 200),
+		})
 	}
 
 	// Widgets: new ids (the sender's may already exist here), the order
@@ -681,6 +693,9 @@ func (h *Handlers) planPageTemplate(tpl PageTemplate, rawValues map[string]strin
 	// Bookmarks.
 	takenShortcuts := map[string]bool{}
 	for _, existing := range h.store.GetAllBookmarks() {
+		if replacing != 0 && existing.PageID == replacing {
+			continue
+		}
 		if s := normalizeShortcut(existing.Shortcut); s != "" {
 			takenShortcuts[s] = true
 		}
@@ -791,6 +806,9 @@ func (h *Handlers) freeTemplatePageName(name string) string {
 		}
 	}
 }
+
+// pageTemplateImportMu holds an import's id choice and writes together.
+var pageTemplateImportMu sync.Mutex
 
 // nextTemplatePageID is one past every page id in use, the trash's included:
 // a restored page writes its old id back.
@@ -1042,6 +1060,12 @@ func (h *Handlers) ImportPageTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	plan := h.planPageTemplate(tpl, req.Values)
+	// One import at a time, from the checks to the last write: a new page's
+	// id is read before it is written, and an empty page is checked before
+	// it is filled, so two imports at once (two tabs) took the same id or
+	// filled the same page, the second overwriting the first.
+	pageTemplateImportMu.Lock()
+	defer pageTemplateImportMu.Unlock()
 	if req.IntoPage != 0 {
 		target, ok := h.emptyTemplateTarget(req.IntoPage)
 		if !ok {
