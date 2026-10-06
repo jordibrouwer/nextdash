@@ -4187,6 +4187,7 @@ class DashboardConfig {
         const zone = (label) => `<h3 class="config-overview-zone">${esc(label)}</h3>`;
         const aside = [
             this.renderOverviewNewsWidget(),
+            this.renderOverviewVersionWidget(),
             this.renderOverviewFeaturesWidget(),
             this.renderOverviewTipWidget(),
         ].join('');
@@ -4547,17 +4548,17 @@ class DashboardConfig {
             go: { section: 'about', aboutTab: 'news' },
             goLabel: this.t('config.overviewAllNews', 'All news'),
             body: `<ul class="config-overview-news-list">${rows}</ul>`,
-            note: this.renderOverviewVersionLine(),
         });
     }
 
     /**
      * "You're running v1.x.y of nextDash" with the changelog and the manual
-     * on GitHub, each opening in a new window. The translated sentence holds
-     * {changelog} and {manual} where the links go; the version is the running
-     * one from the update status.
+     * on GitHub, each opening in a new window, in a panel of its own. The
+     * translated sentence holds {changelog} and {manual} where the links go;
+     * the version is the running one from the update status. No panel until
+     * that status is known; the title dot says whether it is the newest.
      */
-    renderOverviewVersionLine() {
+    renderOverviewVersionWidget() {
         const esc = (v) => this.dash.escapeHtml(v);
         const current = this._updateStatus?.current;
         if (!current) return '';
@@ -4566,10 +4567,30 @@ class DashboardConfig {
         const link = (file) => `<a class="config-overview-version-link" href="${base}${file}" target="_blank" rel="noopener noreferrer">${esc(here)}</a>`;
         const line = esc(this.t('config.overviewVersionLine',
             'You\u2019re running {version} of nextDash. You can find the full changelog {changelog} and the manual {manual}.'))
-            .replace('{version}', esc(String(current)))
+            .replace('{version}', `<strong class="config-overview-version-tag">${esc(String(current))}</strong>`)
             .replace('{changelog}', link('CHANGELOG.md'))
             .replace('{manual}', link('MANUAL.md'));
-        return `<span class="config-overview-version">${line}</span>`;
+        // Green on the newest release, red behind it -- also when the update
+        // notice was dismissed. No dot when GitHub was not asked or not reached.
+        const status = this._updateStatus;
+        const behind = !status.error && status.updateAvailable && status.latest;
+        const tone = status.error ? '' : behind ? 'crit' : status.latest ? 'good' : '';
+        // Behind: say which release is out, its tag a link to the release.
+        const latest = behind
+            ? (status.releaseUrl
+                ? `<a class="config-overview-version-link" href="${esc(status.releaseUrl)}" target="_blank" rel="noopener noreferrer">${esc(status.latest)}</a>`
+                : esc(status.latest))
+            : '';
+        const newer = behind
+            ? `<p class="config-overview-version config-overview-version--behind">${esc(this.t('config.updateCheckModalAvailable', '{latest} is available on GitHub.'))
+                .replace('{latest}', `<strong class="config-overview-version-tag">${latest}</strong>`)}</p>`
+            : '';
+        return this.renderOverviewWidget({
+            id: 'version',
+            title: this.t('config.overviewVersionTitle', 'Version'),
+            tone,
+            body: `<p class="config-overview-version">${line}</p>${newer}`,
+        });
     }
 
     /**

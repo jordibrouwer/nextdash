@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.17.5 — 6 October 2026](#v1175--6-october-2026)
 - [v1.17.4 — 5 October 2026](#v1174--5-october-2026)
 - [v1.17.3 — 5 October 2026](#v1173--5-october-2026)
 - [v1.17.2 — 5 October 2026](#v1172--5-october-2026)
@@ -94,6 +95,23 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.17.5 — 6 October 2026
+
+Config → Overview names the running version in a panel of its own, with a dot that says whether it is the newest release.
+
+### Config
+- **new — a Version panel on the overview.** It sits between **Latest news** and **New in nextDash** and reads *You're running v1.x.y of nextDash*, with links to the full changelog and the manual on GitHub, each opening in a new window. The text has the same size as the other panels. The panel appears once the update check knows the running version, also when the site's news is switched off (`renderOverviewVersionWidget` in `dashboard-config.js`, `config-view.css`).
+- **new — green or red for the running version.** The dot before the panel title is green on the newest release and red when a newer one is out, also after the update notice was dismissed; no dot when GitHub was not asked or could not be reached. When behind, a second line in red says which release is available, its tag a link to the release on GitHub.
+- **fix — the "Running vX" note under New in nextDash is gone;** the Version panel says it instead.
+
+### Tests
+- **tests — `tests/config-overview-release.spec.js` and `tests/config-overview-blocks.spec.js`** read the version from the Version panel; the release spec covers the green and red dot and the behind line.
+
+### Docs
+- **docs — locale keys** `overviewVersionLine` and `overviewVersionHere` in all six languages; `overviewVersionTitle` in English only for now, the other languages fall back to it. The behind line reuses the translated `updateCheckModalAvailable`. `go run scripts/gen-asset-hashes.go` refreshed `asset_hashes_gen.go`.
 
 ---
 

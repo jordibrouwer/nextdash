@@ -54,12 +54,28 @@ test.describe('the current release as the reader meets it', () => {
         await openOverview(page);
 
         // The update bar is a notice now, drawn only when there is a newer
-        // release, so on a current install the version lives under the New
-        // features panel -- About has no version line by decision, and this
-        // is the one place in config that names the running release.
-        await expect.poll(() => page.locator('.config-overview-footnote').innerText(), { timeout: 15_000 })
-            .toMatch(/1\.3\.3/);
+        // release, so on a current install the version lives in the Version
+        // panel -- About has no version line by decision, and this is the one
+        // place in config that names the running release.
+        const panel = page.locator('.config-widget--version');
+        await expect(panel).toContainText('v1.3.3', { timeout: 15_000 });
+        await expect(panel.locator('.config-widget-dot')).toHaveClass(/config-widget-dot--good/);
         await expect(page.locator('.config-overview-panels')).not.toContainText('Latest update');
+    });
+
+    test('behind the newest release, the panel says which one is out', async ({ page }) => {
+        await page.route('**/api/update-status*', (route) => route.fulfill({
+            contentType: 'application/json',
+            body: JSON.stringify({
+                enabled: true, current: 'v1.3.3', latest: 'v1.4.0', updateAvailable: true,
+                releaseUrl: 'https://github.com/jordibrouwer/nextdash/releases/tag/v1.4.0', checkedAt: Date.now(),
+            }),
+        }));
+        await openOverview(page);
+
+        const panel = page.locator('.config-widget--version');
+        await expect(panel.locator('.config-widget-dot')).toHaveClass(/config-widget-dot--crit/, { timeout: 15_000 });
+        await expect(panel.locator('.config-overview-version--behind a')).toHaveText('v1.4.0');
     });
 
     test('the stream leads with the release and its new setting', async ({ page }) => {

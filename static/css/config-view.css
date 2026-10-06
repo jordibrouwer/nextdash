@@ -8438,15 +8438,33 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
     .config-overview-banner-go { animation: none; }
 }
 
-/* Version line under Latest news: the running release, with changelog and manual links. */
+/* Version panel: the running release, with changelog and manual links. */
 .config-overview-version {
-    font-size: var(--font-size-small, 0.68rem);
-    color: var(--text-muted, var(--text-secondary));
+    margin: 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-primary);
+}
+
+/* Behind the newest release: the line saying which one is out. */
+.config-overview-version--behind {
+    margin-top: var(--space-2, 0.5rem);
+    color: var(--accent-error, #ef4444);
+}
+
+.config-overview-version--behind .config-overview-version-tag {
+    color: inherit;
+}
+
+.config-overview-version-tag {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent-primary);
 }
 
 .config-overview-version-link {
     color: inherit;
     text-decoration: underline;
+    text-underline-offset: 2px;
 }
 
 .config-overview-version-link:hover,

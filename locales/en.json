@@ -5518,6 +5518,7 @@
     "overviewRunning": "Running {current}.",
     "overviewVersionLine": "You’re running {version} of nextDash. You can find the full changelog {changelog} and the manual {manual}.",
     "overviewVersionHere": "here",
+    "overviewVersionTitle": "Version",
     "overviewSentenceMonitors": "{n} monitors are down right now.",
     "overviewSentenceInbox": "{n} unfiled links are waiting in the inbox.",
     "overviewSentenceDuplicates": "{n} duplicate URLs across your pages.",

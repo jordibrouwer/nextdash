@@ -293,15 +293,15 @@ test.describe('Config overview — the update notice', () => {
     /*
      * The bar that went carried the running version, and About deliberately has
      * no version line -- so without this the release number left config
-     * entirely, and with it the way into the notes. It sits at the foot of the
-     * New features panel, beside what that release brought.
+     * entirely, and with it the way into the notes. The version has a panel
+     * of its own; the notes stay at the foot of New in nextDash, beside what
+     * that release brought.
      */
-    test('the running release is named under the new features, with a way into its notes', async ({ page }) => {
+    test('the running release is named in its own panel, with a way into its notes', async ({ page }) => {
         await openOverview(page, PROBLEMS, { current: 'v1.2.3', updateAvailable: false });
 
-        const foot = page.locator('.config-overview-footnote');
-        await expect(foot).toContainText('v1.2.3');
-        await expect(foot.locator('[data-overview-action="whats-new"]')).toBeVisible();
+        await expect(page.locator('.config-widget--version')).toContainText('v1.2.3');
+        await expect(page.locator('.config-overview-footnote [data-overview-action="whats-new"]')).toBeVisible();
     });
 
     test('the foot opens the what’s-new modal', async ({ page }) => {
