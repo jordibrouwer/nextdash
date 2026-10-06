@@ -5771,7 +5771,7 @@ class DashboardConfig {
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-db-body" data-db-tab="${esc(tab)}">${esc(this.dbTabLabel(tab))}</button>`;
         }).join('');
         return `
-            <p class="config-view-intro">${esc(this.t('config.dataBackupsIntro', 'Back up your data, restore an earlier snapshot, or move it in and out of nextDash.'))}</p>
+            <p class="config-view-intro">${esc(this.t('config.dataBackupsIntro', 'Keep your data safe, move it in and out, and manage what nextDash stores on this disk.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
             ${this.renderSectionTabNote('data-backups', this.dbTab)}
             <div id="config-db-body" role="tabpanel" tabindex="0">${this.renderDbTab()}</div>

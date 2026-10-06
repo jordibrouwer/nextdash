@@ -5115,7 +5115,7 @@
     "collectionScopeSome": "Selected pages only",
     "collectionScopesHint": "Leave a collection with no pages ticked to draw from every page.",
     "collectionScopesTitle": "Collection scope",
-    "dataBackupsIntro": "Back up your data, restore an earlier snapshot, or move it in and out of nextDash.",
+    "dataBackupsIntro": "Keep your data safe, move it in and out, and manage what nextDash stores on this disk.",
     "delete": "Delete",
     "deleteAllBookmarksBtn": "Delete all bookmarks only",
     "deleteAllBookmarksError": "Could not delete the bookmarks.",
