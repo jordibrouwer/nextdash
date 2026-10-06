@@ -131,6 +131,7 @@ Config → Overview names the running version in a panel of its own, with a dot 
 - **fix — page template imports run one at a time.** A new page's id was read before it was written, and an empty page checked before it was filled, so two imports at once (two tabs) took the same id or filled the same page and the second overwrote the first. The import now holds a lock from those checks to its last write (`ImportPageTemplate` in `page_template.go`).
 - **fix — template labels are cut by character.** A host label over 60 bytes was cut mid-character, which showed as `�` in the file and the import dialog; it is now cut at 60 characters (`truncateRunes`).
 - **fix — `/api/notify/quiet` loads the time zone once.** Working out when the quiet hours end read the zone file once per minute stepped, up to 2880 times a request (`quietEndsAt` in `notify_quiet.go`).
+
 ### Tests
 - **tests — `update_check_test.go`** covers the rate-limit wait, the conditional request and the token with its fallback; `tests/config-overview-release.spec.js` reads the version from the Version panel and covers the behind line and the failure reason.
 - **tests — `tests/config-widgets-tab.spec.js`** moves a widget through its Settings page select and checks it left the source page and landed, same id, on the other.
