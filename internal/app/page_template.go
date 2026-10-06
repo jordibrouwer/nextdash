@@ -225,9 +225,7 @@ func detectTemplateHosts(bookmarks []Bookmark, widgets []Widget) []TemplateHost 
 	out := make([]TemplateHost, 0, len(order))
 	for _, origin := range order {
 		host := byOrigin[origin]
-		if len(host.Label) > templateMaxLabelLength {
-			host.Label = host.Label[:templateMaxLabelLength]
-		}
+		host.Label = truncateRunes(host.Label, templateMaxLabelLength)
 		key := templateKeyFrom(host.Label)
 		used[key]++
 		if used[key] > 1 {
@@ -333,9 +331,8 @@ func buildPageTemplate(page PageWithBookmarks, options TemplateExportOptions, ic
 		if label == "" {
 			label = key
 		}
-		if len(label) > templateMaxLabelLength {
-			label = label[:templateMaxLabelLength]
-		}
+		// By runes: cut by bytes, a label in another script broke mid-character.
+		label = truncateRunes(label, templateMaxLabelLength)
 		tpl.Variables = append(tpl.Variables, TemplateVariable{Key: key, Label: label})
 	}
 
@@ -620,9 +617,8 @@ func (h *Handlers) planPageTemplate(tpl PageTemplate, rawValues map[string]strin
 			continue
 		}
 		label := strings.TrimSpace(variable.Label)
-		if len(label) > templateMaxLabelLength {
-			label = label[:templateMaxLabelLength]
-		}
+		// By runes: cut by bytes, a label in another script broke mid-character.
+		label = truncateRunes(label, templateMaxLabelLength)
 		plan.result.Variables = append(plan.result.Variables, TemplateVariableCount{Key: variable.Key, Label: label, Count: counts[variable.Key]})
 	}
 

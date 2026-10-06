@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/gorilla/mux"
 )
@@ -376,5 +377,17 @@ func TestImportKeepsOnlyShortcutsTheFormCouldStore(t *testing.T) {
 	}
 	if got["a"] != "JF" || got["b"] != "" || got["c"] != "" {
 		t.Fatalf("shortcuts = %v", got)
+	}
+}
+
+// A label longer than the limit is cut between characters, not inside one.
+func TestTemplateLabelsAreCutByCharacter(t *testing.T) {
+	name := strings.Repeat("é", 59) + "中文"
+	hosts := detectTemplateHosts([]Bookmark{{Name: name, URL: "http://nas.lan/"}}, nil)
+	if len(hosts) != 1 {
+		t.Fatalf("hosts = %+v", hosts)
+	}
+	if !utf8.ValidString(hosts[0].Label) || utf8.RuneCountInString(hosts[0].Label) != templateMaxLabelLength {
+		t.Fatalf("label %q is not %d whole characters", hosts[0].Label, templateMaxLabelLength)
 	}
 }

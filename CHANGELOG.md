@@ -128,6 +128,7 @@ Config → Overview names the running version in a panel of its own, with a dot 
 
 ### Server
 - **fix — Retry on a stopped feed fetches that feed only.** It reset the feed and then polled every feed on the install while the request waited, up to a minute; a limited round now takes only the reset feeds and leaves the scheduled round's time alone (`pollFeeds` and `RetryFeed` in `feeds.go`).
+- **fix — template labels are cut by character.** A host label over 60 bytes was cut mid-character, which showed as `�` in the file and the import dialog; it is now cut at 60 characters (`truncateRunes`).
 ### Tests
 - **tests — `update_check_test.go`** covers the rate-limit wait, the conditional request and the token with its fallback; `tests/config-overview-release.spec.js` reads the version from the Version panel and covers the behind line and the failure reason.
 - **tests — `tests/config-widgets-tab.spec.js`** moves a widget through its Settings page select and checks it left the source page and landed, same id, on the other.
@@ -138,6 +139,7 @@ Config → Overview names the running version in a panel of its own, with a dot 
 - **tests — `tests/dashboard-widget-notes.spec.js`** ticks a box and unticks it with two plain clicks, and checks both saves.
 - **tests — `tests/bulk-actions-parity.spec.js`** answers one re-check with a `429` and one with a `502`, and checks the first is asked again and the summary says one.
 - **tests — `feeds_retry_test.go`** retries one of two feeds and checks only that one is fetched and `LastPoll` stays.
+- **tests — `page_template_test.go`** cuts a long label in another script and expects whole characters.
 
 ### Docs
 - **docs — MCP copy in all six languages:** `mcpTitle`, `mcpSummary`, `mcpNote`, `mcpEnabledLabel`, `mcpAddressLabel`, `overviewNewFeatureWebhooksHow` and `overviewNewFeatureWebhooksEnable` name a script or another tool.
