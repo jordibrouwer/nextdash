@@ -294,6 +294,68 @@ test.describe('every page at once', () => {
     });
 });
 
+test.describe('the page a widget stands on', () => {
+    /*
+     * Set from the widget's own settings, one widget at a time -- the bulk bar
+     * needed a tick and a second select for what is a property of one widget.
+     */
+    test('choosing another page in Settings moves the widget there, id and all', async ({ page }) => {
+        await openWidgets(page);
+        const pages = await ensureSecondPage(page);
+        test.skip(pages < 2, 'a second page could not be created here');
+        const mark = `move-probe-${Date.now()}`;
+        const ids = await page.evaluate(async (title) => {
+            const all = window.dashboardInstance.pages;
+            const from = Number(all[0].id);
+            const to = Number(all[1].id);
+            const cfg = window.dashboardInstance.config._module;
+            const res = await cfg.writeFetch(`/api/pages/${from}/blocks`);
+            const data = await res.json();
+            const put = await cfg.writeFetch(`/api/pages/${from}/blocks`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ widgets: (data.widgets || []).concat([{ type: 'trend', title, config: {} }]) }),
+            });
+            if (!put.ok) return { error: `${put.status} ${await put.text()}` };
+            cfg._widgetPageId = from;
+            cfg._widgetLoadedFor = null;
+            await cfg.loadWidgetsEditor();
+            const block = cfg._widgetBlocks.find((b) => b.isWidget && b.title === title);
+            return { from, to, id: block?.id, index: cfg._widgetBlocks.indexOf(block) };
+        }, mark);
+        expect(ids.error).toBeUndefined();
+        expect(ids.id).toBeTruthy();
+
+        await page.click(`[data-widget-settings="${ids.index}"]`);
+        const select = page.locator(`[data-widget-move-page="${ids.index}"]`);
+        await expect(select).toHaveValue(String(ids.from));
+        await select.selectOption(String(ids.to));
+        await page.waitForTimeout(2000);
+
+        const where = await page.evaluate(async ({ from, to, id }) => {
+            const cfg = window.dashboardInstance.config._module;
+            const read = async (p) => ((await (await cfg.writeFetch(`/api/pages/${p}/blocks`)).json()).widgets || []);
+            const source = await read(from);
+            const target = await read(to);
+            // Leave the fixture as it was found.
+            await cfg.writeFetch(`/api/pages/${to}/blocks`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ widgets: target.filter((w) => w.id !== id) }),
+            });
+            return {
+                onSource: source.some((w) => w.id === id),
+                onTarget: target.some((w) => w.id === id),
+                listed: cfg._widgetBlocks.some((b) => b.id === id),
+            };
+        }, ids);
+
+        expect(where.onSource).toBe(false);
+        expect(where.onTarget).toBe(true);
+        expect(where.listed).toBe(false);
+    });
+});
+
 test.describe('widget settings', () => {
     /*
      * Offered only when something is off its default -- the rule the reset

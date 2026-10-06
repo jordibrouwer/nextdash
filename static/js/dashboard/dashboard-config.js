@@ -19489,8 +19489,7 @@ class DashboardConfig {
      * from here, and a reader still has their widgets -- the other way round
      * loses them to a failed second request.
      */
-    async moveWidgetsToPage(targetPageId) {
-        const ids = this.selectedWidgetIds();
+    async moveWidgetsToPage(targetPageId, ids = this.selectedWidgetIds()) {
         const target = Number(targetPageId);
         if (!ids.length || !target || target === Number(this._widgetPageId)) return;
 
@@ -19554,15 +19553,50 @@ class DashboardConfig {
             return;
         }
 
-        this.widgetSelection.clear();
+        ids.forEach((id) => this.widgetSelection.delete(id));
+        // Indices shift once a row leaves, so an open panel would land on
+        // whichever widget slid into its place.
+        this._widgetSettingsOpen = null;
         const pageName = (this.dash.pages || [])
             .find((page) => Number(page.id) === target)?.name || target;
-        this.notify(this.t('config.widgetsMoved', '{n} widgets moved to {page}.')
-            .replace('{n}', String(ids.length)).replace('{page}', String(pageName)), 'success');
+        this.notify(moving.length === 1
+            ? this.t('config.widgetMoved', '{name} moved to {page}.')
+                .replace('{name}', this.widgetRowLabel(moving[0])).replace('{page}', String(pageName))
+            : this.t('config.widgetsMoved', '{n} widgets moved to {page}.')
+                .replace('{n}', String(moving.length)).replace('{page}', String(pageName)), 'success');
 
         this._widgetLoadedFor = null;
         await this.loadWidgetsEditor();
         await this.refreshDashboardBlocks();
+    }
+
+    /*
+     * Move one widget from its settings panel.
+     *
+     * An unsaved draft would not travel: the move carries what is stored, and
+     * the panel closes behind it. So that is asked first, and a refusal puts
+     * the select back where the widget still is.
+     */
+    async moveOneWidgetToPage(index, select) {
+        const block = (this._widgetBlocks || [])[index];
+        const previous = select.getAttribute('data-widget-current-page');
+        if (!block?.isWidget || !select.value || select.value === previous) return;
+
+        if (this.widgetDraftDirty(index)) {
+            const ok = await this.confirmAction(
+                this.t('config.widgetMoveDiscardBody',
+                    'This widget has unsaved changes. Moving it keeps what is saved and drops the rest.'),
+                {
+                    title: this.t('config.widgetsDiscardDraftsTitle', 'Discard unsaved changes?'),
+                    confirmLabel: this.t('config.widgetMoveDiscardOk', 'Move anyway'),
+                });
+            if (!ok) { select.value = previous; return; }
+        }
+        this.stopCustomProbeLive();
+        delete (this._widgetDrafts || {})[block.id];
+        await this.moveWidgetsToPage(select.value, [block.id]);
+        // A failed move leaves the widget where it was; say so in the select too.
+        if (select.isConnected) select.value = previous;
     }
 
     /** The one door to the catalogue. Same label wherever it appears. */
@@ -21608,7 +21642,8 @@ class DashboardConfig {
                 <div class="config-custom-group">
                     <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomOnTheGrid',
                         'On the dashboard'))}</h4>
-                    <div class="config-custom-grid">${this.renderWidgetWidth(widget, index)}</div>
+                    <div class="config-custom-grid">${this.renderWidgetPage(widget, index)}${
+                        this.renderWidgetWidth(widget, index)}</div>
                 </div>
                 ${this.renderWidgetSaveBar(index)}
             </div>`;
@@ -21623,7 +21658,34 @@ class DashboardConfig {
          * block, and needs nothing from the layout to be readable.
          */
         return `${this.renderWidgetSetupNote(widget.type)}<div class="config-widget-settings-body">${
-            this.renderWidgetWidth(widget, index)}${rows}${this.renderWidgetSaveBar(index)}</div>`;
+            this.renderWidgetPage(widget, index)}${this.renderWidgetWidth(widget, index)}${rows}${
+            this.renderWidgetSaveBar(index)}</div>`;
+    }
+
+    /*
+     * Which page the widget stands on, for every type.
+     *
+     * Not part of the draft: a widget lives in its page's file, so changing
+     * this is a move between two files rather than a setting Save writes. It
+     * goes through the same move the bulk bar uses, and happens on change.
+     */
+    renderWidgetPage(widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
+        if (pages.length < 2) return '';
+        const current = Number(this.isAllPagesView() ? widget.pageId : this._widgetPageId);
+        const id = `widget-${index}-page`;
+        const options = pages.map((page) =>
+            `<option value="${esc(page.id)}" ${Number(page.id) === current ? 'selected' : ''}>${
+                esc(page.name || page.id)}</option>`).join('');
+        return `
+            <div class="config-widget-field">
+                <label for="${id}">${esc(this.t('config.widgetsPageLabel', 'Page'))}</label>
+                <select id="${id}" class="config-select" data-widget-move-page="${index}"
+                    data-widget-current-page="${esc(current)}">${options}</select>
+                <span class="config-widget-note">${esc(this.t('config.widgetPageNote',
+                    'Choosing another page moves the widget there straight away, at the end of that page.'))}</span>
+            </div>`;
     }
 
     /*
@@ -22258,6 +22320,12 @@ class DashboardConfig {
                 // Back to the prompt: the select is a verb, not a stored value.
                 moveTo.value = '';
                 if (target_) void this.moveWidgetsToPage(target_);
+                return;
+            }
+
+            const movePage = target.closest('[data-widget-move-page]');
+            if (movePage) {
+                void this.moveOneWidgetToPage(indexOn(movePage, 'data-widget-move-page'), movePage);
                 return;
             }
 
