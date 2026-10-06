@@ -5405,14 +5405,15 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) {
     padding-top: max(var(--space-6, 2rem), env(safe-area-inset-top, 0px));
 }
 
-body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.recent-bookmarks-modal) .modal,
+body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.recent-bookmarks-modal) .modal:not(.header-sheet),
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.keyboard-cheat-sheet-modal) .modal,
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.whats-new-modal) .modal {
     transform: translateY(0) scale(1);
     transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
 }
 
-body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal,
+/* The header sheets keep their transform: it is their centring, not motion. */
+body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.recent-bookmarks-modal) .modal:not(.header-sheet),
 body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal) .modal,
 body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
     transform: none !important;
@@ -5516,12 +5517,12 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) .
     transition: transform 0.15s ease-in, opacity 0.15s ease-in;
 }
 
-body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.page-overview-modal) .modal {
+body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.page-overview-modal) .modal:not(.page-overview-sheet) {
     transform: translateY(0) scale(1);
     transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
 }
 
-body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) .modal {
+body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) .modal:not(.page-overview-sheet) {
     transform: none !important;
     transition: opacity 0.15s ease !important;
 }

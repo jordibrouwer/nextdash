@@ -121,10 +121,14 @@ Config → Overview names the running version in a panel of its own, with a dot 
 - **fix — the Custom widget counts the services it offers.** **Config → Widgets → Types** said 45 services in four groups: `PRESETS.length` counted the three retired presets (Readarr, Pi-hole v5, TrueNAS) and qBittorrent's two entries. It now says 41 services in five groups. `qbittorrent-key` carries `variantOf: 'qbittorrent'`, and a new `serviceCount()` in `dashboard-widget-presets.js` leaves out retired presets and variants.
 - **fix — the widgets tour's preset step said twenty-eight services.** It now says forty-one, names monitoring beside the other kinds, and its chips show Uptime Kuma instead of the retired TrueNAS, with "…and twenty-two more" after them (`widgets-tutorial.js`).
 
+### Dashboard
+- **fix — with less motion, the pages and recents panels stay on the strip.** When the system asks for reduced motion, or **Animations** is off, the reduced-motion rule for every modal and the app-wide no-animations rule cleared `transform`, and with it the `translateX(-50%)` that centres a header sheet on the strip: the pages panel (`,`) ran off the right edge of the window and the recents panel (`*`) sat half its width to the right. The header sheets are left out of those rules and keep their centring; they still open without animation (`modal.css`, `dashboard.css`).
+
 ### Tests
 - **tests — `update_check_test.go`** covers the rate-limit wait, the conditional request and the token with its fallback; `tests/config-overview-release.spec.js` reads the version from the Version panel and covers the behind line and the failure reason.
 - **tests — `tests/config-widgets-tab.spec.js`** moves a widget through its Settings page select and checks it left the source page and landed, same id, on the other.
 - **tests — `tests/config-widgets-tabs.spec.js`** checks the Custom section's count against the offered presets, one per service name, and that it says five groups.
+- **tests — `tests/header-sheet-reduced-motion.spec.js`** opens the pages and recents panels with their keys under reduced motion and with **Animations** off, and checks that each sits inside the window, on the strip's centre line, without an animation.
 - **tests — `tests/config-rail-sticky.spec.js`** opens Config → Behavior from the dashboard, scrolls it at 1440 and 800px wide, and checks that the rail starts below the band.
 - **tests — `settings_merge_test.go`** saves `smartFreshPageIds` through the store and reads it back, and loads an old settings file as an empty list; `tests/config-collection-scope.spec.js` ticks a Fresh page in Collection scope, reloads, and finds it still ticked.
 
