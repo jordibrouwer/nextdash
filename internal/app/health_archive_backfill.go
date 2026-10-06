@@ -179,6 +179,9 @@ unrelated questions on unrelated timescales, and one that fails should not stop
 the other.
 */
 func (h *Handlers) StartArchiveBackfillScheduler(stop <-chan struct{}) {
+	if demoMode() {
+		return // asks archive.org, which the demo does not
+	}
 	go func() {
 		ticker := time.NewTicker(archiveBackfillInterval)
 		defer ticker.Stop()

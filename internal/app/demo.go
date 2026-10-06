@@ -141,6 +141,9 @@ func (h *Handlers) seedDemo(now time.Time) error {
 	if err := h.store.SaveFinders(demoFinders); err != nil {
 		return err
 	}
+	if err := h.seedDemoHealth(now); err != nil {
+		return err
+	}
 
 	inbox := []InboxLink{
 		{URL: "https://github.com/awesome-selfhosted/awesome-selfhosted", Title: "Awesome self-hosted", AddedAt: now.Add(-26 * time.Hour).UnixMilli()},
@@ -197,6 +200,8 @@ func (h *Handlers) seedDemo(now time.Time) error {
 	settings.ActionBarAutoHideSeconds = 0
 	// New bookmarks start unchecked: the demo checks no site.
 	settings.NewBookmarkCheckMode = "off"
+	// Fresh shows the seeded feeds; the demo does not poll them.
+	settings.FeedsEnabled = true
 	return h.store.SaveSettings(settings)
 }
 

@@ -1,5 +1,10 @@
 package app
 
+import (
+	"encoding/json"
+	"os"
+)
+
 // storeReadCache holds in-memory copies of frequently read JSON files so the
 // dashboard shell and API handlers do not re-read and unmarshal from disk on
 // every request. Invalidated on any data mutation (noteDataMutation).
@@ -102,7 +107,7 @@ func (fs *FileStore) writeStoreJSONFile(path string, v any, pageID int) error {
 				return err
 			}
 		}
-		v = withoutDemoChecks(v)
+		v = withoutNewDemoChecks(path, v)
 	}
 	if err := writeIndentJSONFile(path, v); err != nil {
 		return err
@@ -171,21 +176,33 @@ func (fs *FileStore) DataGeneration() uint64 {
 }
 
 /*
-withoutDemoChecks switches checking off on every bookmark of a page file
-about to be written in the demo. The demo checks no site, so a bookmark that
-asks to be checked would show a switch that is on and does nothing. Here,
-where every page write passes, rather than in each handler that can set it.
+withoutNewDemoChecks keeps a page write in the demo from switching checking
+on: a bookmark may keep the Periodic or Monitor it already had on disk (the
+seeded monitors, whose history is a picture the demo shows), and loses any it
+did not have. Here, where every page write passes, rather than in each handler
+that can set it. The demo checks no site either way; this is what keeps the
+switches honest.
 */
-func withoutDemoChecks(v any) any {
+func withoutNewDemoChecks(path string, v any) any {
 	page, ok := pageFileValue(v)
 	if !ok {
 		return v
 	}
+	had := map[string][2]bool{}
+	if data, err := os.ReadFile(path); err == nil {
+		var before PageWithBookmarks
+		if json.Unmarshal(data, &before) == nil {
+			for _, b := range before.Bookmarks {
+				had[canonicalBookmarkURLKey(b.URL)] = [2]bool{b.CheckStatus, b.Monitor}
+			}
+		}
+	}
 	bookmarks := make([]Bookmark, len(page.Bookmarks))
 	copy(bookmarks, page.Bookmarks)
 	for i := range bookmarks {
-		bookmarks[i].CheckStatus = false
-		bookmarks[i].Monitor = false
+		prior := had[canonicalBookmarkURLKey(bookmarks[i].URL)]
+		bookmarks[i].CheckStatus = bookmarks[i].CheckStatus && prior[0]
+		bookmarks[i].Monitor = bookmarks[i].Monitor && prior[1]
 	}
 	page.Bookmarks = bookmarks
 	return page

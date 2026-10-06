@@ -126,6 +126,45 @@ func TestDemoSeedsThreePagesOfPublicSites(t *testing.T) {
 	if kept := h.store.GetBookmarksByPage(unsortedPageID); len(kept) != 3 {
 		t.Errorf("%d kept links, want 3", len(kept))
 	}
+	history := readHealthHistoryFile()
+	if len(history.Samples) != len(demoMonitors) {
+		t.Errorf("history for %d monitors, want %d", len(history.Samples), len(demoMonitors))
+	}
+	for key, samples := range history.Samples {
+		down := 0
+		for _, sample := range samples {
+			if !sample.Up {
+				down++
+			}
+		}
+		if len(samples) < 1400 || len(samples) > maxHealthSamplesPerURL {
+			t.Errorf("%s: %d samples", key, len(samples))
+		}
+		if key == canonicalBookmarkURLKey("https://www.home-assistant.io/") && down == 0 {
+			t.Error("Home Assistant's outages are missing")
+		}
+	}
+	soon := false
+	for _, cert := range readHealthCacheFile().Certificates {
+		soon = soon || cert.ExpiresAt < time.Now().Add(14*24*time.Hour).UnixMilli()
+	}
+	if !soon {
+		t.Error("no certificate close to expiry")
+	}
+	if points := readHealthTrendFile().Points; len(points) != 30 {
+		t.Errorf("%d trend points, want 30", len(points))
+	}
+	fresh := freshnessForBookmarks(readFeedStateFile(), h.store.GetBookmarksByPage(1))
+	all := []Bookmark{}
+	for pageID := 1; pageID <= len(demoPages()); pageID++ {
+		all = append(all, h.store.GetBookmarksByPage(pageID)...)
+	}
+	fresh = freshnessForBookmarks(readFeedStateFile(), all)
+	for _, f := range demoFeeds {
+		if got := fresh[canonicalBookmarkURLKey(f.url)].NewCount; got != f.fresh {
+			t.Errorf("%s: %d new, want %d", f.url, got, f.fresh)
+		}
+	}
 	if len(h.store.GetFinders()) < 4 {
 		t.Errorf("%d finders", len(h.store.GetFinders()))
 	}
@@ -224,22 +263,32 @@ func TestDemoPollsNoSite(t *testing.T) {
 		t.Errorf("check answered %+v", result)
 	}
 
+	// A seeded monitor's dot reads the seeded status; anything else is refused.
 	rec := httptest.NewRecorder()
 	h.PingURL(rec, httptest.NewRequest(http.MethodGet, "/api/ping?url=https://github.com/", nil))
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"status":"online"`) {
+		t.Errorf("/api/ping for a seeded monitor answered %d %s", rec.Code, rec.Body.String())
+	}
+	rec = httptest.NewRecorder()
+	h.PingURL(rec, httptest.NewRequest(http.MethodGet, "/api/ping?url=https://gitlab.com/", nil))
 	if rec.Code != http.StatusForbidden {
-		t.Errorf("/api/ping answered %d", rec.Code)
+		t.Errorf("/api/ping for an unseeded link answered %d", rec.Code)
 	}
 
+	// Checking cannot be switched on; the seeded monitors keep theirs.
 	bookmarks := h.store.GetBookmarksByPage(1)
-	bookmarks[0].CheckStatus = true
-	bookmarks[0].Monitor = true
+	for i := range bookmarks {
+		bookmarks[i].CheckStatus = true
+		bookmarks[i].Monitor = true
+	}
 	bookmarks = append(bookmarks, Bookmark{Name: "Local", URL: site.URL, CheckStatus: true})
 	if err := h.store.SaveBookmarksByPage(1, bookmarks); err != nil {
 		t.Fatal(err)
 	}
 	for _, bookmark := range h.store.GetBookmarksByPage(1) {
-		if bookmark.CheckStatus || bookmark.Monitor {
-			t.Errorf("%s may be checked in the demo", bookmark.Name)
+		seeded := bookmark.Name == "GitHub" || bookmark.Name == "Hacker News"
+		if bookmark.CheckStatus || bookmark.Monitor != seeded {
+			t.Errorf("%s: periodic %v, monitor %v; only the seeded monitors may stay on", bookmark.Name, bookmark.CheckStatus, bookmark.Monitor)
 		}
 	}
 
@@ -257,6 +306,13 @@ func TestDemoPollsNoSite(t *testing.T) {
 	}
 	if n := h.pollFeeds(context.Background(), nil); n != 0 {
 		t.Errorf("polled %d feeds", n)
+	}
+	// Not even in the start-up window, when the favicons are fetched.
+	demoOutboundOpen.Store(true)
+	checked, _ := h.DiscoverFeeds(context.Background())
+	demoOutboundOpen.Store(false)
+	if checked != 0 {
+		t.Errorf("looked for feeds on %d pages", checked)
 	}
 	if hits != 0 {
 		t.Errorf("the site was asked %d times", hits)

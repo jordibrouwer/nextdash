@@ -66,6 +66,8 @@ func demoPages() []demoPage {
 				{name: "JWT debugger", url: "https://jwt.io/", category: "tools", tags: []string{"auth"}},
 				{name: "Hacker News", url: "https://news.ycombinator.com/", category: "news", shortcut: "HN", tags: []string{"news"}, pinned: true, opens: 37},
 				{name: "Lobsters", url: "https://lobste.rs/", category: "news", tags: []string{"news"}, opens: 8},
+				// Gone: the second link Health shows as broken.
+				{name: "Old dev podcast", url: "https://podcast.example.net/feed", category: "news", tags: []string{"podcast"}, lastError: "DNS lookup failed"},
 				{name: "DEV Community", url: "https://dev.to/", category: "news", tags: []string{"news", "blog"}},
 				{name: "The Changelog", url: "https://changelog.com/", category: "news", tags: []string{"podcast", "open-source"}},
 			},

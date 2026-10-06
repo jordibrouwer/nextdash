@@ -156,6 +156,11 @@ func writeFeedStateFile(state FeedStateFile) error {
 // to re-fetch every page before anything can happen. An unchanged URL is left
 // exactly as it is, validators and all, so this never costs a re-poll.
 func recordDiscoveredFeed(bookmarkURL, feedURL string) {
+	// The demo's feeds are seeded; the favicon round at its start reads pages
+	// too, and must not add to the picture.
+	if demoMode() {
+		return
+	}
 	key := canonicalBookmarkURLKey(bookmarkURL)
 	feedURL = strings.TrimSpace(feedURL)
 	if key == "" || feedURL == "" {
@@ -194,6 +199,11 @@ func recordDiscoveredFeed(bookmarkURL, feedURL string) {
 // with no feed URL means "asked, and this page has none", which is most pages.
 // Returns how many were looked at and how many turned out to have a feed.
 func (h *Handlers) DiscoverFeeds(ctx context.Context) (checked int, found int) {
+	// The demo's feeds are seeded; looking for more reads other sites, even in
+	// the start-up window the favicons are fetched in.
+	if demoMode() {
+		return 0, 0
+	}
 	if ctx == nil {
 		ctx = context.Background()
 	}
