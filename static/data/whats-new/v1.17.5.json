@@ -1,0 +1,88 @@
+{
+  "tag": "v1.17.5",
+  "date": "6 October 2026",
+  "releasedAt": "2026-10-06",
+  "modalLead": "Config → Overview names the <strong>version you run</strong> and says when a newer one is out, a widget <strong>moves to another page</strong> from its settings, and a long round of fixes.",
+  "sections": [
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A Version panel on the overview.</strong> It names the release you run, with links to the changelog and the manual. A green dot means you have the newest release; a red one names the newer release, with a link to it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A failed update check says why.</strong> The Version panel and the What's new bar name GitHub's hourly limit with the time of the next try, or say that GitHub could not be reached. A GitHub token under Config → Containers → Updates now counts for this check too."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Choose the pages Fresh shows on,</strong> under Structure → Collections → Collection scope, the same way as Today, Recent and Stale."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The section list on the left no longer slides under the header</strong> when you scroll a long section."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The line under the tabs follows the tab you open</strong> in Data &amp; backups, Bookmarks and Help."
+        }
+      ]
+    },
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Move a widget from its settings.</strong> Config → Widgets → Settings has a Page choice; pick another page and the widget goes there straight away."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The Custom widget counts its services right:</strong> 41, in five groups."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Unticking a box in the Notes widget</strong> right after ticking it is saved."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Retry on a stopped feed answers straight away</strong> instead of fetching every feed first."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>With animations off or less motion, the pages and recent panels</strong> open in the middle again instead of off the right edge."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A spread category keeps its names as wide</strong> as it had them in one column."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A tablet shows the time once</strong> in the header, not twice."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Re-check on the selection bar says how many were really checked,</strong> and tries the ones that hit a limit again."
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Unsorted is called Unsorted</strong> when you group by page, not 999999."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A shared page template keeps long names whole</strong> instead of cutting a letter in half."
+        }
+      ]
+    }
+  ]
+}

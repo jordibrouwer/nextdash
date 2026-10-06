@@ -100,7 +100,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.17.5 — 6 October 2026
 
-Config → Overview names the running version in a panel of its own, with a dot that says whether it is the newest release. The update check uses the Containers GitHub token, waits out GitHub's hourly limit and says why it failed.
+Config → Overview names the running version in a panel of its own, with a dot that says whether it is the newest release. The update check uses the Containers GitHub token, waits out GitHub's hourly limit and says why it failed. v1.17.5 leads the What's new window, and the five releases held back before it (v1.17.4, v1.17.3, v1.17.1, v1.15.4 and v1.15.1) now show under it.
 
 ### Config
 - **new — a Version panel on the overview.** It sits between **Latest news** and **New in nextDash** and reads *You're running v1.x.y of nextDash*, with links to the full changelog and the manual on GitHub, each opening in a new window. The text has the same size as the other panels. The panel appears once the update check knows the running version, also when the site's news is switched off (`renderOverviewVersionWidget` in `dashboard-config.js`, `config-view.css`).
@@ -162,6 +162,8 @@ Config → Overview names the running version in a panel of its own, with a dot 
 - **docs — preset counts in all six languages:** `widgetCustomRefPresetsBody` says five groups, and `widgetsTutorialStep5Title`, `widgetsTutorialStep5Body1` and `widgetsTutorialPresetsMore` give the new numbers and name monitoring.
 - **docs — Config → Help in all six languages:** `helpConfigBody` names the Version panel on the overview and that the Containers GitHub token serves the update check too; `helpContainersConfigBody` says the same under the token; `helpWidgetAddingBody` names the **Page** select in a widget's settings; `helpVersionBody` points to the Version panel and its dot.
 - **docs — README and MANUAL catch up.** The README's links into the manual carried the section numbers from before the manual was renumbered (§13.4 for Collection health, §11.5 for the Custom widget, and eleven more); they now name the sections they open. The alert list on top names Apprise, and the Unraid widgets list names the overview. MANUAL §15.2 names the **Page** select in a widget's settings.
+- **docs — `static/data/whats-new/v1.17.5.json` and its index entry.** `hideFromModal` is gone from v1.17.4, v1.17.3, v1.17.1, v1.15.4 and v1.15.1, so the modal lists every release. `whats-new-stub.js`: `DASHBOARD_RELEASE` moved to `2026.10-dashboard-release-v1.17.5`, so the window opens once more, and `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v321`; `tests/whats-new-hidden-release.spec.js` follows both and expects no held-back release.
+- **docs — a spotlight for the Version panel** in `overview-features.json` with `since: "v1.17.5"`, so it shows in the overview's news and under About → News & features; its five `overviewNewFeatureVersionPanel*` keys are in all six languages.
 - **new — the manual is easier to find your way in.** Contents with start-here routes and every subsection, a glossary of 100 key terms linked into the text, "in short" notes per chapter, three diagrams and 94 screenshots beside the text they show, element crops and full pages, many folded away, the Custom widget section in full with all 42 presets, and the manual caught up with features up to v1.17.5.
 
 ---

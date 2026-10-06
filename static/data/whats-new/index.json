@@ -1,17 +1,21 @@
 [
   {
+    "id": "v1.17.5",
+    "tag": "v1.17.5",
+    "date": "6 October 2026",
+    "releasedAt": "2026-10-06"
+  },
+  {
     "id": "v1.17.4",
     "tag": "v1.17.4",
     "date": "5 October 2026",
-    "releasedAt": "2026-10-05",
-    "hideFromModal": true
+    "releasedAt": "2026-10-05"
   },
   {
     "id": "v1.17.3",
     "tag": "v1.17.3",
     "date": "5 October 2026",
-    "releasedAt": "2026-10-05",
-    "hideFromModal": true
+    "releasedAt": "2026-10-05"
   },
   {
     "id": "v1.17.2",
@@ -23,8 +27,7 @@
     "id": "v1.17.1",
     "tag": "v1.17.1",
     "date": "4 October 2026",
-    "releasedAt": "2026-10-04",
-    "hideFromModal": true
+    "releasedAt": "2026-10-04"
   },
   {
     "id": "v1.17.0",
@@ -66,8 +69,7 @@
     "id": "v1.15.4",
     "tag": "v1.15.4",
     "date": "30 September 2026",
-    "releasedAt": "2026-09-30",
-    "hideFromModal": true
+    "releasedAt": "2026-09-30"
   },
   {
     "id": "v1.15.3",
@@ -85,8 +87,7 @@
     "id": "v1.15.1",
     "tag": "v1.15.1",
     "date": "29 September 2026",
-    "releasedAt": "2026-09-29",
-    "hideFromModal": true
+    "releasedAt": "2026-09-29"
   },
   {
     "id": "v1.15.0",
