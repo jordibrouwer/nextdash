@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -78,7 +79,7 @@ func exportTemplate(t *testing.T, h *Handlers, pageID int, options TemplateExpor
 	t.Helper()
 	body, _ := json.Marshal(options)
 	rec := httptest.NewRecorder()
-	templateTestRouter(h).ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/pages/5/template", bytes.NewReader(body)))
+	templateTestRouter(h).ServeHTTP(rec, httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/pages/%d/template", pageID), bytes.NewReader(body)))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("export answered %d: %s", rec.Code, rec.Body.String())
 	}

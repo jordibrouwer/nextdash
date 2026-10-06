@@ -1,0 +1,183 @@
+{
+  "nextdash": "page-template",
+  "version": 1,
+  "name": "Media server",
+  "icon": "▶",
+  "color": "",
+  "variables": [
+    {
+      "key": "jellyfin",
+      "label": "Jellyfin",
+      "default": "http://{server}:8096"
+    },
+    {
+      "key": "jellyseerr",
+      "label": "Jellyseerr",
+      "default": "http://{server}:5055"
+    },
+    {
+      "key": "sonarr",
+      "label": "Sonarr",
+      "default": "http://{server}:8989"
+    },
+    {
+      "key": "radarr",
+      "label": "Radarr",
+      "default": "http://{server}:7878"
+    },
+    {
+      "key": "lidarr",
+      "label": "Lidarr",
+      "default": "http://{server}:8686"
+    },
+    {
+      "key": "bazarr",
+      "label": "Bazarr",
+      "default": "http://{server}:6767"
+    },
+    {
+      "key": "prowlarr",
+      "label": "Prowlarr",
+      "default": "http://{server}:9696"
+    },
+    {
+      "key": "qbittorrent",
+      "label": "qBittorrent",
+      "default": "http://{server}:8080"
+    }
+  ],
+  "categories": [
+    {
+      "id": "watch",
+      "name": "Watch"
+    },
+    {
+      "id": "library",
+      "name": "Library"
+    },
+    {
+      "id": "downloads",
+      "name": "Downloads"
+    },
+    {
+      "id": "links",
+      "name": "Links"
+    }
+  ],
+  "widgets": [
+    {
+      "id": "health",
+      "type": "health",
+      "config": {}
+    },
+    {
+      "id": "containers",
+      "type": "containers",
+      "config": {}
+    },
+    {
+      "id": "releases",
+      "type": "rss",
+      "config": {
+        "feedUrls": [
+          "https://github.com/jellyfin/jellyfin/releases.atom",
+          "https://github.com/Sonarr/Sonarr/releases.atom",
+          "https://github.com/Radarr/Radarr/releases.atom"
+        ]
+      }
+    }
+  ],
+  "blockOrder": [
+    "health",
+    "watch",
+    "library",
+    "downloads",
+    "containers",
+    "releases",
+    "links"
+  ],
+  "bookmarks": [
+    {
+      "name": "Jellyfin",
+      "url": "{{jellyfin}}/",
+      "category": "watch",
+      "tags": [
+        "media"
+      ],
+      "shortcut": "J"
+    },
+    {
+      "name": "Jellyseerr",
+      "url": "{{jellyseerr}}/",
+      "category": "watch",
+      "tags": [
+        "requests"
+      ],
+      "shortcut": "Q"
+    },
+    {
+      "name": "Sonarr",
+      "url": "{{sonarr}}/",
+      "category": "library",
+      "tags": [
+        "tv"
+      ],
+      "shortcut": "S"
+    },
+    {
+      "name": "Radarr",
+      "url": "{{radarr}}/",
+      "category": "library",
+      "tags": [
+        "movies"
+      ],
+      "shortcut": "R"
+    },
+    {
+      "name": "Lidarr",
+      "url": "{{lidarr}}/",
+      "category": "library",
+      "tags": [
+        "music"
+      ],
+      "shortcut": "L"
+    },
+    {
+      "name": "Bazarr",
+      "url": "{{bazarr}}/",
+      "category": "library",
+      "tags": [
+        "subtitles"
+      ],
+      "shortcut": "B"
+    },
+    {
+      "name": "Prowlarr",
+      "url": "{{prowlarr}}/",
+      "category": "downloads",
+      "tags": [
+        "indexers"
+      ],
+      "shortcut": "P"
+    },
+    {
+      "name": "qBittorrent",
+      "url": "{{qbittorrent}}/",
+      "category": "downloads",
+      "tags": [
+        "downloads"
+      ],
+      "shortcut": "T"
+    },
+    {
+      "name": "nextDash",
+      "url": "https://nextdash.cc/",
+      "tags": [
+        "self-hosted",
+        "bookmarks"
+      ],
+      "shortcut": "N",
+      "category": "links"
+    }
+  ]
+}

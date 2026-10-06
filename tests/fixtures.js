@@ -54,6 +54,20 @@ async function resetStore(request) {
             + `— ${(await response.text()).slice(0, 200)}`,
         );
     }
+    /*
+     * A fresh install opens on the first-start card, in the page above main's
+     * blocks. Every spec would start with the grid pushed down by it, so the
+     * card is answered here the way Keep these links does. The checklist after
+     * it still comes, as before; first-start-templates.spec.js clears this to
+     * test the card itself.
+     */
+    const answered = await request.post('/api/settings', {
+        data: { quickStart: { baselineBookmarks: -1, baselineTagged: -1, templatePicked: 'keep' } },
+        headers: { 'X-NextDash-Token': WRITE_TOKEN },
+    });
+    if (!answered.ok()) {
+        throw new Error(`answering the first-start card failed: HTTP ${answered.status()}`);
+    }
 }
 
 const test = base.test.extend({

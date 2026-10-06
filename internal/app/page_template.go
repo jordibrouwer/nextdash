@@ -96,6 +96,10 @@ type PageTemplate struct {
 type TemplateVariable struct {
 	Key   string `json:"key"`
 	Label string `json:"label"`
+	// Default is the address a bundled template proposes, such as
+	// "http://{server}:8096", where {server} is the one address the
+	// first-start card asks for. An export never writes it.
+	Default string `json:"default,omitempty"`
 }
 
 // templateBookmark is everything of a bookmark that leaves the house.
@@ -473,9 +477,10 @@ type TemplateImportResult struct {
 
 // TemplateVariableCount is a variable with how many links wait on it.
 type TemplateVariableCount struct {
-	Key   string `json:"key"`
-	Label string `json:"label"`
-	Count int    `json:"count"`
+	Key     string `json:"key"`
+	Label   string `json:"label"`
+	Default string `json:"default,omitempty"`
+	Count   int    `json:"count"`
 }
 
 // TemplateImportSkipped is what did not make it, and why.
@@ -561,6 +566,13 @@ writing anything: the dry run answers with its result, and the real import
 writes exactly what it planned.
 */
 func (h *Handlers) planPageTemplate(tpl PageTemplate, rawValues map[string]string) pageTemplatePlan {
+	return h.planPageTemplateReplacing(tpl, rawValues, 0)
+}
+
+// planPageTemplateReplacing plans a template that will take the place of
+// page replacing: that page's own shortcuts are not counted as taken, since
+// its bookmarks are about to go.
+func (h *Handlers) planPageTemplateReplacing(tpl PageTemplate, rawValues map[string]string, replacing int) pageTemplatePlan {
 	plan := pageTemplatePlan{icons: map[int][]byte{}}
 	plan.page = Page{
 		Name:  h.freeTemplatePageName(clampEntityName(tpl.Name)),
@@ -620,7 +632,10 @@ func (h *Handlers) planPageTemplate(tpl PageTemplate, rawValues map[string]strin
 		label := strings.TrimSpace(variable.Label)
 		// By runes: cut by bytes, a label in another script broke mid-character.
 		label = truncateRunes(label, templateMaxLabelLength)
-		plan.result.Variables = append(plan.result.Variables, TemplateVariableCount{Key: variable.Key, Label: label, Count: counts[variable.Key]})
+		plan.result.Variables = append(plan.result.Variables, TemplateVariableCount{
+			Key: variable.Key, Label: label, Count: counts[variable.Key],
+			Default: truncateRunes(strings.TrimSpace(variable.Default), 200),
+		})
 	}
 
 	// Widgets: new ids (the sender's may already exist here), the order
@@ -678,6 +693,9 @@ func (h *Handlers) planPageTemplate(tpl PageTemplate, rawValues map[string]strin
 	// Bookmarks.
 	takenShortcuts := map[string]bool{}
 	for _, existing := range h.store.GetAllBookmarks() {
+		if replacing != 0 && existing.PageID == replacing {
+			continue
+		}
 		if s := normalizeShortcut(existing.Shortcut); s != "" {
 			takenShortcuts[s] = true
 		}

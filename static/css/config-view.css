@@ -8338,6 +8338,11 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
 .config-tpl-host-key .config-text[aria-invalid="true"] { border-color: var(--danger, #d9534f); }
 .config-tpl-count { flex: none; font-size: 0.8em; color: var(--text-secondary); white-space: nowrap; }
 .config-tpl-public { margin-top: var(--space-3, 0.75rem); }
+.config-tpl-bundled { margin: var(--space-2, 0.5rem) 0 0; color: var(--text-secondary); }
+.config-tpl-bundled[hidden] { display: none; }
+.config-tpl-bundled-btn { background: none; border: none; padding: 0; color: var(--accent-primary); font: inherit; cursor: pointer; }
+.config-tpl-bundled-btn:hover, .config-tpl-bundled-btn:focus-visible { text-decoration: underline; }
+.config-tpl-server { display: grid; gap: 4px; margin: var(--space-2, 0.5rem) 0; }
 .config-tpl-public > summary { cursor: pointer; color: var(--text-secondary); }
 .config-tpl-option { display: flex; align-items: center; gap: var(--space-2, 0.5rem); margin-top: var(--space-2, 0.5rem); }
 .config-tpl-source { display: grid; gap: var(--space-2, 0.5rem); }

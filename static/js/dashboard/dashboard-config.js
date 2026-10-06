@@ -16144,6 +16144,9 @@ class DashboardConfig {
             // over.
             if (this.dash.settings?.quickStart && typeof this.dash.settings.quickStart === 'object') {
                 this.dash.settings.quickStart.dismissed = false;
+                // And the first-start card before it. An empty string, not a
+                // deleted key: the server keeps a field the save leaves out.
+                this.dash.settings.quickStart.templatePicked = '';
             }
         } else {
             window.DiscoverabilityState?.forgetTip?.(tour.id, { persist: false });
@@ -18788,6 +18791,11 @@ class DashboardConfig {
         const target = intoPage ? (this.dash.pages || []).find((p) => Number(p.id) === Number(intoPage)) : null;
         let preview = null;
         const values = {};
+        // The bundled templates propose an address per service on one server
+        // address; what the reader types in a field stops following it.
+        let server = '';
+        const edited = new Set();
+        const expand = (def) => window.FirstStartTemplates?.expandDefault?.(def, server) || '';
         const body = `
             <p class="config-panel-note">${esc(target
                 ? this.t('config.pageTemplateFillIntro', 'The template fills this empty page; nothing on your other pages changes.')
@@ -18798,6 +18806,7 @@ class DashboardConfig {
                 <textarea class="config-text config-tpl-text" rows="5" data-tpl-text spellcheck="false"
                     placeholder="${esc(this.t('config.pageTemplatePaste', 'Or paste the template here'))}"></textarea>
             </div>
+            <p class="config-tpl-bundled" data-tpl-bundled hidden></p>
             <div class="config-tpl-preview" data-tpl-preview aria-live="polite"></div>`;
         const renderPreview = (overlay, okBtn) => {
             const host = overlay.querySelector('[data-tpl-preview]');
@@ -18807,6 +18816,15 @@ class DashboardConfig {
                 host.innerHTML = `<p class="config-tpl-error" role="alert">${esc(preview.error)}</p>`;
                 return;
             }
+            const proposes = (preview.variables || []).some((v) => String(v.default || '').includes('{server}'));
+            (preview.variables || []).forEach((v) => {
+                if (!edited.has(v.key) && v.default) values[v.key] = expand(v.default);
+            });
+            const serverRow = proposes ? `
+                <label class="config-tpl-server">
+                    <span>${esc(this.t('config.pageTemplateServer', 'Where do these run?'))}</span>
+                    <input type="text" class="config-text" data-tpl-server placeholder="192.168.1.10" value="${esc(server)}">
+                </label>` : '';
             const vars = (preview.variables || []).map((v) => `
                 <li class="config-tpl-var">
                     <label>
@@ -18822,10 +18840,22 @@ class DashboardConfig {
                 <p class="config-tpl-summary"><strong>${esc(preview.name)}</strong> · ${esc(this.t('config.pageTemplateSummary', '{categories} categories, {widgets} widgets, {bookmarks} links')
                     .replace('{categories}', String(preview.categories)).replace('{widgets}', String(preview.widgets))
                     .replace('{bookmarks}', String(preview.bookmarks + (skipped.unfilled || 0))))}</p>
-                ${vars ? `<p class="config-panel-note">${esc(this.t('config.pageTemplateFillIn', 'Your own address for each service. Left empty, its links are skipped.'))}</p><ul class="config-tpl-vars">${vars}</ul>` : ''}
+                ${vars ? `<p class="config-panel-note">${esc(this.t('config.pageTemplateFillIn', 'Your own address for each service. Left empty, its links are skipped.'))}</p>${serverRow}<ul class="config-tpl-vars">${vars}</ul>` : ''}
                 ${notes.map((n) => `<p class="config-panel-note">${esc(n)}</p>`).join('')}`;
             host.querySelectorAll('[data-tpl-value]').forEach((input) => {
-                input.addEventListener('input', () => { values[input.getAttribute('data-tpl-value')] = input.value; });
+                input.addEventListener('input', () => {
+                    edited.add(input.getAttribute('data-tpl-value'));
+                    values[input.getAttribute('data-tpl-value')] = input.value;
+                });
+            });
+            host.querySelector('[data-tpl-server]')?.addEventListener('input', (event) => {
+                server = event.target.value;
+                (preview.variables || []).forEach((v) => {
+                    if (edited.has(v.key) || !v.default) return;
+                    values[v.key] = expand(v.default);
+                    const field = host.querySelector(`[data-tpl-value="${CSS.escape(v.key)}"]`);
+                    if (field) field.value = values[v.key];
+                });
             });
         };
         let text = String(initialText || '');
@@ -18867,6 +18897,34 @@ class DashboardConfig {
                     clearTimeout(timer);
                     timer = setTimeout(() => void dryRun(overlay, okBtn), 300);
                 });
+                // Or start from one of the three that ship with nextDash.
+                void (async () => {
+                    const row = overlay.querySelector('[data-tpl-bundled]');
+                    let list = [];
+                    try {
+                        const res = await fetch('/api/page-templates/bundled');
+                        if (res.ok) list = (await res.json()).templates || [];
+                    } catch { /* the row stays hidden */ }
+                    if (!list.length || !row.isConnected) return;
+                    row.innerHTML = `<span>${esc(this.t('config.pageTemplateStartFrom', 'Or start from:'))}</span> ${list.map((tpl) =>
+                        `<button type="button" class="config-tpl-bundled-btn" data-tpl-bundled-id="${esc(tpl.id)}">${esc(tpl.name)}</button>`).join(' · ')}`;
+                    row.hidden = false;
+                    row.addEventListener('click', async (event) => {
+                        const id = event.target.closest('[data-tpl-bundled-id]')?.getAttribute('data-tpl-bundled-id');
+                        if (!id) return;
+                        try {
+                            await window.LazyScript.loadScriptOnce('js/first-start-templates.js', 'firstStartTemplates',
+                                () => typeof window.FirstStartTemplates === 'function');
+                            const res = await fetch(`/api/page-templates/bundled/${encodeURIComponent(id)}`);
+                            if (!res.ok) return;
+                            area.value = await res.text();
+                        } catch { return; }
+                        text = area.value;
+                        edited.clear();
+                        Object.keys(values).forEach((key) => delete values[key]);
+                        await dryRun(overlay, okBtn);
+                    });
+                })();
                 overlay.querySelector('[data-tpl-file]').addEventListener('change', async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;

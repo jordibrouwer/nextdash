@@ -36,6 +36,19 @@
 
     const esc = window.NextDashHtml.escapeHtml;
 
+    /**
+     * A bookmark on the page the reader is looking at, with a shortcut, for
+     * the steps that otherwise only have a made-up example. After a bundled
+     * template that is one of their own services ("type j for Jellyfin").
+     * The project's own link does not count. Null leaves the steps as they are.
+     */
+    function exampleBookmark() {
+        const rows = global.dashboardInstance?.bookmarks;
+        if (!Array.isArray(rows)) return null;
+        return rows.find((b) => b?.shortcut && b?.name
+            && !/^https:\/\/nextdash\.cc\/?$/.test(String(b.url || ''))) || null;
+    }
+
     const W = 480;
     const H = 150;
 
@@ -359,6 +372,7 @@
 
     function steps() {
         const f = (key, fallback) => t(key, fallback);
+        const example = exampleBookmark();
         return [
             // New in v1.17, first because the tour is shown again to every
             // reader for them: web search, app icons, the theme editor, Unraid.
@@ -576,7 +590,8 @@
                 body: `<p>${esc(f('dashTourS2Body1',
                     'Type anything on the dashboard and it goes to the search line; Enter opens the top result.'))}</p>
                     <p>${esc(f('dashTourS2Body2',
-                    'The same panel has three modes: > searches your bookmarks, : runs a command, ? sends your text to a search engine or a site you set up as a finder.'))}</p>`,
+                    'The same panel has three modes: > searches your bookmarks, : runs a command, ? sends your text to a search engine or a site you set up as a finder.'))}</p>
+                    ${example ? `<p class="dtv-try">${esc(f('dashTourS2Try', 'Try it: type {name} and press Enter.').replace('{name}', example.name.toLowerCase()))}</p>` : ''}`,
             },
             // 3 — shortcuts
             {
@@ -592,7 +607,9 @@
                 body: `<p>${esc(f('dashTourS3Body1',
                     'Give a bookmark a shortcut of one or two letters and typing it on the dashboard opens it — no search, no Enter.'))}</p>
                     <p>${esc(f('dashTourS3Body2',
-                    'It is the change that makes the keyboard worth it: give the ten you open every day one, in the bookmark form or with Shift+E.'))}</p>`,
+                    'It is the change that makes the keyboard worth it: give the ten you open every day one, in the bookmark form or with Shift+E.'))}</p>
+                    ${example ? `<p class="dtv-try">${esc(f('dashTourS3Try', 'On this page: type {key} for {name}.')
+                        .replace('{key}', String(example.shortcut).toLowerCase()).replace('{name}', example.name))}</p>` : ''}`,
             },
             // 4 — cursor and Shift
             {

@@ -1158,6 +1158,10 @@ type QuickStartState struct {
 	// How often the question has been put off, indexing a backoff schedule so
 	// each further hesitation waits longer than the last.
 	AnalyticsSnoozes int `json:"analyticsSnoozes,omitempty"`
+	// TemplatePicked is the first-start card's answer: a bundled template's
+	// id, or "keep" for the starter links. Empty means the card has not been
+	// answered and comes before the checklist.
+	TemplatePicked string `json:"templatePicked,omitempty"`
 	// Same three-part state for the browser-notification invitation: whether it
 	// was actually answered, how long it stays hidden after being left open, and
 	// how often that has happened. Registering a device is per browser, so this
@@ -1574,75 +1578,82 @@ func stampDefaultBookmarkCreatedAt(bookmarks []Bookmark, now time.Time) {
 	}
 }
 
+// defaultMainPage is the page a fresh install starts on. The first-start
+// card reads it too: main still equal to it means nobody has touched it, and
+// a template may take its place (isUntouchedMainPage).
+func defaultMainPage() PageWithBookmarks {
+	return PageWithBookmarks{
+		Page: Page{
+			ID:   1,
+			Name: "main",
+		},
+		Categories: []Category{
+			{ID: "development", Name: "Development"},
+			{ID: "media", Name: "Media"},
+			{ID: "social", Name: "Social"},
+			{ID: "search", Name: "Search"},
+			{ID: "utilities", Name: "Utilities"},
+		},
+		/*
+		 * A health widget, on the page from the first load.
+		 *
+		 * A page can hold something other than links, and nothing on a
+		 * fresh install said so: widgets were a config section you had to
+		 * go looking for, which is a poor way to learn that the thing
+		 * exists. One block, at the top, reporting the collection it sits
+		 * above.
+		 *
+		 * Health rather than any of the other twelve because it is the only
+		 * one that reads correctly on an install with no history: it counts
+		 * what the header badge has already fetched, so it says something
+		 * true on the first paint rather than "nothing recorded yet". An
+		 * inbox tile would be empty, uptime and trend have no samples, and
+		 * sources and feeds have nothing registered.
+		 *
+		 * Empty config on purpose: `show` absent means every figure, which
+		 * is what a reader who has not chosen wants. Deletable like any
+		 * other seeded row.
+		 */
+		Widgets: []Widget{
+			{ID: defaultHealthWidgetID, Type: WidgetTypeHealth, Config: map[string]any{}},
+			// Notes after the links it sits beside, with the example note:
+			// it shows what the widget does and is one Edit away from yours.
+			{ID: defaultNotesWidgetID, Type: WidgetTypeNotes, Config: notesStarterConfig()},
+		},
+		// The widget leads, then the categories in the order above. Without
+		// an explicit order the widget would fall wherever resolveBlockOrder
+		// put it, which is after every category it is meant to summarise.
+		BlockOrder: []string{
+			defaultHealthWidgetID,
+			"development", "media", "social", "search", "utilities",
+			defaultNotesWidgetID,
+		},
+		Bookmarks: []Bookmark{
+			// The project's own site, in the seed rather than only behind the
+			// "follow it from your own dashboard" button in About: it is the
+			// place a new install finds out what changed, it publishes a feed
+			// so Fresh has something to count on day one, and a bookmark
+			// dashboard whose own site is not on the dashboard is an odd
+			// advertisement for itself. Deletable like any other starter row.
+			{Name: "nextDash", URL: "https://nextdash.cc/", Shortcut: "N", Category: "development", CheckStatus: false, Tags: []string{"dev", "bookmarks", "self-hosted"}},
+			{Name: "GitHub", URL: "https://github.com", Shortcut: "G", Category: "development", CheckStatus: true, Tags: []string{"dev", "code"}},
+			{Name: "GitHub Issues", URL: "https://github.com/issues", Shortcut: "GI", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
+			{Name: "GitHub Pull Requests", URL: "https://github.com/pulls", Shortcut: "GP", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
+			{Name: "YouTube", URL: "https://youtube.com", Shortcut: "Y", Category: "media", CheckStatus: false, Tags: []string{"video", "entertainment"}},
+			{Name: "YouTube Studio", URL: "https://studio.youtube.com", Shortcut: "YS", Category: "media", CheckStatus: false, Tags: []string{"video", "creator"}},
+			{Name: "Bluesky", URL: "https://bsky.app", Shortcut: "B", Category: "social", CheckStatus: false, Tags: []string{"social"}},
+			{Name: "Google", URL: "https://google.com", Shortcut: "", Category: "search", CheckStatus: false, Tags: []string{"search"}},
+		},
+	}
+}
+
 func (fs *FileStore) initializeDefaultFiles() {
 	fs.ensureDataDir()
 
 	// Initialize bookmarks for main page if file doesn't exist
 	mainPageBookmarksFile := filepath.Join(fs.dataDir, "bookmarks-1.json")
 	if _, err := os.Stat(mainPageBookmarksFile); os.IsNotExist(err) {
-		defaultPageWithBookmarks := PageWithBookmarks{
-			Page: Page{
-				ID:   1,
-				Name: "main",
-			},
-			Categories: []Category{
-				{ID: "development", Name: "Development"},
-				{ID: "media", Name: "Media"},
-				{ID: "social", Name: "Social"},
-				{ID: "search", Name: "Search"},
-				{ID: "utilities", Name: "Utilities"},
-			},
-			/*
-			 * A health widget, on the page from the first load.
-			 *
-			 * A page can hold something other than links, and nothing on a
-			 * fresh install said so: widgets were a config section you had to
-			 * go looking for, which is a poor way to learn that the thing
-			 * exists. One block, at the top, reporting the collection it sits
-			 * above.
-			 *
-			 * Health rather than any of the other twelve because it is the only
-			 * one that reads correctly on an install with no history: it counts
-			 * what the header badge has already fetched, so it says something
-			 * true on the first paint rather than "nothing recorded yet". An
-			 * inbox tile would be empty, uptime and trend have no samples, and
-			 * sources and feeds have nothing registered.
-			 *
-			 * Empty config on purpose: `show` absent means every figure, which
-			 * is what a reader who has not chosen wants. Deletable like any
-			 * other seeded row.
-			 */
-			Widgets: []Widget{
-				{ID: defaultHealthWidgetID, Type: WidgetTypeHealth, Config: map[string]any{}},
-				// Notes after the links it sits beside, with the example note:
-				// it shows what the widget does and is one Edit away from yours.
-				{ID: defaultNotesWidgetID, Type: WidgetTypeNotes, Config: notesStarterConfig()},
-			},
-			// The widget leads, then the categories in the order above. Without
-			// an explicit order the widget would fall wherever resolveBlockOrder
-			// put it, which is after every category it is meant to summarise.
-			BlockOrder: []string{
-				defaultHealthWidgetID,
-				"development", "media", "social", "search", "utilities",
-				defaultNotesWidgetID,
-			},
-			Bookmarks: []Bookmark{
-				// The project's own site, in the seed rather than only behind the
-				// "follow it from your own dashboard" button in About: it is the
-				// place a new install finds out what changed, it publishes a feed
-				// so Fresh has something to count on day one, and a bookmark
-				// dashboard whose own site is not on the dashboard is an odd
-				// advertisement for itself. Deletable like any other starter row.
-				{Name: "nextDash", URL: "https://nextdash.cc/", Shortcut: "N", Category: "development", CheckStatus: false, Tags: []string{"dev", "bookmarks", "self-hosted"}},
-				{Name: "GitHub", URL: "https://github.com", Shortcut: "G", Category: "development", CheckStatus: true, Tags: []string{"dev", "code"}},
-				{Name: "GitHub Issues", URL: "https://github.com/issues", Shortcut: "GI", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
-				{Name: "GitHub Pull Requests", URL: "https://github.com/pulls", Shortcut: "GP", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
-				{Name: "YouTube", URL: "https://youtube.com", Shortcut: "Y", Category: "media", CheckStatus: false, Tags: []string{"video", "entertainment"}},
-				{Name: "YouTube Studio", URL: "https://studio.youtube.com", Shortcut: "YS", Category: "media", CheckStatus: false, Tags: []string{"video", "creator"}},
-				{Name: "Bluesky", URL: "https://bsky.app", Shortcut: "B", Category: "social", CheckStatus: false, Tags: []string{"social"}},
-				{Name: "Google", URL: "https://google.com", Shortcut: "", Category: "search", CheckStatus: false, Tags: []string{"search"}},
-			},
-		}
+		defaultPageWithBookmarks := defaultMainPage()
 		stampDefaultBookmarkCreatedAt(defaultPageWithBookmarks.Bookmarks, time.Now())
 		data, _ := json.MarshalIndent(defaultPageWithBookmarks, "", "  ")
 		writeFileAtomic(mainPageBookmarksFile, data, 0644)
