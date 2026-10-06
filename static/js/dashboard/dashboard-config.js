@@ -2127,6 +2127,25 @@ class DashboardConfig {
     }
 
     /**
+     * Publish the band's height on the view as --lvs-header-height, the name
+     * the list-view shell uses, so the sticky rail stops below the sticky band
+     * instead of sliding under it. The band grows and shrinks with the
+     * section's own line, which wraps on a narrower window, so it is watched
+     * rather than read once.
+     */
+    trackShellHeaderHeight(container) {
+        const view = container?.querySelector('.config-view');
+        const head = view?.querySelector('.config-view-head');
+        this._shellHeadObserver?.disconnect?.();
+        if (!view || !head) return;
+        const publish = () => view.style.setProperty('--lvs-header-height', `${Math.round(head.offsetHeight)}px`);
+        publish();
+        if (typeof ResizeObserver !== 'function') return;
+        this._shellHeadObserver = new ResizeObserver(publish);
+        this._shellHeadObserver.observe(head);
+    }
+
+    /**
      * Redraw the section without rebuilding the shell around it.
      *
      * Returns false when there is no shell yet — the first render, or a return
@@ -2156,6 +2175,7 @@ class DashboardConfig {
         // Created up front, not on first save: a live region has to be in the
         // document before its text changes, or the change is not announced.
         this.ensureSaveStateHost();
+        this.trackShellHeaderHeight(container);
         this.bindSectionNav(container);
         this.syncSectionNav(this.section);
         this.bindTileActions(container);

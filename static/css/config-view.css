@@ -126,8 +126,11 @@
     flex-direction: column;
     gap: var(--space-4);
     padding-top: var(--space-2);
+    /* Below the sticky band, not under it: the band is .lvs-header, sticky at
+       0, and at a flat 8px the rail's first row sat behind it. The height is
+       published by trackShellHeaderHeight() in dashboard-config.js. */
     position: sticky;
-    top: 8px;
+    top: calc(var(--lvs-header-height, 0px) + var(--space-2));
     align-self: start;
 }
 
