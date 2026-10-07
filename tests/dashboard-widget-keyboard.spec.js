@@ -333,7 +333,9 @@ refresh they never asked for.
 test('a widget refresh leaves the cursor where it was', async ({ page }) => {
     await dashboardWithAWidget(page);
 
-    await page.locator('.dashboard-widget button').first().focus();
+    // A row, not the first button: the // before the title is a button too
+    // since blocks move with the keyboard, and it is not a stop of the cursor.
+    await page.locator('.dashboard-widget button[data-widget-action]').first().focus();
     await expect.poll(() => cursor(page).then((at) => at?.widget), { timeout: 10_000 }).toBe(true);
     const before = await cursor(page);
 

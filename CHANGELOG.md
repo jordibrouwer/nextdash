@@ -146,6 +146,7 @@ Categories, widgets and collections move on the dashboard itself: a landing box 
 - **tests — `tests/theme-browser-more-filters.spec.js`**, `tests/look-studio-reset-all.spec.js` and `look_defaults_test.go`; `tests/whats-new-modal.spec.js` follows the digest.
 - **tests — `demo_test.go`** covers the marker refusal, the reset and the refused routes; `tests/extension-popup.spec.js` covers a first setup.
 - **tests — `tests/whats-new-hidden-release.spec.js`** names v1.18.0 as the release the modal leads with.
+- **tests — three specs follow this release.** `dashboard-widget-keyboard.spec.js` focuses a widget row rather than the first button, which is now the `//` move handle; `dashboard-alt-move-bookmark.spec.js` expects Alt+→ to pass the next block, which can be a collection now that collections keep their place in the order; `list-view-header-surface.spec.js` lets the band be see-through at rest and expects it nearly solid once the page has scrolled.
 
 ### Docs
 - **docs — Help, tips, MANUAL and README** cover moving blocks, the grouped categories table, spreading by default, More filters, Reset all and the new What's new window; MANUAL §23.9 and the README variable table describe the demo variables.

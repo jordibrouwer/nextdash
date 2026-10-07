@@ -183,8 +183,14 @@ test.describe('moving a category with the keyboard', () => {
             if (!el || heads.length < 2) return null;
             el.focus();
             const id = el.closest('.category').getAttribute('data-category-id');
-            const next = heads[1].closest('.category').getAttribute('data-category-id');
-            return { id, next };
+            // One place right is past the next block, whatever it is: since
+            // collections keep their place in the block order, a collection
+            // can stand between two categories. Read the order the way the
+            // mover does -- in packed columns document order runs column by
+            // column, which is not the stored order.
+            const blocks = d.renderCore.blockOrderFromDom();
+            const next = blocks[blocks.indexOf(id) + 1];
+            return next ? { id, next } : null;
         });
         expect(target).not.toBeNull();
 
@@ -193,7 +199,7 @@ test.describe('moving a category with the keyboard', () => {
 
         const after = await page.evaluate(() => [...(window.dashboardInstance.blockOrder || [])]);
 
-        // The move was actually recorded, and the two swapped places.
+        // The move was actually recorded, and it went past the block after it.
         expect(after.length).toBeGreaterThan(0);
         expect(after.indexOf(target.id)).toBeGreaterThan(after.indexOf(target.next));
     });
