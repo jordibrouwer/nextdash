@@ -5547,6 +5547,16 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .moda
     width: min(36rem, calc(100vw - 2.5rem));
 }
 
+/* The release notes themselves, as against the notices that borrow the shell:
+   wide and tall at a fixed size, so new changes sit side by side as cards and
+   the modal does not jump when the section menu narrows the list. Lines stay
+   short because the cards and the two columns of fixes divide the width. */
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal:not(.analytics-notice-modal)) .modal {
+    width: min(64rem, calc(100vw - 2.5rem));
+    height: min(52rem, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 4rem));
+    max-height: calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 4rem);
+}
+
 /*
  * Room above the modal as well as below it.
  *

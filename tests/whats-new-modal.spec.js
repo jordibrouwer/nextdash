@@ -232,27 +232,52 @@ test.describe("what's new modal", () => {
         await expect(page.locator('.whats-new-modal .wn-support')).not.toContainText(/\d+ changes/);
     });
 
-    test('the filter shows one kind and the tabs jump to a section', async ({ page }) => {
+    /*
+     * New changes come first as cards, fixes after them as one line each, and
+     * one menu narrows both to a section where a row of tabs ran off the edge.
+     */
+    test('the section menu narrows the release to one section', async ({ page }) => {
         await loadDashboard(page);
         await openWhatsNew(page);
-        const fix = page.locator('.whats-new-modal [data-wn-filter="fix"]');
-        test.skip(!(await fix.count()), 'the newest release has only one kind of change');
-        await fix.click();
-        await expect(fix).toHaveAttribute('aria-pressed', 'true');
-        const kinds = await page.$$eval('.whats-new-modal [data-wn-section] [data-wn-kind]',
-            (els) => els.filter((el) => !el.hidden).map((el) => el.getAttribute('data-wn-kind')));
-        expect(kinds.length).toBeGreaterThan(0);
-        expect(new Set(kinds)).toEqual(new Set(['fix']));
-        await page.locator('.whats-new-modal [data-wn-filter="all"]').click();
+        const select = page.locator('.whats-new-modal [data-wn-section-select]');
+        test.skip(!(await select.count()), 'the newest release has one section');
+        await expect(page.locator('.whats-new-modal [data-wn-tab]')).toHaveCount(0);
 
-        const tabs = page.locator('.whats-new-modal [data-wn-tab]');
-        if (await tabs.count() > 1) {
-            const body = page.locator('.whats-new-modal .modal-body');
-            const before = await body.evaluate((el) => el.scrollTop);
-            await tabs.last().click();
-            await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBeGreaterThan(before);
-            await expect(tabs.last()).toHaveClass(/is-on/);
-        }
+        const options = await select.locator('option').evaluateAll((els) => els.map((el) => el.value));
+        const pick = options[options.length - 1];
+        await select.selectOption(pick);
+        const shown = await page.$$eval('.whats-new-modal .wn-groups [data-wn-sec]',
+            (els) => els.filter((el) => el.offsetParent !== null).map((el) => el.getAttribute('data-wn-sec')));
+        expect(shown.length).toBeGreaterThan(0);
+        expect(new Set(shown)).toEqual(new Set([pick]));
+        // The counts in the headings follow the menu.
+        const counted = await page.$$eval('.whats-new-modal [data-wn-block]:not([hidden]) [data-wn-block-count]',
+            (els) => els.reduce((n, el) => n + Number(el.textContent), 0));
+        expect(counted).toBe(shown.length);
+
+        await select.selectOption('');
+        const all = await page.$$eval('.whats-new-modal .wn-groups [data-wn-sec]',
+            (els) => els.filter((el) => el.offsetParent !== null).length);
+        expect(all).toBeGreaterThan(shown.length);
+    });
+
+    test('a fix is one line that opens to its explanation', async ({ page }) => {
+        await loadDashboard(page);
+        await openWhatsNew(page);
+        const row = page.locator('.whats-new-modal .wn-fix-list details.wn-fix').first();
+        test.skip(!(await row.count()), 'the newest release has no fix with an explanation');
+        const body = row.locator('[data-wn-entry-body]');
+        await expect(body).toBeHidden();
+        await row.locator('summary').click();
+        await expect(body).toBeVisible();
+        // New changes sit above the fixes.
+        const order = await page.evaluate(() => {
+            const added = document.querySelector('.whats-new-modal .wn-block--new');
+            const fixed = document.querySelector('.whats-new-modal .wn-block--fix');
+            if (!added || !fixed) return 'after';
+            return added.compareDocumentPosition(fixed) & Node.DOCUMENT_POSITION_FOLLOWING ? 'after' : 'before';
+        });
+        expect(order).toBe('after');
     });
 
     test('the update status is announced politely', async ({ page }) => {
