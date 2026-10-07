@@ -104,6 +104,8 @@
      * reset, the page reloads itself and says so once it is back.
      */
     const INSTALL_URL = 'https://nextdash.cc/install/';
+    // Where an Unraid user finds nextDash: the Community Apps site, searched.
+    const UNRAID_CA_URL = 'https://unraid.net/community/apps?q=nextdash';
     const RESET_NOTE_KEY = 'nextdash:demo-was-reset';
     let resetAt = 0;
     let lastReset = 0;
@@ -208,5 +210,19 @@
         else document.addEventListener('DOMContentLoaded', start, { once: true });
     }
 
-    global.DemoLock = { on, explain, chip, text };
+    /*
+     * On top of Config → Unraid, where the demo's server "Tower" stands: the
+     * place an Unraid user looks, told that nextDash is one search away in
+     * Community Apps.
+     */
+    function unraidNote() {
+        if (!on) return '';
+        return `<div class="demo-unraid-note" role="note">
+            <p class="demo-unraid-note-title">${esc(t('unraidTitle', 'On Unraid? nextDash is in Community Apps.'))}</p>
+            <p class="demo-unraid-note-text">${esc(t('unraidText', 'Open the Apps tab on your server and search for "nextDash" to install it. The server below is the demo\'s own, answering from sample data.'))}</p>
+            <a class="demo-unraid-note-link" href="${UNRAID_CA_URL}" target="_blank" rel="noopener">${esc(t('unraidLink', 'Open in Community Apps'))} →</a>
+        </div>`;
+    }
+
+    global.DemoLock = { on, explain, chip, text, unraidNote };
 })(window);

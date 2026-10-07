@@ -2631,3 +2631,30 @@ html body #app-modal .modal.whats-new-modal {
         display: none;
     }
 }
+
+/* Config → Unraid in the demo: the note pointing to Community Apps. */
+.demo-unraid-note {
+    margin: 0 0 var(--space-4, 1rem);
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    border: 1px solid var(--accent-primary);
+    border-left-width: 3px;
+    border-radius: 0;
+    background: var(--background-secondary);
+    color: var(--text-primary);
+}
+
+.demo-unraid-note-title {
+    margin: 0 0 var(--space-1, 0.25rem);
+    font-weight: 600;
+}
+
+.demo-unraid-note-text {
+    margin: 0 0 var(--space-2, 0.5rem);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.demo-unraid-note-link {
+    color: var(--accent-primary);
+    font-weight: 600;
+}

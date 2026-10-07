@@ -20,6 +20,7 @@
                 'The Unraid server the Unraid widgets read. Every widget uses this one connection.'))}</p>
             <div class="config-tabpage">
                 <div class="config-tabpage-main" id="config-unraid-body">
+                    ${window.DemoLock?.unraidNote?.() || ''}
                     ${this.renderUnraidExplainer()}
                     ${this.renderUnraidPreview()}
                     ${this.renderUnraidPanel()}
