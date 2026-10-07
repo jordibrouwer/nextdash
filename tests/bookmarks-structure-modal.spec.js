@@ -75,9 +75,14 @@ test.describe('pages and categories modal', () => {
   test('a delete confirmation opens over it', async ({ page }) => {
     await openBookmarksWithHealth(page, undefined, { view: 'library' });
     await page.locator('#config-bm-rail [data-bm-manage="pages"]').click();
+    // Adding saves before it repaints: wait for the new row, or the ⋯ opens on
+    // the old last one (page 1 has no Delete) and the repaint drops the menu.
+    const rows = modal(page).locator('[data-page-row]');
+    const before = await rows.count();
     await modal(page).locator('[data-page-add]').click();
-    const last = modal(page).locator('[data-page-row]').last();
-    await last.locator('[data-structure-more]').click();
+    await expect(rows).toHaveCount(before + 1);
+    const id = await rows.last().getAttribute('data-page-row');
+    await modal(page).locator(`[data-page-row="${id}"] [data-structure-more]`).click();
     await modal(page).locator('[data-structure-menu] [data-structure-proxy="delete"]').click();
     const confirm = page.locator('#config-confirm-modal, #app-modal.show').first();
     await expect(confirm).toBeVisible();
