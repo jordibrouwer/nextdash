@@ -314,7 +314,15 @@
      * the grid is scrolled or filtered. Once another card is chosen it says so,
      * and names the stored theme that stays until Apply.
      */
-    function renderInUse(state, t) {
+    /** "18 of 165 · 3 ★": how many cards the filters leave, and the stars given. */
+    function countLine(shown, total, favorites, t) {
+        return t('config.themeBrowserCountShort', '{shown} of {total} · {favorites} ★')
+            .replace('{shown}', String(shown))
+            .replace('{total}', String(total))
+            .replace('{favorites}', String(favorites));
+    }
+
+    function renderInUse(state, t, count = '') {
         const current = state.current;
         const chosen = current !== state.opened;
         const yours = metaFor(current).own === true ? ` · ${escapeHtml(t('config.themeYours', 'yours'))}` : '';
@@ -327,6 +335,7 @@
         return `
                 <div class="theme-browser-inuse${chosen ? ' is-chosen' : ''}" data-theme-inuse>
                     <span class="theme-browser-inuse-text">${line}</span>
+                    ${count ? `<span class="theme-browser-count">${escapeHtml(count)}</span>` : ''}
                     <button type="button" class="theme-browser-chip" data-theme-show-current>${escapeHtml(t('config.themeShowCurrent', 'Show'))}</button>
                 </div>`;
     }
@@ -354,6 +363,17 @@
             `<button type="button" class="theme-browser-chip${st.collection === name ? ' is-on' : ''}"
                      data-theme-collection="${escapeHtml(name)}"
                      aria-pressed="${st.collection === name}">${escapeHtml(label)}</button>`;
+        // Character and collection sit behind "More filters"; while it is
+        // closed, whatever of them is on stays in view as a chip with a ×.
+        const moreFilters = ARCHETYPES.length > 0 || COLLECTIONS.length > 0;
+        const activeChip = (kind, label) =>
+            `<button type="button" class="theme-browser-chip is-on theme-browser-chip--clear" data-theme-clear="${kind}"
+                     aria-label="${escapeHtml(t('config.themeClearFilter', 'Remove filter {name}').replace('{name}', label))}">${escapeHtml(label)}<span aria-hidden="true"> ×</span></button>`;
+        const activeChips = [
+            state.archetype ? activeChip('character', archetypeLabel(state.archetype, t)) : '',
+            state.collection ? activeChip('collection', collectionLabel(state.collection, t)) : '',
+        ].filter(Boolean);
+        const activeCount = activeChips.length;
         const segmentButton = (key, label) =>
             `<button type="button" class="theme-browser-segment${state.segment === key ? ' is-on' : ''}"
                      data-theme-segment="${key}" aria-pressed="${state.segment === key}">${escapeHtml(label)}</button>`;
@@ -365,6 +385,8 @@
                            value="${escapeHtml(state.query)}"
                            placeholder="${escapeHtml(t('config.themeSearchPlaceholder', 'Search themes…'))}"
                            aria-label="${escapeHtml(t('config.themeSearchPlaceholder', 'Search themes…'))}">
+                </div>
+                <div class="theme-browser-filters">
                     <span class="theme-browser-segments" role="group">
                         ${segmentButton('all', t('config.themeSegmentAll', 'All'))}
                         ${segmentButton('favorites', t('config.themeSegmentFavorites', 'Favourites'))}
@@ -372,7 +394,18 @@
                         ${segmentButton('dark', t('config.themeSegmentDark', 'Dark'))}
                         ${hasOwn ? segmentButton('yours', t('config.themeSegmentYours', 'Yours')) : ''}
                     </span>
+                    ${moreFilters ? `<button type="button" class="theme-browser-more" data-theme-more
+                            aria-expanded="${state.moreOpen}" aria-controls="theme-browser-more-filters">${escapeHtml(
+                        t('config.themeMoreFilters', 'More filters'))}${activeCount && !state.moreOpen
+                        ? ` <span class="theme-browser-more-count">${activeCount}</span>` : ''}</button>` : ''}
                 </div>
+                ${!state.moreOpen && activeChips.length ? `
+                <div class="theme-browser-active" role="group"
+                     aria-label="${escapeHtml(t('config.themeActiveFilters', 'Filters on'))}">
+                    ${activeChips.join('')}
+                </div>` : ''}
+                ${moreFilters && state.moreOpen ? `
+                <div class="theme-browser-more-filters" id="theme-browser-more-filters">
                 ${ARCHETYPES.length ? `
                 <div class="theme-browser-characters" role="group"
                      aria-label="${escapeHtml(t('config.themeCharacterFilter', 'Character'))}">
@@ -385,13 +418,8 @@
                     ${collectionButton('', t('config.themeSegmentAll', 'All'), state)}
                     ${COLLECTIONS.map((name) => collectionButton(name, collectionLabel(name, t), state)).join('')}
                 </div>` : ''}
-                <p class="theme-browser-count">${escapeHtml(
-                    t('config.themeBrowserCount', '{shown} of {total} themes · {favorites} favourites')
-                        .replace('{shown}', String(visible.length))
-                        .replace('{total}', String(families.length))
-                        .replace('{favorites}', String(state.favorites.length))
-                )}</p>
-                ${renderInUse(state, t)}
+                </div>` : ''}
+                ${renderInUse(state, t, countLine(visible.length, families.length, state.favorites.length, t))}
                 ${lookSwitch && hasLook ? `
                 <label class="theme-browser-look-switch">
                     <input type="checkbox" data-studio-theme-look ${lookSwitch.get() ? 'checked' : ''}>
@@ -597,6 +625,8 @@
             archetype: '',
             // Empty means every collection; a second axis beside the archetype.
             collection: '',
+            // Whether the character and collection chips are unfolded.
+            moreOpen: false,
             // The theme open in the editor, which takes the Themes tab's place
             // while set; null is the grid.
             editing: null,
@@ -778,6 +808,20 @@
                     repaintThemes();
                 });
             });
+            pane.querySelector('[data-theme-more]')?.addEventListener('click', () => {
+                state.moreOpen = !state.moreOpen;
+                repaintThemes();
+                pane.querySelector('[data-theme-more]')?.focus();
+            });
+            pane.querySelectorAll('[data-theme-clear]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    if (button.getAttribute('data-theme-clear') === 'character') state.archetype = '';
+                    else state.collection = '';
+                    repaintThemes();
+                    pane.querySelector('[data-theme-clear]')?.focus()
+                        || pane.querySelector('[data-theme-more]')?.focus();
+                });
+            });
             pane.querySelectorAll('[data-theme-collection]').forEach((button) => {
                 button.addEventListener('click', () => {
                     const name = button.getAttribute('data-theme-collection') || '';
@@ -843,10 +887,8 @@
                     button.setAttribute('aria-pressed', String(on));
                     const count = pane.querySelector('.theme-browser-count');
                     if (count) {
-                        count.textContent = t('config.themeBrowserCount', '{shown} of {total} themes · {favorites} favourites')
-                            .replace('{shown}', String(pane.querySelectorAll('[data-theme-card]').length))
-                            .replace('{total}', String(families.length))
-                            .replace('{favorites}', String(state.favorites.length));
+                        count.textContent = countLine(pane.querySelectorAll('[data-theme-card]').length,
+                            families.length, state.favorites.length, t);
                     }
                     if (state.segment === 'favorites' && !on) repaintThemes();
                 });
@@ -981,7 +1023,9 @@
                 });
                 const inUse = pane.querySelector('[data-theme-inuse]');
                 if (inUse) {
-                    inUse.outerHTML = renderInUse(state, t);
+                    // The count is the grid's, which this repaint leaves as it is.
+                    const count = inUse.querySelector('.theme-browser-count')?.textContent || '';
+                    inUse.outerHTML = renderInUse(state, t, count);
                     bindShowCurrent();
                 }
             }

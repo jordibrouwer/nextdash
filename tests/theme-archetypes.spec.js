@@ -72,6 +72,7 @@ test('the character chips narrow the browser, and search reaches the written lin
     const all = await cards.count();
     expect(all, 'the browser opened empty').toBeGreaterThan(20);
 
+    await page.locator('[data-theme-more]').click();
     await page.locator('[data-theme-character="velvet"]').click();
     await expect.poll(() => cards.count(), { message: 'the velvet chip did not narrow the grid' })
         .toBeLessThan(all);

@@ -45,6 +45,7 @@ test('gloss themes carry their character as a badge and a chip', async ({ page }
     // A matte theme carries a different one.
     await expect(page.locator('[data-theme-id="moss-stone-dark"] [data-theme-badge="lacquer"]')).toHaveCount(0);
 
+    await page.locator('[data-theme-more]').click();
     await page.locator('[data-theme-character="lacquer"]').click();
     const cards = page.locator('[data-theme-card]');
     await expect.poll(() => cards.count()).toBeGreaterThanOrEqual(8);

@@ -45,6 +45,68 @@
     gap: var(--space-1, 0.25rem);
 }
 
+/*
+ * Under the search: All, Favourites, Light and Dark, the ones reached for
+ * most, and "More filters" at the end for character and collection. Folded,
+ * those two take no room; one that is on shows as a chip with a × below.
+ */
+.theme-browser-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+}
+
+.theme-browser-more {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    padding: var(--space-1, 0.3rem) var(--space-2, 0.6rem);
+    border: 0;
+    border-radius: var(--layout-radius-sm, 8px);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
+.theme-browser-more::after {
+    content: "▸";
+    font-size: 0.85em;
+}
+
+.theme-browser-more[aria-expanded="true"]::after {
+    content: "▾";
+}
+
+.theme-browser-more:hover {
+    color: var(--text-primary);
+}
+
+.theme-browser-more-count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.4em;
+    height: 1.4em;
+    padding: 0 0.3em;
+    border-radius: 999px;
+    background: var(--accent-primary);
+    color: var(--background-primary);
+    font-size: 0.85em;
+}
+
+.theme-browser-active {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+}
+
+.theme-browser-chip--clear span {
+    color: var(--text-secondary);
+}
+
 .theme-browser-segment,
 .theme-browser-variant {
     padding: var(--space-1, 0.3rem) var(--space-2, 0.6rem);
@@ -114,10 +176,11 @@
     line-height: 1.35;
 }
 
+/* How many cards the filters leave, at the end of the In use line. */
 .theme-browser-count {
-    margin: 0;
+    flex: none;
     color: var(--text-tertiary);
-    font-size: 0.85em;
+    white-space: nowrap;
 }
 
 /* The theme in use, kept above the grid however far it scrolls. */
