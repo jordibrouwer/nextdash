@@ -312,5 +312,5 @@ func (h *Handlers) DemoStatus(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, map[string]any{"demo": false})
 		return
 	}
-	writeJSON(w, map[string]any{"demo": true, "resetAt": demoResetAt()})
+	writeJSON(w, map[string]any{"demo": true, "resetAt": demoResetAt(), "lastReset": demo.lastReset.Load()})
 }

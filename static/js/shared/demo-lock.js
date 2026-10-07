@@ -100,11 +100,14 @@
     /*
      * The demo bar: a filled strip above the header, always there and not to
      * be closed. It says the demo is shared and when it resets, counted down
-     * from /api/demo, and links to the install page. A reset itself needs no
-     * reload here: the data revision moves and the dashboard follows it.
+     * from /api/demo, and links to the install page. When the server has
+     * reset, the page reloads itself and says so once it is back.
      */
     const INSTALL_URL = 'https://nextdash.cc/install/';
+    const RESET_NOTE_KEY = 'nextdash:demo-was-reset';
     let resetAt = 0;
+    let lastReset = 0;
+    let soonTimer = null;
 
     function resetText() {
         const left = resetAt - Date.now();
@@ -136,9 +139,29 @@
         try {
             const res = await fetch('/api/demo', { cache: 'no-store' });
             const data = await res.json();
-            if (data?.demo) resetAt = Number(data.resetAt) || 0;
+            if (data?.demo) {
+                resetAt = Number(data.resetAt) || 0;
+                const reset = Number(data.lastReset) || 0;
+                /*
+                 * The server reset since this page loaded: start again from the
+                 * fresh data. A reload rather than a refresh of the views, so
+                 * nothing the visitor had open is left showing the old state.
+                 */
+                if (lastReset && reset && reset !== lastReset) {
+                    try { sessionStorage.setItem(RESET_NOTE_KEY, '1'); } catch { /* the note is optional */ }
+                    global.location.reload();
+                    return;
+                }
+                lastReset = reset || lastReset;
+            }
         } catch { /* the bar keeps its last answer */ }
         renderBar();
+        // Near the end of the countdown, ask every few seconds, so the reload
+        // follows the reset rather than the next half-minute round.
+        clearTimeout(soonTimer);
+        if (resetAt && resetAt - Date.now() < 20000) {
+            soonTimer = setTimeout(() => void refreshResetAt(), 3000);
+        }
     }
 
     /*
@@ -166,6 +189,13 @@
     if (on) {
         watchDemoAnswers();
         const start = () => {
+            try {
+                if (sessionStorage.getItem(RESET_NOTE_KEY)) {
+                    sessionStorage.removeItem(RESET_NOTE_KEY);
+                    setTimeout(() => global.dashboardInstance?.showNotification?.(
+                        t('wasReset', 'The demo was reset to its start'), 'info', { duration: 5000 }), 1500);
+                }
+            } catch { /* the note is optional */ }
             renderBar();
             void refreshResetAt();
             setInterval(renderBar, 15000);
