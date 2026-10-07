@@ -12,6 +12,18 @@ const extensionPath = path.join(__dirname, '..', 'extension');
  * user does: the popup's settings tab, server URL and write token.
  */
 async function launchConfigured(baseURL) {
+    const launched = await launchExtension();
+    const { page } = launched;
+    await page.locator('.tab-button[data-tab="settings"]').click();
+    await page.locator('#server-url').fill(baseURL);
+    await page.locator('#write-token').fill(WRITE_TOKEN);
+    await page.locator('#settings-form button[type="submit"]').click();
+    await expect(page.locator('.message.success')).toBeVisible({ timeout: 15_000 });
+    return launched;
+}
+
+/** The unpacked extension in a fresh profile, popup open, nothing set yet. */
+async function launchExtension() {
     // A fresh profile per launch. The one kept in the repo held the service
     // worker of an earlier run, so the background script under test could be
     // an old copy of background.js.
@@ -38,11 +50,6 @@ async function launchConfigured(baseURL) {
     // being pointed at nothing and its page list stayed empty.
     await page.goto(`chrome-extension://${extensionId}/popup.html`);
     await expect(page.locator('#save-tab')).toBeVisible();
-    await page.locator('.tab-button[data-tab="settings"]').click();
-    await page.locator('#server-url').fill(baseURL);
-    await page.locator('#write-token').fill(WRITE_TOKEN);
-    await page.locator('#settings-form button[type="submit"]').click();
-    await expect(page.locator('.message.success')).toBeVisible({ timeout: 15_000 });
     const close = async () => {
         await context.close();
         fs.rmSync(userDataDir, { recursive: true, force: true });
@@ -73,6 +80,33 @@ test.describe('extension popup', () => {
 
             await expect(page.locator('#save-success-panel:not(.hidden)')).toBeVisible({ timeout: 15_000 });
             await expect(page.locator('#save-success-text')).toContainText(/saved/i);
+        } finally {
+            await close();
+        }
+    });
+
+    /*
+     * A first setup: type the address, reload the pages, pick a default page.
+     * Its categories came from the stored address, and nothing is stored before
+     * Save Settings, so the list stayed empty until the popup was reopened.
+     */
+    test('a first setup lists the default page categories before and after saving', async ({ baseURL }) => {
+        const { close, page } = await launchExtension();
+        try {
+            await page.locator('.tab-button[data-tab="settings"]').click();
+            await page.locator('#server-url').fill(baseURL);
+            await page.locator('#write-token').fill(WRITE_TOKEN);
+            await page.locator('#reload-pages-btn').click();
+            await expect(page.locator('#default-page option')).not.toHaveCount(0, { timeout: 15_000 });
+
+            const pageId = await page.locator('#default-page option').first().getAttribute('value');
+            await page.locator('#default-page').selectOption(pageId);
+            // "No Category" plus at least one real category.
+            await expect.poll(() => page.locator('#default-category option').count(), { timeout: 10_000 }).toBeGreaterThan(1);
+
+            await page.locator('#settings-form button[type="submit"]').click();
+            await expect(page.locator('.message.success')).toBeVisible({ timeout: 15_000 });
+            await expect.poll(() => page.locator('#default-category option').count(), { timeout: 10_000 }).toBeGreaterThan(1);
         } finally {
             await close();
         }
