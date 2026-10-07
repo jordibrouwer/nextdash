@@ -1822,7 +1822,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			BookmarkArchiveUrl:              defaultBookmarkArchiveUrl,
 			ThemeIconStyling:                defaultThemeIconStyling(),
 			PackedColumns:                   true,
-			DefaultCategorySpread:           false,
+			DefaultCategorySpread:           true,
 			CategorySpreadResetScope:        defaultCategorySpreadResetScope,
 			// Was omitted here while both other Settings constructions set it,
 			// so a fresh install was served "" for a field whose documented
@@ -4313,7 +4313,7 @@ func (fs *FileStore) GetSettings() Settings {
 			CategorySpacing:                 "balanced",
 			SideMargin:                      "balanced",
 			PackedColumns:                   true,
-			DefaultCategorySpread:           false,
+			DefaultCategorySpread:           true,
 			CategorySpreadResetScope:        defaultCategorySpreadResetScope,
 			BackgroundType:                  "none",
 			BackgroundGradient:              "",
@@ -4389,6 +4389,10 @@ func (fs *FileStore) GetSettings() Settings {
 		// The bar was always drawn before this switch existed.
 		if _, ok := rawSettings["actionBarEnabled"]; !ok {
 			settings.ActionBarEnabled = true
+		}
+		// New categories spread unless the reader turned it off.
+		if _, ok := rawSettings["defaultCategorySpread"]; !ok {
+			settings.DefaultCategorySpread = true
 		}
 		/*
 		 * A settings file that never answered the look questions.
