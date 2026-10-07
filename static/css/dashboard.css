@@ -2960,6 +2960,44 @@ body.is-moving-block { cursor: grabbing; user-select: none; }
 .block-move-coach-done:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
 @keyframes block-coach-in { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .block-move-coach { animation: none; } }
+/* One-time intro that shows blocks can be moved: a see-through copy of the first
+   category glides to the next place, the landing box and column lines show, and a
+   card stays under its "//". Nothing here takes a click except the card's buttons. */
+.block-intro-ghost {
+    position: absolute; z-index: 5; pointer-events: none; box-sizing: border-box; opacity: 0;
+    padding: var(--space-2, 0.5rem); overflow: hidden;
+    border: 1px solid var(--accent-primary); background: var(--background-secondary);
+    color: var(--accent-primary); font-family: inherit; font-size: var(--font-size-category);
+    font-weight: var(--font-weight-bold); letter-spacing: 0.05em; white-space: nowrap;
+    box-shadow: 0 14px 34px rgb(0 0 0 / .45);
+    transition: left .7s cubic-bezier(.2, .7, .2, 1), top .7s cubic-bezier(.2, .7, .2, 1), width .7s cubic-bezier(.2, .7, .2, 1), opacity .25s, transform .25s;
+}
+.block-intro-ghost.is-up { opacity: .92; transform: translateY(-6px) scale(1.02); }
+.block-landing.block-intro-box { animation: block-coach-in .25s ease-out; transition: left .35s, top .35s, width .35s, height .35s; }
+.category-reorder-handle.is-intro-glow { opacity: 1; color: var(--accent-primary); animation: block-intro-glow .7s ease-in-out 2; }
+.category-reorder-handle.is-intro-ring { opacity: 1; color: var(--accent-primary); border-radius: 2px; box-shadow: 0 0 0 2px var(--accent-primary); }
+@keyframes block-intro-glow {
+    50% { text-shadow: 0 0 10px var(--accent-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 35%, transparent); }
+}
+.block-intro-card { --intro-arrow-x: 18px; }
+.block-intro-card::before {
+    content: ""; position: absolute; left: var(--intro-arrow-x); top: -9px; width: 14px; height: 14px;
+    background: var(--background-secondary); border-left: 2px solid var(--accent-primary); border-top: 2px solid var(--accent-primary);
+    transform: rotate(45deg);
+}
+.block-intro-card.is-above::before { top: auto; bottom: -9px; transform: rotate(225deg); }
+.block-intro-card code { color: var(--accent-primary); }
+.block-intro-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+.block-intro-actions .block-move-coach-done { display: inline-block; margin: 0; }
+.block-intro-btn {
+    padding: 5px 14px; cursor: pointer; border: 1px solid var(--border-secondary); border-radius: var(--radius-3, 4px);
+    background: var(--background-primary); color: var(--text-primary); font-family: inherit; font-weight: 600; font-size: var(--text-sm, 0.8rem);
+}
+.block-intro-btn:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+    .block-intro-ghost, .block-landing.block-intro-box { transition: none; animation: none; }
+    .category-reorder-handle.is-intro-glow { animation: none; }
+}
 .category.is-move-landed { box-shadow: 0 0 0 2px color-mix(in srgb, var(--status-success, #4fd18b) 45%, transparent); transition: box-shadow .6s; }
 @media (prefers-reduced-motion: reduce) { .block-landing { transition: none; } }
 

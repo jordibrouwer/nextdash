@@ -74,6 +74,8 @@
         if (d.settings?.enableSessionTips === false) return false;
         // No tips in the public demo: the bar and the tour already speak.
         if (global.DemoLock?.on) return false;
+        // The block-move intro (animation and card) has the screen until it is answered.
+        if (document.body.classList.contains('is-block-move-intro')) return false;
 
         // Whether unprompted UI may take the screen is one shared question,
         // answered by dashboard-promos.js for every module that asks it. A tip

@@ -148,14 +148,19 @@
         return `${where} · ${width === 2 ? wide : t('blockLandOne', {}, '1 column')}`;
     }
 
-    function drawSeams(grid) {
-        if (!canWiden(state.id)) return [];
+    /** Where the column lines are, relative to the grid: the centres of the gutters between columns. */
+    function seamPositions(grid) {
         const rc = global.dashboardInstance?.renderCore;
         const cols = rc?.getEffectiveColumnsPerRow?.() || 1;
         const g = grid.getBoundingClientRect();
         const gap = parseFloat(getComputedStyle(grid).columnGap) || 0;
         const colW = (g.width - gap * (cols - 1)) / cols;
-        const seams = Model().seamCentres(0, colW, gap, cols);
+        return Model().seamCentres(0, colW, gap, cols);
+    }
+
+    function drawSeams(grid) {
+        if (!canWiden(state.id)) return [];
+        const seams = seamPositions(grid);
         seams.forEach((x) => {
             const el = document.createElement('div');
             el.className = 'block-seam';
@@ -683,6 +688,7 @@
 
     global.DashboardBlockMover = {
         predictRect, attach, isMoving, begin, finish, showLanding, pickUp,
+        canWiden, placeLabel, seamPositions,
         get state() { return state; },
     };
 })(window);

@@ -75,6 +75,8 @@
         if (document.querySelector(`.quickstart-card:not(.${selfClass})`)) return false;
         if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
         if (document.querySelector('.whats-new-modal')) return false;
+        // The block-move intro (animation, then its card) has the screen until it is answered.
+        if (document.body.classList.contains('is-block-move-intro')) return false;
         if (document.body.classList.contains('bookmark-inline-edit-active')) return false;
         return true;
     }
@@ -144,8 +146,8 @@ canShow every time.
         bodyObserver = new MutationObserver((records) => {
             const freed = records.some((record) => [...record.removedNodes].some((node) =>
                 node.nodeType === 1
-                && (node.matches?.('.quickstart-card, .whats-new-modal')
-                    || node.querySelector?.('.quickstart-card, .whats-new-modal'))));
+                && (node.matches?.('.quickstart-card, .whats-new-modal, .block-intro-card')
+                    || node.querySelector?.('.quickstart-card, .whats-new-modal, .block-intro-card'))));
             if (freed) wakeQueue();
         });
         bodyObserver.observe(document.body, { childList: true, subtree: true });
