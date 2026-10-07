@@ -445,6 +445,11 @@ async function loadPages(providedServerUrl) {
     extServerUrl = serverUrl;
     if (!extFormPreview) initExtensionPreview();
 
+    if (!(await hasServerAccess(serverUrl))) {
+        showMessage(extT('msgServerAccessNeeded', 'nextDash needs access to {origin}. Open Settings and click Save Settings to allow it.', { origin: serverOrigin(serverUrl) }), 'info');
+        return;
+    }
+
     try {
         const response = await fetch(new URL('/api/pages', serverUrl));
         if (!response.ok) throw new Error('Failed to fetch pages');
@@ -710,6 +715,8 @@ async function saveSettings(event) {
     event.preventDefault();
 
     const serverUrl = document.getElementById('server-url').value;
+    // Before any await: Firefox only prompts from the click itself.
+    const accessRequest = requestServerAccess(serverUrl);
     const defaultPage = document.getElementById('default-page').value;
     const defaultCategory = document.getElementById('default-category').value;
 
@@ -741,7 +748,19 @@ async function saveSettings(event) {
     }
 
     updateUrlDuplicateHint();
+    if (!(await accessRequest)) {
+        showMessage(extT('msgServerAccessDenied', 'Settings saved, but the browser did not allow access to {origin}. Click Save Settings again and allow it.', { origin: serverOrigin(serverUrl) }), 'error');
+        return;
+    }
     showMessage(extT('msgSettingsSaved', 'Settings saved!'), 'success');
+}
+
+function serverOrigin(serverUrl) {
+    try {
+        return new URL(normalizeServerUrl(serverUrl)).origin;
+    } catch {
+        return serverUrl;
+    }
 }
 
 async function showSaveSuccess(serverUrl, pageId, bookmarkName) {

@@ -2,6 +2,8 @@
   "private": true,
   "scripts": {
     "sync:extension-bookmark-form": "./scripts/sync-extension-bookmark-form.sh",
+    "build:extension": "node scripts/build-extension.mjs",
+    "lint:extension-firefox": "node scripts/build-extension.mjs firefox && npx --yes web-ext lint --source-dir dist/extension/firefox",
     "validate:json": "bash scripts/validate-json.sh",
     "test:e2e": "playwright test",
     "test:e2e:reuse": "PLAYWRIGHT_REUSE_SERVER=true playwright test",
@@ -23,7 +25,8 @@
     "test:news-stream": "node tests/news-stream-model.test.cjs",
     "test:workbench-model": "node tests/bookmark-workbench-model.test.cjs",
     "test:config-split": "node tests/config-section-plan.test.mjs",
-    "test:block-move-model": "node tests/block-move-model.test.cjs"
+    "test:block-move-model": "node tests/block-move-model.test.cjs",
+    "test:extension-build": "node tests/build-extension.test.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.0",

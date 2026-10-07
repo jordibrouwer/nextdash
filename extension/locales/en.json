@@ -52,6 +52,8 @@
   "msgDuplicateSamePage": "This page already has this link.",
   "msgUrlNotSavable": "This URL cannot be saved. Use a normal http(s) page.",
   "msgSettingsSaved": "Settings saved!",
+  "msgServerAccessDenied": "Settings saved, but the browser did not allow access to {origin}. Click Save Settings again and allow it.",
+  "msgServerAccessNeeded": "nextDash needs access to {origin}. Open Settings and click Save Settings to allow it.",
   "msgSettingsReset": "Settings reset!",
   "msgDuplicateConfirm": "This URL already exists in this page as <strong>\"{name}\"</strong>.<br><span class=\"highlight\">Do you want to save it anyway?</span>",
   "notifySaved": "Bookmark saved to nextDash",

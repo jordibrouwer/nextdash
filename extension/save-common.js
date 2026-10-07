@@ -4,6 +4,45 @@ function normalizeServerUrl(serverUrl) {
   return String(serverUrl || '').trim().replace(/\/+$/, '');
 }
 
+// Firefox treats host permissions as optional: its build lists them under
+// optional_host_permissions, and the server's origin is asked for when the
+// settings are saved. Chromium grants them at install, so there the request
+// resolves at once without a prompt. Match patterns carry no port.
+function serverAccessPattern(serverUrl) {
+  try {
+    const url = new URL(normalizeServerUrl(serverUrl));
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';
+    return `${url.protocol}//${url.hostname}/*`;
+  } catch {
+    return '';
+  }
+}
+
+async function hasServerAccess(serverUrl) {
+  const pattern = serverAccessPattern(serverUrl);
+  if (!pattern || typeof chrome.permissions?.contains !== 'function') return true;
+  try {
+    return await chrome.permissions.contains({ origins: [pattern] });
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Ask for the server's origin. Call it first thing in a click or submit
+ * handler: Firefox only shows the prompt from a user action, and an await
+ * before the call ends that action.
+ */
+function requestServerAccess(serverUrl) {
+  const pattern = serverAccessPattern(serverUrl);
+  if (!pattern || typeof chrome.permissions?.request !== 'function') return Promise.resolve(true);
+  try {
+    return Promise.resolve(chrome.permissions.request({ origins: [pattern] })).catch(() => false);
+  } catch {
+    return Promise.resolve(false);
+  }
+}
+
 async function getStoredWriteToken() {
   try {
     const sync = await chrome.storage.sync.get(['writeToken']);

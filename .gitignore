@@ -27,6 +27,9 @@ test-results/
 playwright-report/
 .playwright-extension-profile/
 
+# Extension builds (npm run build:extension)
+dist/
+
 # Local / runtime data
 data/
 !static/data/
