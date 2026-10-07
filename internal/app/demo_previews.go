@@ -1,9 +1,16 @@
 package app
 
-// demoPreviews is what a link preview would have found on each demo site:
-// its page title and a line about it. Written here because the demo fetches
-// no page; the Bookmarks view and the preview cards read them as they read a
-// fetched preview.
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"time"
+)
+
+// demoPreviews is the title and line each demo bookmark carries itself, so
+// the Bookmarks view reads well before, or without, the fetched previews.
 var demoPreviews = map[string][2]string{
 	"https://github.com/":                        {"GitHub", "Where the world builds software: code hosting, pull requests, issues and Actions."},
 	"https://gitlab.com/":                        {"GitLab", "One application for source code, CI/CD, issues and the rest of the DevSecOps cycle."},
@@ -52,4 +59,129 @@ var demoPreviews = map[string][2]string{
 	"https://doc.traefik.io/traefik/":            {"Traefik Proxy Documentation", "A reverse proxy that configures itself from Docker labels and other providers."},
 	"https://caddyserver.com/docs/":              {"Caddy Documentation", "The web server with automatic HTTPS and a one-line config for most sites."},
 	"https://letsencrypt.org/docs/":              {"Let's Encrypt Documentation", "Free, automated TLS certificates, and how ACME clients get them."},
+}
+
+/*
+demoPreviewCache keeps the link previews fetched at the first start, pictures
+included, so every reset puts the preview cards back without asking the sites
+again.
+*/
+var demoPreviewCache struct {
+	sync.Mutex
+	ready   bool
+	entries map[string]BookmarkPreview // canonical URL -> preview
+	files   map[string][]byte          // file name under preview-images -> bytes
+}
+
+// fetchDemoPreviews fetches every demo bookmark's preview and its pictures,
+// a few sites at a time, and keeps them. Runs inside the start-up window.
+func (h *Handlers) fetchDemoPreviews() {
+	urls := []string{}
+	for _, page := range demoPages() {
+		for _, link := range page.links {
+			urls = append(urls, link.url)
+		}
+	}
+	jobs := make(chan string)
+	var wg sync.WaitGroup
+	for i := 0; i < 4; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for rawURL := range jobs {
+				h.fetchDemoPreview(rawURL)
+			}
+		}()
+	}
+	for _, rawURL := range urls {
+		jobs <- rawURL
+	}
+	close(jobs)
+	wg.Wait()
+
+	entries := map[string]BookmarkPreview{}
+	files := map[string][]byte{}
+	dir := previewImageDir()
+	for _, rawURL := range urls {
+		key := canonicalBookmarkURLKey(rawURL)
+		entry, ok := h.storedPreview(key)
+		if !ok || !previewCacheEntryValid(entry) {
+			continue
+		}
+		for _, local := range []string{entry.Image, entry.Icon} {
+			name := strings.TrimPrefix(local, "/data/"+previewImageDirName+"/")
+			if name == local || name == "" || strings.ContainsAny(name, "/\\") {
+				continue
+			}
+			if data, err := os.ReadFile(filepath.Join(dir, name)); err == nil {
+				files[name] = data
+			}
+		}
+		entries[key] = entry
+	}
+	demoPreviewCache.Lock()
+	demoPreviewCache.entries, demoPreviewCache.files, demoPreviewCache.ready = entries, files, true
+	demoPreviewCache.Unlock()
+	logInfo(logComponentServer, "demo: kept %s for every reset", plural(len(entries), "link preview", "link previews"))
+}
+
+// fetchDemoPreview fetches one page's preview and, at once rather than through
+// the background queue, its picture and icon. A second try covers a request the
+// shared limit refused between the wait and the fetch.
+func (h *Handlers) fetchDemoPreview(rawURL string) {
+	key := canonicalBookmarkURLKey(rawURL)
+	var preview BookmarkPreview
+	for attempt := 0; attempt < 2; attempt++ {
+		waitForOutboundRoom()
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		preview = h.fetchBookmarkPreview(ctx, rawURL, &PreviewCacheFile{Cache: map[string]BookmarkPreview{}}, false)
+		cancel()
+		if preview.Title != "" || preview.Description != "" {
+			break
+		}
+	}
+	// A site that answered nothing useful keeps the bookmark's own text.
+	if preview.Title == "" && preview.Description == "" {
+		return
+	}
+	if err := h.mergePreviewCacheUpdates(map[string]BookmarkPreview{key: preview}); err != nil {
+		return
+	}
+	waitForOutboundRoom()
+	h.runPreviewMediaJob(previewMediaJob{key: key, entry: preview, wantImage: true, wantIcon: true})
+}
+
+/*
+waitForOutboundRoom waits, for a while at most, until the shared outbound limit
+has room. The favicon round just before spends most of a minute's worth, and a
+refused request would leave the preview empty rather than late.
+*/
+func waitForOutboundRoom() {
+	for i := 0; i < 60 && globalOutboundLimiter.saturated("global"); i++ {
+		time.Sleep(2 * time.Second)
+	}
+}
+
+/*
+writeDemoPreviewCache puts the kept previews back after a reset, fresh, so
+none ages into a refetch the demo would refuse. Before the first round is done
+the cache is emptied instead, which also drops what visitors fetched.
+*/
+func (h *Handlers) writeDemoPreviewCache(now time.Time) {
+	demoPreviewCache.Lock()
+	entries, files, ready := demoPreviewCache.entries, demoPreviewCache.files, demoPreviewCache.ready
+	demoPreviewCache.Unlock()
+	cache := PreviewCacheFile{Cache: map[string]BookmarkPreview{}}
+	if ready {
+		dir := previewImageDir()
+		_ = os.MkdirAll(dir, 0o755)
+		for name, data := range files {
+			_ = writeFileAtomic(filepath.Join(dir, name), data, 0o644)
+		}
+		for key, entry := range entries {
+			entry.FetchedAt = now.UnixMilli()
+			cache.Cache[key] = entry
+		}
+	}
+	_ = h.replacePreviewCache(cache)
 }

@@ -18,8 +18,8 @@ What the public demo keeps closed, in three layers.
 Outbound: the server reaches no other host. Every outbound client but two
 dials through ssrfSafeDialContext, which refuses in the demo; the install ping
 and browser push have their own client and refuse at their source. The one
-exception is the round at the first start that fetches the demo's favicons and
-the app-icon sets (demoOutboundOpen), before the demo is serving visitors for
+exception is the round at the first start that fetches the demo's favicons,
+link previews and the app-icon sets (demoOutboundOpen), before the demo is serving visitors for
 long. TestDemoKnowsEveryOutboundClient fails when a new client appears that is
 not on that list.
 

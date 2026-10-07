@@ -193,6 +193,8 @@ func (h *Handlers) writeDemoPages(now time.Time) error {
 		}
 	}
 
+	h.writeDemoPreviewCache(now)
+
 	order := []int{}
 	for index, page := range demoPages() {
 		pageID := index + 1
@@ -240,7 +242,8 @@ func (h *Handlers) writeDemoPages(now time.Time) error {
 
 /*
 fetchDemoIconsOnce fetches the favicons at the first start, through the same
-prefetch a fresh install uses, and keeps them for every reset after.
+prefetch a fresh install uses, then the link previews, and keeps both for
+every reset after.
 */
 func (h *Handlers) fetchDemoIconsOnce() {
 	if os.Getenv("NEXTDASH_DISABLE_PREFETCH") == "1" {
@@ -249,7 +252,7 @@ func (h *Handlers) fetchDemoIconsOnce() {
 	go func() {
 		// The one window in which the demo reaches outside: the app-icon sets
 		// first, so the favicon round skips what they already draw, then the
-		// favicons. Closed again as soon as both are done.
+		// favicons, then the link previews. Closed again once all are done.
 		demoOutboundOpen.Store(true)
 		defer demoOutboundOpen.Store(false)
 		if !iconSetsDisabled() && iconSetsFixtureDir() == "" {
@@ -289,5 +292,6 @@ func (h *Handlers) fetchDemoIconsOnce() {
 		demoIconCache.files, demoIconCache.byURL, demoIconCache.ready = files, byURL, true
 		demoIconCache.Unlock()
 		logInfo(logComponentServer, "demo: kept %s for every reset", plural(len(byURL), "favicon", "favicons"))
+		h.fetchDemoPreviews()
 	}()
 }
