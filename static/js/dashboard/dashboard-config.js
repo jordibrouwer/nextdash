@@ -23785,7 +23785,7 @@ class DashboardConfig {
                 [t('config.colSpread', 'Spread'), 'structure-spread-cell'],
                 ['', 'structure-actions'],
             ]);
-            body = `${this.renderPtCountLabel('categories', shown, totalCategories)}${this.renderStructureList('categories', 'minmax(10rem, 1fr) 6rem 5rem 4rem auto', columns + html)}`;
+            body = `${this.renderPtCountLabel('categories', shown, totalCategories)}${this.renderStructureList('categories', 'minmax(10rem, 1fr) 6rem 5rem minmax(max-content, 4rem) auto', columns + html)}`;
         }
         return `${intro}${summary}${toolbar}${chips}${body}`;
     }
