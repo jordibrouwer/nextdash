@@ -125,19 +125,20 @@ test.describe('dashboard widgets', () => {
      * Written back to /api/categories it would become a category with a w_ slug
      * and no bookmarks -- visible on the page, impossible to explain.
      *
-     * Worth knowing: this holds for two reasons. syncCategoriesFromDom filters
-     * widget elements out explicitly, and the lookup that follows maps ids to
-     * category objects and drops what it cannot find, so a widget id would fall
-     * out there too. Removing either alone still leaves the property true --
-     * this asserts the property, not the line, and a passing run is not proof
-     * that both halves are load-bearing.
+     * Worth knowing: commitBlockMove maps the order onto the category objects
+     * and drops what it cannot find, so a widget id falls out there. This
+     * asserts the property, not the line.
      */
     test('reordering does not turn a widget into a category', async ({ page }) => {
         await addWidget(page, 'Status');
         await page.reload({ waitUntil: 'networkidle' });
         await page.waitForFunction(() => window.dashboardInstance?.widgets?.length > 0, null, { timeout: 15_000 });
 
-        await page.evaluate(() => window.dashboardInstance.renderCore.syncCategoriesFromDom());
+        await page.evaluate(() => {
+            const rc = window.dashboardInstance.renderCore;
+            const order = rc.blockOrderFromDom().filter((b) => !b.startsWith('__smart_'));
+            return rc.commitBlockMove({ id: order[0], order, announce: false });
+        });
         await page.waitForTimeout(1500);
 
         const categories = await page.evaluate(async () => {
@@ -578,9 +579,11 @@ test.describe('one order for widgets and categories', () => {
         await page.waitForFunction(() => window.dashboardInstance?.widgets?.length > 0, null, { timeout: 15_000 });
     });
 
-    test('a move writes the block order and nothing else', async ({ page }) => {
+    test('a move writes the block order and no widget into the categories', async ({ page }) => {
         const writes = [];
+        const categoryBodies = [];
         page.on('request', (r) => {
+            if (r.method() !== 'GET' && r.url().includes('/api/categories')) categoryBodies.push(r.postData() || '');
             if (r.method() !== 'GET' && /\/api\/(categories|pages\/\d+\/blocks)/.test(r.url())) {
                 writes.push(`${r.method()} ${r.url().replace(/^https?:\/\/[^/]+/, '').split('?')[0]}`);
             }
@@ -588,14 +591,20 @@ test.describe('one order for widgets and categories', () => {
 
         await page.evaluate(() => {
             const d = window.dashboardInstance;
-            d.renderCore.moveBlockInOrder(d.widgets[0].id, -1);
+            const rc = d.renderCore;
+            const id = d.widgets[0].id;
+            const dom = rc.blockOrderFromDom().filter((b) => !b.startsWith('__smart_'));
+            const next = dom.filter((b) => b !== id);
+            next.splice(Math.max(0, dom.indexOf(id) - 1), 0, id);
+            return rc.commitBlockMove({ id, order: next, announce: false });
         });
         await expect.poll(async () => writes.length, { timeout: 15_000 }).toBeGreaterThan(0);
         await page.waitForTimeout(1500);
 
-        // The category array is not where the order lives any more, so moving a
-        // block must not touch it.
-        expect(writes.filter((w) => w.includes('/api/categories'))).toEqual([]);
+        // The category array is not where the order lives any more. It is only
+        // rewritten when the categories themselves changed places, and never
+        // carries a widget.
+        expect(categoryBodies.filter((b) => /"w_[0-9a-f]{12}"/.test(b))).toEqual([]);
         expect(writes.filter((w) => w.includes('/blocks'))).not.toEqual([]);
     });
 
@@ -614,7 +623,11 @@ test.describe('one order for widgets and categories', () => {
         });
         test.skip(offScreen.length === 0, 'no unrendered block on this page to protect');
 
-        await page.evaluate(() => window.dashboardInstance.renderCore.syncCategoriesFromDom());
+        await page.evaluate(() => {
+            const rc = window.dashboardInstance.renderCore;
+            const order = rc.blockOrderFromDom().filter((b) => !b.startsWith('__smart_'));
+            return rc.commitBlockMove({ id: order[0], order, announce: false });
+        });
         await page.waitForTimeout(1800);
 
         const after = await order(page);
@@ -628,17 +641,27 @@ test.describe('one order for widgets and categories', () => {
     test('the keyboard moves a block through the same order', async ({ page }) => {
         const before = await order(page);
         const widgetId = before.find((id) => String(id).startsWith('w_'));
-        const from = before.indexOf(widgetId);
+        const from = before.filter((b) => !String(b).startsWith('__smart_')).indexOf(widgetId);
         test.skip(from === 0, 'already first; nothing to move up into');
 
-        await page.evaluate((id) => {
-            window.dashboardInstance.renderCore.moveBlockInOrder(id, -1);
-        }, widgetId);
+        const shown = () => page.evaluate((id) => window.dashboardInstance.renderCore.blockOrderFromDom().filter((b) => !b.startsWith('__smart_')).indexOf(id), widgetId);
+        const shownBefore = await shown();
+        test.skip(shownBefore === 0, 'already first on screen');
 
-        await expect.poll(async () => (await order(page)).indexOf(widgetId), { timeout: 15_000 })
-            .toBe(from - 1);
-        // Exactly one place, not to the end and not past a neighbour.
-        const after = await order(page);
-        expect(after.length).toBe(before.length);
+        // The key the reader presses: Alt+← on the widget's title.
+        const full = await page.evaluate(() => window.dashboardInstance.renderCore.blockOrderFromDom());
+        test.skip(String(full[full.indexOf(widgetId) - 1] || '').startsWith('__smart_'), 'a collection is right before it');
+        await dismissBlockingOverlays(page);
+        await page.locator(`#dashboard-layout .dashboard-widget[data-widget-id="${widgetId}"] .category-title`).focus();
+        await page.keyboard.press('Alt+ArrowLeft');
+
+        // One place among the blocks on screen: an empty category hidden in
+        // between keeps its slot, so the stored index can move by more.
+        // The key also gives the collections on screen their place in the
+        // stored order, so they are left out of the count.
+        const blocks = async () => (await order(page)).filter((b) => !String(b).startsWith('__smart_'));
+        await expect.poll(async () => (await blocks()).indexOf(widgetId), { timeout: 15_000 }).toBeLessThan(from);
+        expect(await shown()).toBe(shownBefore - 1);
+        expect((await blocks()).length).toBe(before.filter((b) => !String(b).startsWith('__smart_')).length);
     });
 });

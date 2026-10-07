@@ -235,6 +235,10 @@ class DashboardData {
             if (!Array.isArray(d.settings.smartFreshPageIds)) {
                 d.settings.smartFreshPageIds = [];
             }
+            // Left out of the response when no collection is wide (omitempty).
+            if (!d.settings.collectionColumns || typeof d.settings.collectionColumns !== 'object') {
+                d.settings.collectionColumns = {};
+            }
             if (typeof d.settings.showSmartRecentCollection === 'undefined') {
                 d.settings.showSmartRecentCollection = false;
             }
@@ -667,6 +671,8 @@ class DashboardData {
         if (!changed) {
             return false;
         }
+        // A block in the hand belongs to the layout that is about to be redrawn.
+        window.DashboardBlockMover?.finish?.(false);
         if (d.activeView === 'inbox' && d.inbox?.isEnabled?.()) {
             await d.inbox.loadAndRender();
             return true;
@@ -1132,6 +1138,7 @@ class DashboardData {
         }
 
         const loadId = ++d._pageBookmarksLoadId;
+        d.renderCore?.forgetBlockMoveOnLeave?.(targetPageId);
 
         try {
             d._abortInlineEditForRender();

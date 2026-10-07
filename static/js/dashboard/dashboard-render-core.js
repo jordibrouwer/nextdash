@@ -41,6 +41,24 @@ class DashboardRenderCore {
 
     constructor(dashboard) {
         this.dash = dashboard;
+        // Cmd/Ctrl+Z undoes the last block move while its Undo notice is up --
+        // a move on the page or a move to another page, which brings its own
+        // `restore` because putting it back takes the server's help.
+        if (!dashboard._blockUndoKeyBound) {
+            dashboard._blockUndoKeyBound = true;
+            document.addEventListener('keydown', (e) => {
+                if (!(e.metaKey || e.ctrlKey) || e.shiftKey || e.altKey || String(e.key).toLowerCase() !== 'z') return;
+                if (e.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+                const snapshot = this._lastBlockMove;
+                const host = document.querySelector('#app-notification.show.has-action');
+                // Only while this move's own notice is up, not an unrelated one.
+                if (!snapshot?.message || !host
+                    || host.querySelector('.app-notification-text')?.textContent !== snapshot.message) return;
+                e.preventDefault();
+                window.AppNotification?.hide?.();
+                void (snapshot.restore ? snapshot.restore() : this.restoreBlockMove(snapshot));
+            });
+        }
     }
 
     /*
@@ -483,10 +501,13 @@ class DashboardRenderCore {
         const labelWrap = document.createElement('span');
         labelWrap.className = 'category-title-label';
 
-        const prefix = document.createElement('span');
+        const prefix = document.createElement('button');
+        prefix.type = 'button';
+        // In the tab order, straight after the title: Space on it picks the block up.
+        prefix.tabIndex = 0;
         prefix.className = 'category-reorder-handle';
         prefix.textContent = '// ';
-        prefix.setAttribute('aria-hidden', 'true');
+        prefix.setAttribute('aria-label', d.formatDashboardLabel('blockMoveHandle', { name: widget.title || this.widgetTypeLabel(widget.type) }, 'Move {name}'));
         // Dragging the handle must not do whatever clicking the header does.
         prefix.addEventListener('click', (e) => e.stopPropagation());
         prefix.addEventListener('mousedown', (e) => e.stopPropagation());
@@ -565,6 +586,8 @@ class DashboardRenderCore {
             // sits inside this element, so every key typed into it bubbles out
             // to here -- and Delete would then close the widget mid-rename.
             if (e.target.closest('input, textarea')) return;
+            // The handle has its own keys (the mover's); none of these are its.
+            if (e.target.closest('.category-reorder-handle')) return;
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 setWidgetCollapsed(block.getAttribute('data-collapsed') !== 'true');
@@ -937,20 +960,23 @@ class DashboardRenderCore {
      *
      * Three things this must not do, each of which would be worse than an
      * unordered grid: lose a block the order does not mention, draw one twice,
-     * or move the smart collections, which have no handle and belong at the top.
+     * or move a collection the reader never placed on this page.
      */
     applyBlockOrder(blocks) {
         const order = this.dash.blockOrder;
         if (!Array.isArray(order) || order.length === 0) return blocks;
 
-        // Smart collections and the virtual categories keep their position:
-        // they are not the reader's to arrange. Smart collections are built
-        // first and stay at the top; the virtual ones (Other, an unknown id)
-        // are built last and stay at the end. Lumped together they all went
-        // to the top, so Other jumped above every category the reader arranged.
-        const smart = blocks.filter((b) => b.category?.isSmartCollection);
+        // A collection is placed per page like any block, but one with no
+        // place in this page's order yet keeps the place collections always
+        // had: first, as built. The virtual categories (Other, an unknown id)
+        // are not the reader's to arrange; built last, they stay at the end.
+        // Lumped with the collections they all went to the top, so Other
+        // jumped above every category the reader arranged.
+        const named = new Set(order.map(String));
+        const unplaced = blocks.filter((b) => b.category?.isSmartCollection && !named.has(String(b.category.id)));
         const virtual = blocks.filter((b) => !b.category?.isSmartCollection && b.category?.isVirtualCategory);
-        const movable = blocks.filter((b) => !b.category?.isSmartCollection && !b.category?.isVirtualCategory);
+        const movable = blocks.filter((b) => !b.category?.isVirtualCategory
+            && !(b.category?.isSmartCollection && !named.has(String(b.category.id))));
 
         const byId = new Map();
         movable.forEach((block) => byId.set(String(block.category?.id ?? ''), block));
@@ -966,7 +992,7 @@ class DashboardRenderCore {
         // a category added since the last drag appears rather than vanishing.
         byId.forEach((block) => sorted.push(block));
 
-        return [...smart, ...sorted, ...virtual];
+        return [...unplaced, ...sorted, ...virtual];
     }
 
 
@@ -1059,9 +1085,15 @@ class DashboardRenderCore {
         // Widgets, or a category just made and pinned on screen, are something
         // to draw: returning here for want of bookmarks left an RSS or weather
         // widget on an otherwise empty page never drawn.
-        const hasOtherBlocks = (Array.isArray(d.widgets) && d.widgets.some((w) => w?.config?.enabled !== false))
-            || d.pinnedEmptyCategoryId != null;
-        if ((!Array.isArray(d.bookmarks) || d.bookmarks.length === 0) && !hasOtherBlocks) {
+        // So is a collection scoped to this page -- one moved here: the
+        // reader put it on this page. One shown on every page does not count,
+        // or no new page would ever offer its empty state.
+        const scopedCollectionHere = () => (d.getSmartCollections?.(d.getSmartCollectionSourceBookmarks()) || [])
+            .some((c) => c.bookmarks?.length > 0
+                && (window.DashboardBlockPageMove?.collectionPageList?.(d, c.id)?.get?.() || []).length > 0);
+        const hasOtherBlocks = () => (Array.isArray(d.widgets) && d.widgets.some((w) => w?.config?.enabled !== false))
+            || d.pinnedEmptyCategoryId != null || scopedCollectionHere();
+        if ((!Array.isArray(d.bookmarks) || d.bookmarks.length === 0) && !hasOtherBlocks()) {
             const hasBookmarksOnOtherPages = Array.isArray(d.allBookmarks) && d.allBookmarks.length > 0;
             const currentPage = d.pages.find(p => p.id === d.currentPageId);
             const pageName = currentPage ? d.escapeHtml(currentPage.name) : '';
@@ -1581,109 +1613,16 @@ class DashboardRenderCore {
         // dashboard.css) so it does not sit there offering a grab cursor that
         // no longer drags anything.
         document.body.classList.toggle('layout-locked', Boolean(d.settings?.lockLayout));
-        if (d.settings?.lockLayout) return;
 
-        if (typeof DragReorder === 'undefined') return;
-
+        // Attached under Lock layout too: the mover refuses a pick-up itself,
+        // and Space on the handle says why instead of doing nothing.
         const grid = document.getElementById('dashboard-layout');
         if (!grid) return;
 
-        // Columns in the DOM, not the setting: packed switches to a plain grid
-        // as soon as a category is wider than one column, and that shape wants
-        // the single-container reorder the plain layout uses.
-        const isPacked = grid.querySelector(':scope > .dashboard-column') !== null;
-        const onReorder = () => {
-            // Small delay so the DOM is fully settled after touch/mouse drag ends
-            requestAnimationFrame(() => {
-                this.syncCategoriesFromDom();
-                // Round-robin is redistributed from the new order rather than
-                // left as the drag dropped it: the drag moved one element
-                // between columns, while the order it produced fills them in a
-                // different arrangement entirely.
-                if (isPacked) {
-                    d.renderDashboard?.({ animate: false, forceFull: true });
-                }
-            });
-        };
-
-        if (isPacked) {
-            // Multiple column containers: a document-level drag-over relay moves the
-            // dragged category across columns; per-item dragover is delegated to it.
-            //
-            this.ensureCategoryDragOverRelay();
-            grid.querySelectorAll('.dashboard-column').forEach((col) => {
-                d.dashboardCategoryReorderInstances.push(new DragReorder({
-                    container: col,
-                    itemSelector: '.category:not([data-smart-collection="true"])',
-                    itemClass: 'category-reorder-item',
-                    handleSelector: '.category-reorder-handle',
-                    longPressMs: 0,
-                    delegateItemDragOver: true,
-                    touchContainerSelector: '.dashboard-column',
-                    onReorder
-                }));
-            });
-        } else {
-            d.dashboardCategoryReorderInstances.push(new DragReorder({
-                container: grid,
-                itemSelector: '.category:not([data-smart-collection="true"])',
-                itemClass: 'category-reorder-item',
-                handleSelector: '.category-reorder-handle',
-                longPressMs: 0,
-                delegateItemDragOver: false,
-                touchContainerSelector: '#dashboard-layout',
-                onReorder
-            }));
-        }
-    }
-
-
-    ensureCategoryDragOverRelay() {
-        const d = this.dash;
-        if (d._categoryDragRelayHandler) return;
-
-        // Accept the drop and immediately sync+save — DOM is correct at this moment.
-        d._categoryDropHandler = (e) => {
-            const dragged = window.__dragReorderState && window.__dragReorderState.selected;
-            if (!dragged || !dragged.classList.contains('category')) return;
-            e.preventDefault();
-            this.syncCategoriesFromDom();
-        };
-        document.addEventListener('drop', d._categoryDropHandler, { capture: true });
-
-        d._categoryDragRelayHandler = (e) => {
-            const dragged = window.__dragReorderState && window.__dragReorderState.selected;
-            if (!dragged) return;
-            if (!dragged.classList || !dragged.classList.contains('category')) return;
-            if (!e.dataTransfer) return;
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            const el = document.elementFromPoint(e.clientX, e.clientY);
-            if (!el) return;
-            const targetColumn = el.closest('.dashboard-column');
-            if (!targetColumn) return;
-            const targetItem = el.closest('.category.category-reorder-item');
-            if (!window.__dragReorderState.placeholder) {
-                const ph = document.createElement('div');
-                ph.className = 'bookmark-drop-placeholder';
-                ph.setAttribute('aria-hidden', 'true');
-                window.__dragReorderState.placeholder = ph;
-            }
-            const placeholder = window.__dragReorderState.placeholder;
-            if (targetItem && targetItem !== dragged) {
-                targetItem.parentNode.insertBefore(placeholder, targetItem);
-                if (dragged.parentNode === targetItem.parentNode) {
-                    const isBefore = !!(dragged.compareDocumentPosition(targetItem) & Node.DOCUMENT_POSITION_FOLLOWING);
-                    targetItem.parentNode.insertBefore(dragged, isBefore ? targetItem : targetItem.nextSibling);
-                } else {
-                    targetItem.parentNode.insertBefore(dragged, targetItem.nextSibling);
-                }
-            } else if (!targetItem && dragged.parentNode !== targetColumn) {
-                targetColumn.appendChild(dragged);
-                targetColumn.appendChild(placeholder);
-            }
-        };
-        document.addEventListener('dragover', d._categoryDragRelayHandler, { capture: true, passive: false });
+        // Blocks are moved by DashboardBlockMover: the page holds still and a
+        // landing box shows the result, instead of DragReorder shuffling the DOM.
+        d._blockMoverDetach?.();
+        d._blockMoverDetach = window.DashboardBlockMover?.attach(grid) || null;
     }
 
 
@@ -1714,18 +1653,8 @@ class DashboardRenderCore {
 
     destroyDashboardCategoryReorderInstances() {
         const d = this.dash;
-        if (d._categoryDragRelayHandler) {
-            document.removeEventListener('dragover', d._categoryDragRelayHandler, { capture: true, passive: false });
-            d._categoryDragRelayHandler = null;
-        }
-        if (d._categoryDropHandler) {
-            document.removeEventListener('drop', d._categoryDropHandler, { capture: true });
-            d._categoryDropHandler = null;
-        }
-        (d.dashboardCategoryReorderInstances || []).forEach((i) => {
-            if (i && typeof i.destroy === 'function') i.destroy();
-        });
-        d.dashboardCategoryReorderInstances = [];
+        d._blockMoverDetach?.();
+        d._blockMoverDetach = null;
     }
 
 
@@ -1803,59 +1732,6 @@ class DashboardRenderCore {
     }
 
 
-    syncCategoriesFromDom() {
-        const d = this.dash;
-        const grid = document.getElementById('dashboard-layout');
-        if (!grid) return;
-        // Through the shared reader, not document order: in packed mode those
-        // two are different, and document order is the wrong one.
-        const els = this.readCategoryElementsInOrder(grid)
-            .filter((el) => el.getAttribute('data-smart-collection') !== 'true');
-        // Every block that moved, widgets included -- this is what blockOrder is
-        // built from below.
-        const blockIds = els.map((el) => el.getAttribute('data-category-id')).filter(Boolean);
-        /*
-         * Categories only, for the category array.
-         *
-         * A widget id landing in d.categories would be written back to
-         * /api/categories as a category that does not exist, and the next load
-         * would find a bookmark-less category with a w_ slug in it.
-         */
-        const newIds = els
-            .filter((el) => !el.classList.contains('dashboard-widget'))
-            .map((el) => el.getAttribute('data-category-id'))
-            .filter(Boolean);
-
-        if (!blockIds.length) return;
-
-        const byId = new Map(d.categories.map((c) => [String(c.id), c]));
-        const renderedSet = new Set(newIds);
-
-        // Categories not rendered (empty) — preserve them appended after rendered ones
-        const unrendered = d.categories.filter((c) => !renderedSet.has(String(c.id)));
-        const newCategories = [
-            ...newIds.map((id) => byId.get(id)).filter(Boolean),
-            ...unrendered
-        ];
-
-        // Orphan/virtual categories in the DOM are not persisted objects — never write an
-        // empty payload that would wipe categories still referenced by bookmarks.
-        if (newIds.length > 0 && newCategories.length === 0) {
-            return;
-        }
-        if (newCategories.length === 0 && Array.isArray(d.categories) && d.categories.length > 0) {
-            // No categories moved -- a widget did. Save that and leave the
-            // category array alone rather than returning and losing the drag.
-            d.blockOrder = blockIds;
-            this.scheduleBlockOrderSave();
-            return;
-        }
-
-        d.categories = newCategories;
-        d.blockOrder = this.mergeBlockOrderFromDom(blockIds);
-        this.scheduleBlockOrderSave();
-    }
-
     /*
      * The new order, with the blocks that are not on screen kept in place.
      *
@@ -1875,7 +1751,12 @@ class DashboardRenderCore {
     blockOrderFromDom() {
         const grid = document.getElementById('dashboard-layout');
         if (!grid) return [];
-        return [...grid.querySelectorAll('.category[data-category-id], .dashboard-widget[data-widget-id]')]
+        // Through the shared reader: in packed columns document order runs
+        // column by column, which is not the order the blocks are stored in.
+        const els = this.readCategoryElementsInOrder(grid)
+            // Views over bookmarks have no place of their own (see applyBlockOrder).
+            .filter((el) => !el.matches?.('[data-virtual-category="true"], [data-tag-filter-chunk="true"]'));
+        return els
             .map((el) => String(el.getAttribute('data-widget-id')
                 || el.getAttribute('data-category-id') || ''))
             .filter(Boolean);
@@ -1912,46 +1793,228 @@ class DashboardRenderCore {
         });
     }
 
-    /*
-     * Move one block one place, for the keyboard.
-     *
-     * Works on blockOrder rather than on the category array, so a keyboard move
-     * and a drag write the same thing. Steps over the blocks the reader cannot
-     * arrange -- a smart collection is drawn at the top whatever the order says,
-     * so swapping with one would look like the key did nothing.
-     */
-    moveBlockInOrder(id, direction) {
+    /** 1 or 2: wide means a two-column widget or collection, or a spread category. */
+    blockWidth(id) {
         const d = this.dash;
-        /*
-         * A page that has never been dragged has no stored order at all --
-         * blockOrder is [] until something writes one -- so indexOf found
-         * nothing and this returned false while the caller went on to announce
-         * the move and redraw. The key was swallowed, the screen reader was
-         * told the category had moved, and nothing had.
-         *
-         * Reading the order off the grid first gives the move the list it is
-         * supposed to act on: the same list dragging would have written, in the
-         * order the reader is looking at.
-         */
-        let order = [...(d.blockOrder || [])];
-        if (!order.length) {
-            order = this.blockOrderFromDom();
-        }
-        const from = order.indexOf(String(id));
-        if (from < 0) return false;
-        // The neighbour the reader can see: blockOrder also holds categories
-        // hidden as empty, and swapping with one of those changed nothing on
-        // screen while the move was announced.
-        const shown = new Set(this.blockOrderFromDom());
-        const step = direction < 0 ? -1 : 1;
-        let to = from + step;
-        while (to >= 0 && to < order.length && shown.size && !shown.has(order[to])) to += step;
-        if (to < 0 || to >= order.length) return false;
+        if (this.isCollectionId(id)) return Number(d.settings?.collectionColumns?.[String(id)]) === 2 ? 2 : 1;
+        const widget = (d.widgets || []).find((w) => String(w?.id) === String(id));
+        if (widget) return Number(widget.config?.columns) === 2 ? 2 : 1;
+        const category = (d.categories || []).find((c) => String(c.id) === String(id)) || { id };
+        return window.DashboardCategorySpan?.isCategorySpread?.(d, category) ? 2 : 1;
+    }
 
-        [order[from], order[to]] = [order[to], order[from]];
-        d.blockOrder = order;
+    /*
+     * Every block move ends here: a drop, a keyboard drop, Alt+arrow.
+     *
+     * Order first (the category list follows it, as moveFocusedCategory always
+     * did), width second, one redraw, one slide, one notification with Undo.
+     * The snapshot taken before is the whole undo.
+     *
+     * The order save is debounced and swallows its own failure (see
+     * saveBlockOrder), so a failed save is not reported here; the existing
+     * behaviour stays: the next load shows the old order.
+     */
+    async commitBlockMove({ id, order, width = null, announce = true }) {
+        const d = this.dash;
+        const snapshot = {
+            id,
+            // Whose order this is: Undo puts it back on this page or not at all.
+            pageId: Number(d.currentPageId),
+            order: [...(d.blockOrder?.length ? d.blockOrder : this.blockOrderFromDom())],
+            categories: [...(d.categories || [])],
+            width: this.blockWidth(id),
+        };
+        const first = this.captureBlockRects();
+
+        d.blockOrder = this.mergeBlockOrderFromDom(order);
+        const at = new Map(d.blockOrder.map((bid, i) => [String(bid), i]));
+        d.categories = [...(d.categories || [])].sort(
+            (a, b) => (at.get(String(a.id)) ?? Infinity) - (at.get(String(b.id)) ?? Infinity));
         this.scheduleBlockOrderSave();
+        // Moving a widget leaves the category list as it was: nothing to write.
+        if (d.categories.some((c, i) => c !== snapshot.categories[i])) this.scheduleCategoryOrderSave();
+
+        let widthChanged = false;
+        if (width != null && width !== snapshot.width) {
+            widthChanged = await this.setBlockWidth(id, width);
+        }
+        if (width != null && width !== snapshot.width && !widthChanged) {
+            // The order stays; the width is back where it was. saveWidgetPatch
+            // already put its local change back when the write failed.
+            d.showErrorNotification?.(d.formatDashboardLabel?.('blockWidthSaveFailed', {}, 'Could not change the width.')
+                || 'Could not change the width.');
+        }
+        this.redrawKeepingPlace(id);
+        this.animateBlocksFrom(first);
+        this.flashBlock(id);
+
+        if (announce) {
+            const name = this.blockName(id);
+            const place = window.BlockMoveModel.describePlace(d.blockOrder, String(id), (bid) => this.blockName(bid));
+            let message = place.key === 'first'
+                ? d.formatDashboardLabel?.('blockMovedFirst', { name }, `Moved ${name} · first on the page`)
+                : d.formatDashboardLabel?.('blockMoved', { name, after: place.name }, `Moved ${name} · after ${place.name}`);
+            if (widthChanged && width === 2 && snapshot.width !== 2) {
+                message += this.isCategoryBlockId(id)
+                    ? ` · ${d.formatDashboardLabel?.('blockWidthSpread', {}, 'spread')}`
+                    : ` · ${d.formatDashboardLabel?.('blockWidthWide', {}, '2 columns')}`;
+            }
+            snapshot.message = message;
+            this._lastBlockMove = snapshot;
+            d.showNotification?.(message, 'success', {
+                actionLabel: d.formatDashboardLabel?.('undo', {}, 'Undo') || 'Undo',
+                onAction: () => void this.restoreBlockMove(snapshot),
+                duration: 6000,
+            });
+        }
         return true;
+    }
+
+    async setBlockWidth(id, width) {
+        if (this.isCollectionId(id)) return this.setCollectionWidth(id, width);
+        if (this.isWidgetId(id)) {
+            return this.saveWidgetPatch(id, { config: { columns: width === 2 ? 2 : undefined } });
+        }
+        window.DashboardCategorySpan?.setCategorySpread?.(this.dash, id, width === 2);
+        return true;
+    }
+
+    async restoreBlockMove(snapshot) {
+        const d = this.dash;
+        if (!snapshot) return;
+        // The snapshot is that page's order and categories; written here it
+        // would replace this page's with them. Leaving the page drops the
+        // Undo (forgetBlockMoveOnLeave), so this is the backstop.
+        if (Number(snapshot.pageId) !== Number(d.currentPageId)) {
+            if (this._lastBlockMove === snapshot) this._lastBlockMove = null;
+            return;
+        }
+        const first = this.captureBlockRects();
+        d.blockOrder = [...snapshot.order];
+        d.categories = [...snapshot.categories];
+        this.scheduleBlockOrderSave();
+        this.scheduleCategoryOrderSave();
+        if (this.blockWidth(snapshot.id) !== snapshot.width) await this.setBlockWidth(snapshot.id, snapshot.width);
+        this._lastBlockMove = null;
+        this.redrawKeepingPlace(snapshot.id);
+        this.animateBlocksFrom(first);
+    }
+
+    /*
+     * Going to another page ends the Undo of a move on this one: its notice
+     * goes, and Cmd/Ctrl+Z no longer reaches it. A move to another page keeps
+     * its Undo -- that one is put back through the server from any page.
+     */
+    forgetBlockMoveOnLeave(targetPageId) {
+        const snapshot = this._lastBlockMove;
+        if (!snapshot || snapshot.restore || Number(snapshot.pageId) === Number(targetPageId)) return;
+        this._lastBlockMove = null;
+        const host = document.querySelector('#app-notification.show.has-action');
+        if (host && host.querySelector('.app-notification-text')?.textContent === snapshot.message) {
+            window.AppNotification?.hide?.();
+        }
+    }
+
+    /*
+     * To another page: a category, a widget or a collection, through the one
+     * path in dashboard-block-page-move.js. Lands last there, with an Undo
+     * notice (and Cmd/Ctrl+Z while it is up) like a move on the page.
+     */
+    async moveBlockToPage(options) {
+        return window.DashboardBlockPageMove?.move?.(this, options) ?? false;
+    }
+
+    isWidgetId(id) {
+        return (this.dash.widgets || []).some((w) => String(w?.id) === String(id));
+    }
+
+    /** A collection's block id: built-in, the reader's own, or one per tag. */
+    isCollectionId(id) {
+        return /^(__smart_|custom:|tag:)/.test(String(id ?? ''));
+    }
+
+    /** A category, whose wide is "spread" rather than two columns. */
+    isCategoryBlockId(id) {
+        return !this.isCollectionId(id) && !this.isWidgetId(id);
+    }
+
+    /*
+     * One width per collection, whatever page it is on: the reader made it
+     * wide, not this page. Off is the absence of an entry, as for spread.
+     */
+    async setCollectionWidth(id, width) {
+        const d = this.dash;
+        const key = String(id);
+        const previous = { ...(d.settings.collectionColumns || {}) };
+        const next = { ...previous };
+        if (width === 2) next[key] = 2; else delete next[key];
+        d.settings.collectionColumns = next;
+        // saveSettings reports its own failure and answers false.
+        if (await d.saveSettings?.() === false) {
+            d.settings.collectionColumns = previous;
+            return false;
+        }
+        return true;
+    }
+
+    blockName(id) {
+        const d = this.dash;
+        if (this.isCollectionId(id)) {
+            // Its name is built per render (counts, translated titles), so the
+            // header holds the one the reader sees -- less the count a built-in
+            // one carries, which is not part of its name ("Moved Stale", not
+            // "Moved Stale (12)").
+            const nameEl = document.querySelector(`#dashboard-layout .category[data-category-id="${CSS.escape(String(id))}"] .category-title-name`);
+            const shown = nameEl?.title || nameEl?.textContent?.trim() || String(id);
+            return String(id).startsWith('__smart_') ? shown.replace(/\s*\(\d+\)$/, '') : shown;
+        }
+        const widget = (d.widgets || []).find((w) => String(w?.id) === String(id));
+        if (widget) return widget.title || String(widget.type || id);
+        const category = (d.categories || []).find((c) => String(c.id) === String(id));
+        return category?.name || String(id);
+    }
+
+    /** Every block in the grid, keyed by id. */
+    gridBlocks() {
+        const map = new Map();
+        document.querySelectorAll('#dashboard-layout .category[data-category-id], #dashboard-layout .dashboard-widget[data-widget-id]')
+            .forEach((el) => {
+                const bid = String(el.getAttribute('data-widget-id') || el.getAttribute('data-category-id') || '');
+                if (bid && !map.has(bid)) map.set(bid, el);
+            });
+        return map;
+    }
+
+    captureBlockRects() {
+        const rects = new Map();
+        this.gridBlocks().forEach((el, bid) => rects.set(bid, el.getBoundingClientRect()));
+        return rects;
+    }
+
+    /* FLIP: each block starts where it was and slides to where it is. */
+    animateBlocksFrom(first) {
+        if (!first?.size || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+        this.gridBlocks().forEach((el, bid) => {
+            const was = first.get(bid);
+            if (!was) return;
+            const now = el.getBoundingClientRect();
+            const dx = was.left - now.left;
+            const dy = was.top - now.top;
+            if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+            el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }],
+                { duration: 200, easing: 'cubic-bezier(.2,.7,.2,1)' });
+        });
+    }
+
+    flashBlock(id) {
+        const el = this.gridBlocks().get(String(id));
+        if (!el) return;
+        el.classList.add('is-move-landed');
+        setTimeout(() => el.classList.remove('is-move-landed'), 1200);
+        const r = el.getBoundingClientRect();
+        if (r.top < 0 || r.bottom > window.innerHeight) {
+            el.scrollIntoView({ block: 'nearest', behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+        }
     }
 
     /*
@@ -2167,6 +2230,15 @@ class DashboardRenderCore {
         if (!config) return;
         config._widgetBlocks = null;
         config._widgetLoadedFor = null;
+    }
+
+    /*
+     * The Structure table's category lists are one read of every page; a
+     * category moved to another page from here changes two of them behind
+     * its back, and a later rename there would post the stale list.
+     */
+    forgetStructureCategoryLists() {
+        this.dash.config?.instance?.forgetCategoryLists?.();
     }
 
     async saveBlockOrder(pageId, order) {
@@ -2694,6 +2766,12 @@ class DashboardRenderCore {
         if (isTagFilterChunk) {
             categoryDiv.setAttribute('data-tag-filter-chunk', 'true');
         }
+        // Other and an unknown category are views over bookmarks, built last
+        // on every render (applyBlockOrder): there is no place of theirs to move.
+        const isVirtualBlock = category.isVirtualCategory === true && !isSmartCollection;
+        if (isVirtualBlock) {
+            categoryDiv.setAttribute('data-virtual-category', 'true');
+        }
         const collapsedKey = isSmartCollection
             ? `smart:${category.id}`
             : `${d.currentPageId}:${category.id}`;
@@ -2731,20 +2809,24 @@ class DashboardRenderCore {
         const labelWrap = document.createElement('span');
         labelWrap.className = 'category-title-label';
 
-        // The "//" prefix. For real categories it doubles as the drag-reorder handle
-        // (DragReorder makes it draggable and grabs it via handleSelector); smart
-        // collections keep a plain "//" that is not draggable.
-        const prefixSpan = document.createElement('span');
+        // The "//" prefix doubles as the handle DashboardBlockMover picks the
+        // block up from -- a category's and a collection's alike, since both
+        // are placed per page. A view over bookmarks keeps the "//" for the
+        // look, as plain text: not a button, not a tab stop.
+        const prefixSpan = document.createElement(isVirtualBlock ? 'span' : 'button');
         prefixSpan.textContent = '// ';
-        prefixSpan.setAttribute('aria-hidden', 'true');
-        if (!isSmartCollection) {
+        if (isVirtualBlock) {
+            prefixSpan.className = 'category-reorder-handle is-static';
+            prefixSpan.setAttribute('aria-hidden', 'true');
+        } else {
+            prefixSpan.type = 'button';
+            prefixSpan.tabIndex = 0;
+            prefixSpan.setAttribute('aria-label', d.formatDashboardLabel('blockMoveHandle', { name: category.name }, 'Move {name}'));
             prefixSpan.className = 'category-reorder-handle';
             // Dragging the handle must not toggle collapse or start a rename.
             prefixSpan.addEventListener('click', (e) => e.stopPropagation());
             prefixSpan.addEventListener('mousedown', (e) => e.stopPropagation());
             prefixSpan.addEventListener('dblclick', (e) => e.stopPropagation());
-        } else {
-            prefixSpan.className = 'category-title-prefix';
         }
         labelWrap.appendChild(prefixSpan);
 
@@ -2853,6 +2935,10 @@ class DashboardRenderCore {
             // out to here: without this, Delete while renaming deletes the
             // category the reader is in the middle of naming.
             if (e.target.closest('input, textarea')) {
+                return;
+            }
+            // The handle has its own keys (the mover's); none of these are its.
+            if (e.target.closest('.category-reorder-handle')) {
                 return;
             }
             if (e.key === 'Enter' || e.key === ' ') {
@@ -2983,7 +3069,8 @@ class DashboardRenderCore {
         if (!isTagFilterChunk) {
             window.DashboardCategorySpan?.applyCategorySpan(d, categoryDiv, category, bookmarks.length);
         }
-        d.categoryMenu?.bindCategory(categoryDiv, category);
+        if (isSmartCollection) d.categoryMenu?.bindCollection?.(categoryDiv, category);
+        else d.categoryMenu?.bindCategory(categoryDiv, category);
         return categoryDiv;
     }
 

@@ -18242,6 +18242,7 @@ class DashboardConfig {
     static COLLECTION_SCOPES = [
         ['smartTodayPageIds', 'config.smartTodayScope', '“Today” pages'],
         ['smartRecentPageIds', 'config.smartRecentScope', '“Recent” pages'],
+        ['smartAddedPageIds', 'config.smartAddedScope', '“Recently added” pages'],
         ['smartStalePageIds', 'config.smartStaleScope', '“Stale” pages'],
         ['smartMostUsedPageIds', 'config.smartMostUsedScope', '“Most used” pages'],
         ['smartFreshPageIds', 'config.smartFreshScope', '“Fresh” pages'],
@@ -18252,8 +18253,15 @@ class DashboardConfig {
         const pages = this.dash.pages || [];
         if (!pages.length) return '';
         const s = this.dash.settings || {};
-        const rows = DashboardConfig.COLLECTION_SCOPES.map(([field, key, fallback]) => {
-            const selected = Array.isArray(s[field]) ? s[field].map(String) : [];
+        // The reader's own collections have the same page list, on the
+        // collection itself (pageIds): moving one to a page sets it, and this
+        // is where it goes back to every page.
+        const own = this.customCollections().filter((c) => c?.id).map((c) => [
+            `collection:${c.id}`, null,
+            this.t('config.collectionScopeOwn', '“{name}” pages').replace('{name}', String(c.name || c.id)), c.pageIds,
+        ]);
+        const rows = [...DashboardConfig.COLLECTION_SCOPES.map((row) => [...row, s[row[0]]]), ...own].map(([field, key, fallback, value]) => {
+            const selected = Array.isArray(value) ? value.map(String) : [];
             const boxes = pages.map((p) => {
                 const id = String(p.id);
                 const on = selected.includes(id);
@@ -18267,7 +18275,7 @@ class DashboardConfig {
                 : this.t('config.collectionScopeSome', 'Selected pages only');
             return `
                 <div class="config-field-block">
-                    <span class="config-field-label">${esc(this.t(key, fallback))}</span>
+                    <span class="config-field-label">${esc(key ? this.t(key, fallback) : fallback)}</span>
                     <p class="config-field-hint">${esc(allHint)}</p>
                     <div class="config-scope-pages">${boxes}</div>
                 </div>`;
@@ -18448,6 +18456,15 @@ class DashboardConfig {
                 // page even if it had saved.
                 const pageId = Number(box.getAttribute('data-scope-page'));
                 if (!Number.isFinite(pageId)) return;
+                if (field.startsWith('collection:')) {
+                    const col = this.customCollections().find((c) => `collection:${c.id}` === field);
+                    if (!col) return;
+                    const was = Array.isArray(col.pageIds) ? col.pageIds.map(Number).filter(Number.isFinite) : [];
+                    const now = box.checked ? [...new Set([...was, pageId])] : was.filter((id) => id !== pageId);
+                    if (now.length) col.pageIds = now; else delete col.pageIds;
+                    void this.saveCustomCollections();
+                    return;
+                }
                 const current = Array.isArray(this.dash.settings[field])
                     ? this.dash.settings[field].map(Number).filter(Number.isFinite)
                     : [];

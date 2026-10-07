@@ -264,6 +264,9 @@
         if (!categoryEl) {
             return 1;
         }
+        if (category?.isSmartCollection === true) {
+            return applyCollectionSpan(dash, categoryEl, category);
+        }
         const spread = isCategorySpread(dash, category);
         const span = spread ? spanForCount(dash, count) : 1;
         categoryEl.setAttribute('data-spread', spread ? 'true' : 'false');
@@ -274,6 +277,25 @@
             categoryEl.style.removeProperty('--category-span');
         }
         syncSpreadBadge(dash, categoryEl, span);
+        return span;
+    }
+
+    /*
+     * A collection is wide the way a widget is: two columns, set per
+     * collection in settings.collectionColumns, not spread by its count. On a
+     * one-column dashboard it falls back to one column, as a widget does.
+     */
+    function applyCollectionSpan(dash, categoryEl, category) {
+        const wide = Number(dash?.settings?.collectionColumns?.[String(category.id ?? '')]) === 2;
+        const span = wide ? Math.min(2, availableColumns(dash)) : 1;
+        categoryEl.setAttribute('data-spread', 'false');
+        categoryEl.classList.toggle('category--wide', span > 1);
+        if (span > 1) {
+            categoryEl.style.setProperty('--category-span', String(span));
+        } else {
+            categoryEl.style.removeProperty('--category-span');
+        }
+        syncSpreadBadge(dash, categoryEl, 1);
         return span;
     }
 

@@ -67,6 +67,72 @@ class DashboardCategoryMenu {
     }
 
     /**
+     * Bind a collection header: a block too, so it has a width and, unless it
+     * is generated per tag, a page to go to. Nothing to rename or delete here
+     * -- a collection is edited in Config -> Collections.
+     */
+    bindCollection(categoryEl, collection) {
+        if (!(categoryEl instanceof HTMLElement) || categoryEl.dataset.categoryMenuBound === '1') {
+            return;
+        }
+        const titleEl = categoryEl.querySelector('.category-title');
+        if (!titleEl || !collection?.id) {
+            return;
+        }
+        categoryEl.dataset.categoryMenuBound = '1';
+        titleEl.addEventListener('contextmenu', (e) => {
+            const d = this.dash;
+            if (e.shiftKey) return; // escape hatch to the native menu
+            if (d.uiHelpers?.isModalOpen?.()) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const fromPointer = e.detail > 0 || e.clientX > 0 || e.clientY > 0;
+            const box = titleEl.getBoundingClientRect();
+            this.showCollection(titleEl, collection, fromPointer
+                ? { x: e.clientX, y: e.clientY }
+                : { x: box.left + 8, y: box.bottom });
+        });
+    }
+
+    showCollection(titleEl, collection, point) {
+        const d = this.dash;
+        const rc = d.renderCore;
+        const id = String(collection.id);
+        const name = rc?.blockName?.(id) || String(collection.name || id);
+        const wide = rc?.blockWidth?.(id) === 2;
+        const canWiden = this.widgetCanWiden();
+        const entries = [
+            {
+                id: 'width',
+                label: wide
+                    ? this.t('widgetMenuWidthOne', 'Back to one column')
+                    : this.t('widgetMenuWidthTwo', 'Across two columns'),
+                icon: '↔',
+                key: 'Shift+W',
+                detail: canWiden ? '' : this.t('widgetMenuWidthUnavailableShort', 'One column on this dashboard'),
+                disabled: !canWiden && !wide,
+            },
+            ...this.movePageEntries(id),
+        ];
+        this._openMenu({
+            id: 'collection-context-menu',
+            ariaLabel: this.t('collectionMenuTitle', 'Collection actions'),
+            hint: name,
+            entries,
+            point,
+            onPick: async (action) => {
+                if (action === 'move-page') {
+                    this.showPagePicker(titleEl, id, 'collection-context-menu', name);
+                    return;
+                }
+                if (action === 'width' && await rc?.setBlockWidth?.(id, wide ? 1 : 2)) {
+                    rc.redrawKeepingPlace(id);
+                }
+            },
+        });
+    }
+
+    /**
      * Bind a widget header to the same menu.
      *
      * A widget block is a `.category` to the grid and to DragReorder, and from
@@ -168,13 +234,8 @@ class DashboardCategoryMenu {
                 label: this.t('widgetMenuRefresh', 'Refresh now'),
                 icon: '↻',
             }] : []),
-            {
-                // Same move Config -> Widgets offers, from where the widget is.
-                id: 'move-page',
-                label: this.t('widgetMenuMoveToPage', 'Move to page…'),
-                icon: '→',
-                submenu: true,
-            },
+            // Same move Config -> Widgets offers, from where the widget is.
+            ...this.movePageEntries(widget.id),
             {
                 // Straight to this widget's own row in Config -> Widgets, rather
                 // than opening the section and hunting for it among the others.
@@ -316,7 +377,7 @@ class DashboardCategoryMenu {
             return;
         }
         if (action === 'move-page') {
-            this.showWidgetPagePicker(titleEl, widget);
+            this.showPagePicker(titleEl, widget.id, 'widget-context-menu', this.widgetName(widget));
             return;
         }
         if (action === 'close') {
@@ -324,77 +385,40 @@ class DashboardCategoryMenu {
         }
     }
 
+    /**
+     * "Move to page ▸" for any block, or nothing where it cannot go: under
+     * Lock layout, and for a tag collection, which shows wherever its tag is.
+     */
+    movePageEntries(blockId) {
+        if (!window.DashboardBlockPageMove?.canMoveToPage?.(this.dash, blockId)) return [];
+        return [{
+            id: 'move-page',
+            label: this.t('blockMenuMoveToPage', 'Move to page'),
+            icon: '→',
+            submenu: true,
+        }];
+    }
+
     /** Pages other than this one, as a second menu where the first was. */
-    showWidgetPagePicker(titleEl, widget) {
+    showPagePicker(titleEl, blockId, menuId, hint) {
         const d = this.dash;
         const here = Number(d.currentPageId);
         const pages = (Array.isArray(d.pages) ? d.pages : []).filter((page) => Number(page.id) !== here);
         if (!pages.length) {
-            d.showNotification?.(this.t('widgetMenuMoveNoPages', 'There is no other page to move it to.'), 'info');
+            d.showNotification?.(this.t('blockMoveNoPages', 'There is no other page to move it to.'), 'info');
             return;
         }
         const box = titleEl.getBoundingClientRect();
         this._openMenu({
-            id: 'widget-context-menu',
-            ariaLabel: this.t('widgetMenuMoveToPage', 'Move to page…'),
-            hint: this.widgetName(widget),
+            id: menuId,
+            ariaLabel: this.t('blockMenuMoveToPage', 'Move to page'),
+            hint,
             entries: pages.map((page) => ({ id: String(page.id), label: String(page.name || page.id), icon: '→' })),
             point: { x: box.left + 8, y: box.bottom },
-            onPick: (id) => { void this.moveWidgetToPage(widget, Number(id)); },
+            // Through the one path every block kind takes: last on that page,
+            // with an Undo notice.
+            onPick: (id) => { void d.renderCore?.moveBlockToPage?.({ id: blockId, toPageId: Number(id) }); },
         });
-    }
-
-    /**
-     * Written to the destination first, removed here second: a failure between
-     * the two leaves the widget in both places, never in neither. The id comes
-     * along, so its credential and folded state stay filed under it.
-     */
-    async moveWidgetToPage(widget, targetId) {
-        const d = this.dash;
-        const rc = d.renderCore;
-        const pageId = Number(d.currentPageId);
-        if (!targetId || targetId === pageId || rc?.blocksBelongElsewhere?.()) return false;
-        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        const headers = { 'Content-Type': 'application/json' };
-        if (typeof nextDashWriteHeaders === 'function') Object.assign(headers, nextDashWriteHeaders());
-        const put = (id, body) => fetcher(`/api/pages/${id}/blocks`, {
-            method: 'PUT', headers, body: JSON.stringify(body),
-        });
-        const name = this.widgetName(widget);
-        try {
-            // Both read with the token. The dashboard's own copy is read
-            // without it, and the server leaves a custom widget's address and
-            // credential and an RSS widget's feeds out of that; it puts them
-            // back on a save only for a widget already stored on the same page,
-            // so the moved one arrived without them.
-            const src = await fetcher(`/api/pages/${pageId}/blocks`);
-            if (!src.ok) throw new Error(`HTTP ${src.status}`);
-            const full = ((await src.json()).widgets || []).find((w) => String(w?.id) === String(widget.id));
-            if (!full) throw new Error('widget not found');
-            const res = await fetcher(`/api/pages/${targetId}/blocks`);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const dest = await res.json();
-            const moved = { id: full.id, type: full.type, title: full.title, config: full.config || {} };
-            const added = await put(targetId, { widgets: (dest.widgets || []).concat(moved) });
-            if (!added.ok) throw new Error(`HTTP ${added.status}`);
-            const widgets = (d.widgets || []).filter((w) => String(w?.id) !== String(widget.id));
-            const order = (d.blockOrder || []).filter((id) => String(id) !== String(widget.id));
-            const removed = await put(pageId, { widgets, order });
-            if (!removed.ok) throw new Error(`HTTP ${removed.status}`);
-            d.widgets = widgets;
-            d.blockOrder = order;
-            d.data?.updatePageDataCache?.(pageId, { blocks: { widgets, order } });
-            d._pageDataCache?.delete?.(targetId);
-        } catch (_error) {
-            d.showErrorNotification?.(this.t('widgetMenuMoveFailed', 'Could not move the widget.'));
-            return false;
-        }
-        rc?.forgetWidgetConfigCache?.();
-        rc?.redrawKeepingPlace?.();
-        const pageName = (d.pages || []).find((page) => Number(page.id) === targetId)?.name || targetId;
-        d.showNotification?.(
-            this.t('widgetMenuMoved', '“{name}” moved to {page}.', { name, page: pageName }), 'success');
-        return true;
     }
 
     /**
@@ -528,6 +552,7 @@ class DashboardCategoryMenu {
             // control were still sitting in all four files with no caller: it
             // fell out at some point and left eight identical headers behind.
             { id: 'icon', label: this.t('categoryMenuIcon', 'Icon…'), icon: '☺' },
+            ...this.movePageEntries(category.id),
             { id: 'add', label: this.t('categoryMenuAdd', 'Add category'), icon: '+', key: 'c' },
             { id: 'delete', label: this.t('categoryMenuDelete', 'Delete'), icon: '✕', danger: true, key: 'Delete' },
         ];
@@ -945,6 +970,12 @@ class DashboardCategoryMenu {
 
         if (action === 'icon') {
             this.openIconEditor(titleEl, category);
+            return;
+        }
+
+        if (action === 'move-page') {
+            this.showPagePicker(titleEl, String(category.id), 'category-context-menu',
+                String(category.name || category.id || '').trim() || '—');
             return;
         }
 

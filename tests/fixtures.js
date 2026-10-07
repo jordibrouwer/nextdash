@@ -137,7 +137,7 @@ const test = base.test.extend({
                         const init = value.init;
                         value.init = function seededInit(saved, ...rest) {
                             const wanted = window.__e2eWantTours || [];
-                            const tours = ['bookmarksTutorialV1', 'containersTutorialV3', 'dashboardTutorialV3']
+                            const tours = ['bookmarksTutorialV1', 'containersTutorialV3', 'dashboardTutorialV3', 'blockMoveCoach']
                                 .filter((id) => !wanted.includes(id));
                             const seeded = { ...(saved || {}) };
                             // A spec can also start with a tip already seen, such as an

@@ -282,10 +282,27 @@
             this.closeStructureRowMenu();
             if (!target || !value) return;
             if (target.action === 'move-all') await this.moveAllBookmarksOfPage(target.pageId, value);
-            else if (target.action === 'move-page') await this.moveCategoryToPage(target.pageId, target.categoryId, value);
+            else if (target.action === 'move-page') {
+                // Through the one path every block takes (dashboard-block-page-move.js):
+                // the same server steps and clash rule, last on that page, and Undo.
+                await this.dash.renderCore?.moveBlockToPage?.({
+                    id: String(target.categoryId), toPageId: Number(value), fromPageId: Number(target.pageId), kind: 'category',
+                });
+                // Both pages were written past the table's copy.
+                this.forgetCategoryLists();
+            }
             else if (target.action === 'merge') await this.mergeCategoryInto(target.pageId, target.categoryId, value);
             this.repaintPtBody();
             this.repaintStructureFoot();
+        },
+
+        /**
+         * One page's categories as the editor holds them. Nothing for a page
+         * the table does not hold, rather than another page's list.
+         */
+        categoryListOf(pageId) {
+            if (this._catByPage) return this._catByPage.get(String(pageId)) || [];
+            return this._categories || [];
         },
 
         bookmarksOfStructure(pageId, categoryId = null) {
@@ -297,49 +314,6 @@
             const picked = this.bookmarksOfStructure(pageId);
             if (!picked.length) return;
             await this.bulkMove(picked, { pageId: toPageId });
-            await this.dash.loadAllBookmarks?.();
-        },
-
-        /**
-         * A category and its bookmarks, to another page: the category is made
-         * there under its own name (a new id when that page already uses this
-         * one for something else), the bookmarks follow, and the category
-         * leaves the page it was on.
-         */
-        async moveCategoryToPage(pageId, categoryId, toPageId) {
-            const source = (this._categories || []).find((c) => String(c.id) === String(categoryId));
-            if (!source) return;
-            let id = String(categoryId);
-            try {
-                const res = await fetch(`/api/categories?page=${encodeURIComponent(toPageId)}`);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const list = await res.json();
-                const clash = list.find((c) => String(c.id) === id);
-                if (clash && global.DashboardConfig.nameKey(clash.name) !== global.DashboardConfig.nameKey(source.name)) id = `${id}-${Date.now().toString(36)}`;
-                if (!list.some((c) => String(c.id) === id)) {
-                    const save = await this.writeFetch(`/api/categories?page=${encodeURIComponent(toPageId)}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify([...list, { ...source, id }]),
-                    });
-                    if (!save.ok) throw new Error(`HTTP ${save.status}`);
-                }
-                this.invalidateBookmarkCategoriesCache?.(toPageId);
-            } catch {
-                this.notify(this.t('config.categoriesSaveError', 'Could not save categories.'), 'error');
-                return;
-            }
-            const picked = this.bookmarksOfStructure(pageId, categoryId);
-            // The category goes only when every bookmark went with it: a row the
-            // target refused (already there) or a failed move stayed behind
-            // pointing at a category that no longer existed.
-            const result = picked.length ? await this.bulkMove(picked, { pageId: toPageId, category: id }) : { skipped: [] };
-            if (!result || result.skipped.length) {
-                await this.dash.loadAllBookmarks?.();
-                return;
-            }
-            this._categories = (this._categories || []).filter((c) => String(c.id) !== String(categoryId));
-            await this.saveCategories(pageId);
             await this.dash.loadAllBookmarks?.();
         },
 

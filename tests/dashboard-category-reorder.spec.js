@@ -16,7 +16,7 @@ test.describe('dashboard category drag-reorder', () => {
         });
     });
 
-    test('the "//" prefix is a drag handle on real categories only', async ({ page }) => {
+    test('the "//" prefix is a drag handle on categories and collections', async ({ page }) => {
         await page.goto(`/?_=${Date.now()}`);
         await page.waitForSelector(realCategorySel, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
@@ -26,14 +26,14 @@ test.describe('dashboard category drag-reorder', () => {
         const handle = page.locator(`${realCategorySel} .category-reorder-handle`).first();
         await expect(handle).toHaveCount(1);
         await expect(handle).toHaveText('// ');
-        await expect(handle).toHaveJSProperty('draggable', true);
+        await expect(handle).toHaveAttribute('type', 'button');
         const cursor = await handle.evaluate((el) => getComputedStyle(el).cursor);
         expect(cursor).toBe('grab');
 
-        // Smart collections keep a plain "//" prefix that is not a handle.
+        // Collections are placed per page too, so theirs is the same handle.
         const smart = page.locator('#dashboard-layout .category[data-smart-collection="true"]');
         if (await smart.count()) {
-            await expect(smart.first().locator('.category-reorder-handle')).toHaveCount(0);
+            await expect(smart.first().locator('.category-reorder-handle')).toHaveAttribute('aria-label', /^Move /);
         }
     });
 
@@ -92,15 +92,18 @@ test.describe('dashboard category drag-reorder', () => {
         test.skip(idsBefore.length < 2, 'needs at least two stored categories rendered');
 
         // Move the first stored category behind the last one, then let the dashboard
-        // persist the new order (same path a real drag triggers).
-        await page.evaluate((selector) => {
+        // persist the new order (same path a real drop triggers).
+        await page.evaluate(async (selector) => {
+            const rc = window.dashboardInstance.renderCore;
             const grid = document.getElementById('dashboard-layout');
-            const stored = window.dashboardInstance.renderCore.readCategoryElementsInOrder(grid)
-                .filter((el) => el.matches(selector));
+            const stored = rc.readCategoryElementsInOrder(grid)
+                .filter((el) => el.matches(selector))
+                .map((el) => el.getAttribute('data-category-id'));
             const first = stored[0];
             const last = stored[stored.length - 1];
-            last.after(first);
-            window.dashboardInstance.syncCategoriesFromDom();
+            const order = rc.blockOrderFromDom().filter((id) => id !== first && !id.startsWith('__smart_'));
+            order.splice(order.indexOf(last) + 1, 0, first);
+            await rc.commitBlockMove({ id: first, order, announce: false });
         }, storedSel);
 
         // saveCategoryOrder debounces ~1s; wait it out.

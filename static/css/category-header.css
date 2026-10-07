@@ -49,8 +49,7 @@ body[data-cat-count="on"] .dashboard-grid .category-title-count {
 }
 
 /* ---- alles behalve de eigen stijl van het theme ---- */
-body:not([data-cat-head="theme"]) .dashboard-grid .category-reorder-handle,
-body:not([data-cat-head="theme"]) .dashboard-grid .category-title-prefix {
+body:not([data-cat-head="theme"]) .dashboard-grid .category-reorder-handle {
     display: inline-block;
     width: 0.9em;
     font-size: 0;
@@ -69,8 +68,21 @@ body:not([data-cat-head="theme"]) .dashboard-grid .category-title:hover .categor
     opacity: 0.55;
 }
 
-body:not([data-cat-head="theme"]) .dashboard-grid .category-title-prefix {
-    width: 0;
+/* The box is font-size 0 here, so an outline on it is a line: the grip
+   shows focus instead. */
+body:not([data-cat-head="theme"]) .dashboard-grid .category-reorder-handle:focus-visible {
+    outline: none;
+}
+
+body:not([data-cat-head="theme"]) .dashboard-grid .category-reorder-handle:focus-visible::before {
+    opacity: 1;
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+body:not([data-cat-head="theme"]) .dashboard-grid .category-reorder-handle.is-static::before {
+    content: none;
 }
 
 body:not([data-cat-head="theme"]) .dashboard-grid.layout-terminal .category-title-label::before {

@@ -530,15 +530,16 @@ test.describe('packed columns carries the switch by packing tighter', () => {
     test('the stored order survives a rearrangement in either shape', async ({ page }) => {
         await openDashboard(page, { packed: true, itemLimit: 1 });
 
-        // syncCategoriesFromDom is what a finished drag calls. In the
-        // round-robin shape it used to read the columns in document order while
+        // commitBlockMove is what a finished drop calls. In the
+        // round-robin shape the order used to be read in document order while
         // the render filled them round-robin — not each other's inverse, so
         // every drag rewrote the order into one that redistributed differently
         // and the page scrambled.
-        const roundRobin = await page.evaluate(() => {
+        const roundRobin = await page.evaluate(async () => {
             const d = window.dashboardInstance;
             const before = (d.categories || []).map((cat) => cat.id);
-            d.renderCore.syncCategoriesFromDom();
+            const rc = d.renderCore;
+            await rc.commitBlockMove({ id: rc.blockOrderFromDom().find((b) => !b.startsWith('__smart_')), order: rc.blockOrderFromDom().filter((b) => !b.startsWith('__smart_')), announce: false });
             return { before, after: (d.categories || []).map((cat) => cat.id) };
         });
         expect(roundRobin.after).toEqual(roundRobin.before);
@@ -551,7 +552,8 @@ test.describe('packed columns carries the switch by packing tighter', () => {
             window.DashboardCategorySpan.refreshCategorySpreadUi(d, id);
             await new Promise((resolve) => setTimeout(resolve, 300));
             const before = (d.categories || []).map((cat) => cat.id);
-            d.renderCore.syncCategoriesFromDom();
+            const rc = d.renderCore;
+            await rc.commitBlockMove({ id: rc.blockOrderFromDom().find((b) => !b.startsWith('__smart_')), order: rc.blockOrderFromDom().filter((b) => !b.startsWith('__smart_')), announce: false });
             return { before, after: (d.categories || []).map((cat) => cat.id) };
         });
         expect(masonry.after).toEqual(masonry.before);

@@ -82,6 +82,13 @@ class KeyboardNavigation {
                 return;
             }
 
+            // A block picked up owns the arrows, Enter, W and Escape until it is
+            // dropped; this handler runs first, in capture, and would move the
+            // grid cursor with the same keys.
+            if (window.DashboardBlockMover?.isMoving?.()) {
+                return;
+            }
+
             if (document.body.classList.contains('bookmark-inline-edit-active')) {
                 return;
             }
@@ -354,9 +361,24 @@ class KeyboardNavigation {
             // cursor" for a bookmark, so the same chord on a header is the same
             // idea one level up — left and right rather than up and down,
             // because categories sit beside each other in the grid.
-            if (e.altKey && !e.ctrlKey && !e.metaKey
+            if (e.altKey && !e.shiftKey && !e.ctrlKey && !e.metaKey
                 && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
                 if (this.moveFocusedCategory(e.key === 'ArrowLeft' ? -1 : 1)) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    return;
+                }
+            }
+
+            // Shift+Alt+← / Shift+Alt+→ on a block title — move the block to the
+            // page before or after this one. One level up from Alt+arrow, which
+            // moves it on this page; on a bookmark row the same chord files the
+            // row into the next category (below), so it only acts here when a
+            // title has focus.
+            if (e.altKey && e.shiftKey && !e.ctrlKey && !e.metaKey
+                && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+                if (this.moveFocusedBlockToPage(e.key === 'ArrowLeft' ? -1 : 1)) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     e.stopPropagation();
@@ -794,6 +816,18 @@ class KeyboardNavigation {
         if (!blockEl || !d.categoryMenu) {
             return false;
         }
+        const collectionId = blockEl.getAttribute('data-smart-collection') === 'true'
+            ? String(blockEl.getAttribute('data-category-id') || '') : '';
+        if (collectionId) {
+            // Two columns or one, like a widget, and the same for every page.
+            const rc = d.renderCore;
+            const wide = rc?.blockWidth?.(collectionId) === 2;
+            if (!wide && Number(rc?.getEffectiveColumnsPerRow?.()) < 2) return false;
+            void rc?.setBlockWidth?.(collectionId, wide ? 1 : 2).then((ok) => {
+                if (ok) rc.redrawKeepingPlace(collectionId);
+            });
+            return true;
+        }
         const widgetId = blockEl.getAttribute('data-widget-id');
         if (widgetId) {
             const widget = (d.widgets || []).find((w) => String(w?.id) === String(widgetId));
@@ -828,15 +862,15 @@ class KeyboardNavigation {
     }
 
     /**
-     * Move the category whose header has focus one place left or right.
+     * Move the category or widget whose header has focus one place left or right.
      *
      * Only acts when a header actually has focus — otherwise Alt+arrow keeps
      * whatever meaning it has elsewhere, and a stray chord on the grid does not
-     * silently reorder the page. Smart collections are skipped: their order is
-     * derived, not stored, so moving one would be undone on the next render.
+     * silently reorder the page. Collections move too: their place is stored
+     * per page like any block's.
      *
-     * Writes through the same array the drag reorder writes and reuses its
-     * debounced save, so one route cannot persist what the other does not.
+     * Goes through commitBlockMove, the one place a drop ends too, so the
+     * order, the slide and the Undo notice are the same for both routes.
      */
     moveFocusedCategory(direction) {
         const d = this.dashboard;
@@ -844,47 +878,54 @@ class KeyboardNavigation {
         const title = active?.closest?.('.category-title');
         const categoryEl = title?.closest?.('.category');
         if (!title || !categoryEl) return false;
-        if (categoryEl.getAttribute('data-smart-collection') === 'true') return false;
+        // Other and an unknown category have no place of their own to move.
+        if (categoryEl.matches('[data-virtual-category="true"], [data-tag-filter-chunk="true"]')) return false;
 
-        const id = String(categoryEl.getAttribute('data-category-id') || '');
-        const categories = Array.isArray(d?.categories) ? d.categories : [];
-        const from = categories.findIndex((c) => String(c.id) === id);
-        if (from < 0) return false;
-        const moved = categories[from];
-        /*
-         * Through blockOrder, the one list that decides what is drawn where.
-         *
-         * The category array's own order used to be the order, and this wrote
-         * that. Now that widgets share the arrangement, two lists saying where
-         * something sits is two lists that disagree the moment one is written
-         * and the other is not -- so moving with the keyboard writes the same
-         * order dragging does.
-         */
-        // The bounds are blockOrder's, which holds the widgets as well: checked
-        // against the categories alone, the first or last one could never move
-        // past a widget.
-        if (d.renderCore?.moveBlockInOrder?.(String(moved.id), direction) === false) return false;
-        // The category list follows the block order it was moved in.
-        const at = new Map((d.blockOrder || []).map((bid, i) => [String(bid), i]));
-        d.categories = [...categories].sort((a, b) => (at.get(String(a.id)) ?? Infinity) - (at.get(String(b.id)) ?? Infinity));
-        d.renderDashboard?.({ animate: false });
+        if (d?.settings?.lockLayout) return false;
+        const id = String(categoryEl.getAttribute('data-widget-id') || categoryEl.getAttribute('data-category-id') || '');
+        const rc = d?.renderCore;
+        if (!id || !rc) return false;
+        // The order the reader sees.
+        const order = rc.blockOrderFromDom();
+        const from = order.indexOf(id);
+        const to = from + (direction < 0 ? -1 : 1);
+        if (from < 0 || to < 0 || to >= order.length) return false;
+        void rc.commitBlockMove({ id, order: window.BlockMoveModel.insertAt(order, id, to), width: null });
 
         // The header element is rebuilt by the render, so focus follows the
-        // category rather than the node that used to hold it.
-        requestAnimationFrame(() => {
-            const grid = document.getElementById('dashboard-layout');
-            const el = grid?.querySelector(`.category[data-category-id="${CSS.escape(id)}"] .category-title`);
-            el?.focus?.({ preventScroll: true });
-            el?.scrollIntoView?.({ block: 'nearest', behavior: this._scrollBehavior() });
-        });
-        this._announceCategoryMove(moved?.name || id);
+        // block rather than the node that used to hold it.
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            document.querySelector(`#dashboard-layout .category[data-category-id="${CSS.escape(id)}"] .category-title`)
+                ?.focus({ preventScroll: true });
+        }));
         return true;
     }
 
-    _announceCategoryMove(name) {
-        const live = this._ensureKbdLiveRegion();
-        const label = this.dashboard?.formatDashboardLabel?.('categoryMoved', {}, 'moved') || 'moved';
-        live.textContent = name ? `${name}: ${label}` : label;
+    /**
+     * Move the block whose title has focus to the page before or after this
+     * one, through the same path as the header menu's Move to page ▸.
+     *
+     * Only with focus on a title, so the chord keeps its bookmark meaning on a
+     * row. Answers true for a title even when the move cannot happen (Lock
+     * layout, one page, a tag collection -- each says why), so the key does
+     * not fall through and file a selected bookmark instead.
+     */
+    moveFocusedBlockToPage(direction) {
+        const d = this.dashboard;
+        const title = document.activeElement?.closest?.('.category-title');
+        const blockEl = title?.closest?.('#dashboard-layout .category[data-category-id]');
+        if (!title || !blockEl || blockEl.matches('[data-tag-filter-chunk="true"], [data-virtual-category="true"]')) return false;
+        const id = String(blockEl.getAttribute('data-widget-id') || blockEl.getAttribute('data-category-id') || '');
+        if (!id) return false;
+        const move = window.DashboardBlockPageMove;
+        const to = move?.adjacentPageId?.(d, direction);
+        if (to == null && !id.startsWith('tag:') && !d?.settings?.lockLayout) {
+            d.showNotification?.(d.formatDashboardLabel?.('blockMoveNoPages', {}, 'There is no other page to move it to.')
+                || 'There is no other page to move it to.', 'info');
+            return true;
+        }
+        void d.renderCore?.moveBlockToPage?.({ id, toPageId: to });
+        return true;
     }
 
     _announceCategorySpread(name, on) {
