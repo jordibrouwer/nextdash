@@ -200,6 +200,7 @@ class DashboardPromos {
      */
     maybeAnnounceSearchModeKey() {
         const d = this.dash;
+        if (window.DemoLock?.on) return; // no tips in the public demo
         const release = window.NEXTDASH_WHATS_NEW_RELEASE || '';
         const key = 'nextdash:search-mode-key-announced';
         try {

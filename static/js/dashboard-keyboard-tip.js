@@ -72,6 +72,8 @@
         const d = dash();
         if (!d || shownThisLoad) return false;
         if (d.settings?.enableSessionTips === false) return false;
+        // No tips in the public demo: the bar and the tour already speak.
+        if (global.DemoLock?.on) return false;
 
         // Whether unprompted UI may take the screen is one shared question,
         // answered by dashboard-promos.js for every module that asks it. A tip
