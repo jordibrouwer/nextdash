@@ -2600,6 +2600,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 		sanitized = append(sanitized, col)
 	}
 	settings.Collections = sanitized
+	settings.CollectionColumns = normalizeCollectionColumns(settings.CollectionColumns)
 	settings.TagRules = sanitizeTagRules(settings.TagRules)
 	settings.DismissedTagSuggestions = sanitizeDismissedTagSuggestions(settings.DismissedTagSuggestions)
 	settings.SavedSearches = normalizeSavedSearches(settings.SavedSearches)
@@ -2661,6 +2662,21 @@ func normalizeSavedSearches(list []SavedSearch) []SavedSearch {
 // valuelessRuleFields are collection-rule fields that carry their question in
 // the field name, so an empty value is not a half-filled rule.
 var valuelessRuleFields = map[string]bool{"untagged": true, "pinned": true}
+
+// normalizeCollectionColumns keeps the collections drawn two columns wide. One
+// column is the default, so an entry saying so is left out rather than stored.
+func normalizeCollectionColumns(columns map[string]int) map[string]int {
+	out := make(map[string]int, len(columns))
+	for id, n := range columns {
+		if id = strings.TrimSpace(id); id != "" && n == 2 {
+			out[id] = 2
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
 
 // collectionLabel names a collection for a message to the user, falling back to
 // its id when the name is what went missing.
