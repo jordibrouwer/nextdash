@@ -18,6 +18,11 @@ jobs:
         run: bash scripts/validate-json.sh
       - name: Check extension bookmark-form sync
         run: bash scripts/check-extension-bookmark-form.sh
+      # Builds the Chromium and Firefox packages into a temp folder and checks
+      # the Firefox manifest made from the Chromium one, so a broken build shows
+      # here rather than on upload to addons.mozilla.org.
+      - name: Check the extension build
+        run: npm run test:extension-build
       # The node unit tests ran nowhere. news-stream-model asserted a feature
       # window of two for the month after the code moved to four, and nothing
       # said so — it only surfaced because it also broke the e2e run it was
