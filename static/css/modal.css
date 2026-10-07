@@ -816,6 +816,11 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     overflow: hidden;
     display: flex;
     flex-direction: column;
+/* Stacked on a narrow screen, the 12rem basis meant for the row became a
+   height: a modal of fixed height lost it from the notes. */
+@media (max-width: 42rem) {
+    .wn-foot-update { flex-basis: auto; }
+}
     padding: var(--space-4, 1rem) 1.2rem;
 }
 
