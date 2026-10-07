@@ -1,6 +1,5 @@
 // nextDash Bookmark Saver Extension
 
-let confirmationCallback = null;
 // iconSource: the favicon's own address, stored as an icon only on save.
 let extDraftState = { icon: '', iconSource: '', previewTitle: '', previewDesc: '', previewImage: '' };
 // Set once the "already saved elsewhere" message has been shown, so pressing
@@ -258,27 +257,6 @@ async function refreshPageBookmarks() {
     updateUrlDuplicateHint();
 }
 
-function showConfirmation(text, onYes) {
-    document.getElementById('confirmation-text').innerHTML = text;
-    document.getElementById('confirmation').classList.remove('hidden');
-    confirmationCallback = onYes;
-    
-    // Add click outside to close
-    document.getElementById('confirmation').addEventListener('click', handleConfirmationClick);
-}
-
-function hideConfirmation() {
-    document.getElementById('confirmation').classList.add('hidden');
-    document.getElementById('confirmation').removeEventListener('click', handleConfirmationClick);
-    confirmationCallback = null;
-}
-
-function handleConfirmationClick(event) {
-    if (event.target.id === 'confirmation') {
-        hideConfirmation();
-    }
-}
-
 document.addEventListener('DOMContentLoaded', async function() {
     await initExtensionI18n();
     await loadExtensionPreferences();
@@ -385,18 +363,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Reset settings button
     document.getElementById('reset-settings-btn').addEventListener('click', resetSettings);
-    
-    // Confirmation buttons
-    document.getElementById('confirm-yes').addEventListener('click', async () => {
-        if (confirmationCallback) {
-            await confirmationCallback();
-        }
-        hideConfirmation();
-    });
-    
-    document.getElementById('confirm-no').addEventListener('click', () => {
-        hideConfirmation();
-    });
 });
 
 async function loadSettings() {
