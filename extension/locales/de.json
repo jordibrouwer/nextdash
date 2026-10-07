@@ -50,6 +50,8 @@
   "msgDuplicateSamePage": "Diese Seite enthält den Link bereits.",
   "msgUrlNotSavable": "Diese URL kann nicht gespeichert werden. Normale http(s)-Seite verwenden.",
   "msgSettingsSaved": "Einstellungen gespeichert!",
+  "msgServerAccessDenied": "Einstellungen gespeichert, aber der Browser hat den Zugriff auf {origin} nicht erlaubt. Klicke noch einmal auf Einstellungen speichern und erlaube ihn.",
+  "msgServerAccessNeeded": "nextDash braucht Zugriff auf {origin}. Öffne die Einstellungen und klicke auf Einstellungen speichern, um ihn zu erlauben.",
   "msgSettingsReset": "Einstellungen zurückgesetzt!",
   "notifySaved": "Lesezeichen in nextDash gespeichert",
   "notifySavedNamed": "\"{name}\" in nextDash gespeichert",

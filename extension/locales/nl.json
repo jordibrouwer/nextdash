@@ -50,6 +50,8 @@
   "msgDuplicateSamePage": "Deze pagina heeft deze link al.",
   "msgUrlNotSavable": "Deze URL kan niet worden opgeslagen. Gebruik een normale http(s)-pagina.",
   "msgSettingsSaved": "Instellingen opgeslagen!",
+  "msgServerAccessDenied": "Instellingen opgeslagen, maar de browser gaf geen toegang tot {origin}. Klik nog eens op Instellingen opslaan en sta het toe.",
+  "msgServerAccessNeeded": "nextDash heeft toegang tot {origin} nodig. Open Instellingen en klik op Instellingen opslaan om het toe te staan.",
   "msgSettingsReset": "Instellingen gereset!",
   "notifySaved": "Bladwijzer opgeslagen in nextDash",
   "notifySavedNamed": "\"{name}\" opgeslagen in nextDash",

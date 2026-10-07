@@ -50,6 +50,8 @@
   "msgDuplicateSamePage": "Esta página ya tiene este enlace.",
   "msgUrlNotSavable": "Esta URL no se puede guardar. Usa una página http(s) normal.",
   "msgSettingsSaved": "¡Ajustes guardados!",
+  "msgServerAccessDenied": "Ajustes guardados, pero el navegador no permitió el acceso a {origin}. Pulsa de nuevo Guardar los ajustes y permítelo.",
+  "msgServerAccessNeeded": "nextDash necesita acceso a {origin}. Abre los ajustes y pulsa Guardar los ajustes para permitirlo.",
   "msgSettingsReset": "¡Ajustes restablecidos!",
   "notifySaved": "Marcador guardado en nextDash",
   "notifySavedNamed": "\"{name}\" guardado en nextDash",

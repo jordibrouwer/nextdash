@@ -50,6 +50,8 @@
   "msgDuplicateSamePage": "Cette page contient déjà ce lien.",
   "msgUrlNotSavable": "Cette URL ne peut pas être enregistrée. Utilisez une page http(s) normale.",
   "msgSettingsSaved": "Paramètres enregistrés !",
+  "msgServerAccessDenied": "Paramètres enregistrés, mais le navigateur n’a pas autorisé l’accès à {origin}. Cliquez à nouveau sur Enregistrer les paramètres et autorisez-le.",
+  "msgServerAccessNeeded": "nextDash a besoin d’accéder à {origin}. Ouvrez les paramètres et cliquez sur Enregistrer les paramètres pour l’autoriser.",
   "msgSettingsReset": "Paramètres réinitialisés !",
   "notifySaved": "Favori enregistré dans nextDash",
   "notifySavedNamed": "\"{name}\" enregistré dans nextDash",

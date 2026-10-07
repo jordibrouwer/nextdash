@@ -50,6 +50,8 @@
   "msgDuplicateSamePage": "本页面已经有这个链接了。",
   "msgUrlNotSavable": "这个网址无法保存。请使用普通的 http(s) 页面。",
   "msgSettingsSaved": "设置已保存！",
+  "msgServerAccessDenied": "设置已保存，但浏览器没有允许访问 {origin}。请再次点击「保存设置」并允许访问。",
+  "msgServerAccessNeeded": "nextDash 需要访问 {origin}。打开设置并点击「保存设置」以允许访问。",
   "msgSettingsReset": "设置已重置！",
   "notifySaved": "书签已保存到 nextDash",
   "notifySavedNamed": "「{name}」已保存到 nextDash",
