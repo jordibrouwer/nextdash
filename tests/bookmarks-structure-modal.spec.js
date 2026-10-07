@@ -21,14 +21,14 @@ test.describe('pages and categories modal', () => {
     await expect(modal(page)).toBeVisible();
     await expect(modal(page).locator('[data-pt-tab="pages"]')).toHaveAttribute('aria-selected', 'true');
     await expect(modal(page).locator('[data-page-row]').first()).toBeVisible();
-    await expect(modal(page).locator('[data-page-row]').first().locator('.config-tag-count')).toContainText(/\d/);
+    await expect(modal(page).locator('[data-page-row]').first().locator('.structure-num')).toContainText(/\d/);
   });
 
   test('Manage beside Categories opens it on Categories, and the tabs switch', async ({ page }) => {
     await openBookmarksWithHealth(page, undefined, { view: 'library' });
     await page.locator('#config-bm-rail [data-bm-manage="categories"]').click();
     await expect(modal(page).locator('[data-pt-tab="categories"]')).toHaveAttribute('aria-selected', 'true');
-    await expect(modal(page).locator('[data-cat-page]')).toBeVisible();
+    await expect(modal(page).locator('[data-cat-row][data-cat-page]').first()).toBeVisible();
     await modal(page).locator('[data-pt-tab="pages"]').click();
     await expect(modal(page).locator('[data-page-row]').first()).toBeVisible();
   });
