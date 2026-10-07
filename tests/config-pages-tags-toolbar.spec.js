@@ -112,10 +112,11 @@ test.describe('config pages & tags — list toolbar', () => {
         expect(shown).toEqual(sorted);
     });
 
-    test('categories get the same toolbar, with the page picker kept', async ({ page }) => {
+    test('categories get the same toolbar, without a page picker', async ({ page }) => {
         await openPagesTags(page, 'categories');
         await expect(page.locator('.config-crud-toolbar [data-cat-add]')).toHaveCount(1);
-        await expect(page.locator('.config-crud-toolbar [data-cat-page]')).toHaveCount(1);
+        // Every page is in the one table; chips filter it instead.
+        await expect(page.locator('.config-crud-toolbar [data-cat-page]')).toHaveCount(0);
         await expect(page.locator('[data-pt-sort="categories"]')).toBeVisible();
     });
 });

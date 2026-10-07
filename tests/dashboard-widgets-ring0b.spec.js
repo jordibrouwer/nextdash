@@ -717,31 +717,4 @@ test.describe('widgets as a section', () => {
         await expect(page.locator('[data-pt-tab="categories"]')).toBeVisible({ timeout: 15_000 });
         await expect(page.locator('[data-pt-tab="widgets"]')).toHaveCount(0);
     });
-
-    // The categories list offers a way to a widget's settings; that moved too.
-    test('configuring a widget from the categories list lands in the section', async ({ page }) => {
-        await markWhatsNewSeen(page);
-        await page.goto('/');
-        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-        await dismissOnboardingIfPresent(page);
-        await dismissBlockingOverlays(page);
-        await page.evaluate(async () => {
-            const send = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-            await send('/api/pages/1/blocks', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ widgets: [{ type: 'health', title: 'Health' }] }),
-            });
-        });
-
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
-        await page.click('[data-pt-tab="categories"]');
-        const configure = page.locator('[data-block-configure]').first();
-        await expect(configure).toBeVisible({ timeout: 15_000 });
-        await configure.click();
-
-        await expect.poll(async () => page.evaluate(() =>
-            (window.dashboardInstance.config?.instance || window.dashboardInstance.config)?.section),
-        { timeout: 15_000 }).toBe('widgets');
-    });
 });

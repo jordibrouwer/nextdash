@@ -131,45 +131,6 @@ test.describe('config pages & tags', () => {
         expect(posted[posted.length - 1].id).toBeTruthy();
     });
 
-    // A widget row on the categories tab carries data-block-row, which
-    // listRowKey did not know about: it returned null, and the stored
-    // selection key is null too until an arrow key is pressed, so every widget
-    // row matched at once and the whole list lit up with the cursor accent.
-    test('widget rows on the categories tab are not all marked as the cursor', async ({ page }) => {
-        await page.route('**/api/finders', async (route) => {
-            if (route.request().method() !== 'GET') return route.fallback();
-            await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
-        });
-        await page.route('**/api/categories**', async (route) => {
-            if (route.request().method() !== 'GET') return route.fallback();
-            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
-                { id: 'work', name: 'Work' }, { id: 'home', name: 'Home' },
-            ]) });
-        });
-        await loadDashboard(page);
-
-        // Two widgets on the page, so the categories tab interleaves block rows.
-        await page.evaluate(() => {
-            const cfg = window.dashboardInstance.config;
-            cfg._catWidgets = [
-                { id: 'w1', type: 'uptime', title: 'Uptime' },
-                { id: 'w2', type: 'custom', title: 'Adguard' },
-            ];
-            cfg._catBlockOrder = ['w1', 'work', 'w2', 'home'];
-        });
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
-        await page.locator('[data-pt-tab="categories"]').click();
-        await expect(page.locator('[data-block-row]').first()).toBeVisible();
-
-        // Nothing is selected until an arrow key moves the cursor.
-        expect(await page.locator('.config-crud-row.keyboard-selected').count()).toBe(0);
-
-        // And once it does move, exactly one row carries it.
-        await page.locator('.config-crud-row').first().click();
-        await page.keyboard.press('ArrowDown');
-        expect(await page.locator('.config-crud-row.keyboard-selected').count()).toBeLessThanOrEqual(1);
-    });
-
     test('pages, categories and collections all show bookmark statistics', async ({ page }) => {
         await page.route('**/api/finders', async (route) => {
             if (route.request().method() !== 'GET') return route.fallback();
@@ -194,13 +155,14 @@ test.describe('config pages & tags', () => {
 
         // Pages: the only page holds all three bookmarks.
         await page.locator('[data-pt-tab="pages"]').click();
-        await expect(page.locator('[data-page-row] .config-tag-count').first()).toHaveText('3 bookmarks');
-        await expect(page.locator('.config-stat-summary')).toBeVisible();
+        await expect(page.locator('[data-page-row] .structure-num').first()).toHaveText('3');
+        await expect(page.locator('.structure-summary')).toBeVisible();
 
-        // Categories: counted per category name on the selected page.
+        // Categories: counted per category on its own page; the first number
+        // in a row is its bookmark count.
         await page.locator('[data-pt-tab="categories"]').click();
-        await expect(page.locator('[data-cat-row="0"] .config-tag-count')).toHaveText('2 bookmarks');
-        await expect(page.locator('[data-cat-row="1"] .config-tag-count')).toHaveText('1 bookmarks');
+        await expect(page.locator('[data-cat-page="1"][data-cat-row="0"] .structure-num').first()).toHaveText('2');
+        await expect(page.locator('[data-cat-page="1"][data-cat-row="1"] .structure-num').first()).toHaveText('1');
 
         // Collections: the sizes panel lists each active collection.
         await page.locator('[data-pt-tab="collections"]').click();
@@ -403,10 +365,10 @@ test.describe('category statistics', () => {
         });
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
         await page.locator('[data-pt-tab="categories"]').click();
-        await expect(page.locator('[data-cat-row="0"] .config-tag-count')).toHaveText('2 bookmarks');
-        await expect(page.locator('[data-cat-row="1"] .config-tag-count')).toHaveText('1 bookmarks');
+        await expect(page.locator('[data-cat-page="1"][data-cat-row="0"] .structure-num').first()).toHaveText('2');
+        await expect(page.locator('[data-cat-page="1"][data-cat-row="1"] .structure-num').first()).toHaveText('1');
         // A category nothing points at is genuinely zero, not a lookup miss.
-        await expect(page.locator('[data-cat-row="2"] .config-tag-count')).toHaveText('0 bookmarks');
+        await expect(page.locator('[data-cat-page="1"][data-cat-row="2"] .structure-num').first()).toHaveText('0');
     });
 
     test('the count lookup prefers the id but still falls back to the name', async ({ page }) => {
@@ -572,18 +534,6 @@ test.describe('finder URL placeholder', () => {
         await expect(page.locator('[data-finder="name"]')).toBeFocused();
     });
 
-});
-
-test.describe('category list accessibility', () => {
-    test('the category move buttons are labelled for screen readers', async ({ page }) => {
-        await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
-        await page.locator('[data-pt-tab="categories"]').click();
-        await page.waitForSelector('[data-cat-move]');
-        // Without these a screen reader announces only "↑".
-        await expect(page.locator('[data-cat-move="up"]').first()).toHaveAttribute('aria-label', /.+/);
-        await expect(page.locator('[data-cat-move="down"]').first()).toHaveAttribute('aria-label', /.+/);
-    });
 });
 
 test.describe('tag cloud and filter', () => {

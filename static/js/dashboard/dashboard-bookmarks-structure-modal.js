@@ -36,6 +36,8 @@
             this._structurePrevTab = this.ptTab;
             this._structureModal = true;
             this.ptTab = which;
+            // Read again on every opening: the dashboard writes categories too.
+            this.forgetCategoryLists();
             this.clearListKeyboardSelection?.();
 
             const tabs = TABS.map((name) => {
@@ -237,7 +239,8 @@
                     + proxy('delete', '[data-cat-delete]', t('bmStructureDeleteCategory', 'Delete category…'));
             this._structureMenuFor = isPage
                 ? { kind: 'page', pageId: row.getAttribute('data-page-row') }
-                : { kind: 'category', pageId: this._catPageId, categoryId: row.getAttribute('data-cat-id') };
+                // The row's own page: the categories table holds every page.
+                : { kind: 'category', pageId: row.getAttribute('data-cat-page') ?? this._catPageId, categoryId: row.getAttribute('data-cat-id') };
             button.closest('.config-crud-row-actions')?.appendChild(menu);
             button.setAttribute('aria-expanded', 'true');
             menu.querySelector('button')?.focus();
@@ -265,7 +268,7 @@
                 const from = String(target.pageId);
                 options = (this.dash.pages || []).filter((p) => String(p.id) !== from).map((p) => [String(p.id), p.name || String(p.id)]);
             } else if (action === 'merge') {
-                options = (this._categories || []).filter((c) => String(c.id) !== String(target.categoryId)).map((c) => [String(c.id), c.name || String(c.id)]);
+                options = this.categoryListOf(target.pageId).filter((c) => String(c.id) !== String(target.categoryId)).map((c) => [String(c.id), c.name || String(c.id)]);
             }
             target.action = action;
             menu.innerHTML = options.length
@@ -319,8 +322,8 @@
 
         /** A category's bookmarks into another on the same page, and the first one gone. */
         async mergeCategoryInto(pageId, categoryId, intoId) {
-            const from = (this._categories || []).find((c) => String(c.id) === String(categoryId));
-            const into = (this._categories || []).find((c) => String(c.id) === String(intoId));
+            const from = this.categoryListOf(pageId).find((c) => String(c.id) === String(categoryId));
+            const into = this.categoryListOf(pageId).find((c) => String(c.id) === String(intoId));
             if (!from || !into) return;
             const picked = this.bookmarksOfStructure(pageId, categoryId);
             const ok = await this.confirmAction(this.t('config.bmStructureMergeConfirm',
@@ -336,7 +339,7 @@
                     return;
                 }
             }
-            this._categories = (this._categories || []).filter((c) => String(c.id) !== String(categoryId));
+            this.setCategoryList(pageId, this.categoryListOf(pageId).filter((c) => String(c.id) !== String(categoryId)));
             await this.saveCategories(pageId);
             await this.dash.loadAllBookmarks?.();
         },
@@ -344,13 +347,12 @@
         /* ── Drag to reorder ────────────────────────────────────────────── */
 
         /**
-         * Rows move by their grip. Pages reorder the page list; categories and
-         * the widgets between them reorder the page's blockOrder, the one list
-         * the dashboard draws from -- the same write the ↑ ↓ buttons make.
+         * Pages move by their grip. Categories and widgets are ordered on the
+         * dashboard itself, so only page rows are draggable here.
          */
         bindStructureDrag(overlay) {
             let dragged = null;
-            const rowOf = (el) => el?.closest?.('[data-page-row], [data-cat-row], [data-block-row]');
+            const rowOf = (el) => el?.closest?.('[data-page-row]');
             overlay.addEventListener('dragstart', (e) => {
                 const grip = e.target.closest?.('[data-structure-grip]');
                 if (!grip) return;
@@ -379,12 +381,7 @@
                 e.preventDefault();
                 const box = row.getBoundingClientRect();
                 const after = e.clientY > box.top + box.height / 2;
-                if (source.hasAttribute('data-page-row')) {
-                    this.reorderPages(source.getAttribute('data-page-row'), row.getAttribute('data-page-row'), after);
-                } else {
-                    const id = (el) => el.getAttribute('data-cat-id') || el.getAttribute('data-block-row');
-                    void this.reorderCategoryBlocks(id(source), id(row), after);
-                }
+                this.reorderPages(source.getAttribute('data-page-row'), row.getAttribute('data-page-row'), after);
             });
         },
 
@@ -402,31 +399,6 @@
             pages.splice(to, 0, moved);
             void this.savePages();
             this.repaintPtBody();
-        },
-
-        async reorderCategoryBlocks(id, targetId, after) {
-            const order = [...(this._catBlockOrder || [])].map(String);
-            const from = order.indexOf(String(id));
-            if (from < 0 || !targetId) return;
-            order.splice(from, 1);
-            let to = order.indexOf(String(targetId));
-            if (to < 0) return;
-            if (after) to += 1;
-            order.splice(to, 0, String(id));
-            this._catBlockOrder = order;
-            this.repaintPtBody();
-            try {
-                const res = await this.writeFetch(`/api/pages/${this._catPageId}/blocks`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ order }),
-                });
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            } catch {
-                this.notify(this.t('config.categoriesOrderError', 'Could not save the order.'), 'error');
-                return;
-            }
-            await this.refreshDashboardBlocks?.();
         },
 
         /** Show: the list, filtered to that page or category, and the modal out of the way. */
@@ -465,16 +437,16 @@
         },
 
         /**
-         * What a row adds in the modal: its broken count and Show. Empty in
-         * Structure, where a Show that leaves the section would be a surprise.
+         * What a row adds in the modal: ⋯, a page's broken count, and Show.
+         * A category's broken count is its own column. Empty in Structure,
+         * where a Show that leaves the section would be a surprise.
          */
         renderStructureRowExtras({ pageId, categoryId = null }) {
             if (!this._structureModal) return '';
             const esc = (v) => this.dash.escapeHtml(v);
-            const issues = this._bmHealthModule?.report?.issues || [];
+            const issues = categoryId == null ? (this._bmHealthModule?.report?.issues || []) : [];
             const broken = issues.filter((issue) => issue.status === 'broken'
-                && String(issue.pageId) === String(pageId)
-                && (categoryId == null || String(issue.category || '') === String(categoryId))).length;
+                && String(issue.pageId) === String(pageId)).length;
             const more = `<button type="button" class="config-btn config-btn--small" data-structure-more aria-haspopup="menu" aria-expanded="false"
                         aria-label="${esc(this.t('config.bmMoreActions', 'More actions'))}">⋯</button>`;
             return `${more}${broken ? `<span class="config-structure-broken" data-structure-health>${esc(
