@@ -2,6 +2,40 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureBlockMoveTitle",
+      "titleFallback": "Move categories and widgets where you want them",
+      "whatKey": "config.overviewNewFeatureBlockMoveWhat",
+      "whatFallback": "A category moved one place at a time, a widget only through its settings, and the page shifted under the pointer while you dragged.",
+      "howKey": "config.overviewNewFeatureBlockMoveHow",
+      "howFallback": "Drag the // before a title: the page holds still and a dashed box shows where it lands — wide when you drop it on the line between two columns. With the keyboard, Space on the // picks it up. Move to page in the right-click menu sends it to another page, and Undo puts it back.",
+      "enableKey": "config.overviewNewFeatureBlockMoveEnable",
+      "enableFallback": "Nothing to switch on. Lock layout under Behavior → General stops it.",
+      "ctaKey": "config.overviewNewFeatureBlockMoveCta",
+      "ctaFallback": "Read how it works →",
+      "go": {
+        "section": "help",
+        "helpTab": "organizing"
+      },
+      "since": "v1.18.0"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureCategoryTableTitle",
+      "titleFallback": "Every category in one table",
+      "whatKey": "config.overviewNewFeatureCategoryTableWhat",
+      "whatFallback": "Structure → Categories showed one page at a time, so finding an empty category, or one full of broken links, meant going through every page.",
+      "howKey": "config.overviewNewFeatureCategoryTableHow",
+      "howFallback": "Structure → Categories lists the categories of all your pages in one table, grouped by page. Chips narrow it to some pages, or to the spread, broken or empty ones, and the columns show bookmarks, broken links and spread.",
+      "enableKey": "config.overviewNewFeatureCategoryTableEnable",
+      "enableFallback": "Nothing to switch on.",
+      "ctaKey": "config.overviewNewFeatureCategoryTableCta",
+      "ctaFallback": "Open Categories →",
+      "go": {
+        "section": "structure",
+        "ptTab": "categories"
+      },
+      "since": "v1.18.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureVersionPanelTitle",
       "titleFallback": "Your version, and whether it is the newest",
       "whatKey": "config.overviewNewFeatureVersionPanelWhat",

@@ -385,6 +385,9 @@ Every variable is listed in the reference table below.
 | `NEXTDASH_DOCKER_SOCKET` | *(unset)* | The Docker socket, for the **Containers** widget and view; unset hides the widget |
 | `NEXTDASH_DOCKER_CONTROL` | off | `1` allows start, stop, pause, restart, update and remove in the **Containers** view |
 | `NEXTDASH_DISABLE_PREFETCH` | off | `1` skips the icon prefetch at start-up |
+| `NEXTDASH_DEMO` | off | `1` turns the instance into a public demo: seeded data that resets itself. It empties `NEXTDASH_DATA_DIR` on every start and reset, so it needs a directory of its own and refuses one with a real install. Never set it on your own install. See `deploy/demo/docker-compose.yml` |
+| `NEXTDASH_DEMO_RESET_MINUTES` | `30` | Demo only: minutes between resets |
+| `NEXTDASH_DEMO_IDLE_MINUTES` | `10` | Demo only: reset this many minutes after the last change |
 | `NEXTDASH_RUN_AS_ROOT` | off | `1` keeps the container running as root |
 | `NEXTDASH_BUNDLE` | on | `off` serves scripts and stylesheets one by one, for debugging |
 | `NEXTDASH_STATIC_MUTABLE` | off | `1` re-hashes assets on every request, for a bind-mounted `./static` |
