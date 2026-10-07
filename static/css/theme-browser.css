@@ -622,10 +622,27 @@ body.look-studio-open #app-modal {
     font-size: 0.85em;
 }
 
-/* Ends the first footer row: Applies to, and Save as theme… at its end. */
-.look-studio-break {
+/*
+ * The second footer row: every button on one line. A translation too long
+ * for that wraps, and Cancel and Apply then move down together, at the end,
+ * rather than one of them being cut off or left on a row of its own.
+ */
+.look-studio-row {
+    display: flex;
+    flex-wrap: wrap;
     flex-basis: 100%;
-    height: 0;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.look-studio-row .look-studio-btn {
+    padding-inline: 0.5rem;
+}
+
+.look-studio-actions {
+    display: flex;
+    gap: 0.4rem;
+    margin-left: auto;
 }
 
 .look-studio-btn--quiet {
@@ -659,10 +676,6 @@ body.look-studio-open #app-modal {
 .look-studio-seg button[aria-pressed="true"] {
     background: var(--accent-wash, color-mix(in srgb, var(--accent-primary) 18%, transparent));
     color: var(--accent-primary);
-}
-
-.look-studio-spacer {
-    flex: 1 1 auto;
 }
 
 .look-studio-btn {

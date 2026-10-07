@@ -270,6 +270,7 @@
                 scope: () => this.surfaceScope(),
                 setScope: (scope) => this.setToggle('themeSurfacesForceAll', scope === 'global'),
                 onResetTab: (tab, editing) => this.resetStudioTab(tab, editing),
+                onResetAll: () => this.resetStudioAll(),
                 onDice: (tab) => this.rollStudioTab(tab),
                 onCompare: (on) => this.compareStudio(on),
                 onCancel: () => this.cancelLookStudio(),
@@ -594,6 +595,35 @@
                 else delete settings.themeSurfacePrefs;
             }
             this.applyStudioLook({ redraw: drawnFrom(this.dash.settings) !== drawn });
+        },
+
+        /**
+         * Every look answer back to a fresh install's, for every theme at once,
+         * so a look applied before cannot follow the reader to the next theme.
+         * The theme and the Layout tab stay. Stored on Apply, like the rest.
+         */
+        async resetStudioAll() {
+            const studio = this._lookStudio;
+            if (!studio) return;
+            const defaults = await this.loadLookDefaults();
+            if (!defaults || this._lookStudio !== studio) return;
+            const drawn = drawnFrom(this.dash.settings);
+            this.writeLookFields(defaults, Object.keys(defaults).filter((field) => LOOK_FIELDS.includes(field)));
+            this.applyStudioLook({ redraw: drawnFrom(this.dash.settings) !== drawn });
+        },
+
+        /** The look as a fresh install has it, from the server, which owns the defaults. */
+        async loadLookDefaults() {
+            if (this._lookDefaults) return this._lookDefaults;
+            try {
+                const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+                const response = await fetcher('/api/settings/look-defaults');
+                if (!response.ok) return null;
+                this._lookDefaults = await response.json();
+            } catch (_) {
+                return null;
+            }
+            return this._lookDefaults;
         },
 
         /** The dice: a surprise within one tab. Themes are rolled by the browser itself. */

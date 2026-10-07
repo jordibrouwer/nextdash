@@ -189,6 +189,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/reset", handlers.ResetAllData).Methods("POST")
 	r.HandleFunc("/api/settings", handlers.GetSettings).Methods("GET")
 	r.HandleFunc("/api/settings", handlers.SaveSettings).Methods("POST")
+	r.HandleFunc("/api/settings/look-defaults", handlers.GetLookDefaults).Methods("GET")
 	r.HandleFunc("/api/favicon", handlers.UploadFavicon).Methods("POST")
 	r.HandleFunc("/api/font", handlers.UploadFont).Methods("POST")
 	r.HandleFunc("/api/icon", handlers.UploadIcon).Methods("POST")

@@ -459,16 +459,20 @@
                         </span>
                     </div>
                     ${saveAs ? `<button type="button" class="look-studio-btn look-studio-btn--quiet" data-studio-save-theme>${escapeHtml(t('config.studioSaveAsTheme', 'Save as theme…'))}</button>` : ''}
-                    <span class="look-studio-break" aria-hidden="true"></span>
+                    <div class="look-studio-row">
                     <button type="button" class="look-studio-btn" data-studio-compare aria-pressed="false"
                             title="${escapeHtml(t('config.studioCompareHint', 'Show the look from before you opened this, until you press it again (or hold \\)'))}">${escapeHtml(t('config.studioCompare', 'Compare'))}</button>
                     <button type="button" class="look-studio-btn" data-studio-reset>${escapeHtml(t('config.studioResetTab', 'Reset tab'))}</button>
+                    <button type="button" class="look-studio-btn" data-studio-reset-all
+                            title="${escapeHtml(t('config.studioResetAllHint', 'Everything except Layout back to the defaults, for every theme'))}">${escapeHtml(t('config.studioResetAll', 'Reset all'))}</button>
                     <button type="button" class="look-studio-btn" data-studio-dice
                             aria-label="${escapeHtml(t('config.studioDice', 'Surprise me'))}"
                             title="${escapeHtml(t('config.studioDice', 'Surprise me'))}">🎲</button>
-                    <span class="look-studio-spacer"></span>
-                    <button type="button" class="look-studio-btn" data-studio-cancel>${escapeHtml(t('config.studioCancel', 'Cancel'))}</button>
-                    <button type="button" class="look-studio-btn look-studio-btn--primary" data-studio-apply>${escapeHtml(t('config.studioApply', 'Apply'))}</button>
+                    <span class="look-studio-actions">
+                        <button type="button" class="look-studio-btn" data-studio-cancel>${escapeHtml(t('config.studioCancel', 'Cancel'))}</button>
+                        <button type="button" class="look-studio-btn look-studio-btn--primary" data-studio-apply>${escapeHtml(t('config.studioApply', 'Apply'))}</button>
+                    </span>
+                    </div>
                 </footer>
             </aside>`;
     }
@@ -1055,6 +1059,11 @@
         root.querySelector('[data-studio-reset]').addEventListener('click', () => {
             opts.onResetTab?.(tab, tab === 'themes' ? state.editing : null);
             paintTab();
+        });
+        root.querySelector('[data-studio-reset-all]').addEventListener('click', async () => {
+            await opts.onResetAll?.();
+            if (closed) return;
+            if (tab === 'themes') refresh(); else paintTab();
         });
         root.querySelector('[data-studio-dice]').addEventListener('click', () => {
             if (tab === 'themes') {
