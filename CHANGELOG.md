@@ -12,7 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
-- [v1.18.0 — 7 October 2026](#v1180--7-october-2026)
+- [v1.18.0 — 8 October 2026](#v1180--8-october-2026)
 - [v1.17.5 — 6 October 2026](#v1175--6-october-2026)
 - [v1.17.4 — 5 October 2026](#v1174--5-october-2026)
 - [v1.17.3 — 5 October 2026](#v1173--5-october-2026)
@@ -99,7 +99,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ---
 
-## v1.18.0 — 7 October 2026
+## v1.18.0 — 8 October 2026
 
 Categories, widgets and collections move on the dashboard itself: a landing box shows where a block will land, the column line makes it wide, the keyboard can carry it, and it can go to another page with Undo. Structure → Categories becomes one grouped table for every page. The What's new window is rebuilt around cards, the theme browser gets **More filters** and **Reset all**, and a demo mode runs the public demo. v1.18.0 leads the What's new window.
 
