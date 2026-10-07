@@ -13,10 +13,16 @@ if (typeof importScripts === 'function') {
 
 const BADGE_MS = 3500;
 
+// One badge, so one timer: an earlier save's timeout used to clear the badge
+// of a save made within 3.5 seconds of it.
+let badgeTimer = null;
+
 function flashBadge(text, color) {
   chrome.action.setBadgeBackgroundColor({ color });
   chrome.action.setBadgeText({ text });
-  setTimeout(() => {
+  clearTimeout(badgeTimer);
+  badgeTimer = setTimeout(() => {
+    badgeTimer = null;
     chrome.action.setBadgeText({ text: '' });
   }, BADGE_MS);
 }
