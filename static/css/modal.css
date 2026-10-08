@@ -2632,6 +2632,7 @@ body:not([data-depth="flat"]) .modal.whats-new-modal .wn-entries.wn-cards {
     position: relative;
     z-index: 1001;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: var(--space-3, 0.75rem);
     padding: 6px max(16px, env(safe-area-inset-left));
@@ -2654,7 +2655,7 @@ body:not([data-depth="flat"]) .modal.whats-new-modal .wn-entries.wn-cards {
 }
 
 .demo-bar-text {
-    flex: 1 1 auto;
+    flex: 1 1 0;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2667,6 +2668,13 @@ body:not([data-depth="flat"]) .modal.whats-new-modal .wn-entries.wn-cards {
     font-weight: 600;
     text-decoration: underline;
     text-underline-offset: 2px;
+}
+
+/* What the demo records: a line of its own under the rest of the bar. */
+.demo-bar-notice {
+    flex: 1 1 100%;
+    font-size: 0.75rem;
+    opacity: 0.9;
 }
 
 @media (max-width: 720px) {

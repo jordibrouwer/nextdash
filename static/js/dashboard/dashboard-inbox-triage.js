@@ -494,6 +494,7 @@ class DashboardInboxTriage {
         }
         if (key === 'o' || e.key === 'Enter' || key === ' ') {
             e.preventDefault();
+            if (e.repeat) return;
             void this.actOpen();
             return;
         }
@@ -512,6 +513,7 @@ class DashboardInboxTriage {
         // keep here and mark read there: one letter, two meanings a tab apart.
         if (e.key === 'r') {
             e.preventDefault();
+            if (e.repeat) return;
             void this.actMarkRead();
             return;
         }
@@ -538,39 +540,49 @@ class DashboardInboxTriage {
 
     async actOpen() {
         const item = this.currentItem();
-        if (!item) {
+        // One action per card at a time: a second press while the read mark
+        // was on the wire opened the tab twice and skipped the next card.
+        if (!item || !this.inbox.claimPending(item.id)) {
             return;
         }
-        const url = String(item.url || '').trim();
-        if (url) {
-            window.open(url, '_blank', 'noopener,noreferrer');
-        }
-        if (!item.readAt) {
-            // Only record it locally once the write landed. Opening is the
-            // point of this action and the tab is already open, so a failed
-            // read mark advances anyway rather than trapping the user on a row
-            // they have dealt with — it reports and moves on.
-            if (await this.inbox.markReadReporting(item.id)) {
-                item.readAt = Date.now();
-                this.tally.read += 1;
+        try {
+            const url = String(item.url || '').trim();
+            if (url) {
+                window.open(url, '_blank', 'noopener,noreferrer');
             }
+            if (!item.readAt) {
+                // Only record it locally once the write landed. Opening is the
+                // point of this action and the tab is already open, so a failed
+                // read mark advances anyway rather than trapping the user on a row
+                // they have dealt with — it reports and moves on.
+                if (await this.inbox.markReadReporting(item.id)) {
+                    item.readAt = Date.now();
+                    this.tally.read += 1;
+                }
+            }
+            await this.afterAction(false, { readId: item.id, fromId: item.id });
+        } finally {
+            this.inbox.releasePending(item.id);
         }
-        await this.afterAction(false, { readId: item.id });
     }
 
     /** Read, without opening it: the card stays in the run, the cursor moves on. */
     async actMarkRead() {
         const item = this.currentItem();
-        if (!item) {
+        if (!item || !this.inbox.claimPending(item.id)) {
             return;
         }
-        if (!item.readAt) {
-            if (await this.inbox.markReadReporting(item.id)) {
-                item.readAt = Date.now();
-                this.tally.read += 1;
+        try {
+            if (!item.readAt) {
+                if (await this.inbox.markReadReporting(item.id)) {
+                    item.readAt = Date.now();
+                    this.tally.read += 1;
+                }
             }
+            await this.afterAction(false, { readId: item.id, fromId: item.id });
+        } finally {
+            this.inbox.releasePending(item.id);
         }
-        await this.afterAction(false, { readId: item.id });
     }
 
     /** Next without deciding: the link stays where it is. */
@@ -701,6 +713,10 @@ class DashboardInboxTriage {
             if (this.index >= this.queue.length) {
                 this.index = this.queue.length - 1;
             }
+            // The next card from the live list, as the advance path does: the
+            // queue's copy predates the preview fetch, and keeping from it
+            // saved the bookmark with the domain for a name.
+            this.syncQueueItem(this.currentItem()?.id);
             this.render();
             if (this.inbox.isActiveView()) {
                 if (removedId) {
@@ -714,6 +730,13 @@ class DashboardInboxTriage {
 
         if (sync.readId) {
             this.inbox.applyItemReadLocally(sync.readId);
+        }
+        // Moved off the card while its write was pending (r then j): the
+        // cursor already went on, and a second step would skip a card unseen.
+        if (sync.fromId && this.queue[this.index]?.id !== sync.fromId) {
+            this.syncQueueItem(this.currentItem()?.id);
+            this.render();
+            return;
         }
         if (this.index < this.queue.length - 1) {
             this.index += 1;

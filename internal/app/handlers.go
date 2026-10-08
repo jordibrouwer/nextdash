@@ -54,9 +54,12 @@ type Handlers struct {
 	// healthReportGen is the store's write count when this report was built.
 	// A cached report whose generation no longer matches describes bookmarks
 	// that have since changed, however recently it was built.
-	healthReportGen       uint64
-	healthReportBuildMu   sync.Mutex
-	healthReportBuildCond *sync.Cond
+	healthReportGen uint64
+	// healthReportInvalidations counts invalidateHealthReportCache calls. A
+	// build that saw it change while running does not mark its report fresh.
+	healthReportInvalidations uint64
+	healthReportBuildMu       sync.Mutex
+	healthReportBuildCond     *sync.Cond
 	// Built once, whoever gets there first. NewHandlers sets it, and a Handlers
 	// assembled by hand -- which several tests do -- would otherwise reach
 	// loadBookmarkHealthReport with a nil Cond and race two goroutines into
@@ -451,6 +454,10 @@ func (h *Handlers) loadBookmarkHealthReport(forceRefresh bool) BookmarkHealthRep
 	h.healthReportBuilding = true
 	h.healthReportBuildMu.Unlock()
 
+	h.healthReportMu.RLock()
+	invalidationsBefore := h.healthReportInvalidations
+	h.healthReportMu.RUnlock()
+
 	report := h.buildBookmarkHealthReport()
 
 	/*
@@ -465,15 +472,15 @@ func (h *Handlers) loadBookmarkHealthReport(forceRefresh bool) BookmarkHealthRep
 
 		What that costs is a write landing during a build: it is not in the
 		report, and the stamp says it is, so it goes unseen until the three
-		minutes are up. A build is milliseconds against a window of minutes, and
-		the write paths that invalidate by hand still do. The alternative is no
-		cache at all.
+		minutes are up. A build is milliseconds against a window of minutes. The
+		write paths that invalidate by hand are covered: an invalidation during
+		the build leaves the report unmarked, so the next read rebuilds.
 	*/
 	generation := h.store.DataGeneration()
 
 	h.healthReportMu.Lock()
 	h.healthReport = report
-	h.healthReportOK = true
+	h.healthReportOK = h.healthReportInvalidations == invalidationsBefore
 	h.healthReportAt = time.Now()
 	h.healthReportGen = generation
 	h.healthReportMu.Unlock()
@@ -513,6 +520,7 @@ func staleOpenThreshold(s Settings) time.Duration {
 func (h *Handlers) invalidateHealthReportCache() {
 	h.healthReportMu.Lock()
 	h.healthReportOK = false
+	h.healthReportInvalidations++
 	h.healthReportMu.Unlock()
 	// The analytics counts are drawn from the same files and go stale for the
 	// same reasons, so they ride along with the report rather than growing a
@@ -1274,6 +1282,12 @@ type htmlPageData struct {
 	AnalyticsWebsiteID string
 	AnalyticsScriptSrc string
 	AnalyticsEnabled   bool
+	// AnalyticsDemo marks the tracker's events as the demo's (data-mode) and
+	// AnalyticsRecorder adds the heatmap and replay recorder. Both are true
+	// only in demo mode, counting into the demo's own website.
+	AnalyticsDemo        bool
+	AnalyticsRecorder    bool
+	AnalyticsRecorderSrc string
 	// TelemetryLockedOff mirrors DISABLE_TELEMETRY so config can render the
 	// Privacy checkbox disabled and explain why it cannot be changed.
 	TelemetryLockedOff bool
@@ -1300,6 +1314,7 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	 * than a flash of the default followed by a correction from a script.
 	 */
 	surfaces := resolveSurfaces(settings, themeID, themeColorsFor(themeID, colors))
+	analyticsID, analyticsOn, analyticsSnapshots := analyticsTarget(settings)
 	settings.ThemeDepth = surfaces.Depth
 	settings.GlowStrength = surfaces.Glow
 	settings.ThemeEffects = surfaces.Effects
@@ -1316,11 +1331,14 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 		WriteToken:             writeAccessToken(),
 		AppVersion:             appVersionToken(),
 		ReleaseTag:             releaseTag(),
-		AnalyticsWebsiteID:     analyticsWebsiteID,
+		AnalyticsWebsiteID:     analyticsID,
 		AnalyticsScriptSrc:     analyticsScriptSrc,
-		AnalyticsEnabled:       analyticsEnabled(settings),
-		AnalyticsContentJSON:   h.analyticsContentJSON(analyticsEnabled(settings)),
-		AnalyticsSnapshotsJSON: h.analyticsSnapshotsJSON(analyticsEnabled(settings)),
+		AnalyticsEnabled:       analyticsOn,
+		AnalyticsDemo:          analyticsOn && demoMode(),
+		AnalyticsRecorder:      analyticsRecorderOn(analyticsID, analyticsOn),
+		AnalyticsRecorderSrc:   analyticsRecorderSrc,
+		AnalyticsContentJSON:   h.analyticsContentJSON(analyticsOn && analyticsSnapshots),
+		AnalyticsSnapshotsJSON: h.analyticsSnapshotsJSON(analyticsOn && analyticsSnapshots),
 		TelemetryLockedOff:     telemetryDisabledByEnv(),
 		UpdateCheckLockedOff:   updateCheckDisabledByEnv(),
 		DemoMode:               demoMode(),
@@ -1499,13 +1517,13 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 		trimBookmarkTextFields(&bookmarks[i])
 	}
 
-	beforeBookmarks := h.store.GetBookmarksByPage(pageID)
 	// This request replaces the page, and the list it carries was built in a
 	// browser that cannot see what the server has written since: opens, the
 	// last check, the fetched preview. Without this, opening a bookmark and
-	// then editing any bookmark on the page set the count back to zero.
-	carryServerOwnedBookmarkFields(bookmarks, beforeBookmarks)
-	if !respondStorePersistError(w, h.store.SaveBookmarksByPage(pageID, bookmarks)) {
+	// then editing any bookmark on the page set the count back to zero. The
+	// carry runs under the store lock, so a write landing mid-request is kept.
+	beforeBookmarks, err := h.store.SaveBookmarksByPageCarrying(pageID, bookmarks, carryServerOwnedBookmarkFields)
+	if !respondStorePersistError(w, err) {
 		return
 	}
 	logBookmarkSaveDiff(pageID, beforeBookmarks, bookmarks, r)
@@ -2444,7 +2462,9 @@ func (h *Handlers) GetSettings(w http.ResponseWriter, r *http.Request) {
 	// Report the effective value: with DISABLE_TELEMETRY set, analytics is off no
 	// matter what is stored, and clients should render it that way. The stored
 	// setting is left untouched so it returns when the operator lifts the switch.
-	if telemetryDisabledByEnv() {
+	// The demo counts itself (analyticsTarget), so neither switch is the
+	// visitor's: both read as off, as they did under DISABLE_TELEMETRY.
+	if telemetryDisabledByEnv() || demoMode() {
 		settings.AnalyticsOptIn = false
 		settings.InstallPingEnabled = false
 	}
@@ -2549,12 +2569,24 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	// whatever is already stored rather than writing false: the switch suppresses
 	// analytics while it is set, and the user's own preference must survive it so
 	// it returns unchanged once the operator unsets it.
-	if telemetryDisabledByEnv() {
+	if telemetryDisabledByEnv() || demoMode() {
 		settings.AnalyticsOptIn = h.store.GetSettings().AnalyticsOptIn
 		settings.InstallPingEnabled = h.store.GetSettings().InstallPingEnabled
 	}
 	if updateCheckDisabledByEnv() {
 		settings.UpdateCheckEnabled = h.store.GetSettings().UpdateCheckEnabled
+	}
+	// Config → Behavior → Privacy & sync is locked in the public demo, and the
+	// server holds to it: a page that sends these back changes nothing. (The
+	// two analytics switches are kept above; "keep settings on this device" is
+	// the browser's own and never reaches the server.)
+	if demoMode() {
+		stored := h.store.GetSettings()
+		settings.EnableSessionTips = stored.EnableSessionTips
+		settings.EnableTagSuggestionNotice = stored.EnableTagSuggestionNotice
+		settings.EnableHealthReviewNotice = stored.EnableHealthReviewNotice
+		settings.UpdateCheckEnabled = stored.UpdateCheckEnabled
+		settings.ShowSiteNews = stored.ShowSiteNews
 	}
 	// The Unraid server is written by /api/unraid/settings alone. The page
 	// sends back every setting it loaded, so a copy from before a change there
@@ -5092,15 +5124,42 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 	recorded := map[string]bool{}
 	driftResults := make(map[string]PingResult)
 
+	// Over the cap, the least recently checked go first. In page order every
+	// run took the same first ones, and the rest were never re-checked.
+	type retestRef struct{ page, index int }
+	pageBookmarks := make(map[int][]Bookmark, len(pages))
+	var eligibleRefs []retestRef
 	for _, page := range pages {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
+		pageBookmarks[page.ID] = bookmarks
+		for i, bm := range bookmarks {
+			if bm.CheckStatus || bm.Monitor || (includeFlagged && strings.TrimSpace(bm.LastError) != "") {
+				eligibleRefs = append(eligibleRefs, retestRef{page.ID, i})
+			}
+		}
+	}
+	var withinCap map[retestRef]bool
+	if len(eligibleRefs) > retestAllMaxBookmarks {
+		sort.SliceStable(eligibleRefs, func(i, j int) bool {
+			a := pageBookmarks[eligibleRefs[i].page][eligibleRefs[i].index].LastChecked
+			b := pageBookmarks[eligibleRefs[j].page][eligibleRefs[j].index].LastChecked
+			return a < b
+		})
+		withinCap = make(map[retestRef]bool, retestAllMaxBookmarks)
+		for _, ref := range eligibleRefs[:retestAllMaxBookmarks] {
+			withinCap[ref] = true
+		}
+	}
+
+	for _, page := range pages {
+		bookmarks := pageBookmarks[page.ID]
 		type retestUpdate struct {
 			lastError   string
 			lastChecked int64
 		}
 		updatesByKey := make(map[string]retestUpdate)
 
-		for _, bm := range bookmarks {
+		for bmIndex, bm := range bookmarks {
 			// A bookmark with checkStatus off but a stored LastError is rendered broken
 			// and scored -60, yet the default run never revisits it. Monitored
 			// bookmarks are eligible too: "Retest all" should mean all, not "all
@@ -5110,7 +5169,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 				res.Skipped++
 				continue
 			}
-			if res.Tested >= retestAllMaxBookmarks || ctx.Err() != nil {
+			if (withinCap != nil && !withinCap[retestRef{page.ID, bmIndex}]) || res.Tested >= retestAllMaxBookmarks || ctx.Err() != nil {
 				res.SkippedOverLimit++
 				continue
 			}
@@ -5331,95 +5390,94 @@ func (h *Handlers) MergeDuplicates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	targetBookmarks := h.store.GetBookmarksByPage(req.TargetPageID)
-	if req.TargetIndex < 0 || req.TargetIndex >= len(targetBookmarks) {
-		http.Error(w, "Invalid target index", http.StatusBadRequest)
-		return
-	}
-
-	keeper := targetBookmarks[req.TargetIndex]
-	keeperKey := canonicalBookmarkURLKey(keeper.URL)
-	if keeperKey == "" {
-		http.Error(w, "Invalid target bookmark URL", http.StatusBadRequest)
-		return
-	}
-
-	sources := make([]Bookmark, 0, len(req.SourcePageIDs))
-	deletes := make([]mergeDeleteRef, 0, len(req.SourcePageIDs))
-	// Every ref below is validated against the pre-merge snapshot, so the same
-	// (page, index) pair listed twice would pass twice and then be deleted twice
-	// from a slice that has already shifted -- taking an innocent neighbour with
-	// it, and double-counting the source's open count into the keeper.
-	seenSources := make(map[mergeDeleteRef]bool, len(req.SourcePageIDs))
-	for i := 0; i < len(req.SourcePageIDs); i++ {
-		pageID := req.SourcePageIDs[i]
-		index := req.SourceIndices[i]
-		if pageID == req.TargetPageID && index == req.TargetIndex {
-			continue
-		}
-		ref := mergeDeleteRef{pageID: pageID, index: index}
-		if seenSources[ref] {
-			continue
-		}
-		seenSources[ref] = true
-		bookmarks := h.store.GetBookmarksByPage(pageID)
-		if index < 0 || index >= len(bookmarks) {
-			http.Error(w, "Invalid source index", http.StatusBadRequest)
-			return
-		}
-		src := bookmarks[index]
-		if canonicalBookmarkURLKey(src.URL) != keeperKey {
-			http.Error(w, "Source URL does not match target", http.StatusBadRequest)
-			return
-		}
-		sources = append(sources, src)
-		deletes = append(deletes, ref)
-	}
-
-	merged := keeper
-	mergeBookmarkMetadata(&merged, sources)
-
-	involvedPages := map[int]struct{}{req.TargetPageID: {}}
-	for _, del := range deletes {
-		involvedPages[del.pageID] = struct{}{}
-	}
-	pageSnapshots := make(map[int][]Bookmark, len(involvedPages))
-	for pageID := range involvedPages {
-		existing := h.store.GetBookmarksByPage(pageID)
-		pageSnapshots[pageID] = append([]Bookmark(nil), existing...)
-	}
-
-	sort.Slice(deletes, func(i, j int) bool {
-		if deletes[i].pageID != deletes[j].pageID {
-			return deletes[i].pageID < deletes[j].pageID
-		}
-		return deletes[i].index > deletes[j].index
-	})
-
-	targetIndex := req.TargetIndex
+	pageIDs := append([]int{req.TargetPageID}, req.SourcePageIDs...)
 	mergedCount := 0
-	for _, del := range deletes {
-		bookmarks := pageSnapshots[del.pageID]
-		if del.index < 0 || del.index >= len(bookmarks) {
-			http.Error(w, "Invalid source index", http.StatusBadRequest)
-			return
+	// Validation and deletion run on the lists read under the store lock, so an
+	// add, an open or a check result landing on one of these pages mid-request
+	// is not written back over with an older copy.
+	err := h.store.MutateBookmarkPages(pageIDs, func(pages map[int][]Bookmark) (map[int][]Bookmark, error) {
+		mergedCount = 0
+		targetBookmarks := pages[req.TargetPageID]
+		if req.TargetIndex < 0 || req.TargetIndex >= len(targetBookmarks) {
+			return nil, mergeRequestError("Invalid target index")
 		}
-		if del.pageID == req.TargetPageID && del.index < targetIndex {
-			targetIndex--
-		}
-		pageSnapshots[del.pageID] = append(bookmarks[:del.index], bookmarks[del.index+1:]...)
-		mergedCount++
-	}
 
-	targetBookmarks = pageSnapshots[req.TargetPageID]
-	if targetIndex < 0 || targetIndex >= len(targetBookmarks) {
-		http.Error(w, "Target bookmark missing after merge", http.StatusInternalServerError)
+		keeper := targetBookmarks[req.TargetIndex]
+		keeperKey := canonicalBookmarkURLKey(keeper.URL)
+		if keeperKey == "" {
+			return nil, mergeRequestError("Invalid target bookmark URL")
+		}
+
+		sources := make([]Bookmark, 0, len(req.SourcePageIDs))
+		deletes := make([]mergeDeleteRef, 0, len(req.SourcePageIDs))
+		// Every ref below is validated against the pre-merge lists, so the same
+		// (page, index) pair listed twice would pass twice and then be deleted
+		// twice from a slice that has already shifted -- taking an innocent
+		// neighbour with it, and double-counting the source's open count into
+		// the keeper.
+		seenSources := make(map[mergeDeleteRef]bool, len(req.SourcePageIDs))
+		for i := 0; i < len(req.SourcePageIDs); i++ {
+			pageID := req.SourcePageIDs[i]
+			index := req.SourceIndices[i]
+			if pageID == req.TargetPageID && index == req.TargetIndex {
+				continue
+			}
+			ref := mergeDeleteRef{pageID: pageID, index: index}
+			if seenSources[ref] {
+				continue
+			}
+			seenSources[ref] = true
+			bookmarks := pages[pageID]
+			if index < 0 || index >= len(bookmarks) {
+				return nil, mergeRequestError("Invalid source index")
+			}
+			src := bookmarks[index]
+			if canonicalBookmarkURLKey(src.URL) != keeperKey {
+				return nil, mergeRequestError("Source URL does not match target")
+			}
+			sources = append(sources, src)
+			deletes = append(deletes, ref)
+		}
+
+		merged := keeper
+		mergeBookmarkMetadata(&merged, sources)
+
+		changed := map[int][]Bookmark{req.TargetPageID: pages[req.TargetPageID]}
+		for _, del := range deletes {
+			changed[del.pageID] = pages[del.pageID]
+		}
+
+		sort.Slice(deletes, func(i, j int) bool {
+			if deletes[i].pageID != deletes[j].pageID {
+				return deletes[i].pageID < deletes[j].pageID
+			}
+			return deletes[i].index > deletes[j].index
+		})
+
+		targetIndex := req.TargetIndex
+		for _, del := range deletes {
+			bookmarks := changed[del.pageID]
+			if del.pageID == req.TargetPageID && del.index < targetIndex {
+				targetIndex--
+			}
+			changed[del.pageID] = append(bookmarks[:del.index], bookmarks[del.index+1:]...)
+			mergedCount++
+		}
+
+		targetBookmarks = changed[req.TargetPageID]
+		if targetIndex < 0 || targetIndex >= len(targetBookmarks) {
+			return nil, fmt.Errorf("target bookmark missing after merge")
+		}
+		targetBookmarks[targetIndex] = merged
+		changed[req.TargetPageID] = targetBookmarks
+		return changed, nil
+	})
+	var badRequest mergeRequestError
+	if errors.As(err, &badRequest) {
+		http.Error(w, string(badRequest), http.StatusBadRequest)
 		return
 	}
-	targetBookmarks[targetIndex] = merged
-	pageSnapshots[req.TargetPageID] = targetBookmarks
-
-	if !respondStorePersistError(w, h.store.SaveBookmarkPageUpdates(pageSnapshots)) {
+	if !respondStorePersistError(w, err) {
 		return
 	}
 	h.invalidateHealthReportCache()
@@ -5430,6 +5488,12 @@ func (h *Handlers) MergeDuplicates(w http.ResponseWriter, r *http.Request) {
 		"count":  mergedCount,
 	})
 }
+
+// mergeRequestError is a merge request that does not match the stored pages:
+// answered 400, not as a failed save.
+type mergeRequestError string
+
+func (e mergeRequestError) Error() string { return string(e) }
 
 // DeleteHealthBookmark removes one bookmark by page/index from health view.
 func (h *Handlers) DeleteHealthBookmark(w http.ResponseWriter, r *http.Request) {

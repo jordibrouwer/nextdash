@@ -36,6 +36,11 @@
     // settings snapshot can be read per version rather than as one blur across
     // everyone. Empty when the index could not be read.
     const releaseTag = (self && self.getAttribute('data-release')) || '';
+    // The public demo counts into a website of its own (the server writes
+    // data-mode="demo" only there, with the demo's id). Every event then says
+    // so, which is a second line of defence: if one ever landed in the wrong
+    // website it could be filtered out by this property.
+    const isDemo = !!self && self.getAttribute('data-mode') === 'demo';
 
     // Queue tracks fired before the umami tracker finishes loading; flushed on load.
     const queue = [];
@@ -96,10 +101,25 @@
         return out || props;
     }
 
+    /**
+     * The demo's session depth, counted from the events that pass through
+     * nextdashTrack: a view change is `view:*` or `page-switch`, anything else
+     * that is not the demo's own bookkeeping or a notice appearing by itself
+     * is an action. Only ever sent as a band (see sendSessionDepth).
+     */
+    const depth = { views: 0, actions: 0 };
+    function countDepth(name) {
+        if (!isDemo || name.startsWith('demo:')) return;
+        if (name.startsWith('view:') || name === 'page-switch') depth.views += 1;
+        else if (!name.endsWith(':shown')) depth.actions += 1;
+    }
+
     // Public helper. No-op (but always callable) when disabled.
     window.nextdashTrack = function (name, props) {
         if (!enabled || !name) return;
-        const safe = sanitizeProps(props);
+        countDepth(String(name));
+        let safe = sanitizeProps(props);
+        if (isDemo) safe = { ...(safe && typeof safe === 'object' ? safe : {}), mode: 'demo' };
         if (umamiReady) {
             rawTrack(name, safe);
         } else {
@@ -247,7 +267,8 @@
      * everyone who never touches a setting.
      */
     function trackSettingsSnapshot(settings) {
-        if (!enabled || !settings || typeof settings !== 'object') return;
+        // The demo's settings are the seed's, which says nothing about anyone.
+        if (!enabled || isDemo || !settings || typeof settings !== 'object') return;
         if (trackSettingsSnapshot._sent) return; // once per page load
         trackSettingsSnapshot._sent = true;
         window.nextdashTrack('settings-snapshot', buildPayload(SETTINGS_FIELDS, settings));
@@ -281,7 +302,7 @@
     ];
 
     function trackContentSnapshot() {
-        if (!enabled) return;
+        if (!enabled || isDemo) return;
         trackFeatureSnapshots();
         if (trackContentSnapshot._sent) return;
         const raw = self && self.getAttribute('data-content');
@@ -374,7 +395,7 @@
     ];
 
     function trackFeatureSnapshots() {
-        if (!enabled) return;
+        if (!enabled || isDemo) return;
         if (trackFeatureSnapshots._sent) return;
         const raw = self && self.getAttribute('data-snapshots');
         if (!raw) return;
@@ -398,6 +419,52 @@
     window.nextdashTrackSettings = trackSettingsSnapshot;
     window.nextdashTrackContent = trackContentSnapshot;
 
+    /**
+     * `demo:session-depth`: how far a demo visit went, once, when it ends.
+     *
+     * Two bands, never the numbers: views and actions, each as the first step
+     * it fits in. A page restored from the back/forward cache starts a new
+     * visit (pageshow above), so one is counted per pagehide, not per tab.
+     */
+    /**
+     * An address as the demo reports it: the path and the bare `#view`, never a
+     * query and never what follows the view name in the hash. A hash that is
+     * not a plain word (or a page number) is dropped altogether.
+     */
+    function demoSafeUrl(raw) {
+        try {
+            const url = new URL(raw, window.location.href);
+            const view = url.hash.replace(/^#/, '').split(/[/?&=]/)[0];
+            const hash = /^[a-z0-9][a-z0-9-]{0,30}$/i.test(view) ? `#${view}` : '';
+            return `${url.origin}${url.pathname}${hash}`;
+        } catch (_) {
+            return '';
+        }
+    }
+
+    /** Umami's data-before-send hook: every payload leaves with a safe url and referrer. */
+    function demoBeforeSend(_type, payload) {
+        if (!payload || typeof payload !== 'object') return payload;
+        const out = { ...payload };
+        if (out.url) out.url = demoSafeUrl(out.url);
+        if (out.referrer) out.referrer = demoSafeUrl(out.referrer);
+        return out;
+    }
+
+    const DEPTH_STEPS = [0, 1, 2, 5, 10, 25, 50];
+    let depthSent = false;
+    function sendSessionDepth() {
+        if (depthSent || !umamiReady) return;
+        depthSent = true;
+        rawTrack('demo:session-depth', {
+            views: bucket(depth.views, DEPTH_STEPS),
+            actions: bucket(depth.actions, DEPTH_STEPS),
+            mode: 'demo',
+        });
+        depth.views = 0;
+        depth.actions = 0;
+    }
+
     if (!enabled || !websiteId || !scriptSrc) {
         return;
     }
@@ -406,6 +473,21 @@
     tracker.defer = true;
     tracker.src = scriptSrc;
     tracker.setAttribute('data-website-id', websiteId);
+    if (isDemo) {
+        // Nobody chose to be counted here, so a browser that says "do not
+        // track" is believed. The recorder reads the tracker's session, so it
+        // stays quiet for that visitor as well.
+        tracker.setAttribute('data-do-not-track', 'true');
+        tracker.setAttribute('data-mode', 'demo');
+        // Typed text can reach the address (the Inbox search, Health's filter),
+        // and Umami records the page address: no query at all, and the hash cut
+        // to its view name (see demoBeforeSend).
+        tracker.setAttribute('data-exclude-search', 'true');
+        tracker.setAttribute('data-before-send', 'nextdashDemoBeforeSend');
+        window.nextdashDemoBeforeSend = demoBeforeSend;
+        window.addEventListener('pagehide', sendSessionDepth);
+        window.addEventListener('pageshow', (event) => { if (event.persisted) depthSent = false; });
+    }
     // Let Umami auto-track the initial pageview for real page loads (/, /config).
     // Same-URL view changes (health, inbox, page switches) are tracked manually.
     tracker.addEventListener('load', function () {

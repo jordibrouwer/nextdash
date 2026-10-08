@@ -894,13 +894,18 @@ class KeyboardNavigation {
         const from = order.indexOf(id);
         const to = from + (direction < 0 ? -1 : 1);
         if (from < 0 || to < 0 || to >= order.length) return false;
+        // Read before the move: the render that follows replaces the node.
+        const onHandle = !!active.closest('.category-reorder-handle');
         void rc.commitBlockMove({ id, order: window.BlockMoveModel.insertAt(order, id, to), width: null });
 
         // The header element is rebuilt by the render, so focus follows the
-        // block rather than the node that used to hold it.
+        // block rather than the node that used to hold it -- back onto the //
+        // when it started there, or the next Space folded the block instead
+        // of picking it up.
         requestAnimationFrame(() => requestAnimationFrame(() => {
-            document.querySelector(`#dashboard-layout .category[data-category-id="${CSS.escape(id)}"] .category-title`)
-                ?.focus({ preventScroll: true });
+            const header = document.querySelector(`#dashboard-layout .category[data-category-id="${CSS.escape(id)}"] .category-title`);
+            const target = (onHandle && header?.querySelector('.category-reorder-handle')) || header;
+            target?.focus({ preventScroll: true });
         }));
         return true;
     }
@@ -2599,7 +2604,13 @@ class KeyboardNavigation {
             return false;
         }
 
-        const rows = [...list.querySelectorAll('.bookmark-link')];
+        // Visible rows only: a swap with one behind "show more" or hidden by a
+        // filter changed nothing on screen, and after the save the moved row
+        // vanished behind "+1 more".
+        const rows = [...list.querySelectorAll('.bookmark-link')].filter((el) =>
+            !el.classList.contains('is-overflow-hidden')
+            && !el.classList.contains('find-hidden')
+            && !el.classList.contains('launcher-dim'));
         const index = rows.indexOf(row);
         const target = index + (direction < 0 ? -1 : 1);
         if (index < 0 || target < 0 || target >= rows.length) return false;
@@ -2656,7 +2667,9 @@ class KeyboardNavigation {
         if (here < 0 || !target) return false;
 
         const bookmark = this.getSelectedBookmark();
-        const ref = d?.renderCore?.resolveBookmarkReference?.(bookmark);
+        // On the dashboard, not renderCore: that has no such method, and the
+        // move never ran.
+        const ref = d?.resolveBookmarkReference?.(bookmark);
         if (!ref?.bookmark) return false;
 
         const categoryId = target.getAttribute('data-category-id') || '';

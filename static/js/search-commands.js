@@ -517,6 +517,8 @@ class SearchCommandsComponent {
      * Save first, then reload, so the new page reflects the choice.
      */
     setUsageAnalytics(dashboard, enabled) {
+        // Not the visitor's to change in the public demo.
+        if (window.DemoLock?.on) return Promise.resolve();
         dashboard.settings.analyticsOptIn = enabled;
         // Setting this deliberately is an answer, so the opt-in card must not
         // come back and ask again — least of all to someone who just turned it
@@ -3896,7 +3898,7 @@ class SearchCommandsComponent {
         }
         const params = new URLSearchParams();
         if (filter !== 'all') params.set('health', filter);
-        if (options.query) params.set('q', options.query);
+        if (options.query && !window.DemoLock?.on) params.set('q', options.query);
         const page = options.page != null && String(options.page).trim() !== '' && String(options.page) !== 'all'
             ? `/${encodeURIComponent(String(options.page))}` : '';
         const qs = params.toString();
@@ -4521,14 +4523,20 @@ class SearchCommandsComponent {
         // DISABLE_TELEMETRY is an operator kill switch: the server refuses to turn
         // analytics back on, so offering an "on" row here would reload the page and
         // silently change nothing. Say why instead, matching the note in config.
-        if (document.querySelector('meta[name="nextdash-telemetry-locked"]')) {
+        // The public demo counts itself; the setting is not the visitor's.
+        const inDemo = window.DemoLock?.on === true;
+        if (inDemo || document.querySelector('meta[name="nextdash-telemetry-locked"]')) {
             const t = (key, fallback) => {
                 const v = dashboard.language?.t?.(`dashboard.${key}`);
                 return v && v !== `dashboard.${key}` ? v : fallback;
             };
+            const demoRow = () => {
+                const v = dashboard.language?.t?.('demo.telemetryRow');
+                return v && v !== 'demo.telemetryRow' ? v : 'off — not available in the demo';
+            };
             // Only `name` is rendered in the palette, so the reason goes in it.
             return [{
-                name: t('telemetryLockedRow', 'off — disabled for this server by DISABLE_TELEMETRY'),
+                name: inDemo ? demoRow() : t('telemetryLockedRow', 'off — disabled for this server by DISABLE_TELEMETRY'),
                 shortcut: ':TELEMETRY',
                 stateId: 'telemetry:locked',
                 type: 'command',

@@ -276,7 +276,7 @@ class DashboardInbox {
         const leaving = [];
         const leavingSnaps = [];
         const made = [];
-        let filedElsewhere = 0;
+        const elsewhereIds = new Set();
         let failed = 0;
         for (const item of targets) {
             try {
@@ -291,7 +291,7 @@ class DashboardInbox {
                     const body = await res.json().catch(() => null);
                     const onKept = body?.samePage === true
                         || Number(body?.conflict?.pageId) === Number(d._unsortedPageId);
-                    if (!onKept) filedElsewhere += 1;
+                    if (!onKept) elsewhereIds.add(item.id);
                 } else {
                     failed += 1;
                     continue;
@@ -302,19 +302,26 @@ class DashboardInbox {
                 failed += 1;
             }
         }
+        // Only what the batch actually took counts as kept and comes back on
+        // undo: a failed batch said "Kept N", and its undo put back rows that
+        // had never left and deleted the kept copies.
+        let left = [];
         if (leaving.length) {
-            if (d.settings?.inboxDeleteAfterPromote === false) {
-                await this.batchInboxSafe('read', leaving);
-            } else {
-                await this.batchInboxSafe('delete', leaving, { reason: 'promote' });
-            }
+            const outcome = d.settings?.inboxDeleteAfterPromote === false
+                ? await this.batchInboxSafe('read', leaving)
+                : await this.batchInboxSafe('delete', leaving, { reason: 'promote' });
+            left = outcome.done || [];
         }
+        const leftSet = new Set(left);
+        const leftSnaps = leavingSnaps.filter((snap) => leftSet.has(snap.id));
+        const filedElsewhere = left.filter((id) => elsewhereIds.has(id)).length;
+        const stuck = leaving.length - left.length;
         this.clearChecked();
         await d.loadAllBookmarks?.();
         this.syncBadge();
         this.bumpKeptCounters();
         if (this.isActiveView()) this.render();
-        const kept = leaving.length - filedElsewhere;
+        const kept = left.length - filedElsewhere;
         if (kept) {
             d.showNotification(
                 this.t('dashboard.inboxBulkKept', 'Kept {count} — in Bookmarks → Unsorted', { count: kept }),
@@ -324,7 +331,7 @@ class DashboardInbox {
                     // Every entry that left the inbox comes back, including
                     // those already on the kept page; only the copies this
                     // keep made are taken off it.
-                    undoCallback: () => this.undoBulkKeep(leavingSnaps, made.map((snap) => snap.url)),
+                    undoCallback: () => this.undoBulkKeep(leftSnaps, made.filter((snap) => leftSet.has(snap.id)).map((snap) => snap.url)),
                 }
             );
         }
@@ -337,6 +344,10 @@ class DashboardInbox {
         if (failed) {
             d.showErrorNotification?.(
                 this.t('dashboard.inboxBulkKeepPartial', '{count} could not be kept', { count: failed }));
+        }
+        if (stuck) {
+            d.showErrorNotification?.(
+                this.t('dashboard.inboxBulkKeepCleanupFailed', '{count} were saved as bookmarks but are still in the Inbox', { count: stuck }));
         }
     }
 
@@ -882,17 +893,12 @@ class DashboardInbox {
         if (!item || !tag) return;
         const current = Array.isArray(item.tags) ? item.tags : [];
         if (current.includes(tag)) return;
-        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        const tags = [...current, tag];
         try {
-            const res = await this._inboxWrite('/api/inbox', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: item.id, tags }),
-            });
-            if (!res.ok) throw new Error(`tags HTTP ${res.status}`);
-            const stored = this.items.find((entry) => entry.id === item.id);
-            if (stored) stored.tags = tags;
+            // Added on the server, not sent as the whole list: two chips
+            // clicked quickly each sent the list without the other's tag, and
+            // the second write dropped the first.
+            const { failed } = await this.batchInbox('tag', [item.id], { addTags: [tag] });
+            if (failed) throw new Error('tag not applied');
             // The engine answered before this write; the row it just tagged
             // would go on offering the tag it now carries.
             window.TagSuggestLive?.changed?.(this.dash);
@@ -1500,9 +1506,12 @@ class DashboardInbox {
             setOrDelete('ib_filter', this.filter, this.filter === 'all');
             setOrDelete('ib_sort', this.sort, this.sort === 'newest');
             setOrDelete('ib_dir', this.sortDir, this.sortDir !== 'desc');
-            setOrDelete('ib_q', String(this.searchQuery || '').trim(), !String(this.searchQuery || '').trim());
-            setOrDelete('ib_domain', String(this.domainFilter || '').trim(), !String(this.domainFilter || '').trim());
-            setOrDelete('ib_tag', String(this.tagFilter || '').trim(), !String(this.tagFilter || '').trim());
+            // In the public demo what a visitor types stays out of the address:
+            // the replay recorder reads it, and it is theirs, not the demo's.
+            const keepTyped = !window.DemoLock?.on;
+            setOrDelete('ib_q', String(this.searchQuery || '').trim(), !keepTyped || !String(this.searchQuery || '').trim());
+            setOrDelete('ib_domain', String(this.domainFilter || '').trim(), !keepTyped || !String(this.domainFilter || '').trim());
+            setOrDelete('ib_tag', String(this.tagFilter || '').trim(), !keepTyped || !String(this.tagFilter || '').trim());
             setOrDelete('ib_id', String(this.focusItemId || '').trim(), !String(this.focusItemId || '').trim());
             const query = params.toString();
             history.replaceState(history.state, '', `${url.pathname}${query ? `?${query}` : ''}#inbox`);
@@ -1799,8 +1808,11 @@ class DashboardInbox {
         try {
             return await this.fetchItems();
         } catch {
-            this.items = [];
-            return [];
+            // One failed refresh keeps the list it had. Emptied while
+            // _itemsLoaded stayed true, the view showed "No links yet" and
+            // every delete or keep after it reported a failure.
+            if (!this._itemsLoaded) this.items = [];
+            return this.items || [];
         }
     }
 
@@ -2040,6 +2052,18 @@ class DashboardInbox {
         this._pendingIds?.delete(id);
     }
 
+    /**
+     * Run fn for id unless an action on id is already in flight. For the
+     * buttons and menus: a double-click deleted twice ("Could not delete"
+     * after a delete that worked) or kept twice.
+     */
+    runClaimed(id, fn) {
+        if (!this.claimPending(id)) return Promise.resolve(false);
+        return Promise.resolve()
+            .then(fn)
+            .finally(() => this.releasePending(id));
+    }
+
     async deleteItemWithUndo(id, options = {}) {
         const d = this.dash;
         const snapshot = this.items.find((item) => item.id === id);
@@ -2242,9 +2266,10 @@ class DashboardInbox {
     /**
      * File a kept link where its neighbours are, if they agree on a place.
      *
-     * @returns {Promise<boolean>} true when the link was filed and the inbox
-     *   entry dealt with; false when nothing agreed and the ordinary Keep must
-     *   run instead.
+     * @returns {Promise<boolean|'cleanup-failed'>} true when the link was filed
+     *   and the inbox entry dealt with; 'cleanup-failed' when it was filed but
+     *   the entry could not be removed; false when nothing agreed and the
+     *   ordinary Keep must run instead.
      */
     async autoFileKept(item) {
         const d = this.dash;
@@ -2277,18 +2302,21 @@ class DashboardInbox {
                 const body = await res.json().catch(() => ({}));
                 if (body?.samePage !== true) {
                     if (body?.error !== 'duplicate_url') return false;
-                    await this.completePromote(item.id);
+                    const removed = await this.completePromote(item.id);
                     this.syncBadge();
-                    this.announceAlreadyFiled(item, body.conflict || {});
-                    return true;
+                    if (removed) this.announceAlreadyFiled(item, body.conflict || {});
+                    // Filed either way: false would send keepItem on to add a
+                    // second copy to the kept page.
+                    return removed ? true : 'cleanup-failed';
                 }
             }
             const place = found.categoryLabel
                 ? `${found.pageLabel} / ${found.categoryLabel}`
                 : found.pageLabel;
-            await this.completePromote(item.id);
+            const removed = await this.completePromote(item.id);
             await d.loadAllBookmarks?.();
             this.syncBadge();
+            if (!removed) return 'cleanup-failed';
             d.showNotification(
                 this.t('dashboard.inboxAutoFiled', `Filed on ${place}`, { place }),
                 'success', { duration: 5000 });
@@ -5523,6 +5551,7 @@ class DashboardInbox {
          */
         if (d.settings?.keepAutoFile) {
             const filed = await this.autoFileKept(item);
+            if (filed === 'cleanup-failed') return false;
             if (filed) return true;
         }
         try {
@@ -5554,9 +5583,9 @@ class DashboardInbox {
                 const onKept = body?.samePage === true
                     || Number(conflict.pageId) === Number(d._unsortedPageId);
                 if (!onKept && body?.error === 'duplicate_url') {
-                    await this.completePromote(item.id);
-                    this.announceAlreadyFiled(snapshot, conflict);
-                    return true;
+                    const removed = await this.completePromote(item.id);
+                    if (removed) this.announceAlreadyFiled(snapshot, conflict);
+                    return removed;
                 }
                 createdCopy = false;
             } else if (!response.ok) {
@@ -5571,7 +5600,9 @@ class DashboardInbox {
             // would not have it until the next reload.
             await d.loadAllBookmarks?.();
             this.syncBadge();
-            await this.completePromote(item.id);
+            if (!(await this.completePromote(item.id))) {
+                return false;
+            }
             this.announceKeep(snapshot, { createdCopy });
             return true;
         } catch (_error) {
@@ -5825,24 +5856,37 @@ class DashboardInbox {
             .catch(() => {});
     }
 
+    /**
+     * Clear the inbox entry once its bookmark exists. True when the entry is
+     * gone (or is meant to stay, read). False when the delete failed: the
+     * bookmark is saved, and the caller must not report the link as kept
+     * out of the inbox while it is still there.
+     */
     async completePromote(id, { skipRender = false } = {}) {
         if (this.dash.settings?.inboxDeleteAfterPromote === false) {
-            // Best-effort, like the delete below it: the bookmark is already
-            // saved, and failing to tidy the inbox entry afterwards is not
-            // worth turning a successful promote into an error.
+            // Best-effort: the entry stays by choice, and a failed read mark
+            // is not worth turning a successful promote into an error.
             try {
                 await this.markRead(id);
             } catch { /* the promote itself succeeded */ }
-            return;
+            return true;
         }
         try {
             await this.deleteItem(id, { reason: 'promote' });
-            if (!skipRender && this.isActiveView()) {
-                await this.loadAndRender();
-            }
         } catch {
-            // promote succeeded; inbox cleanup is best-effort
+            if (!skipRender) {
+                this.dash.showNotification(
+                    this.t('dashboard.inboxPromoteCleanupFailed', 'Saved as a bookmark, but it could not be removed from the Inbox'),
+                    'error');
+            }
+            return false;
         }
+        if (!skipRender && this.isActiveView()) {
+            try {
+                await this.loadAndRender();
+            } catch { /* the entry is gone; the list catches up on the next load */ }
+        }
+        return true;
     }
 
     /**

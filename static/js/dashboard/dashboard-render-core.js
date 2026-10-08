@@ -1055,6 +1055,9 @@ class DashboardRenderCore {
 
         d._abortInlineEditForRender();
         window.DashboardSmartWhyPopover?.hide?.();
+        // The rows go without a mouseleave: the peek card stayed up, pinned
+        // to a row no longer in the page.
+        d.preview?.hideBookmarkPreviewCard?.();
 
         if (d.hasActiveTagFilters()) {
             d._categoryListsCache = null;
@@ -2326,10 +2329,14 @@ class DashboardRenderCore {
         })();
 
         d._categoryOrderSaveInFlight = saveTask;
+        // False on a failed save, so a caller can put its change back; the
+        // error was swallowed and the try/catch rollbacks around it never ran.
         try {
             await saveTask;
+            return true;
         } catch (_err) {
             // Notification shown in saveTask.
+            return false;
         } finally {
             if (d._categoryOrderSaveInFlight === saveTask) {
                 d._categoryOrderSaveInFlight = null;
@@ -2439,6 +2446,7 @@ class DashboardRenderCore {
         // categories (see the category-menu's identical guard) — renaming one
         // would fabricate a real category from a virtual one.
         if (category?.isVirtualCategory) return;
+        const previousName = category.name;
 
         this._startBlockRename(titleEl, nameSpan, {
             value: category.name,
@@ -2461,7 +2469,16 @@ class DashboardRenderCore {
                     // in d.categories, so the save would skip them. Add the category first.
                     d.categories.push({ id: category.id, name: newName });
                 }
-                await this.saveCategoryOrder();
+                if ((await this.saveCategoryOrder()) === false) {
+                    // The header showed the new name over a save that failed.
+                    category.name = previousName;
+                    if (stored) {
+                        stored.name = previousName;
+                    } else {
+                        d.categories = d.categories.filter((c) => String(c.id) !== String(category.id));
+                    }
+                    d.renderDashboard?.({ animate: false });
+                }
             },
         });
     }

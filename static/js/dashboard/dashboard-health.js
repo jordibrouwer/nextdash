@@ -300,6 +300,21 @@ class DashboardHealth {
 
     fetchReport({ refresh = false } = {}) {
         if (this._loadPromise) {
+            if (refresh && this._loadPromiseRefresh) {
+                // A refresh already on the wire may have left before the
+                // caller's write landed; joining it showed the report without
+                // that write. One more after it, shared by every caller that
+                // arrives in the meantime.
+                if (!this._trailingRefresh) {
+                    this._trailingRefresh = this._loadPromise
+                        .catch(() => undefined)
+                        .then(() => {
+                            this._trailingRefresh = null;
+                            return this.fetchReport({ refresh: true });
+                        });
+                }
+                return this._trailingRefresh;
+            }
             if (refresh && !this._loadPromiseRefresh) {
                 // then(), not finally(): finally resolves with the *original*
                 // promise's value, so the caller was handed the stale report the
@@ -1086,7 +1101,7 @@ class DashboardHealth {
                 }).catch(() => { /* cache writes are best-effort */ });
             }
             if (Number.isFinite(issue.pageId) && Number.isFinite(issue.index)) {
-                await fetcher('/api/health/update-status', {
+                const saved = await fetcher('/api/health/update-status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1097,6 +1112,12 @@ class DashboardHealth {
                         error: status === 'online' ? '' : errorDetail,
                     }),
                 });
+                // fetch does not throw on an error status. Unchecked, a refused
+                // write still said "Reachable again" over a row left broken.
+                // 409 is the row having moved on, which the refresh shows.
+                if (!saved.ok && saved.status !== 409) {
+                    throw new Error(`update-status HTTP ${saved.status}`);
+                }
             }
         };
 
@@ -2613,7 +2634,7 @@ class DashboardHealth {
     async retestAll(button) {
         if (this._retestRunning) return;
         if (window.DemoLock?.on) {
-            window.DemoLock.explain();
+            window.DemoLock.explain('retest-all');
             return;
         }
         this._retestRunning = true;

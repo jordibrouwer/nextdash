@@ -4021,6 +4021,7 @@ Every count is rounded into a band. **Never recorded:** bookmark names, URLs, se
 - Preview data is kept in memory and written to disk every 30 seconds and on shutdown.
 - `NEXTDASH_DATA_DIR` sets the data directory; `NEXTDASH_DISABLE_PREFETCH=1` skips the icon prefetch at start-up.
 - For the public demo only: `NEXTDASH_DEMO=1` turns an instance into a seeded demo that puts its data back to the start every `NEXTDASH_DEMO_RESET_MINUTES` (default 30) and once nobody has written for `NEXTDASH_DEMO_IDLE_MINUTES` (default 10). It empties its data directory on every start and reset, so it needs `NEXTDASH_DATA_DIR` set to a directory of its own and refuses one that holds a real install. See `deploy/demo/docker-compose.yml`.
+- Demo only: `NEXTDASH_DEMO_ANALYTICS_ID` is the Umami website id the demo counts its visits into (page views, events, heatmaps and screen replays), in a count separate from every install's. Unset, the demo counts nothing. The demo bar and Config → Privacy say so. A normal install ignores it, and `DISABLE_TELEMETRY` switches it off as well.
 - For the test suite only: `NEXTDASH_ICON_SETS_FIXTURE` and `NEXTDASH_UNRAID_FIXTURE` name a directory the app icon sets and the Unraid API answer from instead of the network. A real install leaves them unset.
 
 <sub>[↑ Contents](#table-of-contents)</sub>

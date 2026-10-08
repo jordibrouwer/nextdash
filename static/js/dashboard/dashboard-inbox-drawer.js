@@ -227,7 +227,7 @@ class InboxDrawer {
             case 'promote': view.promoteItem(item); break;
             case 'keep':
                 view.selectItemById(item.id);
-                void view.keepItem(item);
+                void view.runClaimed(item.id, () => view.keepItem(item));
                 break;
             case 'read': void view.markReadFromKeyboard(item); break;
             case 'unread': void view.markUnreadFromRow(item); break;
@@ -235,7 +235,7 @@ class InboxDrawer {
             case 'wake': void view.wakeItem(item); break;
             case 'share': void view.copyItemLink(item.id); break;
             case 'tags': void view.editTags(item); break;
-            case 'delete': void view.deleteItemWithUndo(item.id); break;
+            case 'delete': void view.runClaimed(item.id, () => view.deleteItemWithUndo(item.id)); break;
             default: break;
         }
     }

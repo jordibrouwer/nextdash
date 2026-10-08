@@ -8775,5 +8775,11 @@
     "itemConfigHint": "Réglez langue, thème et disposition",
     "itemCheatsheet": "Voir les raccourcis clavier",
     "itemCheatsheetHint": "Appuyez sur ! ou F1"
+  },
+  "demo": {
+    "analyticsNotice": "Cette démo enregistre les visites de façon anonyme, y compris les clics et des enregistrements d'écran, pour améliorer nextDash. Les enregistrements montrent ce qui est à l'écran ; seul ce que vous tapez dans les champs de formulaire est masqué.",
+    "privacyNote": "Cette démo compte les visites de façon anonyme, dans un décompte séparé. Votre propre installation ne compte que si vous l'activez.",
+    "telemetryRow": "désactivé — indisponible dans la démo",
+    "privacyLocked": "Ces réglages restent tels quels dans la démo. Dans votre propre installation, c'est vous qui décidez."
   }
 }

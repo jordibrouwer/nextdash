@@ -1125,6 +1125,11 @@
         if (name === 'tags') {
             return { tags: [...new Set(value.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean))] };
         }
+        if (name === 'shortcut') {
+            // Letters only, as the edit form keeps them: "A1 B" stored here read
+            // as "AB" there, a phantom unsaved change.
+            return { shortcut: value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5) };
+        }
         return { [name]: value };
     },
 

@@ -345,7 +345,13 @@ class DashboardInlineEdit {
     }
 
 
-    refreshInlineEditBaseline(bookmarkRef, fields) {
+    /**
+     * placeOnly re-baselines just the page and category. A place change in an
+     * open form must not take the other fields' edits into the baseline: Esc
+     * then dropped them unasked, and a URL edit plus a page move deleted the
+     * source row by the new URL, missed it, and left a duplicate.
+     */
+    refreshInlineEditBaseline(bookmarkRef, fields, { placeOnly = false } = {}) {
         if (!bookmarkRef?.bookmark || !fields) {
             return;
         }
@@ -353,6 +359,14 @@ class DashboardInlineEdit {
         const pageId = fields.pageSelect
             ? Number(fields.pageSelect.value)
             : Number(bookmarkRef.pageId || d.currentPageId);
+        if (placeOnly && bookmarkRef.original) {
+            bookmarkRef.original = {
+                ...bookmarkRef.original,
+                category: fields.catSelect.value,
+                pageId: Number.isFinite(pageId) ? pageId : Number(bookmarkRef.pageId || d.currentPageId),
+            };
+            return;
+        }
         const tags = fields.tagsInput
             ? fields.tagsInput.value.split(',').map((tag) => tag.trim().toLowerCase()).filter((tag, index, arr) => tag && arr.indexOf(tag) === index)
             : [];
@@ -384,7 +398,7 @@ class DashboardInlineEdit {
     refreshInlineEditBaselineIfActive(bookmarkRef) {
         const fields = this.dash._inlineEditContext?.fields;
         if (fields) {
-            this.refreshInlineEditBaseline(bookmarkRef, fields);
+            this.refreshInlineEditBaseline(bookmarkRef, fields, { placeOnly: true });
         }
     }
 
@@ -1326,7 +1340,7 @@ class DashboardInlineEdit {
                 catSelect.value = cats[0].id || '';
             }
             if (d._inlineEditContext?.fields?.catSelect === catSelect) {
-                this.refreshInlineEditBaseline(bookmarkRef, d._inlineEditContext.fields);
+                this.refreshInlineEditBaseline(bookmarkRef, d._inlineEditContext.fields, { placeOnly: true });
             }
         };
 
@@ -2135,7 +2149,12 @@ class DashboardInlineEdit {
             return { ok: false, focus: 'place' };
         }
 
-        const norm = (u) => String(u || '').trim().replace(/\/+$/, '').toLowerCase();
+        // The server's identity for a URL: lower-casing path and query blocked
+        // saves the server accepts, and a fragment slipped past to fail there.
+        const canonical = window.BookmarkUrlUtils?.canonicalBookmarkURLKey;
+        const norm = (u) => (typeof canonical === 'function'
+            ? canonical(String(u || '').trim())
+            : String(u || '').trim().replace(/\/+$/, '').toLowerCase());
         const url = norm(urlInput?.value);
         const original = bookmarkRef?.bookmark;
         const urlChanged = isCreate || norm(original?.url) !== url;
@@ -2516,6 +2535,8 @@ class DashboardInlineEdit {
         }
         const categoryId = bookmark.category || row.getAttribute('data-category-id') || '';
         d.populateBookmarkRowView(row, bookmark, categoryId, true);
+        // populateBookmarkRowView resets the class list, multi-select mark too.
+        d.multiSelect?.sync?.();
         d.destroyCategoryReorderInstances();
         d.initializeCategoryReorder();
 
@@ -2561,10 +2582,9 @@ class DashboardInlineEdit {
             return true;
         }
 
-        if (d.settings.globalShortcuts !== true) {
-            return false;
-        }
-
+        // Checked on every page whatever globalShortcuts says: the server refuses
+        // a shortcut another page uses either way, and caught only there, the
+        // form had already closed and the edits were gone.
         const currentPageIdNumber = Number(d.currentPageId);
         return (Array.isArray(d.allBookmarks) ? d.allBookmarks : []).some((bookmark) => {
             const shortcutValue = String(bookmark?.shortcut || '').trim().toUpperCase();

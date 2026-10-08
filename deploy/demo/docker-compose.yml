@@ -35,9 +35,17 @@ services:
       # The proxy's address, so the per-visitor write limit counts visitors
       # rather than the proxy. Set it to the proxy network's range.
       - NEXTDASH_TRUSTED_PROXIES=172.16.0.0/12
-      # A demo instance is not an install: no install count, no release check,
-      # no news feed. (The demo refuses outbound requests anyway.)
-      - DISABLE_TELEMETRY=true
+      # The demo counts its own visits in a separate Umami website
+      # (stats.nextdash.cc): page views, events, heatmaps and screen replays,
+      # all in the browser. The page says so in the demo bar and in Config ->
+      # Privacy. This id is the demo's website, never the shared one; without it
+      # the demo counts nothing.
+      - NEXTDASH_DEMO_ANALYTICS_ID=257bdc36-89c5-4fdd-9e3a-401599dc1005
+      # DISABLE_TELEMETRY is no longer set: it would switch that count off as
+      # well. The install count (the daily ping) and the shared website stay off
+      # in demo mode regardless, so a reset never counts as a new install.
+      # A demo instance is not an install: no release check, no news feed.
+      # (The demo refuses outbound requests anyway.)
       - DISABLE_UPDATE_CHECK=true
       - DISABLE_NEWS_FEED=true
       - TZ=America/New_York

@@ -41,7 +41,13 @@
                 resolve();
                 return;
             }
-            const existing = document.querySelector(`script[data-${datasetKey}]`);
+            let existing = document.querySelector(`script[data-${datasetKey}]`);
+            if (existing?.dataset.loadFailed === 'true') {
+                // A failed tag fires no further events; waiting on it hung every
+                // later right-click or ; until a reload. Start a fresh one.
+                existing.remove();
+                existing = null;
+            }
             if (existing) {
                 if (scriptReady(rel)) {
                     resolve();
@@ -56,7 +62,10 @@
             script.async = true;
             script.dataset[datasetKey] = 'true';
             script.onload = () => resolve();
-            script.onerror = () => reject(new Error(`${rel} failed to load`));
+            script.onerror = () => {
+                script.dataset.loadFailed = 'true';
+                reject(new Error(`${rel} failed to load`));
+            };
             document.head.appendChild(script);
         });
     }

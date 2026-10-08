@@ -8775,5 +8775,11 @@
     "itemConfigHint": "Stel taal, thema en indeling in",
     "itemCheatsheet": "Bekijk de sneltoetsen",
     "itemCheatsheetHint": "Druk op ! of F1"
+  },
+  "demo": {
+    "analyticsNotice": "Deze demo registreert bezoeken anoniem, inclusief kliks en schermopnames, om nextDash te verbeteren. Opnames tonen wat er op het scherm staat; alleen wat je in formuliervelden typt wordt gemaskeerd.",
+    "privacyNote": "Deze demo telt bezoeken anoniem, in een aparte telling. Je eigen installatie telt alleen als je dat aanzet.",
+    "telemetryRow": "uit — niet beschikbaar in de demo",
+    "privacyLocked": "Deze instellingen blijven in de demo zoals ze zijn. In je eigen installatie bepaal je ze zelf."
   }
 }

@@ -8775,5 +8775,11 @@
     "itemConfigHint": "Sprache, Design und Layout anpassen",
     "itemCheatsheet": "Tastenkürzel ansehen",
     "itemCheatsheetHint": "! oder F1 drücken"
+  },
+  "demo": {
+    "analyticsNotice": "Diese Demo erfasst Besuche anonym, einschließlich Klicks und Bildschirmaufzeichnungen, um nextDash zu verbessern. Aufzeichnungen zeigen, was auf dem Bildschirm zu sehen ist; nur was du in Formularfelder eingibst, wird maskiert.",
+    "privacyNote": "Diese Demo zählt Besuche anonym in einer eigenen Zählung. Deine eigene Installation zählt nur, wenn du es einschaltest.",
+    "telemetryRow": "aus — in der Demo nicht verfügbar",
+    "privacyLocked": "Diese Einstellungen bleiben in der Demo, wie sie sind. In deiner eigenen Installation entscheidest du selbst."
   }
 }

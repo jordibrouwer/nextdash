@@ -685,7 +685,17 @@ class DashboardHealthFocus {
         await this.run(async (issue) => {
             const key = this.health.issueKey(issue);
             const flag = this.snoozeFlagFor(issue);
-            await this.health.recheckIssue(issue, { silent: true });
+            const outcome = await this.health.recheckIssue(issue, { silent: true });
+            // Silent leaves the telling to the caller. Dropped, a refused or
+            // failed check redrew the card as if it had been checked.
+            if (outcome?.rateLimited) {
+                this.dash.showNotification?.(
+                    this.t('dashboard.healthRecheckRateLimited', 'Too many checks at once — try again in a few seconds'),
+                    'info', { duration: 3000 });
+            } else if (outcome === 'failed') {
+                this.dash.showNotification?.(
+                    this.t('dashboard.healthRecheckFailed', 'Could not re-check this bookmark'), 'error');
+            }
             await this.health.loadAndRender({ refresh: true });
             // Fixed: the condition it was here for is gone from the fresh report.
             const now = (this.health.report?.issues || []).find((row) => this.health.issueKey(row) === key);

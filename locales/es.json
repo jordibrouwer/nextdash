@@ -8775,5 +8775,11 @@
     "itemConfigHint": "Ajusta el idioma, el tema y la disposición",
     "itemCheatsheet": "Mira los atajos de teclado",
     "itemCheatsheetHint": "Pulsa ! o F1"
+  },
+  "demo": {
+    "analyticsNotice": "Esta demo registra las visitas de forma anónima, incluidos clics y grabaciones de pantalla, para mejorar nextDash. Las grabaciones muestran lo que hay en pantalla; solo se oculta lo que escribes en los campos de formulario.",
+    "privacyNote": "Esta demo cuenta las visitas de forma anónima, en un recuento aparte. Tu propia instalación solo cuenta si lo activas.",
+    "telemetryRow": "desactivado — no disponible en la demo",
+    "privacyLocked": "Estos ajustes se quedan como están en la demo. En tu propia instalación los decides tú."
   }
 }

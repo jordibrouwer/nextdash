@@ -1137,8 +1137,17 @@ class DashboardData {
             }
         }
 
+        // A background reload never cancels one the reader started. Sharing
+        // the load id, the revision poll on window focus bumped it after a tab
+        // click, the click's load gave up, and the old page was redrawn.
+        if (quiet && (d._foregroundPageLoads || 0) > 0) {
+            return false;
+        }
         const loadId = ++d._pageBookmarksLoadId;
         d.renderCore?.forgetBlockMoveOnLeave?.(targetPageId);
+        if (!quiet) {
+            d._foregroundPageLoads = (d._foregroundPageLoads || 0) + 1;
+        }
 
         try {
             d._abortInlineEditForRender();
@@ -1239,6 +1248,10 @@ class DashboardData {
                 }
             );
             return false;
+        } finally {
+            if (!quiet) {
+                d._foregroundPageLoads -= 1;
+            }
         }
     }
 

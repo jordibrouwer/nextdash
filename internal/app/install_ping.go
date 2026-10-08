@@ -16,7 +16,8 @@ import (
 // The install ping is the one thing nextDash sends when extended analytics is
 // off: once a day, a random install id and the version, so the project can say
 // how many installs exist. It is on by default and has its own switch, separate
-// from the usage analytics opt-in. DISABLE_TELEMETRY stops it as well.
+// from the usage analytics opt-in. DISABLE_TELEMETRY stops it as well, and so
+// does demo mode.
 //
 // It goes in as a pageview whose path is the version, not as a named event:
 // Umami counts visitors from pageviews only, so an event would leave the
@@ -49,6 +50,11 @@ const (
 // switch, unless the operator disabled telemetry outright.
 func installPingEnabled(settings Settings) bool {
 	if telemetryDisabledByEnv() {
+		return false
+	}
+	// The demo resets every half hour; each reset would count as a new install.
+	// Its own count is the Umami website in analyticsTarget, not this ping.
+	if demoMode() {
 		return false
 	}
 	return settings.InstallPingEnabled

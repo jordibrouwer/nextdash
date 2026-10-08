@@ -900,12 +900,17 @@ class DashboardMultiSelect {
         }
         d.tagFilter.showTagFilterBulkMovePopover(anchorEl, {
             refs,
+            // Resolved again on the pick: a refresh while the popover was open
+            // replaces d.bookmarks, and the refs from opening it point at rows
+            // no longer on the page -- "Moved N" and nothing moved.
             onMoveToCategory: (categoryId) => {
-                d.applyBookmarkCategoryMove(refs, categoryId, { count: refs.length });
+                const live = this.resolveRefs();
+                if (!live.length) return;
+                d.applyBookmarkCategoryMove(live, categoryId, { count: live.length });
                 this.clear();
             },
             onMoveToPage: (pageId) => {
-                void this.moveSelectedToPage(pageId, refs);
+                void this.moveSelectedToPage(pageId);
             },
         });
     }
@@ -915,20 +920,23 @@ class DashboardMultiSelect {
      *
      * Delegates to the tag filter's page move, which already handles fetching
      * the target page, appending, saving both sides and rolling back on error.
-     * It reads its own refs, so the selection is staged where it can see them.
+     * The refs are passed in; swapping the tag filter's own reader for the
+     * move left a stale one installed when two moves overlapped.
      */
     async moveSelectedToPage(pageId, refs) {
         const d = this.dash;
+        if (this._movingToPage) {
+            return;
+        }
         const resolved = refs || this.resolveRefs();
         if (!resolved.length || !d.tagFilter?.bulkMoveTagFilterToPage) {
             return;
         }
-        const original = d.tagFilter.getTagFilterBookmarkRefs;
-        d.tagFilter.getTagFilterBookmarkRefs = () => resolved;
+        this._movingToPage = true;
         try {
-            await d.tagFilter.bulkMoveTagFilterToPage(pageId);
+            await d.tagFilter.bulkMoveTagFilterToPage(pageId, resolved);
         } finally {
-            d.tagFilter.getTagFilterBookmarkRefs = original;
+            this._movingToPage = false;
         }
         this.clear();
     }
@@ -1122,7 +1130,7 @@ class DashboardMultiSelect {
 
     async deleteSelected() {
         const d = this.dash;
-        const refs = this.resolveRefs();
+        let refs = this.resolveRefs();
         if (!refs.length) {
             return;
         }
@@ -1142,6 +1150,12 @@ class DashboardMultiSelect {
             confirmed = window.confirm(message);
         }
         if (!confirmed) {
+            return;
+        }
+        // Again after the dialog: a background refresh while it was open
+        // replaces d.bookmarks, and the old indexes then spliced other rows.
+        refs = this.resolveRefs();
+        if (!refs.length) {
             return;
         }
 

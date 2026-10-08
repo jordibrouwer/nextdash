@@ -29,27 +29,68 @@
     const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => (
         { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-    function text() {
+    /**
+     * The demo's own events (umami-analytics.js adds mode: 'demo' to each).
+     * Always a name from a closed list or a route with its ids taken out --
+     * nothing a visitor typed.
+     */
+    function track(name, props) {
+        try { global.nextdashTrack?.(name, props); } catch { /* counting must never break the demo */ }
+    }
+
+    /** A refused request as its route: `/api/sources/{id}/run` -> `/api/sources/:id/run`. */
+    function routeName(input) {
+        try {
+            const raw = typeof input === 'string' ? input : (input?.url || String(input));
+            const path = new URL(raw, global.location.href).pathname;
+            // `/api/<area>/...`: whatever follows the area (an id, a name) is one `:id`.
+            const parts = path.split('/');
+            return (parts.length > 3 ? [...parts.slice(0, 3), ':id'] : parts).join('/').slice(0, 80);
+        } catch {
+            return 'unknown';
+        }
+    }
+
+    /**
+     * What a visitor's own notice says, if this demo is being counted: the
+     * tracker the server wrote for the demo's website is on the page. A demo
+     * nobody counts says nothing about it.
+     */
+    const counting = !!document.querySelector('script[data-nextdash-analytics][data-mode="demo"]');
+
+    /**
+     * The explanation for one kind of lock. The default is the checks (the demo
+     * visits no website); `privacy` is Config → Behavior → Privacy & sync, which
+     * is locked as a whole.
+     */
+    function text(kind) {
+        if (kind === 'privacy') {
+            return t('privacyLocked',
+                'These settings stay as they are in the demo. In your own install they are yours to change.');
+        }
         return t('checksLocked',
             'The demo checks no website. Anyone could otherwise make this server knock on any address, again and again. In your own install these settings are yours to change.');
     }
 
-    /** The shared popover, made the first time it is asked for. */
-    function popover() {
-        let el = document.getElementById(POPOVER_ID);
+    const popoverId = (kind) => (kind === 'privacy' ? `${POPOVER_ID}-privacy` : POPOVER_ID);
+
+    /** The shared popover of a kind, made the first time it is asked for. */
+    function popover(kind) {
+        let el = document.getElementById(popoverId(kind));
         if (el) return el;
         el = document.createElement('div');
-        el.id = POPOVER_ID;
+        el.id = popoverId(kind);
         el.className = 'demo-lock-popover';
         el.setAttribute('popover', '');
         el.innerHTML = `<p class="demo-lock-popover-title">${esc(t('lockedTitle', 'Locked in the demo'))}</p>
-            <p class="demo-lock-popover-text">${esc(text())}</p>`;
+            <p class="demo-lock-popover-text">${esc(text(kind))}</p>`;
         document.body.appendChild(el);
         return el;
     }
 
-    /** Show the explanation. */
-    function explain() {
+    /** Show the explanation. `action` names what was refused, for the demo's count. */
+    function explain(action) {
+        track('demo:refused', { action: String(action || 'locked').slice(0, 80) });
         const el = popover();
         try {
             if (typeof el.showPopover === 'function') {
@@ -65,18 +106,34 @@
     }
 
     /** The chip beside a locked panel's title; a click opens the explanation. */
-    function chip() {
-        popover();
-        return `<button type="button" class="demo-lock-chip" popovertarget="${POPOVER_ID}"
-            title="${esc(text())}">${esc(t('lockedChip', 'Locked in the demo'))}</button>`;
+    function chip(kind) {
+        popover(kind);
+        return `<button type="button" class="demo-lock-chip" popovertarget="${popoverId(kind)}"
+            title="${esc(text(kind))}">${esc(t('lockedChip', 'Locked in the demo'))}</button>`;
     }
 
     if (on) {
         document.documentElement.dataset.demo = '1';
+        // The chip beside a locked panel opens the explanation by itself (popovertarget).
+        document.addEventListener('click', (event) => {
+            if (event.target?.closest?.('.demo-lock-chip')) track('demo:refused', { action: 'locked-panel' });
+        }, true);
+        // Install and Community Apps: the links a visitor leaves the demo by.
+        const cta = (event) => {
+            // A middle click only: the other buttons do not open the link.
+            if (event.type === 'auxclick' && event.button !== 1) return;
+            const link = event.target?.closest?.('.demo-bar-install, .demo-unraid-note-link');
+            if (!link) return;
+            track('demo:cta', { target: link.classList.contains('demo-bar-install') ? 'install' : 'unraid-ca' });
+        };
+        document.addEventListener('click', cta, true);
+        document.addEventListener('auxclick', cta, true);
         // The explanation belongs to the view it was opened from.
         global.addEventListener('hashchange', () => {
-            const el = document.getElementById(POPOVER_ID);
-            try { if (el?.matches(':popover-open')) el.hidePopover(); } catch { /* not open */ }
+            [POPOVER_ID, `${POPOVER_ID}-privacy`].forEach((id) => {
+                const el = document.getElementById(id);
+                try { if (el?.matches(':popover-open')) el.hidePopover(); } catch { /* not open */ }
+            });
         });
         /*
          * The availability check in the add and edit forms: choosing Periodic
@@ -93,7 +150,7 @@
                 off.checked = true;
                 off.dispatchEvent(new Event('change', { bubbles: true }));
             }
-            explain();
+            explain('check-mode');
         }, true);
     }
 
@@ -110,6 +167,19 @@
     let resetAt = 0;
     let lastReset = 0;
     let soonTimer = null;
+
+    /** What the demo records, in the words a visitor can read. Config → Privacy says the same. */
+    function analyticsNotice() {
+        return t('analyticsNotice',
+            'This demo records visits anonymously, including clicks and screen replays, to improve nextDash. Replays show what is on screen; only what you type into form fields is masked.');
+    }
+
+    /** Config → Privacy in the demo: the separate count, then the notice. */
+    function privacyNote() {
+        if (!on || !counting) return '';
+        return `${t('privacyNote',
+            'This demo counts visits anonymously in a separate count. Your own install only counts when you turn it on.')} ${analyticsNotice()}`;
+    }
 
     function resetText() {
         const left = resetAt - Date.now();
@@ -130,7 +200,8 @@
             bar.setAttribute('role', 'note');
             bar.innerHTML = `<span class="demo-bar-label">${esc(t('barLabel', 'Demo'))}</span>
                 <span class="demo-bar-text"><span data-demo-reset></span><span class="demo-bar-shared"> · ${esc(t('barShared', 'what you change is shared with other visitors until then'))}</span></span>
-                <a class="demo-bar-install" href="${INSTALL_URL}" target="_blank" rel="noopener">${esc(t('barInstall', 'Install'))}<span class="demo-bar-install-name"> nextDash</span> →</a>`;
+                <a class="demo-bar-install" href="${INSTALL_URL}" target="_blank" rel="noopener">${esc(t('barInstall', 'Install'))}<span class="demo-bar-install-name"> nextDash</span> →</a>
+                ${counting ? `<span class="demo-bar-notice">${esc(analyticsNotice())}</span>` : ''}`;
             document.body.prepend(bar);
         }
         const reset = bar.querySelector('[data-demo-reset]');
@@ -138,6 +209,8 @@
     }
 
     async function refreshResetAt() {
+        // A hidden tab neither polls nor reloads; it catches up when it is shown.
+        if (document.visibilityState === 'hidden') return;
         try {
             const res = await fetch('/api/demo', { cache: 'no-store' });
             const data = await res.json();
@@ -180,6 +253,7 @@
                 response.clone().text().then((body) => {
                     const message = String(body || '').trim();
                     if (message && DEMO_ANSWERS.some((re) => re.test(message))) {
+                        track('demo:refused', { action: routeName(args[0]) });
                         global.dashboardInstance?.showNotification?.(message.slice(0, 160), 'warning', { duration: 5000 });
                     }
                 }).catch(() => {});
@@ -194,6 +268,7 @@
             try {
                 if (sessionStorage.getItem(RESET_NOTE_KEY)) {
                     sessionStorage.removeItem(RESET_NOTE_KEY);
+                    track('demo:reset-seen');
                     setTimeout(() => global.dashboardInstance?.showNotification?.(
                         t('wasReset', 'The demo was reset to its start'), 'info', { duration: 5000 }), 1500);
                 }
@@ -224,5 +299,5 @@
         </div>`;
     }
 
-    global.DemoLock = { on, explain, chip, text, unraidNote };
+    global.DemoLock = { on, explain, chip, text, unraidNote, privacyNote, track };
 })(window);

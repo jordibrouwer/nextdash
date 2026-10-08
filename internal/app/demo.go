@@ -186,7 +186,8 @@ func (h *Handlers) seedDemo(now time.Time) error {
 	settings.CurrentPage = 1
 	settings.QuickStart.Dismissed = true
 	settings.QuickStart.TemplatePicked = "keep"
-	// The demo measures nothing, so it does not ask.
+	// The demo does not ask: its visits are counted in a website of their own
+	// (analyticsTarget), and the Privacy setting is not the visitor's to change.
 	settings.QuickStart.AnalyticsChoiceMade = true
 	settings.AnalyticsOptIn = false
 	settings.ShowWeatherWithDate = true

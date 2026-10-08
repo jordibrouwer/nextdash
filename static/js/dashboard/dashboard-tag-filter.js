@@ -376,7 +376,7 @@ class DashboardTagFilter {
 
     async bulkDeleteTagFilterBookmarks() {
         const d = this.dash;
-        const refs = this.getTagFilterBookmarkRefs();
+        let refs = this.getTagFilterBookmarkRefs();
         if (!refs.length) {
             return;
         }
@@ -404,6 +404,12 @@ class DashboardTagFilter {
             );
         }
         if (!confirmed) {
+            return;
+        }
+        // Again after the dialog: a background refresh while it was open
+        // replaces d.bookmarks, and the old indexes then spliced other rows.
+        refs = this.getTagFilterBookmarkRefs();
+        if (!refs.length) {
             return;
         }
 
@@ -552,9 +558,9 @@ class DashboardTagFilter {
         }
     }
 
-    async bulkMoveTagFilterToPage(targetPageId) {
+    async bulkMoveTagFilterToPage(targetPageId, refsIn = null) {
         const d = this.dash;
-        const refs = this.getTagFilterBookmarkRefs();
+        const refs = refsIn || this.getTagFilterBookmarkRefs();
         if (!refs.length) {
             return;
         }
