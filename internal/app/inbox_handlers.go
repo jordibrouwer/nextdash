@@ -288,7 +288,7 @@ func (h *Handlers) enrichInboxPreviewAsync(itemID, url string) {
 			})
 			return
 		}
-		_, _ = h.store.UpdateInboxLink(itemID, func(item *InboxLink) error {
+		_, err := h.store.UpdateInboxLink(itemID, func(item *InboxLink) error {
 			if strings.TrimSpace(preview.Title) != "" {
 				item.PreviewTitle = preview.Title
 				if strings.TrimSpace(item.Title) == "" || item.Title == item.Domain {
@@ -307,9 +307,17 @@ func (h *Handlers) enrichInboxPreviewAsync(itemID, url string) {
 			if iconFile != "" {
 				item.Icon = iconFile
 			}
+			// A fetched title or description can be as long as the page made it;
+			// the same caps as add and patch keep inbox.json bounded.
+			clampInboxLinkFields(item)
 			stampIcon(item)
 			return nil
 		})
+		// Triaged away while the fetch ran: the delete cleaned up icons before
+		// this one existed, so nothing else will remove it.
+		if errors.Is(err, ErrInboxItemNotFound) && iconFile != "" {
+			h.store.removeUnusedIconFile(iconFile)
+		}
 	}()
 }
 

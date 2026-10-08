@@ -956,14 +956,14 @@ class DashboardContextMenu {
                 );
                 if (!inbox || !item) break;
                 if (action === 'inbox-promote') inbox.promoteItem(item);
-                else if (action === 'inbox-keep') void inbox.keepItem(item);
+                else if (action === 'inbox-keep') void inbox.runClaimed(item.id, () => inbox.keepItem(item));
                 else if (action === 'inbox-read') void inbox.markReadFromKeyboard(item);
                 else if (action === 'inbox-unread') void inbox.markUnreadFromRow(item);
                 else if (action === 'inbox-snooze') inbox.openSnoozeMenu(item, row);
                 else if (action === 'inbox-note') void inbox.editNote(item);
                 else if (action === 'inbox-tags') void inbox.editTags(item);
                 else if (action === 'inbox-copy-link') void inbox.copyItemLink(item.id);
-                else void inbox.deleteItemWithUndo(item.id);
+                else void inbox.runClaimed(item.id, () => inbox.deleteItemWithUndo(item.id));
                 break;
             }
             case 'edit':
