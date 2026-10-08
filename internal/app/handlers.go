@@ -54,9 +54,12 @@ type Handlers struct {
 	// healthReportGen is the store's write count when this report was built.
 	// A cached report whose generation no longer matches describes bookmarks
 	// that have since changed, however recently it was built.
-	healthReportGen       uint64
-	healthReportBuildMu   sync.Mutex
-	healthReportBuildCond *sync.Cond
+	healthReportGen uint64
+	// healthReportInvalidations counts invalidateHealthReportCache calls. A
+	// build that saw it change while running does not mark its report fresh.
+	healthReportInvalidations uint64
+	healthReportBuildMu       sync.Mutex
+	healthReportBuildCond     *sync.Cond
 	// Built once, whoever gets there first. NewHandlers sets it, and a Handlers
 	// assembled by hand -- which several tests do -- would otherwise reach
 	// loadBookmarkHealthReport with a nil Cond and race two goroutines into
@@ -451,6 +454,10 @@ func (h *Handlers) loadBookmarkHealthReport(forceRefresh bool) BookmarkHealthRep
 	h.healthReportBuilding = true
 	h.healthReportBuildMu.Unlock()
 
+	h.healthReportMu.RLock()
+	invalidationsBefore := h.healthReportInvalidations
+	h.healthReportMu.RUnlock()
+
 	report := h.buildBookmarkHealthReport()
 
 	/*
@@ -465,15 +472,15 @@ func (h *Handlers) loadBookmarkHealthReport(forceRefresh bool) BookmarkHealthRep
 
 		What that costs is a write landing during a build: it is not in the
 		report, and the stamp says it is, so it goes unseen until the three
-		minutes are up. A build is milliseconds against a window of minutes, and
-		the write paths that invalidate by hand still do. The alternative is no
-		cache at all.
+		minutes are up. A build is milliseconds against a window of minutes. The
+		write paths that invalidate by hand are covered: an invalidation during
+		the build leaves the report unmarked, so the next read rebuilds.
 	*/
 	generation := h.store.DataGeneration()
 
 	h.healthReportMu.Lock()
 	h.healthReport = report
-	h.healthReportOK = true
+	h.healthReportOK = h.healthReportInvalidations == invalidationsBefore
 	h.healthReportAt = time.Now()
 	h.healthReportGen = generation
 	h.healthReportMu.Unlock()
@@ -513,6 +520,7 @@ func staleOpenThreshold(s Settings) time.Duration {
 func (h *Handlers) invalidateHealthReportCache() {
 	h.healthReportMu.Lock()
 	h.healthReportOK = false
+	h.healthReportInvalidations++
 	h.healthReportMu.Unlock()
 	// The analytics counts are drawn from the same files and go stale for the
 	// same reasons, so they ride along with the report rather than growing a
@@ -5092,15 +5100,42 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 	recorded := map[string]bool{}
 	driftResults := make(map[string]PingResult)
 
+	// Over the cap, the least recently checked go first. In page order every
+	// run took the same first ones, and the rest were never re-checked.
+	type retestRef struct{ page, index int }
+	pageBookmarks := make(map[int][]Bookmark, len(pages))
+	var eligibleRefs []retestRef
 	for _, page := range pages {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
+		pageBookmarks[page.ID] = bookmarks
+		for i, bm := range bookmarks {
+			if bm.CheckStatus || bm.Monitor || (includeFlagged && strings.TrimSpace(bm.LastError) != "") {
+				eligibleRefs = append(eligibleRefs, retestRef{page.ID, i})
+			}
+		}
+	}
+	var withinCap map[retestRef]bool
+	if len(eligibleRefs) > retestAllMaxBookmarks {
+		sort.SliceStable(eligibleRefs, func(i, j int) bool {
+			a := pageBookmarks[eligibleRefs[i].page][eligibleRefs[i].index].LastChecked
+			b := pageBookmarks[eligibleRefs[j].page][eligibleRefs[j].index].LastChecked
+			return a < b
+		})
+		withinCap = make(map[retestRef]bool, retestAllMaxBookmarks)
+		for _, ref := range eligibleRefs[:retestAllMaxBookmarks] {
+			withinCap[ref] = true
+		}
+	}
+
+	for _, page := range pages {
+		bookmarks := pageBookmarks[page.ID]
 		type retestUpdate struct {
 			lastError   string
 			lastChecked int64
 		}
 		updatesByKey := make(map[string]retestUpdate)
 
-		for _, bm := range bookmarks {
+		for bmIndex, bm := range bookmarks {
 			// A bookmark with checkStatus off but a stored LastError is rendered broken
 			// and scored -60, yet the default run never revisits it. Monitored
 			// bookmarks are eligible too: "Retest all" should mean all, not "all
@@ -5110,7 +5145,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 				res.Skipped++
 				continue
 			}
-			if res.Tested >= retestAllMaxBookmarks || ctx.Err() != nil {
+			if (withinCap != nil && !withinCap[retestRef{page.ID, bmIndex}]) || res.Tested >= retestAllMaxBookmarks || ctx.Err() != nil {
 				res.SkippedOverLimit++
 				continue
 			}

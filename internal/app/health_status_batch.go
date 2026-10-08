@@ -80,13 +80,20 @@ func (h *Handlers) UpdateBookmarkHealthStatuses(w http.ResponseWriter, r *http.R
 
 	checkedAt := time.Now().UnixMilli()
 	updated := 0
+	// Per URL, not per row: a URL on two rows of the page counted twice and
+	// made "skipped" negative.
+	matched := map[string]bool{}
 
 	err := h.store.MutateBookmarksOnPage(req.PageID, func(bookmarks []Bookmark) ([]Bookmark, error) {
+		updated = 0
+		clear(matched)
 		for i := range bookmarks {
-			res, ok := wanted[canonicalBookmarkURLKey(bookmarks[i].URL)]
+			key := canonicalBookmarkURLKey(bookmarks[i].URL)
+			res, ok := wanted[key]
 			if !ok {
 				continue
 			}
+			matched[key] = true
 			detail := ""
 			if strings.TrimSpace(res.Status) != "online" {
 				detail = strings.TrimSpace(res.Error)
@@ -108,6 +115,6 @@ func (h *Handlers) UpdateBookmarkHealthStatuses(w http.ResponseWriter, r *http.R
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(map[string]int{
 		"updated": updated,
-		"skipped": len(wanted) - updated,
+		"skipped": len(wanted) - len(matched),
 	})
 }

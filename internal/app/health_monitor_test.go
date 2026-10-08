@@ -427,3 +427,35 @@ func TestRunDueMonitorsKeepsHistoryOfUnmonitoredBookmark(t *testing.T) {
 		t.Fatalf("history of an unmonitored bookmark: got %d samples, want 2", got)
 	}
 }
+
+// Over the cap, "Retest all" takes the least recently checked bookmarks. In
+// page order every run re-tested the same first ones and never the rest.
+func TestRetestAllOverCapTakesOldestChecked(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("<html><body>Hello there, this is a page</body></html>"))
+	}))
+	defer server.Close()
+	h, dir := healthRecheckTestHandlers(t, `{"allowLocalBookmarks":true,"detectSoftNotFound":false}`)
+	recent := time.Now().UnixMilli()
+	rows := make([]string, 0, retestAllMaxBookmarks+1)
+	for i := 0; i < retestAllMaxBookmarks; i++ {
+		rows = append(rows, fmt.Sprintf(`{"name":"B%d","url":"%s/p%d","checkStatus":true,"lastChecked":%d}`, i, server.URL, i, recent))
+	}
+	rows = append(rows, fmt.Sprintf(`{"name":"Stale","url":"%s/stale","checkStatus":true,"lastChecked":1}`, server.URL))
+	body := `{"id":1,"name":"Page 1","bookmarks":[` + strings.Join(rows, ",") + `]}`
+	if err := os.WriteFile(filepath.Join(dir, "bookmarks-1.json"), []byte(body), 0o644); err != nil {
+		t.Fatalf("write bookmarks: %v", err)
+	}
+	res, err := h.runHealthRetest(context.Background(), false, "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Tested != retestAllMaxBookmarks || res.SkippedOverLimit != 1 {
+		t.Fatalf("tested=%d skippedOverLimit=%d", res.Tested, res.SkippedOverLimit)
+	}
+	for _, bm := range h.store.GetBookmarksByPage(1) {
+		if bm.Name == "Stale" && bm.LastChecked <= 1 {
+			t.Fatalf("the least recently checked bookmark was skipped")
+		}
+	}
+}
