@@ -141,6 +141,40 @@ func TestClientIPTrustsForwardedForFromANamedProxy(t *testing.T) {
 	}
 }
 
+/*
+A proxy appends; it does not clear what the client sent.
+
+Traefik and nginx add the address they saw to the end of X-Forwarded-For and
+keep whatever the request already carried. So the first entry is the
+client's own claim, and a visitor who sends "X-Forwarded-For: <anything>"
+through a named proxy picked its own bucket on every request -- the public
+demo's write limit among them. The address to believe is the rightmost one
+that is not itself a named proxy.
+*/
+func TestClientIPIgnoresWhatTheClientPutBeforeTheProxy(t *testing.T) {
+	t.Setenv("NEXTDASH_TRUSTED_PROXIES", "172.16.0.0/12")
+
+	seen := map[string]bool{}
+	for i := 0; i < 50; i++ {
+		req := httptest.NewRequest(http.MethodPost, "/api/bookmarks", nil)
+		req.RemoteAddr = "172.18.0.2:44000"
+		// What the visitor typed, then what the proxy appended.
+		req.Header.Set("X-Forwarded-For", fmt.Sprintf("198.51.100.%d, 203.0.113.50", i))
+		seen[clientIP(req)] = true
+	}
+	if len(seen) != 1 || !seen["203.0.113.50"] {
+		t.Errorf("clientIP keys = %v, want only 203.0.113.50", seen)
+	}
+
+	// Two proxies in a row: both are skipped, the address before them counts.
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.RemoteAddr = "172.18.0.2:44000"
+	req.Header.Set("X-Forwarded-For", "198.51.100.1, 203.0.113.50, 172.20.0.9")
+	if got := clientIP(req); got != "203.0.113.50" {
+		t.Errorf("behind two proxies: clientIP = %q, want 203.0.113.50", got)
+	}
+}
+
 // A preview already in the cache is answered without spending the limit that
 // exists for outbound fetches: hovering down a page asked for each row.
 func TestCachedBookmarkPreviewIsNotRateLimited(t *testing.T) {

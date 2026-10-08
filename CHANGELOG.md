@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.18.2 — 8 October 2026](#v1182--8-october-2026)
 - [v1.18.1 — 8 October 2026](#v1181--8-october-2026)
 - [v1.18.0 — 8 October 2026](#v1180--8-october-2026)
 - [v1.17.5 — 6 October 2026](#v1175--6-october-2026)
@@ -99,6 +100,16 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [How releases are numbered](#how-releases-are-numbered)
 
 ---
+
+## v1.18.2 — 8 October 2026
+
+A fix for installs behind a reverse proxy, the public demo among them: a visitor can no longer choose the address the write and fetch limits count them under.
+
+### Security
+- **fix — the client address behind a named proxy comes from the right of `X-Forwarded-For`.** A proxy such as Traefik or nginx appends the address it saw and keeps whatever the request already carried, and `clientIP()` took the first entry: a visitor who sent their own `X-Forwarded-For` picked a fresh rate-limit bucket on every request, which emptied the demo's 120 writes a minute per address and the limits on `/api/bookmark-preview`, `/api/icon/from-url` and `/api/ping`. The header is now read from the right: each address inside `NEXTDASH_TRUSTED_PROXIES` is skipped and the first one before them is the client; garbage on the way still falls back to the peer (`rate_limit.go`).
+
+### Tests
+- **tests — `TestClientIPIgnoresWhatTheClientPutBeforeTheProxy`** sends fifty requests through a named proxy, each with a made-up address in front of the real one, and expects one bucket; a chain of two proxies gives the address before them. It fails on the old first-entry read.
 
 ## v1.18.1 — 8 October 2026
 

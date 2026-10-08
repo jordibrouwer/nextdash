@@ -190,14 +190,30 @@ func clientIP(r *http.Request) string {
 	 * install named. Anyone can set the header; only a named proxy is taken at
 	 * its word for it.
 	 *
-	 * The first entry is the client the proxy saw. The hops after it were
-	 * appended along the way and prove nothing, so they are not considered.
+	 * Read from the right. A proxy appends the address it saw and keeps what
+	 * the request already carried, so the leftmost entries are whatever the
+	 * client chose to send. Each named proxy in the chain is skipped; the
+	 * first address before them that is not one is the client. Garbage on the
+	 * way stops the walk and the peer counts, as it did before.
 	 */
 	if isTrustedProxy(peer) {
 		if xff := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); xff != "" {
-			first := strings.TrimSpace(strings.Split(xff, ",")[0])
-			if first != "" && net.ParseIP(first) != nil {
-				return first
+			hops := strings.Split(xff, ",")
+			client := ""
+			for i := len(hops) - 1; i >= 0; i-- {
+				hop := strings.TrimSpace(hops[i])
+				if net.ParseIP(hop) == nil {
+					break
+				}
+				client = hop
+				if !isTrustedProxy(hop) {
+					return hop
+				}
+			}
+			// Every hop was a named proxy (a LAN reader inside the trusted
+			// range): the leftmost one reached is the reader.
+			if client != "" {
+				return client
 			}
 		}
 	}
