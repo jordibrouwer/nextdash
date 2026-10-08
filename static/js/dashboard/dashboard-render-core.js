@@ -506,7 +506,7 @@ class DashboardRenderCore {
         // In the tab order, straight after the title: Space on it picks the block up.
         prefix.tabIndex = 0;
         prefix.className = 'category-reorder-handle';
-        prefix.textContent = '// ';
+        prefix.append(this.reorderGlyph(), ' ');
         prefix.setAttribute('aria-label', d.formatDashboardLabel('blockMoveHandle', { name: widget.title || this.widgetTypeLabel(widget.type) }, 'Move {name}'));
         // Dragging the handle must not do whatever clicking the header does.
         prefix.addEventListener('click', (e) => e.stopPropagation());
@@ -1747,6 +1747,18 @@ class DashboardRenderCore {
      * So the DOM decides the order of what it holds, and everything else keeps
      * its position relative to the block it used to follow.
      */
+    /**
+     * The "//" of a block title, in a span of its own. The handle's text stays
+     * "// "; the span is what keyboard focus tints, so the tint sits on the
+     * two slashes and not on the space after them.
+     */
+    reorderGlyph() {
+        const glyph = document.createElement('span');
+        glyph.className = 'category-reorder-glyph';
+        glyph.textContent = '//';
+        return glyph;
+    }
+
     /** The blocks as the grid currently holds them, top to bottom. */
     blockOrderFromDom() {
         const grid = document.getElementById('dashboard-layout');
@@ -2820,7 +2832,7 @@ class DashboardRenderCore {
         // are placed per page. A view over bookmarks keeps the "//" for the
         // look, as plain text: not a button, not a tab stop.
         const prefixSpan = document.createElement(isVirtualBlock ? 'span' : 'button');
-        prefixSpan.textContent = '// ';
+        prefixSpan.append(this.reorderGlyph(), ' ');
         if (isVirtualBlock) {
             prefixSpan.className = 'category-reorder-handle is-static';
             prefixSpan.setAttribute('aria-hidden', 'true');

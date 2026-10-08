@@ -257,15 +257,32 @@ test.describe('moving blocks with the keyboard', () => {
             await page.evaluate((v) => { document.body.dataset.catHead = v; }, style);
             await block.locator('.category-title').focus();
             await page.keyboard.press('Tab');
+            // The selected row's tint on the slashes (or, where the header
+            // style draws a grip instead, on the grip), not an outline: the
+            // label's overflow cut an outline off on two sides.
             const shown = await block.locator('.category-reorder-handle').evaluate((el) => {
-                const own = getComputedStyle(el);
+                const glyph = el.querySelector('.category-reorder-glyph');
                 const grip = getComputedStyle(el, '::before');
-                const visible = (cs) => cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0;
-                return el.matches(':focus-visible') && ((visible(own) && el.getBoundingClientRect().width > 0)
-                    || (visible(grip) && grip.content !== 'none' && Number(grip.opacity) > 0.5));
+                const tinted = (cs) => cs.backgroundImage !== 'none' || !/rgba?\(0, 0, 0, 0\)|transparent/.test(cs.backgroundColor);
+                const glyphShows = glyph && glyph.getBoundingClientRect().width > 0 && tinted(getComputedStyle(glyph));
+                const gripShows = grip.content !== 'none' && Number(grip.opacity) > 0.5 && tinted(grip);
+                return el.matches(':focus-visible') && getComputedStyle(el).outlineStyle === 'none' && !!(glyphShows || gripShows);
             });
             expect(shown, style).toBe(true);
         }
+    });
+
+    test('a focused title wears the selected row\'s tint, not an outline', async ({ page }) => {
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('ArrowUp');
+        const title = page.locator('.category-title:focus');
+        await expect(title).toHaveCount(1);
+        const look = await title.evaluate((el) => {
+            const cs = getComputedStyle(el);
+            return { outline: cs.outlineStyle, tint: cs.backgroundImage !== 'none', radius: parseFloat(cs.borderTopLeftRadius) };
+        });
+        expect(look).toEqual({ outline: 'none', tint: true, radius: expect.any(Number) });
+        expect(look.radius).toBeGreaterThan(0);
     });
 
     test('Alt+Right moves a widget too', async ({ page }) => {

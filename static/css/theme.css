@@ -139,10 +139,12 @@ a:focus-visible,
     outline-offset: 2px;
 }
 
+/* A block's title with keyboard focus: the selected row's tint, like the
+   rows under it, rather than a ring of its own. */
 .category-title:focus-visible {
-    outline: 2px solid var(--accent-primary);
-    outline-offset: 2px;
-    border-radius: var(--radius-1, 2px);
+    outline: none;
+    background: var(--bookmark-row-selected-bg);
+    border-radius: var(--layout-radius-sm, 8px);
 }
 
 .search-command-group-header:focus-visible {
