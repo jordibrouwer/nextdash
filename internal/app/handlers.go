@@ -1499,13 +1499,13 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 		trimBookmarkTextFields(&bookmarks[i])
 	}
 
-	beforeBookmarks := h.store.GetBookmarksByPage(pageID)
 	// This request replaces the page, and the list it carries was built in a
 	// browser that cannot see what the server has written since: opens, the
 	// last check, the fetched preview. Without this, opening a bookmark and
-	// then editing any bookmark on the page set the count back to zero.
-	carryServerOwnedBookmarkFields(bookmarks, beforeBookmarks)
-	if !respondStorePersistError(w, h.store.SaveBookmarksByPage(pageID, bookmarks)) {
+	// then editing any bookmark on the page set the count back to zero. The
+	// carry runs under the store lock, so a write landing mid-request is kept.
+	beforeBookmarks, err := h.store.SaveBookmarksByPageCarrying(pageID, bookmarks, carryServerOwnedBookmarkFields)
+	if !respondStorePersistError(w, err) {
 		return
 	}
 	logBookmarkSaveDiff(pageID, beforeBookmarks, bookmarks, r)
@@ -5331,95 +5331,94 @@ func (h *Handlers) MergeDuplicates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	targetBookmarks := h.store.GetBookmarksByPage(req.TargetPageID)
-	if req.TargetIndex < 0 || req.TargetIndex >= len(targetBookmarks) {
-		http.Error(w, "Invalid target index", http.StatusBadRequest)
-		return
-	}
-
-	keeper := targetBookmarks[req.TargetIndex]
-	keeperKey := canonicalBookmarkURLKey(keeper.URL)
-	if keeperKey == "" {
-		http.Error(w, "Invalid target bookmark URL", http.StatusBadRequest)
-		return
-	}
-
-	sources := make([]Bookmark, 0, len(req.SourcePageIDs))
-	deletes := make([]mergeDeleteRef, 0, len(req.SourcePageIDs))
-	// Every ref below is validated against the pre-merge snapshot, so the same
-	// (page, index) pair listed twice would pass twice and then be deleted twice
-	// from a slice that has already shifted -- taking an innocent neighbour with
-	// it, and double-counting the source's open count into the keeper.
-	seenSources := make(map[mergeDeleteRef]bool, len(req.SourcePageIDs))
-	for i := 0; i < len(req.SourcePageIDs); i++ {
-		pageID := req.SourcePageIDs[i]
-		index := req.SourceIndices[i]
-		if pageID == req.TargetPageID && index == req.TargetIndex {
-			continue
-		}
-		ref := mergeDeleteRef{pageID: pageID, index: index}
-		if seenSources[ref] {
-			continue
-		}
-		seenSources[ref] = true
-		bookmarks := h.store.GetBookmarksByPage(pageID)
-		if index < 0 || index >= len(bookmarks) {
-			http.Error(w, "Invalid source index", http.StatusBadRequest)
-			return
-		}
-		src := bookmarks[index]
-		if canonicalBookmarkURLKey(src.URL) != keeperKey {
-			http.Error(w, "Source URL does not match target", http.StatusBadRequest)
-			return
-		}
-		sources = append(sources, src)
-		deletes = append(deletes, ref)
-	}
-
-	merged := keeper
-	mergeBookmarkMetadata(&merged, sources)
-
-	involvedPages := map[int]struct{}{req.TargetPageID: {}}
-	for _, del := range deletes {
-		involvedPages[del.pageID] = struct{}{}
-	}
-	pageSnapshots := make(map[int][]Bookmark, len(involvedPages))
-	for pageID := range involvedPages {
-		existing := h.store.GetBookmarksByPage(pageID)
-		pageSnapshots[pageID] = append([]Bookmark(nil), existing...)
-	}
-
-	sort.Slice(deletes, func(i, j int) bool {
-		if deletes[i].pageID != deletes[j].pageID {
-			return deletes[i].pageID < deletes[j].pageID
-		}
-		return deletes[i].index > deletes[j].index
-	})
-
-	targetIndex := req.TargetIndex
+	pageIDs := append([]int{req.TargetPageID}, req.SourcePageIDs...)
 	mergedCount := 0
-	for _, del := range deletes {
-		bookmarks := pageSnapshots[del.pageID]
-		if del.index < 0 || del.index >= len(bookmarks) {
-			http.Error(w, "Invalid source index", http.StatusBadRequest)
-			return
+	// Validation and deletion run on the lists read under the store lock, so an
+	// add, an open or a check result landing on one of these pages mid-request
+	// is not written back over with an older copy.
+	err := h.store.MutateBookmarkPages(pageIDs, func(pages map[int][]Bookmark) (map[int][]Bookmark, error) {
+		mergedCount = 0
+		targetBookmarks := pages[req.TargetPageID]
+		if req.TargetIndex < 0 || req.TargetIndex >= len(targetBookmarks) {
+			return nil, mergeRequestError("Invalid target index")
 		}
-		if del.pageID == req.TargetPageID && del.index < targetIndex {
-			targetIndex--
-		}
-		pageSnapshots[del.pageID] = append(bookmarks[:del.index], bookmarks[del.index+1:]...)
-		mergedCount++
-	}
 
-	targetBookmarks = pageSnapshots[req.TargetPageID]
-	if targetIndex < 0 || targetIndex >= len(targetBookmarks) {
-		http.Error(w, "Target bookmark missing after merge", http.StatusInternalServerError)
+		keeper := targetBookmarks[req.TargetIndex]
+		keeperKey := canonicalBookmarkURLKey(keeper.URL)
+		if keeperKey == "" {
+			return nil, mergeRequestError("Invalid target bookmark URL")
+		}
+
+		sources := make([]Bookmark, 0, len(req.SourcePageIDs))
+		deletes := make([]mergeDeleteRef, 0, len(req.SourcePageIDs))
+		// Every ref below is validated against the pre-merge lists, so the same
+		// (page, index) pair listed twice would pass twice and then be deleted
+		// twice from a slice that has already shifted -- taking an innocent
+		// neighbour with it, and double-counting the source's open count into
+		// the keeper.
+		seenSources := make(map[mergeDeleteRef]bool, len(req.SourcePageIDs))
+		for i := 0; i < len(req.SourcePageIDs); i++ {
+			pageID := req.SourcePageIDs[i]
+			index := req.SourceIndices[i]
+			if pageID == req.TargetPageID && index == req.TargetIndex {
+				continue
+			}
+			ref := mergeDeleteRef{pageID: pageID, index: index}
+			if seenSources[ref] {
+				continue
+			}
+			seenSources[ref] = true
+			bookmarks := pages[pageID]
+			if index < 0 || index >= len(bookmarks) {
+				return nil, mergeRequestError("Invalid source index")
+			}
+			src := bookmarks[index]
+			if canonicalBookmarkURLKey(src.URL) != keeperKey {
+				return nil, mergeRequestError("Source URL does not match target")
+			}
+			sources = append(sources, src)
+			deletes = append(deletes, ref)
+		}
+
+		merged := keeper
+		mergeBookmarkMetadata(&merged, sources)
+
+		changed := map[int][]Bookmark{req.TargetPageID: pages[req.TargetPageID]}
+		for _, del := range deletes {
+			changed[del.pageID] = pages[del.pageID]
+		}
+
+		sort.Slice(deletes, func(i, j int) bool {
+			if deletes[i].pageID != deletes[j].pageID {
+				return deletes[i].pageID < deletes[j].pageID
+			}
+			return deletes[i].index > deletes[j].index
+		})
+
+		targetIndex := req.TargetIndex
+		for _, del := range deletes {
+			bookmarks := changed[del.pageID]
+			if del.pageID == req.TargetPageID && del.index < targetIndex {
+				targetIndex--
+			}
+			changed[del.pageID] = append(bookmarks[:del.index], bookmarks[del.index+1:]...)
+			mergedCount++
+		}
+
+		targetBookmarks = changed[req.TargetPageID]
+		if targetIndex < 0 || targetIndex >= len(targetBookmarks) {
+			return nil, fmt.Errorf("target bookmark missing after merge")
+		}
+		targetBookmarks[targetIndex] = merged
+		changed[req.TargetPageID] = targetBookmarks
+		return changed, nil
+	})
+	var badRequest mergeRequestError
+	if errors.As(err, &badRequest) {
+		http.Error(w, string(badRequest), http.StatusBadRequest)
 		return
 	}
-	targetBookmarks[targetIndex] = merged
-	pageSnapshots[req.TargetPageID] = targetBookmarks
-
-	if !respondStorePersistError(w, h.store.SaveBookmarkPageUpdates(pageSnapshots)) {
+	if !respondStorePersistError(w, err) {
 		return
 	}
 	h.invalidateHealthReportCache()
@@ -5430,6 +5429,12 @@ func (h *Handlers) MergeDuplicates(w http.ResponseWriter, r *http.Request) {
 		"count":  mergedCount,
 	})
 }
+
+// mergeRequestError is a merge request that does not match the stored pages:
+// answered 400, not as a failed save.
+type mergeRequestError string
+
+func (e mergeRequestError) Error() string { return string(e) }
 
 // DeleteHealthBookmark removes one bookmark by page/index from health view.
 func (h *Handlers) DeleteHealthBookmark(w http.ResponseWriter, r *http.Request) {

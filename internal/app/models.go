@@ -1430,6 +1430,7 @@ type Store interface {
 	GetAllBookmarks() []Bookmark
 	BookmarkURLExists(url string) bool
 	SaveBookmarksByPage(pageID int, bookmarks []Bookmark) error
+	SaveBookmarksByPageCarrying(pageID int, bookmarks []Bookmark, carry func(next, stored []Bookmark)) ([]Bookmark, error)
 	SaveBookmarkPageUpdates(updates map[int][]Bookmark) error
 	TrackBookmarkOpen(pageID int, index int) error
 	TrackBookmarkOpenURL(pageID int, index int, url string) error
@@ -2620,6 +2621,29 @@ func (fs *FileStore) SaveBookmarksByPage(pageID int, bookmarks []Bookmark) error
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 	return fs.saveBookmarksByPageLocked(pageID, bookmarks)
+}
+
+// SaveBookmarksByPageCarrying replaces a page like SaveBookmarksByPage, but
+// first lets carry copy fields from the stored list into the new one. The read
+// and the write share one lock, so an open or a check result written in
+// between cannot be lost. It returns the stored list it carried from.
+func (fs *FileStore) SaveBookmarksByPageCarrying(pageID int, bookmarks []Bookmark, carry func(next, stored []Bookmark)) ([]Bookmark, error) {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	var stored []Bookmark
+	current, err := fs.readPageWithBookmarksLocked(pageID)
+	switch {
+	case err == nil:
+		stored = current.Bookmarks
+	case errors.Is(err, ErrBookmarkNotFound):
+	default:
+		return nil, err
+	}
+	if carry != nil {
+		carry(bookmarks, stored)
+	}
+	return stored, fs.saveBookmarksByPageLocked(pageID, bookmarks)
 }
 
 func (fs *FileStore) SaveBookmarkPageUpdates(updates map[int][]Bookmark) error {
