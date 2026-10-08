@@ -57,6 +57,7 @@
                 'tipEditDrag',
                 'tipEditLockLayout',
                 'tipEditMoveCategory',
+                'tipEditMoveBlockKeys',
                 'tipEditSelectionActions',
                 'tipEditKeep',
                 'tipEditTriage',

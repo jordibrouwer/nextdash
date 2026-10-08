@@ -877,3 +877,175 @@
 .setting-art-theme.is-e .setting-art-theme-bar { background: #f5c2e7; }
 .setting-art-theme.is-f { background: #eef2f7; }
 .setting-art-theme.is-f .setting-art-theme-bar { background: #2f6f9f; }
+
+/* ─── A block being moved (help: moving categories and widgets) ──────────────
+   Three short loops on a stand-in grid: a block lifted from one column and set
+   down in another with the dashed landing box ahead of it, a block dropped on
+   the line between two columns so it spans both, and a block sent to another
+   page. Every part rests at the end of the move, so without animation the
+   drawing still shows where the block went. */
+.setting-art-frame--move { padding: 0; }
+
+.setting-art-move {
+    --col: 1.7rem;
+    --gap: 0.35rem;
+    --pad: 0.35rem;
+    position: relative;
+    display: block;
+    width: calc(var(--col) * 3 + var(--gap) * 2 + var(--pad) * 2);
+    height: 4.1rem;
+}
+.setting-art-move.is-wide { width: calc(var(--col) * 2 + var(--gap) + var(--pad) * 2); }
+
+.setting-art-move-block,
+.setting-art-move-landing {
+    position: absolute;
+    box-sizing: border-box;
+    width: var(--col);
+    height: 1.35rem;
+    border-radius: var(--radius-2, 0.2rem);
+}
+
+.setting-art-move-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.25rem;
+    border: 1px solid var(--border-primary);
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+.setting-art-move-block .setting-art-band {
+    height: 3px;
+    border-radius: var(--radius-1, 1px);
+    background: color-mix(in srgb, var(--text-primary) 22%, transparent);
+}
+.setting-art-move-block .setting-art-band:nth-child(2) { width: 70%; }
+
+/* Columns: a = left, b = middle, c = right; 1 = top row, 2 = the row under it. */
+.setting-art-move .is-a1 { left: var(--pad); top: var(--pad); }
+.setting-art-move .is-a2 { left: var(--pad); top: calc(var(--pad) + 1.6rem); }
+.setting-art-move .is-b1 { left: calc(var(--pad) + var(--col) + var(--gap)); top: var(--pad); }
+.setting-art-move .is-c1 { left: calc(var(--pad) + (var(--col) + var(--gap)) * 2); top: var(--pad); }
+.setting-art-move .is-c2 { left: calc(var(--pad) + (var(--col) + var(--gap)) * 2); top: calc(var(--pad) + 1.6rem); }
+
+.setting-art-move-block.is-moving {
+    border-color: color-mix(in srgb, var(--accent-primary) 60%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 18%, var(--background-primary));
+    z-index: 2;
+}
+.setting-art-move-block.is-moving .setting-art-band {
+    background: color-mix(in srgb, var(--accent-primary) 65%, transparent);
+}
+
+.setting-art-move-landing {
+    border: 1.5px dashed color-mix(in srgb, var(--accent-primary) 75%, transparent);
+    opacity: 0;
+}
+
+/* place: from the left column's second row to the middle column, under its block. */
+.setting-art-move.is-place .is-moving,
+.setting-art-move.is-place .setting-art-move-landing {
+    left: calc(var(--pad) + var(--col) + var(--gap));
+    top: calc(var(--pad) + 1.6rem);
+}
+.setting-art-move.is-place .is-moving { animation: setting-art-move-place 4.8s ease-in-out infinite both; }
+.setting-art-move.is-place .setting-art-move-landing { animation: setting-art-move-landing 4.8s ease-in-out infinite both; }
+
+@keyframes setting-art-move-place {
+    0%, 14% { transform: translate(calc((var(--col) + var(--gap)) * -1), 0); box-shadow: none; }
+    22% { transform: translate(calc((var(--col) + var(--gap)) * -1), -2px) scale(1.06); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35); }
+    58% { transform: translate(0, -2px) scale(1.06); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35); }
+    66%, 100% { transform: none; box-shadow: none; }
+}
+
+@keyframes setting-art-move-landing {
+    0%, 18% { opacity: 0; }
+    26%, 60% { opacity: 1; }
+    66%, 100% { opacity: 0; }
+}
+
+/* wide: dropped on the line between the two columns, it spans both. */
+.setting-art-move-seam {
+    position: absolute;
+    left: calc(var(--pad) + var(--col) + var(--gap) / 2 - 1px);
+    top: var(--pad);
+    bottom: var(--pad);
+    width: 2px;
+    border-radius: 1px;
+    background: var(--accent-primary);
+    opacity: 0;
+    animation: setting-art-move-seam 4.8s ease-in-out infinite both;
+}
+
+.setting-art-move.is-wide .is-moving,
+.setting-art-move.is-wide .setting-art-move-landing {
+    left: var(--pad);
+    top: calc(var(--pad) + 1.6rem);
+    width: calc(var(--col) * 2 + var(--gap));
+}
+.setting-art-move.is-wide .is-moving { animation: setting-art-move-wide 4.8s ease-in-out infinite both; }
+.setting-art-move.is-wide .setting-art-move-landing { animation: setting-art-move-landing 4.8s ease-in-out infinite both; }
+
+@keyframes setting-art-move-wide {
+    0%, 14% { width: var(--col); transform: translate(calc(var(--col) + var(--gap)), 0); }
+    22% { width: var(--col); transform: translate(calc(var(--col) + var(--gap)), -2px) scale(1.06); }
+    50% { width: var(--col); transform: translate(calc(var(--col) / 2), -2px) scale(1.06); }
+    62%, 100% { width: calc(var(--col) * 2 + var(--gap)); transform: none; }
+}
+
+@keyframes setting-art-move-seam {
+    0%, 34% { opacity: 0; }
+    42%, 58% { opacity: 1; }
+    66%, 100% { opacity: 0; }
+}
+
+/* page: two page tabs over the grid; the block goes into tab 2. */
+.setting-art-move.is-page { padding-top: 0.9rem; height: 5rem; }
+.setting-art-move.is-page .setting-art-move-block:not(.is-moving),
+.setting-art-move.is-page .is-moving { margin-top: 0.9rem; }
+
+.setting-art-move-tabs {
+    position: absolute;
+    top: var(--pad);
+    right: var(--pad);
+    display: flex;
+    gap: 0.25rem;
+}
+
+.setting-art-move-tab {
+    min-width: 0.85rem;
+    padding: 0 0.15rem;
+    border-radius: var(--radius-1, 0.15rem);
+    font-size: 0.62rem;
+    line-height: 0.95rem;
+    text-align: center;
+    color: var(--text-tertiary);
+    border: 1px solid var(--border-primary);
+}
+.setting-art-move-tab.is-here { color: var(--text-primary); border-color: color-mix(in srgb, var(--text-primary) 40%, transparent); }
+.setting-art-move-tab.is-target {
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+    animation: setting-art-move-tab 4.8s ease-in-out infinite both;
+}
+
+.setting-art-move.is-page .is-moving {
+    left: calc(var(--pad) + var(--col) + var(--gap));
+    top: calc(var(--pad) + 1.6rem);
+    opacity: 0;
+    animation: setting-art-move-page 4.8s ease-in-out infinite both;
+}
+.setting-art-move.is-page .setting-art-move-landing { display: none; }
+
+@keyframes setting-art-move-page {
+    0%, 16% { opacity: 1; transform: none; }
+    24% { opacity: 1; transform: translateY(-2px) scale(1.06); }
+    56% { opacity: 1; transform: translate(calc(var(--col) * 1.15), -3rem) scale(0.35); }
+    64%, 100% { opacity: 0; transform: translate(calc(var(--col) * 1.15), -3rem) scale(0.2); }
+}
+
+@keyframes setting-art-move-tab {
+    0%, 56% { transform: none; background: transparent; }
+    62% { transform: scale(1.3); background: color-mix(in srgb, var(--accent-primary) 25%, transparent); }
+    70%, 100% { transform: none; background: color-mix(in srgb, var(--accent-primary) 18%, transparent); }
+}

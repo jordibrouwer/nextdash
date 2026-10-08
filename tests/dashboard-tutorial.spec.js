@@ -11,7 +11,7 @@ const { markWhatsNewSeen } = require('./e2e-helpers');
  * the one that decides whether it opens.
  */
 
-const STEPS = 20;
+const STEPS = 21;
 const TIP = 'dashboardTutorialV3';
 const modal = (page) => page.locator('#app-modal.show .dashboard-tutorial-modal');
 const next = (page) => page.locator('.modal-actions .modal-button').first();
@@ -64,7 +64,7 @@ test.describe('dashboard tour', () => {
         expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenTip('dashboardTutorialV2'))).toBe(true);
         await expect(modal(page)).toBeVisible({ timeout: 10_000 });
         await expect(page.locator('.dashboard-tutorial-step-title'))
-            .toHaveText('New: search the web from the search panel');
+            .toHaveText('New: move categories and widgets where you want them');
     });
 
     test('Next walks every step, and finishing marks it seen', async ({ page }) => {
@@ -79,6 +79,7 @@ test.describe('dashboard tour', () => {
             }
         }
         expect(titles).toEqual([
+            'New: move categories and widgets where you want them',
             'New: search the web from the search panel',
             'New: every app gets its own icon',
             'New: recolour a theme, or save what is on screen',
