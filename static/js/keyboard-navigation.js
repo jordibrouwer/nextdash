@@ -717,7 +717,11 @@ class KeyboardNavigation {
         if (block && block.getAttribute('data-collapsed') === 'true') {
             return false;
         }
-        return true;
+        // A row only a wide tile shows (dashboard-widget-wide-only) is in the
+        // DOM of a narrow one too, drawn as nothing. It took a place in the
+        // walk: ↓ put the cursor on a row nobody could see, and ↑ on the top
+        // row found it "above".
+        return el.getClientRects().length > 0;
     }
 
     /**
@@ -1399,6 +1403,34 @@ class KeyboardNavigation {
             if (this.navigableElements.length === 0) {
                 return;
             }
+            // A block's title holds the // that picks the block up. Shift+Home
+            // puts the focus on the title and leaves the cursor on its row, so
+            // the walk below went on from that row and stepped past the //: the
+            // handle could only be reached by tabbing through every bookmark
+            // before it. On a title, Tab goes into its handle; Shift+Tab on the
+            // handle comes back out to the title.
+            const active = document.activeElement;
+            if (!e.shiftKey) {
+                const handle = active?.matches?.('.category-title')
+                    ? active.querySelector('button.category-reorder-handle')
+                    : null;
+                // The terminal layout hides the // (display: none), and focus()
+                // on a hidden button is a no-op: only swallow Tab when it took.
+                if (handle) {
+                    handle.focus();
+                    if (document.activeElement === handle) {
+                        e.preventDefault();
+                        return;
+                    }
+                }
+            } else if (active?.matches?.('button.category-reorder-handle')) {
+                const title = active.closest('.category-title');
+                if (title) {
+                    e.preventDefault();
+                    title.focus();
+                    return;
+                }
+            }
             const atLast = this.currentIndex === this.navigableElements.length - 1;
             const atFirst = this.currentIndex === 0;
             if ((!e.shiftKey && atLast) || (e.shiftKey && atFirst)) {
@@ -1437,6 +1469,7 @@ class KeyboardNavigation {
                 // types the letter, which clears the selection again: j moved
                 // the cursor and undid itself in the same keystroke.
                 e.stopImmediatePropagation();
+                if (this.stepDownFromTitle()) break;
                 this.navigateDown();
                 break;
 
@@ -1450,6 +1483,7 @@ class KeyboardNavigation {
                 }
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                if (this.stepUpToTitle()) break;
                 this.navigateUp();
                 break;
 
@@ -1512,6 +1546,14 @@ class KeyboardNavigation {
             case 'Enter':
             case ' ': // Space key
                 if (!this._gridNavActive()) {
+                    break;
+                }
+                // On a block's title or its //, the cursor is still on the row
+                // it came from (↑ or Shift+Home leave it there), but the key is
+                // the block's: Enter folds, Space on the // picks the block up.
+                // Opening that row here, ahead of them, sent the reader off to a
+                // bookmark they had walked away from.
+                if (document.activeElement?.closest?.('.category-title')) {
                     break;
                 }
                 e.preventDefault();
@@ -1941,6 +1983,49 @@ class KeyboardNavigation {
         });
         
         return bestMatch;
+    }
+
+    /**
+     * The block a row of the grid belongs to: a category, a collection or a
+     * widget.
+     */
+    blockOfRow(el) {
+        return el?.closest?.('.category[data-category-id], .dashboard-widget[data-widget-id]') || null;
+    }
+
+    /**
+     * ↑ on the top row of a block steps onto the block's title.
+     *
+     * The title carries the block's own keys -- the // that picks it up, F2,
+     * Shift+W, Alt+arrows, the menu -- and Shift+Home was the only key that
+     * reached it, which a Mac keyboard without Home does not have. The cursor
+     * stays on the row, so ↓ comes back to it and ↑ again goes on to whatever
+     * is above, the way it did before. A column's top row counts as the top:
+     * in a spread category every column has one.
+     */
+    stepUpToTitle() {
+        if (this.currentIndex < 0) return false;
+        const active = document.activeElement;
+        if (active?.matches?.('.category-title')) return false;
+        this.updateNavigableElements();
+        const current = this.navigableElements[this.currentIndex];
+        const block = this.blockOfRow(current);
+        if (!current || !block) return false;
+        const above = this.findElementAbove(current);
+        if (above !== -1 && block.contains(this.navigableElements[above])) return false;
+        return this.focusCategoryHeader();
+    }
+
+    /** ↓ on a title goes back to the row the cursor was on in that block. */
+    stepDownFromTitle() {
+        if (this.currentIndex < 0) return false;
+        const title = document.activeElement;
+        if (!title?.matches?.('.category-title')) return false;
+        this.updateNavigableElements();
+        const current = this.navigableElements[this.currentIndex];
+        if (!current || !this.blockOfRow(title)?.contains(current)) return false;
+        this.highlightCurrentElement({ keyboardNav: true });
+        return true;
     }
 
     findElementAbove(currentElement) {

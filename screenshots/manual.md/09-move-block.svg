@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 630 170" width="630" height="170" role="img" aria-labelledby="t d">
+  <title id="t">Moving a block on the dashboard</title>
+  <desc id="d">Three loops: a category lifted from the left column and set down in the middle one, with a dashed box where it will land; a category dropped on the line between two columns so it spans both; a category sent to page 2, where its tab lights up.</desc>
+  <style>
+    .bg { fill: #00060C; }
+    .frame { fill: #021020; stroke: #0E3258; stroke-width: 1; }
+    .block { fill: #061C34; stroke: #0E3258; stroke-width: 1; }
+    .band { stroke: #4EA0DC; stroke-opacity: .55; stroke-width: 3; stroke-linecap: round; }
+    .moving .block { fill: #0A2E4C; stroke: #3DB8FF; stroke-width: 1.5; }
+    .moving .band { stroke: #3DB8FF; stroke-opacity: 1; }
+    .landing { fill: none; stroke: #3DB8FF; stroke-width: 1.5; stroke-dasharray: 5 3; opacity: 0; }
+    .seam { stroke: #3DB8FF; stroke-width: 2; stroke-linecap: round; opacity: 0; }
+    .tab { fill: none; stroke: #0E3258; }
+    .tab-text { fill: #78C8FF; font: 11px ui-monospace, Menlo, monospace; }
+    .tab-target { stroke: #3DB8FF; }
+    .tab-target-text { fill: #3DB8FF; }
+    .caption { fill: #78C8FF; font: 11px ui-monospace, Menlo, monospace; }
+    .anim { transform-box: fill-box; animation-duration: 4.8s; animation-iteration-count: infinite; animation-timing-function: ease-in-out; animation-fill-mode: both; }
+    .place { animation-name: place; }
+    .wide { transform-origin: left center; animation-name: wide; }
+    .page { transform-origin: center; animation-name: page; }
+    .show { animation-name: show; }
+    .seam.anim { animation-name: seam; }
+    .glow { animation-name: glow; }
+    @keyframes place { 0%, 14% { transform: translate(-60px, 0); } 22% { transform: translate(-60px, -3px); } 58% { transform: translate(0, -3px); } 66%, 100% { transform: none; } }
+    @keyframes wide { 0%, 14% { transform: translate(60px, 0) scaleX(.4546); } 22% { transform: translate(60px, -3px) scaleX(.4546); } 50% { transform: translate(30px, -3px) scaleX(.4546); } 62%, 100% { transform: none; } }
+    @keyframes page { 0%, 16% { opacity: 1; transform: none; } 24% { opacity: 1; transform: translateY(-3px); } 56% { opacity: 1; transform: translate(58px, -62px) scale(.3); } 64%, 100% { opacity: 0; transform: translate(58px, -62px) scale(.2); } }
+    @keyframes show { 0%, 18% { opacity: 0; } 26%, 60% { opacity: 1; } 66%, 100% { opacity: 0; } }
+    @keyframes seam { 0%, 34% { opacity: 0; } 42%, 58% { opacity: 1; } 66%, 100% { opacity: 0; } }
+    @keyframes glow { 0%, 56% { fill: none; } 64%, 100% { fill: #0A2E4C; } }
+    @media (prefers-reduced-motion: reduce) { .anim { animation: none; } .landing, .seam, .page { opacity: 0; } .glow { fill: #0A2E4C; } }
+  </style>
+  <defs>
+    <g id="bands"><line class="band" x1="8" y1="12" x2="40" y2="12"/><line class="band" x1="8" y1="22" x2="30" y2="22"/></g>
+  </defs>
+  <rect class="bg" width="630" height="170" rx="8"/>
+
+  <!-- 1: the box shows where it lands -->
+  <rect class="frame" x="12" y="12" width="190" height="122" rx="6"/>
+  <g transform="translate(22 22)"><rect class="block" width="50" height="40" rx="4"/><use href="#bands"/></g>
+  <g transform="translate(82 22)"><rect class="block" width="50" height="40" rx="4"/><use href="#bands"/></g>
+  <g transform="translate(142 22)"><rect class="block" width="50" height="40" rx="4"/><use href="#bands"/></g>
+  <g transform="translate(142 72)"><rect class="block" width="50" height="40" rx="4"/><use href="#bands"/></g>
+  <rect class="landing anim show" x="82" y="72" width="50" height="40" rx="4"/>
+  <g transform="translate(82 72)"><g class="moving anim place"><rect class="block" width="50" height="40" rx="4"/><use href="#bands"/></g></g>
+  <text class="caption" x="12" y="154">The box shows where it lands</text>
+
+  <!-- 2: on the column line, wide -->
+  <rect class="frame" x="222" y="12" width="130" height="122" rx="6"/>
+  <g transform="translate(232 22)"><rect class="block" width="50" height="40" rx="4"/><use href="#bands"/></g>
+  <g transform="translate(292 22)"><rect class="block" width="50" height="40" rx="4"/><use href="#bands"/></g>
+  <line class="seam anim" x1="287" y1="22" x2="287" y2="122"/>
+  <rect class="landing anim show" x="232" y="72" width="110" height="40" rx="4"/>
+  <g transform="translate(232 72)"><g class="moving anim wide"><rect class="block" width="110" height="40" rx="4"/><line class="band" x1="8" y1="12" x2="96" y2="12"/><line class="band" x1="8" y1="22" x2="70" y2="22"/></g></g>
+  <text class="caption" x="222" y="154">On the column line: wide</text>
+
+  <!-- 3: to another page -->
+  <rect class="frame" x="402" y="12" width="190" height="122" rx="6"/>
+  <rect class="tab" x="540" y="18" width="20" height="16" rx="3"/><text class="tab-text" x="550" y="30" text-anchor="middle">1</text>
+  <rect class="tab tab-target anim glow" x="564" y="18" width="20" height="16" rx="3"/><text class="tab-text tab-target-text" x="574" y="30" text-anchor="middle">2</text>
+  <g transform="translate(412 40)"><rect class="block" width="50" height="40" rx="4"/><use href="#bands"/></g>
+  <g transform="translate(472 40)"><rect class="block" width="50" height="40" rx="4"/><use href="#bands"/></g>
+  <g transform="translate(532 40)"><rect class="block" width="50" height="40" rx="4"/><use href="#bands"/></g>
+  <g transform="translate(412 88)"><rect class="block" width="50" height="40" rx="4"/><use href="#bands"/></g>
+  <g transform="translate(472 88)"><g class="moving anim page"><rect class="block" width="50" height="40" rx="4"/><use href="#bands"/></g></g>
+  <text class="caption" x="402" y="154">To another page</text>
+</svg>

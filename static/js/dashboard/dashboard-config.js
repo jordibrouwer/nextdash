@@ -3251,6 +3251,7 @@ class DashboardConfig {
         { tab: 'appearance', titleKey: 'config.helpHeaderTitle', fallback: 'Header & action buttons' },
         { tab: 'appearance', titleKey: 'config.helpAppearanceTitle', fallback: 'Grid, display & date' },
         { tab: 'organizing', titleKey: 'config.helpWorkspaceTitle', fallback: 'Structure' },
+        { tab: 'organizing', titleKey: 'config.helpMoveTitle', fallback: 'Moving categories and widgets' },
         { tab: 'organizing', titleKey: 'config.helpBookmarksTitle', fallback: 'Bookmarks' },
         { tab: 'organizing', titleKey: 'config.helpTagsTitle', fallback: 'Tags & collections' },
         { tab: 'bookmarks', titleKey: 'config.helpLibraryTitle', fallback: 'The Bookmarks view' },
@@ -30705,6 +30706,14 @@ class DashboardConfig {
             { kind: 'grid', value: 3, captionKey: 'config.helpArtColumns3', caption: '3 columns' },
             { kind: 'grid', value: 5, captionKey: 'config.helpArtColumns5', caption: '5 columns' },
         ],
+        // Moving is a movement: the drawings run, and rest on where the block
+        // ended up for a reader who asked for less motion.
+        'config.helpMoveTitle': [
+            { kind: 'blockMove', value: 'place', captionKey: 'config.helpArtMovePlace', caption: 'The box shows where it lands' },
+            { kind: 'blockMove', value: 'wide', captionKey: 'config.helpArtMoveWide', caption: 'On the column line: wide' },
+            { kind: 'blockMove', value: 'page', captionKey: 'config.helpArtMovePage', caption: 'To another page' },
+            { kind: 'keys', value: ['↑', 'Tab', 'Space', '← → ↑ ↓', 'W', 'Enter'], captionKey: 'config.helpArtMoveKeys', caption: 'From a bookmark, without the mouse' },
+        ],
         'config.helpBookmarksTitle': [
             {
                 kind: 'bookmarkRow', value: ['icon', 'tag', 'key', 'dot'],
@@ -31190,6 +31199,8 @@ class DashboardConfig {
             `<div class="config-actions">
                 <button type="button" class="config-btn" data-help-action="spread-tour">${esc(this.t('config.helpSpreadTour', 'Walk me through spreading a category'))}</button>
             </div>`)
+            + this.helpPanel('config.helpMoveTitle', 'Moving categories and widgets',
+                'config.helpMoveBody', '')
             + this.helpPanel('config.helpBookmarksTitle', 'Bookmarks',
                 'config.helpBookmarksBody', '')
             + this.helpPanel('config.helpTagsTitle', 'Tags & collections',

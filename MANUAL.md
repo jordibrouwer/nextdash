@@ -1203,7 +1203,7 @@ With the cursor on a row, a bookmark's own **shortcut** opens it. The letters th
 
 ### 7.4 Acting on a category or widget
 
-`Shift + Home` steps from the rows up to the header. There:
+`Shift + Home` — or `↑` on the block's top row, for a keyboard without Home — steps from the rows up to the header. `↓` goes back to the row, `↑` again goes on to the block above. There:
 
 | Keys | Action |
 |------|--------|
@@ -1215,6 +1215,7 @@ With the cursor on a row, a bookmark's own **shortcut** opens it. The letters th
 | `Space` on the `//` | Pick it up: the arrows move the landing box, `W` switches one column and wide, `Enter` drops, `Esc` cancels |
 | `Ctrl/Cmd + Z` | Undo the last block move while its notice shows |
 | `Delete` | Delete the category (bookmarks are kept) or close the widget |
+| `Tab` | Onto the `//`, where `Space` picks the block up ([§9.2](#92-categories)) |
 | `Shift + F10` | The header menu |
 
 The arrow keys walk into a widget and through its rows; `Enter` does what clicking the row does.
@@ -1460,10 +1461,12 @@ Page names are unique. Each row in Structure → Pages shows how many bookmarks 
 - **Create** — the **+** in a category header or **`Shift + N`** (on the page you are on), `:category new`, **New category…** in the bookmark form, or **Structure → Categories**.
 - **Rename** — `F2`, a long press or double-click on the header, the right-click menu, or Structure → Categories.
 - **Icon** — right-click the header → **Icon…** and type an emoji.
-- **Move** — drag the `//` in the title. The page holds still and a dashed box shows where the category lands; drop it on the line between two columns to make it wide. On the header, `Alt + ←/→` moves it one place and `Shift + Alt + ←/→` to the previous or next page; `Space` on the `//` picks it up for the arrow keys. **Move to page** in the right-click menu sends it to any page, where it lands last. Widgets and collections move the same way, except a tag collection, which shows wherever its tag is. Undo is on the notice, or `Ctrl/Cmd + Z` while it shows.
+- **Move** — drag the `//` in the title. The page holds still and a dashed box shows where the category lands; drop it on the line between two columns to make it wide. On the header, `Alt + ←/→` moves it one place and `Shift + Alt + ←/→` to the previous or next page. Without a mouse: `↑` on the block's top row (or `Shift + Home`) steps onto the title, `Tab` goes to the `//`, and `Space` picks the block up — the arrows move the box, `W` switches one column and wide, `Enter` drops, `Esc` cancels. **Move to page** in the right-click menu sends it to any page, where it lands last. Widgets and collections move the same way, except a tag collection, which shows wherever its tag is. Undo is on the notice, or `Ctrl/Cmd + Z` while it shows.
 - **Overview** — Structure → Categories is one table for every page, grouped by page; a page's row folds its categories away. Chips narrow it to some pages or to a view (*Spread*, *With broken links*, *Empty*), and columns show each category's bookmarks, broken links and whether it spreads. The order of categories is set on the dashboard, not here.
 - **Delete** — `Delete` on the header, the right-click menu, or Structure → Categories. The bookmarks are kept and lose their category; the category goes to the trash.
 - **Duplicate** — on the row in Structure → Categories, with its width, icon and sort, and optionally its bookmarks.
+
+<p align="center"><img src="screenshots/manual.md/09-move-block.svg" alt="Three short loops: a category lifted from the left column and set down in the middle one with a dashed box where it lands, a category dropped on the line between two columns so it spans both, and a category sent to page 2" width="630"></p>
 
 A category you just created stays visible even with *hide empty categories* on, until you leave the page.
 

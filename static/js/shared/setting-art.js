@@ -366,10 +366,45 @@
         );
     }
 
+    /**
+     * A block being moved on the dashboard, as a short loop.
+     *
+     * `place`: lifted out of one column and set down in another, with the
+     * dashed landing box showing where it goes before it gets there.
+     * `wide`: dropped on the line between two columns, so it spans both.
+     * `page`: sent to another page, where the tab it went to takes it.
+     *
+     * The resting state of every part is the end of the move -- the block
+     * where it landed -- so with animations off, or for a reader who asked
+     * their system for less motion, the drawing is the result rather than a
+     * frozen first frame of a story that never starts.
+     */
+    function blockMove(mode) {
+        const m = ['place', 'wide', 'page'].includes(mode) ? mode : 'place';
+        const block = (cls) => `<span class="setting-art-move-block ${cls}">`
+            + `<span class="setting-art-band"></span><span class="setting-art-band"></span></span>`;
+        const tabs = m === 'page'
+            ? `<span class="setting-art-move-tabs"><span class="setting-art-move-tab is-here">1</span>`
+                + `<span class="setting-art-move-tab is-target">2</span></span>`
+            : '';
+        const seam = m === 'wide' ? '<span class="setting-art-move-seam"></span>' : '';
+        const fixed = m === 'wide'
+            ? block('is-a1') + block('is-b1')
+            : block('is-a1') + block('is-b1') + block('is-c1') + (m === 'place' ? block('is-c2') : block('is-a2'));
+        return frame(
+            `<span class="setting-art-move is-${m}">${tabs}${fixed}${seam}`
+            + `<span class="setting-art-move-landing"></span>`
+            + block('is-moving')
+            + `</span>`,
+            'setting-art-frame--move'
+        );
+    }
+
     const BUILDERS = {
         grid, spacing, margins, density, fontSize, flow,
         steps, keys, states, query, bars, spark, meter, dayWindow, toggles, swatches,
         boundary, bookmarkRow, panelMap, depth, pattern, widgetSpan, themeGrid,
+        blockMove,
     };
 
     /**

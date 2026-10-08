@@ -1,0 +1,42 @@
+{
+  "tag": "v1.18.1",
+  "date": "8 October 2026",
+  "releasedAt": "2026-10-08",
+  "modalLead": "Moving a category or widget <strong>with the keyboard</strong> works without a Home key, and Help shows how in <strong>drawings that move</strong>.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>↑ on the top row of a category goes to its title.</strong> No Home key needed: <kbd>↓</kbd> goes back to the row, and <kbd>Tab</kbd> on the title goes to the <code>//</code>, where <kbd>Space</kbd> picks the category up."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Space on the <code>//</code> no longer opens a bookmark</strong> in a new tab, and Enter on a title folds it instead of opening one."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A title and its <code>//</code> show focus in the colour of the selected row,</strong> instead of a ring that was cut off on two sides."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>After dropping a block with the keyboard</strong> the focus stays on its <code>//</code>, ready for the next move."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The cursor no longer stops on hidden rows</strong> of a narrow Health widget."
+        }
+      ]
+    },
+    {
+      "title": "Help",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Help → Structure &amp; bookmarks → Moving categories and widgets</strong> shows the landing box, a block made wide on the column line, and a block sent to another page, in drawings that move. The dashboard tour, the tips, the cheat sheet and its PDF explain it too."
+        }
+      ]
+    }
+  ]
+}

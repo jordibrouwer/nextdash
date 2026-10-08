@@ -192,6 +192,14 @@
         @keyframes dtv-fade { 0%, 30% { opacity: 1; } 40%, 100% { opacity: 0; } }
         /* The panel's left edge is dragged out, and the panel follows. */
         @keyframes dtv-widen { 0%, 18% { transform: translateX(44px); } 46%, 100% { transform: none; } }
+        /* A block carried from the left column to the right one, lifted on the
+           way; the dashed box is where it will land, there before it is. */
+        .dtv-a-carry { animation-name: dtv-carry; }
+        .dtv-a-landing { animation-name: dtv-landing; opacity: 0; }
+        @keyframes dtv-carry { 0%, 14% { transform: translateX(-142px); } 22% { transform: translate(-142px, -3px) scale(1.04); }
+            58% { transform: translateY(-3px) scale(1.04); } 66%, 100% { transform: none; } }
+        @keyframes dtv-landing { 0%, 18% { opacity: 0; } 26%, 60% { opacity: 1; } 66%, 100% { opacity: 0; } }
+        .dtv-landing-box { fill: none; stroke: var(--accent-primary); stroke-width: 1.5; stroke-dasharray: 5 3; }
         @keyframes dtv-hue { 0%, 100% { filter: none; } 33% { filter: hue-rotate(120deg); } 66% { filter: hue-rotate(240deg); } }
 
         @media (prefers-reduced-motion: reduce) { .dtv-anim { animation: none !important; } }
@@ -374,8 +382,37 @@
         const f = (key, fallback) => t(key, fallback);
         const example = exampleBookmark();
         return [
-            // New in v1.17, first because the tour is shown again to every
-            // reader for them: web search, app icons, the theme editor, Unraid.
+            // New in v1.18: categories and widgets move on the dashboard itself.
+            {
+                title: f('dashTourMoveTitle', 'New: move categories and widgets where you want them'),
+                visual: svg(`
+                    <rect x="12" y="8" width="130" height="56" rx="7" class="dtv-panel"/>
+                    ${label(22, 25, '// ' + f('dashTourCatMedia', 'Media'), 'dtv-title')}
+                    ${row(18, 32, 118, 'Jellyfin')}
+                    <rect x="154" y="8" width="130" height="56" rx="7" class="dtv-panel"/>
+                    ${label(164, 25, '// ' + f('dashTourCatDev', 'Development'), 'dtv-title')}
+                    ${row(160, 32, 118, 'Gitea')}
+                    <rect x="154" y="74" width="130" height="56" rx="7" class="dtv-landing-box dtv-anim dtv-a-landing"/>
+                    <g class="dtv-anim dtv-a-carry">
+                        <rect x="154" y="74" width="130" height="56" rx="7" class="dtv-panel"/>
+                        ${label(164, 91, '// ' + f('dashTourCatHome', 'Home lab'), 'dtv-title')}
+                        ${row(160, 98, 118, 'Proxmox', { kind: 'accent' })}
+                    </g>
+                    ${keycap(300, 10, 'Space', anim('press', 0))}
+                    ${label(352, 24, f('dashTourMovePick', 'on // picks it up'), 'dtv-label')}
+                    ${keycap(300, 42, '← → ↑ ↓')}
+                    ${label(372, 56, f('dashTourMoveArrows', 'move the box'), 'dtv-label')}
+                    ${keycap(300, 74, 'W')}
+                    ${label(332, 88, f('dashTourMoveWidth', 'one column or wide'), 'dtv-label')}
+                    ${keycap(300, 106, 'Enter')}
+                    ${label(352, 120, f('dashTourMoveDrop', 'drop'), 'dtv-label')}
+                `, f('dashTourMoveAlt', 'A category carried from the left column to the right one, with a dashed box where it will land, and the keys that do the same')),
+                body: `<p>${esc(f('dashTourMoveBody1',
+                    'Drag the // before a title: the page holds still and a dashed box shows where the block will land. Drop it on the line between two columns to make it wide.'))}</p>
+                    <p>${esc(f('dashTourMoveBody2',
+                    'Without the mouse: ↑ on the top row of a category goes to its title, Tab to the //, and Space picks it up. Move to page in the right-click menu sends it to another page, and Undo brings it back.'))}</p>`,
+            },
+            // New in v1.17: web search, app icons, the theme editor, Unraid.
             {
                 title: f('dashTourWebTitle', 'New: search the web from the search panel'),
                 visual: svg(`

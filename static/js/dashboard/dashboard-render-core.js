@@ -506,7 +506,7 @@ class DashboardRenderCore {
         // In the tab order, straight after the title: Space on it picks the block up.
         prefix.tabIndex = 0;
         prefix.className = 'category-reorder-handle';
-        prefix.textContent = '// ';
+        prefix.append(this.reorderGlyph(), ' ');
         prefix.setAttribute('aria-label', d.formatDashboardLabel('blockMoveHandle', { name: widget.title || this.widgetTypeLabel(widget.type) }, 'Move {name}'));
         // Dragging the handle must not do whatever clicking the header does.
         prefix.addEventListener('click', (e) => e.stopPropagation());
@@ -1747,6 +1747,18 @@ class DashboardRenderCore {
      * So the DOM decides the order of what it holds, and everything else keeps
      * its position relative to the block it used to follow.
      */
+    /**
+     * The "//" of a block title, in a span of its own. The handle's text stays
+     * "// "; the span is what keyboard focus tints, so the tint sits on the
+     * two slashes and not on the space after them.
+     */
+    reorderGlyph() {
+        const glyph = document.createElement('span');
+        glyph.className = 'category-reorder-glyph';
+        glyph.textContent = '//';
+        return glyph;
+    }
+
     /** The blocks as the grid currently holds them, top to bottom. */
     blockOrderFromDom() {
         const grid = document.getElementById('dashboard-layout');
@@ -2153,6 +2165,12 @@ class DashboardRenderCore {
             : null;
         const before = selector ? document.querySelector(selector) : null;
         const hadFocus = before ? document.activeElement?.closest?.(selector) != null : false;
+        // The title or its //: a move dropped with the keyboard leaves the focus
+        // on the handle, and putting it back on the title instead took the next
+        // Space away from the block it had just placed.
+        const focusTarget = document.activeElement?.matches?.('.category-reorder-handle')
+            ? '.category-title .category-reorder-handle'
+            : '.category-title';
         const scrollY = window.scrollY || 0;
         // Where the block sat in the viewport, which is the thing to keep. The
         // absolute offset alone is not enough: the blocks after this one reflow,
@@ -2180,7 +2198,7 @@ class DashboardRenderCore {
                 moved = true;
             }
             if (hadFocus) {
-                el?.querySelector('.category-title')?.focus({ preventScroll: true });
+                el?.querySelector(focusTarget)?.focus({ preventScroll: true });
             }
             return moved;
         };
@@ -2814,7 +2832,7 @@ class DashboardRenderCore {
         // are placed per page. A view over bookmarks keeps the "//" for the
         // look, as plain text: not a button, not a tab stop.
         const prefixSpan = document.createElement(isVirtualBlock ? 'span' : 'button');
-        prefixSpan.textContent = '// ';
+        prefixSpan.append(this.reorderGlyph(), ' ');
         if (isVirtualBlock) {
             prefixSpan.className = 'category-reorder-handle is-static';
             prefixSpan.setAttribute('aria-hidden', 'true');

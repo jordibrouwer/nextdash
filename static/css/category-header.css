@@ -76,9 +76,9 @@ body:not([data-cat-head="theme"]) .dashboard-grid .category-reorder-handle:focus
 
 body:not([data-cat-head="theme"]) .dashboard-grid .category-reorder-handle:focus-visible::before {
     opacity: 1;
-    outline: 2px solid var(--accent-primary);
-    outline-offset: 2px;
-    border-radius: 2px;
+    background: var(--bookmark-row-selected-bg);
+    color: var(--text-primary);
+    border-radius: 4px;
 }
 
 body:not([data-cat-head="theme"]) .dashboard-grid .category-reorder-handle.is-static::before {

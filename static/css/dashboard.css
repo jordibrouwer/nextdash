@@ -2845,6 +2845,11 @@ body[data-category-spacing="airy"] {
     flex: 1 1 auto;
     min-width: 0;
     overflow: hidden;
+    /* Room for the focus tint on the // (below): overflow: hidden cut an
+       outline off on the left and the bottom. Padding and the same negative
+       margin, so nothing in the title moves. */
+    padding: 2px 0 2px 0.2em;
+    margin: -2px 0 -2px -0.2em;
 }
 
 /* The "//" prefix is now a real element that doubles as the drag-reorder handle. */
@@ -2878,12 +2883,27 @@ body[data-category-spacing="airy"] {
     cursor: grabbing;
 }
 
-/* Reached by Tab: it has to show where focus is, in every header style. */
+/* The two slashes, which the focus tint sits on. */
+.category-reorder-glyph {
+    border-radius: 4px;
+    padding: 0 0.2em;
+    margin-left: -0.2em;
+}
+
+/*
+ * Reached by Tab: it has to show where focus is, in every header style. In
+ * the tint of the row the cursor is on, inside the slashes' own box, rather
+ * than an outline around the button: that took the space after // and the
+ * title's letter spacing along, and the label's overflow cut it to two sides.
+ */
 .category-reorder-handle:focus-visible {
     opacity: 1;
-    outline: 2px solid var(--accent-primary);
-    outline-offset: 2px;
-    border-radius: 2px;
+    outline: none;
+}
+
+.category-reorder-handle:focus-visible .category-reorder-glyph {
+    background: var(--bookmark-row-selected-bg);
+    color: var(--text-primary);
 }
 
 /* Other and an unknown category: the "//" for the look, nothing to pick up. */
