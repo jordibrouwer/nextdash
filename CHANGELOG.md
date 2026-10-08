@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.18.1 — 8 October 2026](#v1181--8-october-2026)
 - [v1.18.0 — 8 October 2026](#v1180--8-october-2026)
 - [v1.17.5 — 6 October 2026](#v1175--6-october-2026)
 - [v1.17.4 — 5 October 2026](#v1174--5-october-2026)
@@ -96,6 +97,34 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.18.1 — 8 October 2026
+
+Moving a block with the keyboard works without a Home key and without opening a bookmark on the way: the up arrow reaches a block's title, Tab its `//`, and Space there picks the block up. Focus on a title and on its `//` wears the selected row's tint. Help has a panel of its own on moving categories and widgets, with drawings that move, and the dashboard tour, tips, cheat sheet and manual follow. Held back from the What's new window (`hideFromModal`), so v1.18.0 keeps leading it.
+
+### Dashboard
+- **new — ↑ on the top row of a block steps onto its title.** `Shift + Home` was the only key that reached a title, and most Mac keyboards have no Home. On the top row of a category, collection or widget — every column's top row in a spread category — `↑` now focuses the title and leaves the cursor on the row; `↓` goes back to that row and `↑` again goes on to the block above. `←` and `→` keep walking the columns, also from a title (`stepUpToTitle` and `stepDownFromTitle` in `keyboard-navigation.js`).
+- **fix — Tab on a title reaches its `//`.** With the grid cursor on, Tab walked to the next row and stepped past the handle, so the keyboard pick-up the intro and Help describe could only be reached by tabbing through every bookmark before it. Tab on a title now goes to its `//`, and Shift+Tab on the `//` back to the title; where the terminal layout hides the `//`, Tab falls through as before.
+- **fix — Space on the `//` and Enter on a title no longer open a bookmark.** The cursor stays on its row while the focus is on the title, and the grid's own keydown, which runs first, opened that row in a new tab before the block was picked up or folded. Enter and Space are left to the title and the mover while one of them has the focus.
+- **fix — widget rows only a wide tile shows are no longer cursor stops.** A narrow Health tile kept them in the DOM, drawn as nothing, so `↓` put the cursor on a row nobody could see and `↑` found one "above" the top row (`_isNavigableWidgetElement` now asks for client rects).
+- **fix — after a keyboard drop the focus stays on the `//`.** `redrawKeepingPlace` put it back on the title on every settle frame, so the next Space no longer reached the block just placed; it now restores the element that had it.
+- **fix — focus on a title and on its `//` in the row tint.** A focused title wears the selected row's tint (`--bookmark-row-selected-bg`) instead of a 2px ring, and a focused `//` a small chip of it around the two slashes, which now sit in a span of their own (`reorderGlyph` in `dashboard-render-core.js`). The ring around the handle took the space after `//` and the title's letter spacing along, and `.category-title-label`'s `overflow: hidden` cut it to its top and right sides. The header styles that draw a grip tint the grip the same way.
+
+### Help and docs
+- **new — Help → Structure & bookmarks → Moving categories and widgets.** A panel of its own, opened by three looping drawings — the landing box, the column line that makes a block wide, and a block sent to another page — and the keys from a bookmark without the mouse. The drawings rest on where the block ended up, so with animations off or reduced motion they show the result (`blockMove` in `setting-art.js`, `setting-art.css`). The three bullets on moving in the Structure panel became a pointer to it.
+- **new — the dashboard tour opens on moving a block.** A first step, *New: move categories and widgets where you want them*, carries a category from one column to the next with the dashed box ahead of it and the keys beside it; the tour has 21 steps. Its tip id is unchanged, so readers who finished the tour are not shown it again.
+- **new — a tip for moving without a mouse** (`tipEditMoveBlockKeys`), and the cheat sheet has *Tab on block title*, with `↑` beside `Shift + Home` on the category and widget header rows; `nextDash-cheatsheet.pdf` is regenerated.
+- **docs — MANUAL** §7.4 has `↑` and `Tab`, and §9.2 the keyboard route and an animated drawing of the three moves (`screenshots/manual.md/09-move-block.svg`).
+
+### Tests
+- **tests — `tests/dashboard-block-move-keyboard.spec.js`** drives the keys: arrows and Shift+Home to a title, Tab and Shift+Tab, Space, arrows and Enter, from a row lower in the block; ↑ from a top row and ↓ back to the same row; → from a title to the next column; Space on the `//` and Enter on a title with no page or tab opened; the focus tint on the `//` in all six header styles and on a title. Each fails without its change.
+- **tests — `tests/config-help-move.spec.js`** opens Help on the panel, finds the three drawings and the keys, checks the loop runs, and that with reduced motion the block rests where it landed. `tests/dashboard-tutorial.spec.js` and `tests/dashboard-tutorial-contrast.spec.js` follow the 21 steps.
+
+### Docs
+- **docs — `static/data/whats-new/v1.18.1.json` and its index entry** with `hideFromModal`; `whats-new-stub.js` moves `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v323` and leaves `DASHBOARD_RELEASE` on v1.18.0. `tests/whats-new-hidden-release.spec.js` names v1.18.1 as held back.
+- **docs — locale keys** `helpMoveTitle`, `helpMoveBody`, `helpArtMovePlace`, `helpArtMoveWide`, `helpArtMovePage`, `helpArtMoveKeys`, `tipEditMoveBlockKeys`, `cheatsheet.bmTitleToHandle` and the eight `dashTourMove*` keys in all six languages; `helpKeyboardBody`, `helpWorkspaceBody`, `cheatsheet.navCategoryHeader` and `cheatsheet.wgHeader` updated in all six. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 
