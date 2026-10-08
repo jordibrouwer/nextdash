@@ -8777,9 +8777,9 @@
     "itemCheatsheetHint": "Pulsa ! o F1"
   },
   "demo": {
-    "analyticsNotice": "This demo records visits anonymously, including clicks and screen replays, to improve nextDash. Replays show what is on screen; only what you type into form fields is masked.",
-    "privacyNote": "This demo counts visits anonymously in a separate count. Your own install only counts when you turn it on.",
-    "telemetryRow": "off — not available in the demo",
-    "privacyLocked": "These settings stay as they are in the demo. In your own install they are yours to change."
+    "analyticsNotice": "Esta demo registra las visitas de forma anónima, incluidos clics y grabaciones de pantalla, para mejorar nextDash. Las grabaciones muestran lo que hay en pantalla; solo se oculta lo que escribes en los campos de formulario.",
+    "privacyNote": "Esta demo cuenta las visitas de forma anónima, en un recuento aparte. Tu propia instalación solo cuenta si lo activas.",
+    "telemetryRow": "desactivado — no disponible en la demo",
+    "privacyLocked": "Estos ajustes se quedan como están en la demo. En tu propia instalación los decides tú."
   }
 }

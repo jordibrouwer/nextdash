@@ -8777,9 +8777,9 @@
     "itemCheatsheetHint": "按 ! 或 F1"
   },
   "demo": {
-    "analyticsNotice": "This demo records visits anonymously, including clicks and screen replays, to improve nextDash. Replays show what is on screen; only what you type into form fields is masked.",
-    "privacyNote": "This demo counts visits anonymously in a separate count. Your own install only counts when you turn it on.",
-    "telemetryRow": "off — not available in the demo",
-    "privacyLocked": "These settings stay as they are in the demo. In your own install they are yours to change."
+    "analyticsNotice": "此演示会匿名记录访问，包括点击和屏幕回放，用于改进 nextDash。回放会显示屏幕上的内容；只有你在表单字段中输入的内容会被遮盖。",
+    "privacyNote": "此演示以单独的计数匿名统计访问。你自己的安装只有在你开启后才会计数。",
+    "telemetryRow": "关闭 — 演示中不可用",
+    "privacyLocked": "在演示中这些设置保持不变。在你自己的安装中，由你自行决定。"
   }
 }
