@@ -514,6 +514,32 @@ test('the walk hints move a page, and go dead at the ends', async ({ page }) => 
     await expect.poll(() => current(), { timeout: 10_000 }).toBe(ids[ids.length - 2]);
 });
 
+// The click handler is bound once. It kept the page list from that first
+// call, and d.pages is replaced when a page is added: on the new page the
+// hint looked live and did nothing.
+test('the walk hints still walk after a page is added', async ({ page }) => {
+    await openWithPages(page, 2);
+    await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        d.settings.pageSwitcherStyle = 'segmented';
+        d.setupDOM?.();
+    });
+    const prev = page.locator('.header-track .page-walk-hint[data-page-walk="prev"]');
+    const current = () => page.evaluate(() => Number(window.dashboardInstance.currentPageId));
+    const before = await page.evaluate(() => window.dashboardInstance.pages.map((p) => Number(p.id)));
+    await expect.poll(() => current(), { timeout: 10_000 }).toBe(before[0]);
+
+    await seedPages(page, before.length + 1);
+    const ids = await page.evaluate(() => window.dashboardInstance.pages.map((p) => Number(p.id)));
+    const added = ids[ids.length - 1];
+    await page.evaluate((id) => window.dashboardInstance.pageNav.requestPageNavigation(id), added);
+    await expect.poll(() => current(), { timeout: 10_000 }).toBe(added);
+    await expect(prev).toBeEnabled();
+
+    await prev.click();
+    await expect.poll(() => current(), { timeout: 10_000 }).toBe(ids[ids.length - 2]);
+});
+
 test('with one page both hints are dead', async ({ page }) => {
     await openWithPages(page, 1);
     // Trimmed through the route that removes a page: seeding only ever adds,

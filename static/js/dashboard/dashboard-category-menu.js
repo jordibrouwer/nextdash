@@ -648,9 +648,13 @@ class DashboardCategoryMenu {
             const stored = (d.categories || []).find((c) => String(c.id) === String(category.id));
             if (stored) stored.icon = next;
             d.renderDashboard?.({ animate: false });
+            let saved = false;
             try {
-                await d.renderCore?.saveCategoryOrder?.({ pageId: Number(d.currentPageId) });
+                saved = (await d.renderCore?.saveCategoryOrder?.({ pageId: Number(d.currentPageId) })) !== false;
             } catch (_error) {
+                saved = false;
+            }
+            if (!saved) {
                 if (stored) stored.icon = previous;
                 category.icon = previous;
                 d.renderDashboard?.({ animate: false });

@@ -483,9 +483,17 @@ class Dashboard {
                 await this.health.openHealthView();
             } else if ((bootHash === 'docker' || bootHash.startsWith('docker/') || bootHash.startsWith('docker?'))
                 && this.activeView !== 'docker') {
-                const select = bootHash.startsWith('docker/')
-                    ? decodeURIComponent(bootHash.slice('docker/'.length))
-                    : null;
+                // A malformed escape in a pasted address throws; inside init
+                // that replaced the whole dashboard with the fatal-error page.
+                let select = null;
+                if (bootHash.startsWith('docker/')) {
+                    const raw = bootHash.slice('docker/'.length);
+                    try {
+                        select = decodeURIComponent(raw);
+                    } catch {
+                        select = raw;
+                    }
+                }
                 const filter = bootHash.startsWith('docker?')
                     ? new URLSearchParams(bootHash.slice('docker?'.length)).get('filter')
                     : null;
@@ -1082,7 +1090,12 @@ class Dashboard {
                 return this.health?.openHealthView?.();
             }
             if (hash === 'docker' || hash.startsWith('docker/') || hash.startsWith('docker?')) {
-                const select = hash.startsWith('docker/') ? decodeURIComponent(hash.slice('docker/'.length)) : null;
+                let select = null;
+                if (hash.startsWith('docker/')) {
+                    const raw = hash.slice('docker/'.length);
+                    // A malformed escape throws; a raw name is the better guess.
+                    try { select = decodeURIComponent(raw); } catch { select = raw; }
+                }
                 const filter = hash.startsWith('docker?')
                     ? new URLSearchParams(hash.slice('docker?'.length)).get('filter')
                     : null;

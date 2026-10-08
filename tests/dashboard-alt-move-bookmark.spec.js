@@ -84,6 +84,28 @@ test.describe('moving a bookmark with the keyboard', () => {
         expect(nowAt).toBe(wasAt + 1);
     });
 
+    // The move resolved the row through renderCore.resolveBookmarkReference,
+    // which does not exist: the shortcut did nothing on every row.
+    test('Shift+Alt+ArrowRight moves the row into the next category', async ({ page }) => {
+        await openDashboard(page);
+        const before = await focusMovableRow(page);
+        test.skip(before === null, 'needs a manually-ordered category with two rows');
+        const nextId = await page.evaluate((categoryId) => {
+            const lists = [...document.querySelectorAll('#dashboard-layout .bookmarks-list[data-category-id]')]
+                .filter((el) => el.getAttribute('data-smart-collection') !== 'true');
+            const at = lists.findIndex((el) => el.getAttribute('data-category-id') === categoryId);
+            return at >= 0 && lists[at + 1] ? lists[at + 1].getAttribute('data-category-id') : null;
+        }, before.categoryId);
+        test.skip(nextId === null, 'needs a category after this one');
+
+        await page.keyboard.press('Shift+Alt+ArrowRight');
+
+        await expect.poll(() => page.evaluate(
+            (url) => window.dashboardInstance.bookmarks.find((b) => b.url === url)?.category ?? null,
+            before.url,
+        )).toBe(nextId);
+    });
+
     test('the list a row belongs to is the list, not the row itself', async ({ page }) => {
         await openDashboard(page);
 

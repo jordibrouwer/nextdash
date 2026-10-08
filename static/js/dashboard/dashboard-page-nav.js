@@ -618,8 +618,12 @@ class DashboardPageNav {
             if (!btn.dataset.walkBound) {
                 btn.dataset.walkBound = '1';
                 btn.addEventListener('click', () => {
-                    const pos = pages.findIndex((p) => d.samePageId(p.id, d.currentPageId));
-                    const next = this.dash.pages?.[pos + step];
+                    // The list as it is now: bound once, the handler kept the
+                    // first call's array, and d.pages is replaced on every add,
+                    // delete and reorder.
+                    const list = Array.isArray(d.pages) ? d.pages : [];
+                    const pos = list.findIndex((p) => d.samePageId(p.id, d.currentPageId));
+                    const next = pos < 0 ? null : list[pos + step];
                     if (next) void this.requestPageNavigation(next.id);
                 });
             }
@@ -991,10 +995,12 @@ class DashboardPageNav {
             if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
                 return;
             }
+            // Tabs folded away by fitPageTabs are display:none and cannot take
+            // focus: arrowing onto one left the tablist with no tab stop.
             const tabs = [
                 ...Array.from(container.querySelectorAll('.page-nav-btn')),
                 ...(inboxHost ? Array.from(inboxHost.querySelectorAll('.page-nav-btn')) : []),
-            ];
+            ].filter((tab) => !tab.hidden);
             if (tabs.length === 0) {
                 return;
             }
