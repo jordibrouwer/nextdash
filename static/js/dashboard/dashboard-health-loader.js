@@ -96,7 +96,8 @@ class DashboardHealthLoader {
         const out = new URLSearchParams();
         if (known.includes(filter)) out.set('health', filter);
         const query = (params.get('hv_q') || '').trim();
-        if (query) out.set('q', query);
+        // Not in the public demo: typed text stays out of the address there.
+        if (query && !window.DemoLock?.on) out.set('q', query);
         const qs = out.toString();
         return `#bookmarks${qs ? `?${qs}` : ''}`;
     }

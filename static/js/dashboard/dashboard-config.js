@@ -650,7 +650,9 @@ class DashboardConfig {
             const v = String(value ?? '').trim();
             if (v) params.push(`${key}=${encodeURIComponent(v)}`);
         };
-        add('q', this.bmQuery);
+        // In the public demo what a visitor types stays out of the address: the
+        // replay recorder reads it, and it is theirs, not the demo's.
+        if (!window.DemoLock?.on) add('q', this.bmQuery);
         add('cat', this.bmCategoryFilter);
         add('filter', this.bmCleanupFilter);
         add('health', this.bmHealthFilter);
@@ -13396,6 +13398,8 @@ class DashboardConfig {
                 section: 'behavior',
                 tab: 'privacy',
                 order: 10,
+                demoLocked: true,
+                kind: 'privacy',
                 title: t('config.generalGroupOnboarding', 'Onboarding'),
                 note: t('config.generalGroupOnboardingNote', 'The quick-start card, the occasional keyboard tip, the release summary, and the two review offers.'),
                 controls: [
@@ -14247,6 +14251,8 @@ class DashboardConfig {
                 section: 'behavior',
                 tab: 'privacy',
                 order: 5,
+                demoLocked: true,
+                kind: 'privacy',
                 title: t('config.generalGroupSync', 'Sync & feedback'),
                 note: t('config.generalGroupSyncNote', 'Settings normally follow you to every browser. Keep them on this device to give this one its own appearance and layout.'),
                 controls: [
@@ -14257,6 +14263,12 @@ class DashboardConfig {
                 section: 'behavior',
                 tab: 'privacy',
                 title: t('config.generalGroupPrivacy', 'Privacy'),
+                // Everything on this tab is locked in the public demo (the
+                // demo counts itself, separately), and this panel says what is
+                // recorded there.
+                demoLocked: true,
+                kind: 'privacy',
+                note: window.DemoLock?.privacyNote?.() || undefined,
                 controls: [
                     { field: 'installPingEnabled', type: 'checkbox', label: t('config.installPingLabel', 'Count this install'), disabled: this.dash.telemetryLockedOff === true },
                     { field: 'analyticsOptIn', type: 'checkbox', label: t('config.usageAnalyticsLabel', 'Share anonymous usage analytics'), disabled: this.dash.telemetryLockedOff === true },
@@ -14581,7 +14593,7 @@ class DashboardConfig {
             const locked = panel.demoLocked && window.DemoLock?.on;
             const bulk = (panel.bulk && !this.changedOnly && !locked) ? this.renderPanelBulkActions(panel, prefix) : '';
             const reset = locked ? '' : this.renderPanelResetAction(panel, changedFields);
-            const lockChip = locked ? window.DemoLock.chip() : '';
+            const lockChip = locked ? window.DemoLock.chip(panel.kind) : '';
             const body = controls.map(renderControl).join('');
             return `
             <div class="config-panel${panel.highlight ? ' config-panel--animated' : ''}${locked ? ' config-panel--demo-locked' : ''}">
@@ -15943,15 +15955,24 @@ class DashboardConfig {
 
     renderOnboardingActions() {
         const esc = (v) => this.dash.escapeHtml(v);
-        return `
-            <div class="config-panel config-panel--attached">
+        const body = `
                 <p class="config-panel-note">${esc(this.t('config.resetOnboardingHint', 'Show the quick-start card again on the dashboard.'))}</p>
                 <div class="config-actions">
                     <button type="button" class="config-btn" data-behavior-action="reset-onboarding">${esc(this.t('config.resetOnboardingButton', 'Show quick-start card again'))}</button>
                     <button type="button" class="config-btn" data-behavior-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>
                 </div>
                 ${this.renderTourReplayRow()}
-                ${this.renderNoticeCardsRow()}
+                ${this.renderNoticeCardsRow()}`;
+        // The whole tab is locked in the public demo, this attached panel too.
+        if (window.DemoLock?.on) {
+            return `
+            <div class="config-panel config-panel--attached config-panel--demo-locked">
+                <div>${window.DemoLock.chip('privacy')}</div>
+                <fieldset class="config-demo-lock" disabled>${body}</fieldset>
+            </div>`;
+        }
+        return `
+            <div class="config-panel config-panel--attached">${body}
             </div>`;
     }
 

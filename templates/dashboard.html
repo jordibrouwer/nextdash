@@ -25,7 +25,7 @@
     <script src="{{asset "js/app-version-guard.js"}}"></script>
     <script src="{{asset "js/update-notice.js"}}"></script>
     <script src="{{asset "js/write-api.js"}}"></script>
-    {{if .AnalyticsEnabled}}<script src="{{asset "js/umami-analytics.js"}}" data-nextdash-analytics="on" data-website-id="{{.AnalyticsWebsiteID}}" data-analytics-src="{{.AnalyticsScriptSrc}}" data-release="{{.ReleaseTag}}" data-content="{{.AnalyticsContentJSON}}" data-snapshots="{{.AnalyticsSnapshotsJSON}}"></script>{{end}}
+    {{if .AnalyticsEnabled}}<script src="{{asset "js/umami-analytics.js"}}" data-nextdash-analytics="on" data-website-id="{{.AnalyticsWebsiteID}}" data-analytics-src="{{.AnalyticsScriptSrc}}" data-release="{{.ReleaseTag}}" data-content="{{.AnalyticsContentJSON}}" data-snapshots="{{.AnalyticsSnapshotsJSON}}"{{if .AnalyticsDemo}} data-mode="demo" data-do-not-track="true"{{end}}></script>{{if .AnalyticsRecorder}}<script defer src="{{.AnalyticsRecorderSrc}}" data-website-id="{{.AnalyticsWebsiteID}}" data-do-not-track="true"></script>{{end}}{{end}}
     <script src="{{asset "js/font-presets.js"}}"></script>
     <script src="{{asset "js/device-settings-merge.js"}}"></script>
     <script src="{{asset "js/shared/escape-html.js"}}"></script>

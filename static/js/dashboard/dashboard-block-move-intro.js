@@ -312,6 +312,10 @@
         if (reason !== 'input') schedule(RETRY_MS * 2);
     }
 
+    // How the card ended, as the demo reports it: the block was moved, the
+    // visitor chose Try it or Got it, or dismissed the card.
+    const DEMO_INTRO_OUTCOME = { moved: 'completed', 'try-it': 'try-it', 'got-it': 'got-it', escape: 'skipped' };
+
     /** The card was answered: remembered, and gone. */
     function close(outcome) {
         const r = run;
@@ -323,6 +327,10 @@
         // A tip like the others: the next one waits out the usual gap.
         tips()?.setTipsNotBefore?.(Date.now() + TIP_GAP_MS);
         global.nextdashTrack?.('block-move-intro:closed', { outcome });
+        // The demo counts how its intro ended in the demo's own words.
+        if (global.DemoLock?.on) {
+            global.nextdashTrack?.('demo:intro', { outcome: DEMO_INTRO_OUTCOME[outcome] || outcome });
+        }
         return { handle, id };
     }
 

@@ -103,7 +103,13 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.18.2 — 8 October 2026
 
-A fix for installs behind a reverse proxy, the public demo among them: a visitor can no longer choose the address the write and fetch limits count them under.
+The public demo gets statistics of its own, kept apart from those of real installs, and its Privacy & sync tab is locked. A fix for installs behind a reverse proxy, the public demo among them: a visitor can no longer choose the address the write and fetch limits count them under.
+
+### Demo
+- **new — the demo counts its visits in a website of its own.** `NEXTDASH_DEMO_ANALYTICS_ID` names a separate Umami website (`deploy/demo/docker-compose.yml`); in demo mode only that id is ever written into the page, never the one real installs use, and a real install never gets the demo id. Snapshots stay off and the install ping is off in demo mode. `recorder.js` loads for heatmaps and replays, with `data-do-not-track` on both scripts, and the demo bar says so. Every event carries `mode: 'demo'`, and `demo:refused`, `demo:cta`, `demo:reset-seen`, `demo:intro` and `demo:session-depth` (in bands) show what visitors try (`telemetry.go` `analyticsTarget`, `umami-analytics.js`, `demo-lock.js`).
+- **new — typed text stays out of the demo's addresses.** The tracker sends only path and view (`data-exclude-search`, `data-before-send`), and in demo mode the Inbox and bookmark searches are not written into the URL, so replays and pageviews never carry what a visitor typed. Real installs keep their search deep links.
+- **new — Config → Behavior → Privacy & sync is locked in the demo.** Every panel on the tab is disabled with the lock chip, `:telemetry` is locked in the palette, and the server keeps the stored values for the tab's fields when the demo saves settings.
+- **tests — `telemetry_test.go`** covers which website id lands on the page in every mode and that the demo keeps the Privacy & sync values; `tests/demo-analytics.spec.js` checks the script tags, the events, that no typed text reaches an address in the demo (and does on an ordinary install), and the locked tab.
 
 ### Security
 - **fix — the client address behind a named proxy comes from the right of `X-Forwarded-For`.** A proxy such as Traefik or nginx appends the address it saw and keeps whatever the request already carried, and `clientIP()` took the first entry: a visitor who sent their own `X-Forwarded-For` picked a fresh rate-limit bucket on every request, which emptied the demo's 120 writes a minute per address and the limits on `/api/bookmark-preview`, `/api/icon/from-url` and `/api/ping`. The header is now read from the right: each address inside `NEXTDASH_TRUSTED_PROXIES` is skipped and the first one before them is the client; garbage on the way still falls back to the peer (`rate_limit.go`).

@@ -246,7 +246,7 @@ const CheckMode = {
         // The demo checks no site: every surface that offers the modes ends
         // here, so this is where Periodic and Monitor are turned away.
         if (window.DemoLock?.on && mode !== CheckMode.OFF) {
-            window.DemoLock.explain();
+            window.DemoLock.explain('check-mode');
             return 'refused';
         }
         const target = String(url || '').trim();

@@ -2634,7 +2634,7 @@ class DashboardHealth {
     async retestAll(button) {
         if (this._retestRunning) return;
         if (window.DemoLock?.on) {
-            window.DemoLock.explain();
+            window.DemoLock.explain('retest-all');
             return;
         }
         this._retestRunning = true;

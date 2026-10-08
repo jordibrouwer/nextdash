@@ -1282,6 +1282,12 @@ type htmlPageData struct {
 	AnalyticsWebsiteID string
 	AnalyticsScriptSrc string
 	AnalyticsEnabled   bool
+	// AnalyticsDemo marks the tracker's events as the demo's (data-mode) and
+	// AnalyticsRecorder adds the heatmap and replay recorder. Both are true
+	// only in demo mode, counting into the demo's own website.
+	AnalyticsDemo        bool
+	AnalyticsRecorder    bool
+	AnalyticsRecorderSrc string
 	// TelemetryLockedOff mirrors DISABLE_TELEMETRY so config can render the
 	// Privacy checkbox disabled and explain why it cannot be changed.
 	TelemetryLockedOff bool
@@ -1308,6 +1314,7 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	 * than a flash of the default followed by a correction from a script.
 	 */
 	surfaces := resolveSurfaces(settings, themeID, themeColorsFor(themeID, colors))
+	analyticsID, analyticsOn, analyticsSnapshots := analyticsTarget(settings)
 	settings.ThemeDepth = surfaces.Depth
 	settings.GlowStrength = surfaces.Glow
 	settings.ThemeEffects = surfaces.Effects
@@ -1324,11 +1331,14 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 		WriteToken:             writeAccessToken(),
 		AppVersion:             appVersionToken(),
 		ReleaseTag:             releaseTag(),
-		AnalyticsWebsiteID:     analyticsWebsiteID,
+		AnalyticsWebsiteID:     analyticsID,
 		AnalyticsScriptSrc:     analyticsScriptSrc,
-		AnalyticsEnabled:       analyticsEnabled(settings),
-		AnalyticsContentJSON:   h.analyticsContentJSON(analyticsEnabled(settings)),
-		AnalyticsSnapshotsJSON: h.analyticsSnapshotsJSON(analyticsEnabled(settings)),
+		AnalyticsEnabled:       analyticsOn,
+		AnalyticsDemo:          analyticsOn && demoMode(),
+		AnalyticsRecorder:      analyticsRecorderOn(analyticsID, analyticsOn),
+		AnalyticsRecorderSrc:   analyticsRecorderSrc,
+		AnalyticsContentJSON:   h.analyticsContentJSON(analyticsOn && analyticsSnapshots),
+		AnalyticsSnapshotsJSON: h.analyticsSnapshotsJSON(analyticsOn && analyticsSnapshots),
 		TelemetryLockedOff:     telemetryDisabledByEnv(),
 		UpdateCheckLockedOff:   updateCheckDisabledByEnv(),
 		DemoMode:               demoMode(),
@@ -2452,7 +2462,9 @@ func (h *Handlers) GetSettings(w http.ResponseWriter, r *http.Request) {
 	// Report the effective value: with DISABLE_TELEMETRY set, analytics is off no
 	// matter what is stored, and clients should render it that way. The stored
 	// setting is left untouched so it returns when the operator lifts the switch.
-	if telemetryDisabledByEnv() {
+	// The demo counts itself (analyticsTarget), so neither switch is the
+	// visitor's: both read as off, as they did under DISABLE_TELEMETRY.
+	if telemetryDisabledByEnv() || demoMode() {
 		settings.AnalyticsOptIn = false
 		settings.InstallPingEnabled = false
 	}
@@ -2557,12 +2569,24 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	// whatever is already stored rather than writing false: the switch suppresses
 	// analytics while it is set, and the user's own preference must survive it so
 	// it returns unchanged once the operator unsets it.
-	if telemetryDisabledByEnv() {
+	if telemetryDisabledByEnv() || demoMode() {
 		settings.AnalyticsOptIn = h.store.GetSettings().AnalyticsOptIn
 		settings.InstallPingEnabled = h.store.GetSettings().InstallPingEnabled
 	}
 	if updateCheckDisabledByEnv() {
 		settings.UpdateCheckEnabled = h.store.GetSettings().UpdateCheckEnabled
+	}
+	// Config → Behavior → Privacy & sync is locked in the public demo, and the
+	// server holds to it: a page that sends these back changes nothing. (The
+	// two analytics switches are kept above; "keep settings on this device" is
+	// the browser's own and never reaches the server.)
+	if demoMode() {
+		stored := h.store.GetSettings()
+		settings.EnableSessionTips = stored.EnableSessionTips
+		settings.EnableTagSuggestionNotice = stored.EnableTagSuggestionNotice
+		settings.EnableHealthReviewNotice = stored.EnableHealthReviewNotice
+		settings.UpdateCheckEnabled = stored.UpdateCheckEnabled
+		settings.ShowSiteNews = stored.ShowSiteNews
 	}
 	// The Unraid server is written by /api/unraid/settings alone. The page
 	// sends back every setting it loaded, so a copy from before a change there

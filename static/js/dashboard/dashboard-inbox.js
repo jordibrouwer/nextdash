@@ -1506,9 +1506,12 @@ class DashboardInbox {
             setOrDelete('ib_filter', this.filter, this.filter === 'all');
             setOrDelete('ib_sort', this.sort, this.sort === 'newest');
             setOrDelete('ib_dir', this.sortDir, this.sortDir !== 'desc');
-            setOrDelete('ib_q', String(this.searchQuery || '').trim(), !String(this.searchQuery || '').trim());
-            setOrDelete('ib_domain', String(this.domainFilter || '').trim(), !String(this.domainFilter || '').trim());
-            setOrDelete('ib_tag', String(this.tagFilter || '').trim(), !String(this.tagFilter || '').trim());
+            // In the public demo what a visitor types stays out of the address:
+            // the replay recorder reads it, and it is theirs, not the demo's.
+            const keepTyped = !window.DemoLock?.on;
+            setOrDelete('ib_q', String(this.searchQuery || '').trim(), !keepTyped || !String(this.searchQuery || '').trim());
+            setOrDelete('ib_domain', String(this.domainFilter || '').trim(), !keepTyped || !String(this.domainFilter || '').trim());
+            setOrDelete('ib_tag', String(this.tagFilter || '').trim(), !keepTyped || !String(this.tagFilter || '').trim());
             setOrDelete('ib_id', String(this.focusItemId || '').trim(), !String(this.focusItemId || '').trim());
             const query = params.toString();
             history.replaceState(history.state, '', `${url.pathname}${query ? `?${query}` : ''}#inbox`);

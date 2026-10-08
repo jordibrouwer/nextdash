@@ -388,6 +388,7 @@ Every variable is listed in the reference table below.
 | `NEXTDASH_DEMO` | off | `1` turns the instance into a public demo: seeded data that resets itself. It empties `NEXTDASH_DATA_DIR` on every start and reset, so it needs a directory of its own and refuses one with a real install. Never set it on your own install. See `deploy/demo/docker-compose.yml` |
 | `NEXTDASH_DEMO_RESET_MINUTES` | `30` | Demo only: minutes between resets |
 | `NEXTDASH_DEMO_IDLE_MINUTES` | `10` | Demo only: reset this many minutes after the last change |
+| `NEXTDASH_DEMO_ANALYTICS_ID` | unset | Demo only: the Umami website id the demo counts its visits into, separate from every install's count. Unset, the demo counts nothing. Ignored outside the demo |
 | `NEXTDASH_RUN_AS_ROOT` | off | `1` keeps the container running as root |
 | `NEXTDASH_BUNDLE` | on | `off` serves scripts and stylesheets one by one, for debugging |
 | `NEXTDASH_STATIC_MUTABLE` | off | `1` re-hashes assets on every request, for a bind-mounted `./static` |
