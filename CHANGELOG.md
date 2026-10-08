@@ -103,19 +103,62 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.18.2 — 8 October 2026
 
-The public demo gets statistics of its own, kept apart from those of real installs, and its Privacy & sync tab is locked. A fix for installs behind a reverse proxy, the public demo among them: a visitor can no longer choose the address the write and fetch limits count them under.
+The public demo gets statistics of its own, kept apart from those of real installs, and its Privacy & sync tab is locked. A fix for installs behind a reverse proxy, the public demo among them: a visitor can no longer choose the address the write and fetch limits count them under. Also a round of bug fixes across the dashboard, Bookmarks, Inbox and Health: two paths that could empty a page or the inbox after a read error, lost updates between a save and a background write, and a set of keyboard, triage and edit-form edge cases. v1.18.2 leads the What's new window, and v1.18.1, held back when it shipped, shows under it.
 
 ### Demo
 - **new — the demo counts its visits in a website of its own.** `NEXTDASH_DEMO_ANALYTICS_ID` names a separate Umami website (`deploy/demo/docker-compose.yml`); in demo mode only that id is ever written into the page, never the one real installs use, and a real install never gets the demo id. Snapshots stay off and the install ping is off in demo mode. `recorder.js` loads for heatmaps and replays, with `data-do-not-track` on both scripts, and the demo bar says so. Every event carries `mode: 'demo'`, and `demo:refused`, `demo:cta`, `demo:reset-seen`, `demo:intro` and `demo:session-depth` (in bands) show what visitors try (`telemetry.go` `analyticsTarget`, `umami-analytics.js`, `demo-lock.js`).
 - **new — typed text stays out of the demo's addresses.** The tracker sends only path and view (`data-exclude-search`, `data-before-send`), and in demo mode the Inbox and bookmark searches are not written into the URL, so replays and pageviews never carry what a visitor typed. Real installs keep their search deep links.
 - **new — Config → Behavior → Privacy & sync is locked in the demo.** Every panel on the tab is disabled with the lock chip, `:telemetry` is locked in the palette, and the server keeps the stored values for the tab's fields when the demo saves settings.
+- **i18n — the demo notices are translated** into Dutch, German, French, Spanish and Chinese: the analytics notice, the privacy note, the telemetry row and the locked-tab line (`locales/*.json`, `demo.*`).
 - **tests — `telemetry_test.go`** covers which website id lands on the page in every mode and that the demo keeps the Privacy & sync values; `tests/demo-analytics.spec.js` checks the script tags, the events, that no typed text reaches an address in the demo (and does on an ordinary install), and the locked tab.
+
+### Data
+- **fix — a page file that cannot be read is no longer saved as an empty page.** `SavePage` treated any read error as "new page", so one failed read while pages were renamed or reordered wrote that page back with no bookmarks. Only a missing file is new now; any other error is returned (`models.go`).
+- **fix — an unreadable `inbox.json` is no longer overwritten.** A read or decode error gave an empty inbox, and the next add — from the extension, say — saved that over the file. Every inbox write now reads through `readInboxDataForWriteLocked` and stops on the error; the list still reads as empty (`inbox.go`).
+- **fix — saving a page keeps opens and check results written meanwhile.** `SaveBookmarks` copied the server-owned fields from a read taken outside the store lock, so an open or a monitor result landing in between was lost. The copy and the write share one lock now (`SaveBookmarksByPageCarrying`).
+- **fix — merging duplicates no longer writes back older copies of the pages.** `MergeDuplicates` read, cut and saved whole pages outside the lock; it runs inside `MutateBookmarkPages`, and a request that does not match the stored pages still answers 400.
+
+### Dashboard
+- **fix — `Shift + Alt + ←/→` moves a bookmark into the category beside it.** It asked `renderCore` for a method only the dashboard has, so the move never ran (`keyboard-navigation.js`).
+- **fix — the walk hints beside the page strip keep working after a page is added or deleted.** The click handler kept the page list from its first call; it reads `d.pages` now (`dashboard-page-nav.js`).
+- **fix — a background reload no longer cancels a page you just clicked.** The revision check on window focus shared the load id with page switches, so the click's load gave up and the old page was drawn again. Quiet loads skip while a load you started is running (`dashboard-data.js`).
+- **fix — keyboard moves skip what is hidden.** `Alt + ↑/↓` swapped with rows behind *show more* or hidden by a filter, and the arrow keys in the page tabs landed on tabs folded away, leaving the tab list without a tab stop.
+- **fix — `Alt + →` on the `//` leaves the focus on the `//`,** not the title, so the next Space picks the block up instead of folding it.
+- **fix — a failed category rename or icon change is put back.** `saveCategoryOrder` swallowed its own failure, so the rollbacks around it never ran; it answers true or false now.
+- **fix — the peek card goes with the rows it belongs to** on a full render, and a malformed `#docker/…` address no longer replaces the dashboard with the error page.
+
+### Bookmarks
+- **fix — editing a URL and moving the bookmark to another page no longer leaves a duplicate.** Picking a page reset the form's baseline to the edited values, so the delete on the old page used the new URL and missed. A place change now re-baselines only page and category, which also keeps Esc from dropping earlier edits without asking (`dashboard-inline-edit.js`).
+- **fix — a shortcut used on another page is caught in the form,** whatever *global shortcuts* says. The server refuses it either way, and caught only there the form had already closed with the edits in it.
+- **fix — bulk delete and move act on the rows as they are after the dialog.** A refresh while the confirm or Move popover was open left old indexes behind, and the delete removed other bookmarks (`dashboard-multi-select.js`, `dashboard-tag-filter.js`). The page move passes its rows in instead of swapping the tag filter's reader for the duration.
+- **fix — right-click and `;` recover from a failed module load.** The failed script tag stayed and every later try waited on it until a reload (`dashboard-bookmark-interactions-loader.js`).
+- **fix — smaller ones:** the multi-select mark survives a smart-collection refresh and a cancelled edit; the duplicate check in the form uses the server's URL key; the Bookmarks panel's shortcut field keeps letters only.
+
+### Inbox
+- **fix — one failed refresh no longer empties the list.** The inbox showed *No links yet* and every keep or delete after it failed (`loadItems`).
+- **fix — no double actions.** Open and mark read in triage, and Keep and Delete in the side panel and the right-click menu, run once per card while one is pending; a held or double press opened a link twice or skipped a card unseen.
+- **fix — after d, K or z the next card is the current copy,** with its preview; Keep from the old copy saved the bookmark with the domain for a name.
+- **fix — a keep whose inbox cleanup fails says so** instead of *Kept*, and the card stays; bulk Keep counts and undoes only what the batch removed.
+- **fix — two tag suggestions clicked quickly both stick,** added on the server instead of each sending the whole list.
+- **fix — fetched titles and descriptions are capped like typed ones,** and an icon fetched for a link deleted meanwhile is removed (`inbox_handlers.go`).
+
+### Health
+- **fix — Retest all past 250 bookmarks takes the least recently checked first.** It took the same first 250 in page order on every run, and the rest were never re-checked.
+- **fix — a write during a report build no longer leaves a stale report for three minutes;** an invalidation during the build keeps it unmarked (`healthReportInvalidations`).
+- **fix — a re-check that could not be saved or was refused says so.** The status write was not checked, so a failure still showed *Reachable again*; `p` in the review session drops no result; a refresh asked for during another one runs once more after it.
+- **fix — `skipped` in a batch status update counts URLs,** and is no longer negative when a URL is on two rows.
 
 ### Security
 - **fix — the client address behind a named proxy comes from the right of `X-Forwarded-For`.** A proxy such as Traefik or nginx appends the address it saw and keeps whatever the request already carried, and `clientIP()` took the first entry: a visitor who sent their own `X-Forwarded-For` picked a fresh rate-limit bucket on every request, which emptied the demo's 120 writes a minute per address and the limits on `/api/bookmark-preview`, `/api/icon/from-url` and `/api/ping`. The header is now read from the right: each address inside `NEXTDASH_TRUSTED_PROXIES` is skipped and the first one before them is the client; garbage on the way still falls back to the peer (`rate_limit.go`).
 
 ### Tests
 - **tests — `TestClientIPIgnoresWhatTheClientPutBeforeTheProxy`** sends fifty requests through a named proxy, each with a made-up address in front of the real one, and expects one bucket; a chain of two proxies gives the address before them. It fails on the old first-entry read.
+- **tests — `TestInboxAddRefusesUnreadableInbox`, `TestSavePageRefusesUnreadablePageFile` and `TestRetestAllOverCapTakesOldestChecked`,** and two Playwright tests: `Shift+Alt+ArrowRight` in `tests/dashboard-alt-move-bookmark.spec.js` and the walk hints after a page is added in `tests/dashboard-page-strip.spec.js`. Each fails without its fix.
+
+### Docs
+- **docs — `static/data/whats-new/v1.18.2.json` and its index entry**; `whats-new-stub.js` moves `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v324` and `DASHBOARD_RELEASE` to v1.18.2, so the What's new window opens again. v1.18.1 loses its `hideFromModal`, and `tests/whats-new-hidden-release.spec.js` expects v1.18.2 to lead with v1.18.1 under it. `go generate` refreshed `asset_hashes_gen.go`.
+
+---
 
 ## v1.18.1 — 8 October 2026
 

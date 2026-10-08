@@ -1,0 +1,81 @@
+{
+  "tag": "v1.18.2",
+  "date": "8 October 2026",
+  "releasedAt": "2026-10-08",
+  "modalLead": "A round of fixes across the <strong>dashboard, Bookmarks, Inbox and Health</strong>, and the public demo gets <strong>statistics of its own</strong>.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong><kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>←</kbd>/<kbd>→</kbd> moves a bookmark</strong> into the category beside it again."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A page you just clicked stays open</strong> when the dashboard reloads in the background."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Keyboard moves skip rows and tabs you cannot see,</strong> such as rows behind <em>show more</em> or hidden by a filter."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A failed category rename or icon change is put back</strong> instead of showing a change that was never saved."
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Changing a URL and moving the bookmark to another page</strong> no longer leaves a copy behind on the old page."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Bulk delete and move act on the right bookmarks</strong> when the list refreshes while the dialog is open."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A page can no longer end up empty</strong> after a moment where its file could not be read."
+        }
+      ]
+    },
+    {
+      "title": "Inbox",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>One failed refresh no longer empties the list,</strong> and a held or double key press no longer opens a link twice or skips a card."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A keep whose cleanup fails says so,</strong> and the card stays in the inbox."
+        }
+      ]
+    },
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Retest all on large collections</strong> checks the least recently checked bookmarks first, so every bookmark gets its turn."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A re-check that could not be saved says so</strong> instead of showing <em>Reachable again</em>."
+        }
+      ]
+    },
+    {
+      "title": "Demo",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The public demo counts its visits separately</strong> from real installs, and says so in the demo bar. Its Privacy &amp; sync tab is locked."
+        }
+      ]
+    }
+  ]
+}
