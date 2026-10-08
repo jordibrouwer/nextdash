@@ -2153,6 +2153,12 @@ class DashboardRenderCore {
             : null;
         const before = selector ? document.querySelector(selector) : null;
         const hadFocus = before ? document.activeElement?.closest?.(selector) != null : false;
+        // The title or its //: a move dropped with the keyboard leaves the focus
+        // on the handle, and putting it back on the title instead took the next
+        // Space away from the block it had just placed.
+        const focusTarget = document.activeElement?.matches?.('.category-reorder-handle')
+            ? '.category-title .category-reorder-handle'
+            : '.category-title';
         const scrollY = window.scrollY || 0;
         // Where the block sat in the viewport, which is the thing to keep. The
         // absolute offset alone is not enough: the blocks after this one reflow,
@@ -2180,7 +2186,7 @@ class DashboardRenderCore {
                 moved = true;
             }
             if (hadFocus) {
-                el?.querySelector('.category-title')?.focus({ preventScroll: true });
+                el?.querySelector(focusTarget)?.focus({ preventScroll: true });
             }
             return moved;
         };
