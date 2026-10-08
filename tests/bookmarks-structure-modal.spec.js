@@ -178,10 +178,11 @@ test.describe('pages and categories modal: the rest of its actions', () => {
     await expect.poll(() => posted.length, { timeout: 10_000 }).toBeGreaterThan(0);
     expect(posted.every((p) => p.url.includes(`page=${target}`))).toBe(true);
     // The POSTs are stubbed, so each one carries the categories made so far.
-    await expect.poll(() => new Set(posted.flatMap((p) => p.body.map((c) => String(c.id)))).size,
-      { timeout: 10_000 }).toBeGreaterThanOrEqual(cats.length);
-    const made = [...new Set(posted.flatMap((p) => p.body.map((c) => String(c.id))))];
-    expect(made).toEqual(expect.arrayContaining(cats));
+    // Waited on by name, not by count: the body also carries what the target
+    // page already holds, so a count can be reached before the last category
+    // has been posted.
+    const made = () => [...new Set(posted.flatMap((p) => p.body.map((c) => String(c.id))))];
+    await expect.poll(made, { timeout: 10_000 }).toEqual(expect.arrayContaining(cats));
   });
 
   test('Remove all empty pages deletes the ones without bookmarks, after asking', async ({ page }) => {

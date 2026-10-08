@@ -41,27 +41,34 @@ test('the bulk panel offers both fetches, counting what they would ask for', asy
 test('fetching previews walks the selection behind the counting bar', async ({ page }) => {
     /** @type {string[]} */
     const asked = [];
+    const answer = (route) => route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ title: 'From the sweep', description: 'Fetched here' }),
+    });
+    /*
+     * The side panel asks for a row's preview as it shows it. Answered before
+     * the click, that request gave a row its preview after the button had
+     * counted it, and the sweep skipped the row: one asked where the button
+     * said two, or none at all and no bar. The panel's requests wait until the
+     * sweep has started, so the button's count is still true when it runs.
+     */
+    /** @type {import('@playwright/test').Route[]} */
+    const held = [];
+    let sweeping = false;
     await page.route('**/api/bookmark-preview**', async (route) => {
+        if (!sweeping) { held.push(route); return; }
         asked.push(new URL(route.request().url()).searchParams.get('url') || '');
         // Slow enough for the bar to be seen.
         await new Promise((resolve) => setTimeout(resolve, 400));
-        await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify({ title: 'From the sweep', description: 'Fetched here' }),
-        });
+        await answer(route);
     });
     await openBookmarks(page);
     await tickRows(page, 2);
-    // The side panel asks for a row's preview as it shows it; the sweep's
-    // requests are the ones counted.
-    asked.length = 0;
-    // The panel's own request can land and give a row its preview before the
-    // click, and the sweep skips rows that have one: the button says how many
-    // rows it will ask for, so the sweep is held to that number, not to two.
     const button = page.locator('#config-bm-panel [data-bm-bulk-action="previews"]');
     const targets = Number(/\((\d+)\)/.exec(await button.textContent())?.[1] || 0);
-    expect(targets).toBeGreaterThan(0);
+    expect(targets).toBe(2);
+    sweeping = true;
     await button.click();
 
     const overlay = page.locator('#nextdash-progress-overlay');
@@ -70,6 +77,7 @@ test('fetching previews walks the selection behind the counting bar', async ({ p
     await expect(overlay.locator('[data-progress-cancel]')).toBeVisible();
 
     await expect.poll(() => asked.length, { timeout: 20_000 }).toBe(targets);
+    await Promise.all(held.map((route) => answer(route).catch(() => {})));
     // On the bookmarks themselves, not only in the server's preview cache.
     await expect.poll(async () => page.evaluate(async () => {
         const rows = await (await fetch('/api/bookmarks?page=1', { cache: 'no-store' })).json();
