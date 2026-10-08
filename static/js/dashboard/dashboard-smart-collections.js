@@ -90,6 +90,8 @@ class DashboardSmartCollections {
         // and no observer, and overlap the category below in packed columns.
         window.DashboardPackedMasonry?.observe(container);
         d.syncBookmarkGridA11y();
+        // New rows carry no selection mark; the count would still include them.
+        d.multiSelect?.sync?.();
         d.keyboardNavigation?.scheduleUpdate?.();
     }
 
