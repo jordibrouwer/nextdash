@@ -93,7 +93,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-10-06</Date>
+  <Date>2026-10-08</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
