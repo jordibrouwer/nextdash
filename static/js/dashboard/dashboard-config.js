@@ -180,14 +180,18 @@ class DashboardConfig {
          *
          * Kept per tab rather than shared: the tabs hold different things, and a
          * query typed against tags that survived a switch to pages would filter
-         * a list you never filtered. 'manual' is each list's stored order — the
-         * one the ↑ ↓ buttons write — and stays the default so the tabs open
-         * looking the way they always have.
+         * a list you never filtered. 'manual' is a list's stored order and the
+         * default where Structure still sets that order (pages, finders).
          */
         this.ptQuery = { categories: '', tags: '', pages: '', finders: '' };
-        // Tags default to 'name': they are derived from bookmarks and have no
-        // stored order of their own, so there is no "manual" to fall back to.
-        this.ptSort = { categories: 'manual', tags: 'name', pages: 'manual', finders: 'manual' };
+        // Tags and categories default to 'name'. Tags are derived from
+        // bookmarks and have no stored order; categories are ordered on the
+        // dashboard, so their stored order is not offered here.
+        this.ptSort = { categories: 'name', tags: 'name', pages: 'manual', finders: 'manual' };
+        // Filter chips above a Structure table: which page, which view.
+        this.ptChip = { categories: { page: 'all', view: 'all' } };
+        // Page ids whose group of categories is folded shut, for this session.
+        this._catCollapsed = new Set();
         // Appearance sub-tab: the one last looked at, else Look.
         this._appearanceTab = DashboardConfig.readRememberedTab('appearance') || 'general';
         this._finders = null;
@@ -1044,6 +1048,7 @@ class DashboardConfig {
         if (d.activeView === DashboardConfig.VIEW) {
             if (targetSection !== this.section) {
                 this.section = targetSection;
+                if (targetSection === 'structure') this.forgetCategoryLists();
                 this.render();
                 this.restoreConfigHash();
             }
@@ -1058,6 +1063,9 @@ class DashboardConfig {
         this.clearListKeyboardSelection();
         this.clearBookmarkKeyboardSelection();
         this.section = targetSection;
+        // The dashboard may have written categories since the Structure table
+        // last read them (a move to another page, say): read them again.
+        this.forgetCategoryLists();
         // Started here and awaited at the render, not before it: the section's
         // own data load runs in the meantime, and awaiting up here delayed it
         // enough that a refresh could land after the first paint.
@@ -2441,15 +2449,12 @@ class DashboardConfig {
     listRowKey(row) {
         if (!row) return null;
         if (row.hasAttribute('data-page-row')) return `page:${row.getAttribute('data-page-row')}`;
-        if (row.hasAttribute('data-cat-row')) return `cat:${row.getAttribute('data-cat-row')}`;
+        // The page is part of the key: rows of several pages share one table,
+        // and their indexes repeat from group to group.
+        if (row.hasAttribute('data-cat-row')) return `cat:${row.getAttribute('data-cat-page') || ''}:${row.getAttribute('data-cat-row')}`;
         if (row.hasAttribute('data-tag-row')) return `tag:${row.getAttribute('data-tag-row')}`;
         if (row.hasAttribute('data-finder-index')) return `finder:${row.getAttribute('data-finder-index')}`;
         if (row.hasAttribute('data-collection-row')) return `collection:${row.getAttribute('data-collection-row')}`;
-        // Widget rows spliced into the categories list by interleaveWidgetRows.
-        // Without a key of their own they all returned null -- and since the
-        // stored key is null too until an arrow key is pressed, every widget row
-        // matched it at once and the whole list wore the cursor accent.
-        if (row.hasAttribute('data-block-row')) return `block:${row.getAttribute('data-block-row')}`;
         return null;
     }
 
@@ -2588,6 +2593,16 @@ class DashboardConfig {
             && target?.matches?.('button, a, input, select, textarea')
         );
 
+        // A button of the list's own panel outside the rows: a group head, a
+        // chip. It keeps Enter and Space while it has the focus; moving the
+        // row cursor takes the focus off it, as it does off the tag filter, so
+        // Enter after an arrow edits the row rather than pressing it again.
+        const onBodyButton = Boolean(
+            !onRowControl
+            && target?.matches?.('button')
+            && target?.closest?.(`#${this.listKeyboardBodyId()}`)
+        );
+
         const rows = this.getListKeyboardRows();
         if (!rows.length) return false;
 
@@ -2595,7 +2610,7 @@ class DashboardConfig {
             if (onRowControl) return false;
             e.preventDefault();
             e.stopImmediatePropagation();
-            if (isTagFilter) target.blur();
+            if (isTagFilter || onBodyButton) target.blur();
             this.moveListKeyboardSelection(1, rows);
             return true;
         }
@@ -2603,13 +2618,14 @@ class DashboardConfig {
             if (onRowControl) return false;
             e.preventDefault();
             e.stopImmediatePropagation();
-            if (isTagFilter) target.blur();
+            if (isTagFilter || onBodyButton) target.blur();
             this.moveListKeyboardSelection(-1, rows);
             return true;
         }
         if (onRowControl) {
             return false;
         }
+        if ((e.key === 'Enter' || e.key === ' ') && onBodyButton) return false;
         if ((e.key === 'Enter' || e.key === ' ') && this._listKeyboardKey) {
             const row = rows.find((r) => this.listRowKey(r) === this._listKeyboardKey);
             if (row) {
@@ -5426,6 +5442,7 @@ class DashboardConfig {
         // that is about to be replaced, so Escape must not go looking for it.
         this._logSettingsPopoverClose = null;
         this.section = section;
+        if (section === 'structure') this.forgetCategoryLists();
         // "Only changed" and the settings filter have a bar only where the
         // band draws one; carried into Containers they hid settings with no
         // way to turn them off there.
@@ -12585,7 +12602,7 @@ class DashboardConfig {
         categorySpacing: { info: ['categorySpacingInfoTitle', 'categorySpacingInfoMessage'], def: 'balanced' },
         sideMargin: { info: ['sideMarginInfoTitle', 'sideMarginInfoMessage'], def: 'balanced' },
         packedColumns: { info: ['packedColumnsInfoTitle', 'packedColumnsInfoMessage'], def: true },
-        defaultCategorySpread: { info: ['defaultCategorySpreadInfoTitle', 'defaultCategorySpreadInfoMessage'], hint: 'defaultCategorySpreadHint', def: false },
+        defaultCategorySpread: { info: ['defaultCategorySpreadInfoTitle', 'defaultCategorySpreadInfoMessage'], hint: 'defaultCategorySpreadHint', def: true },
         categorySpreadResetScope: { info: ['categorySpreadResetScopeInfoTitle', 'categorySpreadResetScopeInfoMessage'], hint: 'categorySpreadResetScopeHint', def: 'page' },
         interleaveMode: { info: ['interleaveModeInfoTitle', 'interleaveModeInfoMessage'], def: false },
         hideEmptyCategories: { info: ['hideEmptyCategoriesInfoTitle', 'hideEmptyCategoriesInfoMessage'], def: true },
@@ -14025,6 +14042,7 @@ class DashboardConfig {
                 section: 'behavior',
                 tab: 'status',
                 title: t('config.statusBrowserChecksTitle', 'Checks in this browser'),
+                demoLocked: true,
                 note: t('config.statusBrowserChecksNote', 'How the dashboard tests the bookmarks on screen while you have it open. Applies to bookmarks set to Periodic or Monitor; a bookmark set to Off is never tested.'),
                 appliesTo: t('config.appliesToPeriodicMonitor', 'Periodic + Monitor'),
                 controls: [
@@ -14079,6 +14097,7 @@ class DashboardConfig {
                 section: 'behavior',
                 tab: 'status',
                 title: t('config.statusServerChecksTitle', 'Checks on the server'),
+                demoLocked: true,
                 note: t('config.statusServerChecksNote', 'Re-tests bookmarks on the server, so the Health view stays current without anyone having the dashboard open. On by default; it makes outbound requests, so switch it off if you would rather it did not.'),
                 appliesTo: t('config.appliesToPeriodicMonitor', 'Periodic + Monitor'),
                 controls: [
@@ -14137,6 +14156,7 @@ class DashboardConfig {
                 section: 'behavior',
                 tab: 'fresh',
                 title: t('config.feedsTitle', 'Fresh'),
+                demoLocked: true,
                 note: t('config.feedsNote', 'A bookmark whose page advertises a feed can say how much it has published since you last opened it — a small count on the row, and a Fresh collection. Switching it on looks for feeds on the pages you have saved, then asks each one, hourly, with a conditional request a quiet site answers in a few hundred bytes. Off by default, because it is the one feature here that talks to other people\'s servers on your behalf.'),
                 controls: [
                     { ...bool('feedsEnabled', 'config.feedsEnabledLabel', 'Show what is new since you last looked'), special: 'feeds' },
@@ -14554,15 +14574,21 @@ class DashboardConfig {
             // schema rather than matched on a field name here, so retiring it is
             // deleting one line where the setting is defined.
             const stars = panel.highlight ? this.renderNewFeaturesPanelStars() : '';
-            const bulk = (panel.bulk && !this.changedOnly) ? this.renderPanelBulkActions(panel, prefix) : '';
-            const reset = this.renderPanelResetAction(panel, changedFields);
+            // In the public demo a panel that reaches other sites stays on
+            // screen but cannot be changed: a disabled fieldset around its
+            // controls, and a chip that says why.
+            const locked = panel.demoLocked && window.DemoLock?.on;
+            const bulk = (panel.bulk && !this.changedOnly && !locked) ? this.renderPanelBulkActions(panel, prefix) : '';
+            const reset = locked ? '' : this.renderPanelResetAction(panel, changedFields);
+            const lockChip = locked ? window.DemoLock.chip() : '';
+            const body = controls.map(renderControl).join('');
             return `
-            <div class="config-panel${panel.highlight ? ' config-panel--animated' : ''}">
+            <div class="config-panel${panel.highlight ? ' config-panel--animated' : ''}${locked ? ' config-panel--demo-locked' : ''}">
                 ${stars}
-                <h3 class="config-panel-title">${esc(panel.title)}${badge}${reset}</h3>
+                <h3 class="config-panel-title">${esc(panel.title)}${badge}${reset}${lockChip}</h3>
                 ${note}
                 ${bulk}
-                ${controls.map(renderControl).join('')}
+                ${locked ? `<fieldset class="config-demo-lock" disabled>${body}</fieldset>` : body}
             </div>
         `;
         }).join('');
@@ -17351,10 +17377,11 @@ class DashboardConfig {
      * True when the list on screen is not in its stored order, or is showing
      * only part of itself.
      *
-     * For categories and pages that order is not a display preference — it is
-     * the order they appear in on the dashboard, and the ↑ ↓ buttons are how
-     * you set it. So sorting here is a way of looking at the list, never a way
-     * of changing it: nothing is written, and the move buttons come off the
+     * For pages that order is not a display preference — it is the order
+     * they appear in on the dashboard, and the ↑ ↓ buttons are how you set it
+     * (categories are ordered on the dashboard itself, not here). So sorting
+     * here is a way of looking at the list, never a way of changing it:
+     * nothing is written, and the move buttons come off the
      * rows entirely while it is on. Hidden rather than disabled, because a
      * greyed-out arrow beside a row still says "this row is here, in this
      * position", which is exactly the claim a sorted view cannot make.
@@ -17385,7 +17412,7 @@ class DashboardConfig {
      * index into the underlying array, which sorting the display must not
      * change.
      */
-    ptVisibleRows(tab, items, nameOf) {
+    ptVisibleRows(tab, items, nameOf, metrics = {}) {
         const withIndex = items.map((item, index) => ({ item, index }));
         const q = String(this.ptQuery[tab] || '').trim().toLowerCase();
         const filtered = q
@@ -17400,6 +17427,8 @@ class DashboardConfig {
         if (sort === 'nameDesc') {
             return by((a, b) => String(nameOf(b.item) || '').localeCompare(String(nameOf(a.item) || '')));
         }
+        if (sort === 'most' && metrics.count) return by((a, b) => metrics.count(b.item) - metrics.count(a.item));
+        if (sort === 'broken' && metrics.broken) return by((a, b) => metrics.broken(b.item) - metrics.broken(a.item));
         return filtered;
     }
 
@@ -17451,8 +17480,8 @@ class DashboardConfig {
             <li class="config-crud-row" data-finder-index="${i}">
                 <div class="config-crud-fields">
                     <input type="text" class="config-text config-finder-name" maxlength="60" data-finder="name" data-index="${i}" placeholder="${esc(this.t('config.finderNamePlaceholder', 'Name'))}" value="${esc(f.name || '')}">
-                    <input type="text" class="config-text config-finder-url${missingPlaceholder ? ' field-conflict' : ''}" data-finder="searchUrl" data-index="${i}" placeholder="https://example.com/search?q=%s" value="${esc(f.searchUrl || '')}">
                     <input type="text" class="config-text config-finder-shortcut" data-finder="shortcut" data-index="${i}" placeholder="${esc(this.t('config.finderShortcutPlaceholder', 'key'))}" value="${esc(f.shortcut || '')}">
+                    <input type="text" class="config-text config-finder-url${missingPlaceholder ? ' field-conflict' : ''}" data-finder="searchUrl" data-index="${i}" placeholder="https://example.com/search?q=%s" value="${esc(f.searchUrl || '')}">
                     ${warning}
                 </div>
                 <div class="config-crud-row-actions">
@@ -17468,6 +17497,10 @@ class DashboardConfig {
             : this.t('config.findersNoMatch', 'No finders match your search.');
         return `
             <p class="config-panel-note">${esc(this.t('config.findersIntro', 'Finders are search shortcuts. Use %s in the URL where the query goes.'))}</p>
+            ${this.renderStructureSummary([
+                [this._finders.length, ['config.findersStatTotal', 'finders', 'finder']],
+                [this._finders.filter((f) => String(f.shortcut || '').trim()).length, this.t('config.findersStatShortcut', 'with a shortcut')],
+            ])}
             ${this.renderPtToolbar({
                 tab: 'finders',
                 placeholder: this.t('config.findersSearchPlaceholder', 'Search finders…'),
@@ -17476,7 +17509,12 @@ class DashboardConfig {
                 addLabel: this.t('config.finderAdd', 'Add finder'),
             })}
             ${this.renderPtCountLabel('finders', visible.length, this._finders.length)}
-            <ul class="config-crud-list config-crud-list--table">${rows || `<li class="config-panel-empty">${esc(empty)}</li>`}</ul>
+            ${this.renderStructureList('finders', 'minmax(7rem, 14rem) 5.5rem minmax(0, 1fr) auto', this.renderStructureColumns([
+                [this.t('config.colName', 'Name')],
+                [this.t('config.colShortcut', 'Shortcut')],
+                [this.t('config.colSearchUrl', 'Search URL')],
+                ['', 'structure-actions'],
+            ]) + (rows || `<li class="config-panel-empty">${esc(empty)}</li>`))}
         `;
     }
 
@@ -17697,6 +17735,17 @@ class DashboardConfig {
             const id = String(b.category || '');
             if (!id) return;
             counts.set(id, (counts.get(id) || 0) + 1);
+        });
+        return counts;
+    }
+
+    /** Bookmarks with a failing link per category on one page, keyed like categoryBookmarkCounts. */
+    categoryBrokenCounts(pageId) {
+        const counts = new Map();
+        (this.dash.allBookmarks || []).forEach((b) => {
+            if (String(b.pageId) !== String(pageId) || !(Number(b.brokenSince || 0) > 0)) return;
+            const id = String(b.category || '');
+            if (id) counts.set(id, (counts.get(id) || 0) + 1);
         });
         return counts;
     }
@@ -18078,18 +18127,17 @@ class DashboardConfig {
         const cols = this.customCollections();
         const editing = this._collectionEditing;
 
+        const matchCounts = cols.map((col) => this.collectionMatchCount(col));
         const rows = cols.length
-            ? cols.map((col) => {
-                const n = Array.isArray(col.rules) ? col.rules.length : 0;
-                const ruleLabel = n === 1
-                    ? this.t('config.collectionRuleCountOne', '1 rule')
-                    : this.t('config.collectionRuleCount', '{count} rules').replace('{count}', String(n));
+            ? cols.map((col, i) => {
                 const open = editing === col.id;
+                const search = this.collectionSearchText(col);
                 return `
                 <li class="config-crud-row${open ? ' is-active' : ''}" data-collection-row="${esc(col.id)}">
                     <div class="config-crud-fields">
                         <span class="config-stat-name">${esc(col.icon ? `${col.icon} ` : '')}${esc(col.name || col.id)}</span>
-                        <span class="config-stat-sub">${esc(ruleLabel)}</span>
+                        <span class="structure-muted" title="${esc(search)}">${esc(search || '–')}</span>
+                        <span class="structure-num">${matchCounts[i] === null ? '–' : esc(String(matchCounts[i]))}</span>
                     </div>
                     <div class="config-crud-row-actions">
                         <button type="button" class="config-btn config-btn--small${open ? ' is-active' : ''}" data-collection-edit="${esc(col.id)}">${esc(this.t('config.collectionEditBtn', 'Edit'))}</button>
@@ -18098,16 +18146,85 @@ class DashboardConfig {
                 </li>${open ? `<li class="config-collection-editor">${this.renderCollectionEditor(col)}</li>` : ''}`;
             }).join('')
             : `<li class="config-panel-empty">${esc(this.t('config.collectionsEmptyHint', 'No collections yet.'))}</li>`;
+        const columns = cols.length ? this.renderStructureColumns([
+            [this.t('config.colName', 'Name')],
+            [this.t('config.colSearch', 'Search')],
+            [this.t('config.colMatches', 'Matches'), 'structure-num'],
+            ['', 'structure-actions'],
+        ]) : '';
 
         return `
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.customCollectionsTitle', 'Custom collections'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.customCollectionsNote', 'Group bookmarks by rules on their tags, category or shortcut. They appear on the dashboard alongside the smart collections.'))}</p>
-                <ul class="config-crud-list">${rows}</ul>
+                ${this.renderStructureSummary([
+                    [cols.length, ['config.collectionsCustomStatTotal', 'collections', 'collection']],
+                    [matchCounts.reduce((sum, n) => sum + (n || 0), 0), ['config.collectionsCustomStatMatches', 'bookmarks in them', 'bookmark in them']],
+                ])}
+                ${this.renderStructureList('collections', 'minmax(0, 14rem) minmax(0, 1fr) 5rem auto', columns + rows)}
                 <div class="config-actions">
                     <button type="button" class="config-btn" data-collection-add>${esc(this.t('config.addCollectionBtn', 'Add collection'))}</button>
                 </div>
             </div>`;
+    }
+
+    /**
+     * Whether a rule can match anything. Pinned and Has no tags are
+     * questions on their own (the evaluator reads no value for them); every
+     * other rule needs a value, and without one it is left out, the way the
+     * dashboard leaves it out.
+     */
+    static collectionRuleCounts(rule) {
+        return rule.field === 'pinned' || rule.field === 'untagged' || String(rule.value || '').trim() !== '';
+    }
+
+    /**
+     * What a collection's rules say, in one line: "Tag includes work and
+     * Pinned". The collection's own logic (and/or) joins the rules.
+     */
+    collectionSearchText(col) {
+        const t = (key, fallback) => this.t(key, fallback);
+        const phrase = (r) => {
+            const value = String(r.value || '').trim();
+            const excludes = r.operator === 'excludes';
+            if (r.field === 'pinned' || r.field === 'untagged') {
+                // Pinned also reads a value: "no" turns the question around.
+                const flipped = r.field === 'pinned' && ['false', 'no', '0'].includes(value.toLowerCase());
+                const label = this.collectionRuleFieldLabel(r.field);
+                return excludes !== flipped ? t('config.collectionSearchNot', 'not {rule}').replace('{rule}', label) : label;
+            }
+            if (r.field === 'notOpenedDays') {
+                return t(excludes ? 'config.collectionSearchOpenedWithin' : 'config.collectionSearchNotOpened',
+                    excludes ? 'opened within {days} days' : 'not opened in {days} days').replace('{days}', value);
+            }
+            if (r.field === 'changedDays') {
+                return t(excludes ? 'config.collectionSearchNotChanged' : 'config.collectionSearchChanged',
+                    excludes ? 'not changed within {days} days' : 'changed within {days} days').replace('{days}', value);
+            }
+            const op = excludes
+                ? t('config.collectionRuleOpExcludes', 'excludes')
+                : t('config.collectionRuleOpIncludes', 'includes');
+            return `${this.collectionRuleFieldLabel(r.field || 'tag')} ${op} ${value}`;
+        };
+        const joiner = col.logic === 'or'
+            ? t('config.collectionSearchOr', 'or')
+            : t('config.collectionSearchAnd', 'and');
+        return (Array.isArray(col.rules) ? col.rules : [])
+            .filter((r) => DashboardConfig.collectionRuleCounts(r))
+            .map(phrase)
+            .join(` ${joiner} `);
+    }
+
+    /** Bookmarks a collection matches now; null while it has no rule that can match. */
+    collectionMatchCount(col) {
+        const rules = (col.rules || []).filter((r) => DashboardConfig.collectionRuleCounts(r));
+        if (!rules.length) return null;
+        try {
+            return (this.dash.smartCollections?._evaluateCollection?.(
+                { ...col, rules }, this.dash.allBookmarks || []) || []).length;
+        } catch {
+            return null;
+        }
     }
 
     renderCollectionEditor(col) {
@@ -18207,21 +18324,23 @@ class DashboardConfig {
             </div>`;
         }
         const counts = collections.map((c) => (c.bookmarks || []).length);
-        const scales = DashboardConfig.statScales(counts);
         const rows = collections.map((c, i) => `
             <li class="config-crud-row">
                 <div class="config-crud-fields">
                     <span class="config-stat-name">${esc(c.name || '')}</span>
-                    ${this.renderStatMeta(counts[i], scales[i], 'config.collectionBookmarkCount', '{count} bookmarks')}
+                    <span class="structure-num">${esc(String(counts[i]))}</span>
                 </div>
             </li>`).join('');
         return `<div class="config-panel">
             <h3 class="config-panel-title">${esc(this.t('config.collectionStatsTitle', 'Collection sizes'))}</h3>
-            ${this.renderStatSummary([
-                [collections.length, this.t('config.collectionsStatTotal', 'active collections')],
-                [counts.reduce((sum, n) => sum + n, 0), this.t('config.collectionsStatBookmarks', 'bookmarks shown')],
+            ${this.renderStructureSummary([
+                [collections.length, ['config.collectionsStatTotal', 'active collections', 'active collection']],
+                [counts.reduce((sum, n) => sum + n, 0), ['config.collectionsStatBookmarks', 'bookmarks shown', 'bookmark shown']],
             ])}
-            <ul class="config-crud-list">${rows}</ul>
+            ${this.renderStructureList('collection-sizes', 'minmax(0, 1fr) 5rem', this.renderStructureColumns([
+                [this.t('config.colName', 'Name')],
+                [this.t('config.colMatches', 'Matches'), 'structure-num'],
+            ]) + rows)}
         </div>`;
     }
 
@@ -18233,6 +18352,7 @@ class DashboardConfig {
     static COLLECTION_SCOPES = [
         ['smartTodayPageIds', 'config.smartTodayScope', '“Today” pages'],
         ['smartRecentPageIds', 'config.smartRecentScope', '“Recent” pages'],
+        ['smartAddedPageIds', 'config.smartAddedScope', '“Recently added” pages'],
         ['smartStalePageIds', 'config.smartStaleScope', '“Stale” pages'],
         ['smartMostUsedPageIds', 'config.smartMostUsedScope', '“Most used” pages'],
         ['smartFreshPageIds', 'config.smartFreshScope', '“Fresh” pages'],
@@ -18243,8 +18363,15 @@ class DashboardConfig {
         const pages = this.dash.pages || [];
         if (!pages.length) return '';
         const s = this.dash.settings || {};
-        const rows = DashboardConfig.COLLECTION_SCOPES.map(([field, key, fallback]) => {
-            const selected = Array.isArray(s[field]) ? s[field].map(String) : [];
+        // The reader's own collections have the same page list, on the
+        // collection itself (pageIds): moving one to a page sets it, and this
+        // is where it goes back to every page.
+        const own = this.customCollections().filter((c) => c?.id).map((c) => [
+            `collection:${c.id}`, null,
+            this.t('config.collectionScopeOwn', '“{name}” pages').replace('{name}', String(c.name || c.id)), c.pageIds,
+        ]);
+        const rows = [...DashboardConfig.COLLECTION_SCOPES.map((row) => [...row, s[row[0]]]), ...own].map(([field, key, fallback, value]) => {
+            const selected = Array.isArray(value) ? value.map(String) : [];
             const boxes = pages.map((p) => {
                 const id = String(p.id);
                 const on = selected.includes(id);
@@ -18258,7 +18385,7 @@ class DashboardConfig {
                 : this.t('config.collectionScopeSome', 'Selected pages only');
             return `
                 <div class="config-field-block">
-                    <span class="config-field-label">${esc(this.t(key, fallback))}</span>
+                    <span class="config-field-label">${esc(key ? this.t(key, fallback) : fallback)}</span>
                     <p class="config-field-hint">${esc(allHint)}</p>
                     <div class="config-scope-pages">${boxes}</div>
                 </div>`;
@@ -18302,20 +18429,13 @@ class DashboardConfig {
     updateCollectionMatchCount(col) {
         const el = document.querySelector('[data-collection-match]');
         if (!el) return;
-        const rules = (col.rules || []).filter((r) => String(r.value || '').trim());
-        if (!rules.length) {
+        const count = this.collectionMatchCount(col);
+        if (count === null) {
             el.textContent = this.t('config.collectionNoRules', 'Add a rule to match bookmarks.');
             return;
         }
-        let matched = [];
-        try {
-            matched = this.dash.smartCollections?._evaluateCollection?.(
-                { ...col, rules }, this.dash.allBookmarks || []) || [];
-        } catch {
-            matched = [];
-        }
         el.textContent = this.t('config.collectionMatchCount', '{count} bookmarks match')
-            .replace('{count}', String(matched.length));
+            .replace('{count}', String(count));
     }
 
     bindCustomCollections(container) {
@@ -18439,6 +18559,15 @@ class DashboardConfig {
                 // page even if it had saved.
                 const pageId = Number(box.getAttribute('data-scope-page'));
                 if (!Number.isFinite(pageId)) return;
+                if (field.startsWith('collection:')) {
+                    const col = this.customCollections().find((c) => `collection:${c.id}` === field);
+                    if (!col) return;
+                    const was = Array.isArray(col.pageIds) ? col.pageIds.map(Number).filter(Number.isFinite) : [];
+                    const now = box.checked ? [...new Set([...was, pageId])] : was.filter((id) => id !== pageId);
+                    if (now.length) col.pageIds = now; else delete col.pageIds;
+                    void this.saveCustomCollections();
+                    return;
+                }
                 const current = Array.isArray(this.dash.settings[field])
                     ? this.dash.settings[field].map(Number).filter(Number.isFinite)
                     : [];
@@ -18457,19 +18586,24 @@ class DashboardConfig {
         const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
         const counts = this.pageBookmarkCounts();
         const pageCounts = pages.map((p) => counts.get(String(p.id)) || 0);
-        const scales = DashboardConfig.statScales(pageCounts);
         const locked = this.ptListReordered('pages');
+        // The drag handle exists only in the Bookmarks view's modal, and not
+        // while the list is sorted or filtered.
+        const grip = locked ? '' : (this.renderStructureGrip?.() || '');
         const visible = this.ptVisibleRows('pages', pages, (p) => p.name);
         const rows = visible.map(({ item: p, index: i }) => {
             const isFirst = Number(p.id) === 1;
             return `
             <li class="config-crud-row" data-page-row="${esc(p.id)}">
                 <div class="config-crud-fields">
-                    ${locked ? '' : (this.renderStructureGrip?.() || '')}
-                    <input type="text" class="config-text" style="min-width:56px;max-width:64px" data-page="icon" data-id="${esc(p.id)}" placeholder="📄" value="${esc(p.icon || '')}">
-                    <input type="text" class="config-text" maxlength="60" data-page="name" data-id="${esc(p.id)}" placeholder="${esc(this.t('config.pageNamePlaceholder', 'Page name'))}" value="${esc(p.name || '')}">
-                    <input type="color" class="config-color" data-page="color" data-id="${esc(p.id)}" value="${esc(p.color || '#888888')}" title="${esc(this.t('config.pageColorLabel', 'Tab colour'))}">
-                    ${this.renderStatMeta(pageCounts[i], scales[i], 'config.pageBookmarkCount', '{count} bookmarks')}
+                    ${grip}
+                    <input type="text" class="config-text structure-icon-input" data-page="icon" data-id="${esc(p.id)}" placeholder="📄" value="${esc(p.icon || '')}">
+                    <div class="structure-name-cell">
+                        <input type="text" class="config-text" maxlength="60" data-page="name" data-id="${esc(p.id)}" placeholder="${esc(this.t('config.pageNamePlaceholder', 'Page name'))}" value="${esc(p.name || '')}">
+                        ${p.hidden ? `<span class="structure-tag">${esc(this.t('config.pageHiddenLabel', 'hidden'))}</span>` : ''}
+                        <input type="color" class="config-color" data-page="color" data-id="${esc(p.id)}" value="${esc(p.color || '#888888')}" title="${esc(this.t('config.pageColorLabel', 'Tab colour'))}">
+                    </div>
+                    <span class="structure-num">${esc(String(pageCounts[i]))}</span>
                 </div>
                 <div class="config-crud-row-actions">
                     ${locked ? '' : `
@@ -18484,6 +18618,11 @@ class DashboardConfig {
         }).join('');
         return `
             <p class="config-panel-note">${esc(this.t('config.pagesIntroView', 'Rename, recolour, reorder (↑ ↓), add, or remove dashboard pages. The first page cannot be removed.'))}</p>
+            ${this.renderStructureSummary([
+                [pages.length, ['config.pagesStatTotal', 'pages', 'page']],
+                [pages.filter((p) => !p.hidden).length, this.t('config.pagesStatVisible', 'visible')],
+                [pageCounts.reduce((sum, n) => sum + n, 0), ['config.pagesStatBookmarks', 'bookmarks', 'bookmark']],
+            ])}
             ${this.renderPtToolbar({
                 tab: 'pages',
                 placeholder: this.t('config.pagesSearchPlaceholder', 'Search pages…'),
@@ -18493,13 +18632,15 @@ class DashboardConfig {
                 extra: `<button type="button" class="config-btn config-btn--small" data-page-template-import>${esc(this.t('config.pageTemplateImport', 'Import template'))}</button>`,
             })}
             ${this.renderPtReorderNote('pages')}
-            ${this.renderStatSummary([
-                [pages.length, this.t('config.pagesStatTotal', 'pages')],
-                [pageCounts.reduce((sum, n) => sum + n, 0), this.t('config.pagesStatBookmarks', 'bookmarks')],
-            ])}
             ${this.renderPtCountLabel('pages', visible.length, pages.length)}
             ${rows
-                ? `<ul class="config-crud-list config-crud-list--table">${rows}</ul>`
+                ? this.renderStructureList('pages', `${grip ? '1.25rem ' : ''}4rem minmax(10rem, 1fr) 6rem auto`, this.renderStructureColumns([
+                    ...(grip ? [['', 'structure-grip-col']] : []),
+                    [this.t('config.colIcon', 'Icon')],
+                    [this.t('config.colName', 'Name')],
+                    [this.t('config.colBookmarks', 'Bookmarks'), 'structure-num'],
+                    ['', 'structure-actions'],
+                ]) + rows)
                 : `<p class="config-panel-empty">${esc(this.t('config.pagesNoMatch', 'No pages match your search.'))}</p>`}
         `;
     }
@@ -19068,6 +19209,7 @@ class DashboardConfig {
                 if (!saved.ok) {
                     this.notify(this.t('config.pageDuplicateBookmarksFailed',
                         'The page was copied, but its bookmarks were not'), 'error');
+                    this.forgetCategoryLists();
                     this.repaintPtBody();
                     return;
                 }
@@ -19076,6 +19218,10 @@ class DashboardConfig {
         } catch {
             this.notify(this.t('config.pageDuplicateFailed', 'Could not duplicate this page'), 'error');
         }
+        // The copy was listed before its categories were written, so the
+        // Categories tab may have read it in between and holds the page's
+        // default category for it. Forgotten, an in-flight read included.
+        this.forgetCategoryLists();
         this.repaintPtBody();
         void this.dash.data?.fetchAndStoreDataRevision?.();
     }
@@ -19091,6 +19237,7 @@ class DashboardConfig {
      */
     async duplicateCategory(index) {
         const list = this._categories || [];
+        const pageId = this._catPageId;
         const source = list[Number(index)];
         if (!source) return;
 
@@ -19109,7 +19256,7 @@ class DashboardConfig {
         );
         list.splice(Number(index) + 1, 0, { ...source, id, name });
         this.repaintPtBody();
-        if (!await this.saveCategories(this._catPageId)) return;
+        if (!await this.saveCategories(pageId)) return;
         this.notify(this.t('config.categoryDuplicatedEmpty',
             'Category duplicated, without its bookmarks — a page holds each link once'), 'success');
         void this.dash.data?.fetchAndStoreDataRevision?.();
@@ -23481,240 +23628,376 @@ class DashboardConfig {
         }
     }
 
+    /**
+     * The categories of every visible page in one table, a group per page.
+     *
+     * Rows keep the index into their own page's list (data-index) and name
+     * that page (data-cat-page); the row handlers point the editor at that
+     * page through useCategoryPage before they read the index.
+     */
     renderCategoriesEditor() {
         const esc = (v) => this.dash.escapeHtml(v);
-        const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
-        const pageId = this._catPageId != null ? this._catPageId : (this.dash.currentPageId ?? pages[0]?.id);
-        const pageOptions = pages.map((p) =>
-            `<option value="${esc(p.id)}" ${Number(p.id) === Number(pageId) ? 'selected' : ''}>${esc(p.name || p.id)}</option>`
-        ).join('');
-        const locked = this.ptListReordered('categories');
-        let body;
-        if (this._categories == null) {
-            body = `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
-        } else if (this._categories.length === 0) {
-            body = `<p class="config-panel-empty">${esc(this.t('config.categoriesEmpty', 'No categories on this page yet.'))}</p>`;
-        } else {
-            const counts = this.categoryBookmarkCounts(pageId);
-            const catCounts = this._categories.map((c) => DashboardConfig.categoryCountFor(counts, c));
-            const scales = DashboardConfig.statScales(catCounts);
-            const visible = this.ptVisibleRows('categories', this._categories, (c) => c.name);
-            const last = this._categories.length - 1;
-            // An icon beside the other row buttons rather than a labelled
-            // checkbox: ten rows of "Spread across columns" is a column of
-            // repeated prose between the names and their counts, and the row
-            // already has a place where its controls live.
-            const spreadLabel = this.t('config.categorySpreadLabel', 'Spread across columns');
-            const rows = visible.map(({ item: c, index: i }) => `
-                <li class="config-crud-row" data-cat-row="${i}" data-cat-id="${esc(c.id)}">
-                    <div class="config-crud-fields">
-                        ${locked ? '' : (this.renderStructureGrip?.() || '')}
-                        <input type="text" class="config-text" data-cat="name" data-index="${i}" value="${esc(c.name || '')}">
+        const t = (key, fallback) => this.t(key, fallback);
+        const pages = (Array.isArray(this.dash.pages) ? this.dash.pages : []).filter((p) => !p.hidden);
+        const intro = `<p class="config-panel-note">${esc(t('config.categoriesIntroView', 'Categories group bookmarks within a page. Rename, add or remove them here. To change their order, drag // on the dashboard, or press Alt+← / Alt+→ on a category title.'))}</p>`;
+        const toolbar = this.renderPtToolbar({
+            tab: 'categories',
+            placeholder: t('config.categoriesSearchPlaceholder', 'Search categories…'),
+            sorts: [
+                ['name', t('config.sortByName', 'Name (A–Z)')],
+                ['nameDesc', t('config.sortByNameDesc', 'Name (Z–A)')],
+                ['most', t('config.categoriesSortMost', 'Most bookmarks')],
+                ['broken', t('config.categoriesSortBroken', 'Most broken')],
+            ],
+            addAttr: 'data-cat-add',
+            addLabel: t('config.categoryAdd', 'Add category'),
+        });
+        if (this._catByPage == null) {
+            return `${intro}${toolbar}<p class="config-view-loading">${esc(t('config.backupLoading', 'Loading…'))}</p>`;
+        }
+        const loadFailedText = t('config.categoriesLoadFailed',
+            'Categories could not be loaded, so they will not be saved. Reload and try again.');
+        if (this._categoriesLoadFailed && !this._catByPage.size) {
+            return `${intro}${toolbar}<p class="config-panel-empty">${esc(loadFailedText)}</p>`;
+        }
 
-                        ${this.renderStatMeta(catCounts[i], scales[i], 'config.categoryBookmarkCount', '{count} bookmarks')}
+        const chip = this.ptChip.categories;
+        // A page chip for a page that is gone (deleted, hidden) shows everything.
+        if (chip.page !== 'all' && !pages.some((p) => String(p.id) === String(chip.page))) chip.page = 'all';
+        const groups = pages.map((p) => {
+            const key = String(p.id);
+            const counts = this.categoryBookmarkCounts(p.id);
+            const brokenCounts = this.categoryBrokenCounts(p.id);
+            return {
+                page: p,
+                key,
+                // Not held (yet, or its read failed): drawn as such below,
+                // never as a page without categories.
+                loaded: this._catByPage.has(key),
+                list: this._catByPage.get(key) || [],
+                count: (c) => DashboardConfig.categoryCountFor(counts, c),
+                broken: (c) => DashboardConfig.categoryCountFor(brokenCounts, c),
+            };
+        });
+        const inScope = groups.filter((g) => chip.page === 'all' || g.key === String(chip.page));
+        const views = {
+            all: () => true,
+            spread: (g, c) => c.spread === true,
+            broken: (g, c) => g.broken(c) > 0,
+            empty: (g, c) => g.count(c) === 0,
+        };
+        if (!views[chip.view]) chip.view = 'all';
+        const tally = (pred) => inScope.reduce((sum, g) => sum + g.list.filter((c) => pred(g, c)).length, 0);
+        const sumOf = (fn) => inScope.reduce((sum, g) => sum + g.list.reduce((s, c) => s + fn(g, c), 0), 0);
+        const totalCategories = tally(views.all);
+
+        const summary = this.renderStructureSummary([
+            [totalCategories, ['config.categoriesStatTotal', 'categories', 'category']],
+            [sumOf((g, c) => g.count(c)), ['config.categoriesStatAllBookmarks', 'bookmarks', 'bookmark']],
+            [tally(views.spread), t('config.categoriesStatSpread', 'spread')],
+            [sumOf((g, c) => g.broken(c)), ['config.categoriesStatBroken', 'broken links', 'broken link'], true],
+        ]);
+        const chips = this.renderStructureChips([
+            {
+                key: 'page',
+                label: t('config.structureChipsPages', 'Pages'),
+                current: String(chip.page),
+                // One page is no choice: the group goes, by having no items.
+                items: groups.length < 2 ? [] : [['all', t('config.structureViewAll', 'All'), groups.reduce((n, g) => n + g.list.length, 0)],
+                    ...groups.map((g) => [g.key, g.page.name || g.key, g.list.length])],
+            },
+            {
+                key: 'view',
+                label: t('config.structureChipsViews', 'Views'),
+                current: chip.view,
+                items: [
+                    ['all', t('config.structureViewAll', 'All'), totalCategories],
+                    ['spread', t('config.structureViewSpread', 'Spread'), tally(views.spread)],
+                    ['broken', t('config.structureViewBroken', 'With broken links'), tally(views.broken)],
+                    ['empty', t('config.structureViewEmpty', 'Empty'), tally(views.empty)],
+                ],
+            },
+        ]);
+
+        // An icon beside the other row buttons rather than a labelled
+        // checkbox: ten rows of "Spread across columns" is a column of
+        // repeated prose between the names and their counts.
+        const spreadLabel = t('config.categorySpreadLabel', 'Spread across columns');
+        const filtering = chip.view !== 'all' || Boolean(String(this.ptQuery.categories || '').trim());
+        let shown = 0;
+        const html = inScope.map((g) => {
+            const rows = this.ptVisibleRows('categories', g.list, (c) => c.name, { count: g.count, broken: g.broken })
+                .filter(({ item }) => views[chip.view](g, item));
+            // A page with nothing matching drops out while a filter is on; an
+            // empty page still shows its head otherwise, so it can be seen.
+            if (g.loaded && filtering && !rows.length) return '';
+            const open = !this._catCollapsed.has(g.key);
+            // Rows on screen: a folded group's rows are not shown.
+            if (open) shown += rows.length;
+            const total = g.list.reduce((s, c) => s + g.count(c), 0);
+            const name = g.page.name || g.key;
+            const head = `
+                <li class="structure-group-head" data-structure-group="${esc(g.key)}">
+                    <button type="button" class="structure-group-toggle" data-structure-group-toggle="${esc(g.key)}"
+                            aria-expanded="${open ? 'true' : 'false'}"
+                            aria-label="${esc(t('config.structureGroupToggle', 'Show or hide the categories of {page}').replace('{page}', name))}">
+                        <span class="structure-group-name">${esc(g.page.icon || '⌂')} ${esc(name)}</span>
+                        <span class="structure-group-meta">${g.loaded
+                            ? `${esc(String(g.list.length))} · ${esc(t('config.categoryBookmarkCount', '{count} bookmarks').replace('{count}', String(total)))}`
+                            : esc(this._catFailedPages?.has(g.key) ? loadFailedText : t('config.backupLoading', 'Loading…'))}</span>
+                    </button>
+                </li>`;
+            if (!open || !g.loaded) return head;
+            return head + rows.map(({ item: c, index: i }) => {
+                const n = g.count(c);
+                const bad = g.broken(c);
+                return `
+                <li class="config-crud-row" data-cat-row="${i}" data-cat-page="${esc(g.key)}" data-cat-id="${esc(c.id)}">
+                    <div class="config-crud-fields">
+                        <input type="text" class="config-text" data-cat="name" data-index="${i}" value="${esc(c.name || '')}">
+                        <span class="structure-num">${esc(String(n))}</span>
+                        ${bad ? `<span class="structure-num structure-num--bad">${esc(String(bad))}</span>` : '<span class="structure-num">–</span>'}
                     </div>
-                    <div class="config-crud-row-actions">
+                    <div class="structure-spread-cell">
                         <button type="button" class="config-btn config-btn--small config-btn--icon${c.spread ? ' is-active' : ''}"
                                 data-cat-spread="${i}" aria-pressed="${c.spread ? 'true' : 'false'}"
                                 title="${esc(spreadLabel)}" aria-label="${esc(spreadLabel)}">↔</button>
-                        ${locked ? '' : `
-                        <button type="button" class="config-btn config-btn--small" data-cat-move="up" data-index="${i}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
-                        <button type="button" class="config-btn config-btn--small" data-cat-move="down" data-index="${i}" ${i === last ? 'disabled' : ''} aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>`}
-                        ${this.renderStructureRowExtras?.({ pageId, categoryId: c.id }) || ''}
-                        <button type="button" class="config-btn config-btn--small" data-cat-duplicate="${i}" title="${esc(this.t('config.categoryDuplicateHint', 'Copy this category — with or without its bookmarks'))}">${esc(this.t('config.pageDuplicate', 'Duplicate'))}</button>
-                        <button type="button" class="config-btn config-btn--small config-btn--danger" data-cat-delete="${i}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
-                    </div>
-                </li>`).join('');
-            const summary = this.renderStatSummary([
-                [this._categories.length, this.t('config.categoriesStatTotal', 'categories')],
-                [catCounts.reduce((sum, n) => sum + n, 0), this.t('config.categoriesStatBookmarks', 'bookmarks on this page')],
-            ]);
-            /*
-             * The widgets that live between these categories.
-             *
-             * Interleaved here rather than listed apart, because this is the
-             * one place the page's order is arranged and an arrow that can only
-             * step past half the blocks cannot express "put it after Media".
-             * Under a search or a sort the arrows are hidden anyway, so the
-             * widgets are left out of that view rather than floating loose in a
-             * filtered list.
-             */
-            const withWidgets = locked || visible.length !== this._categories.length
-                ? rows
-                : this.interleaveWidgetRows(rows);
-            body = `${summary}${this.renderPtCountLabel('categories', visible.length, this._categories.length)}${rows
-                // --table: rows read like Health's (config-view.css).
-                ? `<ul class="config-crud-list config-crud-list--table">${withWidgets}</ul>`
-                : `<p class="config-panel-empty">${esc(this.t('config.categoriesNoMatch', 'No categories match your search.'))}</p>`}`;
-        }
-        const pagePicker = `
-            <select class="config-select" data-cat-page aria-label="${esc(this.t('config.categoriesPageLabel', 'Page'))}">${pageOptions}</select>`;
-        return `
-            <p class="config-panel-note">${esc(this.t('config.categoriesIntroView', 'Categories group bookmarks within a page. Pick a page, then rename, reorder (↑ ↓), add, or remove its categories.'))}</p>
-            ${this.renderPtToolbar({
-                tab: 'categories',
-                placeholder: this.t('config.categoriesSearchPlaceholder', 'Search categories…'),
-                sorts: this.ptNameSorts(this.t('config.sortByManualCategories', 'Page order')),
-                extra: pagePicker,
-                addAttr: 'data-cat-add',
-                addLabel: this.t('config.categoryAdd', 'Add category'),
-            })}
-            ${this.renderPtReorderNote('categories')}
-            ${body}
-        `;
-    }
-
-    /*
-     * Put the widget rows where the page's order says they belong.
-     *
-     * The category rows are already built and carry their own indices; this
-     * splices the widgets between them by reading blockOrder, so one list shows
-     * the whole page. A widget row is deliberately thinner than a category row:
-     * it can be moved and opened, and everything else about it -- what it shows,
-     * whether it is on -- lives on the Widgets tab, which is where a reader goes
-     * to configure one.
-     */
-    interleaveWidgetRows(categoryRowsHtml) {
-        const widgets = this._catWidgets || [];
-        if (!widgets.length) return categoryRowsHtml;
-
-        const esc = (v) => this.dash.escapeHtml(v);
-        const order = this._catBlockOrder || [];
-        const widgetById = new Map(widgets.map((w) => [w.id, w]));
-        const categoryIds = (this._categories || []).map((c) => String(c.id));
-
-        // The category rows in the order they were rendered, so a widget can be
-        // dropped between the right two.
-        const rows = String(categoryRowsHtml).split('</li>').filter((chunk) => chunk.trim());
-        const out = [];
-        let categoryCursor = 0;
-
-        order.forEach((id) => {
-            const widget = widgetById.get(id);
-            if (widget) {
-                out.push(this.renderCategoryTabWidgetRow(widget, esc));
-                return;
-            }
-            if (categoryIds.includes(String(id)) && categoryCursor < rows.length) {
-                out.push(`${rows[categoryCursor++]}</li>`);
-            }
-        });
-        // Anything the order did not name keeps its place at the end rather
-        // than disappearing from the list.
-        while (categoryCursor < rows.length) out.push(`${rows[categoryCursor++]}</li>`);
-        return out.join('');
-    }
-
-    renderCategoryTabWidgetRow(widget, esc) {
-        const label = widget.title || this.widgetTypeName(widget.type);
-        return `
-                <li class="config-crud-row config-crud-row--widget" data-block-row="${esc(widget.id)}">
-                    <div class="config-crud-fields">
-                        ${this.renderStructureGrip?.() || ''}
-                        <span class="config-widget-category-name">${esc(label)}</span>
-                        <span class="config-widget-kind">${esc(this.t('config.categoriesRowWidget', 'widget'))}</span>
                     </div>
                     <div class="config-crud-row-actions">
-                        <button type="button" class="config-btn config-btn--small" data-block-move="up" data-block-id="${esc(widget.id)}" aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
-                        <button type="button" class="config-btn config-btn--small" data-block-move="down" data-block-id="${esc(widget.id)}" aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>
-                        <button type="button" class="config-btn config-btn--small" data-block-configure="${esc(widget.id)}">${esc(this.t('config.categoriesWidgetConfigure', 'Configure'))}</button>
+                        ${this.renderStructureRowExtras?.({ pageId: g.page.id, categoryId: c.id }) || ''}
+                        <button type="button" class="config-btn config-btn--small" data-cat-duplicate="${i}" title="${esc(t('config.categoryDuplicateHint', 'Copy this category — with or without its bookmarks'))}">${esc(t('config.pageDuplicate', 'Duplicate'))}</button>
+                        <button type="button" class="config-btn config-btn--small config-btn--danger" data-cat-delete="${i}">${esc(t('config.backupDelete', 'Delete'))}</button>
                     </div>
                 </li>`;
+            }).join('');
+        }).join('');
+
+        let body;
+        if (groups.every((g) => g.loaded) && !groups.some((g) => g.list.length)) {
+            body = `<p class="config-panel-empty">${esc(t('config.categoriesEmpty', 'No categories on this page yet.'))}</p>`;
+        } else if (!html) {
+            body = `<p class="config-panel-empty">${esc(t('config.categoriesNoMatch', 'No categories match your search.'))}</p>`;
+        } else {
+            const columns = this.renderStructureColumns([
+                [t('config.colName', 'Name')],
+                [t('config.colBookmarks', 'Bookmarks'), 'structure-num'],
+                [t('config.colBroken', 'Broken'), 'structure-num'],
+                [t('config.colSpread', 'Spread'), 'structure-spread-cell'],
+                ['', 'structure-actions'],
+            ]);
+            body = `${this.renderPtCountLabel('categories', shown, totalCategories)}${this.renderStructureList('categories', 'minmax(10rem, 1fr) 6rem 5rem minmax(max-content, 4rem) auto', columns + html)}`;
+        }
+        return `${intro}${summary}${toolbar}${chips}${body}`;
     }
 
-    /*
-     * Move one block one place in the page's order.
-     *
-     * Writes blockOrder, the single list the dashboard draws from -- the arrows
-     * on this tab used to reorder the category array instead, which nothing
-     * reads for placement any more, so they moved a row on screen and changed
-     * nothing on the dashboard.
+    /**
+     * "12 categories · 60 bookmarks · 2 broken links" above a Structure table.
+     * A pair marked bad turns the danger colour when its value is not zero.
+     * A label is a string, or [key, plural, singular] to read "1 finder"
+     * where it would otherwise read "1 finders" (the singular lives under
+     * `${key}One`).
      */
-    async moveBlockOnCategoriesTab(id, direction) {
-        const order = [...(this._catBlockOrder || [])];
-        const from = order.indexOf(String(id));
-        if (from < 0) return;
-        const to = from + (direction === 'up' ? -1 : 1);
-        if (to < 0 || to >= order.length) return;
+    renderStructureSummary(pairs) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const words = (value, label) => (Array.isArray(label)
+            ? (Number(value) === 1 ? this.t(`${label[0]}One`, label[2]) : this.t(label[0], label[1]))
+            : label);
+        return `<p class="structure-summary">${pairs.map(([value, label, bad]) =>
+            `<span class="${bad && value ? 'is-bad' : ''}"><strong>${esc(String(value))}</strong> ${esc(words(value, label))}</span>`).join('')}</p>`;
+    }
 
-        [order[from], order[to]] = [order[to], order[from]];
-        this._catBlockOrder = order;
-        this.repaintPtBody();
+    /**
+     * Filter chips under the toolbar. A group with a single item is no
+     * choice at all, so it is left out, and with it the whole strip when
+     * nothing is left.
+     */
+    renderStructureChips(groups) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const useful = groups.filter((g) => g.items.length > 1);
+        if (!useful.length) return '';
+        return `<div class="structure-chips">${useful.map((g) => `
+            <div class="structure-chip-group" role="group" aria-label="${esc(g.label)}">
+                <span class="structure-chip-title">${esc(g.label)}</span>
+                ${g.items.map(([value, label, n]) => `<button type="button" class="structure-chip" data-structure-chip="${esc(g.key)}" data-value="${esc(value)}" aria-pressed="${g.current === value}">
+                    <span class="structure-chip-label">${esc(label)}</span><span class="structure-chip-count">${esc(String(n))}</span></button>`).join('')}
+            </div>`).join('')}</div>`;
+    }
 
-        try {
-            const res = await this.writeFetch(`/api/pages/${this._catPageId}/blocks`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ order }),
+    /**
+     * The list a Structure table sits in. `cols` is the grid template its
+     * column heads and every row share (config-structure.css), so a head
+     * stays over its cells whatever the rows hold.
+     */
+    renderStructureList(kind, cols, inner) {
+        return `<ul class="config-crud-list config-crud-list--table structure-table" data-structure-table="${kind}" style="--structure-cols:${cols}">${inner}</ul>`;
+    }
+
+    /** Column heads as the first item of a Structure table; [label, class] pairs. */
+    renderStructureColumns(cols) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `<li class="structure-colhead" aria-hidden="true">${cols.map(([label, cls]) =>
+            `<span class="${cls || ''}">${esc(label)}</span>`).join('')}</li>`;
+    }
+
+    /**
+     * The categories of every visible page. Only pages not held yet are
+     * fetched, so a page that appears later (added, duplicated, unhidden)
+     * is read on the next bind instead of showing as a page without any.
+     */
+    async loadCategoriesEditor() {
+        // Written elsewhere since they were read (another tab, the dashboard):
+        // the lists are another revision's.
+        const revision = String(this.dash._serverDataRevision || '');
+        if (this._catByPage && revision && this._catRevision && revision !== this._catRevision) this.forgetCategoryLists();
+        const pages = (this.dash.pages || []).filter((p) => !p.hidden);
+        const failed = this._catFailedPages || new Set();
+        // A page that failed is tried again on the next bind -- not on the
+        // repaint this load itself makes, which would retry it in a loop.
+        const retryFailed = !this._catRepaintFromLoad;
+        const missing = pages.filter((p) => !this._catByPage?.has(String(p.id))
+            && (retryFailed || !failed.has(String(p.id))));
+        if (this._catByPage && !missing.length) return;
+        if (this._catLoading) return this._catLoading;
+        const generation = this._catGeneration || 0;
+        this._catRevision = revision;
+        this._catLoading = (async () => {
+            const results = await Promise.allSettled(missing.map(async (p) => {
+                const res = await fetch(`/api/categories?page=${encodeURIComponent(p.id)}`);
+                if (!res || !res.ok) throw new Error(`HTTP ${res?.status ?? 'network'}`);
+                const data = await res.json();
+                if (!Array.isArray(data)) throw new Error('categories: unexpected payload');
+                return data;
+            }));
+            // Forgotten while this was on its way: these answers are older
+            // than whatever made the lists go.
+            if ((this._catGeneration || 0) !== generation) return false;
+            const map = this._catByPage || new Map();
+            results.forEach((r, i) => {
+                const key = String(missing[i].id);
+                if (r.status === 'fulfilled') {
+                    map.set(key, r.value);
+                    failed.delete(key);
+                } else {
+                    // See loadFinders: an empty list here is a write
+                    // instruction, because every save replaces a page's list,
+                    // so a failed read is remembered, never shown as "none".
+                    failed.add(key);
+                }
             });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        } catch {
-            this.notify(this.t('config.categoriesOrderError', 'Could not save the order.'), 'error');
+            this._catByPage = map;
+            this._catFailedPages = failed;
+            this._categoriesLoadFailed = failed.size > 0;
+            return true;
+        })();
+        let fresh;
+        try {
+            fresh = await this._catLoading;
+        } finally {
+            this._catLoading = null;
+        }
+        // Forgotten on the way: read again, or the table stays on "Loading…"
+        // until something else binds it.
+        if (!fresh) {
+            if (this.ptTab === 'categories' && document.getElementById('config-pt-body')) await this.loadCategoriesEditor();
             return;
         }
-        await this.refreshDashboardBlocks();
+        if (!this.useCategoryPage(this._catPageId) && !this.useCategoryPage(this.dash.currentPageId)) {
+            this.useCategoryPage(pages.map((p) => String(p.id)).find((key) => this._catByPage.has(key)));
+        }
+        if (this.ptTab === 'categories') {
+            this._catRepaintFromLoad = true;
+            try {
+                this.repaintPtBody();
+            } finally {
+                this._catRepaintFromLoad = false;
+            }
+        }
     }
 
-    async loadCategoriesEditor() {
-        const pages = this.dash.pages || [];
-        const pageId = this._catPageId != null ? this._catPageId : (this.dash.currentPageId ?? pages[0]?.id);
-        this._catPageId = pageId;
-        // Already loaded for this page — don't refetch/repaint and detach controls.
-        if (this._categories != null && this._catLoadedFor === pageId) return;
-        try {
-            /*
-             * Categories and the page's blocks together.
-             *
-             * The blocks answer carries the order every block is drawn in --
-             * widgets and categories in one list -- which is what this editor
-             * arranges. Fetched in the same round rather than after it, so the
-             * list is never painted once without its widgets and again with.
-             */
-            const [res, blocksRes] = await Promise.all([
-                fetch(`/api/categories?page=${encodeURIComponent(pageId)}`),
-                this.writeFetch(`/api/pages/${encodeURIComponent(pageId)}/blocks`),
-            ]);
-            if (!res || !res.ok) throw new Error(`HTTP ${res?.status ?? 'network'}`);
-            const data = await res.json();
-            if (!Array.isArray(data)) throw new Error('categories: unexpected payload');
-            // The picker moved on while this was loading: another page's list
-            // shown under this one, and the next edit saved it over it.
-            if (String(this._catPageId) !== String(pageId)) return;
-            this._categories = data;
-            this._categoriesLoadFailed = false;
-            // A blocks failure is not a categories failure: the list still
-            // works, it just cannot show the widgets until the next load.
-            const blocks = blocksRes?.ok ? await blocksRes.json().catch(() => null) : null;
-            this._catWidgets = blocks?.widgets || [];
-            this._catBlockOrder = blocks?.order || [];
-        } catch {
-            // See loadFinders: an empty list here is a write instruction, so a
-            // failed read has to be remembered rather than rendered as "none".
-            this._categories = [];
-            this._categoriesLoadFailed = true;
-            this._catWidgets = [];
-            this._catBlockOrder = [];
-        }
-        this._catLoadedFor = pageId;
-        if (this.ptTab === 'categories') this.repaintPtBody();
+    /**
+     * Point the single-page handlers at one page's list.
+     *
+     * `_categories` becomes that page's array itself, not a copy, so an edit
+     * through it is an edit of the table's data, and saveCategories(pageId)
+     * writes exactly that page.
+     */
+    useCategoryPage(pageId) {
+        const key = String(pageId);
+        if (!this._catByPage?.has(key)) return false;
+        this._catPageId = Number(pageId);
+        this._categories = this._catByPage.get(key);
+        this._catLoadedFor = this._catPageId;
+        return true;
+    }
+
+    /**
+     * Replace one page's list, keeping the editor's two views of it in step:
+     * code that builds a new array (a filter, an undo) would otherwise leave
+     * the table showing the old one.
+     */
+    setCategoryList(pageId, list) {
+        if (this._catByPage) this._catByPage.set(String(pageId), list);
+        if (String(this._catPageId) === String(pageId)) this._categories = list;
+    }
+
+    /** The page a row (or a control inside it) belongs to, made current. */
+    useCategoryRowPage(el) {
+        const row = el?.closest?.('[data-cat-page]');
+        if (row) this.useCategoryPage(row.getAttribute('data-cat-page'));
+        return row;
+    }
+
+    /** Forget the loaded lists, so the next bind fetches them again. */
+    forgetCategoryLists() {
+        this._categories = null;
+        this._catByPage = null;
+        this._catFailedPages = null;
+        this._catLoadedFor = null;
+        this._catGeneration = (this._catGeneration || 0) + 1;
     }
 
     bindCategoriesEditor(container) {
-        const pageSelect = container.querySelector('[data-cat-page]');
-        if (pageSelect) {
-            pageSelect.addEventListener('change', () => {
-                this._catPageId = Number(pageSelect.value);
-                this._categories = null;
-                this.repaintPtBody();
-                void this.loadCategoriesEditor();
-            });
+        const body = container.querySelector('#config-pt-body') || container;
+        // Every per-row handler below addresses this._categories by index, so
+        // the row's own page is made current before any of them runs: a
+        // pointer press, a focus arriving by Tab, or a click passed on by the
+        // modal's ⋯ menu (which sits inside the row). Bound once per body, as
+        // the body itself outlives every repaint.
+        if (!body.dataset.catPageWired) {
+            body.dataset.catPageWired = '1';
+            body.addEventListener('pointerdown', (e) => this.useCategoryRowPage(e.target), true);
+            body.addEventListener('focusin', (e) => this.useCategoryRowPage(e.target));
+            body.addEventListener('click', (e) => this.useCategoryRowPage(e.target), true);
         }
+        container.querySelectorAll('[data-structure-chip]').forEach((chipBtn) => {
+            chipBtn.addEventListener('click', () => {
+                const key = chipBtn.getAttribute('data-structure-chip');
+                const value = chipBtn.getAttribute('data-value');
+                if (!this.ptChip.categories[key] || !value) return;
+                this.ptChip.categories[key] = value;
+                if (key === 'page' && value !== 'all') this.useCategoryPage(value);
+                this.repaintPtBody();
+            });
+        });
+        container.querySelectorAll('[data-structure-group-toggle]').forEach((toggle) => {
+            toggle.addEventListener('click', () => {
+                const key = toggle.getAttribute('data-structure-group-toggle');
+                if (this._catCollapsed.has(key)) this._catCollapsed.delete(key);
+                else this._catCollapsed.add(key);
+                this.repaintPtBody();
+                document.querySelector(`#config-pt-body [data-structure-group-toggle="${CSS.escape(key)}"]`)?.focus();
+            });
+        });
         container.querySelectorAll('[data-cat="name"]').forEach((input) => {
             input.addEventListener('change', () => {
+                // Its own page, read off the row: a change fires on blur, after
+                // the press on another row that took the focus away has already
+                // pointed the editor at that row's page.
+                this.useCategoryRowPage(input);
                 const i = Number(input.getAttribute('data-index'));
                 if (!this._categories || !this._categories[i]) return;
                 // Categories live per page, so a name only has to be unique
-                // within the page currently selected in the dropdown.
+                // within the row's own page.
                 if (!this.guardUniqueName(
                     input,
                     input.value,
@@ -23731,6 +24014,7 @@ class DashboardConfig {
         });
         container.querySelectorAll('[data-cat-spread]').forEach((btn) => {
             btn.addEventListener('click', () => {
+                this.useCategoryRowPage(btn);
                 const i = Number(btn.getAttribute('data-cat-spread'));
                 if (!this._categories || !this._categories[i]) return;
                 const on = btn.getAttribute('aria-pressed') !== 'true';
@@ -23760,7 +24044,22 @@ class DashboardConfig {
         });
         const addBtn = container.querySelector('[data-cat-add]');
         if (addBtn) addBtn.addEventListener('click', () => {
-            this._categories = this._categories || [];
+            // Onto the page in the page chip, else the page on the dashboard.
+            // A hidden current page is not in the table, so the first visible
+            // page takes it instead of a category nobody sees appear. A target
+            // whose list is not held (still loading, or its read failed) stops
+            // here: falling back to another page would write to the wrong one.
+            const visible = (this.dash.pages || []).filter((p) => !p.hidden).map((p) => String(p.id));
+            const chipPage = this.ptChip.categories.page;
+            let target = String(chipPage !== 'all' ? chipPage : this.dash.currentPageId);
+            if (!visible.includes(target)) target = visible[0];
+            if (!this.useCategoryPage(target)) {
+                if (this._catFailedPages?.has(target)) {
+                    this.notify(this.t('config.categoriesLoadFailed',
+                        'Categories could not be loaded, so they will not be saved. Reload and try again.'), 'error');
+                }
+                return;
+            }
             // Categories need a stable id; the server does not backfill one.
             const id = `cat-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
             const name = DashboardConfig.uniqueNameFrom(
@@ -23775,18 +24074,26 @@ class DashboardConfig {
             void this.saveCategories(this._catPageId);
         });
         container.querySelectorAll('[data-cat-duplicate]').forEach((btn) => {
-            btn.addEventListener('click', () => void this.duplicateCategory(Number(btn.getAttribute('data-cat-duplicate'))));
+            btn.addEventListener('click', () => {
+                this.useCategoryRowPage(btn);
+                void this.duplicateCategory(Number(btn.getAttribute('data-cat-duplicate')));
+            });
         });
         container.querySelectorAll('[data-cat-delete]').forEach((btn) => {
             btn.addEventListener('click', async () => {
+                this.useCategoryRowPage(btn);
                 const i = Number(btn.getAttribute('data-cat-delete'));
                 if (!this._categories || !this._categories[i]) return;
                 const cat = this._categories[i];
+                // Held across the confirmation: the list and page are this
+                // row's, whatever the editor points at once it closes.
+                const pageId = this._catPageId;
+                const list = this._categories;
                 // Removing a category does not touch its bookmarks: they keep
                 // pointing at an id nothing defines any more and collect in
                 // "unknown categories" on the dashboard. Say so, with the count,
                 // because that consequence is invisible from this list.
-                const orphans = this.categoryBookmarkCounts(this._catPageId);
+                const orphans = this.categoryBookmarkCounts(pageId);
                 const n = DashboardConfig.categoryCountFor(orphans, cat);
                 const message = n > 0
                     ? this.t('config.categoryDeleteWithBookmarks',
@@ -23798,10 +24105,10 @@ class DashboardConfig {
                 if (!await this.confirmAction(message)) return;
                 // The list before the splice is the whole undo payload — saving
                 // categories is a replace-the-list write.
-                const before = (this._categories || []).map((c) => ({ ...c }));
-                const pageId = this._catPageId;
+                const before = list.map((c) => ({ ...c }));
                 const removed = { ...cat };
-                this._categories.splice(i, 1);
+                this.useCategoryPage(pageId);
+                list.splice(i, 1);
                 this.repaintPtBody();
                 // The server refuses to drop the last category while bookmarks
                 // still point at it (409). Without checking, the delete carried
@@ -23809,10 +24116,10 @@ class DashboardConfig {
                 // category that is still there, contradicting the error toast
                 // saveCategories had just shown.
                 if (await this.saveCategories(pageId) === false) {
-                    // Only onto the list it came from: the picker may be on
-                    // another page by now, whose list is not this one's.
-                    if (String(this._catPageId) === String(pageId) && this._categories) {
-                        this._categories.splice(i, 0, removed);
+                    // Back onto the list it came from, which is that page's
+                    // whichever row the editor points at by now.
+                    if (this._catByPage?.get(String(pageId)) === list) {
+                        list.splice(i, 0, removed);
                         this.repaintPtBody();
                     }
                     return;
@@ -23829,11 +24136,11 @@ class DashboardConfig {
                                 `/api/categories?page=${encodeURIComponent(pageId)}`,
                                 before
                             );
-                            // Only repaint the editor if it is still showing the
-                            // page this delete belonged to.
-                            if (Number(pageId) === Number(this._catPageId)) {
-                                this._categories = before;
-                                this.repaintPtBody();
+                            // Every page is in the table, so the restored list
+                            // goes back into it whichever page is current.
+                            if (this._catByPage) {
+                                this.setCategoryList(pageId, before);
+                                if (this.ptTab === 'categories') this.repaintPtBody();
                             }
                             this.invalidateBookmarkCategoriesCache(pageId);
                             this.dash.renderDashboard?.({ animate: false });
@@ -23852,45 +24159,6 @@ class DashboardConfig {
                 });
             });
         });
-        container.querySelectorAll('[data-block-move]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                void this.moveBlockOnCategoriesTab(
-                    btn.getAttribute('data-block-id'), btn.getAttribute('data-block-move'));
-            });
-        });
-
-        container.querySelectorAll('[data-block-configure]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                // Straight to where a widget is set up, rather than repeating
-                // its settings in a list that is about arrangement. That is its
-                // own section now, not a tab beside this one.
-                this.openConfigView('widgets');
-            });
-        });
-
-        container.querySelectorAll('[data-cat-move]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                // The buttons are not rendered under a sort or search, so this
-                // only fires when the list is in its stored order. Checked here
-                // too: a swap by stored index against a reordered display would
-                // move a row the user never pointed at.
-                if (this.ptListReordered('categories')) return;
-                const i = Number(btn.getAttribute('data-index'));
-                const dir = btn.getAttribute('data-cat-move');
-                const category = this._categories?.[i];
-                if (!category) return;
-                /*
-                 * Through blockOrder, the one list the dashboard draws from.
-                 *
-                 * These arrows used to swap two entries in the category array
-                 * and post that -- which nothing reads for placement any more,
-                 * so the row moved here and nothing moved on the dashboard. One
-                 * step in the page's order moves past whatever is next, widget
-                 * or category.
-                 */
-                void this.moveBlockOnCategoriesTab(String(category.id), dir);
-            });
-        });
     }
 
     /**
@@ -23903,17 +24171,24 @@ class DashboardConfig {
      * "Category deleted." toast for a category the server still had.
      *
      * The page id is captured on entry rather than read at write time: every
-     * caller fires this without awaiting, and the page picker reassigns
-     * `_catPageId` synchronously, so switching pages mid-save sent one page's
+     * caller fires this without awaiting, and a press on another page's row
+     * reassigns `_catPageId` synchronously, so reading it late sent one page's
      * categories to another.
      */
     async saveCategories(pageId = this._catPageId) {
-        if (this._categoriesLoadFailed) {
+        // That page's own list from the table, whichever page the editor
+        // points at by now; _categories only for a caller outside the table.
+        // A table without this page refuses rather than send another page's
+        // list, or none, in its place. No table and no list at all (the
+        // table was just forgotten for a reload) refuses too: an empty
+        // post would wipe the page's categories.
+        const list = this._catByPage ? this._catByPage.get(String(pageId)) : this._categories;
+        if (!Array.isArray(list) || (!this._catByPage && this._categoriesLoadFailed)) {
             this.notify(this.t('config.categoriesLoadFailed',
                 'Categories could not be loaded, so they will not be saved. Reload and try again.'), 'error');
             return false;
         }
-        const payload = JSON.stringify(this._categories || []);
+        const payload = JSON.stringify(list);
         try {
             const res = await this.writeFetch(`/api/categories?page=${encodeURIComponent(pageId)}`, {
                 method: 'POST',
@@ -27043,7 +27318,9 @@ class DashboardConfig {
         if (!saveRes.ok) throw new Error(`HTTP ${saveRes.status}`);
         this._pendingCategories?.delete(categoryId);
         this.invalidateBookmarkCategoriesCache(pageId);
-        if (String(this._catLoadedFor) === String(pageId)) this._catLoadedFor = null;
+        // The Structure table holds every page's list: fetched again on its
+        // next bind rather than showing this page without the new category.
+        if (this._catByPage?.has(String(pageId))) this.forgetCategoryLists();
     }
 
     /**

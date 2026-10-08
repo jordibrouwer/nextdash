@@ -75,63 +75,6 @@ body {
   color: var(--accent-warning);
 }
 
-.confirmation {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.8);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 10;
-}
-
-.confirmation.hidden {
-  display: none;
-}
-
-.confirmation p {
-  background-color: var(--background-secondary);
-  border: var(--border-width) solid var(--border-primary);
-  color: var(--text-primary);
-  padding: var(--padding-medium);
-  margin: var(--padding-small);
-  text-align: center;
-  width: calc(100% - 2 * var(--padding-small));
-  max-width: 350px;
-}
-
-.highlight {
-  color: var(--accent-warning);
-  font-weight: bold;
-}
-
-.confirmation-buttons {
-  display: flex;
-  gap: var(--padding-small);
-  width: calc(100% - 2 * var(--padding-small));
-  max-width: 350px;
-  margin: var(--padding-small);
-}
-
-.confirmation-buttons button {
-  flex: 1;
-  padding: var(--padding-small) var(--padding-medium);
-  background-color: var(--background-secondary);
-  border: var(--border-width) solid var(--border-primary);
-  color: var(--text-primary);
-  cursor: pointer;
-  font-size: var(--font-size-text);
-}
-
-.confirmation-buttons button:hover {
-  background-color: var(--accent-success);
-  color: var(--background-primary);
-}
-
 .tabs {
   display: flex;
   border-bottom: var(--border-width) solid var(--border-secondary);

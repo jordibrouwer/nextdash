@@ -1,0 +1,438 @@
+/*
+ * Structure in the shape of Bookmarks, Inbox and Containers: a summary line,
+ * a toolbar, chips, small-caps column heads, and rows without boxes so the
+ * theme's backdrop shows through. Scoped to the Structure body
+ * (#config-pt-body, in Config and in the Bookmarks view's modal) so the other
+ * Config tables keep their look.
+ *
+ * Every table draws its column heads and its rows from one template, set on
+ * the list as --structure-cols (renderStructureList): the rows are subgrids of
+ * the list, so a head always stands over its cells. The modal packs the list
+ * in two columns of its own, so there each row carries the template itself
+ * and the heads are left out.
+ */
+
+#config-pt-body {
+    --structure-hair: color-mix(in srgb, var(--border-primary) 55%, transparent);
+    --structure-tint: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    --structure-tint-strong: color-mix(in srgb, var(--text-primary) 7%, transparent);
+    --structure-mono: var(--font-family-mono, ui-monospace, monospace);
+}
+
+/* ── Summary, toolbar, chips ────────────────────────────────────────────── */
+
+#config-pt-body .structure-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem) var(--space-4, 1rem);
+    margin: 0 0 var(--space-3, 0.75rem);
+    font-family: var(--structure-mono);
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+#config-pt-body .structure-summary strong {
+    color: var(--text-primary);
+    margin-right: 0.25em;
+}
+
+#config-pt-body .structure-summary .is-bad,
+#config-pt-body .structure-summary .is-bad strong {
+    color: var(--accent-error);
+}
+
+#config-pt-body .config-crud-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+    align-items: center;
+}
+
+#config-pt-body .config-crud-toolbar [data-pt-search] {
+    flex: 0 1 16rem;
+    background: var(--structure-tint);
+    border-color: var(--structure-hair);
+}
+
+#config-pt-body .config-crud-toolbar [data-pt-sort] {
+    margin-left: auto;
+    background: var(--structure-tint);
+    border-color: var(--structure-hair);
+}
+
+#config-pt-body .config-crud-toolbar .config-btn:last-child {
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+    background: transparent;
+}
+
+#config-pt-body .structure-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem) var(--space-4, 1rem);
+    margin: var(--space-2, 0.5rem) 0 var(--space-3, 0.75rem);
+}
+
+#config-pt-body .structure-chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+    align-items: center;
+}
+
+#config-pt-body .structure-chip-title {
+    font: 11px var(--structure-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-right: var(--space-1, 0.25rem);
+}
+
+#config-pt-body .structure-chip {
+    display: inline-flex;
+    gap: 0.4em;
+    padding: 2px 9px;
+    border: 1px solid var(--structure-hair);
+    background: transparent;
+    color: var(--text-primary);
+    font: 12px var(--structure-mono);
+    cursor: pointer;
+}
+
+#config-pt-body .structure-chip-count {
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+#config-pt-body .structure-chip[aria-pressed="true"] {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+/* ── Column heads and page groups ───────────────────────────────────────── */
+
+#config-pt-body .structure-colhead {
+    display: flex;
+    gap: var(--space-3, 0.75rem);
+    align-items: center;
+    min-height: 30px;
+    padding: 0 var(--space-3, 0.75rem);
+    border-bottom: 1px solid var(--structure-hair);
+    font: 11px var(--structure-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    list-style: none;
+}
+
+#config-pt-body .structure-colhead > :first-child {
+    flex: 1;
+}
+
+#config-pt-body .structure-group-head {
+    padding: var(--space-3, 0.75rem) var(--space-3, 0.75rem) var(--space-1, 0.25rem);
+    list-style: none;
+}
+
+#config-pt-body .structure-group-toggle {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--accent-primary);
+    font: 600 11.5px var(--structure-mono);
+    letter-spacing: 0.05em;
+    text-align: left;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+#config-pt-body .structure-group-toggle[aria-expanded="false"] .structure-group-name::after {
+    content: ' ▸';
+}
+
+#config-pt-body .structure-group-meta {
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+/* ── Rows ───────────────────────────────────────────────────────────────── */
+
+#config-pt-body .structure-table .config-crud-row {
+    min-height: 38px;
+    background: transparent;
+    border-bottom-color: var(--structure-hair);
+}
+
+#config-pt-body .structure-table .config-crud-row:hover,
+#config-pt-body .structure-table .config-crud-row:focus-within {
+    background: var(--structure-tint);
+}
+
+#config-pt-body .structure-table .config-crud-row.keyboard-selected {
+    background: var(--structure-tint-strong);
+}
+
+/* The collection whose editor is open. */
+#config-pt-body .structure-table .config-crud-row.is-active {
+    border-bottom-color: var(--accent-primary);
+    background: var(--structure-tint);
+    box-shadow: inset 3px 0 0 var(--accent-primary);
+}
+
+#config-pt-body .structure-table .config-crud-fields .config-text {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#config-pt-body .structure-num {
+    text-align: right;
+    font-family: var(--structure-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+}
+
+#config-pt-body .structure-num--bad {
+    color: var(--accent-error);
+}
+
+/* The Spread column: its switch stays in sight, unlike the row's actions. */
+#config-pt-body .structure-spread-cell {
+    display: flex;
+    justify-content: center;
+}
+
+#config-pt-body .structure-muted {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font: 12px var(--structure-mono);
+    color: var(--text-secondary);
+}
+
+#config-pt-body .structure-table .config-stat-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+#config-pt-body .structure-tag {
+    flex: none;
+    padding: 0 6px;
+    border: 1px solid var(--structure-hair);
+    font: 11px var(--structure-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+#config-pt-body .structure-name-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
+}
+
+#config-pt-body .structure-icon-input {
+    text-align: center;
+}
+
+/* Finders: the shortcut is a chip, the URL the long muted value. */
+#config-pt-body .structure-table .config-finder-shortcut {
+    justify-self: start;
+    width: 4.5rem;
+    padding: 2px 9px;
+    border-color: var(--structure-hair);
+    font: 12px var(--structure-mono);
+    text-align: center;
+}
+
+#config-pt-body .structure-table .config-finder-shortcut:hover,
+#config-pt-body .structure-table .config-finder-shortcut:focus {
+    border-color: var(--accent-primary);
+}
+
+#config-pt-body .structure-table .config-finder-url {
+    font: 12px var(--structure-mono);
+    color: var(--text-secondary);
+    text-overflow: ellipsis;
+}
+
+#config-pt-body .structure-table .config-finder-url:focus {
+    color: var(--text-primary);
+}
+
+/* ── Row buttons: dim, full on hover or focus ───────────────────────────── */
+
+#config-pt-body .config-crud-row-actions {
+    opacity: 0.45;
+    transition: opacity 0.12s;
+    justify-self: end;
+}
+
+#config-pt-body .config-crud-row:hover .config-crud-row-actions,
+#config-pt-body .config-crud-row:focus-within .config-crud-row-actions,
+#config-pt-body .config-crud-row.keyboard-selected .config-crud-row-actions {
+    opacity: 1;
+}
+
+#config-pt-body .config-crud-row-actions .config-btn {
+    background: transparent;
+    border-color: transparent;
+}
+
+#config-pt-body .config-crud-row-actions .config-btn:hover,
+#config-pt-body .config-crud-row-actions .config-btn:focus-visible {
+    border-color: var(--structure-hair);
+    background: var(--structure-tint-strong);
+}
+
+@media (hover: none) {
+    #config-pt-body .config-crud-row-actions {
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #config-pt-body .config-crud-row-actions {
+        transition: none;
+    }
+}
+
+body.no-animations #config-pt-body .config-crud-row-actions {
+    transition: none;
+}
+
+/* ── One grid for the heads and the rows ────────────────────────────────── */
+
+@media (min-width: 641px) {
+    #config-pt-body .structure-table {
+        display: grid;
+        grid-template-columns: var(--structure-cols);
+        align-content: start;
+    }
+
+    #config-pt-body .structure-table > * {
+        grid-column: 1 / -1;
+    }
+
+    #config-pt-body .structure-table > .structure-colhead,
+    #config-pt-body .structure-table > .config-crud-row {
+        display: grid;
+        grid-template-columns: subgrid;
+        align-items: center;
+        gap: 0 var(--space-3, 0.75rem);
+    }
+
+    /* The row's fields are its cells: they join the list's columns. */
+    #config-pt-body .structure-table .config-crud-fields {
+        display: contents;
+    }
+
+    /* A finder's %s warning sits on a line of its own under the cells. */
+    #config-pt-body .structure-table > .config-crud-row:has(.config-field-warning) {
+        padding-block: var(--space-1-5, 0.35rem);
+        row-gap: 2px;
+    }
+
+    #config-pt-body .structure-table .config-field-warning {
+        grid-column: 1 / -1;
+    }
+}
+
+/* No subgrid: each row carries the template itself. Only the actions column
+   (auto) can then differ from row to row. */
+@supports not (grid-template-columns: subgrid) {
+    @media (min-width: 641px) {
+        #config-pt-body .structure-table > .structure-colhead,
+        #config-pt-body .structure-table > .config-crud-row {
+            grid-template-columns: var(--structure-cols);
+        }
+    }
+}
+
+/* Narrow: no grid, no heads; the numbers keep a width of their own. */
+@media (max-width: 640px) {
+    #config-pt-body .structure-colhead {
+        display: none;
+    }
+
+    #config-pt-body .structure-num,
+    #config-pt-body .structure-spread-cell {
+        flex: none;
+        min-width: 3.5em;
+    }
+}
+
+/* ── The Bookmarks view's modal ─────────────────────────────────────────── *
+ * Its frame is its own (config-bookmarks-workbench.css): one tinted card,
+ * the list in two columns of 32px rows, the row's buttons under ⋯. */
+
+.config-structure-overlay #config-pt-body .structure-table {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-4, 1rem);
+    align-content: start;
+    margin: 0;
+    padding: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 18%, var(--border-primary));
+    border-radius: var(--radius-5, 8px);
+    background: var(--background-primary);
+    overflow: auto;
+    min-height: 0;
+    flex: 1 1 auto;
+}
+
+@media (max-width: 720px) {
+    .config-structure-overlay #config-pt-body .structure-table {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.config-structure-overlay #config-pt-body .structure-table > .structure-group-head {
+    grid-column: 1 / -1;
+}
+
+.config-structure-overlay #config-pt-body .structure-table > .structure-colhead {
+    display: none;
+}
+
+.config-structure-overlay #config-pt-body .structure-table > .config-crud-row {
+    display: grid;
+    grid-template-columns: var(--structure-cols);
+    grid-column: auto;
+    align-items: center;
+    gap: 0 var(--space-2, 0.5rem);
+    min-height: 32px;
+    height: 32px;
+    padding: 0 var(--space-1, 0.25rem);
+}
+
+.config-structure-overlay #config-pt-body .structure-table .config-crud-fields {
+    display: contents;
+}
+
+/* Half the modal is narrower than the full-width templates (their name column
+   alone asks for 10rem), so a row would run past its column and its ⋯ would
+   sit over the next row's handle. The modal's rows take a template of their
+   own, with the handle's column only where the row has one. */
+.config-structure-overlay #config-pt-body .structure-table[data-structure-table="categories"] > .config-crud-row {
+    grid-template-columns: minmax(0, 1fr) 2.5rem 2.5rem 3rem auto;
+}
+
+.config-structure-overlay #config-pt-body .structure-table[data-structure-table="pages"] > .config-crud-row {
+    grid-template-columns: 3rem minmax(0, 1fr) 2.5rem auto;
+}
+
+.config-structure-overlay #config-pt-body .structure-table[data-structure-table="pages"] > .config-crud-row:has(.config-structure-grip) {
+    grid-template-columns: 1.25rem 3rem minmax(0, 1fr) 2.5rem auto;
+}

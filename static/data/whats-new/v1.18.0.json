@@ -1,0 +1,98 @@
+{
+  "tag": "v1.18.0",
+  "date": "8 October 2026",
+  "releasedAt": "2026-10-08",
+  "modalLead": "<strong>Move categories and widgets</strong> anywhere on the dashboard — wide, with the keyboard, or to another page — see <strong>every category in one table</strong> under Structure, and read these notes in a roomier window.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Move categories, widgets and collections with a landing box.</strong> Drag the <code>//</code> before a title: the page holds still and a dashed box shows where it lands. Drop it on the line between two columns to make it wide."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Move them with the keyboard.</strong> <kbd>Space</kbd> on the <code>//</code> picks a block up; the arrows move the box, <kbd>W</kbd> switches the width, <kbd>Enter</kbd> drops and <kbd>Esc</kbd> cancels. <kbd>Alt</kbd> + <kbd>←</kbd> / <kbd>→</kbd> on a title still moves it one place."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Send a block to another page.</strong> <strong>Move to page</strong> in the right-click menu of a category, widget or collection, or <kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>←</kbd> / <kbd>→</kbd> on its title. It lands last on that page, and <strong>Undo</strong> on the notice — or <kbd>Ctrl/Cmd</kbd> + <kbd>Z</kbd> — brings it back."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>New categories spread across columns</strong> from the start. Switch it off under Appearance → Grid → <strong>New categories spread across columns</strong>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A collection you made two columns wide stays wide</strong>, and stays in its place among your categories."
+        }
+      ]
+    },
+    {
+      "title": "Structure",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Every category in one table.</strong> Structure → Categories lists the categories of all your pages, grouped by page. Chips narrow it to some pages, or to the spread, broken or empty ones, and the columns show bookmarks, broken links and spread."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The Spread heading fits</strong> in every language."
+        }
+      ]
+    },
+    {
+      "title": "Themes",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Reset all</strong> in the theme browser puts your look back the way a fresh install has it, for every theme. Your theme and Layout stay as they are."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Fewer filters at the top of the theme browser.</strong> The character and collection chips fold under <strong>More filters</strong>; while folded, the filters that are on show as chips you can remove."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The page's scrollbar follows the theme.</strong> With scrollbars always shown, a dark theme had a white strip down the right edge."
+        }
+      ]
+    },
+    {
+      "title": "What's new",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A roomier window for these notes.</strong> New things come first as cards, fixes follow as one line each with the explanation a click away, and a menu narrows a release to one section."
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks view",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The header band is see-through at rest</strong> and turns nearly solid once you scroll, so rows no longer show through it."
+        }
+      ]
+    },
+    {
+      "title": "Browser extension",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A first setup lists your pages and categories</strong> straight after Save Settings, without reopening the popup."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Two quick saves in a row both show their mark</strong> on the toolbar icon."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Sharp icons</strong> at every size, drawn from the app's logo."
+        }
+      ]
+    }
+  ]
+}

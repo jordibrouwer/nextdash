@@ -195,6 +195,8 @@
         dismissLabel: () => t('dashboard.uncheckedBookmarksNoticeDecline', 'No thanks'),
         dismissName: 'decline',
         canShow: () => {
+            // Nothing can be checked in the demo, so there is nothing to offer.
+            if (window.DemoLock?.on) return false;
             if (isDismissedForever()) return false;
             if (wasShownRecently()) return false;
             const count = uncheckedBookmarks().length;

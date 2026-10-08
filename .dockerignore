@@ -16,6 +16,9 @@ scripts/
 # Runtime / local data (mounted as a volume in compose)
 data/
 
+# Extension builds (npm run build:extension)
+dist/
+
 # Local binaries
 nextDash
 main

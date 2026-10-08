@@ -16,6 +16,18 @@ func (h *Handlers) PingURL(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
+	// The demo checks no site: a monitored row's dot reads the seeded
+	// status instead, the same answer every time until the next reset.
+	if demoMode() {
+		entry, ok := readHealthCacheFile().Cache[canonicalBookmarkURLKey(r.URL.Query().Get("url"))]
+		if !ok {
+			w.WriteHeader(http.StatusForbidden)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"error": demoNotAvailable, "status": "unknown", "ping": nil})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"status": entry.Status, "ping": entry.PingMs, "errorDetail": entry.Error})
+		return
+	}
 	if !h.requireStatusPingRateLimit(w, r) {
 		return
 	}

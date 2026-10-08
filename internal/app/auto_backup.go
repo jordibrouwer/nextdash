@@ -347,6 +347,11 @@ func (h *Handlers) autoBackupDue() bool {
 // robust across restarts by comparing the newest backup's age rather than
 // relying on an in-process timer.
 func (h *Handlers) StartAutoBackupScheduler(stop <-chan struct{}) {
+	// The demo's data is the seed, put back every half hour; copies of it
+	// would only fill its memory-backed data directory.
+	if demoMode() {
+		return
+	}
 	go func() {
 		ticker := time.NewTicker(autoBackupCheckInterval)
 		defer ticker.Stop()

@@ -97,6 +97,10 @@ func (h *Handlers) sendWebPushNotification(ctx context.Context, msg webPushMessa
 	// targets, so they use a plain client rather than the SSRF-guarded one: the
 	// guard would reject nothing here and its local-address rules do not apply.
 	client := &http.Client{Timeout: pushSendTimeout}
+	// The demo sends nothing to other hosts (demo_guard.go).
+	if demoOutboundRefused() {
+		return
+	}
 
 	results := make(map[string]pushDeliveryOutcome, len(subs))
 	var mu sync.Mutex

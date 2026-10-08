@@ -84,6 +84,11 @@ func respondStorePersistError(w http.ResponseWriter, err error) bool {
 	if err == nil {
 		return true
 	}
+	// A demo limit is the visitor's answer, not a server fault.
+	if errors.Is(err, errDemoLimit) {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return false
+	}
 	http.Error(w, "Failed to save data", http.StatusInternalServerError)
 	return false
 }
@@ -1274,6 +1279,8 @@ type htmlPageData struct {
 	TelemetryLockedOff bool
 	// UpdateCheckLockedOff mirrors DISABLE_UPDATE_CHECK for the same reason.
 	UpdateCheckLockedOff bool
+	// DemoMode writes the meta tag demo-lock.js reads (NEXTDASH_DEMO=1).
+	DemoMode bool
 }
 
 // analyticsWebsiteID / analyticsScriptSrc are the project's shared Umami instance.
@@ -1316,6 +1323,7 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 		AnalyticsSnapshotsJSON: h.analyticsSnapshotsJSON(analyticsEnabled(settings)),
 		TelemetryLockedOff:     telemetryDisabledByEnv(),
 		UpdateCheckLockedOff:   updateCheckDisabledByEnv(),
+		DemoMode:               demoMode(),
 		LandingPageName:        h.landingPageName(),
 	}
 }
@@ -2592,6 +2600,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 		sanitized = append(sanitized, col)
 	}
 	settings.Collections = sanitized
+	settings.CollectionColumns = normalizeCollectionColumns(settings.CollectionColumns)
 	settings.TagRules = sanitizeTagRules(settings.TagRules)
 	settings.DismissedTagSuggestions = sanitizeDismissedTagSuggestions(settings.DismissedTagSuggestions)
 	settings.SavedSearches = normalizeSavedSearches(settings.SavedSearches)
@@ -2653,6 +2662,21 @@ func normalizeSavedSearches(list []SavedSearch) []SavedSearch {
 // valuelessRuleFields are collection-rule fields that carry their question in
 // the field name, so an empty value is not a half-filled rule.
 var valuelessRuleFields = map[string]bool{"untagged": true, "pinned": true}
+
+// normalizeCollectionColumns keeps the collections drawn two columns wide. One
+// column is the default, so an entry saying so is left out rather than stored.
+func normalizeCollectionColumns(columns map[string]int) map[string]int {
+	out := make(map[string]int, len(columns))
+	for id, n := range columns {
+		if id = strings.TrimSpace(id); id != "" && n == 2 {
+			out[id] = 2
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
 
 // collectionLabel names a collection for a message to the user, falling back to
 // its id when the name is what went missing.
@@ -5003,6 +5027,10 @@ func (h *Handlers) RetestAll(w http.ResponseWriter, r *http.Request) {
 	// but the answer never arrived, and the view said the re-check failed.
 	_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(retestAllMaxBookmarks*maxHealthCheckTimeout + time.Minute))
 
+	if demoMode() {
+		http.Error(w, demoNotAvailable, http.StatusForbidden)
+		return
+	}
 	scope := strings.TrimSpace(r.URL.Query().Get("scope"))
 	includeFlagged := strings.EqualFold(scope, "all")
 
@@ -5050,8 +5078,13 @@ type healthRetestResult struct {
 // stored error, so a broken row can be cleared. activitySource labels the batch in
 // the activity log.
 func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, activitySource string) (healthRetestResult, error) {
-	pages := h.store.GetPages()
 	var res healthRetestResult
+	// The demo checks no site; a run would only write "not available" over
+	// the seeded results.
+	if demoMode() {
+		return res, nil
+	}
+	pages := h.store.GetPages()
 	healthUpdates := make(map[string]HealthScanCache)
 	historyUpdates := make(map[string][]HealthSample)
 	// One sample per URL, from its first monitored copy as the monitor takes
@@ -5524,6 +5557,12 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	// Applying a fix checks the new address and fetches its title: both reach
+	// outside, which the demo does not.
+	if demoMode() {
+		http.Error(w, demoNotAvailable, http.StatusForbidden)
 		return
 	}
 

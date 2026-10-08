@@ -12,6 +12,7 @@
     <meta name="nextdash-app-version" content="{{.AppVersion}}">
     {{if .TelemetryLockedOff}}<meta name="nextdash-telemetry-locked" content="1">{{end}}
     {{if .UpdateCheckLockedOff}}<meta name="nextdash-update-check-locked" content="1">{{end}}
+    {{if .DemoMode}}<meta name="nextdash-demo" content="1">{{end}}
     {{/* The same title dashboard-page-nav.js would set, so the first paint does
          not say "Dashboard" and then change its mind. A deep link to another
          page is corrected by the script, as it always was. */}}
@@ -143,6 +144,7 @@
     <link rel="stylesheet" href="{{asset "css/nd-chart.css"}}">
     <link rel="stylesheet" href="{{asset "css/config-view.css"}}">
     <link rel="stylesheet" href="{{asset "css/config-bookmarks-workbench.css"}}">
+    <link rel="stylesheet" href="{{asset "css/config-structure.css"}}">
     <link rel="stylesheet" href="{{asset "css/config-tabs.css"}}">
     <link rel="stylesheet" href="{{asset "css/list-view-shell.css"}}">
     <!-- /bundle:css-views -->
@@ -546,6 +548,7 @@
     <script src="{{asset "js/shared/field-popover.js"}}" defer></script>
     <script src="{{asset "js/status.js"}}" defer></script>
     <!-- Before the health view and the context menu: both read window.CheckMode. -->
+    <script src="{{asset "js/shared/demo-lock.js"}}" defer></script>
     <script src="{{asset "js/check-mode.js"}}" defer></script>
     <script src="{{asset "js/keyboard-navigation.js"}}" defer></script>
     <script src="{{asset "js/swipe-navigation.js"}}" defer></script>
@@ -677,6 +680,10 @@
     <script src="{{asset "js/dashboard/dashboard-category-sort.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-category-span.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-packed-masonry.js"}}" defer></script>
+    <script src="{{asset "js/shared/block-move-model.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-block-mover.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-block-move-intro.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-block-page-move.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-category-title-fit.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-render-core.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-render-incremental.js"}}" defer></script>

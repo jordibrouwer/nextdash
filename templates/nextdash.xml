@@ -49,6 +49,14 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.17.5 (2026-10-06)
+- First start: a new install asks what you run: Homelab, Media server or Developer on one server address, or keep the starter links
+- Config: a Version panel on the overview says whether you run the newest release; a failed update check says why, and the Containers GitHub token now counts for it
+- Widgets: move a widget to another page from its settings; a removed Notes widget no longer comes back after a restart
+- Inbox: no more limit of 500 links, so nothing is pushed out to make room
+- Settings: a setting you change while the dashboard refreshes stays changed
+- Fixes: the pages panel keeps the cursor on your page when reopened, a tablet shows the time once, and Unsorted is called Unsorted
+
 ### v1.17.4 (2026-10-05)
 - Privacy: a one-time card explains the daily install count and how to turn it off; on Unraid the count also says Unraid
 
@@ -78,15 +86,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Appearance: card glass on a Surface tab, and category headers in five styles
 - Themes: a Neutrals collection of five grey glass themes, each light and dark
 - Dashboard: widgets in the Launcher layout show their content again
-
-### v1.15.8 (2026-10-01)
-- Containers: nextDash no longer mistakes a storage layer for its own container and stops itself mid-update (Unraid's docker.img)
-- Containers: a failed automatic update sends a notice, and an update keeps every published port
-- Containers: the Disk tab shows progress while it measures
-- Backups: held and skipped images and the GitHub token are carried; a custom data or backup folder is given to the app's user
-- Dashboard: moves, undos and copies of one address on two pages keep bookmarks on the right page
-- Widgets: custom percentages say their scale, 0–100 or a share from 0–1
-- Docs: a self-hosted guide for Containers, health checks and alerts; more than a hundred smaller fixes
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -94,7 +93,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-10-05</Date>
+  <Date>2026-10-06</Date>
 
   <Config Name="WebUI Port"
           Target="8080"

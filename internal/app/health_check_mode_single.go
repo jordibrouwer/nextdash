@@ -205,6 +205,11 @@ func (h *Handlers) SetBookmarkCheckMode(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "mode must be off, periodic or monitor", http.StatusBadRequest)
 		return
 	}
+	// The demo checks no site: off is the only mode it stores.
+	if demoMode() && mode != checkModeOff {
+		http.Error(w, demoNotAvailable, http.StatusForbidden)
+		return
+	}
 	wantURL := canonicalBookmarkURLKey(strings.TrimSpace(req.URL))
 	if wantURL == "" {
 		http.Error(w, "url is required", http.StatusBadRequest)

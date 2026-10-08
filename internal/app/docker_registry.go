@@ -63,6 +63,13 @@ var manifestAccept = strings.Join([]string{
 var bearerParam = regexp.MustCompile(`(\w+)="([^"]*)"`)
 
 func (l *registryLookup) remoteDigest(ctx context.Context, ref imageRef) (string, string, error) {
+	// The demo's registry is its own daemon's (docker_demo.go): no lookup leaves.
+	if demoMode() {
+		if digest := demoRemoteDigest(ref); digest != "" {
+			return digest, "", nil
+		}
+		return "", "not-found", nil
+	}
 	target := l.scheme + "://" + ref.Registry + "/v2/" + ref.Repo + "/manifests/" + url.PathEscape(ref.Tag)
 	resp, err := l.head(ctx, target, "")
 	if err != nil {

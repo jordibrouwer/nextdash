@@ -1,6 +1,5 @@
 // nextDash Bookmark Saver Extension
 
-let confirmationCallback = null;
 // iconSource: the favicon's own address, stored as an icon only on save.
 let extDraftState = { icon: '', iconSource: '', previewTitle: '', previewDesc: '', previewImage: '' };
 // Set once the "already saved elsewhere" message has been shown, so pressing
@@ -258,27 +257,6 @@ async function refreshPageBookmarks() {
     updateUrlDuplicateHint();
 }
 
-function showConfirmation(text, onYes) {
-    document.getElementById('confirmation-text').innerHTML = text;
-    document.getElementById('confirmation').classList.remove('hidden');
-    confirmationCallback = onYes;
-    
-    // Add click outside to close
-    document.getElementById('confirmation').addEventListener('click', handleConfirmationClick);
-}
-
-function hideConfirmation() {
-    document.getElementById('confirmation').classList.add('hidden');
-    document.getElementById('confirmation').removeEventListener('click', handleConfirmationClick);
-    confirmationCallback = null;
-}
-
-function handleConfirmationClick(event) {
-    if (event.target.id === 'confirmation') {
-        hideConfirmation();
-    }
-}
-
 document.addEventListener('DOMContentLoaded', async function() {
     await initExtensionI18n();
     await loadExtensionPreferences();
@@ -377,23 +355,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Reload pages button
     document.getElementById('reload-pages-btn').addEventListener('click', async () => {
         const serverUrl = document.getElementById('server-url').value;
-        await loadPages(serverUrl);
+        // Before any await: Firefox only prompts from the click itself.
+        const accessRequest = requestServerAccess(serverUrl);
+        await accessRequest;
+        await refreshSettingsLists(serverUrl);
     });
     
     // Reset settings button
     document.getElementById('reset-settings-btn').addEventListener('click', resetSettings);
-    
-    // Confirmation buttons
-    document.getElementById('confirm-yes').addEventListener('click', async () => {
-        if (confirmationCallback) {
-            await confirmationCallback();
-        }
-        hideConfirmation();
-    });
-    
-    document.getElementById('confirm-no').addEventListener('click', () => {
-        hideConfirmation();
-    });
 });
 
 async function loadSettings() {
@@ -444,6 +413,11 @@ async function loadPages(providedServerUrl) {
     }
     extServerUrl = serverUrl;
     if (!extFormPreview) initExtensionPreview();
+
+    if (!(await hasServerAccess(serverUrl))) {
+        showMessage(extT('msgServerAccessNeeded', 'nextDash needs access to {origin}. Open Settings and click Save Settings to allow it.', { origin: serverOrigin(serverUrl) }), 'info');
+        return;
+    }
 
     try {
         const response = await fetch(new URL('/api/pages', serverUrl));
@@ -512,20 +486,33 @@ async function loadSettingsTab() {
     // Pages are loaded manually via the reload button, but we can load if already configured
     const settings = await chrome.storage.sync.get(['serverUrl']);
     if (settings.serverUrl) {
-        await loadPages();
-        const defaultSettings = await chrome.storage.sync.get(['defaultPage', 'defaultCategory']);
-        if (defaultSettings.defaultPage) {
-            await loadCategoriesForSettings(defaultSettings.defaultPage);
-            if (defaultSettings.defaultCategory) {
-                document.getElementById('default-category').value = defaultSettings.defaultCategory;
-            }
-        }
+        await refreshSettingsLists(settings.serverUrl);
+    }
+}
+
+/**
+ * Fill both page lists and the default-category list from the server, with
+ * the stored defaults selected. Used when the Settings tab opens, by the
+ * reload button, and right after Save Settings, so a first setup shows its
+ * pages and categories without reopening the popup.
+ */
+async function refreshSettingsLists(serverUrl) {
+    await loadPages(serverUrl);
+    const pageId = document.getElementById('default-page').value;
+    if (!pageId) return;
+    await loadCategoriesForSettings(pageId);
+    const { defaultCategory } = await chrome.storage.sync.get(['defaultCategory']);
+    const categorySelect = document.getElementById('default-category');
+    if (defaultCategory && [...categorySelect.options].some((o) => o.value === defaultCategory)) {
+        categorySelect.value = defaultCategory;
     }
 }
 
 async function loadCategoriesForSettings(pageId) {
-    const settings = await chrome.storage.sync.get(['serverUrl']);
-    const serverUrl = settings.serverUrl;
+    // The address in the field, not the stored one: on a first setup nothing
+    // is stored until Save Settings, and the default page is chosen before it.
+    const typed = document.getElementById('server-url')?.value.trim();
+    const serverUrl = typed || (await chrome.storage.sync.get(['serverUrl'])).serverUrl;
 
     if (!serverUrl) {
         return;
@@ -710,6 +697,8 @@ async function saveSettings(event) {
     event.preventDefault();
 
     const serverUrl = document.getElementById('server-url').value;
+    // Before any await: Firefox only prompts from the click itself.
+    const accessRequest = requestServerAccess(serverUrl);
     const defaultPage = document.getElementById('default-page').value;
     const defaultCategory = document.getElementById('default-category').value;
 
@@ -741,7 +730,22 @@ async function saveSettings(event) {
     }
 
     updateUrlDuplicateHint();
+    if (!(await accessRequest)) {
+        showMessage(extT('msgServerAccessDenied', 'Settings saved, but the browser did not allow access to {origin}. Click Save Settings again and allow it.', { origin: serverOrigin(serverUrl) }), 'error');
+        return;
+    }
+    // The server may be new, or reachable for the first time: show its pages
+    // and categories now rather than on the next open.
+    await refreshSettingsLists(serverUrl);
     showMessage(extT('msgSettingsSaved', 'Settings saved!'), 'success');
+}
+
+function serverOrigin(serverUrl) {
+    try {
+        return new URL(normalizeServerUrl(serverUrl)).origin;
+    } catch {
+        return serverUrl;
+    }
 }
 
 async function showSaveSuccess(serverUrl, pageId, bookmarkName) {

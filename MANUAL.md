@@ -895,6 +895,7 @@ A bookmark row shows its icon, name, optional tags, the shortcut letters and, wh
 - **Widgets layout** — an invitation to try the **Widgets** layout, which draws every category as a card. **Try it** applies it at once, and the same card puts the old layout back.
 - **Clock and weather** — asks for a town, a clock and a unit when no location is set.
 - **Install count** — says once that the daily count of installs is on, what leaves the server, and offers **Turn it off** ([§23.7](#237-what-nextdash-contacts)).
+- **Moving blocks** — once, a see-through copy of the first category glides to its next place to show that blocks can be moved, and a card under its `//` offers **Try it**. The first time you pick a block up, a card beside the landing box lists the keys until **Got it**.
 - **Others** — browser notifications, the theme browser, Fresh, spreading a category, the tour of what moved, and once you have eight bookmarks a pointer to the feature overview on nextdash.cc, which opens in a new tab.
 
 Each review card has a switch under Behavior → Privacy & sync → Onboarding. The same place lists every card with **Answered** or **Not shown yet**, and **Show again** brings an answered one back the next time its moment arrives.
@@ -1040,7 +1041,7 @@ The form, quick add and the extension all ask. Imports skip duplicates and say h
 | Click a category header | Folds or unfolds it |
 | Long-press or double-click a category header | Renames it |
 | Right-click a category header | Rename, spread, add, icon, delete |
-| Drag the `//` in a category title | Reorders categories |
+| Drag the `//` in a category or widget title | Moves it: the page holds still and a dashed box shows where it lands. Drop it on the line between two columns to make it wide |
 | Double-click a page tab | Renames the page, sets its emoji and colour |
 | `Alt`-click / `Shift`-click | Adds to, or extends, a selection |
 
@@ -1209,7 +1210,10 @@ With the cursor on a row, a bookmark's own **shortcut** opens it. The letters th
 | `Enter` / `Space` | Fold or unfold |
 | `F2` | Rename |
 | `Shift + W` | Spread across columns (on a widget: one or two columns) |
-| `Alt + ←` / `Alt + →` | Move the category one place |
+| `Alt + ←` / `Alt + →` | Move the category, widget or collection one place |
+| `Shift + Alt + ←` / `→` | Move it to the previous or next page, last in line there |
+| `Space` on the `//` | Pick it up: the arrows move the landing box, `W` switches one column and wide, `Enter` drops, `Esc` cancels |
+| `Ctrl/Cmd + Z` | Undo the last block move while its notice shows |
 | `Delete` | Delete the category (bookmarks are kept) or close the widget |
 | `Shift + F10` | The header menu |
 
@@ -1456,7 +1460,8 @@ Page names are unique. Each row in Structure → Pages shows how many bookmarks 
 - **Create** — the **+** in a category header or **`Shift + N`** (on the page you are on), `:category new`, **New category…** in the bookmark form, or **Structure → Categories**.
 - **Rename** — `F2`, a long press or double-click on the header, the right-click menu, or Structure → Categories.
 - **Icon** — right-click the header → **Icon…** and type an emoji.
-- **Reorder** — drag the `//` in the title, `Alt + ←/→` on the header, or Structure → Categories.
+- **Move** — drag the `//` in the title. The page holds still and a dashed box shows where the category lands; drop it on the line between two columns to make it wide. On the header, `Alt + ←/→` moves it one place and `Shift + Alt + ←/→` to the previous or next page; `Space` on the `//` picks it up for the arrow keys. **Move to page** in the right-click menu sends it to any page, where it lands last. Widgets and collections move the same way, except a tag collection, which shows wherever its tag is. Undo is on the notice, or `Ctrl/Cmd + Z` while it shows.
+- **Overview** — Structure → Categories is one table for every page, grouped by page; a page's row folds its categories away. Chips narrow it to some pages or to a view (*Spread*, *With broken links*, *Empty*), and columns show each category's bookmarks, broken links and whether it spreads. The order of categories is set on the dashboard, not here.
 - **Delete** — `Delete` on the header, the right-click menu, or Structure → Categories. The bookmarks are kept and lose their category; the category goes to the trash.
 - **Duplicate** — on the row in Structure → Categories, with its width, icon and sort, and optionally its bookmarks.
 
@@ -1478,7 +1483,7 @@ Click a header, or press `Enter` on it, to fold the category. **`.`** folds or u
 - `Alt + ↑/↓` moves the selected bookmark within its category; `Shift + Alt + ←/→` moves it to the next category.
 - `Shift + M` moves it to any category or page.
 - Moves can be undone from the toast for eight seconds.
-- **Lock layout** (Behavior → General, or `:locklayout`) turns dragging off for bookmarks and categories.
+- **Lock layout** (Behavior → General, or `:locklayout`) turns dragging and moving off for bookmarks, categories and widgets.
 
 <a id="95-spreading-a-category-across-columns"></a>
 
@@ -1501,7 +1506,7 @@ The number of columns is not a setting: it follows from **items per category** a
 | 16–30 | 2 |
 | 31–45 | 3 |
 
-The column count of the grid is the ceiling. Spreading needs a limit on items per category and at least two columns. With **Pack columns tightly** on, the categories after a spread one fill in beside and below it. On a phone held upright every category is one column wide. **Appearance → Grid → Categories across columns** holds the limit, whether new categories start spread, and whether *turn spreading off everywhere* covers this page or all pages. A walkthrough is under Config → Help → Structure & bookmarks.
+The column count of the grid is the ceiling. Spreading needs a limit on items per category and at least two columns. With **Pack columns tightly** on, the categories after a spread one fill in beside and below it. On a phone held upright every category is one column wide. **Appearance → Grid → Categories across columns** holds the limit, whether new categories start spread (they do by default), and whether *turn spreading off everywhere* covers this page or all pages. A walkthrough is under Config → Help → Structure & bookmarks.
 
 <a id="96-smart-collections"></a>
 
@@ -2556,7 +2561,7 @@ A tile with a row limit shows what it left out (*5 of 12*). A figure on a tile i
 
 Each widget has a title, a width (one or two columns), the page it counts, a row count and the settings of its kind. With more than one page, **Page** above the width moves the widget to another page straight away, at the end of that page, with its sign-in and folded state; unsaved changes in the panel ask first. An **ℹ** explains the harder settings and **↺** resets them. The title and **Shown** save at once; the rest waits for **Save**.
 
-Widgets are ordered with the categories under **Structure → Categories**, or dragged on the dashboard. On a one-column dashboard — and on a phone — a wide widget narrows itself and keeps the important half.
+Widgets share one order with the categories and are moved on the dashboard: drag the `//` in the title, or use the keys in [§7.4](#74-acting-on-a-category-or-widget). On a one-column dashboard — and on a phone — a wide widget narrows itself and keeps the important half.
 
 **Two columns say more, not the same thing larger.** A tile drawn wide adds the readings a narrow one leaves out: the load average behind the processor's percentage, the container that is failing by name, used and total beside free space, what the weather feels like, the date a certificate expires, when an import last ran. Lists of rows run in two files instead of one. This follows the width the tile actually got, so narrowing the dashboard takes it back at once.
 
@@ -2949,7 +2954,7 @@ nextDash ships **164 theme families**, each with a light and a dark half — 328
 
 **Theme** on the Look tab lists every theme by name. Beside it:
 
-- **The theme browser** — **Browse…**, or **`Shift + A`** on the dashboard. It opens as a panel beside the dashboard, with tabs of its own ([see below](#the-theme-browser)); the first, **Themes**, has one card per family, with a light/dark switch and the line that says what the theme is like to sit in front of. At the top: a search box, the segments *All*, *Favourites*, *Light* and *Dark*, a row of **character chips** ([§16.2](#162-character)) and a **collection** chip. *Light* and *Dark* turn every card to that half; a card can still be switched by hand. Search matches a family's name, its character and the words of its line. The 38 newest families wear a **new** badge, and searching `new` finds them. Themes of your own come first, under **Your themes**, with a **yours** badge (and **look** when they bring one along); a segment **Yours** shows only them, and searching `yours` finds them. A packaged theme you recoloured wears **recoloured**. A star keeps up to 24 families under *Favourites*. Pointing at a card previews that theme on the real dashboard; clicking one puts it on the page. A line above the grid names the theme in use — or, once you have picked another, which one is chosen and which stays until **Apply** — and **Show** brings its card into view.
+- **The theme browser** — **Browse…**, or **`Shift + A`** on the dashboard. It opens as a panel beside the dashboard, with tabs of its own ([see below](#the-theme-browser)); the first, **Themes**, has one card per family, with a light/dark switch and the line that says what the theme is like to sit in front of. At the top: a search box, the segments *All*, *Favourites*, *Light* and *Dark*, and **More filters**, which unfolds the **character chips** ([§16.2](#162-character)) and the **collection** chips. While it is folded, the filters that are on show as chips you can remove, and the button counts them. *Light* and *Dark* turn every card to that half; a card can still be switched by hand. Search matches a family's name, its character and the words of its line. The 38 newest families wear a **new** badge, and searching `new` finds them. Themes of your own come first, under **Your themes**, with a **yours** badge (and **look** when they bring one along); a segment **Yours** shows only them, and searching `yours` finds them. A packaged theme you recoloured wears **recoloured**. A star keeps up to 24 families under *Favourites*. Pointing at a card previews that theme on the real dashboard; clicking one puts it on the page. A line above the grid names the theme in use — or, once you have picked another, which one is chosen and which stays until **Apply** — and **Show** brings its card into view.
 - **Collections** — the **Neutrals** collection holds five calm grey palettes — Slate, Zinc, Gray, Stone and Neutral — drawn under glass, each with a backdrop of its own.
 - **For Unraid users** — four themes after the Unraid webGUI, each in light and dark: **Unraid Black** (flat black panels, small uppercase labels, the orange of the logo), **Unraid Azure** (cool grey panels, steel-blue accent), **Unraid Ember** (that orange glowing out of black glass) and **Unraid Blaze** (the red end, hard-edged lacquer on deep crimson).
 - **Quick mode** — switches between the light and dark half of the family you are on.
@@ -2983,7 +2988,7 @@ The theme browser lies over the right of the dashboard, so every change shows on
 - A **dot** on a tab marks what you changed there since opening.
 - **Applies to** — *This theme* or *All themes*: whether the backdrop and the surface belong to the theme on screen or hold for every theme (the same switch as **Use these for every theme**).
 - **Compare** shows the look from before you opened the browser until you press it again; holding **`\`** does the same for as long as you hold it.
-- **Reset tab** undoes the open tab; **🎲** tries something at random in it.
+- **Reset tab** undoes the open tab; **🎲** tries something at random in it. **Reset all** puts everything except Layout back to a fresh install's look, for every theme.
 - **`←` / `→`** move between tabs, **`⌘/Ctrl + Enter`** applies, and **Enter** on a theme card picks it.
 - **✎ Edit** on a card of your own, **✎ Recolour** on a packaged one, or **`e`** on a focused card opens the theme editor ([§16.5](#165-custom-themes)) in place of the grid; **← Themes** goes back. The other tabs have a link **✎ Edit ‹theme›** at the top. Colour changes show on the page and are kept on **Apply** like everything else; **Cancel** and **Compare** include them, and **Reset tab** in the editor puts the colours back.
 - **Use this theme's look**, above the grid, appears once a theme of your own carries a look. Off, picking such a theme leaves the look on screen as it is.
@@ -3146,7 +3151,7 @@ Type is on the **Look** tab; everything behind the bookmarks is on the **Backgro
 | **Launcher icon size** | Small, Normal or Large, for the Launcher preset |
 | **Start with categories collapsed** | Every category starts folded |
 | **Items per category** | 10–50 or Unlimited: how many bookmarks show before *+ N more*. Unlimited is not available while a category spreads |
-| **New categories spread across columns** | Only for categories made from now on ([§9.5](#95-spreading-a-category-across-columns)) |
+| **New categories spread across columns** | On by default. Only for categories made from now on ([§9.5](#95-spreading-a-category-across-columns)) |
 | **Turning spreading off covers** | The current page or every page — what **Turn off** acts on; it puts every category back to one column |
 
 Small drawings beside the shape settings show what a value looks like.
@@ -3397,7 +3402,7 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 
 <a id="whats-new"></a>
 
-**What's new.** After an upgrade the release notes open once. After that, the **★** button, `:whatsnew`, or *See what's new* under Help open them, newest first, with up to 50 earlier releases. A small release can count towards the version number without appearing in this window; the [changelog](CHANGELOG.md) always has everything. With **Check GitHub for new releases** on (Behavior → Privacy & sync), a newer release adds a dot to ★ and a toast.
+**What's new.** After an upgrade the release notes open once. After that, the **★** button, `:whatsnew`, or *See what's new* under Help open them, newest first, with up to 50 earlier releases. New changes come first as cards with their explanation; fixes follow as one line each, with the explanation a click away. A menu narrows a release to one section. A small release can count towards the version number without appearing in this window; the [changelog](CHANGELOG.md) always has everything. With **Check GitHub for new releases** on (Behavior → Privacy & sync), a newer release adds a dot to ★ and a toast.
 
 The newest release comes first, with a one-line summary and how many things are *new* and how many are *fixes*. When it has both, the chips **All**, **New** and **Fixes** show only one kind; when it has several sections, a tab per section jumps to it. Each entry carries a *new* or *fix* mark — a long description folds behind **more** — and a section of keys lists each shortcut on its own key cap. At the end, a card says nextDash is made by one person and links to Ko-fi (a one-off gift, no account). Older releases open from the list below.
 
@@ -4012,6 +4017,7 @@ Every count is rounded into a band. **Never recorded:** bookmark names, URLs, se
 - `GET /api/data-revision` — a hash of the bookmark data; open dashboard tabs poll it and refresh when something changes elsewhere.
 - Preview data is kept in memory and written to disk every 30 seconds and on shutdown.
 - `NEXTDASH_DATA_DIR` sets the data directory; `NEXTDASH_DISABLE_PREFETCH=1` skips the icon prefetch at start-up.
+- For the public demo only: `NEXTDASH_DEMO=1` turns an instance into a seeded demo that puts its data back to the start every `NEXTDASH_DEMO_RESET_MINUTES` (default 30) and once nobody has written for `NEXTDASH_DEMO_IDLE_MINUTES` (default 10). It empties its data directory on every start and reset, so it needs `NEXTDASH_DATA_DIR` set to a directory of its own and refuses one that holds a real install. See `deploy/demo/docker-compose.yml`.
 - For the test suite only: `NEXTDASH_ICON_SETS_FIXTURE` and `NEXTDASH_UNRAID_FIXTURE` name a directory the app icon sets and the Unraid API answer from instead of the network. A real install leaves them unset.
 
 <sub>[↑ Contents](#table-of-contents)</sub>

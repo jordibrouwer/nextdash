@@ -103,6 +103,11 @@ func ssrfSafeDialContext(allowLocal bool, dialTimeout time.Duration) func(contex
 	}
 	dialer := &net.Dialer{Timeout: dialTimeout}
 	return func(ctx context.Context, network, address string) (net.Conn, error) {
+		// The public demo reaches no other host (demo_guard.go). Here, where
+		// every guarded client dials, so no feature can open it by accident.
+		if demoOutboundRefused() {
+			return nil, errDemoOutbound
+		}
 		host, port, err := net.SplitHostPort(address)
 		if err != nil {
 			return nil, err

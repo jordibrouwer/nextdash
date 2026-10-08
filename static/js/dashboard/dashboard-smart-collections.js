@@ -65,16 +65,15 @@ class DashboardSmartCollections {
             return;
         }
 
-        const nextIds = collections.map((collection) => String(collection.id));
-        const orderMatches = existingSmart.every((element, index) => (
-            String(element.getAttribute('data-category-id')) === nextIds[index]
-        ));
-        if (!orderMatches) {
+        // The same collections, wherever each is placed on the page: they are
+        // replaced in place, so where the reader put them is kept.
+        const byId = new Map(existingSmart.map((element) => [String(element.getAttribute('data-category-id')), element]));
+        if (!collections.every((collection) => byId.has(String(collection.id)))) {
             d.renderDashboard();
             return;
         }
 
-        collections.forEach((collection, index) => {
+        collections.forEach((collection) => {
             const collectionBookmarks = this._sortSmartCollectionBookmarks(collection);
             const replacement = d.createCategoryElement({
                 id: collection.id,
@@ -83,7 +82,7 @@ class DashboardSmartCollections {
                 isSmartCollection: true,
                 customCollection: collection.customCollection || null,
             }, collectionBookmarks);
-            existingSmart[index].replaceWith(replacement);
+            byId.get(String(collection.id)).replaceWith(replacement);
         });
 
         d._categoryListsCache = null;
@@ -258,6 +257,8 @@ class DashboardSmartCollections {
         const userCollections = Array.isArray(d.settings?.collections) ? d.settings.collections : [];
         for (const col of userCollections) {
             if (!col.id || !col.name || !Array.isArray(col.rules) || col.rules.length === 0) continue;
+            // The same page list the built-in ones have; none means every page.
+            if (!pageAllowed(col.pageIds)) continue;
             const matched = this._evaluateCollection(col, normalized);
             collections.push({
                 id: `custom:${col.id}`,

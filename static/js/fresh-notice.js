@@ -87,6 +87,8 @@
         dismissLabel: () => t('dashboard.freshNoticeDismiss', 'Dismiss'),
         dismissName: 'dismiss',
         canShow: () => {
+            // Fresh polls other sites, which the demo does not: nothing to offer.
+            if (window.DemoLock?.on) return false;
             if (hasAnswered()) return false;
             const d = dash();
             // Nothing to offer someone who already has it on, and nothing to

@@ -134,6 +134,10 @@ type githubReleaseRaw struct {
 // the cache, because dockerGithubRelease itself drops the flag -- keeping a
 // prerelease is only right when the version actually running is one too.
 func fetchGithubReleasesLive(ctx context.Context, owner, repo, current string) ([]dockerGithubRelease, string) {
+	// The demo's changelog comes from its own daemon's images, not GitHub.
+	if demoMode() {
+		return demoReleases(owner, repo), ""
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
 		dockerGitHubBase+"/repos/"+owner+"/"+repo+"/releases?per_page=20", nil)
 	if err != nil {

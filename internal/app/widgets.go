@@ -224,6 +224,13 @@ func isWidgetID(id string) bool {
 	return strings.HasPrefix(id, widgetIDPrefix)
 }
 
+// isCollectionBlockID reports whether a block id names a collection: a
+// built-in one (__smart_today__ and the rest), the reader's own (custom:<id>)
+// or one generated per tag (tag:<tag>).
+func isCollectionBlockID(id string) bool {
+	return strings.HasPrefix(id, "__smart_") || strings.HasPrefix(id, "custom:") || strings.HasPrefix(id, "tag:")
+}
+
 /*
 normalizeWidget trims a widget into the shape the rest of the code may assume.
 
@@ -276,6 +283,11 @@ written before BlockOrder existed: with no stored order at all, every category
 falls through to this rule and comes out exactly as it went in.
 
 And nothing appears twice, however often the stored order names it.
+
+A collection id is kept where it stands although it is neither a category nor a
+widget: collections are blocks too, placed per page, and whether one renders on
+this page (its page list, its switch, whether anything matches) is the
+dashboard's to decide. It skips an id that draws nothing.
 */
 func resolveBlockOrder(stored []string, categories []Category, widgets []Widget) []string {
 	known := make(map[string]struct{}, len(categories)+len(widgets))
@@ -297,7 +309,7 @@ func resolveBlockOrder(stored []string, categories []Category, widgets []Widget)
 		if id == "" {
 			continue
 		}
-		if _, exists := known[id]; !exists {
+		if _, exists := known[id]; !exists && !isCollectionBlockID(id) {
 			continue
 		}
 		if _, already := placed[id]; already {

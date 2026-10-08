@@ -141,6 +141,8 @@ class Dashboard {
             smartStalePageIds: [],
             smartMostUsedPageIds: [],
             smartFreshPageIds: [],
+            // Collections drawn two columns wide, by id; absent is one column.
+            collectionColumns: {},
             dateFormat: 'short-slash',
             showWeatherWithDate: true,
             weatherSource: 'manual',
@@ -187,11 +189,8 @@ class Dashboard {
         this.keyboardNavigation = null;
         this.swipeNavigation = null;
         this.categoryReorderInstances = [];
-        this.dashboardCategoryReorderInstances = [];
         this._categoryListsCache = null;
         this._tagFilters = [];
-        this._categoryDragRelayHandler = null;
-        this._categoryDropHandler = null;
         this._pendingCategoryOrderFromDrop = null;
         this._pendingCategorySave = null;
         this._categoryOrderSaveInFlight = null;
@@ -2051,10 +2050,6 @@ class Dashboard {
         return this.renderCore.toggleAllCategoriesCollapsed(...arguments);
     }
 
-    ensureCategoryDragOverRelay() {
-        return this.renderCore.ensureCategoryDragOverRelay(...arguments);
-    }
-
     destroyCategoryReorderInstances() {
         return this.renderCore.destroyCategoryReorderInstances(...arguments);
     }
@@ -2069,10 +2064,6 @@ class Dashboard {
 
     syncBookmarksFromDom() {
         return this.renderCore.syncBookmarksFromDom(...arguments);
-    }
-
-    syncCategoriesFromDom() {
-        return this.renderCore.syncCategoriesFromDom(...arguments);
     }
 
     scheduleCategoryOrderSave() {

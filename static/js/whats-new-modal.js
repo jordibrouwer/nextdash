@@ -149,7 +149,7 @@
         return String(html || '').replace(/<[^>]*>/g, '').trim().length;
     }
 
-    function renderItem({ badge, text, keys }, isKeys) {
+    function renderItem({ badge, text, keys }, isKeys, { section, index } = {}) {
         if (isKeys) {
             return `
                 <li class="wn-entry wn-entry--keys">
@@ -176,9 +176,10 @@
                     aria-expanded="false">${wnTranslate('dashboard.whatsNewItemMore', 'more')}</button>`
             : '';
         return `
-            <li class="wn-entry wn-entry--${isFix ? 'fix' : 'new'}" data-wn-kind="${isFix ? 'fix' : 'new'}">
+            <li class="wn-entry wn-entry--${isFix ? 'fix' : 'new'}" data-wn-kind="${isFix ? 'fix' : 'new'}"${index === undefined ? '' : ` data-wn-sec="${index}"`}>
                 <span class="wn-badge${isFix ? ' wn-badge--fix' : ' wn-badge--new'}">${badgeLabel}</span>
                 <div class="wn-entry-main">
+                    ${section ? `<span class="wn-entry-section">${section}</span>` : ''}
                     <div class="wn-entry-title">${title}</div>
                     ${bodyHtml}
                     ${moreHtml}
@@ -187,8 +188,9 @@
         `;
     }
 
-    function renderSections(sections, { anchors = false } = {}) {
-        return (sections || []).map(({ title, items, kind }, index) => {
+    function renderSections(sections, { anchors = false, offset = 0 } = {}) {
+        return (sections || []).map(({ title, items, kind }, i) => {
+            const index = i + offset;
             const isKeys = kind === 'keys';
             const count = (items || []).length;
             const anchor = anchors ? ` data-wn-section="${index}"` : '';
@@ -206,19 +208,80 @@
         }).join('');
     }
 
-    function countChanges(sections) {
-        let added = 0;
-        let fixed = 0;
-        (sections || []).forEach((section) => {
+    /*
+     * A release as a digest: what is new up top, the fixes underneath.
+     *
+     * Read as one list per section, a release made the reader work through a
+     * block of prose per change before reaching the next, and the new things
+     * sat between the fixes in whatever order the sections came. New changes
+     * are what someone opens this for, so they come first as cards with their
+     * explanation; a fix is mostly answered by its title, so the fixes follow
+     * as one line each with the explanation one click away. Shortcuts keep
+     * their own group, since a key is a different kind of thing.
+     *
+     * Every entry carries the index of the section it came from, which is what
+     * the section menu filters on.
+     */
+    function renderDigest(sections) {
+        const list = sections || [];
+        const added = [];
+        const fixed = [];
+        const keyGroups = [];
+        list.forEach((section, index) => {
+            if (section.kind === 'keys') {
+                keyGroups.push({ section, index });
+                return;
+            }
             (section.items || []).forEach((item) => {
-                if (section.kind === 'keys' || item.badge === 'new') {
-                    added += 1;
-                } else {
-                    fixed += 1;
-                }
+                (item.badge === 'new' ? added : fixed).push({ item, title: section.title, index });
             });
         });
-        return { added, fixed };
+        const block = (kind, label, entries, html) => `
+            <section class="wn-block wn-block--${kind}" data-wn-block>
+                <h4 class="wn-group-title">
+                    <span>${label}</span>
+                    <span class="wn-group-count" aria-hidden="true" data-wn-block-count>${entries}</span>
+                </h4>
+                ${html}
+            </section>`;
+        const parts = [];
+        if (added.length) {
+            parts.push(block('new', wnTranslate('dashboard.whatsNewBlockNew', 'new'), added.length,
+                `<ul class="wn-entries wn-cards">${added.map(({ item, title, index }) =>
+                    renderItem(item, false, { section: title, index })).join('')}</ul>`));
+        }
+        keyGroups.forEach(({ section, index }) => {
+            parts.push(renderSections([section], { anchors: true, offset: index }));
+        });
+        if (fixed.length) {
+            parts.push(block('fix', wnTranslate('dashboard.whatsNewBlockFixed', 'fixed'), fixed.length,
+                `<ul class="wn-entries wn-fix-list">${fixed.map(({ item, title, index }) =>
+                    renderFixRow(item, { section: title, index })).join('')}</ul>`));
+        }
+        return parts.join('');
+    }
+
+    /*
+     * A fix as one line: the section it belongs to and its title. The
+     * explanation opens under it on request, with the native disclosure so
+     * keyboard and screen reader get it for free.
+     */
+    function renderFixRow({ text }, { section, index }) {
+        const { title, body } = splitItemText(text);
+        const tag = `<span class="wn-entry-section">${section}</span>`;
+        if (!body) {
+            return `
+                <li class="wn-entry wn-entry--fix wn-entry--row" data-wn-kind="fix" data-wn-sec="${index}">
+                    ${tag}<span class="wn-entry-title">${title}</span>
+                </li>`;
+        }
+        return `
+            <li class="wn-entry wn-entry--fix wn-entry--row" data-wn-kind="fix" data-wn-sec="${index}">
+                <details class="wn-fix">
+                    <summary>${tag}<span class="wn-entry-title">${title}</span></summary>
+                    <div class="wn-entry-body" data-wn-entry-body>${body}</div>
+                </details>
+            </li>`;
     }
 
     /*
@@ -229,70 +292,39 @@
      * says what this release was about, so it goes where a subtitle goes.
      */
     function renderHeadlineRelease({ tag, date, sections, modalLead }) {
-        const { added, fixed } = countChanges(sections);
-        const counts = [];
-        if (added) {
-            counts.push(added === 1
-                ? wnTranslate('dashboard.whatsNewCountNewOne', '1 new')
-                : wnTranslate('dashboard.whatsNewCountNewMany', '{count} new', { count: added }));
-        }
-        if (fixed) {
-            counts.push(fixed === 1
-                ? wnTranslate('dashboard.whatsNewCountFixOne', '1 fix')
-                : wnTranslate('dashboard.whatsNewCountFixMany', '{count} fixes', { count: fixed }));
-        }
         const lead = String(modalLead || '').trim();
         return `
             <header class="wn-hero">
                 <div class="wn-hero-line">
                     <h3 class="wn-hero-version">${tag}</h3>
                     ${date ? `<p class="wn-hero-meta">${date}</p>` : ''}
+                    ${buildSectionSelectHtml(sections)}
                 </div>
                 ${lead ? `<p class="wn-hero-lead">${lead}</p>` : ''}
-                ${buildFilterHtml(added, fixed, counts)}
             </header>
-            ${buildSectionTabsHtml(sections)}
-            <div class="wn-groups">${renderSections(sections, { anchors: true })}</div>
+            <div class="wn-groups">${renderDigest(sections)}</div>
             ${buildSupportHtml()}
         `;
     }
 
     /*
-     * New, fixes, or both.
-     *
-     * Only offered when a release has both kinds: a filter with one choice
-     * that does anything is a label pretending to be a control. The counts
-     * are this release's own, which is what the reader is weighing up.
+     * One menu for the sections, where a row of tabs used to run off the
+     * right edge of the modal. Choosing one narrows the digest to it; the
+     * first choice shows everything again. Left out for a release with one
+     * section, where it would only repeat the heading.
      */
-    function buildFilterHtml(added, fixed, counts) {
-        if (!added || !fixed) {
-            return counts.length ? `<p class="wn-hero-counts">${counts.join(' · ')}</p>` : '';
-        }
-        const chip = (kind, label, n, on) => `
-            <button type="button" class="wn-filter${on ? ' is-on' : ''}" data-wn-filter="${kind}"
-                    aria-pressed="${on}">${kind === 'all' ? '' : `<span class="wn-filter-dot wn-filter-dot--${kind}" aria-hidden="true"></span>`}${label} <b>${n}</b></button>`;
-        return `
-            <div class="wn-filters" role="group" aria-label="${wnTranslate('dashboard.whatsNewFilterLabel', 'Show')}">
-                ${chip('all', wnTranslate('dashboard.whatsNewFilterAll', 'All'), added + fixed, true)}
-                ${chip('new', wnTranslate('dashboard.whatsNewFilterNew', 'New'), added, false)}
-                ${chip('fix', wnTranslate('dashboard.whatsNewFilterFix', 'Fixes'), fixed, false)}
-            </div>
-        `;
-    }
-
-    /*
-     * A tab per section, so a long release can be jumped through rather than
-     * scrolled. Left out for a release with one section, where it would only
-     * repeat the heading under it.
-     */
-    function buildSectionTabsHtml(sections) {
+    function buildSectionSelectHtml(sections) {
         const list = sections || [];
         if (list.length < 2) return '';
-        const tabs = list.map(({ title, items }, index) => `
-            <button type="button" class="wn-tab${index === 0 ? ' is-on' : ''}" data-wn-tab="${index}">
-                ${title}<span class="wn-tab-count" aria-hidden="true">${(items || []).length}</span>
-            </button>`).join('');
-        return `<nav class="wn-tabs" aria-label="${wnTranslate('dashboard.whatsNewSections', 'Sections')}">${tabs}</nav>`;
+        const total = list.reduce((n, { items }) => n + (items || []).length, 0);
+        const options = list.map(({ title, items }, index) =>
+            `<option value="${index}">${title} (${(items || []).length})</option>`).join('');
+        const label = wnTranslate('dashboard.whatsNewSections', 'Sections');
+        return `
+            <select class="wn-section-select" data-wn-section-select aria-label="${label}">
+                <option value="">${wnTranslate('dashboard.whatsNewAllSections', 'All sections')} (${total})</option>
+                ${options}
+            </select>`;
     }
 
     /*
@@ -324,40 +356,28 @@
     }
 
     /*
-     * The filter and the tabs, on the headline release only. Both act on the
-     * rendered list: nothing is fetched or re-rendered for either.
+     * The section menu, on the headline release only. It acts on the rendered
+     * digest: nothing is fetched or re-rendered.
      */
     function bindHeadlineControls(root) {
-        if (!root) return;
-        const scroller = root.closest('.modal-body');
-        const filters = [...root.querySelectorAll('[data-wn-filter]')];
-        filters.forEach((btn) => btn.addEventListener('click', () => {
-            const kind = btn.getAttribute('data-wn-filter');
-            filters.forEach((b) => {
-                const on = b === btn;
-                b.classList.toggle('is-on', on);
-                b.setAttribute('aria-pressed', String(on));
+        const select = root?.querySelector('[data-wn-section-select]');
+        if (!select) return;
+        select.addEventListener('change', () => {
+            const pick = select.value;
+            root.querySelectorAll('.wn-groups [data-wn-sec]').forEach((li) => {
+                li.hidden = pick !== '' && li.getAttribute('data-wn-sec') !== pick;
             });
-            root.querySelectorAll('[data-wn-section] [data-wn-kind]').forEach((li) => {
-                li.hidden = kind !== 'all' && li.getAttribute('data-wn-kind') !== kind;
+            root.querySelectorAll('.wn-groups [data-wn-block]').forEach((block) => {
+                const shown = [...block.querySelectorAll('[data-wn-sec]')].filter((li) => !li.hidden).length;
+                block.hidden = shown === 0;
+                const count = block.querySelector('[data-wn-block-count]');
+                if (count) count.textContent = String(shown);
             });
-            root.querySelectorAll('[data-wn-section]').forEach((section) => {
-                section.hidden = ![...section.querySelectorAll('[data-wn-kind]')].some((li) => !li.hidden);
+            root.querySelectorAll('.wn-groups [data-wn-section]').forEach((group) => {
+                group.hidden = pick !== '' && group.getAttribute('data-wn-section') !== pick;
             });
-        }));
-        const tabs = [...root.querySelectorAll('[data-wn-tab]')];
-        tabs.forEach((tab) => tab.addEventListener('click', () => {
-            const section = root.querySelector(`[data-wn-section="${CSS.escape(tab.getAttribute('data-wn-tab'))}"]`);
-            if (!section) return;
-            tabs.forEach((t) => t.classList.toggle('is-on', t === tab));
-            const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-            if (scroller) {
-                const top = section.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
-                scroller.scrollTo({ top: Math.max(0, top - 8), behavior: reduce ? 'auto' : 'smooth' });
-            } else {
-                section.scrollIntoView({ block: 'start' });
-            }
-        }));
+            root.closest('.modal-body')?.scrollTo({ top: 0 });
+        });
     }
 
     /*
@@ -370,7 +390,7 @@
     function renderRelease({ tag, date, sections }) {
         return `
             <div class="wn-release" data-wn-release="${tag}">
-                <div class="wn-groups">${renderSections(sections)}</div>
+                <div class="wn-groups">${renderDigest(sections)}</div>
             </div>
         `;
     }
@@ -811,9 +831,18 @@
         }
     }
 
+    const onAbortOf = (options) => typeof options?.onAbort === 'function';
+
     window.__whatsNewOpen = function openWhatsNewModal(options) {
         options = options || {};
         const force = options.force === true;
+        // Never by itself in the public demo: every visitor is new there, and
+        // notes for a release they never ran would be the first thing they
+        // read. Opened on purpose (force), it still shows.
+        if (!force && window.DemoLock?.on) {
+            if (onAbortOf(options)) options.onAbort();
+            return;
+        }
         const markSeenOnConfirm = options.markSeenOnConfirm !== false;
         const onClose = typeof options.onClose === 'function' ? options.onClose : null;
         const onAbort = typeof options.onAbort === 'function' ? options.onAbort : null;

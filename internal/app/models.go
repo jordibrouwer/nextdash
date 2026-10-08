@@ -336,6 +336,9 @@ type Collection struct {
 	Icon  string           `json:"icon,omitempty"`
 	Logic string           `json:"logic"` // "and" | "or"
 	Rules []CollectionRule `json:"rules"`
+	// PageIds lists the pages the collection is shown on, like the built-in
+	// collections' smart*PageIds; empty or missing is every page.
+	PageIds []int `json:"pageIds,omitempty"`
 }
 
 /*
@@ -733,6 +736,7 @@ type Settings struct {
 	SmartMostUsedPageIds        []int                      `json:"smartMostUsedPageIds"`              // Page IDs where smart most used is enabled (empty = all)
 	SmartFreshPageIds           []int                      `json:"smartFreshPageIds"`                 // Page IDs where Fresh is shown (empty = all)
 	Collections                 []Collection               `json:"collections,omitempty"`             // User-defined dynamic collections
+	CollectionColumns           map[string]int             `json:"collectionColumns,omitempty"`       // Collections drawn across two columns, by collection id; one column is the absence of an entry
 	TagRules                    []TagRule                  `json:"tagRules,omitempty"`                // Patterns you wrote that propose a tag
 	DismissedTagSuggestions     []string                   `json:"dismissedTagSuggestions,omitempty"` // Proposals you turned down, as "pattern|tag"
 	ShowTagCollections          bool                       `json:"showTagCollections"`                // Auto-generate a collection per tag
@@ -1822,7 +1826,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			BookmarkArchiveUrl:              defaultBookmarkArchiveUrl,
 			ThemeIconStyling:                defaultThemeIconStyling(),
 			PackedColumns:                   true,
-			DefaultCategorySpread:           false,
+			DefaultCategorySpread:           true,
 			CategorySpreadResetScope:        defaultCategorySpreadResetScope,
 			// Was omitted here while both other Settings constructions set it,
 			// so a fresh install was served "" for a field whose documented
@@ -4313,7 +4317,7 @@ func (fs *FileStore) GetSettings() Settings {
 			CategorySpacing:                 "balanced",
 			SideMargin:                      "balanced",
 			PackedColumns:                   true,
-			DefaultCategorySpread:           false,
+			DefaultCategorySpread:           true,
 			CategorySpreadResetScope:        defaultCategorySpreadResetScope,
 			BackgroundType:                  "none",
 			BackgroundGradient:              "",
@@ -4389,6 +4393,10 @@ func (fs *FileStore) GetSettings() Settings {
 		// The bar was always drawn before this switch existed.
 		if _, ok := rawSettings["actionBarEnabled"]; !ok {
 			settings.ActionBarEnabled = true
+		}
+		// New categories spread unless the reader turned it off.
+		if _, ok := rawSettings["defaultCategorySpread"]; !ok {
+			settings.DefaultCategorySpread = true
 		}
 		/*
 		 * A settings file that never answered the look questions.

@@ -2323,9 +2323,8 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
     content: '$ ';
 }
 
-/* Terminal layout uses "$ " instead of "// "; hide the "//" prefix/handle. */
-.dashboard-grid.layout-terminal .category-reorder-handle,
-.dashboard-grid.layout-terminal .category-title-prefix {
+/* Terminal layout uses "$ " instead of "// "; hide the "//" handle. */
+.dashboard-grid.layout-terminal .category-reorder-handle {
     display: none;
 }
 
@@ -2850,6 +2849,14 @@ body[data-category-spacing="airy"] {
 
 /* The "//" prefix is now a real element that doubles as the drag-reorder handle. */
 .category-reorder-handle {
+    /* A button for the pointer and for assistive tech, looking like the plain "//" it replaced. */
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
     cursor: grab;
     touch-action: none;
     user-select: none;
@@ -2871,6 +2878,19 @@ body[data-category-spacing="airy"] {
     cursor: grabbing;
 }
 
+/* Reached by Tab: it has to show where focus is, in every header style. */
+.category-reorder-handle:focus-visible {
+    opacity: 1;
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* Other and an unknown category: the "//" for the look, nothing to pick up. */
+.category-reorder-handle.is-static {
+    cursor: default;
+}
+
 /* Lock layout setting: the "//" handle stays put instead of disappearing
    (removing it would shift every category title), but no longer offers a
    grab cursor for a drag that will not happen. */
@@ -2878,12 +2898,108 @@ body.layout-locked .category-reorder-handle {
     cursor: default;
 }
 
-/* Category being dragged across the grid. */
-#dashboard-layout .category.is-draggable {
-    opacity: 0.4;
-    transform: scale(0.985);
-    transition: opacity 0.1s, transform 0.1s;
+/* Moving a block: the page holds still and a box shows where it lands. */
+body.is-moving-block { cursor: grabbing; user-select: none; }
+.category.is-move-source { opacity: .35; outline: 1px dashed var(--border-primary); outline-offset: -1px; }
+.block-landing {
+    position: absolute; z-index: 4; pointer-events: none; box-sizing: border-box;
+    border: 2px dashed var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    transition: left .12s ease, top .12s ease, width .12s ease, height .12s ease;
 }
+.block-landing-label {
+    position: absolute; top: 0; left: 0; padding: 2px 7px;
+    font: 600 var(--font-size-small, 11px) var(--font-mono, monospace);
+    background: var(--accent-primary); color: var(--background-primary); white-space: nowrap;
+}
+.block-landing-width { pointer-events: auto; position: absolute; right: 4px; top: 4px; }
+.block-seam {
+    position: absolute; top: 0; bottom: 0; width: 52px; margin-left: -26px; z-index: 3; pointer-events: none;
+    background: repeating-linear-gradient(0deg, color-mix(in srgb, var(--accent-primary) 16%, transparent) 0 6px, transparent 6px 12px);
+}
+.block-drag-chip {
+    position: fixed; left: 0; top: 0; z-index: 1000; pointer-events: none;
+    padding: 6px 10px; border: 1px solid var(--accent-primary); background: var(--background-secondary);
+    color: var(--accent-primary); font: 600 12px var(--font-mono, monospace);
+    box-shadow: 0 10px 30px rgb(0 0 0 / .45);
+}
+/* First-time coach: beside the landing box while a block is carried, then beside
+   the block until "Got it". Fixed, so it can stay inside the viewport. It takes no
+   pointer events while carried (never the target of a drop). */
+.block-move-coach {
+    position: fixed; left: 0; top: 0; z-index: 900; box-sizing: border-box;
+    width: min(22rem, calc(100vw - 16px)); padding: 15px 16px;
+    border: 2px solid var(--accent-primary); border-radius: var(--radius-3, 6px);
+    background: var(--background-secondary); color: var(--text-secondary);
+    box-shadow: 0 16px 48px rgb(0 0 0 / .55), 0 0 0 4px color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    font-size: var(--text-sm, 0.8rem); line-height: 1.45;
+    animation: block-coach-in .18s ease-out;
+}
+.block-move-coach.is-carried { pointer-events: none; }
+.block-move-coach-eyebrow {
+    margin-bottom: 2px; color: var(--accent-primary); font-size: var(--text-2xs, 0.68rem);
+    font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+}
+.block-move-coach-title { margin-bottom: 6px; color: var(--text-primary); font-weight: 600; font-size: 15px; }
+.block-move-coach p { margin: 0 0 4px; }
+.block-move-coach-keys {
+    display: flex; flex-wrap: wrap; gap: var(--space-1-5, 0.35rem) var(--space-3, 0.75rem);
+    margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-secondary);
+    font-size: var(--text-xs, 0.75rem); color: var(--text-tertiary);
+}
+.block-move-coach kbd {
+    font-size: var(--text-xs, 0.7rem); padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.32rem);
+    border-radius: var(--radius-3, 0.25rem); border: 1px solid var(--border-secondary);
+    background: var(--background-primary); color: var(--text-secondary);
+}
+.block-move-coach-done {
+    display: block; margin: 12px 0 0 auto; padding: 5px 14px; cursor: pointer;
+    border: 1px solid var(--accent-primary); border-radius: var(--radius-3, 4px);
+    background: var(--accent-primary); color: var(--background-primary); font-family: inherit; font-weight: 600; font-size: var(--text-sm, 0.8rem);
+}
+.block-move-coach-done:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
+@keyframes block-coach-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .block-move-coach { animation: none; } }
+/* One-time intro that shows blocks can be moved: a see-through copy of the first
+   category glides to the next place, the landing box and column lines show, and a
+   card stays under its "//". Nothing here takes a click except the card's buttons. */
+.block-intro-ghost {
+    position: absolute; z-index: 5; pointer-events: none; box-sizing: border-box; opacity: 0;
+    padding: var(--space-2, 0.5rem); overflow: hidden;
+    border: 1px solid var(--accent-primary); background: var(--background-secondary);
+    color: var(--accent-primary); font-family: inherit; font-size: var(--font-size-category);
+    font-weight: var(--font-weight-bold); letter-spacing: 0.05em; white-space: nowrap;
+    box-shadow: 0 14px 34px rgb(0 0 0 / .45);
+    transition: left .7s cubic-bezier(.2, .7, .2, 1), top .7s cubic-bezier(.2, .7, .2, 1), width .7s cubic-bezier(.2, .7, .2, 1), opacity .25s, transform .25s;
+}
+.block-intro-ghost.is-up { opacity: .92; transform: translateY(-6px) scale(1.02); }
+.block-landing.block-intro-box { animation: block-coach-in .25s ease-out; transition: left .35s, top .35s, width .35s, height .35s; }
+.category-reorder-handle.is-intro-glow { opacity: 1; color: var(--accent-primary); animation: block-intro-glow .7s ease-in-out 2; }
+.category-reorder-handle.is-intro-ring { opacity: 1; color: var(--accent-primary); border-radius: 2px; box-shadow: 0 0 0 2px var(--accent-primary); }
+@keyframes block-intro-glow {
+    50% { text-shadow: 0 0 10px var(--accent-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 35%, transparent); }
+}
+.block-intro-card { --intro-arrow-x: 18px; }
+.block-intro-card::before {
+    content: ""; position: absolute; left: var(--intro-arrow-x); top: -9px; width: 14px; height: 14px;
+    background: var(--background-secondary); border-left: 2px solid var(--accent-primary); border-top: 2px solid var(--accent-primary);
+    transform: rotate(45deg);
+}
+.block-intro-card.is-above::before { top: auto; bottom: -9px; transform: rotate(225deg); }
+.block-intro-card code { color: var(--accent-primary); }
+.block-intro-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+.block-intro-actions .block-move-coach-done { display: inline-block; margin: 0; }
+.block-intro-btn {
+    padding: 5px 14px; cursor: pointer; border: 1px solid var(--border-secondary); border-radius: var(--radius-3, 4px);
+    background: var(--background-primary); color: var(--text-primary); font-family: inherit; font-weight: 600; font-size: var(--text-sm, 0.8rem);
+}
+.block-intro-btn:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+    .block-intro-ghost, .block-landing.block-intro-box { transition: none; animation: none; }
+    .category-reorder-handle.is-intro-glow { animation: none; }
+}
+.category.is-move-landed { box-shadow: 0 0 0 2px color-mix(in srgb, var(--status-success, #4fd18b) 45%, transparent); transition: box-shadow .6s; }
+@media (prefers-reduced-motion: reduce) { .block-landing { transition: none; } }
 
 .category-title-trailing {
     flex: 0 0 auto;
@@ -5431,6 +5547,16 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .moda
     width: min(36rem, calc(100vw - 2.5rem));
 }
 
+/* The release notes themselves, as against the notices that borrow the shell:
+   wide and tall at a fixed size, so new changes sit side by side as cards and
+   the modal does not jump when the section menu narrows the list. Lines stay
+   short because the cards and the two columns of fixes divide the width. */
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal:not(.analytics-notice-modal)) .modal {
+    width: min(64rem, calc(100vw - 2.5rem));
+    height: min(52rem, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 4rem));
+    max-height: calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 4rem);
+}
+
 /*
  * Room above the modal as well as below it.
  *
@@ -6509,8 +6635,6 @@ body[data-grid-keys="shown"] .dashboard-legend {
 }
 .dashboard-widget-health-waiting { margin: 0; color: var(--text-tertiary); font-style: italic; }
 
-/* Config: the widgets tab lists categories too, greyed, to be moved past. */
-.config-widget-row--category .config-widget-category-name { color: var(--text-tertiary); }
 .config-widget-kind {
     font-size: var(--font-size-small);
     color: var(--text-tertiary);

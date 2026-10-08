@@ -276,6 +276,7 @@ func clampInboxLinkFields(link *InboxLink) {
 }
 
 func (fs *FileStore) AddInboxLink(link InboxLink, dedupe bool, maxItems int) (InboxLink, []InboxLink, error) {
+	maxItems = demoInboxLimit(maxItems)
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
@@ -449,6 +450,7 @@ func (fs *FileStore) RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, 
 // dropped to make room, as AddInboxLink reports it: the caller removes their
 // icons (that needs the lock held here) and tells the user.
 func (fs *FileStore) RestoreInboxLinkEvicting(link InboxLink, maxItems int) (InboxLink, []InboxLink, error) {
+	maxItems = demoInboxLimit(maxItems)
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 

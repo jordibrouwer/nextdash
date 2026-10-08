@@ -200,6 +200,7 @@ class DashboardPromos {
      */
     maybeAnnounceSearchModeKey() {
         const d = this.dash;
+        if (window.DemoLock?.on) return; // no tips in the public demo
         const release = window.NEXTDASH_WHATS_NEW_RELEASE || '';
         const key = 'nextdash:search-mode-key-announced';
         try {
@@ -223,6 +224,9 @@ class DashboardPromos {
 
     maybeShowWhatsNew() {
         const d = this.dash;
+        // Every demo visitor is new; release notes for a version they never
+        // ran would be the first thing they read.
+        if (window.DemoLock?.on) return;
         if (!this.canShowPostOnboardingPrompts() || !this.shouldShowWhatsNewPrompt()) return;
         this.showWhatsNewModal({ force: false });
     }

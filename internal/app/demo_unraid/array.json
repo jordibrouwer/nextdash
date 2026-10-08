@@ -1,0 +1,19 @@
+{"data":{"array":{
+  "state":"STARTED",
+  "capacity":{"kilobytes":{"free":"37580963840","used":"93952409600","total":"131533373440"}},
+  "parities":[
+    {"name":"parity","status":"DISK_OK","temp":38,"numErrors":"0","fsSize":null,"fsUsed":null,"fsFree":null,"isSpinning":true,"type":"PARITY"},
+    {"name":"parity2","status":"DISK_OK","temp":37,"numErrors":"0","fsSize":null,"fsUsed":null,"fsFree":null,"isSpinning":true,"type":"PARITY"}],
+  "disks":[
+    {"name":"disk1","status":"DISK_OK","temp":36,"numErrors":"0","fsSize":"17578328064","fsUsed":"14414229012","fsFree":"3164099052","isSpinning":true,"type":"DATA"},
+    {"name":"disk2","status":"DISK_OK","temp":35,"numErrors":"0","fsSize":"17578328064","fsUsed":"13886879170","fsFree":"3691448894","isSpinning":true,"type":"DATA"},
+    {"name":"disk3","status":"DISK_OK","temp":47,"numErrors":"0","fsSize":"11718885376","fsUsed":"10898563400","fsFree":"820321976","isSpinning":true,"type":"DATA"},
+    {"name":"disk4","status":"DISK_OK","temp":34,"numErrors":"0","fsSize":"11718885376","fsUsed":"7500086640","fsFree":"4218798736","isSpinning":true,"type":"DATA"},
+    {"name":"disk5","status":"DISK_OK","temp":36,"numErrors":"3","fsSize":"11718885376","fsUsed":"6796953518","fsFree":"4921931858","isSpinning":true,"type":"DATA"},
+    {"name":"disk6","status":"DISK_OK","temp":null,"numErrors":"0","fsSize":"11718885376","fsUsed":"8320408617","fsFree":"3398476759","isSpinning":false,"type":"DATA"},
+    {"name":"disk7","status":"DISK_OK","temp":null,"numErrors":"0","fsSize":"11718885376","fsUsed":"4687554150","fsFree":"7031331226","isSpinning":false,"type":"DATA"},
+    {"name":"disk8","status":"DISK_OK","temp":33,"numErrors":"0","fsSize":"17578328064","fsUsed":"3867232174","fsFree":"13711095890","isSpinning":true,"type":"DATA"}],
+  "caches":[
+    {"name":"cache","status":"DISK_OK","temp":41,"numErrors":"0","fsSize":"976762584","fsUsed":"468846040","fsFree":"507916544","isSpinning":true,"type":"CACHE"}],
+  "parityCheckStatus":{"status":"COMPLETED","running":false,"paused":false,"progress":100,"speed":"158 MB/s","errors":0,"date":"2026-09-29T13:02:00Z","duration":75840,"correcting":false}
+}}}

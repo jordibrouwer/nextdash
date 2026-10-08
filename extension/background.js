@@ -1,16 +1,28 @@
-importScripts(
-  'save-common.js',
-  'i18n.js',
-  'bookmark-form/bookmark-url-utils.js',
-  'bookmark-form/bookmark-preview-service.js'
-);
+// Chromium runs this file as a service worker and loads the helpers here.
+// Firefox runs it as a background script and has no importScripts: its build
+// lists these same files before background.js in the manifest, read from this
+// call by scripts/build-extension.mjs.
+if (typeof importScripts === 'function') {
+  importScripts(
+    'save-common.js',
+    'i18n.js',
+    'bookmark-form/bookmark-url-utils.js',
+    'bookmark-form/bookmark-preview-service.js'
+  );
+}
 
 const BADGE_MS = 3500;
+
+// One badge, so one timer: an earlier save's timeout used to clear the badge
+// of a save made within 3.5 seconds of it.
+let badgeTimer = null;
 
 function flashBadge(text, color) {
   chrome.action.setBadgeBackgroundColor({ color });
   chrome.action.setBadgeText({ text });
-  setTimeout(() => {
+  clearTimeout(badgeTimer);
+  badgeTimer = setTimeout(() => {
+    badgeTimer = null;
     chrome.action.setBadgeText({ text: '' });
   }, BADGE_MS);
 }
@@ -71,6 +83,12 @@ async function quickSaveBookmark(name, url) {
   if (!serverUrl) {
     flashBadge('?', '#FFD600');
     return { ok: false, reason: 'no_server' };
+  }
+  // Firefox: the server's origin is granted in the popup's settings. Without
+  // it every request below fails, so this says "set me up", like no server.
+  if (!(await hasServerAccess(serverUrl))) {
+    flashBadge('?', '#FFD600');
+    return { ok: false, reason: 'no_access' };
   }
   if (!isBookmarkableUrl(url)) {
     flashBadge('×', '#FF0055');
@@ -152,6 +170,10 @@ async function quickSaveToInbox(title, url) {
   if (!serverUrl) {
     flashBadge('?', '#FFD600');
     return { ok: false, reason: 'no_server' };
+  }
+  if (!(await hasServerAccess(serverUrl))) {
+    flashBadge('?', '#FFD600');
+    return { ok: false, reason: 'no_access' };
   }
   if (!isBookmarkableUrl(url)) {
     flashBadge('×', '#FF0055');

@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.18.0 — 8 October 2026](#v1180--8-october-2026)
 - [v1.17.5 — 6 October 2026](#v1175--6-october-2026)
 - [v1.17.4 — 5 October 2026](#v1174--5-october-2026)
 - [v1.17.3 — 5 October 2026](#v1173--5-october-2026)
@@ -95,6 +96,63 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.18.0 — 8 October 2026
+
+Categories, widgets and collections move on the dashboard itself: a landing box shows where a block will land, the column line makes it wide, the keyboard can carry it, and it can go to another page with Undo. Structure → Categories becomes one grouped table for every page. The What's new window is rebuilt around cards, the theme browser gets **More filters** and **Reset all**, and a demo mode runs the public demo. v1.18.0 leads the What's new window.
+
+### Dashboard
+- **new — move a block with a landing box.** Dragging the `//` before a category, widget or collection title no longer reflows the page under the pointer: the page holds still and a dashed box shows where the block lands, with a label (*after Media · 2 columns*). Dropping on the line between two columns makes it wide; **W** or **Shift** while dragging switches. Categories, widgets and collections share one path and one order (`dashboard-block-mover.js`, `category-header.css`, `dashboard.css`).
+- **new — move a block with the keyboard.** `Space` on the `//` picks it up; the arrows move the landing box a place sideways or a row up or down, `W` switches one column and wide, `Enter` drops and `Esc` cancels, with each step announced. `Alt + ←/→` on a title still moves it one place.
+- **new — move a block to another page.** **Move to page ▸** in the right-click menu of a category, widget or collection, or `Shift + Alt + ←/→` on its title, sends it to the end of that page. A category takes its bookmarks along; when some are already on that page, only the others move and the notice says the category is on both pages. A tag collection is not offered, since it shows wherever its tag is, and Lock layout blocks every move with a notice saying where to turn it off (`dashboard-block-page-move.js`, `dashboard-category-menu.js`).
+- **new — undo a block move.** The notice after a move has **Undo**, and `Ctrl/Cmd + Z` does the same while it shows, on this page or across pages.
+- **new — a one-time intro and a first-move card.** Once, a see-through copy of the first category glides to its next place with the real landing box and back, and a card under its `//` offers **Try it**; nothing on the page moves or is saved. The first pick-up shows a card beside the landing box with the keys, until **Got it** or Escape. Both are remembered server-side as tips, so **Replay tours and tips** brings them back (`dashboard-block-move-intro.js`, `notice-card.js`, `dashboard-keyboard-tip.js`).
+- **new — the cheat sheet lists the block keys,** under Bookmarks, and the printed sheet carries them too (`keyboard-cheat-sheet-registry.js`, `nextDash-cheatsheet.pdf`).
+- **fix — a collection keeps its place and width.** A collection's id in the block order was dropped on save unless it was a category or widget, so a collection moved among the categories jumped back to the end after a reload, and a collection made two columns wide went back to one. Collection ids now survive the order merge, and `collectionColumns` and a user collection's page list survive a save and a read (`isCollectionBlockID`, `normalizeCollectionColumns` in `models.go`, `handlers.go`, `widgets.go`).
+- **new — new categories spread across columns by default.** `DefaultCategorySpread` is `true` in both defaults blocks, and `GetSettings` sets it for a settings file without the key; a stored `false` stays (`models.go`, `dashboard-config.js`).
+
+### Structure
+- **new — one grouped categories table.** **Structure → Categories** lists every page's categories in one table, grouped by page; a page's row folds its group for the session. Chips above it narrow the table to pages and to a view (*All*, *Spread*, *With broken links*, *Empty*), the summary counts categories, bookmarks, spread ones and broken links, and the sort adds *Most bookmarks* and *Most broken*. The order of categories is set on the dashboard, so the rows no longer carry move buttons. Pages, Finders and Collections take the same list-view look with column heads; a collection row reads its rules as one line (`dashboard-config.js`, `config-structure.css`, `config-view.css`, `dashboard-bookmarks-structure-modal.js`).
+- **fix — the Spread heading fits.** Its column was a fixed `4rem`, so the Dutch *Uitgespreid* ran into *Kapot*; the column now grows to its heading (`minmax(max-content, 4rem)`).
+
+### Themes
+- **new — Reset all in the look studio.** Beside **Reset tab**, **Reset all** puts backdrop, surface, headers and looks back to a fresh install's answers for every theme; Layout and the theme itself stay. The server serves those defaults so the client never guesses them (`look_defaults.go`, `main.go`, `dashboard-config-studio.js`, `theme-browser.js`).
+- **new — More filters in the theme browser.** The character and collection chips fold under **More filters**. Folded, the filters that are on show as removable chips and the button counts them, and the *In use* line ends with *18 of 165 · 3 ★* (`theme-browser.js`, `theme-browser.css`).
+- **fix — the page scrollbar follows the theme.** `--hairline-strong` lives on `body` but the page scrollbar is styled from `html`, where the property was invalid, so the browser's own scrollbar showed: a white strip down every dark theme with *always show scrollbars* on. The scrollbar now mixes from the border colour `html` has, with the track in the page colour (`theme-depth.css`).
+
+### What's new
+- **new — a roomier window.** The modal is wider and taller. A release reads as a digest: new changes first as cards with their explanation, fixes after them as one line each with the explanation in a native disclosure, shortcuts in their own group. One section menu replaces the row of tabs that ran off the right edge; it narrows both lists and is left out for a release with one section (`whats-new-modal.js`, `modal.css`, `dashboard.css`).
+- **fix — the footer keeps its height on a narrow screen.** Stacked, the `12rem` basis meant for the row became a height (`modal.css`).
+
+### Bookmarks view
+- **fix — the header band is see-through at rest and nearly solid once scrolled,** so rows and tiles no longer show through it while they pass behind (`list-view-shell.css`).
+
+### Browser extension
+- **fix — a first setup lists pages and categories** right after **Save Settings**, from the address in the field, without reopening the popup (`popup.js`).
+- **fix — a second quick save keeps its badge mark.** The first save's timeout cleared the badge of a save made within 3.5 seconds; one badge now has one timer (`background.js`).
+- **fix — icons at their real sizes,** 16, 48, 128 and 256 px, drawn from the app logo (`extension/icons/`).
+- **fix — the unused confirmation dialog is gone** from the popup, with its strings in all six languages.
+- **new — server-access messages** when the browser has not granted access to the nextDash address (`msgServerAccessDenied`, `msgServerAccessNeeded`, in all six languages).
+
+### Server
+- **new — demo mode.** `NEXTDASH_DEMO=1` runs the public demo: seeded from the three bundled templates with dates relative to the reset, a month of health and feed history, three kept links and link previews fetched once, a fake Docker daemon with its own registry and changelog, and a fake Unraid server. It resets every `NEXTDASH_DEMO_RESET_MINUTES` (default 30) and after `NEXTDASH_DEMO_IDLE_MINUTES` (default 10) without a write, checks no site and reaches no other host, refuses what would replace data, upload or send, bounds request bodies and the inbox, and shows a demo bar and no What's new by itself. It needs `NEXTDASH_DATA_DIR` set to a directory of its own and refuses one that holds data without its `.nextdash-demo` marker (`demo.go`, `demo_seed.go`, `demo_unraid/`, `demo-lock.js`, `deploy/demo/docker-compose.yml`).
+
+### Tests
+- **tests — block moving:** `tests/dashboard-block-move.spec.js`, `-keyboard`, `-page`, `-coach`, `tests/dashboard-block-move-intro.spec.js`, `tests/dashboard-collection-move.spec.js` and `tests/block-move-model.test.cjs`; `collection_block_test.go` saves and reads collection ids, widths and page lists.
+- **tests — `tests/config-structure-categories-grouped.spec.js`** covers the grouped table, its chips and folding; `config-structure-table.spec.js` and `config-pages-tags.spec.js` follow the new rows.
+- **tests — `category_spread_default_test.go`**: a fresh install and a file without the key spread, a stored `false` stays.
+- **tests — `tests/theme-browser-more-filters.spec.js`**, `tests/look-studio-reset-all.spec.js` and `look_defaults_test.go`; `tests/whats-new-modal.spec.js` follows the digest.
+- **tests — `demo_test.go`** covers the marker refusal, the reset and the refused routes; `tests/extension-popup.spec.js` covers a first setup.
+- **tests — `tests/whats-new-hidden-release.spec.js`** names v1.18.0 as the release the modal leads with.
+- **tests — three specs follow this release.** `dashboard-widget-keyboard.spec.js` focuses a widget row rather than the first button, which is now the `//` move handle; `dashboard-alt-move-bookmark.spec.js` expects Alt+→ to pass the next block, which can be a collection now that collections keep their place in the order; `list-view-header-surface.spec.js` lets the band be see-through at rest and expects it nearly solid once the page has scrolled.
+- **tests — two races in specs, found by this release's CI.** `bookmarks-structure-modal.spec.js` (*Move all bookmarks to… brings their categories along*) waited for as many posted category ids as the source page had, but the body also carries what the target page already holds, so the count could be reached before the last category was posted; it now waits for the categories by name. `config-bookmarks-fetch.spec.js` (*fetching previews walks the selection*) read the button's count while the side panel's own preview request was still out; when that answer landed first the row had a preview and the sweep skipped it, asking one where the button said two, or none and showing no bar. The panel's requests are now held until the sweep has started.
+
+### Docs
+- **docs — Help, tips, MANUAL and README** cover moving blocks, the grouped categories table, spreading by default, More filters, Reset all and the new What's new window; MANUAL §23.9 and the README variable table describe the demo variables.
+- **docs — translations:** the 97 strings added since v1.17.5 in all five languages, eight theme browser and look studio strings that were missing from every locale, the two extension server-access messages, and the two Overview spotlights below.
+- **docs — `static/data/whats-new/v1.18.0.json` and its index entry**; `whats-new-stub.js` moves `DASHBOARD_RELEASE` to `2026.10-dashboard-release-v1.18.0` and `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v322`. Two spotlights in `overview-features.json` with `since: "v1.18.0"`. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 

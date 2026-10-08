@@ -127,6 +127,11 @@ func monitorRuleKey(b Bookmark) string {
 // keep the quality report fresh, while this one polls a small opted-in set often
 // enough to draw a heartbeat.
 func (h *Handlers) StartHealthMonitorScheduler(stop <-chan struct{}) {
+	// The demo's monitors are a seeded picture: a round would only append
+	// "not available" samples to it.
+	if demoMode() {
+		return
+	}
 	go func() {
 		ticker := time.NewTicker(monitorTickInterval)
 		defer ticker.Stop()

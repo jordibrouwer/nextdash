@@ -114,6 +114,9 @@ const AppNotification = {
     },
 
     show(message, type = 'success', options = {}) {
+        // 'promo' is every unprompted tip; the public demo shows none of them
+        // (shared/demo-lock.js). Answers to what the visitor did still show.
+        if (type === 'promo' && window.DemoLock?.on) return;
         if (this._busy) {
             // A promo is an unprompted tip on a long timer (14s). Queueing an
             // answer to something the user just did behind it means the

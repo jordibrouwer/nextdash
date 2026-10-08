@@ -372,11 +372,11 @@
        grey of its own: the band is part of the same page, not a strip laid over
        it. Same token config's panels use (--card-bg in config-view.css).
 
-       Mixed into --background-primary, not into `transparent`. The comment at
-       the top of this file said so and the rule did the opposite, which left
-       the band see-through: it is sticky, so the rows scrolled visibly through
-       the header instead of passing behind it. */
-    background: color-mix(in srgb, var(--background-secondary) 55%, var(--background-primary));
+       At rest it is exactly that card surface, see-through like the panels
+       and tiles beside it, so the theme's backdrop shows through the same way.
+       Nothing scrolls behind it at the top of the page; once something does,
+       the scrolled rule below makes it nearly solid. */
+    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
     /*
      * No margin under it.
      *
@@ -402,9 +402,11 @@
  * config all answer to it. Back at the top, or after a reload, it is 55% again.
  */
 body[data-scrolled="true"] .lvs-header {
-    /* Opaque for the same reason as the resting state above: once the page has
-       scrolled there is certainly something behind this band. */
-    background: color-mix(in srgb, var(--background-secondary) 96%, var(--background-primary));
+    /* Nearly solid once the page has scrolled: rows and tiles pass behind the
+       band, and at 90% they stay a faint shape instead of competing with the
+       title, the filter and the search box. Any lower and the words in the
+       band get hard to read over busy rows. */
+    background: color-mix(in srgb, color-mix(in srgb, var(--background-secondary) 70%, var(--background-primary)) 90%, transparent);
     border-bottom: 1px solid var(--hairline, var(--border-primary));
     transition: background 0.18s ease, border-color 0.18s ease;
 }
