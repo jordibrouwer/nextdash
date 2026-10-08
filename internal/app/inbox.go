@@ -110,13 +110,29 @@ func sortInboxItemsNewestFirst(items []InboxLink) {
 }
 
 func (fs *FileStore) readInboxDataLocked() InboxData {
+	inbox, _ := fs.readInboxDataForWriteLocked()
+	return inbox
+}
+
+// readInboxDataForWriteLocked is the read every mutator uses. A missing file
+// is an empty inbox; any other read or decode error is returned, because the
+// mutator would otherwise save that empty state over inbox.json and lose
+// every item in it.
+func (fs *FileStore) readInboxDataForWriteLocked() (InboxData, error) {
+	empty := InboxData{Version: inboxDataVersion, Items: []InboxLink{}}
 	data, err := os.ReadFile(fs.inboxFile())
 	if err != nil {
-		return InboxData{Version: inboxDataVersion, Items: []InboxLink{}}
+		if os.IsNotExist(err) {
+			return empty, nil
+		}
+		return empty, fmt.Errorf("read inbox: %w", err)
 	}
 	var inbox InboxData
-	if err := json.Unmarshal(data, &inbox); err != nil || inbox.Items == nil {
-		return InboxData{Version: inboxDataVersion, Items: []InboxLink{}}
+	if err := json.Unmarshal(data, &inbox); err != nil {
+		return empty, fmt.Errorf("decode inbox: %w", err)
+	}
+	if inbox.Items == nil {
+		inbox.Items = []InboxLink{}
 	}
 	// Version 1 kept entities as an older fetch stored them; they are decoded
 	// once, and the next save writes version 2. Decoding on every read was not
@@ -130,7 +146,7 @@ func (fs *FileStore) readInboxDataLocked() InboxData {
 		}
 	}
 	inbox.Version = inboxDataVersion
-	return inbox
+	return inbox, nil
 }
 
 func (fs *FileStore) saveInboxDataLocked(inbox InboxData) error {
@@ -280,7 +296,10 @@ func (fs *FileStore) AddInboxLink(link InboxLink, dedupe bool, maxItems int) (In
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
-	inbox := fs.readInboxDataLocked()
+	inbox, err := fs.readInboxDataForWriteLocked()
+	if err != nil {
+		return InboxLink{}, nil, err
+	}
 	urlKey := canonicalBookmarkURLKey(link.URL)
 	if urlKey == "" {
 		return InboxLink{}, nil, fmt.Errorf("invalid inbox url")
@@ -358,7 +377,10 @@ func (fs *FileStore) DeleteInboxLink(id string) error {
 		return ErrInboxItemNotFound
 	}
 
-	inbox := fs.readInboxDataLocked()
+	inbox, err := fs.readInboxDataForWriteLocked()
+	if err != nil {
+		return err
+	}
 	next := make([]InboxLink, 0, len(inbox.Items))
 	found := false
 	for _, item := range inbox.Items {
@@ -459,7 +481,10 @@ func (fs *FileStore) RestoreInboxLinkEvicting(link InboxLink, maxItems int) (Inb
 		return InboxLink{}, nil, fmt.Errorf("invalid inbox id")
 	}
 
-	inbox := fs.readInboxDataLocked()
+	inbox, err := fs.readInboxDataForWriteLocked()
+	if err != nil {
+		return InboxLink{}, nil, err
+	}
 	for _, existing := range inbox.Items {
 		if existing.ID == id {
 			return existing, nil, nil
@@ -524,7 +549,10 @@ func (fs *FileStore) UpdateInboxLink(id string, mutate func(*InboxLink) error) (
 		return InboxLink{}, ErrInboxItemNotFound
 	}
 
-	inbox := fs.readInboxDataLocked()
+	inbox, err := fs.readInboxDataForWriteLocked()
+	if err != nil {
+		return InboxLink{}, err
+	}
 	for i := range inbox.Items {
 		if inbox.Items[i].ID != id {
 			continue
@@ -556,7 +584,10 @@ func (fs *FileStore) BatchInboxLinks(ids []string, mutate func(*InboxLink) bool)
 			wanted[id] = false
 		}
 	}
-	inbox := fs.readInboxDataLocked()
+	inbox, err := fs.readInboxDataForWriteLocked()
+	if err != nil {
+		return nil, nil, err
+	}
 	before := make([]InboxLink, 0, len(wanted))
 	next := make([]InboxLink, 0, len(inbox.Items))
 	for _, item := range inbox.Items {

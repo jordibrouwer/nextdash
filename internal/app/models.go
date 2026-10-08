@@ -3877,7 +3877,13 @@ func (fs *FileStore) SavePage(page Page) error {
 	fileName := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, page.ID)
 
 	var existing PageWithBookmarks
-	if data, err := os.ReadFile(fileName); err == nil {
+	data, err := os.ReadFile(fileName)
+	if err != nil && !os.IsNotExist(err) {
+		// Only a missing file is a new page. Any other read error written back
+		// as "new" would save the page with no bookmarks.
+		return fmt.Errorf("read bookmarks page %d: %w", page.ID, err)
+	}
+	if err == nil {
 		if err := json.Unmarshal(data, &existing); err != nil {
 			return fmt.Errorf("decode bookmarks page %d: %w", page.ID, err)
 		}
