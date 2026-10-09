@@ -145,6 +145,7 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **tests —** `TestClientIPReadsEveryForwardedForLine`, `TestFailedPageReadIsNotCached`, `TestIconCleanupKeepsIconsWhenInboxIsUnreadable`, the capture, counter and reset cases in `TestDemoGuard`, and a page switch during a move in `tests/dashboard-block-move-page.spec.js`. `TestDemoDialsNoHost` now expects a local dial to be refused in the start-up window.
 - **i18n —** the four new strings (the stale Undo notice and the swell setting) in nl, de, fr, es and zh; MANUAL §16 names the swell setting on the Action bar tab.
 - **release —** `static/data/whats-new/v1.18.3.json` and its `index.json` entry; `DASHBOARD_RELEASE` moves to v1.18.3 and the data token to `whats-new-v325`, so the window opens once on v1.18.3; an *Overview* feature for the swell (`overviewNewFeatureActionBarSwell*`, `since: "v1.18.3"`) in all six languages.
+- **unraid —** `templates/nextdash.xml` (and the live copy in `unraid_templates`): `<Date>` 2026-10-09, v1.18.3 in `<Changes>`, the v1.17.0 and v1.16.0 entries dropped to keep the last five.
 
 ---
 
