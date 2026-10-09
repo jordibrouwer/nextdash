@@ -33,6 +33,13 @@ async function openStats(page) {
         return window.dashboardInstance.config.openConfigView('stats');
     });
     await page.waitForFunction(() => typeof window.DashboardConfig === 'function', null, { timeout: 10_000 });
+    // Overview asks the server for the inbox figures as it opens. Seeding
+    // before that answer lands lets it overwrite the seed with the real (in CI
+    // empty) history, and the panel then shows "quiet" instead of a chart.
+    await page.waitForFunction(() => {
+        const c = window.dashboardInstance.config;
+        return c._statsInboxAgg !== undefined && !c._statsInFlight?.has('inbox');
+    }, null, { timeout: 10_000 });
 }
 
 /**

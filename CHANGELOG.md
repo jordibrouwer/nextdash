@@ -146,6 +146,7 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **i18n —** the four new strings (the stale Undo notice and the swell setting) in nl, de, fr, es and zh; MANUAL §16 names the swell setting on the Action bar tab.
 - **release —** `static/data/whats-new/v1.18.3.json` and its `index.json` entry; `DASHBOARD_RELEASE` moves to v1.18.3 and the data token to `whats-new-v325`, so the window opens once on v1.18.3; an *Overview* feature for the swell (`overviewNewFeatureActionBarSwell*`, `since: "v1.18.3"`) in all six languages.
 - **unraid —** `templates/nextdash.xml` (and the live copy in `unraid_templates`): `<Date>` 2026-10-09, v1.18.3 in `<Changes>`, the v1.17.0 and v1.16.0 entries dropped to keep the last five.
+- **tests —** `config-stats-inbox-trend.spec.js` waits for Overview's own inbox fetch before seeding; a slow answer overwrote the seed with the empty CI history and the chart never drew (CI run 618). `config-toolbar-groups.spec.js` counts `actionBarIntro` (24 fields), which the swell added.
 
 ---
 
