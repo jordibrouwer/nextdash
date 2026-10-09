@@ -208,12 +208,14 @@ func demoGuard(next http.Handler) http.Handler {
 				http.Error(w, demoStarting, http.StatusServiceUnavailable)
 				return
 			}
-			demo.writes.RLock()
-			defer demo.writes.RUnlock()
-			if demo.resetting.Load() {
+			// Try, not wait: a waiting reset blocks new readers, and a write
+			// that waited it out ran against the fresh seed -- a delete by
+			// index then took another bookmark than the one on screen.
+			if demo.resetting.Load() || !demo.writes.TryRLock() {
 				http.Error(w, demoResetting, http.StatusServiceUnavailable)
 				return
 			}
+			defer demo.writes.RUnlock()
 			// Usage counters are posted on their own, by readers too: they
 			// are not a change that should arm the idle reset or spend the
 			// visitor's limit.

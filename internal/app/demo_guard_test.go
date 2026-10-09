@@ -13,6 +13,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 )
 
 // writeRoutesInSource lists every route main.go and handlers_unraid.go
@@ -156,6 +157,48 @@ func TestDemoStartUpWindowIsNotTheVisitors(t *testing.T) {
 	guard.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/bookmarks/add", nil))
 	if rec.Code != http.StatusServiceUnavailable {
 		t.Fatalf("a write in the window: %d, want 503", rec.Code)
+	}
+}
+
+// A write that arrives while a reset waits for the store is turned away, not
+// held until the reset is done and then run against the fresh seed.
+func TestDemoWriteDuringAWaitingResetIsRefused(t *testing.T) {
+	t.Setenv("NEXTDASH_DEMO", "1")
+	demoWriteLimiter.reset()
+	reached := 0
+	guard := demoGuard(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { reached++ }))
+
+	// A long write holds the store; a reset queues behind it.
+	demo.writes.RLock()
+	locked := make(chan struct{})
+	go func() {
+		demo.writes.Lock()
+		close(locked)
+		demo.writes.Unlock()
+	}()
+	time.Sleep(20 * time.Millisecond)
+
+	done := make(chan int, 1)
+	go func() {
+		rec := httptest.NewRecorder()
+		guard.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/bookmarks/add", nil))
+		done <- rec.Code
+	}()
+	var code int
+	held := false
+	select {
+	case code = <-done:
+	case <-time.After(time.Second):
+		held = true
+	}
+	demo.writes.RUnlock()
+	<-locked
+	if held {
+		<-done
+		t.Fatal("a write behind a waiting reset was held instead of refused")
+	}
+	if code != http.StatusServiceUnavailable || reached != 0 {
+		t.Errorf("write behind a waiting reset: %d, reached %d", code, reached)
 	}
 }
 

@@ -114,6 +114,7 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **fix — the kept favicons are the seed's only.** A bookmark a visitor added or changed during the start-up window was kept and put back on every reset (`fetchDemoIconsOnce`).
 - **fix — a removed demo container leaves the container order,** which otherwise grew by one id per recreate until the next reset (`docker_demo.go`).
 - **fix — the start-up window is the seed round's, not the visitors'.** It was one global switch, so for the minutes the round took any visitor could make the server fetch a public address of their choosing, through a preview or a tag scan. Every request a visitor makes now carries a mark the dialer refuses whatever the window (`demoDialRefused` in `demo_guard.go`, `url_safety.go`), and while the window is open a visitor's write is answered *The demo is starting; try again in a minute*, since the favicon and preview it would set off run on a context without the mark.
+- **fix — a write during a waiting reset is turned away, not held.** The guard took the shared lock before it looked at the reset flag, and a reset waiting for the lock blocks new readers: a write arriving then hung until the reset was done and ran against the fresh seed, where a delete by index took another bookmark than the one on screen. The guard now tries the lock and answers 503 when it cannot have it (`TryRLock` in `demoGuard`).
 
 ### Data
 - **fix — a page that fails to read is not cached as empty.** `GetBookmarksByPage` held the empty result until the next write, and a save from a reader who saw it replaced the whole page. Only a missing file is cached as empty; `GetAllBookmarks` no longer marks itself complete when a page failed (`models.go`).
@@ -156,6 +157,7 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **tests —** `config-stats-inbox-trend.spec.js` waits for Overview's own inbox fetch before seeding; a slow answer overwrote the seed with the empty CI history and the chart never drew (CI run 618). `config-toolbar-groups.spec.js` counts `actionBarIntro` (24 fields), which the swell added. `dashboard-collection-move.spec.js` expects the tag-collection answer within 1.5 s, in the live region and the toast. `page-switcher-styles.spec.js` saves its style through `saveSettings` instead of a bare POST, which left a settings read already on the wire free to put the previous test's style back (CI run 619).
 - **tests —** `inbox-lazy-load.spec.js` drops its inbox-off case; `shortcut-open-mode.spec.js` checks the inbox switch is gone; `config-new-sections.spec.js` expects the new rail order.
 - **tests —** `TestDemoStartUpWindowIsNotTheVisitors` refuses a visitor's dial and write in the start-up window.
+- **tests —** `TestDemoWriteDuringAWaitingResetIsRefused` turns a write away while a reset waits for the lock.
 
 ---
 
