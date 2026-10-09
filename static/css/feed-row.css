@@ -106,6 +106,9 @@
    grid-template-rows rather than height, so it animates from nothing to its
    own content height without a magic number. */
 .feed-row-actions {
+    /* Read by the children below. Reset here so a bar never inherits an open
+       state from an outer one. */
+    --feed-row-actions-child-overflow: hidden;
     display: grid;
     grid-template-rows: 0fr;
     margin-top: 0;
@@ -121,7 +124,7 @@
     flex-wrap: wrap;
     gap: var(--space-1-5, 0.35rem);
     min-height: 0;
-    overflow: hidden;
+    overflow: var(--feed-row-actions-child-overflow);
 }
 
 .feed-row:hover .feed-row-actions,
@@ -143,14 +146,16 @@
    menu even while the bar itself stays revealed; only while a menu is open
    does the row let it escape — the height animation is finished by then, so
    nothing jumps. Matches both the shared menu class and the one Health names
-   its own popovers with. */
+   its own popovers with.
+   The children are let out through a variable rather than a
+   `.feed-row-actions:has(...) > *` rule. A :has() that is not the subject of
+   its selector made Chrome restyle the whole page on every DOM change
+   anywhere: 16x the style work while the grid renders. */
 .feed-row-actions:has(.health-view-menu:not([hidden])) {
+    --feed-row-actions-child-overflow: visible;
     grid-template-rows: 1fr;
     margin-top: var(--space-2, 0.55rem);
     opacity: 1;
-    overflow: visible;
-}
-.feed-row-actions:has(.health-view-menu:not([hidden])) > * {
     overflow: visible;
 }
 
