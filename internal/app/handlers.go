@@ -3,6 +3,8 @@ package app
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -259,6 +261,7 @@ func (h *Handlers) pageTemplateFuncsFor() template.FuncMap {
 	funcs["themeCSS"] = func() template.CSS {
 		return template.CSS(h.customThemeCSS())
 	}
+	funcs["themeCSSURL"] = h.themeCSSURL
 	return funcs
 }
 
@@ -3980,7 +3983,27 @@ func (h *Handlers) CustomThemeCSS(w http.ResponseWriter, r *http.Request) {
 			seed = normalizeBackdropTuning(BackdropTuning{Strength: 1, Scale: 1, Brightness: 1, Saturate: 1, Seed: n}).Seed
 		}
 	}
-	w.Write([]byte(h.customThemeCSSSeeded(seed)))
+	css := h.customThemeCSSSeeded(seed)
+	// The page links this file by the hash of its content. A request that
+	// carries exactly that hash can never see different bytes under it, so it
+	// may be kept for good. Anything else -- a refresh after a theme change, a
+	// previewed roll, which bakes different bytes -- stays no-store.
+	if v := r.URL.Query().Get("v"); v != "" && v == themeCSSHash(css) {
+		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	}
+	w.Write([]byte(css))
+}
+
+func themeCSSHash(css string) string {
+	sum := sha256.Sum256([]byte(css))
+	return hex.EncodeToString(sum[:])[:12]
+}
+
+// themeCSSURL is the address the page links its theme stylesheet by. The hash
+// moves with colors.json and the backdrop roll, so a change is a new URL and
+// the old bytes can stay cached forever.
+func (h *Handlers) themeCSSURL() string {
+	return "/api/theme.css?v=" + themeCSSHash(h.customThemeCSS())
 }
 
 // customThemeCSS is the same stylesheet the endpoint serves. Split out so the

@@ -459,7 +459,9 @@ test('a theme made elsewhere reaches this tab with the settings sync', async ({ 
         await window.dashboardInstance.data.refreshIfDataRevisionChanged();
     }, id);
     await expect.poll(() => page.evaluate((themeId) =>
-        (document.getElementById('nextdash-theme-css')?.textContent || '').includes(themeId), id), { timeout: 10_000 }).toBe(true);
+        [...document.styleSheets]
+            .filter((sheet) => (sheet.href || '').includes('/api/theme.css'))
+            .some((sheet) => [...sheet.cssRules].some((rule) => rule.cssText.includes(themeId))), id), { timeout: 10_000 }).toBe(true);
     await expect.poll(() => page.evaluate((themeId) =>
         Boolean(window.dashboardInstance.config._colorsData?.custom?.[themeId]), id), { timeout: 10_000 }).toBe(true);
 });

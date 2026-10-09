@@ -59,11 +59,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
-    <!-- Inline rather than linked: this stylesheet is generated per install and
-         served no-store, so as a link it was an uncacheable blocking request
-         between the HTML and the first paint on every load. The endpoint stays
-         for the theme switch, which reloads it — see reloadThemeCSS. -->
-    <style id="nextdash-theme-css">{{themeCSS}}</style>
+    <!-- Linked by the hash of its content, so it is cached for good. It was
+         inline once (606 KB of every HTML response, parsed on each load) because
+         a no-store link was an uncacheable blocking request. A hashed URL keeps
+         the first paint free of that and a repeat visit free of both. The theme
+         switch swaps the link for a fresh one — see reloadThemeCSS. -->
+    <link rel="stylesheet" id="nextdash-theme-css" href="{{themeCSSURL}}">
     <!-- Deliberately unversioned: fonts.css requests this exact URL from a static
          stylesheet, which is served as-is and so cannot render the asset helper.
          A hashed URL here would not match it, making the browser fetch the font
