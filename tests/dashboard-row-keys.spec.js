@@ -59,6 +59,46 @@ test.describe('row actions from the keyboard', () => {
         expect(ref.bookmark?.url).toBeTruthy();
     });
 
+    /*
+     * The real routes, on a fresh load: neither went through the loader's own
+     * openLibraryView, so the views' stylesheet never came and the Bookmarks
+     * view drew unstyled -- a bare list and a favicon the size of the screen.
+     */
+    const viewStyled = (page) => page.evaluate(() => ({
+        sheet: !!document.querySelector('link[rel="stylesheet"][href*="/static/bundle/views.css"]')
+            || !document.querySelector('[data-nextdash-view-css]'),
+        library: !!document.querySelector('.config-view--library'),
+        selected: !!document.querySelector('#config-bm-list .config-bm-row.keyboard-selected'),
+    }));
+
+    test('Shift+R lands on the row in a styled Bookmarks view', async ({ page }) => {
+        await focusFirstRow(page);
+        await page.keyboard.press('Shift+R');
+        await expect.poll(() => viewStyled(page), { timeout: 10_000 })
+            .toEqual({ sheet: true, library: true, selected: true });
+    });
+
+    test('the menu entry names the view and its key, and lands styled', async ({ page }) => {
+        await focusFirstRow(page);
+        await page.locator('.bookmark-link.keyboard-selected').click({ button: 'right' });
+        const item = page.locator('#bookmark-context-menu [data-action="health"]');
+        await expect(item).toContainText('Show in list');
+        await expect(item).toContainText('Shift+R');
+        // Every key chip whole: at the shared 16rem cap the widest row cut
+        // "Shift+C" to "Shi…" and the label pushed this one off the edge.
+        const cut = await page.evaluate(() => [...document.querySelectorAll('#bookmark-context-menu [data-action]')]
+            .filter((row) => {
+                const key = row.querySelector('.move-popover-item-key');
+                const menu = row.closest('#bookmark-context-menu').getBoundingClientRect();
+                return key && (key.scrollWidth > key.clientWidth + 1 || key.getBoundingClientRect().right > menu.right + 1);
+            })
+            .map((row) => row.dataset.action));
+        expect(cut).toEqual([]);
+        await item.click();
+        await expect.poll(() => viewStyled(page), { timeout: 10_000 })
+            .toEqual({ sheet: true, library: true, selected: true });
+    });
+
     test('t filters to the tag on the row, and does nothing without one', async ({ page }) => {
         await focusFirstRow(page);
         const outcome = await page.evaluate(() => {

@@ -666,7 +666,7 @@
                             .replace('{when}', this.statsRelativeTime(s.oldestBrokenAt))
                         : this.t('config.statsSummaryBroken', '{n} links are not answering.'))
                         .replace('{n}', this.statsNumber(broken)),
-                    button: `<button type="button" class="config-btn config-btn--small" data-stats-action="open-health-view">${esc(this.t('config.statsOpenHealthView', 'Open Health'))}</button>`,
+                    button: `<button type="button" class="config-btn config-btn--small" data-stats-action="open-health-view">${esc(this.t('config.statsOpenHealthView', 'Open in Bookmarks'))}</button>`,
                 });
             }
 
@@ -1919,7 +1919,7 @@
                 title: this.t('config.statsStatusTitle', 'Status now and over time'),
                 span: 12,
                 info: this.t('config.statsStatusInfo', 'The line is worked out from broken, monitors down and unchecked on each recorded day, so every day is counted the same way.'),
-                right: `<button type="button" class="config-btn config-btn--small" data-stats-action="open-health-view">${esc(this.t('config.statsOpenHealthView', 'Open Health'))}</button>`,
+                right: `<button type="button" class="config-btn config-btn--small" data-stats-action="open-health-view">${esc(this.t('config.statsOpenHealthView', 'Open in Bookmarks'))}</button>`,
                 body: `<div id="config-stats-health">
                     ${this.statsStack([
                         [this.t('config.statsHealthy', 'Healthy'), h.healthy, 'good'],
@@ -2082,7 +2082,7 @@
                 info: this.t('config.statsIssuesInfo', 'One bookmark can carry several of these at once, so they do not add up to the total.'),
                 body: this.statsBars(rows, { axis: [this.t('config.statsAxisIssue', 'Issue'), this.t('config.statsAxisBookmarks', 'Bookmarks')] })
                     + (clashes.length ? `<p class="config-field-hint">${esc(clashes.join(', '))}</p>
-                        <div class="config-actions"><button type="button" class="config-btn config-btn--small" data-stats-action="open-health">${esc(this.t('config.statsOpenInHealth', 'Open in Health'))}</button></div>` : ''),
+                        <div class="config-actions"><button type="button" class="config-btn config-btn--small" data-stats-action="open-health">${esc(this.t('config.statsOpenInHealth', 'Open in Bookmarks'))}</button></div>` : ''),
             });
         },
 

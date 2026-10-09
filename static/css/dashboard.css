@@ -360,6 +360,11 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
 .bookmark-context-menu {
     max-height: none;
     overflow-y: visible;
+    /* Its rows carry their key too, and at the shared 16rem cap the widest
+       ("Checking (Periodic)…" with Shift+C) cut the chip to "Shi…". Sized to
+       its content like the category menu above. */
+    width: max-content;
+    max-width: min(24rem, calc(100vw - 1rem));
 }
 
 @media (max-height: 34rem) {

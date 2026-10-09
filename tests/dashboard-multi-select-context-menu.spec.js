@@ -163,7 +163,7 @@ test.describe('multi-select from the context menu', () => {
         // The single-row actions are gone: offering "Delete" and "Delete 2
         // selected" together would point at two different sets in one list.
         expect(labels).not.toContain('Edit');
-        expect(labels).not.toContain('Show in Health');
+        expect(labels).not.toContain('Show in list');
     });
 
     test('right-clicking an unselected row keeps the single-row menu', async ({ page }) => {

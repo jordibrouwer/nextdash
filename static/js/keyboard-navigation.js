@@ -2737,7 +2737,7 @@ class KeyboardNavigation {
     }
 
     /**
-     * Shift+R — open the selected bookmark's row in Health.
+     * Shift+R — show the selected bookmark's row in the Bookmarks view.
      *
      * Shift+H and :health open the view but carry no bookmark, so landing on
      * this particular row was a right-click-only route.

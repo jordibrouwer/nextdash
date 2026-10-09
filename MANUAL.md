@@ -1062,7 +1062,7 @@ The form, quick add and the extension all ask. Imports skip duplicates and say h
 | Tags… | `Shift + T` | The quick tag picker |
 | Move to… | `Shift + M` | Another category or page |
 | Checking | `Shift + C` | Off / Periodic / Monitor |
-| Show in Health | `Shift + R` | Opens the bookmark in the Bookmarks view, on its Health tab |
+| Show in list | `Shift + R` | Opens the bookmark in the Bookmarks view, with its Health section open |
 | Select / Select all in category | `x` / `X` | Starts a selection |
 | Delete | `Shift + D` | Asks first; undo in the toast; the trash keeps it 30 days |
 

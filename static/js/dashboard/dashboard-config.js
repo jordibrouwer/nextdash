@@ -1044,6 +1044,8 @@ class DashboardConfig {
         if (!this.isEnabled()) {
             return false;
         }
+        // As in openLibraryView: whichever way the call arrived.
+        await window.ViewStyles?.ensureViewStyles?.();
         const targetSection = this.resolveConfigOpenTarget(section);
         // From the Bookmarks view: the same instance, but Config's own shell.
         this.standalone = false;
@@ -1104,6 +1106,10 @@ class DashboardConfig {
         if (d.isInlineEditActive() && !(await d.confirmInlineEditBeforeNavigation())) {
             return false;
         }
+        // The views' stylesheet, here and not only in the loader: a call that
+        // reaches the module another way (openLibraryOnBookmark, from a
+        // bookmark's menu or Shift+R) drew the view with no styles at all.
+        await window.ViewStyles?.ensureViewStyles?.();
         d._abortInlineEditForRender?.();
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
         d.inbox?.clearKeyboardSelection?.();
