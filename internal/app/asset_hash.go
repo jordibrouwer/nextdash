@@ -171,6 +171,7 @@ var lazyLoadedAssets = []string{
 	"js/dashboard/dashboard-config-containers.js",
 	"js/dashboard/dashboard-config-unraid.js",
 	"js/dashboard/dashboard-config-inbox.js",
+	"js/dashboard/dashboard-config-widgets.js",
 	"js/dashboard/dashboard-config-context-menu.js",
 	"js/dashboard/dashboard-config-stats.js",
 	// Loaded by ensureStatsRenderers, outside SECTION_MODULES: unhashed, a

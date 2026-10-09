@@ -47,10 +47,9 @@
                 {
                     keys: 'Shift + H',
                     cheatKey: 'navHealthView',
-                    fallback: 'Open the Bookmarks view on the broken ones',
-                    when: (ctx) => ctx.healthEnabled,
+                    fallback: 'Open the Bookmarks view, the whole list',
                     print: true,
-                    printFallback: 'Bookmarks, broken ones',
+                    printFallback: 'Bookmarks',
                 },
                 {
                     keys: 'Shift + U',

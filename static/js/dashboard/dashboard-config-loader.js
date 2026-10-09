@@ -37,6 +37,34 @@ class DashboardConfigLoader {
 
     static VIEW = 'config';
 
+    /*
+     * The Bookmarks list's own scripts, which DashboardConfig.ensureBookmarkRenderers
+     * loads one after another once config has run. Named here so they can be
+     * fetched alongside config instead of after it: on a cold cache that was
+     * eleven round trips in a row. Mirrors that method's list;
+     * config-lazy-load.spec.js fails if a preloaded script never runs.
+     */
+    static BOOKMARK_SCRIPTS = [
+        'js/shared/bookmark-workbench-model.js',
+        'js/dashboard/dashboard-config-bookmarks.js',
+        'js/dashboard/dashboard-config-bookmarks-workbench.js',
+        'js/dashboard/dashboard-config-bookmarks-health.js',
+        'js/dashboard/dashboard-bookmarks-health-modal.js',
+        'js/dashboard/dashboard-config-bookmarks-usage.js',
+        'js/dashboard/dashboard-bookmarks-structure-modal.js',
+        'js/dashboard/dashboard-bookmarks-checking-modal.js',
+        'js/dashboard/dashboard-config-bookmarks-details.js',
+        'js/dashboard/dashboard-bookmarks-header.js',
+        'js/dashboard/dashboard-bookmarks-health-large.js',
+    ];
+
+    static preloadBookmarkScripts() {
+        // The first of them has run, so the rest are loaded or on their way: a
+        // preload now would never be used, and the browser says so.
+        if (window.BookmarkWorkbenchModel) return;
+        window.LazyScript.preloadScripts?.(DashboardConfigLoader.BOOKMARK_SCRIPTS);
+    }
+
     /** Mirrors DashboardConfig.isGenericConfigHash for pre-load hash routing. */
     static isGenericConfigHash(hash) {
         return typeof hash === 'string' && hash.replace(/^#/, '') === 'config';
@@ -163,6 +191,40 @@ class DashboardConfigLoader {
                 configurable: true,
             });
         }
+        this._bindIntentPrewarm();
+    }
+
+    /*
+     * Start loading when someone is about to open Bookmarks or Config.
+     *
+     * The first open after a page load waited on the whole module: a 1.7 MB
+     * script to fetch, parse and run, ~500 ms on a server reached over a VPN.
+     * A pointer coming to rest on the button, a focus on it or a touch is
+     * the reader on the way there, and that head start is most of the wait.
+     * Delegated, because the buttons are re-rendered; once, because after
+     * the first time the module is there.
+     */
+    _bindIntentPrewarm() {
+        const SELECTOR = '.library-link-anchor, .config-link-anchor';
+        const events = ['pointerover', 'focusin', 'touchstart'];
+        const onIntent = (e) => {
+            if (!e.target?.closest?.(SELECTOR)) return;
+            events.forEach((type) => document.removeEventListener(type, onIntent, true));
+            this.prewarm();
+        };
+        events.forEach((type) => document.addEventListener(type, onIntent, { capture: true, passive: true }));
+    }
+
+    /** What opening loads, without opening anything, and without a word on failure. */
+    prewarm() {
+        const health = this.dash?.health;
+        DashboardConfigLoader.preloadBookmarkScripts();
+        return Promise.all([
+            this.load(),
+            this.dash?.language?.ensureHelpTranslations?.(),
+            window.ViewStyles?.ensureViewStyles?.(),
+            health?.isEnabled?.() ? health.load?.() : null,
+        ]).catch(() => { /* the real open reports it, and retries */ });
     }
 
     /**
@@ -207,12 +269,11 @@ class DashboardConfigLoader {
         if (this._module) return Promise.resolve(this._module);
         if (this._loadPromise) return this._loadPromise;
 
-        // Fetched side by side, run in the order below.
+        // Fetched side by side, run in the order below. Appearance's three
+        // files are not among them: config fetches those with that section
+        // (DashboardConfig.SECTION_MODULES.appearance).
         window.LazyScript.preloadScripts?.([
             'js/dashboard/dashboard-config.js',
-            'js/dashboard/dashboard-config-look.js',
-            'js/dashboard/dashboard-config-studio.js',
-            'js/dashboard/dashboard-config-theme-edit.js',
             'js/dashboard/dashboard-config-context-menu.js',
             'js/dashboard/dashboard-news-stream.js',
         ]);
@@ -221,31 +282,6 @@ class DashboardConfigLoader {
             'dashboardConfig',
             () => typeof window.DashboardConfig === 'function'
         ).then(() => (
-            // Appearance's Background and Surface tabs. Not optional, unlike the
-            // two below: the Appearance renderer calls into it, so config
-            // without it would throw on the first tab it drew.
-            window.LazyScript.loadScriptOnce(
-                'js/dashboard/dashboard-config-look.js',
-                'dashboardConfigLook',
-                () => window.DashboardConfigLookReady === true
-            )
-        )).then(() => (
-            // The theme browser's tabs, drawn from those same controls.
-            // Required for the same reason: openThemeBrowser is the studio.
-            window.LazyScript.loadScriptOnce(
-                'js/dashboard/dashboard-config-studio.js',
-                'dashboardConfigStudio',
-                () => window.DashboardConfigStudioReady === true
-            )
-        )).then(() => (
-            // The theme editor inside the studio. Optional: without it the
-            // studio simply has no editor, and the cards no ✎.
-            window.LazyScript.loadScriptOnce(
-                'js/dashboard/dashboard-config-theme-edit.js',
-                'dashboardConfigThemeEdit',
-                () => window.DashboardConfigThemeEditReady === true
-            ).catch(() => {})
-        )).then(() => (
             // The Bookmarks row menu, fetched with config rather than on the
             // dashboard's critical path: nothing outside config uses it. Its
             // failure is not fatal — config without a right-click menu is worse
@@ -292,6 +328,7 @@ class DashboardConfigLoader {
 
     /** The Bookmarks view (#bookmarks): the config module's list, full size. */
     async openLibraryView() {
+        DashboardConfigLoader.preloadBookmarkScripts();
         const mod = await this.loadForOpen();
         return mod.openLibraryView();
     }

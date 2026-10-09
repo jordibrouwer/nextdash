@@ -181,8 +181,14 @@ window.ScrollLock = new ScrollLock();
             if (record.type === 'attributes' && (record.attributeName === 'aria-modal' || record.attributeName === 'open')) {
                 return true;
             }
+            // Around one counts only as an attribute: a class or style on a
+            // parent can un-hide it, but a child added to or taken from a
+            // parent (body, every time a view opens) leaves it as it was --
+            // and a candidate that is itself added or removed is caught below.
+            const around = record.type === 'attributes';
             for (const candidate of candidates) {
-                if (candidate === target || candidate.contains(target) || target.contains(candidate)) return true;
+                if (candidate === target || candidate.contains(target)
+                    || (around && target.contains(candidate))) return true;
             }
             for (const node of [...record.addedNodes, ...record.removedNodes]) {
                 if (node.nodeType === 1 && (node.matches(SELECTOR) || node.querySelector(SELECTOR))) return true;

@@ -1,0 +1,38 @@
+{
+  "tag": "v1.18.4.1",
+  "date": "9 October 2026",
+  "releasedAt": "2026-10-09",
+  "modalLead": "<strong>Shift+H</strong> opens the whole Bookmarks list, and Bookmarks <strong>opens sooner</strong>.",
+  "sections": [
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Shift+H opens the whole list,</strong> the same as the Bookmarks button, instead of only the broken ones. It also works with health checks off."
+        }
+      ]
+    },
+    {
+      "title": "Speed",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Bookmarks and Config open sooner the first time:</strong> they start loading as soon as you point at their button."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Bookmarks draws its list once when it opens,</strong> instead of laying out an empty view first and redrawing the rows several times."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Bookmarks no longer loads what only Appearance and the widget editor need,</strong> so there is less to fetch and read before the list appears. Those parts load when you open them."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Views open with a shorter fade,</strong> so Config, Bookmarks, Inbox and Containers appear without the wait."
+        }
+      ]
+    }
+  ]
+}

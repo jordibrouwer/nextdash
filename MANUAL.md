@@ -1132,7 +1132,7 @@ Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to 
 | `1`–`9` | Go to a page |
 | `Shift + ←` / `Shift + →` | Previous / next page |
 | `Shift + I` | Inbox |
-| `Shift + H` | The Bookmarks view, on the broken ones |
+| `Shift + H` | The Bookmarks view, the whole list |
 | `Shift + U` | The Bookmarks view, on Unsorted |
 | `Shift + Y` | Containers |
 | `Shift + S` or `<` | Config (and back) |
@@ -1645,7 +1645,7 @@ The **Bookmarks view** is the library: every bookmark on every page, in one work
 </p>
 <p align="center"><sub>The Bookmarks view: filters on the left, the list in the middle, the focused bookmark in the side panel.</sub></p>
 
-Open it with **`Shift + H`** (on the broken ones), **`Shift + U`** (on Unsorted), the Bookmarks icon, `:health`, or `/#bookmarks`. Old `/#health` and `/#health/monitors` addresses, and `:health`, still land here, on the matching filter; a search that came with them (`hv_q`) comes along, and `hv_refresh` still re-scans on arrival. See [§11.13](#1113-addresses) for the current address scheme.
+Open it with **`Shift + H`** or the Bookmarks icon (the whole list), **`Shift + U`** (on Unsorted), `:health` (on the broken ones), or `/#bookmarks`. Old `/#health` and `/#health/monitors` addresses, and `:health`, still land here, on the matching filter; a search that came with them (`hv_q`) comes along, and `hv_refresh` still re-scans on arrival. See [§11.13](#1113-addresses) for the current address scheme.
 
 <a id="111-the-rail"></a>
 
