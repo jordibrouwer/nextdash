@@ -179,7 +179,13 @@
     function introOnLoad() {
         if (introPlayed || introWaiter || !introOn()) return;
         const attempt = () => {
-            if (introPlayed || hidden || !screenIsFree() || !bar()?.getClientRects().length) return false;
+            // A bar that can never play it (switched off, or in the menu)
+            // stops the wait: the watch below ran for the whole session.
+            if (introPlayed || !introOn() || place() === 'menu') {
+                stopWaiting();
+                return false;
+            }
+            if (hidden || !screenIsFree() || !bar()?.getClientRects().length) return false;
             playIntro();
             return true;
         };
@@ -194,9 +200,13 @@
         observer.observe(document.body, { childList: true, attributes: true });
         const poll = setInterval(check, 1000);
         document.addEventListener('visibilitychange', check);
+        // An intro is for the moment the page arrives; a screen that is not
+        // free within two minutes has moved on without it.
+        const giveUp = setTimeout(() => stopWaiting(), 120000);
         function stopWaiting() {
             observer.disconnect();
             clearInterval(poll);
+            clearTimeout(giveUp);
             document.removeEventListener('visibilitychange', check);
             introWaiter = null;
         }

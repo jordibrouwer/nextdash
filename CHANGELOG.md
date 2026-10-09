@@ -136,6 +136,7 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **fix — resetting spread counts only what was saved,** and puts the spread back on a category whose save failed (`dashboard-category-span.js`).
 - **fix — moving a collection to another page keeps it on its other pages.** A collection shown on pages 1 and 3, moved from 1 to 2, was left on page 2 only: the move set its page list to the one page it went to. It now swaps the page it left for the one it went to; a collection on every page still goes to that one page (`dashboard-block-page-move.js`).
 - **fix — a collection's width that cannot be saved is reported once.** The settings save says so itself, and the move said it again (`commitBlockMove` in `dashboard-render-core.js`).
+- **fix — the action bar's swell stops waiting when it cannot play.** With the bar in the menu, the swell switched off, or the screen busy for two minutes, it watched every change on the page for the rest of the session (`introOnLoad` in `action-bar-autohide.js`).
 
 ### Bookmarks
 - **fix — merging categories in the Structure modal cannot save an empty list.** A reload during the confirmation forgot the lists, and the merge posted `[]` for the page, removing every category (`mergeCategoryInto`).
