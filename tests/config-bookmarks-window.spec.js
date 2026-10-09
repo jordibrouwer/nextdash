@@ -57,6 +57,39 @@ test.describe('a long list draws a screenful', () => {
         expect(drawn.spacerHeight).toBeGreaterThan(1000);
     });
 
+    /*
+     * Opening the view chooses the first window without measuring -- the
+     * measurement was a full layout of the empty shell -- and checks it a frame
+     * later. The guess has to fill the screen, and the check has to agree.
+     */
+    test('a long list opened afresh fills the screen, and the window holds once measured', async ({ page }) => {
+        await openBookmarks(page);
+        await withManyBookmarks(page, 2000);
+        await page.keyboard.press('Escape');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView)).toBe('bookmarks');
+        expect(await page.evaluate(() => window.dashboardInstance.allBookmarks.length)).toBe(2000);
+
+        await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
+        await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
+        await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+
+        const state = await page.evaluate(() => {
+            const c = window.dashboardInstance.config;
+            const rows = [...document.querySelectorAll('#config-bm-list .config-bm-row')];
+            const lastBottom = rows[rows.length - 1].getBoundingClientRect().bottom;
+            const measured = c.bookmarkRowWindow();
+            return {
+                rowsDrawn: rows.length,
+                coversScreen: lastBottom >= window.innerHeight,
+                measuredKey: measured ? `${measured.start}-${measured.end}` : 'all',
+                drawnKey: c._bmWindowKey,
+            };
+        });
+        expect(state.rowsDrawn).toBeLessThan(200);
+        expect(state.coversScreen).toBe(true);
+        expect(state.drawnKey).toBe(state.measuredKey);
+    });
+
     test('a short list is drawn whole, spacers and all left out', async ({ page }) => {
         await openBookmarks(page);
         const drawn = await withManyBookmarks(page, 20);

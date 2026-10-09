@@ -24880,8 +24880,34 @@ class DashboardConfig {
         const model = window.BookmarkWorkbenchModel;
         if (!model || typeof this.workbenchItems !== 'function') return null;
         const items = this.workbenchItems();
+        /*
+         * Every read below -- a rect, a scrollTop, a computed style -- makes the
+         * browser lay the whole view out on the spot. Opening Bookmarks paid for
+         * that twice: once here on the empty shell, and again once the rows were
+         * in. So measure only when the answer needs it.
+         *
+         * A short list is drawn whole whatever the measurements say.
+         */
+        if (items.length <= (model.WINDOW_MIN_ITEMS ?? 120)) return null;
+        /*
+         * A list with no rows yet is a fresh shell: nothing above it has
+         * scrolled, and the viewport is the window's. That is enough to choose
+         * the first rows. One frame later, with the layout done anyway, the
+         * real window is measured and the rows redrawn if it differs.
+         */
+        const listNow = document.getElementById('config-bm-list');
+        if (!listNow?.querySelector('.config-bm-row')) {
+            const win = model.itemWindow(items, {
+                scrollTop: 0,
+                viewport: window.innerHeight,
+                ...(this._bmItemHeights || { rowHeight: 44, headHeight: 32 }),
+            });
+            this._bmWindowKey = win ? `${win.start}-${win.end}` : 'all';
+            this.scheduleBookmarkWindowCheck();
+            return win;
+        }
         const host = this.bookmarkListScrollHost();
-        const list = document.getElementById('config-bm-list');
+        const list = listNow;
         let offset = 0;
         let viewport = window.innerHeight;
         if (list) {
@@ -24894,7 +24920,23 @@ class DashboardConfig {
             }
         }
         const scrollTop = (host ? host.scrollTop : window.scrollY) - offset;
-        return model.itemWindow(items, { scrollTop, viewport, ...this.workbenchItemHeights() });
+        this._bmItemHeights = this.workbenchItemHeights();
+        return model.itemWindow(items, { scrollTop, viewport, ...this._bmItemHeights });
+    }
+
+    /** After a guessed window: measure once the frame is laid out, redraw if it was off. */
+    scheduleBookmarkWindowCheck() {
+        if (this._bmWindowCheckFrame) return;
+        this._bmWindowCheckFrame = requestAnimationFrame(() => {
+            this._bmWindowCheckFrame = 0;
+            if (this.section !== 'bookmarks' || !this.isActiveView()) return;
+            if (!document.querySelector('#config-bm-list .config-bm-row')) return;
+            const next = this.bookmarkRowWindow();
+            const key = next ? `${next.start}-${next.end}` : 'all';
+            if (key === this._bmWindowKey) return;
+            this._bmWindowKey = key;
+            this.repaintBookmarkRowsOnly();
+        });
     }
 
     /**

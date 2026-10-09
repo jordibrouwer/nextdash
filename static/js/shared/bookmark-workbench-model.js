@@ -72,10 +72,13 @@
         return px;
     }
 
+    // Below this many items the whole list is drawn and no window is needed.
+    const WINDOW_MIN_ITEMS = 120;
+
     function itemWindow(items, opts) {
         const { scrollTop, viewport, rowHeight, headHeight } = opts;
         const overscan = opts.overscan ?? 20;
-        const minItems = opts.minItems ?? 120;
+        const minItems = opts.minItems ?? WINDOW_MIN_ITEMS;
         if (!items || items.length <= minItems) return null;
         const top = Math.max(0, scrollTop);
         let px = 0;
@@ -147,7 +150,7 @@
     }
 
     global.BookmarkWorkbenchModel = {
-        healthState, facetCounts, buildItems, itemWindow, itemOffset,
+        healthState, facetCounts, buildItems, itemWindow, itemOffset, WINDOW_MIN_ITEMS,
         sharedValue, tagCounts, bulkMutation, rangeKeys,
     };
 }(typeof window !== 'undefined' ? window : globalThis));
