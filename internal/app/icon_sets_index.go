@@ -37,6 +37,9 @@ type iconSetEntry struct {
 	Dark    string
 	Ext     string // ".svg" or ".png"
 	Aliases []string
+	// PNG says the set also has a .png of an .svg entry: the fallback for an
+	// SVG that is only a PNG in a wrapper (see serveIconSetFile).
+	PNG bool
 }
 
 type iconSetIndex struct {
@@ -79,7 +82,8 @@ func parseDashboardIconsIndex(data []byte) ([]*iconSetEntry, error) {
 		if !iconFileName.MatchString(name) {
 			continue
 		}
-		e := &iconSetEntry{Set: iconSetDashboard, Name: name, Label: iconLabelFromName(name), Ext: ".svg", Aliases: v.Aliases}
+		// dashboard-icons builds a .png of every icon, whatever its base.
+		e := &iconSetEntry{Set: iconSetDashboard, Name: name, Label: iconLabelFromName(name), Ext: ".svg", Aliases: v.Aliases, PNG: true}
 		if v.Base == "png" {
 			e.Ext = ".png"
 		}
@@ -110,7 +114,7 @@ func parseSelfhstIndex(data []byte) ([]*iconSetEntry, error) {
 		if !iconFileName.MatchString(v.Reference) || (v.SVG != "Yes" && v.PNG != "Yes") {
 			continue
 		}
-		e := &iconSetEntry{Set: iconSetSelfhst, Name: v.Reference, Label: strings.TrimSpace(v.Name), Ext: ".png"}
+		e := &iconSetEntry{Set: iconSetSelfhst, Name: v.Reference, Label: strings.TrimSpace(v.Name), Ext: ".png", PNG: v.PNG == "Yes"}
 		if e.Label == "" {
 			e.Label = iconLabelFromName(v.Reference)
 		}
@@ -148,6 +152,9 @@ func buildIconSetIndex(di, sh []*iconSetEntry) *iconSetIndex {
 			for _, f := range []string{e.Name, e.Light, e.Dark} {
 				if f != "" {
 					x.files[e.Set+"/"+f+e.Ext] = true
+					if e.Ext == ".svg" && e.PNG {
+						x.files[e.Set+"/"+f+".png"] = true
+					}
 				}
 			}
 		}

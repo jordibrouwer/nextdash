@@ -127,6 +127,44 @@ func TestIconSetRouteFetchesOnceAndSanitises(t *testing.T) {
 	}
 }
 
+// An SVG that is only a PNG in a wrapper is served as the set's PNG of the
+// same icon, instead of a 404 and a letter.
+func TestIconSetRouteServesThePNGForAWrappedSVG(t *testing.T) {
+	dataDir := t.TempDir()
+	t.Setenv("NEXTDASH_DATA_DIR", dataDir)
+	mirror := filepath.Join(dataDir, iconSetsDirName)
+	_ = os.MkdirAll(mirror, 0o755)
+	for _, name := range []string{"index-dashboard-icons.json", "index-selfhst.json"} {
+		b, _ := os.ReadFile(filepath.Join("testdata/icon-sets", name))
+		_ = os.WriteFile(filepath.Join(mirror, name), b, 0o644)
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/homarr-labs/dashboard-icons/svg/jellyseerr.svg":
+			_, _ = w.Write([]byte(`<svg xmlns="http://www.w3.org/2000/svg"><image href="data:image/png;base64,AAAA"/></svg>`))
+		case "/homarr-labs/dashboard-icons/png/jellyseerr.png":
+			_, _ = w.Write(templateTestPNG)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+	old := iconSetsCDNBase
+	iconSetsCDNBase = srv.URL + "/"
+	t.Cleanup(func() { iconSetsCDNBase = old; resetIconSetsForTest() })
+	resetIconSetsForTest()
+	loadIconSetsFromDisk()
+
+	rec := httptest.NewRecorder()
+	dataFileHandler(dataDir)(rec, httptest.NewRequest(http.MethodGet, "/data/icon-sets/dashboard-icons/jellyseerr.svg", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("wrapped SVG with a PNG beside it: %d", rec.Code)
+	}
+	if ct := rec.Header().Get("Content-Type"); ct != "image/png" {
+		t.Errorf("Content-Type %q, want image/png", ct)
+	}
+}
+
 func TestAdoptIconSetFile(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("NEXTDASH_DATA_DIR", dir)
