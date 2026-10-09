@@ -66,12 +66,10 @@ async function chooseStyle(page, style) {
     await page.evaluate(async (value) => {
         const d = window.dashboardInstance;
         d.settings.pageSwitcherStyle = value;
-        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        await api('/api/settings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(d.settings),
-        });
+        // Through the dashboard's own save, not a bare POST: it tells a
+        // settings read already on the wire that it was outrun. A bare POST
+        // left the revision poll free to put the previous test's style back.
+        await d.saveSettings();
         d.config?.applyChromeSettings?.();
     }, style);
     await page.waitForTimeout(400);
