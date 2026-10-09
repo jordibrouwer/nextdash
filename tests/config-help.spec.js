@@ -166,19 +166,23 @@ test.describe('one topic can be linked to', () => {
 });
 
 test.describe('help says what is switched on here', () => {
-    test('the inbox panel reports its state and offers the setting', async ({ page }) => {
-        await openHelp(page, 'inbox');
+    test('the containers panel reports its state and offers the setting', async ({ page }) => {
+        await openHelp(page, 'containers');
         const state = page.locator('.config-help-state').first();
         await expect(state).toBeVisible();
         await expect(state).toContainText(/switched (on|off)/i);
 
         // The button uses the Overview jump shape, whose handler is bound to
         // the overview body — without wiring here it renders and does nothing.
-        // Inbox settings moved out of Behavior into their own section, so the
-        // jump target follows: HELP_PANEL_FEATURES.helpInboxTitle.go now names
-        // {section:'inbox'}.
         await state.locator('[data-overview-go]').click();
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section),
-            { timeout: 10_000 }).toBe('inbox');
+            { timeout: 10_000 }).toBe('containers');
+    });
+
+    // The inbox is always on, so its panel has no state to report.
+    test('the inbox panel says nothing about being switched on', async ({ page }) => {
+        await openHelp(page, 'inbox');
+        await expect(page.locator('#config-help-body [data-help-panel]').first()).toBeVisible();
+        await expect(page.locator('.config-help-state')).toHaveCount(0);
     });
 });

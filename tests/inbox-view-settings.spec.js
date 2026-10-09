@@ -41,15 +41,15 @@ async function openConfigInbox(page, tab = '') {
 }
 
 test.describe('Config → Inbox', () => {
-    test('stands between Bookmarks and Structure, with the inbox\'s settings', async ({ page }) => {
+    test('stands between Behavior and Data & backups, with the inbox\'s settings', async ({ page }) => {
         await openConfigInbox(page);
         const order = await page.locator('.config-nav-item').evaluateAll((els) => els.map((el) => el.getAttribute('data-config-section')));
-        expect(order.indexOf('inbox')).toBe(order.indexOf('bookmarks') + 1);
-        expect(order.indexOf('structure')).toBe(order.indexOf('inbox') + 1);
+        expect(order.indexOf('inbox')).toBe(order.indexOf('behavior') + 1);
+        expect(order.indexOf('data-backups')).toBe(order.indexOf('inbox') + 1);
         const tabs = await page.locator('[data-inbox-tab]').evaluateAll((els) => els.map((el) => el.getAttribute('data-inbox-tab')));
         expect(tabs).toEqual(['collecting', 'list', 'panel', 'icon']);
         const onTab = {
-            collecting: ['inboxEnabled', 'inboxShowInPageTabs', 'pasteDestination', 'inboxDeleteAfterPromote'],
+            collecting: ['inboxShowInPageTabs', 'pasteDestination', 'inboxDeleteAfterPromote'],
             list: ['inboxViewFilter', 'inboxViewSort', 'inboxViewAddress', 'inboxViewKeyLegend'],
             panel: ['inboxViewRail', 'inboxViewPanelWidth', 'inboxViewClick', 'inboxViewDblClick'],
             icon: ['inboxViewBadge', 'inboxViewBadgeCounts'],

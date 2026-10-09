@@ -150,7 +150,7 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **fix — bulk promote says when an entry could not leave the Inbox,** and keeps those out of its count and its Undo.
 - **fix — a quick second key in triage acts on the next card.** `r`, `d` or `Shift+K` pressed while the card before was still being written was dropped, since the card was still claimed; it now waits and runs on the card after (`keyAction`, `dashboard-inbox-triage.js`). Open is left out: a tab opened after the wait is a popup the browser may block. Seen as `inbox-triage-piles.spec.js:96` failing in CI run 619.
 - **new — the inbox is always on.** *Config → Inbox → Enable the inbox* is gone; the server sets `inboxEnabled` to true on every read and save, so an install that had turned it off gets the inbox back (`GetSettings`, `SaveSettings`, `models.go`; `dashboard-data.js`). Paste-to-inbox, the `0` key and `:inbox` follow. Its four `inboxEnabled*` strings are gone from the locale files.
-- **new — Structure and Behavior sit above Inbox in the config rail.** The order is now Overview, Appearance, Bookmarks, Structure, Behavior, Inbox (`DashboardConfig.SECTIONS`).
+- **new — Structure and Behavior sit above Inbox in the config rail.** The order is now Overview, Appearance, Bookmarks, Structure, Behavior, Inbox (`DashboardConfig.SECTIONS`, and the copy in `DashboardConfigLoader.SECTIONS` that reads a deep link before the module loads).
 
 ### What's new
 - **fix — the section menu filters the headline release only,** not the older releases opened below it.
@@ -165,6 +165,7 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **tests —** `TestDemoStartUpWindowIsNotTheVisitors` refuses a visitor's dial and write in the start-up window.
 - **tests —** `TestDemoWriteDuringAWaitingResetIsRefused` turns a write away while a reset waits for the lock.
 - **i18n —** *Show in list*, *Open in Bookmarks* and the four Overview and cheat-sheet lines that named Health, in nl, de, fr, es and zh. Help → Inbox settings drops the *Enable the inbox* switch and its picture caption, and Help → Config lists Structure and Behavior above Inbox, in all six languages; the English fallbacks in `overview-features.json` and the cheat-sheet registry follow.
+- **tests —** `inbox-view-settings.spec.js` expects Inbox between Behavior and Data & backups and no `inboxEnabled` field; `config-help.spec.js` checks the switched-on line on the Containers panel and its absence on the Inbox panel; `dashboard-widget-keyboard.spec.js` expects *Open in Bookmarks* on a widget row's menu entry (CI run for 0a0b4600).
 - **docs —** MANUAL §13.6, §17.1, §17.6 and §17.8 follow the always-on inbox and the new rail order.
 - **tests —** `TestDemoDockerRefusesATakenName` refuses a create or rename onto a name in use.
 - **tests —** `dashboard-collection-move.spec.js` moves a collection on two pages and checks the other stays.
