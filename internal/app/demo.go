@@ -64,6 +64,10 @@ type demoState struct {
 	resetting atomic.Bool  // writes wait it out with a 503
 	lastReset atomic.Int64 // unix ms
 	lastWrite atomic.Int64 // unix ms; 0 means nothing written since the reset
+	// writes is held shared by every write while it runs, and whole by a
+	// reset, so a write that passed the gate just before cannot land in the
+	// middle of the reseed or after it.
+	writes sync.RWMutex
 }
 
 var demo demoState
@@ -226,6 +230,8 @@ func (h *Handlers) resetDemo() error {
 	defer demo.mu.Unlock()
 	demo.resetting.Store(true)
 	defer demo.resetting.Store(false)
+	demo.writes.Lock()
+	defer demo.writes.Unlock()
 
 	fs, ok := h.store.(*FileStore)
 	if !ok {

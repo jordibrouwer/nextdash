@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.18.3 — 9 October 2026](#v1183--9-october-2026)
 - [v1.18.2 — 8 October 2026](#v1182--8-october-2026)
 - [v1.18.1 — 8 October 2026](#v1181--8-october-2026)
 - [v1.18.0 — 8 October 2026](#v1180--8-october-2026)
@@ -98,6 +99,20 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.18.3 — 9 October 2026
+
+A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no longer reaches the host's own network in its start-up window, and its capture routes are held to its write limit. Reverse proxies that add their own `X-Forwarded-For` line no longer let a visitor pick their rate-limit bucket. Two read errors that could lose data are closed: a page cached as empty, and icons deleted while `inbox.json` could not be read. On the dashboard, moving a block to another page is safe against a page switch and a second press.
+
+### Demo
+- **fix — the start-up window no longer reaches the host's own network.** The window that fetches the seed's favicons and previews was open to every request, and visitors are served by then: `/api/bookmark-preview` could fetch a private or link-local address. In demo mode `ssrfSafeDialContext` now refuses local addresses whatever `AllowLocalBookmarks` says (`url_safety.go`).
+- **fix — `GET /share` and `GET /add` count as writes.** They write the inbox on a GET, so they skipped the write limit and the reset hold (`demoCountsAsWrite`, `demo_guard.go`).
+- **fix — a write cannot land in the middle of a reset.** Writes hold `demo.writes` shared while they run and `resetDemo` takes it whole, so a write that passed the gate just before the reset no longer survives it or mixes into the reseed (`demo.go`).
+- **fix — usage counters no longer arm the idle reset.** `/api/track-*` posts from a visitor who only reads set the idle clock and spent the write limit.
+- **fix — the kept favicons are the seed's only.** A bookmark a visitor added or changed during the start-up window was kept and put back on every reset (`fetchDemoIconsOnce`).
+- **fix — a removed demo container leaves the container order,** which otherwise grew by one id per recreate until the next reset (`docker_demo.go`).
 
 ---
 

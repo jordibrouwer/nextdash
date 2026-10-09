@@ -108,6 +108,10 @@ func ssrfSafeDialContext(allowLocal bool, dialTimeout time.Duration) func(contex
 		if demoOutboundRefused() {
 			return nil, errDemoOutbound
 		}
+		// The start-up window is open to every request, not only the seed's,
+		// and visitors are already served by then: in the demo no dial ever
+		// reaches the host's own network, whatever the settings say.
+		allowLocal := allowLocal && !demoMode()
 		host, port, err := net.SplitHostPort(address)
 		if err != nil {
 			return nil, err

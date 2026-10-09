@@ -149,6 +149,16 @@ func demoWriteRefused(r *http.Request) bool {
 	return false
 }
 
+// demoCountsAsWrite says whether the guard treats a request as a write: the
+// API's write methods, and the two capture routes, which write the inbox on
+// a GET (share_capture.go).
+func demoCountsAsWrite(r *http.Request) bool {
+	if r.URL.Path == "/share" || r.URL.Path == "/add" {
+		return true
+	}
+	return isWriteMethod(r.Method) && strings.HasPrefix(r.URL.Path, "/api/")
+}
+
 var demoWriteLimiter = newSlidingWindowLimiter(demoWritesPerMinute, time.Minute)
 
 /*
@@ -166,17 +176,24 @@ func demoGuard(next http.Handler) http.Handler {
 			http.Error(w, demoNotAvailable, http.StatusForbidden)
 			return
 		}
-		if isWriteMethod(r.Method) && strings.HasPrefix(r.URL.Path, "/api/") {
+		if demoCountsAsWrite(r) {
+			demo.writes.RLock()
+			defer demo.writes.RUnlock()
 			if demo.resetting.Load() {
 				http.Error(w, "The demo is being reset; try again in a moment", http.StatusServiceUnavailable)
 				return
 			}
-			if !demoWriteLimiter.allow(clientIP(r)) {
-				w.Header().Set("Retry-After", "60")
-				http.Error(w, "Too many changes in a minute; the demo is shared", http.StatusTooManyRequests)
-				return
+			// Usage counters are posted on their own, by readers too: they
+			// are not a change that should arm the idle reset or spend the
+			// visitor's limit.
+			if !strings.HasPrefix(r.URL.Path, "/api/track-") {
+				if !demoWriteLimiter.allow(clientIP(r)) {
+					w.Header().Set("Retry-After", "60")
+					http.Error(w, "Too many changes in a minute; the demo is shared", http.StatusTooManyRequests)
+					return
+				}
+				demo.lastWrite.Store(time.Now().UnixMilli())
 			}
-			demo.lastWrite.Store(time.Now().UnixMilli())
 			r.Body = http.MaxBytesReader(w, r.Body, demoMaxBody)
 		}
 		next.ServeHTTP(w, r)

@@ -114,13 +114,19 @@ func TestDemoDialsNoHost(t *testing.T) {
 	if _, err := dial(context.Background(), "tcp", address); err != errDemoOutbound {
 		t.Fatalf("dial in the demo: %v", err)
 	}
+	// The window is open to every request, not only the seed's, and the
+	// demo is serving visitors by then: it never reaches the host's own
+	// network, whatever AllowLocalBookmarks says.
 	demoOutboundOpen.Store(true)
 	conn, err := dial(context.Background(), "tcp", address)
 	demoOutboundOpen.Store(false)
-	if err != nil {
-		t.Fatalf("dial in the start-up window: %v", err)
+	if err == nil {
+		conn.(net.Conn).Close()
+		t.Fatal("dial to a local address in the start-up window succeeded")
 	}
-	conn.(net.Conn).Close()
+	if err == errDemoOutbound {
+		t.Fatalf("the start-up window was closed: %v", err)
+	}
 	if err := sendInstallPing(context.Background(), "id", "v1", ""); err != errDemoOutbound {
 		t.Errorf("install ping in the demo: %v", err)
 	}
@@ -166,6 +172,27 @@ func TestDemoGuard(t *testing.T) {
 	if serve(http.MethodPost, "/api/bookmarks/add", "10.0.0.4").Code != http.StatusOK {
 		t.Error("another address was held to the first one's limit")
 	}
+	// The capture routes write the inbox on a GET: held to the same limit.
+	limited = 0
+	for i := 0; i < demoWritesPerMinute+3; i++ {
+		if serve(http.MethodGet, "/add?url=https://a.example/", "10.0.0.5").Code == http.StatusTooManyRequests {
+			limited++
+		}
+	}
+	if limited != 3 {
+		t.Errorf("%d GET /add refused past the limit, want 3", limited)
+	}
+	// Usage counters are not changes: no limit spent, no idle reset armed.
+	demo.lastWrite.Store(0)
+	if rec := serve(http.MethodPost, "/api/track-session", "10.0.0.5"); rec.Code != http.StatusOK || demo.lastWrite.Load() != 0 {
+		t.Errorf("POST /api/track-session: %d, idle clock %d", rec.Code, demo.lastWrite.Load())
+	}
+	// A write is refused while a reset holds the store.
+	demo.resetting.Store(true)
+	if rec := serve(http.MethodGet, "/share?url=https://a.example/", "10.0.0.6"); rec.Code != http.StatusServiceUnavailable {
+		t.Errorf("GET /share during a reset: %d", rec.Code)
+	}
+	demo.resetting.Store(false)
 
 	t.Setenv("NEXTDASH_DEMO", "")
 	plain := demoGuard(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))

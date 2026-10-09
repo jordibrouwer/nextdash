@@ -339,6 +339,15 @@ func (d *demoDocker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case r.Method == http.MethodDelete && strings.HasPrefix(path, "/containers/"):
 		if c := d.resolve(strings.TrimPrefix(path, "/containers/")); c != nil {
 			delete(d.containers, c.ID)
+			// Out of the order too: a recreate appends a new id, and the old
+			// one would otherwise stay in every list until the next reset.
+			kept := d.order[:0]
+			for _, id := range d.order {
+				if id != c.ID {
+					kept = append(kept, id)
+				}
+			}
+			d.order = kept
 		}
 		w.WriteHeader(http.StatusNoContent)
 	case r.Method == http.MethodPost && path == "/containers/create":
