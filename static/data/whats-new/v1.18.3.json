@@ -47,6 +47,10 @@
         },
         {
           "badge": "fix",
+          "text": "<strong>Widgets that point to your health figures</strong> now say <em>Open in Bookmarks</em>, since that is where Health lives."
+        },
+        {
+          "badge": "fix",
           "text": "<strong>A page that briefly cannot be read</strong> no longer shows up empty, and icons are no longer thrown away at that moment."
         }
       ]
