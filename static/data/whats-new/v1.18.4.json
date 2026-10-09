@@ -1,0 +1,17 @@
+{
+  "tag": "v1.18.4",
+  "date": "9 October 2026",
+  "releasedAt": "2026-10-09",
+  "modalLead": "The action bar's buttons can come into view in <strong>five styles</strong>, each shown on its own card.",
+  "sections": [
+    {
+      "title": "Action bar",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Pick how the buttons come into view:</strong> swell, swell from the middle, swell together, unfold or accordion. Under <em>Config → Appearance → Action bar</em> each style has a card that plays it while you point at it, and the bar plays your pick at once. It is still off by default."
+        }
+      ]
+    }
+  ]
+}

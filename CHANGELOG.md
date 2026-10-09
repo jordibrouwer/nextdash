@@ -105,10 +105,23 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.18.4 — 9 October 2026
 
-The action bar's intro animation gets a choice of five styles, each shown on its own card in config.
+The action bar's intro animation gets a choice of five styles, each shown on its own card in config — held back from the What's new window (`hideFromModal`) like v1.18.1, so v1.18.3 keeps leading it.
 
 ### Dashboard
 - **new — five ways for the action bar's buttons to come into view.** *Config → Appearance → The action bar → Animate the buttons as the bar appears* is now a set of cards instead of an on/off switch: off, swell (left to right, from the middle, or together), unfold and accordion. Each card plays its own animation while it has the pointer or the focus, and a card you pick plays on the bar itself at once, without a reload. An install that had the animation on keeps it as swell (setting `actionBarIntroStyle`, `action-bar-autohide.js`).
+
+
+### Help and docs
+- **new — Config → Overview has a news item for the styles,** *Five ways for the buttons to come into view*, dated v1.18.4 and opening Appearance → Action bar.
+- **docs — Help → Appearance** names the styles on the Action bar tab, and **MANUAL** §4 has *Buttons that come into view* — the five styles, the playing cards, the pick that plays at once, when it plays and that reduced motion skips it; §16's tab line follows.
+- **docs — the Unraid template** (`templates/nextdash.xml`) has the Inbox under Bookmarks → Unsorted and Health inside the Bookmarks view, in its feature list and its v1.18.3 changes, the same as the copy Community Applications reads.
+
+### Tests
+- **tests — `tests/action-bar-autohide.spec.js`** plays each style on the bar, picks a card in config and checks its drawing plays on hover and that a second pick plays on the bar without a reload; the setting off draws no intro. `internal/app/settings_action_bar_test.go` keeps the five styles, turns anything else off, and moves v1.18.3's switch to swell.
+
+### Docs
+- **docs — `static/data/whats-new/v1.18.4.json` and its index entry** with `hideFromModal`; `whats-new-stub.js` moves `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v326` and leaves `DASHBOARD_RELEASE` on v1.18.3. `tests/whats-new-hidden-release.spec.js` names v1.18.4 as held back.
+- **docs — locale keys** `actionBarIntroOff`, `actionBarIntroSwell`, `actionBarIntroSwellMiddle`, `actionBarIntroSwellTogether`, `actionBarIntroUnfold`, `actionBarIntroAccordion` with their `…Body` lines and the five `overviewNewFeatureActionBarStyles*` keys in all six languages; `actionBarIntroLabel`, `actionBarIntroInfoTitle`, `actionBarIntroInfoMessage` and `helpAppearanceBody` updated in all six. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 
