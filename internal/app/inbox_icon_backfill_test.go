@@ -1,6 +1,8 @@
 package app
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -53,9 +55,32 @@ func TestBackfillSkipsItemsAlreadyAttempted(t *testing.T) {
 // An item that already has an icon is skipped regardless of the stamp, which is
 // the pre-existing behaviour and must survive the change.
 func TestBackfillSkipsItemsThatAlreadyHaveAnIcon(t *testing.T) {
-	item := InboxLink{ID: "inl_has", URL: "https://a.example", Icon: "icon-abc.png"}
+	dir := t.TempDir()
+	t.Setenv("NEXTDASH_DATA_DIR", dir)
+	if err := os.MkdirAll(filepath.Join(dir, "icons"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "icons", "icon-abc.png"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	item := InboxLink{ID: "inl_has", URL: "https://a.example", Icon: "icon-abc.png", IconFetchedAt: 1}
 	if inboxItemNeedsIconFetch(item) {
 		t.Error("an item with a stored icon would be re-fetched")
+	}
+}
+
+// An item that names an icon file which is gone is fetched again, whatever
+// its stamp: an older cleanup removed files the inbox still named.
+func TestBackfillRefetchesAnIconWhoseFileIsGone(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	item := InboxLink{ID: "inl_gone", URL: "https://a.example", Icon: "icon-e70e9f2bf650f7ce.ico", IconFetchedAt: 1}
+	if !inboxItemNeedsIconFetch(item) {
+		t.Error("an item whose icon file is gone was skipped")
+	}
+	// A URL or path is not a file of ours to look for.
+	item.Icon = "/static/favicon.png"
+	if inboxItemNeedsIconFetch(item) {
+		t.Error("an icon that is a path was taken for a missing file")
 	}
 }
 
