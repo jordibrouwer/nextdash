@@ -138,6 +138,7 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 ### Inbox
 - **fix — bulk Keep runs once at a time;** a double click reported links as *still in the Inbox* that were not.
 - **fix — bulk promote says when an entry could not leave the Inbox,** and keeps those out of its count and its Undo.
+- **fix — a quick second key in triage acts on the next card.** `r`, `d` or `Shift+K` pressed while the card before was still being written was dropped, since the card was still claimed; it now waits and runs on the card after (`keyAction`, `dashboard-inbox-triage.js`). Open is left out: a tab opened after the wait is a popup the browser may block. Seen as `inbox-triage-piles.spec.js:96` failing in CI run 619.
 
 ### What's new
 - **fix — the section menu filters the headline release only,** not the older releases opened below it.

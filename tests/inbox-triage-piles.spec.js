@@ -106,6 +106,24 @@ test.describe('triage, pile first', () => {
         await expect(done.locator('[data-triage="next-pile"]')).toContainText('Waiting longest');
     });
 
+    test('a second r while the first read is on the wire reads the next card', async ({ page }) => {
+        await openInbox(page);
+        // Held long enough that the second press always lands mid-write. It
+        // was dropped: the cursor had not moved, and the card was still claimed.
+        await page.route('**/api/inbox', async (route) => {
+            if (route.request().method() === 'PATCH') await new Promise((r) => setTimeout(r, 600));
+            await route.fallback();
+        });
+        await page.keyboard.press('t');
+        await page.locator('[data-triage-pile="new"]').click();
+        await expect(card(page).locator('.health-focus-progress')).toHaveText(/^New this week · 1 of 2$/);
+        await page.keyboard.press('r');
+        await page.keyboard.press('r');
+        const done = page.locator('#inbox-triage-overlay .health-focus-card--done');
+        await expect(done).toBeVisible();
+        await expect(done.locator('.health-focus-stat', { hasText: 'read' })).toContainText('2');
+    });
+
     test('Enter on a focused button presses that button', async ({ page }) => {
         await openInbox(page);
         await page.keyboard.press('t');
