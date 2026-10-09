@@ -5082,9 +5082,9 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["pasteUrlQuickAdd"]; !ok {
 			settings.PasteUrlQuickAdd = true
 		}
-		if _, ok := rawSettings["inboxEnabled"]; !ok {
-			settings.InboxEnabled = true
-		}
+		// The inbox is always on; a stored false from before the switch was
+		// removed must not keep hiding it.
+		settings.InboxEnabled = true
 		if _, ok := rawSettings["dockerViewEnabled"]; !ok {
 			settings.DockerViewEnabled = true
 		}
@@ -5114,12 +5114,7 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["globalShortcuts"]; !ok {
 			settings.GlobalShortcuts = true
 		}
-		if settings.InboxEnabled {
-			settings.PasteUrlQuickAdd = true
-		}
-		if !settings.InboxEnabled && normalizePasteDestination(settings.PasteDestination) == "inbox" {
-			settings.PasteDestination = "ask"
-		}
+		settings.PasteUrlQuickAdd = true
 		if _, ok := rawSettings["pasteDestination"]; !ok {
 			settings.PasteDestination = "ask"
 		}
@@ -5217,6 +5212,8 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 	defer fs.mutex.Unlock()
 
 	fs.ensureDataDir()
+
+	settings.InboxEnabled = true
 
 	// Preserve migration markers from the stored file so that importing
 	// settings from another instance cannot suppress pending migrations.

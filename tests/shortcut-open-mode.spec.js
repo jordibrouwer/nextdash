@@ -131,6 +131,8 @@ test.describe('Inbox is its own section in Config', () => {
         expect(searchLabel.toLowerCase()).not.toContain('inbox');
 
         await page.locator('[data-config-section="inbox"]').click();
-        await expect(page.locator('#config-inbox-body [data-behavior-field="inboxEnabled"]')).toHaveCount(1);
+        await expect(page.locator('#config-inbox-body [data-behavior-field="inboxShowInPageTabs"]')).toHaveCount(1);
+        // The inbox is always on: no switch to turn it off.
+        await expect(page.locator('[data-behavior-field="inboxEnabled"]')).toHaveCount(0);
     });
 });

@@ -3438,7 +3438,6 @@ class DashboardConfig {
         installPingEnabled: ['count', 'install', 'ping', 'telemetry', 'privacy', 'users'],
         language: ['language', 'locale', 'translation', 'nederlands', 'deutsch', 'français'],
         deviceSpecificSettings: ['device', 'sync', 'local'],
-        inboxEnabled: ['inbox', 'triage', 'later'],
         detectSoftNotFound: ['404', 'not found', 'rot', 'gone', 'dead'],
         pasteDestination: ['paste', 'clipboard', 'inbox'],
         pasteUrlQuickAdd: ['paste', 'clipboard', 'quick add'],
@@ -12667,7 +12666,6 @@ class DashboardConfig {
         showSearchFlowBanner: { info: ['showSearchFlowBannerInfoTitle', 'showSearchFlowBannerInfoMessage'], def: true },
         // Quick add & inbox
         pasteUrlQuickAdd: { info: ['pasteUrlQuickAddInfoTitle', 'pasteUrlQuickAddInfoMessage'], def: true },
-        inboxEnabled: { info: ['inboxEnabledInfoTitle', 'inboxEnabledInfoMessage'], def: true },
         unsortedEnabled: { hint: 'unsortedEnabledHint', def: true },
         keepAutoFile: { hint: 'keepAutoFileHint', def: false },
         inboxShowInPageTabs: { info: ['inboxShowInPageTabsInfoTitle', 'inboxShowInPageTabsInfoMessage'], def: true },
@@ -13954,7 +13952,6 @@ class DashboardConfig {
                 title: t('config.inboxGroupCollecting', 'Collecting'),
                 note: t('config.generalGroupQuickAddNote', 'What happens when you paste a URL onto the dashboard — add it straight away, or collect it in the inbox to sort later.'),
                 controls: [
-                    bool('inboxEnabled', 'config.inboxEnabledLabel', 'Enable the inbox'),
                     bool('inboxShowInPageTabs', 'config.inboxShowInPageTabsLabel', 'Show the inbox in the header'),
                     bool('pasteUrlQuickAdd', 'config.pasteUrlQuickAdd', 'Quick-add a pasted URL'),
                     // Keeping is a step in the inbox's own flow, so its switch
@@ -31090,10 +31087,6 @@ class DashboardConfig {
      * handleOverviewGo already understands.
      */
     static HELP_PANEL_FEATURES = {
-        'config.helpInboxTitle': {
-            isOn: (s) => s.inboxEnabled !== false,
-            go: { section: 'inbox' },
-        },
         'config.helpHealthTitle': {
             isOn: (s) => s.showStatus === true || s.healthAutoRecheckEnabled === true,
             go: { section: 'behavior', behaviorTab: 'status' },

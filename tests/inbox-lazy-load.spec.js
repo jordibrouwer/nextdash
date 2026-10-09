@@ -2,8 +2,8 @@
 const { test, expect } = require('./fixtures');
 
 /**
- * When inboxEnabled is false the inbox module is not fetched at all; when enabled
- * it loads during bootstrap so badges still work (dashboard-inbox-loader.js).
+ * The inbox is always on, so its module loads during bootstrap and badges
+ * work from the start (dashboard-inbox-loader.js).
  */
 async function waitReady(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
@@ -23,46 +23,11 @@ function tracksInboxScripts(page) {
 }
 
 test.describe('inbox lazy load', () => {
-    test('the inbox module is not fetched when inbox is disabled', async ({ page }) => {
-        await page.goto('/');
-        await waitReady(page);
-        await page.evaluate(async () => {
-            window.dashboardInstance.settings.inboxEnabled = false;
-            await window.dashboardInstance.saveSettings();
-        });
-
-        /** @type {string[]} */
-        const requested = [];
-        page.on('request', (req) => {
-            const url = req.url();
-            if (url.includes('dashboard-inbox.js') || url.includes('dashboard-inbox-triage.js')) {
-                requested.push(url);
-            }
-        });
-
-        await page.goto(`/?_=${Date.now()}`);
-        await waitReady(page);
-
-        expect(requested).toEqual([]);
-        expect(await page.evaluate(() => typeof DashboardInbox)).toBe('undefined');
-        expect(await page.evaluate(() => window.dashboardInstance.inbox.isEnabled())).toBe(false);
-    });
-
-    async function ensureInboxEnabled(page) {
-        await page.goto('/');
-        await waitReady(page);
-        await page.evaluate(async () => {
-            window.dashboardInstance.settings.inboxEnabled = true;
-            await window.dashboardInstance.saveSettings();
-        });
-        await page.goto(`/?_=${Date.now()}`);
-        await waitReady(page);
-    }
-
-    test('the inbox module loads during bootstrap when enabled', async ({ page }) => {
+    test('the inbox module loads during bootstrap', async ({ page }) => {
         const requested = tracksInboxScripts(page);
 
-        await ensureInboxEnabled(page);
+        await page.goto('/');
+        await waitReady(page);
         await page.waitForFunction(
             () => typeof DashboardInbox === 'function'
                 && Array.isArray(window.dashboardInstance.inbox.instance?.items),
@@ -75,7 +40,8 @@ test.describe('inbox lazy load', () => {
     });
 
     test('opening inbox renders the view after bootstrap', async ({ page }) => {
-        await ensureInboxEnabled(page);
+        await page.goto('/');
+        await waitReady(page);
         await page.waitForFunction(
             () => typeof DashboardInbox === 'function',
             null,
