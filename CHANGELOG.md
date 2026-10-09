@@ -141,6 +141,8 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **fix — bulk Keep runs once at a time;** a double click reported links as *still in the Inbox* that were not.
 - **fix — bulk promote says when an entry could not leave the Inbox,** and keeps those out of its count and its Undo.
 - **fix — a quick second key in triage acts on the next card.** `r`, `d` or `Shift+K` pressed while the card before was still being written was dropped, since the card was still claimed; it now waits and runs on the card after (`keyAction`, `dashboard-inbox-triage.js`). Open is left out: a tab opened after the wait is a popup the browser may block. Seen as `inbox-triage-piles.spec.js:96` failing in CI run 619.
+- **new — the inbox is always on.** *Config → Inbox → Enable the inbox* is gone; the server sets `inboxEnabled` to true on every read and save, so an install that had turned it off gets the inbox back (`GetSettings`, `SaveSettings`, `models.go`; `dashboard-data.js`). Paste-to-inbox, the `0` key and `:inbox` follow. The `inboxEnabled*` strings stay in the locale files until the docs round.
+- **new — Structure and Behavior sit above Inbox in the config rail.** The order is now Overview, Appearance, Bookmarks, Structure, Behavior, Inbox (`DashboardConfig.SECTIONS`).
 
 ### What's new
 - **fix — the section menu filters the headline release only,** not the older releases opened below it.
@@ -151,6 +153,7 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **release —** `static/data/whats-new/v1.18.3.json` and its `index.json` entry; `DASHBOARD_RELEASE` moves to v1.18.3 and the data token to `whats-new-v325`, so the window opens once on v1.18.3; an *Overview* feature for the swell (`overviewNewFeatureActionBarSwell*`, `since: "v1.18.3"`) in all six languages.
 - **unraid —** `templates/nextdash.xml` (and the live copy in `unraid_templates`): `<Date>` 2026-10-09, v1.18.3 in `<Changes>`, the v1.17.0 and v1.16.0 entries dropped to keep the last five.
 - **tests —** `config-stats-inbox-trend.spec.js` waits for Overview's own inbox fetch before seeding; a slow answer overwrote the seed with the empty CI history and the chart never drew (CI run 618). `config-toolbar-groups.spec.js` counts `actionBarIntro` (24 fields), which the swell added. `dashboard-collection-move.spec.js` expects the tag-collection answer within 1.5 s, in the live region and the toast. `page-switcher-styles.spec.js` saves its style through `saveSettings` instead of a bare POST, which left a settings read already on the wire free to put the previous test's style back (CI run 619).
+- **tests —** `inbox-lazy-load.spec.js` drops its inbox-off case; `shortcut-open-mode.spec.js` checks the inbox switch is gone; `config-new-sections.spec.js` expects the new rail order.
 
 ---
 
