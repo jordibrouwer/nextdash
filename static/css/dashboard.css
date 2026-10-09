@@ -1814,6 +1814,23 @@ body.no-animations .library-link.is-health-alert .library-link-anchor {
     }
 }
 
+/* Opening a view is a jump to another place, not a turn of the page: the list
+   is usually drawn within a frame, and 200 ms of fade and slide on top of that
+   was most of what made Bookmarks feel slow to open. Half the time, no
+   movement; page switches on the dashboard keep the slide. */
+#dashboard-layout.page-transition:is(.config-layout, .library-layout, .inbox-layout, .docker-layout) {
+    animation: dashboardViewFade 100ms ease-out;
+}
+
+@keyframes dashboardViewFade {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
 .dashboard-grid.columns-1 {
     grid-template-columns: 1fr;
 }
