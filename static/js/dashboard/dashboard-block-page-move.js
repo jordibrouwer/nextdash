@@ -318,7 +318,9 @@
         if (bid.startsWith('tag:')) {
             const text = t('blockMoveTagCollection', {}, 'This collection follows its tag, so it shows wherever the tag is used.');
             dash.keyboardNavigation?.announce?.(text);
-            dash.showNotification?.(text, 'info');
+            // In place of the toast on screen: queued behind the 5-second
+            // "Moved … Undo" of a move just before, it answered the key late.
+            dash.showNotification?.(text, 'info', { replace: true });
             return false;
         }
         const page = (dash.pages || []).find((p) => Number(p.id) === to);

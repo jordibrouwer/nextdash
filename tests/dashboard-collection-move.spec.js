@@ -212,7 +212,10 @@ test.describe('collections move like any other block', () => {
         await page.locator(`${tag} .category-title`).focus();
         await page.keyboard.press('Shift+Alt+ArrowRight');
         await expect(page.locator(tag)).toHaveCount(1);
-        await expect(page.locator('#app-notification')).toContainText('follows its tag');
+        // The answer takes the place of the move's "Moved … Undo" at once. It
+        // used to queue behind it and show 4.8 s after the press.
+        await expect(page.locator('#dashboard-kbd-selection-live')).toContainText('follows its tag');
+        await expect(page.locator('#app-notification')).toContainText('follows its tag', { timeout: 1_500 });
         await page.locator(`${tag} .category-title`).click({ button: 'right' });
         await expect(page.locator('#collection-context-menu')).toBeVisible();
         await expect(page.locator('#collection-context-menu [data-action="move-page"]')).toHaveCount(0);

@@ -6,10 +6,10 @@ class DashboardNotifications {
         this.dash = dashboard;
     }
 
-    showNotification(message, type = 'error', { undoCallback = null, duration = 5000, onAction = null, actionLabel = null, durationMs = null } = {}) {
+    showNotification(message, type = 'error', { undoCallback = null, duration = 5000, onAction = null, actionLabel = null, durationMs = null, replace = false } = {}) {
         const d = this.dash;
         if (!window.AppNotification) return;
-        const opts = { duration: durationMs ?? duration };
+        const opts = { duration: durationMs ?? duration, replace };
         const undo = undoCallback || onAction;
         if (undo) {
             opts.onAction = undo;

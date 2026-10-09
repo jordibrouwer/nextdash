@@ -117,6 +117,13 @@ const AppNotification = {
         // 'promo' is every unprompted tip; the public demo shows none of them
         // (shared/demo-lock.js). Answers to what the visitor did still show.
         if (type === 'promo' && window.DemoLock?.on) return;
+        // An answer that makes the toast on screen beside the point takes its
+        // place at once instead of queueing behind it.
+        if (this._busy && options.replace === true) {
+            this._queue = [];
+            this._showNow(message, type, options);
+            return;
+        }
         if (this._busy) {
             // A promo is an unprompted tip on a long timer (14s). Queueing an
             // answer to something the user just did behind it means the
