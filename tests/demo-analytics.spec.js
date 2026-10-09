@@ -116,9 +116,9 @@ test.describe('demo analytics', () => {
         expect(tags.every((t) => t.id !== SHARED_ID)).toBe(true);
         expect(await page.content()).not.toContain(SHARED_ID);
 
-        // The notice the visitor reads, in the bar.
-        await expect(page.locator('#demo-bar .demo-bar-notice')).toContainText('records visits anonymously');
-        await expect(page.locator('#demo-bar .demo-bar-notice')).toContainText('masked');
+        // The bar stays short: what is recorded is told in Config → Privacy.
+        await expect(page.locator('#demo-bar')).toBeVisible();
+        await expect(page.locator('#demo-bar .demo-bar-notice')).toHaveCount(0);
     });
 
     test('Config shows the Privacy switches locked, with the demo\'s own text', async ({ page, demoServer }) => {

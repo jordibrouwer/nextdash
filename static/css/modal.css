@@ -2670,13 +2670,6 @@ body:not([data-depth="flat"]) .modal.whats-new-modal .wn-entries.wn-cards {
     text-underline-offset: 2px;
 }
 
-/* What the demo records: a line of its own under the rest of the bar. */
-.demo-bar-notice {
-    flex: 1 1 100%;
-    font-size: 0.75rem;
-    opacity: 0.9;
-}
-
 @media (max-width: 720px) {
     .demo-bar-shared,
     .demo-bar-install-name {
