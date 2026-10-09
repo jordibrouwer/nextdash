@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -54,6 +55,27 @@ const (
 func demoOutboundRefused() bool {
 	return demoMode() && !demoOutboundOpen.Load()
 }
+
+// demoVisitorKey marks a request a visitor made (demoGuard). The start-up
+// window is for the seed round only: a dial on a visitor's context is refused
+// while it is open, as it is the rest of the time.
+type demoVisitorKey struct{}
+
+func demoVisitorContext(ctx context.Context) bool {
+	visitor, _ := ctx.Value(demoVisitorKey{}).(bool)
+	return visitor
+}
+
+// demoDialRefused is the dialer's question: closed outside the window, and
+// closed to visitors inside it.
+func demoDialRefused(ctx context.Context) bool {
+	return demoOutboundRefused() || (demoMode() && ctx != nil && demoVisitorContext(ctx))
+}
+
+const (
+	demoStarting  = "The demo is starting; try again in a minute"
+	demoResetting = "The demo is being reset; try again in a moment"
+)
 
 // demoDeniedWrites are the write routes refused in the demo, as main.go
 // registers them.
@@ -176,17 +198,26 @@ func demoGuard(next http.Handler) http.Handler {
 			http.Error(w, demoNotAvailable, http.StatusForbidden)
 			return
 		}
+		r = r.WithContext(context.WithValue(r.Context(), demoVisitorKey{}, true))
 		if demoCountsAsWrite(r) {
+			track := strings.HasPrefix(r.URL.Path, "/api/track-")
+			// While the seed round is out fetching, a write could set off work
+			// of its own -- a new bookmark's favicon and preview -- on a
+			// background context the dialer cannot tell from the round's.
+			if !track && demoOutboundOpen.Load() {
+				http.Error(w, demoStarting, http.StatusServiceUnavailable)
+				return
+			}
 			demo.writes.RLock()
 			defer demo.writes.RUnlock()
 			if demo.resetting.Load() {
-				http.Error(w, "The demo is being reset; try again in a moment", http.StatusServiceUnavailable)
+				http.Error(w, demoResetting, http.StatusServiceUnavailable)
 				return
 			}
 			// Usage counters are posted on their own, by readers too: they
 			// are not a change that should arm the idle reset or spend the
 			// visitor's limit.
-			if !strings.HasPrefix(r.URL.Path, "/api/track-") {
+			if !track {
 				if !demoWriteLimiter.allow(clientIP(r)) {
 					w.Header().Set("Retry-After", "60")
 					http.Error(w, "Too many changes in a minute; the demo is shared", http.StatusTooManyRequests)

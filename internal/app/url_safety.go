@@ -105,11 +105,12 @@ func ssrfSafeDialContext(allowLocal bool, dialTimeout time.Duration) func(contex
 	return func(ctx context.Context, network, address string) (net.Conn, error) {
 		// The public demo reaches no other host (demo_guard.go). Here, where
 		// every guarded client dials, so no feature can open it by accident.
-		if demoOutboundRefused() {
+		if demoDialRefused(ctx) {
 			return nil, errDemoOutbound
 		}
-		// The start-up window is open to every request, not only the seed's,
-		// and visitors are already served by then: in the demo no dial ever
+		// The start-up window is the seed round's; a visitor's request is
+		// refused in it too (demoDialRefused), but work a request starts on a
+		// background context is not marked, so in the demo no dial ever
 		// reaches the host's own network, whatever the settings say.
 		allowLocal := allowLocal && !demoMode()
 		host, port, err := net.SplitHostPort(address)

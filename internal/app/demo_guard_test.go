@@ -132,6 +132,33 @@ func TestDemoDialsNoHost(t *testing.T) {
 	}
 }
 
+// The start-up window is the seed round's: a visitor's request is refused in
+// it, and a visitor's write is not let in to start work of its own.
+func TestDemoStartUpWindowIsNotTheVisitors(t *testing.T) {
+	t.Setenv("NEXTDASH_DEMO", "1")
+	demoWriteLimiter.reset()
+	demoOutboundOpen.Store(true)
+	defer demoOutboundOpen.Store(false)
+
+	visitor := context.WithValue(context.Background(), demoVisitorKey{}, true)
+	if _, err := ssrfSafeDialContext(false, 0)(visitor, "tcp", "93.184.216.34:443"); err != errDemoOutbound {
+		t.Fatalf("a visitor's dial in the window: %v, want refused", err)
+	}
+
+	var seen context.Context
+	guard := demoGuard(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) { seen = r.Context() }))
+	rec := httptest.NewRecorder()
+	guard.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/bookmark-preview?url=https://a.example/", nil))
+	if seen == nil || !demoVisitorContext(seen) {
+		t.Fatal("a visitor's request reached the handler unmarked")
+	}
+	rec = httptest.NewRecorder()
+	guard.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/bookmarks/add", nil))
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("a write in the window: %d, want 503", rec.Code)
+	}
+}
+
 func TestDemoGuard(t *testing.T) {
 	t.Setenv("NEXTDASH_DEMO", "1")
 	demoWriteLimiter.reset()

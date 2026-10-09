@@ -244,7 +244,7 @@
      * answers (403, 429, 503) carry a sentence meant for the visitor, and the
      * caller's own error toast would only say that something failed.
      */
-    const DEMO_ANSWERS = [/not available in the demo/i, /demo holds no more/i, /the demo is shared/i, /demo is being reset/i];
+    const DEMO_ANSWERS = [/not available in the demo/i, /demo holds no more/i, /the demo is shared/i, /demo is being reset/i, /demo is starting/i];
     function watchDemoAnswers() {
         const original = global.fetch.bind(global);
         global.fetch = async (...args) => {
