@@ -196,6 +196,31 @@ test.describe('activating an entry reaches the control', () => {
         expect(landed).toBe('healthAutoRecheckIntervalHours');
     });
 
+    /**
+     * Containers, Inbox, Unraid and Logs load their script on demand. A jump
+     * into one that had not arrived yet focused the section's button in the
+     * rail: the control was looked for before the section had drawn it.
+     */
+    test('jumping into a section whose script is still loading reaches the control', async ({ page }) => {
+        await page.route('**/dashboard-config-containers.js*', async (route) => {
+            await new Promise((r) => setTimeout(r, 800));
+            await route.fallback();
+        });
+        await openConfig(page, 'overview');
+
+        await page.evaluate(async () => {
+            const c = window.dashboardInstance.config;
+            const hit = c.getSettingsJumpEntries().find((e) => e.field === 'dockerRefreshSeconds');
+            await c.activateSettingsJumpEntry(hit);
+        });
+
+        expect(await page.evaluate(() => window.dashboardInstance.config.section)).toBe('containers');
+        expect(await page.evaluate(() => {
+            const sel = window.dashboardInstance.config.settingsJumpControlSelector('dockerRefreshSeconds');
+            return Boolean(sel) && document.activeElement === document.querySelector(sel);
+        }), 'the focus is on the Refresh control').toBe(true);
+    });
+
     /** The hand-written Appearance controls bind their own attributes. */
     test('jumping to a hand-written appearance control works too', async ({ page }) => {
         await openConfig(page, 'overview');

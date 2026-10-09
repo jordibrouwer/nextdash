@@ -3930,6 +3930,11 @@ class DashboardConfig {
         this.cleanupSettingsJumpHandler();
         if (entry.section !== this.section) {
             this.selectSection(entry.section, 'keyboard');
+            // A section whose script is still on its way draws when it lands
+            // (selectSection's own then, queued on the same promise first).
+            // Without the wait the sub-tab switch below rendered a section
+            // that was not there yet and threw, and the focus never arrived.
+            if (!(await this.ensureSection(entry.section)) || this.section !== entry.section) return;
         }
         if (entry.subTab) {
             const prop = DashboardConfig.SUB_TAB_STATE[entry.section];

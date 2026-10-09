@@ -127,6 +127,7 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **fix — a picked-up block lets go when you type in a field.** Arrows, Enter and W went to the block while the search box had focus (`dashboard-block-mover.js`).
 - **fix — Undo of a move puts nothing back after a background reload** of the page, which would have undone what another device changed since; it says so instead (`blockMoveUndoStale`).
 - **fix — moving a tag collection to another page answers at once.** Its "follows its tag" notice queued behind the 5-second *Moved … Undo* of a move just before and showed about five seconds after the key; it now takes that toast's place (`AppNotification.show` option `replace`, `dashboard-block-page-move.js`).
+- **fix — the settings search reaches a setting in Containers, Inbox, Unraid or Logs on a first visit.** Those sections load their script on demand, and a jump into one that had not arrived yet switched to its tab before it was drawn and threw (`renderContainersSection is not a function`), so the focus never reached the control. `activateSettingsJumpEntry` now waits for `ensureSection` (`dashboard-config.js`).
 - **fix — resetting spread counts only what was saved,** and puts the spread back on a category whose save failed (`dashboard-category-span.js`).
 
 ### Bookmarks
