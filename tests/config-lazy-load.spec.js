@@ -180,33 +180,37 @@ test.describe('config lazy load', () => {
     });
 
     /*
-     * Appearance's files came with config itself, so opening Bookmarks parsed
-     * a hundred kilobytes of theme studio before drawing a row. They may still
-     * arrive afterwards, when the tab is idle -- just not before the list.
+     * Appearance's files came with config itself, and the widget editor was
+     * part of config, so opening Bookmarks parsed both before drawing a row.
+     * They may still arrive afterwards, when the tab is idle -- just not
+     * before the list.
      */
-    test('Bookmarks draws its rows before any of Appearance is fetched', async ({ page }) => {
-        await page.addInitScript(() => {
-            const seen = { look: null, rows: null };
-            window.__lookOrder = seen;
-            new MutationObserver(() => {
-                const t = performance.now();
-                if (seen.look === null && document.querySelector(
-                    'script[src*="dashboard-config-look"], script[src*="dashboard-config-studio"], script[src*="dashboard-config-theme-edit"],'
-                    + 'link[href*="dashboard-config-look"], link[href*="dashboard-config-studio"], link[href*="dashboard-config-theme-edit"]')) {
-                    seen.look = t;
-                }
-                if (seen.rows === null && document.querySelector('#config-bm-list .config-bm-row')) seen.rows = t;
-            }).observe(document, { childList: true, subtree: true });
-        });
-        await page.goto('/');
-        await waitReady(page);
-        await page.evaluate(() => { window.location.hash = '#bookmarks'; });
-        await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
+    const NOT_BEFORE_BOOKMARKS = {
+        Appearance: ['dashboard-config-look', 'dashboard-config-studio', 'dashboard-config-theme-edit'],
+        Widgets: ['dashboard-config-widgets'],
+    };
+    for (const [section, files] of Object.entries(NOT_BEFORE_BOOKMARKS)) {
+        test(`Bookmarks draws its rows before any of ${section} is fetched`, async ({ page }) => {
+            await page.addInitScript((names) => {
+                const selector = names.flatMap((n) => [`script[src*="${n}"]`, `link[href*="${n}"]`]).join(', ');
+                const seen = { section: null, rows: null };
+                window.__fetchOrder = seen;
+                new MutationObserver(() => {
+                    const t = performance.now();
+                    if (seen.section === null && document.querySelector(selector)) seen.section = t;
+                    if (seen.rows === null && document.querySelector('#config-bm-list .config-bm-row')) seen.rows = t;
+                }).observe(document, { childList: true, subtree: true });
+            }, files);
+            await page.goto('/');
+            await waitReady(page);
+            await page.evaluate(() => { window.location.hash = '#bookmarks'; });
+            await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
 
-        const order = await page.evaluate(() => window.__lookOrder);
-        expect(order.rows).not.toBeNull();
-        if (order.look !== null) expect(order.look).toBeGreaterThan(order.rows);
-    });
+            const order = await page.evaluate(() => window.__fetchOrder);
+            expect(order.rows).not.toBeNull();
+            if (order.section !== null) expect(order.section).toBeGreaterThan(order.rows);
+        });
+    }
 
     test('Appearance still opens with its own tabs and the theme browser', async ({ page }) => {
         await page.goto('/#config/appearance/background');

@@ -305,6 +305,8 @@ test.describe('widgets update as they are configured', () => {
             const d = window.dashboardInstance;
             await d.config?.load?.();
             const cfg = d.config?.instance || d.config;
+            // refreshDashboardBlocks comes with the Widgets section.
+            await cfg.ensureSection('widgets');
             // Every store a fetching tile keeps, seeded as a first render would.
             d._widgetSources = [{ id: 'stale' }];
             d._widgetFeeds = { stale: {} };

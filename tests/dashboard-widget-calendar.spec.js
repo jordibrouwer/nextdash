@@ -131,6 +131,8 @@ test.describe('the calendar widget', () => {
             const d = window.dashboardInstance;
             await d.config?.load?.();
             const cfg = d.config?.instance || d.config;
+            // refreshDashboardBlocks comes with the Widgets section.
+            await cfg.ensureSection('widgets');
             d._widgetCalendar = { '1:w_stale': { result: { events: [] }, until: Date.now() + 999_999 } };
             await cfg.refreshDashboardBlocks();
             return d._widgetCalendar === undefined;
