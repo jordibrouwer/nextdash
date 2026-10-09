@@ -74,7 +74,7 @@ test.describe('the chrome toggles are grouped', () => {
             'showInboxButton', 'showConfigButton', 'showPagesButton',
             'showAddBookmarkButton', 'showSearchButton', 'showCommandsButton', 'showFindersButton',
             'showRecentButton', 'showCheatSheetButton', 'showCollapseAllButton', 'showTagCloudButton',
-            'actionBarPosition', 'actionBarEnabled', 'actionBarAutoHideSeconds', 'showActionKeys', 'actionBarIntro',
+            'actionBarPosition', 'actionBarEnabled', 'actionBarAutoHideSeconds', 'showActionKeys', 'actionBarIntroStyle',
         ]));
     });
 
