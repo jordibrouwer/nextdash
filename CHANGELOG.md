@@ -148,7 +148,7 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **fix — bulk Keep runs once at a time;** a double click reported links as *still in the Inbox* that were not.
 - **fix — bulk promote says when an entry could not leave the Inbox,** and keeps those out of its count and its Undo.
 - **fix — a quick second key in triage acts on the next card.** `r`, `d` or `Shift+K` pressed while the card before was still being written was dropped, since the card was still claimed; it now waits and runs on the card after (`keyAction`, `dashboard-inbox-triage.js`). Open is left out: a tab opened after the wait is a popup the browser may block. Seen as `inbox-triage-piles.spec.js:96` failing in CI run 619.
-- **new — the inbox is always on.** *Config → Inbox → Enable the inbox* is gone; the server sets `inboxEnabled` to true on every read and save, so an install that had turned it off gets the inbox back (`GetSettings`, `SaveSettings`, `models.go`; `dashboard-data.js`). Paste-to-inbox, the `0` key and `:inbox` follow. The `inboxEnabled*` strings stay in the locale files until the docs round.
+- **new — the inbox is always on.** *Config → Inbox → Enable the inbox* is gone; the server sets `inboxEnabled` to true on every read and save, so an install that had turned it off gets the inbox back (`GetSettings`, `SaveSettings`, `models.go`; `dashboard-data.js`). Paste-to-inbox, the `0` key and `:inbox` follow. Its four `inboxEnabled*` strings are gone from the locale files.
 - **new — Structure and Behavior sit above Inbox in the config rail.** The order is now Overview, Appearance, Bookmarks, Structure, Behavior, Inbox (`DashboardConfig.SECTIONS`).
 
 ### What's new
