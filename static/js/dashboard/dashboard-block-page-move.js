@@ -101,11 +101,16 @@
      * neither.
      */
     const movers = {
-        async collection(dash, { id, to }) {
+        async collection(dash, { id, from, to }) {
             const list = collectionPageList(dash, id);
             if (!list) throw new Error('collection not found');
             const before = list.get();
-            list.set([to]);
+            // From this page to that one; the collection's other pages keep
+            // it. Only "every page" (no list) narrows to the one it went to.
+            // Setting [to] took it off the other pages without a word.
+            list.set(before.length
+                ? [...new Set(before.map(Number).filter((p) => p !== Number(from)).concat(Number(to)))]
+                : [Number(to)]);
             try {
                 await saveSettingsOrThrow(dash);
             } catch (error) {

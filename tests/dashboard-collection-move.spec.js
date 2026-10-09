@@ -175,6 +175,27 @@ test.describe('collections move like any other block', () => {
         await expect(page.locator(block(MINE))).toHaveCount(0);
     });
 
+    // A collection on pages 1 and 3, moved from 1 to 2, stays on 3: the move
+    // swapped all its pages for the one it went to.
+    test('moving a collection keeps it on its other pages', async ({ page, request }) => {
+        const headers = { 'X-NextDash-Token': WRITE_TOKEN };
+        await seed(request, {
+            collections: [{ id: 'mine', name: 'Mine', logic: 'or', pageIds: [1, 3],
+                rules: [{ field: 'tag', operator: 'includes', value: 'video' }] }],
+        });
+        expect((await request.post('/api/pages', {
+            data: [{ id: 1, name: 'main' }, { id: 2, name: 'second' }, { id: 3, name: 'third' }], headers,
+        })).ok()).toBeTruthy();
+        await openDashboard(page);
+        await page.locator(`${block(MINE)} .category-title`).click({ button: 'right' });
+        const menu = page.locator('#collection-context-menu');
+        await menu.locator('[data-action="move-page"]').click();
+        await menu.locator('[data-action="2"]').click();
+        await expect(page.locator(block(MINE))).toHaveCount(0);
+        await expect.poll(async () => [...((await settings(page)).collections?.[0]?.pageIds || [])].sort())
+            .toEqual([2, 3]);
+    });
+
     test('Shift+Alt+→ on a collection title moves it to the next page', async ({ page }) => {
         await openDashboard(page);
         await page.locator(`${block(STALE)} .category-title`).focus();

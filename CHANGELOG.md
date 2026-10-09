@@ -134,6 +134,7 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **fix — the settings search reaches a setting in Containers, Inbox, Unraid or Logs on a first visit.** Those sections load their script on demand, and a jump into one that had not arrived yet switched to its tab before it was drawn and threw (`renderContainersSection is not a function`), so the focus never reached the control. `activateSettingsJumpEntry` now waits for `ensureSection` (`dashboard-config.js`).
 - **fix — Show in list (was *Show in Health*) draws a styled Bookmarks view.** From a bookmark's menu or `Shift + R` on a fresh load, the Bookmarks view came up without its stylesheet: `openLibraryOnBookmark` reached the module past the loader, which is what fetched `views.css`. `openLibraryView` and `openConfigView` now fetch it themselves (`dashboard-config.js`). The entry is renamed now that Health lives in the Bookmarks view, with `▤` for `♥`; `Shift + R` is unchanged. The bookmark menu sizes to its content (`width: max-content`, up to 24rem, `dashboard.css`), so no key chip is cut off any more — `Shift+C` beside *Checking (Periodic)…* read "Shi…". In Statistics, *Open Health* and *Open in Health* are now *Open in Bookmarks*. English only for now — the five translations follow in the docs round.
 - **fix — resetting spread counts only what was saved,** and puts the spread back on a category whose save failed (`dashboard-category-span.js`).
+- **fix — moving a collection to another page keeps it on its other pages.** A collection shown on pages 1 and 3, moved from 1 to 2, was left on page 2 only: the move set its page list to the one page it went to. It now swaps the page it left for the one it went to; a collection on every page still goes to that one page (`dashboard-block-page-move.js`).
 
 ### Bookmarks
 - **fix — merging categories in the Structure modal cannot save an empty list.** A reload during the confirmation forgot the lists, and the merge posted `[]` for the page, removing every category (`mergeCategoryInto`).
@@ -161,6 +162,7 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **tests —** `TestDemoStartUpWindowIsNotTheVisitors` refuses a visitor's dial and write in the start-up window.
 - **tests —** `TestDemoWriteDuringAWaitingResetIsRefused` turns a write away while a reset waits for the lock.
 - **tests —** `TestDemoDockerRefusesATakenName` refuses a create or rename onto a name in use.
+- **tests —** `dashboard-collection-move.spec.js` moves a collection on two pages and checks the other stays.
 
 ---
 
