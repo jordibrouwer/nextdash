@@ -12635,6 +12635,7 @@ class DashboardConfig {
         actionBarEnabled: { info: ['actionBarEnabledInfoTitle', 'actionBarEnabledInfoMessage'], def: true },
         actionBarAutoHideSeconds: { info: ['actionBarAutoHideInfoTitle', 'actionBarAutoHideInfoMessage'], def: 2 },
         showActionKeys: { info: ['showActionKeysInfoTitle', 'showActionKeysInfoMessage'], def: true },
+        actionBarIntro: { info: ['actionBarIntroInfoTitle', 'actionBarIntroInfoMessage'], def: false },
         showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'], def: true },
         showPagesButton: { info: ['showPagesButtonInfoTitle', 'showPagesButtonInfoMessage'], def: true },
         showInboxButton: { info: ['showInboxButtonInfoTitle', 'showInboxButtonInfoMessage'], def: true },
@@ -13829,6 +13830,7 @@ class DashboardConfig {
                         label: t('config.maxHeaderActionsLabel', 'Action buttons shown before “+N”') },
                     { ...chrome('actionBarEnabled', 'config.actionBarEnabledLabel', 'Show the action buttons'), noBulk: true },
                     { ...chrome('showActionKeys', 'config.showActionKeysLabel', 'Show the key on each button'), noBulk: true },
+                    { ...chrome('actionBarIntro', 'config.actionBarIntroLabel', 'Animate the buttons as the bar appears'), noBulk: true },
                     { field: 'actionBarAutoHideSeconds', type: 'select', special: 'chrome',
                         label: t('config.actionBarAutoHideLabel', 'Slide a docked bar away after'),
                         options: [

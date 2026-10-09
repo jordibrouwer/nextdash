@@ -24,7 +24,7 @@ async function openDashboard(page, settings) {
     await page.evaluate(async (next) => {
         const d = window.dashboardInstance;
         // The store is shared by a file's tests, so every one starts from the same bar.
-        Object.assign(d.settings, { actionBarEnabled: true, actionBarAutoHideSeconds: 0, showActionKeys: true }, next);
+        Object.assign(d.settings, { actionBarEnabled: true, actionBarAutoHideSeconds: 0, showActionKeys: true, actionBarIntro: false }, next);
         await d.saveSettings?.();
         d.setupDOM?.();
     }, settings);
@@ -295,4 +295,81 @@ test('brought back by Shift+O it goes once the pointer has passed over it', asyn
     await page.waitForTimeout(1200);
     expect(await hidden(page), 'gone before its time').toBe(false);
     await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+});
+
+// The intro (actionBarIntro, off by default): each button swells and settles
+// back whenever the bar comes into view -- after a load, and back from the edge.
+const introPlayed = (page) => page.evaluate(() => window.ActionBarAutoHide.introPlayed());
+const swelling = (page) => page.locator('.dashboard-section.section-controls .header-shortcuts .action-bar-intro');
+
+test('switched off, nothing swells', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'right', actionBarAutoHideSeconds: 2 });
+    await page.waitForTimeout(600);
+    expect(await introPlayed(page)).toBe(false);
+    await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+    const edge = await page.evaluate(() => document.documentElement.clientWidth - 1);
+    await page.mouse.move(edge, 450);
+    await expect.poll(() => hidden(page)).toBe(false);
+    await expect(swelling(page)).toHaveCount(0);
+});
+
+test('switched on, the buttons swell after a load', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'header', actionBarIntro: true });
+    await expect.poll(() => introPlayed(page)).toBe(true);
+    // And on every load, not once.
+    await page.reload();
+    await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+    await expect.poll(() => introPlayed(page)).toBe(true);
+    await page.evaluate(async () => {
+        window.dashboardInstance.settings.actionBarIntro = false;
+        await window.dashboardInstance.saveSettings?.();
+    });
+});
+
+test('the intro waits until the what’s new modal is closed', async ({ page }) => {
+    await page.setViewportSize({ width: 1500, height: 900 });
+    // An install that last read an older release gets the notes on its next load.
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await page.evaluate(async () => {
+        window.DiscoverabilityState?.setLastWhatsNewRelease?.('2026.08-dashboard-release-v1.3.0');
+        window.dashboardInstance.settings.actionBarIntro = true;
+        await window.dashboardInstance.saveSettings?.();
+    });
+    await dismissOnboardingIfPresent(page);
+    await page.evaluate(() => window.dashboardInstance.config.setBehavior('onboardingCompleted', true, ''));
+    await page.waitForTimeout(600);
+    await page.goto('/');
+
+    const modal = page.locator('.whats-new-modal');
+    await expect(modal).toBeVisible({ timeout: 20_000 });
+    await page.waitForTimeout(1000);
+    expect(await introPlayed(page), 'played under the modal').toBe(false);
+    await page.keyboard.press('Escape');
+    await expect(modal).toBeHidden();
+    await expect.poll(() => introPlayed(page), { timeout: 4000 }).toBe(true);
+    await page.evaluate(async () => {
+        window.dashboardInstance.settings.actionBarIntro = false;
+        await window.dashboardInstance.saveSettings?.();
+    });
+});
+
+test('coming back from the edge swells the buttons again', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'right', actionBarAutoHideSeconds: 2, actionBarIntro: true });
+    await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
+    await expect(swelling(page)).toHaveCount(0);
+    const edge = await page.evaluate(() => document.documentElement.clientWidth - 1);
+    await page.mouse.move(edge, 450);
+    await expect.poll(() => hidden(page)).toBe(false);
+    expect(await swelling(page).count()).toBeGreaterThan(0);
+});
+
+test("brought back by ' the buttons swell too", async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'bottom', actionBarIntro: true });
+    await page.keyboard.press("'");
+    await expect.poll(() => hidden(page)).toBe(true);
+    await expect(swelling(page)).toHaveCount(0);
+    await page.keyboard.press("'");
+    await expect.poll(() => hidden(page)).toBe(false);
+    expect(await swelling(page).count()).toBeGreaterThan(0);
 });

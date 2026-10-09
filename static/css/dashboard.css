@@ -9467,6 +9467,33 @@ body[data-action-bar-hidden][data-action-bar="right"] .dashboard-section.section
 }
 
 /*
+ * The intro (action-bar-autohide.js, setting actionBarIntro): after a load
+ * and on the way back from the edge, each button swells to half again its
+ * size and settles back slowly, left to right. `scale`, not transform, so the dock's own transforms
+ * and the buttons' hover stay theirs.
+ */
+.dashboard-section.section-controls .header-shortcuts .action-bar-intro {
+    animation: action-bar-intro-swell 1100ms both;
+    animation-delay: calc(var(--intro-index, 0) * 70ms);
+}
+
+@keyframes action-bar-intro-swell {
+    0% {
+        scale: 0.4;
+        opacity: 0;
+        animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+    22% {
+        scale: 1.5;
+        opacity: 1;
+        animation-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+    100% {
+        scale: 1;
+    }
+}
+
+/*
  * The handle on the edge a bar slid into (action-bar-autohide.js).
  *
  * Plain enough at rest that the reader keeps knowing where the bar went, and

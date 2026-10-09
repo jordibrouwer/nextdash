@@ -491,6 +491,7 @@ type Settings struct {
 	ActionBarEnabled                bool   `json:"actionBarEnabled"`                        // Whether the action buttons are drawn at all; their keys work either way
 	ActionBarAutoHideSeconds        int    `json:"actionBarAutoHideSeconds"`                // Seconds before a docked bar slides into its edge; 0 keeps it in view
 	ShowActionKeys                  bool   `json:"showActionKeys"`                          // The key chip on each action button
+	ActionBarIntro                  bool   `json:"actionBarIntro"`                          // The buttons swell and settle back when the bar comes into view
 	HeaderButtonStyle               string `json:"headerButtonStyle"`                       // How every control in the header is drawn: plain glyphs underlined when current, or plated boxes
 	EnableCustomFavicon             bool   `json:"enableCustomFavicon"`                     // Enable custom favicon
 	CustomFaviconPath               string `json:"customFaviconPath"`                       // Path to custom favicon file
