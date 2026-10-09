@@ -115,6 +115,7 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **fix — a removed demo container leaves the container order,** which otherwise grew by one id per recreate until the next reset (`docker_demo.go`).
 - **fix — the start-up window is the seed round's, not the visitors'.** It was one global switch, so for the minutes the round took any visitor could make the server fetch a public address of their choosing, through a preview or a tag scan. Every request a visitor makes now carries a mark the dialer refuses whatever the window (`demoDialRefused` in `demo_guard.go`, `url_safety.go`), and while the window is open a visitor's write is answered *The demo is starting; try again in a minute*, since the favicon and preview it would set off run on a context without the mark.
 - **fix — a write during a waiting reset is turned away, not held.** The guard took the shared lock before it looked at the reset flag, and a reset waiting for the lock blocks new readers: a write arriving then hung until the reset was done and ran against the fresh seed, where a delete by index took another bookmark than the one on screen. The guard now tries the lock and answers 503 when it cannot have it (`TryRLock` in `demoGuard`).
+- **fix — the demo's Docker refuses a name in use,** on create and on rename, as the real daemon does. Two containers answered to one name, and actions by that name hit either (`nameTaken` in `docker_demo.go`).
 
 ### Data
 - **fix — a page that fails to read is not cached as empty.** `GetBookmarksByPage` held the empty result until the next write, and a save from a reader who saw it replaced the whole page. Only a missing file is cached as empty; `GetAllBookmarks` no longer marks itself complete when a page failed (`models.go`).
@@ -158,6 +159,7 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **tests —** `inbox-lazy-load.spec.js` drops its inbox-off case; `shortcut-open-mode.spec.js` checks the inbox switch is gone; `config-new-sections.spec.js` expects the new rail order.
 - **tests —** `TestDemoStartUpWindowIsNotTheVisitors` refuses a visitor's dial and write in the start-up window.
 - **tests —** `TestDemoWriteDuringAWaitingResetIsRefused` turns a write away while a reset waits for the lock.
+- **tests —** `TestDemoDockerRefusesATakenName` refuses a create or rename onto a name in use.
 
 ---
 

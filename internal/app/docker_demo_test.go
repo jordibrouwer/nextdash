@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -110,4 +112,27 @@ func TestDemoDockerUpdatesAreItsOwn(t *testing.T) {
 		t.Errorf("after the pull: %+v", u)
 	}
 	demoDockerEngine.reset(time.Now())
+}
+
+// One name, one container: a create or rename onto a name in use is refused,
+// as the real daemon refuses it.
+func TestDemoDockerRefusesATakenName(t *testing.T) {
+	demoDockerEngine.reset(time.Now())
+	serve := func(method, target, body string) int {
+		rec := httptest.NewRecorder()
+		demoDockerEngine.ServeHTTP(rec, httptest.NewRequest(method, target, strings.NewReader(body)))
+		return rec.Code
+	}
+	if code := serve(http.MethodPost, "/containers/create?name=sonarr", `{"Image":"lscr.io/linuxserver/sonarr:4"}`); code != http.StatusConflict {
+		t.Errorf("create under a taken name: %d, want 409", code)
+	}
+	if code := serve(http.MethodPost, "/containers/radarr/rename?name=sonarr", ""); code != http.StatusConflict {
+		t.Errorf("rename onto a taken name: %d, want 409", code)
+	}
+	if code := serve(http.MethodPost, "/containers/radarr/rename?name=radarr-old", ""); code != http.StatusNoContent {
+		t.Errorf("rename to a free name: %d", code)
+	}
+	if code := serve(http.MethodPost, "/containers/create?name=radarr", `{"Image":"lscr.io/linuxserver/radarr:5"}`); code != http.StatusCreated {
+		t.Errorf("create under the name just freed: %d", code)
+	}
 }

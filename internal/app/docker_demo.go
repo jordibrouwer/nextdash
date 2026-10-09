@@ -479,6 +479,10 @@ func (d *demoDocker) serveAction(w http.ResponseWriter, r *http.Request, path st
 		c.State = "paused"
 	case "rename":
 		if name := r.URL.Query().Get("name"); name != "" {
+			if d.nameTaken(name, c.ID) {
+				demoJSON(w, http.StatusConflict, map[string]string{"message": demoNameConflict(name)})
+				return
+			}
 			c.Name = name
 		}
 	}
@@ -489,6 +493,12 @@ func (d *demoDocker) serveAction(w http.ResponseWriter, r *http.Request, path st
 // look: the demo has one of each.
 func (d *demoDocker) serveCreate(w http.ResponseWriter, r *http.Request, now time.Time) {
 	name := r.URL.Query().Get("name")
+	// As the real daemon: one name, one container. Two answered to it, and
+	// every action by that name hit whichever the map gave first.
+	if name != "" && d.nameTaken(name, "") {
+		demoJSON(w, http.StatusConflict, map[string]string{"message": demoNameConflict(name)})
+		return
+	}
 	var body struct {
 		Image string `json:"Image"`
 	}
@@ -513,6 +523,20 @@ func (d *demoDocker) serveCreate(w http.ResponseWriter, r *http.Request, now tim
 	d.containers[base.ID] = &base
 	d.order = append(d.order, base.ID)
 	demoJSON(w, http.StatusCreated, map[string]string{"Id": base.ID})
+}
+
+// nameTaken says whether a container other than except is called name.
+func (d *demoDocker) nameTaken(name, except string) bool {
+	for _, c := range d.containers {
+		if c.Name == name && c.ID != except {
+			return true
+		}
+	}
+	return false
+}
+
+func demoNameConflict(name string) string {
+	return fmt.Sprintf("Conflict. The container name \"/%s\" is already in use", name)
 }
 
 func (d *demoDocker) serveDF(w http.ResponseWriter) {
