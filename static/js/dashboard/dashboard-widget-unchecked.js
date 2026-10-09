@@ -107,7 +107,7 @@
                     'On the faster tier, with uptime history.'),
                 onOpen: () => u.openHealthFiltered(dash, 'monitored'),
             },
-        ], { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open Health' });
+        ], { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open in Bookmarks' });
         /*
          * Past the first two, the figures wait for the width.
          *
@@ -151,7 +151,7 @@
                 detail,
                 bookmark?.checkStatus ? 'warn' : null,
                 () => u.openHealthFiltered(dash, last ? 'stale' : 'unchecked'),
-                { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open Health' }));
+                { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open in Bookmarks' }));
         });
         u.appendOverflowRow(list, dash, candidates.length - maxRows,
             () => u.openHealthFiltered(dash, 'unchecked'));

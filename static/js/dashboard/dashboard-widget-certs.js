@@ -139,7 +139,7 @@
             row.appendChild(when);
             window.DashboardWidgetUtils?.bindRowAction(row, dash, {
                 labelKey: 'widgetActionOpenHealth',
-                labelFallback: 'Open Health',
+                labelFallback: 'Open in Bookmarks',
                 run: () => {
                     window.DashboardWidgetUtils?.openHealthFiltered(dash, 'certificates');
                 },

@@ -110,7 +110,7 @@
                 label: label(dash, 'dashboard.widgetArchiveNoCopy', 'no copy'),
                 tone: null,
             },
-        ], { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open Health' });
+        ], { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open in Bookmarks' });
         /*
          * Past the first two, the figures wait for the width.
          *
@@ -166,7 +166,7 @@
                 detail,
                 broken ? 'bad' : null,
                 () => u.openHealthFiltered(dash, broken ? 'broken' : 'all'),
-                { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open Health' }));
+                { dash, labelKey: 'widgetActionOpenHealth', labelFallback: 'Open in Bookmarks' }));
         });
         u.appendOverflowRow(list, dash, ranked.length - maxRows,
             () => u.openHealthFiltered(dash, 'broken'));

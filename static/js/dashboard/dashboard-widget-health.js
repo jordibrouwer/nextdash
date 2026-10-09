@@ -112,7 +112,7 @@
                 // Named after the figure, since all four rows open the same view
                 // and a menu saying "Open Health" four times says nothing about
                 // which one is under the pointer.
-                labelFallback: label(dash, 'dashboard.widgetActionOpenHealthFilter', 'Open Health — {name}')
+                labelFallback: label(dash, 'dashboard.widgetActionOpenHealthFilter', 'Open in Bookmarks — {name}')
                     .replace('{name}', label(dash, figure.labelKey, figure.fallback)),
                 run: () => {
                     // Straight to the rows behind the number: a count you cannot

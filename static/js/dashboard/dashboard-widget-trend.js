@@ -160,7 +160,7 @@
         }
         if (clickable) {
             window.DashboardWidgetUtils?.bindRowAction(el, dash, {
-                labelFallback: label(dash, 'dashboard.widgetActionOpenHealthFilter', 'Open Health — {name}', { name }),
+                labelFallback: label(dash, 'dashboard.widgetActionOpenHealthFilter', 'Open in Bookmarks — {name}', { name }),
                 run: () => window.DashboardWidgetUtils?.openHealthFiltered(dash, filter),
             });
         }
