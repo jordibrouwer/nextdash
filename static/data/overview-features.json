@@ -2,6 +2,23 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureActionBarSwellTitle",
+      "titleFallback": "Buttons that swell into view",
+      "whatKey": "config.overviewNewFeatureActionBarSwellWhat",
+      "whatFallback": "The action bar simply appeared, and after it slid into the edge it was easy to miss that it came back.",
+      "howKey": "config.overviewNewFeatureActionBarSwellHow",
+      "howFallback": "Each time the bar comes into view, its buttons grow past their size one after the other and settle back — after a load, and on the way back from the edge.",
+      "enableKey": "config.overviewNewFeatureActionBarSwellEnable",
+      "enableFallback": "Off by default. Switch it on under Appearance → Action bar.",
+      "ctaKey": "config.overviewNewFeatureActionBarSwellCta",
+      "ctaFallback": "Open Action bar →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "buttonbar"
+      },
+      "since": "v1.18.3"
+    },
+    {
       "titleKey": "config.overviewNewFeatureBlockMoveTitle",
       "titleFallback": "Move categories and widgets where you want them",
       "whatKey": "config.overviewNewFeatureBlockMoveWhat",
