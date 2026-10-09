@@ -66,7 +66,9 @@ test.describe('the Health view\'s ways in', () => {
     await prepareDashboardInteraction(page);
     await page.keyboard.press('Shift+H');
     await page.waitForFunction(() => window.dashboardInstance.activeView === 'library', null, { timeout: 15_000 });
-    expect((await where(page)).hash).toMatch(/^#bookmarks/);
+    // The view switches before its first render writes the address, as the
+    // header button's path does since Shift+H goes through openLibraryView.
+    await expect.poll(async () => (await where(page)).hash, { timeout: 15_000 }).toMatch(/^#bookmarks/);
   });
 
   test('the header has no Health icon; the Bookmarks icon carries the badge', async ({ page }) => {
