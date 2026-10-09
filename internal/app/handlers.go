@@ -36,6 +36,7 @@ type Handlers struct {
 	files             assetFS
 	pageTemplates     map[string]*template.Template
 	pageTemplatesMu   sync.RWMutex
+	themeCSSMemo      themeCSSMemo
 	previewCacheMu    sync.RWMutex
 	previewCache      PreviewCacheFile
 	previewLoaded     bool
@@ -4015,7 +4016,31 @@ func (h *Handlers) customThemeCSS() string {
 	return h.customThemeCSSSeeded(normalizeBackdropTuning(h.store.GetSettings().BackdropTuning).Seed)
 }
 
+// themeCSSMemo keeps the last rendered theme stylesheet. Rendering it walks
+// every theme -- 331 blocks, ~600 KB -- and the page needs it twice per load:
+// once for the hash in its link, once when that link is fetched. The data
+// revision moves with every write to colors.json or the settings (where the
+// backdrop seed lives), so revision and seed together say when it is stale.
+type themeCSSMemo struct {
+	mu  sync.Mutex
+	key string
+	css string
+}
+
 func (h *Handlers) customThemeCSSSeeded(seed int) string {
+	key := h.store.GetDataRevision() + "|" + strconv.Itoa(seed)
+	h.themeCSSMemo.mu.Lock()
+	defer h.themeCSSMemo.mu.Unlock()
+	if h.themeCSSMemo.key == key && h.themeCSSMemo.css != "" {
+		return h.themeCSSMemo.css
+	}
+	css := h.renderThemeCSS(seed)
+	h.themeCSSMemo.key = key
+	h.themeCSSMemo.css = css
+	return css
+}
+
+func (h *Handlers) renderThemeCSS(seed int) string {
 	colors := h.store.GetColors()
 
 	// Built with a Builder: this renders ~150 theme blocks and the += version
