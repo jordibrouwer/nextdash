@@ -24,6 +24,15 @@ class DashboardHealthLoader {
 
     async _loadDependencies() {
         const load = window.LazyScript.loadScriptOnce;
+        // Fetched side by side, run in the order below.
+        window.LazyScript.preloadScripts?.([
+            'js/health-reason-utils.js',
+            'js/shared/last-opened-format.js',
+            'js/shared/list-view-shell.js',
+            'js/dashboard/dashboard-health.js',
+            'js/dashboard/dashboard-health-multi-select.js',
+            'js/dashboard/dashboard-health-focus.js',
+        ]);
         // Each dependency states its own readiness test, so the order of these
         // calls no longer has to work around filenames matching each other.
         if (typeof window.HealthReasonUtils === 'undefined') {

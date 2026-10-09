@@ -400,11 +400,31 @@
         );
     }
 
+    /**
+     * A small action bar in the given intro style. Still at rest; it plays
+     * while its card has the pointer or the focus, with the very classes the
+     * real bar plays with (dashboard.css), so the two cannot drift apart.
+     */
+    function actionBarIntro(style) {
+        const n = 6;
+        const index = (i) => {
+            if (style === 'swell-together') return 0;
+            if (style === 'swell-middle' || style === 'accordion') return Math.abs(i - (n - 1) / 2);
+            return i;
+        };
+        const buttons = Array.from({ length: n }, (_, i) =>
+            `<span class="setting-art-intro-button action-bar-intro" style="--intro-index:${index(i)}"></span>`).join('');
+        return frame(
+            `<span class="setting-art-intro" data-intro-style="${escape(String(style || 'off'))}" data-intro-axis="h">${buttons}</span>`,
+            'setting-art-frame--intro'
+        );
+    }
+
     const BUILDERS = {
         grid, spacing, margins, density, fontSize, flow,
         steps, keys, states, query, bars, spark, meter, dayWindow, toggles, swatches,
         boundary, bookmarkRow, panelMap, depth, pattern, widgetSpan, themeGrid,
-        blockMove,
+        blockMove, actionBarIntro,
     };
 
     /**

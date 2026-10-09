@@ -491,7 +491,7 @@ type Settings struct {
 	ActionBarEnabled                bool   `json:"actionBarEnabled"`                        // Whether the action buttons are drawn at all; their keys work either way
 	ActionBarAutoHideSeconds        int    `json:"actionBarAutoHideSeconds"`                // Seconds before a docked bar slides into its edge; 0 keeps it in view
 	ShowActionKeys                  bool   `json:"showActionKeys"`                          // The key chip on each action button
-	ActionBarIntro                  bool   `json:"actionBarIntro"`                          // The buttons swell and settle back when the bar comes into view
+	ActionBarIntroStyle             string `json:"actionBarIntroStyle"`                     // How the buttons animate as the bar comes into view; "off" for none
 	HeaderButtonStyle               string `json:"headerButtonStyle"`                       // How every control in the header is drawn: plain glyphs underlined when current, or plated boxes
 	EnableCustomFavicon             bool   `json:"enableCustomFavicon"`                     // Enable custom favicon
 	CustomFaviconPath               string `json:"customFaviconPath"`                       // Path to custom favicon file
@@ -1733,6 +1733,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			HeaderButtonStyle:               defaultHeaderButtonStyle,
 			ActionBarPosition:               defaultActionBarFresh,
 			ActionBarAutoHideSeconds:        defaultActionBarAutoHide,
+			ActionBarIntroStyle:             "off",
 			ActionBarEnabled:                true,
 			ShowActionKeys:                  true,
 			EnableCustomFavicon:             false,
@@ -3510,6 +3511,13 @@ const (
 	defaultActionBarAutoHide = 2
 )
 
+// How the action bar's buttons animate as the bar comes into view. Off unless
+// the reader picks one.
+var actionBarIntroStyles = map[string]bool{
+	"off": true, "swell": true, "swell-middle": true, "swell-together": true,
+	"unfold": true, "accordion": true,
+}
+
 const (
 	headerButtonsPlain       = "plain"
 	headerButtonsPlated      = "plated"
@@ -3747,6 +3755,9 @@ func clampBookmarkSettings(s *Settings) {
 	case 0, 2, 5, 10, 30:
 	default:
 		s.ActionBarAutoHideSeconds = 0
+	}
+	if !actionBarIntroStyles[s.ActionBarIntroStyle] {
+		s.ActionBarIntroStyle = "off"
 	}
 	switch s.HeaderButtonStyle {
 	case headerButtonsPlain, headerButtonsPlated:
@@ -4271,6 +4282,7 @@ func (fs *FileStore) GetSettings() Settings {
 			HeaderButtonStyle:               defaultHeaderButtonStyle,
 			ActionBarPosition:               defaultActionBarFresh,
 			ActionBarAutoHideSeconds:        defaultActionBarAutoHide,
+			ActionBarIntroStyle:             "off",
 			ActionBarEnabled:                true,
 			ShowActionKeys:                  true,
 			EnableCustomFavicon:             false,
@@ -4405,6 +4417,18 @@ func (fs *FileStore) GetSettings() Settings {
 
 	var settings Settings
 	json.Unmarshal(data, &settings)
+	// An install from before the setting, or one holding a style since
+	// dropped, has no animation -- except one that had v1.18.3's on/off
+	// switch on, which keeps the swell that switch played.
+	if !actionBarIntroStyles[settings.ActionBarIntroStyle] {
+		settings.ActionBarIntroStyle = "off"
+		var legacy struct {
+			ActionBarIntro bool `json:"actionBarIntro"`
+		}
+		if json.Unmarshal(data, &legacy) == nil && legacy.ActionBarIntro {
+			settings.ActionBarIntroStyle = "swell"
+		}
+	}
 
 	var rawSettings map[string]json.RawMessage
 	if err := json.Unmarshal(data, &rawSettings); err == nil {

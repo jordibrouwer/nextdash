@@ -251,6 +251,13 @@ func serveIconSetFile(w http.ResponseWriter, req *http.Request, rel string) {
 		return
 	}
 	path, err := ensureIconSetFile(req.Context(), set, file)
+	// An SVG the guards turn away -- upstream, a few are only a PNG in an SVG
+	// wrapper, which the sanitiser would leave empty -- is served as the
+	// set's PNG of the same icon. It was a 404 for every icon on the page
+	// and a letter where the app's icon could have been.
+	if err != nil && strings.HasSuffix(file, ".svg") {
+		path, err = ensureIconSetFile(req.Context(), set, strings.TrimSuffix(file, ".svg")+".png")
+	}
 	if err != nil {
 		http.NotFound(w, req)
 		return

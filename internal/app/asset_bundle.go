@@ -1,6 +1,8 @@
 package app
 
 import (
+	"bytes"
+	"compress/gzip"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -302,11 +304,49 @@ func (h *Handlers) ServeAssetBundle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 	w.Header().Set("X-Bundle-Files", fmt.Sprintf("%d", len(b.files)))
-	_, _ = w.Write(b.content)
+	body := b.content
 	// Only for the script bundles: a stylesheet has no stack traces to name.
 	if contentType != "text/css; charset=utf-8" {
-		fmt.Fprintf(w, "\n//# sourceMappingURL=%s.map?v=%s\n", r.URL.Path, b.hash)
+		body = append(append([]byte(nil), b.content...),
+			fmt.Sprintf("\n//# sourceMappingURL=%s.map?v=%s\n", r.URL.Path, b.hash)...)
 	}
+	// Compressed once per bundle rather than once per request: the script
+	// bundle took ~40 ms of gzip on every uncached load. Content-Encoding set
+	// here makes gzipMiddleware pass the bytes through untouched.
+	if clientAcceptsGzip(r) {
+		w.Header().Set("Content-Encoding", "gzip")
+		_, _ = w.Write(gzippedBundle(r.URL.Path, b.hash, body))
+		return
+	}
+	_, _ = w.Write(body)
+}
+
+var (
+	gzippedBundlesMu sync.Mutex
+	// One entry per bundle path: a new hash replaces the old bytes, so live
+	// static edits in development do not pile up copies.
+	gzippedBundles = map[string]gzippedBundleEntry{}
+)
+
+type gzippedBundleEntry struct {
+	hash string
+	gz   []byte
+}
+
+func gzippedBundle(urlPath, hash string, body []byte) []byte {
+	gzippedBundlesMu.Lock()
+	defer gzippedBundlesMu.Unlock()
+	if e, ok := gzippedBundles[urlPath]; ok && e.hash == hash && hash != "" {
+		return e.gz
+	}
+	var buf bytes.Buffer
+	// Default, not Best: Best was 0.4% smaller and made the first visitor
+	// after a restart wait half a second for the script bundle.
+	zw, _ := gzip.NewWriterLevel(&buf, gzip.DefaultCompression)
+	_, _ = zw.Write(body)
+	_ = zw.Close()
+	gzippedBundles[urlPath] = gzippedBundleEntry{hash: hash, gz: buf.Bytes()}
+	return buf.Bytes()
 }
 
 // readTemplateSource reads a template from disk if there is one, or from the

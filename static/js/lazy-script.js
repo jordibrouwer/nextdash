@@ -103,6 +103,32 @@
         });
     }
 
+    const preloaded = new Set();
+
+    /**
+     * Start fetching a loader's whole chain at once.
+     *
+     * The loaders run their scripts one after another, because each one builds
+     * on the globals of the one before. Fetching them that way too meant one
+     * round trip per file before a view could draw: a dozen on the way to
+     * Bookmarks, which is nothing on localhost and a visible wait over a VPN.
+     * A preload fetches them side by side; loadScriptOnce still runs them in
+     * the order it always did, and finds each one already downloaded.
+     *
+     * @param {string[]} rels asset paths, as loadScriptOnce takes them
+     */
+    function preloadScripts(rels) {
+        for (const rel of rels) {
+            if (preloaded.has(rel)) continue;
+            preloaded.add(rel);
+            const link = document.createElement('link');
+            link.rel = 'preload';
+            link.as = 'script';
+            link.href = assetURL(rel);
+            document.head.appendChild(link);
+        }
+    }
+
     /**
      * Install the stub's placeholder Escape handler.
      *
@@ -145,5 +171,5 @@
         }
     }
 
-    global.LazyScript = { assetURL, loadScriptOnce, bindStubEscape, unbindStubEscape };
+    global.LazyScript = { assetURL, loadScriptOnce, preloadScripts, bindStubEscape, unbindStubEscape };
 }(typeof window !== 'undefined' ? window : globalThis));

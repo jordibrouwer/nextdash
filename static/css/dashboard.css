@@ -9472,14 +9472,50 @@ body[data-action-bar-hidden][data-action-bar="right"] .dashboard-section.section
 }
 
 /*
- * The intro (action-bar-autohide.js, setting actionBarIntro): after a load
- * and on the way back from the edge, each button swells to half again its
- * size and settles back slowly, left to right. `scale`, not transform, so the dock's own transforms
- * and the buttons' hover stay theirs.
+ * The intro (action-bar-autohide.js, setting actionBarIntroStyle): how the
+ * buttons come in as the bar comes into view. The host carries the style and
+ * is-intro-playing, each button .action-bar-intro and --intro-index, its turn
+ * in steps. The drawings on the setting's cards (setting-art.js) use the same
+ * classes and play while their card has the pointer or the focus. `scale`,
+ * not transform, so the dock's own transforms and the buttons' hover stay
+ * theirs.
+ *
+ * swell, swell-middle, swell-together: each button grows to half again its
+ * size and settles back slowly -- left to right, out from the middle, or all
+ * at once. unfold: the bar opens along its length while the buttons pop in
+ * left to right. accordion: the same, from a narrower start, the buttons
+ * popping out from the middle.
  */
-.dashboard-section.section-controls .header-shortcuts .action-bar-intro {
+:is(.is-intro-playing, .config-choice-card:is(:hover, :focus-visible) .setting-art-intro)[data-intro-style^="swell"] .action-bar-intro {
     animation: action-bar-intro-swell 1100ms both;
     animation-delay: calc(var(--intro-index, 0) * 70ms);
+}
+
+:is(.is-intro-playing, .config-choice-card:is(:hover, :focus-visible) .setting-art-intro):is([data-intro-style="unfold"], [data-intro-style="accordion"]) {
+    --intro-unfold-from: 0.25 1;
+    animation: action-bar-intro-unfold 380ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+:is(.is-intro-playing, .config-choice-card:is(:hover, :focus-visible) .setting-art-intro)[data-intro-style="accordion"] {
+    --intro-unfold-from: 0.15 1;
+}
+
+:is(.is-intro-playing, .config-choice-card:is(:hover, :focus-visible) .setting-art-intro)[data-intro-style="unfold"][data-intro-axis="v"] {
+    --intro-unfold-from: 1 0.25;
+}
+
+:is(.is-intro-playing, .config-choice-card:is(:hover, :focus-visible) .setting-art-intro)[data-intro-style="accordion"][data-intro-axis="v"] {
+    --intro-unfold-from: 1 0.15;
+}
+
+:is(.is-intro-playing, .config-choice-card:is(:hover, :focus-visible) .setting-art-intro)[data-intro-style="unfold"] .action-bar-intro {
+    animation: action-bar-intro-pop 340ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
+    animation-delay: calc(var(--intro-index, 0) * 45ms);
+}
+
+:is(.is-intro-playing, .config-choice-card:is(:hover, :focus-visible) .setting-art-intro)[data-intro-style="accordion"] .action-bar-intro {
+    animation: action-bar-intro-pop 360ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
+    animation-delay: calc(var(--intro-index, 0) * 60ms);
 }
 
 @keyframes action-bar-intro-swell {
@@ -9495,6 +9531,20 @@ body[data-action-bar-hidden][data-action-bar="right"] .dashboard-section.section
     }
     100% {
         scale: 1;
+    }
+}
+
+@keyframes action-bar-intro-unfold {
+    from {
+        scale: var(--intro-unfold-from);
+        opacity: 0.3;
+    }
+}
+
+@keyframes action-bar-intro-pop {
+    from {
+        scale: 0;
+        opacity: 0;
     }
 }
 

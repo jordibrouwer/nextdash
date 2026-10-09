@@ -864,6 +864,8 @@ While it is away, a small **handle** stands on that edge, so the place it came f
 
 **The keys.** **Show the key on each button** adds a key chip to every button. It starts **on** for a new install and **off** on a dashboard that already existed — a bar of nine chips is a lot to meet on upgrade. With the chips off, resting on a button for a moment shows that button's key beside it, so the key is still there to find.
 
+**Buttons that come into view.** **Animate the buttons as the bar appears** is off to begin with. Its cards offer five styles: **Swell** (each button grows past its size and settles back, left to right), **Swell from the middle**, **Swell together**, **Unfold** (the bar opens and the buttons pop in) and **Accordion** (the bar opens from the middle and the buttons pop out to both ends). Point at a card, or move the focus to it, and its small bar plays that style; pick one and the real bar plays it at once. From then on it plays each time the bar comes into view: after a load — once no window, card or tour covers the screen — and each time it comes back from the edge it slid into. With reduced motion set in your system, the buttons simply appear.
+
 `:buttons` and `:maxactions` change these from the command palette.
 
 The **★** button in the bottom-right corner opens the release notes. It is left out on a window as narrow as a phone; `:whatsnew` and Help still open them.
@@ -3186,7 +3188,7 @@ Small drawings beside the shape settings show what a value looks like.
 See [§4](#4-the-dashboard) for what each part does. The settings:
 
 - **Header** tab — button style (plain or boxed), page tabs on/off, page names in tabs, page switcher style, page tabs before *+N*, the dashboard title, and toggles for the dashboard, inbox and config buttons (the Bookmarks and Containers icons are switched under Config → Bookmarks → View and Config → Containers). Also **Clock & weather** — where they stand: beside the view name, in a column of their own, or on their own line — and **Browser tab**: the page name in the browser title, and **Branding**, the page title and favicon, also used when nextDash is installed as an app.
-- **Action bar** tab — where the fixed buttons stand (a column on the right by default), action buttons before *+N*, show the action buttons, show the key on each button, slide a docked bar away (2 seconds by default), let the buttons swell into view each time the bar appears (off by default), and one switch per button. See [§4](#4-the-dashboard) for what sliding away looks like and how the bar comes back.
+- **Action bar** tab — where the fixed buttons stand (a column on the right by default), action buttons before *+N*, show the action buttons, show the key on each button, slide a docked bar away (2 seconds by default), how the buttons come into view each time the bar appears (off by default; five styles on cards), and one switch per button. See [§4](#4-the-dashboard) for what sliding away looks like and how the bar comes back.
 
 Each group has **Show all / Hide all**.
 

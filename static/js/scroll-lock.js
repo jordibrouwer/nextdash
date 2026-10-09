@@ -163,8 +163,38 @@ window.ScrollLock = new ScrollLock();
         setTimeout(sync, 0);
     };
 
+    /*
+     * Does this batch touch anything that could open or close a modal?
+     *
+     * The observer watches the whole body, so the grid's own rendering -- class
+     * and style writes on hundreds of rows while titles are fitted -- woke sync()
+     * dozens of times during load. Each wake-up asked an element for its client
+     * rects, which flushes layout in the middle of the render: 36 times, 121 ms
+     * on a throttled CPU. A change only matters when it happens on a candidate,
+     * inside one, around one (a parent that un-hides it), or when a candidate is
+     * added or removed. Everything else cannot change the answer.
+     */
+    const touchesModal = (records) => {
+        const candidates = document.querySelectorAll(SELECTOR);
+        for (const record of records) {
+            const target = record.target;
+            if (record.type === 'attributes' && (record.attributeName === 'aria-modal' || record.attributeName === 'open')) {
+                return true;
+            }
+            for (const candidate of candidates) {
+                if (candidate === target || candidate.contains(target) || target.contains(candidate)) return true;
+            }
+            for (const node of [...record.addedNodes, ...record.removedNodes]) {
+                if (node.nodeType === 1 && (node.matches(SELECTOR) || node.querySelector(SELECTOR))) return true;
+            }
+        }
+        return false;
+    };
+
     const start = () => {
-        new MutationObserver(schedule).observe(document.body, {
+        new MutationObserver((records) => {
+            if (held || touchesModal(records)) schedule();
+        }).observe(document.body, {
             childList: true,
             subtree: true,
             attributes: true,

@@ -157,10 +157,25 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 // not that one succeeded — plenty of sites simply have no favicon, and without
 // this the same doomed fetches re-ran on every restart for the life of the item.
 func inboxItemNeedsIconFetch(item InboxLink) bool {
-	if strings.TrimSpace(item.Icon) != "" || strings.TrimSpace(item.URL) == "" {
+	if strings.TrimSpace(item.URL) == "" {
 		return false
 	}
+	if strings.TrimSpace(item.Icon) != "" {
+		return inboxIconMissing(item.Icon)
+	}
 	return item.IconFetchedAt == 0
+}
+
+// inboxIconMissing says whether an item names a stored icon file that is not
+// on disk. An older cleanup removed icons while inbox.json could not be read;
+// the items kept the name, and every load asked for a file that was gone.
+func inboxIconMissing(icon string) bool {
+	name := strings.TrimSpace(icon)
+	if name == "" || strings.ContainsAny(name, "/:\\") {
+		return false
+	}
+	_, err := os.Stat(filepath.Join(ResolveDataDir(), "icons", name))
+	return os.IsNotExist(err)
 }
 
 // backfillInboxIconsAsync fetches favicons for existing inbox items that predate
@@ -187,6 +202,13 @@ func (h *Handlers) backfillInboxIconsAsync() {
 			}
 			id := item.ID
 			file := iconFile
+			// The name an item had for a file that is gone: replaced by the
+			// new one, or dropped when nothing could be fetched, so the row
+			// shows its glyph instead of asking for the missing file again.
+			gone := ""
+			if inboxIconMissing(item.Icon) {
+				gone = strings.TrimSpace(item.Icon)
+			}
 			attemptedAt := time.Now().UnixMilli()
 			// Stamped whether or not the fetch produced a file: the stamp records
 			// that the attempt happened, which is exactly what a failure needs to
@@ -194,6 +216,9 @@ func (h *Handlers) backfillInboxIconsAsync() {
 			// "last attempted" rather than "last failed".
 			if _, err := h.store.UpdateInboxLink(id, func(link *InboxLink) error {
 				// Re-check under the store lock: another path may have set it since.
+				if gone != "" && strings.TrimSpace(link.Icon) == gone {
+					link.Icon = ""
+				}
 				if file != "" && strings.TrimSpace(link.Icon) == "" {
 					link.Icon = file
 				}

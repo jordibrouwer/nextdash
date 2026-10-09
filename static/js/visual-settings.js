@@ -366,11 +366,11 @@
     function reloadThemeCSS(options) {
         const seed = Number.isInteger(options?.seed) ? `&seed=${options.seed}` : '';
         const url = `/api/theme.css?t=${Date.now()}${seed}`;
-        // The page carries the generated theme inline now, so a refresh replaces
-        // that block; the link form is still handled for a page rendered before
-        // this change and left open in another tab.
+        // The page links the theme by a content hash. A refresh swaps that link
+        // for one with a fresh query below. The inline form is still handled
+        // for a page rendered before this change and left open in another tab.
         const inline = document.getElementById('nextdash-theme-css');
-        if (inline) {
+        if (inline && inline.tagName === 'STYLE') {
             return fetch(url)
                 .then((res) => (res.ok ? res.text() : null))
                 .then((css) => { if (css) inline.textContent = css; })
@@ -381,6 +381,7 @@
             return;
         }
         const newLink = link.cloneNode(true);
+        newLink.removeAttribute('id');
         newLink.href = url;
         // Keep the old sheet until the new one has loaded so CSS variables never
         // disappear for a frame (avoids a white flash during theme.css refresh).
