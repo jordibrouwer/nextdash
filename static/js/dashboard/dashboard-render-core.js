@@ -1857,7 +1857,9 @@ class DashboardRenderCore {
         if (width != null && width !== snapshot.width) {
             widthChanged = await this.setBlockWidth(id, width);
         }
-        if (width != null && width !== snapshot.width && !widthChanged) {
+        // A collection's width is a settings save, which reports its own
+        // failure: said here as well, the reader got two errors for one.
+        if (width != null && width !== snapshot.width && !widthChanged && !this.isCollectionId(id)) {
             // The order stays; the width is back where it was. saveWidgetPatch
             // already put its local change back when the write failed.
             d.showErrorNotification?.(d.formatDashboardLabel?.('blockWidthSaveFailed', {}, 'Could not change the width.')

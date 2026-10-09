@@ -196,6 +196,31 @@ test.describe('collections move like any other block', () => {
             .toEqual([2, 3]);
     });
 
+    // A width that could not be saved is said once: the settings save reports
+    // it, and the move used to say it again.
+    test('a collection width that fails to save gives one error', async ({ page }) => {
+        await openDashboard(page);
+        await page.route('**/api/settings', (route) => (route.request().method() === 'POST'
+            ? route.fulfill({ status: 500, body: 'nope' }) : route.fallback()));
+        await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            window.__errors = 0;
+            const show = d.showErrorNotification?.bind(d);
+            d.showErrorNotification = (...args) => { window.__errors += 1; return show?.(...args); };
+            const plain = d.showNotification.bind(d);
+            d.showNotification = (msg, type, ...rest) => { if (type === 'error') window.__errors += 1; return plain(msg, type, ...rest); };
+        });
+        await page.locator(`${block(MINE)} .category-reorder-handle`).focus();
+        await page.keyboard.press('Space');
+        await page.keyboard.press('w');
+        await expect(page.locator('.block-landing')).toHaveAttribute('data-width', '2');
+        await page.keyboard.press('Enter');
+        await expect.poll(() => page.evaluate(() => window.__errors)).toBeGreaterThan(0);
+        await page.waitForTimeout(500);
+        expect(await page.evaluate(() => window.__errors)).toBe(1);
+        await expect(page.locator(block(MINE))).not.toHaveClass(/category--wide/);
+    });
+
     test('Shift+Alt+→ on a collection title moves it to the next page', async ({ page }) => {
         await openDashboard(page);
         await page.locator(`${block(STALE)} .category-title`).focus();
