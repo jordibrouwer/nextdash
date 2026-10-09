@@ -235,7 +235,7 @@ test.describe('the menu on a widget row', () => {
         expect(actions).toContain('close');
         // Named after the row's own action rather than a second description
         // written in the menu.
-        await expect(menu.locator('[data-action="row-open"]')).toContainText('Health');
+        await expect(menu.locator('[data-action="row-open"]')).toContainText('Open in Bookmarks');
     });
 
     test('picking that entry does what clicking the row does', async ({ page }) => {
