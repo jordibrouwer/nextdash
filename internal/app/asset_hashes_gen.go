@@ -255,7 +255,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/shared/config-preview.js":                            "9ddbba65bbc1",
 	"js/shared/config-setting-promo.js":                      "21f2e2480265",
 	"js/shared/config-setting-promos.js":                     "f38e24251f62",
-	"js/shared/demo-lock.js":                                 "7c90d217dbdc",
+	"js/shared/demo-lock.js":                                 "422e7af73e55",
 	"js/shared/destination-suggest.js":                       "cc39efb53f24",
 	"js/shared/duplicate-bookmark-prompt.js":                 "b92e210404ac",
 	"js/shared/escape-html.js":                               "02f8bbe16272",

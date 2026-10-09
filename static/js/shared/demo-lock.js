@@ -234,7 +234,11 @@
         // Near the end of the countdown, ask every few seconds, so the reload
         // follows the reset rather than the next half-minute round.
         clearTimeout(soonTimer);
-        if (resetAt && resetAt - Date.now() < 20000) {
+        // Closely only around the reset itself. A reset that failed leaves
+        // resetAt in the past until the server's next try; asking every three
+        // seconds from every open tab until then was a flood for nothing.
+        const left = resetAt - Date.now();
+        if (resetAt && left < 20000 && left > -60000) {
             soonTimer = setTimeout(() => void refreshResetAt(), 3000);
         }
     }
