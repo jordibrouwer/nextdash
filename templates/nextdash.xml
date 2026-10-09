@@ -25,8 +25,8 @@ NextDash is a lightweight, self-hosted bookmark dashboard that features a minima
 Key features:
 • Keyboard-driven navigation for fast access to all your bookmarks
 • Extensive theme and layout customization, with a look studio beside the dashboard and a theme editor
-• Inbox to collect new links fast: triage them, or keep them on a Kept tab and file whole groups later
-• Health view that finds broken, stale and duplicate links, with uptime monitoring and downtime alerts
+• Inbox to collect new links fast: triage them, or keep them under Bookmarks → Unsorted and file whole groups later
+• Bookmarks view with Health built in: finds broken, stale and duplicate links, with uptime monitoring and downtime alerts
 • Video bookmarks marked in the list, and played in the hover card without leaving the dashboard
 • Widgets beside your bookmarks: 28 built-in kinds (uptime, feeds, weather, calendar, disks, containers and more) plus a Custom widget for any JSON API
 • Your Unraid server on the dashboard: seven widgets for the array, parity, shares, VMs, the UPS and notifications, with alerts
@@ -55,7 +55,8 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Bookmarks: merging or deleting a category in Structure, and bulk moves to another page, act on the right items when the list refreshes meanwhile
 - Data: a page that briefly cannot be read is no longer cached as empty, and icons are kept while the inbox cannot be read
 - Reverse proxies: every X-Forwarded-For line is read, so a proxy that adds its own line no longer lets a visitor pick their rate-limit bucket
-- Inbox: bulk Keep runs once on a double click; promote says which links could not leave the Inbox
+- Inbox: always on now, its switch is gone; bulk Keep runs once on a double click, and promote says which links could not leave the Inbox
+- Bookmarks view: Show in list (was Show in Health) and the health widgets' Open in Bookmarks open it fully styled; Structure and Behavior sit above Inbox in Config
 
 ### v1.17.5 (2026-10-06)
 - First start: a new install asks what you run: Homelab, Media server or Developer on one server address, or keep the starter links
