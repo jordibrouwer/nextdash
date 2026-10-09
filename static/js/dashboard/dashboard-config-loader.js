@@ -207,6 +207,15 @@ class DashboardConfigLoader {
         if (this._module) return Promise.resolve(this._module);
         if (this._loadPromise) return this._loadPromise;
 
+        // Fetched side by side, run in the order below.
+        window.LazyScript.preloadScripts?.([
+            'js/dashboard/dashboard-config.js',
+            'js/dashboard/dashboard-config-look.js',
+            'js/dashboard/dashboard-config-studio.js',
+            'js/dashboard/dashboard-config-theme-edit.js',
+            'js/dashboard/dashboard-config-context-menu.js',
+            'js/dashboard/dashboard-news-stream.js',
+        ]);
         this._loadPromise = window.LazyScript.loadScriptOnce(
             'js/dashboard/dashboard-config.js',
             'dashboardConfig',
