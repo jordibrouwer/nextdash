@@ -2,7 +2,7 @@
   "tag": "v1.18.4",
   "date": "9 October 2026",
   "releasedAt": "2026-10-09",
-  "modalLead": "The action bar's buttons can come into view in <strong>five styles</strong>, each shown on its own card.",
+  "modalLead": "The action bar's buttons can come into view in <strong>five styles</strong>, the dashboard <strong>opens faster</strong>, and missing <strong>icons</strong> come back.",
   "sections": [
     {
       "title": "Action bar",
@@ -10,6 +10,36 @@
         {
           "badge": "new",
           "text": "<strong>Pick how the buttons come into view:</strong> swell, swell from the middle, swell together, unfold or accordion. Under <em>Config → Appearance → Action bar</em> each style has a card that plays it while you point at it, and the bar plays your pick at once. It is still off by default."
+        }
+      ]
+    },
+    {
+      "title": "Speed",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The dashboard opens faster,</strong> most of all on a second visit: your theme is kept by the browser instead of arriving again with every page."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config, Bookmarks and Health appear sooner</strong> the first time you open them, which you notice most over a VPN or a slow connection."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A long dashboard stays smooth while it draws,</strong> instead of stalling for a moment as the bookmarks come in."
+        }
+      ]
+    },
+    {
+      "title": "Icons",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Some icons from the icon sets showed a letter</strong> instead of the app's icon. They show the icon now."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inbox links whose icon had gone missing</strong> fetch it again, or show their plain symbol when nothing can be found."
         }
       ]
     }

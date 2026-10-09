@@ -105,11 +105,21 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.18.4 — 9 October 2026
 
-The action bar's intro animation gets a choice of five styles, each shown on its own card in config — held back from the What's new window (`hideFromModal`) like v1.18.1, so v1.18.3 keeps leading it.
+The action bar's intro animation gets a choice of five styles, each shown on its own card in config. The dashboard loads faster — the theme stylesheet is cached instead of inlined, a view's lazy scripts are fetched side by side, and a page-wide restyle while the grid renders is gone — and icons that went missing come back.
 
 ### Dashboard
 - **new — five ways for the action bar's buttons to come into view.** *Config → Appearance → The action bar → Animate the buttons as the bar appears* is now a set of cards instead of an on/off switch: off, swell (left to right, from the middle, or together), unfold and accordion. Each card plays its own animation while it has the pointer or the focus, and a card you pick plays on the bar itself at once, without a reload. An install that had the animation on keeps it as swell (setting `actionBarIntroStyle`, `action-bar-autohide.js`).
 
+### Performance
+- **fix — the theme stylesheet is linked by the hash of its content instead of inlined.** Inlining put ~600 KB into every HTML response and had it parsed on each load. `templates/dashboard.html` now links `/api/theme.css?v=<hash>` (`themeCSSURL`); a request carrying the current hash is served `immutable` for a year, anything else (a refresh after a theme change, a previewed backdrop roll) stays no-store. `reloadThemeCSS` in `visual-settings.js` swaps the link and still handles the inline form for a tab left open from before.
+- **fix — the theme stylesheet is rendered once per change on the server.** Rendering walks every theme (331 blocks) and the page needs it twice per load, for the hash and for the fetch. `themeCSSMemo` keeps the last result, keyed by data revision and backdrop seed.
+- **fix — asset bundles are gzipped once per bundle, not once per request.** The script bundle cost ~40 ms of gzip on every uncached load; `ServeAssetBundle` now keeps the compressed bytes per path and hash (`gzippedBundle`, default level — best was 0.4% smaller and half a second slower for the first visitor after a restart).
+- **fix — a view's lazy scripts are fetched side by side.** The config and Health loaders run their scripts in order, and used to fetch them in order too: one round trip per file, a visible wait over a VPN. `LazyScript.preloadScripts` adds `<link rel="preload">` for the whole chain; `loadScriptOnce` still runs them in the same order.
+- **fix — no more page-wide restyle while the grid renders.** A `.feed-row-actions:has(...) > *` rule made Chrome restyle the whole page on every DOM change (16x the style work during render); `feed-row.css` lets the children out through the `--feed-row-actions-child-overflow` variable instead. The scroll lock's `MutationObserver` (`scroll-lock.js`) only re-checks when a batch touches a modal candidate, instead of forcing layout 36 times during load.
+
+### Icons
+- **fix — icon-set SVGs that are only a wrapped PNG are served as the set's PNG.** The sanitiser turned them away, so the icon was a 404 and the row showed a letter. `serveIconSetFile` falls back to the `.png` of the same icon, and the index records which sets have one (`iconSetEntry.PNG`).
+- **fix — Inbox items whose icon file is gone fetch it again.** An older cleanup removed icons while `inbox.json` could not be read; the items kept the name and every load asked for a missing file. `inboxItemNeedsIconFetch` now also picks up such items, and the startup backfill replaces the name, or clears it so the row shows its glyph.
 
 ### Help and docs
 - **new — Config → Overview has a news item for the styles,** *Five ways for the buttons to come into view*, dated v1.18.4 and opening Appearance → Action bar.
@@ -117,10 +127,11 @@ The action bar's intro animation gets a choice of five styles, each shown on its
 - **docs — the Unraid template** (`templates/nextdash.xml`) has the Inbox under Bookmarks → Unsorted and Health inside the Bookmarks view, in its feature list and its v1.18.3 changes, the same as the copy Community Applications reads.
 
 ### Tests
+- **tests — `internal/app/perf_cache_test.go`** covers the hashed theme link and its cache headers, the theme memo and the gzipped bundle cache; `icon_sets_cache_test.go` and `inbox_icon_backfill_test.go` cover the two icon fixes; `tests/config-custom-themes.spec.js` follows the linked stylesheet.
 - **tests — `tests/action-bar-autohide.spec.js`** plays each style on the bar, picks a card in config and checks its drawing plays on hover and that a second pick plays on the bar without a reload; the setting off draws no intro. `internal/app/settings_action_bar_test.go` keeps the five styles, turns anything else off, and moves v1.18.3's switch to swell.
 
 ### Docs
-- **docs — `static/data/whats-new/v1.18.4.json` and its index entry** with `hideFromModal`; `whats-new-stub.js` moves `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v326` and leaves `DASHBOARD_RELEASE` on v1.18.3. `tests/whats-new-hidden-release.spec.js` names v1.18.4 as held back.
+- **docs — `static/data/whats-new/v1.18.4.json` and its index entry**, leading the What's new window; `whats-new-stub.js` moves `DASHBOARD_RELEASE` to v1.18.4 and `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v327`. `tests/whats-new-hidden-release.spec.js` names v1.18.4 as the release the modal leads with.
 - **docs — locale keys** `actionBarIntroOff`, `actionBarIntroSwell`, `actionBarIntroSwellMiddle`, `actionBarIntroSwellTogether`, `actionBarIntroUnfold`, `actionBarIntroAccordion` with their `…Body` lines and the five `overviewNewFeatureActionBarStyles*` keys in all six languages; `actionBarIntroLabel`, `actionBarIntroInfoTitle`, `actionBarIntroInfoMessage` and `helpAppearanceBody` updated in all six. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---

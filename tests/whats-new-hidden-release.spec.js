@@ -157,16 +157,15 @@ test.describe('a release flagged hideFromModal', () => {
     // modal, and every release before it shows under it; v1.18.0 leads now,
     // with v1.17.5 under it. v1.18.1 was held back; v1.18.2 leads now and
     // brings it back in, so nothing in the index is held back. v1.18.3 leads now,
-    // with v1.18.2 under it. v1.18.4 is held back: first in the index, which is
-    // the version, and not in the modal, which v1.18.3 still leads.
-    test('v1.18.3 leads the modal, and the releases held back before it show under it', async ({ page }) => {
+    // with v1.18.2 under it. v1.18.4 leads now, with v1.18.3 under it.
+    test('v1.18.4 leads the modal, and the releases held back before it show under it', async ({ page }) => {
         await loadDashboard(page);
 
         const index = await page.evaluate(async () =>
             (await fetch('/static/data/whats-new/index.json')).json());
 
         expect(index[0].tag).toBe('v1.18.4');
-        expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual(['v1.18.4']);
+        expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual([]);
 
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
         const modal = page.locator('.whats-new-modal');
@@ -180,8 +179,8 @@ test.describe('a release flagged hideFromModal', () => {
                 // Three parts or four: a hotfix tag is v1.3.3.5.
                 .filter((t) => /^v\d+\.\d+\.\d+(\.\d+)?$/.test(t)),
         )]);
+        expect(await shownTags()).toContain('v1.18.4');
         expect(await shownTags()).toContain('v1.18.3');
-        expect(await shownTags()).not.toContain('v1.18.4');
         expect(await shownTags()).toContain('v1.18.2');
         expect(await shownTags()).toContain('v1.18.1');
         expect(await shownTags()).toContain('v1.18.0');
@@ -214,22 +213,21 @@ test.describe('a release flagged hideFromModal', () => {
         }
     });
 
-    test('the release constants name v1.18.3, the release the modal leads with', async ({ page }) => {
+    test('the release constants name v1.18.4, the release the modal leads with', async ({ page }) => {
         const stub = await page.request.get('/static/js/whats-new-stub.js');
         const src = await stub.text();
         /*
          * The release token names what the modal leads with, so it moves for a
          * release that leads and stays put for one that is held back. v1.13.1,
-         * v1.13.5 and v1.13.6 were held back and were never named here; v1.18.3
+         * v1.13.5 and v1.13.6 were held back and were never named here; v1.18.4
          * leads, so it is.
          *
          * Leaving it behind is the quiet failure this pins: every install that
-         * had already read v1.18.2's notes would simply never be shown v1.18.3.
-         * v1.18.4 is held back, so the token stays on v1.18.3.
+         * had already read v1.18.3's notes would simply never be shown v1.18.4.
          */
-        expect(src).toContain("DASHBOARD_RELEASE = '2026.10-dashboard-release-v1.18.3'");
+        expect(src).toContain("DASHBOARD_RELEASE = '2026.10-dashboard-release-v1.18.4'");
         // The data token moves regardless: the index changed, and a browser
         // holding its old copy would never learn v1.18.4 exists.
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v326'");
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v327'");
     });
 });
