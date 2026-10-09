@@ -41,7 +41,11 @@
                 resolve();
                 return;
             }
-            let existing = document.querySelector(`script[data-${datasetKey}]`);
+            // The attribute as the dataset key writes it: dashboardInlineEditModule
+            // is data-dashboard-inline-edit-module, which a camelCase selector
+            // never matched, so a failed tag was never found or replaced.
+            const attr = `data-${datasetKey.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`;
+            let existing = document.querySelector(`script[${attr}]`);
             if (existing?.dataset.loadFailed === 'true') {
                 // A failed tag fires no further events; waiting on it hung every
                 // later right-click or ; until a reload. Start a fresh one.

@@ -362,18 +362,22 @@
     function bindHeadlineControls(root) {
         const select = root?.querySelector('[data-wn-section-select]');
         if (!select) return;
+        // The headline's own groups only: an older release opened below is
+        // drawn with the same markup, and its section numbers are its own.
+        const scope = root.querySelector(':scope > .wn-groups');
+        if (!scope) return;
         select.addEventListener('change', () => {
             const pick = select.value;
-            root.querySelectorAll('.wn-groups [data-wn-sec]').forEach((li) => {
+            scope.querySelectorAll('[data-wn-sec]').forEach((li) => {
                 li.hidden = pick !== '' && li.getAttribute('data-wn-sec') !== pick;
             });
-            root.querySelectorAll('.wn-groups [data-wn-block]').forEach((block) => {
+            scope.querySelectorAll('[data-wn-block]').forEach((block) => {
                 const shown = [...block.querySelectorAll('[data-wn-sec]')].filter((li) => !li.hidden).length;
                 block.hidden = shown === 0;
                 const count = block.querySelector('[data-wn-block-count]');
                 if (count) count.textContent = String(shown);
             });
-            root.querySelectorAll('.wn-groups [data-wn-section]').forEach((group) => {
+            scope.querySelectorAll('[data-wn-section]').forEach((group) => {
                 group.hidden = pick !== '' && group.getAttribute('data-wn-section') !== pick;
             });
             root.closest('.modal-body')?.scrollTo({ top: 0 });

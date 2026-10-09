@@ -24112,7 +24112,6 @@ class DashboardConfig {
                 // Held across the confirmation: the list and page are this
                 // row's, whatever the editor points at once it closes.
                 const pageId = this._catPageId;
-                const list = this._categories;
                 // Removing a category does not touch its bookmarks: they keep
                 // pointing at an id nothing defines any more and collect in
                 // "unknown categories" on the dashboard. Say so, with the count,
@@ -24127,12 +24126,23 @@ class DashboardConfig {
                     : this.t('config.categoryDeleteConfirm', 'Delete “{name}”?')
                         .replace('{name}', String(cat.name || cat.id || ''));
                 if (!await this.confirmAction(message)) return;
+                // Found again after the confirmation: a reload while it was open
+                // (another tab, a page move) replaces the lists, and a splice of
+                // the old one would save the new one unchanged -- a "deleted"
+                // toast for a category still there.
+                this.useCategoryPage(pageId);
+                const list = this._catByPage?.get(String(pageId))
+                    || (String(this._catPageId) === String(pageId) ? this._categories : null);
+                const at = list ? list.findIndex((c) => String(c.id) === String(cat.id)) : -1;
+                if (at < 0) {
+                    this.repaintPtBody();
+                    return;
+                }
                 // The list before the splice is the whole undo payload — saving
                 // categories is a replace-the-list write.
                 const before = list.map((c) => ({ ...c }));
-                const removed = { ...cat };
-                this.useCategoryPage(pageId);
-                list.splice(i, 1);
+                const removed = { ...list[at] };
+                list.splice(at, 1);
                 this.repaintPtBody();
                 // The server refuses to drop the last category while bookmarks
                 // still point at it (409). Without checking, the delete carried
@@ -24143,14 +24153,14 @@ class DashboardConfig {
                     // Back onto the list it came from, which is that page's
                     // whichever row the editor points at by now.
                     if (this._catByPage?.get(String(pageId)) === list) {
-                        list.splice(i, 0, removed);
+                        list.splice(at, 0, removed);
                         this.repaintPtBody();
                     }
                     return;
                 }
                 // After the save, so a delete that did not persist cannot leave
                 // a phantom entry in the trash.
-                await window.DashboardTrash?.recordCategory?.(removed, pageId, i, 'config-category-delete');
+                await window.DashboardTrash?.recordCategory?.(removed, pageId, at, 'config-category-delete');
                 await this.refreshTrashIfVisible();
                 this.notify(this.t('config.categoryDeleted', 'Category deleted.'), 'success', {
                     duration: 8000,

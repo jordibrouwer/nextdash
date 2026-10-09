@@ -128,6 +128,22 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **fix — Undo of a move puts nothing back after a background reload** of the page, which would have undone what another device changed since; it says so instead (`blockMoveUndoStale`).
 - **fix — resetting spread counts only what was saved,** and puts the spread back on a category whose save failed (`dashboard-category-span.js`).
 
+### Bookmarks
+- **fix — merging categories in the Structure modal cannot save an empty list.** A reload during the confirmation forgot the lists, and the merge posted `[]` for the page, removing every category (`mergeCategoryInto`).
+- **fix — deleting a category in Structure finds it again after the confirmation,** so a reload meanwhile no longer gives a *Category deleted.* for a category still there.
+- **fix — a bulk move to another page removes the moved rows by identity,** not by indexes taken before the requests, and leaves the list alone when you went to another page meanwhile (`dashboard-tag-filter.js`).
+- **fix — the script loader finds a failed tag.** The selector used the camelCase dataset key, which never matched the attribute, so the failed-load check never ran (`dashboard-bookmark-interactions-loader.js`).
+
+### Inbox
+- **fix — bulk Keep runs once at a time;** a double click reported links as *still in the Inbox* that were not.
+- **fix — bulk promote says when an entry could not leave the Inbox,** and keeps those out of its count and its Undo.
+
+### What's new
+- **fix — the section menu filters the headline release only,** not the older releases opened below it.
+
+### Docs
+- **tests —** `TestClientIPReadsEveryForwardedForLine`, `TestFailedPageReadIsNotCached`, `TestIconCleanupKeepsIconsWhenInboxIsUnreadable`, the capture, counter and reset cases in `TestDemoGuard`, and a page switch during a move in `tests/dashboard-block-move-page.spec.js`. `TestDemoDialsNoHost` now expects a local dial to be refused in the start-up window.
+
 ---
 
 ## v1.18.2 — 8 October 2026
