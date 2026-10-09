@@ -106,7 +106,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.18.4.1 — 9 October 2026
 
-Bookmarks opens sooner and the same way from the key as from the button. `Shift+H` now lands on the whole list instead of the Broken filter, loading starts as the pointer reaches the button, and a view opens with half the fade. Held back from the What's new window (`hideFromModal`) like v1.18.1, so v1.18.4 keeps leading it.
+Bookmarks opens sooner and the same way from the key as from the button. `Shift+H` now lands on the whole list instead of the Broken filter, loading starts as the pointer reaches the button, the list is laid out and drawn once instead of several times, config no longer carries Appearance and the widget editor into Bookmarks, and a view opens with half the fade. Held back from the What's new window (`hideFromModal`) like v1.18.1, so v1.18.4 keeps leading it.
 
 ### Bookmarks
 
@@ -121,6 +121,10 @@ Bookmarks opens sooner and the same way from the key as from the button. `Shift+
 - **fix — Bookmarks no longer waits on Appearance's files, or on its own one at a time.** The config loader fetched the look, the studio and the theme editor (about 105 KB) with config itself, so opening Bookmarks parsed them before the list; they are now `DashboardConfig.SECTION_MODULES.appearance`, a chain fetched side by side and run in order when Appearance, the theme browser or a theme's look needs them, and on idle otherwise. A stand-in `applyThemeLookAndSave` on config loads them first, so `:theme` still brings a theme's look. The list's eleven scripts, which `ensureBookmarkRenderers` loads one after another, are preloaded with config by `DashboardConfigLoader.preloadBookmarkScripts`. Rows on a cold cache: 861 → 331 ms at 50 ms latency, 1130 → 605 ms at 4× CPU; warm, 340 → 323 ms. `tests/config-lazy-load.spec.js` checks that no Appearance file is fetched before the rows, and that Appearance and the theme browser still open.
 - **fix — the widget editor is its own file, so Bookmarks no longer parses it.** The Widgets section's 98 methods (about 200 KB) moved unchanged from `dashboard-config.js` to `dashboard-config-widgets.js`, loaded as `DashboardConfig.SECTION_MODULES.widgets` when that section opens and on idle otherwise. The type tables and the helpers other sections share — the folds, `secretEyeIcon`, `widgetTypeName` — stay on the class. Config itself is 1.48 MB instead of 1.68 MB; Bookmarks' rows at 4× CPU: 308 → 292 ms warm, 593 → 575 ms cold. `tests/config-lazy-load.spec.js` checks that the file is not fetched before the rows.
 - **fix — opening Bookmarks draws the list once instead of four times.** Every draw rebuilt the rows and measured their tag chips, which forces a layout. `ensureBookmarkCategoriesForFilter` and `prefetchAllBookmarkCategories` redrew the list whenever they finished, even with every name already cached; they now say whether anything was fetched, and only then is it redrawn — so a first open in a session redraws once when the names land, and every later one not at all. Two callers asking for the same page's categories share one request. The first draw takes a screenful (`bmInitialLimit`) when the page size is smaller, so `fillBookmarkListToScreen` no longer adds a page a frame later. The band's height is published from the last one and corrected by its `ResizeObserver`, instead of read mid-render; and the modal scroll lock no longer wakes on a child added to `<body>`, only on an attribute that could show a modal. Painted at 4× CPU: 323 → 274 ms; at 1×: 79 → 70 ms; cold, unchanged. `tests/bookmarks-open-draws-once.spec.js` counts the draws.
+
+### Tests
+
+- **tests — `tests/health-view-redirect.spec.js`** waits for `#bookmarks` after `Shift+H` instead of reading the address the moment the view switches: through `openLibraryView` the view switches first and its first render writes the address.
 
 ### Help and docs
 
