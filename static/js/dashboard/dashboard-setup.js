@@ -525,13 +525,16 @@ class DashboardSetup {
             // with that shortcut letter is reached.
             // e.code, not e.key: on a layout where Shift+H yields another character
             // the physical key is still the one the user pressed.
+            // Shift+H opens Bookmarks the way its header button does: the whole
+            // list, no Health filter and nothing selected. It used to go through
+            // openHealthView, which landed on the Broken filter -- the old Health
+            // view's front page -- so the key and the button opened two
+            // different things.
             if (e.shiftKey && e.code === 'KeyH') {
-                if (d.health?.isEnabled?.()) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.nextdashRecordKey?.('Shift + H');
-                    void d.health.openHealthView();
-                }
+                e.preventDefault();
+                e.stopPropagation();
+                window.nextdashRecordKey?.('Shift + H');
+                void d.config?.openLibraryView?.();
                 return;
             }
 

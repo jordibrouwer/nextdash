@@ -36,7 +36,7 @@ async function openConfig(page) {
     await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
 }
 
-/** Shift+H: the Bookmarks view, on its broken ones. */
+/** Shift+H: the Bookmarks view. */
 async function openBookmarksView(page) {
     await loadDashboard(page);
     await page.keyboard.press('Shift+H');

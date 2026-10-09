@@ -208,8 +208,6 @@ test('a slid-away bar stays away while you browse the views', async ({ page }) =
 
     const steps = [
         ['Shift+H', 'library'],
-        // The first Escape clears the Broken filter Shift+H opened on.
-        ['Escape', 'library'],
         ['Escape', 'bookmarks'],
         ['Shift+I', 'inbox'],
         ['Escape', 'bookmarks'],
