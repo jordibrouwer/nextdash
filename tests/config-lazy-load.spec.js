@@ -33,6 +33,21 @@ test.describe('config lazy load', () => {
         expect(await page.evaluate(() => Boolean(window.dashboardInstance.config))).toBe(true);
     });
 
+    // The first open after a page load waited on the whole module. A pointer
+    // resting on the Bookmarks button is the reader on the way there: the
+    // module starts loading then, and nothing opens until the click.
+    test('pointing at the Bookmarks button loads the module without opening it', async ({ page }) => {
+        await page.goto('/');
+        await waitReady(page);
+        expect(await page.evaluate(() => typeof window.DashboardConfig)).toBe('undefined');
+
+        await page.locator('.library-link-anchor').first().hover();
+
+        await expect.poll(() => page.evaluate(() => typeof window.DashboardConfig), { timeout: 15_000 }).toBe('function');
+        expect(await page.evaluate(() => window.location.hash)).not.toContain('bookmarks');
+        expect(await page.evaluate(() => document.querySelector('#config-bm-list'))).toBeNull();
+    });
+
     test('opening config fetches the module once and renders the view', async ({ page }) => {
         /** @type {string[]} */
         const requested = [];

@@ -163,6 +163,39 @@ class DashboardConfigLoader {
                 configurable: true,
             });
         }
+        this._bindIntentPrewarm();
+    }
+
+    /*
+     * Start loading when someone is about to open Bookmarks or Config.
+     *
+     * The first open after a page load waited on the whole module: a 1.7 MB
+     * script to fetch, parse and run, ~500 ms on a server reached over a VPN.
+     * A pointer coming to rest on the button, a focus on it or a touch is
+     * the reader on the way there, and that head start is most of the wait.
+     * Delegated, because the buttons are re-rendered; once, because after
+     * the first time the module is there.
+     */
+    _bindIntentPrewarm() {
+        const SELECTOR = '.library-link-anchor, .config-link-anchor';
+        const events = ['pointerover', 'focusin', 'touchstart'];
+        const onIntent = (e) => {
+            if (!e.target?.closest?.(SELECTOR)) return;
+            events.forEach((type) => document.removeEventListener(type, onIntent, true));
+            this.prewarm();
+        };
+        events.forEach((type) => document.addEventListener(type, onIntent, { capture: true, passive: true }));
+    }
+
+    /** What opening loads, without opening anything, and without a word on failure. */
+    prewarm() {
+        const health = this.dash?.health;
+        return Promise.all([
+            this.load(),
+            this.dash?.language?.ensureHelpTranslations?.(),
+            window.ViewStyles?.ensureViewStyles?.(),
+            health?.isEnabled?.() ? health.load?.() : null,
+        ]).catch(() => { /* the real open reports it, and retries */ });
     }
 
     /**
