@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.18.4.1 — 9 October 2026](#v11841--9-october-2026)
 - [v1.18.4 — 9 October 2026](#v1184--9-october-2026)
 - [v1.18.3 — 9 October 2026](#v1183--9-october-2026)
 - [v1.18.2 — 8 October 2026](#v1182--8-october-2026)
@@ -100,6 +101,31 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.18.4.1 — 9 October 2026
+
+Bookmarks opens sooner and the same way from the key as from the button. `Shift+H` now lands on the whole list instead of the Broken filter, loading starts as the pointer reaches the button, and a view opens with half the fade. Held back from the What's new window (`hideFromModal`) like v1.18.1, so v1.18.4 keeps leading it.
+
+### Bookmarks
+
+- **fix — `Shift+H` opens the whole Bookmarks list, the same as its header button.** The key went through `openHealthView`, which landed on the Broken filter — the old Health view's front page — and did nothing at all with health checks off, so the key and the button opened two different things. `dashboard-setup.js` now calls `config.openLibraryView`, with no filter and nothing selected; `:health` and `/#health` still land on Broken. `tests/bookmarks-shift-h.spec.js` covers it.
+
+### Performance
+
+- **fix — Bookmarks and Config start loading when the pointer reaches their button.** The first open after a page load waited on the whole module, a 1.7 MB script to fetch, parse and run — about 500 ms over a VPN. `DashboardConfigLoader._bindIntentPrewarm` listens once, delegated, for a pointer, a focus or a touch on either button and calls `prewarm()`, which loads the module, the help translations, the view styles and (with checks on) the health module without opening anything; a failure stays silent and the real open reports it. `tests/config-lazy-load.spec.js` covers the hover.
+- **fix — the health loader no longer preloads scripts the page already has.** Two of its six dependencies ride in the dashboard bundle, but v1.18.4's side-by-side preload fetched them again. `DashboardHealthLoader.DEPENDENCIES` lists each script with its own readiness test, and only the missing ones are preloaded and loaded, still in order. `tests/health-lazy-load.spec.js` checks that every preloaded script is one that then runs.
+- **fix — a view opens with a 100 ms fade instead of 200 ms of fade and slide.** Opening Config, Bookmarks, Inbox or Containers is a jump to another place, not a turn of the page, and the list is usually drawn within a frame; the animation was most of what made Bookmarks feel slow. `dashboard.css` gives those layouts `dashboardViewFade`; page switches on the dashboard keep the slide.
+
+### Help and docs
+
+- **docs — the key is described as it now works:** MANUAL §7's key table and §11's opening line, the cheat sheet (`navHealthView`, which now shows with checks off too), the everyday-views tip (`tipEverydayViews`) and Help → Keyboard (`helpKeyboardBody`), in all six languages.
+- **docs — the Unraid template** (`templates/nextdash.xml`) lists the v1.18.4 changes, the same as the copy Community Applications reads.
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.18.4.1.json` and its index entry**, held back from the What's new window (`hideFromModal`); `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v328`, `DASHBOARD_RELEASE` stays on v1.18.4. `tests/whats-new-hidden-release.spec.js` names v1.18.4.1 as held back. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 
