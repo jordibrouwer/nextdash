@@ -2384,13 +2384,17 @@ func (fs *FileStore) GetBookmarksByPage(pageID int) []Bookmark {
 	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, pageID)
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		fs.readCache.bookmarks[pageID] = []Bookmark{}
+		// Only a missing file is an empty page. A failed read is not cached:
+		// held as empty, the next save from a reader who saw it would replace
+		// the whole page.
+		if os.IsNotExist(err) {
+			fs.readCache.bookmarks[pageID] = []Bookmark{}
+		}
 		return []Bookmark{}
 	}
 
 	var pageWithBookmarks PageWithBookmarks
 	if err := json.Unmarshal(data, &pageWithBookmarks); err != nil {
-		fs.readCache.bookmarks[pageID] = []Bookmark{}
 		return []Bookmark{}
 	}
 
@@ -2799,29 +2803,36 @@ func (fs *FileStore) removeBookmarkFromSlice(bookmarks []Bookmark, toDelete Book
 }
 
 func (fs *FileStore) GetAllBookmarks() []Bookmark {
+	all, _ := fs.getAllBookmarksChecked()
+	return all
+}
+
+// getAllBookmarksChecked is GetAllBookmarks plus whether every page was read.
+// A page that failed to read is left out and the result is not cached, so
+// the next call tries again.
+func (fs *FileStore) getAllBookmarksChecked() ([]Bookmark, bool) {
 	fs.mutex.RLock()
 	if fs.readCache.allBookmarksOK {
 		out := cloneBookmarks(fs.readCache.allBookmarks)
 		fs.mutex.RUnlock()
-		return out
+		return out, true
 	}
 	fs.mutex.RUnlock()
 
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 	if fs.readCache.allBookmarksOK {
-		return cloneBookmarks(fs.readCache.allBookmarks)
+		return cloneBookmarks(fs.readCache.allBookmarks), true
 	}
 
 	fs.ensureDataDir()
 
 	var allBookmarks []Bookmark
+	complete := true
 
 	files, err := os.ReadDir(fs.dataDir)
 	if err != nil {
-		fs.readCache.allBookmarks = []Bookmark{}
-		fs.readCache.allBookmarksOK = true
-		return []Bookmark{}
+		return []Bookmark{}, false
 	}
 
 	for _, file := range files {
@@ -2835,11 +2846,13 @@ func (fs *FileStore) GetAllBookmarks() []Bookmark {
 		filePath := fmt.Sprintf("%s/%s", fs.dataDir, file.Name())
 		data, err := os.ReadFile(filePath)
 		if err != nil {
+			complete = false
 			continue
 		}
 
 		var pageWithBookmarks PageWithBookmarks
 		if err := json.Unmarshal(data, &pageWithBookmarks); err != nil {
+			complete = false
 			continue
 		}
 
@@ -2850,9 +2863,11 @@ func (fs *FileStore) GetAllBookmarks() []Bookmark {
 		allBookmarks = append(allBookmarks, pageWithBookmarks.Bookmarks...)
 	}
 
-	fs.readCache.allBookmarks = cloneBookmarks(allBookmarks)
-	fs.readCache.allBookmarksOK = true
-	return cloneBookmarks(allBookmarks)
+	if complete {
+		fs.readCache.allBookmarks = cloneBookmarks(allBookmarks)
+		fs.readCache.allBookmarksOK = true
+	}
+	return cloneBookmarks(allBookmarks), complete
 }
 
 // BookmarkURLExists reports whether url matches any bookmark (single pass; for /api/ping validation).

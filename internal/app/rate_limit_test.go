@@ -175,6 +175,39 @@ func TestClientIPIgnoresWhatTheClientPutBeforeTheProxy(t *testing.T) {
 	}
 }
 
+// A proxy may add its own X-Forwarded-For line rather than append to the one
+// the client sent (HAProxy's option forwardfor). The first line alone is then
+// entirely the client's, and every request picked its own bucket.
+func TestClientIPReadsEveryForwardedForLine(t *testing.T) {
+	t.Setenv("NEXTDASH_TRUSTED_PROXIES", "172.16.0.0/12")
+
+	seen := map[string]bool{}
+	for i := 0; i < 20; i++ {
+		req := httptest.NewRequest(http.MethodPost, "/api/bookmarks", nil)
+		req.RemoteAddr = "172.18.0.2:44000"
+		req.Header.Add("X-Forwarded-For", fmt.Sprintf("198.51.100.%d", i))
+		req.Header.Add("X-Forwarded-For", "203.0.113.50")
+		seen[clientIP(req)] = true
+	}
+	if len(seen) != 1 || !seen["203.0.113.50"] {
+		t.Errorf("clientIP keys = %v, want only 203.0.113.50", seen)
+	}
+
+	// An entry with a port, or an IPv6 one in brackets, is still an address.
+	for header, want := range map[string]string{
+		"203.0.113.7:4711":  "203.0.113.7",
+		"[2001:db8::1]:443": "2001:db8::1",
+		"[2001:db8::2]":     "2001:db8::2",
+	} {
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req.RemoteAddr = "172.18.0.2:44000"
+		req.Header.Set("X-Forwarded-For", header)
+		if got := clientIP(req); got != want {
+			t.Errorf("X-Forwarded-For %q: clientIP = %q, want %q", header, got, want)
+		}
+	}
+}
+
 // A preview already in the cache is answered without spending the limit that
 // exists for outbound fetches: hovering down a page asked for each row.
 func TestCachedBookmarkPreviewIsNotRateLimited(t *testing.T) {

@@ -197,11 +197,17 @@ func clientIP(r *http.Request) string {
 	 * way stops the walk and the peer counts, as it did before.
 	 */
 	if isTrustedProxy(peer) {
-		if xff := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); xff != "" {
+		// Every header line: a proxy may add its own line rather than append
+		// to the one the client sent, and that line alone is the client's.
+		if xff := strings.TrimSpace(strings.Join(r.Header.Values("X-Forwarded-For"), ",")); xff != "" {
 			hops := strings.Split(xff, ",")
 			client := ""
 			for i := len(hops) - 1; i >= 0; i-- {
 				hop := strings.TrimSpace(hops[i])
+				if h, _, err := net.SplitHostPort(hop); err == nil {
+					hop = h
+				}
+				hop = strings.Trim(hop, "[]")
 				if net.ParseIP(hop) == nil {
 					break
 				}

@@ -114,6 +114,12 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **fix — the kept favicons are the seed's only.** A bookmark a visitor added or changed during the start-up window was kept and put back on every reset (`fetchDemoIconsOnce`).
 - **fix — a removed demo container leaves the container order,** which otherwise grew by one id per recreate until the next reset (`docker_demo.go`).
 
+### Data
+- **fix — a page that fails to read is not cached as empty.** `GetBookmarksByPage` held the empty result until the next write, and a save from a reader who saw it replaced the whole page. Only a missing file is cached as empty; `GetAllBookmarks` no longer marks itself complete when a page failed (`models.go`).
+- **fix — icons are not deleted while `inbox.json` or a page cannot be read.** The cleanup after a delete took a failed read for an empty inbox and removed every icon only an inbox item used. `iconReferenced` and `removeUnusedIconFiles` now skip when either store did not read in full (`inbox.go`).
+- **fix — `X-Forwarded-For` is read across every header line,** and an entry with a port or IPv6 brackets is still an address. A proxy that adds its own line (HAProxy `option forwardfor`) left the first line entirely the client's (`rate_limit.go`).
+- **fix — Health's re-check past the cap puts rows without a URL key last.** Their result is never stored, so they stayed "never checked" and took a slot on every run.
+
 ---
 
 ## v1.18.2 — 8 October 2026

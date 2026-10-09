@@ -45,3 +45,56 @@ func TestSavePageRefusesUnreadablePageFile(t *testing.T) {
 		t.Fatalf("bookmarks after SavePage = %d, want 1", len(bms))
 	}
 }
+
+// A page that failed to read is not cached as empty: held that way, the next
+// save from a reader who saw it replaced the whole page.
+func TestFailedPageReadIsNotCached(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root reads a mode-0 file")
+	}
+	dir := t.TempDir()
+	fs := &FileStore{settingsFile: filepath.Join(dir, "settings.json"), dataDir: dir}
+	file := filepath.Join(dir, "bookmarks-1.json")
+	if err := os.WriteFile(file, []byte(`{"id":1,"name":"P","bookmarks":[{"name":"A","url":"https://a.example"}]}`), 0o000); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(file, 0o644) })
+	if bms := fs.GetBookmarksByPage(1); len(bms) != 0 {
+		t.Fatalf("unreadable page gave %d bookmarks", len(bms))
+	}
+	if all := fs.GetAllBookmarks(); len(all) != 0 {
+		t.Fatalf("unreadable page gave %d bookmarks in all", len(all))
+	}
+	_ = os.Chmod(file, 0o644)
+	if bms := fs.GetBookmarksByPage(1); len(bms) != 1 {
+		t.Fatalf("page after the read recovers = %d bookmarks, want 1", len(bms))
+	}
+	if all := fs.GetAllBookmarks(); len(all) != 1 {
+		t.Fatalf("all after the read recovers = %d bookmarks, want 1", len(all))
+	}
+}
+
+// An inbox.json that cannot be read is not proof that its icons are unused:
+// the cleanup after a delete removed every icon only an inbox item had.
+func TestIconCleanupKeepsIconsWhenInboxIsUnreadable(t *testing.T) {
+	dir := t.TempDir()
+	fs := &FileStore{settingsFile: filepath.Join(dir, "settings.json"), dataDir: dir}
+	if err := os.MkdirAll(filepath.Join(dir, "icons"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	icon := filepath.Join(dir, "icons", "abc123.png")
+	if err := os.WriteFile(icon, []byte("png"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	broken := []byte(`{"version":2,"items":[{"id":"a","url":"https://a.example","icon":"abc123.png"`)
+	if err := os.WriteFile(fs.inboxFile(), broken, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	fs.removeUnusedIconFiles([]string{"abc123.png"})
+	if fs.iconReferenced("abc123.png") != true {
+		t.Error("iconReferenced = false on an unreadable inbox")
+	}
+	if _, err := os.Stat(icon); err != nil {
+		t.Fatalf("icon removed on an unreadable inbox: %v", err)
+	}
+}
