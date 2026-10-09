@@ -99,6 +99,36 @@ class DashboardConfig {
             datasetKey: 'dashboardConfigLogs',
             ready: () => window.DashboardConfigLogsReady === true,
         },
+        /*
+         * Appearance's Background and Surface tabs, the theme browser built
+         * from them, and its editor: three files, run in this order. They were
+         * fetched with config itself, so opening Bookmarks parsed a hundred
+         * kilobytes it never used. The editor is optional -- without it the
+         * studio has no editor, and the cards no ✎.
+         */
+        appearance: {
+            chain: [
+                {
+                    file: 'js/dashboard/dashboard-config-look.js',
+                    datasetKey: 'dashboardConfigLook',
+                    ready: () => window.DashboardConfigLookReady === true,
+                },
+                {
+                    file: 'js/dashboard/dashboard-config-studio.js',
+                    datasetKey: 'dashboardConfigStudio',
+                    ready: () => window.DashboardConfigStudioReady === true,
+                },
+                {
+                    file: 'js/dashboard/dashboard-config-theme-edit.js',
+                    datasetKey: 'dashboardConfigThemeEdit',
+                    ready: () => window.DashboardConfigThemeEditReady === true,
+                    optional: true,
+                },
+            ],
+            ready: () => window.DashboardConfigLookReady === true
+                && window.DashboardConfigStudioReady === true
+                && window.DashboardConfigThemeEditReady === true,
+        },
     };
 
     /** The Logs section's two sub-tabs. */
@@ -9884,10 +9914,25 @@ class DashboardConfig {
      *
      * The studio itself lives in dashboard-config-studio.js; this is the name
      * Shift+A, the notice card, the changes tour and Appearance's Browse button
-     * all call.
+     * all call. The studio is fetched with Appearance, not with config, so
+     * these may arrive before it has.
      */
     async openThemeBrowser(options) {
+        if (!(await this.ensureSection('appearance'))) return undefined;
         return this.openLookStudio?.(options);
+    }
+
+    /*
+     * Stands in for the studio's applyThemeLookAndSave until that file runs
+     * and replaces it on the prototype. The command bar's theme switch calls
+     * this without config ever having been opened; without the stand-in the
+     * `?.` there found nothing and a theme's own look was silently skipped.
+     */
+    async applyThemeLookAndSave(id, previous) {
+        const standIn = DashboardConfig.prototype.applyThemeLookAndSave;
+        if (!(await this.ensureSection('appearance'))) return undefined;
+        const real = DashboardConfig.prototype.applyThemeLookAndSave;
+        return real === standIn ? undefined : real.call(this, id, previous);
     }
 
     renderThemeOptions() {
@@ -28857,9 +28902,22 @@ class DashboardConfig {
         if (!entry || entry.ready()) return Promise.resolve(true);
         this._sectionPromises = this._sectionPromises || {};
         if (this._sectionPromises[id]) return this._sectionPromises[id];
-        this._sectionPromises[id] = window.LazyScript
-            .loadScriptOnce(entry.file, entry.datasetKey, entry.ready)
-            .then(() => true)
+        // A section of several files fetches them side by side and runs them
+        // in order; an optional one may fail without failing the section.
+        const steps = entry.chain || [entry];
+        const missing = steps.filter((s) => !s.ready());
+        if (missing.length > 1) window.LazyScript.preloadScripts?.(missing.map((s) => s.file));
+        const run = steps.reduce((prev, s) => prev.then(() => {
+            const loading = window.LazyScript.loadScriptOnce(s.file, s.datasetKey, s.ready);
+            return s.optional ? loading.catch(() => {}) : loading;
+        }), Promise.resolve());
+        this._sectionPromises[id] = run
+            .then(() => {
+                // Done, whatever an optional file did: a later visit tries
+                // that one again rather than this promise standing for it.
+                if (!entry.ready()) delete this._sectionPromises[id];
+                return true;
+            })
             .catch(() => {
                 // Dropped rather than kept, so a later visit tries again instead
                 // of returning the same failure for the life of the tab.

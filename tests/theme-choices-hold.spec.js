@@ -72,12 +72,14 @@ test(':theme draws the half Follow system wants', async ({ page }) => {
 
 test('with Random theme on, the studio shows the theme you pick', async ({ page }) => {
     await open(page);
+    // The studio comes with Appearance, not with config itself.
+    await page.evaluate(() => window.dashboardInstance.config.ensureSection('appearance'));
     const shown = await page.evaluate(() => {
         const d = window.dashboardInstance;
         const was = { mode: d.settings.randomThemeMode, theme: d.settings.theme, auto: d.settings.autoDarkMode };
         Object.assign(d.settings, { randomThemeMode: 'refresh', theme: 'cherry-graphite-dark', autoDarkMode: false });
         try {
-            return typeof d.config.studioShownTheme === 'function' ? d.config.studioShownTheme() : d.config.displayTheme();
+            return d.config.studioShownTheme();
         } finally {
             Object.assign(d.settings, { randomThemeMode: was.mode, theme: was.theme, autoDarkMode: was.auto });
         }

@@ -142,12 +142,14 @@ test.describe('config lazy load', () => {
             const C = window.DashboardConfig;
             return {
                 sections: C.SECTIONS,
-                modules: Object.entries(C.SECTION_MODULES).map(([id, entry]) => ({
+                // A section of several files lists them as a chain; each link
+                // is held to the same rules as a single-file section.
+                modules: Object.entries(C.SECTION_MODULES).flatMap(([id, entry]) => (entry.chain || [entry]).map((step) => ({
                     id,
-                    file: entry.file,
-                    datasetKey: entry.datasetKey,
-                    readyIsFunction: typeof entry.ready === 'function',
-                })),
+                    file: step.file,
+                    datasetKey: step.datasetKey,
+                    readyIsFunction: typeof step.ready === 'function' && typeof entry.ready === 'function',
+                }))),
             };
         });
 
@@ -175,6 +177,55 @@ test.describe('config lazy load', () => {
         for (const [key, filesForKey] of byKey) {
             expect(filesForKey.size, `dataset key ${key} is used for ${[...filesForKey].join(' and ')}`).toBe(1);
         }
+    });
+
+    /*
+     * Appearance's files came with config itself, so opening Bookmarks parsed
+     * a hundred kilobytes of theme studio before drawing a row. They may still
+     * arrive afterwards, when the tab is idle -- just not before the list.
+     */
+    test('Bookmarks draws its rows before any of Appearance is fetched', async ({ page }) => {
+        await page.addInitScript(() => {
+            const seen = { look: null, rows: null };
+            window.__lookOrder = seen;
+            new MutationObserver(() => {
+                const t = performance.now();
+                if (seen.look === null && document.querySelector(
+                    'script[src*="dashboard-config-look"], script[src*="dashboard-config-studio"], script[src*="dashboard-config-theme-edit"],'
+                    + 'link[href*="dashboard-config-look"], link[href*="dashboard-config-studio"], link[href*="dashboard-config-theme-edit"]')) {
+                    seen.look = t;
+                }
+                if (seen.rows === null && document.querySelector('#config-bm-list .config-bm-row')) seen.rows = t;
+            }).observe(document, { childList: true, subtree: true });
+        });
+        await page.goto('/');
+        await waitReady(page);
+        await page.evaluate(() => { window.location.hash = '#bookmarks'; });
+        await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
+
+        const order = await page.evaluate(() => window.__lookOrder);
+        expect(order.rows).not.toBeNull();
+        if (order.look !== null) expect(order.look).toBeGreaterThan(order.rows);
+    });
+
+    test('Appearance still opens with its own tabs and the theme browser', async ({ page }) => {
+        await page.goto('/#config/appearance/background');
+        await waitReady(page);
+        await expect(page.locator('#config-appearance-body')).toBeVisible({ timeout: 15_000 });
+        expect(await page.evaluate(() => window.DashboardConfigLookReady)).toBe(true);
+        // Drawn by renderAppearanceBackgroundBody, which lives in the look file.
+        await expect.poll(() => page.locator('#config-appearance-body').innerText()).not.toBe('');
+
+        // Every file fetched ahead for the section is one that then ran.
+        await expect.poll(() => page.evaluate(() => {
+            const ran = new Set([...document.scripts].map((s) => s.src));
+            return [...document.querySelectorAll('link[rel="preload"][as="script"]')]
+                .map((link) => link.href)
+                .filter((href) => !ran.has(href));
+        })).toEqual([]);
+
+        await page.evaluate(() => window.dashboardInstance.config.openThemeBrowser());
+        await expect(page.locator('[data-look-studio]')).toBeVisible({ timeout: 15_000 });
     });
 
     /**
