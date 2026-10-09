@@ -378,6 +378,12 @@ class KeyboardNavigation {
             // title has focus.
             if (e.altKey && e.shiftKey && !e.ctrlKey && !e.metaKey
                 && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+                // A held chord would send the block on page after page.
+                if (e.repeat && document.activeElement?.closest?.('.category-title')) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    return;
+                }
                 if (this.moveFocusedBlockToPage(e.key === 'ArrowLeft' ? -1 : 1)) {
                     e.preventDefault();
                     e.stopImmediatePropagation();

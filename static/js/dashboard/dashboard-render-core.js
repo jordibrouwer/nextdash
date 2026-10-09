@@ -1838,6 +1838,10 @@ class DashboardRenderCore {
             order: [...(d.blockOrder?.length ? d.blockOrder : this.blockOrderFromDom())],
             categories: [...(d.categories || [])],
             width: this.blockWidth(id),
+            // Which load of the page this was taken from: after a background
+            // reload it is an old copy, and putting it back would undo what
+            // another device changed since.
+            loadId: d._pageBookmarksLoadId,
         };
         const first = this.captureBlockRects();
 
@@ -1902,6 +1906,13 @@ class DashboardRenderCore {
         // Undo (forgetBlockMoveOnLeave), so this is the backstop.
         if (Number(snapshot.pageId) !== Number(d.currentPageId)) {
             if (this._lastBlockMove === snapshot) this._lastBlockMove = null;
+            return;
+        }
+        if (snapshot.loadId !== d._pageBookmarksLoadId) {
+            if (this._lastBlockMove === snapshot) this._lastBlockMove = null;
+            d.showNotification?.(d.formatDashboardLabel?.('blockMoveUndoStale', {},
+                'The page was reloaded since; nothing was put back.')
+                || 'The page was reloaded since; nothing was put back.', 'info');
             return;
         }
         const first = this.captureBlockRects();

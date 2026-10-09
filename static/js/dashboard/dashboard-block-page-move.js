@@ -133,9 +133,14 @@
             const moved = { id: full.id, type: full.type, title: full.title, config: full.config || {} };
             const dest = await readBlocks(to);
             await send(`/api/pages/${to}/blocks`, 'PUT', { widgets: (dest.widgets || []).concat(moved) });
-            const widgets = (dash.widgets || []).filter((w) => String(w?.id) !== id);
+            // From the stored list, not the dashboard's: the reader may have
+            // gone to another page while this waited, and dash.widgets is then
+            // that page's.
+            const widgets = (src.widgets || []).filter((w) => String(w?.id) !== id);
             await send(`/api/pages/${from}/blocks`, 'PUT', { widgets });
-            dash.widgets = widgets;
+            if (Number(dash.currentPageId) === Number(from)) {
+                dash.widgets = (dash.widgets || []).filter((w) => String(w?.id) !== id);
+            }
             return {
                 landedAs: id,
                 async undo() {
@@ -279,7 +284,19 @@
      * page is read from the server and nothing on screen is redrawn in place;
      * the views reload from what was stored instead.
      */
-    async function move(rc, { id, toPageId, fromPageId = null, kind: givenKind = null }) {
+    async function move(rc, options) {
+        // One move at a time: a second (a double press, a held key) would
+        // read the pages while the first is half done and land the block twice.
+        if (rc._pageMoveBusy) return false;
+        rc._pageMoveBusy = true;
+        try {
+            return await moveOnce(rc, options);
+        } finally {
+            rc._pageMoveBusy = false;
+        }
+    }
+
+    async function moveOnce(rc, { id, toPageId, fromPageId = null, kind: givenKind = null }) {
         const dash = rc.dash;
         const t = (key, vars, fallback) => dash.formatDashboardLabel?.(key, vars, fallback)
             || fallback.replace(/\{(\w+)\}/g, (_, k) => vars?.[k] ?? '');
@@ -355,7 +372,7 @@
             await writeOrder(to, [...destOrder.filter((x) => x !== done.landedAs), done.landedAs]);
             const order = sourceOrder.filter((x) => x !== bid);
             if (order.length) await writeOrder(from, order);
-            if (onPage) dash.blockOrder = order;
+            if (onPage && rc.onSamePage(from)) dash.blockOrder = order;
         } catch (error) {
             // Past the kind's own move, a failed order write would leave the
             // block half moved -- a collection listed for a page whose order
@@ -366,21 +383,26 @@
             rc.forgetStructureCategoryLists?.();
             dash.showErrorNotification?.(error?.partial ? error.message
                 : t('blockMoveToPageFailed', { name }, 'Could not move {name}.'));
-            if (kind === 'category' || error?.partial) await reload(dash, [from, to]);
+            if (kind === 'category' || error?.partial || !rc.onSamePage(from)) await reload(dash, [from, to]);
             else if (done) rc.redrawKeepingPlace(bid);
             return false;
         }
 
         dash.data?.invalidatePageDataCache?.(to);
         rc.forgetStructureCategoryLists?.();
-        if (kind === 'category' || !onPage) {
+        // The reader may have gone to another page while the move waited on
+        // the server: then the dashboard holds that page, and only what is
+        // stored is drawn -- never this page's widgets or order over it.
+        const stillHere = onPage && rc.onSamePage(from);
+        if (kind === 'category' || !stillHere) {
+            if (!stillHere) dash.data?.invalidatePageDataCache?.(from);
             await reload(dash, [from, to]);
         } else {
             dash.data?.updatePageDataCache?.(from, { blocks: { widgets: dash.widgets || [], order: dash.blockOrder } });
             rc.forgetWidgetConfigCache?.();
             rc.redrawKeepingPlace();
         }
-        if (onPage) {
+        if (stillHere) {
             rc.animateBlocksFrom(first);
             focusTitle(next);
         }

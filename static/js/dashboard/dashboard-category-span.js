@@ -213,10 +213,16 @@
             if (spread.length === 0) {
                 continue;
             }
-            changed += spread.length;
             spread.forEach((cat) => { delete cat.spread; });
+            // Counted only once stored: saveCategoryOrder answers false rather
+            // than throwing, and a refused write is not a reset.
+            const putBack = () => spread.forEach((cat) => { cat.spread = true; });
             if (isCurrent) {
-                await dash.renderCore?.saveCategoryOrder?.({ pageId, payload: categories });
+                if (await dash.renderCore?.saveCategoryOrder?.({ pageId, payload: categories }) === false) {
+                    putBack();
+                    continue;
+                }
+                changed += spread.length;
                 // The cached page still holds the categories as they were, and
                 // the next reload writes them back over the reset — which is
                 // how a reset could undo itself a moment after it succeeded.
@@ -226,11 +232,12 @@
                     const headers = typeof nextDashWriteHeaders === 'function'
                         ? nextDashWriteHeaders({ 'Content-Type': 'application/json' })
                         : { 'Content-Type': 'application/json' };
-                    await fetch(`/api/categories?page=${pageId}`, {
+                    const res = await fetch(`/api/categories?page=${pageId}`, {
                         method: 'POST',
                         headers,
                         body: JSON.stringify(categories.map((cat) => ({ ...cat, originalId: cat.id }))),
                     });
+                    if (res.ok) changed += spread.length;
                 } catch (_err) {
                     // Reported by the caller through the count it gets back.
                 }

@@ -117,6 +117,43 @@ test.describe('moving a block to another page', () => {
         expect((await storedWidget(1))?.config?.columns).toBe(2);
     });
 
+    test('a page switch while the move waits on the server leaves the new page its own widgets', async ({ page, request }) => {
+        const headers = { 'X-NextDash-Token': WRITE_TOKEN };
+        expect((await request.put('/api/pages/2/blocks', {
+            data: { widgets: [{ id: 'w_second', type: 'health', title: 'Second status' }] }, headers,
+        })).ok()).toBeTruthy();
+        await openDashboard(page);
+        const wid = (await domOrder(page)).find((id) => id.startsWith('w_'));
+        expect(wid).toBeTruthy();
+        // Hold the write that takes the widget off page 1 until the reader
+        // has gone to page 2.
+        let release;
+        const held = new Promise((resolve) => { release = resolve; });
+        await page.route('**/api/pages/1/blocks', async (route) => {
+            if (route.request().method() === 'PUT') await held;
+            await route.continue();
+        });
+        await page.locator(`${block(wid)} .category-title`).focus();
+        await page.keyboard.press('Shift+Alt+ArrowRight');
+        // Landed on page 2 already; only the source write is held.
+        await expect.poll(() => page.evaluate(async () => (await (await nextDashFetch('/api/pages/2/blocks')).json())
+            .widgets.map((w) => w.id))).toContain(wid);
+        await page.evaluate(() => window.dashboardInstance.requestPageNavigation(2));
+        await expect(page.locator(block('w_second'))).toHaveCount(1);
+        release();
+        await expect(page.locator('#app-notification.has-action').filter({ hasText: 'to second' })).toBeVisible();
+        await page.unroute('**/api/pages/1/blocks');
+
+        const stored2 = await page.evaluate(async () => (await (await nextDashFetch('/api/pages/2/blocks')).json())
+            .widgets.map((w) => w.id).sort());
+        expect(stored2).toEqual(['w_second', wid].sort());
+        await expect.poll(() => page.evaluate(() => Number(window.dashboardInstance.currentPageId))).toBe(2);
+        await expect.poll(() => page.evaluate(() => (window.dashboardInstance.widgets || []).map((w) => w.id).sort()))
+            .toEqual(stored2);
+        await expect(page.locator(block('w_second'))).toHaveCount(1);
+        await expect(page.locator(block(wid))).toHaveCount(1);
+    });
+
     test('Undo from the page it went to takes it off that page, without a reload', async ({ page }) => {
         await openDashboard(page);
         const wid = (await domOrder(page)).find((id) => id.startsWith('w_'));

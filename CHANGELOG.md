@@ -120,6 +120,14 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **fix — `X-Forwarded-For` is read across every header line,** and an entry with a port or IPv6 brackets is still an address. A proxy that adds its own line (HAProxy `option forwardfor`) left the first line entirely the client's (`rate_limit.go`).
 - **fix — Health's re-check past the cap puts rows without a URL key last.** Their result is never stored, so they stayed "never checked" and took a slot on every run.
 
+### Dashboard
+- **new — the action bar's buttons can swell into view.** *Config → Appearance → The action bar → Animate the buttons as the bar appears*, off by default. On, the buttons grow past their size one after the other and settle back each time the bar comes into view: after a load, once no modal, card or tour covers the screen, and on its way back from the edge it slid into (`action-bar-autohide.js`, setting `actionBarIntro`).
+- **fix — moving a block to another page no longer draws the old page's widgets on the new one.** A page switch while the move waited on the server set `dash.widgets` and `blockOrder` to the page left behind, and a later widget save wrote them over the new page. The source write now uses the stored list, and the dashboard is only touched while it still shows that page (`dashboard-block-page-move.js`).
+- **fix — one move to another page at a time.** A double press or held `Shift + Alt + ←/→` ran two moves that could land a widget twice; the second is ignored, and so is key repeat.
+- **fix — a picked-up block lets go when you type in a field.** Arrows, Enter and W went to the block while the search box had focus (`dashboard-block-mover.js`).
+- **fix — Undo of a move puts nothing back after a background reload** of the page, which would have undone what another device changed since; it says so instead (`blockMoveUndoStale`).
+- **fix — resetting spread counts only what was saved,** and puts the spread back on a category whose save failed (`dashboard-category-span.js`).
+
 ---
 
 ## v1.18.2 — 8 October 2026
