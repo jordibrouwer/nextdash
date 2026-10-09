@@ -55,4 +55,23 @@ test.describe('health lazy load', () => {
         await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
         expect(requested).toHaveLength(1);
     });
+
+    // The loaders preload their chain so it downloads side by side. A script
+    // the page already carries in its bundle must not be in that chain: the
+    // preload is a wasted download, and Safari warns about it in the console.
+    test('every preloaded script is one that then runs', async ({ page }) => {
+        await page.goto('/');
+        await waitReady(page);
+        await page.evaluate(() => { window.location.hash = '#bookmarks'; });
+        await page.waitForSelector('#config-bm-list .config-bm-row', { timeout: 15_000 });
+        await expect.poll(() => page.evaluate(() => typeof window.DashboardHealth)).toBe('function');
+
+        const unused = await page.evaluate(() => {
+            const ran = new Set([...document.scripts].map((s) => s.src));
+            return [...document.querySelectorAll('link[rel="preload"][as="script"]')]
+                .map((link) => link.href)
+                .filter((href) => !ran.has(href));
+        });
+        expect(unused).toEqual([]);
+    });
 });

@@ -22,50 +22,43 @@ class DashboardHealthLoader {
         return this._module;
     }
 
+    /*
+     * What the module needs, in the order it runs. Each entry states its own
+     * readiness test, so the order no longer has to work around filenames
+     * matching each other -- and a script the page already carries (two of
+     * these ride in the dashboard bundle) is neither fetched nor preloaded.
+     */
+    static get DEPENDENCIES() {
+        return [
+            ['js/health-reason-utils.js', 'dashboardHealthReason',
+                () => typeof window.HealthReasonUtils !== 'undefined'],
+            ['js/shared/last-opened-format.js', 'dashboardLastOpened',
+                () => typeof window.formatLastOpened === 'function'],
+            // The chrome the view now renders into. Loaded before the module so
+            // a first render can never find the shell missing and fall back to
+            // nothing; the inbox loads it the same way.
+            ['js/shared/list-view-shell.js', 'listViewShell',
+                () => typeof window.ListViewShell !== 'undefined'],
+            ['js/dashboard/dashboard-health.js', 'dashboardHealthModule',
+                () => typeof window.DashboardHealth === 'function'],
+            // Loaded with the view rather than on the dashboard's critical path:
+            // the bulk toolbar only exists once someone is looking at a list.
+            ['js/dashboard/dashboard-health-multi-select.js', 'dashboardHealthMultiSelect',
+                () => typeof window.DashboardHealthMultiSelect === 'function'],
+            // Focus mode rides along for the same reason: it is an overlay on a
+            // health list, so it cannot be wanted before one exists.
+            ['js/dashboard/dashboard-health-focus.js', 'dashboardHealthFocus',
+                () => typeof window.DashboardHealthFocus === 'function'],
+        ];
+    }
+
     async _loadDependencies() {
-        const load = window.LazyScript.loadScriptOnce;
-        // Fetched side by side, run in the order below.
-        window.LazyScript.preloadScripts?.([
-            'js/health-reason-utils.js',
-            'js/shared/last-opened-format.js',
-            'js/shared/list-view-shell.js',
-            'js/dashboard/dashboard-health.js',
-            'js/dashboard/dashboard-health-multi-select.js',
-            'js/dashboard/dashboard-health-focus.js',
-        ]);
-        // Each dependency states its own readiness test, so the order of these
-        // calls no longer has to work around filenames matching each other.
-        if (typeof window.HealthReasonUtils === 'undefined') {
-            await load('js/health-reason-utils.js', 'dashboardHealthReason',
-                () => typeof window.HealthReasonUtils !== 'undefined');
-        }
-        if (typeof window.formatLastOpened !== 'function') {
-            await load('js/shared/last-opened-format.js', 'dashboardLastOpened',
-                () => typeof window.formatLastOpened === 'function');
-        }
-        // The chrome the view now renders into. Loaded before the module so a
-        // first render can never find the shell missing and fall back to
-        // nothing; the inbox loads it the same way.
-        if (typeof window.ListViewShell === 'undefined') {
-            await load('js/shared/list-view-shell.js', 'listViewShell',
-                () => typeof window.ListViewShell !== 'undefined');
-        }
-        if (typeof window.DashboardHealth !== 'function') {
-            await load('js/dashboard/dashboard-health.js', 'dashboardHealthModule',
-                () => typeof window.DashboardHealth === 'function');
-        }
-        // Loaded with the view rather than on the dashboard's critical path: the
-        // bulk toolbar only exists once someone is looking at a health list.
-        if (typeof window.DashboardHealthMultiSelect !== 'function') {
-            await load('js/dashboard/dashboard-health-multi-select.js', 'dashboardHealthMultiSelect',
-                () => typeof window.DashboardHealthMultiSelect === 'function');
-        }
-        // Focus mode rides along with the view for the same reason as the bulk
-        // toolbar: it is an overlay on a health list, so it cannot be wanted
-        // before one exists.
-        if (typeof window.DashboardHealthFocus !== 'function') {
-            await load('js/dashboard/dashboard-health-focus.js', 'dashboardHealthFocus',
-                () => typeof window.DashboardHealthFocus === 'function');
+        const missing = DashboardHealthLoader.DEPENDENCIES.filter(([, , isReady]) => !isReady());
+        // Fetched side by side, run in order. Only what is missing: a preload
+        // nothing goes on to use is a wasted download and a console warning.
+        window.LazyScript.preloadScripts?.(missing.map(([rel]) => rel));
+        for (const [rel, datasetKey, isReady] of missing) {
+            await window.LazyScript.loadScriptOnce(rel, datasetKey, isReady);
         }
     }
 
