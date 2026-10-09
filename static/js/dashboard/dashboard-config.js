@@ -267,7 +267,7 @@ class DashboardConfig {
         // for the rule that picks what an instance with no group of its own yet
         // opens on.
         this.bmGroup = null;
-        this.bmVisibleLimit = this.bmPageSize();
+        this.bmVisibleLimit = this.bmInitialLimit();
         this.bmSelected = new Set();
         this.bmSelectAnchor = null;
         /** Rows with an in-flight network action (recheck, favicon refresh, …). */
@@ -2194,10 +2194,26 @@ class DashboardConfig {
         const head = view?.querySelector('.config-view-head');
         this._shellHeadObserver?.disconnect?.();
         if (!view || !head) return;
-        const publish = () => view.style.setProperty('--lvs-header-height', `${Math.round(head.offsetHeight)}px`);
-        publish();
-        if (typeof ResizeObserver !== 'function') return;
-        this._shellHeadObserver = new ResizeObserver(publish);
+        const publish = (height) => {
+            this._shellHeadHeight = Math.round(height);
+            view.style.setProperty('--lvs-header-height', `${this._shellHeadHeight}px`);
+        };
+        if (typeof ResizeObserver !== 'function') {
+            publish(head.offsetHeight);
+            return;
+        }
+        /*
+         * Not measured here: reading offsetHeight in the middle of the render
+         * laid the whole new view out before its rows were bound, and then
+         * again for the paint. The height it had last time goes on at once --
+         * the same, nearly always -- and the observer, which reports after
+         * layout and before paint, corrects it.
+         */
+        if (this._shellHeadHeight) publish(this._shellHeadHeight);
+        this._shellHeadObserver = new ResizeObserver((entries) => {
+            const box = entries[entries.length - 1]?.borderBoxSize?.[0];
+            publish(box ? box.blockSize : head.offsetHeight);
+        });
         this._shellHeadObserver.observe(head);
     }
 
@@ -20441,8 +20457,21 @@ class DashboardConfig {
         return null;
     }
 
+    /**
+     * Rows in the first draw: a page, or a screenful when a page is less.
+     *
+     * A page of ten on a tall window left the sentinel on screen, and
+     * fillBookmarkListToScreen added the next page a frame later -- a second
+     * draw of the whole list on every open. Rows are 40px at the smallest
+     * density (--bm-row-h), so this errs towards a few rows too many.
+     */
+    bmInitialLimit() {
+        const screenful = Math.ceil(((window.innerHeight || 0) + 160) / 40);
+        return Math.max(this.bmPageSize(), screenful);
+    }
+
     resetBookmarkVisibleLimit() {
-        this.bmVisibleLimit = this.bmPageSize();
+        this.bmVisibleLimit = this.bmInitialLimit();
         // A new filter is a new list: last scroll position from the old one
         // must not be read as "already scrolled" here.
         this._bmLoadMoreLastScrollTop = undefined;
@@ -21881,9 +21910,19 @@ class DashboardConfig {
      *
      * Repaints whichever of the two is on screen when the names land.
      */
+    /** Every page's categories not cached yet; true when there were any. */
+    async loadMissingBookmarkCategories() {
+        const missing = (this.dash.pages || []).filter((p) => p.id != null && p.id !== ''
+            && !this._bmCategoriesCache.has(String(p.id)));
+        if (!missing.length) return false;
+        await Promise.all(missing.map((p) => this.loadBookmarkCategoriesForPage(p.id)));
+        return true;
+    }
+
     async prefetchAllBookmarkCategories() {
-        const pages = this.dash.pages || [];
-        await Promise.all(pages.map((p) => this.loadBookmarkCategoriesForPage(p.id)));
+        // Nothing to fetch, nothing new to show: the list on screen already
+        // has every name, and redrawing it was a whole second render.
+        if (!(await this.loadMissingBookmarkCategories())) return;
         if (!this.isActiveView()) return;
         if (this.section === 'bookmarks') {
             this.repaintBookmarksList();
@@ -21898,6 +21937,21 @@ class DashboardConfig {
         if (this._bmCategoriesCache.has(key)) {
             return this._bmCategoriesCache.get(key);
         }
+        // Asked for twice while the first answer is on its way -- opening the
+        // list waits for it, and the list's own bind asks again -- it is one
+        // request.
+        this._bmCategoriesInflight = this._bmCategoriesInflight || new Map();
+        if (this._bmCategoriesInflight.has(key)) return this._bmCategoriesInflight.get(key);
+        const request = this.fetchBookmarkCategoriesForPage(key);
+        this._bmCategoriesInflight.set(key, request);
+        try {
+            return await request;
+        } finally {
+            if (this._bmCategoriesInflight.get(key) === request) this._bmCategoriesInflight.delete(key);
+        }
+    }
+
+    async fetchBookmarkCategoriesForPage(key) {
         try {
             const res = await fetch(`/api/categories?page=${encodeURIComponent(key)}`);
             const data = res && res.ok ? await res.json() : [];
@@ -21916,12 +21970,21 @@ class DashboardConfig {
         this._bmCategoryRevision = (this._bmCategoryRevision || 0) + 1;
         if (pageId != null && pageId !== '') {
             this._bmCategoriesCache.delete(String(pageId));
+            // An answer still on its way predates the change.
+            this._bmCategoriesInflight?.delete(String(pageId));
         }
     }
 
+    /**
+     * Load the filtered page's categories and drop a category filter they no
+     * longer contain. True when that changed what the list shows: names that
+     * were not there before, or a filter let go. A caller that has just drawn
+     * the list redraws only then.
+     */
     async ensureBookmarkCategoriesForFilter() {
         const pageId = String(this.bmPageFilter || '');
-        if (!pageId) return;
+        if (!pageId) return false;
+        const fetched = !this._bmCategoriesCache.has(pageId);
         await this.loadBookmarkCategoriesForPage(pageId);
         if (this.bmCategoryFilter) {
             const valid = this.knownCategories(pageId).some((c) => {
@@ -21929,8 +21992,12 @@ class DashboardConfig {
                 return c.id === this.bmCategoryFilter
                     || c.id === DashboardConfig.categoryFilterKey(pageId, this.bmCategoryFilter);
             });
-            if (!valid) this.bmCategoryFilter = '';
+            if (!valid) {
+                this.bmCategoryFilter = '';
+                return true;
+            }
         }
+        return fetched;
     }
 
     /** The rows currently passing search, page filter, category filter and sort. */
@@ -23245,8 +23312,10 @@ class DashboardConfig {
                 this.restoreConfigHash();
             });
         }
-        void this.ensureBookmarkCategoriesForFilter().then(() => {
-            this.repaintBookmarksList();
+        // Redrawn only when the names were not here yet: with them cached --
+        // every open after the first -- this redrew the list it had just drawn.
+        void this.ensureBookmarkCategoriesForFilter().then((changed) => {
+            if (changed) this.repaintBookmarksList();
         });
         container.querySelector('#config-bm-add')
             ?.addEventListener('click', () => this.openAddBookmarkModal());
