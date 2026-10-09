@@ -895,7 +895,7 @@ class DashboardContextMenu {
     }
 
     /**
-     * "Show in Health": the Bookmarks view, on this bookmark's Health tab.
+     * "Show in list": the Bookmarks view, on this bookmark's row with Health open.
      */
     async revealInHealth(bookmarkRef) {
         const pageId = Number(bookmarkRef?.pageId);

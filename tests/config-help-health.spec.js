@@ -241,7 +241,8 @@ test.describe('config help — inbox', () => {
         await openInboxHelp(page);
         const body = page.locator('#config-help-body');
 
-        await expect(body).toContainText(/Enable the inbox/i);
+        await expect(body).toContainText(/the inbox itself is always on/i);
+        await expect(body).not.toContainText(/Enable the inbox/i);
         await expect(body).toContainText(/[Dd]eduplicat/);
     });
 

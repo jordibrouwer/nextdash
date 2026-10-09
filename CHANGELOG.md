@@ -104,7 +104,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.18.3 — 9 October 2026
 
-A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no longer reaches the host's own network in its start-up window, and its capture routes are held to its write limit. Reverse proxies that add their own `X-Forwarded-For` line no longer let a visitor pick their rate-limit bucket. Two read errors that could lose data are closed: a page cached as empty, and icons deleted while `inbox.json` could not be read. On the dashboard, moving a block to another page is safe against a page switch and a second press.
+A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no longer reaches the host's own network in its start-up window, and its capture routes are held to its write limit. Reverse proxies that add their own `X-Forwarded-For` line no longer let a visitor pick their rate-limit bucket. Two read errors that could lose data are closed: a page cached as empty, and icons deleted while `inbox.json` could not be read. On the dashboard, moving a block to another page is safe against a page switch and a second press. The inbox is now always on, and Structure and Behavior sit above it in the config rail.
 
 ### Demo
 - **fix — the start-up window no longer reaches the host's own network.** The window that fetches the seed's favicons and previews was open to every request, and visitors are served by then: `/api/bookmark-preview` could fetch a private or link-local address. In demo mode `ssrfSafeDialContext` now refuses local addresses whatever `AllowLocalBookmarks` says (`url_safety.go`).
@@ -117,6 +117,7 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **fix — a write during a waiting reset is turned away, not held.** The guard took the shared lock before it looked at the reset flag, and a reset waiting for the lock blocks new readers: a write arriving then hung until the reset was done and ran against the fresh seed, where a delete by index took another bookmark than the one on screen. The guard now tries the lock and answers 503 when it cannot have it (`TryRLock` in `demoGuard`).
 - **fix — the demo's Docker refuses a name in use,** on create and on rename, as the real daemon does. Two containers answered to one name, and actions by that name hit either (`nameTaken` in `docker_demo.go`).
 - **fix — a failed reset no longer has every open tab asking every three seconds.** The bar polled closely while the reset time was near or past; past by more than a minute it goes back to its 30-second round (`refreshResetAt` in `demo-lock.js`). *The demo is starting* is shown like the demo's other answers.
+- **fix — the demo bar no longer carries the recording notice** on a line of its own; *Config → Privacy* still says what the demo records (`demo-lock.js`).
 
 ### Data
 - **fix — a page that fails to read is not cached as empty.** `GetBookmarksByPage` held the empty result until the next write, and a save from a reader who saw it replaced the whole page. Only a missing file is cached as empty; `GetAllBookmarks` no longer marks itself complete when a page failed (`models.go`).
@@ -163,6 +164,8 @@ A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no 
 - **tests —** `inbox-lazy-load.spec.js` drops its inbox-off case; `shortcut-open-mode.spec.js` checks the inbox switch is gone; `config-new-sections.spec.js` expects the new rail order.
 - **tests —** `TestDemoStartUpWindowIsNotTheVisitors` refuses a visitor's dial and write in the start-up window.
 - **tests —** `TestDemoWriteDuringAWaitingResetIsRefused` turns a write away while a reset waits for the lock.
+- **i18n —** *Show in list*, *Open in Bookmarks* and the four Overview and cheat-sheet lines that named Health, in nl, de, fr, es and zh. Help → Inbox settings drops the *Enable the inbox* switch and its picture caption, and Help → Config lists Structure and Behavior above Inbox, in all six languages; the English fallbacks in `overview-features.json` and the cheat-sheet registry follow.
+- **docs —** MANUAL §13.6, §17.1, §17.6 and §17.8 follow the always-on inbox and the new rail order.
 - **tests —** `TestDemoDockerRefusesATakenName` refuses a create or rename onto a name in use.
 - **tests —** `dashboard-collection-move.spec.js` moves a collection on two pages and checks the other stays.
 - **tests —** `dashboard-collection-move.spec.js` counts one error for a collection width the settings would not save.

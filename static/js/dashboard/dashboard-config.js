@@ -31016,7 +31016,7 @@ class DashboardConfig {
         'config.helpInboxSettingsTitle': [
             {
                 kind: 'toggles', value: [true, false],
-                captionKey: 'config.helpArtInboxSwitch', caption: 'One switch turns the whole inbox off',
+                captionKey: 'config.helpArtInboxSwitch', caption: 'Two of the Collecting switches, as they start',
             },
         ],
         'config.helpInboxTourTitle': [

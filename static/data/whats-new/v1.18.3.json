@@ -43,6 +43,10 @@
         },
         {
           "badge": "fix",
+          "text": "<strong>Show in list</strong> (was <em>Show in Health</em>) opens a fully styled Bookmarks view, and the bookmark menu no longer cuts off its key hints."
+        },
+        {
+          "badge": "fix",
           "text": "<strong>A page that briefly cannot be read</strong> no longer shows up empty, and icons are no longer thrown away at that moment."
         }
       ]
@@ -50,6 +54,10 @@
     {
       "title": "Inbox",
       "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The inbox is always on.</strong> Its switch under <em>Config → Inbox</em> is gone, so an install that had turned it off has the inbox back. In Config, <em>Structure</em> and <em>Behavior</em> now sit above <em>Inbox</em>."
+        },
         {
           "badge": "fix",
           "text": "<strong>Keep on several links</strong> runs once on a double click, and <strong>promote</strong> tells you which links could not leave the Inbox."
