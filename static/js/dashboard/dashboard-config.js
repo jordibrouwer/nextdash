@@ -12645,7 +12645,7 @@ class DashboardConfig {
         actionBarEnabled: { info: ['actionBarEnabledInfoTitle', 'actionBarEnabledInfoMessage'], def: true },
         actionBarAutoHideSeconds: { info: ['actionBarAutoHideInfoTitle', 'actionBarAutoHideInfoMessage'], def: 2 },
         showActionKeys: { info: ['showActionKeysInfoTitle', 'showActionKeysInfoMessage'], def: true },
-        actionBarIntro: { info: ['actionBarIntroInfoTitle', 'actionBarIntroInfoMessage'], def: false },
+        actionBarIntroStyle: { info: ['actionBarIntroInfoTitle', 'actionBarIntroInfoMessage'], def: 'off' },
         showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'], def: true },
         showPagesButton: { info: ['showPagesButtonInfoTitle', 'showPagesButtonInfoMessage'], def: true },
         showInboxButton: { info: ['showInboxButtonInfoTitle', 'showInboxButtonInfoMessage'], def: true },
@@ -13839,7 +13839,18 @@ class DashboardConfig {
                         label: t('config.maxHeaderActionsLabel', 'Action buttons shown before “+N”') },
                     { ...chrome('actionBarEnabled', 'config.actionBarEnabledLabel', 'Show the action buttons'), noBulk: true },
                     { ...chrome('showActionKeys', 'config.showActionKeysLabel', 'Show the key on each button'), noBulk: true },
-                    { ...chrome('actionBarIntro', 'config.actionBarIntroLabel', 'Animate the buttons as the bar appears'), noBulk: true },
+                    // Cards rather than a select: an animation is seen, not read,
+                    // and each card plays its own while it has the pointer or the focus.
+                    { field: 'actionBarIntroStyle', type: 'cards', special: 'chrome', art: 'actionBarIntro', noBulk: true,
+                        label: t('config.actionBarIntroLabel', 'Animate the buttons as the bar appears'),
+                        options: [
+                            { value: 'off', label: t('config.actionBarIntroOff', 'Off'), body: t('config.actionBarIntroOffBody', 'The bar just appears.') },
+                            { value: 'swell', label: t('config.actionBarIntroSwell', 'Swell'), body: t('config.actionBarIntroSwellBody', 'Each button grows past its size and settles back, left to right.') },
+                            { value: 'swell-middle', label: t('config.actionBarIntroSwellMiddle', 'Swell from the middle'), body: t('config.actionBarIntroSwellMiddleBody', 'The same, outwards from the middle.') },
+                            { value: 'swell-together', label: t('config.actionBarIntroSwellTogether', 'Swell together'), body: t('config.actionBarIntroSwellTogetherBody', 'All buttons at once.') },
+                            { value: 'unfold', label: t('config.actionBarIntroUnfold', 'Unfold'), body: t('config.actionBarIntroUnfoldBody', 'The bar opens and the buttons pop in, left to right.') },
+                            { value: 'accordion', label: t('config.actionBarIntroAccordion', 'Accordion'), body: t('config.actionBarIntroAccordionBody', 'The bar opens from the middle and the buttons pop out to both ends.') },
+                        ] },
                     { field: 'actionBarAutoHideSeconds', type: 'select', special: 'chrome',
                         label: t('config.actionBarAutoHideLabel', 'Slide a docked bar away after'),
                         options: [

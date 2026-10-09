@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.18.4 — 9 October 2026](#v1184--9-october-2026)
 - [v1.18.3 — 9 October 2026](#v1183--9-october-2026)
 - [v1.18.2 — 8 October 2026](#v1182--8-october-2026)
 - [v1.18.1 — 8 October 2026](#v1181--8-october-2026)
@@ -99,6 +100,15 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.18.4 — 9 October 2026
+
+The action bar's intro animation gets a choice of five styles, each shown on its own card in config.
+
+### Dashboard
+- **new — five ways for the action bar's buttons to come into view.** *Config → Appearance → The action bar → Animate the buttons as the bar appears* is now a set of cards instead of an on/off switch: off, swell (left to right, from the middle, or together), unfold and accordion. Each card plays its own animation while it has the pointer or the focus, and a card you pick plays on the bar itself at once, without a reload. An install that had the animation on keeps it as swell (setting `actionBarIntroStyle`, `action-bar-autohide.js`).
 
 ---
 

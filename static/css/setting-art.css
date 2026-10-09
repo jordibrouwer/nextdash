@@ -1049,3 +1049,24 @@
     62% { transform: scale(1.3); background: color-mix(in srgb, var(--accent-primary) 25%, transparent); }
     70%, 100% { transform: none; background: color-mix(in srgb, var(--accent-primary) 18%, transparent); }
 }
+
+/* The action bar's intro (actionBarIntroStyle): a bar of six buttons, at rest
+   until its card has the pointer or the focus; the animation is dashboard.css's. */
+.setting-art-frame--intro {
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+}
+
+.setting-art-intro {
+    display: flex;
+    gap: 0.2rem;
+    padding: 0.2rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-3, 0.25rem);
+}
+
+.setting-art-intro-button {
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: var(--radius-2, 0.18rem);
+    background: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
+}

@@ -162,3 +162,50 @@ func TestHidingTheActionKeysIsKept(t *testing.T) {
 		t.Fatalf("showActionKeys = true, want the stored false")
 	}
 }
+
+func TestActionBarIntroStyleKeepsKnownStylesAndTurnsTheRestOff(t *testing.T) {
+	for _, style := range []string{"off", "swell", "swell-middle", "swell-together", "unfold", "accordion"} {
+		s := Settings{ActionBarIntroStyle: style}
+		clampBookmarkSettings(&s)
+		if s.ActionBarIntroStyle != style {
+			t.Fatalf("clamp changed %q to %q", style, s.ActionBarIntroStyle)
+		}
+	}
+	for _, style := range []string{"", "spin", "SWELL"} {
+		s := Settings{ActionBarIntroStyle: style}
+		clampBookmarkSettings(&s)
+		if s.ActionBarIntroStyle != "off" {
+			t.Fatalf("clamp: %q became %q, want off", style, s.ActionBarIntroStyle)
+		}
+	}
+}
+
+func TestActionBarIntroStyleIsOffWhenNeverStored(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if got := NewStore().GetSettings().ActionBarIntroStyle; got != "off" {
+		t.Fatalf("fresh install: actionBarIntroStyle = %q, want off", got)
+	}
+	t.Chdir(t.TempDir())
+	seedSettingsFile(t, map[string]any{"currentPage": 1})
+	if got := NewStore().GetSettings().ActionBarIntroStyle; got != "off" {
+		t.Fatalf("existing install: actionBarIntroStyle = %q, want off", got)
+	}
+	t.Chdir(t.TempDir())
+	seedSettingsFile(t, map[string]any{"currentPage": 1, "actionBarIntroStyle": "accordion"})
+	if got := NewStore().GetSettings().ActionBarIntroStyle; got != "accordion" {
+		t.Fatalf("stored accordion: actionBarIntroStyle = %q", got)
+	}
+}
+
+func TestActionBarIntroSwitchedOnInV1183BecomesSwell(t *testing.T) {
+	t.Chdir(t.TempDir())
+	seedSettingsFile(t, map[string]any{"currentPage": 1, "actionBarIntro": true})
+	if got := NewStore().GetSettings().ActionBarIntroStyle; got != "swell" {
+		t.Fatalf("actionBarIntro on: actionBarIntroStyle = %q, want swell", got)
+	}
+	t.Chdir(t.TempDir())
+	seedSettingsFile(t, map[string]any{"currentPage": 1, "actionBarIntro": true, "actionBarIntroStyle": "off"})
+	if got := NewStore().GetSettings().ActionBarIntroStyle; got != "off" {
+		t.Fatalf("a style picked since wins: actionBarIntroStyle = %q, want off", got)
+	}
+}

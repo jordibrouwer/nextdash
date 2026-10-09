@@ -21,10 +21,11 @@
  * nearness is --edge-proximity, 0 to 1, on the handle -- and a click on it
  * brings the bar back for anyone who misses the edge itself.
  *
- * With actionBarIntro on, its buttons swell past their size and settle back,
- * one after the other, whenever the bar comes into view: after a load -- in
- * any place, once nothing else (a modal, a card, a tour) holds the screen --
- * and each time it comes back from the edge it slid into.
+ * With an actionBarIntroStyle picked, its buttons animate whenever the bar
+ * comes into view: after a load -- in any place, once nothing else (a modal,
+ * a card, a tour) holds the screen -- and each time it comes back from the
+ * edge it slid into. The styles themselves are CSS (dashboard.css), shared
+ * with the drawings on the setting's cards (setting-art.js).
  */
 (function (global) {
     'use strict';
@@ -47,6 +48,8 @@
     let frame = 0;
     let handle = null;
     let introPlayed = false;
+    /** The style at the last sync, to tell a new pick from a repaint. */
+    let lastIntroStyle = null;
     let introWaiter = null;
     let introTimer = null;
 
@@ -57,7 +60,12 @@
     const seconds = () => Number(settings().actionBarAutoHideSeconds) || 0;
     const bar = () => document.querySelector('.dashboard-section.section-controls .header-shortcuts');
     // No hover on a touch screen, so nothing would ever bring the bar back.
-    const introOn = () => settings().actionBarIntro === true;
+    const INTRO_STYLES = ['swell', 'swell-middle', 'swell-together', 'unfold', 'accordion'];
+    const introStyle = () => {
+        const style = settings().actionBarIntroStyle;
+        return INTRO_STYLES.includes(style) ? style : '';
+    };
+    const introOn = () => Boolean(introStyle());
     const touchOnly = () => global.matchMedia?.('(hover: none)').matches === true;
 
     /** The handle on the edge; drawn only while the bar is away (CSS). */
@@ -149,7 +157,17 @@
             .map(({ b }) => b);
     }
 
-    /** Each button swells past its size and settles back, one after the other. */
+    /**
+     * When a button's turn comes, counted in steps: left to right, outwards
+     * from the middle, or all at once. The step's length is the style's own.
+     */
+    function introIndex(style, i, n) {
+        if (style === 'swell-together') return 0;
+        if (style === 'swell-middle' || style === 'accordion') return Math.abs(i - (n - 1) / 2);
+        return i;
+    }
+
+    /** The buttons animate in the chosen style, one after the other. */
     function playIntro() {
         const el = bar();
         if (!el || !introOn() || !enabled() || place() === 'menu' || hidden) return;
@@ -159,7 +177,11 @@
         introPlayed = true;
         introWaiter?.();
         clearTimeout(introTimer);
+        const style = introStyle();
         const clear = () => {
+            el.classList.remove('is-intro-playing');
+            el.removeAttribute('data-intro-style');
+            el.removeAttribute('data-intro-axis');
             el.querySelectorAll('.action-bar-intro').forEach((b) => {
                 b.classList.remove('action-bar-intro');
                 b.style.removeProperty('--intro-index');
@@ -167,11 +189,16 @@
         };
         clear();
         void el.offsetWidth;
+        const r = el.getBoundingClientRect();
+        // A column unfolds downwards, a row sideways.
+        el.setAttribute('data-intro-axis', r.height > r.width ? 'v' : 'h');
+        el.setAttribute('data-intro-style', style);
+        el.classList.add('is-intro-playing');
         buttons.forEach((b, i) => {
-            b.style.setProperty('--intro-index', String(i));
+            b.style.setProperty('--intro-index', String(introIndex(style, i, buttons.length)));
             b.classList.add('action-bar-intro');
         });
-        // 1100 ms each, 70 ms apart (dashboard.css), and a little to spare.
+        // The longest style is 1100 ms a button, 70 ms apart (dashboard.css).
         introTimer = setTimeout(clear, 1100 + buttons.length * 70 + 200);
     }
 
@@ -304,6 +331,15 @@
         pinned = false;
         setHidden(false);
         arm();
+        // A style just picked in config plays on the bar at once, so the
+        // reader sees what they chose without a reload.
+        const style = introStyle();
+        const picked = lastIntroStyle !== null && style !== lastIntroStyle;
+        lastIntroStyle = style;
+        if (picked && style) {
+            requestAnimationFrame(() => requestAnimationFrame(playIntro));
+            return;
+        }
         introOnLoad();
     }
 

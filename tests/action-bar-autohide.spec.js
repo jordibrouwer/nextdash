@@ -24,7 +24,7 @@ async function openDashboard(page, settings) {
     await page.evaluate(async (next) => {
         const d = window.dashboardInstance;
         // The store is shared by a file's tests, so every one starts from the same bar.
-        Object.assign(d.settings, { actionBarEnabled: true, actionBarAutoHideSeconds: 0, showActionKeys: true, actionBarIntro: false }, next);
+        Object.assign(d.settings, { actionBarEnabled: true, actionBarAutoHideSeconds: 0, showActionKeys: true, actionBarIntroStyle: 'off' }, next);
         await d.saveSettings?.();
         d.setupDOM?.();
     }, settings);
@@ -297,8 +297,8 @@ test('brought back by Shift+O it goes once the pointer has passed over it', asyn
     await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
 });
 
-// The intro (actionBarIntro, off by default): each button swells and settles
-// back whenever the bar comes into view -- after a load, and back from the edge.
+// The intro (actionBarIntroStyle, off by default): the buttons animate in the
+// chosen style whenever the bar comes into view -- after a load, and back from the edge.
 const introPlayed = (page) => page.evaluate(() => window.ActionBarAutoHide.introPlayed());
 const swelling = (page) => page.locator('.dashboard-section.section-controls .header-shortcuts .action-bar-intro');
 
@@ -314,14 +314,14 @@ test('switched off, nothing swells', async ({ page }) => {
 });
 
 test('switched on, the buttons swell after a load', async ({ page }) => {
-    await openDashboard(page, { actionBarPosition: 'header', actionBarIntro: true });
+    await openDashboard(page, { actionBarPosition: 'header', actionBarIntroStyle: 'swell' });
     await expect.poll(() => introPlayed(page)).toBe(true);
     // And on every load, not once.
     await page.reload();
     await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
     await expect.poll(() => introPlayed(page)).toBe(true);
     await page.evaluate(async () => {
-        window.dashboardInstance.settings.actionBarIntro = false;
+        window.dashboardInstance.settings.actionBarIntroStyle = 'off';
         await window.dashboardInstance.saveSettings?.();
     });
 });
@@ -333,7 +333,7 @@ test('the intro waits until the what’s new modal is closed', async ({ page }) 
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await page.evaluate(async () => {
         window.DiscoverabilityState?.setLastWhatsNewRelease?.('2026.08-dashboard-release-v1.3.0');
-        window.dashboardInstance.settings.actionBarIntro = true;
+        window.dashboardInstance.settings.actionBarIntroStyle = 'swell';
         await window.dashboardInstance.saveSettings?.();
     });
     await dismissOnboardingIfPresent(page);
@@ -349,13 +349,13 @@ test('the intro waits until the what’s new modal is closed', async ({ page }) 
     await expect(modal).toBeHidden();
     await expect.poll(() => introPlayed(page), { timeout: 4000 }).toBe(true);
     await page.evaluate(async () => {
-        window.dashboardInstance.settings.actionBarIntro = false;
+        window.dashboardInstance.settings.actionBarIntroStyle = 'off';
         await window.dashboardInstance.saveSettings?.();
     });
 });
 
 test('coming back from the edge swells the buttons again', async ({ page }) => {
-    await openDashboard(page, { actionBarPosition: 'right', actionBarAutoHideSeconds: 2, actionBarIntro: true });
+    await openDashboard(page, { actionBarPosition: 'right', actionBarAutoHideSeconds: 2, actionBarIntroStyle: 'swell' });
     await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
     await expect(swelling(page)).toHaveCount(0);
     const edge = await page.evaluate(() => document.documentElement.clientWidth - 1);
@@ -365,11 +365,64 @@ test('coming back from the edge swells the buttons again', async ({ page }) => {
 });
 
 test("brought back by ' the buttons swell too", async ({ page }) => {
-    await openDashboard(page, { actionBarPosition: 'bottom', actionBarIntro: true });
+    await openDashboard(page, { actionBarPosition: 'bottom', actionBarIntroStyle: 'swell' });
     await page.keyboard.press("'");
     await expect.poll(() => hidden(page)).toBe(true);
     await expect(swelling(page)).toHaveCount(0);
     await page.keyboard.press("'");
     await expect.poll(() => hidden(page)).toBe(false);
     expect(await swelling(page).count()).toBeGreaterThan(0);
+});
+
+for (const style of ['swell-middle', 'swell-together', 'unfold', 'accordion']) {
+    test(`the ${style} style plays on the bar`, async ({ page }) => {
+        await openDashboard(page, { actionBarPosition: 'bottom', actionBarIntroStyle: style });
+        await page.keyboard.press("'");
+        await expect.poll(() => hidden(page)).toBe(true);
+        await page.keyboard.press("'");
+        await expect(bar(page)).toHaveAttribute('data-intro-style', style);
+        expect(await swelling(page).count()).toBeGreaterThan(0);
+    });
+}
+
+test('the style is picked on a card in config, and the card shows it', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'bottom' });
+    await page.keyboard.press('Shift+S');
+    await page.click('[data-config-section="appearance"]');
+    await page.locator('[data-appearance-tab="buttonbar"]').click();
+    const card = page.locator('[data-behavior-field="actionBarIntroStyle"][data-behavior-value="accordion"]');
+    // The ℹ beside the setting.
+    await expect(page.locator('.config-info-btn[data-info-field="actionBarIntroStyle"]')).toBeVisible();
+    // At rest until the card has the pointer, then its own drawing plays.
+    const playing = () => card.locator('.setting-art-intro').evaluate((el) => el.getAnimations().length > 0);
+    expect(await playing()).toBe(false);
+    await card.hover();
+    await expect.poll(playing).toBe(true);
+
+    await card.click();
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.actionBarIntroStyle)).toBe('accordion');
+    await expect(card).toHaveAttribute('aria-checked', 'true');
+    await page.evaluate(async () => {
+        window.dashboardInstance.settings.actionBarIntroStyle = 'off';
+        await window.dashboardInstance.saveSettings?.();
+    });
+});
+
+test('a style picked in config plays on the bar at once, and the next one too', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'bottom' });
+    await page.keyboard.press('Shift+S');
+    await page.click('[data-config-section="appearance"]');
+    await page.locator('[data-appearance-tab="buttonbar"]').click();
+    const card = (style) => page.locator(`[data-behavior-field="actionBarIntroStyle"][data-behavior-value="${style}"]`);
+
+    await card('unfold').click();
+    await expect(bar(page)).toHaveAttribute('data-intro-style', 'unfold');
+    await expect(bar(page)).not.toHaveAttribute('data-intro-style', 'unfold', { timeout: 4000 });
+
+    await card('swell-together').click();
+    await expect(bar(page)).toHaveAttribute('data-intro-style', 'swell-together');
+    expect(await swelling(page).count()).toBeGreaterThan(0);
+
+    await card('off').click();
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.actionBarIntroStyle)).toBe('off');
 });
