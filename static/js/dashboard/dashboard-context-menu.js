@@ -318,7 +318,7 @@ class DashboardContextMenu {
             // that), and that row is where its checking gets turned on. Hiding
             // the entry made the destination unreachable from the one place
             // someone would look for it.
-            { id: 'health', divider: !currentMode, label: this.t('dashboard.healthOpenInHealth', 'Show in Health'), icon: '♥', key: 'Shift+R' },
+            { id: 'health', divider: !currentMode, label: this.t('dashboard.healthOpenInHealth', 'Show in list'), icon: '▤', key: 'Shift+R' },
             { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true, key: 'Delete' },
         ]);
 
@@ -895,7 +895,7 @@ class DashboardContextMenu {
     }
 
     /**
-     * "Show in Health": the Bookmarks view, on this bookmark's Health tab.
+     * "Show in list": the Bookmarks view, on this bookmark's row with Health open.
      */
     async revealInHealth(bookmarkRef) {
         const pageId = Number(bookmarkRef?.pageId);

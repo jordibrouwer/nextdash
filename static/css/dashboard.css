@@ -360,6 +360,11 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
 .bookmark-context-menu {
     max-height: none;
     overflow-y: visible;
+    /* Its rows carry their key too, and at the shared 16rem cap the widest
+       ("Checking (Periodic)…" with Shift+C) cut the chip to "Shi…". Sized to
+       its content like the category menu above. */
+    width: max-content;
+    max-width: min(24rem, calc(100vw - 1rem));
 }
 
 @media (max-height: 34rem) {
@@ -9464,6 +9469,33 @@ body[data-action-bar-hidden][data-action-bar="right"] .dashboard-section.section
     transform: translate(calc(100% + 20px), -50%);
     opacity: 0;
     pointer-events: none;
+}
+
+/*
+ * The intro (action-bar-autohide.js, setting actionBarIntro): after a load
+ * and on the way back from the edge, each button swells to half again its
+ * size and settles back slowly, left to right. `scale`, not transform, so the dock's own transforms
+ * and the buttons' hover stay theirs.
+ */
+.dashboard-section.section-controls .header-shortcuts .action-bar-intro {
+    animation: action-bar-intro-swell 1100ms both;
+    animation-delay: calc(var(--intro-index, 0) * 70ms);
+}
+
+@keyframes action-bar-intro-swell {
+    0% {
+        scale: 0.4;
+        opacity: 0;
+        animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+    22% {
+        scale: 1.5;
+        opacity: 1;
+        animation-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+    100% {
+        scale: 1;
+    }
 }
 
 /*

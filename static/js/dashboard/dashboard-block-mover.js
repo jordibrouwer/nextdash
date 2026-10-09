@@ -544,6 +544,13 @@
             if (e.key === 'Escape' && coach && !document.querySelector('.modal-overlay.show')) dismissCoach();
             return;
         }
+        // Typing in a field (search, a form) is not a move: the carry ends
+        // and the key reaches the field, rather than "w" changing the width.
+        if (state.mode === 'keyboard'
+            && e.target?.closest?.('input, textarea, select, [contenteditable=""], [contenteditable="true"]')) {
+            finish(false);
+            return;
+        }
         if (e.key === 'Escape') {
             e.preventDefault();
             e.stopImmediatePropagation();

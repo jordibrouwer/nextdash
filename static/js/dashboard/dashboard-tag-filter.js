@@ -614,8 +614,6 @@ class DashboardTagFilter {
             return ref;
         }));
 
-        // allSettled resolves in input order, so movedRefs keeps sorted's
-        // descending-index order — splicing high-to-low below is still safe.
         const movedRefs = outcomes
             .filter((outcome) => outcome.status === 'fulfilled')
             .map((outcome) => outcome.value);
@@ -625,16 +623,25 @@ class DashboardTagFilter {
             return;
         }
 
-        const remaining = [...d.bookmarks];
-        movedRefs.forEach((ref) => {
-            d.removeBookmarkFromAllBookmarks(ref);
-            remaining.splice(ref.index, 1);
-        });
-        d.bookmarks = remaining;
-
+        // Removed by identity, not by the indexes taken before the requests:
+        // a background reload meanwhile replaces d.bookmarks, and a page switch
+        // makes it another page's list altogether.
+        movedRefs.forEach((ref) => d.removeBookmarkFromAllBookmarks(ref));
         d.data?.invalidatePageDataCache?.(sourcePageId);
         d.data?.invalidatePageDataCache?.(targetId);
-        d.data?.updatePageDataCache?.(sourcePageId, { bookmarks: remaining });
+        if (Number(d.currentPageId) === Number(sourcePageId)) {
+            const key = (b) => `${b?.url}\u0000${b?.category ?? ''}`;
+            const gone = new Map();
+            movedRefs.forEach((ref) => gone.set(key(ref.bookmark), (gone.get(key(ref.bookmark)) || 0) + 1));
+            const remaining = (d.bookmarks || []).filter((b) => {
+                const n = gone.get(key(b)) || 0;
+                if (!n) return true;
+                gone.set(key(b), n - 1);
+                return false;
+            });
+            d.bookmarks = remaining;
+            d.data?.updatePageDataCache?.(sourcePageId, { bookmarks: remaining });
+        }
         void d.data?.fetchAndStoreDataRevision?.();
         await d.loadAllBookmarks();
         d.renderDashboard();

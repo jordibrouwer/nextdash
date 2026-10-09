@@ -49,6 +49,14 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.18.3 (2026-10-09)
+- Action bar: the buttons can swell into view each time the bar appears (Config → Appearance → Action bar, off by default)
+- Dashboard: moving a block to another page is safe against a page switch and a double press; Undo after a background reload says so instead of undoing another device's change
+- Bookmarks: merging or deleting a category in Structure, and bulk moves to another page, act on the right items when the list refreshes meanwhile
+- Data: a page that briefly cannot be read is no longer cached as empty, and icons are kept while the inbox cannot be read
+- Reverse proxies: every X-Forwarded-For line is read, so a proxy that adds its own line no longer lets a visitor pick their rate-limit bucket
+- Inbox: bulk Keep runs once on a double click; promote says which links could not leave the Inbox
+
 ### v1.17.5 (2026-10-06)
 - First start: a new install asks what you run: Homelab, Media server or Developer on one server address, or keep the starter links
 - Config: a Version panel on the overview says whether you run the newest release; a failed update check says why, and the Containers GitHub token now counts for it
@@ -70,22 +78,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Health: a Trend tab and more figures in Collection health; uptime badges for monitored addresses
 - Privacy: a daily anonymous install count (random id and version), on by default with its own switch
 
-### v1.17.0 (2026-10-03)
-- Unraid: seven widgets (overview, array, parity, shares, VMs, UPS, notifications) through one connection under Config → Unraid
-- Unraid: a stopped array, disk errors, parity errors and Unraid's own notifications go through your alert channels
-- Search: web results from your own SearXNG or the Brave Search API under your bookmarks (Shift+Enter)
-- Icons: containers and bookmarks get their app's own icon from two open icon sets, in the variant that suits the theme
-- Look studio: a theme editor, and save what is on screen as a theme of your own
-- Widgets: sixteen more Custom widget services; alerts through Apprise; a bookmark as a QR code
-- 81 fixes, among them "back online" after a Re-check and backups that leave out alert secrets
-
-### v1.16.0 (2026-10-02)
-- Themes: the theme browser is a look studio beside the dashboard; nothing is saved until Apply
-- Themes: twelve ready-made looks set backdrop, card glass, headers and type in one click
-- Appearance: 26 backdrops drawn in the theme's colours, with blur, brightness and tint
-- Appearance: card glass on a Surface tab, and category headers in five styles
-- Themes: a Neutrals collection of five grey glass themes, each light and dark
-- Dashboard: widgets in the Launcher layout show their content again
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -93,7 +85,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-10-08</Date>
+  <Date>2026-10-09</Date>
 
   <Config Name="WebUI Port"
           Target="8080"

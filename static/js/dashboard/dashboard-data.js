@@ -263,15 +263,9 @@ class DashboardData {
             if (typeof d.settings.pasteUrlQuickAdd === 'undefined') {
                 d.settings.pasteUrlQuickAdd = true;
             }
-            if (typeof d.settings.inboxEnabled === 'undefined') {
-                d.settings.inboxEnabled = true;
-            }
-            if (d.settings.inboxEnabled !== false) {
-                d.settings.pasteUrlQuickAdd = true;
-            }
-            if (d.settings.inboxEnabled === false && String(d.settings.pasteDestination || '').toLowerCase() === 'inbox') {
-                d.settings.pasteDestination = 'ask';
-            }
+            // The inbox is always on.
+            d.settings.inboxEnabled = true;
+            d.settings.pasteUrlQuickAdd = true;
             if (typeof d.settings.showAddBookmarkButton === 'undefined') {
                 d.settings.showAddBookmarkButton = true;
             }

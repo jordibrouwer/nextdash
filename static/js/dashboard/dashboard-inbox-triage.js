@@ -194,6 +194,7 @@ class DashboardInboxTriage {
 
     close() {
         this.unmount();
+        this._keyActionNext = null;
         this.queue = [];
         this.index = 0;
         this.chooser = null;
@@ -473,7 +474,7 @@ class DashboardInboxTriage {
             e.preventDefault();
             // A held key repeats every 30 ms or so: card after card went.
             if (e.repeat) return;
-            void this.actKeep();
+            this.keyAction(() => this.actKeep());
             return;
         }
         if (e.key === 'Escape') {
@@ -506,7 +507,7 @@ class DashboardInboxTriage {
         if (key === 'd' || e.key === 'Delete') {
             e.preventDefault();
             if (e.repeat) return;
-            void this.actDelete();
+            this.keyAction(() => this.actDelete());
             return;
         }
         // r marks read and moves on, as it marks read in the list. It used to
@@ -514,7 +515,7 @@ class DashboardInboxTriage {
         if (e.key === 'r') {
             e.preventDefault();
             if (e.repeat) return;
-            void this.actMarkRead();
+            this.keyAction(() => this.actMarkRead());
             return;
         }
         if (key === 'z') {
@@ -527,6 +528,27 @@ class DashboardInboxTriage {
             e.preventDefault();
             void this.actNote();
         }
+    }
+
+    /**
+     * A key pressed while the card's action is still on the wire acts on the
+     * card after it once that action is done: `r r` reads two cards. It used
+     * to be dropped, because the cursor had not moved yet and the card was
+     * still claimed. Only the newest key waits. Open is not routed here: a
+     * tab opened after an await is a popup the browser may block.
+     */
+    keyAction(act) {
+        if (this._keyActionRunning) {
+            this._keyActionNext = act;
+            return;
+        }
+        this._keyActionRunning = true;
+        void Promise.resolve().then(act).finally(() => {
+            this._keyActionRunning = false;
+            const next = this._keyActionNext;
+            this._keyActionNext = null;
+            if (next && this.overlay) this.keyAction(next);
+        });
     }
 
     advance(delta) {

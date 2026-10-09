@@ -56,9 +56,9 @@ class DashboardConfig {
         'overview',
         'appearance',
         'bookmarks',
-        'inbox',
         'structure',
         'behavior',
+        'inbox',
         'data-backups',
         'widgets',
         'containers',
@@ -1044,6 +1044,8 @@ class DashboardConfig {
         if (!this.isEnabled()) {
             return false;
         }
+        // As in openLibraryView: whichever way the call arrived.
+        await window.ViewStyles?.ensureViewStyles?.();
         const targetSection = this.resolveConfigOpenTarget(section);
         // From the Bookmarks view: the same instance, but Config's own shell.
         this.standalone = false;
@@ -1104,6 +1106,10 @@ class DashboardConfig {
         if (d.isInlineEditActive() && !(await d.confirmInlineEditBeforeNavigation())) {
             return false;
         }
+        // The views' stylesheet, here and not only in the loader: a call that
+        // reaches the module another way (openLibraryOnBookmark, from a
+        // bookmark's menu or Shift+R) drew the view with no styles at all.
+        await window.ViewStyles?.ensureViewStyles?.();
         d._abortInlineEditForRender?.();
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
         d.inbox?.clearKeyboardSelection?.();
@@ -3432,7 +3438,6 @@ class DashboardConfig {
         installPingEnabled: ['count', 'install', 'ping', 'telemetry', 'privacy', 'users'],
         language: ['language', 'locale', 'translation', 'nederlands', 'deutsch', 'français'],
         deviceSpecificSettings: ['device', 'sync', 'local'],
-        inboxEnabled: ['inbox', 'triage', 'later'],
         detectSoftNotFound: ['404', 'not found', 'rot', 'gone', 'dead'],
         pasteDestination: ['paste', 'clipboard', 'inbox'],
         pasteUrlQuickAdd: ['paste', 'clipboard', 'quick add'],
@@ -3930,6 +3935,11 @@ class DashboardConfig {
         this.cleanupSettingsJumpHandler();
         if (entry.section !== this.section) {
             this.selectSection(entry.section, 'keyboard');
+            // A section whose script is still on its way draws when it lands
+            // (selectSection's own then, queued on the same promise first).
+            // Without the wait the sub-tab switch below rendered a section
+            // that was not there yet and threw, and the focus never arrived.
+            if (!(await this.ensureSection(entry.section)) || this.section !== entry.section) return;
         }
         if (entry.subTab) {
             const prop = DashboardConfig.SUB_TAB_STATE[entry.section];
@@ -12635,6 +12645,7 @@ class DashboardConfig {
         actionBarEnabled: { info: ['actionBarEnabledInfoTitle', 'actionBarEnabledInfoMessage'], def: true },
         actionBarAutoHideSeconds: { info: ['actionBarAutoHideInfoTitle', 'actionBarAutoHideInfoMessage'], def: 2 },
         showActionKeys: { info: ['showActionKeysInfoTitle', 'showActionKeysInfoMessage'], def: true },
+        actionBarIntro: { info: ['actionBarIntroInfoTitle', 'actionBarIntroInfoMessage'], def: false },
         showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'], def: true },
         showPagesButton: { info: ['showPagesButtonInfoTitle', 'showPagesButtonInfoMessage'], def: true },
         showInboxButton: { info: ['showInboxButtonInfoTitle', 'showInboxButtonInfoMessage'], def: true },
@@ -12655,7 +12666,6 @@ class DashboardConfig {
         showSearchFlowBanner: { info: ['showSearchFlowBannerInfoTitle', 'showSearchFlowBannerInfoMessage'], def: true },
         // Quick add & inbox
         pasteUrlQuickAdd: { info: ['pasteUrlQuickAddInfoTitle', 'pasteUrlQuickAddInfoMessage'], def: true },
-        inboxEnabled: { info: ['inboxEnabledInfoTitle', 'inboxEnabledInfoMessage'], def: true },
         unsortedEnabled: { hint: 'unsortedEnabledHint', def: true },
         keepAutoFile: { hint: 'keepAutoFileHint', def: false },
         inboxShowInPageTabs: { info: ['inboxShowInPageTabsInfoTitle', 'inboxShowInPageTabsInfoMessage'], def: true },
@@ -13829,6 +13839,7 @@ class DashboardConfig {
                         label: t('config.maxHeaderActionsLabel', 'Action buttons shown before “+N”') },
                     { ...chrome('actionBarEnabled', 'config.actionBarEnabledLabel', 'Show the action buttons'), noBulk: true },
                     { ...chrome('showActionKeys', 'config.showActionKeysLabel', 'Show the key on each button'), noBulk: true },
+                    { ...chrome('actionBarIntro', 'config.actionBarIntroLabel', 'Animate the buttons as the bar appears'), noBulk: true },
                     { field: 'actionBarAutoHideSeconds', type: 'select', special: 'chrome',
                         label: t('config.actionBarAutoHideLabel', 'Slide a docked bar away after'),
                         options: [
@@ -13941,7 +13952,6 @@ class DashboardConfig {
                 title: t('config.inboxGroupCollecting', 'Collecting'),
                 note: t('config.generalGroupQuickAddNote', 'What happens when you paste a URL onto the dashboard — add it straight away, or collect it in the inbox to sort later.'),
                 controls: [
-                    bool('inboxEnabled', 'config.inboxEnabledLabel', 'Enable the inbox'),
                     bool('inboxShowInPageTabs', 'config.inboxShowInPageTabsLabel', 'Show the inbox in the header'),
                     bool('pasteUrlQuickAdd', 'config.pasteUrlQuickAdd', 'Quick-add a pasted URL'),
                     // Keeping is a step in the inbox's own flow, so its switch
@@ -24110,7 +24120,6 @@ class DashboardConfig {
                 // Held across the confirmation: the list and page are this
                 // row's, whatever the editor points at once it closes.
                 const pageId = this._catPageId;
-                const list = this._categories;
                 // Removing a category does not touch its bookmarks: they keep
                 // pointing at an id nothing defines any more and collect in
                 // "unknown categories" on the dashboard. Say so, with the count,
@@ -24125,12 +24134,23 @@ class DashboardConfig {
                     : this.t('config.categoryDeleteConfirm', 'Delete “{name}”?')
                         .replace('{name}', String(cat.name || cat.id || ''));
                 if (!await this.confirmAction(message)) return;
+                // Found again after the confirmation: a reload while it was open
+                // (another tab, a page move) replaces the lists, and a splice of
+                // the old one would save the new one unchanged -- a "deleted"
+                // toast for a category still there.
+                this.useCategoryPage(pageId);
+                const list = this._catByPage?.get(String(pageId))
+                    || (String(this._catPageId) === String(pageId) ? this._categories : null);
+                const at = list ? list.findIndex((c) => String(c.id) === String(cat.id)) : -1;
+                if (at < 0) {
+                    this.repaintPtBody();
+                    return;
+                }
                 // The list before the splice is the whole undo payload — saving
                 // categories is a replace-the-list write.
                 const before = list.map((c) => ({ ...c }));
-                const removed = { ...cat };
-                this.useCategoryPage(pageId);
-                list.splice(i, 1);
+                const removed = { ...list[at] };
+                list.splice(at, 1);
                 this.repaintPtBody();
                 // The server refuses to drop the last category while bookmarks
                 // still point at it (409). Without checking, the delete carried
@@ -24141,14 +24161,14 @@ class DashboardConfig {
                     // Back onto the list it came from, which is that page's
                     // whichever row the editor points at by now.
                     if (this._catByPage?.get(String(pageId)) === list) {
-                        list.splice(i, 0, removed);
+                        list.splice(at, 0, removed);
                         this.repaintPtBody();
                     }
                     return;
                 }
                 // After the save, so a delete that did not persist cannot leave
                 // a phantom entry in the trash.
-                await window.DashboardTrash?.recordCategory?.(removed, pageId, i, 'config-category-delete');
+                await window.DashboardTrash?.recordCategory?.(removed, pageId, at, 'config-category-delete');
                 await this.refreshTrashIfVisible();
                 this.notify(this.t('config.categoryDeleted', 'Category deleted.'), 'success', {
                     duration: 8000,
@@ -30996,7 +31016,7 @@ class DashboardConfig {
         'config.helpInboxSettingsTitle': [
             {
                 kind: 'toggles', value: [true, false],
-                captionKey: 'config.helpArtInboxSwitch', caption: 'One switch turns the whole inbox off',
+                captionKey: 'config.helpArtInboxSwitch', caption: 'Two of the Collecting switches, as they start',
             },
         ],
         'config.helpInboxTourTitle': [
@@ -31067,10 +31087,6 @@ class DashboardConfig {
      * handleOverviewGo already understands.
      */
     static HELP_PANEL_FEATURES = {
-        'config.helpInboxTitle': {
-            isOn: (s) => s.inboxEnabled !== false,
-            go: { section: 'inbox' },
-        },
         'config.helpHealthTitle': {
             isOn: (s) => s.showStatus === true || s.healthAutoRecheckEnabled === true,
             go: { section: 'behavior', behaviorTab: 'status' },

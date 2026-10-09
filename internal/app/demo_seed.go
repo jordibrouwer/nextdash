@@ -274,8 +274,20 @@ func (h *Handlers) fetchDemoIconsOnce() {
 		files := map[string][]byte{}
 		byURL := map[string]string{}
 		dir := filepath.Join(ResolveDataDir(), "icons")
+		// Only the seed's own links: a visitor may already have added,
+		// changed or removed bookmarks on these pages, and what is kept here
+		// comes back with every reset.
+		seeded := map[string]bool{}
+		for _, page := range demoPages() {
+			for _, link := range page.links {
+				seeded[canonicalBookmarkURLKey(link.url)] = true
+			}
+		}
 		for pageID := 1; pageID <= len(demoPages()); pageID++ {
 			for _, bookmark := range h.store.GetBookmarksByPage(pageID) {
+				if !seeded[canonicalBookmarkURLKey(bookmark.URL)] {
+					continue
+				}
 				name := strings.TrimSpace(bookmark.Icon)
 				if name == "" || strings.ContainsAny(name, "/\\") {
 					continue

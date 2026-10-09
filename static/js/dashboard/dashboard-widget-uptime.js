@@ -219,7 +219,7 @@
              */
             window.DashboardWidgetUtils?.bindRowAction(button, dash, {
                 labelKey: 'widgetActionOpenHealth',
-                labelFallback: 'Open Health',
+                labelFallback: 'Open in Bookmarks',
                 href: row.url,
                 run: () => {
                     window.DashboardWidgetUtils?.openHealthFiltered(dash, 'monitored');

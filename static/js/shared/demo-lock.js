@@ -168,7 +168,7 @@
     let lastReset = 0;
     let soonTimer = null;
 
-    /** What the demo records, in the words a visitor can read. Config → Privacy says the same. */
+    /** What the demo records, in the words a visitor can read, for Config → Privacy. */
     function analyticsNotice() {
         return t('analyticsNotice',
             'This demo records visits anonymously, including clicks and screen replays, to improve nextDash. Replays show what is on screen; only what you type into form fields is masked.');
@@ -200,8 +200,7 @@
             bar.setAttribute('role', 'note');
             bar.innerHTML = `<span class="demo-bar-label">${esc(t('barLabel', 'Demo'))}</span>
                 <span class="demo-bar-text"><span data-demo-reset></span><span class="demo-bar-shared"> · ${esc(t('barShared', 'what you change is shared with other visitors until then'))}</span></span>
-                <a class="demo-bar-install" href="${INSTALL_URL}" target="_blank" rel="noopener">${esc(t('barInstall', 'Install'))}<span class="demo-bar-install-name"> nextDash</span> →</a>
-                ${counting ? `<span class="demo-bar-notice">${esc(analyticsNotice())}</span>` : ''}`;
+                <a class="demo-bar-install" href="${INSTALL_URL}" target="_blank" rel="noopener">${esc(t('barInstall', 'Install'))}<span class="demo-bar-install-name"> nextDash</span> →</a>`;
             document.body.prepend(bar);
         }
         const reset = bar.querySelector('[data-demo-reset]');
@@ -234,7 +233,11 @@
         // Near the end of the countdown, ask every few seconds, so the reload
         // follows the reset rather than the next half-minute round.
         clearTimeout(soonTimer);
-        if (resetAt && resetAt - Date.now() < 20000) {
+        // Closely only around the reset itself. A reset that failed leaves
+        // resetAt in the past until the server's next try; asking every three
+        // seconds from every open tab until then was a flood for nothing.
+        const left = resetAt - Date.now();
+        if (resetAt && left < 20000 && left > -60000) {
             soonTimer = setTimeout(() => void refreshResetAt(), 3000);
         }
     }
@@ -244,7 +247,7 @@
      * answers (403, 429, 503) carry a sentence meant for the visitor, and the
      * caller's own error toast would only say that something failed.
      */
-    const DEMO_ANSWERS = [/not available in the demo/i, /demo holds no more/i, /the demo is shared/i, /demo is being reset/i];
+    const DEMO_ANSWERS = [/not available in the demo/i, /demo holds no more/i, /the demo is shared/i, /demo is being reset/i, /demo is starting/i];
     function watchDemoAnswers() {
         const original = global.fetch.bind(global);
         global.fetch = async (...args) => {

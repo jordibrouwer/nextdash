@@ -1,0 +1,90 @@
+{
+  "tag": "v1.18.3",
+  "date": "9 October 2026",
+  "releasedAt": "2026-10-09",
+  "modalLead": "The action bar's buttons can <strong>swell into view</strong>, and a round of fixes makes <strong>moving blocks, Structure and the Inbox</strong> safer.",
+  "sections": [
+    {
+      "title": "Action bar",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The buttons can swell into view</strong> one after the other each time the bar appears. Switch it on under <em>Config → Appearance → Action bar</em>; it is off by default."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Moving a block to another page</strong> no longer shows the old page's widgets when you switch pages while it moves, and a double press moves it only once."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Typing in the search box lets go of a picked-up block,</strong> so your arrow keys and Enter go to the search again."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Undo after a move</strong> says so when the page was reloaded meanwhile, instead of undoing what another device changed."
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Merging or deleting a category in Structure</strong> works on the right category, even when the list refreshes while you confirm."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A bulk move to another page</strong> takes away exactly the bookmarks you moved."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Show in list</strong> (was <em>Show in Health</em>) opens a fully styled Bookmarks view, and the bookmark menu no longer cuts off its key hints."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Widgets that point to your health figures</strong> now say <em>Open in Bookmarks</em>, since that is where Health lives."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A page that briefly cannot be read</strong> no longer shows up empty, and icons are no longer thrown away at that moment."
+        }
+      ]
+    },
+    {
+      "title": "Inbox",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The inbox is always on.</strong> Its switch under <em>Config → Inbox</em> is gone, so an install that had turned it off has the inbox back. In Config, <em>Structure</em> and <em>Behavior</em> now sit above <em>Inbox</em>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Keep on several links</strong> runs once on a double click, and <strong>promote</strong> tells you which links could not leave the Inbox."
+        }
+      ]
+    },
+    {
+      "title": "What's new",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The section menu</strong> filters only the newest release, not the older ones you opened below it."
+        }
+      ]
+    },
+    {
+      "title": "Demo",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The public demo</strong> is more careful with visitors' changes and resets cleanly, even when someone saves at that very moment."
+        }
+      ]
+    }
+  ]
+}

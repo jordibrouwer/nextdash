@@ -20,6 +20,11 @@
  * comes back from is visible. It grows as the pointer comes near -- the
  * nearness is --edge-proximity, 0 to 1, on the handle -- and a click on it
  * brings the bar back for anyone who misses the edge itself.
+ *
+ * With actionBarIntro on, its buttons swell past their size and settle back,
+ * one after the other, whenever the bar comes into view: after a load -- in
+ * any place, once nothing else (a modal, a card, a tour) holds the screen --
+ * and each time it comes back from the edge it slid into.
  */
 (function (global) {
     'use strict';
@@ -31,6 +36,8 @@
     const SLACK = 24;
     /** From how far away the handle starts to grow, in pixels. */
     const NEAR = 340;
+    /** How long after the load the intro waits for pending release notes. */
+    const WHATS_NEW_GRACE_MS = 4000;
 
     let timer = null;
     let hidden = false;
@@ -39,6 +46,9 @@
     let bound = false;
     let frame = 0;
     let handle = null;
+    let introPlayed = false;
+    let introWaiter = null;
+    let introTimer = null;
 
     const settings = () => global.dashboardInstance?.settings || {};
     const place = () => document.body.getAttribute('data-action-bar') || 'header';
@@ -47,6 +57,7 @@
     const seconds = () => Number(settings().actionBarAutoHideSeconds) || 0;
     const bar = () => document.querySelector('.dashboard-section.section-controls .header-shortcuts');
     // No hover on a touch screen, so nothing would ever bring the bar back.
+    const introOn = () => settings().actionBarIntro === true;
     const touchOnly = () => global.matchMedia?.('(hover: none)').matches === true;
 
     /** The handle on the edge; drawn only while the bar is away (CSS). */
@@ -99,8 +110,109 @@
     }
 
     function show() {
-        if (hidden) setHidden(false);
+        if (hidden) {
+            setHidden(false);
+            if (screenIsFree()) playIntro();
+        }
         arm();
+    }
+
+    /** Nothing else has the screen: no modal, card, tour or onboarding. */
+    function screenIsFree() {
+        const d = global.dashboardInstance;
+        if (!d?.settings) return false;
+        if (document.visibilityState === 'hidden') return false;
+        if (d.settings.onboardingCompleted === false || d.onboardingStartedInSession) return false;
+        if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
+        // The release notes open about a second after the load. Give them that
+        // long to arrive rather than playing just before they cover the bar;
+        // not forever, since a browser new to nextDash is never shown them.
+        if (performance.now() < WHATS_NEW_GRACE_MS && !global.DemoLock?.on
+            && d.promos?.shouldShowWhatsNewPrompt?.()) return false;
+        if (global.ScrollLock?.isLocked?.()) return false;
+        if (document.querySelector('.quickstart-card')) return false;
+        // The release notes' shell can stay in the DOM once closed.
+        if (document.querySelector('.whats-new-modal')?.offsetParent) return false;
+        const cls = document.body.classList;
+        return !cls.contains('is-block-move-intro')
+            && !cls.contains('changes-tour-peeking')
+            && !cls.contains('bookmark-inline-edit-active');
+    }
+
+    /** The buttons the reader sees, in the order they stand on screen. */
+    function visibleButtons(el) {
+        return [...el.querySelectorAll('button')]
+            .filter((b) => !b.closest('[role="menu"]') && b.getClientRects().length > 0)
+            .map((b) => ({ b, r: b.getBoundingClientRect() }))
+            .filter(({ r }) => r.width > 0 && r.height > 0)
+            .sort((p, q) => (p.r.top - q.r.top) || (p.r.left - q.r.left))
+            .map(({ b }) => b);
+    }
+
+    /** Each button swells past its size and settles back, one after the other. */
+    function playIntro() {
+        const el = bar();
+        if (!el || !introOn() || !enabled() || place() === 'menu' || hidden) return;
+        const buttons = visibleButtons(el);
+        if (!buttons.length) return;
+        // Back from the edge before the load's turn came: that was the load's one.
+        introPlayed = true;
+        introWaiter?.();
+        clearTimeout(introTimer);
+        const clear = () => {
+            el.querySelectorAll('.action-bar-intro').forEach((b) => {
+                b.classList.remove('action-bar-intro');
+                b.style.removeProperty('--intro-index');
+            });
+        };
+        clear();
+        void el.offsetWidth;
+        buttons.forEach((b, i) => {
+            b.style.setProperty('--intro-index', String(i));
+            b.classList.add('action-bar-intro');
+        });
+        // 1100 ms each, 70 ms apart (dashboard.css), and a little to spare.
+        introTimer = setTimeout(clear, 1100 + buttons.length * 70 + 200);
+    }
+
+    /** After a load: now if the screen is free, else when it comes free. */
+    function introOnLoad() {
+        if (introPlayed || introWaiter || !introOn()) return;
+        const attempt = () => {
+            // A bar that can never play it (switched off, or in the menu)
+            // stops the wait: the watch below ran for the whole session.
+            if (introPlayed || !introOn() || place() === 'menu') {
+                stopWaiting();
+                return false;
+            }
+            if (hidden || !screenIsFree() || !bar()?.getClientRects().length) return false;
+            playIntro();
+            return true;
+        };
+        let frame = 0;
+        const check = () => {
+            if (frame) return;
+            frame = requestAnimationFrame(() => { frame = 0; attempt(); });
+        };
+        const observer = new MutationObserver(check);
+        // Modals, cards and locks all show on <body>: children come and go,
+        // classes and the scroll lock's style change.
+        observer.observe(document.body, { childList: true, attributes: true });
+        const poll = setInterval(check, 1000);
+        document.addEventListener('visibilitychange', check);
+        // An intro is for the moment the page arrives; a screen that is not
+        // free within two minutes has moved on without it.
+        const giveUp = setTimeout(() => stopWaiting(), 120000);
+        function stopWaiting() {
+            observer.disconnect();
+            clearInterval(poll);
+            clearTimeout(giveUp);
+            document.removeEventListener('visibilitychange', check);
+            introWaiter = null;
+        }
+        introWaiter = stopWaiting;
+        // Two frames: the settings have just been applied, let the bar lay out.
+        requestAnimationFrame(() => requestAnimationFrame(check));
     }
 
     /** Is the pointer on the edge the bar is docked to, beside the bar? */
@@ -192,6 +304,7 @@
         pinned = false;
         setHidden(false);
         arm();
+        introOnLoad();
     }
 
     /**
@@ -205,6 +318,7 @@
         if (hidden) {
             pinned = true;
             setHidden(false);
+            if (screenIsFree()) playIntro();
         } else {
             pinned = false;
             setHidden(true);
@@ -218,5 +332,6 @@
         show,
         isHidden: () => hidden,
         isPinned: () => pinned,
+        introPlayed: () => introPlayed,
     };
 }(typeof window !== 'undefined' ? window : globalThis));

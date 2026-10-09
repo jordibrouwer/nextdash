@@ -5140,10 +5140,17 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 	}
 	var withinCap map[retestRef]bool
 	if len(eligibleRefs) > retestAllMaxBookmarks {
+		// A row without a URL key never has its result stored, so it stays
+		// "never checked" and would take a slot on every run: it goes last.
+		lastChecked := func(ref retestRef) int64 {
+			bm := pageBookmarks[ref.page][ref.index]
+			if canonicalBookmarkURLKey(bm.URL) == "" {
+				return math.MaxInt64
+			}
+			return bm.LastChecked
+		}
 		sort.SliceStable(eligibleRefs, func(i, j int) bool {
-			a := pageBookmarks[eligibleRefs[i].page][eligibleRefs[i].index].LastChecked
-			b := pageBookmarks[eligibleRefs[j].page][eligibleRefs[j].index].LastChecked
-			return a < b
+			return lastChecked(eligibleRefs[i]) < lastChecked(eligibleRefs[j])
 		})
 		withinCap = make(map[retestRef]bool, retestAllMaxBookmarks)
 		for _, ref := range eligibleRefs[:retestAllMaxBookmarks] {

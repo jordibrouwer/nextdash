@@ -2,6 +2,23 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureActionBarSwellTitle",
+      "titleFallback": "Buttons that swell into view",
+      "whatKey": "config.overviewNewFeatureActionBarSwellWhat",
+      "whatFallback": "The action bar simply appeared, and after it slid into the edge it was easy to miss that it came back.",
+      "howKey": "config.overviewNewFeatureActionBarSwellHow",
+      "howFallback": "Each time the bar comes into view, its buttons grow past their size one after the other and settle back — after a load, and on the way back from the edge.",
+      "enableKey": "config.overviewNewFeatureActionBarSwellEnable",
+      "enableFallback": "Off by default. Switch it on under Appearance → Action bar.",
+      "ctaKey": "config.overviewNewFeatureActionBarSwellCta",
+      "ctaFallback": "Open Action bar →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "buttonbar"
+      },
+      "since": "v1.18.3"
+    },
+    {
       "titleKey": "config.overviewNewFeatureBlockMoveTitle",
       "titleFallback": "Move categories and widgets where you want them",
       "whatKey": "config.overviewNewFeatureBlockMoveWhat",
@@ -1655,9 +1672,9 @@
       "titleKey": "config.overviewNewFeatureRowKeysTitle",
       "titleFallback": "Four more things you can do without the mouse",
       "whatKey": "config.overviewNewFeatureRowKeysWhat",
-      "whatFallback": "Pinning, sharing, opening a bookmark in Health and filtering to a tag you can see all needed the mouse or the command palette, in an app where everything else on a row has a key.",
+      "whatFallback": "Pinning, sharing, opening a bookmark in the Bookmarks view and filtering to a tag you can see all needed the mouse or the command palette, in an app where everything else on a row has a key.",
       "howKey": "config.overviewNewFeatureRowKeysHow",
-      "howFallback": "Shift + P pins, Shift + S shares, Shift + R opens the row in Health, and t filters to its tag. Ctrl/Cmd + Enter opens a bookmark in a new tab for that press alone, whatever your standing preference says. Pin also has a right-click entry now.",
+      "howFallback": "Shift + P pins, Shift + S shares, Shift + R shows the row in the Bookmarks view, and t filters to its tag. Ctrl/Cmd + Enter opens a bookmark in a new tab for that press alone, whatever your standing preference says. Pin also has a right-click entry now.",
       "enableKey": "config.overviewNewFeatureRowKeysEnable",
       "enableFallback": "Nothing to switch on. Press ! or F1 for the full list, which is also on the printable cheat sheet.",
       "ctaKey": "config.overviewNewFeatureRowKeysCta",
@@ -2014,7 +2031,7 @@
       "whatKey": "config.overviewNewFeatureMonitorEmphasisWhat",
       "whatFallback": "A bookmark set to Monitor now shows its status on the dashboard, the way a Periodic one always did — and you can say how much it should stand out.",
       "howKey": "config.overviewNewFeatureMonitorEmphasisHow",
-      "howFallback": "Right-click a bookmark and pick Show in Health to jump straight to its row, from the dashboard or from Config → Bookmarks.",
+      "howFallback": "Right-click a bookmark and pick Show in list to jump straight to its row in the Bookmarks view, from the dashboard or from Config → Bookmarks.",
       "enableKey": "config.overviewNewFeatureMonitorEmphasisEnable",
       "enableFallback": "Set to draw the eye only when something is down. Choose Always or Never under Config → Behavior → Status & health.",
       "ctaKey": "config.overviewNewFeatureMonitorEmphasisCta",

@@ -152,7 +152,7 @@
                 { keys: 'Shift + V', cheatKey: 'bmTogglePreview', fallback: 'Toggle hover preview card on focused bookmark' },
                 { keys: 'Enter on "+ N more"', cheatKey: 'bmShowMoreToggle', fallback: 'Expand or collapse a long category — selection returns to the last bookmark above the toggle' },
                 { keys: 'Delete', cheatKey: 'bmDelete', fallback: 'Delete focused bookmark — confirm in the popover beside it; with a selection open, deletes everything selected' },
-                { keys: 'Right-click bookmark', cheatKey: 'bmContextMenu', fallback: 'Menu with open in new tab, copy URL, share, QR code, edit, pin, tags, move, checking, Show in Health, select, delete (Shift + right-click for the browser menu)', printFallback: 'Row menu: open, copy, edit, tags, move, delete' },
+                { keys: 'Right-click bookmark', cheatKey: 'bmContextMenu', fallback: 'Menu with open in new tab, copy URL, share, QR code, edit, pin, tags, move, checking, Show in list, select, delete (Shift + right-click for the browser menu)', printFallback: 'Row menu: open, copy, edit, tags, move, delete' },
                 { keys: 'Double-click page tab', cheatKey: 'bmRenamePageTab', fallback: 'Rename page tab — also set emoji icon and colour dot' },
                 { keys: 'Long-press category (~500 ms)', cheatKey: 'bmRenameCategory', fallback: 'Rename category header (not on sort buttons)' },
                 { keys: 'Right-click category', cheatKey: 'bmCategoryMenu', fallback: 'Right-click a category header to rename, add, or delete it' },

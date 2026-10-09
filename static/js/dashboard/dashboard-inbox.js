@@ -258,6 +258,18 @@ class DashboardInbox {
      * already kept are not copied twice, and undo leaves those copies alone.
      */
     async bulkKeep() {
+        // One run at a time: a second click while the first is still adding
+        // took the same ticked links, and its "still in the Inbox" was false.
+        if (this._bulkKeeping) return;
+        this._bulkKeeping = true;
+        try {
+            await this._bulkKeepOnce();
+        } finally {
+            this._bulkKeeping = false;
+        }
+    }
+
+    async _bulkKeepOnce() {
         const targets = this.checkedItems();
         if (!targets.length || !this.keptEnabled()) return;
         const d = this.dash;
@@ -548,14 +560,18 @@ class DashboardInbox {
             }
             if (!res.ok) throw new Error(`promote HTTP ${res.status}`);
             // Only clear the inbox entry once its bookmark exists, so a failure
-            // leaves the link here to try again rather than losing it.
-            await this.completePromote(item.id, { skipRender: true });
-            return { snapshot, duplicate: false, keptCopy };
+            // leaves the link here to try again rather than losing it. A
+            // cleanup that failed leaves it filed and still listed: counted
+            // apart, and kept out of the undo, which would put back an entry
+            // that never left.
+            const removed = await this.completePromote(item.id, { skipRender: true });
+            return { snapshot, duplicate: false, keptCopy, stuck: removed === false };
         }));
 
         const settled = results.filter((r) => r.status === 'fulfilled').map((r) => r.value);
         const duplicates = settled.filter((r) => r?.duplicate).length;
-        const promoted = settled.length - duplicates;
+        const stuck = settled.filter((r) => r?.stuck).length;
+        const promoted = settled.length - duplicates - stuck;
         const failed = results.length - settled.length;
         this.clearChecked();
         // Once, at the end: each row used to redraw the list as its own
@@ -567,8 +583,8 @@ class DashboardInbox {
         }
 
         if (promoted) {
-            const made = settled.filter((r) => !r.duplicate).map((r) => r.snapshot);
-            const keptCopies = settled.filter((r) => !r.duplicate && r.keptCopy).map((r) => r.keptCopy);
+            const made = settled.filter((r) => !r.duplicate && !r.stuck).map((r) => r.snapshot);
+            const keptCopies = settled.filter((r) => !r.duplicate && !r.stuck && r.keptCopy).map((r) => r.keptCopy);
             d.showNotification?.(
                 this.t('dashboard.inboxPromotedCount', 'Promoted {count} links', { count: promoted }),
                 'success',
@@ -590,6 +606,10 @@ class DashboardInbox {
             d.showErrorNotification?.(
                 this.t('dashboard.inboxPromotePartial', '{count} could not be promoted', { count: failed })
             );
+        }
+        if (stuck) {
+            d.showErrorNotification?.(
+                this.t('dashboard.inboxBulkKeepCleanupFailed', '{count} were saved as bookmarks but are still in the Inbox', { count: stuck }));
         }
     }
 

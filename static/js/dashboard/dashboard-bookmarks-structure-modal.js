@@ -305,7 +305,7 @@
          */
         categoryListOf(pageId) {
             if (this._catByPage) return this._catByPage.get(String(pageId)) || [];
-            return this._categories || [];
+            return String(this._catPageId) === String(pageId) ? (this._categories || []) : [];
         },
 
         bookmarksOfStructure(pageId, categoryId = null) {
@@ -339,7 +339,15 @@
                     return;
                 }
             }
-            this.setCategoryList(pageId, this.categoryListOf(pageId).filter((c) => String(c.id) !== String(categoryId)));
+            // Read again after the waits: a reload meanwhile forgets the lists,
+            // and an empty list saved here would wipe the page's categories.
+            const list = this._catByPage?.get(String(pageId))
+                || (String(this._catPageId) === String(pageId) ? this._categories : null);
+            if (!list?.some((c) => String(c.id) === String(categoryId))) {
+                await this.dash.loadAllBookmarks?.();
+                return;
+            }
+            this.setCategoryList(pageId, list.filter((c) => String(c.id) !== String(categoryId)));
             await this.saveCategories(pageId);
             await this.dash.loadAllBookmarks?.();
         },

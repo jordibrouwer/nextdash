@@ -208,6 +208,15 @@ func trimInboxItemsKeeping(items []InboxLink, maxItems int, keepID string) []Inb
 	return kept
 }
 
+// getInboxItemsChecked is GetInboxItems with the read error kept: a cleanup
+// that decides what is unused must not take a failed read for an empty inbox.
+func (fs *FileStore) getInboxItemsChecked() ([]InboxLink, error) {
+	fs.mutex.RLock()
+	defer fs.mutex.RUnlock()
+	inbox, err := fs.readInboxDataForWriteLocked()
+	return inbox.Items, err
+}
+
 func (fs *FileStore) GetInboxItems() []InboxLink {
 	fs.mutex.RLock()
 	defer fs.mutex.RUnlock()
@@ -411,12 +420,22 @@ func (fs *FileStore) iconReferenced(fileName string) bool {
 	if strings.ContainsAny(fileName, "/:") {
 		return true
 	}
-	for _, bm := range fs.GetAllBookmarks() {
+	// A store that could not be read in full keeps the icon: an unreadable
+	// page or inbox.json is not proof that nothing uses it.
+	bookmarks, complete := fs.getAllBookmarksChecked()
+	if !complete {
+		return true
+	}
+	for _, bm := range bookmarks {
 		if strings.TrimSpace(bm.Icon) == fileName {
 			return true
 		}
 	}
-	for _, item := range fs.GetInboxItems() {
+	items, err := fs.getInboxItemsChecked()
+	if err != nil {
+		return true
+	}
+	for _, item := range items {
 		if strings.TrimSpace(item.Icon) == fileName {
 			return true
 		}
@@ -447,10 +466,19 @@ func (fs *FileStore) removeUnusedIconFiles(fileNames []string) {
 	if len(candidates) == 0 {
 		return
 	}
-	for _, bm := range fs.GetAllBookmarks() {
+	// Unread is not unused: skip the cleanup when either store failed to read.
+	bookmarks, complete := fs.getAllBookmarksChecked()
+	if !complete {
+		return
+	}
+	items, err := fs.getInboxItemsChecked()
+	if err != nil {
+		return
+	}
+	for _, bm := range bookmarks {
 		delete(candidates, strings.TrimSpace(bm.Icon))
 	}
-	for _, item := range fs.GetInboxItems() {
+	for _, item := range items {
 		delete(candidates, strings.TrimSpace(item.Icon))
 	}
 	// A container's chosen icon (Containers view drawer) can be the same

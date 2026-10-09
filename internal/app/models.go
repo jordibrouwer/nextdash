@@ -491,6 +491,7 @@ type Settings struct {
 	ActionBarEnabled                bool   `json:"actionBarEnabled"`                        // Whether the action buttons are drawn at all; their keys work either way
 	ActionBarAutoHideSeconds        int    `json:"actionBarAutoHideSeconds"`                // Seconds before a docked bar slides into its edge; 0 keeps it in view
 	ShowActionKeys                  bool   `json:"showActionKeys"`                          // The key chip on each action button
+	ActionBarIntro                  bool   `json:"actionBarIntro"`                          // The buttons swell and settle back when the bar comes into view
 	HeaderButtonStyle               string `json:"headerButtonStyle"`                       // How every control in the header is drawn: plain glyphs underlined when current, or plated boxes
 	EnableCustomFavicon             bool   `json:"enableCustomFavicon"`                     // Enable custom favicon
 	CustomFaviconPath               string `json:"customFaviconPath"`                       // Path to custom favicon file
@@ -2383,13 +2384,17 @@ func (fs *FileStore) GetBookmarksByPage(pageID int) []Bookmark {
 	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, pageID)
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		fs.readCache.bookmarks[pageID] = []Bookmark{}
+		// Only a missing file is an empty page. A failed read is not cached:
+		// held as empty, the next save from a reader who saw it would replace
+		// the whole page.
+		if os.IsNotExist(err) {
+			fs.readCache.bookmarks[pageID] = []Bookmark{}
+		}
 		return []Bookmark{}
 	}
 
 	var pageWithBookmarks PageWithBookmarks
 	if err := json.Unmarshal(data, &pageWithBookmarks); err != nil {
-		fs.readCache.bookmarks[pageID] = []Bookmark{}
 		return []Bookmark{}
 	}
 
@@ -2798,29 +2803,36 @@ func (fs *FileStore) removeBookmarkFromSlice(bookmarks []Bookmark, toDelete Book
 }
 
 func (fs *FileStore) GetAllBookmarks() []Bookmark {
+	all, _ := fs.getAllBookmarksChecked()
+	return all
+}
+
+// getAllBookmarksChecked is GetAllBookmarks plus whether every page was read.
+// A page that failed to read is left out and the result is not cached, so
+// the next call tries again.
+func (fs *FileStore) getAllBookmarksChecked() ([]Bookmark, bool) {
 	fs.mutex.RLock()
 	if fs.readCache.allBookmarksOK {
 		out := cloneBookmarks(fs.readCache.allBookmarks)
 		fs.mutex.RUnlock()
-		return out
+		return out, true
 	}
 	fs.mutex.RUnlock()
 
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 	if fs.readCache.allBookmarksOK {
-		return cloneBookmarks(fs.readCache.allBookmarks)
+		return cloneBookmarks(fs.readCache.allBookmarks), true
 	}
 
 	fs.ensureDataDir()
 
 	var allBookmarks []Bookmark
+	complete := true
 
 	files, err := os.ReadDir(fs.dataDir)
 	if err != nil {
-		fs.readCache.allBookmarks = []Bookmark{}
-		fs.readCache.allBookmarksOK = true
-		return []Bookmark{}
+		return []Bookmark{}, false
 	}
 
 	for _, file := range files {
@@ -2834,11 +2846,13 @@ func (fs *FileStore) GetAllBookmarks() []Bookmark {
 		filePath := fmt.Sprintf("%s/%s", fs.dataDir, file.Name())
 		data, err := os.ReadFile(filePath)
 		if err != nil {
+			complete = false
 			continue
 		}
 
 		var pageWithBookmarks PageWithBookmarks
 		if err := json.Unmarshal(data, &pageWithBookmarks); err != nil {
+			complete = false
 			continue
 		}
 
@@ -2849,9 +2863,11 @@ func (fs *FileStore) GetAllBookmarks() []Bookmark {
 		allBookmarks = append(allBookmarks, pageWithBookmarks.Bookmarks...)
 	}
 
-	fs.readCache.allBookmarks = cloneBookmarks(allBookmarks)
-	fs.readCache.allBookmarksOK = true
-	return cloneBookmarks(allBookmarks)
+	if complete {
+		fs.readCache.allBookmarks = cloneBookmarks(allBookmarks)
+		fs.readCache.allBookmarksOK = true
+	}
+	return cloneBookmarks(allBookmarks), complete
 }
 
 // BookmarkURLExists reports whether url matches any bookmark (single pass; for /api/ping validation).
@@ -5066,9 +5082,9 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["pasteUrlQuickAdd"]; !ok {
 			settings.PasteUrlQuickAdd = true
 		}
-		if _, ok := rawSettings["inboxEnabled"]; !ok {
-			settings.InboxEnabled = true
-		}
+		// The inbox is always on; a stored false from before the switch was
+		// removed must not keep hiding it.
+		settings.InboxEnabled = true
 		if _, ok := rawSettings["dockerViewEnabled"]; !ok {
 			settings.DockerViewEnabled = true
 		}
@@ -5098,12 +5114,7 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["globalShortcuts"]; !ok {
 			settings.GlobalShortcuts = true
 		}
-		if settings.InboxEnabled {
-			settings.PasteUrlQuickAdd = true
-		}
-		if !settings.InboxEnabled && normalizePasteDestination(settings.PasteDestination) == "inbox" {
-			settings.PasteDestination = "ask"
-		}
+		settings.PasteUrlQuickAdd = true
 		if _, ok := rawSettings["pasteDestination"]; !ok {
 			settings.PasteDestination = "ask"
 		}
@@ -5201,6 +5212,8 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 	defer fs.mutex.Unlock()
 
 	fs.ensureDataDir()
+
+	settings.InboxEnabled = true
 
 	// Preserve migration markers from the stored file so that importing
 	// settings from another instance cannot suppress pending migrations.

@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.18.3 — 9 October 2026](#v1183--9-october-2026)
 - [v1.18.2 — 8 October 2026](#v1182--8-october-2026)
 - [v1.18.1 — 8 October 2026](#v1181--8-october-2026)
 - [v1.18.0 — 8 October 2026](#v1180--8-october-2026)
@@ -98,6 +99,77 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.18.3 — 9 October 2026
+
+A bug fix round from a review of the v1.18.0–v1.18.2 work. The public demo no longer reaches the host's own network in its start-up window, and its capture routes are held to its write limit. Reverse proxies that add their own `X-Forwarded-For` line no longer let a visitor pick their rate-limit bucket. Two read errors that could lose data are closed: a page cached as empty, and icons deleted while `inbox.json` could not be read. On the dashboard, moving a block to another page is safe against a page switch and a second press. The inbox is now always on, and Structure and Behavior sit above it in the config rail.
+
+### Demo
+- **fix — the start-up window no longer reaches the host's own network.** The window that fetches the seed's favicons and previews was open to every request, and visitors are served by then: `/api/bookmark-preview` could fetch a private or link-local address. In demo mode `ssrfSafeDialContext` now refuses local addresses whatever `AllowLocalBookmarks` says (`url_safety.go`).
+- **fix — `GET /share` and `GET /add` count as writes.** They write the inbox on a GET, so they skipped the write limit and the reset hold (`demoCountsAsWrite`, `demo_guard.go`).
+- **fix — a write cannot land in the middle of a reset.** Writes hold `demo.writes` shared while they run and `resetDemo` takes it whole, so a write that passed the gate just before the reset no longer survives it or mixes into the reseed (`demo.go`).
+- **fix — usage counters no longer arm the idle reset.** `/api/track-*` posts from a visitor who only reads set the idle clock and spent the write limit.
+- **fix — the kept favicons are the seed's only.** A bookmark a visitor added or changed during the start-up window was kept and put back on every reset (`fetchDemoIconsOnce`).
+- **fix — a removed demo container leaves the container order,** which otherwise grew by one id per recreate until the next reset (`docker_demo.go`).
+- **fix — the start-up window is the seed round's, not the visitors'.** It was one global switch, so for the minutes the round took any visitor could make the server fetch a public address of their choosing, through a preview or a tag scan. Every request a visitor makes now carries a mark the dialer refuses whatever the window (`demoDialRefused` in `demo_guard.go`, `url_safety.go`), and while the window is open a visitor's write is answered *The demo is starting; try again in a minute*, since the favicon and preview it would set off run on a context without the mark.
+- **fix — a write during a waiting reset is turned away, not held.** The guard took the shared lock before it looked at the reset flag, and a reset waiting for the lock blocks new readers: a write arriving then hung until the reset was done and ran against the fresh seed, where a delete by index took another bookmark than the one on screen. The guard now tries the lock and answers 503 when it cannot have it (`TryRLock` in `demoGuard`).
+- **fix — the demo's Docker refuses a name in use,** on create and on rename, as the real daemon does. Two containers answered to one name, and actions by that name hit either (`nameTaken` in `docker_demo.go`).
+- **fix — a failed reset no longer has every open tab asking every three seconds.** The bar polled closely while the reset time was near or past; past by more than a minute it goes back to its 30-second round (`refreshResetAt` in `demo-lock.js`). *The demo is starting* is shown like the demo's other answers.
+- **fix — the demo bar no longer carries the recording notice** on a line of its own; *Config → Privacy* still says what the demo records (`demo-lock.js`).
+
+### Data
+- **fix — a page that fails to read is not cached as empty.** `GetBookmarksByPage` held the empty result until the next write, and a save from a reader who saw it replaced the whole page. Only a missing file is cached as empty; `GetAllBookmarks` no longer marks itself complete when a page failed (`models.go`).
+- **fix — icons are not deleted while `inbox.json` or a page cannot be read.** The cleanup after a delete took a failed read for an empty inbox and removed every icon only an inbox item used. `iconReferenced` and `removeUnusedIconFiles` now skip when either store did not read in full (`inbox.go`).
+- **fix — `X-Forwarded-For` is read across every header line,** and an entry with a port or IPv6 brackets is still an address. A proxy that adds its own line (HAProxy `option forwardfor`) left the first line entirely the client's (`rate_limit.go`).
+- **fix — Health's re-check past the cap puts rows without a URL key last.** Their result is never stored, so they stayed "never checked" and took a slot on every run.
+
+### Dashboard
+- **new — the action bar's buttons can swell into view.** *Config → Appearance → The action bar → Animate the buttons as the bar appears*, off by default. On, the buttons grow past their size one after the other and settle back each time the bar comes into view: after a load, once no modal, card or tour covers the screen, and on its way back from the edge it slid into (`action-bar-autohide.js`, setting `actionBarIntro`).
+- **fix — moving a block to another page no longer draws the old page's widgets on the new one.** A page switch while the move waited on the server set `dash.widgets` and `blockOrder` to the page left behind, and a later widget save wrote them over the new page. The source write now uses the stored list, and the dashboard is only touched while it still shows that page (`dashboard-block-page-move.js`).
+- **fix — one move to another page at a time.** A double press or held `Shift + Alt + ←/→` ran two moves that could land a widget twice; the second is ignored, and so is key repeat.
+- **fix — a picked-up block lets go when you type in a field.** Arrows, Enter and W went to the block while the search box had focus (`dashboard-block-mover.js`).
+- **fix — Undo of a move puts nothing back after a background reload** of the page, which would have undone what another device changed since; it says so instead (`blockMoveUndoStale`).
+- **fix — moving a tag collection to another page answers at once.** Its "follows its tag" notice queued behind the 5-second *Moved … Undo* of a move just before and showed about five seconds after the key; it now takes that toast's place (`AppNotification.show` option `replace`, `dashboard-block-page-move.js`).
+- **fix — the settings search reaches a setting in Containers, Inbox, Unraid or Logs on a first visit.** Those sections load their script on demand, and a jump into one that had not arrived yet switched to its tab before it was drawn and threw (`renderContainersSection is not a function`), so the focus never reached the control. `activateSettingsJumpEntry` now waits for `ensureSection` (`dashboard-config.js`).
+- **fix — Show in list (was *Show in Health*) draws a styled Bookmarks view.** From a bookmark's menu or `Shift + R` on a fresh load, the Bookmarks view came up without its stylesheet: `openLibraryOnBookmark` reached the module past the loader, which is what fetched `views.css`. `openLibraryView` and `openConfigView` now fetch it themselves (`dashboard-config.js`). The entry is renamed now that Health lives in the Bookmarks view, with `▤` for `♥`; `Shift + R` is unchanged. The bookmark menu sizes to its content (`width: max-content`, up to 24rem, `dashboard.css`), so no key chip is cut off any more — `Shift+C` beside *Checking (Periodic)…* read "Shi…". In Statistics, *Open Health* and *Open in Health* are now *Open in Bookmarks*, and so is the *Open Health* action on the health, trend, uptime, certificates, archive, unchecked and duplicates widgets.
+- **fix — resetting spread counts only what was saved,** and puts the spread back on a category whose save failed (`dashboard-category-span.js`).
+- **fix — moving a collection to another page keeps it on its other pages.** A collection shown on pages 1 and 3, moved from 1 to 2, was left on page 2 only: the move set its page list to the one page it went to. It now swaps the page it left for the one it went to; a collection on every page still goes to that one page (`dashboard-block-page-move.js`).
+- **fix — a collection's width that cannot be saved is reported once.** The settings save says so itself, and the move said it again (`commitBlockMove` in `dashboard-render-core.js`).
+- **fix — the action bar's swell stops waiting when it cannot play.** With the bar in the menu, the swell switched off, or the screen busy for two minutes, it watched every change on the page for the rest of the session (`introOnLoad` in `action-bar-autohide.js`).
+
+### Bookmarks
+- **fix — merging categories in the Structure modal cannot save an empty list.** A reload during the confirmation forgot the lists, and the merge posted `[]` for the page, removing every category (`mergeCategoryInto`).
+- **fix — deleting a category in Structure finds it again after the confirmation,** so a reload meanwhile no longer gives a *Category deleted.* for a category still there.
+- **fix — a bulk move to another page removes the moved rows by identity,** not by indexes taken before the requests, and leaves the list alone when you went to another page meanwhile (`dashboard-tag-filter.js`).
+- **fix — the script loader finds a failed tag.** The selector used the camelCase dataset key, which never matched the attribute, so the failed-load check never ran (`dashboard-bookmark-interactions-loader.js`).
+
+### Inbox
+- **fix — bulk Keep runs once at a time;** a double click reported links as *still in the Inbox* that were not.
+- **fix — bulk promote says when an entry could not leave the Inbox,** and keeps those out of its count and its Undo.
+- **fix — a quick second key in triage acts on the next card.** `r`, `d` or `Shift+K` pressed while the card before was still being written was dropped, since the card was still claimed; it now waits and runs on the card after (`keyAction`, `dashboard-inbox-triage.js`). Open is left out: a tab opened after the wait is a popup the browser may block. Seen as `inbox-triage-piles.spec.js:96` failing in CI run 619.
+- **new — the inbox is always on.** *Config → Inbox → Enable the inbox* is gone; the server sets `inboxEnabled` to true on every read and save, so an install that had turned it off gets the inbox back (`GetSettings`, `SaveSettings`, `models.go`; `dashboard-data.js`). Paste-to-inbox, the `0` key and `:inbox` follow. Its four `inboxEnabled*` strings are gone from the locale files.
+- **new — Structure and Behavior sit above Inbox in the config rail.** The order is now Overview, Appearance, Bookmarks, Structure, Behavior, Inbox (`DashboardConfig.SECTIONS`, and the copy in `DashboardConfigLoader.SECTIONS` that reads a deep link before the module loads).
+
+### What's new
+- **fix — the section menu filters the headline release only,** not the older releases opened below it.
+
+### Docs
+- **tests —** `TestClientIPReadsEveryForwardedForLine`, `TestFailedPageReadIsNotCached`, `TestIconCleanupKeepsIconsWhenInboxIsUnreadable`, the capture, counter and reset cases in `TestDemoGuard`, and a page switch during a move in `tests/dashboard-block-move-page.spec.js`. `TestDemoDialsNoHost` now expects a local dial to be refused in the start-up window.
+- **i18n —** the four new strings (the stale Undo notice and the swell setting) in nl, de, fr, es and zh; MANUAL §16 names the swell setting on the Action bar tab.
+- **release —** `static/data/whats-new/v1.18.3.json` and its `index.json` entry; `DASHBOARD_RELEASE` moves to v1.18.3 and the data token to `whats-new-v325`, so the window opens once on v1.18.3; an *Overview* feature for the swell (`overviewNewFeatureActionBarSwell*`, `since: "v1.18.3"`) in all six languages.
+- **unraid —** `templates/nextdash.xml` (and the live copy in `unraid_templates`): `<Date>` 2026-10-09, v1.18.3 in `<Changes>`, the v1.17.0 and v1.16.0 entries dropped to keep the last five.
+- **tests —** `config-stats-inbox-trend.spec.js` waits for Overview's own inbox fetch before seeding; a slow answer overwrote the seed with the empty CI history and the chart never drew (CI run 618). `config-toolbar-groups.spec.js` counts `actionBarIntro` (24 fields), which the swell added. `dashboard-collection-move.spec.js` expects the tag-collection answer within 1.5 s, in the live region and the toast. `page-switcher-styles.spec.js` saves its style through `saveSettings` instead of a bare POST, which left a settings read already on the wire free to put the previous test's style back (CI run 619).
+- **tests —** `inbox-lazy-load.spec.js` drops its inbox-off case; `shortcut-open-mode.spec.js` checks the inbox switch is gone; `config-new-sections.spec.js` expects the new rail order.
+- **tests —** `TestDemoStartUpWindowIsNotTheVisitors` refuses a visitor's dial and write in the start-up window.
+- **tests —** `TestDemoWriteDuringAWaitingResetIsRefused` turns a write away while a reset waits for the lock.
+- **i18n —** *Show in list*, *Open in Bookmarks* and the four Overview and cheat-sheet lines that named Health, in nl, de, fr, es and zh. Help → Inbox settings drops the *Enable the inbox* switch and its picture caption, and Help → Config lists Structure and Behavior above Inbox, in all six languages; the English fallbacks in `overview-features.json` and the cheat-sheet registry follow.
+- **tests —** `inbox-view-settings.spec.js` expects Inbox between Behavior and Data & backups and no `inboxEnabled` field; `config-help.spec.js` checks the switched-on line on the Containers panel and its absence on the Inbox panel; `dashboard-widget-keyboard.spec.js` expects *Open in Bookmarks* on a widget row's menu entry (CI run for 0a0b4600).
+- **docs —** MANUAL §13.6, §17.1, §17.6 and §17.8 follow the always-on inbox and the new rail order.
+- **tests —** `TestDemoDockerRefusesATakenName` refuses a create or rename onto a name in use.
+- **tests —** `dashboard-collection-move.spec.js` moves a collection on two pages and checks the other stays.
+- **tests —** `dashboard-collection-move.spec.js` counts one error for a collection width the settings would not save.
 
 ---
 
