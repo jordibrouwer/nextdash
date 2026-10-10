@@ -129,6 +129,7 @@ Config forgets the tab you had open once five minutes have passed, in every sect
 
 - **docs — MANUAL §10.4, §16 and §17** and Help → Config, Appearance and Behavior say a tab is kept for five minutes and a section opens on its first tab after that, in six languages; §10.4 says the whole row opens a proposal.
 - **docs — the README** links the demo at demo.nextdash.cc in place of the developer blog.
+- **docs — the Unraid template** (`templates/nextdash.xml`) lists v1.19.2 and keeps the last five releases, the same as the copy Community Applications reads.
 
 ### Docs
 
