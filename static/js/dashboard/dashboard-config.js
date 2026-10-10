@@ -1018,7 +1018,7 @@ class DashboardConfig {
      * The timestamp is what makes that safe: without an expiry, remembering
      * every exit would mean a tab you opened once, weeks ago, greeting you
      * forever. It is stamped on the way out rather than on the way in, so the
-     * fifteen minutes count from when you last had config open.
+     * five minutes count from when you last had config open.
      */
     saveLastConfigLocation() {
         try {
@@ -1053,7 +1053,7 @@ class DashboardConfig {
      * target or `#config/…` hash — e.g. Shift+S from the bookmark grid.
      *
      * The saved location applies wherever you are coming from — the grid, the
-     * inbox, health — as long as it is still inside the fifteen-minute window;
+     * inbox, health — as long as it is still inside the five-minute window;
      * loadLastConfigLocation answers with nothing once it is not. It used to
      * apply only when returning from health or inbox, which meant the far more
      * common route, Shift+S from the grid, always landed on Overview.
