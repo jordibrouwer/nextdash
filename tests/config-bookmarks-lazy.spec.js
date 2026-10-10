@@ -42,6 +42,7 @@ test.describe('the bookmark list loads with its section', () => {
         await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        // A fixed wait: proving no request goes out has no event to wait for.
         await page.waitForTimeout(800);
         expect(asked.length).toBe(0);
     });

@@ -105,9 +105,9 @@ test('editing a custom theme leaves the packaged themes their character', async 
     const withCharacter = Object.entries(before).filter(([, t]) => t.radiusScale || t.labelTransform || t.surfaceAlpha);
     expect(withCharacter.length).toBeGreaterThan(0);
 
-    await openEditor(page);
+    const id = await openEditor(page);
     await page.locator('[data-theme-char="radiusScale"]').fill('1.2');
-    await page.waitForTimeout(600);
+    await expect.poll(async () => (await colors(page)).custom[id].radiusScale).toBe(1.2);
 
     const after = (await colors(page)).builtIn;
     for (const [themeId, t] of withCharacter) {

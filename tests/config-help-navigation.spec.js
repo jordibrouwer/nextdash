@@ -20,7 +20,7 @@ async function openHelp(page, tab) {
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('help'));
     await page.waitForSelector('#config-help-body', { timeout: 15_000 });
     await page.click(`[data-help-tab="${tab}"]`);
-    await page.waitForTimeout(500);
+    await expect(page.locator(`[data-help-tab="${tab}"]`)).toHaveAttribute('aria-selected', 'true');
 }
 
 test.describe('the Tips tab filters itself', () => {

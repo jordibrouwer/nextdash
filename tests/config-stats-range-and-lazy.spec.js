@@ -45,12 +45,13 @@ test.describe('statistics: the activity range is remembered', () => {
         // been opened says so instead of drawing thirty flat bars, so without
         // this the axis under test is simply not on the page. Recorded through
         // the same call a click on a bookmark makes.
+        const recorded = page.waitForResponse((r) => r.url().includes('/api/track-open'));
         await page.evaluate(() => {
             const d = window.dashboardInstance;
             const bookmark = d.bookmarks[0];
             d.recordBookmarkOpened(bookmark, d.resolveBookmarkIndex(bookmark));
         });
-        await page.waitForTimeout(600);
+        await recorded;
         await page.evaluate((k) => localStorage.setItem(k, '7'), RANGE_KEY);
         await page.reload();
         await loadDashboard(page);
@@ -120,6 +121,7 @@ test.describe('statistics: health loads only when its tab is opened', () => {
         await expect.poll(() => hits.length - before, { timeout: 10_000 }).toBe(1);
         await page.locator('[data-stats-tab="collection"]').click();
         await page.locator('[data-stats-tab="health"]').click();
+        // A fixed wait: the check is that no second fetch goes out.
         await page.waitForTimeout(600);
         expect(hits.length - before).toBe(1);
     });
@@ -137,6 +139,7 @@ test.describe('statistics: health loads only when its tab is opened', () => {
         // Leaving and returning must not refetch — the result is cached.
         await page.locator('[data-stats-tab="overview"]').click();
         await page.locator('[data-stats-tab="health"]').click();
+        // A fixed wait: the check is that no second fetch goes out.
         await page.waitForTimeout(600);
         expect(hits.length - before).toBe(1);
     });
@@ -158,6 +161,7 @@ test.describe('statistics: health loads only when its tab is opened', () => {
         await page.locator('[data-stats-tab="overview"]').click();
         await page.locator('[data-stats-tab="health"]').click();
         await expect(page.locator('#config-stats-health')).toBeVisible();
+        // A fixed wait, longer than the held reply: no second fetch may follow it.
         await page.waitForTimeout(2000);
         expect(hits.length).toBe(1);
     });

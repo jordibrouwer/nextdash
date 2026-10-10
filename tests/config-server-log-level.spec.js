@@ -216,6 +216,7 @@ test('a search is only sent to the server once the search channel is on', async 
     await page.keyboard.type('zzz-search-off', { delay: 10 });
     await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
     await page.keyboard.press('Escape');
+    // A fixed wait: proving no request goes out has no event to wait for.
     await page.waitForTimeout(300);
     expect(requests.length).toBe(0);
 

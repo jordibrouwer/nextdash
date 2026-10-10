@@ -204,6 +204,7 @@ test.describe('Config → Bookmarks writes deletes to the trash', () => {
             await cfg.deleteBookmarkByKey(cfg.bookmarkKey(target));
         }, marker);
 
+        // A fixed wait: the check is that no entry turns up, which nothing signals.
         await page.waitForTimeout(1000);
         const items = await trashEntries(page);
         expect(items.some((i) => i.bookmark?.name === marker)).toBe(false);

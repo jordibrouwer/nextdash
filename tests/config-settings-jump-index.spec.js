@@ -248,7 +248,7 @@ test.describe('activating an entry reaches the control', () => {
     test('a rendered setting is listed once, not once per source', async ({ page }) => {
         await openConfig(page, 'behavior');
         // Let the scrape run over the rendered tab.
-        await page.waitForTimeout(400);
+        await expect(page.locator('#config-section-panel [data-config-jump]').first()).toBeAttached();
 
         const dupes = await page.evaluate(() => {
             const entries = window.dashboardInstance.config.getSettingsJumpEntries()
@@ -270,7 +270,7 @@ test.describe('activating an entry reaches the control', () => {
      */
     test('a rendered setting keeps a focusable selector', async ({ page }) => {
         await openConfig(page, 'behavior');
-        await page.waitForTimeout(400);
+        await expect(page.locator('#config-section-panel [data-config-jump]').first()).toBeAttached();
 
         const ok = await page.evaluate(() => {
             const hit = window.dashboardInstance.config.getSettingsJumpEntries()

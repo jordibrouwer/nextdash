@@ -168,6 +168,7 @@ test('a template file dropped on the dashboard opens the import with it, other f
         await page.dispatchEvent('#dashboard-layout', 'drop', { dataTransfer: dt });
     };
     await drop('notes.json', '{"hello":"world"}');
+    // A fixed wait: the check is that no dialog opens, which nothing signals.
     await page.waitForTimeout(500);
     await expect(page.locator('#config-template-import')).toHaveCount(0);
 

@@ -88,7 +88,8 @@ test('changing an Appearance control keeps the focus on it', async ({ page }) =>
 
     await toggle.focus();
     await toggle.click();
-    await page.waitForTimeout(600);
+    // The repaint that matters lands when the save comes back.
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.config._settingsSavePromise == null)).toBe(true);
 
     const landed = await page.evaluate(() => {
         const el = document.activeElement;

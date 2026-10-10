@@ -363,7 +363,7 @@ test.describe('a stored widget key survives a save', () => {
             await label.fill(`${service} figure`);
             await label.blur();
             await again.locator('[data-widget-save]').click();
-            await page.waitForTimeout(1500);
+            await expect(again.locator('[data-widget-save-state]')).toHaveText('Saved.', { timeout: 10_000 });
 
             const left = await page.evaluate(async () => {
                 const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
@@ -433,8 +433,10 @@ test('a failed delete keeps the widget its key', async ({ page }) => {
     await page.evaluate(() => { window.dashboardInstance.config.confirmAction = async () => true; });
     await page.route('**/api/pages/*/blocks', (route) => (route.request().method() === 'GET'
         ? route.fallback() : route.fulfill({ status: 500, body: 'no' })));
+    const refused = page.waitForResponse((r) => /\/api\/pages\/[^/]+\/blocks/.test(r.url())
+        && r.request().method() !== 'GET');
     await page.locator(`[data-widget-delete="${index}"]`).click();
-    await page.waitForTimeout(1500);
+    await refused;
     await page.unroute('**/api/pages/*/blocks');
     const filed = await page.evaluate(async (wanted) => {
         const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;

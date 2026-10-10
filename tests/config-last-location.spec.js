@@ -53,7 +53,13 @@ async function goToBehaviorPrivacy(page) {
         c.behaviorTab = 'privacy';
         c.render();
     });
-    await page.waitForTimeout(200);
+    await expect(page.locator('[data-behavior-tab="privacy"]')).toHaveAttribute('aria-selected', 'true');
+}
+
+/** Leave config and wait until the grid is back. */
+async function closeConfig(page) {
+    await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView)).not.toBe('config');
 }
 
 test.describe('config remembers where you were', () => {
@@ -62,8 +68,7 @@ test.describe('config remembers where you were', () => {
         await goToBehaviorPrivacy(page);
 
         // Escape, which used to be the exit that deliberately forgot.
-        await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
-        await page.waitForTimeout(200);
+        await closeConfig(page);
 
         const saved = await stored(page);
         expect(saved).toMatchObject({ section: 'behavior', subTab: 'privacy' });
@@ -73,9 +78,7 @@ test.describe('config remembers where you were', () => {
     test('reopening lands back on it, from the grid', async ({ page }) => {
         await load(page);
         await goToBehaviorPrivacy(page);
-        await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
-        await page.waitForTimeout(200);
-        expect(await page.evaluate(() => window.dashboardInstance.activeView)).not.toBe('config');
+        await closeConfig(page);
 
         await openConfigBare(page);
         expect(await section(page)).toBe('behavior');
@@ -85,8 +88,7 @@ test.describe('config remembers where you were', () => {
     test('an entry older than five minutes is ignored', async ({ page }) => {
         await load(page);
         await goToBehaviorPrivacy(page);
-        await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
-        await page.waitForTimeout(200);
+        await closeConfig(page);
 
         // Age it past the window rather than waiting out the clock.
         await page.evaluate((k) => {
@@ -102,8 +104,7 @@ test.describe('config remembers where you were', () => {
     test('just inside the window still counts', async ({ page }) => {
         await load(page);
         await goToBehaviorPrivacy(page);
-        await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
-        await page.waitForTimeout(200);
+        await closeConfig(page);
 
         await page.evaluate((k) => {
             const data = JSON.parse(localStorage.getItem(k));
@@ -165,11 +166,10 @@ test.describe('config remembers where you were', () => {
             // What clicking the sub-tab does: it rewrites the address bar.
             c.restoreConfigHash();
         });
-        await page.waitForTimeout(200);
 
         // No exit at all — the tab is reloaded out from under it, which is what
         // a crash, a closed browser or a link followed from config look like.
-        expect(await stored(page)).toMatchObject({ section: 'appearance', subTab: 'layout' });
+        await expect.poll(() => stored(page)).toMatchObject({ section: 'appearance', subTab: 'layout' });
 
         await page.reload();
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
@@ -194,21 +194,17 @@ test.describe('config remembers where you were', () => {
     test('an explicit section and a config hash both still win', async ({ page }) => {
         await load(page);
         await goToBehaviorPrivacy(page);
-        await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
-        await page.waitForTimeout(200);
+        await closeConfig(page);
 
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('help'));
-        await page.waitForTimeout(200);
-        expect(await section(page)).toBe('help');
+        await expect.poll(() => section(page)).toBe('help');
 
-        await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
-        await page.waitForTimeout(200);
+        await closeConfig(page);
         await page.evaluate(() => {
             window.location.hash = '#config/appearance';
             return window.dashboardInstance.config.openConfigView();
         });
-        await page.waitForTimeout(300);
-        expect(await section(page)).toBe('appearance');
+        await expect.poll(() => section(page)).toBe('appearance');
     });
 
     test('a page-tab exit remembers too', async ({ page }) => {
@@ -220,8 +216,7 @@ test.describe('config remembers where you were', () => {
             const e = new KeyboardEvent('keydown', { key: '1', bubbles: true });
             window.dashboardInstance.config.handleShellViewShortcut(e);
         });
-        await page.waitForTimeout(400);
 
-        expect(await stored(page)).toMatchObject({ section: 'behavior', subTab: 'privacy' });
+        await expect.poll(() => stored(page)).toMatchObject({ section: 'behavior', subTab: 'privacy' });
     });
 });

@@ -21,11 +21,12 @@ async function openBehavior(page, tab = 'general') {
     await dismissBlockingOverlays(page);
     await page.evaluate((t) => {
         const c = window.dashboardInstance.config;
-        (c.behaviorTab = c.behaviorTab || 'general', c).openConfigView('behavior');
+        const opened = (c.behaviorTab = c.behaviorTab || 'general', c).openConfigView('behavior');
         c.behaviorTab = t;
         c.render();
+        return opened;
     }, tab);
-    await page.waitForTimeout(600);
+    await expect(page.locator(`[data-behavior-tab="${tab}"]`)).toHaveAttribute('aria-selected', 'true');
 }
 
 test.describe('a control writes something that survives', () => {
@@ -44,8 +45,7 @@ test.describe('a control writes something that survives', () => {
 
         // And it draws its state from there, not from the settings object.
         await page.evaluate(() => window.dashboardInstance.config.render());
-        await page.waitForTimeout(400);
-        expect(await page.locator('[data-behavior-field="deviceSpecificSettings"]').first().isChecked()).toBe(true);
+        await expect(page.locator('[data-behavior-field="deviceSpecificSettings"]').first()).toBeChecked();
     });
 
     test('it is offered in one place, not two', async ({ page }) => {
@@ -53,7 +53,8 @@ test.describe('a control writes something that survives', () => {
         await expect(page.locator('[data-behavior-field="deviceSpecificSettings"]')).toHaveCount(1);
 
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('data-backups'));
-        await page.waitForTimeout(800);
+        // Backups is drawn before its absence counts for anything.
+        await expect(page.locator('[data-backup-toggle="autoBackupEnabled"]')).toHaveCount(1);
         await expect(page.locator('[data-backup-toggle="deviceSpecificSettings"]')).toHaveCount(0);
     });
 });
