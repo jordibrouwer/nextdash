@@ -41,7 +41,7 @@ const CASES = [
     // "Working through the list" — and the Ten links / Rot report cards it
     // covers — moved to the Bookmarks view tab with the standalone health view.
     { tab: 'bookmarks', needles: [/ten links, two minutes/i, /rot report/i] },
-    { tab: 'config', needles: [/tab you used last/i, /all devices/i, /duplicate/i] },
+    { tab: 'config', needles: [/tab you had open/i, /all devices/i, /duplicate/i] },
     { tab: 'inbox', needles: [/integrations\//i, /share sheet/i] },
     // The log rebuild: a level and a component on every line, one control for
     // how much is written and another for what goes into the trail.

@@ -123,7 +123,7 @@ Config forgets the tab you had open once five minutes have passed, in every sect
 
 ### Tests
 
-- **tests — `tests/config-tabs.spec.js`** covers a remembered tab expiring after five minutes, a tab expiring while the page stays open, and time spent reading a tab keeping it fresh; `tests/config-tag-suggestions.spec.js` opens a group by clicking the row's tag and its reason.
+- **tests — `tests/config-tabs.spec.js`** covers a remembered tab expiring after five minutes, a tab expiring while the page stays open, and time spent reading a tab keeping it fresh; `tests/config-tag-suggestions.spec.js` opens a group by clicking the row's tag and its reason. `tests/help-current-features.spec.js` looks for the new Help → Config wording, *the tab you had open*; it still asked for *the tab you used last* and failed in CI.
 
 ### Help and docs
 
