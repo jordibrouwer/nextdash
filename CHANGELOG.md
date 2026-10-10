@@ -114,6 +114,8 @@ A status page for the people who use your services: a read-only page behind a se
 - **new — a page at `/s/<token>` for the people who use your services, with its data at `/s/<token>/data.json`.** It shows an overall line, a banner for planned maintenance, and groups of services, each with its state, since when it is down, 30 day bars, response time and uptime. The visitor's device picks the language and light or dark; the page refreshes every minute and pauses while the tab is hidden. It never shows error details, container images or internal addresses unless Link is switched on for a service. Config and token live in the store; every wrong address answers the same 404, `/s/*` allows 60 requests a minute per visitor (counted by the real client address behind a proxy), "Only from the home network" lets in private addresses the install can identify, and the token is kept out of the request log. The owner API sits behind the write token. Specs: `tests/status-page-visitor.spec.js` and the `status_page_*_test.go` files.
 - **new — Config → Status page.** Five tabs, All and then one per card: Link and access (turn it on, Copy, Open, a QR code, New link… which retires the old link at once), Top of the page, Groups and services (a picker offers a linked bookmark and container as one service) and Maintenance (windows per group). Sub-tabs and ℹ modals as on the other sections. Spec: `tests/config-status-page.spec.js`.
 - **fix — editing a maintenance window under Behavior no longer drops the groups it is linked to.** The window was saved from the form's fields alone, and the link to the status page's groups is not one of them.
+- **new — the status page and Config → Status page speak all six languages.** The visitor page picked the language from `Accept-Language`, but its 32 strings (`statusPageStrings` in `status_page_view.go`) had no `statusPage.*` keys in `locales/`, so every visitor read English; Config → Status page's 78 strings and the four Unraid tab names existed only as English fallbacks too. All of them are in `locales/{en,nl,de,fr,es,zh}.json` now.
+- **fix — the command palette offers Config → Status page.** `_CONFIG_SECTIONS` in `search-commands.js` had no row for it, so typing *config status* found nothing. `commands.configStatusPage` is its label in six languages; `tests/dashboard-command-palette-config.spec.js` compares the palette against `DashboardConfig.SECTIONS` and failed without it.
 
 ### Config
 
@@ -141,11 +143,17 @@ A status page for the people who use your services: a read-only page behind a se
 - **new — CI runs `govulncheck` on every push**, pinned to v1.1.4 so a new release of the tool cannot change what passes.
 - **new — the release image is scanned with Trivy before it is pushed**, in `docker-publish.yml`, which dev now tracks too.
 - **new — `release-to-main.sh` runs the same two checks first**, through `scripts/release-preflight.sh`: `govulncheck`, and a Trivy scan of an image built on this machine. It needs Docker running, and `--skip-scan` skips it for an emergency. A finding in `docker-publish.yml` would leave a release with no image and no way out but a new patch version; this finds it before anything is merged, tagged or pushed.
+- **fix — the browser extension's copy of `bookmark-url-utils.js` carries the URL key cache too.** The cache went into `static/js/bookmark-form/` only, and CI's `check-extension-bookmark-form.sh` failed on the drift; `sync-extension-bookmark-form.sh` brought the copy level.
+
+### Tests
+
+- **tests — `tests/config-help-health.spec.js`** counts nine panels on Help → Monitoring, with the two for the status page. `tests/whats-new-hidden-release.spec.js` names v1.19.0 as the release the modal leads with.
 
 ### Help and docs
 
 - **docs — Help → Config lists Unraid and Status page** among the sections and explains the "new" mark and the tabs they share with Inbox and Containers. `config.sectionStatusPage` was missing, so its label fell back to English in every language; it exists in all six now.
 - **docs — MANUAL §12.8 and §23.10 and Help → Monitoring describe the status page**, how to share it over the internet (proxy only `/s/` and `/static/status/`, `NEXTDASH_TRUSTED_PROXIES`) and what to restore. The README lists it under Health and monitoring.
+- **docs — Help → Monitoring's two status page panels open with a drawing and read in six languages.** Every Help article opens with one (`tests/config-setting-art.spec.js`): a working and a down service for *The status page*, and the two paths a proxy should pass for *Sharing the status page safely* (`HELP_PANEL_ART`). Their bodies were English fallbacks in the code; `config.helpStatusPage*` now has them in every language, and the "new" mark in the section list (`config.sectionNewBadge`) is translated too.
 - **docs — Config → Overview and About → News & features carry the status page**, dated `v1.19.0`, in six languages.
 
 ### Docs
