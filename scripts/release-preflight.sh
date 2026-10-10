@@ -16,11 +16,14 @@ ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
 
 IMAGE="nextdash:preflight"
+TRIVY_FINDING=10
 TRIVY_IMAGE="aquasec/trivy:0.75.0"
+
+trap 'docker image rm "$IMAGE" >/dev/null 2>&1 || true' EXIT
 
 echo "Preflight 1/2: govulncheck..."
 if ! go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...; then
-  echo "Preflight: govulncheck found known vulnerabilities (see above). Fix them on dev first." >&2
+  echo "Preflight: govulncheck failed (findings above, or it could not run). Fix the findings on dev first." >&2
   exit 1
 fi
 
@@ -32,11 +35,13 @@ fi
 echo "Preflight 2/2: building ${IMAGE} and scanning it with Trivy..."
 docker build --pull -q -t "$IMAGE" . >/dev/null
 status=0
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE" \
-  image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --no-progress "$IMAGE" || status=$?
-docker image rm "$IMAGE" >/dev/null 2>&1 || true
-if [[ "$status" -ne 0 ]]; then
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v nextdash-trivy-cache:/root/.cache/trivy "$TRIVY_IMAGE" \
+  image --severity HIGH,CRITICAL --ignore-unfixed --exit-code "$TRIVY_FINDING" --no-progress "$IMAGE" || status=$?
+if [[ "$status" -eq "$TRIVY_FINDING" ]]; then
   echo "Preflight: Trivy found HIGH or CRITICAL vulnerabilities that have a fix (see above). Fix them on dev first." >&2
+  exit 1
+elif [[ "$status" -ne 0 ]]; then
+  echo "Preflight: Trivy could not finish (exit ${status}, see above), for instance a failed database download. Run this again." >&2
   exit 1
 fi
 

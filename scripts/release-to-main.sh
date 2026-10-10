@@ -24,7 +24,12 @@ for arg in "$@"; do
   case "$arg" in
     --skip-scan) SKIP_SCAN=1 ;;
     -*) echo "Unknown option: ${arg}" >&2; exit 1 ;;
-    *) TAG="$arg" ;;
+    *)
+      if [[ -n "$TAG" ]]; then
+        echo "Only one tag allowed, got: ${TAG} and ${arg}" >&2
+        exit 1
+      fi
+      TAG="$arg" ;;
   esac
 done
 if [[ -z "$TAG" ]]; then
@@ -40,7 +45,8 @@ fi
 # The same vulnerability checks docker-publish.yml runs, but here, before
 # anything is merged, tagged or pushed. That workflow only starts once the
 # GitHub Release exists; a finding there leaves a release with no image and
-# no way out but a new patch version.
+# no way out but a new patch version. It scans dev; main ships the same code
+# minus the pruned dev-only paths, so a clean dev scan stands for the image.
 if [[ "$SKIP_SCAN" -eq 1 ]]; then
   echo "Warning: --skip-scan given; releasing without the vulnerability preflight." >&2
 else

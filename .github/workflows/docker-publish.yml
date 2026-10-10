@@ -41,7 +41,11 @@ jobs:
       # The tag and the GitHub Release already exist by then, and neither a
       # rerun (same commit, same finding) nor workflow_dispatch (no version
       # tag, only :latest) gets an image out. Fix the finding on dev and
-      # release a new patch version (vX.Y.Z.1).
+      # release a new patch version.
+      #
+      # no-cache-filters: runtime rebuilds the final stage (apk add) every run,
+      # so a fixed Alpine package is not hidden behind a cached layer while the
+      # alpine:3.24 digest stays the same. The Go builder stage stays cached.
       - name: Build image for scanning
         uses: docker/build-push-action@v6
         with:
@@ -52,6 +56,7 @@ jobs:
           tags: nextdash:scan
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          no-cache-filters: runtime
 
       - name: Scan image for vulnerabilities
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
@@ -103,3 +108,4 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          no-cache-filters: runtime

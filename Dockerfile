@@ -24,7 +24,7 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -installsuffix c
     -o main .
 
 # Final stage — binary only; static/templates/locales come from go:embed.
-FROM alpine:3.24
+FROM alpine:3.24 AS runtime
 
 # monolith saves a whole page as one file, for Config -> Data & backups ->
 # Sources -> Local copies. Included because a container is not a place anyone
