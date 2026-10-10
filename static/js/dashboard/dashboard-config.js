@@ -27646,7 +27646,23 @@ class DashboardConfig {
                     <button type="button" class="config-btn" data-help-action="fresh-tour">${esc(this.t('config.helpFreshTour', 'Walk me through Fresh'))}</button>
                 </div>`)
             + this.helpPanel('config.helpNotificationsTitle', 'Alerts & notifications',
-                'config.helpNotificationsBody', '');
+                'config.helpNotificationsBody', '')
+            + this.helpPanel('config.helpStatusPageTitle', 'The status page',
+                'config.helpStatusPageBody',
+                '<p>One page behind a secret link, for your household and friends: which services work, since when one is down, planned maintenance and 30 days of history. No accounts, and visitors can only read. Light or dark and the language follow their device.</p>'
+                + '<p><strong>What a visitor sees.</strong> Your title and notice, then your groups. Per service: the public name you gave it, its state, <em>Down since 14:03</em> while it is down, 30 day bars with the uptime percentage, and planned maintenance of the groups you linked. A link to the service and its response time only when you tick <strong>Link</strong> and <strong>Speed</strong>. Never error details, container images, internal addresses or anything else of your dashboard.</p>'
+                + '<p><strong>Setting it up.</strong> In Config → Status page, tick <strong>Turn the status page on</strong>, then <strong>Copy</strong> the link or scan the QR code. Under <strong>Groups and services</strong>, add a group and <strong>+ Add service</strong>: the picker lists monitored bookmarks and containers. A bookmark linked to a container is offered as one service, and the worse of the two counts. Under <strong>Maintenance shown on the page</strong>, tick the groups each window belongs to; the windows themselves live in Behavior → Status &amp; alerts.</p>'
+                + '<p><strong>Who can open it.</strong> Anyone with the link. <strong>New link…</strong> stops the old one at once. <strong>Only from the home network</strong> keeps it inside your house.</p>')
+            + this.helpPanel('config.helpStatusPageShareTitle', 'Sharing the status page safely',
+                'config.helpStatusPageShareBody',
+                '<p>nextDash has no login, so never put the whole app on the internet for the status page. Let your reverse proxy pass only <code>/s/</code> and <code>/static/status/</code>, and answer everything else with a 404. With Caddy:</p>'
+                + '<pre><code>status.example.net {\n    @status path /s/* /static/status/*\n    reverse_proxy @status nextdash:8080\n    respond 404\n}</code></pre>'
+                + '<p>With nginx:</p>'
+                + '<pre><code>proxy_set_header X-Forwarded-For $remote_addr;\nlocation /s/             { proxy_pass http://nextdash:8080; }\nlocation /static/status/ { proxy_pass http://nextdash:8080; }\nlocation /               { return 404; }</code></pre>'
+                + '<p>The <code>proxy_set_header</code> line tells nextDash who the visitor is; Caddy does this on its own.</p>'
+                + '<p><strong>Name the proxy</strong> in <code>NEXTDASH_TRUSTED_PROXIES</code>. Without it, or when it does not pass the visitor\'s address on, <strong>Only from the home network</strong> refuses everyone who comes through the proxy, and all visitors share one limit of 60 requests a minute, so with about 50 pages open at once they start getting <em>not found</em>.</p>'
+                + '<p><strong>The link is the key.</strong> Sharing the link is sharing the page. When it went further than you meant, use <strong>New link…</strong>. nextDash keeps the link out of its own log, but your proxy\'s access log may record it: switch that off for these paths or keep it private. After restoring a backup the old link does not come back; Config → Status page makes a new one when you open it.</p>'
+                + '<p><strong>Think about what it shows:</strong> which services you run and when you plan maintenance. Tick <strong>Link</strong> only for addresses meant to be public. The page is not indexed by search engines, sends no referrer, and a wrong or old link gets a plain <em>not found</em>.</p>');
     }
 
     /**
