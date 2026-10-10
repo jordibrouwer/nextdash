@@ -1,0 +1,68 @@
+:root {
+    --sp-bg: #f7f8f6; --sp-card: #ffffff; --sp-fg: #1d2327; --sp-muted: #66717a; --sp-line: #e3e7ea;
+    --ok: #2e9e5b; --warn: #c98a12; --down: #d64545; --maint: #3f7fd6; --unk: #9aa4ab;
+    --sp-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --sp-mono: ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --sp-bg: #111517; --sp-card: #171c1f; --sp-fg: #e4e9ec; --sp-muted: #8f9ba3; --sp-line: #262d31;
+        --ok: #43b874; --warn: #e0a63a; --down: #ef6262; --maint: #6aa0ee; --unk: #5d676d;
+    }
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    padding: 28px clamp(16px, 4vw, 44px) 22px;
+    background: var(--sp-bg);
+    color: var(--sp-fg);
+    font-family: var(--sp-sans);
+}
+.sp-inner { max-width: 760px; margin-inline: auto; display: grid; gap: 18px; }
+[data-status-body] { display: grid; gap: 18px; min-width: 0; }
+.sp-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.sp-title { font: 600 22px var(--sp-sans); margin: 0; letter-spacing: -.01em; }
+.sp-updated { font: 12px var(--sp-mono); color: var(--sp-muted); }
+.sp-note { margin: 0; background: var(--sp-card); border: 1px solid var(--sp-line); border-radius: 8px; padding: 10px 14px; font-size: 14px; color: var(--sp-fg); overflow-wrap: anywhere; }
+.sp-total { display: flex; gap: 12px; align-items: center; border-radius: 8px; padding: 14px 16px; font-weight: 600; font-size: 17px; color: #fff; background: var(--warn); }
+.sp-total.ok { background: var(--ok); }
+.sp-total.down { background: var(--down); }
+.sp-total svg { flex: none; }
+.sp-maint { border-left: 4px solid var(--maint); background: var(--sp-card); border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 14px; }
+.sp-maint b { color: var(--maint); }
+.sp-group { background: var(--sp-card); border: 1px solid var(--sp-line); border-radius: 10px; overflow: hidden; min-width: 0; }
+.sp-group h3 { margin: 0; padding: 10px 16px; font: 600 13px var(--sp-sans); letter-spacing: .04em; text-transform: uppercase; color: var(--sp-muted); border-bottom: 1px solid var(--sp-line); display: flex; justify-content: space-between; gap: 12px; }
+.sp-row { padding: 12px 16px; display: grid; gap: 8px; border-bottom: 1px solid var(--sp-line); }
+.sp-row:last-child { border-bottom: 0; }
+.sp-line1 { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.sp-name { font-weight: 600; color: var(--sp-fg); text-decoration: none; min-width: 0; overflow-wrap: anywhere; }
+a.sp-name:hover { text-decoration: underline; }
+.sp-ms { margin-left: auto; font: 12px var(--sp-mono); color: var(--sp-muted); font-variant-numeric: tabular-nums; display: flex; gap: 8px; align-items: center; }
+.pill { font: 600 12px var(--sp-sans); padding: 2px 9px; border-radius: 999px; color: #fff; white-space: nowrap; }
+.pill.ok { background: var(--ok); }
+.pill.warn { background: var(--warn); }
+.pill.down { background: var(--down); }
+.pill.maint { background: var(--maint); }
+.pill.unk { background: var(--unk); }
+.sp-since { font-size: 13px; color: var(--sp-muted); }
+.bars { display: grid; grid-template-columns: repeat(30, 1fr); gap: 2px; height: 26px; }
+.bars span { border-radius: 2px; background: var(--ok); }
+.bars span.warn { background: var(--warn); }
+.bars span.down { background: var(--down); }
+.bars span.maint { background: var(--maint); }
+.bars span.unk { background: var(--sp-line); }
+.bars span:hover { outline: 2px solid var(--sp-fg); outline-offset: 1px; }
+.bars-axis { display: flex; justify-content: space-between; font: 11px var(--sp-mono); color: var(--sp-muted); }
+.sp-foot { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; font-size: 12px; color: var(--sp-muted); }
+.sp-legend { display: flex; gap: 12px; flex-wrap: wrap; }
+.sp-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; background: var(--ok); }
+.sp-legend i.warn { background: var(--warn); }
+.sp-legend i.down { background: var(--down); }
+.sp-legend i.maint { background: var(--maint); }
+.spark { width: 56px; height: 16px; }
+@media (max-width: 480px) {
+    body { padding: 18px 12px; font-size: 14px; }
+    .sp-title { font-size: 18px; }
+    .bars { height: 20px; }
+    .sp-ms .spark { display: none; }
+}

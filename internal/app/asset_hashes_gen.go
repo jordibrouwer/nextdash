@@ -309,6 +309,8 @@ var precomputedAssetHashes = map[string]string{
 	"js/widgets-tutorial.js":                                 "84e6c57f1d76",
 	"js/write-api.js":                                        "25afcd408905",
 	"nextDash-cheatsheet.pdf":                                "333c1906ffec",
+	"status/status.css":                                      "a9ce0e7f22f9",
+	"status/status.js":                                       "02443ce43d7b",
 	"vendor/qrcode-generator/1.4.4/qrcode.js":                "18ae399f8118",
 	"vendor/uplot/1.6.32/uPlot.iife.min.js":                  "19c8d4c6ad88",
 	"vendor/uplot/1.6.32/uPlot.min.css":                      "df630c6a8d6f",
