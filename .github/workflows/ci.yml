@@ -69,6 +69,22 @@ jobs:
       - name: Run Go tests
         run: go test ./...
 
+  # Known vulnerabilities in the Go code and the standard library it is built
+  # with. govulncheck reports only what the code really calls, so a finding
+  # here is one to fix, not noise. It exits 3 when it finds one, and the job
+  # fails. The version is pinned so a new govulncheck release cannot change
+  # what passes. The toolchain comes from go.mod, so the standard library it
+  # checks is the one the release image is built with.
+  govulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Check for known vulnerabilities in the Go code
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
+
   e2e:
     runs-on: ubuntu-latest
     # Six runners, each with its own machine, its own `go run .` and its own
