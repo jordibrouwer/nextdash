@@ -15,11 +15,17 @@
 
     renderUnraidSection() {
         const esc = (v) => this.dash.escapeHtml(v);
+        const active = this.unraidTab || 'all';
+        const tabs = global.DashboardConfig.UNRAID_TABS.map((tab) => {
+            const on = tab === active;
+            return `<button type="button" class="config-subtab${on ? ' is-active' : ''}" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="config-unraid-body" data-unraid-tab="${esc(tab)}">${esc(this.unraidTabLabel(tab))}</button>`;
+        }).join('');
         return `
             <p class="config-view-intro">${esc(this.t('config.unraidSectionIntro',
                 'The Unraid server the Unraid widgets read. Every widget uses this one connection.'))}</p>
+            <div class="config-subtabs" role="tablist">${tabs}</div>
             <div class="config-tabpage">
-                <div class="config-tabpage-main" id="config-unraid-body">
+                <div class="config-tabpage-main" id="config-unraid-body" role="tabpanel" tabindex="0">
                     ${window.DemoLock?.unraidNote?.() || ''}
                     ${this.renderUnraidExplainer()}
                     ${this.renderUnraidPreview()}
@@ -44,7 +50,7 @@
                 <span class="config-sr-only" data-unraid-step-state></span>
             </li>`;
         return `
-            <div class="config-panel unraid-explain" data-unraid-explain>
+            <div class="config-panel unraid-explain" data-unraid-explain data-unraid-panel="how"${this.unraidPanelHidden('how')}>
                 <h3 class="config-panel-title">${t('unraidHowTitle', 'How it works')}</h3>
                 <div class="unraid-flow" aria-hidden="true">
                     <div class="unraid-node"><span class="unraid-node-box">nextDash</span><span class="unraid-node-label">${t('unraidHowDashboard', 'dashboard')}</span></div>
@@ -84,7 +90,7 @@
                         aria-label="${esc(this.t('config.widgetsAddNamed', 'Add {name}').replace('{name}', this.widgetTypeName(type)))}">${t('unraidMiniAdd', 'Add…')}</button>
             </div>`;
         return `
-            <div class="config-panel unraid-preview" data-unraid-preview>
+            <div class="config-panel unraid-preview" data-unraid-preview data-unraid-panel="widgets"${this.unraidPanelHidden('widgets')}>
                 <h3 class="config-panel-title">${t('unraidPreviewTitle', 'What you get')}</h3>
                 <p class="config-panel-note">${t('unraidPreviewNote',
                     'Seven widgets read this server, shown here with example figures. Add opens Widgets → Types on that kind.')}</p>
@@ -183,7 +189,43 @@
         if (container.isConnected) mark('widgets', placed);
     },
 
+    unraidTabLabel(tab) {
+        const map = {
+            all: ['config.unraidTabAll', 'All'],
+            connection: ['config.unraidTabConnection', 'Connection'],
+            how: ['config.unraidTabHow', 'How it works'],
+            widgets: ['config.unraidTabWidgets', 'What you get'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
+    },
+
+    /** ` hidden` for a card that is not on the chosen tab; All shows every card. */
+    unraidPanelHidden(panel) {
+        const tab = this.unraidTab || 'all';
+        return tab === 'all' || tab === panel ? '' : ' hidden';
+    },
+
+    /** Show the cards of the chosen tab without redrawing them. */
+    showUnraidTab(container) {
+        const tab = this.unraidTab || 'all';
+        container.querySelectorAll('[data-unraid-panel]').forEach((panel) => {
+            panel.hidden = !(tab === 'all' || panel.getAttribute('data-unraid-panel') === tab);
+        });
+    },
+
     bindUnraidSection(container) {
+        // Tabs show and hide the cards rather than redraw them: the connection
+        // form is bound once, and a half-typed key survives a switch of tab.
+        if (container.querySelector('[data-unraid-tab]')) {
+            this.bindSubTabStrip(container, 'data-unraid-tab', (tab) => {
+                if (tab === this.unraidTab) return;
+                this.unraidTab = tab;
+                this.restoreConfigHash();
+                this.showUnraidTab(container);
+                this.syncSubTabStrip('data-unraid-tab', this.unraidTab);
+            });
+        }
         container.querySelectorAll('[data-unraid-goto-widgets]').forEach((btn) => {
             btn.addEventListener('click', () => this.openUnraidWidgetTypes());
         });
@@ -201,7 +243,7 @@
         const esc = (v) => this.dash.escapeHtml(v);
         const t = (key, fallback) => esc(this.t(`config.${key}`, fallback));
         return `
-            <div class="config-panel" data-unraid-section>
+            <div class="config-panel" data-unraid-section data-unraid-panel="connection"${this.unraidPanelHidden('connection')}>
                 <h3 class="config-panel-title">${t('unraidTitle', 'Unraid')}</h3>
                 <p class="config-panel-note">${t('unraidIntro',
                     'The Unraid widgets read this server through its API (Unraid 7.2, or the Unraid Connect plugin). Make a key under Settings → Management Access → API Keys with the role Viewer: nextDash only reads.')}</p>

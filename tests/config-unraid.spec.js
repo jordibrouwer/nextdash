@@ -193,3 +193,28 @@ test.describe('Config -> Unraid explains itself', () => {
         await expect(page.locator('#config-widgets-body [data-widget-add="unraid"]')).toBeInViewport();
     });
 });
+
+test.describe('Unraid tabs', () => {
+    test('tabs show one card each, All shows every card, and typed text survives a switch', async ({ page }) => {
+        await openSection(page, { server: SAVED, keySet: true });
+        const panels = ['connection', 'how', 'widgets'];
+        for (const p of panels) await expect(page.locator(`[data-unraid-panel="${p}"]`)).toBeVisible();
+
+        await page.locator('[data-unraid-tab="connection"]').click();
+        await expect(page).toHaveURL(/#config\/unraid\/connection$/);
+        await expect(page.locator('[data-unraid-panel="connection"]')).toBeVisible();
+        await expect(page.locator('[data-unraid-panel="how"]')).toBeHidden();
+        await expect(page.locator('[data-unraid-panel="widgets"]')).toBeHidden();
+
+        // Cards are hidden, not redrawn: a typed key is still there.
+        await page.locator('[data-unraid-field="key"]').fill('typed-key');
+        await page.locator('[data-unraid-tab="how"]').click();
+        await expect(page.locator('[data-unraid-panel="how"]')).toBeVisible();
+        await expect(page.locator('[data-unraid-panel="connection"]')).toBeHidden();
+        await page.locator('[data-unraid-tab="connection"]').click();
+        await expect(page.locator('[data-unraid-field="key"]')).toHaveValue('typed-key');
+
+        await page.locator('[data-unraid-tab="all"]').click();
+        for (const p of panels) await expect(page.locator(`[data-unraid-panel="${p}"]`)).toBeVisible();
+    });
+});
