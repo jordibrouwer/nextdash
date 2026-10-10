@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Merge dev into main, strip dev-only paths, tag, push, and publish a GitHub Release.
-# Usage: ./scripts/release-to-main.sh v2026.06.31
+# Usage: ./scripts/release-to-main.sh v1.19.0 [--skip-scan]
+#   --skip-scan  skip the local govulncheck + Trivy preflight (emergencies only)
 # Requires: gh auth login (once) for the GitHub Release step.
 set -euo pipefail
 
@@ -17,15 +18,33 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
   exit 1
 fi
 
-TAG="${1:-}"
+TAG=""
+SKIP_SCAN=0
+for arg in "$@"; do
+  case "$arg" in
+    --skip-scan) SKIP_SCAN=1 ;;
+    -*) echo "Unknown option: ${arg}" >&2; exit 1 ;;
+    *) TAG="$arg" ;;
+  esac
+done
 if [[ -z "$TAG" ]]; then
-  echo "Usage: $0 <tag>   e.g. v2026.06.29" >&2
+  echo "Usage: $0 <tag> [--skip-scan]   e.g. v1.19.0" >&2
   exit 1
 fi
 
 if [[ ! "$TAG" =~ ^v[0-9] ]]; then
-  echo "Tag must start with v (e.g. v2026.06.31), got: ${TAG}" >&2
+  echo "Tag must start with v (e.g. v1.19.0), got: ${TAG}" >&2
   exit 1
+fi
+
+# The same vulnerability checks docker-publish.yml runs, but here, before
+# anything is merged, tagged or pushed. That workflow only starts once the
+# GitHub Release exists; a finding there leaves a release with no image and
+# no way out but a new patch version.
+if [[ "$SKIP_SCAN" -eq 1 ]]; then
+  echo "Warning: --skip-scan given; releasing without the vulnerability preflight." >&2
+else
+  bash "${ROOT}/scripts/release-preflight.sh"
 fi
 
 tag_commit() {
