@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.19.0 — 10 October 2026](#v1190--10-october-2026)
 - [v1.18.4.1 — 9 October 2026](#v11841--9-october-2026)
 - [v1.18.4 — 9 October 2026](#v1184--9-october-2026)
 - [v1.18.3 — 9 October 2026](#v1183--9-october-2026)
@@ -104,6 +105,55 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ---
 
+## v1.19.0 — 10 October 2026
+
+A status page for the people who use your services: a read-only page behind a secret link, set up under **Config → Status page**. Around it, Config gets tabs for Unraid and a "new" mark in the section list, Bookmarks and the category titles draw faster with many bookmarks and containers, two theme fixes, and the build now checks for known vulnerabilities before anything is released.
+
+### Status page
+
+- **new — a page at `/s/<token>` for the people who use your services, with its data at `/s/<token>/data.json`.** It shows an overall line, a banner for planned maintenance, and groups of services, each with its state, since when it is down, 30 day bars, response time and uptime. The visitor's device picks the language and light or dark; the page refreshes every minute and pauses while the tab is hidden. It never shows error details, container images or internal addresses unless Link is switched on for a service. Config and token live in the store; every wrong address answers the same 404, `/s/*` allows 60 requests a minute per visitor (counted by the real client address behind a proxy), "Only from the home network" lets in private addresses the install can identify, and the token is kept out of the request log. The owner API sits behind the write token. Specs: `tests/status-page-visitor.spec.js` and the `status_page_*_test.go` files.
+- **new — Config → Status page.** Five tabs, All and then one per card: Link and access (turn it on, Copy, Open, a QR code, New link… which retires the old link at once), Top of the page, Groups and services (a picker offers a linked bookmark and container as one service) and Maintenance (windows per group). Sub-tabs and ℹ modals as on the other sections. Spec: `tests/config-status-page.spec.js`.
+- **fix — editing a maintenance window under Behavior no longer drops the groups it is linked to.** The window was saved from the form's fields alone, and the link to the status page's groups is not one of them.
+
+### Config
+
+- **new — Unraid has tabs.** All, Connection, How it works and What you get, as on the other sections; a tab hides cards instead of redrawing them, so the page no longer jumps when you move between sections. `tests/config-unraid.spec.js` covers it.
+- **new — a small "new" behind Structure, Containers, Unraid and Status page in the section list.** `DashboardConfig.NEW_SECTIONS` names them, and the mark is drawn from an attribute with empty alt text so the tabs keep their accessible names. Clear the list once the release is no longer recent.
+
+### Performance
+
+- **fix — containers are matched to bookmarks once, not once per row.** `containersFor` ran `bookmarkFor` for every container on every row, so the work grew as rows × containers × bookmarks, and each call parsed addresses with `new URL`. `docker-search-index.js` now keeps the answer for every container until the container list, the bookmarks, the links set by hand or the host address change, and parses each address once. `tests/docker-bookmark-link.spec.js` fails without it.
+- **fix — category titles are fitted together, not one at a time.** Each title was reset, measured and resized in turn, and every measurement forced a layout. `dashboard-category-title-fit.js` now fits all of them in a fixed number of layouts, however many there are. `tests/category-title-fit-batched.spec.js` counts the layouts.
+- **fix — the Bookmarks list looks up its URL keys and its rows once when health lands.** The canonical key of an address is cached by the address as given (it depends on the string alone, so it cannot go stale), and the health repaint builds one lookup for all rows instead of walking the library for each. `tests/bookmarks-health-repaint-cost.spec.js` covers it.
+
+### Themes
+
+- **fix — the newest theme stylesheet wins, and older ones go.** Two refreshes in a row (Use theme runs one inside `applyThemeChoice` and one after it) left two `/api/theme.css` links loading, and the second was put after the first only by position, so the older copy could come last, win the cascade and never be removed. `visual-settings.js` now replaces the last link and removes every link before the new one. `tests/theme-css-reload.spec.js` covers it.
+- **fix — with several custom themes, the theme stylesheet has the same bytes every time.** Custom themes came out in map order, so with two or more of them every render after any data write hashed differently and the browser fetched the 600 KB file again. They are sorted now, as the built-in themes are. `TestThemeCSSSameThemesSameBytes` fails without it.
+
+### Inbox
+
+- **fix — pasting a link the Inbox already holds opens a styled Inbox.** The answer to a duplicate is to open the view on the existing item, and that went straight to `DashboardInbox.openInboxView`, past the loader's, which was the only one to fetch the views stylesheet bundle. On a fresh dashboard the list then drew as bare markup. The module's `openInboxView` now awaits `ViewStyles.ensureViewStyles` itself, which also covers triage started from the dashboard. `tests/dashboard-paste-choice-style.spec.js` pastes a duplicate and checks the Inbox's rules have arrived.
+
+### Build and security
+
+- **new — Go 1.26 and a current `golang.org/x/net`.** `govulncheck` on Go 1.24 reported 29 advisories in the standard library, which this moves past. The Dockerfile builds with `golang:1.26-alpine` and runs on Alpine 3.24, and CI takes its Go version from `go.mod`.
+- **new — CI runs `govulncheck` on every push**, pinned to v1.1.4 so a new release of the tool cannot change what passes.
+- **new — the release image is scanned with Trivy before it is pushed**, in `docker-publish.yml`, which dev now tracks too.
+- **new — `release-to-main.sh` runs the same two checks first**, through `scripts/release-preflight.sh`: `govulncheck`, and a Trivy scan of an image built on this machine. It needs Docker running, and `--skip-scan` skips it for an emergency. A finding in `docker-publish.yml` would leave a release with no image and no way out but a new patch version; this finds it before anything is merged, tagged or pushed.
+
+### Help and docs
+
+- **docs — Help → Config lists Unraid and Status page** among the sections and explains the "new" mark and the tabs they share with Inbox and Containers. `config.sectionStatusPage` was missing, so its label fell back to English in every language; it exists in all six now.
+- **docs — MANUAL §12.8 and §23.10 and Help → Monitoring describe the status page**, how to share it over the internet (proxy only `/s/` and `/static/status/`, `NEXTDASH_TRUSTED_PROXIES`) and what to restore. The README lists it under Health and monitoring.
+- **docs — Config → Overview and About → News & features carry the status page**, dated `v1.19.0`, in six languages.
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.19.0.json` and its index entry**; `whats-new-stub.js` moved `DASHBOARD_RELEASE` to `2026.10-dashboard-release-v1.19.0` and `NEXTDASH_WHATS_NEW_DATA_VERSION` one step. The Inbox fix above was listed under v1.18.4.1 after that release went out; it ships here, so it moved. `go generate` refreshed `asset_hashes_gen.go`.
+
+---
+
 ## v1.18.4.1 — 9 October 2026
 
 Bookmarks opens sooner and the same way from the key as from the button. `Shift+H` now lands on the whole list instead of the Broken filter, loading starts as the pointer reaches the button, the list is laid out and drawn once instead of several times, config no longer carries Appearance and the widget editor into Bookmarks, and a view opens with half the fade. Held back from the What's new window (`hideFromModal`) like v1.18.1, so v1.18.4 keeps leading it.
@@ -111,10 +161,6 @@ Bookmarks opens sooner and the same way from the key as from the button. `Shift+
 ### Bookmarks
 
 - **fix — `Shift+H` opens the whole Bookmarks list, the same as its header button.** The key went through `openHealthView`, which landed on the Broken filter — the old Health view's front page — and did nothing at all with health checks off, so the key and the button opened two different things. `dashboard-setup.js` now calls `config.openLibraryView`, with no filter and nothing selected; `:health` and `/#health` still land on Broken. `tests/bookmarks-shift-h.spec.js` covers it.
-
-### Inbox
-
-- **fix — pasting a link the Inbox already holds opens a styled Inbox.** The answer to a duplicate is to open the view on the existing item, and that went straight to `DashboardInbox.openInboxView`, past the loader's, which was the only one to fetch the views stylesheet bundle. On a fresh dashboard the list then drew as bare markup. The module's `openInboxView` now awaits `ViewStyles.ensureViewStyles` itself, which also covers triage started from the dashboard. `tests/dashboard-paste-choice-style.spec.js` pastes a duplicate and checks the Inbox's rules have arrived.
 
 ### Performance
 
