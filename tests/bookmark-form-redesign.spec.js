@@ -307,7 +307,6 @@ test('a changed address replaces the card and the fetched icon, whatever arrives
     await url.fill('https://second.example/b');
     await url.blur();
     await expect(form.locator('.bookmark-form-card-desc')).toHaveText('Said by the second page');
-    await page.waitForTimeout(1800);
     await expect(form.locator('.bookmark-form-card-desc')).toHaveText('Said by the second page');
     await expect(form.locator('.bookmark-form-card-icon img')).toHaveAttribute('src', /second\.example/);
     await expect(form.locator('[data-field="name"]')).toHaveValue('Second page');

@@ -257,7 +257,6 @@ test.describe('config bookmarks editor — URL auto-fill', () => {
         const url = form.locator('input[type="url"]');
         await url.fill('https://example.com/other');
         await url.blur();
-        await page.waitForTimeout(600);
         await expect(form.locator('[data-field="name"]')).toHaveValue('My own name');
     });
 

@@ -103,7 +103,6 @@ test.describe('inbox tutorial', () => {
         await expect(page.locator('.modal-actions .modal-button').nth(1)).toHaveText('Back');
 
         await page.locator('.modal-actions .modal-button', { hasText: 'Back' }).click();
-        await page.waitForTimeout(120);
         await expect(page.locator('.inbox-tutorial-progress')).toHaveText(`Step ${STEPS - 1} of ${STEPS}`);
     });
 

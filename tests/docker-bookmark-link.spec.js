@@ -137,7 +137,6 @@ test('a bookmark far down the list still gets its row, in view and in focus', as
     await page.locator('[data-docker-row="sonarr"] [data-docker-bm-dot]').click();
     const row = page.locator('#config-bm-list .config-bm-row[data-bm-key="1::http://localhost:8989/"]');
     await expect(row).toBeFocused();
-    await page.waitForTimeout(1500);
     await expect(row).toBeFocused();
     await expect(row).toBeInViewport();
     await expect(page.locator('#config-bm-panel')).toHaveAttribute('data-bm-panel-key', '1::http://localhost:8989/');

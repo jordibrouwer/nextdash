@@ -87,7 +87,6 @@ test.describe('copying structure', () => {
             c.ptTab = 'pages';
             c.render();
         });
-        await page.waitForTimeout(500);
         await expect(page.locator('[data-page-duplicate]').first()).toBeVisible({ timeout: 10_000 });
         expect(await page.evaluate(() =>
             typeof window.dashboardInstance.config.duplicatePage)).toBe('function');

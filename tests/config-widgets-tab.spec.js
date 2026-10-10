@@ -159,7 +159,6 @@ test.describe('the widgets tab', () => {
         expect(await page.locator('.config-widget-bulk').count()).toBe(0);
 
         await page.locator('[data-widget-pick]').first().check();
-        await page.waitForTimeout(600);
         await expect(page.locator('.config-widget-bulk')).toBeVisible();
         await expect(page.locator('.config-widget-bulk-count')).toContainText('1');
 

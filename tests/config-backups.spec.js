@@ -148,7 +148,6 @@ test.describe('the tab holds what belongs to it', () => {
             c.behaviorTab = 'status';
             c.render();
         });
-        await page.waitForTimeout(1200);
         // Behaviour panels stamp their controls with data-behavior-field.
         await expect(page.locator('[data-behavior-field="healthAutoRecheckEnabled"]').first())
             .toBeVisible({ timeout: 10_000 });

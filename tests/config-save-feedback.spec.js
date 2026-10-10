@@ -57,7 +57,6 @@ test.describe('config save feedback', () => {
             : route.fallback());
         await page.locator('[data-behavior-field="showRecentButton"]').click();
         await expect(state(page)).toHaveClass(/is-error/);
-        await page.waitForTimeout(3200);
         await expect(state(page)).toHaveClass(/is-error/);
     });
 
