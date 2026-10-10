@@ -18,15 +18,18 @@ async function openConfig(page, section) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
     await page.evaluate((s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; return c.openConfigView(s); }, section);
     await page.waitForSelector('.config-view-body', { timeout: 20_000 });
-    await page.waitForTimeout(500);
 }
 
 test.describe('the spotlight catalogue is data', () => {
     test('it is fetched, and it holds what the panels draw', async ({ page }) => {
         await openConfig(page, 'overview');
-        const fetched = await page.evaluate(() => performance.getEntriesByType('resource')
-            .some((r) => r.name.includes('overview-features.json')));
-        expect(fetched).toBe(true);
+        await expect.poll(() => page.evaluate(() => performance.getEntriesByType('resource')
+            .some((r) => r.name.includes('overview-features.json')))).toBe(true);
+        // The catalogue is parsed once its fetch lands.
+        await expect.poll(() => page.evaluate(() => {
+            const c = window.dashboardInstance.config._module || window.dashboardInstance.config;
+            return c.overviewNewFeatures().length;
+        })).toBeGreaterThan(30);
 
         const state = await page.evaluate(() => {
             const c = window.dashboardInstance.config._module || window.dashboardInstance.config;
@@ -59,8 +62,7 @@ test.describe('switching sections keeps the shell', () => {
         const railBefore = await page.locator('.config-nav-column').elementHandle();
 
         await page.locator('[data-config-section="behavior"]').click();
-        await page.waitForTimeout(400);
-        expect(await page.evaluate(() => {
+        await expect.poll(() => page.evaluate(() => {
             const c = window.dashboardInstance.config._module || window.dashboardInstance.config;
             return c.section;
         })).toBe('behavior');
@@ -73,6 +75,7 @@ test.describe('switching sections keeps the shell', () => {
         // One click, one switch — a rail bound twice would fire two handlers and
         // the second could land on a stale section.
         await page.locator('[data-config-section="about"]').click();
+        // A second handler would land later, so wait long enough for it to show.
         await page.waitForTimeout(400);
         expect(await page.evaluate(() => {
             const c = window.dashboardInstance.config._module || window.dashboardInstance.config;

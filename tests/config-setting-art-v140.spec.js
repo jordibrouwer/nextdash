@@ -75,7 +75,7 @@ test.describe('the v1.4.0 setting drawings', () => {
 
     test('a widget names its width and draws it', async ({ page }) => {
         await openConfig(page, () => window.dashboardInstance.config.openConfigView('widgets'));
-        await page.waitForTimeout(800);
+        await expect.poll(() => page.evaluate(() => typeof window.SettingArt?.render)).toBe('function');
         const drawn = await page.evaluate(() =>
             typeof window.SettingArt?.render === 'function'
             && /setting-art-block/.test(window.SettingArt.render('widgetSpan', 2) || ''));
@@ -91,7 +91,7 @@ test.describe('the v1.4.0 setting drawings', () => {
             c.openConfigView('help');
             c.render();
         });
-        await page.waitForTimeout(600);
+        await expect(page.locator('.setting-art').first()).toBeAttached();
         const hidden = await page.evaluate(() =>
             [...document.querySelectorAll('.setting-art')].every((el) => el.getAttribute('aria-hidden') === 'true'));
         expect(hidden).toBe(true);

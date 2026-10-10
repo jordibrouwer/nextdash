@@ -920,7 +920,9 @@ test('neither rail carries a raised plate', async ({ page }) => {
     await loadDashboard(page);
     await openSection(page, 'overview');
     await page.evaluate(() => document.body.setAttribute('data-depth', 'glass'));
-    await page.waitForTimeout(300);
+    // Any transition the depth change started has run out before it is read.
+    await expect.poll(() => page.evaluate(() =>
+        document.querySelector('.config-nav-column .lvs-group').getAnimations().length)).toBe(0);
 
     const config = await page.evaluate(() => {
         const c = window.getComputedStyle(document.querySelector('.config-nav-column .lvs-group'));

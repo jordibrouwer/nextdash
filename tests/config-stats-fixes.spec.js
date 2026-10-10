@@ -28,7 +28,9 @@ async function openStats(page, tab = 'overview') {
             c.loadStatsTabData(t);
             c.repaintStatsBody();
         }, tab);
-        await page.waitForTimeout(600);
+        // Every load the tab started has landed and repainted the body.
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config._statsInFlight?.size ?? 0)).toBe(0);
     }
 }
 

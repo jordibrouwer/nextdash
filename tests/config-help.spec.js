@@ -27,7 +27,7 @@ async function openHelp(page, tab) {
             c.helpTab = t;
             c.render();
         }, tab);
-        await page.waitForTimeout(500);
+        await expect(page.locator(`[data-help-tab="${tab}"]`)).toHaveAttribute('aria-selected', 'true');
     }
 }
 

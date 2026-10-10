@@ -179,7 +179,8 @@ test.describe('config: browser push notifications', () => {
 
         const master = page.locator('[data-behavior-field="pushNotifyEnabled"]');
         if (!(await master.isChecked())) await master.click();
-        await page.waitForTimeout(1000);
+        // The device button is offered once the master switch is on.
+        await expect(page.locator('[data-push-toggle]')).toBeEnabled();
 
         await page.evaluate(() => { window.__order = []; });
 
@@ -187,7 +188,8 @@ test.describe('config: browser push notifications', () => {
 
         // A genuine click on the button, as a user would.
         await page.locator('[data-push-toggle]').click();
-        await page.waitForTimeout(1500);
+        await expect.poll(() => page.evaluate(() =>
+            window.__order.some((e) => e === 'requestPermission-OK' || e === 'REJECTED-no-gesture'))).toBe(true);
 
         const order = await page.evaluate(() => window.__order);
 

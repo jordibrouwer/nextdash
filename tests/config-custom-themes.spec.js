@@ -162,7 +162,9 @@ test.describe('custom theme editor', () => {
         await expect(page.locator('[data-theme-name]')).toHaveCount(1);
         await page.locator('[data-theme-name]').first().fill('Midnight Blue');
         await page.locator('[data-theme-name]').first().blur();
-        await page.waitForTimeout(800);
+        // The rename's save has finished.
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config._colorsSavePromise == null)).toBe(true);
 
         // The picker is built from a cached custom-themes response, so the
         // cache has to be dropped when a theme is added or renamed.
@@ -411,6 +413,7 @@ test('a failed colour read is never saved back over the stored themes', async ({
         : route.continue()));
     await page.evaluate(() => window.dashboardInstance.config.openCustomThemes());
     await page.locator('[data-theme-add]').click();
+    // Checks that no write lands, so give a stray save time to reach the server.
     await page.waitForTimeout(500);
     await page.unroute('**/api/colors');
     const stored = await page.evaluate(async () => Object.values((await (await fetch('/api/colors')).json()).custom || {}).map((t) => t.name));
@@ -429,7 +432,9 @@ test('the order of your own themes survives a read back from the server', async 
     const before = await order();
     await page.locator(`[data-theme-move="down"][data-id="${before[0]}"]`).click();
     await expect.poll(order).toEqual([before[1], before[0]]);
-    await page.waitForTimeout(800);
+    // The move's save has finished.
+    await expect.poll(() => page.evaluate(() =>
+        window.dashboardInstance.config._colorsSavePromise == null)).toBe(true);
     // Read back from the server as a fresh page would.
     const stored = await page.evaluate(async () => {
         const cfg = window.dashboardInstance.config;

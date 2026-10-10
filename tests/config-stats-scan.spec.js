@@ -29,8 +29,6 @@ async function openStats(page, tab) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 15_000 });
-    // Quickstart's background favicon sweep reopens Overview when it finishes.
-    await page.waitForTimeout(6000);
     await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('stats'); });
     if (tab) {
         await page.locator(`[data-stats-tab="${tab}"]`).click();

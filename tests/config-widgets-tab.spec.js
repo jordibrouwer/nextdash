@@ -20,7 +20,16 @@ async function openWidgets(page) {
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
-    await page.waitForTimeout(1500);
+    await waitForWidgetsLoaded(page);
+}
+
+/** The tab has read its widgets for the page it shows, and painted them. */
+async function waitForWidgetsLoaded(page) {
+    await expect.poll(() => page.evaluate(() => {
+        const cfg = window.dashboardInstance.config._module;
+        return Boolean(cfg && cfg._widgetBlocks != null && cfg._widgetLoadedFor != null
+            && cfg._widgetLoadedFor === cfg._widgetPageId);
+    }), { timeout: 15_000 }).toBe(true);
 }
 
 /*
@@ -119,14 +128,15 @@ test.describe('the widgets tab', () => {
         await ensureWidget(page, 'health');
 
         await page.fill('#config-widget-search', 'zzzznomatchzzzz');
-        await page.waitForTimeout(600);
+        // The search repaints after its debounce.
+        await expect(page.locator('.config-widget-none')).toBeVisible();
 
         const text = await page.evaluate(() =>
             document.querySelector('.config-widget-none')?.textContent?.trim() || '');
         expect(text.length).toBeGreaterThan(0);
 
         await page.fill('#config-widget-search', '');
-        await page.waitForTimeout(500);
+        await expect(page.locator('.config-widget-none')).toHaveCount(0);
     });
 
     test('grouped puts headings above the rows, and the other sorts do not', async ({ page }) => {
@@ -138,13 +148,10 @@ test.describe('the widgets tab', () => {
         expect(grouped).toBeGreaterThan(0);
 
         await page.selectOption('[data-widget-sort]', 'name');
-        await page.waitForTimeout(700);
-        const flat = await page.evaluate(() =>
-            document.querySelectorAll('.config-widget-group-title').length);
-        expect(flat).toBe(0);
+        await expect(page.locator('.config-widget-group-title')).toHaveCount(0);
 
         await page.selectOption('[data-widget-sort]', 'group');
-        await page.waitForTimeout(700);
+        await expect(page.locator('.config-widget-group-title').first()).toBeVisible();
     });
 
     /*
@@ -163,8 +170,7 @@ test.describe('the widgets tab', () => {
         await expect(page.locator('.config-widget-bulk-count')).toContainText('1');
 
         await page.locator('[data-widget-bulk="clear"]').click();
-        await page.waitForTimeout(600);
-        expect(await page.locator('.config-widget-bulk').count()).toBe(0);
+        await expect(page.locator('.config-widget-bulk')).toHaveCount(0);
     });
 
     /*
@@ -176,12 +182,13 @@ test.describe('the widgets tab', () => {
         await ensureWidget(page, 'health');
 
         await page.locator('[data-widget-pick]').first().check();
-        await page.waitForTimeout(500);
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config._module.widgetSelection.size)).toBe(1);
         const picked = await page.evaluate(() =>
             [...window.dashboardInstance.config._module.widgetSelection]);
 
         await page.selectOption('[data-widget-sort]', 'name');
-        await page.waitForTimeout(700);
+        await expect(page.locator('.config-widget-group-title')).toHaveCount(0);
 
         const after = await page.evaluate(() =>
             [...window.dashboardInstance.config._module.widgetSelection]);
@@ -190,7 +197,7 @@ test.describe('the widgets tab', () => {
         expect(await page.locator('[data-widget-pick]:checked').count()).toBe(1);
 
         await page.selectOption('[data-widget-sort]', 'group');
-        await page.waitForTimeout(500);
+        await expect(page.locator('.config-widget-group-title').first()).toBeVisible();
         await page.evaluate(() => {
             window.dashboardInstance.config._module.widgetSelection.clear();
             window.dashboardInstance.config._module.repaintWidgetsBody();
@@ -215,14 +222,16 @@ test.describe('every page at once', () => {
             cfg._widgetLoadedFor = null;
             return cfg.loadWidgetsEditor();
         });
-        await page.waitForTimeout(1200);
+        await waitForWidgetsLoaded(page);
 
         const before = await page.evaluate(() =>
             (window.dashboardInstance.config._module._widgetBlocks || [])
                 .filter((b) => b.isWidget).length);
 
         await page.selectOption('[data-widget-page]', 'all');
-        await page.waitForTimeout(2500);
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config._module.isAllPagesView())).toBe(true);
+        await waitForWidgetsLoaded(page);
 
         const view = await page.evaluate(() => {
             const cfg = window.dashboardInstance.config._module;
@@ -259,10 +268,12 @@ test.describe('every page at once', () => {
             cfg._widgetLoadedFor = null;
             return cfg.loadWidgetsEditor();
         });
-        await page.waitForTimeout(1200);
+        await waitForWidgetsLoaded(page);
 
         await page.selectOption('[data-widget-page]', 'all');
-        await page.waitForTimeout(2500);
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config._module.isAllPagesView())).toBe(true);
+        await waitForWidgetsLoaded(page);
 
         const outcome = await page.evaluate(async () => {
             const cfg = window.dashboardInstance.config._module;
@@ -329,7 +340,15 @@ test.describe('the page a widget stands on', () => {
         const select = page.locator(`[data-widget-move-page="${ids.index}"]`);
         await expect(select).toHaveValue(String(ids.from));
         await select.selectOption(String(ids.to));
-        await page.waitForTimeout(2000);
+        // Both pages are written and the tab has reloaded without the widget.
+        await expect.poll(() => page.evaluate(async ({ from, to, id }) => {
+            const cfg = window.dashboardInstance.config._module;
+            const read = async (p) => ((await (await cfg.writeFetch(`/api/pages/${p}/blocks`)).json()).widgets || []);
+            const onSource = (await read(from)).some((w) => w.id === id);
+            const onTarget = (await read(to)).some((w) => w.id === id);
+            const settled = cfg._widgetBlocks != null && cfg._widgetLoadedFor === cfg._widgetPageId;
+            return !onSource && onTarget && settled && !cfg._widgetBlocks.some((b) => b.id === id);
+        }, ids), { timeout: 10_000 }).toBe(true);
 
         const where = await page.evaluate(async ({ from, to, id }) => {
             const cfg = window.dashboardInstance.config._module;

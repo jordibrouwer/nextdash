@@ -235,6 +235,7 @@ test.describe('config bookmarks context menu', () => {
         await openBookmarksSection(page);
         await firstRow(page).locator('.config-bm-title')
             .click({ button: 'right', modifiers: ['Shift'] });
+        // Nothing should appear, so give the menu time to have opened if it were going to.
         await page.waitForTimeout(300);
         await expect(page.locator(MENU)).toHaveCount(0);
     });
@@ -266,7 +267,15 @@ test.describe('config bookmarks context menu', () => {
 
         await page.locator(`${MENU} [data-action="filter-page"]`).click();
         await expect(page.locator(MENU)).toHaveCount(0);
-        await page.waitForTimeout(400);
+        // The filter is set at once but the list repaints after the page's
+        // categories arrive, so wait until every row shown is on that page.
+        await expect.poll(() => page.evaluate(() => {
+            const cfg = window.dashboardInstance.config;
+            const pageFilter = String(cfg.bmPageFilter || '');
+            const rows = [...document.querySelectorAll('#config-bm-list .config-bm-row')];
+            return pageFilter !== '' && rows.length > 0 && rows.every((row) =>
+                String(cfg.findBookmarkByKey(row.getAttribute('data-bm-key'))?.pageId) === pageFilter);
+        })).toBe(true);
 
         const filter = await page.evaluate(() => String(window.dashboardInstance.config.bmPageFilter || ''));
         expect(filter).not.toBe('');

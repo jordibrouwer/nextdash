@@ -140,6 +140,7 @@ test.describe('config bookmarks — opening a row', () => {
         expect(before.length).toBeGreaterThan(0);
 
         await openBtn.dblclick();
+        // The row must stay put, so allow time for a re-filter to have dropped it.
         await page.waitForTimeout(700);
 
         // Still there, and now showing the open that just happened.
