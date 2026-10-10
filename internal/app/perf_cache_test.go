@@ -70,6 +70,31 @@ func TestThemeCSSFollowsASavedColour(t *testing.T) {
 }
 
 /*
+The same themes are the same bytes. Custom themes came out in map order, so
+with two or more of them every re-render -- after any data write -- gave the
+stylesheet a new hash and the browser a new 600 KB download.
+*/
+func TestThemeCSSSameThemesSameBytes(t *testing.T) {
+	h := themeCSSTestHandlers(t)
+	colors := h.store.GetColors()
+	if colors.Custom == nil {
+		colors.Custom = map[string]ThemeColors{}
+	}
+	for _, id := range []string{"probe-a", "probe-b", "probe-c", "probe-d", "probe-e", "probe-f"} {
+		colors.Custom[id] = colors.Dark
+	}
+	if err := h.store.SaveColors(colors); err != nil {
+		t.Fatal(err)
+	}
+	first := h.renderThemeCSS(1)
+	for i := 0; i < 20; i++ {
+		if h.renderThemeCSS(1) != first {
+			t.Fatal("the same themes rendered to different bytes, so the hashed address keeps moving")
+		}
+	}
+}
+
+/*
 The bundles are compressed once rather than on every request. What a gzip
 client gets must decode to exactly what any other client gets.
 */

@@ -4056,8 +4056,16 @@ func (h *Handlers) renderThemeCSS(seed int) string {
 	b.WriteString(renderThemeCSSBlockSeeded("dark", colors.Dark, seed))
 	b.WriteString("\n")
 
-	// Add custom themes CSS
-	for themeID, themeColors := range colors.Custom {
+	// Add custom themes CSS. Sorted, as the built-ins are: the page links this
+	// file by the hash of its bytes, and map order made the same themes hash
+	// differently on every render.
+	customIDs := make([]string, 0, len(colors.Custom))
+	for themeID := range colors.Custom {
+		customIDs = append(customIDs, themeID)
+	}
+	sort.Strings(customIDs)
+	for _, themeID := range customIDs {
+		themeColors := colors.Custom[themeID]
 		safeID := sanitizeCSSIdent(themeID)
 		if safeID == "" {
 			continue
