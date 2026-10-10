@@ -31,12 +31,15 @@ async function restoreRandomThemeDefaults(page) {
 }
 
 async function setRandomThemeMode(page, mode) {
+    // The save has to have landed before a reload, or the reload cancels it.
+    const saved = page.waitForResponse((r) => r.url().endsWith('/api/settings')
+        && r.request().method() === 'POST');
     await page.locator(`[data-appearance-randommode="${mode}"]`).click();
     // The panel repaints after the settings POST, so wait for the button that
     // comes back marked active rather than a fixed delay.
     await expect(page.locator(`[data-appearance-randommode="${mode}"]`))
         .toHaveAttribute('aria-pressed', 'true');
-    await page.waitForTimeout(300);
+    await saved;
 }
 
 test.describe('Random theme modes', () => {

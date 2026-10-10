@@ -16,7 +16,7 @@ async function openConfig(page) {
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('structure'));
-    await page.waitForTimeout(800);
+    await expect(page.locator('.config-nav-item[data-config-section="structure"]')).toHaveAttribute('aria-selected', 'true');
 }
 
 test.describe('config keyboard lists', () => {
@@ -32,7 +32,8 @@ test.describe('config keyboard lists', () => {
         const tab = page.locator('[data-pt-tab="collections"]').first();
         test.skip(!(await tab.count()), 'no collections tab');
         await tab.click();
-        await page.waitForTimeout(900);
+        await expect(tab).toHaveAttribute('aria-selected', 'true');
+        await expect(page.locator('#config-pt-body .config-crud-list').first()).toBeAttached();
 
         const shape = await page.evaluate(() => {
             const cfg = window.dashboardInstance.config;
@@ -58,7 +59,8 @@ test.describe('config keyboard lists', () => {
         const tab = page.locator('[data-pt-tab="collections"]').first();
         test.skip(!(await tab.count()), 'no collections tab');
         await tab.click();
-        await page.waitForTimeout(900);
+        await expect(tab).toHaveAttribute('aria-selected', 'true');
+        await expect(page.locator('#config-pt-body .config-crud-list').first()).toBeAttached();
 
         const ok = await page.evaluate(() => {
             const cfg = window.dashboardInstance.config;

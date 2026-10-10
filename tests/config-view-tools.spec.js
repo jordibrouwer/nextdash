@@ -17,7 +17,7 @@ async function config(page, section) {
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
     await page.evaluate((s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; return c.openConfigView(s); }, section);
-    await page.waitForTimeout(700);
+    await expect(page.locator(`.config-nav-item[data-config-section="${section}"]`)).toHaveAttribute('aria-selected', 'true');
 }
 
 test.describe('finding a setting by its value', () => {
@@ -66,7 +66,7 @@ test.describe('a statistics row leads somewhere', () => {
 
         const tag = (await tagBtn.getAttribute('data-stats-goto')).split(':').slice(1).join(':');
         await tagBtn.click();
-        await page.waitForTimeout(600);
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('bookmarks');
         const state = await page.evaluate(() => {
             const c = window.dashboardInstance.config;
             return { section: c.section, tags: c.bmTagFilter, cleanup: c.bmCleanupFilter };

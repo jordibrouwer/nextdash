@@ -210,6 +210,7 @@ test.describe('Config overview — your install', () => {
             contentType: 'application/json', body: JSON.stringify({ socket: false, control: false }),
         }));
         await openOverview(page);
+        // A fixed wait: the panel must stay away, so there is nothing to wait for.
         await page.waitForTimeout(500);
 
         await expect(page.locator('.config-widget--containers')).toHaveCount(0);
@@ -344,6 +345,19 @@ test.describe('Config overview — the shell it sits in', () => {
             const el = document.querySelector('.config-view');
             return el ? Math.round(el.getBoundingClientRect().width) : null;
         });
+        // The width once the overview has drawn and stopped moving: two reads
+        // in a row that agree.
+        const settledShellWidth = async () => {
+            await expect(page.locator('.config-overview-panels')).toBeVisible({ timeout: 15_000 });
+            let last = null;
+            await expect.poll(async () => {
+                const w = await shellWidth();
+                const same = w !== null && w === last;
+                last = w;
+                return same;
+            }, { timeout: 10_000, intervals: [250] }).toBe(true);
+            return last;
+        };
 
         // The direct load goes FIRST and in a fresh context: it is the case that
         // broke, and navigating to the dashboard first would leave the grid
@@ -351,16 +365,14 @@ test.describe('Config overview — the shell it sits in', () => {
         await page.goto('/#config');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await dismissBlockingOverlays(page);
-        await page.waitForTimeout(1500);
-        const direct = await shellWidth();
+        const direct = await settledShellWidth();
 
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
-        await page.waitForTimeout(1200);
-        const navigated = await shellWidth();
+        const navigated = await settledShellWidth();
 
         expect(direct).toBe(navigated);
         // And it is the full shell, not a content-sized box.

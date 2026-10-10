@@ -231,6 +231,7 @@ test.describe('statistics: the inbox trend chart', () => {
         await seedTrend(page);
         const panel = trendPanel(page);
         await expect(panel.locator('.config-chart-bar')).toHaveCount(30);
+        // A fixed wait: the chart must never replace the bars, so there is nothing to wait for.
         await page.waitForTimeout(500);
         await expect(panel.locator('.nd-chart')).toHaveCount(0);
     });

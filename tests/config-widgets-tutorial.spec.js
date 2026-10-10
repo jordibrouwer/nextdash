@@ -37,8 +37,12 @@ const openWidgetsSection = (page) => page.evaluate(async () => {
 
 /** The confirm button — first in the row, Next until the last step. */
 const next = async (page) => {
+    const progress = page.locator('#app-modal.show .widgets-tutorial-progress');
+    const [n, total] = ((await progress.textContent()) || '').match(/\d+/g).map(Number);
     await page.locator('.modal-actions .modal-button').first().click();
-    await page.waitForTimeout(150);
+    // Next draws the following step; the last one closes the window.
+    if (n < total) await expect(progress).toHaveText(new RegExp(`^\\D*${n + 1}\\D+${total}\\D*$`));
+    else await expect(page.locator('#app-modal.show .widgets-tutorial-modal')).toHaveCount(0);
 };
 
 test.describe('the widgets tour', () => {
@@ -68,6 +72,7 @@ test.describe('the widgets tour', () => {
             await window.dashboardInstance.config.openConfigView('overview');
             await window.dashboardInstance.config.openConfigView('widgets');
         });
+        // A fixed wait: the tour must not come back, so there is nothing to wait for.
         await page.waitForTimeout(800);
         // The modal element stays in the document once used; what matters is
         // that it is not shown again.
@@ -105,6 +110,7 @@ test.describe('the widgets tour', () => {
         await openDashboard(page);
         await page.evaluate(() => { window.dashboardInstance.settings.enableSessionTips = false; });
         await openWidgetsSection(page);
+        // A fixed wait: the tour must stay away, so there is nothing to wait for.
         await page.waitForTimeout(900);
 
         await expect(page.locator('#app-modal.show .widgets-tutorial-modal')).toHaveCount(0);

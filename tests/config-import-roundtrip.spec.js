@@ -105,7 +105,8 @@ test.describe('theme import', () => {
     test('the button is offered beside Export', async ({ page }) => {
         await openConfig(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
-        await page.waitForTimeout(600);
+        await expect(page.locator('.config-nav-item[data-config-section="appearance"]')).toHaveAttribute('aria-selected', 'true');
+        await expect(page.locator('#config-appearance-body')).toBeAttached();
         const hasBoth = await page.evaluate(() => ({
             exp: !!document.querySelector('[data-theme-action="export"]'),
             imp: !!document.querySelector('[data-theme-action="import"]'),

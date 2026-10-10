@@ -25,7 +25,7 @@ async function openAppearance(page, tab) {
     // between visits, so setting it in code lands on whichever body was last
     // rendered often enough to look like the drawings are missing.
     await page.click(`[data-appearance-tab="${tab}"]`);
-    await page.waitForTimeout(900);
+    await expect(page.locator(`[data-appearance-tab="${tab}"]`)).toHaveAttribute('aria-selected', 'true');
 }
 
 test.describe('a choice you can see before you make it', () => {
@@ -102,8 +102,10 @@ test.describe('help opens with a picture', () => {
                 c.render();
             }, tab);
             // render() repaints the shell asynchronously; counting in the same
-            // evaluate reads the body the previous tab left behind.
-            await page.waitForTimeout(700);
+            // evaluate reads the body the previous tab left behind. So wait for
+            // this tab's strip and its articles first.
+            await expect(page.locator(`[data-help-tab="${tab}"]`)).toHaveAttribute('aria-selected', 'true');
+            await expect(page.locator('#config-help-body .config-help-prose').first()).toBeAttached();
             return page.evaluate(() => {
                 const body = document.getElementById('config-help-body');
                 const panels = [...body.querySelectorAll('.config-panel')]
@@ -154,6 +156,7 @@ test.describe('help opens with a picture', () => {
 
     test('a drawing is never read out twice', async ({ page }) => {
         await openAppearance(page, 'layout');
+        await expect(page.locator('.setting-art').first()).toBeAttached();
         const exposed = await page.evaluate(() =>
             [...document.querySelectorAll('.setting-art')]
                 .filter((el) => el.getAttribute('aria-hidden') !== 'true').length);
@@ -176,7 +179,6 @@ test.describe('the settings that are a place, not a size', () => {
             // inbox's other settings.
             c.openConfigView('inbox');
         });
-        await page.waitForTimeout(800);
 
         const art = page.locator('[data-behavior-art="pasteDestination"]');
         await expect(art).toHaveCount(1);

@@ -19,7 +19,7 @@ async function openConfig(page, section) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate((s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; return c.openConfigView(s); }, section);
-    await page.waitForTimeout(800);
+    await expect(page.locator(`.config-nav-item[data-config-section="${section}"]`)).toHaveAttribute('aria-selected', 'true');
 }
 
 test.describe('About in the rail', () => {
@@ -41,6 +41,7 @@ test.describe('About in the rail', () => {
 
     test('Help no longer carries it as a tab', async ({ page }) => {
         await openConfig(page, 'help');
+        await expect(page.locator('[data-help-tab]').first()).toBeVisible();
         const tabs = await page.locator('[data-help-tab]').evaluateAll((els) =>
             els.map((e) => e.getAttribute('data-help-tab')));
         expect(tabs.length).toBeGreaterThan(4);

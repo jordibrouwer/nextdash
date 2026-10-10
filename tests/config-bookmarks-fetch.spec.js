@@ -149,6 +149,7 @@ test('Stop ends a sweep where it stands', async ({ page }) => {
     const atStop = asked;
     await expect(overlay).toBeHidden({ timeout: 15_000 });
 
+    // A fixed wait: proving no further row is asked for needs time to pass.
     await page.waitForTimeout(1500);
     expect(atStop).toBeLessThan(3);
     expect(asked, 'a row was asked for after Stop').toBe(atStop);

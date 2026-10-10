@@ -32,9 +32,15 @@ async function openSeededBookmarks(page, total = TOTAL) {
     // Opening the section starts its own load of every bookmark, which lands a
     // second later and would replace the seed with the seven a fresh install
     // ships with. Waited for here rather than before opening: it is that open
-    // which starts it.
-    await page.waitForFunction(() => !window.dashboardInstance._deferredAllBookmarksLoadInFlight);
-    await page.waitForTimeout(1200);
+    // which starts it. The health report it also starts repaints the list when
+    // it lands, so that is waited out too.
+    await page.waitForFunction(() => {
+        const d = window.dashboardInstance;
+        if (d._deferredAllBookmarksLoadInFlight) return false;
+        if (d.health?.isEnabled?.() === false) return true;
+        const health = d.health?.instance;
+        return Boolean(health?.report) && !health._loadPromise;
+    }, null, { timeout: 15_000 });
     await page.evaluate((n) => {
         const d = window.dashboardInstance;
         const pageId = d.pages[0].id;
@@ -116,6 +122,7 @@ test.describe('config bookmark list paging', () => {
 
         // Growing the list re-renders it and rebuilds the observer; without the
         // arming guard that cascades to the end of the library untouched.
+        // A fixed wait: nothing should happen, so there is no event to wait for.
         await page.waitForTimeout(1_200);
 
         expect(await rowCount(page)).toBe(PAGE);
@@ -164,9 +171,12 @@ test.describe('config bookmark list paging, small page size', () => {
         await page.locator('#config-bm-sort').selectOption('name');
         // Ten pages of ten: one scroll per page, with room to spare.
         for (let i = 0; i < 40; i += 1) {
-            if (await loadedCount(page) >= TOTAL) break;
+            const before = await loadedCount(page);
+            if (before >= TOTAL) break;
             await scrollToBottom(page);
-            await page.waitForTimeout(200);
+            // Until the next page is in; a scroll that lands nothing moves on.
+            await expect.poll(() => loadedCount(page), { timeout: 1_000 }).toBeGreaterThan(before)
+                .catch(() => {});
         }
         await expect.poll(() => loadedCount(page), { timeout: 5_000 }).toBe(TOTAL);
     });

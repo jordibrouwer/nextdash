@@ -106,6 +106,7 @@ test.describe('the health tab shows where the numbers came from', () => {
         await routeHealthWithTrend(page, [60, 64, 70, 72]);
         await openStats(page, 'health');
         await expect(page.locator('#config-stats-health .config-stats-trend-chart polyline')).toHaveCount(1, { timeout: 15_000 });
+        // A fixed wait: the chart must never replace the line, so there is nothing to wait for.
         await page.waitForTimeout(500);
         await expect(page.locator('#config-stats-health .nd-chart')).toHaveCount(0);
     });

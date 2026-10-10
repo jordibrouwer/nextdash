@@ -31,9 +31,9 @@ async function openFirstGroup(page) {
 async function change(page, pairs) {
     await page.evaluate(async (list) => {
         const c = window.dashboardInstance.config;
+        // setBehavior resolves after the save and the repaint, so nothing is left to wait for.
         for (const [field, value] of list) await c.setBehavior(field, value, '');
     }, pairs);
-    await page.waitForTimeout(500);
 }
 
 /** Put everything back, so a later spec does not inherit the changes. */
@@ -45,7 +45,6 @@ async function restore(page, fields) {
             if (def !== undefined) await c.setBehavior(f, def, '');
         }
     }, fields);
-    await page.waitForTimeout(500);
 }
 
 /*
@@ -204,6 +203,7 @@ test.describe('reset a whole panel', () => {
 
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.settings.openInNewTab), { timeout: 10_000 }).toBe(true);
+        // A fixed wait: a second write, if there were one, needs time to show up.
         await page.waitForTimeout(500);
 
         expect(saves, `two fields must not mean two writes (saw ${saves})`).toBe(1);
