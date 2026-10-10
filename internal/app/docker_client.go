@@ -337,13 +337,20 @@ func (d *dockerAPI) pullImage(ctx context.Context, ref string) error {
 	defer resp.Body.Close()
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Buffer(make([]byte, 64<<10), 1<<20)
+	var tracker dockerPullTracker
 	for scanner.Scan() {
 		var line struct {
-			Error string `json:"error"`
+			Error  string `json:"error"`
+			Status string `json:"status"`
+			ID     string `json:"id"`
 		}
-		if json.Unmarshal(scanner.Bytes(), &line) == nil && line.Error != "" {
+		if json.Unmarshal(scanner.Bytes(), &line) != nil {
+			continue
+		}
+		if line.Error != "" {
 			return &dockerAPIError{Status: http.StatusBadGateway, Message: line.Error}
 		}
+		tracker.line(ctx, line.Status, line.ID)
 	}
 	return scanner.Err()
 }

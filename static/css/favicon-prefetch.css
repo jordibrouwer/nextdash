@@ -74,6 +74,25 @@
 }
 
 /*
+ * Step-by-step detail under the bar (ProgressOverlay.detail()): the panel
+ * widens for it and the list scrolls inside, so a long log never pushes the
+ * close button off screen.
+ */
+.progress-overlay-panel:has(.progress-overlay-detail:not(:empty)) {
+    width: min(36rem, 100%);
+}
+
+.progress-overlay-detail {
+    max-height: min(60vh, 32rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.progress-overlay-detail:empty {
+    display: none;
+}
+
+/*
  * The way out, for the work that has one.
  *
  * Quiet rather than prominent: it is not the expected answer, only the

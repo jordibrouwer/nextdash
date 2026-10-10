@@ -49,29 +49,43 @@ func dockerNetworkModeIsNetwork(mode string) bool {
 
 func (h *Handlers) dockerRecreate(ctx context.Context, api *dockerAPI, c dockerContainerSummary) (dockerRecreateResult, error) {
 	res := dockerRecreateResult{OldImageID: c.ImageID, ContainerID: c.ID}
+	dockerStep(ctx, "check", "start")
 	in, err := api.inspectContainer(ctx, c.ID)
 	if err != nil {
+		dockerStep(ctx, "check", "fail")
 		return res, err
 	}
 	if err := dockerRecreateRefusal(ctx, api, c, in); err != nil {
+		dockerStep(ctx, "check", "fail")
 		return res, err
 	}
+	dockerStep(ctx, "check", "done")
 	res.OldImageID = in.Image
 	ref := in.Config.Image
+	dockerStep(ctx, "pull", "start")
+	dockerLog(ctx, "pull %s", ref)
 	if err := api.pullImage(ctx, ref); err != nil {
 		res.FailedStep = "pull"
+		dockerStep(ctx, "pull", "fail")
 		return res, err
 	}
 	img, err := api.inspectImage(ctx, ref)
 	if err != nil {
 		res.FailedStep = "pull"
+		dockerStep(ctx, "pull", "fail")
 		return res, err
 	}
+	dockerStep(ctx, "pull", "done")
 	res.NewImageID = img.ID
+	dockerStep(ctx, "compare", "start")
 	if img.ID == in.Image {
+		dockerLog(ctx, "already runs %s", shortImageID(img.ID))
+		dockerStep(ctx, "compare", "done")
 		res.Phase = "already-current"
 		return res, nil
 	}
+	dockerLog(ctx, "%s -> %s", shortImageID(in.Image), shortImageID(img.ID))
+	dockerStep(ctx, "compare", "done")
 	return h.dockerRecreateOn(ctx, api, c, in, ref, res)
 }
 
@@ -195,16 +209,25 @@ func (h *Handlers) dockerRecreateOn(ctx context.Context, api *dockerAPI, c docke
 	wasRunning := in.State.Running
 	res.WasRunning = wasRunning
 	if wasRunning {
+		dockerStep(ctx, "stop", "start")
 		if err := api.post(ctx, "/containers/"+c.ID+"/stop", nil); err != nil {
 			res.FailedStep = "stop"
+			dockerStep(ctx, "stop", "fail")
 			return res, err
 		}
+		dockerStep(ctx, "stop", "done")
+	} else {
+		dockerStep(ctx, "stop", "skip")
 	}
 	oldName := fmt.Sprintf("%s-nextdash-old-%d", name, time.Now().Unix())
+	dockerStep(ctx, "rename", "start")
 	if err := api.post(ctx, "/containers/"+c.ID+"/rename?name="+url.QueryEscape(oldName), nil); err != nil {
 		res.FailedStep = "rename"
+		dockerStep(ctx, "rename", "fail")
 		return h.dockerRollback(ctx, api, res, c.ID, "", "", wasRunning, err)
 	}
+	dockerLog(ctx, "renamed to %s", oldName)
+	dockerStep(ctx, "rename", "done")
 
 	// Docker folds the image's defaults into a container's Config when it is
 	// created, and inspect hands them back merged. Sent back as they are, the
@@ -249,11 +272,16 @@ func (h *Handlers) dockerRecreateOn(ctx context.Context, api *dockerAPI, c docke
 		}}
 	}
 
+	dockerStep(ctx, "create", "start")
 	newID, err := api.createContainer(ctx, name, body)
 	if err != nil {
 		res.FailedStep = "create"
+		dockerStep(ctx, "create", "fail")
 		return h.dockerRollback(ctx, api, res, c.ID, "", name, wasRunning, err)
 	}
+	dockerLog(ctx, "created %s", shortImageID(newID))
+	dockerStep(ctx, "create", "done")
+	dockerStep(ctx, "connect", "start")
 	if joinable {
 		for netName, n := range networks {
 			if netName == mode {
@@ -265,19 +293,30 @@ func (h *Handlers) dockerRecreateOn(ctx context.Context, api *dockerAPI, c docke
 			}
 			if err := api.post(ctx, "/networks/"+url.PathEscape(netName)+"/connect", payload); err != nil {
 				res.FailedStep = "connect"
+				dockerStep(ctx, "connect", "fail")
 				return h.dockerRollback(ctx, api, res, c.ID, newID, name, wasRunning, err)
 			}
+			dockerLog(ctx, "connected to %s", netName)
 		}
 	}
+	dockerStep(ctx, "connect", "done")
 	if wasRunning {
+		dockerStep(ctx, "start", "start")
 		if err := api.post(ctx, "/containers/"+newID+"/start", nil); err != nil {
 			res.FailedStep = "start"
+			dockerStep(ctx, "start", "fail")
 			return h.dockerRollback(ctx, api, res, c.ID, newID, name, wasRunning, err)
 		}
+		dockerStep(ctx, "start", "done")
+	} else {
+		dockerStep(ctx, "start", "skip")
 	}
+	dockerStep(ctx, "remove", "start")
 	if err := api.remove(ctx, c.ID); err != nil {
 		logWarn(logComponentMutate, "updated %s, but the previous container %s could not be removed: %v", name, oldName, err)
+		dockerLog(ctx, "the previous container %s could not be removed: %v", oldName, err)
 	}
+	dockerStep(ctx, "remove", "done")
 	logInfo(logComponentMutate, "recreated %s on %s", name, shortImageID(res.NewImageID))
 	res.Phase = "done"
 	res.ContainerID = newID
@@ -402,6 +441,8 @@ func isDockerNotFound(err error) bool {
 func (h *Handlers) dockerRollback(ctx context.Context, api *dockerAPI, res dockerRecreateResult,
 	oldID, newID, name string, wasRunning bool, cause error) (dockerRecreateResult, error) {
 	logWarn(logComponentMutate, "the update of %s failed at %s (%v); restoring the previous container", name, res.FailedStep, cause)
+	dockerLog(ctx, "%s failed: %v", res.FailedStep, cause)
+	dockerStep(ctx, "restore", "start")
 	// Time of its own: the update's budget may be what ran out, and a
 	// rollback that fails on it leaves the old container stopped and renamed.
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), dockerRollbackTimeout)
@@ -418,13 +459,16 @@ func (h *Handlers) dockerRollback(ctx context.Context, api *dockerAPI, res docke
 			// Force it: the new container may be half-started.
 			_ = api.post(ctx, "/containers/"+newID+"/stop", nil)
 			if err := removeNew(); err != nil {
+				dockerStep(ctx, "restore", "fail")
 				return res, fmt.Errorf("the update failed at %s and the new container could not be removed: %w", res.FailedStep, err)
 			}
 		}
 	}
 	if err := h.dockerRestore(ctx, api, oldID, name, wasRunning); err != nil {
+		dockerStep(ctx, "restore", "fail")
 		return res, fmt.Errorf("the update failed at %s and the previous container could not be restored: %w", res.FailedStep, err)
 	}
+	dockerStep(ctx, "restore", "done")
 	res.Phase = "rolled-back"
 	res.ContainerID = oldID
 	return res, nil

@@ -12,7 +12,170 @@
  * undone by pressing the key next to it.
  */
 (function () {
-    const PHASE_RECREATING_AFTER_MS = 3000;
+    /**
+     * The overlay's list for an update or rollback run: one row per
+     * container, its steps as the server reports them, and a few log lines.
+     * The running container is open; one that went well folds up, one that
+     * failed stays open with the reason.
+     */
+    class DockerUpdateRun {
+        static STEPS = {
+            update: ['check', 'pull', 'compare', 'stop', 'rename', 'create', 'connect', 'start', 'remove'],
+            rollback: ['check', 'tag', 'stop', 'rename', 'create', 'connect', 'start', 'remove'],
+        };
+
+        static LOG_LINES = 200;
+
+        constructor(actions, action, containers) {
+            this.actions = actions;
+            this.action = action;
+            this.rows = new Map();
+            const host = window.ProgressOverlay?.detail?.();
+            if (!host) return;
+            const list = document.createElement('ol');
+            list.className = 'docker-run';
+            list.setAttribute('data-docker-run', '');
+            containers.forEach((c) => list.appendChild(this.buildRow(c.name)));
+            host.replaceChildren(list);
+        }
+
+        t(key, fallback, params) {
+            return this.actions.t(key, fallback, params);
+        }
+
+        stepLabel(step) {
+            const labels = {
+                check: ['dockerStepCheck', 'Check the container'],
+                pull: ['dockerStepPull', 'Pull the image'],
+                compare: ['dockerStepCompare', 'Compare with the running image'],
+                tag: ['dockerStepTag', 'Tag the previous image'],
+                stop: ['dockerStepStop', 'Stop'],
+                rename: ['dockerStepRename', 'Rename the old container'],
+                create: ['dockerStepCreate', 'Create the new container'],
+                connect: ['dockerStepConnect', 'Connect networks'],
+                start: ['dockerStepStart', 'Start'],
+                remove: ['dockerStepRemove', 'Remove the old container'],
+                restore: ['dockerStepRestore', 'Put the previous container back'],
+            };
+            const [key, fallback] = labels[step] || [step, step];
+            return this.t(key, fallback);
+        }
+
+        buildRow(name) {
+            const item = document.createElement('li');
+            item.className = 'docker-run-item';
+            item.dataset.dockerRunItem = name;
+            item.dataset.state = 'waiting';
+            const head = document.createElement('button');
+            head.type = 'button';
+            head.className = 'docker-run-head';
+            head.setAttribute('aria-expanded', 'false');
+            const icon = document.createElement('span');
+            icon.className = 'docker-run-icon';
+            icon.setAttribute('aria-hidden', 'true');
+            const label = document.createElement('span');
+            label.className = 'docker-run-name';
+            label.textContent = name;
+            const status = document.createElement('span');
+            status.className = 'docker-run-status';
+            status.dataset.dockerRunStatus = '';
+            status.textContent = this.t('dockerRunWaiting', 'Waiting');
+            head.append(icon, label, status);
+            const body = document.createElement('div');
+            body.className = 'docker-run-body';
+            body.hidden = true;
+            const steps = document.createElement('ol');
+            steps.className = 'docker-run-steps';
+            (DockerUpdateRun.STEPS[this.action] || []).forEach((step) => steps.appendChild(this.buildStep(step)));
+            const log = document.createElement('pre');
+            log.className = 'docker-run-log';
+            log.dataset.dockerRunLog = '';
+            log.hidden = true;
+            body.append(steps, log);
+            head.addEventListener('click', () => this.toggle(name));
+            item.append(head, body);
+            this.rows.set(name, { item, head, status, body, steps, log, startedAt: 0 });
+            return item;
+        }
+
+        buildStep(step) {
+            const li = document.createElement('li');
+            li.className = 'docker-run-step';
+            li.dataset.step = step;
+            li.dataset.state = 'pending';
+            li.textContent = this.stepLabel(step);
+            return li;
+        }
+
+        toggle(name, open) {
+            const row = this.rows.get(name);
+            if (!row) return;
+            const next = open === undefined ? row.body.hidden : open;
+            row.body.hidden = !next;
+            row.head.setAttribute('aria-expanded', String(next));
+        }
+
+        begin(name) {
+            const row = this.rows.get(name);
+            if (!row) return;
+            row.startedAt = Date.now();
+            row.item.dataset.state = 'running';
+            row.status.textContent = this.t('dockerRunStarting', 'Starting…');
+            this.toggle(name, true);
+            row.item.scrollIntoView?.({ block: 'nearest' });
+        }
+
+        event(name, ev) {
+            const row = this.rows.get(name);
+            if (!row) return;
+            if (ev.type === 'step') {
+                let li = row.steps.querySelector(`[data-step="${ev.step}"]`);
+                if (!li) {
+                    li = this.buildStep(ev.step);
+                    row.steps.appendChild(li);
+                }
+                li.dataset.state = ev.state;
+                if (ev.state === 'start') row.status.textContent = this.stepLabel(ev.step);
+            } else if (ev.type === 'log' && ev.text) {
+                const at = new Date(ev.at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                this.appendLog(row, `${at}  ${ev.text}`);
+            }
+        }
+
+        appendLog(row, line) {
+            row.log.hidden = false;
+            const lines = row.log.textContent ? row.log.textContent.split('\n') : [];
+            lines.push(line);
+            row.log.textContent = lines.slice(-DockerUpdateRun.LOG_LINES).join('\n');
+            row.log.scrollTop = row.log.scrollHeight;
+        }
+
+        end(name, { ok, phase, text } = {}) {
+            const row = this.rows.get(name);
+            if (!row) return;
+            const seconds = Math.max(1, Math.round((Date.now() - row.startedAt) / 1000));
+            // A step left running when the answer came was the one that broke.
+            row.steps.querySelectorAll('[data-state="start"]').forEach((li) => { li.dataset.state = ok ? 'done' : 'fail'; });
+            if (ok) {
+                row.item.dataset.state = phase === 'already-current' ? 'current' : 'done';
+                row.status.textContent = phase === 'already-current'
+                    ? this.t('dockerRunAlreadyCurrent', 'Already current')
+                    : this.t('dockerRunDone', 'Done in {seconds} s', { seconds });
+                row.steps.querySelectorAll('[data-state="pending"]').forEach((li) => { li.dataset.state = 'skip'; });
+                this.toggle(name, false);
+                return;
+            }
+            row.item.dataset.state = 'fail';
+            row.status.textContent = this.t('dockerRunFailed', 'Failed');
+            if (text) {
+                const error = document.createElement('p');
+                error.className = 'docker-run-error';
+                error.textContent = text;
+                row.body.insertBefore(error, row.log);
+            }
+            this.toggle(name, true);
+        }
+    }
 
     class DockerActions {
         constructor(view) {
@@ -168,56 +331,51 @@
          * the end, so a single container's overlay and error notice would
          * only talk over it.
          */
-        async send(action, container, { quiet = false } = {}) {
+        async send(action, container, { quiet = false, run = null } = {}) {
             const name = container.name;
-            let phaseTimer = null;
-            const overlay = !quiet && (action === 'update' || action === 'rollback') ? window.ProgressOverlay : null;
+            const recreate = action === 'update' || action === 'rollback';
+            const overlay = !quiet && recreate ? window.ProgressOverlay : null;
             this.view.setBusy(name, { update: 'pulling', rollback: 'recreating' }[action] || action);
-            if (action === 'rollback') {
-                overlay?.show?.(
-                    this.t('dockerRollingBackTitle', 'Rolling back {name}', { name }),
-                    this.t('dockerPhaseRecreatingLong', 'Recreating the container with the same settings…'));
+            // An update or rollback says what it is doing, step by step, in the
+            // overlay: a bulk run hands its own list in, a single one gets one.
+            let progress = run;
+            if (overlay) {
+                overlay.show?.(action === 'rollback'
+                    ? this.t('dockerRollingBackTitle', 'Rolling back {name}', { name })
+                    : this.t('dockerUpdatingTitle', 'Updating {name}', { name }), '');
+                progress = new DockerUpdateRun(this, action, [container]);
             }
-            if (action === 'update') {
-                // A pull can take minutes; the row alone is easy to miss, so the
-                // overlay says what is happening, as it does for other long work.
-                overlay?.show?.(
-                    this.t('dockerUpdatingTitle', 'Updating {name}', { name }),
-                    this.t('dockerPhasePullingLong', 'Pulling the newest image…'));
-                phaseTimer = setTimeout(() => {
-                    this.view.setBusy(name, 'recreating');
-                    overlay?.show?.(
-                        this.t('dockerUpdatingTitle', 'Updating {name}', { name }),
-                        this.t('dockerPhaseRecreatingLong', 'Recreating the container with the same settings…'));
-                }, PHASE_RECREATING_AFTER_MS);
-            }
+            progress?.begin(name);
+            const url = `/api/docker/containers/${encodeURIComponent(name)}/${action}`;
             let res = null;
             let body = null;
             try {
-                res = await window.nextDashFetch(
-                    `/api/docker/containers/${encodeURIComponent(name)}/${action}`, { method: 'POST' });
-                body = await res.json().catch(() => null);
+                if (recreate) {
+                    ({ res, body } = await this.streamAction(`${url}?stream=1`, (ev) => {
+                        progress?.event(name, ev);
+                        if (ev.type === 'step' && ev.state === 'start') {
+                            this.view.setBusy(name, ev.step === 'pull' ? 'pulling' : 'recreating');
+                        }
+                    }));
+                } else {
+                    res = await window.nextDashFetch(url, { method: 'POST' });
+                    body = await res.json().catch(() => null);
+                }
             } catch {
                 res = null;
             } finally {
-                if (phaseTimer) clearTimeout(phaseTimer);
                 this.view.setBusy(name, null);
             }
             window.DockerSearchIndex?.invalidate?.();
 
             if (!res || !res.ok) {
-                overlay?.hide?.();
-                const text = await this.explain(res, body, { quiet });
+                // The overlay holds the reason; a notice as well would say it twice.
+                const text = await this.explain(res, body, { quiet: quiet || Boolean(overlay) });
+                progress?.end(name, { ok: false, text });
+                overlay?.settle?.(text, this.t('dockerRunClose', 'Close'));
                 return { ok: false, text };
             }
             const phase = body?.update?.phase;
-            if (overlay) {
-                if (phase === 'rolled-back') overlay.hide?.();
-                else if (action === 'rollback') overlay.finish?.(this.t('dockerRollbackDone', '{name} runs the previous image again.', { name }));
-                else overlay.finish?.(phase === 'already-current'
-                    ? this.t('dockerUpdateAlreadyCurrent', '{name} already runs the newest image.', { name })
-                    : this.t('dockerUpdateDone', '{name} is up to date.', { name }));
-            }
             let rolledBackText = '';
             if (phase === 'rolled-back') {
                 const step = body.update.failedStep || '?';
@@ -226,13 +384,61 @@
                         'The rollback of {name} failed at "{step}"; the container runs as before.', { name, step })
                     : this.t('dockerUpdateRolledBack',
                         'The update of {name} failed at "{step}"; the previous container is running again.', { name, step });
-                if (!quiet) this.notify(rolledBackText, 'error');
+                if (!quiet && !overlay) this.notify(rolledBackText, 'error');
+            }
+            progress?.end(name, { ok: phase !== 'rolled-back', phase, text: rolledBackText });
+            if (overlay) {
+                if (phase === 'rolled-back') overlay.settle?.(rolledBackText, this.t('dockerRunClose', 'Close'));
+                else if (action === 'rollback') overlay.finish?.(this.t('dockerRollbackDone', '{name} runs the previous image again.', { name }));
+                else overlay.finish?.(phase === 'already-current'
+                    ? this.t('dockerUpdateAlreadyCurrent', '{name} already runs the newest image.', { name })
+                    : this.t('dockerUpdateDone', '{name} is up to date.', { name }));
             }
             await this.view.refreshContainers();
             this.view.drawerRefresh?.();
             // An update that put the old container back did not do what was asked.
             if (phase === 'rolled-back') return { ...body, ok: false, text: rolledBackText };
             return { ok: true, ...body };
+        }
+
+        /**
+         * POST that answers in NDJSON (docker_progress.go): each step and log
+         * line goes to onEvent as it arrives, and the last line is the answer
+         * the route would have sent plainly. A refusal before the work starts
+         * still comes back as plain JSON, and is read as such.
+         */
+        async streamAction(url, onEvent) {
+            const res = await window.nextDashFetch(url, { method: 'POST' });
+            const type = res.headers?.get?.('Content-Type') || '';
+            if (!type.includes('ndjson') || !res.body?.getReader) {
+                return { res, body: await res.json().catch(() => null) };
+            }
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let result = null;
+            const take = (line) => {
+                if (!line.trim()) return;
+                let ev = null;
+                try { ev = JSON.parse(line); } catch { return; }
+                if (ev.type === 'result') result = ev;
+                else onEvent?.(ev);
+            };
+            for (;;) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                let at = buffer.indexOf('\n');
+                while (at >= 0) {
+                    take(buffer.slice(0, at));
+                    buffer = buffer.slice(at + 1);
+                    at = buffer.indexOf('\n');
+                }
+            }
+            take(buffer);
+            // Cut off before the answer: what happened is not known.
+            if (!result) return { res: null, body: null };
+            return { res: { ok: result.status < 400, status: result.status }, body: result.body || null };
         }
 
         async explain(res, body, { quiet = false } = {}) {
@@ -444,6 +650,7 @@
             const progress = (done) => this.t('dockerBulkProgress', '{done} of {total}', { done, total: targets.length });
             this.view.setBulkRunning?.(true);
             overlay?.show?.(this.label(action), progress(0));
+            const run = action === 'update' && overlay ? new DockerUpdateRun(this, action, targets) : null;
             let ok = 0;
             let failed = 0;
             let current = 0;
@@ -457,7 +664,7 @@
                             const stopped = await this.send('stop', targets[i], { quiet: true });
                             result = stopped?.ok ? await this.send('remove', targets[i], { quiet: true }) : stopped;
                         } else {
-                            result = await this.send(action, targets[i], { quiet: true });
+                            result = await this.send(action, targets[i], { quiet: true, run });
                         }
                     } catch {
                         result = null;
@@ -472,7 +679,7 @@
                             : `${targets[i].name}: ${this.t('dockerActionFailed', 'Docker did not do that.')}`);
                     }
                 }
-                overlay?.finish?.(progress(targets.length));
+                if (!run) overlay?.finish?.(progress(targets.length));
             } catch {
                 overlay?.hide?.();
             } finally {
@@ -483,6 +690,9 @@
             if (current) summary.push(this.t('dockerBulkAlreadyCurrent', '{count} already current', { count: current }));
             // The reasons ride along: a bare "1 failed" says nothing about which or why.
             const text = failures.length ? `${summary.join(', ')}. ${failures.join(' ')}` : summary.join(', ');
+            // An update run stays on screen with its list, each failure under
+            // its own name, until the reader closes it.
+            if (run) overlay?.settle?.(summary.join(', '), this.t('dockerRunClose', 'Close'));
             this.notify(text, failed ? (ok ? 'info' : 'error') : 'success');
             return { ok, failed };
         }

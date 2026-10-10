@@ -34,6 +34,7 @@
                     <div class="progress-overlay-fill progress-overlay-fill--indeterminate" data-progress-fill></div>
                 </div>
                 <p class="progress-overlay-status" data-progress-status></p>
+                <div class="progress-overlay-detail" data-progress-detail aria-live="off"></div>
                 <button type="button" class="progress-overlay-cancel" data-progress-cancel hidden></button>
             </div>`;
         document.body.appendChild(overlay);
@@ -64,6 +65,8 @@
         overlay.querySelector('[role="progressbar"]')?.removeAttribute('aria-valuenow');
         overlay.querySelector('[data-progress-title]').textContent = title || '';
         overlay.querySelector('[data-progress-status]').textContent = status || '';
+        // A caller's own detail (detail()) belongs to its run, not the next one.
+        overlay.querySelector('[data-progress-detail]')?.replaceChildren();
 
         /*
          * A way out, for the work that has one.
@@ -140,6 +143,40 @@
         hideTimer = setTimeout(() => { overlay.hidden = true; }, 600);
     }
 
+    /*
+     * Room under the bar for what the work is doing, step by step: the
+     * container updates fill it with their steps and log. Emptied by the
+     * next show(), so a run never opens with the last one's lines.
+     */
+    function detail() {
+        return ensureOverlay().querySelector('[data-progress-detail]');
+    }
+
+    /*
+     * Fill the bar and stay, with a button to close. For a run whose outcome
+     * is worth reading -- a list of what failed and why -- rather than one a
+     * line long that finish() can take away by itself.
+     */
+    function settle(status, closeLabel) {
+        const overlay = document.getElementById(OVERLAY_ID);
+        if (!overlay || overlay.hidden) return;
+        clearTimeout(hideTimer);
+        const fill = overlay.querySelector('[data-progress-fill]');
+        if (fill) {
+            fill.classList.remove('progress-overlay-fill--indeterminate');
+            fill.style.width = '100%';
+        }
+        overlay.querySelector('[role="progressbar"]')?.setAttribute('aria-valuenow', '100');
+        if (status) overlay.querySelector('[data-progress-status]').textContent = status;
+        const close = overlay.querySelector('[data-progress-cancel]');
+        if (!close) return;
+        close.hidden = false;
+        close.disabled = false;
+        close.textContent = closeLabel || 'Close';
+        close.onclick = () => { overlay.hidden = true; };
+        close.focus();
+    }
+
     function hide() {
         const overlay = document.getElementById(OVERLAY_ID);
         if (overlay) overlay.hidden = true;
@@ -187,5 +224,5 @@
         };
     }
 
-    window.ProgressOverlay = { show, update, finish, hide, run, begin };
+    window.ProgressOverlay = { show, update, finish, settle, detail, hide, run, begin };
 })();

@@ -143,6 +143,31 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
         if (c.state === 'running') return json({ reason: 'running' }, 409);
         state.containers = state.containers.filter((x) => x !== c); return json({ ok: true });
       }
+      if (sub === 'update' && url.searchParams.get('stream') === '1') {
+        // The steps as the real route streams them (docker_progress.go); a
+        // name in state.updateFails fails at create and is put back.
+        const fails = state.updateFails?.has(c.name);
+        const at = Date.now();
+        const step = (s, st) => ({ type: 'step', step: s, state: st, at });
+        const lines = [step('check', 'start'), step('check', 'done'), step('pull', 'start'),
+          { type: 'log', text: `pull ${c.image}`, at }, { type: 'log', text: 'layer 1a2b complete (1/1)', at },
+          step('pull', 'done'), step('compare', 'start'), step('compare', 'done'),
+          step('stop', 'start'), step('stop', 'done'), step('rename', 'start'), step('rename', 'done'), step('create', 'start')];
+        let result;
+        if (fails) {
+          lines.push(step('create', 'fail'), { type: 'log', text: 'create failed: conflicting options', at },
+            step('restore', 'start'), step('restore', 'done'));
+          result = { ok: true, state: 'running', update: { phase: 'rolled-back', failedStep: 'create' } };
+        } else {
+          lines.push(step('create', 'done'), step('connect', 'start'), step('connect', 'done'),
+            step('start', 'start'), step('start', 'done'), step('remove', 'start'), step('remove', 'done'));
+          c.update = { status: 'current' };
+          result = { ok: true, state: 'running', update: { phase: 'done' } };
+        }
+        lines.push({ type: 'result', status: 200, body: result, at });
+        return route.fulfill({ status: 200, contentType: 'application/x-ndjson',
+          body: lines.map((l) => JSON.stringify(l)).join('\n') + '\n' });
+      }
       if (sub === 'update') { c.update = { status: 'current' }; return json({ ok: true, state: 'running', update: { phase: 'done' } }); }
       if (sub === 'rollback') {
         if (!c.rollback) return json({ reason: 'no-rollback' }, 409);
