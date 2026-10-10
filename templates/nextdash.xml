@@ -49,6 +49,19 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.19.1 (2026-10-10)
+- Containers: an update or rollback shows its steps and a short log of the download while it runs; a failed one stays open with the step that broke and why
+- Containers: updating a selection takes only the containers with an update on offer, and the closing notice names each one that failed and why
+- Bookmarks view: a row height setting under Config → Bookmarks → View; Compact is as tall as a row in Containers and Inbox, Comfortable gives a little more room
+- Unraid: Config → Unraid explains what the widgets can do, including alerts for the array, disks and parity
+
+### v1.19.0 (2026-10-10)
+- Status page: a read-only page behind a secret link for the people who use your services, with groups, each service's state, planned maintenance and 30 days of history
+- Status page: set up under Config → Status page with Copy and a QR code, groups of services (a bookmark and its container count as one) and maintenance windows per group
+- Config: Unraid has tabs like the other sections, and a small "new" marks new or reworked sections
+- Speed: Bookmarks and the dashboard draw faster with many bookmarks and containers
+- Fixes: switching themes quickly no longer leaves old colours in front, and your own themes are no longer downloaded again after every change
+
 ### v1.18.4.1 (2026-10-09)
 - Bookmarks: Shift+H opens the whole list, the same as the Bookmarks button, and also works with health checks off
 - Speed: Bookmarks starts loading when you point at its button, draws its list once, and no longer loads what only Appearance and the widget editor need
@@ -67,17 +80,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Reverse proxies: every X-Forwarded-For line is read, so a proxy that adds its own line no longer lets a visitor pick their rate-limit bucket
 - Inbox: always on now, its switch is gone; bulk Keep runs once on a double click, and promote says which links could not leave the Inbox
 - Bookmarks view: Show in list (was Show in Health) and the health widgets' Open in Bookmarks open it fully styled; Structure and Behavior sit above Inbox in Config
-
-### v1.17.5 (2026-10-06)
-- First start: a new install asks what you run: Homelab, Media server or Developer on one server address, or keep the starter links
-- Config: a Version panel on the overview says whether you run the newest release; a failed update check says why, and the Containers GitHub token now counts for it
-- Widgets: move a widget to another page from its settings; a removed Notes widget no longer comes back after a restart
-- Inbox: no more limit of 500 links, so nothing is pushed out to make room
-- Settings: a setting you change while the dashboard refreshes stays changed
-- Fixes: the pages panel keeps the cursor on your page when reopened, a tablet shows the time once, and Unsorted is called Unsorted
-
-### v1.17.4 (2026-10-05)
-- Privacy: a one-time card explains the daily install count and how to turn it off; on Unraid the count also says Unraid
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -85,7 +87,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-10-09</Date>
+  <Date>2026-10-10</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
