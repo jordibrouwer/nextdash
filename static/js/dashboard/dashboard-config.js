@@ -21369,6 +21369,12 @@ class DashboardConfig {
                 this.toggleTagSuggestionMembers((this._tagSuggestionGroups || [])[index]);
                 return;
             }
+            // The rest of a proposal row opens it too; its buttons returned above.
+            const row = event.target.closest('[data-tag-suggestion]');
+            if (row && !event.target.closest('button, a, input, label')) {
+                const index = Number(row.getAttribute('data-tag-suggestion'));
+                this.toggleTagSuggestionMembers((this._tagSuggestionGroups || [])[index]);
+            }
         });
     }
 

@@ -868,6 +868,14 @@ test.describe('the suggestions panel', () => {
         await page.keyboard.press('Space');
         await expect(page.locator('#config-bm-suggestions .config-suggestion-members'))
             .toHaveCount(0, { timeout: 15_000 });
+
+        // The rest of the row opens it too, not only the count.
+        await row.locator('.config-suggestion-tag').click();
+        await expect(page.locator('#config-bm-suggestions .config-suggestion-members'))
+            .toBeVisible({ timeout: 15_000 });
+        await row.locator('.config-suggestion-reason').click();
+        await expect(page.locator('#config-bm-suggestions .config-suggestion-members'))
+            .toHaveCount(0, { timeout: 15_000 });
     });
 
     /*
