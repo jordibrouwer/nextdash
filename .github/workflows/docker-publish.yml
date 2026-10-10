@@ -30,6 +30,39 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Build the amd64 image once into the runner's Docker and scan it before
+      # anything is pushed. A HIGH or CRITICAL finding that has a fix stops the
+      # release here, so neither registry ever gets that image. arm64 is built
+      # from the same Dockerfile and the same Alpine release, so one scan stands
+      # for both. Build and push below reuses this build's layers from the cache.
+      #
+      # release-to-main.sh runs the same scan locally before it tags anything,
+      # so a failure here means a CVE was published in the minutes between.
+      # The tag and the GitHub Release already exist by then, and neither a
+      # rerun (same commit, same finding) nor workflow_dispatch (no version
+      # tag, only :latest) gets an image out. Fix the finding on dev and
+      # release a new patch version (vX.Y.Z.1).
+      - name: Build image for scanning
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: nextdash:scan
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: nextdash:scan
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          format: table
+          version: v0.75.0
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
