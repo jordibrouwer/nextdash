@@ -8680,6 +8680,7 @@
     "configInbox": "Inbox",
     "configContainers": "Containers",
     "configUnraid": "Unraid",
+    "configStatusPage": "Status page",
     "configFinders": "Finders",
     "configBackups": "Backups",
     "configStats": "Statistics",

@@ -27242,6 +27242,25 @@ class DashboardConfig {
                 ],
             },
         ],
+        // The page a visitor gets: a service that works and one that is down,
+        // the two states the panel's prose keeps returning to.
+        'config.helpStatusPageTitle': [
+            {
+                kind: 'states',
+                value: [
+                    ['ok', { k: 'config.statsHealthy', d: 'Healthy' }],
+                    ['off', { k: 'config.helpArtDown', d: 'Down' }],
+                ],
+            },
+        ],
+        // Only the status page's own addresses may reach the internet; the rest
+        // of the app must not. Literal paths, so nothing to translate.
+        'config.helpStatusPageShareTitle': [
+            {
+                kind: 'flow',
+                value: ['/s/*', '/static/status/*', 'nextDash'],
+            },
+        ],
 
         // ── Inbox ──────────────────────────────────────────────────────────
         'config.helpInboxTitle': [
