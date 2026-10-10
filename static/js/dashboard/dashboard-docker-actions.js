@@ -397,7 +397,10 @@
                 : this.allowed(c).includes(action))
                 && !(action === 'update' && c.update?.status !== 'available'));
             if (action === 'update') {
-                const left = containers.filter((c) => !targets.includes(c) && this.allowed(c).includes('update'));
+                // What the reader skipped or held is left out by their own choice;
+                // only the ones with nothing on offer are worth naming.
+                const left = containers.filter((c) => !targets.includes(c) && this.allowed(c).includes('update')
+                    && !['skipped', 'held'].includes(c.update?.status));
                 if (!targets.length) {
                     this.notify(this.t('dockerBulkNoUpdates', 'None of the selected containers has an update on offer.'), 'info');
                     return null;
