@@ -8595,6 +8595,7 @@
     "unraidHowCarries": "array · parity · shares · VMs · UPS · alerts",
     "unraidHowServer": "your server",
     "unraidHowNote": "nextDash asks the server about once a minute and only reads: it never starts, stops or changes anything there.",
+    "unraidHowWidgets": "With the Unraid widgets you can put the server on any page: one overview tile with a line each for the array, parity, disks, alerts, VMs and the UPS, or a tile per area. Each widget sets how often it refreshes, how many rows it shows and whether a click opens that page in Unraid; a wide tile shows more, such as every disk or the parity history. Switch on alerts under Connection and a stopped array, disk or parity errors and Unraid's own notifications reach you through your alert channels.",
     "unraidStepKey": "In Unraid, make an API key with the role Viewer:",
     "unraidStepConnect": "Fill in the address and the key below, test the connection and save.",
     "unraidStepWidgets": "Put Unraid widgets on a page.",
