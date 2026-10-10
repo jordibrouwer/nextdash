@@ -98,3 +98,61 @@ test('the paste choice cards use the app\'s bookmark and inbox glyphs', async ({
     expect(marks.text.trim()).toBe('');
     expect(marks.drawn).toBeGreaterThan(12);
 });
+
+/*
+ * Pasting a link the Inbox already holds opened the Inbox unstyled.
+ *
+ * The answer to a duplicate is to open the view on the existing item, and that
+ * call went straight to the module's openInboxView, past the loader's -- the
+ * only one that fetched the views bundle. On a fresh dashboard nothing else had
+ * fetched it, so the list drew as bare markup: chips and checkboxes on lines of
+ * their own, one word per line in the titles.
+ */
+test('pasting a link already in the Inbox opens a styled Inbox', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+
+    const url = `https://inbox-dupe-${Date.now()}.example.com/`;
+    await page.evaluate(async (u) => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        await api('/api/inbox', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: u, title: 'Dupe', source: 'paste' }),
+        });
+        window.dashboardInstance.settings.inboxEnabled = true;
+        window.dashboardInstance.settings.pasteDestination = 'ask';
+    }, url);
+
+    const sheetRules = () => page.evaluate(() => {
+        let n = 0;
+        for (const sheet of document.styleSheets) {
+            try {
+                for (const rule of sheet.cssRules) if (rule.cssText?.includes('.inbox-feed')) n++;
+            } catch (_error) { /* cross-origin sheet */ }
+        }
+        return n;
+    });
+    // The bundle is still unfetched, as on the user's fresh dashboard.
+    expect(await sheetRules()).toBe(0);
+
+    await page.focus('body');
+    await page.evaluate((u) => {
+        const event = new ClipboardEvent('paste', {
+            bubbles: true,
+            cancelable: true,
+            clipboardData: new DataTransfer(),
+        });
+        event.clipboardData.setData('text/plain', u);
+        document.dispatchEvent(event);
+    }, url);
+    const modal = page.locator('#paste-choice-modal.show');
+    await expect(modal).toBeVisible({ timeout: 5000 });
+    await modal.locator('[data-paste-choice="inbox"]').click();
+
+    await expect(page.locator('.inbox-layout')).toBeVisible();
+    expect(await sheetRules()).toBeGreaterThan(0);
+});

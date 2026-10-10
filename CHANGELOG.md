@@ -112,6 +112,10 @@ Bookmarks opens sooner and the same way from the key as from the button. `Shift+
 
 - **fix — `Shift+H` opens the whole Bookmarks list, the same as its header button.** The key went through `openHealthView`, which landed on the Broken filter — the old Health view's front page — and did nothing at all with health checks off, so the key and the button opened two different things. `dashboard-setup.js` now calls `config.openLibraryView`, with no filter and nothing selected; `:health` and `/#health` still land on Broken. `tests/bookmarks-shift-h.spec.js` covers it.
 
+### Inbox
+
+- **fix — pasting a link the Inbox already holds opens a styled Inbox.** The answer to a duplicate is to open the view on the existing item, and that went straight to `DashboardInbox.openInboxView`, past the loader's, which was the only one to fetch the views stylesheet bundle. On a fresh dashboard the list then drew as bare markup. The module's `openInboxView` now awaits `ViewStyles.ensureViewStyles` itself, which also covers triage started from the dashboard. `tests/dashboard-paste-choice-style.spec.js` pastes a duplicate and checks the Inbox's rules have arrived.
+
 ### Performance
 
 - **fix — Bookmarks and Config start loading when the pointer reaches their button.** The first open after a page load waited on the whole module, a 1.7 MB script to fetch, parse and run — about 500 ms over a VPN. `DashboardConfigLoader._bindIntentPrewarm` listens once, delegated, for a pointer, a focus or a touch on either button and calls `prewarm()`, which loads the module, the help translations, the view styles and (with checks on) the health module without opening anything; a failure stays silent and the real open reports it. `tests/config-lazy-load.spec.js` covers the hover.

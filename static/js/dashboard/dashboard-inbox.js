@@ -2364,6 +2364,10 @@ class DashboardInbox {
         if (d.activeView === DashboardInbox.VIEW) {
             return true;
         }
+        // The loader's openInboxView awaits these too, but a paste of a link
+        // already in the Inbox, and triage, open the view from here and skipped
+        // it: the list painted as bare markup until another view fetched them.
+        await window.ViewStyles?.ensureViewStyles?.();
         if (d.isInlineEditActive() && !(await d.confirmInlineEditBeforeNavigation())) {
             return false;
         }
