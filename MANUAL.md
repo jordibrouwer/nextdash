@@ -1672,7 +1672,7 @@ Active filters show as removable tokens above the groups, with **Clear filters**
 
 ### 11.2 The toolbar and the list
 
-The toolbar sits above the list: a **search** field (`/`) that matches name, URL, category, note, shortcut and tags; a count of what is shown; **Group** (No groups, Page, Category, Site, Status, Tag); **Sort** (Page order, Name A–Z, URL, Category, Recently added, Last opened, Most opened, Pinned first, Tags, Shortcut, Usage, Health score); the row-density toggle shared with the other list views; and **Add bookmark**, which opens the full form on the page the list is filtered to.
+The toolbar sits above the list: a **search** field (`/`) that matches name, URL, category, note, shortcut and tags; a count of what is shown; **Group** (No groups, Page, Category, Site, Status, Tag); **Sort** (Page order, Name A–Z, URL, Category, Recently added, Last opened, Most opened, Pinned first, Tags, Shortcut, Usage, Health score); and **Add bookmark**, which opens the full form on the page the list is filtered to.
 
 <p align="center"><img src="screenshots/manual.md/11-toolbar.jpg" alt="The Bookmarks view toolbar: the search field with its / key, the count of 29 bookmarks, a button to check the unchecked ones, Group, Sort, the density toggle and Add Bookmark" width="860"></p>
 <p align="center"><sub>The toolbar above the list.</sub></p>
@@ -2301,7 +2301,7 @@ The web UI link is the address you set in the side panel's **Custom** section, e
 
 The bookmark's own side panel says it back: **Details → Address → Runs in** names the container, a link to its side panel.
 
-**Selecting several.** Tick containers with the box in front of the name, `x` or `Space`; `Shift`-click a box, `Shift + X` or `Shift + ↑/↓` ticks a run, and `Ctrl/Cmd + A` ticks everything the filter shows (again to clear). A bar above the list then offers **Start**, **Stop**, **Restart**, **Update**, **Remove**, **Mute notifications** and **Update automatically** ([§14.5](#145-actions-and-updates)) for the lot, one container at a time with a count, and ends with one notice such as *3 restarted, 1 failed*. **Remove** asks once, naming the ones that still run, and stops those first; `⌫` or `Delete` with containers ticked does the same, and so does a right-click on one of the ticked rows, whose menu then offers the bar's actions for all of them. The container nextDash runs in is left out. Without actions switched on ([§14.6](#146-what-it-needs)) the bar offers only muting. **Clear selection** or `Esc` lets go. The header badge counts containers with an update waiting; a skipped or held update does not count.
+**Selecting several.** Tick containers with the box in front of the name, `x` or `Space`; `Shift`-click a box, `Shift + X` or `Shift + ↑/↓` ticks a run, and `Ctrl/Cmd + A` ticks everything the filter shows (again to clear). A bar above the list then offers **Start**, **Stop**, **Restart**, **Update**, **Remove**, **Mute notifications** and **Update automatically** ([§14.5](#145-actions-and-updates)) for the lot, one container at a time with a count, and ends with one notice such as *3 restarted, 1 failed*, naming each one that failed and why. **Update** takes only the ticked containers with an update on offer: the question names the ones it leaves out for having none, and with none on offer it says so and does nothing. Skipped and held ones are left out without a word. **Remove** asks once, naming the ones that still run, and stops those first; `⌫` or `Delete` with containers ticked does the same, and so does a right-click on one of the ticked rows, whose menu then offers the bar's actions for all of them. The container nextDash runs in is left out. Without actions switched on ([§14.6](#146-what-it-needs)) the bar offers only muting. **Clear selection** or `Esc` lets go. The header badge counts containers with an update waiting; a skipped or held update does not count.
 
 <a id="143-the-side-panel"></a>
 
@@ -2365,6 +2365,8 @@ The side panel's **Updates** part says where the image stands and keeps your say
 - **Roll back to …** — while the image the last update replaced is still on the host, this puts the container back on it after asking: the old image gets its tag back and the container is recreated on it, without a download. The version it leaves is skipped, so it is not offered straight back. Pruning dangling images ([§14.7](#147-disk)) removes the images a rollback needs.
 
 Updating by hand still works on a skipped or held image.
+
+**While an update runs** the progress window lists each container with its steps — check, pull, compare, stop, rename, create, connect networks, start, remove the old one — ticked off as they happen, and a short log of the pull. A finished container folds up with *Done in 12 s* or *Already current*; one that failed stays open with the step that broke and the reason, and the window waits for **Close**.
 
 **Update automatically** — a switch in the same part, or the selection bar for several — lets nextDash update the container on its own, in the nightly window set in **Config → Containers → Updates** (03:00 to 05:00 until you change it; a window past midnight, 22 to 4, works too). Inside it, every five minutes, a container with this switch on and an update waiting — as the last check found it; not skipped, not held, never nextDash's own — is updated as the Update button would, one at a time, and tried once per night for a given image. It is then watched for five minutes: if it stops, starts again on its own or turns unhealthy, it is rolled back to the image it had, started again, and that version is skipped. A stop or restart you make yourself during those five minutes is left alone. A container that was not running is updated and left stopped, without the watch. Each update, rollback or failure sends a notice ([§14.9](#149-notices)). It needs `NEXTDASH_DOCKER_CONTROL=1`, and the update check switched on — that is what finds a newer image.
 
@@ -3173,7 +3175,7 @@ Type is on the **Look** tab; everything behind the bookmarks is on the **Backgro
 |---|---|
 | **Columns per row** | 1–6 — the most the grid uses. A narrower window takes as many as fit, and one only when two no longer fit; a phone held upright always shows one |
 | **Layout preset** | Default, Compact, Cards, Terminal-ish, Masonry, List, Widgets and Launcher (large icon tiles) |
-| **Density** | Comfortable, Compact, Dense or Auto — one setting for the dashboard, the Bookmarks view, the inbox and the Containers view |
+| **Density** | Comfortable, Compact, Dense or Auto — one setting for the dashboard, the inbox and the Containers view; the Bookmarks view has its own row height ([§17.4](#174-config--bookmarks)) |
 | **Category spacing** | Snug · Balanced (default) · Airy — the gap between rows of categories |
 | **Page margins** | Snug · Balanced (default) · Airy — the empty band left and right |
 | **Pack columns tightly** | Categories fill the columns without waiting for a full row |
@@ -3320,7 +3322,7 @@ Old addresses still land in the right place — for example `/#config/pages-tags
 
 | Group | Settings |
 |---|---|
-| **The list** | Group by (as last chosen, or fixed), open sorted by, rows per load, address in the row (full, domain, hidden), colour rows by health |
+| **The list** | Group by (as last chosen, or fixed), open sorted by, rows per load, address in the row (full, domain, hidden), row height (**Compact**, as tall as a row in Containers and Inbox, or **Comfortable**), colour rows by health |
 | **Columns** | Which columns show — tags, shortcut, pinned, opens, last opened, added, usage, score — and how many days *usage* covers |
 | **Rail** | Open or folded to start; which blocks show — Views, Health, Pages, Tags |
 | **Side panel** | Opens on the last tab, Details, Health or Usage; close on a click beside it; width (normal or wide) |
@@ -3328,7 +3330,7 @@ Old addresses still land in the right place — for example `/#config/pages-tags
 | **Health** | Health in large opens on today, 7, 14, 30 or 90 days; a count on the Bookmarks icon, and whether it shows the most urgent kind or every problem added up |
 | **Keys** | The key legend below the list, above it, or hidden |
 
-There is no row-height setting here any more — the Bookmarks view follows the app-wide density ([§16.6](#166-grid-and-rows)).
+Row height is this view's own setting: the app-wide density ([§16.6](#166-grid-and-rows)) does not size these rows.
 
 The other tabs:
 
@@ -3394,7 +3396,7 @@ Four tabs, with the same strip, keys and memory as Config → Inbox. It opens on
 <p align="center"><img src="screenshots/manual.md/14-connection.jpg" alt="The Connection panel under Config, Containers: Docker socket Connected, Actions On, Write token Not set with a warning, and This container nextdash" width="860"></p>
 <p align="center"><sub>Config → Containers → Connection: what the environment set, read only.</sub></p>
 
-The Unraid server has a section of its own, **Config → Unraid**: the Containers view does not use it, only the Unraid widgets do ([§15.6](#156-unraid-widgets)). Their *Set up Unraid* row opens it. It opens with **How it works** — nextDash and the server drawn as two boxes with data running between them, and three steps (a Viewer key, the address and key tested and saved, a widget on a page) that are ticked off as they are done — and **What you get**: the seven widgets in miniature with example figures, each with an **Add…** that opens Widgets → Types on that kind.
+The Unraid server has a section of its own, **Config → Unraid**: the Containers view does not use it, only the Unraid widgets do ([§15.6](#156-unraid-widgets)). Their *Set up Unraid* row opens it. It opens with **How it works** — nextDash and the server drawn as two boxes with data running between them, and three steps (a Viewer key, the address and key tested and saved, a widget on a page) that are ticked off as they are done — and **What you get**: the seven widgets in miniature with example figures, each with an **Add…** that opens Widgets → Types on that kind. **How it works** also says what a widget can do: refresh as often as you set, show as many rows as you choose, open that page in Unraid on a click, and show more when it is wide; with alerts switched on under **Connection**, a stopped array, disk or parity errors and Unraid's own notifications reach your alert channels.
 
 <details>
 <summary>📷 Screenshot — Config → Containers, full page</summary>
@@ -4376,7 +4378,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 |---|---|---|
 | Dashboard grid | The page of categories and widgets, as distinct from the Bookmarks view. | [§3.5](#35-views) |
 | Data directory | Where nextDash keeps all its data: `./data` by default, `NEXTDASH_DATA_DIR` to put it elsewhere. | [§25](#data-location) |
-| Density | Comfortable, Compact, Dense or Auto: how tight rows sit, for the dashboard, Bookmarks view, inbox and Containers view alike. | [§16.6](#166-grid-and-rows) |
+| Density | Comfortable, Compact, Dense or Auto: how tight rows sit, for the dashboard, inbox and Containers view alike. | [§16.6](#166-grid-and-rows) |
 | Disk tab | Shows what images, volumes and the build cache take up, with clean-ups that ask first. | [§14.7](#147-disk) |
 | Docker control | `NEXTDASH_DOCKER_CONTROL=1`: lets nextDash start, stop, pause, restart, update and remove containers; off by default, so a mounted socket only reads. | [§14.5](#145-actions-and-updates) |
 | Docker socket | How nextDash talks to Docker; without it the Containers view shows a setup card. | [§14.6](#146-what-it-needs) |
