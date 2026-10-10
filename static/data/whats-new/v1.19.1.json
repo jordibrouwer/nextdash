@@ -1,0 +1,43 @@
+{
+  "tag": "v1.19.1",
+  "date": "10 October 2026",
+  "releasedAt": "2026-10-10",
+  "modalLead": "Container updates <strong>show their steps</strong> while they run, and Bookmarks gets a <strong>row height</strong> setting.",
+  "sections": [
+    {
+      "title": "Containers",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>An update shows what it is doing:</strong> each container's steps are ticked off as they happen, with a short log of the download. One that fails stays open with the step that broke and why."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Updating a selection takes only the containers with an update,</strong> and says which ones it leaves out. The notice at the end names each one that failed and why."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A second update started right after the first</strong> no longer has its progress window closed under it."
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Row height under Config → Bookmarks → View:</strong> Compact rows are as tall as the rows in Containers and Inbox, Comfortable gives each bookmark a little more room."
+        }
+      ]
+    },
+    {
+      "title": "Unraid",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Config → Unraid explains what the widgets can do:</strong> how often they refresh, how many rows they show, a click to open Unraid, and alerts for the array, disks and parity."
+        }
+      ]
+    }
+  ]
+}

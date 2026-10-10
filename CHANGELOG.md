@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.19.1 — 10 October 2026](#v1191--10-october-2026)
 - [v1.19.0 — 10 October 2026](#v1190--10-october-2026)
 - [v1.18.4.1 — 9 October 2026](#v11841--9-october-2026)
 - [v1.18.4 — 9 October 2026](#v1184--9-october-2026)
@@ -102,6 +103,37 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.19.1 — 10 October 2026
+
+Container updates show what they are doing while they run, and an update of a selection takes only the containers that have one and says why one failed. The Bookmarks view gets its own row height, as tall as a row in Inbox and Containers by default. Held back from the What's new window (`hideFromModal`) like v1.18.4.1, so v1.19.0 keeps leading it.
+
+### Containers
+
+- **new — an update or rollback shows its steps and a log while it runs.** The page used to guess the phase with a timer. `dockerRecreate` and the rollback now report each step (check, pull, compare, tag, stop, rename, create, connect, start, remove, and restore when it puts the old container back) as it starts and ends, plus one log line per finished pull layer, to a sink on the context (`docker_progress.go`); without one — the nightly auto-update, the tests — nothing is sent. The action route streams them as NDJSON on `?stream=1`, with the route's usual answer as the last line, so the page handles a streamed update exactly as a plain one. The progress window lists each container with its steps and the last 200 log lines; a finished one folds up with *Done in N s* or *Already current*, a failed one stays open on the step that broke with the reason, and the window waits for **Close** (`ProgressOverlay.detail()` and `settle()`). Specs: `docker_progress_test.go`, `tests/docker-update-progress.spec.js`.
+- **fix — updating a selection takes only the containers with an update on offer.** It left out skipped and held ones but pulled the rest anyway and counted them as updated. The question now names the ones left out for having no update, says so and stops when none has one, and the closing notice counts *already current* apart. Skipped and held containers are left out without being named, since that was the reader's own choice.
+- **fix — a bulk update names each container that failed, and why.** It ended on a bare *1 failed*. `explain()` returns the reason it shows, a rolled-back update carries its own, and the notice lists them per container.
+- **fix — a new run in the progress window is no longer hidden by the previous one finishing.** `finish()` hid the window 600 ms later on an untracked timer, which also closed a run that started in that gap; the timer is now cleared by `show()` and by the next `finish()`.
+
+### Bookmarks
+
+- **new — row height is a setting under Config → Bookmarks → View.** **Compact** (the default) is 38 px, the height of a row in Containers and Inbox, so the three list views line up; **Comfortable** is the 46 px row the view had before. It replaces the toolbar's density buttons: the app-wide density no longer sizes these rows. `bmViewRowHeight` in the settings, `is-rows-comfortable` on the workbench; `tests/bookmarks-view-settings.spec.js`.
+
+### Config
+
+- **new — Config → Unraid's How it works says what the widgets can do:** refresh as often as you set, show as many rows as you choose, open the page in Unraid on a click, show more when wide, and send alerts for a stopped array, disk or parity errors and Unraid's own notifications (`config.unraidHowWidgets`).
+
+### Help and docs
+
+- **docs — Help no longer says the Bookmarks view follows the app-wide density.** The everyday tip (`tipEverydayDensity`), Help → Bookmarks view, Help → Bookmarks view settings and Help → Appearance pointed at toolbar buttons that are gone; all four say where row height and density live now, in six languages.
+- **docs — MANUAL §11.2, §14.2, §14.5, §16.6, §17.4, §17.7 and the quick reference** describe the row height setting, the update progress window, what a bulk update takes and the Unraid explanation. The README's Containers list mentions the steps and log.
+- **docs — translations** of the update steps, the bulk update notices, the row height setting and the Unraid text in nl, de, fr, es and zh.
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.19.1.json` and its index entry**, held back from the What's new window (`hideFromModal`); `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v330`, `DASHBOARD_RELEASE` stays on v1.19.0. `tests/whats-new-hidden-release.spec.js` names v1.19.1 as held back. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 
