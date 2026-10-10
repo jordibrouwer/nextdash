@@ -27,9 +27,26 @@
         return `${bare}:${port}`;
     }
 
+    /*
+     * Keys already worked out, by the address as given. The key depends on the
+     * string alone, so a cached one cannot go stale -- and the same addresses
+     * are asked for over and over: every health fact looked up, every facet
+     * counted in the Bookmarks rail, each one a `new URL` until now.
+     */
+    const canonicalKeyCache = new Map();
+
     /** Same rules as server canonicalBookmarkURLKey (handlers.go). */
     function canonicalBookmarkURLKey(raw) {
         const s = String(raw || '').trim();
+        const cached = canonicalKeyCache.get(s);
+        if (cached !== undefined) return cached;
+        const key = computeCanonicalBookmarkURLKey(s);
+        if (canonicalKeyCache.size > 5000) canonicalKeyCache.clear();
+        canonicalKeyCache.set(s, key);
+        return key;
+    }
+
+    function computeCanonicalBookmarkURLKey(s) {
         try {
             const u = new URL(ensureHttpUrl(s));
             const scheme = u.protocol.replace(/:$/, '').toLowerCase();
