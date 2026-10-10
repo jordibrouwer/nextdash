@@ -63,6 +63,7 @@ class DashboardConfig {
         'widgets',
         'containers',
         'unraid',
+        'status-page',
         'stats',
         'help',
         'logs',
@@ -93,6 +94,11 @@ class DashboardConfig {
             file: 'js/dashboard/dashboard-config-unraid.js',
             datasetKey: 'dashboardConfigUnraid',
             ready: () => window.DashboardConfigUnraidReady === true,
+        },
+        'status-page': {
+            file: 'js/dashboard/dashboard-config-status-page.js',
+            datasetKey: 'dashboardConfigStatusPage',
+            ready: () => window.DashboardConfigStatusPageReady === true,
         },
         logs: {
             file: 'js/dashboard/dashboard-config-logs.js',
@@ -236,6 +242,8 @@ class DashboardConfig {
         this._inboxTab = DashboardConfig.readRememberedTab('inbox') || 'collecting';
         // Containers sub-tab, remembered the same way.
         this._containersTab = DashboardConfig.readRememberedTab('containers') || 'connection';
+        // Status page sub-tab, remembered the same way.
+        this._statusPageTab = DashboardConfig.readRememberedTab('status-page') || 'all';
         /**
          * Whether a settings tab is filtered to what differs from the default.
          * Not persisted: it is a way of looking at the page for a minute, not a
@@ -544,6 +552,7 @@ class DashboardConfig {
             widgets: DashboardConfig.WIDGETS_TABS,
             inbox: DashboardConfig.INBOX_TABS,
             containers: DashboardConfig.CONTAINERS_TABS,
+            'status-page': DashboardConfig.STATUS_PAGE_TABS,
         };
     }
 
@@ -602,6 +611,7 @@ class DashboardConfig {
         widgets: 'widgetsTab',
         inbox: 'inboxTab',
         containers: 'containersTab',
+        'status-page': 'statusPageTab',
     };
 
     /**
@@ -622,6 +632,7 @@ class DashboardConfig {
         'data-widgets-tab': 'widgets',
         'data-inbox-tab': 'inbox',
         'data-containers-tab': 'containers',
+        'data-sp-tab': 'status-page',
     };
 
     /** data-* attribute on each section's sub-tab strip buttons. */
@@ -637,6 +648,7 @@ class DashboardConfig {
         widgets: 'data-widgets-tab',
         inbox: 'data-inbox-tab',
         containers: 'data-containers-tab',
+        'status-page': 'data-sp-tab',
     };
 
     /** Apply a sub-tab from the hash, if the section has one. */
@@ -1964,6 +1976,7 @@ class DashboardConfig {
             widgets: ['config.sectionWidgets', 'Widgets'],
             containers: ['config.sectionContainers', 'Containers'],
             unraid: ['config.sectionUnraid', 'Unraid'],
+            'status-page': ['config.sectionStatusPage', 'Status page'],
             stats: ['config.sectionStats', 'Statistics'],
             help: ['config.sectionHelp', 'Help'],
             logs: ['config.sectionLogs', 'Logs'],
@@ -2009,6 +2022,7 @@ class DashboardConfig {
             case 'help': return this.helpTabLabel?.(tab) || tab;
             case 'logs': return this.logsTabLabel?.(tab) || tab;
             case 'containers': return this.containersTabLabel?.(tab) || tab;
+            case 'status-page': return this.statusPageTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -2264,6 +2278,8 @@ class DashboardConfig {
             this.bindContainersSection(container);
         } else if (this.section === 'unraid') {
             void this.bindUnraidSection?.(container);
+        } else if (this.section === 'status-page') {
+            void this.bindStatusPageSection?.(container);
         } else if (this.section === 'inbox') {
             this.bindControlPanels(container, 'behavior');
             this.bindInboxSection?.(container);
@@ -3371,6 +3387,7 @@ class DashboardConfig {
             case 'logs': return this.logsTabLabel(tab);
             case 'inbox': return this.inboxTabLabel?.(tab) || tab;
             case 'containers': return this.containersTabLabel?.(tab) || tab;
+            case 'status-page': return this.statusPageTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -4194,6 +4211,9 @@ class DashboardConfig {
         }
         if (this.section === 'unraid') {
             return this.renderUnraidSection();
+        }
+        if (this.section === 'status-page') {
+            return this.renderStatusPageSection();
         }
         if (this.section === 'inbox') {
             return this.renderInboxSection();
@@ -15290,6 +15310,10 @@ class DashboardConfig {
                 start: row.querySelector('[data-maint-start]')?.value || '',
                 end: row.querySelector('[data-maint-end]')?.value || '',
                 label: (row.querySelector('[data-maint-label]')?.value || '').trim(),
+                // Linked status page groups are set in Config → Status page;
+                // editing the window here must not drop them.
+                ...(Array.isArray(saved[i]?.statusGroups) && saved[i].statusGroups.length
+                    ? { statusGroups: saved[i].statusGroups } : {}),
             };
         });
     }
@@ -16543,6 +16567,13 @@ class DashboardConfig {
     set containersTab(tab) {
         this._containersTab = tab;
         DashboardConfig.rememberTab('containers', tab);
+    }
+
+    get statusPageTab() { return this._statusPageTab; }
+
+    set statusPageTab(tab) {
+        this._statusPageTab = tab;
+        DashboardConfig.rememberTab('status-page', tab);
     }
 
     set behaviorTab(tab) {
@@ -19267,6 +19298,9 @@ class DashboardConfig {
 
     /** Config → Containers: where the socket is, how it looks, updates, alerts, Unraid. */
     static CONTAINERS_TABS = ['connection', 'view', 'updates', 'alerts'];
+
+    /** The Status page section's sub-tabs; 'all' shows every card at once. */
+    static STATUS_PAGE_TABS = ['all', 'link', 'top', 'groups', 'maintenance'];
 
     // Repeated from widgets-tutorial.js, which is checked before the script is
     // fetched at all. Both must agree.

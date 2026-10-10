@@ -175,5 +175,9 @@
         return 'shown';
     }
 
-    global.BookmarkQR = { show };
+    global.BookmarkQR = {
+        show,
+        // The bare symbol as SVG markup, for a page that draws its own frame.
+        async svg(url) { return svgFor(await load(), url); },
+    };
 })(window);

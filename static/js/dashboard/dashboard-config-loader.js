@@ -29,6 +29,7 @@ class DashboardConfigLoader {
         'widgets',
         'containers',
         'unraid',
+        'status-page',
         'stats',
         'help',
         'logs',
