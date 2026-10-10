@@ -24,7 +24,8 @@ Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by Mati
 
 🌐 **Website:** [nextdash.cc](https://nextdash.cc)
 
-📰 **Developer blog & updates:** [jordibrw.nl](https://jordibrw.nl)
+🌐 **Demo:** [demo.nextdash.cc](https://demo.nextdash.cc)
+
 
 🧩 **Save a link from anywhere:** a browser extension, a share sheet, a bookmarklet, a shell one-liner, Raycast, Dropzone 5, Alfred, Apple Shortcuts and Ulauncher — see [What nextDash talks to](#what-nextdash-talks-to).
 
