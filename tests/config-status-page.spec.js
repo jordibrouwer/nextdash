@@ -291,3 +291,15 @@ test('Help → Monitoring explains the status page and how to share it', async (
     await expect(body).toContainText('/static/status/');
     await expect(body).toContainText('NEXTDASH_TRUSTED_PROXIES');
 });
+
+test('the rail marks the new and reworked sections with "new", and only those', async ({ page }) => {
+    await openSection(page);
+    const badges = await page.evaluate(() => [...document.querySelectorAll('[data-config-section]')]
+        .map((el) => [el.getAttribute('data-config-section'), getComputedStyle(el, '::after').content])
+        .filter(([, content]) => content && content !== 'none' && content !== 'normal')
+        // "new" / "" — the drawn text, then its (empty) alt text.
+        .map(([section, content]) => `${section}:${content.split(' / ')[0]}`));
+    expect(badges.sort()).toEqual(['containers:"new"', 'status-page:"new"', 'structure:"new"', 'unraid:"new"']);
+    // The badge is drawn, not written: the tab keeps its own name.
+    await expect(page.getByRole('tab', { name: 'Status page', exact: true })).toHaveCount(1);
+});

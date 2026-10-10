@@ -173,6 +173,13 @@ class DashboardConfig {
      */
     static NEW_THIS_RELEASE = {};
 
+    /*
+     * Sections that carry a small "new" in the rail: new, or reworked enough to
+     * be worth a second look. Cleared when the release is no longer recent,
+     * for the same reason as the twinkle above.
+     */
+    static NEW_SECTIONS = ['structure', 'containers', 'unraid', 'status-page'];
+
     static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
 
     /**
@@ -4087,6 +4094,10 @@ class DashboardConfig {
             // heard of.
             const isNew = section === DashboardConfig.NEW_THIS_RELEASE.section;
             const stars = isNew ? this.renderNewFeaturesPanelStars() : '';
+            // Drawn by CSS from the attribute, so the button's name stays the
+            // section's name for readers, keys and searches.
+            const newBadge = DashboardConfig.NEW_SECTIONS.includes(section)
+                ? ` data-config-new="${esc(this.t('config.sectionNewBadge', 'new'))}"` : '';
             return `
                 <button type="button" class="config-nav-item${active ? ' is-active' : ''}${isNew ? ' config-nav-item--animated' : ''}"
                         role="tab" aria-selected="${active ? 'true' : 'false'}"
@@ -4094,7 +4105,7 @@ class DashboardConfig {
                         id="config-section-${esc(section)}"
                         aria-controls="${panelId}"
                         title="${esc(this.sectionLabel(section))}"
-                        data-config-section="${esc(section)}">
+                        data-config-section="${esc(section)}"${newBadge}>
                     ${esc(this.sectionLabel(section))}${stars}
                 </button>`;
         }).join('');

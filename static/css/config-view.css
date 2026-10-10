@@ -262,6 +262,19 @@
     background: var(--background-secondary);
 }
 
+/* A small "new" behind a section that is new or reworked this release. */
+.config-nav-item[data-config-new]::after {
+    content: attr(data-config-new);
+    /* Empty alt text: the tab's name stays the section's name. */
+    content: attr(data-config-new) / "";
+    flex: none;
+    color: var(--accent-success, var(--accent-primary));
+    font-size: 0.72em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: lowercase;
+}
+
 .config-nav-item.is-active {
     background: var(--background-secondary);
     color: var(--accent-primary);
