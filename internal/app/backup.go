@@ -176,6 +176,7 @@ var dataFiles = map[string]dataFilePolicy{
 	"notify-open.json": dataKeep,
 	// Which images are held, and which update was skipped.
 	"docker-updates.json": dataKeep,
+	"status-page.json":    dataKeep,
 
 	/*
 	 * Credentials, at the owner's explicit instruction.
@@ -197,6 +198,7 @@ var dataFiles = map[string]dataFilePolicy{
 	"health-cache.json":  dataCache,
 
 	"docker-bind-sizes.json":     dataNever, // measured from this host's disks
+	"status-page-secrets.json":   dataNever, // the link's token: a restore makes a new link
 	"docker-events.json":         dataNever, // this host's container timeline
 	"docker-update-history.json": dataNever, // rollbacks name this host's image ids
 	"activity.log":               dataNever,

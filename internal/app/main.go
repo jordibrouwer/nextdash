@@ -129,6 +129,10 @@ func Run(files assetFS) {
 	r.HandleFunc("/push-service-worker.js", handlers.PushServiceWorker).Methods("GET")
 	r.HandleFunc("/", handlers.Dashboard).Methods("GET")
 	r.HandleFunc("/health", handlers.HealthPage).Methods("GET")
+	// The read-only status page behind its secret link. No write token: the
+	// link is the key, and every failure looks like any unknown address.
+	r.HandleFunc("/s/{token}", handlers.StatusPageView).Methods("GET")
+	r.HandleFunc("/s/{token}/data.json", handlers.StatusPageData).Methods("GET")
 	r.HandleFunc("/config", handlers.Config).Methods("GET")
 	r.HandleFunc("/colors", handlers.Colors).Methods("GET")
 	r.HandleFunc("/api/bookmarks", handlers.GetBookmarks).Methods("GET")
@@ -157,6 +161,10 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/bookmarks/delete-all", handlers.DeleteAllBookmarks).Methods("POST")
 	r.HandleFunc("/api/finders", handlers.GetFinders).Methods("GET")
 	r.HandleFunc("/api/finders", handlers.SaveFinders).Methods("POST")
+	r.HandleFunc("/api/status-page", handlers.GetStatusPage).Methods("GET")
+	r.HandleFunc("/api/status-page", handlers.SaveStatusPage).Methods("PUT")
+	r.HandleFunc("/api/status-page/token", handlers.NewStatusPageLink).Methods("POST")
+	r.HandleFunc("/api/status-page/sources", handlers.StatusPageSources).Methods("GET")
 	r.HandleFunc("/api/categories", handlers.GetCategories).Methods("GET")
 	r.HandleFunc("/api/categories", handlers.SaveCategories).Methods("POST")
 	r.HandleFunc("/api/pages", handlers.GetPages).Methods("GET")

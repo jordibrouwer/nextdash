@@ -266,13 +266,24 @@ func (h *Handlers) pageTemplateFuncsFor() template.FuncMap {
 	return funcs
 }
 
+// assetFiles is the asset set this Handlers reads. One built without a set
+// (tests use &Handlers{}) falls back to the package's, which Run and TestMain
+// fill, rather than panicking in ParseFS.
+func (h *Handlers) assetFiles() assetFS {
+	if h.files != nil {
+		return h.files
+	}
+	return embeddedFiles
+}
+
 func (h *Handlers) parsePageTemplates(templateFiles ...string) (*template.Template, error) {
+	files := h.assetFiles()
 	key := strings.Join(templateFiles, "|")
 	// The page embeds the bundle addresses. When live static edits rebuild a
 	// bundle its address changes, and a page cached from before would keep
 	// sending browsers to the old one; the generation makes it a new page.
 	if staticAssetsMutable() {
-		key += fmt.Sprintf("|bundles-%d", buildAssetBundles(h.files).generation)
+		key += fmt.Sprintf("|bundles-%d", buildAssetBundles(files).generation)
 	}
 
 	h.pageTemplatesMu.RLock()
@@ -290,10 +301,10 @@ func (h *Handlers) parsePageTemplates(templateFiles ...string) (*template.Templa
 	// out before parsing — see applyAssetBundles. Anything else is parsed the
 	// way it always was.
 	if len(templateFiles) == 1 {
-		source := readTemplateSource(h.files, templateFiles[0])
+		source := readTemplateSource(files, templateFiles[0])
 		if source != "" {
 			name := path.Base(templateFiles[0])
-			tmpl, err = template.New(name).Funcs(h.pageTemplateFuncsFor()).Parse(applyAssetBundles(h.files, source))
+			tmpl, err = template.New(name).Funcs(h.pageTemplateFuncsFor()).Parse(applyAssetBundles(files, source))
 		}
 	}
 	if tmpl == nil && err == nil {
@@ -306,7 +317,7 @@ func (h *Handlers) parsePageTemplates(templateFiles ...string) (*template.Templa
 			tmpl, err = template.New(name).Funcs(h.pageTemplateFuncsFor()).ParseFiles(diskFiles...)
 		} else {
 			name := path.Base(templateFiles[0])
-			tmpl, err = template.New(name).Funcs(h.pageTemplateFuncsFor()).ParseFS(h.files, templateFiles...)
+			tmpl, err = template.New(name).Funcs(h.pageTemplateFuncsFor()).ParseFS(files, templateFiles...)
 		}
 	}
 	if err != nil {
