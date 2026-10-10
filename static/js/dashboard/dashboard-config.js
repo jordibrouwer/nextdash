@@ -12832,6 +12832,7 @@ class DashboardConfig {
         bmViewGroup: { info: ['bmViewGroupInfoTitle', 'bmViewGroupInfoMessage'], def: 'last' },
         bmViewAddress: { info: ['bmViewAddressInfoTitle', 'bmViewAddressInfoMessage'], def: 'full' },
         bmViewRowColors: { info: ['bmViewRowColorsInfoTitle', 'bmViewRowColorsInfoMessage'], def: true },
+        bmViewRowHeight: { info: ['bmViewRowHeightInfoTitle', 'bmViewRowHeightInfoMessage'], def: 'compact' },
         bmViewColumns: { info: ['bmViewColumnsInfoTitle', 'bmViewColumnsInfoMessage'], def: null },
         bmViewUsageDays: { info: ['bmViewUsageDaysInfoTitle', 'bmViewUsageDaysInfoMessage'], def: 30 },
         bmViewRail: { info: ['bmViewRailInfoTitle', 'bmViewRailInfoMessage'], def: 'open' },
@@ -13317,6 +13318,10 @@ class DashboardConfig {
                         opt('full', t('config.bmViewAddressFull', 'Full address')),
                         opt('domain', t('config.bmViewAddressDomain', 'Domain')),
                         opt('hidden', t('config.bmViewAddressHidden', 'Hidden')),
+                    ] },
+                    { field: 'bmViewRowHeight', type: 'select', label: t('config.bmViewRowHeightLabel', 'Row height'), options: [
+                        opt('compact', t('config.bmViewRowHeightCompact', 'Compact')),
+                        opt('comfortable', t('config.bmViewRowHeightComfortable', 'Comfortable')),
                     ] },
                     { field: 'bmViewRowColors', type: 'checkbox', label: t('config.bmViewRowColorsLabel', 'Colour rows by their health') },
                 ],
@@ -23382,21 +23387,6 @@ class DashboardConfig {
         });
         container.querySelector('#config-bm-add')
             ?.addEventListener('click', () => this.openAddBookmarkModal());
-        // Row height is the app's one density setting; the rows are redrawn at
-        // their new height, which the windowed list reads back from the CSS.
-        container.querySelector('.config-bm-density')?.addEventListener('click', (e) => {
-            const btn = e.target.closest('[data-lvs-density]');
-            if (!btn) return;
-            window.ListDensity?.set?.(btn.getAttribute('data-lvs-density'));
-        });
-        if (!this._bmDensityListener) {
-            this._bmDensityListener = () => {
-                document.querySelectorAll('.config-bm-density [data-lvs-density]').forEach((b) => b.setAttribute(
-                    'aria-pressed', String(b.getAttribute('data-lvs-density') === window.ListDensity?.get?.())));
-                if (this.isActiveView() && this.section === 'bookmarks') this.repaintBookmarksList();
-            };
-            window.addEventListener('nextdash:list-density', this._bmDensityListener);
-        }
         container.querySelector('#config-bm-list')?.addEventListener('click', (e) => {
             if (e.target.closest('[data-bm-empty-add]')) {
                 this.openAddBookmarkModal();

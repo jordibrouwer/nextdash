@@ -32,31 +32,26 @@ const row = (page, n = 0) => page.locator('#config-bm-list .config-bm-row').nth(
 const drawerFrame = (page) => page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer-frame');
 
 test.describe('Bookmarks view: View settings, the list', () => {
-  // Row height is the app's one density setting, as in the other list views.
-  test('rows follow the app\'s density: comfortable taller, dense shorter', async ({ page }) => {
-    const height = () => row(page).evaluate((el) => Math.round(el.getBoundingClientRect().height));
-    await open(page, { densityMode: 'comfortable' });
-    expect(await height()).toBe(56);
+  // Row height is View's own setting: compact is the Containers and Inbox row.
+  test('rows are compact by default, the height of an Inbox row', async ({ page }) => {
+    await open(page);
+    expect(await row(page).evaluate((el) => Math.round(el.getBoundingClientRect().height))).toBe(38);
+    await expect(page.locator('.config-bm-toolbar .lvs-density')).toHaveCount(0);
   });
 
-  test('dense rows are shorter than the compact default', async ({ page }) => {
-    await open(page, { densityMode: 'dense' });
-    expect(await row(page).evaluate((el) => Math.round(el.getBoundingClientRect().height))).toBe(40);
-  });
-
-  test('the toolbar\'s pair switches it, and the list is redrawn at the new height', async ({ page }) => {
-    await open(page, { densityMode: 'compact' });
-    const height = () => row(page).evaluate((el) => Math.round(el.getBoundingClientRect().height));
-    expect(await height()).toBe(46);
-    await page.locator('.config-bm-toolbar [data-lvs-density="comfortable"]').click();
-    await expect.poll(height).toBe(56);
-    await expect(page.locator('.config-bm-toolbar [data-lvs-density="comfortable"]')).toHaveAttribute('aria-pressed', 'true');
-    // The windowed list lays out rows at the height it reads back.
+  test('comfortable rows are taller, and the windowed list lays them out at that height', async ({ page }) => {
+    await open(page, { bmViewRowHeight: 'comfortable' });
+    expect(await row(page).evaluate((el) => Math.round(el.getBoundingClientRect().height))).toBe(46);
     const gap = await page.evaluate(() => {
       const rows = [...document.querySelectorAll('#config-bm-list .config-bm-row')];
-      return rows.length > 1 ? Math.round(rows[1].getBoundingClientRect().top - rows[0].getBoundingClientRect().top) : 56;
+      return rows.length > 1 ? Math.round(rows[1].getBoundingClientRect().top - rows[0].getBoundingClientRect().top) : 46;
     });
-    expect(gap).toBeGreaterThanOrEqual(56);
+    expect(gap).toBeGreaterThanOrEqual(46);
+  });
+
+  test('the app-wide density no longer sizes the rows', async ({ page }) => {
+    await open(page, { densityMode: 'comfortable' });
+    expect(await row(page).evaluate((el) => Math.round(el.getBoundingClientRect().height))).toBe(38);
   });
 
   test('the address shows only the site, or not at all', async ({ page }) => {

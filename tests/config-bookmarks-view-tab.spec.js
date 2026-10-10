@@ -18,7 +18,7 @@ async function openView(page) {
 }
 
 const FIELDS = [
-  'bmViewGroup', 'configBookmarksSort', 'configBookmarksPageSize', 'bmViewAddress', 'bmViewRowColors',
+  'bmViewGroup', 'configBookmarksSort', 'configBookmarksPageSize', 'bmViewAddress', 'bmViewRowHeight', 'bmViewRowColors',
   'bmViewColumns', 'bmViewUsageDays', 'bmViewRail', 'bmViewRailBlocks', 'bmViewPanelTab', 'bmViewCloseOutside',
   'bmViewPanelWidth', 'bmViewClick', 'bmViewDblClick', 'bmViewHealthRange', 'bmViewBadge', 'bmViewBadgeCounts', 'bmViewKeyLegend',
 ];

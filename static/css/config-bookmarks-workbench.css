@@ -10,9 +10,10 @@
 
 .config-bm-workbench {
     --bm-rail-w: 176px;
-    /* Health's row (health-view.css): 8px, a 29px line, 8px, a 1px rule.
-       The virtual list reads this, so it must be the drawn height. */
-    --bm-row-h: 46px;
+    /* The Containers and Inbox row (~38px), so the three list views line up;
+       View → Row height sets comfortable (below). The virtual list reads
+       this, so it must be the drawn height. */
+    --bm-row-h: 38px;
     --bm-head-h: 32px;
     --bm-slab-bg: var(--surface-2, var(--background-secondary));
     --bm-slab-radius: var(--radius-5, 8px);
@@ -1970,20 +1971,11 @@ html body .config-bm-more-menu .config-btn {
     }
 }
 
-/* Row height follows the app's one density setting (densityMode), as the
-   other list views' rows do; compact and auto are the 46px it always was.
-   The virtual list reads --bm-row-h, so this is the drawn height too. */
-body[data-density-mode="comfortable"] .config-bm-workbench {
-    --bm-row-h: 56px;
-}
-
-body[data-density-mode="dense"] .config-bm-workbench {
-    --bm-row-h: 40px;
-}
-
-/* The pair sits with the toolbar's other controls, not pushed to its end. */
-.config-bm-toolbar .config-bm-density {
-    margin-left: 0;
+/* View → Row height: comfortable is the 46px row this view had before it
+   matched Containers and Inbox. The virtual list reads --bm-row-h, so this
+   is the drawn height too. */
+.config-bm-workbench.is-rows-comfortable {
+    --bm-row-h: 46px;
 }
 
 /* View: the rail folded away at every width, behind the Filters button --
