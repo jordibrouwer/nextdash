@@ -30,7 +30,7 @@ if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
 fi
 
 echo "Preflight 2/2: building ${IMAGE} and scanning it with Trivy..."
-docker build -q -t "$IMAGE" . >/dev/null
+docker build --pull -q -t "$IMAGE" . >/dev/null
 status=0
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE" \
   image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --no-progress "$IMAGE" || status=$?

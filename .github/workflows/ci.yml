@@ -73,8 +73,10 @@ jobs:
   # with. govulncheck reports only what the code really calls, so a finding
   # here is one to fix, not noise. It exits 3 when it finds one, and the job
   # fails. The version is pinned so a new govulncheck release cannot change
-  # what passes. The toolchain comes from go.mod, so the standard library it
-  # checks is the one the release image is built with.
+  # what passes. The toolchain comes from go.mod. The release image is built
+  # with whatever Go the golang:1.26-alpine tag holds (GOTOOLCHAIN=local
+  # there), which is never older than go.mod's toolchain line; Trivy scans
+  # that binary too, so the shipped standard library is checked as well.
   govulncheck:
     runs-on: ubuntu-latest
     steps:
