@@ -92,6 +92,7 @@ test.describe('weather settings apply without a reload', () => {
 
         asked.length = 0;
         await page.selectOption('[data-behavior-field="timeFormat"]', '12h');
+        // Fixed wait: the check is that no request is sent.
         await page.waitForTimeout(1500);
 
         // The clock is read at render time; refetching here would hit the

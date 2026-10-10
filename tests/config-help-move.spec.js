@@ -37,7 +37,8 @@ test.describe('help on moving categories and widgets', () => {
         await page.goto('/#config/help/organizing');
         const moving = page.locator('.setting-art-move.is-place .is-moving');
         await expect(moving).toHaveCount(1);
-        await page.waitForTimeout(200);
+        await expect.poll(() => moving.evaluate((el) =>
+            el.getAnimations().every((a) => a.playState !== 'running'))).toBe(true);
         const transform = await moving.evaluate((el) => getComputedStyle(el).transform);
         expect(['none', 'matrix(1, 0, 0, 1, 0, 0)']).toContain(transform);
     });

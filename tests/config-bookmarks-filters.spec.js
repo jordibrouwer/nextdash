@@ -69,6 +69,7 @@ test.describe('what the bookmark list is narrowed to', () => {
         // Through the toolbar, as a reader changes a filter — this is the path
         // that used to empty the selection.
         await page.selectOption('#config-bm-sort', 'name');
+        // Fixed wait: the check is that the selection is not dropped afterwards.
         await page.waitForTimeout(300);
         expect(await page.evaluate(() => window.dashboardInstance.config.bmSelected.size),
             'the selection was dropped by a filter change').toBe(1);

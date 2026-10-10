@@ -194,9 +194,8 @@ test.describe('the news stream', () => {
         // back on every repaint and the rail badge kept its first number until
         // the page was reloaded.
         await page.locator('[data-news-filter="all"]').click();
-        await page.waitForTimeout(400);
-        expect(await page.locator('.config-news-dot').count()).toBe(0);
-        expect(await page.evaluate(() => window.dashboardInstance.config._newsUnread)).toBe(0);
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config._newsUnread)).toBe(0);
+        await expect(page.locator('.config-news-dot')).toHaveCount(0);
     });
 
     test('the drill-in fills itself when opened directly', async ({ page }) => {
@@ -283,6 +282,7 @@ test.describe('the switch under Behavior → Privacy', () => {
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('about'));
         await page.click('[data-about-tab="news"]');
         await page.waitForSelector('.config-news-panel', { timeout: 15_000 });
+        // Fixed wait: gives a late request the chance to show up before we check none was made.
         await page.waitForTimeout(1200);
         // Cleared means the request is never made, not made and hidden.
         expect(asked).toBe(before);
@@ -369,6 +369,7 @@ test.describe('the overview', () => {
         await page.evaluate(() => window.dashboardInstance.config.setBehavior('showSiteNews', false, 'siteNews'));
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
         await expect(page.locator('.config-overview-panels')).toBeVisible({ timeout: 15_000 });
+        // Fixed wait: the check is that the news widget does not appear.
         await page.waitForTimeout(500);
         await expect(page.locator('.config-widget--news')).toHaveCount(0);
         await page.evaluate(() => window.dashboardInstance.config.setBehavior('showSiteNews', true, 'siteNews'));

@@ -23,10 +23,11 @@ async function openAppearance(page, tab) {
     await page.waitForSelector('#config-appearance-body', { timeout: 15_000 });
     if (tab === 'custom-themes') {
         await page.click('[data-appearance-goto="custom-themes"]');
-        await page.waitForTimeout(900);
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.appearanceTab)).toBe('custom-themes');
+        await expect(page.locator('#config-appearance-body [data-theme-add]')).toBeVisible();
     } else if (tab) {
         await page.click(`[data-appearance-tab="${tab}"]`);
-        await page.waitForTimeout(900);
+        await expect(page.locator(`[data-appearance-tab="${tab}"]`)).toHaveAttribute('aria-selected', 'true');
     }
 }
 
@@ -57,7 +58,7 @@ test.describe('the filter reaches hand-written markup', () => {
     test('a row nested in another row is hidden with it', async ({ page }) => {
         await openAppearance(page);
         await page.locator('[data-settings-filter]').fill('zzzznothingatall');
-        await page.waitForTimeout(600);
+        await expect(page.locator('#config-appearance-body [data-filter-empty]')).toBeVisible();
         // Hiding parents and children independently left the child on screen
         // inside a hidden panel, which kept the panel alive.
         const strays = await page.evaluate(() => {
@@ -131,7 +132,7 @@ test.describe('the picker owes what a select gives free', () => {
     test('typing jumps to a theme by name', async ({ page }) => {
         await openAppearance(page);
         await page.click('[data-theme-picker-button]');
-        await page.waitForTimeout(400);
+        await expect(page.locator('[data-theme-picker-list]')).toBeFocused();
         await page.keyboard.type('te', { delay: 80 });
 
         await expect.poll(() => page.evaluate(() =>
@@ -141,6 +142,8 @@ test.describe('the picker owes what a select gives free', () => {
         // Leaving without choosing changes nothing.
         const before = await page.evaluate(() => window.dashboardInstance.settings.theme);
         await page.keyboard.press('Escape');
+        await expect(page.locator('[data-theme-picker-list]')).toBeHidden();
+        // Fixed wait: proving nothing changes needs time for a late save to land.
         await page.waitForTimeout(500);
         expect(await page.evaluate(() => window.dashboardInstance.settings.theme)).toBe(before);
     });
@@ -163,7 +166,7 @@ test.describe('a size you can see before you pick it', () => {
             target.focus();
             return target.getAttribute('data-appearance-font');
         }, before.setting);
-        await page.waitForTimeout(300);
+        await expect.poll(async () => (await read()).css).not.toBe(before.css);
 
         // Small/Medium/Large says nothing about what the grid will look like.
         const during = await read();
@@ -171,7 +174,7 @@ test.describe('a size you can see before you pick it', () => {
         expect(other).not.toBe(before.setting);
 
         await page.evaluate(() => document.activeElement?.blur());
-        await page.waitForTimeout(300);
+        await expect.poll(async () => (await read()).css).toBe(before.css);
         const after = await read();
         // Browsing is not choosing: the stored size never moved.
         expect(after.css).toBe(before.css);
@@ -183,8 +186,10 @@ test.describe('a theme can be handed to someone', () => {
     test('exported as a file, and read back as a new theme', async ({ page }) => {
         await openAppearance(page, 'custom-themes');
         if (!(await page.locator('[data-theme-export]').count())) {
+            const saved = page.waitForResponse((r) => r.url().endsWith('/api/colors') && r.request().method() === 'POST');
             await page.click('[data-theme-add]');
-            await page.waitForTimeout(1500);
+            await saved;
+            await expect(page.locator('[data-theme-export]').first()).toBeVisible();
         }
 
         const exported = await page.evaluate(async () => {

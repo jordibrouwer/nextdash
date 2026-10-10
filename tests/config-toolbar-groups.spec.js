@@ -32,6 +32,12 @@ async function openToolbarTab(page) {
     await expect(page.locator('.config-panel-bulk').first()).toBeVisible();
 }
 
+// Resolves once every queued settings save has come back from the server.
+const settingsSaved = (page) => page.evaluate(() => {
+    const c = window.dashboardInstance.config;
+    return (c._module || c)._settingsSaveChain;
+});
+
 async function openButtonBarTab(page) {
     await openToolbarTab(page);
     await page.locator('[data-appearance-tab="buttonbar"]').click();
@@ -200,7 +206,7 @@ test.describe('Show all / Hide all', () => {
         // and so never noticed that Hide all had been left behind.
         await headerPanel.locator('[data-behavior-bulk="show"]').click();
         await expect(page.locator('[data-behavior-field="showTitle"]')).toBeChecked();
-        await page.waitForTimeout(700);
+        await settingsSaved(page);
     });
 
     test('the count follows, and the pair disables at the ends', async ({ page }) => {
@@ -218,7 +224,7 @@ test.describe('Show all / Hide all', () => {
         await expect(headerPanel.locator('[data-behavior-bulk="show"]')).toBeDisabled();
         await expect(page.locator('[data-behavior-field="showPageTabs"]')).toBeChecked();
         // Let the save land: the next test reads the header from the server.
-        await page.waitForTimeout(700);
+        await settingsSaved(page);
     });
 
     /**
@@ -236,13 +242,14 @@ test.describe('Show all / Hide all', () => {
         const headerPanel = page.locator('.config-panel').filter({ has: page.locator('[data-behavior-field="showPageTabs"]') });
         await headerPanel.locator('[data-behavior-bulk="hide"]').click();
         await expect(page.locator('[data-behavior-field="showTitle"]')).not.toBeChecked();
+        // Fixed wait: a second save would come after the first, so give it time to show.
         await page.waitForTimeout(600);
 
         expect(saves, `five fields must not mean five writes (saw ${saves})`).toBe(1);
         // And back, for the tests after this one.
         await headerPanel.locator('[data-behavior-bulk="show"]').click();
         await expect(page.locator('[data-behavior-field="showTitle"]')).toBeChecked();
-        await page.waitForTimeout(700);
+        await settingsSaved(page);
     });
 
     test('the change survives a reload', async ({ page }) => {
@@ -255,7 +262,7 @@ test.describe('Show all / Hide all', () => {
         const headerPanel = page.locator('.config-panel').filter({ has: page.locator('[data-behavior-field="showPageTabs"]') });
         await headerPanel.locator('[data-behavior-bulk="hide"]').click();
         await expect(page.locator('[data-behavior-field="showTitle"]')).not.toBeChecked();
-        await page.waitForTimeout(700);
+        await settingsSaved(page);
 
         await openToolbarTab(page);
         await expect(page.locator('[data-behavior-field="showTitle"]')).not.toBeChecked();

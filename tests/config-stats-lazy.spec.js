@@ -20,6 +20,7 @@ async function config(page, section) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
     await page.evaluate((s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; return c.openConfigView(s); }, section);
     await page.waitForSelector('.config-view-body', { timeout: 20_000 });
+    // Fixed wait: the first test checks the stats code has not loaded, which needs time to pass.
     await page.waitForTimeout(600);
 }
 
@@ -48,6 +49,7 @@ test.describe('the statistics renderers arrive with the section', () => {
                 c.statsTab = t;
                 c.repaintStatsBody();
             }, tab);
+            // Fixed wait: lets a late error from this tab's charts reach the listener.
             await page.waitForTimeout(300);
         }
         expect(errors).toEqual([]);

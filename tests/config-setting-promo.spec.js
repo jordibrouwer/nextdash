@@ -72,6 +72,7 @@ test.describe('Config setting promo', () => {
 
         // The repaint after saving must not resurrect it.
         await expect(page.locator('.config-setting-promo')).toHaveCount(0, { timeout: 5000 });
+        // Fixed wait: give the save's repaint time to bring it back, if it would.
         await page.waitForTimeout(1500);
         await expect(page.locator('.config-setting-promo')).toHaveCount(0);
         await expect(page.locator('.config-setting-promo-anchor-highlight')).toHaveCount(0);

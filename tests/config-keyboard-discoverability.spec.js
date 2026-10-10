@@ -76,6 +76,7 @@ test.describe('config keyboard discoverability', () => {
         }))));
         await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+        // Fixed wait: the check is that the notification does not come back.
         await page.waitForTimeout(900);
         console.log('SLEUTEL ->', JSON.stringify(await page.evaluate(() => ({
             announced: localStorage.getItem('nextdash:search-mode-key-announced'),

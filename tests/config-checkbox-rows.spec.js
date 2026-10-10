@@ -50,7 +50,7 @@ test.describe('checkboxes use one row shape', () => {
             await page.evaluate((s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; return c.openConfigView(s); }, section);
             for (const tab of tabs) {
                 await page.locator(`[${attr}="${tab}"]`).click();
-                await page.waitForTimeout(200);
+                await expect(page.locator(`[${attr}="${tab}"]`)).toHaveAttribute('aria-selected', 'true');
                 const found = await page.evaluate(({ s, t }) => {
                     const out = [];
                     document.querySelectorAll('#config-section-panel .config-field').forEach((row) => {

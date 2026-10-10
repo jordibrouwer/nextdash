@@ -71,7 +71,8 @@ test.describe('Config → Bookmarks has a sub-tab strip', () => {
         expect(await activeTab(page)).toBe('settings');
 
         await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
-        await page.waitForTimeout(300);
+        await expect.poll(() => page.evaluate(() => !window.dashboardInstance.config.isActiveView()
+            && !window.dashboardInstance._leavingConfig)).toBe(true);
         // Wiped in memory first: closeConfigView leaves bmTab on the instance, so
         // without this the assertion below passes whether or not the location was
         // ever stored — the same vacuum that made four config-dashboard-view
