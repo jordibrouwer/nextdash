@@ -47,10 +47,11 @@ test.describe('config bookmarks redesign: rows', () => {
     await expect(tick).toBeVisible();
   });
 
-  test('a row is as tall as a Health row', async ({ page }) => {
+  // Compact, the default row height, matches the Inbox and Containers row.
+  test('a row is as tall as an Inbox row', async ({ page }) => {
     await openConfigBookmarks(page);
     const h = await bmRow(page).evaluate((el) => Math.round(el.getBoundingClientRect().height));
-    expect(h).toBe(46);
+    expect(h).toBe(38);
   });
 });
 

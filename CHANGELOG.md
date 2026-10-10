@@ -125,6 +125,10 @@ Container updates show what they are doing while they run, and an update of a se
 
 - **new — Config → Unraid's How it works says what the widgets can do:** refresh as often as you set, show as many rows as you choose, open the page in Unraid on a click, show more when wide, and send alerts for a stopped array, disk or parity errors and Unraid's own notifications (`config.unraidHowWidgets`).
 
+### Tests
+
+- **tests — `tests/config-bookmarks-redesign.spec.js`** expects the 38 px Compact row, as tall as an Inbox row; it still asked for the 46 px row the view had before and failed in CI.
+
 ### Help and docs
 
 - **docs — Help no longer says the Bookmarks view follows the app-wide density.** The everyday tip (`tipEverydayDensity`), Help → Bookmarks view, Help → Bookmarks view settings and Help → Appearance pointed at toolbar buttons that are gone; all four say where row height and density live now, in six languages.
