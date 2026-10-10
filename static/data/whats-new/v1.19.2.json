@@ -1,0 +1,30 @@
+{
+  "tag": "v1.19.2",
+  "date": "10 October 2026",
+  "releasedAt": "2026-10-10",
+  "modalLead": "Config <strong>forgets an old tab</strong> after five minutes, and a whole <strong>Tag suggestions</strong> row opens its group.",
+  "sections": [
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Every section opens on its first tab</strong> when you were last there more than five minutes ago. Come back sooner and it shows the tab you had open."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A link to Status page or Unraid</strong> always names the tab it shows."
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Click anywhere on a Tag suggestions row</strong> to see the bookmarks it means, not only on the count."
+        }
+      ]
+    }
+  ]
+}

@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.19.2 — 10 October 2026](#v1192--10-october-2026)
 - [v1.19.1 — 10 October 2026](#v1191--10-october-2026)
 - [v1.19.0 — 10 October 2026](#v1190--10-october-2026)
 - [v1.18.4.1 — 9 October 2026](#v11841--9-october-2026)
@@ -103,6 +104,35 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.19.2 — 10 October 2026
+
+Config forgets the tab you had open once five minutes have passed, in every section, and a whole Tag suggestions row opens its group. Held back from the What's new window (`hideFromModal`) like v1.19.1, so v1.19.0 keeps leading it.
+
+### Config
+
+- **fix — a remembered tab expires after five minutes, like the config location.** Appearance, Behavior, Inbox, Containers, Status page and Unraid kept the tab you used last for good, so a tab picked once weeks ago still greeted you. `nextdash:config-tab-v1` now stores `{ tab, savedAt }` per section and counts a bare string from before as stale; time spent on a tab keeps it fresh, not only choosing it. The other sections, which kept their tab only for the life of the page, expire the same way against when config last showed them (`resetExpiredTab`, `markTabSeen`). A link or jump that names a tab still wins.
+- **fix — a link to Status page or Unraid names its first tab too.** Both remember their tab, so a bare `#config/status-page` would land on a different tab for each reader; the address now always says which one is shown, as it already did for Appearance, Behavior, Inbox and Containers.
+- **fix — the comments in `dashboard-config.js`** say five minutes for the config location, not fifteen.
+
+### Bookmarks
+
+- **fix — a click anywhere on a Tag suggestions row opens its group,** not only on the count. Its buttons, links and checkboxes keep their own action; the row shows a pointer.
+
+### Tests
+
+- **tests — `tests/config-tabs.spec.js`** covers a remembered tab expiring after five minutes, a tab expiring while the page stays open, and time spent reading a tab keeping it fresh; `tests/config-tag-suggestions.spec.js` opens a group by clicking the row's tag and its reason.
+
+### Help and docs
+
+- **docs — MANUAL §10.4, §16 and §17** and Help → Config, Appearance and Behavior say a tab is kept for five minutes and a section opens on its first tab after that, in six languages; §10.4 says the whole row opens a proposal.
+- **docs — the README** links the demo at demo.nextdash.cc in place of the developer blog.
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.19.2.json` and its index entry**, held back from the What's new window (`hideFromModal`); `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v331`, `DASHBOARD_RELEASE` stays on v1.19.0. `tests/whats-new-hidden-release.spec.js` names v1.19.2 as held back. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 
