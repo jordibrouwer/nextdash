@@ -14,6 +14,7 @@
     'use strict';
 
     const OVERLAY_ID = 'nextdash-progress-overlay';
+    let hideTimer = null;
 
     function ensureOverlay() {
         let overlay = document.getElementById(OVERLAY_ID);
@@ -48,6 +49,8 @@
      * problem this is here to solve rather than restate.
      */
     function show(title, status, options) {
+        // finish() hides after a beat; a run that starts inside it must not be cut off.
+        clearTimeout(hideTimer);
         const overlay = ensureOverlay();
         const fill = overlay.querySelector('[data-progress-fill]');
         if (fill) {
@@ -133,7 +136,8 @@
         }
         overlay.querySelector('[role="progressbar"]')?.setAttribute('aria-valuenow', '100');
         if (status) overlay.querySelector('[data-progress-status]').textContent = status;
-        setTimeout(() => { overlay.hidden = true; }, 600);
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(() => { overlay.hidden = true; }, 600);
     }
 
     function hide() {
