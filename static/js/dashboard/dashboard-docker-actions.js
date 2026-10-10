@@ -207,8 +207,8 @@
 
             if (!res || !res.ok) {
                 overlay?.hide?.();
-                await this.explain(res, body, { quiet });
-                return { ok: false };
+                const text = await this.explain(res, body, { quiet });
+                return { ok: false, text };
             }
             const phase = body?.update?.phase;
             if (overlay) {
@@ -218,18 +218,20 @@
                     ? this.t('dockerUpdateAlreadyCurrent', '{name} already runs the newest image.', { name })
                     : this.t('dockerUpdateDone', '{name} is up to date.', { name }));
             }
-            if (phase === 'rolled-back' && !quiet) {
+            let rolledBackText = '';
+            if (phase === 'rolled-back') {
                 const step = body.update.failedStep || '?';
-                this.notify(action === 'rollback'
+                rolledBackText = action === 'rollback'
                     ? this.t('dockerRollbackRolledBack',
                         'The rollback of {name} failed at "{step}"; the container runs as before.', { name, step })
                     : this.t('dockerUpdateRolledBack',
-                        'The update of {name} failed at "{step}"; the previous container is running again.', { name, step }), 'error');
+                        'The update of {name} failed at "{step}"; the previous container is running again.', { name, step });
+                if (!quiet) this.notify(rolledBackText, 'error');
             }
             await this.view.refreshContainers();
             this.view.drawerRefresh?.();
             // An update that put the old container back did not do what was asked.
-            if (phase === 'rolled-back') return { ...body, ok: false };
+            if (phase === 'rolled-back') return { ...body, ok: false, text: rolledBackText };
             return { ok: true, ...body };
         }
 
@@ -245,7 +247,7 @@
                 } else {
                     this.notify(this.t('dockerReadOnly', 'Read-only — set NEXTDASH_DOCKER_CONTROL=1 to manage containers.'), 'error');
                 }
-                return;
+                return this.t('dockerReadOnly', 'Read-only — set NEXTDASH_DOCKER_CONTROL=1 to manage containers.');
             }
             const messages = {
                 'docker-self': ['dockerSelfNote', 'This container runs nextDash; update it from your Docker host.'],
@@ -269,6 +271,7 @@
             // A failed update may have left a container under another id or
             // none; the side panel shows what is there now.
             this.view.drawerRefresh?.();
+            return text;
         }
 
         /**
@@ -384,20 +387,34 @@
          * the page doing the stopping.
          */
         async runBulk(action, containers, { via = 'bulk' } = {}) {
-            // An update of a selection leaves out what the reader skipped or held.
+            let skipped = [];
+            // An update of a selection takes only what has an update on offer:
+            // the rest would be pulled for nothing and reported as updated.
             // A remove takes running ones too: they are stopped first, and the
             // question says so -- the daemon refuses to remove a running one.
             const targets = containers.filter((c) => (action === 'remove'
                 ? this.canRemove(c)
                 : this.allowed(c).includes(action))
-                && !(action === 'update' && ['skipped', 'held'].includes(c.update?.status)));
+                && !(action === 'update' && c.update?.status !== 'available'));
+            if (action === 'update') {
+                const left = containers.filter((c) => !targets.includes(c) && this.allowed(c).includes('update'));
+                if (!targets.length) {
+                    this.notify(this.t('dockerBulkNoUpdates', 'None of the selected containers has an update on offer.'), 'info');
+                    return null;
+                }
+                skipped = left.map((c) => c.name);
+            }
             if (!targets.length) return null;
             if (action === 'stop' || action === 'update' || action === 'remove') {
                 const names = targets.map((c) => c.name).join(', ');
                 const running = action === 'remove' ? targets.filter((c) => DockerActions.isUp(c)) : [];
                 const message = {
                     stop: () => this.t('dockerConfirmBulkStop', 'Stop {names}?', { names }),
-                    update: () => this.t('dockerConfirmBulkUpdate', 'Update {names} to their newest images?', { names }),
+                    update: () => [
+                        this.t('dockerConfirmBulkUpdate', 'Update {names} to their newest images?', { names }),
+                        skipped.length ? this.t('dockerConfirmBulkUpdateSkipped', 'No update on offer for {names}; left out.',
+                            { names: skipped.join(', ') }) : '',
+                    ].filter(Boolean).join(' '),
                     remove: () => [
                         this.t('dockerConfirmBulkRemove', 'Remove {names}? Their volumes and images stay.', { names }),
                         running.length ? this.t('dockerConfirmBulkRemoveRunning', '{names} still run; they are stopped first.',
@@ -426,6 +443,8 @@
             overlay?.show?.(this.label(action), progress(0));
             let ok = 0;
             let failed = 0;
+            let current = 0;
+            const failures = [];
             try {
                 for (let i = 0; i < targets.length; i += 1) {
                     overlay?.update?.(i, targets.length, progress(i));
@@ -440,8 +459,15 @@
                     } catch {
                         result = null;
                     }
-                    if (result?.ok) ok += 1;
-                    else failed += 1;
+                    if (result?.ok) {
+                        ok += 1;
+                        if (result.update?.phase === 'already-current') current += 1;
+                    } else {
+                        failed += 1;
+                        failures.push(result?.text
+                            ? `${targets[i].name}: ${result.text}`
+                            : `${targets[i].name}: ${this.t('dockerActionFailed', 'Docker did not do that.')}`);
+                    }
                 }
                 overlay?.finish?.(progress(targets.length));
             } catch {
@@ -450,7 +476,11 @@
                 this.view.setBulkRunning?.(false);
             }
             this.track(action, failed === 0, via, { count: targets.length });
-            this.notify(this.bulkResultText(action, ok, failed), failed ? (ok ? 'info' : 'error') : 'success');
+            const summary = [this.bulkResultText(action, ok - current, failed)];
+            if (current) summary.push(this.t('dockerBulkAlreadyCurrent', '{count} already current', { count: current }));
+            // The reasons ride along: a bare "1 failed" says nothing about which or why.
+            const text = failures.length ? `${summary.join(', ')}. ${failures.join(' ')}` : summary.join(', ');
+            this.notify(text, failed ? (ok ? 'info' : 'error') : 'success');
             return { ok, failed };
         }
 
