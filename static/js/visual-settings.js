@@ -376,17 +376,27 @@
                 .then((css) => { if (css) inline.textContent = css; })
                 .catch(() => { /* the old variables stay, which is the safe half */ });
         }
-        const link = document.querySelector('link[href^="/api/theme.css"]');
+        // The last one: two refreshes in a row (Use theme runs one inside
+        // applyThemeChoice and one after it) leave two links loading, and a
+        // new one put after the first stayed in front of the second -- so the
+        // older copy came last, won the cascade, and was never removed.
+        const links = document.querySelectorAll('link[href^="/api/theme.css"]');
+        const link = links[links.length - 1];
         if (!link || !link.parentNode) {
             return;
         }
         const newLink = link.cloneNode(true);
         newLink.removeAttribute('id');
         newLink.href = url;
-        // Keep the old sheet until the new one has loaded so CSS variables never
+        // Keep the old sheets until the new one has loaded so CSS variables never
         // disappear for a frame (avoids a white flash during theme.css refresh).
+        // Every theme link before it goes then, not only the one it replaced.
         newLink.addEventListener('load', () => {
-            link.remove();
+            document.querySelectorAll('link[href^="/api/theme.css"]').forEach((old) => {
+                if (old !== newLink && (old.compareDocumentPosition(newLink) & Node.DOCUMENT_POSITION_FOLLOWING)) {
+                    old.remove();
+                }
+            });
         }, { once: true });
         newLink.addEventListener('error', () => {
             newLink.remove();
