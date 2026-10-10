@@ -142,3 +142,53 @@ test('a bookmark far down the list still gets its row, in view and in focus', as
     await expect(row).toBeInViewport();
     await expect(page.locator('#config-bm-panel')).toHaveAttribute('data-bm-panel-key', '1::http://localhost:8989/');
 });
+
+/*
+ * Which container a bookmark runs in was worked out row by row: every row
+ * asked every container to search every bookmark, three times over, parsing
+ * each address each time. A hundred bookmarks and a few dozen containers made
+ * opening Bookmarks spend a quarter of a second in `new URL`, and it grew with
+ * every bookmark and container added.
+ */
+test('a screen of rows parses each address once, not once per row and container', async ({ page }) => {
+    const filler = Array.from({ length: 120 }, (_, i) => ({ name: `Site ${i}`, url: `https://site-${i}.example.org/`, pageId: 1, category: 'c1' }));
+    const bookmarks = [...BOOKMARKS, ...filler];
+    await open(page, '#docker', bookmarks);
+    const parses = await page.evaluate(async (all) => {
+        const index = window.DockerSearchIndex;
+        await index.refresh();
+        const Real = window.URL;
+        let count = 0;
+        window.URL = class extends Real { constructor(...a) { count += 1; super(...a); } };
+        try {
+            // Thirty rows, as one screen of the list asks.
+            all.slice(0, 30).forEach((b) => index.containersFor(b, all));
+        } finally {
+            window.URL = Real;
+        }
+        return count;
+    }, bookmarks);
+    // Each address at most once, and each container's web UI: far below the
+    // rows x containers x bookmarks it was.
+    expect(parses).toBeLessThanOrEqual(bookmarks.length + CONTAINERS.length);
+});
+
+test('an address edited in place moves the container mark with it', async ({ page }) => {
+    await open(page);
+    const got = await page.evaluate(async (all) => {
+        const index = window.DockerSearchIndex;
+        await index.refresh();
+        const names = (b) => index.containersFor(b, all).map((c) => c.name).join(',');
+        const before = { sonarr: names(all[0]), movies: names(all[1]) };
+        // The same array and the same objects, as an edit in the panel leaves them.
+        all[0].url = 'http://localhost:9999/';
+        all[3].url = 'http://localhost:8989/';
+        // A new name can make a match that no address held before.
+        all[5].name = 'Plex';
+        return { before, oldRow: names(all[0]), newRow: names(all[3]), renamed: names(all[5]) };
+    }, BOOKMARKS.map((b) => ({ ...b })));
+    expect(got.before).toEqual({ sonarr: 'sonarr', movies: 'radarr' });
+    expect(got.oldRow).toBe('');
+    expect(got.newRow).toBe('sonarr');
+    expect(got.renamed).toBe('plex');
+});
