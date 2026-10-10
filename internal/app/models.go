@@ -1020,6 +1020,7 @@ type Settings struct {
 	BmViewGroup        string   `json:"bmViewGroup"`        // Group the list opens on: last (as last left)/none/page/category/site/status/tag
 	BmViewAddress      string   `json:"bmViewAddress"`      // Address in the row: full/domain/hidden
 	BmViewRowColors    bool     `json:"bmViewRowColors"`    // Rows coloured by their health (default on)
+	BmViewRowHeight    string   `json:"bmViewRowHeight"`    // Row height: compact (the Containers/Inbox row)/comfortable
 	BmViewColumns      []string `json:"bmViewColumns"`      // Columns shown (null = all, [] = none)
 	BmViewUsageDays    int      `json:"bmViewUsageDays"`    // Days the Usage column covers: 7/14/30
 	BmViewRail         string   `json:"bmViewRail"`         // The rail on the left: open/folded
@@ -3541,6 +3542,7 @@ var categorySpreadResetScopes = map[string]bool{"page": true, "all": true}
 var bmViewChoices = map[string][]string{
 	"group":       {"last", "none", "page", "category", "site", "status", "tag"},
 	"address":     {"full", "domain", "hidden"},
+	"rowHeight":   {"compact", "comfortable"},
 	"rail":        {"open", "folded"},
 	"panelTab":    {"last", "details", "health", "usage"},
 	"panelWidth":  {"normal", "wide"},
@@ -3587,6 +3589,7 @@ func bmViewKnown(values, known []string) []string {
 func clampBookmarkViewSettings(s *Settings) {
 	s.BmViewGroup = bmViewChoice("group", s.BmViewGroup)
 	s.BmViewAddress = bmViewChoice("address", s.BmViewAddress)
+	s.BmViewRowHeight = bmViewChoice("rowHeight", s.BmViewRowHeight)
 	s.BmViewRail = bmViewChoice("rail", s.BmViewRail)
 	s.BmViewPanelTab = bmViewChoice("panelTab", s.BmViewPanelTab)
 	s.BmViewPanelWidth = bmViewChoice("panelWidth", s.BmViewPanelWidth)

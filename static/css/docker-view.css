@@ -1645,3 +1645,126 @@
     right: auto;
     min-width: 11rem;
 }
+
+/*
+ * An update or rollback, step by step, in the progress overlay
+ * (DockerUpdateRun in dashboard-docker-actions.js). One row per container;
+ * the one running is open, one that went well folds up, one that failed
+ * stays open with its reason. The marks are text, so they keep the theme's
+ * colours and need no icon set.
+ */
+.docker-run {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: var(--font-size-small);
+}
+
+.docker-run-item + .docker-run-item {
+    border-top: 1px solid var(--border-primary);
+}
+
+.docker-run-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.45rem 0.1rem;
+    border: 0;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.docker-run-icon {
+    flex: 0 0 1rem;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.docker-run-icon::before { content: '○'; }
+.docker-run-item[data-state="running"] .docker-run-icon::before { content: '●'; color: var(--accent-primary); }
+.docker-run-item[data-state="done"] .docker-run-icon::before,
+.docker-run-item[data-state="current"] .docker-run-icon::before { content: '✓'; color: var(--accent-success); }
+.docker-run-item[data-state="fail"] .docker-run-icon::before { content: '✕'; color: var(--accent-error); }
+
+.docker-run-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.docker-run-item[data-state="waiting"] .docker-run-name {
+    color: var(--text-secondary);
+}
+
+.docker-run-status {
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.docker-run-item[data-state="fail"] .docker-run-status {
+    color: var(--accent-error);
+}
+
+.docker-run-body {
+    padding: 0 0 0.6rem 1.5rem;
+}
+
+.docker-run-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.15rem;
+    color: var(--text-secondary);
+}
+
+.docker-run-step::before {
+    display: inline-block;
+    width: 1.1rem;
+    content: '·';
+}
+
+.docker-run-step[data-state="start"] { color: var(--text-primary); }
+.docker-run-step[data-state="start"]::before { content: '●'; color: var(--accent-primary); }
+.docker-run-step[data-state="done"]::before { content: '✓'; color: var(--accent-success); }
+.docker-run-step[data-state="fail"] { color: var(--accent-error); }
+.docker-run-step[data-state="fail"]::before { content: '✕'; }
+.docker-run-step[data-state="skip"] { opacity: 0.6; }
+.docker-run-step[data-state="skip"]::before { content: '–'; }
+
+@media (prefers-reduced-motion: no-preference) {
+    .docker-run-step[data-state="start"]::before {
+        animation: docker-run-pulse 1s ease-in-out infinite alternate;
+    }
+}
+
+@keyframes docker-run-pulse {
+    from { opacity: 1; }
+    to { opacity: 0.35; }
+}
+
+.docker-run-error {
+    margin: 0.4rem 0 0;
+    color: var(--accent-error);
+}
+
+.docker-run-log {
+    margin: 0.4rem 0 0;
+    padding: 0.45rem 0.6rem;
+    max-height: 9rem;
+    overflow: auto;
+    border-radius: var(--layout-radius-sm, 6px);
+    background: color-mix(in srgb, var(--text-secondary) 10%, transparent);
+    color: var(--text-secondary);
+    font-family: var(--font-family-mono, ui-monospace, monospace);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-all;
+}

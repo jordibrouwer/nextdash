@@ -171,8 +171,10 @@ func dockerRollbackOfferFor(ctx context.Context, api *dockerAPI, history []docke
 // replaced, and skips the version it leaves.
 func (h *Handlers) dockerRollbackUpdate(ctx context.Context, api *dockerAPI, c dockerContainerSummary) (dockerRecreateResult, error) {
 	res := dockerRecreateResult{OldImageID: c.ImageID, ContainerID: c.ID}
+	dockerStep(ctx, "check", "start")
 	in, err := api.inspectContainer(ctx, c.ID)
 	if err != nil {
+		dockerStep(ctx, "check", "fail")
 		return res, err
 	}
 	ref := in.Config.Image
@@ -195,6 +197,7 @@ func (h *Handlers) dockerRollbackUpdate(ctx context.Context, api *dockerAPI, c d
 		return res, err
 	}
 	newImg, _ := api.inspectImage(ctx, in.Image)
+	dockerStep(ctx, "check", "done")
 
 	repo, tag := splitImageTag(ref)
 	tagQuery := func(id string) string {
@@ -203,10 +206,14 @@ func (h *Handlers) dockerRollbackUpdate(ctx context.Context, api *dockerAPI, c d
 		q.Set("tag", tag)
 		return "/images/" + url.PathEscape(id) + "/tag?" + q.Encode()
 	}
+	dockerStep(ctx, "tag", "start")
+	dockerLog(ctx, "tag %s as %s", shortImageID(oldImg.ID), ref)
 	if err := api.post(ctx, tagQuery(oldImg.ID), nil); err != nil {
 		res.FailedStep = "tag"
+		dockerStep(ctx, "tag", "fail")
 		return res, err
 	}
+	dockerStep(ctx, "tag", "done")
 	res.OldImageID = in.Image
 	res.NewImageID = oldImg.ID
 	res, err = h.dockerRecreateOn(ctx, api, c, in, ref, res)

@@ -64,6 +64,8 @@
                 </div>
                 <p class="config-panel-note">${t('unraidHowNote',
                     'nextDash asks the server about once a minute and only reads: it never starts, stops or changes anything there.')}</p>
+                <p class="config-panel-note">${t('unraidHowWidgets',
+                    'With the Unraid widgets you can put the server on any page: one overview tile with a line each for the array, parity, disks, alerts, VMs and the UPS, or a tile per area. Each widget sets how often it refreshes, how many rows it shows and whether a click opens that page in Unraid; a wide tile shows more, such as every disk or the parity history. Switch on alerts under Connection and a stopped array, disk or parity errors and Unraid\'s own notifications reach you through your alert channels.')}</p>
                 <ol class="unraid-steps">
                     ${step('key', 1, `${t('unraidStepKey', 'In Unraid, make an API key with the role Viewer:')} <strong>Settings → Management Access → API Keys</strong>.`)}
                     ${step('connect', 2, t('unraidStepConnect', 'Fill in the address and the key below, test the connection and save.'))}

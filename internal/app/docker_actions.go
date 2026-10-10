@@ -137,6 +137,15 @@ func (h *Handlers) DockerActionHandler(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), dockerActionTimeout)
 	defer cancel()
 
+	// ?stream=1: the steps as they happen, then this route's answer as the
+	// last line (docker_progress.go). Refusals above still answer plainly.
+	if (action == "update" || action == "rollback") && r.URL.Query().Get("stream") == "1" {
+		emit, capture, finish := dockerProgressStream(w)
+		ctx = withDockerProgress(ctx, emit)
+		w = capture
+		defer finish()
+	}
+
 	name := c.name()
 	result := map[string]any{"ok": true}
 	var err error
