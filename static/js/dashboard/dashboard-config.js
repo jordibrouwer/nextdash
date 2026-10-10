@@ -580,20 +580,25 @@ class DashboardConfig {
     static ABOUT_TABS = ['colophon', 'news'];
 
     /**
-     * The tab Appearance and Behavior last showed, kept in this browser.
+     * The tab each remembering section last showed, kept in this browser.
      *
-     * The five-minute config location (CONFIG_LAST_KEY) answers "where was I
-     * a moment ago"; this answers "which tab of this section do I usually
-     * want", which outlives it. A new browser opens on the first tab.
+     * It expires like the config location (CONFIG_LAST_TTL_MS): coming back
+     * within five minutes is a continuation, later is a new task and opens on
+     * the first tab. Each entry is `{ tab, savedAt }`; a bare string is from
+     * before the expiry and counts as stale.
      */
     static REMEMBERED_TAB_KEY = 'nextdash:config-tab-v1';
+
+    static REMEMBERED_TAB_SECTIONS = ['appearance', 'behavior', 'inbox', 'containers', 'status-page', 'unraid'];
 
     static readRememberedTab(section) {
         try {
             const stored = JSON.parse(localStorage.getItem(DashboardConfig.REMEMBERED_TAB_KEY) || '{}');
-            const tab = stored?.[section];
+            const entry = stored?.[section];
+            const savedAt = Number(entry?.savedAt) || 0;
+            if (!savedAt || Date.now() - savedAt > DashboardConfig.CONFIG_LAST_TTL_MS) return null;
             const tabs = DashboardConfig.SUB_TABS[section] || [];
-            return typeof tab === 'string' && tabs.includes(tab) ? tab : null;
+            return typeof entry.tab === 'string' && tabs.includes(entry.tab) ? entry.tab : null;
         } catch {
             return null;
         }
@@ -602,10 +607,24 @@ class DashboardConfig {
     static rememberTab(section, tab) {
         try {
             const stored = JSON.parse(localStorage.getItem(DashboardConfig.REMEMBERED_TAB_KEY) || '{}') || {};
-            if (stored[section] === tab) return;
-            stored[section] = tab;
+            stored[section] = { tab, savedAt: Date.now() };
             localStorage.setItem(DashboardConfig.REMEMBERED_TAB_KEY, JSON.stringify(stored));
         } catch { /* a browser refusing storage opens on the first tab next time */ }
+    }
+
+    /**
+     * Back to the first tab when the remembered one has expired.
+     *
+     * The tab is read once when config is built, and the instance outlives
+     * many visits; without this a tab chosen an hour ago would still greet a
+     * reader who never reloaded.
+     */
+    resetExpiredTab(section) {
+        if (!DashboardConfig.REMEMBERED_TAB_SECTIONS.includes(section)) return;
+        if (DashboardConfig.readRememberedTab(section)) return;
+        const prop = DashboardConfig.SUB_TAB_STATE[section];
+        const first = DashboardConfig.SUB_TABS[section]?.[0];
+        if (prop && first) this[prop] = first;
     }
 
     static SUB_TAB_STATE = {
@@ -1007,6 +1026,10 @@ class DashboardConfig {
             if (!DashboardConfig.SECTIONS.includes(section)) return;
             const prop = DashboardConfig.SUB_TAB_STATE[section];
             const subTab = prop ? this[prop] : null;
+            // Time spent on a tab keeps it fresh, not only choosing it.
+            if (subTab && DashboardConfig.REMEMBERED_TAB_SECTIONS.includes(section)) {
+                DashboardConfig.rememberTab(section, subTab);
+            }
             localStorage.setItem(DashboardConfig.CONFIG_LAST_KEY, JSON.stringify({
                 section,
                 subTab: subTab || null,
@@ -1047,11 +1070,14 @@ class DashboardConfig {
         const stored = (!explicitSection && !hashSection) ? this.loadLastConfigLocation() : null;
         const targetSection = explicitSection || hashSection || stored?.section || 'overview';
 
+        let tabSet = false;
         if (!hashIsGeneric && hashSection === targetSection) {
+            tabSet = !!DashboardConfig.subTabFromHash(hash);
             this.applySubTabFromHash(hash);
         } else if (!explicitSection && stored?.section === targetSection && stored.subTab) {
-            this.applyStoredSubTab(targetSection, stored.subTab);
+            tabSet = this.applyStoredSubTab(targetSection, stored.subTab);
         }
+        if (!tabSet) this.resetExpiredTab(targetSection);
 
         return targetSection;
     }
@@ -1086,6 +1112,7 @@ class DashboardConfig {
         const pageChanged = this.applyBookmarksPageFromHash(hash)
             | this.applyBookmarksFiltersFromHash(hash);
         if (section && section !== this.section) {
+            if (!DashboardConfig.subTabFromHash(hash)) this.resetExpiredTab(section);
             this.section = section;
             this.render();
         } else if (tabChanged || pageChanged) {
@@ -5544,6 +5571,7 @@ class DashboardConfig {
         // Same reasoning for the log settings popover: it belongs to a body
         // that is about to be replaced, so Escape must not go looking for it.
         this._logSettingsPopoverClose = null;
+        this.resetExpiredTab(section);
         this.section = section;
         if (section === 'structure') this.forgetCategoryLists();
         // "Only changed" and the settings filter have a bar only where the

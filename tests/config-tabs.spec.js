@@ -70,6 +70,40 @@ test('the tab last looked at is where the section opens next time', async ({ pag
     await expect(later.locator('[data-appearance-tab="display"]')).toHaveAttribute('aria-selected', 'true');
 });
 
+test('a tab remembered more than five minutes ago opens on the first tab', async ({ page }) => {
+    // Six minutes old on load, and a bare string from before the expiry:
+    // both start the section from its first tab. Inbox, because Appearance
+    // has a promo that steers to its first tab on its own.
+    await page.addInitScript(() => {
+        localStorage.removeItem('nextdash:config-last-location-v1');
+        localStorage.setItem('nextdash:config-tab-v1', JSON.stringify({
+            inbox: 'icon',
+            behavior: { tab: 'privacy', savedAt: Date.now() - 6 * 60 * 1000 },
+        }));
+    });
+    await open(page, '#config/inbox');
+    await expect(page.locator('[data-inbox-tab="collecting"]')).toHaveAttribute('aria-selected', 'true');
+    await page.locator('[data-config-section="behavior"]').click();
+    await expect(page.locator('[data-behavior-tab="general"]')).toHaveAttribute('aria-selected', 'true');
+});
+
+test('a tab expires while the page stays open', async ({ page }) => {
+    // Choose a tab, leave the section, let the memory age past five minutes,
+    // come back without a reload. Inbox, because Appearance has a promo that
+    // steers to its first tab on its own.
+    await open(page, '#config/inbox');
+    await page.locator('[data-inbox-tab="icon"]').click();
+    await expect(page.locator('[data-inbox-tab="icon"]')).toHaveAttribute('aria-selected', 'true');
+    await page.locator('[data-config-section="overview"]').click();
+    await page.evaluate(() => {
+        const stored = JSON.parse(localStorage.getItem('nextdash:config-tab-v1'));
+        stored.inbox.savedAt = Date.now() - 6 * 60 * 1000;
+        localStorage.setItem('nextdash:config-tab-v1', JSON.stringify(stored));
+    });
+    await page.locator('[data-config-section="inbox"]').click();
+    await expect(page.locator('[data-inbox-tab="collecting"]')).toHaveAttribute('aria-selected', 'true');
+});
+
 test('the preview follows the tab and the setting', async ({ page }) => {
     await open(page, '#config/appearance/buttonbar');
     const preview = page.locator('.config-preview');
