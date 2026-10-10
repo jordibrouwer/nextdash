@@ -618,13 +618,31 @@ class DashboardConfig {
      * The tab is read once when config is built, and the instance outlives
      * many visits; without this a tab chosen an hour ago would still greet a
      * reader who never reloaded.
+     *
+     * Sections that keep their tab only for the life of the page expire the
+     * same way, against the moment config last showed them (_tabSeen). A tab
+     * that differs from the one seen then was set on purpose since -- a jump
+     * or a link naming it -- and is left alone.
      */
     resetExpiredTab(section) {
-        if (!DashboardConfig.REMEMBERED_TAB_SECTIONS.includes(section)) return;
-        if (DashboardConfig.readRememberedTab(section)) return;
         const prop = DashboardConfig.SUB_TAB_STATE[section];
         const first = DashboardConfig.SUB_TABS[section]?.[0];
-        if (prop && first) this[prop] = first;
+        if (!prop || !first) return;
+        if (DashboardConfig.REMEMBERED_TAB_SECTIONS.includes(section)) {
+            if (!DashboardConfig.readRememberedTab(section)) this[prop] = first;
+            return;
+        }
+        const seen = this._tabSeen?.[section];
+        if (!seen || seen.tab !== this[prop]) return;
+        if (Date.now() - seen.at > DashboardConfig.CONFIG_LAST_TTL_MS) this[prop] = first;
+    }
+
+    /** Stamp the tab this section shows now; see resetExpiredTab. */
+    markTabSeen(section) {
+        const prop = DashboardConfig.SUB_TAB_STATE[section];
+        if (!prop || DashboardConfig.REMEMBERED_TAB_SECTIONS.includes(section)) return;
+        if (!this._tabSeen) this._tabSeen = {};
+        this._tabSeen[section] = { tab: this[prop], at: Date.now() };
     }
 
     static SUB_TAB_STATE = {
@@ -1029,6 +1047,7 @@ class DashboardConfig {
             if (subTab && DashboardConfig.REMEMBERED_TAB_SECTIONS.includes(section)) {
                 DashboardConfig.rememberTab(section, subTab);
             }
+            this.markTabSeen(section);
             localStorage.setItem(DashboardConfig.CONFIG_LAST_KEY, JSON.stringify({
                 section,
                 subTab: subTab || null,
@@ -1111,6 +1130,7 @@ class DashboardConfig {
         const pageChanged = this.applyBookmarksPageFromHash(hash)
             | this.applyBookmarksFiltersFromHash(hash);
         if (section && section !== this.section) {
+            if (!this.standalone) this.saveLastConfigLocation();
             if (!DashboardConfig.subTabFromHash(hash)) this.resetExpiredTab(section);
             this.section = section;
             this.render();
@@ -5570,6 +5590,9 @@ class DashboardConfig {
         // Same reasoning for the log settings popover: it belongs to a body
         // that is about to be replaced, so Escape must not go looking for it.
         this._logSettingsPopoverClose = null;
+        // Stamp the section being left: reading one tab for ten minutes
+        // without a click is still using it, and must not expire it.
+        if (!this.standalone) this.saveLastConfigLocation();
         this.resetExpiredTab(section);
         this.section = section;
         if (section === 'structure') this.forgetCategoryLists();

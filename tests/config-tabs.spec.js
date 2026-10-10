@@ -167,3 +167,28 @@ test('the filter and the changed toggle in the band are wired up', async ({ page
             window.dashboardInstance.config.changedOnly === true), { timeout: 5_000 }).toBe(true);
     }
 });
+
+test.describe('a tab kept only for the page expires too', () => {
+    // Bookmarks keeps its tab for the life of the page, not in the browser.
+    // The clock runs on, so the five minutes are real time to the page.
+    test('back after more than five minutes opens the first tab', async ({ page }) => {
+        await page.clock.install();
+        await open(page, '#config/bookmarks');
+        await page.locator('[data-bm-tab="tags"]').click();
+        await expect(page.locator('[data-bm-tab="tags"]')).toHaveAttribute('aria-selected', 'true');
+        await page.locator('[data-config-section="overview"]').click();
+        await page.clock.fastForward('06:00');
+        await page.locator('[data-config-section="bookmarks"]').click();
+        await expect(page.locator('[data-bm-tab="view"]')).toHaveAttribute('aria-selected', 'true');
+    });
+
+    test('reading one tab for a while does not count as gone', async ({ page }) => {
+        await page.clock.install();
+        await open(page, '#config/bookmarks');
+        await page.locator('[data-bm-tab="tags"]').click();
+        await page.clock.fastForward('10:00');
+        await page.locator('[data-config-section="overview"]').click();
+        await page.locator('[data-config-section="bookmarks"]').click();
+        await expect(page.locator('[data-bm-tab="tags"]')).toHaveAttribute('aria-selected', 'true');
+    });
+});
