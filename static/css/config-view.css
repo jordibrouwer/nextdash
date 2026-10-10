@@ -262,6 +262,19 @@
     background: var(--background-secondary);
 }
 
+/* A small "new" behind a section that is new or reworked this release. */
+.config-nav-item[data-config-new]::after {
+    content: attr(data-config-new);
+    /* Empty alt text: the tab's name stays the section's name. */
+    content: attr(data-config-new) / "";
+    flex: none;
+    color: var(--accent-success, var(--accent-primary));
+    font-size: 0.72em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: lowercase;
+}
+
 .config-nav-item.is-active {
     background: var(--background-secondary);
     color: var(--accent-primary);
@@ -8098,6 +8111,10 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
    miniature fill their bars once as the section opens; the VM dot breathes.
    Reduced motion (the OS or the in-app switch) keeps the drawing and stops it. */
 
+/* The section's tabs hide cards by the hidden attribute; no card's own display
+   rule may win over it. */
+#config-unraid-body [hidden] { display: none !important; }
+
 .unraid-flow {
     display: grid;
     grid-template-columns: auto minmax(4rem, 1fr) auto;
@@ -8297,6 +8314,124 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
 }
 .unraid-mini-add { margin-top: auto; align-self: flex-start; }
 .unraid-preview-foot { margin: var(--space-3, 0.75rem) 0 0; }
+
+/* Config -> Status page: the link, its buttons and the QR symbol. */
+/* The section shows and hides by the hidden attribute; a display rule below
+   (the link row is flex) would otherwise win over it. */
+#config-status-page-body [hidden] { display: none !important; }
+.status-page-card-title { display: flex; align-items: center; gap: 6px; }
+.status-page-about p { margin: 0 0 8px; }
+.status-page-about p:last-child { margin-bottom: 0; }
+.status-page-link-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    margin: 4px 0 4px;
+}
+.status-page-link {
+    flex: 1 1 260px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    user-select: all;
+}
+.status-page-qr { flex: 0 0 auto; width: 112px; line-height: 0; }
+.status-page-qr svg { width: 100%; height: auto; border-radius: var(--radius-5, 8px); }
+
+/* Config -> Status page: groups, their services and the source picker. */
+.status-page-groups { display: flex; flex-direction: column; gap: 12px; margin: 10px 0 12px; }
+.status-page-group {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: var(--radius-5, 8px);
+    background: var(--background-primary, transparent);
+}
+.status-page-group.is-dragging, .status-page-service.is-dragging { opacity: 0.45; }
+.status-page-group.is-drop-before { box-shadow: 0 -2px 0 var(--accent-primary); }
+.status-page-group.is-drop-after { box-shadow: 0 2px 0 var(--accent-primary); }
+.status-page-group.is-drop-into { outline: 1px dashed var(--accent-primary); }
+.status-page-group-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.status-page-group-name { font-weight: var(--font-weight-semibold, 600); }
+.status-page-group-rename { flex: 0 1 220px; min-width: 0; }
+.status-page-group-count { color: var(--text-muted); font-size: var(--font-size-small, 0.85em); }
+.status-page-group-actions { margin-left: auto; }
+.status-page-services { display: flex; flex-direction: column; margin: 6px 0; }
+.status-page-service {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    padding: 6px 4px;
+    border-top: 1px solid var(--border-secondary, rgba(128, 128, 128, 0.15));
+    border-radius: var(--radius-3, 4px);
+}
+.status-page-service:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: -2px; }
+.status-page-service.is-drop-before { box-shadow: inset 0 2px 0 var(--accent-primary); }
+.status-page-service.is-drop-after { box-shadow: inset 0 -2px 0 var(--accent-primary); }
+.status-page-grip:focus-visible { outline: 2px solid var(--accent-primary); border-radius: var(--radius-3, 4px); }
+.status-page-service-name { flex: 1 1 160px; min-width: 0; max-width: 260px; }
+.status-page-chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 2 1 240px; min-width: 0; }
+.status-page-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 100%;
+    padding: 2px 8px;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.3));
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--font-size-small, 0.85em);
+    background: transparent;
+    color: var(--text-primary, inherit);
+}
+.status-page-chip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.status-page-chip-meta { color: var(--text-muted); white-space: nowrap; }
+.status-page-chip.is-missing { border-color: color-mix(in srgb, var(--accent-warning, #d9a400) 60%, transparent); }
+.status-page-chip.is-missing .status-page-chip-meta { color: var(--accent-warning, #d9a400); }
+.status-page-chip--add { border-style: dashed; color: var(--text-secondary); cursor: pointer; font: inherit; font-size: var(--font-size-small, 0.85em); }
+.status-page-chip--add:hover, .status-page-chip--add:focus-visible { color: var(--accent-primary); border-color: var(--accent-primary); }
+.status-page-chip-clear {
+    padding: 0 2px;
+    border: 0;
+    background: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font: inherit;
+    line-height: 1;
+}
+.status-page-chip-clear:hover, .status-page-chip-clear:focus-visible { color: var(--accent-error, #d1493f); }
+.status-page-check { display: inline-flex; align-items: center; gap: 4px; font-size: var(--font-size-small, 0.85em); white-space: nowrap; }
+.status-page-remove { margin-left: auto; }
+.status-page-add-service {
+    padding: 4px 10px;
+    border: 1px dashed var(--border-primary, rgba(128, 128, 128, 0.3));
+    border-radius: var(--radius-5, 8px);
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font: inherit;
+    font-size: var(--font-size-small, 0.85em);
+}
+.status-page-add-service:hover, .status-page-add-service:focus-visible { color: var(--accent-primary); border-color: var(--accent-primary); }
+.status-page-picker {
+    margin-top: 8px;
+    padding: 10px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: var(--radius-5, 8px);
+    background: var(--card-bg, rgba(128, 128, 128, 0.04));
+}
+.status-page-picker [data-sp-picker-search] { width: 100%; }
+.status-page-picker-list { list-style: none; margin: 8px 0 4px; padding: 0; max-height: 240px; overflow-y: auto; }
+.status-page-picker-item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    padding: 5px 8px;
+    border-radius: var(--radius-3, 4px);
+    cursor: pointer;
+}
+.status-page-picker-item.is-active { background: color-mix(in srgb, var(--accent-primary) 16%, transparent); }
+.status-page-picker-meta { color: var(--text-muted); font-size: var(--font-size-small, 0.85em); }
+.status-page-picker-empty { padding: 5px 8px; color: var(--text-muted); }
 
 /* Widgets -> Types, arrived at from Config -> Unraid: the kind asked for. */
 .config-widget-type-row.is-pointed {

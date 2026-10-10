@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="{{.Lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<title>{{.Title}}</title>
+<link rel="stylesheet" href="{{asset "status/status.css"}}">
+<script src="{{asset "status/status.js"}}" defer></script>
+</head>
+<body>
+<main class="sp-inner" data-status-root data-status-data="{{.DataURL}}">
+  <header class="sp-head"><h1 class="sp-title">{{.Title}}</h1><span class="sp-updated" data-status-updated></span></header>
+  {{if .Notice}}<p class="sp-note">{{.Notice}}</p>{{end}}
+  <div data-status-body><noscript><p class="sp-note">{{.NoScript}}</p></noscript></div>
+</main>
+<script type="application/json" id="status-strings">{{.Strings}}</script>
+</body>
+</html>

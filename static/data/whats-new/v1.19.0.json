@@ -1,0 +1,56 @@
+{
+  "tag": "v1.19.0",
+  "date": "10 October 2026",
+  "releasedAt": "2026-10-10",
+  "modalLead": "A <strong>status page</strong> for the people who use your services, and a dashboard that opens quicker.",
+  "sections": [
+    {
+      "title": "Status page",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A page for the people who use your services.</strong> Turn it on under Config → Status page and share the link: they see your groups, whether each service works, planned maintenance and 30 days of history, without getting into your dashboard."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Set it up from top to bottom in Config → Status page:</strong> the link with Copy and a QR code, the top of the page, groups of services (a bookmark or container you already have counts as one service) and maintenance windows per group."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Unraid has tabs,</strong> like the other sections, so the page no longer jumps when you move between them. A small <em>new</em> in the section list marks what is new or reworked."
+        }
+      ]
+    },
+    {
+      "title": "Speed",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Bookmarks and the dashboard draw faster with many bookmarks and containers:</strong> category titles are fitted together, and containers are matched to their bookmarks once instead of for every row."
+        }
+      ]
+    },
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Choosing a theme no longer leaves an older version of the colours in front</strong> when you change themes twice in quick succession."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>With several of your own themes, the theme file is no longer downloaded again</strong> after every change you make."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Pasting a link the Inbox already holds opens a styled Inbox</strong> on a freshly loaded page, instead of a bare list."
+        }
+      ]
+    }
+  ]
+}

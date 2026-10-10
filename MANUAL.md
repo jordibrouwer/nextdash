@@ -195,6 +195,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 - [Maintenance windows](#125-maintenance-windows)
 - [Fresh](#126-fresh)
 - [Keeping a copy of a page](#127-keeping-a-copy-of-a-page)
+- [The status page](#128-the-status-page)
 
 </details>
 
@@ -330,6 +331,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 - [What nextDash contacts](#237-what-nextdash-contacts)
 - [Analytics](#238-analytics)
 - [Operations](#239-operations)
+- [Sharing the status page over the internet](#2310-sharing-the-status-page-over-the-internet)
 
 </details>
 
@@ -2069,6 +2071,29 @@ Set up under **Data & backups → Sources**.
 
 On a bookmark's Health tab, **Find in Web Archive** reads the archive's index for the last capture that was a real page.
 
+<a id="128-the-status-page"></a>
+
+### 12.8 The status page
+
+The status page is one page behind a secret link, for your household and friends. It answers "does it work?" before anyone asks: which services work, since when one is down, planned maintenance, and 30 days of history. No accounts and nothing to change: visitors only read. You choose the groups and the names they see. Light or dark and the language follow the visitor's device. Set it up under **Config → Status page**.
+
+**What a visitor sees.** Your title and notice, one line for the whole page (*All services are working*, or how many have a problem), then your groups. Per service: its public name, its state (Operational, Degraded, Down, Maintenance or Unknown), *Down since 14:03* while it is down, a bar for each of the last 30 days with the uptime percentage, and planned maintenance for the groups you linked. A link to the service and its response time show only when you switch them on. A service with no check for a while reads *Unknown* with the time of its last check. The page refreshes itself every minute.
+
+**What a visitor never sees.** Error details, container images, bookmark ids, internal addresses (unless **Link** is on for that service), or anything else of your dashboard. The page loads none of the dashboard's files.
+
+**Setting it up.**
+
+1. Under **Link and access**, tick **Turn the status page on**. The link appears with **Copy**, **Open** and a QR code to scan with a phone.
+2. Under **Top of the page**, give it a **Title** and, if you like, a **Notice** shown under it.
+3. Under **Groups and services**, **+ Add group**, then **+ Add service** in each group. The picker lists monitored bookmarks and containers; a bookmark without monitoring has no history to show, so it is not listed. A bookmark linked to a container (the same pairing as in the Containers view, [§14](#14-containers)) is offered as one service, and the worse of the two counts. The pairing is fixed when you add it. Give each service a **Public name**, and tick **Link** and **Speed** where you want them.
+4. Under **Maintenance shown on the page**, tick the groups each maintenance window belongs to. The windows themselves are set in **Behavior → Status & alerts** ([§12.5](#125-maintenance-windows)). A linked group shows *Planned maintenance* ahead of time and blue instead of red during it. Alerts are not affected.
+
+Everything saves as you go.
+
+**Who can open it.** Anyone with the link. **New link…** makes a fresh one and the old link stops working at once — use it when the link went further than you meant. **Only from the home network** refuses visitors from outside your own network. A wrong, old or stopped link gets a plain *not found*. A backup keeps the page's layout but never its link, so after a restore the old link is gone: open **Config → Status page** and it makes a new one. Share that.
+
+**Sharing it over the internet.** nextDash has no login, so let your reverse proxy pass only `/s/` and `/static/status/`, never the whole app, and name the proxy in `NEXTDASH_TRUSTED_PROXIES`. The examples and the rest are in [§23.10](#2310-sharing-the-status-page-over-the-internet).
+
 <sub>[↑ Contents](#table-of-contents)</sub>
 
 ---
@@ -3246,6 +3271,7 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Widgets** | Widgets · Types ([§15](#15-widgets)) |
 | **Containers** | Connection · View · Updates · Alerts ([§17.7](#177-config-containers)) |
 | **Unraid** | The one Unraid server the Unraid widgets read ([§15.6](#156-unraid-widgets)) |
+| **Status page** | The read-only page for the people who use your services: its link, its top, groups and services, and linked maintenance ([§12.8](#128-the-status-page)) |
 | **Statistics** | Overview · Activity · Content · Inbox · Health ([§18](#18-statistics)) |
 | **Help** | The in-app guide |
 | **Logs** | Server logs · Activity trail ([§20](#20-logs)) |
@@ -4027,6 +4053,46 @@ Every count is rounded into a band. **Never recorded:** bookmark names, URLs, se
 - For the public demo only: `NEXTDASH_DEMO=1` turns an instance into a seeded demo that puts its data back to the start every `NEXTDASH_DEMO_RESET_MINUTES` (default 30) and once nobody has written for `NEXTDASH_DEMO_IDLE_MINUTES` (default 10). It empties its data directory on every start and reset, so it needs `NEXTDASH_DATA_DIR` set to a directory of its own and refuses one that holds a real install. See `deploy/demo/docker-compose.yml`.
 - Demo only: `NEXTDASH_DEMO_ANALYTICS_ID` is the Umami website id the demo counts its visits into (page views, events, heatmaps and screen replays), in a count separate from every install's. Unset, the demo counts nothing. The demo bar and Config → Privacy say so. A normal install ignores it, and `DISABLE_TELEMETRY` switches it off as well.
 - For the test suite only: `NEXTDASH_ICON_SETS_FIXTURE` and `NEXTDASH_UNRAID_FIXTURE` name a directory the app icon sets and the Unraid API answer from instead of the network. A real install leaves them unset.
+
+<a id="2310-sharing-the-status-page-over-the-internet"></a>
+
+### 23.10 Sharing the status page over the internet
+
+The status page ([§12.8](#128-the-status-page)) is meant for people outside your home. nextDash has no login, so **never put the whole app on the internet for it**. Let your reverse proxy pass only two paths: `/s/` (the page and its data) and `/static/status/` (its own style and script). Everything else gets a 404 from the proxy.
+
+With Caddy:
+
+```
+status.example.net {
+    @status path /s/* /static/status/*
+    reverse_proxy @status nextdash:8080
+    respond 404
+}
+```
+
+With nginx, inside the `server` block:
+
+```nginx
+proxy_set_header X-Forwarded-For $remote_addr;
+location /s/             { proxy_pass http://nextdash:8080; }
+location /static/status/ { proxy_pass http://nextdash:8080; }
+location /               { return 404; }
+```
+
+`8080` is the container's own port in these examples; use the address and port of your install. The `proxy_set_header` line tells nextDash who the visitor is, and replaces whatever the visitor sent in that header themselves. Caddy does this on its own.
+
+**Name the proxy.** Add the proxy's address to `NEXTDASH_TRUSTED_PROXIES` ([§23.3](#233-local-addresses-and-outgoing-requests)). Without it nextDash cannot tell who is behind the proxy:
+
+- With **Only from the home network** on, every request that comes through the proxy is refused, whatever address it claims. The same happens with a named proxy that does not pass the visitor's address on.
+- Every visitor counts as the proxy's one address for the rate limit of 60 requests a minute, shared by page loads and the once-a-minute refresh. With about 50 or more pages open at once, visitors start getting *not found*.
+
+**The link is the key.** Anyone who has the link can open the page, so sharing the link is sharing the page. When it went further than you meant, press **New link…** in Config → Status page; the old link stops at once. For a page only your household needs, turn on **Only from the home network**.
+
+**Logs.** nextDash keeps the link's secret part out of its own log (it writes `/s/…`). Your proxy's access log may still record the full address: turn logging off for these paths, or keep that log private.
+
+**What nextDash does for you.** The page asks search engines not to index it, sends no referrer to the services it links to, and answers a wrong, old or stopped link with the same plain *not found* as any unknown address. After restoring a backup the old link does not come back; Config → Status page makes a new one when you open it.
+
+**Think about what it reveals.** The page shows which services you run and when you plan maintenance. Tick **Link** only for services whose address is meant to be public.
 
 <sub>[↑ Contents](#table-of-contents)</sub>
 

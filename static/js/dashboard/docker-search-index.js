@@ -134,14 +134,28 @@
         return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     }
 
+    /*
+     * Parsed once per address. The answer depends on the string alone, so a
+     * cached one cannot go stale; matching asks for the same addresses over
+     * and over, and `new URL` was most of what opening Bookmarks cost.
+     */
+    const parsedCache = new Map();
+
     function parsedUrl(raw) {
+        const key = String(raw || '').trim();
+        if (parsedCache.has(key)) return parsedCache.get(key);
+        let out = null;
         try {
-            const u = new URL(String(raw || '').trim());
-            if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
-            return { host: u.hostname.toLowerCase().replace(/^\[|\]$/g, ''), port: u.port || (u.protocol === 'https:' ? '443' : '80') };
+            const u = new URL(key);
+            if (u.protocol === 'http:' || u.protocol === 'https:') {
+                out = { host: u.hostname.toLowerCase().replace(/^\[|\]$/g, ''), port: u.port || (u.protocol === 'https:' ? '443' : '80') };
+            }
         } catch {
-            return null;
+            out = null;
         }
+        if (parsedCache.size > 5000) parsedCache.clear();
+        parsedCache.set(key, out);
+        return out;
     }
 
     function bookmarkKey(b) {
@@ -199,11 +213,39 @@
         return null;
     }
 
+    /*
+     * Every container's bookmark, worked out once and kept while nothing it
+     * depends on has changed: the container list, the bookmarks (their pages,
+     * addresses and names, read afresh each time, since an edit changes the
+     * objects in place), the links set by hand and the host address.
+     *
+     * Asked once per row, containersFor used to run bookmarkFor for every
+     * container on every row -- rows x containers x bookmarks.
+     */
+    let byUrl = null, byUrlKey = null, byUrlList = null;
+
+    function containersByUrl(bookmarks) {
+        const all = bookmarks || [];
+        const links = window.dashboardInstance?.settings?.dockerBookmarkLinks || {};
+        let key = `${hostAddress()}|${window.location.hostname}|${JSON.stringify(links)}|${all.length}`;
+        for (const b of all) key += `|${b?.pageId}\u0001${b?.url}\u0001${b?.name}`;
+        if (byUrl && byUrlList === list && byUrlKey === key) return byUrl;
+        byUrl = new Map();
+        list.forEach((c) => {
+            const url = String(bookmarkFor(c, all)?.bookmark?.url || '').trim();
+            if (!url) return;
+            if (!byUrl.has(url)) byUrl.set(url, []);
+            byUrl.get(url).push(c);
+        });
+        byUrlList = list;
+        byUrlKey = key;
+        return byUrl;
+    }
+
     /** The containers whose bookmark is this one, from the cached list. */
     function containersFor(bookmark, bookmarks) {
         if (!bookmark?.url) return [];
-        const url = String(bookmark.url).trim();
-        return list.filter((c) => String(bookmarkFor(c, bookmarks)?.bookmark?.url || '').trim() === url);
+        return [...(containersByUrl(bookmarks).get(String(bookmark.url).trim()) || [])];
     }
 
     /**

@@ -95,6 +95,7 @@ var demoDeniedWrites = []string{
 	"/mcp",
 	// Secrets.
 	"/api/health/credentials", "/api/web-search/brave-key",
+	"/api/status-page", "/api/status-page/token",
 }
 
 // demoAllowedWrites work in the demo as they do anywhere: they change the

@@ -19,6 +19,22 @@
       "since": "v1.18.4"
     },
     {
+      "titleKey": "config.overviewNewFeatureStatusPageTitle",
+      "titleFallback": "A status page for the people who use your services",
+      "whatKey": "config.overviewNewFeatureStatusPageWhat",
+      "whatFallback": "The people at home or the friends who use your services had to ask you whether something worked.",
+      "howKey": "config.overviewNewFeatureStatusPageHow",
+      "howFallback": "Behind a secret link, a read-only page shows your groups of services, whether each one works, since when one is down, planned maintenance and 30 days of history. It refreshes itself every minute and follows the visitor’s language and light or dark.",
+      "enableKey": "config.overviewNewFeatureStatusPageEnable",
+      "enableFallback": "Off by default. Turn it on under Config → Status page and share the link.",
+      "ctaKey": "config.overviewNewFeatureStatusPageCta",
+      "ctaFallback": "Open Status page →",
+      "go": {
+        "section": "status-page"
+      },
+      "since": "v1.19.0"
+    },
+    {
       "titleKey": "config.overviewNewFeatureActionBarSwellTitle",
       "titleFallback": "Buttons that swell into view",
       "whatKey": "config.overviewNewFeatureActionBarSwellWhat",

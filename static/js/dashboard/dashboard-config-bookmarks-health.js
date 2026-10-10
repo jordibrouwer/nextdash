@@ -500,8 +500,15 @@
         syncWorkbenchRowsHealth() {
             const esc = (v) => this.dash.escapeHtml(v);
             const tone = (score) => (score >= 90 ? 'good' : score >= 70 ? 'warn' : 'bad');
+            // One lookup for all the rows, the same two pools findBookmarkByKey
+            // searches: asking it per row walked the whole library each time.
+            const byKey = new Map();
+            [...(this.dash.allBookmarks || []), ...(this.dash.unsortedBookmarks || [])].forEach((b) => {
+                const key = this.bookmarkKey(b);
+                if (!byKey.has(key)) byKey.set(key, b);
+            });
             document.querySelectorAll('#config-bm-list .config-bm-row').forEach((row) => {
-                const b = this.findBookmarkByKey(this.bookmarkRowKey(row));
+                const b = byKey.get(this.bookmarkRowKey(row)) || null;
                 if (!b) return;
                 const status = this.workbenchRowStatus?.(b);
                 if (status) row.setAttribute('data-lvs-status', status);

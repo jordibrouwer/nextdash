@@ -72,10 +72,24 @@ func requestLogging(next http.Handler) http.Handler {
 		logRequestLine("%s %s %s %d %dB %s",
 			reqID,
 			r.Method,
-			r.URL.Path,
+			redactLogPath(r.URL.Path),
 			status,
 			rec.bytes,
 			time.Since(start),
 		)
 	})
+}
+
+// redactLogPath keeps the status page's secret out of the log. The link is
+// the only key that page has; a log line read in Config, in docker logs or
+// in a support paste must not hand it on.
+func redactLogPath(path string) string {
+	rest, ok := strings.CutPrefix(path, "/s/")
+	if !ok || rest == "" {
+		return path
+	}
+	if _, tail, found := strings.Cut(rest, "/"); found {
+		return "/s/…/" + tail
+	}
+	return "/s/…"
 }

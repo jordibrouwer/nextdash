@@ -324,6 +324,7 @@ class SearchCommandsComponent {
         { id: 'widgets', labelKey: 'commands.configWidgets', fallback: 'Widgets' },
         { id: 'containers', labelKey: 'commands.configContainers', fallback: 'Containers' },
         { id: 'unraid', labelKey: 'commands.configUnraid', fallback: 'Unraid' },
+        { id: 'status-page', labelKey: 'commands.configStatusPage', fallback: 'Status page' },
         { id: 'stats', labelKey: 'commands.configStats', fallback: 'Statistics' },
         { id: 'help', labelKey: 'commands.configHelp', fallback: 'Help' },
         { id: 'logs', labelKey: 'commands.configLogs', fallback: 'Logs' },

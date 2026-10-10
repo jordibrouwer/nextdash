@@ -1,5 +1,5 @@
 # Build stage
-FROM --platform=$BUILDPLATFORM golang:1.24-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS builder
 
 WORKDIR /app
 
@@ -24,14 +24,14 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -installsuffix c
     -o main .
 
 # Final stage — binary only; static/templates/locales come from go:embed.
-FROM alpine:3.21
+FROM alpine:3.24 AS runtime
 
 # monolith saves a whole page as one file, for Config -> Data & backups ->
 # Sources -> Local copies. Included because a container is not a place anyone
 # can install something into afterwards: without it that feature is present in
 # the UI and permanently unavailable, which is worse than not offering it.
-# Around 6 MB. Alpine ships 2.8, whose quiet flag is -s where 2.10's is -q --
-# archive_monolith.go reads --help and uses whichever this build has.
+# Around 6 MB. Alpine 3.24 ships 2.10, whose quiet flag is -q where 2.8's was
+# -s -- archive_monolith.go reads --help and uses whichever this build has.
 RUN apk --no-cache add ca-certificates tzdata su-exec monolith \
     && addgroup -S nextdash \
     && adduser -S nextdash -G nextdash

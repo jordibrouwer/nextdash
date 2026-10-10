@@ -63,6 +63,7 @@ class DashboardConfig {
         'widgets',
         'containers',
         'unraid',
+        'status-page',
         'stats',
         'help',
         'logs',
@@ -93,6 +94,11 @@ class DashboardConfig {
             file: 'js/dashboard/dashboard-config-unraid.js',
             datasetKey: 'dashboardConfigUnraid',
             ready: () => window.DashboardConfigUnraidReady === true,
+        },
+        'status-page': {
+            file: 'js/dashboard/dashboard-config-status-page.js',
+            datasetKey: 'dashboardConfigStatusPage',
+            ready: () => window.DashboardConfigStatusPageReady === true,
         },
         logs: {
             file: 'js/dashboard/dashboard-config-logs.js',
@@ -167,6 +173,13 @@ class DashboardConfig {
      */
     static NEW_THIS_RELEASE = {};
 
+    /*
+     * Sections that carry a small "new" in the rail: new, or reworked enough to
+     * be worth a second look. Cleared when the release is no longer recent,
+     * for the same reason as the twinkle above.
+     */
+    static NEW_SECTIONS = ['structure', 'containers', 'unraid', 'status-page'];
+
     static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
 
     /**
@@ -236,6 +249,10 @@ class DashboardConfig {
         this._inboxTab = DashboardConfig.readRememberedTab('inbox') || 'collecting';
         // Containers sub-tab, remembered the same way.
         this._containersTab = DashboardConfig.readRememberedTab('containers') || 'connection';
+        // Status page sub-tab, remembered the same way.
+        this._statusPageTab = DashboardConfig.readRememberedTab('status-page') || 'all';
+        // Unraid sub-tab, remembered the same way.
+        this._unraidTab = DashboardConfig.readRememberedTab('unraid') || 'all';
         /**
          * Whether a settings tab is filtered to what differs from the default.
          * Not persisted: it is a way of looking at the page for a minute, not a
@@ -544,6 +561,8 @@ class DashboardConfig {
             widgets: DashboardConfig.WIDGETS_TABS,
             inbox: DashboardConfig.INBOX_TABS,
             containers: DashboardConfig.CONTAINERS_TABS,
+            'status-page': DashboardConfig.STATUS_PAGE_TABS,
+            unraid: DashboardConfig.UNRAID_TABS,
         };
     }
 
@@ -602,6 +621,8 @@ class DashboardConfig {
         widgets: 'widgetsTab',
         inbox: 'inboxTab',
         containers: 'containersTab',
+        'status-page': 'statusPageTab',
+        unraid: 'unraidTab',
     };
 
     /**
@@ -622,6 +643,8 @@ class DashboardConfig {
         'data-widgets-tab': 'widgets',
         'data-inbox-tab': 'inbox',
         'data-containers-tab': 'containers',
+        'data-sp-tab': 'status-page',
+        'data-unraid-tab': 'unraid',
     };
 
     /** data-* attribute on each section's sub-tab strip buttons. */
@@ -637,6 +660,8 @@ class DashboardConfig {
         widgets: 'data-widgets-tab',
         inbox: 'data-inbox-tab',
         containers: 'data-containers-tab',
+        'status-page': 'data-sp-tab',
+        unraid: 'data-unraid-tab',
     };
 
     /** Apply a sub-tab from the hash, if the section has one. */
@@ -1964,6 +1989,7 @@ class DashboardConfig {
             widgets: ['config.sectionWidgets', 'Widgets'],
             containers: ['config.sectionContainers', 'Containers'],
             unraid: ['config.sectionUnraid', 'Unraid'],
+            'status-page': ['config.sectionStatusPage', 'Status page'],
             stats: ['config.sectionStats', 'Statistics'],
             help: ['config.sectionHelp', 'Help'],
             logs: ['config.sectionLogs', 'Logs'],
@@ -2009,6 +2035,8 @@ class DashboardConfig {
             case 'help': return this.helpTabLabel?.(tab) || tab;
             case 'logs': return this.logsTabLabel?.(tab) || tab;
             case 'containers': return this.containersTabLabel?.(tab) || tab;
+            case 'status-page': return this.statusPageTabLabel?.(tab) || tab;
+            case 'unraid': return this.unraidTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -2264,6 +2292,8 @@ class DashboardConfig {
             this.bindContainersSection(container);
         } else if (this.section === 'unraid') {
             void this.bindUnraidSection?.(container);
+        } else if (this.section === 'status-page') {
+            void this.bindStatusPageSection?.(container);
         } else if (this.section === 'inbox') {
             this.bindControlPanels(container, 'behavior');
             this.bindInboxSection?.(container);
@@ -3371,6 +3401,8 @@ class DashboardConfig {
             case 'logs': return this.logsTabLabel(tab);
             case 'inbox': return this.inboxTabLabel?.(tab) || tab;
             case 'containers': return this.containersTabLabel?.(tab) || tab;
+            case 'status-page': return this.statusPageTabLabel?.(tab) || tab;
+            case 'unraid': return this.unraidTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -4062,6 +4094,10 @@ class DashboardConfig {
             // heard of.
             const isNew = section === DashboardConfig.NEW_THIS_RELEASE.section;
             const stars = isNew ? this.renderNewFeaturesPanelStars() : '';
+            // Drawn by CSS from the attribute, so the button's name stays the
+            // section's name for readers, keys and searches.
+            const newBadge = DashboardConfig.NEW_SECTIONS.includes(section)
+                ? ` data-config-new="${esc(this.t('config.sectionNewBadge', 'new'))}"` : '';
             return `
                 <button type="button" class="config-nav-item${active ? ' is-active' : ''}${isNew ? ' config-nav-item--animated' : ''}"
                         role="tab" aria-selected="${active ? 'true' : 'false'}"
@@ -4069,7 +4105,7 @@ class DashboardConfig {
                         id="config-section-${esc(section)}"
                         aria-controls="${panelId}"
                         title="${esc(this.sectionLabel(section))}"
-                        data-config-section="${esc(section)}">
+                        data-config-section="${esc(section)}"${newBadge}>
                     ${esc(this.sectionLabel(section))}${stars}
                 </button>`;
         }).join('');
@@ -4194,6 +4230,9 @@ class DashboardConfig {
         }
         if (this.section === 'unraid') {
             return this.renderUnraidSection();
+        }
+        if (this.section === 'status-page') {
+            return this.renderStatusPageSection();
         }
         if (this.section === 'inbox') {
             return this.renderInboxSection();
@@ -15290,6 +15329,10 @@ class DashboardConfig {
                 start: row.querySelector('[data-maint-start]')?.value || '',
                 end: row.querySelector('[data-maint-end]')?.value || '',
                 label: (row.querySelector('[data-maint-label]')?.value || '').trim(),
+                // Linked status page groups are set in Config → Status page;
+                // editing the window here must not drop them.
+                ...(Array.isArray(saved[i]?.statusGroups) && saved[i].statusGroups.length
+                    ? { statusGroups: saved[i].statusGroups } : {}),
             };
         });
     }
@@ -16543,6 +16586,20 @@ class DashboardConfig {
     set containersTab(tab) {
         this._containersTab = tab;
         DashboardConfig.rememberTab('containers', tab);
+    }
+
+    get statusPageTab() { return this._statusPageTab; }
+
+    set statusPageTab(tab) {
+        this._statusPageTab = tab;
+        DashboardConfig.rememberTab('status-page', tab);
+    }
+
+    get unraidTab() { return this._unraidTab; }
+
+    set unraidTab(tab) {
+        this._unraidTab = tab;
+        DashboardConfig.rememberTab('unraid', tab);
     }
 
     set behaviorTab(tab) {
@@ -19267,6 +19324,12 @@ class DashboardConfig {
 
     /** Config → Containers: where the socket is, how it looks, updates, alerts, Unraid. */
     static CONTAINERS_TABS = ['connection', 'view', 'updates', 'alerts'];
+
+    /** The Status page section's sub-tabs; 'all' shows every card at once. */
+    static STATUS_PAGE_TABS = ['all', 'link', 'top', 'groups', 'maintenance'];
+
+    /** The Unraid section's sub-tabs; 'all' shows every card at once. */
+    static UNRAID_TABS = ['all', 'connection', 'how', 'widgets'];
 
     // Repeated from widgets-tutorial.js, which is checked before the script is
     // fetched at all. Both must agree.
@@ -27179,6 +27242,25 @@ class DashboardConfig {
                 ],
             },
         ],
+        // The page a visitor gets: a service that works and one that is down,
+        // the two states the panel's prose keeps returning to.
+        'config.helpStatusPageTitle': [
+            {
+                kind: 'states',
+                value: [
+                    ['ok', { k: 'config.statsHealthy', d: 'Healthy' }],
+                    ['off', { k: 'config.helpArtDown', d: 'Down' }],
+                ],
+            },
+        ],
+        // Only the status page's own addresses may reach the internet; the rest
+        // of the app must not. Literal paths, so nothing to translate.
+        'config.helpStatusPageShareTitle': [
+            {
+                kind: 'flow',
+                value: ['/s/*', '/static/status/*', 'nextDash'],
+            },
+        ],
 
         // ── Inbox ──────────────────────────────────────────────────────────
         'config.helpInboxTitle': [
@@ -27612,7 +27694,23 @@ class DashboardConfig {
                     <button type="button" class="config-btn" data-help-action="fresh-tour">${esc(this.t('config.helpFreshTour', 'Walk me through Fresh'))}</button>
                 </div>`)
             + this.helpPanel('config.helpNotificationsTitle', 'Alerts & notifications',
-                'config.helpNotificationsBody', '');
+                'config.helpNotificationsBody', '')
+            + this.helpPanel('config.helpStatusPageTitle', 'The status page',
+                'config.helpStatusPageBody',
+                '<p>One page behind a secret link, for your household and friends: which services work, since when one is down, planned maintenance and 30 days of history. No accounts, and visitors can only read. Light or dark and the language follow their device.</p>'
+                + '<p><strong>What a visitor sees.</strong> Your title and notice, then your groups. Per service: the public name you gave it, its state, <em>Down since 14:03</em> while it is down, 30 day bars with the uptime percentage, and planned maintenance of the groups you linked. A link to the service and its response time only when you tick <strong>Link</strong> and <strong>Speed</strong>. Never error details, container images, internal addresses or anything else of your dashboard.</p>'
+                + '<p><strong>Setting it up.</strong> In Config → Status page, tick <strong>Turn the status page on</strong>, then <strong>Copy</strong> the link or scan the QR code. Under <strong>Groups and services</strong>, add a group and <strong>+ Add service</strong>: the picker lists monitored bookmarks and containers. A bookmark linked to a container is offered as one service, and the worse of the two counts. Under <strong>Maintenance shown on the page</strong>, tick the groups each window belongs to; the windows themselves live in Behavior → Status &amp; alerts.</p>'
+                + '<p><strong>Who can open it.</strong> Anyone with the link. <strong>New link…</strong> stops the old one at once. <strong>Only from the home network</strong> keeps it inside your house.</p>')
+            + this.helpPanel('config.helpStatusPageShareTitle', 'Sharing the status page safely',
+                'config.helpStatusPageShareBody',
+                '<p>nextDash has no login, so never put the whole app on the internet for the status page. Let your reverse proxy pass only <code>/s/</code> and <code>/static/status/</code>, and answer everything else with a 404. With Caddy:</p>'
+                + '<pre><code>status.example.net {\n    @status path /s/* /static/status/*\n    reverse_proxy @status nextdash:8080\n    respond 404\n}</code></pre>'
+                + '<p>With nginx:</p>'
+                + '<pre><code>proxy_set_header X-Forwarded-For $remote_addr;\nlocation /s/             { proxy_pass http://nextdash:8080; }\nlocation /static/status/ { proxy_pass http://nextdash:8080; }\nlocation /               { return 404; }</code></pre>'
+                + '<p>The <code>proxy_set_header</code> line tells nextDash who the visitor is; Caddy does this on its own.</p>'
+                + '<p><strong>Name the proxy</strong> in <code>NEXTDASH_TRUSTED_PROXIES</code>. Without it, or when it does not pass the visitor\'s address on, <strong>Only from the home network</strong> refuses everyone who comes through the proxy, and all visitors share one limit of 60 requests a minute, so with about 50 pages open at once they start getting <em>not found</em>.</p>'
+                + '<p><strong>The link is the key.</strong> Sharing the link is sharing the page. When it went further than you meant, use <strong>New link…</strong>. nextDash keeps the link out of its own log, but your proxy\'s access log may record it: switch that off for these paths or keep it private. After restoring a backup the old link does not come back; Config → Status page makes a new one when you open it.</p>'
+                + '<p><strong>Think about what it shows:</strong> which services you run and when you plan maintenance. Tick <strong>Link</strong> only for addresses meant to be public. The page is not indexed by search engines, sends no referrer, and a wrong or old link gets a plain <em>not found</em>.</p>');
     }
 
     /**
