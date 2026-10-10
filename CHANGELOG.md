@@ -134,6 +134,7 @@ Container updates show what they are doing while they run, and an update of a se
 - **docs — Help no longer says the Bookmarks view follows the app-wide density.** The everyday tip (`tipEverydayDensity`), Help → Bookmarks view, Help → Bookmarks view settings and Help → Appearance pointed at toolbar buttons that are gone; all four say where row height and density live now, in six languages.
 - **docs — MANUAL §11.2, §14.2, §14.5, §16.6, §17.4, §17.7 and the quick reference** describe the row height setting, the update progress window, what a bulk update takes and the Unraid explanation. The README's Containers list mentions the steps and log.
 - **docs — translations** of the update steps, the bulk update notices, the row height setting and the Unraid text in nl, de, fr, es and zh.
+- **docs — the Unraid template** (`templates/nextdash.xml`) lists the v1.19.0 and v1.19.1 changes and is dated 10 October, the same as the copy Community Applications reads; v1.19.0 had not reached it.
 
 ### Docs
 
