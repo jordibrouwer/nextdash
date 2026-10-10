@@ -813,11 +813,10 @@ class DashboardConfig {
         const prop = DashboardConfig.SUB_TAB_STATE[section];
         const tab = prop ? this[prop] : null;
         const tabs = DashboardConfig.SUB_TABS[section];
-        // Appearance and Behavior open on the tab last looked at, so a bare
-        // link to them lands differently for everyone: their first tab is
+        // Sections that remember their tab open on the one last looked at, so
+        // a bare link to them lands differently for everyone: their first tab is
         // named too, or the address bar would not be a link to what is shown.
-        const remembers = section === 'appearance' || section === 'behavior' || section === 'inbox'
-            || section === 'containers';
+        const remembers = DashboardConfig.REMEMBERED_TAB_SECTIONS.includes(section);
         if (tab && tabs && tabs.includes(tab) && (tab !== tabs[0] || remembers)) {
             return `config/${section}/${tab}`;
         }
