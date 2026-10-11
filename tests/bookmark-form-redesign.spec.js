@@ -80,6 +80,8 @@ test.describe('bookmark form preview card', () => {
             return d.openBookmarkFormModal({ mode: 'edit', pageId: d.currentPageId, index: 0, bookmark: d.bookmarks[0] });
         });
         await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
+        await expect(page.locator('#bookmark-form-modal .bookmark-inline-form')).toBeVisible();
+        // A fixed wait: no request should be sent, so there is nothing to wait for.
         await page.waitForTimeout(600);
         expect(calls.preview).toBe(0);
     });
@@ -300,10 +302,12 @@ test('a changed address replaces the card and the fetched icon, whatever arrives
     });
     const form = await openAdd(page);
     const url = form.locator('[data-field="url"]');
+    // The first read is really running once its request has gone out.
+    const firstAsked = page.waitForRequest((r) => r.url().includes('/api/bookmark-preview')
+        && r.url().includes('first.example'));
     await url.fill('https://first.example/a');
     await url.blur();
-    // Past the 250ms settle, so the first read is really running.
-    await page.waitForTimeout(500);
+    await firstAsked;
     await url.fill('https://second.example/b');
     await url.blur();
     await expect(form.locator('.bookmark-form-card-desc')).toHaveText('Said by the second page');

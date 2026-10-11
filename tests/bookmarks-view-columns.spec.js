@@ -87,7 +87,20 @@ test('tag chips stay whole inside their cell, whatever the width', async ({ page
   });
   for (const width of [900, 1080, 1440]) {
     await page.setViewportSize({ width, height: 800 });
-    await page.waitForTimeout(250);
+    await expect.poll(() => page.evaluate(() => window.innerWidth)).toBe(width);
+    // The cells re-lay out for the new width: read them once they stop changing.
+    let last = '';
+    let steady = 0;
+    await expect.poll(async () => {
+      const now = await page.locator('#config-bm-list .config-bm-row').evaluateAll((rows) => rows.map((r) => {
+        const cell = r.querySelector('.config-bm-tags');
+        if (!cell) return '-';
+        return `${Math.round(cell.getBoundingClientRect().width)}:${cell.querySelectorAll('.config-bm-tag:not([hidden])').length}`;
+      }).join(','));
+      steady = now === last ? steady + 1 : 0;
+      last = now;
+      return steady;
+    }, { timeout: 10_000, intervals: [100] }).toBeGreaterThanOrEqual(2);
     const spill = await page.locator('#config-bm-list .config-bm-row').evaluateAll((rows) => rows.flatMap((r) => {
       const cell = r.querySelector('.config-bm-tags');
       if (!cell) return [];

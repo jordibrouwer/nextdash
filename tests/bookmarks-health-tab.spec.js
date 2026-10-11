@@ -113,6 +113,7 @@ test.describe('bookmark panel: the Health tab', () => {
     const section = await openMonitorChart(page);
     await expect(section.locator('svg.health-sparkline--large .health-sparkline-hit')).toHaveCount(3);
     await expect(section.locator('[data-health-readout]')).toContainText('200ms');
+    // A fixed wait: the chart must never replace the plain one, so there is nothing to wait for.
     await page.waitForTimeout(500);
     await expect(section.locator('.nd-chart')).toHaveCount(0);
   });

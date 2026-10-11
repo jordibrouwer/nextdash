@@ -116,8 +116,13 @@ const cardIcon = (page) => page.locator('#bookmark-form-modal .bookmark-form-car
 const save = (page) => page.locator('#bookmark-form-modal .bookmark-inline-actions .bookmark-inline-save').click();
 const iconField = (page) => page.locator('#bookmark-form-modal [data-field-block="icon"] .bookmark-inline-input');
 
-/** The auto-fetch waits 250ms after blur, then talks to two endpoints. */
-const settle = (page) => page.waitForTimeout(900);
+/**
+ * The auto-fetch waits 250ms after blur, then talks to two endpoints. For the
+ * checks that a call was NOT made or an icon did NOT appear, and for letting
+ * the reads one blur starts finish before they are counted.
+ */
+// A fixed wait: the 250ms debounce comes first, and a call that should not come needs time to show up.
+const quiet = (page) => page.waitForTimeout(900);
 
 test.describe('fetching a favicon', () => {
     test('the Fetch button asks again even when an icon is already set', async ({ page }) => {
@@ -129,10 +134,10 @@ test.describe('fetching a favicon', () => {
         // Fetch lives behind the pencil on the icon since the form's redesign.
         await page.locator('#bookmark-form-modal .bookmark-form-card-pencil').click();
         await page.locator('#bookmark-form-modal').getByRole('menuitem', { name: /fetch again/i }).click();
-        await settle(page);
 
-        expect(calls.preview, 'the Fetch button did not ask').toBeGreaterThan(0);
+        await expect.poll(() => calls.preview, { message: 'the Fetch button did not ask' }).toBeGreaterThan(0);
         await expect(cardIcon(page)).toHaveAttribute('src', 'https://example.com/favicon.ico');
+        await quiet(page);
         expect(calls.download, 'the icon was stored before Save').toBe(0);
         await save(page);
         await expect.poll(() => calls.download, { message: 'Save did not store the icon' }).toBe(1);
@@ -144,10 +149,10 @@ test.describe('fetching a favicon', () => {
 
         await urlField(page).fill('https://changed.example.com/page');
         await urlField(page).blur();
-        await settle(page);
 
-        expect(calls.preview, 'typing a new address fetched nothing').toBeGreaterThan(0);
+        await expect.poll(() => calls.preview, { message: 'typing a new address fetched nothing' }).toBeGreaterThan(0);
         await expect(cardIcon(page)).toHaveAttribute('src', 'https://example.com/favicon.ico');
+        await quiet(page);
         expect(calls.download, 'typing an address stored an icon').toBe(0);
         await save(page);
         await expect.poll(() => calls.download, { message: 'Save did not store the icon' }).toBe(1);
@@ -163,8 +168,10 @@ test.describe('fetching a favicon', () => {
         // pencil, is how you ask for a new one.
         await urlField(page).fill('https://changed.example.com/page');
         await urlField(page).blur();
-        await settle(page);
 
+        // The page is read again, so that has happened; the icon is the part that must not.
+        await expect.poll(() => calls.preview).toBeGreaterThan(0);
+        await quiet(page);
         expect(calls.download, 'the blur fetch overrode a chosen icon').toBe(0);
         await expect(iconField(page), 'the chosen icon was replaced')
             .toHaveValue('/data/icons/hand-picked.ico');
@@ -176,16 +183,18 @@ test.describe('fetching a favicon', () => {
 
         await urlField(page).fill('example.com/path');
         await urlField(page).blur();
-        await settle(page);
-        const afterFirst = calls.preview;
+        await expect.poll(() => calls.preview).toBeGreaterThan(0);
 
         // The form rewrites the value to https://example.com/path on blur. That
         // rewrite is the app's own doing, so leaving the field a second time
         // must not read as a second address.
         await expect(urlField(page)).toHaveValue('https://example.com/path');
+        // Let the first blur's own reads finish (the 250ms debounce comes first) before counting them.
+        await quiet(page);
+        const afterFirst = calls.preview;
         await urlField(page).focus();
         await urlField(page).blur();
-        await settle(page);
+        await quiet(page);
 
         expect(calls.preview, 'the app re-fetched its own rewrite').toBe(afterFirst);
     });
@@ -196,9 +205,9 @@ test.describe('fetching a favicon', () => {
 
         await urlField(page).fill('https://nothing.example.com/');
         await urlField(page).blur();
-        await settle(page);
 
-        expect(calls.preview, 'nothing was asked at all').toBeGreaterThan(0);
+        await expect.poll(() => calls.preview, { message: 'nothing was asked at all' }).toBeGreaterThan(0);
+        await quiet(page);
         // A page with no icon of its own is an answer, and the card shows it as
         // one: an empty icon square, not a field that never fills and not a
         // status word.

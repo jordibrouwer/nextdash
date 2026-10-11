@@ -32,7 +32,8 @@ async function dashboard(page) {
     // a category header; dismissOnboardingIfPresent does not always catch it
     // before it has finished animating in.
     await page.evaluate(() => document.querySelectorAll('.quickstart-card').forEach((el) => el.remove()));
-    await page.waitForTimeout(300);
+    await expect(page.locator('.quickstart-card')).toHaveCount(0);
+    await expect(page.locator('.category:not([data-smart-collection="true"]) .category-title').first()).toBeVisible();
 }
 
 /** Right-click a real category header and pick the icon entry. */

@@ -12,6 +12,18 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
 const hidden = (page) => page.evaluate(() => document.body.hasAttribute('data-action-bar-hidden'));
 const bar = (page) => page.locator('.dashboard-section.section-controls .header-shortcuts');
 
+/** The bar's box once it has stopped moving: two reads in a row that agree. */
+async function restingBox(locator) {
+    let last = null;
+    await expect.poll(async () => {
+        const now = JSON.stringify(await locator.boundingBox());
+        const same = now === last;
+        last = now;
+        return same;
+    }, { timeout: 5_000, intervals: [100] }).toBe(true);
+    return locator.boundingBox();
+}
+
 async function openDashboard(page, settings) {
     await page.setViewportSize({ width: 1500, height: 900 });
     await markWhatsNewSeen(page);
@@ -32,6 +44,8 @@ async function openDashboard(page, settings) {
 
 test('a left column slides away after the chosen delay', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'left', actionBarAutoHideSeconds: 2 });
+    await expect(bar(page)).toBeVisible();
+    // A fixed wait: the delay is a real time, and part-way through it the bar must still be out.
     await page.waitForTimeout(800);
     expect(await hidden(page), 'gone before its time').toBe(false);
     await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
@@ -41,6 +55,8 @@ test('a left column slides away after the chosen delay', async ({ page }) => {
 
 test('always in view never slides', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'left', actionBarAutoHideSeconds: 0 });
+    await expect(bar(page)).toBeVisible();
+    // A fixed wait: longer than any delay the other tests use, to show it never slides.
     await page.waitForTimeout(2500);
     expect(await hidden(page)).toBe(false);
 });
@@ -67,6 +83,7 @@ test('the far edge does nothing for a left column', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'left', actionBarAutoHideSeconds: 2 });
     await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
     await page.mouse.move(1499, 450);
+    // A fixed wait: the far edge must do nothing, so there is no change to wait for.
     await page.waitForTimeout(300);
     expect(await hidden(page)).toBe(true);
 });
@@ -74,9 +91,9 @@ test('the far edge does nothing for a left column', async ({ page }) => {
 test('a bar in use stays where it is', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'bottom', actionBarAutoHideSeconds: 2 });
     // Moving to the bottom is itself a slide; measure where it came to rest.
-    await page.waitForTimeout(400);
-    const box = await bar(page).boundingBox();
+    const box = await restingBox(bar(page));
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    // A fixed wait: longer than the 2 second delay, so a bar that slid away under the pointer shows.
     await page.waitForTimeout(3000);
     expect(await hidden(page), 'slid away under the pointer').toBe(false);
 
@@ -104,6 +121,8 @@ test("' and Shift+O move a docked bar out and back", async ({ page }) => {
 test('in the header the keys leave the bar alone', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'header', actionBarAutoHideSeconds: 2 });
     await page.locator('body').press("'");
+    await expect(bar(page)).toBeVisible();
+    // A fixed wait: longer than the 2 second delay, so a bar that slid away shows.
     await page.waitForTimeout(2500);
     expect(await hidden(page)).toBe(false);
     await expect(bar(page)).toBeVisible();
@@ -196,6 +215,8 @@ test('a click on the handle brings the bar back', async ({ page }) => {
 
 test('no handle for a bar in the header', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'header', actionBarAutoHideSeconds: 2 });
+    await expect(bar(page)).toBeVisible();
+    // A fixed wait: a handle would only show once the delay is up, so give the delay time to pass.
     await page.waitForTimeout(2500);
     await expect(handle(page)).toBeHidden();
 });
@@ -218,6 +239,7 @@ test('a slid-away bar stays away while you browse the views', async ({ page }) =
         await page.keyboard.press(key);
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView), { message: `${key} did not reach ${view}` })
             .toBe(view);
+        // A fixed wait: the bar must stay away after the browse, so there is nothing to wait for.
         await page.waitForTimeout(400);
         expect(await hidden(page), `the bar came back after ${key}`).toBe(true);
     }
@@ -245,6 +267,7 @@ test('a page switch leaves a slid-away bar where it is', async ({ page }) => {
         const before = await page.evaluate(() => window.dashboardInstance.currentPageId);
         await page.keyboard.press('2');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.currentPageId)).not.toBe(before);
+        // A fixed wait: the bar must stay away after the page switch, so there is nothing to wait for.
         await page.waitForTimeout(400);
         expect(await hidden(page), 'the bar came back after a page switch').toBe(true);
     } finally {
@@ -259,6 +282,7 @@ test('called by the edge, it keeps its delay before sliding off', async ({ page 
     await page.mouse.move(edge, 450);
     await expect.poll(() => hidden(page)).toBe(false);
     await page.mouse.move(750, 450);
+    // A fixed wait: the delay starts again on leaving, and part-way through it the bar must still be out.
     await page.waitForTimeout(1200);
     expect(await hidden(page), 'gone before its time').toBe(false);
     await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
@@ -271,6 +295,7 @@ test("brought back by ' it stays until the key again", async ({ page }) => {
     await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
     await page.keyboard.press("'");
     await expect.poll(() => hidden(page)).toBe(false);
+    // A fixed wait: longer than the 2 second delay, so a bar that slid away although a key called it shows.
     await page.waitForTimeout(3500);
     expect(await hidden(page), 'slid away although a key called it').toBe(false);
     await page.keyboard.press("'");
@@ -282,14 +307,15 @@ test('brought back by Shift+O it goes once the pointer has passed over it', asyn
     await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
     await page.keyboard.press('Shift+O');
     await expect.poll(() => hidden(page)).toBe(false);
-    await page.waitForTimeout(400);
-    const box = await bar(page).boundingBox();
+    const box = await restingBox(bar(page));
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    // A fixed wait: longer than the 2 second delay, so a bar that slid away under the pointer shows.
     await page.waitForTimeout(3000);
     expect(await hidden(page), 'slid away under the pointer').toBe(false);
 
     // Leaving hands it back to the delay.
     await page.mouse.move(750, 450);
+    // A fixed wait: the delay starts again on leaving, and part-way through it the bar must still be out.
     await page.waitForTimeout(1200);
     expect(await hidden(page), 'gone before its time').toBe(false);
     await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
@@ -302,6 +328,8 @@ const swelling = (page) => page.locator('.dashboard-section.section-controls .he
 
 test('switched off, nothing swells', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'right', actionBarAutoHideSeconds: 2 });
+    await expect(bar(page)).toBeVisible();
+    // A fixed wait: an intro would start within moments of the load, and proving none does needs time to pass.
     await page.waitForTimeout(600);
     expect(await introPlayed(page)).toBe(false);
     await expect.poll(() => hidden(page), { timeout: 4000 }).toBe(true);
@@ -335,12 +363,13 @@ test('the intro waits until the what’s new modal is closed', async ({ page }) 
         await window.dashboardInstance.saveSettings?.();
     });
     await dismissOnboardingIfPresent(page);
+    // setBehavior resolves after the save, so the reload below finds it written.
     await page.evaluate(() => window.dashboardInstance.config.setBehavior('onboardingCompleted', true, ''));
-    await page.waitForTimeout(600);
     await page.goto('/');
 
     const modal = page.locator('.whats-new-modal');
     await expect(modal).toBeVisible({ timeout: 20_000 });
+    // A fixed wait: the intro must not play under the modal, so there is nothing to wait for.
     await page.waitForTimeout(1000);
     expect(await introPlayed(page), 'played under the modal').toBe(false);
     await page.keyboard.press('Escape');

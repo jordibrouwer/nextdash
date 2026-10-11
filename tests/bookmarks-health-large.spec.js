@@ -242,6 +242,7 @@ test.describe('bookmark health, in large', () => {
     await expect(modal(page)).toHaveAttribute('data-loading', '0');
     await expect(card(page, 'days').locator('rect[data-tone]')).toHaveCount(30);
     await expect(card(page, 'response').locator('svg.bm-health-large-line .is-point')).not.toHaveCount(0);
+    // A fixed wait: the chart must never replace the plain one, so there is nothing to wait for.
     await page.waitForTimeout(500);
     await expect(modal(page).locator('.nd-chart')).toHaveCount(0);
   });

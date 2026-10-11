@@ -374,6 +374,7 @@ test.describe('the course over time, drawn with uPlot', () => {
     await page.route('**/vendor/uplot/**', (route) => route.abort());
     const trend = await openTrend(page);
     await expect(trend.locator('svg.bm-health-modal-trend-chart')).toHaveAttribute('aria-label', /60% → 100%/);
+    // A fixed wait: the chart must never replace the plain one, so there is nothing to wait for.
     await page.waitForTimeout(500);
     await expect(trend.locator('.nd-chart')).toHaveCount(0);
   });
@@ -508,6 +509,7 @@ test.describe('the score over time, drawn with uPlot', () => {
     await page.route('**/vendor/uplot/**', (route) => route.abort());
     const card = await openScore(page);
     await expect(card.locator('svg.bm-health-modal-score-chart polyline')).toHaveCount(1);
+    // A fixed wait: the chart must never replace the plain one, so there is nothing to wait for.
     await page.waitForTimeout(500);
     await expect(card.locator('.nd-chart')).toHaveCount(0);
   });
@@ -535,6 +537,7 @@ test.describe('every monitor, per day', () => {
     const { card } = await openFleetDays(page);
     await expect(card.locator('svg.bm-health-modal-fleet-days rect')).toHaveCount(4);
     await expect(card.locator('svg.bm-health-modal-fleet-days rect[data-tone="bad"]')).toHaveCount(1);
+    // A fixed wait: the chart must never replace the plain one, so there is nothing to wait for.
     await page.waitForTimeout(500);
     await expect(card.locator('.nd-chart')).toHaveCount(0);
   });

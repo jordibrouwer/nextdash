@@ -57,7 +57,7 @@ async function openDashboard(page) {
         });
         d.renderDashboard?.({ animate: false });
     });
-    await page.waitForTimeout(300);
+    await expect(page.locator('.bookmark-link a.bookmark-open').first()).toBeVisible();
 }
 
 const marks = (page) => page.evaluate(() => ({

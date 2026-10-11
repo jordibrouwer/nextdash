@@ -34,8 +34,17 @@ async function renameFirstCategory(page, name) {
         return true;
     }, name);
 
-    // The fit runs on a frame after the render.
-    await page.waitForTimeout(600);
+    // The fit runs on a frame after the render: read once the measurements stop changing.
+    if (applied) {
+        let last = '';
+        let steady = 0;
+        await expect.poll(async () => {
+            const now = JSON.stringify(await measure(page, name));
+            steady = now === last && now !== 'null' ? steady + 1 : 0;
+            last = now;
+            return steady;
+        }, { timeout: 10_000, intervals: [100] }).toBeGreaterThanOrEqual(3);
+    }
     return applied;
 }
 

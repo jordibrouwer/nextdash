@@ -29,7 +29,19 @@ async function openAddBookmark(page) {
     await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
     // The icon prefetch repaints parts of the form; measuring before it settles
     // would measure a shorter form than the one the user ends up looking at.
-    await page.waitForTimeout(700);
+    // So wait until the size of the dialog and of its body has stopped changing.
+    let last = '';
+    let steady = 0;
+    await expect.poll(async () => {
+        const size = await page.evaluate(() => {
+            const dialog = document.querySelector('.bookmark-form-modal-dialog').getBoundingClientRect();
+            const body = document.querySelector('.bookmark-form-modal-body');
+            return `${Math.round(dialog.height)}/${body.scrollHeight}/${body.clientHeight}`;
+        });
+        steady = size === last ? steady + 1 : 0;
+        last = size;
+        return steady;
+    }, { timeout: 10_000, intervals: [150] }).toBeGreaterThanOrEqual(3);
 }
 
 function overflow(page) {

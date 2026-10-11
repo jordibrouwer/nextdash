@@ -178,12 +178,14 @@ test('scrolling over the form and its popover leaves the dashboard where it was'
 
     await form.locator('[data-field="url"]').hover();
     await page.mouse.wheel(0, 1200);
+    // A fixed wait: the dashboard must not move, so there is no change to wait for.
     await page.waitForTimeout(300);
     expect(await scrollTop()).toBe(before);
 
     await form.locator('.bookmark-form-place-value').click();
     await page.locator('.bookmark-form-place-pop').hover();
     await page.mouse.wheel(0, 1200);
+    // A fixed wait: the dashboard must not move, so there is no change to wait for.
     await page.waitForTimeout(300);
     expect(await scrollTop()).toBe(before);
 });
