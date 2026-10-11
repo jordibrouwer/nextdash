@@ -432,8 +432,10 @@ test.describe('a figure can be rounded to a chosen number of decimals', () => {
         // Zero is a real choice -- round to whole -- and has to survive as one
         // rather than reading back as "nothing chosen".
         await decimals.nth(2).selectOption('0');
+        const blocksSaved = page.waitForResponse((r) => /\/api\/pages\/[^/]+\/blocks/.test(r.url())
+            && r.request().method() === 'PUT');
         await page.locator(`${row} [data-widget-save]`).click();
-        await page.waitForTimeout(1500);
+        expect((await blocksSaved).ok()).toBe(true);
 
         /*
          * Reloaded rather than merely reopened: the draft would answer from
@@ -746,8 +748,10 @@ test.describe('a service that hands out a session', () => {
         await page.locator(`${row} [data-widget-auth="basicUser"]`).blur();
         await page.locator(`${row} [data-widget-auth="secret"]`).fill('a-password');
         await page.locator(`${row} [data-widget-auth="secret"]`).blur();
+        const blocksSaved = page.waitForResponse((r) => /\/api\/pages\/[^/]+\/blocks/.test(r.url())
+            && r.request().method() === 'PUT');
         await page.locator(`${row} [data-widget-save]`).click();
-        await page.waitForTimeout(1500);
+        expect((await blocksSaved).ok()).toBe(true);
 
         await page.reload();
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
@@ -1029,8 +1033,9 @@ test.describe('a figure shows what its path found', () => {
         // the second is what proves a missing path is marked rather than blank.
         const rows = page.locator(`${row} .config-custom-field`);
         while (await rows.count() < 2) {
+            const had = await rows.count();
             await page.locator(`${row} [data-custom-add="${index}"]`).click();
-            await page.waitForTimeout(200);
+            await expect(rows).toHaveCount(had + 1);
         }
 
         await answerWith(page, [

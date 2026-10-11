@@ -224,7 +224,8 @@ test.describe('the containers widget in config', () => {
     test('offers the figures as a choice, and warns about the socket', async ({ page }) => {
         await openDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
-        await page.waitForTimeout(1200);
+        await expect.poll(() => page.evaluate(
+            () => Boolean(window.dashboardInstance.config._module?.constructor?.WIDGET_SETTINGS))).toBe(true);
 
         const shape = await page.evaluate(() => {
             const cfg = window.dashboardInstance.config._module;

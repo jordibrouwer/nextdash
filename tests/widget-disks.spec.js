@@ -232,7 +232,8 @@ test.describe('the disks widget in config', () => {
             }),
         }));
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
-        await page.waitForTimeout(1200);
+        await expect.poll(() => page.evaluate(
+            () => Boolean(window.dashboardInstance.config._module?.constructor?.WIDGET_SETTINGS))).toBe(true);
 
         const shown = await page.evaluate(async () => {
             const cfg = window.dashboardInstance.config._module;
@@ -284,7 +285,8 @@ test.describe('the disks widget in config', () => {
             status: 200, contentType: 'application/json', body: JSON.stringify({ mounts: [] }),
         }));
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
-        await page.waitForTimeout(1200);
+        await expect.poll(() => page.evaluate(
+            () => Boolean(window.dashboardInstance.config._module?.constructor?.WIDGET_SETTINGS))).toBe(true);
 
         const text = await page.evaluate(async () => {
             const cfg = window.dashboardInstance.config._module;
@@ -304,7 +306,8 @@ test.describe('the disks widget in config', () => {
     test('is offered with settings and the mount it needs', async ({ page }) => {
         await openDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
-        await page.waitForTimeout(1200);
+        await expect.poll(() => page.evaluate(
+            () => Boolean(window.dashboardInstance.config._module?.constructor?.WIDGET_SETTINGS))).toBe(true);
 
         const shape = await page.evaluate(() => {
             const cfg = window.dashboardInstance.config._module;

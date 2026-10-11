@@ -138,14 +138,18 @@ test.describe('a release flagged hideFromModal', () => {
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
         const modal = page.locator('.whats-new-modal');
         await expect(modal).toBeVisible({ timeout: 15_000 });
-        await page.waitForTimeout(1200);
 
-        const tags = await modal.evaluate((m) => [...new Set(
+        const readTags = () => modal.evaluate((m) => [...new Set(
             [...m.querySelectorAll('*')]
                 .filter((e) => e.childElementCount === 0)
                 .map((e) => e.textContent.trim())
                 .filter((t) => /^v2026\.\d/.test(t)),
         )]);
+        await expect.poll(readTags).toContain('v2026.09.2');
+        // The held-back release must be absent; if it were drawn it would be
+        // drawn with the rest, but give a late render a moment before looking.
+        await page.waitForTimeout(400);
+        const tags = await readTags();
         expect(tags).toContain('v2026.09.2');
         expect(tags).not.toContain('v2026.09.9');
     });
@@ -174,7 +178,6 @@ test.describe('a release flagged hideFromModal', () => {
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
         const modal = page.locator('.whats-new-modal');
         await expect(modal).toBeVisible({ timeout: 15_000 });
-        await page.waitForTimeout(1200);
 
         const shownTags = () => modal.evaluate((m) => [...new Set(
             [...m.querySelectorAll('*')]
@@ -183,7 +186,7 @@ test.describe('a release flagged hideFromModal', () => {
                 // Three parts or four: a hotfix tag is v1.3.3.5.
                 .filter((t) => /^v\d+\.\d+\.\d+(\.\d+)?$/.test(t)),
         )]);
-        expect(await shownTags()).toContain('v1.19.3');
+        await expect.poll(shownTags).toContain('v1.19.3');
         expect(await shownTags()).toContain('v1.19.2');
         expect(await shownTags()).toContain('v1.19.1');
         expect(await shownTags()).toContain('v1.18.4.1');

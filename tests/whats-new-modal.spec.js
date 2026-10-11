@@ -10,6 +10,25 @@ async function loadDashboard(page) {
     await dismissBlockingOverlays(page);
 }
 
+/** Wait until no earlier release is still being fetched into its row. */
+const earlierLoaded = (page) => expect.poll(() => page.evaluate(
+    () => document.querySelectorAll('[data-wn-earlier-body][data-loaded="pending"]').length)).toBe(0);
+
+/** Wait until an element's box reads the same several times in a row (animation done). */
+async function boxSettled(page, selector) {
+    let last = '';
+    let agreeing = 0;
+    await expect.poll(async () => {
+        const now = await page.evaluate((sel) => {
+            const r = document.querySelector(sel)?.getBoundingClientRect();
+            return r ? [r.x, r.y, r.width, r.height].map(Math.round).join(',') : '';
+        }, selector);
+        agreeing = now !== '' && now === last ? agreeing + 1 : 1;
+        last = now;
+        return agreeing;
+    }, { intervals: [50] }).toBeGreaterThanOrEqual(4);
+}
+
 async function openWhatsNew(page) {
     await page.evaluate(async () => {
         await window.ensureWhatsNewLoaded?.();
@@ -143,7 +162,7 @@ test.describe("what's new modal", () => {
         const rows = page.locator('.whats-new-modal [data-wn-earlier]');
         const count = Math.min(await rows.count(), 12);
         for (let i = 0; i < count; i += 1) await rows.nth(i).click();
-        await page.waitForTimeout(500);
+        await earlierLoaded(page);
         const starts = await page.$$eval('.whats-new-modal [data-wn-entry-body]',
             // A key name (<kbd>m</kbd>) may start a sentence; a word may not.
             (els) => els.map((el) => el.innerHTML.trim()).filter((t) => /^[,;:)\-—–]|^[a-z]/.test(t)));
@@ -165,7 +184,7 @@ test.describe("what's new modal", () => {
             const count = await rows.count();
             for (let i = 0; i < count; i += 1) {
                 await rows.nth(i).click();
-                await page.waitForTimeout(400);
+                await earlierLoaded(page);
                 if (await more.count() > 0) break;
             }
         }
@@ -390,7 +409,7 @@ test('the what\'s-new button is in the bottom-right corner, the toast at the bot
     await expect.poll(() => page.evaluate(
         () => document.getElementById('app-notification')?.classList.contains('show') === true,
     )).toBe(true);
-    await page.waitForTimeout(400);
+    await boxSettled(page, '#app-notification');
 
     const toast = await page.evaluate(() => {
         const r = document.getElementById('app-notification').getBoundingClientRect();
@@ -406,7 +425,7 @@ test('the what\'s-new button is in the bottom-right corner, the toast at the bot
 test('Support and Esc sit in the header right corner, over the footer Esc', async ({ page }) => {
     await loadDashboard(page);
     await openWhatsNew(page);
-    await page.waitForTimeout(100);
+    await boxSettled(page, '.modal.whats-new-modal .modal-header');
     const x = await page.evaluate(() => {
         const m = document.querySelector('.modal.whats-new-modal');
         const box = (sel) => m.querySelector(sel).getBoundingClientRect();

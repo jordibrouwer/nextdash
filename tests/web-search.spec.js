@@ -68,9 +68,9 @@ async function openWithEngine(page, extra = {}) {
 
 async function typeQuery(page, text) {
     await page.keyboard.press('>');
-    await page.waitForTimeout(300);
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.searchComponent?.searchActive)).toBe(true);
     await page.keyboard.type(text);
-    await page.waitForTimeout(400);
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.searchComponent.currentQuery)).toBe(text);
 }
 
 test.describe('web search in the search panel', () => {
@@ -80,10 +80,12 @@ test.describe('web search in the search panel', () => {
         page.on('request', (req) => { if (req.url().includes('/api/web-search?')) webCalls.push(req.url()); });
 
         await typeQuery(page, 'zzweb query');
+        await expect(page.locator('#search-matches .search-web-entry')).toContainText('zzweb query');
+        // Nothing must be sent while typing: a late request would land after the
+        // panel shows the query, and an immediate check proves nothing.
         await page.waitForTimeout(800);
         expect(webCalls).toEqual([]);
         expect(stubRequests).toEqual([]);
-        await expect(page.locator('#search-matches .search-web-entry')).toContainText('zzweb query');
 
         await page.keyboard.press('Shift+Enter');
         await expect(page.locator('#search-matches .search-web-result')).toHaveCount(2);
@@ -120,6 +122,8 @@ test.describe('web search in the search panel', () => {
         await page.keyboard.press('Shift+Enter');
         await expect(page.locator('#search-matches .search-web-result')).toHaveCount(2);
         await page.keyboard.press('Enter');
+        // No tracking call must go out for the private query; a late one would
+        // arrive after the Enter, so give it time to show up.
         await page.waitForTimeout(500);
         expect(tracked.filter((b) => b.includes('zzprivate'))).toEqual([]);
 
@@ -139,9 +143,8 @@ test.describe('web search in the search panel', () => {
         await openWithEngine(page);
         // In the open panel, "/" switches to tag mode: the query becomes "tag:".
         await page.keyboard.press('>');
-        await page.waitForTimeout(300);
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.searchComponent?.searchActive)).toBe(true);
         await page.keyboard.press('/');
-        await page.waitForTimeout(400);
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.searchComponent.currentQuery)).toBe('tag:');
         await expect(page.locator('#search-matches .search-web-entry')).toHaveCount(0);
         await page.keyboard.press('Escape');
@@ -149,6 +152,8 @@ test.describe('web search in the search panel', () => {
         await typeQuery(page, 'zzweb category:');
         await expect(page.locator('#search-matches .search-web-entry')).toHaveCount(0);
         await page.keyboard.press('Shift+Enter');
+        // No request must go out for a filter query; it would be sent a moment
+        // after the key, so an immediate check proves nothing.
         await page.waitForTimeout(300);
         expect(stubRequests).toEqual([]);
     });
@@ -183,6 +188,8 @@ test.describe('web search in the search panel', () => {
         // Nothing is selected while the answer is on its way.
         expect(await page.evaluate(() => window.dashboardInstance.searchComponent.selectedMatchIndex)).toBe(-1);
         await page.keyboard.press('Enter');
+        // Nothing may stray while the web is loading; a stray event would show
+        // up after the key, and the loading row stays visible either way.
         await page.waitForTimeout(300);
         expect(await page.evaluate(() => window.__strays)).toEqual([]);
         await expect(page.locator('#search-matches .search-web-loading')).toBeVisible();
@@ -298,6 +305,8 @@ test.describe('web search in the search panel', () => {
         // The bookmark really opened ...
         await expect.poll(() => page.evaluate(() => window.__clicked.length)).toBe(1);
         // ... and the pick memory's write-out (debounced 2 s) had its chance to go.
+        // The test is about time: the pick memory writes out 2 s after the pick,
+        // and nothing about this query may be in what it writes.
         await page.waitForTimeout(2600);
         const picks = await page.evaluate(async () => (await (await fetch('/api/settings')).json()).searchPicks || []);
         expect(picks.filter((p) => String(p.q).includes('zzpickleak'))).toEqual([]);
@@ -359,6 +368,8 @@ test.describe('web search in the search panel', () => {
         await page.keyboard.type('x');
         await expect(page.locator('#search-matches .search-web-entry')).toContainText('zzeditx');
         await page.keyboard.press('Shift+ArrowRight');
+        // Moving the caret must not send a new request; one would go out a
+        // moment after the key, so an immediate check proves nothing.
         await page.waitForTimeout(500);
         expect(stubRequests).toHaveLength(sent);
         await expect(page.locator('#search-matches .search-web-entry')).toBeVisible();

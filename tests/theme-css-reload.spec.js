@@ -25,7 +25,9 @@ test('two theme refreshes in a row leave one stylesheet, the newest', async ({ p
     await expect.poll(() => themeLinks(page).then((l) => l.length)).toBe(1);
 
     // And the next refresh is the one that applies.
-    await page.waitForTimeout(5);
+    // The stamp in the link is Date.now(), so wait until the clock has moved past the newest one.
+    await expect.poll(() => page.evaluate(() => Date.now() > Math.max(...[...document.querySelectorAll('link[href^="/api/theme.css"]')]
+        .map((l) => Number(new URL(l.href).searchParams.get('t')) || 0)))).toBe(true);
     await page.evaluate(() => window.VisualSettings.reloadThemeCSS());
     await expect.poll(() => themeLinks(page).then((l) => l.length)).toBe(1);
     const [last] = await themeLinks(page);

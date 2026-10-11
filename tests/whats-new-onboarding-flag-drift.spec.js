@@ -46,7 +46,8 @@ test.describe('onboarding flags that disagree', () => {
             window.DiscoverabilityState?.setLastWhatsNewRelease?.(release);
             localStorage.setItem(key, release);
         }, { release: OLD_RELEASE, key: SEEN_KEY });
-        await page.waitForTimeout(500);
+        await expect.poll(() => page.evaluate(async () =>
+            (await (await fetch('/api/settings')).json()).onboardingCompleted)).toBe(false);
 
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
@@ -73,10 +74,13 @@ test.describe('onboarding flags that disagree', () => {
             await d.saveSettings?.();
             localStorage.removeItem(key);
         }, { key: SEEN_KEY });
-        await page.waitForTimeout(500);
+        await expect.poll(() => page.evaluate(async () =>
+            (await (await fetch('/api/settings')).json()).onboardingCompleted)).toBe(false);
 
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        // The notes and the flag repair would show up some time after the load;
+        // nothing must change, so an immediate check proves nothing.
         await page.waitForTimeout(2500);
 
         expect(await page.evaluate(() =>

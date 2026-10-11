@@ -172,7 +172,8 @@ test.describe('the processor widget in config', () => {
         // The config view is loaded on demand, and the tables are statics on
         // the loaded module rather than on the loader standing in for it.
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
-        await page.waitForTimeout(1200);
+        await expect.poll(() => page.evaluate(
+            () => Boolean(window.dashboardInstance.config._module?.constructor?.WIDGET_SETTINGS))).toBe(true);
 
         const shape = await page.evaluate(() => {
             const cfg = window.dashboardInstance.config._module;
@@ -207,7 +208,8 @@ test.describe('the processor widget in config', () => {
     test('carries the mount it needs, beside its settings', async ({ page }) => {
         await openDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
-        await page.waitForTimeout(1200);
+        await expect.poll(() => page.evaluate(
+            () => Boolean(window.dashboardInstance.config._module?.constructor?.WIDGET_SETTINGS))).toBe(true);
 
         const note = await page.evaluate(() => {
             const cfg = window.dashboardInstance.config._module;
@@ -247,7 +249,8 @@ test.describe('the processor widget in config', () => {
     test('the setup note spans the panel rather than a grid column', async ({ page }) => {
         await openDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
-        await page.waitForTimeout(1500);
+        await expect.poll(() => page.evaluate(
+            () => Boolean(window.dashboardInstance.config._module?.constructor?.WIDGET_SETTINGS))).toBe(true);
 
         // Through the real panel: a hand-built copy of the markup would keep
         // passing while the actual settings row rendered it wrongly, which is
@@ -270,7 +273,22 @@ test.describe('the processor widget in config', () => {
         // would hide the note this test is about to measure.
         const toggle = page.locator(`[data-widget-settings="${idx}"]`);
         if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
-        await page.waitForTimeout(900);
+        const settingsBody = page.locator(`[data-widget-row="${idx}"] .config-widget-settings-body`);
+        await expect(settingsBody).toBeVisible();
+        await expect(page.locator(`[data-widget-row="${idx}"] .config-widget-setup`)).toBeVisible();
+        // The panel opens with a transition; read widths only once they agree.
+        let lastWidths = '';
+        let agreeing = 0;
+        await expect.poll(async () => {
+            const now = await page.evaluate((i) => {
+                const row = document.querySelector(`[data-widget-row="${i}"]`);
+                return ['.config-widget-setup', '.config-widget-settings-body']
+                    .map((sel) => Math.round(row.querySelector(sel)?.getBoundingClientRect().width ?? -1)).join(',');
+            }, idx);
+            agreeing = now === lastWidths ? agreeing + 1 : 1;
+            lastWidths = now;
+            return agreeing;
+        }, { intervals: [50] }).toBeGreaterThanOrEqual(4);
 
         const shape = await page.evaluate((i) => {
             const row = document.querySelector(`[data-widget-row="${i}"]`);

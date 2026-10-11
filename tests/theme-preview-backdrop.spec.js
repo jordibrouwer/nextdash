@@ -105,7 +105,7 @@ test('Escape closes the theme picker on the first press', async ({ page }) => {
     await dismissBlockingOverlays(page);
     await prepareDashboardInteraction(page);
     await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
-    await page.waitForTimeout(2500);
+    await expect(page.locator('[data-theme-picker-button], [data-appearance-theme-button]').first()).toBeVisible();
 
     /*
      * Config's Escape handler runs a list of things that might want the key,
@@ -123,21 +123,22 @@ test('Escape closes the theme picker on the first press', async ({ page }) => {
         window.ConfigSettingPromo?.resetSeen?.();
         window.ConfigSettingPromo?.scheduleForSection?.('appearance', { config: cfg });
     });
-    await page.waitForTimeout(1500);
-    expect(await page.evaluate(() => !!document.querySelector('.config-setting-promo')),
-        'no promo was showing, so this cannot prove the ordering').toBe(true);
+    await expect(page.locator('.config-setting-promo').first(),
+        'no promo was showing, so this cannot prove the ordering').toBeAttached();
 
     const before = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
     await page.locator('[data-theme-picker-button], [data-appearance-theme-button]').first().click();
-    await page.waitForTimeout(400);
+    const activeOption = () => page.evaluate(() => document.querySelector(
+        '[data-theme-picker-list] .is-active')?.getAttribute('data-theme-option') || '');
+    await expect.poll(() => page.evaluate(() => document.querySelector('[data-theme-picker-list]')?.hidden)).toBe(false);
+    const highlighted = await activeOption();
     await page.keyboard.press('ArrowDown');
-    await page.waitForTimeout(250);
+    await expect.poll(activeOption).not.toBe(highlighted);
 
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(600);
 
-    expect(await page.evaluate(() => document.querySelector('[data-theme-picker-list]')?.hidden),
-        'one Escape did not close the picker').toBe(true);
-    expect(await page.evaluate(() => document.documentElement.getAttribute('data-theme')),
-        'the previewed theme was left applied').toBe(before);
+    await expect.poll(() => page.evaluate(() => document.querySelector('[data-theme-picker-list]')?.hidden),
+        { message: 'one Escape did not close the picker' }).toBe(true);
+    await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute('data-theme')),
+        { message: 'the previewed theme was left applied' }).toBe(before);
 });

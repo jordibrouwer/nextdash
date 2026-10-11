@@ -47,13 +47,13 @@ const openInbox = async (page) => {
     await page.evaluate(() => window.dashboardInstance.inbox.openInboxView());
     await page.waitForFunction(
         () => document.querySelector('#dashboard-layout.inbox-layout'), null, { timeout: 15_000 });
-    await page.waitForTimeout(400);
 };
 
 const openConfigBookmarks = async (page) => {
     await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
     await page.waitForSelector('#config-bm-workbench .config-bm-feed', { timeout: 15_000 });
-    await page.waitForTimeout(400);
+    await expect(page.locator('.config-view-head .config-bm-header-badge')).toHaveText(/^\s*\d+\s*$/);
+    await expect(page.locator('.config-view-head .lvs-description')).not.toBeEmpty();
 };
 
 test.describe('the three views share one row', () => {
