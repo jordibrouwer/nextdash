@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.19.3 — 12 October 2026](#v1193--12-october-2026)
 - [v1.19.2 — 10 October 2026](#v1192--10-october-2026)
 - [v1.19.1 — 10 October 2026](#v1191--10-october-2026)
 - [v1.19.0 — 10 October 2026](#v1190--10-october-2026)
@@ -104,6 +105,54 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.19.3 — 12 October 2026
+
+A weekly digest sums up what needs you once a week: links that broke, certificates running out, container updates and bookmarks nobody opens. Status & alerts leaves Behavior for a section of its own, Config → Monitoring, with three tabs. A pasted link shows what it is before you choose where it goes. v1.19.3 leads the What's new window and brings v1.19.2, v1.19.1 and v1.18.4.1, held back before, in under it.
+
+### Monitoring
+
+- **new — a weekly digest.** Once a week the server builds one message from the health report, the container update check and usage: newly and still broken links, certificates running out, container updates (held ones left out), most opened, never opened, not opened for the stale threshold, and the Inbox count. It goes to browser notifications and the downtime alert service, on Monday at 08:00 by default in the quiet-hours zone. It waits for quiet hours to end instead of going through `quietGate`, and a week with nothing to say sends nothing. The due slot is the latest configured weekday and time at or before now, so a restart, a late start and a double tick all give the same answer; a digest missed while the server was off goes out once, and the very first tick only records the slot so an upgrade does not push last Monday's digest at once. State and the latest snapshot live in `data/digest.json` (`digest.go`, `digest_build.go`, `digest_settings.go`); `GET /api/digest/latest` serves the snapshot and `POST /api/digest/test`, behind the write token, sends a proof digest without moving the week's slot.
+- **new — the digest on the dashboard: a card, a window and a bar.** The card, *Your week in nextDash*, names the one or two things that matter most; **Read the digest** opens a window with a part per subject — what it means, the names behind the count, and a button to the view where it is dealt with (**Open in Bookmarks**, **Work through** for the broken links, **Open Containers**, **Review**, **Open Inbox**). After a button the digest shrinks to a bar in the corner with its progress and **Next**; it holds the corner so other cards wait, comes back after a reload, and goes once every part is opened or with ×. The push lands on `/#digest`, which opens the same window. On the day of a digest the daily review card waits (`DigestNotice.holdsTheWeek`). `digest-notice.js`, `digest.css`.
+- **new — Config → Monitoring.** Status & alerts was split into Checks and Notifications, then moved out of Behavior into a section of its own with three tabs: **Checks** (in this browser, on the server, how monitored bookmarks stand out), **Notifications** (downtime alerts, browser notifications, reminders, the weekly digest) and **Schedules** (maintenance windows and quiet hours). `MONITORING_FROM_BEHAVIOR` sends an old `#config/behavior/status`, `checks` or `notifications` address, a saved location, a news entry and the `behaviorTab` setter to the matching Monitoring tab; the loader's copy of that map is gone. The bookmarks tour, the status page hints, the Health tutorial and the container notice say *Monitoring* instead of *Behavior → Status & alerts*.
+- **new — Monitoring → Notifications → Weekly digest**: send it or not, the day, the hour, which parts go in, **Show** for the latest digest and **Send** for a proof one. The settings default to on (`digestEnabled`, `digestHealth`, `digestUpdates`, `digestUsage`), with missing-key entries so an existing install gets them on too.
+- **fix — `digest.json` stays out of backups** (`dataNever` in `backup.go`). It had no backup policy, which `TestEveryDataFileHasABackupPolicy` caught. A restore has no use for last week's digest: without the file, the next tick only records the week's slot and sends nothing.
+
+### Config
+
+- **fix — the sub-tab strips stay on one line and scroll.** A section with many tabs wrapped them onto a second row on a narrow screen. The strip now scrolls sideways, keeps the active tab in view and fades the side where there is more (`syncSubtabStrips`, `config-view.css`).
+- **fix — Structure is no longer marked new in the section list.**
+
+### Dashboard
+
+- **new — the paste choice shows what the pasted link is.** While you choose between bookmark and Inbox, a card shows the site's favicon, domain, title, description and picture, from the same `/api/bookmark-preview` answer the hover card draws, with the local copy of the picture. A slow answer never lands in a later modal, and a missing picture is asked for once more (`dashboard-paste-choice.js`).
+- **fix — a block's grip can be dragged with the mouse again under a header style other than the theme's.** The grip was sized in `em` against a font size of 0, so it was zero wide and the icon after it took every click (`category-header.css`).
+
+### Widgets
+
+- **fix — a label typed right after Save is no longer wiped.** Save repainted the panel, then redrew it once more when the dashboard's blocks came back, replacing what was typed in between; that second redraw is skipped while config is on screen (`dashboard-config-widgets.js`).
+
+### Containers
+
+- **fix — the disk prune questions use the singular for one:** *Remove 1 stopped container*, *1 untagged image*, *1 image no container uses*, in six languages.
+
+### Tests
+
+- **tests — `digest_test.go`, `digest_build_test.go` and `digest_settings_test.go`** cover the due slot, the first tick, quiet hours, an empty week and the snapshot; `tests/digest-notice.spec.js` the card, window and bar; `tests/digest-config.spec.js` the settings panel. `tests/config-tabs.spec.js` covers the Monitoring tabs, old Behavior addresses and saved places, and the scrolling strips; the specs that opened Behavior → Status & alerts open Monitoring. `tests/dashboard-paste-preview.spec.js`, `tests/dashboard-block-move.spec.js` and `tests/docker-disk.spec.js` cover the preview, the grip and the singular questions.
+- **tests — `tests/config-widget-panel.spec.js`** waits on signals instead of a 6 s sleep, which was hiding the Save race. `tests/config-help-health.spec.js` counts ten panels on Help → Monitoring.
+
+### Help and docs
+
+- **docs — Help → Config gets a Monitoring panel and Help → Monitoring a Weekly digest panel**, in six languages; Help → Behavior lists four tabs, and every Help panel and tip that named Behavior → Status & alerts names the Monitoring tab now. Help → Config says the tab strips scroll on a narrow screen.
+- **docs — MANUAL §12.1, §12.4, §12.5, §12.8, §14.9, §17.1, §17.2 and §17.5** describe Monitoring and its three tabs, and §12.4 the weekly digest; *Get told* mentions it. §5.3 describes the preview in the paste choice, and the README's alerts line mentions the weekly digest.
+- **docs — translations** of the weekly digest card, window, bar and settings, and of the five strings that pointed to Behavior → Status & alerts (the Health tutorial, the bookmarks tour, two status page hints and the container notice), in nl, de, fr, es and zh. The orphaned `config.behaviorTabStatusAlerts` is gone from those five, so `validate:locale-parity` is green again.
+- **docs — Config → Overview and About → News & features** gain two v1.19.3 entries, the weekly digest and the Monitoring section, in six languages (`overview-features.json`).
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.19.3.json` and its index entry.** v1.19.3 leads the What's new window, and v1.19.2, v1.19.1 and v1.18.4.1 lose `hideFromModal`, so they show under it. `whats-new-stub.js`'s `DASHBOARD_RELEASE` moved to v1.19.3 and `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v332`; `tests/whats-new-hidden-release.spec.js` expects nothing held back. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 
