@@ -73,6 +73,9 @@
         // Quick-start — the setup wizard *or* the checklist that follows it — owns
         // the same corner, as does any other notice card.
         if (document.querySelector(`.quickstart-card:not(.${selfClass})`)) return false;
+        // Something that is not a card but stands in the corner too -- the
+        // minimised weekly digest -- says so with this attribute.
+        if (document.querySelector('[data-holds-corner]')) return false;
         if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
         if (document.querySelector('.whats-new-modal')) return false;
         // The block-move intro (animation, then its card) has the screen until it is answered.

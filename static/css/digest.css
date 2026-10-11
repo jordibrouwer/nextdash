@@ -1,0 +1,229 @@
+/*
+ * The weekly digest's window (static/js/digest-notice.js).
+ *
+ * A part per subject: a title with the button to the view that deals with it,
+ * one line of what it means, and the names behind the count as chips. The
+ * window scrolls inside the modal like any other; nothing here is fixed.
+ */
+.digest-window {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.digest-window-when {
+    margin: 0;
+    font-size: var(--font-size-small, 0.72rem);
+    color: var(--text-tertiary);
+}
+
+.digest-window-intro {
+    margin: var(--space-1, 0.3rem) 0 var(--space-2, 0.55rem);
+    font-size: var(--font-size-text);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.digest-part {
+    padding: var(--space-3, 0.8rem) 0;
+    border-top: 1px solid var(--hairline, var(--border-primary));
+}
+
+.digest-part-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.55rem);
+}
+
+.digest-part-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.55rem);
+    margin: 0;
+    font-size: var(--font-size-text);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.digest-part-icon {
+    width: 1.2em;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.digest-part-go {
+    flex: none;
+    padding: 0.3rem 0.65rem;
+    border: 1px solid var(--border-secondary, var(--border-primary));
+    border-radius: var(--radius-4, 6px);
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-small, 0.8rem);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.digest-part-go:hover {
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+
+.digest-part-go:focus-visible {
+    outline: 2px solid var(--accent-primary, var(--accent-color, #4a90d9));
+    outline-offset: 1px;
+}
+
+.digest-part-note {
+    margin: var(--space-1, 0.3rem) 0 0;
+    font-size: var(--font-size-small, 0.8rem);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.digest-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: var(--space-2, 0.55rem);
+}
+
+.digest-chip {
+    padding: 0.12rem 0.5rem;
+    border-radius: var(--radius-3, 4px);
+    background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+    color: var(--text-primary);
+    font-size: var(--font-size-small, 0.78rem);
+    overflow-wrap: anywhere;
+}
+
+.digest-chip--more {
+    background: transparent;
+    color: var(--text-tertiary);
+}
+
+/* A part already opened from this digest, and the one to do next. */
+.digest-part.is-done .digest-part-title,
+.digest-part.is-done .digest-part-note {
+    color: var(--text-tertiary);
+}
+
+.digest-part.is-done .digest-part-icon {
+    color: var(--accent-primary, var(--accent-color, currentColor));
+}
+
+.digest-part-go.is-next {
+    border-color: var(--accent-primary, var(--accent-color, currentColor));
+    color: var(--accent-primary, var(--accent-color, currentColor));
+}
+
+/*
+ * The minimised digest, in the corner the notice cards use (dashboard-
+ * quickstart.css). Under the modal, unlike the cards, because the window it
+ * reopens is that modal.
+ */
+.digest-bar {
+    position: fixed;
+    left: max(1rem, env(safe-area-inset-left));
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    z-index: 1500;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    max-width: calc(100vw - 2rem);
+    padding: 0.3rem 0.35rem 0.3rem 0.4rem;
+    border: 1px solid var(--border-secondary, var(--border-primary));
+    border-radius: 999px;
+    background: var(--background-primary);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+    font-size: var(--font-size-small, 0.8rem);
+}
+
+.digest-bar button {
+    font: inherit;
+    cursor: pointer;
+}
+
+.digest-bar-open {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-width: 0;
+    padding: 0.2rem 0.5rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-primary);
+}
+
+.digest-bar-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.digest-bar-meter {
+    flex: none;
+    width: 3.5rem;
+    height: 4px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-primary) 14%, transparent);
+    overflow: hidden;
+}
+
+.digest-bar-meter > span {
+    display: block;
+    height: 100%;
+    background: var(--accent-primary, var(--accent-color, currentColor));
+}
+
+.digest-bar-next {
+    flex: none;
+    padding: 0.25rem 0.7rem;
+    border: 1px solid var(--accent-primary, var(--accent-color, currentColor));
+    border-radius: 999px;
+    background: transparent;
+    color: var(--accent-primary, var(--accent-color, currentColor));
+    white-space: nowrap;
+}
+
+.digest-bar-close {
+    flex: none;
+    width: 1.7rem;
+    height: 1.7rem;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.digest-bar button:hover {
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+
+.digest-bar button:focus-visible {
+    outline: 2px solid var(--accent-primary, var(--accent-color, #4a90d9));
+    outline-offset: 1px;
+}
+
+/* On a phone the label gives way first; the next step and the × stay. */
+@media (max-width: 560px) {
+    .digest-bar {
+        left: 0.75rem;
+        right: 0.75rem;
+        max-width: none;
+    }
+
+    .digest-bar-meter {
+        display: none;
+    }
+}
+
+.digest-part-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.35rem;
+}
