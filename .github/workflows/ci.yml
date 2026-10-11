@@ -94,9 +94,10 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
-    # Six runners, each with its own machine, its own `go run .` and its own
-    # data directory -- which is also why sharding is safe here while raising
-    # `workers` inside one runner is not: every spec in a run shares one server.
+    # Six runners, each with its own machine. Inside a runner, Playwright runs
+    # four workers (PW_WORKERS defaults to 4 in playwright.config.js), and
+    # tests/worker-server.js gives each its own server, port and data
+    # directory, so the workers cannot touch each other's store.
     #
     # The shards are left at Playwright's own split, by test count.
     #
