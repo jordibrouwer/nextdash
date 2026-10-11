@@ -126,8 +126,28 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '20'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      # Chromium was downloaded afresh on every shard of every run, six times a
+      # push. It is cached per Playwright version, so a version bump downloads
+      # the matching browser once and the shards after it reuse it. The system
+      # libraries it needs are not in the cache and are installed either way.
+      - name: Read the Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache the Playwright browser
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - name: Install Playwright
-        run: npm ci && npx playwright install chromium --with-deps
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install chromium --with-deps
+      - name: Install the browser's system libraries
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
       - name: Run Playwright tests
         run: xvfb-run npx playwright test --shard=${{ matrix.shard }}/6
       - name: Upload report
