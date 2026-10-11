@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Merge dev into main, strip dev-only paths, tag, push, and publish a GitHub Release.
-# Usage: ./scripts/release-to-main.sh v1.19.0 [--skip-scan]
+# Usage: ./scripts/release-to-main.sh v1.19.0 [--skip-scan] [--skip-ci]
 #   --skip-scan  skip the local govulncheck + Trivy preflight (emergencies only)
+#   --skip-ci    release without a green CI run on dev's HEAD (emergencies only)
 # Requires: gh auth login (once) for the GitHub Release step.
 set -euo pipefail
 
@@ -20,9 +21,11 @@ fi
 
 TAG=""
 SKIP_SCAN=0
+SKIP_CI=0
 for arg in "$@"; do
   case "$arg" in
     --skip-scan) SKIP_SCAN=1 ;;
+    --skip-ci) SKIP_CI=1 ;;
     -*) echo "Unknown option: ${arg}" >&2; exit 1 ;;
     *)
       if [[ -n "$TAG" ]]; then
@@ -33,13 +36,48 @@ for arg in "$@"; do
   esac
 done
 if [[ -z "$TAG" ]]; then
-  echo "Usage: $0 <tag> [--skip-scan]   e.g. v1.19.0" >&2
+  echo "Usage: $0 <tag> [--skip-scan] [--skip-ci]   e.g. v1.19.0" >&2
   exit 1
 fi
 
 if [[ ! "$TAG" =~ ^v[0-9] ]]; then
   echo "Tag must start with v (e.g. v1.19.0), got: ${TAG}" >&2
   exit 1
+fi
+
+# CI has to have passed on the exact commit being released. Nothing else in
+# this script runs the tests, the validators or go vet, so a dev HEAD whose
+# CI run was red -- or never finished, or never started because dev was not
+# pushed -- would otherwise go to main as it is.
+if [[ "$SKIP_CI" -eq 1 ]]; then
+  echo "Warning: --skip-ci given; releasing without a green CI run on dev." >&2
+else
+  if ! command -v gh >/dev/null 2>&1; then
+    echo "gh is needed to check CI on dev (or pass --skip-ci)." >&2
+    exit 1
+  fi
+  head_sha="$(git rev-parse HEAD)"
+  git fetch --quiet origin dev
+  if [[ "$(git rev-parse origin/dev)" != "$head_sha" ]]; then
+    echo "Local dev and origin/dev differ; push dev (or pull) and let CI run first." >&2
+    exit 1
+  fi
+  ci_run="$(gh run list --workflow ci.yml --branch dev --commit "$head_sha" --limit 1 \
+    --json status,conclusion,url --jq '.[0] | "\(.status)|\(.conclusion)|\(.url)"')"
+  if [[ -z "$ci_run" ]]; then
+    echo "No CI run found for ${head_sha:0:8} on dev." >&2
+    exit 1
+  fi
+  IFS='|' read -r ci_status ci_conclusion ci_url <<<"$ci_run"
+  if [[ "$ci_status" != "completed" ]]; then
+    echo "CI is still running for ${head_sha:0:8}: ${ci_url}" >&2
+    exit 1
+  fi
+  if [[ "$ci_conclusion" != "success" ]]; then
+    echo "CI did not pass for ${head_sha:0:8} (${ci_conclusion}): ${ci_url}" >&2
+    exit 1
+  fi
+  echo "CI passed for ${head_sha:0:8}."
 fi
 
 # The same vulnerability checks docker-publish.yml runs, but here, before
