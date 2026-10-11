@@ -149,6 +149,10 @@ test.describe('config info + reset affordances', () => {
             'dockerUpdateInterval', 'dockerConfirmStopRestart', 'dockerHostAddress', 'dockerNotify', 'dockerViewCloseOutside', 'dockerViewKeyLegend',
             'dockerUsageAlerts', 'dockerCpuAlertPercent', 'dockerMemAlertPercent', 'dockerUsageAlertMinutes',
             'dockerAutoUpdateFrom', 'dockerAutoUpdateTo',
+            // Monitoring → Notifications → Weekly digest. The switch carries the
+            // ℹ; the day, the hour and the three parts under it read as part of
+            // it, under a panel note that says what the digest holds.
+            'digestWeekday', 'digestTime', 'digestHealth', 'digestUpdates', 'digestUsage',
             // Behavior → General → Notes widget. One select under a group note
             // that says where a note is worked out, and what each choice costs.
             'notesProcessing',
@@ -179,8 +183,14 @@ test.describe('config info + reset affordances', () => {
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
         // The inbox's settings moved to Config → Inbox; Fresh kept the tab.
-        for (const tab of ['general', 'search', 'fresh', 'privacy', 'status']) {
+        // Status & alerts left for Monitoring, which has tabs of its own.
+        for (const tab of ['general', 'search', 'fresh', 'privacy']) {
             await expect(page.locator(`[data-behavior-tab="${tab}"]`)).toBeVisible();
+        }
+        await expect(page.locator('[data-behavior-tab="status"]')).toHaveCount(0);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('monitoring'));
+        for (const tab of ['checks', 'notifications', 'schedules']) {
+            await expect(page.locator(`[data-monitoring-tab="${tab}"]`)).toBeVisible();
         }
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         for (const tab of ['general', 'layout', 'datetime', 'display']) {

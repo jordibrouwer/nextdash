@@ -138,15 +138,14 @@ test.describe('the tab holds what belongs to it', () => {
     test('link rechecking is not on the backups tab', async ({ page }) => {
         await openBackups(page);
         // It was a second copy of a control that already lives on
-        // Behavior → Status & health, on a tab about moving data around.
+        // Monitoring → Checks, on a tab about moving data around.
         await expect(page.locator('#config-db-body [data-backup-toggle="healthAutoRecheckEnabled"]'))
             .toHaveCount(0);
 
         await page.evaluate(() => {
             const c = window.dashboardInstance.config;
-            (c.behaviorTab = c.behaviorTab || 'general', c).openConfigView('behavior');
-            c.behaviorTab = 'status';
-            c.render();
+            c.monitoringTab = 'checks';
+            return c.openConfigView('monitoring');
         });
         // Behaviour panels stamp their controls with data-behavior-field.
         await expect(page.locator('[data-behavior-field="healthAutoRecheckEnabled"]').first())

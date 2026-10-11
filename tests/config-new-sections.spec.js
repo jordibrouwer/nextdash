@@ -218,11 +218,13 @@ test.describe('config: sections restored from the old config', () => {
         expect(text).toMatch(/no Save button|saves the moment/i);
     });
 
-    test('behavior gained a status & health sub-tab with the webhook', async ({ page }) => {
+    test('monitoring has a checks tab, and the webhook on notifications', async ({ page }) => {
         await loadDashboard(page);
-        await openSection(page, 'behavior');
-        await page.locator('[data-behavior-tab="status"]').click();
+        await openSection(page, 'monitoring');
+        await page.locator('[data-monitoring-tab="checks"]').click();
         await expect(page.locator('[data-behavior-field="statusRecheckIntervalMinutes"]')).toBeVisible();
+        await expect(page.locator('[data-behavior-field="monitorNotifyUrl"]')).toHaveCount(0);
+        await page.locator('[data-monitoring-tab="notifications"]').click();
         await expect(page.locator('[data-behavior-field="monitorNotifyUrl"]')).toBeVisible();
     });
 
@@ -270,7 +272,7 @@ test.describe('config: sections restored from the old config', () => {
         await loadDashboard(page);
         await openSection(page, 'behavior');
 
-        for (const tab of ['general', 'search', 'fresh', 'status']) {
+        for (const tab of ['general', 'search', 'fresh']) {
             await page.locator(`[data-behavior-tab="${tab}"]`).click();
             const panels = await page.locator('.config-panel').count();
             const notes = await page.locator('.config-panel-note').count();
@@ -280,6 +282,14 @@ test.describe('config: sections restored from the old config', () => {
         // Privacy explains itself through the control's own hint.
         await page.locator('[data-behavior-tab="privacy"]').click();
         await expect(page.locator('.config-field-hint').first()).toBeVisible();
+
+        await openSection(page, 'monitoring');
+        for (const tab of ['checks', 'notifications', 'schedules']) {
+            await page.locator(`[data-monitoring-tab="${tab}"]`).click();
+            const panels = await page.locator('.config-panel').count();
+            const notes = await page.locator('.config-panel-note').count();
+            expect(notes, `${tab} has ${panels} panels but ${notes} notes`).toBeGreaterThanOrEqual(panels);
+        }
 
         await openSection(page, 'appearance');
         for (const tab of ['layout', 'buttonbar', 'display']) {
@@ -434,8 +444,8 @@ test.describe('config: sections restored from the old config', () => {
 test.describe('config: status & health explains the modes', () => {
     async function openStatus(page) {
         await loadDashboard(page);
-        await openSection(page, 'behavior');
-        await page.locator('[data-behavior-tab="status"]').click();
+        await openSection(page, 'monitoring');
+        await page.locator('[data-monitoring-tab="checks"]').click();
     }
 
     test('the tab opens with all three modes and what each does', async ({ page }) => {
@@ -463,7 +473,7 @@ test.describe('config: status & health explains the modes', () => {
         await openStatus(page);
 
         const expected = await page.evaluate(() => window.dashboardInstance.config
-            .panelsFor('behavior', 'status')
+            .panelsFor('monitoring', 'checks')
             .filter((p) => p.appliesTo)
             .map((p) => p.appliesTo));
 
@@ -479,16 +489,22 @@ test.describe('config: status & health explains the modes', () => {
 
     test('the alerts panel spells out that Periodic never notifies', async ({ page }) => {
         await openStatus(page);
+        await page.locator('[data-monitoring-tab="notifications"]').click();
         const panel = page.locator('.config-panel', { has: page.locator('[data-behavior-field="monitorNotifyUrl"]') });
         await expect(panel.locator('.config-panel-note')).toContainText(/Periodic/);
     });
 
-    test('the legend is only on the status tab', async ({ page }) => {
+    test('the legend is only on the checks tab', async ({ page }) => {
         await loadDashboard(page);
         await openSection(page, 'behavior');
         await expect(page.locator('.config-mode-legend')).toHaveCount(0);
-        await page.locator('[data-behavior-tab="status"]').click();
+        await openSection(page, 'monitoring');
+        await page.locator('[data-monitoring-tab="checks"]').click();
         await expect(page.locator('.config-mode-legend')).toHaveCount(1);
+        await page.locator('[data-monitoring-tab="notifications"]').click();
+        await expect(page.locator('.config-mode-legend')).toHaveCount(0);
+        await page.locator('[data-monitoring-tab="schedules"]').click();
+        await expect(page.locator('.config-mode-legend')).toHaveCount(0);
         await openAppearanceTab(page, 'layout');
         await expect(page.locator('.config-mode-legend')).toHaveCount(0);
     });

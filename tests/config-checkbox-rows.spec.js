@@ -38,13 +38,14 @@ test.describe('checkboxes use one row shape', () => {
     test('no checkbox is rendered in a labelled-control row', async ({ page }) => {
         await openAppearance(page);
 
-        // Walk every Appearance tab plus the Behavior tabs, since both draw
+        // Walk every Appearance tab plus the Behavior and Monitoring tabs, since both draw
         // checkboxes and only one of them goes through the schema -- and the
         // Inbox section, which took the inbox's checkboxes out of Behavior.
         const offenders = [];
         for (const [section, tabs, attr] of [
             ['appearance', ['general', 'layout', 'display', 'header', 'buttonbar', 'datetime'], 'data-appearance-tab'],
-            ['behavior', ['general', 'search', 'fresh', 'status', 'privacy'], 'data-behavior-tab'],
+            ['behavior', ['general', 'search', 'fresh', 'privacy'], 'data-behavior-tab'],
+            ['monitoring', ['checks', 'notifications', 'schedules'], 'data-monitoring-tab'],
             ['inbox', ['collecting', 'list', 'panel', 'icon'], 'data-inbox-tab'],
         ]) {
             await page.evaluate((s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; return c.openConfigView(s); }, section);
