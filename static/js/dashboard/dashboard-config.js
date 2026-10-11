@@ -1527,6 +1527,43 @@ class DashboardConfig {
      * is what happened to Help — eighth of nine, and left 36px past the right
      * edge with 112px of scroll still available.
      */
+    /**
+     * The sub-tab strips scroll on one line (config-view.css); keep the active
+     * tab in view and say on which side there is more.
+     *
+     * Scrolls the strip itself, as scrollActiveNavIntoView does, so the panel
+     * behind it never moves. Run after every render; the listeners are bound
+     * once per strip, and one resize listener covers every strip on screen.
+     */
+    syncSubtabStrips(root = document) {
+        const edges = (strip) => {
+            const more = strip.scrollWidth - strip.clientWidth;
+            strip.classList.toggle('has-more-before', more > 1 && strip.scrollLeft > 1);
+            strip.classList.toggle('has-more-after', more > 1 && strip.scrollLeft < more - 1);
+        };
+        root.querySelectorAll('.config-subtabs:not(.config-structure-tabs)').forEach((strip) => {
+            const active = strip.querySelector('.is-active, [aria-selected="true"]');
+            if (active && strip.scrollWidth > strip.clientWidth) {
+                const stripRect = strip.getBoundingClientRect();
+                const tabRect = active.getBoundingClientRect();
+                if (tabRect.left < stripRect.left || tabRect.right > stripRect.right) {
+                    strip.scrollLeft += tabRect.left - stripRect.left - 24;
+                }
+            }
+            if (!strip.dataset.edgesBound) {
+                strip.dataset.edgesBound = '1';
+                strip.addEventListener('scroll', () => edges(strip), { passive: true });
+            }
+            edges(strip);
+        });
+        if (!this._subtabResizeBound) {
+            this._subtabResizeBound = true;
+            window.addEventListener('resize', () => {
+                document.querySelectorAll('.config-subtabs:not(.config-structure-tabs)').forEach(edges);
+            }, { passive: true });
+        }
+    }
+
     scrollActiveNavIntoView() {
         const nav = document.querySelector('.config-nav');
         const btn = nav?.querySelector('.config-nav-item.is-active');
@@ -2324,6 +2361,7 @@ class DashboardConfig {
         this.trackShellHeaderHeight(container);
         this.bindSectionNav(container);
         this.syncSectionNav(this.section);
+        this.syncSubtabStrips(container);
         this.bindTileActions(container);
         if (this.section === 'overview') {
             this.bindOverviewActions(container);

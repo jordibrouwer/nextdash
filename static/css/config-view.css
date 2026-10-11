@@ -2037,10 +2037,54 @@
 .config-subtabs {
     display: flex;
     gap: 4px;
-    flex-wrap: wrap;
     margin-bottom: 20px;
     border-bottom: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
     padding-bottom: 8px;
+}
+
+/*
+ * One line that scrolls, never a wrapped block.
+ *
+ * Wrapped, a strip one tab too long dropped its last tab onto a second row of
+ * its own -- Behavior's six did that on anything under ~1100px, where the
+ * second row reads as a different group. Same answer as the section rail on a
+ * narrow screen: the strip keeps its line and scrolls, the active tab is
+ * scrolled into view (syncSubtabStrips), and a fade on the side with more says
+ * the strip goes on. The scroll stays on the strip; the page never scrolls
+ * sideways.
+ *
+ * Not the Structure modal's two-tab segmented control, which is a grid.
+ */
+.config-subtabs:not(.config-structure-tabs) {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    min-width: 0;
+}
+
+.config-subtabs:not(.config-structure-tabs)::-webkit-scrollbar {
+    display: none;
+}
+
+.config-subtabs:not(.config-structure-tabs) > .config-subtab {
+    flex: none;
+    white-space: nowrap;
+}
+
+.config-subtabs.has-more-after {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+}
+
+.config-subtabs.has-more-before {
+    -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 40px), transparent);
+    mask-image: linear-gradient(to left, #000 calc(100% - 40px), transparent);
+}
+
+.config-subtabs.has-more-before.has-more-after {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent);
 }
 
 .config-subtab {

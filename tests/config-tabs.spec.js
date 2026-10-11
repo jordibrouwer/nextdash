@@ -196,3 +196,26 @@ test.describe('a tab kept only for the page expires too', () => {
         await expect(page.locator('[data-bm-tab="tags"]')).toHaveAttribute('aria-selected', 'true');
     });
 });
+
+test.describe('a tab strip too long for the window', () => {
+    test.use({ viewport: { width: 800, height: 900 } });
+
+    test('stays on one line, scrolls, and shows the open tab', async ({ page }) => {
+        await open(page, '#config/behavior/privacy');
+        await expect(page.locator('[data-behavior-tab="privacy"]')).toHaveAttribute('aria-selected', 'true');
+
+        const strip = await page.evaluate(() => {
+            const el = document.querySelector('[data-behavior-tab]').parentElement;
+            const box = el.getBoundingClientRect();
+            const active = el.querySelector('[aria-selected="true"]').getBoundingClientRect();
+            return {
+                rows: new Set([...el.children].map((tab) => Math.round(tab.getBoundingClientRect().top))).size,
+                scrollable: el.scrollWidth > el.clientWidth,
+                activeInView: active.left >= box.left - 1 && active.right <= box.right + 1,
+                fadeBefore: el.classList.contains('has-more-before'),
+                pageScrollsSideways: document.documentElement.scrollWidth > window.innerWidth,
+            };
+        });
+        expect(strip).toEqual({ rows: 1, scrollable: true, activeInView: true, fadeBefore: true, pageScrollsSideways: false });
+    });
+});
