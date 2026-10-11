@@ -32,6 +32,8 @@ test('search promo appears while whats-new blocks, after modal closes', async ({
 
     await page.keyboard.press('>');
     await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+    // A fixed wait: the promo, if it were going to show, comes up after a
+    // delay of its own, and "it did not" has nothing to poll for.
     await page.waitForTimeout(1500);
     await expect(page.locator('.dashboard-search-promo--search')).toHaveCount(0);
 

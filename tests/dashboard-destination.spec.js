@@ -36,7 +36,7 @@ async function openWithPages(page, count = 3) {
         await dash.loadData();
         dash.pageNav?.renderPageNavigation?.();
     }, count);
-    await page.waitForTimeout(400);
+    await page.waitForFunction((n) => window.dashboardInstance.pages.length >= n, count);
 }
 
 const view = (page) => page.evaluate(() => window.dashboardInstance.activeView);
@@ -84,7 +84,7 @@ test('it is lit on the grid and dark in a view', async ({ page }) => {
     await expect.poll(lit, { timeout: 10_000 }).toBe(false);
 
     await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
-    await page.waitForTimeout(600);
+    await expect.poll(() => view(page), { timeout: 10_000 }).toBe('library');
     expect(await lit(), 'the dashboard icon is lit inside the Bookmarks view').toBe(false);
 });
 

@@ -144,11 +144,22 @@ test.describe('the preview card', () => {
         await expect(card).toBeVisible({ timeout: 10_000 });
 
         const first = await card.boundingBox();
+        // Counted from here, so the second showing is told from the first.
+        await page.evaluate(() => {
+            const preview = window.dashboardInstance.preview;
+            const real = preview.showBookmarkPreviewCard;
+            window.__cardShown = 0;
+            preview.showBookmarkPreviewCard = function shown(...args) {
+                window.__cardShown += 1;
+                return real.apply(this, args);
+            };
+        });
         // The card used to be repositioned on every pixel of mousemove, so
         // moving toward it moved it away.
         await page.mouse.move(5, 5, { steps: 3 });
         await row.hover();
-        await page.waitForTimeout(200);
+        await expect.poll(() => page.evaluate(() => window.__cardShown)).toBeGreaterThan(0);
+        await expect(card).toBeVisible();
         const second = await card.boundingBox();
         expect(Math.round(second.x)).toBe(Math.round(first.x));
         expect(Math.round(second.y)).toBe(Math.round(first.y));
@@ -156,7 +167,11 @@ test.describe('the preview card', () => {
 
     test('keyboard-only means the pointer never opens it', async ({ page }) => {
         await openDashboard(page, 'keyboard');
-        await page.locator('.bookmark-link .bookmark-open').first().hover();
+        const row = page.locator('.bookmark-link .bookmark-open').first();
+        await row.hover();
+        await expect.poll(() => row.evaluate((el) => el.matches(':hover'))).toBe(true);
+        // A fixed wait: the card, if one were coming, opens after the hover
+        // delay, and "it did not" has nothing to poll for.
         await page.waitForTimeout(400);
         await expect(page.locator('.bookmark-preview-card.is-visible')).toHaveCount(0);
 

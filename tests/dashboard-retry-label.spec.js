@@ -86,6 +86,8 @@ test.describe('a failed page load', () => {
             window.dashboardInstance.currentPageId, { forceFetch: true, quiet: true }));
 
         expect(result).toBe(false);
+        // A fixed wait: a notification, if one were coming, shows up after the
+        // load has failed, and "nothing appears" has nothing to poll for.
         await page.waitForTimeout(1200);
         await expect(page.locator('.app-notification.show')).toHaveCount(0);
     });

@@ -36,10 +36,12 @@ async function focusFirstBookmark(page) {
  *
  * After a beat, because the outside-close listener is deliberately armed on the
  * next tick — otherwise the very gesture that opened the popover would close it
- * again. A user cannot right-click inside that tick; a test can.
+ * again. A user cannot right-click inside that tick; a test can. The beat is one
+ * turn of the page's own event loop: the arming timer was queued first, so a
+ * timer queued now runs after it.
  */
 async function rightClickAwayFromPopover(page) {
-    await page.waitForTimeout(50);
+    await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 0)));
     await page.evaluate(() => {
         document.dispatchEvent(new MouseEvent('contextmenu', {
             bubbles: true, clientX: 5, clientY: 5,

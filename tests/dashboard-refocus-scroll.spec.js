@@ -31,7 +31,9 @@ async function longDashboard(page) {
         }
     });
     await page.reload({ waitUntil: 'networkidle' });
-    await page.waitForTimeout(600);
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    // Tall enough to scroll the 700px the tests ask for.
+    await page.waitForFunction(() => document.documentElement.scrollHeight > window.innerHeight + 800, null, { timeout: 20_000 });
 }
 
 test.describe('a refresh of the page you are on', () => {
@@ -39,7 +41,7 @@ test.describe('a refresh of the page you are on', () => {
         await longDashboard(page);
 
         await page.evaluate(() => window.scrollTo(0, 700));
-        await page.waitForTimeout(300);
+        await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBeGreaterThan(300);
         const before = await page.evaluate(() => Math.round(window.scrollY));
         expect(before).toBeGreaterThan(300);
 
@@ -47,6 +49,8 @@ test.describe('a refresh of the page you are on', () => {
         // and reloads the page under the reader.
         await page.evaluate(() => window.dashboardInstance.data.loadPageBookmarks(
             window.dashboardInstance.currentPageId, { forceFetch: true, animate: false, quiet: true }));
+        // A fixed wait: a scroll the reload reset would be reset after the call
+        // returned, and "it stayed" has nothing to poll for.
         await page.waitForTimeout(800);
 
         expect(Math.abs((await page.evaluate(() => Math.round(window.scrollY))) - before)).toBeLessThan(30);
@@ -75,12 +79,17 @@ test.describe('a refresh of the page you are on', () => {
         expect(pages.length).toBeGreaterThan(1);
 
         await page.evaluate(() => window.scrollTo(0, 700));
-        await page.waitForTimeout(300);
+        await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBeGreaterThan(300);
 
         await page.evaluate(async ([id]) => {
             await window.dashboardInstance.data.loadPageBookmarks(id, { forceFetch: true, animate: false });
         }, [pages[1]]);
-        await page.waitForTimeout(800);
+        await expect.poll(() => page.evaluate(() => Number(window.dashboardInstance.currentPageId)))
+            .toBe(Number(pages[1]));
+        // The scroll is put where the arriving page keeps it a frame or two
+        // after the render, so it is read once the frames have run.
+        await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBeLessThan(30);
 
         // A page you are arriving on has its own place, and with none remembered
         // that place is the top.

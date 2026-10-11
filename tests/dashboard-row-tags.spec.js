@@ -93,7 +93,7 @@ test.describe('tag chips on the grid', () => {
         await load(page);
         const before = await shortcutLefts(page);
         await seed(page);
-        await page.waitForTimeout(300);
+        await expect(page.locator('.bookmark-tag-strip').first()).toBeVisible();
         expect(await shortcutLefts(page)).toEqual(before);
     });
 

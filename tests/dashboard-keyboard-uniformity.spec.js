@@ -107,7 +107,10 @@ test.describe('Shift+W acts on the category you are in, or on none at all', () =
         const before = await page.evaluate(() => [...document.querySelectorAll(
             '#dashboard-layout .category[data-category-id]')].map((el) => el.getAttribute('data-spread') || ''));
 
+        expect(before.length, 'the page has categories to leave alone').toBeGreaterThan(0);
+
         await page.keyboard.press('Shift+W');
+        // A fixed wait: nothing should change, so there is no event to wait for.
         await page.waitForTimeout(400);
 
         const after = await page.evaluate(() => [...document.querySelectorAll(

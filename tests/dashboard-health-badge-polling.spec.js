@@ -176,6 +176,7 @@ test.describe('health badge polling', () => {
         // handler. The poller deliberately does not fetch here as well: doing
         // it in both places fetched the report twice on every tab switch.
         await expect.poll(() => requestCount(page), { timeout: 5_000 }).toBe(before + 1);
+        // A fixed wait: a second fetch, if there were one, needs time to arrive.
         await page.waitForTimeout(300);
         expect(await requestCount(page), 'the badge was fetched twice on return').toBe(before + 1);
 

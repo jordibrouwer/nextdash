@@ -198,9 +198,7 @@ test.describe('the Delete key on a bookmark', () => {
         });
 
         await page.keyboard.press('Delete');
-        await page.waitForTimeout(400);
-
-        expect(await page.evaluate(() => window.__bulkAsked)).toBe(true);
+        await expect.poll(() => page.evaluate(() => window.__bulkAsked)).toBe(true);
         await expect(page.locator('#delete-popover')).toHaveCount(0);
         await page.evaluate(() => window.__restoreDanger());
     });

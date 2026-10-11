@@ -221,8 +221,13 @@ test.describe('dashboard grid shortcuts', () => {
     // on the common case.
     test('G arms the chord on the first press, without opening search', async ({ page }) => {
         await page.keyboard.press('g');
-        await page.waitForTimeout(200);
+        await expect.poll(() => page.evaluate(() => (
+            window.dashboardInstance?.keyboardNavigation?.isGChordActive?.() === true
+        ))).toBe(true);
 
+        // A fixed wait: the old behaviour opened the search a moment after the
+        // press, so "it did not" needs that moment to pass.
+        await page.waitForTimeout(200);
         await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
         expect(await page.evaluate(() => (
             window.dashboardInstance?.keyboardNavigation?.isGChordActive?.() === true

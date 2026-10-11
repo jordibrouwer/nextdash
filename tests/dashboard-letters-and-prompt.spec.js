@@ -30,7 +30,8 @@ async function dashboard(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 15_000 });
+    await expect(page.locator('.bookmark-link').first()).toBeAttached();
 }
 
 const query = (page) => page.evaluate(() => document.querySelector('.search-query')?.textContent || '');

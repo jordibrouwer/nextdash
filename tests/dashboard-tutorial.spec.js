@@ -44,7 +44,9 @@ test.describe('dashboard tour', () => {
             d.quickStart?.start?.();
         });
         await expect(page.locator('.quickstart-checklist')).toBeVisible();
-        // Two introductions at once is one too many.
+        // Two introductions at once is one too many. A fixed wait: the tour,
+        // if it were going to start, starts a moment after the card shows, and
+        // "it did not" has nothing to poll for.
         await page.waitForTimeout(2000);
         await expect(modal(page)).toHaveCount(0);
 
@@ -118,6 +120,8 @@ test.describe('dashboard tour', () => {
         });
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        // A fixed wait: the tour opens a few seconds after load when it is
+        // going to, and "it did not" has nothing to poll for.
         await page.waitForTimeout(3500);
         await expect(modal(page)).toHaveCount(0);
     });
@@ -129,6 +133,8 @@ test.describe('dashboard tour', () => {
         await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        // A fixed wait: the script is asked for a few seconds after load when
+        // the tour is going to open, and "it was not" has nothing to poll for.
         await page.waitForTimeout(3500);
         expect(requested).toEqual([]);
     });
@@ -179,7 +185,9 @@ test.describe('dashboard tour', () => {
             (await page.locator('.dashboard-tutorial-scene text').allTextContents()).forEach((w) => words.add(w.trim()));
             if (i < STEPS - 1) {
                 await next(page).click();
-                await page.waitForTimeout(80);
+                // The dots, not the "Step n" line: that one is among the strings
+                // swapped out above.
+                await expect(page.locator('.dashboard-tutorial-dot').nth(i + 1)).toHaveClass(/is-active/);
             }
         }
         // A command is typed as it is, in every language: :config help is a key, not a label.

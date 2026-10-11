@@ -131,9 +131,8 @@ test.describe('the grid ARIA columns', () => {
     test('survive an incremental repaint, and the row indices still track', async ({ page }) => {
         await openDashboard(page);
         await page.evaluate(() => window.dashboardInstance.data.repaintBookmarkMutationSurfaces({}));
-        await page.waitForTimeout(300);
 
-        const state = await page.evaluate(() => {
+        const readState = () => page.evaluate(() => {
             const links = [...document.querySelectorAll('#dashboard-layout .bookmark-link a.bookmark-open')];
             const firstGroup = document.querySelector('#dashboard-layout .category[role="rowgroup"]');
             const rows = firstGroup
@@ -144,6 +143,12 @@ test.describe('the grid ARIA columns', () => {
                 rowIndices: rows.map((r) => r.getAttribute('aria-rowindex')),
             };
         });
+        // Rows are there and numbered again before anything is read.
+        await expect.poll(async () => {
+            const s = await readState();
+            return s.rowIndices.length > 0 && s.rowIndices[0] === '1';
+        }).toBe(true);
+        const state = await readState();
 
         expect(state.missingCols).toBe(0);
         // Still numbered from 1, which is the part syncBookmarkGridA11y still owns.

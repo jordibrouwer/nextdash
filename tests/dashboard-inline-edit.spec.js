@@ -10,6 +10,14 @@ async function isBookmarkFormModalOpen(page) {
     return page.evaluate(() => document.getElementById('bookmark-form-modal')?.classList.contains('show') === true);
 }
 
+/** The form is up and has settled: focused on the address, the page behind it inert, nothing still moving. */
+async function formSettled(page) {
+    await expect(page.locator('.bookmark-inline-form input[type="url"]').first()).toBeFocused();
+    await expect.poll(() => page.evaluate(() => document.getElementById('dashboard-layout')?.hasAttribute('inert') === true)).toBe(true);
+    await expect.poll(() => page.evaluate(() => document.getElementById('bookmark-form-modal')
+        .getAnimations({ subtree: true }).length)).toBe(0);
+}
+
 test.describe('dashboard bookmark form modal', () => {
     test.beforeEach(async ({ page }) => {
         await markWhatsNewSeen(page);
@@ -96,7 +104,7 @@ test.describe('dashboard bookmark form modal', () => {
         const nameInput = page.locator('.bookmark-inline-form [data-field="name"]');
         await expect(nameInput).toBeVisible({ timeout: 3000 });
         const original = await nameInput.inputValue();
-        await page.waitForTimeout(600);
+        await formSettled(page);
         await nameInput.click({ force: true });
         await nameInput.fill(`${original} typed`);
         await expect(page.locator('#app-modal.show')).toHaveCount(0);
@@ -152,7 +160,7 @@ test.describe('dashboard bookmark form modal', () => {
         await page.keyboard.press(';');
         const nameInput = page.locator('.bookmark-inline-form [data-field="name"]');
         await expect(nameInput).toBeVisible({ timeout: 3000 });
-        await page.waitForTimeout(600);
+        await formSettled(page);
         const inputName = (await nameInput.inputValue()).trim();
         const baseName = inputName || target.storedName || target.label;
         const suffix = `save-${Date.now()}`;
@@ -218,7 +226,7 @@ test.describe('dashboard bookmark form modal', () => {
         const nameInput = page.locator('.bookmark-inline-form [data-field="name"]');
         const urlInput = page.locator('.bookmark-inline-form input[type="url"]').first();
         await expect(nameInput).toBeVisible({ timeout: 3000 });
-        await page.waitForTimeout(700);
+        await formSettled(page);
         await page.evaluate(() => {
             document.querySelector('.bookmark-inline-form input[type="url"]')?.focus();
         });
