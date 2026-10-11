@@ -220,7 +220,7 @@ test.describe('the settings schema declares its section', () => {
     /** The rendered tabs must still get their panels after the rerouting. */
     test('the Behavior and Appearance tabs still render their panels', async ({ page }) => {
         await openSection(page, 'behavior');
-        await openSubTab(page, 'data-behavior-tab', 'status');
+        await openSubTab(page, 'data-behavior-tab', 'checks');
         await expect(page.locator('[data-behavior-field="statusRecheckIntervalMinutes"]')).toBeVisible();
 
         await openSection(page, 'appearance');

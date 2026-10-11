@@ -137,7 +137,7 @@ test.describe('demo analytics', () => {
     test('a locked panel and a refused request report demo:refused, with no input', async ({ page, demoServer }) => {
         await openDemo(page, demoServer);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
-        await page.locator('[data-behavior-tab="status"]').first().click();
+        await page.locator('[data-behavior-tab="checks"]').first().click();
         await page.locator('.demo-lock-chip').first().click();
         await expect.poll(async () => (await named(page, 'demo:refused')).length).toBe(1);
         expect((await named(page, 'demo:refused'))[0].props).toEqual({ action: 'locked-panel', mode: 'demo' });

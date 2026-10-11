@@ -161,7 +161,7 @@ test.describe('monitor emphasis setting', () => {
             typeof window.dashboardInstance.config.behaviorSchema === 'function', null, { timeout: 15_000 });
         await page.evaluate(() => {
             const c = window.dashboardInstance.config;
-            c.behaviorTab = 'status';
+            c.behaviorTab = 'checks';
             c.render?.();
         });
 
@@ -249,7 +249,7 @@ test.describe('the feature catalogue announces it', () => {
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.config.section), { timeout: 5000 }).toBe('behavior');
         await expect.poll(() => page.evaluate(() =>
-            window.dashboardInstance.config.behaviorTab)).toBe('status');
+            window.dashboardInstance.config.behaviorTab)).toBe('checks');
         // And the setting it promises is actually on screen.
         await expect(page.locator('[data-behavior-field="monitorEmphasis"]')).toHaveCount(3);
     });
@@ -263,10 +263,10 @@ test.describe('the new setting is marked as new', () => {
             typeof window.dashboardInstance.config.behaviorSchema === 'function', null, { timeout: 15_000 });
         await page.evaluate(() => {
             const c = window.dashboardInstance.config;
-            c.behaviorTab = 'status';
+            c.behaviorTab = 'checks';
             c.render?.();
         });
-        await page.waitForSelector('[data-behavior-tab="status"]', { timeout: 15_000 });
+        await page.waitForSelector('[data-behavior-tab="checks"]', { timeout: 15_000 });
 
         // The monitor-emphasis setting carried the twinkle when it was new;
         // Appearance → Layout took it over in v1.3.0, and Behavior holds none of
@@ -280,9 +280,9 @@ test.describe('the new setting is marked as new', () => {
         const marked = await page.evaluate(() => ({
             tabs: document.querySelectorAll('#config-behavior-body .config-subtab--animated, [data-behavior-tab].config-subtab--animated').length,
             panels: document.querySelectorAll('#config-behavior-body .config-panel--animated').length,
-            status: getComputedStyle(document.querySelector('[data-behavior-tab="status"]')).animationName,
+            checks: getComputedStyle(document.querySelector('[data-behavior-tab="checks"]')).animationName,
         }));
-        expect(marked).toEqual({ tabs: 0, panels: 0, status: 'none' });
+        expect(marked).toEqual({ tabs: 0, panels: 0, checks: 'none' });
 
         // And the section this release does mark is not this one.
         expect(await page.evaluate(() =>

@@ -3,7 +3,7 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
- * Quiet hours and reminders, on Config -> Behavior -> Status & alerts.
+ * Quiet hours and reminders, on Config -> Behavior -> Notifications.
  */
 
 async function openStatus(page) {
@@ -16,7 +16,7 @@ async function openStatus(page) {
     await page.evaluate(() => {
         const c = window.dashboardInstance.config;
         (c.behaviorTab = c.behaviorTab || 'general', c).openConfigView('behavior');
-        c.behaviorTab = 'status';
+        c.behaviorTab = 'notifications';
         c.render();
     });
     await page.waitForSelector('[data-behavior-field="quietHoursEnabled"]', { timeout: 15_000 });

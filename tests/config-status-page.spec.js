@@ -268,7 +268,7 @@ test.describe('Config → Status page maintenance', () => {
         await page.goto('/#config/behavior');
         await waitForConfigReady(page);
         await page.evaluate(() => {
-            window.dashboardInstance.config.behaviorTab = 'status';
+            window.dashboardInstance.config.behaviorTab = 'checks';
             window.dashboardInstance.config.render();
         });
         const label = page.locator('[data-maint-field="maintenanceWindows"] [data-maint-row="0"] [data-maint-label]');

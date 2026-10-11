@@ -774,7 +774,7 @@ async function settleScroll(page) {
 test('12 alerts', async ({ page }) => {
     await prepare(page);
     await openConfig(page, 'behavior');
-    await subtab(page, 'Status & alerts').click();
+    await subtab(page, 'Notifications').click();
     const heading = page.getByRole('heading', { name: /^Downtime alerts/ }).first();
     await heading.waitFor();
     await scrollToTop(page, heading);
@@ -1318,11 +1318,12 @@ test.describe('drift', () => {
 test('12 maintenance and quiet hours', async ({ page }) => {
     await prepare(page);
     await openConfig(page, 'behavior');
-    await subtab(page, 'Status & alerts').click();
+    await subtab(page, 'Checks').click();
     const panel = (title) => page.locator('.config-panel', { has: page.locator('.config-panel-title', { hasText: title }) }).first();
     const windows = panel(/^Maintenance windows/);
     await scrollToTop(page, windows, 120);
     await snap(page, windows, '12-maintenance.jpg', { pad: 10 });
+    await subtab(page, 'Notifications').click();
     const quiet = panel(/^Quiet hours/);
     await scrollToTop(page, quiet, 120);
     await quiet.getByText('Hold notices during quiet hours').click();

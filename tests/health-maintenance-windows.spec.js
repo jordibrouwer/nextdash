@@ -19,7 +19,7 @@ async function openStatusTab(page) {
     await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 15_000 });
     await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
     await page.evaluate(() => {
-        window.dashboardInstance.config.behaviorTab = 'status';
+        window.dashboardInstance.config.behaviorTab = 'checks';
         window.dashboardInstance.config.render();
     });
     await page.waitForSelector('[data-maint-list][data-maint-field="maintenanceWindows"]', { timeout: 10_000 });

@@ -33,10 +33,10 @@ test('Appearance opens on its first tab, with the settings already there', async
     await expect(page.locator('.config-preview')).toHaveAttribute('data-preview-focus', 'all');
 });
 
-test('Behavior has five tabs, and the moved settings are where the tabs say', async ({ page }) => {
+test('Behavior has six tabs, and the moved settings are where the tabs say', async ({ page }) => {
     await open(page, '#config/behavior');
     await expect(page.locator('[data-behavior-tab]')).toHaveText(
-        ['General', 'Keyboard & search', 'Fresh', 'Status & alerts', 'Privacy & sync']);
+        ['General', 'Keyboard & search', 'Fresh', 'Checks', 'Notifications', 'Privacy & sync']);
 
     await page.locator('[data-behavior-tab="search"]').click();
     await expect(page.locator('[data-behavior-field="globalShortcuts"]')).toBeVisible();
@@ -52,6 +52,10 @@ test('an old tab link opens the tab that holds its settings now', async ({ page 
     await open(page, '#config/behavior/inbox');
     await expect(page.locator('[data-behavior-tab="fresh"]')).toHaveAttribute('aria-selected', 'true');
     await expect.poll(() => hash(page)).toBe('#config/behavior/fresh');
+
+    // Status & alerts was split; its old id opens Checks.
+    await page.goto('/#config/behavior/status');
+    await expect(page.locator('[data-behavior-tab="checks"]')).toHaveAttribute('aria-selected', 'true');
 
     await page.goto('/#config/appearance/grid');
     await expect(page.locator('[data-appearance-tab="layout"]')).toHaveAttribute('aria-selected', 'true');

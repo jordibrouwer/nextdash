@@ -3528,6 +3528,7 @@ class DashboardConfig {
         uptimeBadges: ['badge', 'svg', 'readme', 'embed', 'image', 'uptime', 'status'],
         quietHoursEnabled: ['quiet', 'night', 'sleep', 'hold', 'mute', 'alert', 'notification', 'summary'],
         remindersEnabled: ['remind', 'reminder', 'escalate', 'escalation', 'repeat', 'still down', 'alert'],
+        digestEnabled: ['digest', 'weekly', 'summary', 'report', 'monday', 'broken', 'updates', 'unused'],
         healthAutoRecheckIntervalHours: ['uptime', 'monitor', 'health', 'interval', 'recheck'],
         inboxViewFilter: ['inbox', 'filter', 'unread', 'opens'],
         inboxViewSort: ['inbox', 'sort', 'order', 'newest', 'oldest'],
@@ -12844,6 +12845,13 @@ class DashboardConfig {
         feedsEnabled: { info: ['feedsInfoTitle', 'feedsInfoMessage'], def: false },
         feedsMarkQuiet: { info: ['feedsMarkQuietInfoTitle', 'feedsMarkQuietInfoMessage'], def: false },
         healthAutoRecheckIntervalHours: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 24 },
+        // Weekly digest (digest.go)
+        digestEnabled: { def: true },
+        digestWeekday: { def: 1 },
+        digestTime: { def: '08:00' },
+        digestHealth: { def: true },
+        digestUpdates: { def: true },
+        digestUsage: { def: true },
         // Containers
         dockerViewEnabled: { def: true },
         dockerRefreshSeconds: { def: 5 },
@@ -14226,7 +14234,28 @@ class DashboardConfig {
             },
             {
                 section: 'behavior',
-                tab: 'status',
+                tab: 'fresh',
+                title: t('config.feedsTitle', 'Fresh'),
+                demoLocked: true,
+                note: t('config.feedsNote', 'A bookmark whose page advertises a feed can say how much it has published since you last opened it — a small count on the row, and a Fresh collection. Switching it on looks for feeds on the pages you have saved, then asks each one, hourly, with a conditional request a quiet site answers in a few hundred bytes. Off by default, because it is the one feature here that talks to other people\'s servers on your behalf.'),
+                controls: [
+                    { ...bool('feedsEnabled', 'config.feedsEnabledLabel', 'Show what is new since you last looked'), special: 'feeds' },
+                    // Off by default on purpose: most rows with a feed are
+                    // silent most of the time, and a mark on twenty of them is
+                    // the noise Fresh exists to avoid. For the reader who would
+                    // rather see who is taking part than ask one row at a time.
+                    { ...bool('feedsMarkQuiet', 'config.feedsMarkQuietLabel', 'Mark rows that publish, even when nothing is new'), special: 'render' },
+                    // Most bookmarks have no feed, so an empty Fresh is the
+                    // normal state and looks exactly like a broken feature.
+                    // This line is the difference: it says how many pages have
+                    // been asked and how many of them publish anything at all.
+                    { type: 'action', label: t('config.feedsCoverageLabel', 'Feeds found'),
+                      button: t('config.feedsFindNow', 'Find feeds now'), action: 'findFeeds' },
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'checks',
                 title: t('config.statusBrowserChecksTitle', 'Checks in this browser'),
                 demoLocked: true,
                 note: t('config.statusBrowserChecksNote', 'How the dashboard tests the bookmarks on screen while you have it open. Applies to bookmarks set to Periodic or Monitor; a bookmark set to Off is never tested.'),
@@ -14247,41 +14276,7 @@ class DashboardConfig {
             },
             {
                 section: 'behavior',
-                tab: 'status',
-                title: t('config.monitorEmphasisTitle', 'Monitored bookmarks on the dashboard'),
-                note: t('config.monitorEmphasisNote', 'How much a monitored bookmark stands out among the others. A monitor that is down is always marked, whichever you pick — this chooses how visible the healthy ones are.'),
-                appliesTo: t('config.appliesToMonitorOnly', 'Monitor only'),
-                controls: [
-                    {
-                        field: 'monitorEmphasis',
-                        type: 'cards',
-                        // Body attribute only, so it needs `chrome` — `render`
-                        // redraws the rows but never rewrites <body>.
-                        special: 'chrome',
-                        label: t('config.monitorEmphasisLabel', 'Emphasis'),
-                        options: [
-                            {
-                                value: 'problems',
-                                label: t('config.monitorEmphasisProblems', 'Only when there is a problem'),
-                                body: t('config.monitorEmphasisProblemsBody', 'A healthy monitor looks like any other bookmark. Only an outage draws the eye.'),
-                            },
-                            {
-                                value: 'always',
-                                label: t('config.monitorEmphasisAlways', 'Always stand out'),
-                                body: t('config.monitorEmphasisAlwaysBody', 'Every monitored bookmark gets its own accent edge, so you can see at a glance what you are watching.'),
-                            },
-                            {
-                                value: 'never',
-                                label: t('config.monitorEmphasisNever', 'Never stand out'),
-                                body: t('config.monitorEmphasisNeverBody', 'Monitoring stays entirely in the Health view. The dashboard shows no marking at all, not even for an outage.'),
-                            },
-                        ],
-                    },
-                ],
-            },
-            {
-                section: 'behavior',
-                tab: 'status',
+                tab: 'checks',
                 title: t('config.statusServerChecksTitle', 'Checks on the server'),
                 demoLocked: true,
                 note: t('config.statusServerChecksNote', 'Re-tests bookmarks on the server, so the Health view stays current without anyone having the dashboard open. On by default; it makes outbound requests, so switch it off if you would rather it did not.'),
@@ -14340,36 +14335,41 @@ class DashboardConfig {
             },
             {
                 section: 'behavior',
-                tab: 'fresh',
-                title: t('config.feedsTitle', 'Fresh'),
-                demoLocked: true,
-                note: t('config.feedsNote', 'A bookmark whose page advertises a feed can say how much it has published since you last opened it — a small count on the row, and a Fresh collection. Switching it on looks for feeds on the pages you have saved, then asks each one, hourly, with a conditional request a quiet site answers in a few hundred bytes. Off by default, because it is the one feature here that talks to other people\'s servers on your behalf.'),
+                tab: 'checks',
+                title: t('config.monitorEmphasisTitle', 'Monitored bookmarks on the dashboard'),
+                note: t('config.monitorEmphasisNote', 'How much a monitored bookmark stands out among the others. A monitor that is down is always marked, whichever you pick — this chooses how visible the healthy ones are.'),
+                appliesTo: t('config.appliesToMonitorOnly', 'Monitor only'),
                 controls: [
-                    { ...bool('feedsEnabled', 'config.feedsEnabledLabel', 'Show what is new since you last looked'), special: 'feeds' },
-                    // Off by default on purpose: most rows with a feed are
-                    // silent most of the time, and a mark on twenty of them is
-                    // the noise Fresh exists to avoid. For the reader who would
-                    // rather see who is taking part than ask one row at a time.
-                    { ...bool('feedsMarkQuiet', 'config.feedsMarkQuietLabel', 'Mark rows that publish, even when nothing is new'), special: 'render' },
-                    // Most bookmarks have no feed, so an empty Fresh is the
-                    // normal state and looks exactly like a broken feature.
-                    // This line is the difference: it says how many pages have
-                    // been asked and how many of them publish anything at all.
-                    { type: 'action', label: t('config.feedsCoverageLabel', 'Feeds found'),
-                      button: t('config.feedsFindNow', 'Find feeds now'), action: 'findFeeds' },
+                    {
+                        field: 'monitorEmphasis',
+                        type: 'cards',
+                        // Body attribute only, so it needs `chrome` — `render`
+                        // redraws the rows but never rewrites <body>.
+                        special: 'chrome',
+                        label: t('config.monitorEmphasisLabel', 'Emphasis'),
+                        options: [
+                            {
+                                value: 'problems',
+                                label: t('config.monitorEmphasisProblems', 'Only when there is a problem'),
+                                body: t('config.monitorEmphasisProblemsBody', 'A healthy monitor looks like any other bookmark. Only an outage draws the eye.'),
+                            },
+                            {
+                                value: 'always',
+                                label: t('config.monitorEmphasisAlways', 'Always stand out'),
+                                body: t('config.monitorEmphasisAlwaysBody', 'Every monitored bookmark gets its own accent edge, so you can see at a glance what you are watching.'),
+                            },
+                            {
+                                value: 'never',
+                                label: t('config.monitorEmphasisNever', 'Never stand out'),
+                                body: t('config.monitorEmphasisNeverBody', 'Monitoring stays entirely in the Health view. The dashboard shows no marking at all, not even for an outage.'),
+                            },
+                        ],
+                    },
                 ],
             },
             {
                 section: 'behavior',
-                tab: 'status',
-                title: t('config.generalGroupMonitorNotify', 'Downtime alerts'),
-                note: t('config.statusAlertsNote', 'Posts to a webhook when a monitored bookmark goes down and again when it recovers. Only monitored bookmarks raise alerts — Periodic flags a broken link in the Health view but never notifies.'),
-                appliesTo: t('config.appliesToMonitorOnly', 'Monitor only'),
-                controls: this.monitorNotifyControls(t, opt, { forIndex }),
-            },
-            {
-                section: 'behavior',
-                tab: 'status',
+                tab: 'checks',
                 title: t('config.maintenanceTitle', 'Maintenance windows'),
                 note: t('config.maintenanceNote', 'Times when downtime is expected — a nightly backup, a weekly reboot. Checks still run and the heartbeat still records what happened, but failures inside a window raise no alert and do not count against uptime.'),
                 appliesTo: t('config.appliesToMonitorOnly', 'Monitor only'),
@@ -14379,7 +14379,29 @@ class DashboardConfig {
             },
             {
                 section: 'behavior',
-                tab: 'status',
+                tab: 'notifications',
+                title: t('config.generalGroupMonitorNotify', 'Downtime alerts'),
+                note: t('config.statusAlertsNote', 'Posts to a webhook when a monitored bookmark goes down and again when it recovers. Only monitored bookmarks raise alerts — Periodic flags a broken link in the Health view but never notifies.'),
+                appliesTo: t('config.appliesToMonitorOnly', 'Monitor only'),
+                controls: this.monitorNotifyControls(t, opt, { forIndex }),
+            },
+            {
+                section: 'behavior',
+                tab: 'notifications',
+                title: t('config.pushNotifyTitle', 'Browser notifications'),
+                note: t('config.pushNotifyNote', 'Sends notifications to this browser, even when nextDash is closed. Requires HTTPS (or localhost) and permission per device.'),
+                controls: [
+                    bool('pushNotifyEnabled', 'config.pushNotifyEnabledLabel', 'Enable browser notifications'),
+                    bool('pushNotifyMonitor', 'config.pushNotifyMonitorLabel', 'Notify on downtime and recovery'),
+                    bool('pushNotifyBackup', 'config.pushNotifyBackupLabel', 'Notify on automatic backups'),
+                    bool('pushNotifyContainers', 'config.pushNotifyContainersLabel', 'Notify when a container stops, keeps restarting or turns unhealthy'),
+                    { field: 'pushNotifySubject', type: 'text', label: t('config.pushNotifySubjectLabel', 'Contact address for push services') },
+                    { type: 'pushDevice' },
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'notifications',
                 title: t('config.quietTitle', 'Quiet hours'),
                 note: t('config.quietNote', 'Notices that arrive in these hours are held, and one summary says what still plays and what recovered when they end. Unlike a maintenance window the downtime still counts. Outgoing webhooks always get every event.'),
                 appliesTo: t('config.appliesToAllNotices', 'Monitors, containers, Unraid, backups'),
@@ -14393,7 +14415,7 @@ class DashboardConfig {
             },
             {
                 section: 'behavior',
-                tab: 'status',
+                tab: 'notifications',
                 title: t('config.remindersTitle', 'Reminders'),
                 note: t('config.remindersNote', 'A monitor or container that is still down gets another message after a while, not a second alarm. Not during quiet hours: the summary that ends them says what is still down.'),
                 appliesTo: t('config.appliesToMonitorContainer', 'Monitors, containers'),
@@ -14416,16 +14438,34 @@ class DashboardConfig {
             },
             {
                 section: 'behavior',
-                tab: 'status',
-                title: t('config.pushNotifyTitle', 'Browser notifications'),
-                note: t('config.pushNotifyNote', 'Sends notifications to this browser, even when nextDash is closed. Requires HTTPS (or localhost) and permission per device.'),
+                tab: 'notifications',
+                title: t('config.digestTitle', 'Weekly digest'),
+                note: t('config.digestNote', 'One message a week: links that broke, container updates and bookmarks nobody opens. Sent to your push and alert channels and shown once on the dashboard. Held until quiet hours end. Nothing is sent when there is nothing to say.'),
+                appliesTo: t('config.appliesToDigest', 'Monitors, containers, usage'),
                 controls: [
-                    bool('pushNotifyEnabled', 'config.pushNotifyEnabledLabel', 'Enable browser notifications'),
-                    bool('pushNotifyMonitor', 'config.pushNotifyMonitorLabel', 'Notify on downtime and recovery'),
-                    bool('pushNotifyBackup', 'config.pushNotifyBackupLabel', 'Notify on automatic backups'),
-                    bool('pushNotifyContainers', 'config.pushNotifyContainersLabel', 'Notify when a container stops, keeps restarting or turns unhealthy'),
-                    { field: 'pushNotifySubject', type: 'text', label: t('config.pushNotifySubjectLabel', 'Contact address for push services') },
-                    { type: 'pushDevice' },
+                    bool('digestEnabled', 'config.digestEnabledLabel', 'Send a weekly digest'),
+                    { field: 'digestWeekday', type: 'select', numeric: true, label: t('config.digestWeekdayLabel', 'On'), options: [
+                        opt(1, t('config.weekdayMon', 'Monday')), opt(2, t('config.weekdayTue', 'Tuesday')),
+                        opt(3, t('config.weekdayWed', 'Wednesday')), opt(4, t('config.weekdayThu', 'Thursday')),
+                        opt(5, t('config.weekdayFri', 'Friday')), opt(6, t('config.weekdaySat', 'Saturday')),
+                        opt(0, t('config.weekdaySun', 'Sunday')),
+                    ] },
+                    // Whole hours: there is no time control, and a digest does
+                    // not need a minute. The server reads any "HH:MM".
+                    { field: 'digestTime', type: 'select', label: t('config.digestTimeLabel', 'At'),
+                      options: Array.from({ length: 24 }, (_, hour) => {
+                          const value = `${String(hour).padStart(2, '0')}:00`;
+                          return opt(value, value);
+                      }) },
+                    bool('digestHealth', 'config.digestHealthLabel', 'Include broken links and certificates'),
+                    bool('digestUpdates', 'config.digestUpdatesLabel', 'Include container updates'),
+                    bool('digestUsage', 'config.digestUsageLabel', 'Include most opened, unused and Inbox'),
+                    { type: 'action', action: 'showDigest',
+                      label: t('config.digestShowLabel', 'The latest digest'),
+                      button: t('config.digestShowButton', 'Show') },
+                    { type: 'action', action: 'sendDigest',
+                      label: t('config.digestTestLabel', 'Send a proof digest now'),
+                      button: t('config.digestTestButton', 'Send') },
                 ],
             },
             {
@@ -15566,6 +15606,37 @@ class DashboardConfig {
             });
         }
 
+        // The weekly digest as the dashboard shows it, without waiting for the card.
+        const showDigest = container.querySelector('[data-config-action="showDigest"]');
+        if (showDigest) {
+            showDigest.addEventListener('click', async () => {
+                const status = container.querySelector('[data-config-action-status="showDigest"]');
+                const shown = await window.DigestNotice?.openDigest?.();
+                if (status) status.textContent = shown ? '' : this.t('config.digestShowNone', 'No digest yet.');
+            });
+        }
+
+        // The weekly digest: one now, from live data, through the same channels.
+        const sendDigest = container.querySelector('[data-config-action="sendDigest"]');
+        if (sendDigest) {
+            sendDigest.addEventListener('click', async () => {
+                const status = container.querySelector('[data-config-action-status="sendDigest"]');
+                sendDigest.disabled = true;
+                try {
+                    const api = typeof window.nextDashFetch === 'function' ? window.nextDashFetch : fetch;
+                    const res = await api('/api/digest/test', { method: 'POST' });
+                    let text = this.t('config.digestTestFailed', 'Could not send the digest');
+                    if (res.status === 200) text = this.t('config.digestTestSent', 'Sent. It is on the dashboard too.');
+                    else if (res.status === 204) text = this.t('config.digestTestEmpty', 'Nothing to report right now.');
+                    if (status) status.textContent = text;
+                } catch (_) {
+                    if (status) status.textContent = this.t('config.digestTestFailed', 'Could not send the digest');
+                } finally {
+                    sendDigest.disabled = false;
+                }
+            });
+        }
+
         container.querySelectorAll('[data-config-action]').forEach((btn) => {
             const action = btn.getAttribute('data-config-action');
             if (action !== 'resetCategorySpreads') {
@@ -15866,10 +15937,11 @@ class DashboardConfig {
     // device-only switch joined privacy, which is where "what does this app do
     // on its own" is already answered.
     // The inbox's own settings moved to Config → Inbox; Fresh kept the tab.
-    static BEHAVIOR_TABS = ['general', 'search', 'fresh', 'status', 'privacy'];
+    // Status & alerts was split in two: what is checked, and how you hear of it.
+    static BEHAVIOR_TABS = ['general', 'search', 'fresh', 'checks', 'notifications', 'privacy'];
 
     /** Behavior tabs that were folded into another one still open it. */
-    static BEHAVIOR_TAB_ALIASES = { inbox: 'fresh' };
+    static BEHAVIOR_TAB_ALIASES = { inbox: 'fresh', status: 'checks' };
 
     /**
      * Date & weather fields that need a fresh fetch rather than a redraw: each
@@ -15884,7 +15956,8 @@ class DashboardConfig {
             datetime: ['config.behaviorTabDateTime', 'Date & weather'],
             search: ['config.behaviorTabKeyboardSearch', 'Keyboard & search'],
             fresh: ['config.behaviorTabFresh', 'Fresh'],
-            status: ['config.behaviorTabStatusAlerts', 'Status & alerts'],
+            checks: ['config.behaviorTabChecks', 'Checks'],
+            notifications: ['config.behaviorTabNotifications', 'Notifications'],
             privacy: ['config.behaviorTabPrivacySync', 'Privacy & sync'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
@@ -15912,7 +15985,7 @@ class DashboardConfig {
         const panels = this.panelsFor('behavior', this.behaviorTab);
         // The lead and the onboarding buttons are not settings, so they go with
         // the full view and are dropped when only changed settings are wanted.
-        const lead = (this.behaviorTab === 'status' && !this.changedOnly) ? this.renderStatusModesLead() : '';
+        const lead = (this.behaviorTab === 'checks' && !this.changedOnly) ? this.renderStatusModesLead() : '';
         // The two onboarding actions are buttons rather than settings, so they
         // cannot come from the schema; they follow the Onboarding panel on
         // Privacy & sync so the whole of onboarding sits together.
@@ -16658,6 +16731,9 @@ class DashboardConfig {
     }
 
     set behaviorTab(tab) {
+        // An old id ('status', from a news entry or a saved link) opens the
+        // tab that holds those settings now.
+        tab = DashboardConfig.BEHAVIOR_TAB_ALIASES[tab] || tab;
         this._behaviorTab = tab;
         DashboardConfig.rememberTab('behavior', tab);
     }
@@ -27445,11 +27521,11 @@ class DashboardConfig {
     static HELP_PANEL_FEATURES = {
         'config.helpHealthTitle': {
             isOn: (s) => s.showStatus === true || s.healthAutoRecheckEnabled === true,
-            go: { section: 'behavior', behaviorTab: 'status' },
+            go: { section: 'behavior', behaviorTab: 'checks' },
         },
         'config.helpNotificationsTitle': {
             isOn: (s) => s.monitorNotifyEnabled === true,
-            go: { section: 'behavior', behaviorTab: 'status' },
+            go: { section: 'behavior', behaviorTab: 'notifications' },
         },
         'config.helpStatsPrivacyTitle': {
             isOn: (s) => s.analyticsOptIn === true,

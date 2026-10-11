@@ -883,7 +883,7 @@ class DashboardHealth {
     }
 
     /**
-     * Open Config → Behavior → Status & health.
+     * Open Config → Behavior → Checks.
      *
      * The subtab is set before the section opens, because Behavior's tab strip
      * has no switch-to method of its own — it reads `behaviorTab` as it
@@ -906,8 +906,8 @@ class DashboardHealth {
         // The loader proxies openConfigView, so the real module — and its
         // behaviorTab field — may only exist once that call has resolved.
         const mod = config.instance || config;
-        if (mod && mod.behaviorTab !== 'status') {
-            mod.behaviorTab = 'status';
+        if (mod && mod.behaviorTab !== 'checks') {
+            mod.behaviorTab = 'checks';
             mod.render?.();
         }
     }
