@@ -258,7 +258,10 @@ test.describe('inbox announcements', () => {
             });
         });
 
+        const added = page.waitForResponse((r) => r.url().includes('/api/inbox') && r.request().method() === 'POST');
         await page.evaluate(() => window.dashboardInstance.inbox.addFromUrl('https://f.example'));
+        await added;
+        // Negative check: the add landed, now give a would-be notice time to render.
         await page.waitForTimeout(500);
         await expect(page.locator('.app-notification', { hasText: /full/i })).toHaveCount(0);
     });

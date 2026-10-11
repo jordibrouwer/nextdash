@@ -225,7 +225,7 @@ test.describe('putting one aside for a month', () => {
         });
 
         await page.locator('.health-focus-card [data-focus="snooze"]').click();
-        await page.waitForTimeout(1200);
+        await expect.poll(() => asked.length).toBeGreaterThan(0);
 
         // The write went out, carrying an expiry rather than a permanent mute.
         expect(asked.length).toBeGreaterThan(0);
@@ -233,10 +233,9 @@ test.describe('putting one aside for a month', () => {
 
         // And the session moved on: a card that keeps showing what you have
         // just dealt with is not counting honestly.
-        const after = await page.evaluate(() => {
+        await expect.poll(() => page.evaluate(() => {
             return window.dashboardInstance.config.instance._libFocus.queue.length;
-        });
-        expect(after).toBeLessThan(before);
+        })).toBeLessThan(before);
     });
 
     /*

@@ -83,6 +83,7 @@ test.describe('the notice-card queue', () => {
             await defineProbeCards(page);
             await expect(page.locator('.probe-first-card')).toBeVisible({ timeout: 10_000 });
 
+            // The test is about time: the second card must still be held after a long unanswered wait.
             await page.waitForTimeout(50_000);
             await expect(page.locator('.probe-second-card')).toHaveCount(0);
 

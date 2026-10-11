@@ -70,7 +70,6 @@ test.describe('a review session', () => {
             window.dashboardInstance.config.instance._libFocus.queue.length);
         for (let i = 0; i < length; i += 1) {
             await page.keyboard.press('j');
-            await page.waitForTimeout(120);
         }
 
         const done = page.locator('.health-focus-card--done');

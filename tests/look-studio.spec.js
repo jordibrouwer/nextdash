@@ -296,6 +296,7 @@ test.describe('the look studio', () => {
         await compare.click();
         await expect.poll(() => bodyAttr(page, 'data-cat-head')).toBe(headBefore);
         await expect(compare).toHaveAttribute('aria-pressed', 'true');
+        // Negative check: Compare must not let go on its own; give a stray release time to happen.
         await page.waitForTimeout(300);
         expect(await bodyAttr(page, 'data-cat-head'), 'Compare let go on its own').toBe(headBefore);
         await compare.click();
@@ -468,6 +469,7 @@ test.describe('the look studio', () => {
         const foot = await page.locator('.look-studio-foot').boundingBox();
         await page.mouse.move(foot.x + 10, foot.y + 10);
         await page.mouse.wheel(0, 800);
+        // Negative check: the dashboard must not scroll; give a late scroll chain time to move it.
         await page.waitForTimeout(200);
         expect(await page.evaluate(() => window.scrollY), 'a wheel over the footer moved the dashboard').toBe(0);
 

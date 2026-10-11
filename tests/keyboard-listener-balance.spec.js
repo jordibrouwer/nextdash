@@ -61,7 +61,8 @@ async function load(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     // Let the deferred loaders settle, so their listeners are in the baseline
-    // rather than arriving mid-measurement.
+    // rather than arriving mid-measurement. The loaders give no completion signal
+    // to wait on, and the baseline is only meaningful once they are done.
     await page.waitForTimeout(1500);
 }
 
@@ -171,11 +172,10 @@ test.describe('overlays hand their keys back', () => {
             await expect(page.locator('.page-tab-popover')).toHaveCount(1, { timeout: 10_000 });
             // The outside-click handler is bound a tick after the popover
             // opens, so closing sooner would measure nothing.
-            await page.waitForTimeout(120);
+            await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 0)));
             // Escape is bound to the fields, so press it where the reader would.
             await page.locator('.page-tab-popover-name').press('Escape');
             await expect(page.locator('.page-tab-popover')).toHaveCount(0, { timeout: 10_000 });
-            await page.waitForTimeout(120);
         }
 
         await expect
@@ -206,11 +206,9 @@ test.describe('overlays hand their keys back', () => {
 
         // Start from nothing bound, whatever the page did on load.
         await page.evaluate(() => window.dashboardInstance.toolbar.teardownToolbarKbdTooltips());
-        await page.waitForTimeout(150);
         const idle = await counts();
 
         await page.evaluate(() => window.dashboardInstance.toolbar.setupToolbarKbdTooltips());
-        await page.waitForTimeout(150);
         const bound = await counts();
         expect(bound.winScroll,
             'setup bound no window scroll handler, so this test is not measuring it')

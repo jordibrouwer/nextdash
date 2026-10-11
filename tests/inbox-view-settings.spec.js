@@ -183,6 +183,7 @@ test.describe('the Inbox view follows Config → Inbox', () => {
     test('a click can only select the row', async ({ page }) => {
         await open(page, { inboxViewClick: 'select' });
         await item(page, 'Read one').locator('.inbox-item-title').click();
+        // Negative check: a click only selects, so no drawer may open; give a late open time to show.
         await page.waitForTimeout(300);
         await expect(drawer(page)).toHaveCount(0);
     });

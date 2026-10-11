@@ -21,7 +21,6 @@ async function palette(page, query) {
     await page.waitForSelector('.search-scope-rail', { timeout: 20_000 });
     for (const ch of query) {
         await page.keyboard.press(ch);
-        await page.waitForTimeout(30);
     }
     return errors;
 }

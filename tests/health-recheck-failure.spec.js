@@ -58,8 +58,10 @@ test('a ping that never answered is not saved as an outage', async ({ page }) =>
     test.skip(!checked, 'no checked bookmark on the first page');
     // The dashboard pings its checked rows on load: the real entry point.
     await expect.poll(() => pings, { timeout: 15_000 }).toBeGreaterThan(0);
+    // Negative check: no 'Unreachable' status may be posted; let the check/retry window elapse first.
     await page.waitForTimeout(4000);
     await page.evaluate(() => window.dashboardInstance.statusMonitor?.flushPendingStatuses?.());
+    // Negative check: let anything the flush sent reach the route before asserting nothing was posted.
     await page.waitForTimeout(500);
     expect(posted.filter((body) => body.includes('Unreachable'))).toEqual([]);
 });

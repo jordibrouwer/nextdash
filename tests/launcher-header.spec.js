@@ -141,10 +141,8 @@ test('a reader who wants the buttons back can have them', async ({ page }) => {
         });
         d.setupDOM?.();
     });
-    await page.waitForTimeout(300);
-
-    expect(await drawn(page, '#recent-bookmarks-button')).toBe(true);
-    expect(await drawn(page, '#help-button')).toBe(true);
+    await expect.poll(() => drawn(page, '#recent-bookmarks-button')).toBe(true);
+    await expect.poll(() => drawn(page, '#help-button')).toBe(true);
 
     // And the reload does not take them away again: the pass runs once.
     await page.reload();

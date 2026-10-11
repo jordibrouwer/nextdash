@@ -48,14 +48,25 @@ async function seedPages(page, count) {
         await dash.loadData();
         dash.pageNav?.renderPageNavigation?.();
     }, { n: count, round: seedRound });
-    await page.waitForTimeout(300);
 }
 
 /** Through the key a reader presses, not through showPageOverlay(). */
 async function openSheet(page) {
     await page.keyboard.press(',');
     await page.waitForSelector('.page-overview-sheet', { timeout: 10_000 });
-    await page.waitForTimeout(350);
+    // Until the sheet has stopped moving: two reads of its box agree.
+    let lastBox = null;
+    await expect.poll(async () => {
+        const now = await page.evaluate(() => {
+            const el = document.querySelector('.page-overview-sheet');
+            if (!el) return null;
+            const r = el.getBoundingClientRect();
+            return JSON.stringify([r.x, r.y, r.width, r.height]);
+        });
+        const settled = now !== null && now === lastBox;
+        lastBox = now;
+        return settled;
+    }, { intervals: [50, 100] }).toBe(true);
 }
 
 const sheet = (page) => page.evaluate(() => {
@@ -125,7 +136,6 @@ async function keepPages(page, keep) {
         await d.loadData();
         d.pageNav?.renderPageNavigation?.();
     }, keep);
-    await page.waitForTimeout(300);
 }
 
 test('with a handful of pages it is as wide as what it holds', async ({ page }) => {
@@ -149,7 +159,7 @@ test('a row keeps its height whichever shape the sheet is in', async ({ page }) 
     await openSheet(page);
     const narrow = await sheet(page);
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(300);
+    await expect(page.locator('.page-overview-sheet')).toHaveCount(0);
 
     await seedPages(page, 9);
     await openSheet(page);
@@ -194,19 +204,15 @@ test('the arrows walk the grid in both directions', async ({ page }) => {
     expect(start, 'nothing carries the keyboard').toBeGreaterThan(0);
 
     await page.keyboard.press('ArrowDown');
-    await page.waitForTimeout(150);
-    expect(await key(), 'down walked sideways').toBe(String(start + columns));
+    await expect.poll(key, { message: 'down walked sideways' }).toBe(String(start + columns));
 
     await page.keyboard.press('ArrowUp');
-    await page.waitForTimeout(150);
-    expect(await key(), 'up did not come back').toBe(String(start));
+    await expect.poll(key, { message: 'up did not come back' }).toBe(String(start));
 
     // And the row itself is walked with left and right.
     await page.keyboard.press('ArrowRight');
-    await page.waitForTimeout(150);
-    expect(await key(), 'right did not step along the row').toBe(String(start + 1));
+    await expect.poll(key, { message: 'right did not step along the row' }).toBe(String(start + 1));
 
     await page.keyboard.press('ArrowLeft');
-    await page.waitForTimeout(150);
-    expect(await key(), 'left did not step back').toBe(String(start));
+    await expect.poll(key, { message: 'left did not step back' }).toBe(String(start));
 });

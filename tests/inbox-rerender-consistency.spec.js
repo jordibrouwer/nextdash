@@ -90,8 +90,10 @@ test('the search box keeps its caret while the list repaints', async ({ page }) 
 
     const search = page.locator('[data-inbox-search]');
     await search.click();
+    const everything = await page.locator('.inbox-item').count();
     await search.type('C 1', { delay: 60 });
-    await page.waitForTimeout(300);
+    // The debounced repaint has landed once the list is narrowed.
+    await expect(page.locator('.inbox-item')).not.toHaveCount(everything);
 
     const caret = await page.evaluate(() => {
         const el = document.querySelector('[data-inbox-search]');
@@ -175,8 +177,10 @@ test('typing in the search box fires no analytics event', async ({ page }) => {
     await captureTracks(page);
     const search = page.locator('[data-inbox-search]');
     await search.click();
+    const everything = await page.locator('.inbox-item').count();
     await search.type('C 1', { delay: 60 });
-    await page.waitForTimeout(300);
+    // The debounced repaint has landed once the list is narrowed.
+    await expect(page.locator('.inbox-item')).not.toHaveCount(everything);
 
     const seen = await tracks(page);
     expect(seen.filter((t) => t.name.startsWith('inbox:'))).toEqual([]);

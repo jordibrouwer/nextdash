@@ -97,7 +97,11 @@ test.describe('triage can be finished', () => {
         // the queue empties one card at a time down to the last one.
         for (let i = 0; i < total; i += 1) {
             await page.keyboard.press('Shift+K');
-            await page.waitForTimeout(250);
+            if (i < total - 1) {
+                await expect.poll(() => page.evaluate(
+                    () => window.dashboardInstance.inbox.triage.queue.length
+                )).toBe(total - i - 1);
+            }
         }
 
         await expect(page.locator('.inbox-triage-done')).toBeVisible({ timeout: 10_000 });
