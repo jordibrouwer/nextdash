@@ -7,7 +7,7 @@ var precomputedAssetHashes = map[string]string{
 	"css/bookmark-form-modal.css":                            "9f0714c0656e",
 	"css/bookmark-form-preview.css":                          "55d219f09044",
 	"css/bookmarks-tutorial.css":                             "acd8d28a738d",
-	"css/category-header.css":                                "60d20345daca",
+	"css/category-header.css":                                "74a86eca02bb",
 	"css/changes-tour.css":                                   "57aec585b869",
 	"css/check-mode-control.css":                             "a18c38343fd4",
 	"css/colors.css":                                         "e5388d4c6f99",

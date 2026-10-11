@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent, waitForConfigReady } = require('./e2e-helpers');
 
 const blockSel = '#dashboard-layout .category[data-category-id]:not([data-smart-collection="true"])';
 
@@ -268,6 +268,36 @@ test.describe('moving blocks on the dashboard', () => {
             await page.mouse.up();
         } finally {
             await setLock(false);
+        }
+    });
+
+    test('the grip carries a block under a header style other than the theme\'s', async ({ page }) => {
+        await openDashboard(page);
+        await waitForConfigReady(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.waitForSelector('#config-appearance-body', { timeout: 20_000 });
+        await page.click('[data-appearance-tab="display"]');
+        const style = page.locator('[data-behavior-field="categoryHeaderStyle"]');
+        await style.selectOption('underlined');
+        await expect.poll(() => page.getAttribute('body', 'data-cat-head')).toBe('underlined');
+        try {
+            await openDashboard(page);
+            // The icon sits right after the grip: with the grip zero wide it covered it.
+            await expect(page.locator(`${blockSel} .category-title-icon`).first()).toBeVisible();
+            const from = await handleBox(page, 0);
+            expect(from.width).toBeGreaterThan(8);
+            const to = await page.locator(blockSel).nth(2).boundingBox();
+            await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+            await page.mouse.down();
+            await page.mouse.move(to.x + to.width * 0.75, to.y + 20, { steps: 8 });
+            await expect(page.locator('.block-landing')).toBeVisible();
+            await page.keyboard.press('Escape');
+            await page.mouse.up();
+        } finally {
+            await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+            await page.click('[data-appearance-tab="display"]');
+            await style.selectOption('theme');
+            await expect.poll(() => page.getAttribute('body', 'data-cat-head')).toBe('theme');
         }
     });
 });
