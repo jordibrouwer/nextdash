@@ -12951,7 +12951,7 @@ class DashboardConfig {
         feedsMarkQuiet: { info: ['feedsMarkQuietInfoTitle', 'feedsMarkQuietInfoMessage'], def: false },
         healthAutoRecheckIntervalHours: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 24 },
         // Weekly digest (digest.go)
-        digestEnabled: { def: true },
+        digestEnabled: { info: ['digestEnabledInfoTitle', 'digestEnabledInfoMessage'], def: true },
         digestWeekday: { def: 1 },
         digestTime: { def: '08:00' },
         digestHealth: { def: true },
@@ -27571,6 +27571,20 @@ class DashboardConfig {
         ],
         // The page a visitor gets: a service that works and one that is down,
         // the two states the panel's prose keeps returning to.
+        // Monitoring is a section of three tabs, which is the whole article.
+        'config.helpMonitoringConfigTitle': [
+            { kind: 'panelMap', value: 'tabs', captionKey: 'config.helpArtMonitoringTabs', caption: 'Three tabs' },
+        ],
+        'config.helpDigestTitle': [
+            {
+                kind: 'flow',
+                value: [
+                    { k: 'config.helpArtDigestWeek', d: 'A week' },
+                    { k: 'config.helpArtDigestOne', d: 'One message' },
+                    { k: 'config.helpArtYourDevices', d: 'Your devices' },
+                ],
+            },
+        ],
         'config.helpStatusPageTitle': [
             {
                 kind: 'states',
