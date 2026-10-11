@@ -993,7 +993,7 @@ This same form, titled **Promote bookmark**, is how an Unsorted bookmark from th
 
 ### 5.3 Paste a URL (`Ctrl + V`)
 
-With no field active, paste a URL on the dashboard. A dialog offers **Add bookmark** (`1` or `b`) or **Save to Inbox** (`2` or `i`). Set a fixed answer under **Config → Inbox → Collecting → Paste destination** — *Ask each time*, *Always add bookmark* or *Always save to Inbox*.
+With no field active, paste a URL on the dashboard. A dialog offers **Add bookmark** (`1` or `b`) or **Save to Inbox** (`2` or `i`). While you choose, a card shows what the link is — the site's icon and domain, its title, a line of description and its picture — from the same preview the hover card uses; it stays hidden when the site gives nothing to show. Set a fixed answer under **Config → Inbox → Collecting → Paste destination** — *Ask each time*, *Always add bookmark* or *Always save to Inbox*.
 
 <p align="center"><img src="screenshots/manual.md/05-paste-prompt.jpg" alt="The Save this link dialog after pasting an address: the address, the choices Add bookmark and Save to Inbox with their number keys, Remember my choice and Cancel" width="408"></p>
 <p align="center"><sub>Pasting an address on the dashboard asks where it goes: the full form, or the inbox.</sub></p>
