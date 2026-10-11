@@ -56,6 +56,8 @@ test.describe('an open modal locks the page', () => {
             el.style.cssText = 'position:fixed;inset:0;visibility:hidden';
             document.body.appendChild(el);
         });
+        // Must not happen: a hidden host taking the lock. There is nothing
+        // positive to wait for, so give the lock's observer time to react.
         await page.waitForTimeout(100);
         expect(await locked(page)).toBe(false);
         await page.evaluate(() => { document.getElementById('probe-modal').style.visibility = 'visible'; });
@@ -69,6 +71,8 @@ test.describe('an open modal locks the page', () => {
         await page.evaluate(() => { window.__t = window.ScrollLock.acquire('probe-owner'); });
         await page.evaluate(() => window.ProgressOverlay.show('Working', 'status'));
         await page.evaluate(() => window.ProgressOverlay.hide());
+        // Must not happen: hide() releasing the component's own lock. Give the
+        // overlay's release time to land before checking it did not.
         await page.waitForTimeout(150);
         // The component still holds its own lock.
         expect(await locked(page)).toBe(true);

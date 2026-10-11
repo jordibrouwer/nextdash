@@ -32,7 +32,7 @@ async function openDashboard(page) {
         d.setupDOM?.();
         await d.saveSettings?.();
     });
-    await page.waitForTimeout(250);
+    await expect(page.locator('body')).toHaveAttribute('data-show-recent-button', 'true');
 }
 
 /**
@@ -74,14 +74,25 @@ async function seedRecent(page, count) {
         await dash.loadData();
         dash.renderDashboard?.({ animate: false });
     }, count);
-    await page.waitForTimeout(400);
 }
 
 async function openRecents(page) {
     // Through the key a reader presses.
     await page.keyboard.press('Shift+Digit8');
     await page.waitForSelector('.recents-sheet .recent-bookmarks-modal-item', { timeout: 20_000 });
-    await page.waitForTimeout(300);
+    // The sheet slides in; its box is read next, so wait until it is still.
+    let last = '';
+    let same = 0;
+    await expect.poll(async () => {
+        const cur = await page.evaluate(() => {
+            const el = document.querySelector('.recents-sheet');
+            const r = el.getBoundingClientRect();
+            return { box: [r.x, r.y, r.width, r.height].join(',') };
+        });
+        same = cur.box === last ? same + 1 : 0;
+        last = cur.box;
+        return same >= 4;
+    }).toBe(true);
 }
 
 const sheet = (page) => page.evaluate(() => {
@@ -229,23 +240,18 @@ test('the arrows walk the sheet in both directions', async ({ page }) => {
 
     // Into the list, then down a line.
     await page.keyboard.press('ArrowDown');
-    await page.waitForTimeout(150);
-    expect(await name(), 'the arrows do not reach the list').toBe(order[0]);
+    await expect.poll(name, { message: 'the arrows do not reach the list' }).toBe(order[0]);
 
     await page.keyboard.press('ArrowDown');
-    await page.waitForTimeout(150);
-    expect(await name(), 'down walked sideways').toBe(order[columns]);
+    await expect.poll(name, { message: 'down walked sideways' }).toBe(order[columns]);
 
     await page.keyboard.press('ArrowUp');
-    await page.waitForTimeout(150);
-    expect(await name(), 'up did not come back').toBe(order[0]);
+    await expect.poll(name, { message: 'up did not come back' }).toBe(order[0]);
 
     // And the line itself is walked with left and right.
     await page.keyboard.press('ArrowRight');
-    await page.waitForTimeout(150);
-    expect(await name(), 'right did not step along the line').toBe(order[1]);
+    await expect.poll(name, { message: 'right did not step along the line' }).toBe(order[1]);
 
     await page.keyboard.press('ArrowLeft');
-    await page.waitForTimeout(150);
-    expect(await name(), 'left did not step back').toBe(order[0]);
+    await expect.poll(name, { message: 'left did not step back' }).toBe(order[0]);
 });

@@ -162,7 +162,8 @@ test.describe('the header and surfaces settings', () => {
             sc.currentQuery = q;
             sc.updateSearch();
         }, query);
-        await page.waitForTimeout(250);
+        await expect.poll(() => page.evaluate(
+            () => (window.dashboardInstance.searchComponent.searchMatches || []).length)).toBeGreaterThan(0);
     }
 
     const rows = (page) => page.evaluate(

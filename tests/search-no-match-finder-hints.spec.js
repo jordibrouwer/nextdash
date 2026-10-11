@@ -32,9 +32,13 @@ async function searchWithNoMatch(page) {
         s.findersComponent?.shortcuts?.set?.('g', s.finders[0]);
     });
     await page.keyboard.press('>');
-    await page.waitForTimeout(300);
+    await expect.poll(() => page.evaluate(
+        () => window.dashboardInstance.searchComponent.searchActive)).toBe(true);
     await page.keyboard.type('zzzznomatchzzzz');
-    await page.waitForTimeout(600);
+    // The no-match panel is what the callers read the hint rows from.
+    await expect.poll(() => page.evaluate(
+        () => window.dashboardInstance.searchComponent.selectableMatches.map((m) => m.type)
+    )).toContain('hint-new');
 }
 
 test.describe('finder hints under a no-match search', () => {
@@ -69,12 +73,10 @@ test.describe('finder hints under a no-match search', () => {
         await searchWithNoMatch(page);
 
         await page.keyboard.press('ArrowDown');
-        await page.waitForTimeout(200);
-        const selected = await page.evaluate(() => {
+        await expect.poll(() => page.evaluate(() => {
             const s = window.dashboardInstance.searchComponent;
             return s.selectableMatches[s.selectedMatchIndex]?.type;
-        });
-        expect(selected).toBe('hint-finder');
+        })).toBe('hint-finder');
 
         const highlighted = await page.locator('.search-match.keyboard-selected').count();
         expect(highlighted).toBe(1);

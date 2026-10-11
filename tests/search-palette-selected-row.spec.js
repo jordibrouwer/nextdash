@@ -26,7 +26,11 @@ test(':pin pins the row that was selected when : was pressed', async ({ page }) 
 
     await page.keyboard.press(':');
     await page.keyboard.type('pin', { delay: 40 });
-    await page.waitForTimeout(150);
+    await expect.poll(() => page.evaluate(() => {
+        const s = window.dashboardInstance.searchComponent;
+        const row = s.selectableMatches?.[s.selectedMatchIndex];
+        return `${s.currentQuery}|${row?.name || row?.label || ''}`;
+    })).toMatch(/^:pin\|.*pin/i);
     await page.keyboard.press('Enter');
 
     await expect.poll(() => page.evaluate(async (url) => {
@@ -105,11 +109,23 @@ test(':save saves on Enter, not while typing', async ({ page }) => {
     });
     const names = () => page.evaluate(() => window.dashboardInstance.searchComponent.savedSearches.map((e) => e.name));
     // A search, cleared, then the command: what a reader does.
+    const typed = () => page.evaluate(() => window.dashboardInstance.searchComponent.currentQuery);
     await page.keyboard.type('github', { delay: 40 });
-    await page.waitForTimeout(150);
+    await expect.poll(typed).not.toBe('');
+    // The search has to be committed as the last real one, or there is nothing for :save to save.
+    await expect.poll(() => page.evaluate(
+        () => String(window.dashboardInstance.searchComponent.lastNonCommandQuery || ''))).not.toBe('');
     for (let i = 0; i < 6; i += 1) await page.keyboard.press('Backspace');
-    await page.waitForTimeout(150);
+    await expect.poll(typed).toBe('');
     await page.keyboard.type(':save my', { delay: 60 });
+    await expect.poll(typed).toBe(':save my');
+    await expect.poll(() => page.evaluate(() => {
+        const s = window.dashboardInstance.searchComponent;
+        const row = s.selectableMatches?.[s.selectedMatchIndex];
+        return `${row?.name || row?.label || ''}`;
+    })).toMatch(/^(?!.*no active search).*save/i);
+    // Must not happen: typing saving the search. The query is in place, so give
+    // a save triggered by the last keystroke time to land before checking none did.
     await page.waitForTimeout(300);
     expect(await names()).toEqual([]);
     await page.keyboard.press('Enter');

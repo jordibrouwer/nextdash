@@ -135,7 +135,7 @@ test('Reset puts a theme back to the surfaces it ships with', async ({ page }) =
     await openAppearance(page);
     await page.locator('[data-appearance-tab="surface"]').click();
     await page.evaluate(() => window.dashboardInstance.config.applyThemeChoice('tarnished-brass-dark'));
-    await page.waitForTimeout(500);
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.theme)).toBe('tarnished-brass-dark');
 
     await page.selectOption('[data-appearance-select="themeDepth"]', 'flat');
     await expect.poll(async () => (await drawn(page)).depth).toBe('flat');
@@ -153,7 +153,6 @@ test('Effects off takes the character out of the drawing', async ({ page }) => {
     await openAppearance(page);
     await page.locator('[data-appearance-tab="surface"]').click();
     await page.evaluate(() => window.dashboardInstance.config.applyThemeChoice('gloss-liquid-chrome-dark'));
-    await page.waitForTimeout(500);
 
     const factor = () => page.evaluate(
         () => getComputedStyle(document.body).getPropertyValue('--theme-effects').trim());

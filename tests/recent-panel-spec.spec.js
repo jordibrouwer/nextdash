@@ -66,7 +66,7 @@ async function openRecent(page) {
         d.setupDOM?.();
         await d.saveSettings?.();
     });
-    await page.waitForTimeout(200);
+    await expect(page.locator('body')).toHaveAttribute('data-show-recent-button', 'true');
 
     // Through the key someone presses, not through the renderer.
     await page.keyboard.press('Shift+Digit8');
@@ -116,7 +116,12 @@ test.describe('the recent bookmarks panel', () => {
         // The slab is a depth cue, and the default depth is flat, which draws
         // none -- so this is asked of a step that draws depth at all.
         await page.evaluate(() => document.body.setAttribute('data-depth', 'rich'));
-        await page.waitForTimeout(150);
+        await expect.poll(() => page.evaluate(() => {
+            const bg = (el) => window.getComputedStyle(el).backgroundColor;
+            const c = bg(document.querySelector('.recent-bookmarks-modal-list'));
+            return c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent'
+                && c !== bg(document.querySelector('.recent-bookmarks-modal'));
+        })).toBe(true);
 
         const same = await page.evaluate(() => {
             const bg = (el) => window.getComputedStyle(el).backgroundColor;

@@ -67,11 +67,17 @@ async function open(page, view) {
             });
             if (!home) return false;
             quiet += 1;
+            // About time: the reads must be spread out, so that a late restore
+            // of the scroll position shows up between two of them.
             await page.waitForTimeout(120);
         }
         return true;
     }, { timeout: 15_000, message: 'the page would not settle at the top' }).toBe(true);
 }
+
+/** The band's colour and border ease in; wait for that to finish before reading them. */
+const bandSettled = (page) => expect.poll(() => page.evaluate(
+    () => document.querySelector('.lvs-header')?.getAnimations().length ?? 0)).toBe(0);
 
 const band = (page) => page.evaluate(() => {
     const el = document.querySelector('.lvs-header');
@@ -103,7 +109,8 @@ async function scrollDown(page) {
         }
         window.scrollTo(0, 600);
     });
-    await page.waitForTimeout(250);
+    await expect(page.locator('body')).toHaveAttribute('data-scrolled', 'true');
+    await bandSettled(page);
 }
 
 for (const view of ['inbox', 'health', 'config']) {
@@ -124,7 +131,8 @@ for (const view of ['inbox', 'health', 'config']) {
 
         // And back up: the same band it was.
         await page.evaluate(() => window.scrollTo(0, 0));
-        await page.waitForTimeout(250);
+        await expect(page.locator('body')).toHaveAttribute('data-scrolled', 'false');
+        await bandSettled(page);
         const back = await band(page);
         expect(back.scrolled).toBe('false');
         expect(back.background, 'the band stayed solid at the top').toBe(top.background);
@@ -138,7 +146,8 @@ test('a reload starts at the top, whatever it was before', async ({ page }) => {
 
     await page.reload();
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
-    await page.waitForTimeout(300);
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
+    await expect(page.locator('.bookmark-link').first()).toBeVisible();
 
     expect(await page.evaluate(() => document.body.getAttribute('data-scrolled')),
         'the page came back thinking it was still scrolled').toBe('false');

@@ -89,6 +89,8 @@ test.describe('Shift+L shares the focused row', () => {
         });
 
         await page.keyboard.press('Shift+L');
+        // Must not happen: the share firing with nothing selected. Nothing
+        // visible changes, so give the key handler time to act before checking.
         await page.waitForTimeout(400);
         expect(await page.evaluate(() => window.__shared)).toBe(false);
         expect(await view(page)).toBe('bookmarks');
@@ -114,6 +116,8 @@ test.describe('the rest of the family', () => {
         await clearSelection(page);
 
         await page.keyboard.press('Shift+M');
+        // Must not happen: the move popover opening. Give it time to appear
+        // before asserting it did not.
         await page.waitForTimeout(400);
         await expect(page.locator('#move-popover')).toHaveCount(0);
         // And it did not take a view with it either.

@@ -160,6 +160,8 @@ test('a preview with no picture at all is not re-asked forever', async ({ page }
     await expect(page.locator('.bookmark-preview-card')).toHaveClass(/is-visible/);
 
     const afterFirst = previewCalls;
+    // Must not happen: no further preview call for a site with no picture, so the
+    // window has to elapse before the count is compared.
     await page.waitForTimeout(3000);
     expect(previewCalls, 'a site with no picture was polled anyway').toBe(afterFirst);
 });
@@ -220,10 +222,12 @@ test('a picture that never arrives does not flood the endpoint', async ({ page }
     // is reused for.
     for (let i = 0; i < 8; i++) {
         await link.hover();
-        await page.waitForTimeout(250);
+        await expect(page.locator('.bookmark-preview-card')).toHaveClass(/is-visible/);
         await page.mouse.move(0, 0);
-        await page.waitForTimeout(100);
+        await expect(page.locator('.bookmark-preview-card')).not.toHaveClass(/is-visible/);
     }
+    // Must not happen: no further calls after the passes, so give a late retry
+    // time to show up before counting.
     await page.waitForTimeout(2000);
 
     // One for the first hover, at most one refill. Anything per-hover is the

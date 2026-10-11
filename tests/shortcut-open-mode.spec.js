@@ -42,7 +42,7 @@ async function seedShortcut(page, name, shortcut) {
     await dismissBlockingOverlays(page);
     await page.waitForFunction((mark) => (window.dashboardInstance?.allBookmarks || [])
         .some((b) => b.shortcut === mark), shortcut, { timeout: 20_000 });
-    await page.waitForTimeout(400);
+    await expect(page.locator('.bookmark-link', { hasText: name }).first()).toBeVisible();
 }
 
 /** Record what the search asks to open, rather than following it. */
@@ -72,6 +72,9 @@ test.describe('typing a bookmark shortcut', () => {
         await watchOpens(page, 'enter');
 
         await page.keyboard.type('le', { delay: 60 });
+        await expect.poll(() => query(page)).toMatch(/^le$/i);
+        // Must not happen: typing opening anything in "enter" mode. Wait out
+        // longer than the pause the "delay" mode would use.
         await page.waitForTimeout(900);
         expect(await opened(page)).toEqual([]);
         await page.keyboard.press('Enter');
@@ -88,7 +91,8 @@ test.describe('typing a bookmark shortcut', () => {
         await expect.poll(() => opened(page), { timeout: 5_000 })
             .toEqual([expect.stringContaining('meteor.example.com')]);
         // And the search stays closed: an update scheduled after the open
-        // reopened the overlay on its empty state 50 ms later.
+        // reopened the overlay on its empty state 50 ms later. Must not happen,
+        // so the late update has to be given time to show up.
         await page.waitForTimeout(300);
         expect(await page.evaluate(() => window.dashboardInstance.searchComponent.searchActive)).toBe(false);
     });
@@ -109,7 +113,8 @@ test.describe('typing a bookmark shortcut', () => {
 
         // And the same shortcut on its own does open, once the typing stops.
         await page.keyboard.press('Escape');
-        await page.waitForTimeout(300);
+        await expect.poll(() => page.evaluate(
+            () => window.dashboardInstance.searchComponent.searchActive)).toBe(false);
         await page.keyboard.type('in', { delay: 60 });
         await expect.poll(() => opened(page), { timeout: 5_000 })
             .toEqual([expect.stringContaining('invoice-app.example.com')]);
