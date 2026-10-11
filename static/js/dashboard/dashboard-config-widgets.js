@@ -3863,7 +3863,7 @@
         // The tile is holding an answer it fetched under the old settings.
         this.dash.renderCore?.forgetWidgetCaches?.();
         this.repaintWidgetsBody();
-        await this.refreshDashboardBlocks();
+        await this.refreshDashboardBlocks({ keepConfig: true });
         this.notify(this.t('config.widgetSavedNotice', 'Widget saved.'), 'success');
     },
 
@@ -3949,8 +3949,16 @@
      * Without this the grid keeps the blocks it loaded with, so a widget added
      * in config appears only after a reload -- and the reader has no way to know
      * that is why.
+     *
+     * `keepConfig` is for a caller that has already repainted the panel. With
+     * config on screen the dashboard's render is config's own, so redrawing
+     * would replace the rows a second time once this fetch lands -- after the
+     * Save button had already gone grey, which is a reader's cue to carry on
+     * typing. A label typed in that gap, not yet committed by a blur, was
+     * wiped. The grid is drawn afresh when config closes, from what is set
+     * here, so skipping the redraw costs it nothing.
      */
-    async refreshDashboardBlocks() {
+    async refreshDashboardBlocks({ keepConfig = false } = {}) {
         const d = this.dash;
         const pageId = Number(d.currentPageId);
         /*
@@ -3968,6 +3976,7 @@
             d.widgets = blocks.widgets || [];
             d.blockOrder = blocks.order || [];
             d.data?.updatePageDataCache?.(pageId, { blocks: { widgets: d.widgets, order: d.blockOrder } });
+            if (keepConfig && this.isActiveView?.()) return;
             d.renderDashboard?.({ animate: false, forceFull: true });
         } catch {
             // The dashboard keeps what it had; the next load corrects it.
