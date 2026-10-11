@@ -52,6 +52,11 @@ jobs:
         run: npm run validate:overview-features
       - name: Validate tag patterns
         run: npm run validate:tag-patterns
+      # Every page.waitForTimeout in tests/ says why it waits on the clock and
+      # not on a condition. The suite once spent minutes per shard on sleeps a
+      # retrying expect would have made unnecessary.
+      - name: Validate fixed waits in tests
+        run: npm run validate:test-waits
       - name: Run the model unit tests
         run: npm run test:workbench-model && npm run test:config-split
 

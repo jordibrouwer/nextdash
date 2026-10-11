@@ -40,6 +40,7 @@ test('every config section draws without a console error', async ({ page }) => {
     const pollIntervalMs = 300;
     const startTime = Date.now();
     while (Date.now() - startTime < maxWaitMs) {
+        // A quiet period: the check is that no error arrives late.
         await page.waitForTimeout(pollIntervalMs);
         if (errors.length === lastLength) {
             stableCount++;

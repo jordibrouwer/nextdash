@@ -40,12 +40,11 @@ async function openWidgets(page, { keep = false } = {}) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    /*
-     * Quickstart sweeps favicons in the background on a fresh store and
-     * reopens Overview when it finishes, which takes whatever panel is on
-     * screen with it. Waited out rather than raced.
-     */
     await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 15_000 });
+    // Something on a fresh store still repaints the widget panel a few seconds
+    // after load, with no signal to wait on; without this the "turns Save back
+    // on" tests fail under load. (Quickstart no longer reopens Overview, which
+    // is what this used to say.) Waited out rather than raced.
     await page.waitForTimeout(6000);
     if (!keep) await clearWidgets(page);
     await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('widgets'); });
