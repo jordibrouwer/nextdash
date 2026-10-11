@@ -181,6 +181,8 @@ test('typing in the search box fires no analytics event', async ({ page }) => {
     await search.type('C 1', { delay: 60 });
     // The debounced repaint has landed once the list is narrowed.
     await expect(page.locator('.inbox-item')).not.toHaveCount(everything);
+    // Negative check: an event sent after the repaint must still be caught.
+    await page.waitForTimeout(300);
 
     const seen = await tracks(page);
     expect(seen.filter((t) => t.name.startsWith('inbox:'))).toEqual([]);
