@@ -27,7 +27,19 @@ async function openDashboard(page) {
 async function openWithKey(page, key, selector) {
     await page.keyboard.press(key);
     await page.waitForSelector(selector, { timeout: 10_000 });
-    await page.waitForTimeout(350);
+    // The sheet has stopped moving: no animation on it and the same box for several frames.
+    await page.evaluate((sel) => new Promise((resolve) => {
+        let last = null;
+        let same = 0;
+        const tick = () => {
+            const el = document.querySelector(sel);
+            const r = el?.getBoundingClientRect();
+            const key = r ? `${r.left}:${r.top}:${r.width}:${r.height}:${el.getAnimations().length}` : 'gone';
+            if (key === last) same += 1; else { same = 0; last = key; }
+            if (same >= 8) resolve(); else requestAnimationFrame(tick);
+        };
+        tick();
+    }), selector);
 }
 
 const measure = (page, selector) => page.evaluate((sel) => {
@@ -59,7 +71,7 @@ async function expectInPlace(page, sheet) {
         .toBeLessThanOrEqual(1);
     expect(seen.animation, `the ${sheet.name} still animates`).toBe('none');
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(300);
+    await expect(page.locator(sheet.selector)).toBeHidden();
 }
 
 test.describe('with the OS asking for less motion', () => {

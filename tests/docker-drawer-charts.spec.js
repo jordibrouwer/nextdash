@@ -194,6 +194,7 @@ test('the figures are not polled while the tab is hidden', async ({ page }) => {
         Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
     });
     const before = calls;
+    // No call should be made, so wait longer than a beat (a few seconds) to see none.
     await page.waitForTimeout(4500);
     expect(calls - before).toBe(0);
 });

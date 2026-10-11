@@ -75,6 +75,8 @@ test('Keep these links leaves main alone and the card does not come back', async
 
 test('an install that finished its first run never sees the card', async ({ page, request }) => {
     await freshInstall(page, request, { onboardingCompleted: true });
+    await expect(page.locator('#dashboard-layout .bookmark-link').first()).toBeVisible();
+    // The card must never appear, so give a late render time to show it.
     await page.waitForTimeout(1500);
     await expect(card(page)).toHaveCount(0);
 });

@@ -495,9 +495,12 @@ test.describe('the notes widget', () => {
                 await new Promise((r) => setTimeout(r, 400));
                 await route.continue();
             });
+            const answered = page.waitForResponse('**/api/widgets/notes/command');
             await modal.getByRole('button', { name: 'Bold' }).click();
             await modal.locator('textarea').pressSequentially('zz');
-            await page.waitForTimeout(700);
+            await answered;
+            // The late answer must not overwrite the typing, so give the page time to have applied it.
+            await page.waitForTimeout(300);
             expect(await modal.locator('textarea').inputValue()).toContain('zz');
             await removeNotes(page, pageId);
         });

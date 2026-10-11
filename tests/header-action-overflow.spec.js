@@ -46,7 +46,11 @@ async function openWithActions(page, { cap = 4 } = {}) {
         d.setupDOM?.();
         await d.saveSettings?.();
     }, cap);
-    await page.waitForTimeout(400);
+    // The fold has been applied: either everything fits or the bar holds the cap.
+    await expect.poll(async () => {
+        const b = await bar(page);
+        return b.shown > 0 && (b.folded.length === 0 || b.shown === cap);
+    }).toBe(true);
 }
 
 const bar = (page) => page.evaluate(() => {
@@ -87,7 +91,7 @@ test('past the cap the rest fold behind a control that counts them', async ({ pa
         d.setupDOM?.();
         await d.saveSettings?.();
     });
-    await page.waitForTimeout(300);
+    await expect.poll(async () => (await bar(page)).folded.length, { message: 'the actions stayed folded with room for them' }).toBe(0);
 
     const wide = await bar(page);
     expect(wide.folded.length, 'the actions stayed folded with room for them').toBe(0);
@@ -108,7 +112,7 @@ test('two is a cap the reader may choose', async ({ page }) => {
         d.setupDOM?.();
         await d.saveSettings?.();
     });
-    await page.waitForTimeout(300);
+    await expect.poll(async () => (await bar(page)).shown, { message: 'the bar went below its floor' }).toBe(0);
     expect((await bar(page)).shown, 'the bar went below its floor').toBe(0);
 });
 
@@ -133,7 +137,7 @@ test('zero from Config puts every action behind the control', async ({ page }) =
 
     // One Escape leaves config; there is no start screen in front of the tab.
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(300);
+    await expect(page.locator('.config-view')).toHaveCount(0);
     const seen = await bar(page);
     expect(seen.shown, `${seen.shown} actions on the bar`).toBe(0);
     expect(seen.chip, 'the control does not hold every action').toBe(`+${seen.folded.length}`);
@@ -183,13 +187,14 @@ test('a folded action stays folded in a view', async ({ page }) => {
         d.setupDOM?.();
         await d.saveSettings?.();
     });
-    await page.waitForTimeout(300);
+    await expect.poll(async () => (await bar(page)).folded, { message: 'the tag cloud button was not folded' })
+        .toContain('tag-cloud-toggle-btn');
 
     expect((await bar(page)).shown, 'the cap does not hold on the dashboard').toBe(2);
 
     await page.evaluate(() => window.dashboardInstance.config.openConfigView());
     await page.waitForSelector('.config-view', { timeout: 20_000 });
-    await page.waitForTimeout(600);
+    await expect.poll(async () => (await bar(page)).folded).toContain('tag-cloud-toggle-btn');
 
     const inView = await bar(page);
     expect(inView.shown, `${inView.shown} actions on the bar in config`).toBe(2);
@@ -241,7 +246,7 @@ test('a switched-off action is in neither place, and its key still works', async
         d.setupDOM?.();
         await d.saveSettings?.();
     });
-    await page.waitForTimeout(300);
+    await expect(page.locator('#help-button')).toBeHidden();
 
     const gone = await page.evaluate(() => ({
         onBar: window.getComputedStyle(document.getElementById('help-button')).display,
@@ -257,7 +262,7 @@ test('a switched-off action is in neither place, and its key still works', async
     expect(names.join(' '), 'the switched-off action is in the menu').not.toContain('cheat');
 
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(200);
+    await expect(page.locator('.header-action-menu')).toHaveCount(0);
 
     // The keys never cared where the button was, or whether there is one.
     await page.keyboard.press('!');
@@ -281,7 +286,7 @@ test('the arrows walk the menu and escape hands the focus back', async ({ page }
     expect(second, 'the arrows do not walk the menu').not.toBe(first);
 
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(200);
+    await expect(page.locator('.header-action-menu')).toHaveCount(0);
     const after = await page.evaluate(() => ({
         open: !!document.querySelector('.header-action-menu'),
         focused: document.activeElement?.className || '',

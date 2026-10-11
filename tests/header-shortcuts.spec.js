@@ -43,6 +43,12 @@ async function openDashboard(page) {
  * measures is the boxes, the plates and the hairline between the groups, so it
  * asks for the drawing it is about rather than testing whichever is default.
  */
+/** Nothing under this element is mid-transition, so a colour read is its final one. */
+async function transitionsDone(page, sel) {
+    await expect.poll(() => page.locator(sel).first().evaluate(
+        (el) => el.getAnimations({ subtree: true }).length)).toBe(0);
+}
+
 async function usePlatedHeader(page) {
     await page.evaluate(async () => {
         const d = window.dashboardInstance;
@@ -55,7 +61,8 @@ async function usePlatedHeader(page) {
         });
         d.setupDOM?.();
     });
-    await page.waitForTimeout(250);
+    await expect(page.locator('body')).toHaveAttribute('data-header-buttons', 'plated');
+    await transitionsDone(page, '.header-shortcuts');
 }
 
 test('every action button is in the header', async ({ page }) => {
@@ -157,7 +164,8 @@ test('the buttons the reader turned off are not drawn', async ({ page }) => {
         d.setupDOM?.();
         await d.saveSettings?.();
     });
-    await page.waitForTimeout(300);
+    await expect(page.locator('#quick-add-toolbar-btn')).toBeHidden();
+    await expect(page.locator('#help-button')).toBeHidden();
 
     const hidden = await page.evaluate(() => ['quick-add-toolbar-btn', 'help-button']
         .map((id) => window.getComputedStyle(document.getElementById(id)).display));
@@ -182,7 +190,12 @@ async function showEveryAction(page) {
         window.DashboardTagCloud?.syncFromSettings?.();
         d.toolbar?.syncTagCloudButtonPlacement?.();
     });
-    await page.waitForTimeout(400);
+    // All nine are drawn on the bar, none folded away.
+    await expect.poll(() => page.evaluate(() =>
+        [...document.querySelectorAll('.header-shortcuts button.search-button')]
+            .filter((b) => !b.classList.contains('header-action-overflow'))
+            .filter((b) => window.getComputedStyle(b).display !== 'none').length)).toBe(9);
+    await transitionsDone(page, '.header-shortcuts');
 }
 
 /*
@@ -350,7 +363,7 @@ test('the surround goes when the last action does', async ({ page }) => {
         await d.saveSettings?.();
         window.DashboardTagCloud?.syncFromSettings?.();
     });
-    await page.waitForTimeout(300);
+    await expect(page.locator('.header-shortcuts')).toBeHidden();
 
     const drawn = await page.evaluate(() =>
         window.getComputedStyle(document.querySelector('.header-shortcuts')).display);
@@ -433,7 +446,7 @@ test('the groups in the band are all the same plate', async ({ page }) => {
     await page.evaluate(async () => {
         await window.dashboardInstance.config.setBehavior('pageSwitcherStyle', 'segmented', 'chrome');
     });
-    await page.waitForTimeout(300);
+    await expect(page.locator('body')).toHaveAttribute('data-page-switcher', 'segmented');
     // A second page, so there is a tab that is not the one you are on: the
     // active tab carries the bloom on top of the plate and would not compare.
     await page.evaluate(async () => {
@@ -448,7 +461,8 @@ test('the groups in the band are all the same plate', async ({ page }) => {
         await d.loadData();
         d.pageNav?.renderPageNavigation?.();
     });
-    await page.waitForTimeout(400);
+    await expect(page.locator('#page-navigation .page-nav-btn:not(.active)').first()).toBeAttached();
+    await transitionsDone(page, '#page-navigation');
 
     const seen = await page.evaluate(() => {
         const shadow = (sel) => {
@@ -502,7 +516,8 @@ test('the destination you are in is the lit one', async ({ page }) => {
 
     await page.locator('.library-link-anchor').click();
     await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('library');
-    await page.waitForTimeout(400);
+    await expect(page.locator('.library-link-anchor')).toHaveClass(/(^|\s)active(\s|$)/);
+    await transitionsDone(page, '.library-link-anchor');
 
     const lit = await read('.library-link-anchor');
     expect(lit.active, 'Bookmarks is not marked active in its own view').toBe(true);

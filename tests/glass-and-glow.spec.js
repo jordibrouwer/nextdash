@@ -36,7 +36,7 @@ async function setDepth(page, depth) {
         d.settings.themeDepth = value;
         window.ThemeLoader?.applyThemeDepth?.(value);
     }, depth);
-    await page.waitForTimeout(200);
+    await expect(page.locator('body')).toHaveAttribute('data-depth', depth);
 }
 
 test('the glow follows the theme out of the box, and both layers read the dial', async ({ page }) => {
@@ -51,7 +51,7 @@ test('the glow follows the theme out of the box, and both layers read the dial',
     expect(await token(page, '--glow-strength')).toBe('0');
 
     await page.evaluate(() => window.ThemeLoader.applyGlowStrength('off'));
-    await page.waitForTimeout(150);
+    await expect(page.locator('body')).toHaveAttribute('data-glow', 'off');
     expect(await token(page, '--glow-strength')).toBe('0');
     const off = {
         bloom: await token(page, '--bloom'),
@@ -60,7 +60,7 @@ test('the glow follows the theme out of the box, and both layers read the dial',
 
     // Both glows carry the multiplier rather than each having its own number.
     await page.evaluate(() => window.ThemeLoader.applyGlowStrength('soft'));
-    await page.waitForTimeout(150);
+    await expect(page.locator('body')).toHaveAttribute('data-glow', 'soft');
     expect(await token(page, '--glow-strength')).toBe('0.6');
     const soft = {
         bloom: await token(page, '--bloom'),
@@ -70,7 +70,7 @@ test('the glow follows the theme out of the box, and both layers read the dial',
     expect(soft.ring, 'the ambient ring ignored the dial').not.toBe(off.ring);
 
     await page.evaluate(() => window.ThemeLoader.applyGlowStrength('full'));
-    await page.waitForTimeout(150);
+    await expect(page.locator('body')).toHaveAttribute('data-glow', 'full');
     expect(await token(page, '--glow-strength')).toBe('1');
 });
 
@@ -264,11 +264,11 @@ test('the backdrop survives flat, and the setting still switches it', async ({ p
 
     // And the choice still means something there.
     await page.evaluate(() => window.ThemeLoader.applyThemeBackdrop('off'));
-    await page.waitForTimeout(150);
+    await expect(page.locator('body')).toHaveAttribute('data-theme-backdrop', 'off');
     expect(await painted(), 'switching the backdrop off at flat changed nothing')
         .not.toBe(flat);
 
     await page.evaluate(() => window.ThemeLoader.applyThemeBackdrop('on'));
-    await page.waitForTimeout(150);
+    await expect(page.locator('body')).toHaveAttribute('data-theme-backdrop', 'on');
     expect(await painted()).toBe(flat);
 });

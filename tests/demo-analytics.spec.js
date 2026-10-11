@@ -191,6 +191,7 @@ test.describe('demo analytics', () => {
 
         // A second pagehide of the same visit does not count it twice.
         await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+        // A second send would be asynchronous, so give it time to have arrived before counting.
         await page.waitForTimeout(300);
         expect((await named(page, 'demo:session-depth')).length).toBe(1);
     });
@@ -236,14 +237,15 @@ test.describe('demo analytics', () => {
     test('in the demo, typed text stays out of the address', async ({ page, demoServer }) => {
         await openDemo(page, demoServer);
         await typeInInbox(page);
-        // Give the view time to write its address, then look.
         await expect(page.locator('.inbox-search-input')).toHaveValue('tophemlig');
+        // The address must stay clean, so give the view time to write it if it were going to.
         await page.waitForTimeout(800);
         expect(await page.evaluate(() => location.href)).not.toContain('tophemlig');
         expect(await page.evaluate(() => location.href)).not.toContain('ib_q');
 
         await typeInBookmarks(page);
         await expect(page.locator('#config-bm-search')).toHaveValue('tophemlig');
+        // Same here: the address must stay clean, so give the view time to write it.
         await page.waitForTimeout(800);
         expect(await page.evaluate(() => location.href)).not.toContain('tophemlig');
     });

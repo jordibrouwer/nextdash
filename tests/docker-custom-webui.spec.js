@@ -142,10 +142,7 @@ test.describe('a custom web UI address', () => {
         });
         await page.keyboard.press('>');
         await page.waitForSelector('.search-scope-rail', { timeout: 20_000 });
-        for (const ch of ':docker sonarr op') {
-            await page.keyboard.press(ch);
-            await page.waitForTimeout(40);
-        }
+        await page.keyboard.type(':docker sonarr op');
         await page.locator('.search-match', { hasText: /open sonarr/i }).click();
         await expect.poll(() => page.evaluate(() => window.__opened)).toEqual(['https://sonarr.home.lan']);
     });

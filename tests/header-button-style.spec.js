@@ -45,7 +45,14 @@ async function openDashboard(page) {
             d.pageNav?.renderPageNavigation?.();
         }
     });
-    await page.waitForTimeout(300);
+    // The second page has a tab of its own that is not the one you are on.
+    await expect(page.locator('.header-track .page-nav-btn:not(.active)').first()).toBeAttached();
+}
+
+/** Nothing under this element is mid-transition, so a colour read is its final one. */
+async function transitionsDone(page, sel) {
+    await expect.poll(() => page.locator(sel).first().evaluate(
+        (el) => el.getAnimations({ subtree: true }).length)).toBe(0);
 }
 
 /*
@@ -137,7 +144,7 @@ test('plated puts every control back in a box', async ({ page }) => {
     await page.evaluate(async () => {
         await window.dashboardInstance.config.setBehavior('pageSwitcherStyle', 'segmented', 'chrome');
     });
-    await page.waitForTimeout(300);
+    await expect(page.locator('body')).toHaveAttribute('data-page-switcher', 'segmented');
     await chooseStyle(page, 'plated');
     const seen = await drawn(page);
 
@@ -155,7 +162,6 @@ test('the choice is a setting, and it survives a reload', async ({ page }) => {
     await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.waitForSelector('.config-view', { timeout: 20_000 });
     await page.locator('[data-appearance-tab="header"]').click();
-    await page.waitForTimeout(200);
 
     const select = page.locator('[data-behavior-field="headerButtonStyle"]');
     await expect(select).toBeVisible();
@@ -224,7 +230,9 @@ test('plated leaves the actions and tabs in the header bare, hover included; a d
     const hover = async (sel) => {
         const box = await page.locator(sel).first().boundingBox();
         await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-        await page.waitForTimeout(300);
+        // The hover has applied and its transition has run out before the colours are read.
+        await expect.poll(() => page.locator(sel).first().evaluate((el) => el.matches(':hover'))).toBe(true);
+        await transitionsDone(page, sel);
         return ground(sel);
     };
     const bare = /rgba\(0, 0, 0, 0\)|transparent/;
@@ -247,7 +255,8 @@ test('plated leaves the actions and tabs in the header bare, hover included; a d
         d.settings.actionBarPosition = 'bottom';
         d.setupDOM?.();
     });
-    await page.waitForTimeout(400);
+    await expect(page.locator('body')).toHaveAttribute('data-action-bar', 'bottom');
+    await transitionsDone(page, '.header-shortcuts');
     expect((await ground('.header-shortcuts')).bg, 'the dock lost its plate').not.toMatch(bare);
     const docked = await hover('#search-button');
     expect(docked.bg, 'the dock lost its hover').not.toMatch(bare);
@@ -262,7 +271,15 @@ test('a rule stands between the pages and the actions when both are in the heade
             await d.saveSettings?.();
             d.config?.applyChromeSettings?.();
         }, settings);
-        await page.waitForTimeout(400);
+        const attrs = {
+            headerButtonStyle: 'data-header-buttons',
+            actionBarPosition: 'data-action-bar',
+            pageSwitcherStyle: 'data-page-switcher',
+        };
+        for (const [key, attr] of Object.entries(attrs)) {
+            if (settings[key]) await expect(page.locator('body')).toHaveAttribute(attr, settings[key]);
+        }
+        await transitionsDone(page, '.header-shortcuts');
     };
     const rule = () => page.evaluate(() => {
         const el = document.querySelector('.header-zone-divider--pages');

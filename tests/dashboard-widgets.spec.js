@@ -134,12 +134,16 @@ test.describe('dashboard widgets', () => {
         await page.reload({ waitUntil: 'networkidle' });
         await page.waitForFunction(() => window.dashboardInstance?.widgets?.length > 0, null, { timeout: 15_000 });
 
+        // The order save is debounced by a second; wait for it to reach the server.
+        const orderSaved = page.waitForResponse((r) => r.request().method() === 'PUT' && /\/api\/pages\/\d+\/blocks/.test(r.url()));
         await page.evaluate(() => {
             const rc = window.dashboardInstance.renderCore;
             const order = rc.blockOrderFromDom().filter((b) => !b.startsWith('__smart_'));
             return rc.commitBlockMove({ id: order[0], order, announce: false });
         });
-        await page.waitForTimeout(1500);
+        await orderSaved;
+        // No category write should follow, so give a stray one time to land.
+        await page.waitForTimeout(300);
 
         const categories = await page.evaluate(async () => {
             const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
@@ -254,7 +258,9 @@ test.describe('the widgets tab', () => {
         // And off the grid.
         await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
         await page.reload({ waitUntil: 'networkidle' });
-        await page.waitForTimeout(2000);
+        await expect(page.locator('#dashboard-layout .category').first()).toBeVisible({ timeout: 15_000 });
+        // The widget must stay off the grid, so give a late render time to draw it.
+        await page.waitForTimeout(1000);
         await expect(page.locator('.dashboard-widget')).toHaveCount(0);
     });
 });
@@ -531,8 +537,9 @@ test.describe('one order for widgets and categories', () => {
             next.splice(Math.max(0, dom.indexOf(id) - 1), 0, id);
             return rc.commitBlockMove({ id, order: next, announce: false });
         });
-        await expect.poll(async () => writes.length, { timeout: 15_000 }).toBeGreaterThan(0);
-        await page.waitForTimeout(1500);
+        await expect.poll(async () => writes.some((w) => w.includes('/blocks')), { timeout: 15_000 }).toBe(true);
+        // No category write should follow the block save, so give a stray one time to be sent.
+        await page.waitForTimeout(500);
 
         // The category array is not where the order lives any more. It is only
         // rewritten when the categories themselves changed places, and never
@@ -556,12 +563,14 @@ test.describe('one order for widgets and categories', () => {
         });
         test.skip(offScreen.length === 0, 'no unrendered block on this page to protect');
 
+        // The order save is debounced by a second; wait for it to reach the server.
+        const orderSaved = page.waitForResponse((r) => r.request().method() === 'PUT' && /\/api\/pages\/\d+\/blocks/.test(r.url()));
         await page.evaluate(() => {
             const rc = window.dashboardInstance.renderCore;
             const order = rc.blockOrderFromDom().filter((b) => !b.startsWith('__smart_'));
             return rc.commitBlockMove({ id: order[0], order, announce: false });
         });
-        await page.waitForTimeout(1800);
+        await orderSaved;
 
         const after = await order(page);
         // Same members, and the unrendered one did not fall to the end.

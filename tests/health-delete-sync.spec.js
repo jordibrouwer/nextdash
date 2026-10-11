@@ -70,6 +70,6 @@ test('deleting through Health removes the bookmark from the dashboard live', asy
     // And gone from the rendered grid once we return to the dashboard — again
     // without a reload.
     await page.evaluate(() => window.dashboardInstance.health.closeHealthView?.());
-    await page.waitForTimeout(400);
+    await expect(page.locator('#dashboard-layout .bookmark-link').first()).toBeVisible();
     await expect(page.locator(`.bookmark-link[data-bookmark-url="${url}"]`)).toHaveCount(0);
 });

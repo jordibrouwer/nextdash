@@ -3,6 +3,27 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
+ * The widget has stopped moving: its top, the page height and the scroll
+ * position are the same for ten frames running, so a smooth scroll, a masonry
+ * pass (measured a frame later) and the scroll correction have all finished.
+ */
+async function waitForLayoutStable(page) {
+    await page.evaluate(() => new Promise((resolve) => {
+        let last = null;
+        let same = 0;
+        const tick = () => {
+            const el = document.querySelector('.dashboard-widget');
+            const key = el
+                ? `${Math.round(el.getBoundingClientRect().top)}:${document.documentElement.scrollHeight}:${Math.round(window.scrollY)}`
+                : 'none';
+            if (key === last) same += 1; else { same = 0; last = key; }
+            if (same >= 10) resolve(); else requestAnimationFrame(tick);
+        };
+        tick();
+    }));
+}
+
+/**
  * A widget answers its header, the way the categories beside it do.
  *
  * Renaming one, making it two columns wide and putting it away were three trips
@@ -233,7 +254,7 @@ test('the widget keeps its place in the viewport when its width changes', async 
         const box = document.querySelector('.dashboard-widget').getBoundingClientRect();
         window.scrollTo(0, Math.round(window.scrollY + box.top - (window.innerHeight - box.height) / 2));
     });
-    await page.waitForTimeout(400);
+    await waitForLayoutStable(page);
 
     const topOf = () => page.evaluate(() =>
         Math.round(document.querySelector('.dashboard-widget').getBoundingClientRect().top));
@@ -244,7 +265,7 @@ test('the widget keeps its place in the viewport when its width changes', async 
 
     await block.locator('.category-title').press('Shift+W');
     await expect.poll(async () => (await storedWidget(page))?.config?.columns, { timeout: 15_000 }).toBe(2);
-    await page.waitForTimeout(600);
+    await waitForLayoutStable(page);
 
     /*
      * 40, not 24. The old number was a guess from before a wide widget showed
@@ -298,10 +319,10 @@ test('the widget keeps its place with packed columns too', async ({ page }) => {
         d.settings.packedColumns = true;
         d.renderDashboard({ animate: false, forceFull: true });
     });
-    await page.waitForTimeout(800);
 
     const block = page.locator('.dashboard-widget[data-widget-type="health"]');
     await expect(block).toBeVisible({ timeout: 15_000 });
+    await waitForLayoutStable(page);
     /*
      * Part way down, not pinned to the very end.
      *
@@ -319,7 +340,7 @@ test('the widget keeps its place with packed columns too', async ({ page }) => {
         const box = document.querySelector('.dashboard-widget').getBoundingClientRect();
         window.scrollTo(0, Math.round(window.scrollY + box.top - (window.innerHeight - box.height) / 2));
     });
-    await page.waitForTimeout(400);
+    await waitForLayoutStable(page);
 
     const topOf = () => page.evaluate(() =>
         Math.round(document.querySelector('.dashboard-widget').getBoundingClientRect().top));
@@ -328,7 +349,7 @@ test('the widget keeps its place with packed columns too', async ({ page }) => {
 
     await block.locator('.category-title').press('Shift+W');
     await expect.poll(async () => (await storedWidget(page))?.config?.columns, { timeout: 15_000 }).toBe(2);
-    await page.waitForTimeout(700);
+    await waitForLayoutStable(page);
 
     /*
      * 40, not 24. The old number was a guess from before a wide widget showed
@@ -368,7 +389,8 @@ test('the add-category button never lands in a widget header', async ({ page }) 
     });
     await page.reload({ waitUntil: 'networkidle' });
     await expect(page.locator('.dashboard-widget').first()).toBeVisible({ timeout: 15_000 });
-    await page.waitForTimeout(800);
+    // The button is placed once the grid is built; it is on a category, never in a widget.
+    await expect(page.locator('.category-add-inline-btn').first()).toBeAttached();
 
     expect(await page.locator('.dashboard-widget .category-add-inline-btn').count()).toBe(0);
     // It still exists somewhere — on a category, which is what it is for.
