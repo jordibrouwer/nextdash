@@ -3473,6 +3473,7 @@ class DashboardConfig {
         { tab: 'start', titleKey: 'config.helpTipsTitle', fallback: 'Everyday keys' },
         { tab: 'config', titleKey: 'config.helpConfigTitle', fallback: 'Finding your way around config' },
         { tab: 'config', titleKey: 'config.helpBehaviorTitle', fallback: 'Behavior' },
+        { tab: 'config', titleKey: 'config.helpMonitoringConfigTitle', fallback: 'Monitoring' },
         { tab: 'appearance', titleKey: 'config.helpThemesTitle', fallback: 'Themes' },
         { tab: 'appearance', titleKey: 'config.helpHeaderTitle', fallback: 'Header & action buttons' },
         { tab: 'appearance', titleKey: 'config.helpAppearanceTitle', fallback: 'Grid, display & date' },
@@ -3494,6 +3495,7 @@ class DashboardConfig {
         { tab: 'health', titleKey: 'config.helpHealthTitle', fallback: 'Availability & health' },
         { tab: 'monitoring', titleKey: 'config.helpHealthStatsTitle', fallback: 'Uptime, trends & statistics' },
         { tab: 'monitoring', titleKey: 'config.helpNotificationsTitle', fallback: 'Alerts & notifications' },
+        { tab: 'monitoring', titleKey: 'config.helpDigestTitle', fallback: 'Weekly digest' },
         // These three render on the Inbox tab, not on Health — jumping to one
         // used to land a tab away from the thing it named.
         { tab: 'inbox', titleKey: 'config.helpInboxTitle', fallback: 'Inbox' },
@@ -27022,6 +27024,9 @@ class DashboardConfig {
         'config.helpNotificationsTitle': [
             { tab: 'health', panel: 'health', labelKey: 'config.helpHealthTitle', label: 'Availability & health' },
         ],
+        'config.helpDigestTitle': [
+            { tab: 'monitoring', panel: 'notifications', labelKey: 'config.helpNotificationsTitle', label: 'Alerts & notifications' },
+        ],
         'config.helpBmPanelTitle': [
             { tab: 'health', panel: 'health', labelKey: 'config.helpHealthTitle', label: 'Availability & health' },
         ],
@@ -27206,7 +27211,7 @@ class DashboardConfig {
             { kind: 'keys', value: ['Shift + S', 'Esc'], captionKey: 'config.helpArtConfigKeys', caption: 'In and out' },
         ],
         'config.helpBehaviorTitle': [
-            { kind: 'panelMap', value: 'tabs', captionKey: 'config.helpArtBehaviorTabs', caption: 'Five sub-tabs' },
+            { kind: 'panelMap', value: 'tabs', captionKey: 'config.helpArtBehaviorTabs', caption: 'Four tabs' },
             {
                 kind: 'toggles', value: [true, false, true],
                 captionKey: 'config.helpArtSavesInstantly', caption: 'Saved the moment you change it',
@@ -27727,6 +27732,10 @@ class DashboardConfig {
             isOn: (s) => s.monitorNotifyEnabled === true,
             go: { section: 'monitoring', monitoringTab: 'notifications' },
         },
+        'config.helpDigestTitle': {
+            isOn: (s) => s.digestEnabled !== false,
+            go: { section: 'monitoring', monitoringTab: 'notifications' },
+        },
         'config.helpStatsPrivacyTitle': {
             isOn: (s) => s.analyticsOptIn === true,
             go: { section: 'behavior', behaviorTab: 'privacy' },
@@ -27839,7 +27848,9 @@ class DashboardConfig {
         return this.helpPanel('config.helpConfigTitle', 'Finding your way around config',
             'config.helpConfigBody', '')
             + this.helpPanel('config.helpBehaviorTitle', 'Behavior',
-                'config.helpBehaviorBody', '');
+                'config.helpBehaviorBody', '')
+            + this.helpPanel('config.helpMonitoringConfigTitle', 'Monitoring',
+                'config.helpMonitoringConfigBody', '');
     }
 
     /**
@@ -28017,11 +28028,13 @@ class DashboardConfig {
                 </div>`)
             + this.helpPanel('config.helpNotificationsTitle', 'Alerts & notifications',
                 'config.helpNotificationsBody', '')
+            + this.helpPanel('config.helpDigestTitle', 'Weekly digest',
+                'config.helpDigestBody', '')
             + this.helpPanel('config.helpStatusPageTitle', 'The status page',
                 'config.helpStatusPageBody',
                 '<p>One page behind a secret link, for your household and friends: which services work, since when one is down, planned maintenance and 30 days of history. No accounts, and visitors can only read. Light or dark and the language follow their device.</p>'
                 + '<p><strong>What a visitor sees.</strong> Your title and notice, then your groups. Per service: the public name you gave it, its state, <em>Down since 14:03</em> while it is down, 30 day bars with the uptime percentage, and planned maintenance of the groups you linked. A link to the service and its response time only when you tick <strong>Link</strong> and <strong>Speed</strong>. Never error details, container images, internal addresses or anything else of your dashboard.</p>'
-                + '<p><strong>Setting it up.</strong> In Config → Status page, tick <strong>Turn the status page on</strong>, then <strong>Copy</strong> the link or scan the QR code. Under <strong>Groups and services</strong>, add a group and <strong>+ Add service</strong>: the picker lists monitored bookmarks and containers. A bookmark linked to a container is offered as one service, and the worse of the two counts. Under <strong>Maintenance shown on the page</strong>, tick the groups each window belongs to; the windows themselves live in Behavior → Status &amp; alerts.</p>'
+                + '<p><strong>Setting it up.</strong> In Config → Status page, tick <strong>Turn the status page on</strong>, then <strong>Copy</strong> the link or scan the QR code. Under <strong>Groups and services</strong>, add a group and <strong>+ Add service</strong>: the picker lists monitored bookmarks and containers. A bookmark linked to a container is offered as one service, and the worse of the two counts. Under <strong>Maintenance shown on the page</strong>, tick the groups each window belongs to; the windows themselves live in Monitoring → Schedules.</p>'
                 + '<p><strong>Who can open it.</strong> Anyone with the link. <strong>New link…</strong> stops the old one at once. <strong>Only from the home network</strong> keeps it inside your house.</p>')
             + this.helpPanel('config.helpStatusPageShareTitle', 'Sharing the status page safely',
                 'config.helpStatusPageShareBody',

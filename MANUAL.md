@@ -267,7 +267,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 - [Tabs and saving](#172-tabs-and-saving)
 - [Finding a setting](#173-finding-a-setting)
 - [Config → Bookmarks](#174-config-bookmarks)
-- [Behavior](#175-behavior)
+- [Behavior and Monitoring](#175-behavior)
 - [Config → Inbox](#176-config-inbox)
 - [Config → Containers](#177-config-containers)
 - [Overview, Help and About](#178-overview-help-and-about)
@@ -489,7 +489,7 @@ Local addresses are checked once **Allow local bookmarks** is on ([§23.3](#233-
 
 There is one place where bad news goes, and both halves use it.
 
-**Where it goes.** Set it up once under **Behavior → Status & alerts**:
+**Where it goes.** Set it up once under **Monitoring → Notifications**:
 
 - **Downtime alerts** — Slack, Discord, Telegram, Gotify, **ntfy**, **Pushover**, **Apprise** (which passes an alert on to mail, Matrix, Signal and more — [§12.4](#124-alerts)) or your own JSON receiver. **Send test alert** proves the route. ntfy alerts carry **Open link** and **Health** buttons, and failures go out at a higher priority than recoveries.
 - **Browser notifications** — push to your phone, tablet or desktop, even with nextDash closed. Press **Enable on this device** on each device. On iPhone and iPad, add nextDash to the home screen first, and serve it over HTTPS ([§22](#22-phones-tablets-and-the-installed-app)).
@@ -506,7 +506,7 @@ There is one place where bad news goes, and both halves use it.
 
 For containers on your phone, also switch on **Notify when a container stops, keeps restarting or turns unhealthy** under the browser notifications.
 
-**Keeping it quiet.** nextDash leaves out what you did yourself: a stop you asked for is not a notice, nor is a crash the restart policy fixes within 30 seconds. One incident is one notice; four or more at once become one message, and a host that takes many bookmarks down together sends one downtime alert. Mute what you do not care about — a container with `m` or its row menu, a bookmark with **Do not alert me about this bookmark** — and it still shows its state on screen. **Config → Containers → Muted containers** says where container notices go, and **Hidden containers** keeps test containers out of the view and the widget count altogether. To hold notices overnight, or to be reminded of an outage that goes on, use **Quiet hours** and **Reminders** ([§12.5](#125-maintenance-windows)).
+**Keeping it quiet.** nextDash leaves out what you did yourself: a stop you asked for is not a notice, nor is a crash the restart policy fixes within 30 seconds. One incident is one notice; four or more at once become one message, and a host that takes many bookmarks down together sends one downtime alert. Mute what you do not care about — a container with `m` or its row menu, a bookmark with **Do not alert me about this bookmark** — and it still shows its state on screen. **Config → Containers → Muted containers** says where container notices go, and **Hidden containers** keeps test containers out of the view and the widget count altogether. To hold notices overnight, or to be reminded of an outage that goes on, use **Quiet hours** and **Reminders** ([§12.5](#125-maintenance-windows)). Once a week the **Weekly digest** sums it all up — what broke, what can be updated, what nobody opens ([§12.4](#weekly-digest)).
 
 **For other programs.** Outgoing webhooks send `health.down`, `health.up` and `health.cert-expiring`, signed, to anything that listens — Home Assistant, n8n, a script ([§19.3](#193-webhooks)).
 
@@ -707,7 +707,7 @@ Data is stored in `./data` next to the binary. `NEXTDASH_DATA_DIR` points it els
 4. **Your own bookmarks.** Import your browser's bookmark file under **Config → Data & backups** ([§19](#19-data-backups-and-import)), or add them with **+** and **&** ([§5](#5-adding-bookmarks)).
 5. **Config.** Press **`Shift + S`** or click the gear. Config is a view inside the dashboard; **`Escape`** takes you back.
 
-**The first hour.** Split your bookmarks across a few pages, give the ten you open daily a shortcut, and switch on link checking under Config → Behavior → Status & alerts. Everything else can wait until you know what you want.
+**The first hour.** Split your bookmarks across a few pages, give the ten you open daily a shortcut, and switch on link checking under Config → Monitoring → Checks. Everything else can wait until you know what you want.
 
 <details>
 <summary>📷 Screenshot — a new install on its first launch, full page</summary>
@@ -1916,17 +1916,17 @@ Set the mode in the bookmark form, the Bookmarks view's side panel, the right-cl
 
 **Nothing checked at all?** Once 20 or more bookmarks are set to **Off**, a card in the bottom-left corner offers to switch them all to **Periodic** in one go, naming the count. It shows at most once a month; declining once brings it back next month, declining a second time offers to stop asking for good.
 
-**Behavior → Status & alerts** holds the rest:
+**Config → Monitoring** holds the rest, on three tabs:
 
-| Group | Settings |
-|---|---|
-| **Checks in this browser** | How often, skip fast pings, retries for offline bookmarks |
-| **Monitored bookmarks on the dashboard** | How much they stand out: only when there is a problem (default), always, or never |
-| **Checks on the server** | Re-check in the background (on by default) and how often, the **check timeout** (5–30 s), **spot pages that answer 200 but say "not found"**, **Serve uptime badges** and when certificate warnings start |
-| **Downtime alerts** | See [§12.4](#124-alerts) |
-| **Maintenance windows** | See [§12.5](#125-maintenance-windows) |
-| **Quiet hours** and **Reminders** | See [§12.5](#125-maintenance-windows) |
-| **Browser notifications** | See [§12.4](#124-alerts) |
+| Tab | Group | Settings |
+|---|---|---|
+| **Checks** | **Checks in this browser** | How often, skip fast pings, retries for offline bookmarks |
+| | **Checks on the server** | Re-check in the background (on by default) and how often, the **check timeout** (5–30 s), **spot pages that answer 200 but say "not found"**, **Serve uptime badges** and when certificate warnings start |
+| | **Monitored bookmarks on the dashboard** | How much they stand out: only when there is a problem (default), always, or never |
+| **Notifications** | **Downtime alerts** and **Browser notifications** | See [§12.4](#124-alerts) |
+| | **Reminders** | See [§12.5](#reminders) |
+| | **Weekly digest** | See [§12.4](#weekly-digest) |
+| **Schedules** | **Maintenance windows** and **Quiet hours** | See [§12.5](#125-maintenance-windows) |
 
 <img src="screenshots/manual.md/12-health-tab.jpg" alt="The Health tab of a monitored bookmark: the score, the checking mode and interval, a bar for each of the last checks at 100 % with the response time, and the sections Why, Score breakdown, Checking, Monitor & history and Expectations" width="384" align="right">
 
@@ -1979,7 +1979,7 @@ One finding per check, in that order. The row badge reads *Moved*, *Retitled* or
 
 ### 12.4 Alerts
 
-**Downtime alerts** (Behavior → Status & alerts) post when a monitored bookmark goes down and again when it recovers, with how long it was down.
+**Downtime alerts** (Monitoring → Notifications) post when a monitored bookmark goes down and again when it recovers, with how long it was down.
 
 | Service | Needs |
 |---|---|
@@ -2004,7 +2004,7 @@ One finding per check, in that order. The row badge reads *Moved*, *Retitled* or
 
 <a id="browser-notifications"></a>
 
-**Browser notifications** reach a device even with nextDash closed. Switch them on from the dashboard card or under Behavior → Status & alerts, then press **Enable on this device** and allow notifications. A test notification follows.
+**Browser notifications** reach a device even with nextDash closed. Switch them on from the dashboard card or under Monitoring → Notifications, then press **Enable on this device** and allow notifications. A test notification follows.
 
 | Notifies about | Default |
 |---|---|
@@ -2021,11 +2021,21 @@ They need a secure context: Safari and every browser on iPhone and iPad require 
 
 </details>
 
+<a id="weekly-digest"></a>
+
+**Weekly digest.** Once a week nextDash sums up what needs you: links that broke, certificates that run out soon, container updates, what you opened most, bookmarks nobody opens, and links waiting in the Inbox. It is on by default and goes out on **Monday at 08:00**, in the time zone of the quiet hours.
+
+- **Where it arrives** — as a browser notification when those are on, through the service under **Downtime alerts**, and once on the dashboard as a card, *Your week in nextDash*, that names the one or two things that matter most. A digest that falls in quiet hours waits until they end; one that came due while the server was off goes out once, when it starts. A week with nothing to say sends nothing.
+- **Reading it** — **Read the digest** opens a window with a part per subject: what it means, the names behind the count, and a button to the view where you deal with it — **Open in Bookmarks** (with **Work through** for the broken links), **Open Containers**, **Review** for never opened and long unopened bookmarks, **Open Inbox**. After a button the digest shrinks to a bar in the bottom-left corner: *Weekly digest · 1 of 4 done*, and **Next** for the following part. The bar goes once every part is opened, or with **×**. Clicking the push notification opens the same window (`/#digest`).
+- **Setting it up** — Monitoring → Notifications → **Weekly digest**: **Send a weekly digest**, **On** (the day), **At** (the hour), and which parts go in — **Include broken links and certificates**, **Include container updates**, **Include most opened, unused and Inbox**. **The latest digest → Show** opens the last one again; **Send a proof digest now → Send** builds one from today's data and sends it, without moving the week's own digest.
+
+On the day the digest comes out it goes first, and the daily review card ([§4](#corner-cards)) waits — both offer the same broken and unopened links.
+
 <a id="125-maintenance-windows"></a>
 
 ### 12.5 Maintenance windows
 
-A window is a recurring period when downtime is expected — days, a start and an end. An end before the start runs past midnight. The times are in **your** time zone: the browser's zone is saved with the windows when you change them, so a window you set for 02:00 is 02:00 where you are, even when the container itself runs on UTC. Windows apply to every monitor. Quiet hours use the same clock.
+A window is a recurring period when downtime is expected — days, a start and an end. Set windows under **Monitoring → Schedules**. An end before the start runs past midnight. The times are in **your** time zone: the browser's zone is saved with the windows when you change them, so a window you set for 02:00 is 02:00 where you are, even when the container itself runs on UTC. Windows apply to every monitor. Quiet hours use the same clock.
 
 <p align="center"><img src="screenshots/manual.md/12-maintenance.jpg" alt="The Maintenance windows panel: the days of the week, a window from 02:00 to 03:00 with room for a note, and Add window" width="860"></p>
 <p align="center"><sub>A maintenance window every night from two to three.</sub></p>
@@ -2034,7 +2044,7 @@ Inside a window, checks still run and the heartbeat still records them, but a fa
 
 <a id="quiet-hours"></a>
 
-**Quiet hours.** Under **Behavior → Status & alerts → Quiet hours**, **Hold notices during quiet hours** holds alerts from monitors, containers, Unraid and backups while a window is open — the same editor as maintenance windows. When the hours end, one summary says what is still going on and what recovered by itself. Unlike a maintenance window the downtime still counts. **Always let through** lists the kinds that break the quiet: an expired certificate, a mass outage (several at once) and a failed backup by default, and a container that stops or restarts if you tick it. A line under the list says whether it is quiet now, until when, and how many notices are held. Outgoing webhooks ([§19.3](#193-webhooks)) are outside it and get every event. A muted bookmark or container never raises a notice, and a maintenance window drops it before the quiet hours would hold it.
+**Quiet hours.** Under **Monitoring → Schedules → Quiet hours**, **Hold notices during quiet hours** holds alerts from monitors, containers, Unraid and backups while a window is open — the same editor as maintenance windows. When the hours end, one summary says what is still going on and what recovered by itself. Unlike a maintenance window the downtime still counts. **Always let through** lists the kinds that break the quiet: an expired certificate, a mass outage (several at once) and a failed backup by default, and a container that stops or restarts if you tick it. A line under the list says whether it is quiet now, until when, and how many notices are held. Outgoing webhooks ([§19.3](#193-webhooks)) are outside it and get every event. A muted bookmark or container never raises a notice, and a maintenance window drops it before the quiet hours would hold it.
 
 <p align="center"><img src="screenshots/manual.md/12-quiet-hours.jpg" alt="The Quiet hours panel: Hold notices during quiet hours ticked, a window from 02:00 to 03:00 on every day, and Always let through with an expired certificate, a mass outage and a failed backup ticked" width="860"></p>
 <p align="center"><sub>Quiet hours, and the kinds of notice that always get through.</sub></p>
@@ -2086,7 +2096,7 @@ The status page is one page behind a secret link, for your household and friends
 1. Under **Link and access**, tick **Turn the status page on**. The link appears with **Copy**, **Open** and a QR code to scan with a phone.
 2. Under **Top of the page**, give it a **Title** and, if you like, a **Notice** shown under it.
 3. Under **Groups and services**, **+ Add group**, then **+ Add service** in each group. The picker lists monitored bookmarks and containers; a bookmark without monitoring has no history to show, so it is not listed. A bookmark linked to a container (the same pairing as in the Containers view, [§14](#14-containers)) is offered as one service, and the worse of the two counts. The pairing is fixed when you add it. Give each service a **Public name**, and tick **Link** and **Speed** where you want them.
-4. Under **Maintenance shown on the page**, tick the groups each maintenance window belongs to. The windows themselves are set in **Behavior → Status & alerts** ([§12.5](#125-maintenance-windows)). A linked group shows *Planned maintenance* ahead of time and blue instead of red during it. Alerts are not affected.
+4. Under **Maintenance shown on the page**, tick the groups each maintenance window belongs to. The windows themselves are set in **Monitoring → Schedules** ([§12.5](#125-maintenance-windows)). A linked group shows *Planned maintenance* ahead of time and blue instead of red during it. Alerts are not affected.
 
 Everything saves as you go.
 
@@ -2479,7 +2489,7 @@ Every clean-up asks first and says how much it frees. Below the tiles, the image
 
 When a container **stops unexpectedly**, **keeps restarting** (three crashes in ten minutes) or **turns unhealthy**, nextDash sends a notice — and a second one when it recovers. A stop you or nextDash asked for is not a notice, and neither is a crash the restart policy fixes within 30 seconds. One notice per incident; four or more at once become one message.
 
-They go where Health's downtime alerts go: the alert webhook under **Behavior → Status & alerts → Downtime alerts** (with its presets), and browser notifications with **Notify when a container stops, keeps restarting or turns unhealthy** switched on. **Config → Containers → Notifications** switches them off. Mute a single container from its row menu, its side panel's ⋯ menu, or `m`; **Muted containers** lists them and says where notices go. Hidden containers and nextDash's own raise nothing.
+They go where Health's downtime alerts go: the alert webhook under **Monitoring → Notifications → Downtime alerts** (with its presets), and browser notifications with **Notify when a container stops, keeps restarting or turns unhealthy** switched on. **Config → Containers → Notifications** switches them off. Mute a single container from its row menu, its side panel's ⋯ menu, or `m`; **Muted containers** lists them and says where notices go. Hidden containers and nextDash's own raise nothing.
 
 **Running hot.** **Also when one uses too much CPU or memory** (on by default) sends a notice when a container stays above a line for a while — **CPU above** 90 % of every core, **Memory above** 90 % of its limit (the host's memory when it has none), **For at least** 10 minutes, each adjustable — and one when it is back under both. It reads the stats history, so it needs **Keep the last hour of CPU and memory** on. One notice per spell; the same mutes apply.
 
@@ -3267,7 +3277,8 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Appearance** | Look · Background · Surface · Grid · Rows · Header · Action bar · Date & weather ([§16](#16-appearance)) |
 | **Bookmarks** | View · Tags · Tag suggestions · Your rules · Settings · Local copies ([§17.4](#174-config-bookmarks)) |
 | **Structure** | Categories · Pages · Finders · Collections ([§9](#9-pages-categories-and-collections)) |
-| **Behavior** | General · Keyboard & search · Fresh · Status & alerts · Privacy & sync ([§17.5](#175-behavior)) |
+| **Behavior** | General · Keyboard & search · Fresh · Privacy & sync ([§17.5](#175-behavior)) |
+| **Monitoring** | Checks · Notifications · Schedules ([§17.5](#monitoring)) |
 | **Inbox** | Collecting · List · Panel & clicks · Header icon ([§17.6](#176-config-inbox)) |
 | **Data & backups** | Backups & data · Sources · Webhooks · Icons & previews · Trash · Reset ([§19](#19-data-backups-and-import)) |
 | **Widgets** | Widgets · Types ([§15](#15-widgets)) |
@@ -3279,7 +3290,7 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Logs** | Server logs · Activity trail ([§20](#20-logs)) |
 | **About** | About nextDash · News & features |
 
-Old addresses still land in the right place — for example `/#config/pages-tags` opens Structure, `/#config/data-backups/logs` opens Logs, and `/#config/behavior/fresh` opens Behavior → Fresh. The tab ids in addresses did not always change when tabs were renamed: Look is `general`, Grid `layout`, Rows `display`, Action bar `buttonbar`.
+Old addresses still land in the right place — for example `/#config/pages-tags` opens Structure, `/#config/data-backups/logs` opens Logs, `/#config/behavior/fresh` opens Behavior → Fresh, and `/#config/behavior/status` — Status & alerts, before it became a section of its own — opens Monitoring → Checks. The tab ids in addresses did not always change when tabs were renamed: Look is `general`, Grid `layout`, Rows `display`, Action bar `buttonbar`.
 
 <details>
 <summary>📷 Screenshot — Config → Appearance, full page</summary>
@@ -3292,7 +3303,7 @@ Old addresses still land in the right place — for example `/#config/pages-tags
 
 ### 17.2 Tabs and saving
 
-**Appearance** and **Behavior** open straight on their settings, in tabs, on the tab you had open in the last five minutes, or on the first one. Every setting of a tab is on it — the ones that change most first — with a short line under each saying what it does. Appearance keeps a live preview of the dashboard beside its tabs ([§16](#16-appearance)).
+**Appearance**, **Behavior** and **Monitoring** open straight on their settings, in tabs, on the tab you had open in the last five minutes, or on the first one. A row of tabs stays on one line; on a narrow screen it scrolls sideways. Every setting of a tab is on it — the ones that change most first — with a short line under each saying what it does. Appearance keeps a live preview of the dashboard beside its tabs ([§16](#16-appearance)).
 
 **Every change saves the moment you make it**, confirmed by a short message. The exceptions are forms with their own **Save** button — the bookmark form and a widget's settings. Config only writes what changed.
 
@@ -3348,17 +3359,26 @@ The other tabs:
 
 <a id="175-behavior"></a>
 
-### 17.5 Behavior
+### 17.5 Behavior and Monitoring
 
 | Tab | Settings |
 |---|---|
 | **General** | Language; remember where you were on a page; **Lock layout**; open links in a new tab; allow localhost and private-network bookmarks; **Hypr mode**; **Notes widget → Notes are processed**, *On the server* (the default) or *In the browser*, which needs no requests while you type ([§15](#15-widgets)) |
 | **Keyboard & search** | Typing a bookmark shortcut, switch search mode, include finders, search unsorted bookmarks, fuzzy suggestions, prefer matches that start with the query, keep search open when empty, the search hint; **Web search** (engine, SearXNG address, Brave key, Test connection); and the keys: global shortcuts, shortcut hints on header links, the key legend under the grid |
 | **Fresh** | Show what is new since you last looked, mark rows that publish, find feeds now ([§12.6](#126-fresh)) |
-| **Status & alerts** | [§12.1](#121-availability-modes) |
 | **Privacy & sync** | **Count this install** (on by default, [§23.8](#238-analytics)), analytics, **Check GitHub for new releases**, posts from nextdash.cc; **Keep settings on this device only**; **Onboarding**: keyboard tips, the two review offers, every tour (replay it with its button), *Show quick-start card again*, and the list of corner cards — each **Answered** or **Not shown yet**, with **Show again** ([§4](#corner-cards)) |
 
 Paste-to-quick-add, the inbox and how a kept link is filed moved to **Config → Inbox** ([§17.6](#176-config-inbox)).
+
+<a id="monitoring"></a>
+
+**Monitoring** is everything about watching your bookmarks: how they are checked, how you hear when one goes down, and when to keep quiet. It used to be the Status & alerts tab of Behavior; old links and saved places open the matching Monitoring tab.
+
+| Tab | Settings |
+|---|---|
+| **Checks** | Checks in this browser, checks on the server, how monitored bookmarks stand out ([§12.1](#121-availability-modes)) |
+| **Notifications** | Downtime alerts, browser notifications, reminders, the weekly digest ([§12.4](#124-alerts)) |
+| **Schedules** | Maintenance windows and quiet hours ([§12.5](#125-maintenance-windows)) |
 
 <a id="176-config-inbox"></a>
 

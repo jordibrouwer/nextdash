@@ -277,10 +277,10 @@ test.describe('config help — translations', () => {
                 english: ['Availability & health', 'Setting up one monitored bookmark, start to finish'],
             },
             monitoring: {
-                // Nine since the status page was given two: stats, expectations,
-                // certificates, drift, maintenance, Fresh, alerts, the status
-                // page and sharing it.
-                count: 9,
+                // Ten since the weekly digest got one: stats, expectations,
+                // certificates, drift, maintenance, Fresh, alerts, the weekly
+                // digest, the status page and sharing it.
+                count: 10,
                 english: ['Uptime, trends & statistics', 'Certificate expiry', 'Maintenance windows'],
             },
             inbox: {
