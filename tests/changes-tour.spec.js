@@ -31,6 +31,8 @@ test('nothing offers it on its own any more', async ({ page }) => {
     await loadWithTourPending(page);
     // The corner card that used to invite it is gone: an unseen tour stays
     // closed, and no card turns up after the delay the card used to wait.
+    await expect(page.locator('#dashboard-layout')).toBeVisible();
+    // A fixed wait: the card must stay away, so there is nothing to wait for.
     await page.waitForTimeout(1500);
     await expect(page.locator('#app-modal.show .changes-tour')).toHaveCount(0);
     await expect(page.locator('.changes-tour-notice-card')).toHaveCount(0);

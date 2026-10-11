@@ -222,6 +222,7 @@ test.describe('moving blocks with the keyboard', () => {
         await block.locator('.category-title').first().click({ position: { x: 60, y: 8 } });
         await expect(block).not.toHaveAttribute('data-collapsed', 'true');
 
+        // A fixed wait: nothing may open, so there is no event to wait for.
         await page.waitForTimeout(500);
         expect(opened).toBe(0);
         expect(page.url()).toBe(before);

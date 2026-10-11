@@ -84,12 +84,11 @@ test.describe('dashboard bookmark drag', () => {
         await page.mouse.move(sb.x + sb.width * 0.6, sb.y + sb.height / 2 - 10, { steps: 4 });
         await page.mouse.move(db.x + db.width * 0.5, db.y + db.height / 2, { steps: 12 });
         await page.mouse.up();
-        await page.waitForTimeout(400);
 
-        const afterSrc = await page.evaluate((cat) =>
-            window.dashboardInstance.bookmarks.filter((b) => (b.category || '') === cat).length,
-        srcCat);
-        expect(afterSrc).toBe(before - 1);
+        const countIn = (cat) => page.evaluate((c) =>
+            window.dashboardInstance.bookmarks.filter((b) => (b.category || '') === c).length,
+        cat);
+        await expect.poll(() => countIn(srcCat)).toBe(before - 1);
     });
 
     test('holding over a target does not thrash the dragged row (no column flicker)', async ({ page }) => {
@@ -118,11 +117,12 @@ test.describe('dashboard bookmark drag', () => {
         await page.mouse.down();
         await page.mouse.move(sb.x + sb.width * 0.6, sb.y + sb.height / 2 - 8, { steps: 3 });
         await page.mouse.move(db.x + db.width * 0.5, db.y + db.height / 2, { steps: 6 });
-        await page.waitForTimeout(40);
+        await expect.poll(() => page.evaluate(() => Boolean(window.__dragReorderState?.selected))).toBe(true);
         await page.evaluate(() => { window.__draggedMoves = 0; });
         // Hold still over the target; the relay must not re-home the dragged row.
         for (let i = 0; i < 20; i += 1) {
             await page.mouse.move(db.x + db.width * 0.5, db.y + db.height / 2);
+            // A fixed wait: this is the hold itself, a stretch of time spent still.
             await page.waitForTimeout(15);
         }
         const moves = await page.evaluate(() => window.__draggedMoves);
@@ -157,7 +157,9 @@ test.describe('dashboard bookmark drag', () => {
             const dt = new DataTransfer();
             el.dispatchEvent(new DragEvent('dragstart', { ...p, dataTransfer: dt }));
         });
-        await page.waitForTimeout(650); // past ROW_LONG_PRESS_MS (500)
+        // A fixed wait: past ROW_LONG_PRESS_MS (500), when the editor would open if
+        // the long-press had not been cancelled.
+        await page.waitForTimeout(650);
 
         const editing = await page.evaluate(() =>
             document.getElementById('bookmark-form-modal')?.classList.contains('show') === true
@@ -183,7 +185,8 @@ test.describe('dashboard bookmark drag', () => {
             };
             target.dispatchEvent(new PointerEvent('pointerdown', opts));
         });
-        await page.waitForTimeout(650); // past the 500 ms long-press threshold, no movement
+        // A fixed wait: past the 500 ms long-press threshold, which is a real duration.
+        await page.waitForTimeout(650);
 
         const editing = await page.evaluate(() =>
             document.getElementById('bookmark-form-modal')?.classList.contains('show') === true

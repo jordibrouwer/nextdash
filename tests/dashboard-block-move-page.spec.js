@@ -23,6 +23,25 @@ async function seed(request, extra = {}) {
     })).ok()).toBeTruthy();
 }
 
+/**
+ * Waits until the blocks have stopped moving, as widgets land and push them
+ * about: two reads of every block's box in a row that agree.
+ * @param {import('@playwright/test').Page} page
+ */
+async function layoutSettled(page) {
+    let last = null;
+    await expect.poll(async () => {
+        const now = await page.evaluate(() => JSON.stringify(
+            [...document.querySelectorAll('#dashboard-layout .category[data-category-id]')].map((el) => {
+                const r = el.getBoundingClientRect();
+                return [el.getAttribute('data-category-id'), Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)];
+            })));
+        const same = now === last;
+        last = now;
+        return same;
+    }, { timeout: 10_000, intervals: [250] }).toBe(true);
+}
+
 async function openDashboard(page) {
     await page.setViewportSize({ width: 1280, height: 900 });
     await markWhatsNewSeen(page, { extraPromoConfirmedKeys: ['nextdash:dashboard-grid-keyboard-promo-confirmed-v1'] });
@@ -31,7 +50,8 @@ async function openDashboard(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true);
-    await page.waitForTimeout(1200);
+    // Widgets still load in after the first paint and move the blocks beneath them.
+    await layoutSettled(page);
 }
 
 const domOrder = (page) => page.evaluate(() => window.dashboardInstance.renderCore.blockOrderFromDom());
@@ -186,7 +206,8 @@ test.describe('moving a block to another page', () => {
         const order2 = await storedOrder(page, 2);
         await page.locator('body').click({ position: { x: 5, y: 5 } });
         await page.keyboard.press('ControlOrMeta+z');
-        // Past both save debounces.
+        // A fixed wait: a stray save from the Undo, if there were one, only lands past
+        // both save debounces, and page 2 must stay as it was.
         await page.waitForTimeout(1500);
         expect(await categoryIds(page, 2)).toEqual(['films']);
         expect(await storedOrder(page, 2)).toEqual(order2);
@@ -238,6 +259,7 @@ test.describe('moving a block to another page', () => {
         await page.mouse.up();
         await ghost.locator('.category-title').focus();
         await page.keyboard.press('Alt+ArrowLeft');
+        // A fixed wait: no "Moved" notice may appear, so there is nothing to wait for.
         await page.waitForTimeout(300);
         await expect(page.locator('#app-notification.show').filter({ hasText: 'Moved' })).toHaveCount(0);
         expect(await domOrder(page)).toEqual(before);

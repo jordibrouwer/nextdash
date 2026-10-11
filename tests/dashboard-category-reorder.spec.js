@@ -92,7 +92,12 @@ test.describe('dashboard category drag-reorder', () => {
         test.skip(idsBefore.length < 2, 'needs at least two stored categories rendered');
 
         // Move the first stored category behind the last one, then let the dashboard
-        // persist the new order (same path a real drop triggers).
+        // persist the new order (same path a real drop triggers). Both saves are
+        // debounced; the reload below must come after they have landed.
+        const saved = Promise.all([
+            page.waitForResponse((r) => r.url().includes('/api/categories') && r.request().method() === 'POST'),
+            page.waitForResponse((r) => /\/api\/pages\/\d+\/blocks/.test(r.url()) && r.request().method() === 'PUT'),
+        ]);
         await page.evaluate(async (selector) => {
             const rc = window.dashboardInstance.renderCore;
             const grid = document.getElementById('dashboard-layout');
@@ -106,8 +111,7 @@ test.describe('dashboard category drag-reorder', () => {
             await rc.commitBlockMove({ id: first, order, announce: false });
         }, storedSel);
 
-        // saveCategoryOrder debounces ~1s; wait it out.
-        await page.waitForTimeout(1500);
+        await saved;
 
         await page.reload();
         await page.waitForSelector(realCategorySel, { timeout: 15_000 });

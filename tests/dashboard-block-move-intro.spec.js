@@ -83,6 +83,7 @@ test.describe('one-time intro that shows blocks can be moved', () => {
 
         expect(await blockOrder(page)).toEqual(before);
         // Showing it is not seeing it: nothing is written until the card is answered.
+        // A fixed wait: a write, if there were one, needs time to be sent.
         await page.waitForTimeout(600);
         expect(writes).toEqual([]);
         expect(await storedSeen(page)).toBe(false);
@@ -102,6 +103,8 @@ test.describe('one-time intro that shows blocks can be moved', () => {
         // A reload shows nothing, whatever the page itself would otherwise want.
         await page.reload();
         await page.waitForSelector(blockSel, { timeout: 15_000 });
+        // A fixed wait: the intro plays a few seconds after load, so for as long as it
+        // would take to start nothing may show.
         await page.waitForTimeout(6000);
         await expect(card(page)).toHaveCount(0);
         await expect(page.locator('.block-intro-ghost')).toHaveCount(0);
@@ -141,6 +144,7 @@ test.describe('one-time intro that shows blocks can be moved', () => {
         await expect(page.locator('.category.is-move-source')).toHaveCount(0);
         await expect(page.locator('.category-reorder-handle.is-intro-glow, .category-reorder-handle.is-intro-ring')).toHaveCount(0);
         // It does not come back later in the same visit, and no card appears.
+        // A fixed wait: the card is due a few seconds after load, and must not appear.
         await page.waitForTimeout(6000);
         await expect(card(page)).toHaveCount(0);
         expect(await storedSeen(page)).toBe(false);
@@ -151,6 +155,7 @@ test.describe('one-time intro that shows blocks can be moved', () => {
         await expect(page.locator('.block-intro-ghost')).toBeVisible({ timeout: 15_000 });
         await page.mouse.click(5, 5);
         await expect(page.locator('.block-intro-ghost')).toHaveCount(0);
+        // A fixed wait: the card is due a few seconds after load, and must not appear.
         await page.waitForTimeout(5000);
         await expect(card(page)).toHaveCount(0);
         expect(await storedSeen(page)).toBe(false);
@@ -158,6 +163,7 @@ test.describe('one-time intro that shows blocks can be moved', () => {
 
     test('a locked layout shows no intro', async ({ page }) => {
         await openDashboard(page, { lockLayout: true });
+        // A fixed wait: the intro would play within seconds if it were going to, and must not.
         await page.waitForTimeout(8000);
         await expect(page.locator('.block-intro-ghost')).toHaveCount(0);
         await expect(card(page)).toHaveCount(0);

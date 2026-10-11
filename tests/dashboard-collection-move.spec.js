@@ -32,6 +32,25 @@ async function seed(request, extra = {}) {
     })).ok()).toBeTruthy();
 }
 
+/**
+ * Waits until the blocks have stopped moving, as widgets land and push them
+ * about: two reads of every block's box in a row that agree.
+ * @param {import('@playwright/test').Page} page
+ */
+async function layoutSettled(page) {
+    let last = null;
+    await expect.poll(async () => {
+        const now = await page.evaluate(() => JSON.stringify(
+            [...document.querySelectorAll('#dashboard-layout .category[data-category-id]')].map((el) => {
+                const r = el.getBoundingClientRect();
+                return [el.getAttribute('data-category-id'), Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)];
+            })));
+        const same = now === last;
+        last = now;
+        return same;
+    }, { timeout: 10_000, intervals: [250] }).toBe(true);
+}
+
 async function openDashboard(page) {
     await page.setViewportSize({ width: 1280, height: 900 });
     await markWhatsNewSeen(page, { extraPromoConfirmedKeys: ['nextdash:dashboard-grid-keyboard-promo-confirmed-v1'] });
@@ -41,7 +60,7 @@ async function openDashboard(page) {
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !!window.DashboardBlockMover && window.dashboardInstance?._bookmarksReady === true);
     // Widgets load in after the first paint and move the blocks beneath them.
-    await page.waitForTimeout(1200);
+    await layoutSettled(page);
 }
 
 const domOrder = (page) => page.evaluate(() => window.dashboardInstance.renderCore.blockOrderFromDom());
@@ -200,6 +219,9 @@ test.describe('collections move like any other block', () => {
     // it, and the move used to say it again.
     test('a collection width that fails to save gives one error', async ({ page }) => {
         await openDashboard(page);
+        // A fixed wait: the page saves its own settings a debounce (700 ms) after
+        // load, and that save has to be in before the route below makes them fail.
+        await page.waitForTimeout(1000);
         await page.route('**/api/settings', (route) => (route.request().method() === 'POST'
             ? route.fulfill({ status: 500, body: 'nope' }) : route.fallback()));
         await page.evaluate(() => {
@@ -216,6 +238,7 @@ test.describe('collections move like any other block', () => {
         await expect(page.locator('.block-landing')).toHaveAttribute('data-width', '2');
         await page.keyboard.press('Enter');
         await expect.poll(() => page.evaluate(() => window.__errors)).toBeGreaterThan(0);
+        // A fixed wait: a second error, if there were one, needs time to show up.
         await page.waitForTimeout(500);
         expect(await page.evaluate(() => window.__errors)).toBe(1);
         await expect(page.locator(block(MINE))).not.toHaveClass(/category--wide/);

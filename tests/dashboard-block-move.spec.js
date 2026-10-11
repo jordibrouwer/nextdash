@@ -4,6 +4,40 @@ const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent, w
 
 const blockSel = '#dashboard-layout .category[data-category-id]:not([data-smart-collection="true"])';
 
+/**
+ * Waits until the blocks have stopped moving, as widgets land and push them
+ * about: two reads of every block's box in a row that agree.
+ * @param {import('@playwright/test').Page} page
+ */
+async function layoutSettled(page) {
+    let last = null;
+    await expect.poll(async () => {
+        const now = await page.evaluate(() => JSON.stringify(
+            [...document.querySelectorAll('#dashboard-layout .category[data-category-id]')].map((el) => {
+                const r = el.getBoundingClientRect();
+                return [el.getAttribute('data-category-id'), Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)];
+            })));
+        const same = now === last;
+        last = now;
+        return same;
+    }, { timeout: 10_000, intervals: [250] }).toBe(true);
+}
+
+/**
+ * A box once it has stopped gliding: two reads in a row that agree.
+ * @param {import('@playwright/test').Locator} locator
+ */
+async function settledBox(locator) {
+    let last = null;
+    await expect.poll(async () => {
+        const now = JSON.stringify(await locator.boundingBox());
+        const same = now !== 'null' && now === last;
+        last = now;
+        return same;
+    }, { intervals: [100] }).toBe(true);
+    return JSON.parse(last);
+}
+
 async function openDashboard(page) {
     await page.setViewportSize({ width: 1280, height: 900 });
     await markWhatsNewSeen(page, { extraPromoConfirmedKeys: ['nextdash:dashboard-grid-keyboard-promo-confirmed-v1'] });
@@ -13,7 +47,7 @@ async function openDashboard(page) {
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !!window.DashboardBlockMover);
     // Widgets still load in after the first paint and move the blocks beneath them.
-    await page.waitForTimeout(1200);
+    await layoutSettled(page);
 }
 
 async function moveFirstToSecond(page) {
@@ -117,11 +151,10 @@ test.describe('moving blocks on the dashboard', () => {
         await page.mouse.down();
         await page.mouse.move(to.x + to.width * 0.75, to.y + 20, { steps: 8 });
         // The box glides to its place; measure it once it is there.
-        await page.waitForTimeout(300);
-        const box = await page.locator('.block-landing').boundingBox();
+        const box = await settledBox(page.locator('.block-landing'));
         await page.mouse.up();
-        await page.waitForTimeout(400);
-        const landed = await page.locator(`#dashboard-layout .category[data-category-id="${id}"]`).boundingBox();
+        await expect(page.locator('.block-landing')).toHaveCount(0);
+        const landed = await settledBox(page.locator(`#dashboard-layout .category[data-category-id="${id}"]`));
         expect(Math.abs(box.x - landed.x)).toBeLessThanOrEqual(2);
         expect(Math.abs(box.y - landed.y)).toBeLessThanOrEqual(2);
         expect(Math.abs(box.width - landed.width)).toBeLessThanOrEqual(2);
@@ -185,13 +218,15 @@ test.describe('moving blocks on the dashboard', () => {
         }, id);
         const width = () => page.evaluate((cid) => window.dashboardInstance.renderCore.blockWidth(cid), id);
         expect(await width()).toBe(2);
-        await page.waitForTimeout(300);
+        await layoutSettled(page);
         const orderBefore = await page.evaluate(() => window.dashboardInstance.renderCore.blockOrderFromDom());
         const h = await page.locator(`${catSel}[data-category-id="${id}"] .category-reorder-handle`).boundingBox();
         await page.mouse.move(h.x + 4, h.y + 4);
         await page.mouse.down();
         await page.mouse.move(h.x + 6, h.y + 4);
         await page.mouse.up();
+        // A fixed wait: nothing may change after a press that did not move, so there
+        // is no event to wait for.
         await page.waitForTimeout(300);
         expect(await width()).toBe(2);
         expect(await page.evaluate(() => window.dashboardInstance.renderCore.blockOrderFromDom())).toEqual(orderBefore);
@@ -225,6 +260,8 @@ test.describe('moving blocks on the dashboard', () => {
             const h = document.querySelector('#dashboard-layout .category:not([data-smart-collection="true"]) .category-reorder-handle');
             h.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerType: 'touch', pointerId: 7, button: 0, clientX: x, clientY: y }));
         }, { x: from.x + 4, y: from.y + 4 });
+        // A fixed wait: the press has to be held past the long-press threshold before
+        // the block lets go of its place.
         await page.waitForTimeout(450);
         await page.evaluate(({ x, y }) => {
             document.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerType: 'touch', pointerId: 7, clientX: x, clientY: y }));
@@ -243,6 +280,8 @@ test.describe('moving blocks on the dashboard', () => {
             h.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerType: 'touch', pointerId: 7, button: 0, clientX: x, clientY: y }));
             document.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerType: 'touch', pointerId: 7, clientX: x + 30, clientY: y + 30 }));
         }, { x: from.x + 4, y: from.y + 4 });
+        // A fixed wait: the long-press threshold has to pass without the block
+        // being carried, so there is nothing to wait for.
         await page.waitForTimeout(500);
         await expect(page.locator('.block-landing')).toHaveCount(0);
     });
