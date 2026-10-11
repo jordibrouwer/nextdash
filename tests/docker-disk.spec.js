@@ -1,5 +1,5 @@
 const { test, expect } = require('./fixtures');
-const { mockDocker } = require('./helpers/docker-mock');
+const { mockDocker, mockDisk } = require('./helpers/docker-mock');
 
 const confirmDialog = (page) => page.locator('.modal[role="dialog"]');
 
@@ -92,6 +92,39 @@ test.describe('docker disk', () => {
     await confirmDialog(page).getByRole('button', { name: /remove/i }).click();
     await expect.poll(() => state.calls).toContain('POST /prune/images-dangling');
     await expect.poll(() => state.calls.filter((c) => c === 'GET /disk').length).toBeGreaterThan(before);
+  });
+
+  // A count of one reads "1 image", not "1 images", in all three prune questions.
+  async function pruneQuestion(page, kind) {
+    await page.locator(`[data-docker-prune="${kind}"]`).click();
+    const dialog = confirmDialog(page);
+    const text = await dialog.textContent();
+    await dialog.getByRole('button', { name: /cancel/i }).click();
+    await expect(dialog).toBeHidden();
+    return text;
+  }
+
+  test('prune questions say one image or container in the singular', async ({ page }) => {
+    const state = await mockDocker(page);
+    state.disk = mockDisk();
+    Object.assign(state.disk.totals, { imagesUnusedCount: 1, danglingCount: 1 });
+    state.disk.stopped = ['bazarr'];
+    await page.goto('/#docker/~disk');
+    expect(await pruneQuestion(page, 'images-unused')).toContain('Remove 1 image no container uses');
+    expect(await pruneQuestion(page, 'images-dangling')).toContain('Remove 1 untagged image and');
+    expect(await pruneQuestion(page, 'containers-stopped')).toContain('Remove 1 stopped container: bazarr');
+  });
+
+  test('prune questions keep the plural above one', async ({ page }) => {
+    const state = await mockDocker(page);
+    state.disk = mockDisk();
+    Object.assign(state.disk.totals, { imagesUnusedCount: 2, danglingCount: 2 });
+    state.disk.stopped = ['bazarr', 'lidarr'];
+    state.disk.totals.containersStoppedCount = 2;
+    await page.goto('/#docker/~disk');
+    expect(await pruneQuestion(page, 'images-unused')).toContain('Remove 2 images no container uses');
+    expect(await pruneQuestion(page, 'images-dangling')).toContain('Remove 2 untagged images and');
+    expect(await pruneQuestion(page, 'containers-stopped')).toContain('Remove 2 stopped containers: bazarr, lidarr');
   });
 
   // A fixed word, not the volume's name: anonymous volumes are named by 64

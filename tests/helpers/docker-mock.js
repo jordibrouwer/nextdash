@@ -179,4 +179,4 @@ async function mockDocker(page, { control = true, socket = true, containers = nu
   });
   return state;
 }
-module.exports = { mockDocker };
+module.exports = { mockDocker, mockDisk };

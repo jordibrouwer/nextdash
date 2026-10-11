@@ -311,12 +311,18 @@
                 : '';
             const questions = {
                 'images-dangling': [this.t('dockerDiskPruneDanglingTitle', 'Remove dangling images'),
-                    this.t('dockerDiskPruneDanglingBody', 'Remove {count} untagged images and free {size}?',
-                        { count: totals.danglingCount || 0, size: formatBytes(totals.dangling || 0) }) + ends,
+                    (totals.danglingCount === 1
+                        ? this.t('dockerDiskPruneDanglingBodyOne', 'Remove 1 untagged image and free {size}?',
+                            { size: formatBytes(totals.dangling || 0) })
+                        : this.t('dockerDiskPruneDanglingBody', 'Remove {count} untagged images and free {size}?',
+                            { count: totals.danglingCount || 0, size: formatBytes(totals.dangling || 0) })) + ends,
                     this.t('dockerDiskRemove', 'Remove')],
                 'images-unused': [this.t('dockerDiskPruneUnusedTitle', 'Remove unused images'),
-                    this.t('dockerDiskPruneUnusedBody', 'Remove {count} images no container uses and free {size}? A container that needs one later downloads it again.',
-                        { count: totals.imagesUnusedCount || 0, size: formatBytes(totals.imagesUnused || 0) }) + ends,
+                    (totals.imagesUnusedCount === 1
+                        ? this.t('dockerDiskPruneUnusedBodyOne', 'Remove 1 image no container uses and free {size}? A container that needs it later downloads it again.',
+                            { size: formatBytes(totals.imagesUnused || 0) })
+                        : this.t('dockerDiskPruneUnusedBody', 'Remove {count} images no container uses and free {size}? A container that needs one later downloads it again.',
+                            { count: totals.imagesUnusedCount || 0, size: formatBytes(totals.imagesUnused || 0) })) + ends,
                     this.t('dockerDiskRemove', 'Remove')],
                 'build-cache': [this.t('dockerDiskPruneCacheTitle', 'Clear the build cache'),
                     this.t('dockerDiskPruneCacheBody', 'Clear the build cache and free {size}? The next build takes longer.',
@@ -327,8 +333,11 @@
             const shown = stopped.slice(0, 8).join(', ') + (stopped.length > 8
                 ? ` ${this.t('dockerDiskAndMore', 'and {count} more', { count: stopped.length - 8 })}` : '');
             questions['containers-stopped'] = [this.t('dockerDiskPruneStoppedTitle', 'Remove stopped containers'),
-                this.t('dockerDiskPruneStoppedBody', 'Remove {count} stopped containers: {names}? Their volumes and images stay.',
-                    { count: stopped.length, names: shown }),
+                stopped.length === 1
+                    ? this.t('dockerDiskPruneStoppedBodyOne', 'Remove 1 stopped container: {names}? Its volumes and images stay.',
+                        { names: shown })
+                    : this.t('dockerDiskPruneStoppedBody', 'Remove {count} stopped containers: {names}? Their volumes and images stay.',
+                        { count: stopped.length, names: shown }),
                 this.t('dockerDiskRemove', 'Remove')];
             const [title, message, confirmText] = questions[kind] || [];
             if (!title) return;
