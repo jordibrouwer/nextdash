@@ -980,6 +980,13 @@ type Settings struct {
 	// (quietKinds). Nil means the default list; an empty list means none. The
 	// field has no omitempty so the two stay apart on disk.
 	QuietHoursAllow []string `json:"quietHoursAllow"`
+	// The weekly digest (digest.go). All on by default; an absent key reads as on.
+	DigestEnabled bool   `json:"digestEnabled"`
+	DigestWeekday int    `json:"digestWeekday"` // 0 = Sunday … 6 = Saturday
+	DigestTime    string `json:"digestTime"`    // "HH:MM" in the quiet-hours zone
+	DigestHealth  bool   `json:"digestHealth"`
+	DigestUpdates bool   `json:"digestUpdates"`
+	DigestUsage   bool   `json:"digestUsage"`
 	// RemindersEnabled repeats an outage that is still going: after
 	// RemindAfterMinutes, up to RemindMax times. Monitors and containers only.
 	RemindersEnabled   bool `json:"remindersEnabled"`
@@ -1851,6 +1858,12 @@ func (fs *FileStore) initializeDefaultFiles() {
 			AllowLocalBookmarks:            true,
 			AutoBackupEnabled:              true,
 			HealthAutoRecheckEnabled:       true,
+			DigestEnabled:                  true,
+			DigestWeekday:                  defaultDigestWeekday,
+			DigestTime:                     defaultDigestTime,
+			DigestHealth:                   true,
+			DigestUpdates:                  true,
+			DigestUsage:                    true,
 			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:           "off",
 			DockerViewEnabled:              true,
@@ -4395,6 +4408,12 @@ func (fs *FileStore) GetSettings() Settings {
 			AllowLocalBookmarks:             true,
 			AutoBackupEnabled:               true,
 			HealthAutoRecheckEnabled:        true,
+			DigestEnabled:                   true,
+			DigestWeekday:                   defaultDigestWeekday,
+			DigestTime:                      defaultDigestTime,
+			DigestHealth:                    true,
+			DigestUpdates:                   true,
+			DigestUsage:                     true,
 			HealthAutoRecheckIntervalHours:  defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:            "off",
 			DockerViewEnabled:               true,
@@ -4453,6 +4472,11 @@ func (fs *FileStore) GetSettings() Settings {
 			"detectSoftNotFound":     &settings.DetectSoftNotFound,
 			// Background re-checks, on since 5 October 2026.
 			"healthAutoRecheckEnabled": &settings.HealthAutoRecheckEnabled,
+			// The weekly digest, on since it was built.
+			"digestEnabled": &settings.DigestEnabled,
+			"digestHealth":  &settings.DigestHealth,
+			"digestUpdates": &settings.DigestUpdates,
+			"digestUsage":   &settings.DigestUsage,
 		} {
 			if _, ok := rawSettings[key]; !ok {
 				*field = true
@@ -4470,6 +4494,10 @@ func (fs *FileStore) GetSettings() Settings {
 		// New categories spread unless the reader turned it off.
 		if _, ok := rawSettings["defaultCategorySpread"]; !ok {
 			settings.DefaultCategorySpread = true
+		}
+		// Sunday is zero, so an absent key is the only way to tell "never answered".
+		if _, ok := rawSettings["digestWeekday"]; !ok {
+			settings.DigestWeekday = defaultDigestWeekday
 		}
 		/*
 		 * A settings file that never answered the look questions.
@@ -5223,6 +5251,7 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
 	settings.MaintenanceTimeZone = normalizeMaintenanceTimeZone(settings.MaintenanceTimeZone)
 	normalizeQuietSettings(&settings)
+	normalizeDigestSettings(&settings)
 	settings.PushNotifySubject = normalizeVAPIDSubject(settings.PushNotifySubject)
 	// Read as the view reads it: a setting the file never had is its default.
 	clampBookmarkViewSettings(&settings)

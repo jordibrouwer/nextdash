@@ -86,7 +86,7 @@ var demoDeniedWrites = []string{
 	"/api/favicon", "/api/font", "/api/icon", "/api/icon/from-url",
 	// Sending or fetching on the visitor's behalf.
 	"/api/push/subscribe", "/api/push/unsubscribe", "/api/push/test",
-	"/api/webhooks", "/api/webhooks/test", "/api/health/test-notification",
+	"/api/webhooks", "/api/webhooks/test", "/api/health/test-notification", "/api/digest/test",
 	"/api/widgets/custom/test", "/api/unraid/test", "/api/unraid/settings",
 	"/api/sources/{id}", "/api/sources/{id}/run", "/api/sources/{id}/forget",
 	"/api/feeds/poll", "/api/feeds/retry", "/api/previews/refresh", "/api/bookmarks/prefetch-icons",

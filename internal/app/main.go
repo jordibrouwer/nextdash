@@ -320,6 +320,8 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/health/history", handlers.HealthHistoryView).Methods("GET")
 	r.HandleFunc("/badge/uptime.svg", handlers.UptimeBadge).Methods("GET")
 	r.HandleFunc("/api/notify/quiet", handlers.QuietStatus).Methods("GET")
+	r.HandleFunc("/api/digest/latest", handlers.DigestLatest).Methods("GET")
+	r.HandleFunc("/api/digest/test", handlers.DigestTest).Methods("POST")
 	r.HandleFunc("/api/health/archive-snapshot", handlers.ArchiveSnapshot).Methods("GET")
 	// Asking the archive to keep a copy, rather than hoping someone already
 	// did. Behind the write token: it spends a shared daily budget.
@@ -433,6 +435,8 @@ func Run(files assetFS) {
 	handlers.StartUnraidWatcher(schedulerStop)
 	// Ends the quiet hours with one summary, and sends the reminders.
 	handlers.StartQuietHoursScheduler(schedulerStop)
+	// One digest a week, after the quiet hours.
+	handlers.StartDigestScheduler(schedulerStop)
 	// Uptime monitoring for bookmarks opted into the faster monitor tier.
 	handlers.StartHealthMonitorScheduler(schedulerStop)
 	// Feed polling for bookmarks whose page advertises one (opt-in, same cadence
