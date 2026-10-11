@@ -201,6 +201,7 @@ var dataFiles = map[string]dataFilePolicy{
 	"status-page-secrets.json":   dataNever, // the link's token: a restore makes a new link
 	"docker-events.json":         dataNever, // this host's container timeline
 	"docker-update-history.json": dataNever, // rollbacks name this host's image ids
+	"digest.json":                dataNever, // last week's digest; without it the next tick only records the slot
 	"activity.log":               dataNever,
 	"server.log":                 dataNever,
 }
