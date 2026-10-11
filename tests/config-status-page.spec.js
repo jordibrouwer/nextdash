@@ -265,12 +265,8 @@ test.describe('Config → Status page maintenance', () => {
 
     test('editing the window in its own panel keeps its groups', async ({ page, request }) => {
         await request.post('/api/settings', { headers: H, data: { maintenanceWindows: [{ days: [6], start: '02:00', end: '04:00', label: 'Backups', statusGroups: ['home'] }] } });
-        await page.goto('/#config/behavior');
+        await page.goto('/#config/monitoring/schedules');
         await waitForConfigReady(page);
-        await page.evaluate(() => {
-            window.dashboardInstance.config.behaviorTab = 'checks';
-            window.dashboardInstance.config.render();
-        });
         const label = page.locator('[data-maint-field="maintenanceWindows"] [data-maint-row="0"] [data-maint-label]');
         await expect(label).toHaveValue('Backups');
         await label.fill('Nightly backups');
@@ -299,7 +295,7 @@ test('the rail marks the new and reworked sections with "new", and only those', 
         .filter(([, content]) => content && content !== 'none' && content !== 'normal')
         // "new" / "" — the drawn text, then its (empty) alt text.
         .map(([section, content]) => `${section}:${content.split(' / ')[0]}`));
-    expect(badges.sort()).toEqual(['containers:"new"', 'status-page:"new"', 'structure:"new"', 'unraid:"new"']);
+    expect(badges.sort()).toEqual(['containers:"new"', 'monitoring:"new"', 'status-page:"new"', 'structure:"new"', 'unraid:"new"']);
     // The badge is drawn, not written: the tab keeps its own name.
     await expect(page.getByRole('tab', { name: 'Status page', exact: true })).toHaveCount(1);
 });

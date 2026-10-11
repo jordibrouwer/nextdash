@@ -156,13 +156,10 @@ test.describe('monitor emphasis setting', () => {
 
     test('the three choices apply live and survive a reload', async ({ page }) => {
         await load(page);
-        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
-        await page.waitForFunction(() =>
-            typeof window.dashboardInstance.config.behaviorSchema === 'function', null, { timeout: 15_000 });
         await page.evaluate(() => {
             const c = window.dashboardInstance.config;
-            c.behaviorTab = 'checks';
-            c.render?.();
+            c.monitoringTab = 'checks';
+            return c.openConfigView('monitoring');
         });
 
         const cards = page.locator('[data-behavior-field="monitorEmphasis"]');
@@ -243,13 +240,12 @@ test.describe('the feature catalogue announces it', () => {
 
         await row.locator('[data-overview-go]').click();
 
-        // Behavior has no switchAppearanceTab equivalent, so landing on the
-        // right sub-tab is its own step rather than a side effect of the
-        // section change.
+        // The news entry still names Behavior's old Status tab; it lands on
+        // Monitoring → Checks, where the setting lives now.
         await expect.poll(() => page.evaluate(() =>
-            window.dashboardInstance.config.section), { timeout: 5000 }).toBe('behavior');
+            window.dashboardInstance.config.section), { timeout: 5000 }).toBe('monitoring');
         await expect.poll(() => page.evaluate(() =>
-            window.dashboardInstance.config.behaviorTab)).toBe('checks');
+            window.dashboardInstance.config.monitoringTab)).toBe('checks');
         // And the setting it promises is actually on screen.
         await expect(page.locator('[data-behavior-field="monitorEmphasis"]')).toHaveCount(3);
     });
@@ -258,15 +254,12 @@ test.describe('the feature catalogue announces it', () => {
 test.describe('the new setting is marked as new', () => {
     test('no tab or panel claims to be new once the release has passed', async ({ page }) => {
         await load(page);
-        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
-        await page.waitForFunction(() =>
-            typeof window.dashboardInstance.config.behaviorSchema === 'function', null, { timeout: 15_000 });
         await page.evaluate(() => {
             const c = window.dashboardInstance.config;
-            c.behaviorTab = 'checks';
-            c.render?.();
+            c.monitoringTab = 'checks';
+            return c.openConfigView('monitoring');
         });
-        await page.waitForSelector('[data-behavior-tab="checks"]', { timeout: 15_000 });
+        await page.waitForSelector('[data-monitoring-tab="checks"]', { timeout: 15_000 });
 
         // The monitor-emphasis setting carried the twinkle when it was new;
         // Appearance → Layout took it over in v1.3.0, and Behavior holds none of
@@ -278,15 +271,15 @@ test.describe('the new setting is marked as new', () => {
         // asserting that no section anywhere twinkles made every later release
         // read as this trail never having been cleared.
         const marked = await page.evaluate(() => ({
-            tabs: document.querySelectorAll('#config-behavior-body .config-subtab--animated, [data-behavior-tab].config-subtab--animated').length,
-            panels: document.querySelectorAll('#config-behavior-body .config-panel--animated').length,
-            checks: getComputedStyle(document.querySelector('[data-behavior-tab="checks"]')).animationName,
+            tabs: document.querySelectorAll('#config-monitoring-body .config-subtab--animated, [data-monitoring-tab].config-subtab--animated').length,
+            panels: document.querySelectorAll('#config-monitoring-body .config-panel--animated').length,
+            checks: getComputedStyle(document.querySelector('[data-monitoring-tab="checks"]')).animationName,
         }));
         expect(marked).toEqual({ tabs: 0, panels: 0, checks: 'none' });
 
         // And the section this release does mark is not this one.
         expect(await page.evaluate(() =>
-            window.DashboardConfig.NEW_THIS_RELEASE.section)).not.toBe('behavior');
+            window.DashboardConfig.NEW_THIS_RELEASE.section)).not.toBe('monitoring');
 
         // The setting itself is still there — it is the mark that went, not the
         // panel it pointed at.

@@ -63,6 +63,7 @@ class DashboardConfig {
         'widgets',
         'containers',
         'unraid',
+        'monitoring',
         'status-page',
         'stats',
         'help',
@@ -178,7 +179,7 @@ class DashboardConfig {
      * be worth a second look. Cleared when the release is no longer recent,
      * for the same reason as the twinkle above.
      */
-    static NEW_SECTIONS = ['structure', 'containers', 'unraid', 'status-page'];
+    static NEW_SECTIONS = ['structure', 'containers', 'unraid', 'monitoring', 'status-page'];
 
     static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
 
@@ -245,6 +246,8 @@ class DashboardConfig {
         this._finders = null;
         // Behavior sub-tab, remembered the same way.
         this._behaviorTab = DashboardConfig.readRememberedTab('behavior') || 'general';
+        // Monitoring sub-tab, remembered the same way.
+        this._monitoringTab = DashboardConfig.readRememberedTab('monitoring') || 'checks';
         // Inbox sub-tab, remembered the same way.
         this._inboxTab = DashboardConfig.readRememberedTab('inbox') || 'collecting';
         // Containers sub-tab, remembered the same way.
@@ -432,6 +435,9 @@ class DashboardConfig {
         if (raw === 'config/behavior/display') return 'appearance';
         // Date & weather moved to Appearance; old links follow it there.
         if (raw === 'config/behavior/datetime') return 'appearance';
+        // Status & alerts left Behavior for a section of its own.
+        if (DashboardConfig.MONITORING_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)]
+            && raw.startsWith('config/behavior/')) return 'monitoring';
         if (raw === 'config') return 'overview';
         // Pages & tags was renamed when its Tags tab moved to Bookmarks. Links
         // handed out before that still name the old section, and a link that
@@ -464,6 +470,11 @@ class DashboardConfig {
         if (raw === 'config/behavior/layout') return 'layout';
         if (raw === 'config/behavior/display') return 'display';
         if (raw === 'config/behavior/datetime') return 'datetime';
+        // Same move as sectionFromHash above: the tab it lands on now.
+        if (raw.startsWith('config/behavior/')) {
+            const moved = DashboardConfig.MONITORING_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)];
+            if (moved) return moved;
+        }
         // Branding lived on Display, then moved to Header with the browser tab.
         if (raw === 'config/appearance/branding') return 'header';
         // Same move as sectionFromHash above: the tab it lands on now.
@@ -543,6 +554,7 @@ class DashboardConfig {
     static get SUB_TABS() {
         return {
             behavior: DashboardConfig.BEHAVIOR_TABS,
+            monitoring: DashboardConfig.MONITORING_TABS,
             'structure': DashboardConfig.PT_TABS,
             appearance: DashboardConfig.APPEARANCE_TABS,
             stats: DashboardConfig.STATS_TABS,
@@ -589,7 +601,7 @@ class DashboardConfig {
      */
     static REMEMBERED_TAB_KEY = 'nextdash:config-tab-v1';
 
-    static REMEMBERED_TAB_SECTIONS = ['appearance', 'behavior', 'inbox', 'containers', 'status-page', 'unraid'];
+    static REMEMBERED_TAB_SECTIONS = ['appearance', 'behavior', 'monitoring', 'inbox', 'containers', 'status-page', 'unraid'];
 
     static readRememberedTab(section) {
         try {
@@ -647,6 +659,7 @@ class DashboardConfig {
 
     static SUB_TAB_STATE = {
         behavior: 'behaviorTab',
+        monitoring: 'monitoringTab',
         about: 'aboutTab',
         'structure': 'ptTab',
         appearance: 'appearanceTab',
@@ -670,6 +683,7 @@ class DashboardConfig {
      */
     static SUB_TAB_SECTION = {
         'data-behavior-tab': 'behavior',
+        'data-monitoring-tab': 'monitoring',
         'data-pt-tab': 'structure',
         'data-appearance-tab': 'appearance',
         'data-stats-tab': 'stats',
@@ -687,6 +701,7 @@ class DashboardConfig {
     /** data-* attribute on each section's sub-tab strip buttons. */
     static SUB_TAB_ATTR = {
         behavior: 'data-behavior-tab',
+        monitoring: 'data-monitoring-tab',
         'structure': 'data-pt-tab',
         appearance: 'data-appearance-tab',
         stats: 'data-stats-tab',
@@ -896,6 +911,9 @@ class DashboardConfig {
             if (section === 'behavior' && (subTab === 'layout' || subTab === 'display')) {
                 return { section: 'appearance', subTab };
             }
+            if (section === 'behavior' && DashboardConfig.MONITORING_FROM_BEHAVIOR[subTab]) {
+                return { section: 'monitoring', subTab: DashboardConfig.MONITORING_FROM_BEHAVIOR[subTab] };
+            }
             if (subTab) {
                 const tabs = DashboardConfig.SUB_TABS[section];
                 if (!tabs?.includes(subTab)) subTab = null;
@@ -1082,6 +1100,7 @@ class DashboardConfig {
      * lazy module loads.
      */
     resolveConfigOpenTarget(explicitSection) {
+        explicitSection = this.followMovedBehaviorTab(explicitSection);
         const hash = window.location.hash;
         const hashIsGeneric = DashboardConfig.isGenericConfigHash(hash);
         const hashSection = hashIsGeneric ? null : DashboardConfig.sectionFromHash(hash);
@@ -1098,6 +1117,20 @@ class DashboardConfig {
         if (!tabSet) this.resetExpiredTab(targetSection);
 
         return targetSection;
+    }
+
+    /**
+     * Behavior, when the tab just asked of it has moved to Monitoring.
+     *
+     * Callers set the tab and then open the section (`behaviorTab = 'checks'`,
+     * then `openConfigView('behavior')`); the setter has already put the tab
+     * on Monitoring, and this sends the section after it. Once: the next plain
+     * open of Behavior opens Behavior.
+     */
+    followMovedBehaviorTab(section) {
+        if (section !== 'behavior' || !this._behaviorTabMoved) return section;
+        this._behaviorTabMoved = false;
+        return 'monitoring';
     }
 
     /** Re-apply the section from the hash while the view is already open. */
@@ -1892,6 +1925,19 @@ class DashboardConfig {
                 }
                 break;
             }
+            case 'monitoring': {
+                const body = document.getElementById('config-monitoring-body');
+                if (!body) {
+                    this.render();
+                    break;
+                }
+                body.innerHTML = this.renderMonitoringBody();
+                if (container) {
+                    this.bindControlPanels(container, 'behavior');
+                    this.bindFormKeyboard(container);
+                }
+                break;
+            }
             case 'structure':
                 this.clearListKeyboardSelection();
                 this.repaintPtBody();
@@ -2068,6 +2114,7 @@ class DashboardConfig {
             inbox: ['config.sectionInbox', 'Inbox'],
             appearance: ['config.sectionAppearance', 'Appearance'],
             behavior: ['config.sectionBehavior', 'Behavior'],
+            monitoring: ['config.sectionMonitoring', 'Monitoring'],
             'data-backups': ['config.sectionDataBackups', 'Data & backups'],
             widgets: ['config.sectionWidgets', 'Widgets'],
             containers: ['config.sectionContainers', 'Containers'],
@@ -2111,6 +2158,7 @@ class DashboardConfig {
     subTabHeaderLabel(section, tab) {
         switch (section) {
             case 'behavior': return this.behaviorTabLabel?.(tab) || tab;
+            case 'monitoring': return this.monitoringTabLabel?.(tab) || tab;
             case 'structure': return this.ptTabLabel?.(tab) || tab;
             case 'appearance': return this.appearanceTabLabel?.(tab) || tab;
             case 'stats': return this.statsTabLabel?.(tab) || tab;
@@ -2237,6 +2285,9 @@ class DashboardConfig {
         }
         if (this.section === 'behavior') {
             return { section: 'behavior', tab: this.behaviorTab };
+        }
+        if (this.section === 'monitoring') {
+            return { section: 'monitoring', tab: this.monitoringTab };
         }
         // Bookmarks → View is a tab of settings like Behavior's.
         if (this.section === 'bookmarks' && !this.standalone && this.bmTab === 'view') {
@@ -2406,6 +2457,8 @@ class DashboardConfig {
             }
         } else if (this.section === 'behavior') {
             this.bindBehaviorControls(container);
+        } else if (this.section === 'monitoring') {
+            this.bindMonitoringControls(container);
         } else if (this.section === 'structure') {
             this.bindPagesTags(container);
         } else if (this.section === 'bookmarks') {
@@ -2467,7 +2520,7 @@ class DashboardConfig {
 
     /** Footer hint on form-heavy sections (Behavior, Appearance, …). */
     bindFormKeyboardLegend(container) {
-        const formSections = new Set(['behavior', 'appearance', 'stats', 'data-backups', 'logs']);
+        const formSections = new Set(['behavior', 'monitoring', 'appearance', 'stats', 'data-backups', 'logs']);
         if (!formSections.has(this.section)) return;
         const body = container?.querySelector('#config-view-body') || document.getElementById('config-view-body');
         if (!body) return;
@@ -3476,6 +3529,7 @@ class DashboardConfig {
     subTabLabel(section, tab) {
         switch (section) {
             case 'behavior': return this.behaviorTabLabel(tab);
+            case 'monitoring': return this.monitoringTabLabel(tab);
             case 'structure': return this.ptTabLabel(tab);
             case 'appearance': return this.appearanceTabLabel(tab);
             case 'stats': return this.statsTabLabel(tab);
@@ -4300,6 +4354,9 @@ class DashboardConfig {
         }
         if (this.section === 'behavior') {
             return this.renderBehavior();
+        }
+        if (this.section === 'monitoring') {
+            return this.renderMonitoring();
         }
         if (this.section === 'structure') {
             return this.renderPagesTags();
@@ -5546,6 +5603,13 @@ class DashboardConfig {
                     return;
                 }
             }
+            if (target.monitoringTab && target.section === 'monitoring') {
+                this.monitoringTab = target.monitoringTab;
+                if (this.section === 'monitoring') {
+                    this.render();
+                    return;
+                }
+            }
             // Pages & tags has its own strip too, and was the one section a
             // spotlight could name a tab for and not reach it.
             if (target.ptTab && target.section === 'structure') {
@@ -5618,6 +5682,7 @@ class DashboardConfig {
     /* ── Section navigation ────────────────────────────────────────────────── */
 
     selectSection(section, via = 'click') {
+        section = this.followMovedBehaviorTab(section);
         if (!DashboardConfig.SECTIONS.includes(section) || section === this.section) {
             return;
         }
@@ -14292,7 +14357,7 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
+                section: 'monitoring',
                 tab: 'checks',
                 title: t('config.statusBrowserChecksTitle', 'Checks in this browser'),
                 demoLocked: true,
@@ -14313,7 +14378,7 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
+                section: 'monitoring',
                 tab: 'checks',
                 title: t('config.statusServerChecksTitle', 'Checks on the server'),
                 demoLocked: true,
@@ -14372,7 +14437,7 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
+                section: 'monitoring',
                 tab: 'checks',
                 title: t('config.monitorEmphasisTitle', 'Monitored bookmarks on the dashboard'),
                 note: t('config.monitorEmphasisNote', 'How much a monitored bookmark stands out among the others. A monitor that is down is always marked, whichever you pick — this chooses how visible the healthy ones are.'),
@@ -14406,8 +14471,8 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
-                tab: 'checks',
+                section: 'monitoring',
+                tab: 'schedules',
                 title: t('config.maintenanceTitle', 'Maintenance windows'),
                 note: t('config.maintenanceNote', 'Times when downtime is expected — a nightly backup, a weekly reboot. Checks still run and the heartbeat still records what happened, but failures inside a window raise no alert and do not count against uptime.'),
                 appliesTo: t('config.appliesToMonitorOnly', 'Monitor only'),
@@ -14416,7 +14481,7 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
+                section: 'monitoring',
                 tab: 'notifications',
                 title: t('config.generalGroupMonitorNotify', 'Downtime alerts'),
                 note: t('config.statusAlertsNote', 'Posts to a webhook when a monitored bookmark goes down and again when it recovers. Only monitored bookmarks raise alerts — Periodic flags a broken link in the Health view but never notifies.'),
@@ -14424,7 +14489,7 @@ class DashboardConfig {
                 controls: this.monitorNotifyControls(t, opt, { forIndex }),
             },
             {
-                section: 'behavior',
+                section: 'monitoring',
                 tab: 'notifications',
                 title: t('config.pushNotifyTitle', 'Browser notifications'),
                 note: t('config.pushNotifyNote', 'Sends notifications to this browser, even when nextDash is closed. Requires HTTPS (or localhost) and permission per device.'),
@@ -14438,8 +14503,8 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
-                tab: 'notifications',
+                section: 'monitoring',
+                tab: 'schedules',
                 title: t('config.quietTitle', 'Quiet hours'),
                 note: t('config.quietNote', 'Notices that arrive in these hours are held, and one summary says what still plays and what recovered when they end. Unlike a maintenance window the downtime still counts. Outgoing webhooks always get every event.'),
                 appliesTo: t('config.appliesToAllNotices', 'Monitors, containers, Unraid, backups'),
@@ -14452,7 +14517,7 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
+                section: 'monitoring',
                 tab: 'notifications',
                 title: t('config.remindersTitle', 'Reminders'),
                 note: t('config.remindersNote', 'A monitor or container that is still down gets another message after a while, not a second alarm. Not during quiet hours: the summary that ends them says what is still down.'),
@@ -14475,7 +14540,7 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
+                section: 'monitoring',
                 tab: 'notifications',
                 title: t('config.digestTitle', 'Weekly digest'),
                 note: t('config.digestNote', 'One message a week: links that broke, container updates and bookmarks nobody opens. Sent to your push and alert channels and shown once on the dashboard. Held until quiet hours end. Nothing is sent when there is nothing to say.'),
@@ -15975,11 +16040,27 @@ class DashboardConfig {
     // device-only switch joined privacy, which is where "what does this app do
     // on its own" is already answered.
     // The inbox's own settings moved to Config → Inbox; Fresh kept the tab.
-    // Status & alerts was split in two: what is checked, and how you hear of it.
-    static BEHAVIOR_TABS = ['general', 'search', 'fresh', 'checks', 'notifications', 'privacy'];
+    // Status & alerts was split in two, then left for Monitoring.
+    static BEHAVIOR_TABS = ['general', 'search', 'fresh', 'privacy'];
 
     /** Behavior tabs that were folded into another one still open it. */
-    static BEHAVIOR_TAB_ALIASES = { inbox: 'fresh', status: 'checks' };
+    static BEHAVIOR_TAB_ALIASES = { inbox: 'fresh' };
+
+    /*
+     * Monitoring: what is checked, how you hear of it, and when to keep
+     * quiet. Maintenance windows and quiet hours share a tab because both are
+     * a stretch of time set aside, the one for checks and the other for
+     * notices.
+     */
+    static MONITORING_TABS = ['checks', 'notifications', 'schedules'];
+
+    /*
+     * Behavior tabs that moved to Monitoring, and the tab each landed on.
+     * 'status' is the one before the split. Read by the hash, a saved
+     * location, a news entry and the behaviorTab setter, so an old id opens
+     * the new place from wherever it arrives.
+     */
+    static MONITORING_FROM_BEHAVIOR = { status: 'checks', checks: 'checks', notifications: 'notifications' };
 
     /**
      * Date & weather fields that need a fresh fetch rather than a redraw: each
@@ -15994,8 +16075,6 @@ class DashboardConfig {
             datetime: ['config.behaviorTabDateTime', 'Date & weather'],
             search: ['config.behaviorTabKeyboardSearch', 'Keyboard & search'],
             fresh: ['config.behaviorTabFresh', 'Fresh'],
-            checks: ['config.behaviorTabChecks', 'Checks'],
-            notifications: ['config.behaviorTabNotifications', 'Notifications'],
             privacy: ['config.behaviorTabPrivacySync', 'Privacy & sync'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
@@ -16021,9 +16100,8 @@ class DashboardConfig {
 
     renderBehaviorBody() {
         const panels = this.panelsFor('behavior', this.behaviorTab);
-        // The lead and the onboarding buttons are not settings, so they go with
-        // the full view and are dropped when only changed settings are wanted.
-        const lead = (this.behaviorTab === 'checks' && !this.changedOnly) ? this.renderStatusModesLead() : '';
+        // The onboarding buttons are not settings, so they go with the full
+        // view and are dropped when only changed settings are wanted.
         // The two onboarding actions are buttons rather than settings, so they
         // cannot come from the schema; they follow the Onboarding panel on
         // Privacy & sync so the whole of onboarding sits together.
@@ -16031,10 +16109,41 @@ class DashboardConfig {
             ? this.renderOnboardingActions() : '';
         const webPanel = (this.behaviorTab === 'search' && !this.changedOnly && !String(this.settingsFilter || '').trim())
             ? this.renderWebSearchPanel() : '';
-        return lead
-            + this.renderControlPanels(panels, 'behavior')
+        return this.renderControlPanels(panels, 'behavior')
             + webPanel
             + trailing;
+    }
+
+    monitoringTabLabel(tab) {
+        const map = {
+            checks: ['config.monitoringTabChecks', 'Checks'],
+            notifications: ['config.monitoringTabNotifications', 'Notifications'],
+            schedules: ['config.monitoringTabSchedules', 'Schedules'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
+    }
+
+    renderMonitoring() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <p class="config-view-intro">${esc(this.t('config.monitoringIntro', 'How bookmarks are checked, how you hear when one goes down, and when to keep quiet. Every change applies immediately and is saved.'))}</p>
+            ${this.renderSectionTabStrip('monitoring')}
+            <div class="config-tabpage">
+                <div class="config-tabpage-main">
+                    <div id="config-monitoring-body" role="tabpanel" tabindex="0">${this.renderMonitoringBody()}</div>
+                    <div data-filter-elsewhere-host>${this.renderFilterElsewhere('monitoring')}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    renderMonitoringBody() {
+        const panels = this.panelsFor('monitoring', this.monitoringTab);
+        // The lead is not a setting, so it goes with the full view and is
+        // dropped when only changed settings are wanted.
+        const lead = (this.monitoringTab === 'checks' && !this.changedOnly) ? this.renderStatusModesLead() : '';
+        return lead + this.renderControlPanels(panels, 'behavior');
     }
 
     /**
@@ -16440,6 +16549,26 @@ class DashboardConfig {
         this.bindFormKeyboard(container);
     }
 
+    bindMonitoringControls(container) {
+        this.bindSubTabStrip(container, 'data-monitoring-tab', (tab) => {
+            if (tab === this.monitoringTab) return;
+            this.monitoringTab = tab;
+            this.restoreConfigHash();
+            const body = document.getElementById('config-monitoring-body');
+            if (!body) { this.render(); return; }
+            body.innerHTML = this.renderMonitoringBody();
+            this.syncSubTabStrip('data-monitoring-tab', this.monitoringTab);
+            this.repaintFilterElsewhere('monitoring');
+            this._fillShellHeadFromSection(document.getElementById('dashboard-layout') || document);
+            this.bindControlPanels(container, 'behavior');
+            this.bindFormKeyboard(container);
+            this.bindFormKeyboardLegend(container);
+        });
+        this.bindControlPanels(container, 'behavior');
+        this.bindFilterElsewhere(container);
+        this.bindFormKeyboard(container);
+    }
+
     /**
      * The onboarding buttons on the General tab.
      *
@@ -16769,11 +16898,30 @@ class DashboardConfig {
     }
 
     set behaviorTab(tab) {
-        // An old id ('status', from a news entry or a saved link) opens the
-        // tab that holds those settings now.
+        // A tab that left for Monitoring is set there instead, and Behavior
+        // keeps the tab it had: opening Behavior next sends the reader on
+        // (see the section setter).
+        const moved = DashboardConfig.MONITORING_FROM_BEHAVIOR[tab];
+        if (moved) {
+            this.monitoringTab = moved;
+            // Already on Behavior (the tab set after the open): the caller's
+            // render draws Monitoring.
+            if (this.section === 'behavior') this.section = 'monitoring';
+            else this._behaviorTabMoved = true;
+            return;
+        }
+        this._behaviorTabMoved = false;
+        // An old id ('inbox') opens the tab that holds those settings now.
         tab = DashboardConfig.BEHAVIOR_TAB_ALIASES[tab] || tab;
         this._behaviorTab = tab;
         DashboardConfig.rememberTab('behavior', tab);
+    }
+
+    get monitoringTab() { return this._monitoringTab; }
+
+    set monitoringTab(tab) {
+        this._monitoringTab = tab;
+        DashboardConfig.rememberTab('monitoring', tab);
     }
 
     /**
@@ -16877,17 +17025,17 @@ class DashboardConfig {
     renderSectionTabStrip(section) {
         const esc = (v) => this.dash.escapeHtml(v);
         const isAppearance = section === 'appearance';
-        const current = isAppearance ? this.appearanceTab : this.behaviorTab;
+        const current = this[DashboardConfig.SUB_TAB_STATE[section]];
         const owner = isAppearance ? (DashboardConfig.APPEARANCE_SUBPAGES[current] || current) : current;
-        const tabs = (isAppearance ? DashboardConfig.APPEARANCE_TABS : DashboardConfig.BEHAVIOR_TABS)
+        const tabs = DashboardConfig.SUB_TABS[section]
             .filter((tab) => !(isAppearance && DashboardConfig.APPEARANCE_SUBPAGES[tab]));
-        const attr = isAppearance ? 'data-appearance-tab' : 'data-behavior-tab';
+        const attr = DashboardConfig.SUB_TAB_ATTR[section];
         const buttons = tabs.map((tab) => {
             const active = tab === owner;
             const isNew = DashboardConfig.NEW_THIS_RELEASE.section === section
                 && tab === DashboardConfig.NEW_THIS_RELEASE.tab;
             const stars = isNew ? this.renderNewFeaturesPanelStars() : '';
-            const label = isAppearance ? this.appearanceTabLabel(tab) : this.behaviorTabLabel(tab);
+            const label = this.subTabLabel(section, tab);
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}${isNew ? ' config-subtab--animated' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-${section}-body" ${attr}="${esc(tab)}">${esc(label)}${stars}</button>`;
         }).join('');
         return `<div class="config-subtabs" role="tablist">${buttons}</div>`;
@@ -16969,6 +17117,10 @@ class DashboardConfig {
                     void this.switchAppearanceTab(tab);
                 } else if (this.section === 'inbox') {
                     this.inboxTab = tab;
+                    this.restoreConfigHash();
+                    this.render();
+                } else if (this.section === 'monitoring') {
+                    this.monitoringTab = tab;
                     this.restoreConfigHash();
                     this.render();
                 } else {
@@ -17191,8 +17343,18 @@ class DashboardConfig {
         // panels never got it.
         const restoreFocus = this.captureControlPanelFocus();
         if (this.section === 'appearance') this.repaintAppearancePreview();
-        if (this.section === 'appearance' || this.section === 'behavior' || this.section === 'inbox') {
+        if (['appearance', 'behavior', 'monitoring', 'inbox'].includes(this.section)) {
             this.repaintFilterElsewhere(this.section);
+        }
+        if (this.section === 'monitoring') {
+            const body = document.getElementById('config-monitoring-body');
+            if (body) {
+                body.innerHTML = this.renderMonitoringBody();
+                this.bindControlPanels(container, 'behavior');
+                this.labelSettingsControls();
+                restoreFocus();
+            }
+            return;
         }
         if (this.section === 'behavior') {
             const body = document.getElementById('config-behavior-body');
@@ -27559,11 +27721,11 @@ class DashboardConfig {
     static HELP_PANEL_FEATURES = {
         'config.helpHealthTitle': {
             isOn: (s) => s.showStatus === true || s.healthAutoRecheckEnabled === true,
-            go: { section: 'behavior', behaviorTab: 'checks' },
+            go: { section: 'monitoring', monitoringTab: 'checks' },
         },
         'config.helpNotificationsTitle': {
             isOn: (s) => s.monitorNotifyEnabled === true,
-            go: { section: 'behavior', behaviorTab: 'notifications' },
+            go: { section: 'monitoring', monitoringTab: 'notifications' },
         },
         'config.helpStatsPrivacyTitle': {
             isOn: (s) => s.analyticsOptIn === true,

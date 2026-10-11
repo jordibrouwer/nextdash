@@ -225,9 +225,9 @@ test.describe('numeric inputs accept what the server accepts', () => {
 test.describe('the background re-check interval reaches the server', () => {
     async function openStatusTab(page) {
         await openConfig(page);
-        await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
-        await page.locator('[data-behavior-tab="checks"]').click();
-        await expect(page.locator('[data-behavior-tab="checks"]')).toHaveAttribute('aria-selected', 'true');
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('monitoring'));
+        await page.locator('[data-monitoring-tab="checks"]').click();
+        await expect(page.locator('[data-monitoring-tab="checks"]')).toHaveAttribute('aria-selected', 'true');
     }
 
     test('the control binds the field the server actually stores', async ({ page }) => {
@@ -269,7 +269,7 @@ test.describe('the background re-check interval reaches the server', () => {
     test('every offered interval is one the server accepts', async ({ page }) => {
         await openConfig(page);
         const values = await page.evaluate(() => {
-            for (const p of window.dashboardInstance.config.panelsFor('behavior', 'checks')) {
+            for (const p of window.dashboardInstance.config.panelsFor('monitoring', 'checks')) {
                 for (const c of p.controls || []) {
                     if (c.field === 'healthAutoRecheckIntervalHours') {
                         return (c.options || []).map((o) => o.value);

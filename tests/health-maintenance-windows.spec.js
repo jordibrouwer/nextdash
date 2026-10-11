@@ -3,7 +3,7 @@ const { test, expect } = require('./fixtures');
 const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } = require('./e2e-helpers');
 
 /**
- * Config → Behavior → Status & health → Maintenance windows.
+ * Config → Monitoring → Schedules → Maintenance windows.
  *
  * A window says "expect downtime here": checks still run and samples are still
  * recorded, but failures inside it raise no alert and do not count against
@@ -17,10 +17,10 @@ async function openStatusTab(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 15_000 });
-    await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
     await page.evaluate(() => {
-        window.dashboardInstance.config.behaviorTab = 'checks';
-        window.dashboardInstance.config.render();
+        const c = window.dashboardInstance.config;
+        c.monitoringTab = 'schedules';
+        return c.openConfigView('monitoring');
     });
     await page.waitForSelector('[data-maint-list][data-maint-field="maintenanceWindows"]', { timeout: 10_000 });
 }

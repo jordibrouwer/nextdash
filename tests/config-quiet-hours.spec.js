@@ -3,23 +3,22 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
- * Quiet hours and reminders, on Config -> Behavior -> Notifications.
+ * Quiet hours on Config -> Monitoring -> Schedules, reminders on Notifications.
  */
 
-async function openStatus(page) {
+async function openStatus(page, tab = 'schedules') {
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
-    await page.evaluate(() => {
+    await page.evaluate((t) => {
         const c = window.dashboardInstance.config;
-        (c.behaviorTab = c.behaviorTab || 'general', c).openConfigView('behavior');
-        c.behaviorTab = 'notifications';
-        c.render();
-    });
-    await page.waitForSelector('[data-behavior-field="quietHoursEnabled"]', { timeout: 15_000 });
+        c.monitoringTab = t;
+        return c.openConfigView('monitoring');
+    }, tab);
+    await page.waitForSelector(tab === 'schedules' ? '[data-behavior-field="quietHoursEnabled"]' : '[data-behavior-field="remindersEnabled"]', { timeout: 15_000 });
 }
 
 const saved = (page, field) => page.evaluate(async (f) => {
@@ -56,7 +55,7 @@ test('the status line says whether the hours are open', async ({ page }) => {
 });
 
 test('reminders save their interval and their limit', async ({ page }) => {
-    await openStatus(page);
+    await openStatus(page, 'notifications');
     await page.locator('[data-behavior-field="remindersEnabled"]').first().check();
     await expect.poll(() => saved(page, 'remindersEnabled')).toBe(true);
     await page.locator('[data-behavior-field="remindAfterMinutes"]').first().selectOption('30');

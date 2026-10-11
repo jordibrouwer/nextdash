@@ -33,10 +33,10 @@ test('Appearance opens on its first tab, with the settings already there', async
     await expect(page.locator('.config-preview')).toHaveAttribute('data-preview-focus', 'all');
 });
 
-test('Behavior has six tabs, and the moved settings are where the tabs say', async ({ page }) => {
+test('Behavior has four tabs, and the moved settings are where the tabs say', async ({ page }) => {
     await open(page, '#config/behavior');
     await expect(page.locator('[data-behavior-tab]')).toHaveText(
-        ['General', 'Keyboard & search', 'Fresh', 'Checks', 'Notifications', 'Privacy & sync']);
+        ['General', 'Keyboard & search', 'Fresh', 'Privacy & sync']);
 
     await page.locator('[data-behavior-tab="search"]').click();
     await expect(page.locator('[data-behavior-field="globalShortcuts"]')).toBeVisible();
@@ -47,18 +47,61 @@ test('Behavior has six tabs, and the moved settings are where the tabs say', asy
     await expect(page.locator('[data-behavior-field="deviceSpecificSettings"]')).toBeVisible();
 });
 
+test('Monitoring has Checks, Notifications and Schedules, each with its settings', async ({ page }) => {
+    await open(page, '#config/behavior');
+    await page.locator('[data-config-section="monitoring"]').click();
+    await expect(page.locator('[data-monitoring-tab]')).toHaveText(['Checks', 'Notifications', 'Schedules']);
+    await expect(page.locator('[data-monitoring-tab="checks"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('[data-behavior-field="skipFastPing"]')).toBeVisible();
+    await expect.poll(() => hash(page)).toBe('#config/monitoring/checks');
+
+    await page.locator('[data-monitoring-tab="notifications"]').click();
+    await expect(page.locator('[data-behavior-field="pushNotifyEnabled"]')).toBeVisible();
+    await expect(page.locator('[data-behavior-field="digestEnabled"]')).toBeVisible();
+    await expect.poll(() => hash(page)).toBe('#config/monitoring/notifications');
+
+    await page.locator('[data-monitoring-tab="schedules"]').click();
+    await expect(page.locator('[data-behavior-field="quietHoursEnabled"]')).toBeVisible();
+    await expect(page.locator('#config-monitoring-body .config-panel-title', { hasText: 'Maintenance windows' })).toBeVisible();
+    await expect(page.locator('[data-behavior-field="skipFastPing"]')).toHaveCount(0);
+});
+
 test('an old tab link opens the tab that holds its settings now', async ({ page }) => {
     // Inbox & Fresh was the tab's name while it held the inbox's settings too.
     await open(page, '#config/behavior/inbox');
     await expect(page.locator('[data-behavior-tab="fresh"]')).toHaveAttribute('aria-selected', 'true');
     await expect.poll(() => hash(page)).toBe('#config/behavior/fresh');
 
-    // Status & alerts was split; its old id opens Checks.
-    await page.goto('/#config/behavior/status');
-    await expect(page.locator('[data-behavior-tab="checks"]')).toHaveAttribute('aria-selected', 'true');
+    // Status & alerts was split in Behavior, then left for Monitoring: all
+    // three of its old addresses land there, and the bar says where.
+    for (const [old, tab] of [['status', 'checks'], ['checks', 'checks'], ['notifications', 'notifications']]) {
+        await page.goto(`/#config/behavior/${old}`);
+        await expect(page.locator(`[data-monitoring-tab="${tab}"]`)).toHaveAttribute('aria-selected', 'true');
+        await expect.poll(() => hash(page)).toBe(`#config/monitoring/${tab}`);
+    }
 
     await page.goto('/#config/appearance/grid');
     await expect(page.locator('[data-appearance-tab="layout"]')).toHaveAttribute('aria-selected', 'true');
+});
+
+test('a cold load of an old Status & alerts link lands on Monitoring', async ({ page }) => {
+    await open(page, '#config/behavior/notifications');
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('monitoring');
+    await expect(page.locator('[data-monitoring-tab="notifications"]')).toHaveAttribute('aria-selected', 'true');
+});
+
+test('setting an old Behavior tab and opening Behavior opens Monitoring', async ({ page }) => {
+    // News entries and scripts do it in this order: the tab, then the section.
+    await open(page, '#config/overview');
+    await page.evaluate(() => {
+        const c = window.dashboardInstance.config;
+        c.behaviorTab = 'status';
+        return c.openConfigView('behavior');
+    });
+    await expect(page.locator('[data-monitoring-tab="checks"]')).toHaveAttribute('aria-selected', 'true');
+    // Once: Behavior itself still opens afterwards.
+    await page.locator('[data-config-section="behavior"]').click();
+    await expect(page.locator('[data-behavior-tab]').first()).toBeVisible();
 });
 
 test('the tab last looked at is where the section opens next time', async ({ page }) => {
@@ -218,4 +261,13 @@ test.describe('a tab strip too long for the window', () => {
         });
         expect(strip).toEqual({ rows: 1, scrollable: true, activeInView: true, fadeBefore: true, pageScrollsSideways: false });
     });
+});
+
+test('Health settings in the Bookmarks view open Monitoring → Checks', async ({ page }) => {
+    const { openBookmarksWithHealth } = require('./helpers/bookmarks-health');
+    await openBookmarksWithHealth(page);
+    await page.locator('.config-view--library [data-bm-header-more]').click();
+    await page.locator('[data-bm-header-menu] [data-bm-header-action="settings"]').click();
+    await expect(page.locator('[data-monitoring-tab="checks"]')).toHaveAttribute('aria-selected', 'true');
+    await expect.poll(() => hash(page)).toBe('#config/monitoring/checks');
 });

@@ -133,7 +133,7 @@
             link: ['statusPageInfoLink', 'Turning the page on makes a secret link. Anyone who has it can open the page, so sharing the link is sharing the page. New link… makes a fresh one and the old link stops at once. Only from the home network refuses visitors from outside your own network, and visitors through a proxy you have not named in NEXTDASH_TRUSTED_PROXIES.'],
             top: ['statusPageInfoTop', 'The title and the notice are the first things a visitor reads. Under them the page adds one line for everything: all services working, or how many have a problem. Leave the notice empty to hide it.'],
             groups: ['statusPageInfoGroups', 'A service is a monitored bookmark, a container, or both; the worse of the two counts. A bookmark linked to a container in the Containers view is offered as one service. The public name is all a visitor sees of it. Link shows its address on the page, Speed its response time. A source that is gone is marked missing and shows as Unknown.'],
-            maintenance: ['statusPageInfoMaintenance', 'Tick the groups a maintenance window belongs to. Those groups show Planned maintenance up to a week ahead, and blue instead of red while the window is open: a stop inside it does not count as an outage. Alerts are not affected. The windows themselves are set in Behavior → Status & alerts.'],
+            maintenance: ['statusPageInfoMaintenance', 'Tick the groups a maintenance window belongs to. Those groups show Planned maintenance up to a week ahead, and blue instead of red while the window is open: a stop inside it does not count as an outage. Alerts are not affected. The windows themselves are set in Monitoring → Schedules.'],
         };
         const titles = {
             link: ['statusPageLinkTitle', 'Link and access'],
@@ -1091,7 +1091,7 @@
 
     /**
      * One row per maintenance window with a checkbox per group. The windows
-     * themselves are edited in Config → Behavior → Status & alerts; here only
+     * themselves are edited in Config → Monitoring → Schedules; here only
      * their statusGroups change. The card repaints when the groups change.
      */
     bindStatusPageMaintenance(root) {
@@ -1143,7 +1143,7 @@
                 <div class="config-panel" data-sp-maint-card>
                     ${this.statusPageCardTitle('maintenance', t('statusPageMaintTitle', 'Maintenance shown on the page'))}
                     <p class="config-field-hint">${esc(t('statusPageMaintHint',
-                        'Windows are set in Config → Behavior → Status & alerts. Ticked groups show “Planned maintenance” ahead of time and blue instead of red during it. Alerts are not affected.'))}</p>
+                        'Windows are set in Config → Monitoring → Schedules. Ticked groups show “Planned maintenance” ahead of time and blue instead of red during it. Alerts are not affected.'))}</p>
                     ${ws.length ? rows : `<p class="config-field-hint">${esc(t('statusPageMaintEmpty', 'No maintenance windows yet.'))}</p>`}
                     ${ws.length && !list.length ? `<p class="config-field-hint">${esc(t('statusPageMaintNoGroups', 'Add a group above to link a window to it.'))}</p>` : ''}
                 </div>`;

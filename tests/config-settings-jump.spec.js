@@ -48,6 +48,19 @@ test.describe('config settings jump', () => {
         await expect(page.locator('[data-config-section="appearance"][aria-selected="true"]')).toBeVisible();
     });
 
+    test('a monitoring setting jumps to its section and tab', async ({ page }) => {
+        await openConfig(page, 'overview');
+        await page.locator('#config-section-panel').focus();
+        await page.keyboard.press('Control+Shift+K');
+        await page.locator('#config-settings-jump-filter').fill('Hold notices during quiet hours');
+        const hit = page.locator('.config-settings-jump-result', { hasText: 'Hold notices during quiet hours' }).first();
+        await expect(hit).toContainText('Monitoring › Schedules');
+        await hit.click();
+        await expect(page.locator('[data-config-section="monitoring"][aria-selected="true"]')).toBeVisible();
+        await expect(page.locator('[data-monitoring-tab="schedules"]')).toHaveAttribute('aria-selected', 'true');
+        await expect(page.locator('[data-behavior-field="quietHoursEnabled"]').first()).toBeVisible();
+    });
+
     test('cached fields appear after visiting a section', async ({ page }) => {
         await openConfig(page, 'appearance');
         await page.locator('#config-section-panel').focus();

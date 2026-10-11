@@ -3,7 +3,7 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, WRITE_TOKEN } = require('./e2e-helpers');
 
 /**
- * The weekly digest's settings, on Config -> Behavior -> Notifications.
+ * The weekly digest's settings, on Config -> Monitoring -> Notifications.
  */
 
 async function openStatus(page) {
@@ -15,9 +15,8 @@ async function openStatus(page) {
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
     await page.evaluate(() => {
         const c = window.dashboardInstance.config;
-        (c.behaviorTab = c.behaviorTab || 'general', c).openConfigView('behavior');
-        c.behaviorTab = 'notifications';
-        c.render();
+        c.monitoringTab = 'notifications';
+        return c.openConfigView('monitoring');
     });
     await page.waitForSelector('[data-behavior-field="digestEnabled"]', { timeout: 15_000 });
 }

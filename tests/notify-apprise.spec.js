@@ -39,8 +39,8 @@ async function openAlerts(page, request) {
     await dismissBlockingOverlays(page);
     await page.evaluate(() => {
         const config = window.dashboardInstance.config;
-        config.behaviorTab = 'notifications';
-        return config.openConfigView('behavior');
+        config.monitoringTab = 'notifications';
+        return config.openConfigView('monitoring');
     });
     await expect(page.locator('[data-monitor-notify-test]')).toBeVisible();
 }
