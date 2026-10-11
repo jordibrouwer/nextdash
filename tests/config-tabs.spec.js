@@ -271,3 +271,28 @@ test('Health settings in the Bookmarks view open Monitoring → Checks', async (
     await expect(page.locator('[data-monitoring-tab="checks"]')).toHaveAttribute('aria-selected', 'true');
     await expect.poll(() => hash(page)).toBe('#config/monitoring/checks');
 });
+
+test.describe('a saved place on an old Status & alerts tab', () => {
+    const saved = (subTab) => JSON.stringify({ section: 'behavior', subTab, savedAt: Date.now() });
+
+    test('a cold load of bare #config opens it on Monitoring', async ({ page }) => {
+        await page.addInitScript((value) => {
+            localStorage.setItem('nextdash:config-last-location-v1', value);
+        }, saved('notifications'));
+        await open(page, '#config');
+        await expect(page.locator('[data-monitoring-tab="notifications"]')).toHaveAttribute('aria-selected', 'true');
+        await expect.poll(() => hash(page)).toBe('#config/monitoring/notifications');
+    });
+
+    test('opening config from the dashboard opens it on Monitoring', async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate((value) => localStorage.setItem('nextdash:config-last-location-v1', value), saved('status'));
+        await page.locator('.config-link-anchor').click();
+        await expect(page.locator('[data-monitoring-tab="checks"]')).toHaveAttribute('aria-selected', 'true');
+        await expect.poll(() => hash(page)).toBe('#config/monitoring/checks');
+    });
+});

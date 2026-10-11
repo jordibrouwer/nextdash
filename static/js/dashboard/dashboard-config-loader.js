@@ -143,10 +143,6 @@ class DashboardConfigLoader {
             if (section === 'appearance' && subTab === 'toolbar') subTab = 'header';
             // Mirrors DashboardConfig.BEHAVIOR_TAB_ALIASES.
             if (section === 'behavior' && subTab === 'inbox') subTab = 'fresh';
-            // Mirrors DashboardConfig.MONITORING_FROM_BEHAVIOR.
-            if (section === 'behavior' && ['status', 'checks', 'notifications'].includes(subTab)) {
-                return { section: 'monitoring', subTab: subTab === 'notifications' ? 'notifications' : 'checks' };
-            }
             return { section, subTab: subTab || null };
         } catch {
             return null;
