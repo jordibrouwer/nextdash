@@ -69,8 +69,9 @@ test.describe('the Catalogue tab', () => {
         await tab(page, 'catalogue').click();
         const grouped = await page.evaluate(() => window.DashboardConfig.WIDGET_TYPE_GROUPS
             .reduce((n, [, types]) => n + types.length, 0));
-        // +1: the Custom widget, in a group of its own at the end.
-        const cards = page.locator('.config-widget-kind');
+        // +1: the Custom widget, in a group of its own at the end. The New
+        // strip on top repeats kinds that are also in their own group.
+        const cards = page.locator('.config-widget-kind-group:not(.config-widget-kind-group--new) .config-widget-kind');
         await expect(cards).toHaveCount(grouped + 1);
         await expect(page.locator('.config-widget-kind:not(:has(.config-widget-kind-sample))')).toHaveCount(0);
         await expect(page.locator('.config-widget-kind:not(:has([data-widget-add]))')).toHaveCount(0);

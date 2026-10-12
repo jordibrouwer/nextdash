@@ -195,3 +195,62 @@ test.describe('the widget picker', () => {
         await expect(page.locator('.modal--widget-catalogue [data-widget-search]')).toHaveValue('');
     });
 });
+
+/*
+ * New kinds wear a badge, and lose it by themselves one minor release later.
+ *
+ * The release is read from the nextdash-release meta, so the test sets it
+ * rather than depending on whichever release this checkout happens to be.
+ */
+test.describe('new widget kinds', () => {
+    async function setRelease(page, tag) {
+        await page.evaluate((value) => {
+            let meta = document.querySelector('meta[name="nextdash-release"]');
+            if (!meta) {
+                meta = document.createElement('meta');
+                meta.name = 'nextdash-release';
+                document.head.appendChild(meta);
+            }
+            meta.content = value;
+        }, tag);
+    }
+
+    const MEDIA = ['jellyfin', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd'];
+
+    test('the media kinds lead the picker with a New badge', async ({ page }) => {
+        await openWidgets(page);
+        await setRelease(page, 'v1.20.0');
+        await page.locator('[data-widget-catalogue]').click();
+
+        const strip = page.locator('.config-widget-picker-group--new [data-widget-option]');
+        await expect(strip).toHaveCount(MEDIA.length);
+        expect(await strip.evaluateAll((els) => els.map((el) => el.getAttribute('data-widget-option'))))
+            .toEqual(MEDIA);
+        await expect(page.locator('.config-widget-picker-group--new .config-widget-new-badge')).toHaveCount(MEDIA.length);
+        // Opened without a kind asked for, the first new one is the one shown.
+        await expect(page.locator('.config-widget-picker-preview .config-widget-new-badge')).toBeVisible();
+        // An older kind carries none.
+        await expect(page.locator('[data-widget-option="health"] .config-widget-new-badge')).toHaveCount(0);
+    });
+
+    test('the Catalogue tab shows them first, marked', async ({ page }) => {
+        await openWidgets(page);
+        await setRelease(page, 'v1.20.3');
+        await page.locator('[data-widgets-tab="catalogue"]').click();
+
+        const strip = page.locator('.config-widget-kind-group--new .config-widget-kind.is-new');
+        await expect(strip).toHaveCount(MEDIA.length);
+        await expect(page.locator('.config-widget-kind-group').first()).toHaveClass(/config-widget-kind-group--new/);
+        await expect(page.locator('[data-widget-kind-filter="new"]')).toBeVisible();
+    });
+
+    test('a minor release later the badge is gone', async ({ page }) => {
+        await openWidgets(page);
+        await setRelease(page, 'v1.21.0');
+        await page.locator('[data-widget-catalogue]').click();
+
+        await expect(page.locator('.modal--widget-catalogue [data-widget-search]')).toBeFocused();
+        await expect(page.locator('.config-widget-picker-group--new')).toHaveCount(0);
+        await expect(page.locator('.modal--widget-catalogue .config-widget-new-badge')).toHaveCount(0);
+    });
+});

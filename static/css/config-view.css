@@ -6475,6 +6475,44 @@ body.no-animations .config-new-features-panel-star {
     }
 }
 
+/*
+ * New: a filled chip in the accent, the one loud thing on a card or a row,
+ * so a release's new kinds are found without being looked for. It goes away
+ * by itself a minor release later (isWidgetTypeNew).
+ */
+.config-widget-new-badge {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    margin-left: 8px;
+    padding: 1px 6px;
+    border-radius: var(--radius-3, 4px);
+    background: var(--accent-primary);
+    color: var(--background-primary);
+    font-size: calc(var(--font-size-text) * 0.66);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.5;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.config-widget-picker-option .config-widget-new-badge,
+.config-widget-picker-name .config-widget-new-badge {
+    margin-left: 0;
+}
+
+/* Catalogue tab: a new kind's card carries the accent before it is hovered. */
+.config-widget-kind.is-new {
+    border-color: color-mix(in srgb, var(--accent-primary) 70%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 6%, var(--surface-2, var(--card-bg, transparent)));
+}
+
+.config-widget-kind-group--new .config-widget-kind-group-title {
+    color: var(--accent-primary);
+}
+
 .config-widget-list {
     display: flex;
     flex-direction: column;

@@ -10,6 +10,7 @@
     <meta name="darkreader-lock">
     {{if .WriteToken}}<meta name="nextdash-write-token" content="{{.WriteToken}}">{{end}}
     <meta name="nextdash-app-version" content="{{.AppVersion}}">
+    {{if .ReleaseTag}}<meta name="nextdash-release" content="{{.ReleaseTag}}">{{end}}
     {{if .TelemetryLockedOff}}<meta name="nextdash-telemetry-locked" content="1">{{end}}
     {{if .UpdateCheckLockedOff}}<meta name="nextdash-update-check-locked" content="1">{{end}}
     {{if .DemoMode}}<meta name="nextdash-demo" content="1">{{end}}
