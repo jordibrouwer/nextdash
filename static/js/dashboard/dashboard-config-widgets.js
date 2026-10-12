@@ -28,29 +28,18 @@
      */
     renderWidgetsSection() {
         const esc = (v) => this.dash.escapeHtml(v);
-        const tabs = DashboardConfig.WIDGETS_TABS.map((tab) => {
-            const active = tab === this.widgetsTab;
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-widgets-body" data-widgets-tab="${esc(tab)}">${esc(this.widgetsTabLabel(tab))}</button>`;
-        }).join('');
+        // A stored or linked 'types' from before the tab was folded into the
+        // catalogue lands on the list.
+        this.widgetsTab = 'widgets';
         return `
             <p class="config-view-intro">${esc(this.t('config.widgetsSectionIntro',
                 'Blocks on a page that hold something other than bookmarks — what is broken, what is waiting, what has gone quiet.'))}</p>
-            <div class="config-subtabs" role="tablist">${tabs}</div>
-            <div id="config-widgets-body" role="tabpanel" tabindex="0">${this.renderWidgetsTab()}</div>
+            <div id="config-widgets-body">${this.renderWidgetsTab()}</div>
         `;
     },
 
     renderWidgetsTab() {
-        return this.widgetsTab === 'types' ? this.renderWidgetTypeReference() : this.renderWidgetsEditor();
-    },
-
-    widgetsTabLabel(tab) {
-        const map = {
-            widgets: ['config.widgetsTabList', 'Widgets'],
-            types: ['config.widgetsTabTypes', 'Types'],
-        };
-        const [key, fallback] = map[tab] || [tab, tab];
-        return this.t(key, fallback);
+        return this.renderWidgetsEditor();
     },
 
     widgetTypeGroupLabel(group) {
@@ -68,34 +57,6 @@
         };
         const [key, fallback] = map[group] || [group, group];
         return this.t(key, fallback);
-    },
-
-    renderWidgetTypeReference() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        // Each row carries the button that adds it, so reading about a kind and
-        // choosing it are not two screens apart. Reference and catalogue were
-        // the same thirteen names and the same thirteen sentences, twice.
-        const row = (type) => `
-            <li class="config-widget-type-row">
-                <span class="config-widget-type-name">${esc(this.widgetTypeName(type))}</span>
-                <span class="config-widget-type-about">${esc(this.widgetTypeAbout(type))}</span>
-                <button type="button" class="config-btn config-btn--small config-widget-type-add"
-                    data-widget-add="${esc(type)}"
-                    aria-label="${esc(this.t('config.widgetsAddNamed', 'Add {name}')
-                        .replace('{name}', this.widgetTypeName(type)))}">${
-                    esc(this.t('config.widgetsAddShort', 'Add'))}</button>
-            </li>`;
-        const groups = DashboardConfig.WIDGET_TYPE_GROUPS.map(([group, types]) => `
-            <section class="config-widget-type-group">
-                <h4 class="config-widget-type-group-title">${esc(this.widgetTypeGroupLabel(group))}</h4>
-                <ul class="config-widget-type-list">${types.map(row).join('')}</ul>
-            </section>`).join('');
-
-        return `
-            <p class="config-panel-note">${esc(this.t('config.widgetTypesIntro',
-                'Every kind of widget nextDash can draw. Add one straight from this list.'))}</p>
-            ${groups}
-            ${this.renderCustomWidgetReference()}`;
     },
 
     /*
@@ -128,9 +89,9 @@
             .join(' ');
 
         return `
-            <section class="config-widget-type-group config-widget-custom-ref">
-                <h4 class="config-widget-type-group-title">${t('config.widgetGroupCustom',
-                    'And anything else: the Custom widget')}</h4>
+            <details class="config-widget-custom-ref">
+                <summary class="config-widget-custom-summary">${t('config.widgetCustomRefSummary',
+                    'What can the Custom widget do?')}</summary>
                 <p class="config-widget-custom-lead">${t('config.widgetCustomRefLead',
                     'Every widget above reads something nextDash already knows. The Custom widget reads a figure out of any service that answers JSON, so a tile can show what your own machines are doing without waiting for nextDash to grow a widget for them.')}</p>
                 <ul class="config-widget-custom-points">
@@ -168,24 +129,7 @@
                 </ul>
                 <p class="config-widget-custom-lead">${t('config.widgetCustomRefLimits',
                     'What it will not do is change anything. A tile reads, and the two methods it offers are the two that ask a question. An answer has eight seconds to arrive and is read up to a megabyte.')}</p>
-                <p class="config-widget-custom-add">
-                    <button type="button" class="config-btn config-btn--small" data-widget-add="custom">${
-                        t('config.widgetsAddNamed', 'Add {name}')
-                            .replace('{name}', esc(this.widgetTypeName('custom')))}</button>
-                </p>
-            </section>`;
-    },
-
-    bindWidgetsTabs(container) {
-        this.bindSubTabStrip(container, 'data-widgets-tab', (tab) => {
-            if (tab === this.widgetsTab) return;
-            this.widgetsTab = tab;
-            this.restoreConfigHash();
-            // Only the body changes. Repainting the strip as well would rebuild
-            // the buttons under the pointer that just clicked one.
-            this.repaintWidgetsBody();
-            this.syncSubTabStrip('data-widgets-tab', this.widgetsTab);
-        });
+            </details>`;
     },
 
     /** Redraw the widgets section without refetching what it already has. */
@@ -724,7 +668,7 @@
      * theme browser answers the same question the same way, for the same
      * reason.
      */
-    openWidgetCatalogue() {
+    openWidgetCatalogue({ focusType } = {}) {
         const esc = (v) => this.dash.escapeHtml(v);
         if (!window.AppModal?.show) return;
 
@@ -738,7 +682,11 @@
             confirmText: this.t('dashboard.close', 'Close'),
             modalClass: 'modal--widget-catalogue',
             modalMaxWidth: '52rem',
-            initialFocusSelector: '[data-widget-add]',
+            // The modal moves focus itself a frame or two after it opens, so
+            // the card asked for is named here rather than focused afterwards.
+            initialFocusSelector: focusType
+                ? `[data-widget-add="${CSS.escape(focusType)}"]`
+                : '[data-widget-add]',
         });
 
         // The overlay lives outside #config-widgets-body, so the tab's
@@ -751,6 +699,11 @@
             window.AppModal.hide();
             void this.addWidget(card.getAttribute('data-widget-add') || 'health');
         });
+
+        if (focusType) {
+            root.querySelector(`[data-widget-add="${CSS.escape(focusType)}"]`)
+                ?.scrollIntoView({ block: 'center' });
+        }
     },
 
     /** The catalogue itself: every kind, grouped under the question it answers. */
@@ -774,8 +727,9 @@
                     <h4 class="config-widget-pick-group-title">${esc(this.t('config.widgetGroupCustom',
                         'And anything else: the Custom widget'))}</h4>
                     <div class="config-widget-pick-grid">${card('custom')}</div>
-                    <p class="config-widget-pick-footnote">${esc(this.t('config.widgetsAddCustomNote',
-                        'Reads a figure out of any service that answers JSON, and can start from one of the services already known. The Types tab explains what it can do.'))}</p>
+                    <p class="config-widget-pick-footnote">${esc(this.t('config.widgetsAddCustomNoteInline',
+                        'Reads a figure out of any service that answers JSON, and can start from one of the services already known.'))}</p>
+                    ${this.renderCustomWidgetReference()}
                 </section>
             </div>`;
     },
@@ -3302,10 +3256,6 @@
         // place that decides what a widget id looks like.
         if (!await this.saveWidgetBlocks(payload)) return;
         this._widgetLoadedFor = null;
-        // Switch to the list before it redraws: adding from the Types tab must
-        // land somewhere the new row exists.
-        this.widgetsTab = 'widgets';
-        this.syncSubTabStrip('data-widgets-tab', this.widgetsTab);
         await this.loadWidgetsEditor();
         /*
          * Open the new widget's settings straight away.

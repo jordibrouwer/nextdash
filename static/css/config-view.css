@@ -7479,18 +7479,15 @@ body.no-animations .config-new-features-panel-star {
  * time and remembering. Both screens now put every kind on the page under the
  * question it answers; the only difference is that one of them is clickable.
  */
-.config-widget-pick-group,
-.config-widget-type-group {
+.config-widget-pick-group {
     margin: 0 0 18px;
 }
 
-.config-widget-pick-group:last-child,
-.config-widget-type-group:last-child {
+.config-widget-pick-group:last-child {
     margin-bottom: 0;
 }
 
-.config-widget-pick-group-title,
-.config-widget-type-group-title {
+.config-widget-pick-group-title {
     margin: 0 0 8px;
     font-size: var(--font-size-small);
     font-weight: var(--font-weight-semibold, 600);
@@ -7538,8 +7535,7 @@ body.no-animations .config-new-features-panel-star {
     font-weight: var(--font-weight-semibold, 600);
 }
 
-.config-widget-pick-about,
-.config-widget-type-about {
+.config-widget-pick-about {
     color: var(--text-tertiary);
     font-size: var(--font-size-small);
     line-height: 1.5;
@@ -7553,62 +7549,21 @@ body.no-animations .config-new-features-panel-star {
     line-height: 1.5;
 }
 
-/* The reference: a name and a sentence, stacked rather than gridded — reading
-   is a column, choosing is a grid. */
-.config-widget-type-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin: 0;
-    padding: 0;
-}
-
-/* The name and the sentence read as a column; the button that adds the kind
-   sits beside them rather than under, so a list of thirteen stays a list of
-   thirteen rather than becoming thirteen rows with a button hanging off each. */
-.config-widget-type-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: start;
-    column-gap: 12px;
-    row-gap: 3px;
-    padding: 12px 14px;
-    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: var(--radius-6, 10px);
-    background: var(--card-bg, rgba(127, 127, 127, 0.03));
-}
-
-.config-widget-type-add {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-    align-self: center;
-}
-
-/* Narrow: the button drops under the sentence rather than squeezing it. */
-@media (max-width: 30rem) {
-    .config-widget-type-row {
-        grid-template-columns: 1fr;
-    }
-
-    .config-widget-type-add {
-        grid-column: 1;
-        grid-row: auto;
-        justify-self: start;
-        margin-top: 6px;
-    }
-}
-
-.config-widget-type-name {
-    font-weight: var(--font-weight-semibold, 600);
-}
-
 /* ── The Custom widget, explained at length ──────────────────────────────── */
 .config-widget-custom-ref {
-    padding: 14px 16px;
-    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: var(--radius-6, 10px);
-    background: var(--card-bg, rgba(127, 127, 127, 0.03));
+    margin-top: 12px;
+    border-top: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    padding-top: 10px;
+}
+
+.config-widget-custom-summary {
+    cursor: pointer;
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.93);
+}
+
+.config-widget-custom-ref[open] > .config-widget-custom-summary {
+    margin-bottom: 10px;
 }
 
 .config-widget-custom-lead {
@@ -7618,14 +7573,6 @@ body.no-animations .config-new-features-panel-star {
     line-height: 1.6;
     max-width: 70ch;
     text-wrap: pretty;
-}
-
-/* The Custom widget is explained at length rather than in a row, so its Add
-   button cannot sit beside a sentence the way the others do. It closes the
-   section instead — every kind on this tab is addable from where it is
-   described, and this one was the exception. */
-.config-widget-custom-add {
-    margin: 14px 0 0;
 }
 
 .config-widget-custom-ref .config-widget-custom-lead:last-child {
@@ -8477,13 +8424,6 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
 .status-page-picker-item.is-active { background: color-mix(in srgb, var(--accent-primary) 16%, transparent); }
 .status-page-picker-meta { color: var(--text-muted); font-size: var(--font-size-small, 0.85em); }
 .status-page-picker-empty { padding: 5px 8px; color: var(--text-muted); }
-
-/* Widgets -> Types, arrived at from Config -> Unraid: the kind asked for. */
-.config-widget-type-row.is-pointed {
-    outline: 1px solid var(--accent-primary);
-    outline-offset: 2px;
-    border-radius: var(--layout-radius-xs, 6px);
-}
 
 /* Still, for whoever asked for stillness: the dots wait mid-line. */
 @media (prefers-reduced-motion: reduce) {

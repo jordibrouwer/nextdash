@@ -2449,7 +2449,6 @@ class DashboardConfig {
             this.bindControlPanels(container, 'behavior');
             this.bindInboxSection?.(container);
         } else if (this.section === 'widgets') {
-            this.bindWidgetsTabs(container);
             this.bindWidgetsEditor(container);
             void this.loadWidgetsEditor();
             // The custom widget offers a credential by name; the names are two
@@ -19662,7 +19661,7 @@ class DashboardConfig {
     /* ── Categories (native, per page) ─────────────────────────────────────── */
 
     /** The two halves of the Widgets section: the ones you have, and the kinds. */
-    static WIDGETS_TABS = ['widgets', 'types'];
+    static WIDGETS_TABS = ['widgets'];
 
     /** Config → Inbox: what is collected, the list, the side panel and clicks, the header icon. */
     static INBOX_TABS = ['collecting', 'list', 'panel', 'icon'];

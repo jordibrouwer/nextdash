@@ -92,17 +92,6 @@ test.describe('the widget catalogue is a door, not the page', () => {
         await expect(page.locator('.config-widget-row [data-widget="title"]')).toBeFocused();
     });
 
-    test('the Types tab adds too, and switches to the list to show it', async ({ page }) => {
-        await openWidgets(page);
-        await page.locator('[data-widgets-tab="types"]').click();
-
-        await page.locator('.config-widget-type-row [data-widget-add="uptime"]').click();
-
-        await expect(page.locator('[data-widgets-tab="widgets"]')).toHaveAttribute('aria-selected', 'true');
-        await expect(page.locator('.config-widget-row')).toHaveCount(1);
-        await expect(page.locator('.config-widget-row [data-widget="title"]')).toBeFocused();
-    });
-
     /*
      * Adding one is almost always followed by filling it in, and the fields sat
      * behind a Settings button. Only one panel is open at a time, so on a page
@@ -134,24 +123,6 @@ test.describe('the widget catalogue is a door, not the page', () => {
         // And it is the second widget's panel, not the first one reopened.
         const openIndex = await open.getAttribute('data-widget-settings');
         await expect(areas).toHaveAttribute('data-widget-index', openIndex);
-    });
-
-    test('every kind on Types is addable from where it is described', async ({ page }) => {
-        await openWidgets(page);
-        await page.locator('[data-widgets-tab="types"]').click();
-
-        // Custom is explained at length rather than in a row, which is how it
-        // came to be the one kind on this tab with nothing to press.
-        const offered = await page.evaluate(() => {
-            const Config = window.DashboardConfig || window.dashboardInstance.config?.constructor;
-            return [...(Config?.WIDGET_TYPES || [])];
-        });
-        await expect(page.locator('[data-widget-add]')).toHaveCount(offered.length);
-        await expect(page.locator('.config-widget-custom-ref [data-widget-add="custom"]')).toBeVisible();
-
-        await page.locator('.config-widget-custom-ref [data-widget-add="custom"]').click();
-        await expect(page.locator('[data-widgets-tab="widgets"]')).toHaveAttribute('aria-selected', 'true');
-        await expect(page.locator('.config-widget-row')).toHaveCount(1);
     });
 
     test('the Custom widget is named, not spelled as its type', async ({ page }) => {

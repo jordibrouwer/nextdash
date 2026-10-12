@@ -69,7 +69,7 @@
                 <ol class="unraid-steps">
                     ${step('key', 1, `${t('unraidStepKey', 'In Unraid, make an API key with the role Viewer:')} <strong>Settings → Management Access → API Keys</strong>.`)}
                     ${step('connect', 2, t('unraidStepConnect', 'Fill in the address and the key below, test the connection and save.'))}
-                    ${step('widgets', 3, `${t('unraidStepWidgets', 'Put Unraid widgets on a page.')} <button type="button" class="config-link-btn" data-unraid-goto-widgets>${t('unraidOpenTypes', 'Open Widgets → Types')}</button>`)}
+                    ${step('widgets', 3, `${t('unraidStepWidgets', 'Put Unraid widgets on a page.')} <button type="button" class="config-link-btn" data-unraid-goto-widgets>${t('unraidOpenCatalogue', 'Add an Unraid widget')}</button>`)}
                 </ol>
             </div>`;
     },
@@ -112,45 +112,17 @@
     },
 
     /*
-     * Widgets -> Types, scrolled to the Unraid group or to one kind in it,
-     * whose Add then has the focus: one Enter from a widget on the page.
+     * The Add catalogue, scrolled to one kind in it (the Unraid card by
+     * default), whose card then has the focus: one Enter from a widget on the
+     * page.
      */
-    openUnraidWidgetTypes(type) {
-        this.widgetsTab = 'types';
+    async openUnraidWidgetTypes(type) {
         this.selectSection('widgets');
-        let tries = 0;
-        const find = () => {
-            const body = document.getElementById('config-widgets-body');
-            if (!body) return null;
-            if (type) return body.querySelector(`[data-widget-add="${CSS.escape(type)}"]`);
-            return body.querySelector('[data-widget-add="unraid"]')?.closest('.config-widget-type-group') || null;
-        };
-        /*
-         * The Widgets section draws, then repaints once its list has loaded --
-         * which replaces the button that was just focused. So keep pointing
-         * at the current one until it has stayed put for a few frames.
-         */
-        let pointed = null;
-        let steady = 0;
-        const tick = () => {
-            const el = find();
-            if (el && el !== pointed) {
-                pointed = el;
-                steady = 0;
-                el.scrollIntoView({ block: 'center' });
-                if (type) {
-                    el.focus({ preventScroll: true });
-                    const rowEl = el.closest('.config-widget-type-row');
-                    rowEl?.classList.add('is-pointed');
-                    setTimeout(() => rowEl?.classList.remove('is-pointed'), 2400);
-                }
-            } else if (el && type && document.activeElement !== el) {
-                el.focus({ preventScroll: true });
-            }
-            steady = el ? steady + 1 : 0;
-            if (steady < 20 && (tries += 1) < 120) requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
+        // The Widgets script loads on demand; openWidgetCatalogue is not there
+        // until it has landed.
+        if (!(await this.ensureSection('widgets')) || this.section !== 'widgets') return;
+        // The section paints first; the catalogue is an overlay over it.
+        requestAnimationFrame(() => this.openWidgetCatalogue({ focusType: type || 'unraid' }));
     },
 
     /** Tick off the three steps from what the server says. */

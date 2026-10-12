@@ -175,22 +175,20 @@ test.describe('Config -> Unraid explains itself', () => {
         await expect(page.locator('.unraid-step.is-done')).toHaveCount(0);
     });
 
-    // What you get: each kind's Add leads to that kind in Widgets -> Types,
-    // with its own Add focused -- one Enter from a widget on the page.
-    test('Add on a kind opens Widgets -> Types on that kind', async ({ page }) => {
+    // What you get: each kind's Add opens the catalogue with that kind's
+    // card focused -- one Enter from a widget on the page.
+    test('Add on a kind opens the catalogue on that kind', async ({ page }) => {
         await openSection(page, { server: SAVED, keySet: true, suggestedBaseUrl: '' });
         await expect(page.locator('[data-unraid-preview] .unraid-mini')).toHaveCount(7);
         await page.locator('[data-unraid-add="unraidParity"]').click();
         await expect(page.locator('#config-section-widgets')).toHaveAttribute('aria-selected', 'true');
-        await expect(page.locator('[data-widgets-tab="types"]')).toHaveAttribute('aria-selected', 'true');
-        await expect(page.locator('#config-widgets-body [data-widget-add="unraidParity"]')).toBeFocused();
+        await expect(page.locator('.modal--widget-catalogue [data-widget-add="unraidParity"]')).toBeFocused();
     });
 
-    test('Open Widgets -> Types lands on the Unraid group', async ({ page }) => {
+    test('Add an Unraid widget opens the catalogue on the Unraid card', async ({ page }) => {
         await openSection(page, { server: null, keySet: false, suggestedBaseUrl: '' });
         await page.locator('[data-unraid-explain] [data-unraid-goto-widgets]').click();
-        await expect(page.locator('[data-widgets-tab="types"]')).toHaveAttribute('aria-selected', 'true');
-        await expect(page.locator('#config-widgets-body [data-widget-add="unraid"]')).toBeInViewport();
+        await expect(page.locator('.modal--widget-catalogue [data-widget-add="unraid"]')).toBeFocused();
     });
 });
 
