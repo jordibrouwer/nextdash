@@ -4578,7 +4578,8 @@ body.no-animations .config-new-features-panel-star {
 
 .config-bm-keyboard-legend kbd,
 .config-form-keyboard-legend kbd,
-.config-list-keyboard-legend kbd {
+.config-list-keyboard-legend kbd,
+.config-widget-picker-keys kbd {
     font-size: var(--text-xs, 0.7rem);
     padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.32rem);
     border-radius: var(--radius-3, 0.25rem);
@@ -6251,12 +6252,227 @@ body.no-animations .config-new-features-panel-star {
     text-wrap: pretty;
 }
 
-/* The catalogue is the tall part of the dialog and the only part that scrolls,
-   so the close button stays reachable however many kinds there are. */
-.modal--widget-catalogue .config-widget-catalogue {
-    max-height: min(60vh, 34rem);
+/*
+ * The picker: search and list on the left, the chosen kind on the right.
+ *
+ * The list is the only part that scrolls, so the field above it and the
+ * Close button below stay where they are however many kinds there are.
+ */
+.config-widget-picker {
+    display: grid;
+    grid-template-columns: minmax(14rem, 17rem) minmax(0, 1fr);
+    gap: 18px;
+    min-height: min(60vh, 32rem);
+}
+
+.config-widget-picker-side {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.config-widget-picker-search {
+    width: 100%;
+}
+
+.config-widget-picker-list {
+    flex: 1;
+    max-height: min(52vh, 28rem);
     overflow-y: auto;
     padding-right: 4px;
+    overscroll-behavior: contain;
+}
+
+.config-widget-picker-group + .config-widget-picker-group {
+    margin-top: 10px;
+}
+
+.config-widget-picker-group-title {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 4px 8px;
+    background: var(--modal-bg, var(--background-primary));
+    font-size: calc(var(--font-size-text) * 0.74);
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-muted, var(--text-tertiary));
+}
+
+.config-widget-picker-group--new .config-widget-picker-group-title {
+    color: var(--accent-primary);
+}
+
+.config-widget-picker-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 6px 8px;
+    border-radius: var(--radius-4, 6px);
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+}
+
+/* display:flex above would otherwise outrank the attribute the search sets. */
+.config-widget-picker-option[hidden] {
+    display: none;
+}
+
+.config-widget-picker-option:hover {
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+    color: var(--text-primary, inherit);
+}
+
+.config-widget-picker-option.is-active {
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    box-shadow: inset 2px 0 0 var(--accent-primary);
+    color: var(--text-primary, inherit);
+}
+
+.config-widget-picker-option-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* How many are already on the page: a quiet count, the sentence is in the pane. */
+.config-widget-picker-option-have {
+    flex: none;
+    min-width: 1.4em;
+    padding: 0 5px;
+    border: 1px solid color-mix(in srgb, var(--accent-success) 50%, transparent);
+    border-radius: var(--radius-pill, 999px);
+    font-size: calc(var(--font-size-text) * 0.72);
+    text-align: center;
+    color: var(--accent-success);
+}
+
+.config-widget-picker-empty {
+    margin: 12px 8px;
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small);
+}
+
+.config-widget-picker-keys {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    color: var(--text-tertiary);
+    font-size: var(--text-xs, 0.72rem);
+}
+
+.config-widget-picker-keys span + kbd {
+    margin-left: 8px;
+}
+
+/* Arrows and Enter mean nothing to a finger. */
+@media (pointer: coarse) {
+    .config-widget-picker-keys {
+        display: none;
+    }
+}
+
+.config-widget-picker-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    padding-left: 18px;
+    border-left: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    overflow-y: auto;
+    max-height: min(60vh, 32rem);
+}
+
+.config-widget-picker-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.config-widget-picker-title {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.config-widget-picker-name {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 1.2);
+    font-weight: 600;
+    color: var(--text-primary, inherit);
+}
+
+.config-widget-picker-group-label {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small);
+}
+
+.config-widget-picker-about {
+    margin: 0;
+    max-width: 52ch;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
+/* The same drawing the Catalogue tab uses, given the room to be read. */
+.config-widget-picker-sample.config-widget-kind-sample {
+    gap: 9px;
+    max-width: 30rem;
+    min-height: 6rem;
+    padding: 14px 16px;
+    font-size: var(--font-size-text);
+}
+
+.config-widget-picker-sample .config-widget-kind-big {
+    font-size: calc(var(--font-size-text) * 2);
+}
+
+.config-widget-picker-sample .config-widget-kind-spark {
+    height: 36px;
+}
+
+.config-widget-picker-have {
+    margin: 0;
+    color: var(--accent-success);
+    font-size: var(--font-size-small);
+}
+
+.config-widget-picker-preview .config-widget-custom-ref {
+    margin-top: 0;
+}
+
+/* A phone: the list on top, shorter, and the pane under it. */
+@media (max-width: 640px) {
+    .config-widget-picker {
+        grid-template-columns: minmax(0, 1fr);
+        min-height: 0;
+    }
+
+    .config-widget-picker-list {
+        max-height: 34vh;
+    }
+
+    .config-widget-picker-preview {
+        padding: 14px 0 0;
+        border-left: 0;
+        border-top: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+        max-height: none;
+    }
 }
 
 .config-widget-list {

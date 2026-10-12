@@ -34,6 +34,7 @@ async function openWidgets(page) {
 async function addCustom(page) {
     const before = await page.locator('[data-widget-settings]').count();
     await page.locator('[data-widget-catalogue]').click();
+    await page.locator('.modal--widget-catalogue [data-widget-option="custom"]').first().click();
     await page.locator('.modal--widget-catalogue [data-widget-add="custom"]').click();
     await expect.poll(() => page.locator('[data-widget-settings]').count()).toBe(before + 1);
     await expect(page.locator('.config-widget-row').last().locator('[data-widget="title"]'))

@@ -120,7 +120,7 @@ test.describe('the container list widget', () => {
             await window.dashboardInstance.config.openConfigView('widgets');
         });
         await page.locator('[data-widget-catalogue]').first().click();
-        await expect(page.locator('.modal--widget-catalogue [data-widget-add="containers"]')).toBeVisible();
+        await expect(page.locator('.modal--widget-catalogue [data-widget-option="containers"]')).toBeVisible();
         await expect(page.locator('.modal--widget-catalogue')).toContainText('Container list');
         const offered = await page.evaluate(() => {
             const Config = window.DashboardConfig || window.dashboardInstance.config?.constructor;

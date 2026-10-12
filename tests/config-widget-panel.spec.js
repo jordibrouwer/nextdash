@@ -56,6 +56,7 @@ async function addWidget(page, type) {
     const before = await page.locator('[data-widget-settings]').count();
     // The catalogue is an overlay, so choosing a kind is: open it, pick.
     await page.locator('[data-widget-catalogue]').click();
+    await page.locator(`.modal--widget-catalogue [data-widget-option="${type}"]`).first().click();
     await page.locator(`.modal--widget-catalogue [data-widget-add="${type}"]`).click();
     await expect.poll(() => page.locator('[data-widget-settings]').count()).toBe(before + 1);
     // The count arriving is not the list settling: the dashboard redraws behind

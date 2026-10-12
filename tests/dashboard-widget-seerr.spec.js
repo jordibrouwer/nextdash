@@ -116,6 +116,7 @@ test.describe('the Seerr widget', () => {
             await window.dashboardInstance.config.openConfigView('widgets');
         });
         await page.locator('[data-widget-catalogue]').click();
+        await page.locator('.modal--widget-catalogue [data-widget-option="seerr"]').first().click();
         await page.locator('.modal--widget-catalogue [data-widget-add="seerr"]').click();
         await expect(page.locator('.config-widget-row').last().locator('[data-widget="title"]')).toBeFocused({ timeout: 10_000 });
         const toggle = page.locator('[data-widget-settings]').last();

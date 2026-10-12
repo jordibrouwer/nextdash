@@ -90,6 +90,7 @@ async function addInConfig(page, type) {
     });
     await expect(page.locator('[data-widget-catalogue]')).toBeVisible();
     await page.locator('[data-widget-catalogue]').click();
+    await page.locator(`.modal--widget-catalogue [data-widget-option="${type}"]`).first().click();
     await page.locator(`.modal--widget-catalogue [data-widget-add="${type}"]`).click();
     await expect(page.locator('.config-widget-row').last().locator('[data-widget="title"]'))
         .toBeFocused({ timeout: 10_000 });

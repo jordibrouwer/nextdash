@@ -60,6 +60,7 @@ test.describe('the widget catalogue is a door, not the page', () => {
         await page.locator('[data-widget-catalogue]').click();
         await expect(page.locator('.modal--widget-catalogue [data-widget-add]').first()).toBeVisible();
 
+        await page.locator('.modal--widget-catalogue [data-widget-option="health"]').first().click();
         await page.locator('.modal--widget-catalogue [data-widget-add="health"]').click();
         await expect(page.locator('.modal--widget-catalogue')).toHaveCount(0);
         await expect(page.locator('.config-widget-row')).toHaveCount(1);
@@ -102,6 +103,7 @@ test.describe('the widget catalogue is a door, not the page', () => {
     test('the new widget arrives with its settings already open', async ({ page }) => {
         await openWidgets(page);
         await page.locator('[data-widget-catalogue]').click();
+        await page.locator('.modal--widget-catalogue [data-widget-option="rss"]').first().click();
         await page.locator('.modal--widget-catalogue [data-widget-add="rss"]').click();
 
         const row = page.locator('.config-widget-row').filter({ hasText: 'RSS' });
@@ -115,6 +117,7 @@ test.describe('the widget catalogue is a door, not the page', () => {
         // A second one of the same kind opens its own panel rather than
         // reopening the first, and each carries its own fields.
         await page.locator('[data-widget-catalogue]').click();
+        await page.locator('.modal--widget-catalogue [data-widget-option="rss"]').first().click();
         await page.locator('.modal--widget-catalogue [data-widget-add="rss"]').click();
         await expect(page.locator('.config-widget-row').filter({ hasText: 'RSS' })).toHaveCount(2);
 
@@ -132,14 +135,63 @@ test.describe('the widget catalogue is a door, not the page', () => {
         await page.locator('[data-widget-catalogue]').click();
         await expect(page.locator('.modal--widget-catalogue [data-widget-add]').first()).toBeVisible();
 
-        // dashboard.widgetType.custom was missing from every locale, so the card
+        // dashboard.widgetType.custom was missing from every locale, so the row
         // fell back to the raw type and read a lowercase "custom" among thirteen
-        // proper names. Read with textContent: the card sits at the bottom of
-        // the catalogue's own scroll area, and innerText answers '' for
-        // anything not currently rendered.
-        const name = (await page.locator('[data-widget-add="custom"] .config-widget-pick-name')
+        // proper names. Read with textContent: the row sits at the bottom of
+        // the list's own scroll area, and innerText answers '' for anything
+        // not currently rendered.
+        const name = (await page.locator('[data-widget-option="custom"] .config-widget-picker-option-name')
             .textContent() || '').trim();
         expect(name).not.toBe('custom');
         expect(name).not.toBe('');
+    });
+});
+
+/*
+ * The picker: a list to search and a pane that shows the chosen kind.
+ *
+ * Driven from the keyboard the way a reader who knows what they want uses it:
+ * the field has focus when the dialog opens, three letters narrow the list,
+ * and Enter adds what is chosen.
+ */
+test.describe('the widget picker', () => {
+    test('typing narrows the list and Enter adds the one chosen', async ({ page }) => {
+        await openWidgets(page);
+        await page.locator('[data-widget-catalogue]').click();
+
+        const search = page.locator('.modal--widget-catalogue [data-widget-search]');
+        await expect(search).toBeFocused();
+        await page.keyboard.type('sab');
+
+        const shown = page.locator('.modal--widget-catalogue [data-widget-option]:visible');
+        await expect(shown).toHaveCount(1);
+        await expect(shown).toHaveAttribute('data-widget-option', 'sabnzbd');
+        await expect(page.locator('.config-widget-picker-preview')).toHaveAttribute('data-type', 'sabnzbd');
+
+        await page.keyboard.press('Enter');
+        await expect(page.locator('.modal--widget-catalogue')).toHaveCount(0);
+        await expect(page.locator('.config-widget-row')).toHaveCount(1);
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config._module._widgetBlocks.filter((b) => b.isWidget).map((b) => b.type)))
+            .toEqual(['sabnzbd']);
+    });
+
+    test('the arrows move the choice and the pane follows', async ({ page }) => {
+        await openWidgets(page);
+        await page.locator('[data-widget-catalogue]').click();
+        await expect(page.locator('.modal--widget-catalogue [data-widget-search]')).toBeFocused();
+
+        const before = await page.locator('.config-widget-picker-preview').getAttribute('data-type');
+        await page.keyboard.press('ArrowDown');
+        const after = await page.locator('.config-widget-picker-preview').getAttribute('data-type');
+        expect(after).not.toBe(before);
+        await expect(page.locator('.config-widget-picker-option.is-active'))
+            .toHaveAttribute('data-widget-option', after || '');
+        // The first Escape empties a field with text in it rather than closing.
+        await page.keyboard.type('zzzz');
+        await expect(page.locator('.config-widget-picker-empty')).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(page.locator('.modal--widget-catalogue')).toHaveCount(1);
+        await expect(page.locator('.modal--widget-catalogue [data-widget-search]')).toHaveValue('');
     });
 });

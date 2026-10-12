@@ -444,7 +444,8 @@ async function startSonarrStub() {
 async function addCustomWidget(page) {
     await openConfig(page, 'widgets');
     await page.locator('[data-widget-catalogue]').first().click();
-    await page.locator('#app-modal.show [data-widget-add="custom"]').first().click();
+    await page.locator('#app-modal.show [data-widget-option="custom"]').first().click();
+    await page.locator('#app-modal.show [data-widget-add="custom"]').click();
     const preset = page.locator('[data-widget-preset]').last();
     await preset.waitFor();
     return preset;

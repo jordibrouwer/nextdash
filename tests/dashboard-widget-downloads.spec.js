@@ -77,6 +77,7 @@ async function addInConfig(page, type) {
         await window.dashboardInstance.config.openConfigView('widgets');
     });
     await page.locator('[data-widget-catalogue]').click();
+    await page.locator(`.modal--widget-catalogue [data-widget-option="${type}"]`).first().click();
     await page.locator(`.modal--widget-catalogue [data-widget-add="${type}"]`).click();
     await expect(page.locator('.config-widget-row').last().locator('[data-widget="title"]')).toBeFocused({ timeout: 10_000 });
     const toggle = page.locator('[data-widget-settings]').last();

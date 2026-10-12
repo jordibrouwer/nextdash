@@ -274,9 +274,10 @@ test.describe('widgets update as they are configured', () => {
 
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
         await page.waitForSelector('[data-widget-catalogue]', { timeout: 15_000 });
-        // The kind is the button: choosing one is what adds it. The catalogue
-        // is an overlay, so it is opened first.
+        // The catalogue is an overlay, so it is opened first; the kind is
+        // chosen in its list and added from the pane beside it.
         await page.click('[data-widget-catalogue]');
+        await page.click('.modal--widget-catalogue [data-widget-option="inbox"]');
         await page.click('.modal--widget-catalogue [data-widget-add="inbox"]');
 
         // No reload anywhere: the grid is redrawn in place.
