@@ -3336,7 +3336,7 @@ Old addresses still land in the right place — for example `/#config/pages-tags
 
 **`Ctrl/Cmd + Shift + K`** — or **Find settings** below the section rail — searches every section, tab, setting and help topic. It also finds settings by related words (*uptime*, *wallpaper*, *hotkey*) and by their current value (*8099*, *Monitor*), and shows that value beside the result.
 
-<p align="center"><img src="screenshots/manual.md/17-find-settings.jpg" alt="Find settings with quiet typed: one result, Hold notices during quiet hours, under Behavior › Status & alerts, with its value Off" width="840"></p>
+<p align="center"><img src="screenshots/manual.md/17-find-settings.jpg" alt="Find settings with quiet typed: one result, Hold notices during quiet hours, under Monitoring › Schedules, with its value Off" width="840"></p>
 <p align="center"><sub>Find settings shows where a setting lives and what it is set to.</sub></p>
 
 **Settings per device.** Settings live on the server, so every browser shows the same dashboard. **Keep settings on this device only** (Behavior → Privacy & sync) keeps appearance and layout in this browser instead. The few settings that stay shared — such as the custom favicon and font, collections, the action bar position, web search and container icons — carry an **all devices** mark.
