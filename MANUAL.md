@@ -2594,6 +2594,9 @@ These read one server, set once under Config → Unraid ([§15.6](#156-unraid-wi
 | Kind | Shows |
 |---|---|
 | **Jellyfin** | What was added to your Jellyfin server lately, with the posters from your own library: a film or series with its poster, an episode under its series' poster. Four layouts — **list**, **strip** (a tab per library), **hero** (the newest large on its backdrop) and **grid**. See below |
+| **Sonarr**, **Radarr** | The episodes and films coming up in the next days (a week unless you choose up to 30), and what is downloading, with posters. The same four layouts; in the strip, *Upcoming* and *Queue* are the tabs |
+| **Seerr** | Requests in Overseerr or Jellyseerr, under *Pending*, *Approved* and *Available*, with who asked and the poster. Show every request or one state, films, series or both, from everyone or one person |
+| **qBittorrent**, **SABnzbd** | What is downloading, paused and finished, with progress, speed and time left, and the client's speeds and counts on top. As one list or a tab per part (*Downloading*, *Paused*, *Done*). Without posters, and in the order you choose |
 
 And the **Custom** widget, which reads any service that answers with JSON ([§15.5](#155-the-custom-widget)).
 
@@ -2634,7 +2637,18 @@ Widgets share one order with the categories and are moved on the dashboard: drag
 
 **RSS** — your server fetches each feed and caches it for 15 minutes. A headline shows the feed's summary on hover or focus. Rows past the row count fold into a **more** row. A feed that fails does not empty the tile.
 
-**Jellyfin** — fill in the server's address and an API key (Jellyfin: Dashboard → API Keys) and press **Connect**. The server tries both and says *Connected to* the server's name and version, then fills the choices below: **Read as** (a user, or no one for the newest of everything) and the **Libraries** that exist, so nothing is typed by id. Then the **Layout**, what **A click** does (open the item in Jellyfin, or show its details here first), where it opens, **Hide what was watched**, **Items to show** (in the strip, per library) and how often to ask Jellyfin (a minute at least). The key stays on the server: the tile and its posters come through nextDash, which keeps the posters in `data/jellyfin-images/` (up to 200 MB, oldest out first, not in backups). When Jellyfin cannot be reached, the tile keeps the last list and says how old it is. Jellyfin also has a Custom widget preset for its library counts ([§15.5](#155-the-custom-widget)).
+**Jellyfin** — fill in the server's address and an API key (Jellyfin: Dashboard → API Keys) and press **Connect**. The server tries both and says *Connected to* the server's name and version, then fills the choices below: **Read as** (a user, or no one for the newest of everything) and the **Libraries** that exist, so nothing is typed by id. Then the **Layout**, what **A click** does (open the item in Jellyfin, or show its details here first), where it opens, **Hide what was watched**, **Items to show** (in the strip, per library) and how often to ask Jellyfin (a minute at least). The key stays on the server: the tile and its posters come through nextDash, which keeps the posters in `data/media-images/`, shared by all the media tiles (up to 200 MB, oldest out first, not in backups; the `data/jellyfin-images/` folder of v1.19.4 is removed the first time a poster is stored). When Jellyfin cannot be reached, the tile keeps the last list and says how old it is. Jellyfin also has a Custom widget preset for its library counts ([§15.5](#155-the-custom-widget)).
+
+**Sonarr**, **Radarr**, **Seerr**, **qBittorrent**, **SABnzbd** — set up the way Jellyfin is: the address, the key and **Connect**, which says *Connected to* with the version. Where to find the key:
+
+| Service | Key | Chosen after Connect |
+|---|---|---|
+| Sonarr, Radarr | Settings → General → API Key | — |
+| Seerr | Settings → General → API Key, with the `==` at the end. A key copied without it is mended | **Requested by**: everyone, or one person |
+| qBittorrent | **Sign in with** **Username and password** (every version), or **API key** (Options → WebUI, 5.2 and later) | **Category**: all, or one |
+| SABnzbd | Config → General → API Key | — |
+
+Then the settings of the kind. Sonarr and Radarr: **Show** (what is coming, what is downloading, or both) and **Look ahead** (1–30 days). Seerr: **Show** (every request, waiting for approval, approved and on its way, or arrived) and **Films or series**. qBittorrent and SABnzbd: **Show** (everything, downloading, paused or finished), **Order** (newest, furthest along or fastest first), **Leave out what has finished**, **Leave out the speeds on top**, and a layout of **One list** or **A tab per part**. All of them: **A click** (open the item in the service, or show its details here first), where it opens, **Items to show** and **Refresh every** — a minute at least for the first three, 15 seconds for the download clients, which change while you look. The keys stay on the server, as with Jellyfin. Seerr's posters come from TMDB, which your server fetches without any key. A failure keeps the last answer and says how old it is; a refused key or sign-in says so on the tile.
 
 <img src="screenshots/manual.md/15-notes.jpg" alt="The Notes tile: a short checklist with two items ticked and struck through, and Edit and Open large" width="380" align="left">
 
