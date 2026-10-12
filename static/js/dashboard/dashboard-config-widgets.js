@@ -874,11 +874,15 @@
     },
 
     /*
-     * Choosing what to add: the kinds themselves, not a list of their names.
+     * Choosing what to add: a list to search on the left, the chosen kind on
+     * the right.
      *
-     * Every kind is on screen at once, under the question it answers, and
-     * choosing one is the click that adds it -- no second step that asks
-     * nothing.
+     * It was every kind as a card, all at once: thirty-odd cards of a name and
+     * a sentence, in three columns, which read as a wall and had nowhere to
+     * show what a kind looks like. The list is one line per kind, so all of
+     * them fit in a glance; the pane beside it has room for the drawing and
+     * the whole sentence; and the search box is where focus starts, so a
+     * reader who knows what they want types three letters and presses Enter.
      *
      * It opens as an overlay rather than sitting on the tab. Inline it was
      * measured at 900px on a 900px viewport, which put the list of widgets you
@@ -891,66 +895,245 @@
         const esc = (v) => this.dash.escapeHtml(v);
         if (!window.AppModal?.show) return;
 
+        const types = this.widgetCatalogueTypes();
+        const fresh = this.newWidgetTypes?.() || [];
+        const first = types.includes(focusType) ? focusType : (fresh[0] || types[0]);
+
         window.AppModal.show({
             title: this.t('config.widgetsAddTitle', 'Add a widget'),
             htmlMessage: `
                 <p class="config-widget-catalogue-note">${esc(this.t('config.widgetsAddNote',
                     'Choose a kind and it lands at the end of the page. Everything about it is editable afterwards.'))}</p>
-                ${this.renderWidgetCatalogue()}`,
+                ${this.renderWidgetCatalogue(first)}`,
             showCancel: false,
             confirmText: this.t('dashboard.close', 'Close'),
             modalClass: 'modal--widget-catalogue',
-            modalMaxWidth: '52rem',
+            modalMaxWidth: '60rem',
             // The modal moves focus itself a frame or two after it opens, so
-            // the card asked for is named here rather than focused afterwards.
-            initialFocusSelector: focusType
-                ? `[data-widget-add="${CSS.escape(focusType)}"]`
-                : '[data-widget-add]',
+            // the field is named here rather than focused afterwards.
+            initialFocusSelector: '[data-widget-search]',
         });
 
-        // The overlay lives outside #config-widgets-body, so the tab's
-        // delegated click handler never sees these.
-        const root = document.getElementById('modal-text');
-        if (!root) return;
-        root.addEventListener('click', (event) => {
-            const card = event.target?.closest?.('[data-widget-add]');
-            if (!card) return;
+        /*
+         * Listeners go on the picker rather than on #modal-text: that element
+         * outlives this dialog and is reused by every other one, so a listener
+         * left on it would add a widget from somebody else's modal -- or add
+         * two, the second time this one opens.
+         */
+        const picker = document.querySelector('#modal-text .config-widget-picker');
+        if (!picker) return;
+        const search = picker.querySelector('[data-widget-search]');
+        const list = picker.querySelector('.config-widget-picker-list');
+        const preview = picker.querySelector('.config-widget-picker-preview');
+        const empty = picker.querySelector('.config-widget-picker-empty');
+        let active = picker.querySelector(`[data-widget-option="${CSS.escape(first)}"]`);
+
+        const visible = () => [...list.querySelectorAll('[data-widget-option]')]
+            .filter((option) => !option.hidden && !option.closest('[hidden]'));
+
+        const choose = (option, { scroll = true } = {}) => {
+            if (!option) return;
+            active = option;
+            const type = option.getAttribute('data-widget-option');
+            list.querySelectorAll('[data-widget-option]').forEach((each) => {
+                const on = each === option;
+                each.setAttribute('aria-selected', String(on));
+                each.classList.toggle('is-active', on);
+            });
+            search.setAttribute('aria-activedescendant', option.id);
+            if (preview.getAttribute('data-type') !== type) {
+                preview.setAttribute('data-type', type);
+                preview.innerHTML = this.renderWidgetPickerPreview(type);
+            }
+            if (scroll) option.scrollIntoView({ block: 'nearest' });
+        };
+
+        const add = (type) => {
+            if (!type) return;
             window.AppModal.hide();
-            void this.addWidget(card.getAttribute('data-widget-add') || 'health');
+            void this.addWidget(type);
+        };
+
+        const filter = () => {
+            const words = this.widgetSearchKey(search.value).split(/\s+/).filter(Boolean);
+            // While searching, the New strip would only repeat hits that are
+            // already in their own group.
+            list.querySelector('.config-widget-picker-group--new')?.toggleAttribute('hidden', words.length > 0);
+            list.querySelectorAll('.config-widget-picker-group').forEach((group) => {
+                if (group.classList.contains('config-widget-picker-group--new') && words.length) return;
+                let any = false;
+                group.querySelectorAll('[data-widget-option]').forEach((option) => {
+                    const hay = option.getAttribute('data-widget-search-text') || '';
+                    const hit = words.every((word) => hay.includes(word));
+                    option.hidden = !hit;
+                    any = any || hit;
+                });
+                group.hidden = !any;
+            });
+            const shown = visible();
+            empty.hidden = shown.length > 0;
+            if (!shown.length) {
+                search.removeAttribute('aria-activedescendant');
+                return;
+            }
+            if (!shown.includes(active)) choose(shown[0]);
+        };
+
+        search.addEventListener('input', filter);
+        search.addEventListener('keydown', (event) => {
+            const shown = visible();
+            const at = shown.indexOf(active);
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                const step = event.key === 'ArrowDown' ? 1 : -1;
+                choose(shown[Math.min(shown.length - 1, Math.max(0, at + step))]);
+            } else if (event.key === 'Home' && event.ctrlKey) {
+                event.preventDefault();
+                choose(shown[0]);
+            } else if (event.key === 'End' && event.ctrlKey) {
+                event.preventDefault();
+                choose(shown[shown.length - 1]);
+            } else if (event.key === 'Enter') {
+                event.preventDefault();
+                if (shown.includes(active)) add(active.getAttribute('data-widget-option'));
+            } else if (event.key === 'Escape' && search.value) {
+                // First Escape empties the field; the next one closes.
+                event.preventDefault();
+                event.stopPropagation();
+                search.value = '';
+                filter();
+            }
         });
 
-        if (focusType) {
-            root.querySelector(`[data-widget-add="${CSS.escape(focusType)}"]`)
-                ?.scrollIntoView({ block: 'center' });
-        }
+        picker.addEventListener('click', (event) => {
+            const addButton = event.target?.closest?.('[data-widget-add]');
+            if (addButton) {
+                add(addButton.getAttribute('data-widget-add'));
+                return;
+            }
+            const option = event.target?.closest?.('[data-widget-option]');
+            if (option) {
+                choose(option, { scroll: false });
+                search.focus({ preventScroll: true });
+            }
+        });
+        picker.addEventListener('dblclick', (event) => {
+            const option = event.target?.closest?.('[data-widget-option]');
+            if (option) add(option.getAttribute('data-widget-option'));
+        });
+
+        choose(active);
     },
 
-    /** The catalogue itself: every kind, grouped under the question it answers. */
-    renderWidgetCatalogue() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const card = (type) => `
-            <button type="button" class="config-widget-pick" data-widget-add="${esc(type)}">
-                <span class="config-widget-pick-name">${esc(this.widgetTypeName(type))}</span>
-                <span class="config-widget-pick-about">${esc(this.widgetTypeAbout(type))}</span>
-            </button>`;
-        const groups = DashboardConfig.WIDGET_TYPE_GROUPS.map(([group, types]) => `
-            <section class="config-widget-pick-group">
-                <h4 class="config-widget-pick-group-title">${esc(this.widgetTypeGroupLabel(group))}</h4>
-                <div class="config-widget-pick-grid">${types.map(card).join('')}</div>
-            </section>`).join('');
+    /** Every kind the picker offers, in catalogue order, Custom last. */
+    widgetCatalogueTypes() {
+        return DashboardConfig.WIDGET_TYPE_GROUPS.flatMap(([, types]) => types).concat('custom');
+    },
 
-        return `
-            <div class="config-widget-catalogue">
-                ${groups}
-                <section class="config-widget-pick-group">
-                    <h4 class="config-widget-pick-group-title">${esc(this.t('config.widgetGroupCustom',
-                        'And anything else: the Custom widget'))}</h4>
-                    <div class="config-widget-pick-grid">${card('custom')}</div>
-                    <p class="config-widget-pick-footnote">${esc(this.t('config.widgetsAddCustomNoteInline',
-                        'Reads a figure out of any service that answers JSON, and can start from one of the services already known.'))}</p>
-                    ${this.renderCustomWidgetReference()}
-                </section>
+    /** Lowercase without accents, so "sho" finds Shōgun and "seer" finds Seerr. */
+    widgetSearchKey(value) {
+        return String(value || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    },
+
+    /*
+     * The picker: a search field over a list grouped under the question each
+     * kind answers, and the pane that shows the one chosen.
+     *
+     * The list is a listbox the field drives (aria-activedescendant), the way
+     * the command palette works, so focus never leaves the field while the
+     * arrows move through it.
+     */
+    renderWidgetCatalogue(selected) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const types = this.widgetCatalogueTypes();
+        const counts = this.widgetKindCounts?.() || {};
+        let n = 0;
+
+        const option = (type, group) => {
+            const name = this.widgetTypeName(type);
+            const hay = this.widgetSearchKey([
+                name, type, this.widgetTypeAbout(type), group,
+                this.isWidgetTypeNew?.(type) ? this.t('config.widgetNewBadge', 'New') : '',
+            ].join(' '));
+            const have = counts[type] || 0;
+            return `
+                <div class="config-widget-picker-option" role="option" id="widget-option-${n++}"
+                    aria-selected="${type === selected}" data-widget-option="${esc(type)}"
+                    data-widget-search-text="${esc(hay)}">
+                    <span class="config-widget-picker-option-name">${esc(name)}</span>
+                    ${this.renderWidgetNewBadge?.(type) || ''}
+                    ${have ? `<span class="config-widget-picker-option-have" title="${esc(
+                        this.t('config.widgetKindsHaveAll', '{n} in use').replace('{n}', String(have)))}">${esc(String(have))}</span>` : ''}
+                </div>`;
+        };
+        const section = (label, list, extraClass = '') => `
+            <div class="config-widget-picker-group${extraClass}" role="group" aria-label="${esc(label)}">
+                <div class="config-widget-picker-group-title" aria-hidden="true">${esc(label)}</div>
+                ${list.map((type) => option(type, label)).join('')}
             </div>`;
+
+        const fresh = this.newWidgetTypes?.() || [];
+        const groups = [
+            fresh.length ? section(this.t('config.widgetGroupNew', 'New in this release'), fresh,
+                ' config-widget-picker-group--new') : '',
+            ...DashboardConfig.WIDGET_TYPE_GROUPS.map(([group, list]) =>
+                section(this.widgetTypeGroupLabel(group), list)),
+            section(this.t('config.widgetGroupCustom', 'And anything else: the Custom widget'), ['custom']),
+        ].join('');
+
+        const placeholder = this.t('config.widgetsSearchPlaceholder', 'Search {n} widgets…')
+            .replace('{n}', String(types.length));
+        return `
+            <div class="config-widget-picker">
+                <div class="config-widget-picker-side">
+                    <input type="search" class="config-input config-widget-picker-search" data-widget-search
+                        role="combobox" aria-expanded="true" aria-autocomplete="list"
+                        aria-controls="config-widget-picker-list" autocomplete="off" spellcheck="false"
+                        placeholder="${esc(placeholder)}" aria-label="${esc(this.t('config.widgetsSearchLabel', 'Search widgets'))}">
+                    <div class="config-widget-picker-list" id="config-widget-picker-list" role="listbox"
+                        aria-label="${esc(this.t('config.widgetsAddTitle', 'Add a widget'))}">
+                        ${groups}
+                        <p class="config-widget-picker-empty" hidden>${esc(this.t('config.widgetsSearchEmpty',
+                            'No widget matches that.'))}</p>
+                    </div>
+                    <p class="config-widget-picker-keys" aria-hidden="true">
+                        <kbd>↑</kbd><kbd>↓</kbd> <span>${esc(this.t('config.widgetsPickerChoose', 'choose'))}</span>
+                        <kbd>↵</kbd> <span>${esc(this.t('config.widgetsPickerAdd', 'add'))}</span>
+                    </p>
+                </div>
+                <div class="config-widget-picker-preview" aria-live="polite" data-type="${esc(selected)}">${
+                    this.renderWidgetPickerPreview(selected)}</div>
+            </div>`;
+    },
+
+    /** The chosen kind: its name, the button that adds it, what it says, what it looks like. */
+    renderWidgetPickerPreview(type) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const name = this.widgetTypeName(type);
+        const group = DashboardConfig.WIDGET_TYPE_GROUPS.find(([, list]) => list.includes(type))?.[0];
+        const have = (this.widgetKindCounts?.() || {})[type] || 0;
+        const canAdd = !this.isAllPagesView?.();
+        const sample = this.renderWidgetSample?.(type) || '';
+        return `
+            <div class="config-widget-picker-head">
+                <div class="config-widget-picker-title">
+                    <h3 class="config-widget-picker-name">${esc(name)}${this.renderWidgetNewBadge?.(type) || ''}</h3>
+                    <span class="config-widget-picker-group-label">${esc(group
+                        ? this.widgetTypeGroupLabel(group)
+                        : this.t('config.widgetGroupCustom', 'And anything else: the Custom widget'))}</span>
+                </div>
+                <button type="button" class="config-btn config-btn--primary" data-widget-add="${esc(type)}">${
+                    esc(this.t('config.widgetsAddNamed', 'Add {name}').replace('{name}', name))}</button>
+            </div>
+            <p class="config-widget-picker-about">${esc(this.widgetTypeAbout(type))}</p>
+            ${sample ? `<span class="config-widget-kind-sample config-widget-picker-sample" aria-hidden="true">${sample}</span>` : ''}
+            ${have ? `<p class="config-widget-picker-have">${esc((canAdd
+                ? this.t('config.widgetKindsHave', '{n} on this page')
+                : this.t('config.widgetKindsHaveAll', '{n} in use')).replace('{n}', String(have)))}</p>` : ''}
+            ${type === 'custom' ? `
+                <p class="config-widget-pick-footnote">${esc(this.t('config.widgetsAddCustomNoteInline',
+                    'Reads a figure out of any service that answers JSON, and can start from one of the services already known.'))}</p>
+                ${this.renderCustomWidgetReference()}` : ''}`;
     },
 
     /*
@@ -2412,8 +2595,9 @@
                     <div class="config-widget-checkset">${boxes}</div>
                 </div>`;
         }).join('');
-        if (widget.type === 'jellyfin' && typeof this.renderJellyfinSettings === 'function') {
-            return this.renderJellyfinSettings(widget, index, rows);
+        const mediaService = DashboardConfig.MEDIA_SERVICES?.[widget.type];
+        if (mediaService && typeof this.renderMediaSettings === 'function') {
+            return this.renderMediaSettings(widget, index, rows, mediaService);
         }
         if (widget.type === 'custom') {
             /*
@@ -2814,6 +2998,11 @@
             rss: 'The latest articles from the feeds you give it — headlines, with the whole entry on hover.',
             notes: 'A few lines of your own, with checkboxes for the ones that are tasks.',
             jellyfin: 'What was added to Jellyfin lately — films, series and anime, with posters.',
+            sonarr: 'Episodes coming up and downloads in progress in Sonarr, with posters.',
+            radarr: 'Films coming out and downloads in progress in Radarr, with posters.',
+            seerr: 'Requests in Overseerr or Jellyseerr — who asked, and whether it has arrived — with posters.',
+            qbittorrent: 'Torrents in qBittorrent — progress, speed and time left — with the speeds on top.',
+            sabnzbd: 'Downloads in SABnzbd — the queue and what finished last — with the speed on top.',
             unraid: 'The Unraid server at a glance: array, parity, disks, alerts, VMs and the UPS, a line each.',
             unraidArray: 'Every disk of the Unraid array: how full, how warm, and which one is in trouble.',
             unraidParity: 'The last parity check, or the one running now, with its history when wide.',
@@ -3007,9 +3196,9 @@
              * state rather than a class toggle: a rename or a save elsewhere
              * must not close a panel someone is working in.
              */
-            const jellyfinConnect = target.closest('[data-jellyfin-connect]');
-            if (jellyfinConnect) {
-                void this.connectJellyfin?.(indexOn(jellyfinConnect, 'data-jellyfin-connect'));
+            const mediaConnect = target.closest('[data-media-connect]');
+            if (mediaConnect) {
+                void this.connectMedia?.(indexOn(mediaConnect, 'data-media-connect'));
                 return;
             }
 
@@ -3242,6 +3431,12 @@
                  */
                 const picked = preset.value;
                 if (picked) this.applyWidgetPreset(indexOn(preset, 'data-widget-preset'), picked);
+                return;
+            }
+
+            const mediaAuth = target.closest('[data-media-auth]');
+            if (mediaAuth) {
+                this.setMediaAuthMode?.(indexOn(mediaAuth, 'data-widget-index'), mediaAuth.value);
                 return;
             }
 
@@ -3778,6 +3973,11 @@
     updateWidgetAuthField(index, field, value) {
         const draft = this.widgetDraft(index);
         if (!draft) return;
+        // A service that knows its key's shape can mend a careless copy of it
+        // (Seerr's base64 without its "==").
+        const type = (this._widgetBlocks || [])[index]?.type;
+        const normalize = DashboardConfig.MEDIA_SERVICES?.[type]?.normalizeKey;
+        if (field === 'secret' && typeof normalize === 'function') value = normalize(String(value || '').trim(), draft.auth);
         draft.auth = { ...(draft.auth || {}), [field]: String(value || '') };
         if (field === 'headerName') this.syncSchemeHint(index, value);
         // A key typed is a change on its own: Save stayed off until something

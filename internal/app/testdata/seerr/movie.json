@@ -1,0 +1,33 @@
+{
+ "id": 1440050,
+ "adult": false,
+ "budget": 25000000,
+ "genres": [
+  {
+   "id": 35,
+   "name": "Komedie"
+  },
+  {
+   "id": 10751,
+   "name": "Familie"
+  }
+ ],
+ "originalLanguage": "en",
+ "originalTitle": "The Breadwinner",
+ "popularity": 16.0123,
+ "releaseDate": "2026-05-29",
+ "revenue": 20247080,
+ "status": "Released",
+ "title": "The Breadwinner",
+ "video": false,
+ "voteAverage": 7.053,
+ "voteCount": 113,
+ "backdropPath": "/dgqBcgTzaUiSLvKJPDF9AbdFEMO.jpg",
+ "homepage": "",
+ "imdbId": "tt34459219",
+ "overview": "Nadat zijn vrouw Katie in *Shark Tank* een unieke deal heeft gesloten die haar op een langdurige zakenreis stuurt, moet Nate Wilcox \u2013 die altijd de kostwinner is geweest \u2013 nu voor zijn gezin zorgen als huisvader.",
+ "posterPath": "/4apG9Xk6HQvV48JKEjSUeiebju7.jpg",
+ "runtime": 100,
+ "tagline": "",
+ "onUserWatchlist": false
+}

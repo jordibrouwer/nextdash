@@ -55,10 +55,66 @@
         rss: { rows: [['Release 2.4 is out', ''], ['A note on caching', '']] },
         notes: { rows: [['☑ renew domain', ''], ['☐ swap disk', '']] },
         jellyfin: { rows: [['Severance', 'S2E4'], ['Dune: Part Two', 'film']] },
+        sonarr: { rows: [['The Bear', 'tonight'], ['Andor', '62%', 'good']] },
+        radarr: { rows: [['Mickey 17', 'Friday'], ['Flow', 'queued']] },
+        seerr: { rows: [['Shōgun', 'asked'], ['Wicked', 'arrived', 'good']] },
+        qbittorrent: { rows: [['↓ 12.4 MB/s', '']], bars: [['ubuntu-24.10.iso', 0.81]] },
+        sabnzbd: { rows: [['queue', '3 · 4.1 GB'], ['↓ 38 MB/s', '']] },
         custom: { rows: [['queued', '7'], ['paused', '2']] },
     };
 
+    /*
+     * Kinds that arrived recently, and the minor release they arrived in.
+     *
+     * The badge reads the release the server says it is and goes away by
+     * itself one minor later, so nobody has to remember to take it off. With
+     * no release to read -- an index that would not parse -- it shows: a
+     * badge too many is cheaper than a new widget nobody spots.
+     */
+    const NEW_SINCE = {
+        jellyfin: '1.20',
+        sonarr: '1.20',
+        radarr: '1.20',
+        seerr: '1.20',
+        qbittorrent: '1.20',
+        sabnzbd: '1.20',
+    };
+
+    /** "v1.19.4" -> [1, 19]; anything else, an old date tag included, -> null. */
+    function majorMinor(tag) {
+        const match = /^v?(\d+)\.(\d+)(?:\.|$)/.exec(String(tag || '').trim());
+        if (!match || Number(match[1]) > 100) return null;
+        return [Number(match[1]), Number(match[2])];
+    }
+
+    function releaseNow() {
+        return majorMinor(global.document?.querySelector?.('meta[name="nextdash-release"]')?.content);
+    }
+
     Object.assign(global.DashboardConfig.prototype, {
+
+    /** Whether a kind still wears the New badge in this release. */
+    isWidgetTypeNew(type) {
+        const since = majorMinor(NEW_SINCE[type]);
+        if (!since) return false;
+        const now = releaseNow();
+        if (!now) return true;
+        return now[0] < since[0] || (now[0] === since[0] && now[1] <= since[1]);
+    },
+
+    /** The kinds that are new, in catalogue order. */
+    newWidgetTypes() {
+        return DashboardConfig.WIDGET_TYPE_GROUPS
+            .flatMap(([, types]) => types)
+            .filter((type) => this.isWidgetTypeNew(type));
+    },
+
+    /** The badge itself; empty for a kind that is not new. */
+    renderWidgetNewBadge(type) {
+        if (!this.isWidgetTypeNew(type)) return '';
+        return `<span class="config-widget-new-badge">${
+            this.dash.escapeHtml(this.t('config.widgetNewBadge', 'New'))}</span>`;
+    },
 
     /** One kind's drawing, in the Unraid preview's vocabulary of rows and bars. */
     renderWidgetSample(type) {
@@ -136,7 +192,9 @@
         const chip = (value, label) => `<button type="button" class="config-widget-kind-chip${
             value === filter ? ' is-active' : ''}" aria-pressed="${value === filter}" data-widget-kind-filter="${
             esc(value)}">${esc(label)}</button>`;
+        const fresh = this.newWidgetTypes();
         const chips = [chip('all', this.t('config.widgetKindsAll', 'All'))]
+            .concat(fresh.length ? chip('new', this.t('config.widgetKindsNew', 'New')) : [])
             .concat(groups.map(([group]) => chip(group, this.widgetTypeGroupLabel(group))))
             .concat(chip('custom', this.widgetTypeName('custom')))
             .join('');
@@ -145,10 +203,11 @@
         const card = (type, extra = '') => {
             const have = counts[type] || 0;
             const name = this.widgetTypeName(type);
+            const isNew = this.isWidgetTypeNew(type);
             return `
-                <article class="config-widget-kind" data-widget-kind="${esc(type)}" style="--i:${order++}">
+                <article class="config-widget-kind${isNew ? ' is-new' : ''}" data-widget-kind="${esc(type)}" style="--i:${order++}">
                     <h4 class="config-widget-kind-name">
-                        <span>${esc(name)}</span>
+                        <span>${esc(name)}${this.renderWidgetNewBadge(type)}</span>
                         ${have ? `<span class="config-widget-kind-have">${esc((canAdd
                             ? this.t('config.widgetKindsHave', '{n} on this page')
                             : this.t('config.widgetKindsHaveAll', '{n} in use'))
@@ -165,6 +224,18 @@
                     </div>
                 </article>`;
         };
+
+        /*
+         * The new kinds first, on a strip of their own, so a release that
+         * added widgets shows them before the reader has scrolled past six
+         * groups to find them. They stay in their own group too: someone
+         * browsing Media should not find it missing its newest members.
+         */
+        const spotlight = fresh.length && (filter === 'all' || filter === 'new') ? `
+            <section class="config-widget-kind-group config-widget-kind-group--new">
+                <h4 class="config-widget-kind-group-title">${esc(this.t('config.widgetGroupNew', 'New in this release'))}</h4>
+                <div class="config-widget-kind-grid">${fresh.map((type) => card(type)).join('')}</div>
+            </section>` : '';
 
         const sections = groups
             .filter(([group]) => filter === 'all' || filter === group)
@@ -194,7 +265,7 @@
                 </div>
                 <div class="config-widget-kind-chips" role="group" aria-label="${
                     esc(this.t('config.widgetKindsFilter', 'Show one group'))}">${chips}</div>
-                ${sections.join('')}
+                ${spotlight}${sections.join('')}
             </section>`;
     },
 

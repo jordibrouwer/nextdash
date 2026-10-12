@@ -1,0 +1,56 @@
+{
+ "episodeRunTime": [],
+ "firstAirDate": "2026-02-09",
+ "genres": [
+  {
+   "id": 35,
+   "name": "Komedie"
+  },
+  {
+   "id": 18,
+   "name": "Drama"
+  },
+  {
+   "id": 9648,
+   "name": "Mysterie"
+  }
+ ],
+ "homepage": "https://www.bbc.co.uk/programmes/m002q765",
+ "id": 312693,
+ "inProduction": true,
+ "languages": [
+  "en"
+ ],
+ "lastAirDate": "2026-03-16",
+ "name": "Small Prophets",
+ "numberOfEpisodes": 6,
+ "numberOfSeasons": 1,
+ "originCountry": [
+  "GB"
+ ],
+ "originalLanguage": "en",
+ "originalName": "Small Prophets",
+ "tagline": "Jaren na een mysterieuze verdwijning laait een magisch recept de hoop weer op.",
+ "overview": "Sinds de verdwijning van zijn vriendin zeven jaar geleden staat Michaels leven stil. Een mysterieus recept in een oud dagboek biedt de antwoorden waar hij al jaren naar zoekt.",
+ "popularity": 29.5412,
+ "status": "Returning Series",
+ "type": "Scripted",
+ "voteAverage": 8.17,
+ "voteCount": 53,
+ "backdropPath": "/5fThMa3y5H4V7mHtiIEJgtYKPz9.jpg",
+ "lastEpisodeToAir": {
+  "id": 6896384,
+  "airDate": "2026-03-16",
+  "episodeNumber": 6,
+  "name": "Aflevering 6",
+  "overview": "",
+  "productionCode": "",
+  "seasonNumber": 1,
+  "showId": 312693,
+  "voteAverage": 6,
+  "voteCount": 3,
+  "stillPath": "/AguZ6UK0R8NSegGzvHt9Tx2749h.jpg"
+ },
+ "posterPath": "/39pC4gr8GTD7dDcuoGLbbyZSyTk.jpg",
+ "onUserWatchlist": false
+}

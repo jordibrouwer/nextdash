@@ -108,7 +108,7 @@ class DashboardConfig {
         },
         /*
          * The widget editor, and the one panel that is more than a table of
-         * settings: Jellyfin's connect-then-choose flow, in a file of its own so
+         * settings: the media tiles' connect-then-choose flow, in a file of its own so
          * the editor does not grow by a service at a time.
          */
         widgets: {
@@ -119,9 +119,9 @@ class DashboardConfig {
                     ready: () => window.DashboardConfigWidgetsReady === true,
                 },
                 {
-                    file: 'js/dashboard/dashboard-config-widget-jellyfin.js',
-                    datasetKey: 'dashboardConfigWidgetJellyfin',
-                    ready: () => window.DashboardConfigJellyfinReady === true,
+                    file: 'js/dashboard/dashboard-config-widget-media.js',
+                    datasetKey: 'dashboardConfigWidgetMedia',
+                    ready: () => window.DashboardConfigMediaReady === true,
                 },
                 {
                     file: 'js/dashboard/dashboard-config-widget-catalogue.js',
@@ -130,7 +130,7 @@ class DashboardConfig {
                 },
             ],
             ready: () => window.DashboardConfigWidgetsReady === true
-                && window.DashboardConfigJellyfinReady === true
+                && window.DashboardConfigMediaReady === true
                 && window.DashboardConfigWidgetCatalogueReady === true,
         },
         /*
@@ -17659,7 +17659,7 @@ class DashboardConfig {
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'notes']],
-        ['media', ['jellyfin']],
+        ['media', ['jellyfin', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd']],
     ];
 
     renderPagesTags() {
@@ -19808,8 +19808,94 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
+
+    /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
+    static ARR_SETTINGS = [
+        { key: 'show', kind: 'choice', label: ['config.widgetArrShow', 'Show'],
+          options: [
+              ['both', ['config.widgetArrShowBoth', 'What is coming and what is downloading']],
+              ['upcoming', ['config.widgetArrShowUpcoming', 'What is coming']],
+              ['queue', ['config.widgetArrShowQueue', 'What is downloading']],
+          ] },
+        { key: 'days', kind: 'int', min: 1, max: 30, label: ['config.widgetArrDays', 'Look ahead (days)'] },
+        { key: 'layout', kind: 'choice', label: ['config.widgetMediaLayout', 'Layout'],
+          options: [
+              ['list', ['config.widgetMediaLayoutList', 'List with posters']],
+              ['strip', ['config.widgetMediaLayoutStrip', 'Poster strip, a tab per part']],
+              ['hero', ['config.widgetMediaLayoutHero', 'First large, the rest as a list']],
+              ['grid', ['config.widgetMediaLayoutGrid', 'Poster grid']],
+          ] },
+        { key: 'click', kind: 'choice', label: ['config.widgetMediaClick', 'A click'],
+          options: [
+              ['open', ['config.widgetMediaClickOpen', 'Opens it in the service']],
+              ['detail', ['config.widgetMediaClickDetail', 'Shows details here first']],
+          ] },
+        { key: 'target', kind: 'choice', label: ['config.widgetMediaTarget', 'Open in'],
+          options: [
+              ['inherit', ['config.widgetMediaTargetInherit', 'Same as other links']],
+              ['_blank', ['config.widgetMediaTargetBlank', 'A new tab']],
+              ['_self', ['config.widgetMediaTargetSelf', 'This tab']],
+          ] },
+        { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetMediaRows', 'Items to show'],
+          hint: ['config.widgetMediaRowsHint', 'In the strip, per part.'] },
+        { key: 'ttl', kind: 'int', min: 60, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
+    ];
+
+    /**
+     * Seerr's settings, mirroring WidgetTypeSeerr in widgets_config.go. The
+     * requester is chosen after Connect, so it is drawn by the media panel and
+     * not listed here.
+     */
+    static SEERR_SETTINGS = [
+        { key: 'status', kind: 'choice', label: ['config.widgetSeerrStatus', 'Show'],
+          options: [
+              ['all', ['config.widgetSeerrStatusAll', 'Every request']],
+              ['pending', ['config.widgetSeerrStatusPending', 'Waiting for approval']],
+              ['approved', ['config.widgetSeerrStatusApproved', 'Approved, on its way']],
+              ['available', ['config.widgetSeerrStatusAvailable', 'Arrived']],
+          ] },
+        { key: 'mediaType', kind: 'choice', label: ['config.widgetSeerrMediaType', 'Films or series'],
+          options: [
+              ['both', ['config.widgetSeerrMediaTypeBoth', 'Both']],
+              ['movie', ['config.widgetSeerrMediaTypeMovie', 'Films']],
+              ['tv', ['config.widgetSeerrMediaTypeTv', 'Series']],
+          ] },
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => !['show', 'days'].includes(field.key)),
+    ];
+
+    /**
+     * qBittorrent's and SABnzbd's settings, mirroring downloadWidgetFields in
+     * widgets_downloads.go. qBittorrent's category is chosen after Connect, so
+     * the media panel draws it.
+     */
+    static DOWNLOAD_SETTINGS = [
+        { key: 'filter', kind: 'choice', label: ['config.widgetDownloadsFilter', 'Show'],
+          options: [
+              ['all', ['config.widgetDownloadsFilterAll', 'Everything']],
+              ['active', ['config.widgetDownloadsFilterActive', 'What is downloading']],
+              ['paused', ['config.widgetDownloadsFilterPaused', 'What is paused']],
+              ['completed', ['config.widgetDownloadsFilterCompleted', 'What has finished']],
+          ] },
+        { key: 'sort', kind: 'choice', label: ['config.widgetDownloadsSort', 'Order'],
+          options: [
+              ['added', ['config.widgetDownloadsSortAdded', 'Newest first']],
+              ['progress', ['config.widgetDownloadsSortProgress', 'Furthest along first']],
+              ['speed', ['config.widgetDownloadsSortSpeed', 'Fastest first']],
+          ] },
+        { key: 'hideCompleted', kind: 'bool',
+          label: ['config.widgetDownloadsHideCompleted', 'Leave out what has finished'] },
+        { key: 'hideTotals', kind: 'bool',
+          label: ['config.widgetDownloadsHideTotals', 'Leave out the speeds on top'] },
+        { key: 'layout', kind: 'choice', label: ['config.widgetMediaLayout', 'Layout'],
+          options: [
+              ['list', ['config.widgetDownloadsLayoutList', 'One list']],
+              ['strip', ['config.widgetDownloadsLayoutStrip', 'A tab per part']],
+          ] },
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => ['click', 'target', 'rows'].includes(field.key)),
+        { key: 'ttl', kind: 'int', min: 15, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
+    ];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -20062,6 +20148,12 @@ class DashboardConfig {
             { key: 'ttl', kind: 'int', min: 60, max: 3600,
               label: ['config.widgetJellyfinTtl', 'Ask Jellyfin every (seconds)'] },
         ],
+        // Sonarr and Radarr ask the same questions; one table, two names.
+        sonarr: DashboardConfig.ARR_SETTINGS,
+        radarr: DashboardConfig.ARR_SETTINGS,
+        seerr: DashboardConfig.SEERR_SETTINGS,
+        qbittorrent: DashboardConfig.DOWNLOAD_SETTINGS,
+        sabnzbd: DashboardConfig.DOWNLOAD_SETTINGS,
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
               label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },

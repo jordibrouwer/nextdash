@@ -82,6 +82,22 @@ type widgetField struct {
 	MaxLen int
 }
 
+// arrWidgetFields are Sonarr's and Radarr's settings: the same API, so the
+// same questions. days is how far the calendar looks ahead.
+func arrWidgetFields() []widgetField {
+	return []widgetField{
+		{Key: "server", Kind: "url"},
+		{Key: "credentialId", Kind: "string"},
+		{Key: "show", Kind: "string", Allowed: []string{"both", "upcoming", "queue"}},
+		{Key: "days", Kind: "int", Min: 1, Max: 30},
+		{Key: "layout", Kind: "string", Allowed: []string{"list", "strip", "hero", "grid"}},
+		{Key: "click", Kind: "string", Allowed: []string{"open", "detail"}},
+		{Key: "target", Kind: "string", Allowed: []string{"inherit", "_blank", "_self"}},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+		{Key: "ttl", Kind: "int", Min: 60, Max: 3600},
+	}
+}
+
 // unraidWidgetFields: the floor is the server's own poll floor (unraid_poll.go);
 // asking faster would only redraw the same cached answer.
 func unraidWidgetFields(rows bool) []widgetField {
@@ -276,6 +292,23 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "credentialId", Kind: "string"},
 		{Key: "ttl", Kind: "int", Min: customWidgetMinTTL, Max: customWidgetMaxTTL},
 		{Key: "itemsPath", Kind: "string", MaxLen: widgetMaxPathLen},
+	},
+	WidgetTypeSonarr:      arrWidgetFields(),
+	WidgetTypeRadarr:      arrWidgetFields(),
+	WidgetTypeQBittorrent: downloadWidgetFields(),
+	WidgetTypeSABnzbd:     downloadWidgetFields(),
+	WidgetTypeSeerr: {
+		{Key: "server", Kind: "url"},
+		{Key: "credentialId", Kind: "string"},
+		{Key: "status", Kind: "string", Allowed: []string{"all", "pending", "approved", "available"}},
+		// A Seerr user id; absent means everyone's requests.
+		{Key: "requestedBy", Kind: "string"},
+		{Key: "mediaType", Kind: "string", Allowed: []string{"both", "movie", "tv"}},
+		{Key: "layout", Kind: "string", Allowed: []string{"list", "strip", "hero", "grid"}},
+		{Key: "click", Kind: "string", Allowed: []string{"open", "detail"}},
+		{Key: "target", Kind: "string", Allowed: []string{"inherit", "_blank", "_self"}},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+		{Key: "ttl", Kind: "int", Min: 60, Max: 3600},
 	},
 	WidgetTypeJellyfin: {
 		{Key: "server", Kind: "url"},
@@ -573,7 +606,8 @@ func widgetTypeNames() []string {
 		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS, WidgetTypeNotes,
 		WidgetTypeUnraid, WidgetTypeUnraidArray, WidgetTypeUnraidParity, WidgetTypeUnraidShares,
 		WidgetTypeUnraidVMs, WidgetTypeUnraidUPS, WidgetTypeUnraidNotifications,
-		WidgetTypeJellyfin,
+		WidgetTypeJellyfin, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr,
+		WidgetTypeQBittorrent, WidgetTypeSABnzbd,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone
 		// to build by hand what is two entries above it.

@@ -889,7 +889,7 @@ func (h *Handlers) buildBackupZip() ([]byte, error) {
 			}
 			// Jellyfin posters: the same decoration, back from the server on
 			// the next draw.
-			if info.Name() == jellyfinImageDirName && filepath.Dir(path) == dataDir {
+			if info.Name() == mediaImageDirName && filepath.Dir(path) == dataDir {
 				return filepath.SkipDir
 			}
 			// The app-icon set mirrors and their cached icons: all of it comes

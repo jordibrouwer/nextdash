@@ -1,0 +1,59 @@
+{
+  "tag": "v1.19.5",
+  "date": "12 October 2026",
+  "releasedAt": "2026-10-12",
+  "modalLead": "Five more media widgets next to Jellyfin: <strong>Sonarr and Radarr</strong>, <strong>Seerr</strong>, and the download clients <strong>qBittorrent and SABnzbd</strong>. And adding a widget now starts with a search.",
+  "sections": [
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>See what is coming in Sonarr and Radarr,</strong> with the posters: the episodes and films of the next days, and what is downloading. Pick a list, a strip with Upcoming and Queue as tabs, a grid, or the next one large.",
+          "highlight": true,
+          "title": "What's coming in Sonarr and Radarr",
+          "link": "#config/widgets/catalogue",
+          "linkLabel": "Set it up",
+          "media": {
+            "image": "media/v1.19.5-sonarr-widget.jpg",
+            "alt": "The Sonarr widget on the dashboard: the episodes coming up, each under its series poster"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Follow your downloads in qBittorrent and SABnzbd:</strong> progress, speed and time left, with the client's speeds on top. One list, or a tab each for Downloading, Paused and Done.",
+          "highlight": true,
+          "title": "Your downloads, with progress and speed",
+          "link": "#config/widgets/catalogue",
+          "linkLabel": "Set it up"
+        },
+        {
+          "badge": "new",
+          "text": "<strong>See your requests in Seerr</strong> (Overseerr or Jellyseerr): what waits for approval, what is on its way and what has arrived, with the poster and who asked.",
+          "highlight": true,
+          "title": "Requests in Seerr, and who asked",
+          "link": "#config/widgets/catalogue",
+          "linkLabel": "Set it up",
+          "media": {
+            "image": "media/v1.19.5-seerr-widget.jpg",
+            "alt": "The Seerr widget: requests with their posters, who asked and whether they arrived"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Add a widget starts with a search.</strong> Type what you are after, choose with the arrow keys and press Enter; the one you are on is shown beside the list. New kinds carry a <strong>New</strong> badge, and the Catalogue gathers them at the top.",
+          "link": "#config/widgets"
+        }
+      ]
+    },
+    {
+      "title": "Translations",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A few labels showed in English</strong> in the other languages: the widget search, the New badge, and messages in the Inbox and after a re-check."
+        }
+      ]
+    }
+  ]
+}

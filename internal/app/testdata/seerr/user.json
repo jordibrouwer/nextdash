@@ -1,0 +1,120 @@
+{
+ "pageInfo": {
+  "pages": 1,
+  "pageSize": 10,
+  "results": 10,
+  "page": 1
+ },
+ "results": [
+  {
+   "permissions": 2,
+   "id": 1,
+   "userType": 4,
+   "createdAt": "2025-07-10T13:17:58.000Z",
+   "updatedAt": "2025-07-10T13:17:58.000Z",
+   "requestCount": 230,
+   "displayName": "User 1",
+   "email": "user1@example.invalid",
+   "avatar": "/avatarproxy/placeholder"
+  },
+  {
+   "permissions": 1147166752,
+   "id": 2,
+   "userType": 3,
+   "createdAt": "2025-07-10T13:33:21.000Z",
+   "updatedAt": "2026-05-19T05:48:19.000Z",
+   "requestCount": 328,
+   "displayName": "User 3",
+   "email": "user2@example.invalid",
+   "avatar": "/avatarproxy/placeholder"
+  },
+  {
+   "permissions": 67133600,
+   "id": 8,
+   "userType": 2,
+   "createdAt": "2025-12-27T22:54:46.000Z",
+   "updatedAt": "2025-12-27T22:54:46.000Z",
+   "requestCount": 0,
+   "displayName": "User 4",
+   "email": "user8@example.invalid",
+   "avatar": "/avatarproxy/placeholder"
+  },
+  {
+   "permissions": 34,
+   "id": 13,
+   "userType": 3,
+   "createdAt": "2026-03-27T14:59:51.000Z",
+   "updatedAt": "2026-04-24T17:19:15.000Z",
+   "requestCount": 12,
+   "displayName": "User 5",
+   "email": "user13@example.invalid",
+   "avatar": "/avatarproxy/placeholder"
+  },
+  {
+   "permissions": 1147159328,
+   "id": 15,
+   "userType": 3,
+   "createdAt": "2026-03-27T15:16:36.000Z",
+   "updatedAt": "2026-05-18T21:56:25.000Z",
+   "requestCount": 0,
+   "displayName": "User 6",
+   "email": "user15@example.invalid",
+   "avatar": "/avatarproxy/placeholder"
+  },
+  {
+   "permissions": 1147158560,
+   "id": 16,
+   "userType": 3,
+   "createdAt": "2026-03-27T15:16:45.000Z",
+   "updatedAt": "2026-06-13T20:33:16.000Z",
+   "requestCount": 15,
+   "displayName": "User 7",
+   "email": "user16@example.invalid",
+   "avatar": "/avatarproxy/placeholder"
+  },
+  {
+   "permissions": 32,
+   "id": 17,
+   "userType": 3,
+   "createdAt": "2026-04-03T16:08:32.000Z",
+   "updatedAt": "2026-04-03T16:08:32.000Z",
+   "requestCount": 0,
+   "displayName": "User 8",
+   "email": "user17@example.invalid",
+   "avatar": "/avatarproxy/placeholder"
+  },
+  {
+   "permissions": 1147158560,
+   "id": 18,
+   "userType": 3,
+   "createdAt": "2026-04-27T05:42:11.000Z",
+   "updatedAt": "2026-05-18T21:56:08.000Z",
+   "requestCount": 22,
+   "displayName": "User 9",
+   "email": "user18@example.invalid",
+   "avatar": "/avatarproxy/placeholder"
+  },
+  {
+   "permissions": 1331708704,
+   "id": 19,
+   "userType": 3,
+   "createdAt": "2026-05-15T10:10:57.000Z",
+   "updatedAt": "2026-08-15T20:48:53.000Z",
+   "requestCount": 11,
+   "displayName": "User 10",
+   "email": "user19@example.invalid",
+   "avatar": "/avatarproxy/placeholder"
+  },
+  {
+   "permissions": 32,
+   "id": 20,
+   "userType": 3,
+   "createdAt": "2026-06-13T12:01:43.000Z",
+   "updatedAt": "2026-06-13T20:33:39.000Z",
+   "requestCount": 9,
+   "displayName": "User 2",
+   "email": "user20@example.invalid",
+   "avatar": "/avatarproxy/placeholder"
+  }
+ ]
+}

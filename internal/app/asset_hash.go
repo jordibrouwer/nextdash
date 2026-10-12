@@ -173,7 +173,7 @@ var lazyLoadedAssets = []string{
 	"js/dashboard/dashboard-config-status-page.js",
 	"js/dashboard/dashboard-config-inbox.js",
 	"js/dashboard/dashboard-config-widgets.js",
-	"js/dashboard/dashboard-config-widget-jellyfin.js",
+	"js/dashboard/dashboard-config-widget-media.js",
 	"js/dashboard/dashboard-config-widget-catalogue.js",
 	"js/dashboard/dashboard-config-context-menu.js",
 	"js/dashboard/dashboard-config-stats.js",
