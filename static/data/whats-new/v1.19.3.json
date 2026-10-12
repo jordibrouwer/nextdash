@@ -9,7 +9,16 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>Once a week, one message about what needs you:</strong> links that broke, certificates that run out soon, container updates, what you opened most, bookmarks nobody opens and what waits in the Inbox. It arrives as a push notification, through your alert service, and once as a card on the dashboard. A quiet week sends nothing."
+          "text": "<strong>Once a week, one message about what needs you:</strong> links that broke, certificates that run out soon, container updates, what you opened most, bookmarks nobody opens and what waits in the Inbox. It arrives as a push notification, through your alert service, and once as a card on the dashboard. A quiet week sends nothing.",
+          "highlight": true,
+          "title": "One message a week about what needs you",
+          "link": "#config/monitoring/notifications",
+          "linkLabel": "Set it up",
+          "media": {
+            "image": "media/v1.19.3-weekly-digest.jpg",
+            "video": "media/v1.19.3-weekly-digest.webm",
+            "alt": "Config → Monitoring → Notifications, scrolled to the weekly digest"
+          }
         },
         {
           "badge": "new",
@@ -17,7 +26,8 @@
         },
         {
           "badge": "new",
-          "text": "<strong>Pick the day, the hour and what goes in</strong> under Config → Monitoring → Notifications → Weekly digest. <strong>Send</strong> sends a proof digest right away. It is on by default, on Monday at 08:00."
+          "text": "<strong>Pick the day, the hour and what goes in</strong> under Config → Monitoring → Notifications → Weekly digest. <strong>Send</strong> sends a proof digest right away. It is on by default, on Monday at 08:00.",
+          "link": "#config/monitoring/notifications"
         }
       ]
     },
@@ -26,7 +36,8 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>Monitoring has its own section.</strong> Everything that was under Behavior → Status & alerts is now in Config → Monitoring, on three tabs: <strong>Checks</strong>, <strong>Notifications</strong> and <strong>Schedules</strong> for maintenance windows and quiet hours. Old links still land in the right place."
+          "text": "<strong>Monitoring has its own section.</strong> Everything that was under Behavior → Status & alerts is now in Config → Monitoring, on three tabs: <strong>Checks</strong>, <strong>Notifications</strong> and <strong>Schedules</strong> for maintenance windows and quiet hours. Old links still land in the right place.",
+          "link": "#config/monitoring"
         },
         {
           "badge": "fix",

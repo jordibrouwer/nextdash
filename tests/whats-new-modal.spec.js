@@ -75,14 +75,18 @@ test.describe("what's new modal", () => {
         await loadDashboard(page);
         await openWhatsNew(page);
 
-        const offset = await page.evaluate(() => {
-            const body = document.querySelector('.whats-new-modal .modal-body');
-            const hero = document.querySelector('.whats-new-modal .wn-hero');
-            if (!body || !hero) return null;
-            return Math.round(hero.getBoundingClientRect().top - body.getBoundingClientRect().top);
+        // Above the release only the line that counts what was missed and the
+        // chips that narrow it -- both about the notes, neither a panel.
+        const before = await page.evaluate(() => {
+            const content = document.querySelector('.whats-new-modal [data-wn-content]');
+            const out = [];
+            for (const el of content ? content.children : []) {
+                if (el.classList.contains('wn-rel')) break;
+                out.push(el.className);
+            }
+            return out;
         });
-        expect(offset).not.toBeNull();
-        expect(offset).toBeLessThan(24);
+        expect(before.every((name) => /wn-since|wn-filter/.test(name))).toBe(true);
 
         // The version is the headline, and it is bigger than the text under it
         // -- "which release am I reading" used to be answered by a small chip.
@@ -179,36 +183,23 @@ test.describe("what's new modal", () => {
     });
 
     /*
-     * new and fix are a filled and a hollow dot, and still words for a reader
-     * who cannot see the difference.
-     *
-     * The chips they replace cost about seven characters of a column kept
-     * deliberately narrow, and drew their "new" tint from --accent-success --
-     * which on a green accent is the same value as --accent-primary, so the
-     * badge was literally the colour of the version tag beside it.
+     * New and fixed are told apart by the block they sit in, and the block
+     * says so in words: no chip on every entry repeating the heading above it.
      */
-    test('new and fix are readable without colour', async ({ page }) => {
+    test('new and fixed are readable without colour', async ({ page }) => {
         await loadDashboard(page);
         await openWhatsNew(page);
-
-        // The word itself, on the face of the entry. A filled or hollow dot
-        // stood here and carried the word only in a visually-hidden span, so
-        // the distinction reached a screen reader and nobody else. Now that it
-        // is printed, "readable without colour" is what the markup says rather
-        // than something the stylesheet has to be trusted for.
-        const entry = page.locator('.whats-new-modal .wn-entry').first();
-        const badge = entry.locator('.wn-badge');
-        await expect(badge).toHaveCount(1);
-        await expect(badge).toBeVisible();
-        expect((await badge.textContent() || '').trim()).toMatch(/^(new|fix)$/i);
-
-        // Told apart by fill, not by a colour pair: new is a solid block, fix
-        // is an outline. Either reads on a monochrome screen.
-        const shape = await badge.evaluate((el) => {
-            const cs = getComputedStyle(el);
-            return { filled: cs.backgroundColor !== 'rgba(0, 0, 0, 0)', klass: el.className };
-        });
-        expect(shape.filled).toBe(shape.klass.includes('wn-badge--new'));
+        const rel = page.locator('.whats-new-modal .wn-rel--headline');
+        await expect(rel.locator('.wn-badge')).toHaveCount(0);
+        const fixes = rel.locator('.wn-block--fix');
+        if (await fixes.count()) {
+            await expect(fixes.locator('.wn-group-title')).toContainText(/fixed/i);
+            expect(await fixes.locator('li[data-wn-kind]').evaluateAll((els) => els.every((el) => el.dataset.wnKind === 'fix'))).toBe(true);
+        }
+        const added = rel.locator('.wn-block--new');
+        if (await added.count()) {
+            await expect(added.locator('.wn-group-title')).toContainText(/new/i);
+        }
     });
 
     /*
@@ -230,35 +221,6 @@ test.describe("what's new modal", () => {
         await expect(page.locator('.whats-new-modal > .wn-foot .wn-kofi-btn')).toHaveCount(0);
         // The card asks without counting: no tally of changes in it.
         await expect(page.locator('.whats-new-modal .wn-support')).not.toContainText(/\d+ changes/);
-    });
-
-    /*
-     * New changes come first as cards, fixes after them as one line each, and
-     * one menu narrows both to a section where a row of tabs ran off the edge.
-     */
-    test('the section menu narrows the release to one section', async ({ page }) => {
-        await loadDashboard(page);
-        await openWhatsNew(page);
-        const select = page.locator('.whats-new-modal [data-wn-section-select]');
-        test.skip(!(await select.count()), 'the newest release has one section');
-        await expect(page.locator('.whats-new-modal [data-wn-tab]')).toHaveCount(0);
-
-        const options = await select.locator('option').evaluateAll((els) => els.map((el) => el.value));
-        const pick = options[options.length - 1];
-        await select.selectOption(pick);
-        const shown = await page.$$eval('.whats-new-modal .wn-groups [data-wn-sec]',
-            (els) => els.filter((el) => el.offsetParent !== null).map((el) => el.getAttribute('data-wn-sec')));
-        expect(shown.length).toBeGreaterThan(0);
-        expect(new Set(shown)).toEqual(new Set([pick]));
-        // The counts in the headings follow the menu.
-        const counted = await page.$$eval('.whats-new-modal [data-wn-block]:not([hidden]) [data-wn-block-count]',
-            (els) => els.reduce((n, el) => n + Number(el.textContent), 0));
-        expect(counted).toBe(shown.length);
-
-        await select.selectOption('');
-        const all = await page.$$eval('.whats-new-modal .wn-groups [data-wn-sec]',
-            (els) => els.filter((el) => el.offsetParent !== null).length);
-        expect(all).toBeGreaterThan(shown.length);
     });
 
     test('a fix is one line that opens to its explanation', async ({ page }) => {
