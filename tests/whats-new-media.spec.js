@@ -77,6 +77,7 @@ async function still(page, file, clip) {
     const view = page.viewportSize() || VIEWPORT;
     await page.mouse.move(5, view.height - 5);
     await page.evaluate(() => /** @type {HTMLElement|null} */ (document.activeElement)?.blur?.());
+    // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
     await page.waitForTimeout(300);
     await page.screenshot({ path: file, type: 'jpeg', quality: 85, ...(clip ? { clip } : {}) });
 }
@@ -112,6 +113,7 @@ for (const shot of shots) {
                 }
                 const from = (Date.now() - started) / 1000;
                 if (shot.act) await shot.act(page, kit);
+                // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
                 await page.waitForTimeout(800);
                 const to = (Date.now() - started) / 1000;
                 // Measured at the end, where the element act was heading for

@@ -468,8 +468,10 @@ async function settle(page) {
         const cards = page.locator('.notice-card.show [data-notice-dismiss]');
         while (await cards.count()) {
             await cards.first().click();
+            // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
             await page.waitForTimeout(400);
         }
+        // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
         await page.waitForTimeout(300);
     }
 }
@@ -482,6 +484,7 @@ async function shot(page, name) {
     const view = page.viewportSize() || DESKTOP;
     await page.mouse.move(5, view.height - 5);
     await page.evaluate(() => document.activeElement?.blur?.());
+    // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
     await page.waitForTimeout(300);
     fs.mkdirSync(OUT, { recursive: true });
     await page.screenshot({ path: path.join(OUT, name), type: 'jpeg', quality: 82 });
@@ -531,6 +534,7 @@ async function snap(page, locator, name, { pad = 12, maxHeight = Infinity, keepF
     const view = page.viewportSize() || DESKTOP;
     await page.mouse.move(5, view.height - 5);
     if (!keepFocus) await page.evaluate(() => document.activeElement?.blur?.());
+    // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
     await page.waitForTimeout(300);
     await crop(page, locator, name, pad, maxHeight);
 }

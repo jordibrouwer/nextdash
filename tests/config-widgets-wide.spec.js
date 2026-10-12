@@ -194,12 +194,12 @@ test.describe('narrow: the detail opens under its row', () => {
             if (bw < min - 4 && bw > min - 36) inBand = w;
         }
         expect(inBand).not.toBeNull();
-        await page.waitForTimeout(150);
         await expect(side(page)).toBeVisible();
         // Arriving at the same width from narrow stays narrow: it is slack, not a new line.
         await page.setViewportSize({ width: 820, height: 900 });
         await expect(side(page)).toHaveCount(0);
         await page.setViewportSize({ width: /** @type {number} */ (inBand), height: 900 });
+        // Nothing may appear here: give a late repaint time to show up before the count is read.
         await page.waitForTimeout(150);
         await expect(side(page)).toHaveCount(0);
     });

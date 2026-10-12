@@ -28,6 +28,7 @@ module.exports = {
                 const n = Math.min(await posters.count(), 4);
                 for (let i = 0; i < n; i += 1) {
                     await posters.nth(i).hover();
+                    // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
                     await page.waitForTimeout(700);
                 }
             },
@@ -45,15 +46,18 @@ module.exports = {
                 await openDashboard(page);
                 await page.locator('.config-link-anchor').click();
                 await page.locator('[data-config-section="monitoring"]').click();
+                // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
                 await page.waitForTimeout(800);
                 await settle(page);
             },
             async act(page) {
                 await page.locator('.config-subtab', { hasText: 'Notifications' }).first().click();
+                // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
                 await page.waitForTimeout(700);
                 const heading = page.getByRole('heading', { name: /^Weekly digest/ }).first();
                 await heading.waitFor();
                 await heading.evaluate((el) => el.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+                // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
                 await page.waitForTimeout(1_500);
             },
         },
