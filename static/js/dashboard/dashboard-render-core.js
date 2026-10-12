@@ -32,6 +32,8 @@ class DashboardRenderCore {
         rss: { configKey: '', floor: 300, fallback: 900 },
         // Its own ttl, like custom: one timer per widget on its own cadence.
         jellyfin: { configKey: 'ttl', floor: 60, fallback: 300 },
+        sonarr: { configKey: 'ttl', floor: 60, fallback: 300 },
+        radarr: { configKey: 'ttl', floor: 60, fallback: 300 },
         unraid: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
         unraidArray: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
         unraidParity: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
@@ -945,6 +947,8 @@ class DashboardRenderCore {
         containers: 'Container list',
         notes: 'Notes',
         jellyfin: 'Jellyfin',
+        sonarr: 'Sonarr',
+        radarr: 'Radarr',
         unraid: 'Unraid',
         unraidArray: 'Unraid array',
         unraidParity: 'Parity',

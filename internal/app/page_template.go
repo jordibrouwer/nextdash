@@ -250,7 +250,7 @@ func templateWidgetURLs(widget Widget) []string {
 		if raw, ok := widget.Config["url"].(string); ok && raw != "" {
 			out = append(out, raw)
 		}
-	case WidgetTypeJellyfin:
+	case WidgetTypeJellyfin, WidgetTypeSonarr, WidgetTypeRadarr:
 		if raw, ok := widget.Config["server"].(string); ok && raw != "" {
 			out = append(out, raw)
 		}
@@ -378,6 +378,10 @@ func buildPageTemplate(page PageWithBookmarks, options TemplateExportOptions, ic
 			// they name nobody, so the receiver connects and chooses again.
 			delete(config, "userId")
 			delete(config, "libraries")
+		case WidgetTypeSonarr, WidgetTypeRadarr:
+			if raw, ok := config["server"].(string); ok {
+				config["server"] = templatizeURL(raw, variables)
+			}
 		case WidgetTypeRSS:
 			if list, ok := config["feedUrls"].([]any); ok {
 				out := make([]any, 0, len(list))
@@ -663,7 +667,7 @@ func (h *Handlers) planPageTemplateReplacing(tpl PageTemplate, rawValues map[str
 				filled, _ := fillTemplateURL(raw, values)
 				widget.Config["url"] = filled
 			}
-		case WidgetTypeJellyfin:
+		case WidgetTypeJellyfin, WidgetTypeSonarr, WidgetTypeRadarr:
 			if raw, ok := widget.Config["server"].(string); ok {
 				filled, _ := fillTemplateURL(raw, values)
 				widget.Config["server"] = filled

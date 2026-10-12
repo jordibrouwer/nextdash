@@ -2815,6 +2815,8 @@
             rss: 'The latest articles from the feeds you give it — headlines, with the whole entry on hover.',
             notes: 'A few lines of your own, with checkboxes for the ones that are tasks.',
             jellyfin: 'What was added to Jellyfin lately — films, series and anime, with posters.',
+            sonarr: 'Episodes coming up and downloads in progress in Sonarr, with posters.',
+            radarr: 'Films coming out and downloads in progress in Radarr, with posters.',
             unraid: 'The Unraid server at a glance: array, parity, disks, alerts, VMs and the UPS, a line each.',
             unraidArray: 'Every disk of the Unraid array: how full, how warm, and which one is in trouble.',
             unraidParity: 'The last parity check, or the one running now, with its history when wide.',

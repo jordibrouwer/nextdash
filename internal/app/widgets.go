@@ -132,7 +132,11 @@ const (
 	 * and its pictures come through /api/widgets/jellyfin/image.
 	 */
 	WidgetTypeJellyfin WidgetType = "jellyfin"
-	WidgetTypeCustom   WidgetType = "custom"
+	// WidgetTypeSonarr and WidgetTypeRadarr show what is coming and what is
+	// downloading, with posters, through the same media tile as Jellyfin.
+	WidgetTypeSonarr WidgetType = "sonarr"
+	WidgetTypeRadarr WidgetType = "radarr"
+	WidgetTypeCustom WidgetType = "custom"
 	// WidgetTypeNotes holds a short text of the reader's own, some lines of it
 	// tickable. The text is the widget's config, so it travels with the page.
 	WidgetTypeNotes WidgetType = "notes"
@@ -178,6 +182,8 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeCustom:     {},
 	WidgetTypeNotes:      {},
 	WidgetTypeJellyfin:   {},
+	WidgetTypeSonarr:     {},
+	WidgetTypeRadarr:     {},
 
 	WidgetTypeUnraid:              {},
 	WidgetTypeUnraidArray:         {},

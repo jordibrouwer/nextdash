@@ -29,7 +29,7 @@ func TestAnalyticsSnapshotsCountWithoutNaming(t *testing.T) {
 
 	settings := h.store.GetSettings()
 	settings.DockerHiddenContainers = []string{"secret-box"}
-	settings.DockerWebUIs = map[string]string{"sonarr": "https://sonarr.home.lan"}
+	settings.DockerWebUIs = map[string]string{"my-tv-box": "https://tv.home.lan"}
 	settings.DockerHostAddress = "tower.lan"
 	settings.BmViewColumns = []string{"tags", "opens"}
 	if err := h.store.SaveSettings(settings); err != nil {
@@ -78,7 +78,7 @@ func TestAnalyticsSnapshotsCountWithoutNaming(t *testing.T) {
 	}
 
 	encoded, _ := json.Marshal(snap)
-	for _, private := range []string{"secret-box", "sonarr", "tower.lan", "Private title", "private note", "a.lan", "c.lan"} {
+	for _, private := range []string{"secret-box", "my-tv-box", "tower.lan", "Private title", "private note", "a.lan", "c.lan"} {
 		if strings.Contains(string(encoded), private) {
 			t.Errorf("snapshot carries %q: %s", private, encoded)
 		}

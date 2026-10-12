@@ -103,6 +103,8 @@ var withheldWidgetKeys = map[WidgetType]map[string]bool{
 	WidgetTypeCustom:   {"url": true, "credentialId": true},
 	WidgetTypeRSS:      {"feedUrls": true},
 	WidgetTypeJellyfin: {"server": true, "credentialId": true, "userId": true},
+	WidgetTypeSonarr:   {"server": true, "credentialId": true},
+	WidgetTypeRadarr:   {"server": true, "credentialId": true},
 }
 
 /*

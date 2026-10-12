@@ -17659,7 +17659,7 @@ class DashboardConfig {
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'notes']],
-        ['media', ['jellyfin']],
+        ['media', ['jellyfin', 'sonarr', 'radarr']],
     ];
 
     renderPagesTags() {
@@ -19808,8 +19808,40 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'sonarr', 'radarr', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
+
+    /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
+    static ARR_SETTINGS = [
+        { key: 'show', kind: 'choice', label: ['config.widgetArrShow', 'Show'],
+          options: [
+              ['both', ['config.widgetArrShowBoth', 'What is coming and what is downloading']],
+              ['upcoming', ['config.widgetArrShowUpcoming', 'What is coming']],
+              ['queue', ['config.widgetArrShowQueue', 'What is downloading']],
+          ] },
+        { key: 'days', kind: 'int', min: 1, max: 30, label: ['config.widgetArrDays', 'Look ahead (days)'] },
+        { key: 'layout', kind: 'choice', label: ['config.widgetMediaLayout', 'Layout'],
+          options: [
+              ['list', ['config.widgetMediaLayoutList', 'List with posters']],
+              ['strip', ['config.widgetMediaLayoutStrip', 'Poster strip, a tab per part']],
+              ['hero', ['config.widgetMediaLayoutHero', 'First large, the rest as a list']],
+              ['grid', ['config.widgetMediaLayoutGrid', 'Poster grid']],
+          ] },
+        { key: 'click', kind: 'choice', label: ['config.widgetMediaClick', 'A click'],
+          options: [
+              ['open', ['config.widgetMediaClickOpen', 'Opens it in the service']],
+              ['detail', ['config.widgetMediaClickDetail', 'Shows details here first']],
+          ] },
+        { key: 'target', kind: 'choice', label: ['config.widgetMediaTarget', 'Open in'],
+          options: [
+              ['inherit', ['config.widgetMediaTargetInherit', 'Same as other links']],
+              ['_blank', ['config.widgetMediaTargetBlank', 'A new tab']],
+              ['_self', ['config.widgetMediaTargetSelf', 'This tab']],
+          ] },
+        { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetMediaRows', 'Items to show'],
+          hint: ['config.widgetMediaRowsHint', 'In the strip, per part.'] },
+        { key: 'ttl', kind: 'int', min: 60, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
+    ];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -20062,6 +20094,9 @@ class DashboardConfig {
             { key: 'ttl', kind: 'int', min: 60, max: 3600,
               label: ['config.widgetJellyfinTtl', 'Ask Jellyfin every (seconds)'] },
         ],
+        // Sonarr and Radarr ask the same questions; one table, two names.
+        sonarr: DashboardConfig.ARR_SETTINGS,
+        radarr: DashboardConfig.ARR_SETTINGS,
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
               label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },

@@ -79,6 +79,12 @@
         },
     };
 
+    // Sonarr and Radarr: a key and an address, nothing to choose after Connect.
+    [['sonarr', 'Sonarr', 'http://sonarr.local:8989'], ['radarr', 'Radarr', 'http://radarr.local:7878']]
+        .forEach(([id, name, placeholder]) => {
+            Config.MEDIA_SERVICES[id] = { id, name, header: 'X-Api-Key', placeholder, words: {} };
+        });
+
     const SHARED_WORDS = {
         server: ['config.widgetMediaServer', 'Address'],
         key: ['config.widgetMediaKey', 'API key'],
