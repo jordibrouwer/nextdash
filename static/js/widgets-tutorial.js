@@ -193,7 +193,7 @@
                 body: `<p>${esc(t('widgetsTutorialStep7Body1',
                     'Drag the // in its title to move it among your categories, click the header to fold it away, and right-click it for rename, width, settings and close. The arrow keys walk into a tile and through its rows, and Enter on a row does what clicking it does.'))}</p>
                 <p>${esc(t('widgetsTutorialStep7Body2',
-                    'Everything here is also on this tab: Add a widget opens the catalogue, which describes each kind before you take it.'))}</p>`,
+                    'Everything here is also on this tab: Add a widget opens the catalogue, and the Catalogue tab draws each kind before you take it.'))}</p>`,
             },
         ];
     }

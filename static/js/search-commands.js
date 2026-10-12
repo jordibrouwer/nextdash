@@ -358,7 +358,7 @@ class SearchCommandsComponent {
         this._closeCommandPalette();
         const dash = window.dashboardInstance;
         const section = entry.section || entry.id;
-        const state = { 'structure': 'ptTab', appearance: 'appearanceTab', 'data-backups': 'dbTab', stats: 'statsTab', help: 'helpTab', about: 'aboutTab', bookmarks: 'bmTab', behavior: 'behaviorTab', monitoring: 'monitoringTab', logs: 'logsTab' }[section];
+        const state = { 'structure': 'ptTab', appearance: 'appearanceTab', 'data-backups': 'dbTab', stats: 'statsTab', help: 'helpTab', about: 'aboutTab', bookmarks: 'bmTab', behavior: 'behaviorTab', monitoring: 'monitoringTab', widgets: 'widgetsTab', logs: 'logsTab' }[section];
         if (dash?.config?.openConfigView) {
             if (entry.tab && state) dash.config[state] = entry.tab;
             void dash.config.openConfigView(section);

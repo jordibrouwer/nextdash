@@ -123,9 +123,15 @@ class DashboardConfig {
                     datasetKey: 'dashboardConfigWidgetJellyfin',
                     ready: () => window.DashboardConfigJellyfinReady === true,
                 },
+                {
+                    file: 'js/dashboard/dashboard-config-widget-catalogue.js',
+                    datasetKey: 'dashboardConfigWidgetCatalogue',
+                    ready: () => window.DashboardConfigWidgetCatalogueReady === true,
+                },
             ],
             ready: () => window.DashboardConfigWidgetsReady === true
-                && window.DashboardConfigJellyfinReady === true,
+                && window.DashboardConfigJellyfinReady === true
+                && window.DashboardConfigWidgetCatalogueReady === true,
         },
         /*
          * Appearance's Background and Surface tabs, the theme browser built
@@ -324,6 +330,7 @@ class DashboardConfig {
         this.statsInboxRange = 30;
         // Statistics sub-tab.
         this.statsTab = 'overview';
+        this.widgetsTab = 'widgets';
         // Grouped by default: the same headings the catalogue uses, so a long
         // list arrives already sorted into the questions each type answers.
         this.widgetSort = 'group';
@@ -492,6 +499,8 @@ class DashboardConfig {
         }
         // Branding lived on Display, then moved to Header with the browser tab.
         if (raw === 'config/appearance/branding') return 'header';
+        // Widgets → Types listed every kind; the Catalogue draws them now.
+        if (raw === 'config/widgets/types') return 'catalogue';
         // Same move as sectionFromHash above: the tab it lands on now.
         if (raw === 'config/data-backups/logs') return 'server';
         // Tags left Pages & tags for Bookmarks; an old link to it lands on the
@@ -582,6 +591,7 @@ class DashboardConfig {
             // news` opened the colophon and choosing the tab never reached the
             // address bar.
             about: DashboardConfig.ABOUT_TABS,
+            widgets: DashboardConfig.WIDGETS_TABS,
             inbox: DashboardConfig.INBOX_TABS,
             containers: DashboardConfig.CONTAINERS_TABS,
             'status-page': DashboardConfig.STATUS_PAGE_TABS,
@@ -679,6 +689,7 @@ class DashboardConfig {
         help: 'helpTab',
         logs: 'logsTab',
         bookmarks: 'bmTab',
+        widgets: 'widgetsTab',
         inbox: 'inboxTab',
         containers: 'containersTab',
         'status-page': 'statusPageTab',
@@ -701,6 +712,7 @@ class DashboardConfig {
         'data-help-tab': 'help',
         'data-logs-tab': 'logs',
         'data-bm-tab': 'bookmarks',
+        'data-widgets-tab': 'widgets',
         'data-inbox-tab': 'inbox',
         'data-containers-tab': 'containers',
         'data-sp-tab': 'status-page',
@@ -718,6 +730,7 @@ class DashboardConfig {
         help: 'data-help-tab',
         logs: 'data-logs-tab',
         bookmarks: 'data-bm-tab',
+        widgets: 'data-widgets-tab',
         inbox: 'data-inbox-tab',
         containers: 'data-containers-tab',
         'status-page': 'data-sp-tab',
@@ -2441,6 +2454,7 @@ class DashboardConfig {
             this.bindControlPanels(container, 'behavior');
             this.bindInboxSection?.(container);
         } else if (this.section === 'widgets') {
+            this.bindWidgetsTabs(container);
             this.bindWidgetsEditor(container);
             void this.loadWidgetsEditor();
             // The custom widget offers a credential by name; the names are two
@@ -16949,6 +16963,11 @@ class DashboardConfig {
      * branch of a tab dispatcher is a sentence nobody finds again.
      */
     static SECTION_TAB_NOTES = {
+        widgets: {
+            'widgets': ['config.widgetsNoteWidgets', 'The widgets on each page: show or hide them, rename them, and change what they count.'],
+            'catalogue': ['config.widgetsNoteCatalogue', 'Every kind nextDash can draw, with example figures. Add one to the page you are on.'],
+            'custom': ['config.widgetsNoteCustom', 'Read a figure out of any service that answers JSON, and show it as a tile.'],
+        },
         bookmarks: {
             /*
              * No note for the List tab, as Health's All has none: it cost a
@@ -19661,6 +19680,9 @@ class DashboardConfig {
      * beside it leaves the row titles room to read.
      */
     static WIDGETS_WIDE_MIN = 960;
+
+    /** Config → Widgets: the ones you have, every kind there is, and the Custom one at length. */
+    static WIDGETS_TABS = ['widgets', 'catalogue', 'custom'];
 
     /** Config → Inbox: what is collected, the list, the side panel and clicks, the header icon. */
     static INBOX_TABS = ['collecting', 'list', 'panel', 'icon'];

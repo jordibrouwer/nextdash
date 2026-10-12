@@ -95,7 +95,7 @@
             <div class="config-panel unraid-preview" data-unraid-preview data-unraid-panel="widgets"${this.unraidPanelHidden('widgets')}>
                 <h3 class="config-panel-title">${t('unraidPreviewTitle', 'What you get')}</h3>
                 <p class="config-panel-note">${t('unraidPreviewNote',
-                    'Seven widgets read this server, shown here with example figures. Add opens the widget catalogue on that kind.')}</p>
+                    'Seven widgets read this server, shown here with example figures. Add opens that kind in Widgets → Catalogue.')}</p>
                 <div class="unraid-minis">
                     ${tile('unraid', `${row('array', 'started', 'good')}${row('alerts', '2 unread', 'warn')}`)}
                     ${tile('unraidArray', `${bar(0.74)}${row('disk1', '74%')}`)}
@@ -117,12 +117,35 @@
      * page.
      */
     async openUnraidWidgetTypes(type) {
+        // Widgets → Catalogue, narrowed to the Unraid group: the seven kinds
+        // drawn, each with its own Add.
+        this.widgetsTab = 'catalogue';
+        this.widgetKindFilter = 'unraid';
         this.selectSection('widgets');
-        // The Widgets script loads on demand; openWidgetCatalogue is not there
-        // until it has landed.
+        // The Widgets script loads on demand; the cards are not there until
+        // it has landed and the section has painted.
         if (!(await this.ensureSection('widgets')) || this.section !== 'widgets') return;
-        // The section paints first; the catalogue is an overlay over it.
-        requestAnimationFrame(() => this.openWidgetCatalogue({ focusType: type || 'unraid' }));
+        /*
+         * The section paints, then paints again once its widgets have loaded
+         * (the badges need them), which replaces the button just focused. So
+         * keep pointing at the current one until it has stayed put a while.
+         */
+        const selector = `[data-widget-kind="${CSS.escape(type || 'unraid')}"] [data-widget-add]`;
+        let pointed = null;
+        let steady = 0;
+        let tries = 0;
+        const tick = () => {
+            const add = document.querySelector(selector);
+            if (add && add !== pointed) {
+                pointed = add;
+                steady = 0;
+                add.closest('[data-widget-kind]')?.scrollIntoView({ block: 'center' });
+            }
+            if (add && document.activeElement !== add) add.focus({ preventScroll: true });
+            steady = add ? steady + 1 : 0;
+            if (steady < 20 && (tries += 1) < 120) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
     },
 
     /** Tick off the three steps from what the server says. */

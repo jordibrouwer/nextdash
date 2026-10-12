@@ -182,13 +182,16 @@ test.describe('Config -> Unraid explains itself', () => {
         await expect(page.locator('[data-unraid-preview] .unraid-mini')).toHaveCount(7);
         await page.locator('[data-unraid-add="unraidParity"]').click();
         await expect(page.locator('#config-section-widgets')).toHaveAttribute('aria-selected', 'true');
-        await expect(page.locator('.modal--widget-catalogue [data-widget-add="unraidParity"]')).toBeFocused();
+        await expect(page.locator('[data-widget-kind="unraidParity"] [data-widget-add]')).toBeFocused();
     });
 
-    test('Add an Unraid widget opens the catalogue on the Unraid card', async ({ page }) => {
+    test('Add an Unraid widget opens the Catalogue tab on the Unraid group', async ({ page }) => {
         await openSection(page, { server: null, keySet: false, suggestedBaseUrl: '' });
         await page.locator('[data-unraid-explain] [data-unraid-goto-widgets]').click();
-        await expect(page.locator('.modal--widget-catalogue [data-widget-add="unraid"]')).toBeFocused();
+        await expect(page).toHaveURL(/#config\/widgets\/catalogue$/);
+        await expect(page.locator('[data-widget-kind="unraid"] [data-widget-add]')).toBeFocused();
+        // Narrowed to the Unraid group: no card from another one is drawn.
+        await expect(page.locator('[data-widget-kind="health"]')).toHaveCount(0);
     });
 });
 

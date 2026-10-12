@@ -116,6 +116,7 @@ class DashboardConfigLoader {
         help: 'helpTab',
         logs: 'logsTab',
         bookmarks: 'bmTab',
+        widgets: 'widgetsTab',
         inbox: 'inboxTab',
         containers: 'containersTab',
     };
@@ -168,6 +169,7 @@ class DashboardConfigLoader {
         'dbTab',
         'statsTab',
         'logsTab',
+        'widgetsTab',
         'inboxTab',
         'containersTab',
         'aboutTab',
