@@ -206,14 +206,14 @@ test.describe('presets in the widget panel', () => {
         const toggle = page.locator('[data-widget-settings]').last();
         const index = await toggle.getAttribute('data-widget-settings');
         if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
-        await expect(page.locator(`[data-widget-row="${index}"] [data-widget-setting="url"]`)).toBeVisible();
+        await expect(page.locator(`[data-widget-detail="${index}"] [data-widget-setting="url"]`)).toBeVisible();
         return index;
     }
 
     test('a retired service is not offered for a new widget', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const offered = await page.locator(`[data-widget-row="${index}"] [data-widget-preset] option`)
+        const offered = await page.locator(`[data-widget-detail="${index}"] [data-widget-preset] option`)
             .evaluateAll((options) => options.map((option) => option.value));
         expect(offered).toContain('sonarr');
         expect(offered).toContain('npm');
@@ -229,7 +229,7 @@ test.describe('presets in the widget panel', () => {
         try {
             await openWidgets(page);
             const index = await addCustom(page);
-            const row = page.locator(`[data-widget-row="${index}"]`);
+            const row = page.locator(`[data-widget-detail="${index}"]`);
             await row.locator('[data-widget-preset]').selectOption('pihole6');
 
             await expect(row.locator('[data-widget-auth="basicUser"]')).toBeHidden();
