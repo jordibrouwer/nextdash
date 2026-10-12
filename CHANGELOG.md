@@ -136,6 +136,11 @@ The headline is the Jellyfin widget: connect it once and it shows what was added
 
 - **new — the weekly digest names the week's nextDash releases.** A *New in nextDash* part, made from the same files the What's new window reads, lists every release that came out in the digest's week with the items marked as a highlight, or the release's one-line lead when nothing is marked. Its button opens What's new; it is news, so it does not count as something to work through. On by default (`digestNews`, `digest_news.go`).
 
+### Docs
+
+- **docs — Help follows v1.19.4**, in six languages: Widgets → Adding one names the three tabs and the side-by-side layout, The kinds counts thirty-one and adds *What is new to watch?* with Jellyfin, Weekly digest names the *New in nextDash* part and its switch, and Version describes the spotlight and every release since your last visit. Checks & health and the `tipMaintBulkCheck` tip no longer point at the removed corner card; they send unchecked bookmarks through the Bookmarks view instead.
+- **docs — MANUAL §4, §12.1, §12.4, §15.1, §15.2, §15.3, §17.1, §17.7 and §17.8**: the four removed corner cards are gone from the list, Config → Widgets has its three tabs and the wide layout, Jellyfin has a row and a set-up paragraph, the digest has its news part, and What's new its spotlight, the releases since your last visit and the **All** / **New only** / section chips.
+
 ### Tests
 
 - **tests — `tests/dashboard-widget-jellyfin.spec.js`** and `widgets_jellyfin_test.go`, `widgets_jellyfin_config_test.go`, `widgets_jellyfin_images_test.go` and `page_template_test.go` cover the tile, its layouts, the setup, the cache, the image proxy and the template. `tests/config-widgets-tabs.spec.js`, `tests/config-widgets-tab.spec.js` and `tests/config-widgets-wide.spec.js` cover the three tabs, the rows and the side-by-side layout; `widget-secret-reveal`, `widget-preset-address`, `config-widget-panel` and `config-unraid` follow the new panel.
