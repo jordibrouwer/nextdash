@@ -2610,8 +2610,8 @@ A tile with a row limit shows what it left out (*5 of 12*). A figure on a tile i
 
 | Tab | What it holds |
 |---|---|
-| **Your widgets** | The widgets you have, one line each. **Add a widget** opens the catalogue. A search (title and type), a page picker (including **All pages**), a sort (grouped, page order, name, type) and a selection bar with **Show**, **Hide**, **Move to page…** and **Delete** |
-| **Catalogue** | Every kind on one page, each with a small drawing of what it shows (made of example figures) and an **Add** button. The chips above the cards show one group |
+| **Your widgets** | The widgets you have, one line each. **Add a widget** opens a picker: type to search the kinds by name or by what they show, `↑` `↓` to choose and `Enter` to add; the pane beside the list shows the kind you are on. The first `Escape` empties the search, the next closes the picker. A search (title and type), a page picker (including **All pages**), a sort (grouped, page order, name, type) and a selection bar with **Show**, **Hide**, **Move to page…** and **Delete** |
+| **Catalogue** | Every kind on one page, each with a small drawing of what it shows (made of example figures) and an **Add** button. The chips above the cards show one group. Kinds added in the current release carry a **New** badge, and a **New** chip and strip gather them at the top |
 | **Custom widget** | What the Custom widget does and will not do, with an **Add** button ([§15.5](#155-the-custom-widget)) |
 
 A widget added from the Catalogue or the Custom widget tab lands on **Your widgets**, ready to be filled in. An old `/#config/widgets/types` address opens the Catalogue.
