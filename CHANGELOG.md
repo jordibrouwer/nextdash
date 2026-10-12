@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.19.5 — 12 October 2026](#v1195--12-october-2026)
 - [v1.19.4 — 12 October 2026](#v1194--12-october-2026)
 - [v1.19.2 — 10 October 2026](#v1192--10-october-2026)
 - [v1.19.1 — 10 October 2026](#v1191--10-october-2026)
@@ -105,6 +106,30 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.19.5 — 12 October 2026
+
+Five more media widgets join Jellyfin on one shared base: Sonarr and Radarr show what is coming and what is in the queue, Seerr shows requests with who asked and whether they arrived, and qBittorrent and SABnzbd show what is downloading with progress, speed and time left. Adding a widget opens a picker you can search, with the kind you are on shown beside the list, and the kinds new in this release carry a New badge and a strip of their own in the Catalogue.
+
+### Widgets
+
+- **new — Sonarr and Radarr widgets.** The episodes and films coming up in the next days (a week by default, up to 30) and what is downloading, each with its poster. The same four layouts as Jellyfin; in the strip, *Upcoming* and *Queue* are the tabs. **Show** picks what is coming, what is downloading, or both (`widgets_arr.go`, `widgets_arr_route.go`, `dashboard-widget-arr.js`).
+- **new — a Seerr widget.** Requests in Overseerr or Jellyseerr under *Pending*, *Approved* and *Available*, with who asked and the poster. Show every request or one state, films, series or both, from everyone or one person. Posters come from TMDB, which the server fetches without a key; a key copied without its trailing `==` is mended (`widgets_seerr.go`, `dashboard-widget-seerr.js`).
+- **new — qBittorrent and SABnzbd widgets.** What is downloading, paused and finished, with progress, speed and time left, and the client's speeds and counts on top. One list or a tab per part, in the order you choose (newest, furthest along or fastest), refreshed as often as every 15 seconds. qBittorrent signs in with a username and password, or with an API key from 5.2 on, and can be narrowed to one category (`widgets_qbittorrent.go`, `widgets_sabnzbd.go`, `widgets_downloads.go`, `dashboard-widget-downloads.js`).
+- **new — the media tiles share one base.** Jellyfin and the five new kinds use one cache per widget on its own TTL, one picture proxy and one tile with the list, strip, hero and grid layouts. Set-up is the same for all of them: the address, the key and **Connect**, which says *Connected to* with the version and fills the choices below. Posters now live in `data/media-images/`, shared by all media tiles (up to 200 MB, oldest out first, not in backups); the `data/jellyfin-images/` folder of v1.19.4 is removed the first time a poster is stored (`widgets_media.go`, `widgets_media_images.go`, `dashboard-media-tile.js`, `dashboard-config-widget-media.js`).
+- **new — a picker for Add a widget.** Type to search the kinds by name or by what they show, `↑` `↓` to choose and `Enter` to add; the pane beside the list shows the kind you are on. The first `Escape` empties the search, the next closes the picker. The list is a listbox the field drives, so focus stays in the field (`dashboard-config-widgets.js`).
+- **new — a New badge on the kinds added in this release,** in the picker and the Catalogue, with a **New** chip and strip at the top of the Catalogue. The badge stays through v1.20 and goes away by itself from v1.21 on (`NEW_SINCE`, `dashboard-config-widget-catalogue.js`).
+
+### Translations
+
+- **fix — eight strings of the widget picker and the New badge** were missing from every locale and showed in English; they are now in all six languages.
+- **fix — three keys the Inbox and re-check messages were missing** are added in all six languages.
+
+### Docs
+
+- **new — Help, MANUAL and README cover Sonarr, Radarr, Seerr, qBittorrent and SABnzbd,** with where to find each key, and the widget picker in §15.2.
 
 ---
 
