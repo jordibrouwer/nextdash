@@ -142,11 +142,16 @@ The headline is the Jellyfin widget: connect it once and it shows what was added
 - **docs — MANUAL §4, §12.1, §12.4, §15.1, §15.2, §15.3, §17.1, §17.7 and §17.8**: the four removed corner cards are gone from the list, Config → Widgets has its three tabs and the wide layout, Jellyfin has a row and a set-up paragraph, the digest has its news part, and What's new its spotlight, the releases since your last visit and the **All** / **New only** / section chips.
 - **docs — translations** of the v1.19.4 strings, which only had an English fallback in the code: the Widgets tabs and Catalogue, the Custom widget tab, the Jellyfin settings and tile, the digest's *New in nextDash* part and its switch, and the What's new window's spotlight, chips and Ko-fi card — 100 keys in `en.json`, nl, de, fr, es and zh. The Jellyfin set-up errors now have fixed keys (`widgetJellyfinError*`) instead of one built from the server's error text.
 
+### Tag suggestions
+
+- **fix — the catalogue also knows a subdomain by its parent domain.** `docs.docker.com`, `wiki.archlinux.org` and `en.wikipedia.org` were passed over because the shipped file names `docker.com`, `archlinux.org` and `wikipedia.org`; the lookup now tries the host and then each parent down to two labels. A domain and its subdomains are one row under the catalogue's site, so turning it down holds for all of them.
+
 ### Tests
 
 - **tests — `tests/dashboard-widget-jellyfin.spec.js`** and `widgets_jellyfin_test.go`, `widgets_jellyfin_config_test.go`, `widgets_jellyfin_images_test.go` and `page_template_test.go` cover the tile, its layouts, the setup, the cache, the image proxy and the template. `tests/config-widgets-tabs.spec.js`, `tests/config-widgets-tab.spec.js` and `tests/config-widgets-wide.spec.js` cover the three tabs, the rows and the side-by-side layout; `widget-secret-reveal`, `widget-preset-address`, `config-widget-panel` and `config-unraid` follow the new panel.
 - **tests — `tests/whats-new-spotlight.spec.js`** covers the spotlight and the releases since the last visit; `digest_news_test.go` and `tests/digest-notice.spec.js` the digest's news part.
 - **tests — `tests/whats-new-media.spec.js`** takes the What's new pictures and recordings through the real UI, one release at a time against a copy of the demo data, from a plan in `tests/fixtures/whats-new-media/<tag>.js`. The shared steps moved out of `manual-screenshots.spec.js` into `tests/helpers/manual-shot-kit.js`.
+- **tests — `tests/config-tag-suggestions.spec.js`** also covers the catalogue matching a subdomain through its parent domain, as one row.
 
 ---
 
