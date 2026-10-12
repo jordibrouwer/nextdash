@@ -481,9 +481,15 @@ test.describe('the notes widget', () => {
         test('it locks page scroll while open and releases it after', async ({ page }) => {
             await open(page);
             const pageId = await openModal(page, 'x');
-            expect(await page.evaluate(() => getComputedStyle(document.body).overflow)).toBe('hidden');
+            // Polled both ways: the modal is opened after the click returns,
+            // and Escape closes it asynchronously (the last edit is saved
+            // first), so the lock is taken and released a moment after the key.
+            const overflow = () => page.evaluate(() => getComputedStyle(document.body).overflow);
+            await expect(page.locator('.notes-modal-overlay')).toBeVisible();
+            await expect.poll(overflow).toBe('hidden');
             await page.keyboard.press('Escape');
-            expect(await page.evaluate(() => getComputedStyle(document.body).overflow)).not.toBe('hidden');
+            await expect(page.locator('.notes-modal-overlay')).toBeHidden();
+            await expect.poll(overflow).not.toBe('hidden');
             await removeNotes(page, pageId);
         });
 
