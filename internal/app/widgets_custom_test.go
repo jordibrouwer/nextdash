@@ -88,6 +88,10 @@ func TestCustomWidgetFormatting(t *testing.T) {
 		// Under a kilobit there is nothing to scale, and decimals would be
 		// noise on a number that is already whole.
 		{float64(512), "rate", "512 bps"},
+		// A negative figure -- a change, a difference -- scales on its
+		// magnitude, the way it does with a decimals setting.
+		{float64(-1536), "bytes", "-1.5 KB"},
+		{float64(-94000000), "rate", "-94.000 Mbps"},
 		// A value the format cannot read falls back to showing it, rather than
 		// showing nothing: the reader can then see what arrived.
 		{"not a number", "count", "not a number"},

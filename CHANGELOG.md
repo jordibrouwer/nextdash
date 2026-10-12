@@ -121,6 +121,7 @@ The headline is the Jellyfin widget: connect it once and it shows what was added
 - **new — the Types tab folds into the Catalogue.** A stored or linked `types` tab lands on the Catalogue; the Unraid section's **Add** opens the catalogue on that kind, and the widgets tutorial and search commands say so. The orphaned Types strings are gone from all six locales.
 - **new — Your widgets is one panel of one-line rows with a shared detail view.** One function draws a widget's detail for both places it can stand, so the two can never offer different controls.
 - **new — list and detail side by side on a wide screen.** Wide or narrow is measured on the section's own width, not the window's, with 40 px of slack so a width on the line does not flip back and forth; it repaints only when the answer changes. Wide, one widget is always open beside the list — the chosen one, or the first shown once that one is gone after a delete, move or search. Moving between the layouts keeps the field being typed in, with its uncommitted value.
+- **fix — a negative size or line speed scales like a positive one.** A custom widget's Size and Rate formats stepped on the value rather than its magnitude, so a negative change read `-5000000 B` without a decimals setting and `-4.77 MB` with one (`formatByteSize`, `formatBitRate`).
 - **fix — renaming a widget no longer takes the caret away.** A rename fires when you leave the title, so the config redraw that followed took the caret out of the field you had just moved to; the dashboard's blocks now refresh with `keepConfig`.
 
 ### Config
@@ -156,6 +157,7 @@ The headline is the Jellyfin widget: connect it once and it shows what was added
 - **tests — `tests/dashboard-widget-jellyfin.spec.js`** and `widgets_jellyfin_test.go`, `widgets_jellyfin_config_test.go`, `widgets_jellyfin_images_test.go` and `page_template_test.go` cover the tile, its layouts, the setup, the cache, the image proxy and the template. `tests/config-widgets-tabs.spec.js`, `tests/config-widgets-tab.spec.js` and `tests/config-widgets-wide.spec.js` cover the three tabs, the rows and the side-by-side layout; `widget-secret-reveal`, `widget-preset-address`, `config-widget-panel` and `config-unraid` follow the new panel.
 - **tests — `tests/whats-new-spotlight.spec.js`** covers the spotlight and the releases since the last visit; `digest_news_test.go` and `tests/digest-notice.spec.js` the digest's news part.
 - **tests — `tests/whats-new-media.spec.js`** takes the What's new pictures and recordings through the real UI, one release at a time against a copy of the demo data, from a plan in `tests/fixtures/whats-new-media/<tag>.js`. The shared steps moved out of `manual-screenshots.spec.js` into `tests/helpers/manual-shot-kit.js`.
+- **tests — `TestContainerNotifierRecreateAnswersWhatWasTold`, `TestRunDueMonitorsOneSlowHostDoesNotStarveTheOthers`, `TestServerLogRetentionPassesUnstampedLines`** and two negative cases in `TestCustomWidgetFormatting` cover the four fixes above; each fails without its fix.
 - **tests — `tests/config-tag-suggestions.spec.js`** also covers the catalogue matching a subdomain through its parent domain, as one row.
 
 ---
