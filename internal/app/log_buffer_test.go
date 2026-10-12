@@ -233,6 +233,25 @@ func TestServerLogRetentionDropsOldLines(t *testing.T) {
 	}
 }
 
+// A panic's stack lines carry no stamp. They age with the line they follow,
+// rather than parking at the head of the ring and stopping every expiry
+// behind them.
+func TestServerLogRetentionPassesUnstampedLines(t *testing.T) {
+	s := &serverLogSink{}
+	now := time.Now()
+	old := now.Add(-3 * time.Hour).Format("2006/01/02 15:04:05")
+	s.appendLine(old + " http: panic serving 127.0.0.1:1234: boom")
+	s.appendLine("goroutine 42 [running]:")
+	s.appendLine("\tnet/http.(*conn).serve.func1()")
+	s.appendLine(now.Format("2006/01/02 15:04:05") + " import: recent")
+
+	s.SetRetention(serverLogModeTime, 2, serverLogDefaultMaxEntries)
+	kept, _, _ := s.Entries(-1, "", "", 0)
+	if len(kept) != 1 || kept[0].Message != "recent" {
+		t.Fatalf("after a 2h retention: %d entries, want just the recent one: %+v", len(kept), kept)
+	}
+}
+
 func TestClampServerLogRetentionHours(t *testing.T) {
 	for _, tc := range []struct{ in, want int }{
 		{-5, serverLogRetentionKeepAll},
