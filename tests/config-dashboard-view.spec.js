@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, markConfigSettingPromosSeen } = require('./e2e-helpers');
 
 /**
  * Config as a dashboard view — Phase 1 scaffold.
@@ -758,6 +758,10 @@ test.describe('config dashboard view (scaffold)', () => {
             return route.fallback();
         });
         await loadDashboard(page);
+        // An unseen Random theme promo pulls Appearance over to General
+        // (ensureSubTab) half a second after it draws, taking the date
+        // format select with it. That promo is not what this test is about.
+        await markConfigSettingPromosSeen(page);
         // Date & weather lives under Appearance now.
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = 'datetime', window.dashboardInstance.config).openConfigView('appearance'));
 
