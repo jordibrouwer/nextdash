@@ -82,7 +82,18 @@ test.describe('the bookmark form sheet', () => {
         await openForm(page, 'rich');
         // On a theme with no opinion about glass. The fresh-install theme is a
         // terminal theme, whose archetype keeps its surfaces solid on purpose.
-        await page.evaluate(() => window.ThemeLoader.applyTheme('tarnished-brass-dark'));
+        //
+        // A theme change brings the theme's own depth with it, asynchronously
+        // (theme-changed -> applySurfacesForTheme, after the surface meta is
+        // fetched), and that landed after the data-depth set below: glass was
+        // put back to the theme's depth and the form had no blur. So wait for
+        // those surfaces -- the same call, queued behind the one the event
+        // made -- and then choose the depth.
+        await page.evaluate(async () => {
+            window.ThemeLoader.applyTheme('tarnished-brass-dark');
+            await window.ThemeLoader.applySurfacesForTheme('tarnished-brass-dark', window.dashboardInstance.settings);
+            document.body.setAttribute('data-depth', 'rich');
+        });
         expect((await dialog(page, ['backdropFilter'])).backdropFilter,
             'rich blurs what is behind a form').toBe('none');
 
