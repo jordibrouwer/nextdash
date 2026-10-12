@@ -160,6 +160,7 @@ test.describe('Bookmarks view: View settings, clicking', () => {
     await open(page, { bmViewClick: 'select' });
     await row(page, 1).click();
     await expect(row(page, 1)).toHaveClass(/keyboard-selected/);
+    // A fixed wait: the panel must not open, so there is nothing to wait for.
     await page.waitForTimeout(300);
     await expect(sidePanel(page)).toHaveCount(0);
   });
@@ -196,6 +197,9 @@ test('a View setting changed in Config reaches the view', async ({ page }) => {
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
     await page.locator('[data-bm-tab="view"]').click();
     await page.locator('.config-bm-view-tab select[data-behavior-field="bmViewAddress"]').selectOption('full');
-    await page.waitForTimeout(500);
+    await expect.poll(() => page.evaluate(async () => {
+      const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+      return (await (await api('/api/settings')).json()).bmViewAddress;
+    })).toBe('full');
   }
 });

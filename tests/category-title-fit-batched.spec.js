@@ -61,7 +61,13 @@ async function openDashboard(page) {
     await page.waitForSelector('.category-title', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.waitForTimeout(400);
+    // The dashboard's own fit has run once the module is there, the fonts are
+    // in and two frames have passed; the clones are measured on that footing.
+    await page.waitForFunction(() => typeof window.DashboardCategoryTitleFit?.fitAllCategoryTitles === 'function');
+    await page.evaluate(async () => {
+        await document.fonts.ready;
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    });
 }
 
 /** Two identical sets of thirty categories, cloned from a real one, side by side in the grid's styles. */

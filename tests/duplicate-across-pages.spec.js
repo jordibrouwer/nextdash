@@ -143,7 +143,8 @@ test.describe('the same link on another page', () => {
         await expect(dialog).toHaveClass(/show/, { timeout: 10_000 });
         await dialog.locator('.modal-button').nth(1).click();
 
-        // Nothing to poll towards, so settle first and then assert absence.
+        await expect(dialog).not.toHaveClass(/show/);
+        // Nothing to poll towards: the copy must never be saved, so give a save time to have landed.
         await page.waitForTimeout(1500);
         const list = await bookmarksOnPage(page, currentPageId);
         expect(list.some((b) => b.url === url)).toBe(false);

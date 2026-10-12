@@ -335,7 +335,16 @@ test.describe('video bookmarks', () => {
         // Settle first: a repaint after the load replaces the row elements, and
         // the cursor set on an element that is no longer in the grid points
         // nowhere. Any card left open would make Shift+V a toggle that closes.
-        await page.waitForTimeout(800);
+        await expect(page.locator('.bookmark-link', { hasText: `Keyboard video ${stamp}` }).first()).toBeVisible();
+        // Stable means the same row element answered several reads in a row; a
+        // repaint swaps the element and starts the count again.
+        await expect.poll(() => page.evaluate((mark) => {
+            const row = [...document.querySelectorAll('.bookmark-link')]
+                .find((el) => el.textContent.includes(`Keyboard video ${mark}`));
+            if (!row) return 0;
+            row.__stableReads = (row.__stableReads || 0) + 1;
+            return row.__stableReads;
+        }, stamp), { intervals: [100] }).toBeGreaterThanOrEqual(5);
         const ready = await page.evaluate((mark) => {
             const d = window.dashboardInstance;
             d.hideBookmarkPreviewCard?.();
@@ -358,7 +367,10 @@ test.describe('video bookmarks', () => {
         expect(ready).toBe(true);
 
         await page.keyboard.press('Shift+V');
-        await page.waitForTimeout(600);
+        await expect.poll(() => page.evaluate(() => ({
+            mode: window.dashboardInstance.previewCardElement?.dataset.previewMode || '',
+            focused: document.activeElement?.className || '',
+        }))).toMatchObject({ mode: 'pinned', focused: expect.stringContaining('bookmark-preview-card-poster') });
         const pinned = await page.evaluate(() => ({
             mode: window.dashboardInstance.previewCardElement?.dataset.previewMode || '',
             focused: document.activeElement?.className || '',
@@ -367,7 +379,11 @@ test.describe('video bookmarks', () => {
         expect(pinned.focused).toContain('bookmark-preview-card-poster');
 
         await page.keyboard.press('Enter');
-        await page.waitForTimeout(800);
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.previewCardElement
+            ?.querySelector('iframe')?.getAttribute('src') || '')).toContain('/embed/');
+        // Nothing must open: a popup from the Enter would arrive a moment after
+        // the frame shows, and the check below passes at once without this wait.
+        await page.waitForTimeout(300);
 
         const played = await page.evaluate(() => {
             const card = window.dashboardInstance.previewCardElement;

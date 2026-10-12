@@ -36,7 +36,8 @@ async function openWithPages(page, count = 3) {
         await dash.loadData();
         dash.pageNav?.renderPageNavigation?.();
     }, count);
-    await page.waitForTimeout(400);
+    // The pages are loaded and the page keys can reach the third one.
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.pages.length)).toBeGreaterThanOrEqual(count);
 }
 
 const currentPage = (page) => page.evaluate(() => Number(window.dashboardInstance.currentPageId));

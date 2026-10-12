@@ -214,6 +214,7 @@ test.describe('deleting a page from the overview', () => {
         await expect(row).toHaveClass(/is-armed/);
         await expect(row.locator('.page-overview-modal-confirm')).toBeVisible();
 
+        // Negative check: one press must not delete; give a stray DELETE time to be sent.
         await page.waitForTimeout(800);
         expect(deletes, 'one press deleted the page').toEqual([]);
         expect(await page.evaluate(() => window.dashboardInstance.pages.some((p) => p.name === 'doomed')))
@@ -268,7 +269,7 @@ test.describe('the shape of the panel', () => {
             await d.loadData();
             d.pageNav?.renderPageNavigation?.();
         }, count);
-        await page.waitForTimeout(300);
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.pages.length)).toBe(count);
     }
 
     test('the rows are one column, and the current one is marked down its edge', async ({ page }) => {
@@ -327,7 +328,10 @@ test.describe('the shape of the panel', () => {
         await page.keyboard.press(',');
         await page.waitForSelector('#page-overview-filter', { timeout: 10_000 });
         await page.locator('#page-overview-filter').fill('page-9');
-        await page.waitForTimeout(200);
+        await expect.poll(() => page.evaluate(
+            () => [...document.querySelectorAll('.page-overview-modal-item')]
+                .filter((el) => !el.hidden).length,
+        ), { timeout: 5_000 }).toBe(1);
 
         // The filter hides rows; it does not renumber them.
         await page.keyboard.press('3');

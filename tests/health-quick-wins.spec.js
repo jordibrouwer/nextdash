@@ -97,6 +97,7 @@ test.describe('health quick wins', () => {
         });
         const section = await openSection(page, bookmarks[0], 'checking');
         await section.locator('[data-check-interval="15"]').click();
+        // Negative check: no write may be sent; give a stray request time to arrive.
         await page.waitForTimeout(300);
         expect(writes).toHaveLength(0);
     });

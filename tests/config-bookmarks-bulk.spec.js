@@ -121,6 +121,10 @@ test.describe('the bulk form', () => {
         await openBookmarks(page);
         await page.fill('#config-bm-search', 'a');
         await page.locator('#config-bm-search').blur();
+        // The search repaints the list on a debounce and writes the query into
+        // the address in the same step. Ticking before that lands ticks rows
+        // the filter is about to take away, along with the keyboard cursor.
+        await expect(page).toHaveURL(/[?&]q=a(&|$)/);
         await tickRows(page, 2);
         await page.keyboard.press('Escape');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.bmSelected.size)).toBe(0);

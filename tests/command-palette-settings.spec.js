@@ -14,11 +14,11 @@ async function palette(page, typed) {
     // Leave whatever is open: the palette stays up after a command, and a
     // second `:` would be typed into the query rather than opening it.
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(150);
     await page.keyboard.press(':');
     await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 5_000 });
     await page.keyboard.type(typed);
-    await page.waitForTimeout(250);
+    // The prompt echoes the query once the (debounced) search has caught up.
+    await expect(page.locator('#search-query')).toContainText(typed);
 }
 
 async function open(page) {
@@ -116,7 +116,7 @@ test('the palette names the same tours config does', async ({ page }) => {
     await open(page);
     // Loads the config module, then compares the two lists.
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('help'));
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => window.DashboardConfig?.GUIDED_TOURS?.length > 0);
 
     const lists = await page.evaluate(() => ({
         config: (window.DashboardConfig?.GUIDED_TOURS || []).map((t) => t.id),

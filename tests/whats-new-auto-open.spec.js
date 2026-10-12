@@ -40,7 +40,8 @@ async function visitAfterUpgrade(page) {
     // directory, so a run that left onboarding unfinished would start quick
     // start again on the next load.
     await page.evaluate(() => window.dashboardInstance.config.setBehavior('onboardingCompleted', true, ''));
-    await page.waitForTimeout(600);
+    await expect.poll(() => page.evaluate(async () =>
+        (await (await fetch('/api/settings')).json()).onboardingCompleted)).toBe(true);
 
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
@@ -63,10 +64,13 @@ test.describe('release notes on a new version', () => {
 
         // And a later visit stays quiet: once is the whole promise. The pause is
         // for the analytics card, which is scheduled as the notes close and
-        // would otherwise still be settling when the next load starts.
+        // would otherwise still be settling when the next load starts. That
+        // timer has no state to read, so this is a fixed wait.
         await page.waitForTimeout(1500);
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        // The notes must not open on their own; they would come up a moment
+        // after the load, so an immediate check proves nothing.
         await page.waitForTimeout(3000);
         // The shell stays in the DOM once it has been built, and the analytics
         // card may take the same modal afterwards — so the question is whether
@@ -87,6 +91,8 @@ test.describe('release notes on a new version', () => {
 
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        // The notes must not open on their own; they would come up a moment
+        // after the load, so an immediate check proves nothing.
         await page.waitForTimeout(3000);
         // The shell stays in the DOM once it has been built, and the analytics
         // card may take the same modal afterwards — so the question is whether

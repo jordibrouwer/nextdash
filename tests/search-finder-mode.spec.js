@@ -53,6 +53,8 @@ test.describe('the finder line', () => {
         expect(await query(page)).toBe('?');
 
         await page.keyboard.press('Shift+Slash');
+        // Must not happen: a second "?" landing in the query. The query already
+        // reads "?", so there is no new state to wait for.
         await page.waitForTimeout(250);
 
         // Already in finders: the key has nothing left to do.
@@ -68,7 +70,7 @@ test.describe('the finder line', () => {
         await page.keyboard.type('jordibrw.nl');
         await page.keyboard.press('Space');
         await page.keyboard.type('test');
-        await page.waitForTimeout(300);
+        await expect.poll(async () => (await query(page)).toLowerCase()).toContain('jordibrw.nl test');
 
         const q = await query(page);
         expect(q).not.toContain('??');
@@ -113,8 +115,7 @@ test.describe('a freshly built overlay', () => {
         // typing the letter again would land in the search text.
         const shortcut = await page.evaluate(() =>
             (window.dashboardInstance.finders || []).find((f) => f.shortcut)?.shortcut || '');
-        await page.waitForTimeout(300);
-        expect(await query(page)).toBe(`?${shortcut.toUpperCase()} `);
+        await expect.poll(() => query(page)).toBe(`?${shortcut.toUpperCase()} `);
     });
 });
 

@@ -139,6 +139,9 @@ test.describe('shortcut label display modes', () => {
         expect(await chipShown(page)).toBe(false);
 
         await row(page).hover();
+        await expect.poll(() => row(page).evaluate((el) => el.matches(':hover'))).toBe(true);
+        // A fixed wait: a label that was going to fade in would do it after the
+        // hover lands, and "it stays away" has nothing to poll for.
         await page.waitForTimeout(250);
         expect(await chipShown(page)).toBe(false);
     });
@@ -148,8 +151,7 @@ test.describe('shortcut label display modes', () => {
         expect(await chipShown(page)).toBe(false);
 
         await row(page).hover();
-        await page.waitForTimeout(250);
-        expect(await chipShown(page)).toBe(true);
+        await expect.poll(() => chipShown(page)).toBe(true);
     });
 
     test('hover gives the width to the name', async ({ page }) => {
@@ -171,7 +173,7 @@ test.describe('shortcut label display modes', () => {
         const atRest = await nameWidth(page);
 
         await row(page).hover();
-        await page.waitForTimeout(250);
+        await expect.poll(() => chipShown(page)).toBe(true);
         const hovered = await nameWidth(page);
 
         // It floats over the row rather than pushing into it: hovering must not
@@ -194,7 +196,7 @@ test.describe('shortcut label display modes', () => {
         await page.waitForSelector('.bookmarks-list[data-show-ping="true"]', { timeout: 10_000 });
         await setMode(page, 'hover');
         await row(page).hover();
-        await page.waitForTimeout(250);
+        await expect.poll(() => chipShown(page)).toBe(true);
 
         const placement = await page.evaluate((sc) => {
             const chipEl = document.querySelector(`.bookmark-shortcut[data-shortcut="${sc}"]`);
@@ -234,7 +236,6 @@ test.describe('shortcut label display modes', () => {
             const el = document.querySelector(`.bookmark-shortcut[data-shortcut="${sc}"]`);
             el?.closest('.bookmark-link')?.classList.add('keyboard-selected');
         }, SHORTCUT);
-        await page.waitForTimeout(250);
-        expect(await chipShown(page)).toBe(true);
+        await expect.poll(() => chipShown(page)).toBe(true);
     });
 });

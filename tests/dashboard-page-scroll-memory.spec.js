@@ -83,13 +83,28 @@ test.describe('the dashboard remembers where you were on a page', () => {
             window.scrollTo({ top: 500, behavior: 'instant' });
             const reached = window.scrollY;
 
-            await d.data.loadPageBookmarks(targetId);
+            // Where the page was at the moment it was left. Usually `reached`,
+            // but the page can settle by a pixel while the switch fetches
+            // (seen as 499 for 500, about one run in twenty), and the app keeps
+            // where the reader was when they left, not where they once were.
+            let atLeave = null;
+            const remember = d.data.rememberScrollForPage;
+            d.data.rememberScrollForPage = function (id) {
+                if (id === from) atLeave = window.scrollY;
+                return remember.call(this, id);
+            };
+            try {
+                await d.data.loadPageBookmarks(targetId);
+            } finally {
+                d.data.rememberScrollForPage = remember;
+            }
             spacer.remove();
-            return { reached, remembered: d._pageScrollPositions?.get(from) ?? null };
+            return { reached, atLeave, remembered: d._pageScrollPositions?.get(from) ?? null };
         }, otherId);
 
         expect(stored.reached).toBeGreaterThan(400);
-        expect(stored.remembered).toBe(stored.reached);
+        expect(stored.atLeave).toBeGreaterThan(400);
+        expect(stored.remembered).toBe(stored.atLeave);
     });
 
     test('coming back restores it, and it is not restored twice', async ({ page }) => {

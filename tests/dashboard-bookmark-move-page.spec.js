@@ -105,6 +105,7 @@ test.describe('move bookmark to another page', () => {
         // ~1s) a chance to fire before re-checking — this is exactly the class
         // of bug this test caught: a leftover pendingReorderSnapshot flushing
         // the pre-move bookmark list back and silently undoing the delete.
+        // A fixed wait: nothing should happen, so there is no event to wait for.
         await page.waitForTimeout(1500);
         const sourceAfterSettle = await bookmarksOnPage(page, sourcePageId);
         expect(sourceAfterSettle.some((b) => b.url === uniqueUrl)).toBe(false);

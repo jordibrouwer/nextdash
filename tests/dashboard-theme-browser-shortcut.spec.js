@@ -50,6 +50,8 @@ test.describe('Shift+A opens the theme browser', () => {
         await openDashboard(page);
 
         await page.keyboard.press('a');
+        // A fixed wait: the studio, if the key were going to open it, comes up
+        // after the press, and "it stays shut" has nothing to poll for.
         await page.waitForTimeout(700);
 
         const open = await page.evaluate(() => !!document.querySelector('[data-look-studio]'));

@@ -38,10 +38,10 @@ test.describe('a shared link lands in the inbox', () => {
         await expect.poll(() => page.evaluate(() => location.hash), { timeout: 10_000 }).toContain('inbox');
 
         await dismissOnboardingIfPresent(page);
-        await page.waitForTimeout(1200);
         // Reported, then cleaned out of the URL: a reload must not repeat a
         // confirmation for something that happened minutes ago.
-        expect(await page.evaluate(() => new URL(location.href).searchParams.get('captured'))).toBeNull();
+        await expect.poll(() => page.evaluate(() => new URL(location.href).searchParams.get('captured')),
+            { timeout: 10_000 }).toBeNull();
 
         const saved = await page.evaluate(async (target) => {
             const res = await fetch('/api/inbox');
@@ -101,7 +101,6 @@ test.describe('Help hands you the bookmarklet', () => {
 
         // A token typed in ends up in the line, so nobody has to edit it by hand.
         await page.locator('[data-capture-token]').fill('abc123');
-        await page.waitForTimeout(400);
-        expect(await page.locator('[data-capture-bookmarklet]').inputValue()).toContain('token=abc123');
+        await expect(page.locator('[data-capture-bookmarklet]')).toHaveValue(/token=abc123/);
     });
 });

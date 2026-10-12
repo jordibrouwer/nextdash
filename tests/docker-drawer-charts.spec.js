@@ -1,7 +1,7 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
 const { mockDocker } = require('./helpers/docker-mock');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } = require('./e2e-helpers');
 
 /**
  * The Resources tab: the figures now, and under them the last hour of each as
@@ -18,6 +18,11 @@ function hour(now = Date.now()) {
 }
 
 async function openResources(page, stats) {
+    // What's new opens on its own once onboarding counts as done, and the
+    // Config test in this file leaves it done on the server: from then on the
+    // modal came up over the drawer and took the tab click. Seen in advance,
+    // it never opens.
+    await markWhatsNewSeen(page);
     await mockDocker(page);
     await page.route('**/api/docker/containers/*/stats**', (route) => route.fulfill({
         status: 200, contentType: 'application/json', body: JSON.stringify(stats),
@@ -194,6 +199,7 @@ test('the figures are not polled while the tab is hidden', async ({ page }) => {
         Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
     });
     const before = calls;
+    // No call should be made, so wait longer than a beat (a few seconds) to see none.
     await page.waitForTimeout(4500);
     expect(calls - before).toBe(0);
 });

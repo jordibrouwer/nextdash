@@ -162,7 +162,7 @@ test.describe('the trend chart can draw what it records', () => {
         // The health module is loaded on demand, so open the view before asking
         // it anything.
         await page.evaluate(() => window.dashboardInstance.health?.openHealthView?.());
-        await page.waitForTimeout(1500);
+        await page.waitForFunction(() => window.dashboardInstance.health?.instance, null, { timeout: 15_000 });
         const series = await page.evaluate(() => {
             const health = window.dashboardInstance.health?._module || window.dashboardInstance.health;
             const List = health?.constructor?.TREND_SERIES || window.DashboardHealth?.TREND_SERIES || [];
@@ -177,7 +177,7 @@ test.describe('the trend chart can draw what it records', () => {
     test('a count series reads the counter it names', async ({ page }) => {
         await dashboard(page);
         await page.evaluate(() => window.dashboardInstance.health?.openHealthView?.());
-        await page.waitForTimeout(1500);
+        await page.waitForFunction(() => window.dashboardInstance.health?.instance, null, { timeout: 15_000 });
         const values = await page.evaluate(() => {
             const health = window.dashboardInstance.health?._module || window.dashboardInstance.health;
             const point = { t: Date.now(), n: 100, h: 90, b: 7, c: 82 };

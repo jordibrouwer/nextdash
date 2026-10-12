@@ -48,7 +48,8 @@ async function openCompact(page, pageCount = 4) {
         d.renderPageNavigation?.();
         await d.saveSettings?.();
     });
-    await page.waitForTimeout(500);
+    await expect(page.locator('body')).toHaveAttribute('data-page-switcher', 'compact');
+    await expect(trigger(page)).toBeVisible();
 }
 
 const trigger = (page) => page.locator('.header-track .page-nav-btn.active');
@@ -119,7 +120,8 @@ test('the arrows walk it, enter switches page, escape hands the focus back', asy
     await trigger(page).click();
     await page.waitForSelector('.page-switcher-menu');
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(200);
+    await expect(page.locator('.page-switcher-menu')).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => document.activeElement?.className || '')).toContain('page-nav-btn');
 
     const after = await page.evaluate(() => ({
         open: !!document.querySelector('.page-switcher-menu'),
@@ -140,13 +142,12 @@ test('past a handful of pages the menu filters', async ({ page }) => {
     await expect(filter, 'a long list has no filter').toBeVisible();
 
     await filter.fill('page-9');
-    await page.waitForTimeout(200);
 
-    const left = await page.evaluate(() => [...document.querySelectorAll('.page-switcher-list .page-switcher-item')]
+    const standing = () => page.evaluate(() => [...document.querySelectorAll('.page-switcher-list .page-switcher-item')]
         .filter((row) => !row.hidden)
         .map((row) => row.querySelector('.page-switcher-item-name')?.textContent?.trim()));
 
-    expect(left, 'the filter left the wrong rows standing').toEqual(['page-9']);
+    await expect.poll(standing, { message: 'the filter left the wrong rows standing' }).toEqual(['page-9']);
 
     // The rows under the list are about the list, so the filter leaves them.
     await expect(page.locator('.page-switcher-foot .page-switcher-item').first()).toBeVisible();
@@ -158,7 +159,6 @@ test('the menu adds a page without sending you to the panel', async ({ page }) =
     await page.waitForSelector('.page-switcher-menu');
 
     await page.locator('.page-switcher-add').click();
-    await page.waitForTimeout(300);
 
     const box = page.locator('.page-switcher-menu .inline-create-row, .page-switcher-create');
     await expect(box.first(), 'no way to name the new page').toBeVisible();

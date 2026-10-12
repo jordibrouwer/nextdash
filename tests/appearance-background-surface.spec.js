@@ -134,7 +134,8 @@ test.describe('the Background and Surface tabs', () => {
         await expect.poll(async () => Object.values((await stored(page)).themeSurfacePrefs || {})
             .some((pref) => typeof pref.alpha === 'number'), { timeout: 5_000 }).toBe(true);
         await expect(page.locator('[data-glass-mode="own"]')).toHaveClass(/is-active/);
-        await page.waitForTimeout(400);
+        // The repaint runs when the save promise settles, so wait for that.
+        await page.waitForFunction(() => !window.dashboardInstance.config._settingsSavePromise);
         await page.locator('[data-glass-range="alpha"]').fill('0.4');
         await expect.poll(() => rootVar(page, '--theme-surface-alpha')).toBe('0.4');
         await expect(page.locator('[data-glass-contrast]')).not.toBeEmpty();

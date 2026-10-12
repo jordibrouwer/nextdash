@@ -65,23 +65,21 @@ test.describe('moving a bookmark with the keyboard', () => {
         test.skip(before === null, 'needs a manually-ordered category with two rows');
 
         await page.keyboard.press('Alt+ArrowDown');
-        await page.waitForTimeout(900);
 
         // Read the category's own list by id. A bookmark can also be rendered
         // in a smart collection such as Today, so looking the row up by url
         // alone can land on the copy that was never being moved.
-        const after = await page.evaluate((categoryId) => {
+        const nowAt = () => page.evaluate(({ categoryId, url }) => {
             const list = document.querySelector(
                 `.bookmarks-list[data-category-id="${CSS.escape(categoryId)}"]:not([data-smart-collection="true"])`,
             );
             return [...(list?.querySelectorAll('.bookmark-link') || [])]
-                .map((r) => r.getAttribute('data-bookmark-url'));
-        }, before.categoryId);
+                .map((r) => r.getAttribute('data-bookmark-url')).indexOf(url);
+        }, before);
 
         // The row it started above is now above it.
         const wasAt = before.order.indexOf(before.url);
-        const nowAt = after.indexOf(before.url);
-        expect(nowAt).toBe(wasAt + 1);
+        await expect.poll(nowAt).toBe(wasAt + 1);
     });
 
     // The move resolved the row through renderCore.resolveBookmarkReference,
@@ -164,19 +162,18 @@ test.describe('the sort-locked drag hint', () => {
         )?.getAttribute('title') || '', categoryId);
 
         await setMode('az');
-        await page.waitForTimeout(400);
-        expect(await titleOf()).toMatch(/A–Z|A-Z/i);
+        await expect.poll(titleOf).toMatch(/A–Z|A-Z/i);
+        const azTitle = await titleOf();
 
         // The wording follows the new mode rather than sticking on the old one.
         await setMode('opened');
-        await page.waitForTimeout(400);
+        await expect.poll(titleOf).not.toBe(azTitle);
         const recent = await titleOf();
         expect(recent).not.toMatch(/A–Z|A-Z/i);
 
         // And manual order leaves no hint at all, since dragging works there.
         await setMode('order');
-        await page.waitForTimeout(400);
-        expect(await titleOf()).toBe('');
+        await expect.poll(titleOf).toBe('');
     });
 });
 
@@ -217,7 +214,7 @@ test.describe('moving a category with the keyboard', () => {
         expect(target).not.toBeNull();
 
         await page.keyboard.press('Alt+ArrowRight');
-        await page.waitForTimeout(500);
+        await expect.poll(() => page.evaluate(() => (window.dashboardInstance.blockOrder || []).length)).toBeGreaterThan(0);
 
         const after = await page.evaluate(() => [...(window.dashboardInstance.blockOrder || [])]);
 

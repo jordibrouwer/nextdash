@@ -24,8 +24,19 @@ async function openAppearance(page) {
     await waitForConfigReady(page);
     await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.waitForSelector('.config-view', { timeout: 20_000 });
-    await page.waitForTimeout(300);
+    await expect(page.locator('[data-appearance-tab="general"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('[data-appearance-select="inkGap"]')).toBeAttached();
 }
+
+/** The repaint after a change runs when its save settles: wait for that before touching the page again. */
+const saveIdle = (page) => page.waitForFunction(() => !window.dashboardInstance.config._settingsSavePromise);
+
+// A control from each tab that is drawn with it.
+const TAB_PROBES = {
+    general: ['[data-appearance-select="inkGap"]'],
+    surface: ['[data-appearance-select="themeDepth"]', '[data-appearance-select="glowStrength"]'],
+    background: ['[data-reset-field="backgroundPattern"]'],
+};
 
 // Depth, Glow, Effects and the backdrop moved to their own tabs (Surface and
 // Background); the theme, the contrast and the pattern stayed where they were
@@ -35,7 +46,8 @@ const BACKGROUND_FIELDS = ['backgroundPattern'];
 
 async function openTab(page, tab) {
     await page.click(`[data-appearance-tab="${tab}"]`);
-    await page.waitForTimeout(200);
+    await expect(page.locator(`[data-appearance-tab="${tab}"]`)).toHaveAttribute('aria-selected', 'true');
+    for (const probe of TAB_PROBES[tab] || []) await expect(page.locator(probe)).toBeAttached();
 }
 
 test('text contrast is a dropdown, like the two above it', async ({ page }) => {
@@ -132,11 +144,15 @@ test('the reset puts the value back and repaints the page', async ({ page }) => 
      * first. The per-theme reset has its own test in theme-archetypes.spec.js.
      */
     await page.locator('[data-appearance-select="inkGap"]').selectOption('0.58');
-    await page.waitForTimeout(300);
+    await expect.poll(() => page.evaluate(
+        () => Number(window.dashboardInstance.settings.inkGap)), { timeout: 5_000 }).toBe(0.58);
+    await saveIdle(page);
     await openTab(page, 'surface');
     await page.locator('[data-appearance-select="themeDepth"]').selectOption('flat');
     await page.locator('[data-appearance-select="glowStrength"]').selectOption('full');
-    await page.waitForTimeout(400);
+    await expect.poll(() => page.evaluate(() => document.body.getAttribute('data-depth')), { timeout: 5_000 }).toBe('flat');
+    await expect.poll(() => page.evaluate(() => document.body.getAttribute('data-glow')), { timeout: 5_000 }).toBe('full');
+    await saveIdle(page);
 
     expect(await page.evaluate(() => document.body.getAttribute('data-depth'))).toBe('flat');
     expect(await page.evaluate(() => document.body.getAttribute('data-glow'))).toBe('full');

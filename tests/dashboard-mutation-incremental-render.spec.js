@@ -90,6 +90,8 @@ test.describe('a bookmark mutation patches the grid', () => {
         expect(focusedBefore).not.toBe('');
 
         await page.evaluate(() => window.dashboardInstance.data.repaintBookmarkMutationSurfaces({}));
+        // A fixed wait: a repaint that took the focus would do it after the
+        // call returned, and "it stayed" has nothing to poll for.
         await page.waitForTimeout(300);
 
         const focusedAfter = await page.evaluate(
@@ -107,6 +109,8 @@ test.describe('a bookmark mutation patches the grid', () => {
 
         await page.evaluate(() => window.scrollTo({ top: 100, behavior: 'instant' }));
         await page.evaluate(() => window.dashboardInstance.data.repaintBookmarkMutationSurfaces({}));
+        // A fixed wait: a repaint that reset the scroll would do it after the
+        // call returned, and "it stayed" has nothing to poll for.
         await page.waitForTimeout(300);
 
         expect(await page.evaluate(() => Math.round(window.scrollY))).toBeGreaterThan(50);

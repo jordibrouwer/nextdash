@@ -150,6 +150,13 @@ test.describe('a deep link followed on a cold load', () => {
             + `&url=${encodeURIComponent(link.url)}`;
         await page.goto(url);
         await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
+        // The link's own row is drawn before anything else is judged.
+        await page.waitForFunction((wanted) => Boolean(document.querySelector(
+            `.category[data-category-id="${CSS.escape(wanted.categoryId)}"] `
+            + `.bookmark-link[data-bookmark-url="${CSS.escape(wanted.url)}"]`
+        )), link, { timeout: 15_000 });
+        // A fixed wait: a "not found" notice, if there were one, comes late, so there
+        // is nothing to wait for.
         await page.waitForTimeout(1200);
 
         const state = await page.evaluate((wanted) => ({

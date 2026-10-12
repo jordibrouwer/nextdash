@@ -85,6 +85,7 @@ test.describe('bookmarks view tutorial', () => {
         await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
         await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
         await expect(page.locator('#config-bm-list')).toBeVisible();
+        // A fixed wait: the tour must not open, so there is nothing to wait for.
         await page.waitForTimeout(700);
         await expect(modal(page)).toHaveCount(0);
     });
@@ -106,6 +107,7 @@ test.describe('bookmarks view tutorial', () => {
         }, TIP);
         await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
         await expect(page.locator('#config-bm-list')).toBeVisible();
+        // A fixed wait: the tour must not open, so there is nothing to wait for.
         await page.waitForTimeout(700);
         await expect(modal(page)).toHaveCount(0);
     });
@@ -120,6 +122,7 @@ test.describe('bookmarks view tutorial', () => {
         await prepareDashboardInteraction(page);
         await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
         await expect(page.locator('#config-bm-list')).toBeVisible();
+        // A fixed wait: the script must not be asked for, so there is nothing to wait for.
         await page.waitForTimeout(700);
         expect(requested).toEqual([]);
     });
@@ -131,6 +134,7 @@ test.describe('bookmarks view tutorial', () => {
         await prepareDashboardInteraction(page);
         await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
         await expect(page.locator('#config-bm-list')).toBeVisible();
+        // A fixed wait: the tour must not open, so there is nothing to wait for.
         await page.waitForTimeout(500);
         await expect(modal(page)).toHaveCount(0);
 
@@ -183,7 +187,8 @@ test.describe('bookmarks view tutorial', () => {
             (await page.locator('.bookmarks-tutorial-scene text').allTextContents()).forEach((w) => words.add(w.trim()));
             if (i < STEPS - 1) {
                 await next(page).click();
-                await page.waitForTimeout(80);
+                // The dots are the one part of a step the stubbed labels leave alone.
+                await expect(page.locator('.bookmarks-tutorial-dot').nth(i + 1)).toHaveClass(/is-active/);
             }
         }
         // An address in the picture is an address, not a label.

@@ -55,6 +55,9 @@ async function hoverAndRead(page, selector) {
     // Move away first so a re-entry always registers as a fresh hover.
     await page.mouse.move(5, 5);
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await expect.poll(() => el.evaluate((node) => node.matches(':hover'))).toBe(true);
+    // A fixed wait: whether the popover opens is the question, and when it
+    // should stay shut there is nothing to wait for.
     await page.waitForTimeout(120);
     return page.evaluate((q) => {
         const tip = document.getElementById('toolbar-kbd-tooltip');

@@ -38,7 +38,6 @@ async function openWithPages(page, count = 3) {
         await dash.loadData();
         dash.pageNav?.renderPageNavigation?.();
     }, count);
-    await page.waitForTimeout(500);
     /*
      * The plated header, which is what the three switcher styles are drawn on.
      *
@@ -58,7 +57,7 @@ async function openWithPages(page, count = 3) {
         });
         d.setupDOM?.();
     });
-    await page.waitForTimeout(250);
+    await expect(page.locator('body')).toHaveAttribute('data-header-buttons', 'plated');
 }
 
 /** Through the setting, the way config writes it — not by setting the attribute. */
@@ -72,7 +71,7 @@ async function chooseStyle(page, style) {
         await d.saveSettings();
         d.config?.applyChromeSettings?.();
     }, style);
-    await page.waitForTimeout(400);
+    await expect(page.locator('body')).toHaveAttribute('data-page-switcher', style);
 }
 
 const read = (page) => page.evaluate(() => {
@@ -230,8 +229,9 @@ test('the page you were last on stays marked in config, Bookmarks and the inbox'
     await openWithPages(page);
     await chooseStyle(page, 'classic');
     // Onto the second page, so the mark is not simply the first tab.
+    const startedOn = await page.evaluate(() => String(window.dashboardInstance.currentPageId));
     await page.locator('#page-navigation .page-nav-btn:not(.active):not([hidden])').first().click();
-    await page.waitForTimeout(400);
+    await expect.poll(() => page.evaluate(() => String(window.dashboardInstance.currentPageId))).not.toBe(startedOn);
     const marked = () => page.evaluate(() => {
         const d = window.dashboardInstance;
         const tabs = [...document.querySelectorAll('#page-navigation .page-nav-btn')];

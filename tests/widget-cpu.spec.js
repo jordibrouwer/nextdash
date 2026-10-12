@@ -172,7 +172,8 @@ test.describe('the processor widget in config', () => {
         // The config view is loaded on demand, and the tables are statics on
         // the loaded module rather than on the loader standing in for it.
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
-        await page.waitForTimeout(1200);
+        await expect.poll(() => page.evaluate(
+            () => Boolean(window.dashboardInstance.config._module?.constructor?.WIDGET_SETTINGS))).toBe(true);
 
         const shape = await page.evaluate(() => {
             const cfg = window.dashboardInstance.config._module;
@@ -207,7 +208,8 @@ test.describe('the processor widget in config', () => {
     test('carries the mount it needs, beside its settings', async ({ page }) => {
         await openDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
-        await page.waitForTimeout(1200);
+        await expect.poll(() => page.evaluate(
+            () => Boolean(window.dashboardInstance.config._module?.constructor?.WIDGET_SETTINGS))).toBe(true);
 
         const note = await page.evaluate(() => {
             const cfg = window.dashboardInstance.config._module;
@@ -247,7 +249,8 @@ test.describe('the processor widget in config', () => {
     test('the setup note spans the panel rather than a grid column', async ({ page }) => {
         await openDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
-        await page.waitForTimeout(1500);
+        await expect.poll(() => page.evaluate(
+            () => Boolean(window.dashboardInstance.config._module?.constructor?.WIDGET_SETTINGS))).toBe(true);
 
         // Through the real panel: a hand-built copy of the markup would keep
         // passing while the actual settings row rendered it wrongly, which is
@@ -271,7 +274,22 @@ test.describe('the processor widget in config', () => {
         const isOpen = await page.locator(`[data-widget-row="${idx}"]`)
             .evaluate((li) => li.classList.contains('is-open'));
         if (!isOpen) await page.locator(`[data-widget-settings="${idx}"]`).click();
-        await page.waitForTimeout(900);
+        const detail = page.locator(`[data-widget-detail="${idx}"]`);
+        await expect(detail.locator('.config-widget-settings-body')).toBeVisible();
+        await expect(detail.locator('.config-widget-setup')).toBeVisible();
+        // The panel opens with a transition; read widths only once they agree.
+        let lastWidths = '';
+        let agreeing = 0;
+        await expect.poll(async () => {
+            const now = await page.evaluate((i) => {
+                const detail = document.querySelector(`[data-widget-detail="${i}"]`);
+                return ['.config-widget-setup', '.config-widget-settings-body']
+                    .map((sel) => Math.round(detail?.querySelector(sel)?.getBoundingClientRect().width ?? -1)).join(',');
+            }, idx);
+            agreeing = now === lastWidths ? agreeing + 1 : 1;
+            lastWidths = now;
+            return agreeing;
+        }, { intervals: [50] }).toBeGreaterThanOrEqual(4);
 
         // The detail, wherever it is drawn: under the row when the section is
         // narrow, beside the list when it is wide.

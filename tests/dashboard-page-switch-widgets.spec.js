@@ -68,10 +68,14 @@ test.describe('switching pages', () => {
             body: '{"error":"unavailable"}',
         }));
 
+        const refused = page.waitForResponse((r) => r.url().includes(`/api/pages/${target}/blocks`) && r.status() === 503);
         await page.evaluate((id) => window.dashboardInstance.data.loadPageBookmarks(id, {
             forceFetch: true,
             quiet: true,
         }), target);
+        await refused;
+        // A fixed wait: a page emptied by the refused request would be emptied
+        // after the answer, and "it was not" has nothing to poll for.
         await page.waitForTimeout(1200);
 
         // Not emptied by a request that never answered.
@@ -138,12 +142,17 @@ test.describe('switching pages', () => {
             target,
             { timeout: 10_000 },
         );
-        await page.waitForTimeout(600);
 
-        const landed = await page.evaluate(() => ({
+        const landedNow = () => page.evaluate(() => ({
             widgets: (window.dashboardInstance.widgets || []).length,
             order: (window.dashboardInstance.blockOrder || []).length,
         }));
+        // The switch applies the cached page once its render lands.
+        await expect.poll(async () => {
+            const l = await landedNow();
+            return l.widgets > 0 && l.order > 0;
+        }, { message: 'the hovered page never got its widgets and block order' }).toBe(true);
+        const landed = await landedNow();
 
         expect(landed.widgets, 'the hovered page opened without its widgets').toBeGreaterThan(0);
         expect(landed.order, 'the hovered page opened without its block order').toBeGreaterThan(0);
@@ -158,10 +167,12 @@ test.describe('switching pages', () => {
         const load = (id) => page.evaluate((pid) => window.dashboardInstance.data.loadPageBookmarks(pid), id);
 
         // Warm both pages.
+        const cached = (id) => page.waitForFunction(
+            (pid) => !!window.dashboardInstance._pageDataCache?.get(Number(pid)), id, { timeout: 10_000 });
         await load(second);
-        await page.waitForTimeout(800);
+        await cached(second);
         await load(first);
-        await page.waitForTimeout(800);
+        await cached(first);
 
         // Now count what a switch between two known pages actually asks for.
         const urls = [];
@@ -171,6 +182,8 @@ test.describe('switching pages', () => {
         });
 
         await load(second);
+        // A fixed wait: a refetch, if one were coming, arrives after the call
+        // returns, and "none was sent" has nothing to poll for.
         await page.waitForTimeout(1200);
 
         expect(urls).toEqual([]);

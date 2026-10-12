@@ -19,6 +19,11 @@ async function captureTracks(page) {
 
 const tracks = (page) => page.evaluate(() => window.__tracks || []);
 
+const optedIn = (page) => page.evaluate(async () => {
+    const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+    return (await (await api('/api/settings')).json()).analyticsOptIn;
+});
+
 async function openConfig(page) {
     await page.setViewportSize({ width: 1400, height: 900 });
     await markWhatsNewSeen(page);
@@ -69,7 +74,8 @@ test.describe('view analytics events', () => {
 
         const box = page.locator('[data-behavior-field="analyticsOptIn"]').first();
         await box.check();
-        await page.waitForTimeout(500);
+        await expect.poll(async () => (await tracks(page)).some((t) => t.name === 'config:setting')).toBe(true);
+        await expect.poll(() => optedIn(page)).toBe(true);
 
         const seen = await tracks(page);
         const setting = seen.find((t) => t.name === 'config:setting');
@@ -79,7 +85,8 @@ test.describe('view analytics events', () => {
         expect(setting.props.value).toBe('on');
 
         await box.uncheck();
-        await page.waitForTimeout(500);
+        // Saved before the test ends, so the next one does not start opted in.
+        await expect.poll(() => optedIn(page)).toBe(false);
     });
 
     test('a free-text setting reports its name only, not what was typed', async ({ page }) => {
@@ -103,7 +110,7 @@ test.describe('view analytics events', () => {
     test('inbox reports filter choices', async ({ page }) => {
         await openConfig(page);
         await page.evaluate(() => window.dashboardInstance.inbox.openInboxView());
-        await page.waitForTimeout(800);
+        await expect(page.locator('[data-inbox-filter]').first()).toBeAttached();
         await captureTracks(page);
 
         const clicked = await page.evaluate(() => {

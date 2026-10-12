@@ -223,6 +223,7 @@ test.describe('docker view', () => {
     await expect(page.locator('[data-docker-cpu]')).toContainText('3.2');
     await page.locator('[data-docker-drawer] [data-slp-tab="overview"]').click();
     const n = state.calls.filter((c) => c.endsWith('/stats')).length;
+    // Polling should have stopped, so wait long enough for another stats call to show if it hadn't.
     await page.waitForTimeout(2500);
     expect(state.calls.filter((c) => c.endsWith('/stats')).length).toBe(n);
   });

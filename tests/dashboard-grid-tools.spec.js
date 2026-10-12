@@ -16,7 +16,8 @@ async function dashboard(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
-    await page.waitForTimeout(300);
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    await expect(page.locator('.bookmark-link').first()).toBeAttached();
 }
 
 test.describe('filtering the page you are on', () => {
@@ -36,18 +37,18 @@ test.describe('filtering the page you are on', () => {
         await expect(page.locator('#grid-filter-bar')).toBeVisible();
 
         await page.locator('.grid-filter-input').fill(term);
-        await page.waitForTimeout(200);
+        // The count says what it is showing, so the filter cannot silently hide
+        // everything and look like an empty page. It only says "N of M" once
+        // the filter has been applied, so it is also what is waited on.
+        await expect(page.locator('.grid-filter-count')).toContainText(String(total));
         const visible = await page.locator('.bookmark-link:not(.grid-filter-hidden)').count();
         expect(visible).toBeGreaterThan(0);
         expect(visible).toBeLessThanOrEqual(total);
-        // The count says what it is showing, so the filter cannot silently hide
-        // everything and look like an empty page.
-        await expect(page.locator('.grid-filter-count')).toContainText(String(total));
 
         // First Escape clears the query, the second closes the bar: a typo does
         // not cost you the bar as well.
         await page.locator('.grid-filter-input').press('Escape');
-        await page.waitForTimeout(150);
+        await expect(page.locator('.grid-filter-count')).toHaveText('');
         expect(await page.locator('.bookmark-link:not(.grid-filter-hidden)').count()).toBe(total);
         await page.locator('.grid-filter-input').press('Escape');
         await expect(page.locator('#grid-filter-bar')).toHaveCount(0);
@@ -59,7 +60,6 @@ test.describe('the selection can do what a row can', () => {
         await dashboard(page);
         await page.keyboard.press('ArrowDown');
         await page.keyboard.press('x');
-        await page.waitForTimeout(300);
 
         const bar = page.locator('.multi-select-toolbar, .bookmark-multi-select-bar, [aria-label="Selection actions"]').first();
         await expect(bar).toBeVisible({ timeout: 5_000 });

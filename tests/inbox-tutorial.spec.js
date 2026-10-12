@@ -72,6 +72,7 @@ test.describe('inbox tutorial', () => {
         await page.evaluate(() => window.dashboardInstance.inbox.closeInboxView());
         await page.locator('#page-nav-inbox-btn').click();
         await expect(page.locator('.inbox-layout')).toBeVisible();
+        // Negative check: the tour must not open on its own; give a late auto-open time to show.
         await page.waitForTimeout(700);
         await expect(modal(page)).toHaveCount(0);
     });
@@ -84,7 +85,7 @@ test.describe('inbox tutorial', () => {
             titles.push((await page.locator('.inbox-tutorial-step-title').textContent())?.trim());
             if (i < STEPS - 1) {
                 await page.locator('.modal-actions .modal-button', { hasText: 'Next' }).click();
-                await page.waitForTimeout(120);
+                await expect(page.locator('.inbox-tutorial-dot').nth(i + 1)).toHaveClass(/is-active/);
             }
         }
         expect(titles).toEqual([
@@ -110,7 +111,7 @@ test.describe('inbox tutorial', () => {
         await openInboxWithoutMarkingTutorialSeen(page);
         for (let i = 0; i < STEPS - 1; i += 1) {
             await page.locator('.modal-actions .modal-button', { hasText: 'Next' }).click();
-            await page.waitForTimeout(100);
+            await expect(page.locator('.inbox-tutorial-dot').nth(i + 1)).toHaveClass(/is-active/);
         }
         await page.locator('.modal-actions .modal-button', { hasText: 'Got it' }).click();
         await expect(page.locator('#app-modal.show')).toHaveCount(0);
@@ -149,6 +150,7 @@ test.describe('inbox tutorial', () => {
         });
         await page.locator('#page-nav-inbox-btn').click();
         await expect(page.locator('.inbox-layout')).toBeVisible();
+        // Negative check: the tour must not open when session tips are off; give a late auto-open time to show.
         await page.waitForTimeout(700);
         await expect(modal(page)).toHaveCount(0);
     });
@@ -167,6 +169,7 @@ test.describe('inbox tutorial', () => {
         await prepareDashboardInteraction(page);
         await page.locator('#page-nav-inbox-btn').click();
         await expect(page.locator('.inbox-layout')).toBeVisible();
+        // Negative check: the tour script must not be requested; give a late fetch time to start.
         await page.waitForTimeout(700);
 
         expect(requested).toEqual([]);
@@ -180,6 +183,7 @@ test.describe('inbox tutorial', () => {
         await page.evaluate(() => { window.dashboardInstance.settings.inboxEnabled = true; });
         await page.locator('#page-nav-inbox-btn').click();
         await expect(page.locator('.inbox-layout')).toBeVisible();
+        // Negative check: the tour must not open by itself; give a late auto-open time to show.
         await page.waitForTimeout(500);
         await expect(modal(page)).toHaveCount(0);
 
@@ -209,7 +213,7 @@ test.describe('inbox tutorial', () => {
             expect(await running(), `step ${i + 1} has a moving part`).toBeGreaterThan(0);
             if (i < STEPS - 1) {
                 await page.locator('.modal-actions .modal-button', { hasText: 'Next' }).click();
-                await page.waitForTimeout(120);
+                await expect(page.locator('.inbox-tutorial-dot').nth(i + 1)).toHaveClass(/is-active/);
             }
         }
 
@@ -241,7 +245,7 @@ test.describe('inbox tutorial', () => {
             if (i < STEPS - 1) {
                 // The confirm button is first; its label is 'XX' now too.
                 await page.locator('.modal-actions .modal-button').first().click();
-                await page.waitForTimeout(80);
+                await expect(page.locator('.inbox-tutorial-dot').nth(i + 1)).toHaveClass(/is-active/);
             }
         }
         const english = [...words].filter((w) =>

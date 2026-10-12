@@ -91,6 +91,7 @@ test.describe('maintenance windows', () => {
         // Saturday off: nothing picked, so nothing is saved.
         await maint(page, '[data-maint-day="6"]').click();
         await expect(maint(page, '[data-maint-day].is-on')).toHaveCount(0);
+        // Negative check: no save should follow; give a would-be debounced write time to show up.
         await page.waitForTimeout(400);
         expect((await storedWindows(page))[0]?.days).toEqual([6]);
 

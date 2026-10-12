@@ -42,8 +42,38 @@ async function openDashboard(page, { columns, density, ping }) {
     await page.reload();
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
     await dismissBlockingOverlays(page);
-    await page.waitForTimeout(400);
+    await expect(page.locator('#dashboard-layout .bookmark-link').first()).toBeAttached();
+    await layoutSettled(page, GRID_BOXES);
 }
+
+/**
+ * Resolves once every element matching the selector has held its box for five
+ * frames running. The grid lays its columns out on the frame after a change, and
+ * that can move the rows again, so a single frame says nothing about being
+ * done.
+ */
+function layoutSettled(page, selector) {
+    return page.evaluate((sel) => new Promise((resolve, reject) => {
+        const snap = () => [...document.querySelectorAll(sel)].map((el) => {
+            const r = el.getBoundingClientRect();
+            return `${Math.round(r.x)},${Math.round(r.y)},${Math.round(r.width)},${Math.round(r.height)},${el.hidden}`;
+        }).join('|');
+        const deadline = Date.now() + 5000;
+        let last = snap();
+        let still = 0;
+        const tick = () => {
+            const now = snap();
+            still = now === last ? still + 1 : 0;
+            last = now;
+            if (still >= 5) { resolve(); return; }
+            if (Date.now() > deadline) { reject(new Error(`layout of ${sel} did not settle`)); return; }
+            requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    }), selector);
+}
+
+const GRID_BOXES = '#dashboard-layout .category, #dashboard-layout .bookmark-link, #dashboard-layout .bookmark-open';
 
 /** One bookmark per column, so a category of four asks for four. */
 const limitToOne = (page) => page.evaluate(async () => {
@@ -99,7 +129,7 @@ for (const columns of [2, 3, 4]) {
                 await expect(category).toHaveClass(/category--wide/);
                 await expect.poll(() => category.evaluate((el) =>
                     Number(el.style.getPropertyValue('--category-span')))).toBe(columns);
-                await page.waitForTimeout(300);
+                await layoutSettled(page, GRID_BOXES);
 
                 const spread = await namesOf(page, id);
                 expect(spread.length).toBe(columns);

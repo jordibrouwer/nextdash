@@ -10,10 +10,7 @@ async function openSearch(page, query) {
   await dismissBlockingOverlays(page);
   await page.keyboard.press('>');
   await page.waitForSelector('.search-scope-rail', { timeout: 20_000 });
-  for (const ch of query) {
-    await page.keyboard.press(ch);
-    await page.waitForTimeout(40);
-  }
+  await page.keyboard.type(query);
 }
 
 test.describe('docker containers in search', () => {
@@ -41,6 +38,7 @@ test.describe('docker containers in search', () => {
   test('no containers section without a socket', async ({ page }) => {
     await mockDocker(page, { socket: false });
     await openSearch(page, 'sonarr');
+    // Nothing should appear, so give the containers time to be listed if they were going to be.
     await page.waitForTimeout(500);
     await expect(page.locator('[data-match-type="docker-container"]')).toHaveCount(0);
   });

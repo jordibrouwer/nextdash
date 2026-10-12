@@ -92,7 +92,7 @@ test.describe('alert muting can be set on a group', () => {
         await dashboard(page);
         // The health module is loaded on demand.
         await page.evaluate(() => window.dashboardInstance.health?.openHealthView?.());
-        await page.waitForTimeout(1500);
+        await page.waitForFunction(() => window.dashboardInstance.health?.instance, null, { timeout: 15_000 });
         const html = await page.evaluate(() => {
             const health = window.dashboardInstance.health?._module || window.dashboardInstance.health;
             const multi = health?.multiSelect || health?.multi;

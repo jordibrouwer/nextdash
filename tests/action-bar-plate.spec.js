@@ -26,7 +26,7 @@ async function fillBar(page) {
         button.textContent = 'x';
         bar.appendChild(button);
     });
-    await page.waitForTimeout(100);
+    await expect(page.locator('.button-container > .search-button').first()).toBeAttached();
 }
 
 async function openDashboard(page, depth) {
@@ -37,7 +37,7 @@ async function openDashboard(page, depth) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate((value) => document.body.setAttribute('data-depth', value), depth);
-    await page.waitForTimeout(150);
+    await expect(page.locator('body')).toHaveAttribute('data-depth', depth);
 }
 
 const barStyle = (page) => page.evaluate(() => {

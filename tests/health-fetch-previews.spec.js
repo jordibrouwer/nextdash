@@ -67,6 +67,7 @@ test.describe('the fetch-previews sweep', () => {
         await expect(overlay).toBeHidden({ timeout: 15_000 });
         // Stopped means stopped: no further round goes out.
         const seen = calls;
+        // No further round should go out, so give one time to start if it were going to.
         await page.waitForTimeout(1000);
         expect(calls).toBe(seen);
     });

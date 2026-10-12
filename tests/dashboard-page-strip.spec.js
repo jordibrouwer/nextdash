@@ -19,6 +19,36 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * in the range where the desktop header applies.
  */
 
+/**
+ * Resolves once every element matching the selector has held its box for five
+ * frames running. The header and the strip fit themselves on the frame after a
+ * change, and that can move them again, so one frame says nothing about being
+ * done.
+ */
+function layoutSettled(page, selector) {
+    return page.evaluate((sel) => new Promise((resolve, reject) => {
+        const snap = () => [...document.querySelectorAll(sel)].map((el) => {
+            const r = el.getBoundingClientRect();
+            return `${Math.round(r.x)},${Math.round(r.y)},${Math.round(r.width)},${Math.round(r.height)},${el.hidden}`;
+        }).join('|');
+        const deadline = Date.now() + 5000;
+        let last = snap();
+        let still = 0;
+        const tick = () => {
+            const now = snap();
+            still = now === last ? still + 1 : 0;
+            last = now;
+            if (still >= 5) { resolve(); return; }
+            if (Date.now() > deadline) { reject(new Error(`layout of ${sel} did not settle`)); return; }
+            requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    }), selector);
+}
+
+/** The header and the tabs in it, which is what every measurement here reads. */
+const HEADER_BOXES = '.header-top, .header-top *, .page-navigation .page-nav-btn';
+
 /** Give the dashboard enough pages that the track has to make a choice. */
 async function seedPages(page, count) {
     await page.evaluate(async (n) => {
@@ -59,7 +89,14 @@ async function openWithPages(page, count, width = 1500) {
         d.setupDOM?.();
     });
     await seedPages(page, count);
-    await page.waitForTimeout(600);
+    // A tab for every page the dashboard holds. Not for `count`: pages an
+    // earlier test deleted can keep seeding from reaching it.
+    await page.waitForFunction(() => {
+        const d = window.dashboardInstance;
+        return d.pages.length > 0
+            && document.querySelectorAll('.page-navigation .page-nav-btn').length === d.pages.length;
+    });
+    await layoutSettled(page, HEADER_BOXES);
 }
 
 /** Label the tabs with page names, which are several times wider than a digit. */
@@ -75,7 +112,7 @@ async function showPageNames(page) {
         });
         dash.pageNav?.renderPageNavigation?.();
     });
-    await page.waitForTimeout(400);
+    await layoutSettled(page, HEADER_BOXES);
 }
 
 const strip = (page) => page.evaluate(() => {
@@ -132,7 +169,6 @@ test('the track gives up width before the toolbar does', async ({ page }) => {
     // 800: the desktop header still applies (the phone scroller starts at 767)
     // and nine named tabs cannot fit in the middle zone at that width.
     await page.setViewportSize({ width: 800, height: 900 });
-    await page.waitForTimeout(500);
     // Polled: the fit runs on a frame after the resize, and under parallel load
     // that frame lands well after a fixed wait.
     await expect.poll(async () => (await strip(page)).visible, { timeout: 10_000 })
@@ -187,7 +223,7 @@ async function setCap(page, n) {
         if (!saved.ok) throw new Error(`saving settings failed: ${saved.status}`);
         dash.pageNav?.renderPageNavigation?.();
     }, n);
-    await page.waitForTimeout(400);
+    await layoutSettled(page, HEADER_BOXES);
 }
 
 test('the header draws five tabs by default, not every page that fits', async ({ page }) => {
@@ -227,7 +263,7 @@ test('the cap holds whether tabs are named or numbered', async ({ page }) => {
         });
         dash.pageNav?.renderPageNavigation?.();
     });
-    await page.waitForTimeout(400);
+    await layoutSettled(page, HEADER_BOXES);
     const named = await strip(page);
 
     // Named tabs are wider, so the width may fold one away where numbers fit;
@@ -253,7 +289,7 @@ test('raising the cap shows more tabs, lowering it shows fewer', async ({ page }
         });
         d.pageNav?.renderPageNavigation?.();
     });
-    await page.waitForTimeout(400);
+    await layoutSettled(page, HEADER_BOXES);
 
     /*
      * Polled rather than read once: raising the cap re-renders the strip and
@@ -314,7 +350,7 @@ test('a folded-away page takes the slot right before the chip', async ({ page })
         const dash = window.dashboardInstance;
         return dash.pageNav.requestPageNavigation(dash.pages[dash.pages.length - 1].id);
     });
-    await page.waitForTimeout(400);
+    await layoutSettled(page, HEADER_BOXES);
 
     const where = await page.evaluate(() => {
         const track = document.querySelector('.page-navigation');
@@ -376,7 +412,7 @@ test('the header gives things up in one order, and never grows a second row', as
     const seen = [wide];
     for (const width of [1300, 1150, 1000, 900, 820, 780]) {
         await page.setViewportSize({ width, height: 950 });
-        await page.waitForTimeout(500);
+        await layoutSettled(page, HEADER_BOXES);
         seen.push(await zones(page));
     }
 
@@ -503,8 +539,9 @@ test('the walk hints move a page, and go dead at the ends', async ({ page }) => 
     // Walk to the end -- the store may carry pages an earlier test left behind,
     // so the last one is wherever the button stops rather than the third.
     for (let i = 0; i < ids.length + 2 && await next.isEnabled(); i += 1) {
+        const was = await current();
         await next.click();
-        await page.waitForTimeout(150);
+        await expect.poll(() => current(), { timeout: 10_000 }).not.toBe(was);
     }
     // Nothing to the right of the last one: the keys wrap, these do not.
     await expect(next).toBeDisabled();
@@ -585,13 +622,14 @@ test('the strip stands in the same place whatever the name and the clock do', as
             d.setupDOM?.();
             await d.saveSettings?.();
         }, value);
-        await page.waitForTimeout(300);
+        await expect(page.locator('body')).toHaveAttribute('data-header-clock', value);
+        await layoutSettled(page, HEADER_BOXES);
     };
     const rename = async (name) => {
         await page.evaluate((value) => {
             document.querySelector('.header-identity .title').textContent = value;
         }, name);
-        await page.waitForTimeout(200);
+        await layoutSettled(page, HEADER_BOXES);
     };
 
     await placeClock('beside-name');

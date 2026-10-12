@@ -18,7 +18,8 @@ async function loadDashboard(page) {
         d.settings.showLinkPreviewCards = false;
         d.renderDashboard();
     });
-    await page.waitForTimeout(300);
+    // The rebuild is synchronous; the row the specs read is back in the page.
+    await expect(page.locator('#dashboard-layout .bookmark-link[data-bookmark-url]').first()).toBeVisible();
 }
 
 /** Give the first rendered bookmark a known history and repaint. */

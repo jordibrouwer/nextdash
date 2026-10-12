@@ -128,10 +128,12 @@ test('a save that landed before the other device does not hide its change', asyn
         });
     }, before);
 
+    // The refresh has to have read settings while the POST is still held.
+    const refreshRead = page.waitForResponse((r) => r.url().includes('/api/settings') && r.request().method() === 'GET');
     await page.evaluate(() => {
         window.__refresh = window.dashboardInstance.data.refreshIfDataRevisionChanged();
     });
-    await page.waitForTimeout(300);
+    await refreshRead;
     release();
     await page.evaluate(async () => { await window.__save; await window.__refresh; });
 

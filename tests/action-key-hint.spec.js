@@ -29,13 +29,15 @@ async function openDashboard(page, settings) {
 
 /** Moves onto the button once the bar has finished sliding into its dock. */
 const hover = async (page, selector) => {
-    let box = await page.locator(selector).boundingBox();
+    let box = null;
+    let steady = 0;
+    // Three reads in a row that agree: the first can come before the slide has begun.
     await expect.poll(async () => {
-        const prev = box;
-        await page.waitForTimeout(100);
+        const prev = JSON.stringify(box);
         box = await page.locator(selector).boundingBox();
-        return JSON.stringify(prev) === JSON.stringify(box);
-    }).toBe(true);
+        steady = JSON.stringify(box) === prev ? steady + 1 : 0;
+        return steady;
+    }, { intervals: [100] }).toBeGreaterThanOrEqual(3);
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     return box;
 };
@@ -45,6 +47,7 @@ test('chips off: resting on a button shows its key after a moment', async ({ pag
     const button = await hover(page, '#search-button');
 
     // Not at once: a pointer passing by must not raise it.
+    // A fixed wait: the hint must not be there yet, so there is no change to wait for.
     await page.waitForTimeout(100);
     await expect(hint(page)).toHaveCount(0);
 
@@ -81,6 +84,7 @@ test('a click takes it away', async ({ page }) => {
 test('chips on: no popover, the chip already says it', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'bottom', showActionKeys: true });
     await hover(page, '#search-button');
+    // A fixed wait: the hint must never appear, so there is nothing to wait for.
     await page.waitForTimeout(600);
     await expect(hint(page)).toHaveCount(0);
 });

@@ -93,6 +93,7 @@ test.describe('containers view tutorial', () => {
         await page.evaluate(() => window.dashboardInstance.docker.closeDockerView());
         await page.evaluate(() => window.dashboardInstance.docker.openDockerView());
         await expect(page.locator('[data-docker-row]').first()).toBeVisible();
+        // A fixed wait: the tour must not open, so there is nothing to wait for.
         await page.waitForTimeout(700);
         await expect(modal(page)).toHaveCount(0);
     });
@@ -115,6 +116,7 @@ test.describe('containers view tutorial', () => {
         }, TIP);
         await page.evaluate(() => window.dashboardInstance.docker.openDockerView());
         await expect(page.locator('[data-docker-row]').first()).toBeVisible();
+        // A fixed wait: the tour must not open, so there is nothing to wait for.
         await page.waitForTimeout(700);
         await expect(modal(page)).toHaveCount(0);
     });
@@ -130,6 +132,7 @@ test.describe('containers view tutorial', () => {
         await prepareDashboardInteraction(page);
         await page.evaluate(() => window.dashboardInstance.docker.openDockerView());
         await expect(page.locator('[data-docker-row]').first()).toBeVisible();
+        // A fixed wait: proving the script is never requested needs time to pass.
         await page.waitForTimeout(700);
         expect(requested).toEqual([]);
     });
@@ -142,6 +145,7 @@ test.describe('containers view tutorial', () => {
         await prepareDashboardInteraction(page);
         await page.evaluate(() => window.dashboardInstance.docker.openDockerView());
         await expect(page.locator('[data-docker-row]').first()).toBeVisible();
+        // A fixed wait: the tour must not open on its own, so there is nothing to wait for.
         await page.waitForTimeout(500);
         await expect(modal(page)).toHaveCount(0);
 
@@ -194,7 +198,8 @@ test.describe('containers view tutorial', () => {
             (await page.locator('.containers-tutorial-scene text').allTextContents()).forEach((w) => words.add(w.trim()));
             if (i < STEPS - 1) {
                 await next(page).click();
-                await page.waitForTimeout(80);
+                // The progress line is translated to "XX" here, so the dots say which step it is on.
+                await expect(page.locator('.containers-tutorial-dot').nth(i + 1)).toHaveClass(/is-active/);
             }
         }
         // An address in the picture is an address, not a label.

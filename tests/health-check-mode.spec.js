@@ -72,6 +72,7 @@ test.describe('check mode from the side panel', () => {
         const calls = await captureCheckMode(page);
         const section = await openChecking(page, bookmarks[0]);
         await section.locator('[data-check-mode="monitor"]').click();
+        // Nothing should be written, so give a request time to go out if it were going to.
         await page.waitForTimeout(400);
         expect(calls).toEqual([]);
     });

@@ -97,10 +97,13 @@ test('hovering a bookmark makes no request to a third party', async ({ page, bas
     // shortcut is where a stale remote address gets handed to the card.
     for (let i = 0; i < 2; i++) {
         await link.hover();
-        await page.waitForTimeout(900);
+        await expect(page.locator('.bookmark-preview-card')).toHaveClass(/is-visible/);
         await page.mouse.move(0, 0);
-        await page.waitForTimeout(200);
+        await expect(page.locator('.bookmark-preview-card')).not.toHaveClass(/is-visible/);
     }
+    // Must not happen: no off-site request. The card is up and gone twice; this
+    // gives a late image fetch time to be issued before the list is checked.
+    await page.waitForTimeout(900);
 
     expect(offSite, `the page fetched ${offSite.join(', ')}`).toEqual([]);
 

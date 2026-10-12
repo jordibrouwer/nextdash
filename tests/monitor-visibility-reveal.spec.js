@@ -35,7 +35,7 @@ async function setMode(page, index, mode) {
         d.renderDashboard({ animate: false });
         return b.url;
     }, { i: index, m: mode });
-    await page.waitForTimeout(1200);
+    await expect(page.locator(`.bookmark-link[data-bookmark-url="${url}"]`).first()).toBeVisible();
     return url;
 }
 

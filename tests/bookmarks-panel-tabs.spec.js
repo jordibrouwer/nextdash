@@ -227,6 +227,7 @@ test.describe('bookmark panel: scrolling stays in it', () => {
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     for (let i = 0; i < 6; i += 1) await page.mouse.wheel(0, 600);
     // Wheel scrolling settles over a few frames.
+    // A fixed wait: the page behind must not move, so there is no change to wait for.
     await page.waitForTimeout(300);
   }
 
@@ -248,8 +249,24 @@ test.describe('bookmark panel: scrolling stays in it', () => {
     await page.setViewportSize({ width: 1280, height: 520 });
     await pick(page, bookmarks[1].name);
     // The drawer slides in: let it settle before measuring its edge.
-    await page.waitForTimeout(400);
-    const box = await page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer-frame').boundingBox();
+    const frame = page.locator('.lvs-drawer-host[data-lvs-drawer="library"] .lvs-drawer-frame');
+    let last = null;
+    await expect.poll(async () => {
+      const now = JSON.stringify(await frame.boundingBox());
+      const same = now === last;
+      last = now;
+      return same;
+    }, { timeout: 5_000, intervals: [100] }).toBe(true);
+    // And nothing in it is still fading or moving: the edges are compared pixel for pixel.
+    await expect.poll(() => page.locator('.lvs-drawer-host[data-lvs-drawer="library"]').evaluate((host) =>
+      host.getAnimations({ subtree: true }).filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).length),
+    { timeout: 5_000 }).toBe(0);
+    // The once-a-release tip comes up over the bottom of the screen and fades
+    // in; compared while it does, the strips differ. Wait until it is up and still.
+    const tip = page.locator('#app-notification.show');
+    await expect(tip).toBeVisible({ timeout: 10_000 });
+    await expect.poll(() => tip.evaluate((el) => el.getAnimations().length)).toBe(0);
+    const box = await frame.boundingBox();
     // The middle of each edge, from the edge a few pixels in: the corners are
     // rounded, and scrolled content has to stop short of the edge.
     const strip = (y) => ({ x: Math.round(box.x + box.width * 0.2), y: Math.round(y), width: Math.round(box.width * 0.6), height: 5 });

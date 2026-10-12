@@ -88,6 +88,22 @@ test.describe('the word cloud', () => {
     });
 });
 
+/** Waits until the open cloud has stopped animating and its box has held still. */
+async function cloudSettled(page) {
+    let last = '';
+    let same = 0;
+    await expect.poll(async () => {
+        const cur = await page.evaluate(() => {
+            const el = document.getElementById('tag-cloud-modal');
+            const r = el.getBoundingClientRect();
+            return { box: [r.x, r.y, r.width, r.height].join(',') };
+        });
+        same = cur.box === last ? same + 1 : 0;
+        last = cur.box;
+        return same >= 4;
+    }).toBe(true);
+}
+
 /*
  * It hangs under the button, and stays inside the window.
  *
@@ -101,8 +117,9 @@ test.describe('where the cloud opens', () => {
     async function readCloud(page) {
         // The cloud scales in when it opens, and a box read mid-animation is a
         // smaller box in a different place -- which is a moving target, not a
-        // placement. Let it settle first.
-        await page.waitForTimeout(400);
+        // placement. Let it settle first: no running animation, and the same
+        // box on several reads in a row.
+        await cloudSettled(page);
         return page.evaluate(() => {
             const modal = document.getElementById('tag-cloud-modal');
             const button = document.getElementById('tag-cloud-toggle-btn');
@@ -143,7 +160,9 @@ test.describe('where the cloud opens', () => {
         const viaButton = await readCloud(page);
 
         await page.keyboard.press('Escape');
-        await page.waitForTimeout(300);
+        await expect.poll(() => page.evaluate(
+            () => document.getElementById('tag-cloud-modal').hidden,
+        )).toBe(true);
         await page.keyboard.press('/');
         await expect.poll(() => page.evaluate(
             () => document.getElementById('tag-cloud-modal').classList.contains('is-open'),
@@ -175,10 +194,10 @@ for (const place of ['bottom', 'left', 'right']) {
                 { showTagCloudButton: true, actionBarPosition: where, actionBarAutoHideSeconds: 0 });
             window.dashboardInstance.setupDOM?.();
         }, place);
-        await page.waitForTimeout(400);
+        await expect(page.locator('#tag-cloud-toggle-btn')).toBeVisible();
         await page.locator('#tag-cloud-toggle-btn').click();
         await expect.poll(() => page.locator('.tag-cloud-word').count()).toBeGreaterThan(1);
-        await page.waitForTimeout(400);
+        await cloudSettled(page);
 
         const seen = await page.evaluate(() => {
             const m = document.getElementById('tag-cloud-modal').getBoundingClientRect();
@@ -226,7 +245,8 @@ test('escape leaves the cloud on the grid, not on the button', async ({ page }) 
     await page.locator('body').press('/');
     await expect.poll(() => page.locator('.tag-cloud-word').count()).toBeGreaterThan(1);
     await page.locator('body').press('Escape');
-    await page.waitForTimeout(400);
+    await expect.poll(() => page.evaluate(
+        () => !!document.activeElement?.closest?.('.bookmark-link'))).toBe(true);
 
     const landed = await page.evaluate(() => {
         const active = document.activeElement;
@@ -282,7 +302,8 @@ test('the closed cloud lets the grid have its clicks back', async ({ page }) => 
     });
 
     await page.locator('body').press('Escape');
-    await page.waitForTimeout(400);
+    await expect.poll(() => page.evaluate(
+        () => document.querySelector('#tag-cloud-modal').hidden)).toBe(true);
 
     const after = await page.evaluate(({ x, y }) => {
         const modal = document.querySelector('#tag-cloud-modal');

@@ -144,7 +144,12 @@ test('the memory survives a reload, because the server kept it', async ({ page }
     // second browser. A field the server quietly drops would leave the feature
     // working all session and forgetting everything overnight.
     await recordPick(page, 'mail', GMAIL);
-    await page.waitForTimeout(2500); // the settings write is debounced
+    // The settings write is debounced; wait until the server holds the pick.
+    await expect.poll(() => page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const stored = await (await api('/api/settings')).json();
+        return (stored.searchPicks || []).length;
+    }), { timeout: 15_000 }).toBe(1);
 
     await page.evaluate(() => localStorage.removeItem('dashboardSearchPicks'));
     await openDashboard(page);

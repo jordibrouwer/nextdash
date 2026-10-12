@@ -27,10 +27,10 @@ async function wheelScrolls(page) {
     const before = await page.evaluate(() => window.scrollY);
     await page.mouse.move(500, 400);
     await page.mouse.wheel(0, 600);
-    await page.waitForTimeout(300);
-    const after = await page.evaluate(() => window.scrollY);
+    const moved = await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 2000 })
+        .not.toBe(before).then(() => true, () => false);
     await page.evaluate(() => window.scrollTo(0, 0));
-    return after !== before;
+    return moved;
 }
 
 test.describe('scroll lock is refcounted', () => {
@@ -40,14 +40,13 @@ test.describe('scroll lock is refcounted', () => {
     test('a modal opened over another still frees the page on close', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
-        await page.waitForTimeout(500);
+        await expect(page.locator('.config-view')).toBeVisible();
 
         await page.evaluate(() => { void window.AppModal.alert({ title: 'first', message: 'a' }); });
         await page.evaluate(() => { void window.AppModal.alert({ title: 'second', message: 'b' }); });
         expect(await page.evaluate(bodyOverflow)).toBe('hidden');
 
         await page.locator('#modal-actions button').first().click();
-        await page.waitForTimeout(400);
 
         await expect(page.locator('#app-modal.show')).toHaveCount(0);
         await expect.poll(() => page.evaluate(bodyOverflow), { message: 'still locked', timeout: 2000 }).toBe('')
@@ -61,18 +60,17 @@ test.describe('scroll lock is refcounted', () => {
 
         for (const section of ['behavior', 'appearance']) {
             await page.evaluate((s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; return c.openConfigView(s); }, section);
-            await page.waitForTimeout(500);
+            await expect(page.locator('.config-view')).toBeVisible();
 
             const btn = page.locator('#config-view [data-info-field], .config-info-btn').first();
+            // Not every section carries an info button; give the section time to draw one.
+            await btn.waitFor({ timeout: 3000 }).catch(() => {});
             if (await btn.count() === 0) continue;
 
-            await btn.scrollIntoViewIfNeeded();
             await btn.click();
-            await page.waitForTimeout(250);
-            expect(await page.evaluate(bodyOverflow), `${section}: locked while open`).toBe('hidden');
+            await expect.poll(() => page.evaluate(bodyOverflow), { message: `${section}: locked while open` }).toBe('hidden');
 
             await page.locator('#modal-actions button').first().click();
-            await page.waitForTimeout(400);
             await expect.poll(() => page.evaluate(bodyOverflow), { message: `${section}: freed after close`, timeout: 2000 }).toBe('')
                 .catch(async (e) => { throw new Error(`${e.message}\n${await page.evaluate(lockHolders)}`); });
             expect(await wheelScrolls(page), `${section}: wheel works after close`).toBe(true);

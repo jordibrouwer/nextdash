@@ -191,6 +191,8 @@ test.describe('the digest window', () => {
         await page.evaluate(() => window.__probeCard.close());
         await page.reload();
         await page.waitForFunction(() => window.DigestNotice, null, { timeout: 15_000 });
+        // Must not happen: the closed bar coming back. Give the notice time to
+        // decide before checking it stayed away.
         await page.waitForTimeout(1000);
         await expect(page.locator('.digest-bar')).toHaveCount(0);
     });
@@ -205,6 +207,8 @@ test.describe('the digest window', () => {
         // Taken off the address, so a reload does not open it again.
         await page.reload();
         await page.waitForFunction(() => window.dashboardInstance?.settings && window.DigestNotice, null, { timeout: 15_000 });
+        // Must not happen: the digest opening again after the reload. Give it
+        // time to open before checking it did not.
         await page.waitForTimeout(1500);
         await expect(page.locator('.digest-modal .digest-window')).toHaveCount(0);
     });

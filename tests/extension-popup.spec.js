@@ -130,7 +130,8 @@ test.describe('extension popup', () => {
             await expect(popup.locator('#page-select option')).not.toHaveCount(0, { timeout: 15_000 });
             await popup.locator('#bookmark-url').fill(`https://extension-icon-${Date.now()}.example.com/`);
             await popup.locator('#bookmark-name').fill('Icon on save');
-            // Past the 450 ms debounce, and the preview fetch behind it.
+            // No upload should happen yet: wait past the 450 ms debounce, and
+            // the preview fetch behind it, to be sure none is coming.
             await popup.waitForTimeout(1500);
             expect(uploads).toEqual([]);
 

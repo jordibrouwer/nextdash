@@ -14,6 +14,25 @@ const TIP = 'blockMoveCoach';
 const blockSel = '#dashboard-layout .category[data-category-id]:not([data-smart-collection="true"])';
 const coach = (page) => page.locator('.block-move-coach');
 
+/**
+ * Waits until the blocks have stopped moving, as widgets land and push them
+ * about: two reads of every block's box in a row that agree.
+ * @param {import('@playwright/test').Page} page
+ */
+async function layoutSettled(page) {
+    let last = null;
+    await expect.poll(async () => {
+        const now = await page.evaluate(() => JSON.stringify(
+            [...document.querySelectorAll('#dashboard-layout .category[data-category-id]')].map((el) => {
+                const r = el.getBoundingClientRect();
+                return [el.getAttribute('data-category-id'), Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)];
+            })));
+        const same = now === last;
+        last = now;
+        return same;
+    }, { timeout: 10_000, intervals: [250] }).toBe(true);
+}
+
 /** @param {import('@playwright/test').Page} page @param {{ unseenOnReload?: boolean }} [opts] */
 async function openDashboard(page, { unseenOnReload = false } = {}) {
     await page.setViewportSize({ width: 1280, height: 900 });
@@ -33,7 +52,7 @@ async function openDashboard(page, { unseenOnReload = false } = {}) {
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !!window.DashboardBlockMover);
     // Widgets still load in after the first paint and move the blocks beneath them.
-    await page.waitForTimeout(1200);
+    await layoutSettled(page);
 }
 
 async function pickUpWithMouse(page, index = 0) {
@@ -103,6 +122,7 @@ test.describe('first-time coach for moving a block', () => {
                 || Math.abs(card.top - block.bottom) < 80 || Math.abs(card.bottom - block.top) < 80;
         }, movedId)).toBe(true);
         expect(await page.evaluate((tip) => window.DiscoverabilityState.hasSeenTip(tip), TIP)).toBe(false);
+        // A fixed wait: a write, if there were one, needs time to reach the server.
         await page.waitForTimeout(1200);
         expect(await storedSeen(page)).toBe(false);
     });
@@ -152,12 +172,15 @@ test.describe('first-time coach for moving a block', () => {
         await pickUpWithMouse(page);
         await page.mouse.up();
         await expect(coach(page)).toBeVisible();
+        // A fixed wait: a write, if there were one, needs time to reach the server.
         await page.waitForTimeout(1200);
         // Shown is not seen: the server holds nothing until it is dismissed.
         expect(await storedSeen(page)).toBe(false);
         await page.reload();
         await page.waitForSelector(blockSel, { timeout: 15_000 });
         await page.waitForFunction(() => !!window.DashboardBlockMover);
+        // A fixed wait: the card must not come back on its own, so there is nothing to
+        // wait for. It also lets the widgets land before the pick-up measures a box.
         await page.waitForTimeout(1200);
         await expect(coach(page)).toHaveCount(0);
         await pickUpWithMouse(page);

@@ -32,7 +32,9 @@ async function setColumnMode(page, packed) {
         d.settings.packedColumns = value;
         d.renderDashboard({ animate: false });
     }, packed);
-    await page.waitForTimeout(300);
+    const grid = page.locator('#dashboard-layout');
+    if (packed) await expect(grid).toHaveClass(/packed-columns/);
+    else await expect(grid).not.toHaveClass(/packed-columns/);
 }
 
 async function openFilter(page) {

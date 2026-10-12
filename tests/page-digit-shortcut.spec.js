@@ -51,6 +51,8 @@ test('a digit switches page without opening the search palette', async ({ page }
 
     await page.locator('body').click({ position: { x: 5, y: 5 } });
     await page.keyboard.press('2');
+    await expect.poll(() => page.evaluate(() => String(window.dashboardInstance.currentPageId))).not.toBe(before);
+    // Negative check: the palette must not open; the page switch landed, so give a late open time to show.
     await page.waitForTimeout(600);
 
     const opened = await page.evaluate(() => ({
@@ -115,7 +117,6 @@ test('a digit with no page behind it does nothing at all', async ({ page }) => {
         d.settings.inboxEnabled = false;
         await d.saveSettings?.();
     });
-    await page.waitForTimeout(300);
 
     for (const key of ['5', '8', '0']) {
         // Reset through the component, not the Escape key: on a bare grid with
@@ -123,8 +124,9 @@ test('a digit with no page behind it does nothing at all', async ({ page }) => {
         // search) — pressing it here would open the very panel this test is
         // checking the digit does not.
         await page.evaluate(() => window.dashboardInstance?.searchComponent?.closeSearch?.());
-        await page.waitForTimeout(250);
+        await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
         await page.keyboard.press(key);
+        // Negative check: the digit must open nothing; give a late palette time to show.
         await page.waitForTimeout(600);
 
         const seen = await page.evaluate(() => ({
@@ -159,7 +161,7 @@ test('0 still opens the inbox while the inbox is on', async ({ page }) => {
         await d.saveSettings?.();
         d.pageNav?.renderPageNavigation?.();
     });
-    await page.waitForTimeout(400);
+    await expect(page.locator('#page-nav-inbox-btn')).toBeVisible();
 
     await page.keyboard.press('0');
     await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('inbox');

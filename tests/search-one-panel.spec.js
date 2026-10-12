@@ -76,6 +76,8 @@ test.describe('the command surface switches mode on a key', () => {
         const before = await state(page);
 
         await page.keyboard.press(KEY[':']);
+        // Must not happen: the key doubling up in the query. The state is
+        // supposed to stay as it was, so there is nothing to wait for.
         await page.waitForTimeout(300);
 
         expect(await state(page), 'the key doubled up in the query').toEqual(before);
@@ -105,7 +107,7 @@ test.describe('past the entry a mode key is a character', () => {
         await page.keyboard.type('new x');
 
         await page.keyboard.press(KEY['>']);
-        await page.waitForTimeout(300);
+        await expect.poll(() => state(page).then((s) => s.query)).toBe(':new x>');
 
         const { mode, query } = await state(page);
         expect(mode, 'a half-typed command jumped to search').toBe('command');

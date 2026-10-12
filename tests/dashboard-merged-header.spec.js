@@ -32,6 +32,32 @@ async function openDashboard(page) {
     });
 }
 
+/**
+ * Resolves once every element matching the selector has held its box for five
+ * frames running. The header fits itself on the frame after a change, and that
+ * can move it again, so a single frame says nothing about being done.
+ */
+function layoutSettled(page, selector) {
+    return page.evaluate((sel) => new Promise((resolve, reject) => {
+        const snap = () => [...document.querySelectorAll(sel)].map((el) => {
+            const r = el.getBoundingClientRect();
+            return `${Math.round(r.x)},${Math.round(r.y)},${Math.round(r.width)},${Math.round(r.height)},${el.hidden}`;
+        }).join('|');
+        const deadline = Date.now() + 5000;
+        let last = snap();
+        let still = 0;
+        const tick = () => {
+            const now = snap();
+            still = now === last ? still + 1 : 0;
+            last = now;
+            if (still >= 5) { resolve(); return; }
+            if (Date.now() > deadline) { reject(new Error(`layout of ${sel} did not settle`)); return; }
+            requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    }), selector);
+}
+
 const box = (page, selector) => page.evaluate((sel) => {
     const el = document.querySelector(sel);
     if (!el) return null;
@@ -270,7 +296,8 @@ test('the clock is readable, and its placement is a setting', async ({ page }) =
         d.setupDOM?.();
         await d.saveSettings?.();
     });
-    await page.waitForTimeout(300);
+    await expect(page.locator('body')).toHaveAttribute('data-header-clock', 'own-zone');
+    await layoutSettled(page, '.header-top, .header-top *');
 
     expect(await page.evaluate(() => document.body.getAttribute('data-header-clock'))).toBe('own-zone');
     const zone = await read();
@@ -314,7 +341,9 @@ test('the classic placement puts the clock on its own line with the name under i
         d.pageNav?.renderPageNavigation?.();
         await d.saveSettings?.();
     });
-    await page.waitForTimeout(600);
+    await expect(page.locator('body')).toHaveAttribute('data-header-clock', 'classic');
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.pages.length)).toBeGreaterThanOrEqual(5);
+    await layoutSettled(page, '.header-top, .header-top *');
 
     expect(await page.evaluate(() => document.body.getAttribute('data-header-clock'))).toBe('classic');
 

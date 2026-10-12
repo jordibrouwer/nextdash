@@ -16,6 +16,29 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * are exercised.
  */
 
+/**
+ * Waits until the blocks have stopped moving after a repaint: two reads of
+ * every block's box in a row that agree.
+ * @param {import('@playwright/test').Page} page
+ */
+async function layoutSettled(page) {
+    let last = null;
+    await expect.poll(async () => {
+        const now = await page.evaluate(() => JSON.stringify(
+            [...document.querySelectorAll('#dashboard-layout .category[data-category-id]')].map((el) => {
+                const r = el.getBoundingClientRect();
+                return [el.getAttribute('data-category-id'), Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)];
+            })));
+        const same = now === last;
+        last = now;
+        return same;
+    }, { timeout: 10_000, intervals: [250] }).toBe(true);
+}
+
+/** The category save, which the app sends a second after a switch changes. */
+const categorySaved = (page) => page.waitForResponse((r) => r.url().includes('/api/categories')
+    && r.request().method() === 'POST');
+
 async function openDashboard(page, { packed = false, columns = 3, itemLimit = 15 } = {}) {
     await page.setViewportSize({ width: 1600, height: 1000 });
     await markWhatsNewSeen(page);
@@ -39,7 +62,7 @@ async function openDashboard(page, { packed = false, columns = 3, itemLimit = 15
         await window.DashboardCategorySpan.resetAllCategorySpreads(d, 'page');
         d.renderDashboard({ animate: false, forceFull: true });
     }, { packed, columns, itemLimit });
-    await page.waitForTimeout(400);
+    await layoutSettled(page);
 }
 
 /** A stored category holding at least `rows` bookmarks. */
@@ -119,9 +142,10 @@ test.describe('spreading is a switch, the width follows from the content', () =>
     test('the switch survives a reload', async ({ page }) => {
         await openDashboard(page, { itemLimit: 1 });
         const id = await categoryWith(page, 2);
-        await setSpread(page, id, true);
         // The category save is debounced by a second.
-        await page.waitForTimeout(1600);
+        const saved = categorySaved(page);
+        await setSpread(page, id, true);
+        await saved;
 
         await page.reload();
         await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
@@ -132,8 +156,9 @@ test.describe('spreading is a switch, the width follows from the content', () =>
         expect(after.spread).toBe('true');
         expect(after.wide).toBe(true);
 
+        const cleared = categorySaved(page);
         await setSpread(page, id, false);
-        await page.waitForTimeout(1600);
+        await cleared;
     });
 
     test('a spread category flows its bookmarks across the columns', async ({ page }) => {
@@ -212,7 +237,7 @@ test.describe('the width follows the category as it changes', () => {
             await d.saveSettings?.();
             d.renderDashboard({ animate: false, forceFull: true });
         }, id);
-        await page.waitForTimeout(300);
+        await layoutSettled(page);
 
         await setSpread(page, id, true);
         expect((await stateOf(page, id)).span).toBe(1);
@@ -281,13 +306,14 @@ test.describe('the column count is the ceiling', () => {
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         await page.waitForFunction(() => window.dashboardInstance.config.instance != null, null, { timeout: 15_000 });
         await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
-        await page.waitForTimeout(300);
+        await expect(page.locator('.config-view')).toBeHidden();
+        await layoutSettled(page);
 
         const setColumns = async (n) => {
             await page.evaluate(async (count) => {
                 await window.dashboardInstance.config.instance.setBehavior('columnsPerRow', count, 'render');
             }, n);
-            await page.waitForTimeout(400);
+            await layoutSettled(page);
         };
 
         await setColumns(2);
@@ -359,7 +385,7 @@ test.describe('a spread category lines up with the ones around it', () => {
             const id = await categoryWith(page, 2);
             test.skip(id === null, 'no stored category with two bookmarks in this fixture');
             await setSpread(page, id, true);
-            await page.waitForTimeout(400);
+            await layoutSettled(page);
 
             const columns = await page.evaluate(() => {
                 const wide = document.querySelector('.category--wide');
@@ -428,7 +454,7 @@ test.describe('packed columns carries the switch by packing tighter', () => {
         // block being spread has to be the same one every run.
         const id = await page.evaluate(() => window.dashboardInstance.categories[1].id);
         await setSpread(page, id, true);
-        await page.waitForTimeout(400);
+        await layoutSettled(page);
 
         const layout = await page.evaluate((categoryId) => {
             const grid = document.getElementById('dashboard-layout');
@@ -476,16 +502,15 @@ test.describe('packed columns carries the switch by packing tighter', () => {
         await openDashboard(page, { packed: true, itemLimit: 1 });
         const id = await page.evaluate(() => window.dashboardInstance.categories[1].id);
         await setSpread(page, id, true);
-        await page.waitForTimeout(400);
+        await layoutSettled(page);
 
         await page.setViewportSize({ width: 1200, height: 1000 });
-        await page.waitForTimeout(600);
 
         // A resize runs the settings refresh, which rewrites the grid's class
         // list wholesale. Dropping the masonry class there left the categories
         // as bare flex children of a row with no columns in it — a dozen
         // categories side by side, each a few characters wide.
-        expect(await page.evaluate(() => {
+        await expect.poll(() => page.evaluate(() => {
             const grid = document.getElementById('dashboard-layout');
             const lefts = [...new Set([...grid.querySelectorAll('.category[data-category-id]')]
                 .map((el) => Math.round(el.getBoundingClientRect().left)))];
@@ -501,7 +526,6 @@ test.describe('packed columns carries the switch by packing tighter', () => {
         await openDashboard(page, { packed: true, itemLimit: 1 });
         const id = await page.evaluate(() => window.dashboardInstance.categories[1].id);
         await setSpread(page, id, true);
-        await page.waitForTimeout(400);
 
         const smart = await page.evaluate(() => document.querySelectorAll('.category[data-smart-collection="true"]').length);
         test.skip(smart === 0, 'no smart section on this data');
@@ -511,16 +535,15 @@ test.describe('packed columns carries the switch by packing tighter', () => {
         // icon arriving -- left the span behind, and they printed over the
         // category below.
         await page.evaluate(() => window.dashboardInstance.refreshSmartCollectionSections());
-        await page.waitForTimeout(400);
         await page.evaluate(() => {
             const el = document.querySelector('.category[data-smart-collection="true"]');
             const grow = document.createElement('div');
             grow.style.height = '200px';
             el.appendChild(grow);
         });
-        await page.waitForTimeout(400);
 
-        expect(await page.evaluate(() => {
+        // The row span follows the new height once the observer has seen it.
+        await expect.poll(() => page.evaluate(() => {
             const el = document.querySelector('.category[data-smart-collection="true"]');
             const span = Number(el.style.getPropertyValue('--masonry-span'));
             return span >= Math.ceil(el.getBoundingClientRect().height / 4);
@@ -569,9 +592,10 @@ test.describe('the switch is reachable from everywhere', () => {
         await page.keyboard.press('Shift+W');
         await expect.poll(async () => (await stateOf(page, id)).spread, { timeout: 5000 }).toBe('true');
 
+        const cleared = categorySaved(page);
         await page.keyboard.press('Shift+W');
         await expect.poll(async () => (await stateOf(page, id)).spread, { timeout: 5000 }).toBe('false');
-        await page.waitForTimeout(1600);
+        await cleared;
     });
 
     test('the category menu says what the click will do, both ways', async ({ page }) => {
@@ -635,7 +659,7 @@ test.describe('the category menu shows its keys', () => {
                 await d.language.loadTranslations(code);
                 d.renderDashboard({ animate: false, forceFull: true });
             }, lang);
-            await page.waitForTimeout(250);
+            await layoutSettled(page);
             await page.locator(`.category[data-category-id="${id}"] .category-title`).click({ button: 'right' });
             await page.waitForSelector('#category-context-menu', { timeout: 5000 });
 
@@ -714,8 +738,7 @@ test.describe('config sets the switch too', () => {
         await expect(toggle).toHaveAttribute('aria-label', /spread/i);
 
         await toggle.click();
-        await page.waitForTimeout(1200);
-        expect(await page.evaluate(() => {
+        await expect.poll(() => page.evaluate(() => {
             const c = window.dashboardInstance.config;
             const first = c._categories[0];
             const live = (window.dashboardInstance.categories || []).find((cat) => cat.id === first.id);
@@ -726,8 +749,10 @@ test.describe('config sets the switch too', () => {
     test('the reset button turns spreading off across the page', async ({ page }) => {
         await openDashboard(page, { itemLimit: 1 });
         const id = await categoryWith(page, 2);
+        // Opening config reloads the categories, so the save has to be in first.
+        const saved = categorySaved(page);
         await setSpread(page, id, true);
-        await page.waitForTimeout(1200);
+        await saved;
 
         await openConfig(page, 'appearance', 'layout');
         await expect(page.locator('[data-behavior-field="defaultCategorySpread"]')).toHaveCount(1);

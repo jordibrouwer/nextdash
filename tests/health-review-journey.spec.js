@@ -215,7 +215,6 @@ test.describe('a review session, from the offer to the end', () => {
         // it started; pressing past the last one is what ends a session.
         for (let i = 0; i < queueBefore; i += 1) {
             await page.keyboard.press('j');
-            await page.waitForTimeout(150);
         }
         const done = page.locator('.health-focus-card--done');
         await expect(done).toBeVisible({ timeout: 10_000 });

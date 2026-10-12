@@ -76,6 +76,7 @@ test.describe('docker view actions', () => {
     await expect(page.locator('[data-docker-drawer]')).toContainText(/runs nextDash/i);
     await expect(page.locator('[data-docker-drawer-actions] button')).toHaveCount(0);
     await page.keyboard.press('s');
+    // No request should be sent, so give one time to go out if it were going to.
     await page.waitForTimeout(300);
     expect(state.calls.some((c) => c.startsWith('POST /containers'))).toBe(false);
   });
@@ -85,6 +86,7 @@ test.describe('docker view actions', () => {
     await page.locator('[data-docker-row="jellyfin"]').click();
     await expect(page.locator('[data-docker-drawer-actions] button')).toHaveCount(0);
     await page.keyboard.press('s');
+    // No request should be sent, so give one time to go out if it were going to.
     await page.waitForTimeout(300);
     expect(state.calls.some((c) => c.startsWith('POST /containers'))).toBe(false);
     // The legend stays, without the keys that act on Docker.

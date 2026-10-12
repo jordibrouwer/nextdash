@@ -30,9 +30,12 @@ async function openSearch(page, query = '') {
     await page.waitForSelector('.search-scope-rail', { timeout: 20_000 });
     for (const ch of query) {
         await page.keyboard.press(ch);
-        await page.waitForTimeout(60);
     }
-    await page.waitForTimeout(400);
+    if (query) {
+        await expect.poll(() => page.evaluate(
+            () => window.dashboardInstance.searchComponent.currentQuery)).toBe(query);
+        await expect(page.locator('.search-scope-section').first()).toBeVisible();
+    }
 }
 
 /** A bookmark, a command and a finder that one word all answers. */
@@ -116,20 +119,18 @@ test('tab walks the rail and keeps the word', async ({ page }) => {
         .toMatchObject({ scope: 'all', query: 'theme' });
 
     await page.keyboard.press('Tab');
-    await page.waitForTimeout(300);
     // Scoping narrows the question rather than asking a new one.
-    expect(await state(), 'tab did not walk to the commands')
+    await expect.poll(state, { message: 'tab did not walk to the commands' })
         .toMatchObject({ scope: 'commands', query: ':theme' });
 
     await page.keyboard.press('Shift+Tab');
-    await page.waitForTimeout(300);
-    expect((await state()).scope, 'shift+tab did not walk back').toBe('all');
+    await expect.poll(async () => (await state()).scope, { message: 'shift+tab did not walk back' }).toBe('all');
 });
 
 test('the commands scope opens on its headings, closed', async ({ page }) => {
     await openSearch(page);
     await page.keyboard.press(':');
-    await page.waitForTimeout(400);
+    await expect(page.locator('.search-command-group-header').first()).toBeVisible();
 
     const rows = await page.evaluate(() => ({
         headers: document.querySelectorAll('.search-command-group-header').length,
@@ -150,7 +151,7 @@ test('the commands scope opens on its headings, closed', async ({ page }) => {
 test('! opens the cheat sheet from inside the panel', async ({ page }) => {
     await openSearch(page);
     await page.keyboard.press('!');
-    await page.waitForTimeout(600);
+    await expect(page.locator('.cheat-sheet-group').first()).toBeVisible();
 
     const sheet = await page.evaluate(() => ({
         open: !!document.querySelector('.cheat-sheet-group'),

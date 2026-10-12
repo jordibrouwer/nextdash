@@ -517,7 +517,14 @@
 
     /** The block is rebuilt by the redraw, so focus goes back to the handle of the new one. */
     function refocus(id) {
+        const from = document.activeElement;
         requestAnimationFrame(() => requestAnimationFrame(() => {
+            // The reader has moved on in the two frames since the key: a Tab
+            // or Shift+Tab right after Escape put the focus on the title, and
+            // this took it back to the handle, so the next Enter folded
+            // nothing. Only a focus the redraw dropped is brought back.
+            const now = document.activeElement;
+            if (now && now !== from && now !== document.body && now.isConnected) return;
             document.querySelector(`#dashboard-layout .category[data-category-id="${CSS.escape(id)}"] .category-reorder-handle`)
                 ?.focus({ preventScroll: true });
         }));

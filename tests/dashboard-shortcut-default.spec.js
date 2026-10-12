@@ -24,7 +24,8 @@ async function dashboard(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-    await page.waitForTimeout(400);
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 15_000 });
+    await expect(page.locator('.bookmark-link').first()).toBeAttached();
 }
 
 const query = (page) => page.evaluate(() => document.querySelector('.search-query')?.textContent || '');
@@ -57,7 +58,7 @@ async function seedShortcut(page, name, shortcut) {
     await dismissBlockingOverlays(page);
     await page.waitForFunction((mark) => (window.dashboardInstance?.allBookmarks || [])
         .some((b) => b.shortcut === mark), shortcut, { timeout: 15_000 });
-    await page.waitForTimeout(400);
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 15_000 });
 }
 
 /** Record what the search asks to open rather than following it: this

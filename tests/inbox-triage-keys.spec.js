@@ -143,9 +143,11 @@ test.describe('triage keys that must not act', () => {
         // The repeats arrive after the first delete has landed, on the next card.
         for (let i = 0; i < 2; i += 1) {
             await page.evaluate(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', repeat: true, bubbles: true })));
+            // Negative check: a repeat must not delete again; let each one be handled.
             await page.waitForTimeout(200);
         }
         await page.keyboard.up('d');
+        // Negative check: nothing further is deleted after the key is released.
         await page.waitForTimeout(400);
         expect(await inboxCount(page)).toBe(before - 1);
     });
@@ -155,6 +157,7 @@ test.describe('triage keys that must not act', () => {
         await openTriage(page);
         const before = await inboxCount(page);
         await page.evaluate(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true })));
+        // Negative check: Ctrl+D must delete nothing; give a stray delete time to land.
         await page.waitForTimeout(500);
         expect(await inboxCount(page)).toBe(before);
     });

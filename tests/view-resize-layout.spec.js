@@ -20,10 +20,26 @@ test.describe('view layout survives a window resize', () => {
             await client.send('Emulation.setDeviceMetricsOverride', {
                 width, height: 900, deviceScaleFactor: 1, mobile: false,
             });
+            await expect.poll(() => page.evaluate(() => window.innerWidth)).toBe(width);
+            // The cadence of a drag: each step has to land after the previous
+            // step's 120ms resize debounce could have fired, or the steps merge.
             await page.waitForTimeout(180);
         }
-        // Outlast the 120ms resize debounce in mobile-experience.js.
+        // Outlast the 120ms resize debounce in mobile-experience.js; the bug
+        // shows only once that debounced sync has run, so there is no state to wait for.
         await page.waitForTimeout(600);
+    }
+
+    /** Wait until the layout reads the same several times in a row. */
+    async function settledLayout(page) {
+        let last = '';
+        let agreeing = 0;
+        await expect.poll(async () => {
+            const now = JSON.stringify(await layoutState(page));
+            agreeing = now === last ? agreeing + 1 : 1;
+            last = now;
+            return agreeing;
+        }, { intervals: [100] }).toBeGreaterThanOrEqual(5);
     }
 
     async function layoutState(page) {
@@ -63,7 +79,7 @@ test.describe('view layout survives a window resize', () => {
 
             await page.goto(`/#${view}`);
             await page.waitForSelector(`#dashboard-layout.${view}-layout`, { timeout: 15_000 });
-            await page.waitForTimeout(500);
+            await settledLayout(page);
             const before = await layoutState(page);
 
             // Down across the 767px threshold, then back up.
@@ -105,7 +121,7 @@ test.describe('view layout survives a window resize', () => {
 
         await page.goto('/#config');
         await page.waitForSelector('#dashboard-layout.config-layout', { timeout: 15_000 });
-        await page.waitForTimeout(500);
+        await settledLayout(page);
 
         await dragResize(client, page, [1200, 1000, 850, 700, 560, 460]);
         await expect(page.locator('#dashboard-layout')).toHaveClass(/config-layout/);

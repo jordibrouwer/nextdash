@@ -50,7 +50,12 @@ async function openTab(page, tab) {
     await page.waitForSelector('.config-view', { timeout: 20_000 });
     await page.locator(`[data-appearance-tab="${tab}"]`).click();
     await expect(page.locator(`[data-appearance-tab="${tab}"]`)).toHaveAttribute('aria-selected', 'true');
-    await page.waitForTimeout(200);
+    // The tab's own controls are drawn, with their ℹ and ↺, before anything reads them.
+    const probe = { buttonbar: ACTION_BAR[0][0], header: HEADER_PANEL[0][0] }[tab];
+    if (probe) {
+        await expect(page.locator(`[data-info-field="${probe}"]`)).toBeAttached();
+        await expect(page.locator(`[data-reset-field="${probe}"]`)).toBeAttached();
+    }
 }
 
 const affordances = (page, fields) => page.evaluate((names) => names.map((field) => ({

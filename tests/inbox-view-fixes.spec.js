@@ -403,6 +403,7 @@ test.describe('opening the selection', () => {
             const body = await (await api('/api/inbox')).json();
             return (Array.isArray(body) ? body : body.items || []).filter((i) => i.readAt).length;
         })).toBe(1);
+        // Negative check: the second link failed to open, so it must stay unread; give a stray write time to land.
         await page.waitForTimeout(300);
         const read = await page.evaluate(async () => {
             const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;

@@ -349,10 +349,12 @@ test('the row under the cursor is marked inside the row, without a glow', async 
     await page.keyboard.press('j');
     const row = page.locator('.inbox-item.keyboard-selected').first();
     await expect(row).toBeVisible();
-    await page.waitForTimeout(300);
-    const shadow = await row.evaluate((el) => getComputedStyle(el).boxShadow);
     // The Bookmarks view's marking: every layer inset, none spreading outside.
-    const layers = shadow.split(/,(?![^(]*\))/).map((s) => s.trim());
-    expect(layers.length).toBeGreaterThan(0);
-    for (const layer of layers) expect(layer, shadow).toContain('inset');
+    // Retried, since the depth change restyles the row.
+    await expect(async () => {
+        const shadow = await row.evaluate((el) => getComputedStyle(el).boxShadow);
+        const layers = shadow.split(/,(?![^(]*\))/).map((s) => s.trim());
+        expect(layers.length).toBeGreaterThan(0);
+        for (const layer of layers) expect(layer, shadow).toContain('inset');
+    }).toPass();
 });

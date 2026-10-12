@@ -155,6 +155,7 @@ test.describe('the bookmark keys stay off a widget', () => {
 
         await page.keyboard.press('Shift+E');
         await page.keyboard.press('Delete');
+        // Nothing should happen, so give an editor or a removal time to show if it were going to.
         await page.waitForTimeout(600);
 
         // Nothing opened, nothing was removed, and the cursor did not wander.
@@ -169,6 +170,7 @@ test.describe('the bookmark keys stay off a widget', () => {
         expect(at).not.toBe(null);
 
         await page.keyboard.press('x');
+        // Nothing should be selected, so give a stray selection time to appear.
         await page.waitForTimeout(400);
 
         // This is the dangerous one. x hands the selected element straight to
@@ -341,6 +343,7 @@ test('a widget refresh leaves the cursor where it was', async ({ page }) => {
 
     // What the health badge does every time its report lands.
     await page.evaluate(() => window.dashboardInstance.renderCore.refreshWidgets('health'));
+    // The cursor must be unchanged once the redraw has settled, so wait for it to have happened.
     await page.waitForTimeout(500);
 
     const after = await cursor(page);

@@ -52,6 +52,11 @@ jobs:
         run: npm run validate:overview-features
       - name: Validate tag patterns
         run: npm run validate:tag-patterns
+      # Every page.waitForTimeout in tests/ says why it waits on the clock and
+      # not on a condition. The suite once spent minutes per shard on sleeps a
+      # retrying expect would have made unnecessary.
+      - name: Validate fixed waits in tests
+        run: npm run validate:test-waits
       - name: Run the model unit tests
         run: npm run test:workbench-model && npm run test:config-split
 
@@ -89,9 +94,10 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
-    # Six runners, each with its own machine, its own `go run .` and its own
-    # data directory -- which is also why sharding is safe here while raising
-    # `workers` inside one runner is not: every spec in a run shares one server.
+    # Six runners, each with its own machine. Inside a runner, Playwright runs
+    # four workers (PW_WORKERS defaults to 4 in playwright.config.js), and
+    # tests/worker-server.js gives each its own server, port and data
+    # directory, so the workers cannot touch each other's store.
     #
     # The shards are left at Playwright's own split, by test count.
     #
@@ -120,8 +126,28 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '20'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      # Chromium was downloaded afresh on every shard of every run, six times a
+      # push. It is cached per Playwright version, so a version bump downloads
+      # the matching browser once and the shards after it reuse it. The system
+      # libraries it needs are not in the cache and are installed either way.
+      - name: Read the Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache the Playwright browser
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - name: Install Playwright
-        run: npm ci && npx playwright install chromium --with-deps
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install chromium --with-deps
+      - name: Install the browser's system libraries
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
       - name: Run Playwright tests
         run: xvfb-run npx playwright test --shard=${{ matrix.shard }}/6
       - name: Upload report

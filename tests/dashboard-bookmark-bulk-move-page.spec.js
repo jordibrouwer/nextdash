@@ -127,6 +127,7 @@ test.describe('bulk move selected bookmarks to another page', () => {
 
         // A stray debounced reorder-save must not flush a stale pre-move
         // snapshot back and silently resurrect either bookmark on the source.
+        // A fixed wait: nothing should happen, so there is no event to wait for.
         await page.waitForTimeout(1500);
         const sourceAfterSettle = await bookmarksOnPage(page, sourcePageId);
         expect([urlA, urlB].some((u) => sourceAfterSettle.some((b) => b.url === u))).toBe(false);

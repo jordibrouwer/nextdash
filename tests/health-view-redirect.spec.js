@@ -98,7 +98,7 @@ test.describe(':health in the palette', () => {
     await page.keyboard.press(':');
     await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 5_000 });
     await page.keyboard.type(typed);
-    await page.waitForTimeout(250);
+    await expect(page.locator('#shortcut-search .search-match').first()).toBeVisible();
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => window.dashboardInstance?.activeView === 'library', null, { timeout: 15_000 });
   }

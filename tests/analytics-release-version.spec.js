@@ -105,6 +105,7 @@ test.describe('analytics — release version in the settings snapshot', () => {
 
         await captureUmami(page);
         await loadDashboard(page);
+        // A fixed wait: the script must never be added, so there is nothing to wait for.
         await page.waitForTimeout(1500);
 
         // Opting out means the script is never put in the page at all, so the

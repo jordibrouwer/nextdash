@@ -39,17 +39,29 @@ async function bodyText(page) {
     return page.evaluate(() => document.getElementById('config-view-body')?.innerText || '');
 }
 
+/**
+ * The text once it stops changing: two reads in a row agree and are not empty.
+ * A panel can repaint after its data lands, and a key left on screen by a
+ * half-drawn panel is what this spec is looking for, so it reads the settled one.
+ */
+async function settledText(page, read = () => bodyText(page)) {
+    let previous = null;
+    let text = '';
+    await expect.poll(async () => {
+        text = await read();
+        const settled = text !== '' && text === previous;
+        previous = text;
+        return settled;
+    }, { intervals: [100], timeout: 15_000 }).toBe(true);
+    return text;
+}
+
 test.describe('every screen speaks in sentences', () => {
     test('every config section and sub-tab', async ({ page }) => {
-        // Ten sections and forty-nine sub-tabs, each given a fixed 500ms and
-        // 450ms to settle: twenty-seven seconds of waiting before a single
-        // assertion, in a suite whose per-test limit is thirty. It fitted while
-        // that limit was sixty and stopped fitting when it went back down.
-        //
-        // The waits are the thing to fix — waiting on the render rather than on
-        // a stopwatch would make this both quicker and steadier — but that is
-        // its own change. Until then the test says out loud that it needs
-        // longer, rather than raising the limit for the other 2144.
+        // Ten sections and forty-nine sub-tabs, each read once its text has
+        // stopped changing (two reads agree), which costs a couple of hundred
+        // milliseconds apiece. The test says out loud that it needs longer than
+        // the suite default, rather than raising the limit for the other 2144.
         test.setTimeout(90_000);
         await open(page);
 
@@ -68,7 +80,6 @@ test.describe('every screen speaks in sentences', () => {
         const offenders = [];
         for (const { section, tabs } of sections) {
             await page.evaluate((s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; return c.openConfigView(s); }, section);
-            await page.waitForTimeout(500);
             for (const tab of (tabs.length ? tabs : [null])) {
                 if (tab) {
                     await page.evaluate(({ s, t }) => {
@@ -77,9 +88,8 @@ test.describe('every screen speaks in sentences', () => {
                         if (prop) c[prop] = t;
                         c.render();
                     }, { s: section, t: tab });
-                    await page.waitForTimeout(450);
                 }
-                const text = await bodyText(page);
+                const text = await settledText(page);
                 const hit = text.match(KEY_PATTERN);
                 if (hit) offenders.push(`${section}${tab ? `/${tab}` : ''}: ${hit[0]}`);
             }
@@ -95,13 +105,11 @@ test.describe('every screen speaks in sentences', () => {
         expect(dashboard.match(KEY_PATTERN)?.[0] ?? null).toBeNull();
 
         await page.evaluate(() => window.dashboardInstance.health?.openHealthView?.());
-        await page.waitForTimeout(1500);
-        const health = await page.evaluate(() => document.body.innerText);
+        const health = await settledText(page, () => page.evaluate(() => document.body.innerText));
         expect(health.match(KEY_PATTERN)?.[0] ?? null).toBeNull();
 
         await page.evaluate(() => window.dashboardInstance.inbox?.openInboxView?.());
-        await page.waitForTimeout(1500);
-        const inbox = await page.evaluate(() => document.body.innerText);
+        const inbox = await settledText(page, () => page.evaluate(() => document.body.innerText));
         expect(inbox.match(KEY_PATTERN)?.[0] ?? null).toBeNull();
     });
 });
