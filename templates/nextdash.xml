@@ -28,7 +28,8 @@ Key features:
 • Inbox to collect new links fast: triage them, or keep them under Bookmarks → Unsorted and file whole groups later
 • Bookmarks view with Health built in: finds broken, stale and duplicate links, with uptime monitoring and downtime alerts
 • Video bookmarks marked in the list, and played in the hover card without leaving the dashboard
-• Widgets beside your bookmarks: 29 built-in kinds (uptime, feeds, weather, calendar, disks, containers and more) plus a Custom widget for any JSON API
+• Widgets beside your bookmarks: 36 built-in kinds (uptime, feeds, weather, calendar, disks, containers and more) plus a Custom widget for any JSON API
+• Your media stack on the dashboard: Jellyfin, Sonarr, Radarr, Seerr, qBittorrent and SABnzbd, with the posters from your own library
 • Your Unraid server on the dashboard: seven widgets for the array, parity, shares, VMs, the UPS and notifications, with alerts
 • Web search in the search panel through your own SearXNG or the Brave Search API
 • Six interface languages: English, Dutch, German, French, Spanish and Chinese
@@ -43,12 +44,19 @@ Links:
 • Also available on GHCR: ghcr.io/jordibrouwer/nextdash:latest
 • User manual: https://github.com/jordibrouwer/nextdash/blob/main/MANUAL.md
 
-The host widgets (Processor, Memory, Disks, Containers) are off until you fill in the optional paths and variables below — they are hidden under Show more settings. Section 11.4 of the manual explains what each one reads.
+The host widgets (Processor, Memory, Disks, Containers) are off until you fill in the optional paths and variables below — they are hidden under Show more settings. Section 15.4 of the manual explains what each one reads.
 
 Support: open an issue on GitHub via the Support link above. Bug reports and feature requests are welcome.
   </Overview>
 
   <Changes>
+### v1.19.5 (2026-10-12)
+- Widgets: Sonarr and Radarr widgets show what is coming and what is in the queue, with posters
+- Widgets: a Seerr widget shows requests in Overseerr or Jellyseerr, who asked and whether they arrived
+- Widgets: qBittorrent and SABnzbd widgets show downloads with progress, speed and time left
+- Widgets: Add a widget opens a picker you can search, and new kinds carry a New badge in the Catalogue
+- Translations: the widget picker and a few Inbox messages no longer show English in the other languages
+
 ### v1.19.4 (2026-10-12)
 - Widgets: a Jellyfin widget shows what was added to your media server lately, with the posters from your own library
 - Widgets: Config → Widgets has the tabs Your widgets, Catalogue and Custom widget, with the list and the open widget side by side on a wide screen
@@ -75,11 +83,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Config: Unraid has tabs like the other sections, and a small "new" marks new or reworked sections
 - Speed: Bookmarks and the dashboard draw faster with many bookmarks and containers
 - Fixes: switching themes quickly no longer leaves old colours in front, and your own themes are no longer downloaded again after every change
-
-### v1.18.4.1 (2026-10-09)
-- Bookmarks: Shift+H opens the whole list, the same as the Bookmarks button, and also works with health checks off
-- Speed: Bookmarks starts loading when you point at its button, draws its list once, and no longer loads what only Appearance and the widget editor need
-- Views: Config, Bookmarks, Inbox and Containers open with a shorter fade
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
