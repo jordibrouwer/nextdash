@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.19.4 — 12 October 2026](#v1194--12-october-2026)
 - [v1.19.3 — 12 October 2026](#v1193--12-october-2026)
 - [v1.19.2 — 10 October 2026](#v1192--10-october-2026)
 - [v1.19.1 — 10 October 2026](#v1191--10-october-2026)
@@ -105,6 +106,41 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.19.4 — 12 October 2026
+
+The headline is the Jellyfin widget: connect it once and it shows what was added to your media server lately with the real posters and backdrops from Jellyfin itself, so a dashboard tile looks like your library. Config → Widgets is one panel with three tabs — Your widgets, Catalogue and Custom widget — and on a wide screen the list and the open widget stand side by side. The What's new window gives a release's highlight a spotlight and opens every release since your last visit, and the weekly digest gains a part for the week's nextDash releases.
+
+### Widgets
+
+- **new — a Jellyfin widget with the real posters from your server.** The tile shows what was added lately the way Jellyfin itself does: each film and series with its own poster, an episode under its series poster (an episode's own still is 16:9 and reads badly in a 2:3 frame), and in the **hero** layout the newest item large on its backdrop. The pictures are the ones in your library, fetched from Jellyfin by the server at quality 85 and the width the tile needs, so the tile looks like a shelf of your own media rather than a list of titles.
+- **new — the Jellyfin set-up connects first and asks after.** Fill in the address and the API key and press **Connect** (`POST /api/widgets/jellyfin/setup`, denied in demo mode): the server tries both and says *Connected to {name} ({version})*, then fills the choices below it with who the tile reads as and the libraries that exist, so nothing has to be typed by id. Then pick the libraries (anime is usually a library of its own, so libraries rather than item types), a layout — **list**, **strip**, **hero** or **grid** — whether a click opens the item in Jellyfin or a detail view, whether watched items are hidden, how many rows and how often it refreshes (a minute at least). How wide the tile is comes from a container query, so a two-column tile on a phone reads as the one-column version. The API key is an ordinary widget credential (`X-Emby-Token`) and never comes back to the browser: the server fetches the list (`GET /api/widgets/jellyfin`) and the posters (`GET /api/widgets/jellyfin/image`), which only proxies a picture the last answer named. One answer per widget on its own TTL; a failure keeps the last good answer and says how old it is. Posters are kept in `data/jellyfin-images/`, named by server, item, kind and tag, capped at 200 MB and trimmed oldest-first (`evictImagesIn`, shared with the preview cache), and left out of backups. A page template carries the server address as a variable and drops the user and libraries, which name nobody on another server (`widgets_jellyfin.go`, `widgets_jellyfin_route.go`, `widgets_jellyfin_images.go`, `dashboard-widget-jellyfin.js`, `dashboard-config-widget-jellyfin.js`, `dashboard-widget-jellyfin.css`).
+- **new — Config → Widgets has three tabs: Your widgets, Catalogue and Custom widget.** The Catalogue is every kind on one page with a small drawing of what it shows, made of example figures rather than a live render so it opens fast; group chips narrow the cards without a refetch. The Custom widget tab explains the one kind that is a capability rather than a report. A widget added from either lands on Your widgets to be filled in (`dashboard-config-widget-catalogue.js`).
+- **new — the Types tab folds into the Catalogue.** A stored or linked `types` tab lands on the Catalogue; the Unraid section's **Add** opens the catalogue on that kind, and the widgets tutorial and search commands say so. The orphaned Types strings are gone from all six locales.
+- **new — Your widgets is one panel of one-line rows with a shared detail view.** One function draws a widget's detail for both places it can stand, so the two can never offer different controls.
+- **new — list and detail side by side on a wide screen.** Wide or narrow is measured on the section's own width, not the window's, with 40 px of slack so a width on the line does not flip back and forth; it repaints only when the answer changes. Wide, one widget is always open beside the list — the chosen one, or the first shown once that one is gone after a delete, move or search. Moving between the layouts keeps the field being typed in, with its uncommitted value.
+- **fix — renaming a widget no longer takes the caret away.** A rename fires when you leave the title, so the config redraw that followed took the caret out of the field you had just moved to; the dashboard's blocks now refresh with `keepConfig`.
+
+### Config
+
+- **fix — the new badge moves from Containers and Unraid to Widgets** (`NEW_SECTIONS`).
+
+### What's new
+
+- **new — a spotlight for the highlight.** An item a release marks as `highlight` gets room at the top: its picture or a short silent looping recording (the still with motion turned down), a short `title` of its own, the explanation and a button to where the change lives (`link`, `linkLabel`, a hash route such as `#config/monitoring/notifications`). Other new changes are one row each with their section in front and the detail folded; fixes are one line each, opened with a native disclosure; shortcuts keep their own block. When the release the window opens on marks nothing, its first new change stands in. Media lives under `static/data/whats-new/media/`. v1.19.3's weekly digest is the first spotlight, with a screenshot and a recording (`whats-new-modal.js`, `modal.css`).
+- **new — every release since your last visit opens.** The window opens each release newer than the last one you saw, the newest with the big version as its headline, and says *Since your last visit: n releases, x new and y fixed.* Older releases stay as rows under Earlier.
+
+### Monitoring
+
+- **new — the weekly digest names the week's nextDash releases.** A *New in nextDash* part, made from the same files the What's new window reads, lists every release that came out in the digest's week with the items marked as a highlight, or the release's one-line lead when nothing is marked. Its button opens What's new; it is news, so it does not count as something to work through. On by default (`digestNews`, `digest_news.go`).
+
+### Tests
+
+- **tests — `tests/dashboard-widget-jellyfin.spec.js`** and `widgets_jellyfin_test.go`, `widgets_jellyfin_config_test.go`, `widgets_jellyfin_images_test.go` and `page_template_test.go` cover the tile, its layouts, the setup, the cache, the image proxy and the template. `tests/config-widgets-tabs.spec.js`, `tests/config-widgets-tab.spec.js` and `tests/config-widgets-wide.spec.js` cover the three tabs, the rows and the side-by-side layout; `widget-secret-reveal`, `widget-preset-address`, `config-widget-panel` and `config-unraid` follow the new panel.
+- **tests — `tests/whats-new-spotlight.spec.js`** covers the spotlight and the releases since the last visit; `digest_news_test.go` and `tests/digest-notice.spec.js` the digest's news part.
+- **tests — `tests/whats-new-media.spec.js`** takes the What's new pictures and recordings through the real UI, one release at a time against a copy of the demo data, from a plan in `tests/fixtures/whats-new-media/<tag>.js`. The shared steps moved out of `manual-screenshots.spec.js` into `tests/helpers/manual-shot-kit.js`.
 
 ---
 
