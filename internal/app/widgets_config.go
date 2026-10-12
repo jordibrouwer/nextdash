@@ -277,6 +277,20 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "ttl", Kind: "int", Min: customWidgetMinTTL, Max: customWidgetMaxTTL},
 		{Key: "itemsPath", Kind: "string", MaxLen: widgetMaxPathLen},
 	},
+	WidgetTypeJellyfin: {
+		{Key: "server", Kind: "url"},
+		{Key: "credentialId", Kind: "string"},
+		{Key: "userId", Kind: "string"},
+		{Key: "libraries", Kind: "list"},
+		{Key: "layout", Kind: "string", Allowed: []string{"list", "strip", "hero", "grid"}},
+		{Key: "click", Kind: "string", Allowed: []string{"open", "detail"}},
+		{Key: "target", Kind: "string", Allowed: []string{"inherit", "_blank", "_self"}},
+		{Key: "hideWatched", Kind: "bool"},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+		// A minute is the floor: the answer is a list of posters, and asking
+		// more often only redraws the same list.
+		{Key: "ttl", Kind: "int", Min: 60, Max: 3600},
+	},
 	WidgetTypeUnraid:              unraidWidgetFields(false),
 	WidgetTypeUnraidArray:         unraidWidgetFields(false),
 	WidgetTypeUnraidParity:        unraidWidgetFields(false),
@@ -559,6 +573,7 @@ func widgetTypeNames() []string {
 		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS, WidgetTypeNotes,
 		WidgetTypeUnraid, WidgetTypeUnraidArray, WidgetTypeUnraidParity, WidgetTypeUnraidShares,
 		WidgetTypeUnraidVMs, WidgetTypeUnraidUPS, WidgetTypeUnraidNotifications,
+		WidgetTypeJellyfin,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone
 		// to build by hand what is two entries above it.

@@ -51,7 +51,9 @@ body[data-cat-count="on"] .dashboard-grid .category-title-count {
 /* ---- alles behalve de eigen stijl van het theme ---- */
 body:not([data-cat-head="theme"]) .dashboard-grid .category-reorder-handle {
     display: inline-block;
-    width: 0.9em;
+    /* rem, not em: against its own font-size of 0 an em is nothing, the box
+       was zero wide and the icon after it took every click on the grip. */
+    width: 0.9rem;
     font-size: 0;
     opacity: 1;
 }

@@ -428,7 +428,7 @@
                     `, f('bmTourS8Alt', 'A down bookmark sends alerts to Slack, ntfy, Pushover and the browser'));
                 })(),
                 body: `<p>${esc(f('bmTourS8Body1',
-                    'Downtime alerts go to Slack, Discord, Telegram, Gotify, ntfy, Pushover or your own JSON receiver — and again when it comes back. Browser notifications reach your desktop or phone. Set them up under Behavior → Status & alerts.'))}</p>
+                    'Downtime alerts go to Slack, Discord, Telegram, Gotify, ntfy, Pushover or your own JSON receiver — and again when it comes back. Browser notifications reach your desktop or phone. Set them up under Monitoring → Notifications.'))}</p>
                     <p>${esc(f('bmTourS8Body2',
                     'Maintenance windows keep a planned restart quiet, and a muted bookmark is still checked, only never announced.'))}</p>`,
             },

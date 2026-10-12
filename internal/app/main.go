@@ -298,6 +298,9 @@ func Run(files assetFS) {
 	// The RSS tile's feeds, read by widget id for the same reason: the
 	// addresses are stored, never sent with the request.
 	r.HandleFunc("/api/widgets/rss", handlers.RSSWidgetHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/widgets/jellyfin", handlers.JellyfinWidgetHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/widgets/jellyfin/image", handlers.JellyfinImageHandler).Methods("GET")
+	r.HandleFunc("/api/widgets/jellyfin/setup", handlers.JellyfinSetupHandler).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/health/credentials", handlers.HealthCredentialsHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
 	r.HandleFunc("/api/health/credentials/reveal", handlers.HealthCredentialRevealHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/webhooks", handlers.WebhooksHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
@@ -320,6 +323,8 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/health/history", handlers.HealthHistoryView).Methods("GET")
 	r.HandleFunc("/badge/uptime.svg", handlers.UptimeBadge).Methods("GET")
 	r.HandleFunc("/api/notify/quiet", handlers.QuietStatus).Methods("GET")
+	r.HandleFunc("/api/digest/latest", handlers.DigestLatest).Methods("GET")
+	r.HandleFunc("/api/digest/test", handlers.DigestTest).Methods("POST")
 	r.HandleFunc("/api/health/archive-snapshot", handlers.ArchiveSnapshot).Methods("GET")
 	// Asking the archive to keep a copy, rather than hoping someone already
 	// did. Behind the write token: it spends a shared daily budget.
@@ -433,6 +438,8 @@ func Run(files assetFS) {
 	handlers.StartUnraidWatcher(schedulerStop)
 	// Ends the quiet hours with one summary, and sends the reminders.
 	handlers.StartQuietHoursScheduler(schedulerStop)
+	// One digest a week, after the quiet hours.
+	handlers.StartDigestScheduler(schedulerStop)
 	// Uptime monitoring for bookmarks opted into the faster monitor tier.
 	handlers.StartHealthMonitorScheduler(schedulerStop)
 	// Feed polling for bookmarks whose page advertises one (opt-in, same cadence

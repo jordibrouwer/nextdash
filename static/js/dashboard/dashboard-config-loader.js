@@ -29,6 +29,7 @@ class DashboardConfigLoader {
         'widgets',
         'containers',
         'unraid',
+        'monitoring',
         'status-page',
         'stats',
         'help',
@@ -77,6 +78,9 @@ class DashboardConfigLoader {
         const raw = hash.replace(/^#/, '');
         if (raw === 'config/behavior/layout') return 'appearance';
         if (raw === 'config/behavior/display') return 'appearance';
+        // Mirrors DashboardConfig.MONITORING_FROM_BEHAVIOR: Status & alerts
+        // left Behavior for Monitoring.
+        if (/^config\/behavior\/(status|checks|notifications)$/.test(raw)) return 'monitoring';
         if (raw === 'config') return 'overview';
         // Pages & tags is Structure now, and its Tags tab went to
         // Bookmarks. Both old shapes are still in people's links, and this
@@ -101,6 +105,7 @@ class DashboardConfigLoader {
     /** Mirrors DashboardConfig.SUB_TAB_STATE for pre-load sub-tab replay. */
     static SUB_TAB_STATE = {
         behavior: 'behaviorTab',
+        monitoring: 'monitoringTab',
         about: 'aboutTab',
         'structure': 'ptTab',
         appearance: 'appearanceTab',
@@ -158,6 +163,7 @@ class DashboardConfigLoader {
         'ptTab',
         'appearanceTab',
         'behaviorTab',
+        'monitoringTab',
         'helpTab',
         'bmTab',
         'dbTab',

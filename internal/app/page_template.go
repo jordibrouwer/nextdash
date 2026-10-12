@@ -250,6 +250,10 @@ func templateWidgetURLs(widget Widget) []string {
 		if raw, ok := widget.Config["url"].(string); ok && raw != "" {
 			out = append(out, raw)
 		}
+	case WidgetTypeJellyfin:
+		if raw, ok := widget.Config["server"].(string); ok && raw != "" {
+			out = append(out, raw)
+		}
 	case WidgetTypeRSS:
 		if list, ok := widget.Config["feedUrls"].([]any); ok {
 			for _, item := range list {
@@ -366,6 +370,14 @@ func buildPageTemplate(page PageWithBookmarks, options TemplateExportOptions, ic
 			if raw, ok := config["url"].(string); ok {
 				config["url"] = templatizeURL(raw, variables)
 			}
+		case WidgetTypeJellyfin:
+			if raw, ok := config["server"].(string); ok {
+				config["server"] = templatizeURL(raw, variables)
+			}
+			// The user and the libraries are ids on one server; on another
+			// they name nobody, so the receiver connects and chooses again.
+			delete(config, "userId")
+			delete(config, "libraries")
 		case WidgetTypeRSS:
 			if list, ok := config["feedUrls"].([]any); ok {
 				out := make([]any, 0, len(list))
@@ -650,6 +662,11 @@ func (h *Handlers) planPageTemplateReplacing(tpl PageTemplate, rawValues map[str
 			if raw, ok := widget.Config["url"].(string); ok {
 				filled, _ := fillTemplateURL(raw, values)
 				widget.Config["url"] = filled
+			}
+		case WidgetTypeJellyfin:
+			if raw, ok := widget.Config["server"].(string); ok {
+				filled, _ := fillTemplateURL(raw, values)
+				widget.Config["server"] = filled
 			}
 		case WidgetTypeRSS:
 			if list, ok := widget.Config["feedUrls"].([]any); ok {

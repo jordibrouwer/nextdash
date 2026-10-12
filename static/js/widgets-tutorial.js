@@ -193,7 +193,7 @@
                 body: `<p>${esc(t('widgetsTutorialStep7Body1',
                     'Drag the // in its title to move it among your categories, click the header to fold it away, and right-click it for rename, width, settings and close. The arrow keys walk into a tile and through its rows, and Enter on a row does what clicking it does.'))}</p>
                 <p>${esc(t('widgetsTutorialStep7Body2',
-                    'Everything here is also on this tab: Add a widget opens the catalogue, and Types describes each kind before you take it.'))}</p>`,
+                    'Everything here is also on this tab: Add a widget opens the catalogue, and the Catalogue tab draws each kind before you take it.'))}</p>`,
             },
         ];
     }
@@ -248,8 +248,8 @@
                 state.index -= 1;
                 render();
             },
-            // Escape, the backdrop and walking away all count as seen: the Types
-            // tab covers the same ground on demand, so reopening this on every
+            // Escape, the backdrop and walking away all count as seen: the catalogue
+            // covers the same ground on demand, so reopening this on every
             // visit to the section would be nagging.
             // Only a real dismissal: Next and Back close the window too, and
             // reach here with their own reason after they have run.

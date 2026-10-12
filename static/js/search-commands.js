@@ -324,6 +324,7 @@ class SearchCommandsComponent {
         { id: 'widgets', labelKey: 'commands.configWidgets', fallback: 'Widgets' },
         { id: 'containers', labelKey: 'commands.configContainers', fallback: 'Containers' },
         { id: 'unraid', labelKey: 'commands.configUnraid', fallback: 'Unraid' },
+        { id: 'monitoring', labelKey: 'commands.configMonitoring', fallback: 'Monitoring' },
         { id: 'status-page', labelKey: 'commands.configStatusPage', fallback: 'Status page' },
         { id: 'stats', labelKey: 'commands.configStats', fallback: 'Statistics' },
         { id: 'help', labelKey: 'commands.configHelp', fallback: 'Help' },
@@ -357,7 +358,7 @@ class SearchCommandsComponent {
         this._closeCommandPalette();
         const dash = window.dashboardInstance;
         const section = entry.section || entry.id;
-        const state = { 'structure': 'ptTab', appearance: 'appearanceTab', 'data-backups': 'dbTab', stats: 'statsTab', help: 'helpTab', about: 'aboutTab', bookmarks: 'bmTab', behavior: 'behaviorTab', widgets: 'widgetsTab', logs: 'logsTab' }[section];
+        const state = { 'structure': 'ptTab', appearance: 'appearanceTab', 'data-backups': 'dbTab', stats: 'statsTab', help: 'helpTab', about: 'aboutTab', bookmarks: 'bmTab', behavior: 'behaviorTab', monitoring: 'monitoringTab', widgets: 'widgetsTab', logs: 'logsTab' }[section];
         if (dash?.config?.openConfigView) {
             if (entry.tab && state) dash.config[state] = entry.tab;
             void dash.config.openConfigView(section);

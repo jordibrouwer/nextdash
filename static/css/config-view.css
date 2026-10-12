@@ -2037,10 +2037,54 @@
 .config-subtabs {
     display: flex;
     gap: 4px;
-    flex-wrap: wrap;
     margin-bottom: 20px;
     border-bottom: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
     padding-bottom: 8px;
+}
+
+/*
+ * One line that scrolls, never a wrapped block.
+ *
+ * Wrapped, a strip one tab too long dropped its last tab onto a second row of
+ * its own -- Behavior's six did that on anything under ~1100px, where the
+ * second row reads as a different group. Same answer as the section rail on a
+ * narrow screen: the strip keeps its line and scrolls, the active tab is
+ * scrolled into view (syncSubtabStrips), and a fade on the side with more says
+ * the strip goes on. The scroll stays on the strip; the page never scrolls
+ * sideways.
+ *
+ * Not the Structure modal's two-tab segmented control, which is a grid.
+ */
+.config-subtabs:not(.config-structure-tabs) {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    min-width: 0;
+}
+
+.config-subtabs:not(.config-structure-tabs)::-webkit-scrollbar {
+    display: none;
+}
+
+.config-subtabs:not(.config-structure-tabs) > .config-subtab {
+    flex: none;
+    white-space: nowrap;
+}
+
+.config-subtabs.has-more-after {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+}
+
+.config-subtabs.has-more-before {
+    -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 40px), transparent);
+    mask-image: linear-gradient(to left, #000 calc(100% - 40px), transparent);
+}
+
+.config-subtabs.has-more-before.has-more-after {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent);
 }
 
 .config-subtab {
@@ -6234,11 +6278,36 @@ body.no-animations .config-new-features-panel-star {
 .config-widget-row {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 12px 14px;
+    padding: 8px 12px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
     border-radius: var(--radius-6, 10px);
     background: var(--card-bg, rgba(127, 127, 127, 0.03));
+}
+
+.config-widget-row-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+/* .config-toggle carries a top margin for stacked settings; on one line it
+   pushed Shown below the select box and the title. */
+.config-widget-row-line .config-toggle {
+    margin-top: 0;
+}
+
+/* Said in words, so it does not read as a second select box beside the first. */
+.config-widget-row-shown span {
+    font-size: calc(var(--font-size-text) * 0.8);
+    color: var(--text-muted, #888);
+}
+
+.config-widget-row-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
 }
 
 /* An open row is the one being worked on, so it reads as the foreground: a step
@@ -6259,30 +6328,11 @@ body.no-animations .config-new-features-panel-star {
 }
 
 /* Switched off is a state worth seeing in the list, not only in the checkbox. */
-.config-widget-row.is-off .config-widget-row-identity,
-.config-widget-row.is-off .config-widget-row-about {
+.config-widget-row.is-off .config-widget-row-line > :not([data-widget-settings]):not(.config-widget-row-shown) {
     opacity: 0.55;
 }
 
-.config-widget-row-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-}
-
-.config-widget-row-identity {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex: 1;
-    min-width: 14rem;
-}
-
-/* The type, as a quiet chip ahead of the name someone chose. It used to sit
-   after the title field on a line with no room, which is why it landed on top
-   of the toggle. */
+/* The type, as a quiet chip at the end of the line. */
 .config-widget-row-kind {
     flex: none;
     padding: 2px 8px;
@@ -6293,24 +6343,467 @@ body.no-animations .config-new-features-panel-star {
     white-space: nowrap;
 }
 
+/* Reads as the row's name until it is focused, the way bookmark names do. */
 .config-widget-row-title {
-    flex: 1;
-    min-width: 8rem;
+    border-color: transparent;
+    background: transparent;
+    font-weight: 600;
+    padding-inline: 4px;
 }
 
-.config-widget-row-actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
+.config-widget-row-title:hover,
+.config-widget-row-title:focus {
+    border-color: var(--border-color, rgba(128, 128, 128, 0.35));
 }
 
 .config-widget-row-about {
+    padding-inline: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: calc(var(--font-size-text) * 0.88);
+    color: var(--text-muted, #888);
+}
+
+@media (max-width: 640px) {
+    .config-widget-row-kind { display: none; }
+}
+
+/* One widget, opened: description, settings, and the way out. */
+.config-widget-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 10px;
+}
+
+.config-widget-detail-title {
     margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: calc(var(--font-size-text) * 1.0);
+    font-weight: 600;
+}
+
+.config-widget-detail-about {
+    margin: 2px 0 0;
     max-width: 68ch;
     font-size: calc(var(--font-size-text) * 0.88);
     color: var(--text-muted, #888);
+}
+
+.config-widget-detail-section {
+    border-top: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    padding-top: 12px;
+}
+
+.config-widget-detail-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-top: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    padding-top: 10px;
+    font-size: calc(var(--font-size-text) * 0.88);
+    color: var(--text-muted, #888);
+}
+
+/* Wide: the list and the opened widget side by side. Which layout is drawn is
+   decided in JS from the section's width (WIDGETS_WIDE_MIN), since the detail
+   is one node that moves between the row and this column. */
+.config-widgets-split {
+    display: grid;
+    grid-template-columns: minmax(20rem, 2fr) minmax(0, 3fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.config-widgets-split > .config-panel {
+    min-width: 0;
+}
+
+/* Stays in view while a long list scrolls beside it. */
+.config-widgets-detailpanel {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+}
+
+.config-widgets-detailpanel .config-widget-detail {
+    padding-top: 0;
+}
+
+/* Beside a detail panel the list is narrower: the type chip gives way first.
+   The page chip stays -- it only appears in All pages, where it is the one
+   thing a row says that the detail beside it does not. */
+.config-widgets-split .config-widget-row .config-widget-row-kind { display: none; }
+
+/* ── Widgets → Catalogue: every kind, drawn ─────────────────────────────── */
+
+.config-widget-kinds-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.config-widget-kinds-head .config-panel-title {
+    margin: 0;
+}
+
+.config-widget-kinds-count {
+    margin-left: 6px;
+    font-weight: 400;
+    font-size: calc(var(--font-size-text) * 0.86);
+    color: var(--text-muted, #888);
+}
+
+.config-widget-kinds-page {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: calc(var(--font-size-text) * 0.88);
+    color: var(--text-muted, #888);
+}
+
+.config-widget-kind-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.config-widget-kind-chip {
+    padding: 2px 10px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
+    border-radius: var(--radius-pill, 999px);
+    background: transparent;
+    color: var(--text-muted, #888);
+    font: inherit;
+    font-size: calc(var(--font-size-text) * 0.86);
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.config-widget-kind-chip:hover,
+.config-widget-kind-chip.is-active {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.config-widget-kind-group-title {
+    margin: 18px 0 8px;
+    font-size: calc(var(--font-size-text) * 0.8);
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-muted, #888);
+}
+
+.config-widget-kind-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+    gap: 10px;
+}
+
+/* A card per kind. They arrive one after another rather than all at once,
+   and lift under the pointer: a page to browse, so it can feel like one. */
+.config-widget-kind {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    border-radius: var(--radius-6, 10px);
+    background: var(--surface-2, var(--card-bg, rgba(127, 127, 127, 0.05)));
+    animation: config-widget-kind-rise 0.35s ease both;
+    animation-delay: calc(var(--i, 0) * 35ms);
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.config-widget-kind:hover,
+.config-widget-kind:focus-within {
+    transform: translateY(-2px);
+    border-color: var(--accent-primary);
+    box-shadow: 0 6px 18px color-mix(in srgb, #000 30%, transparent);
+}
+
+@keyframes config-widget-kind-rise {
+    from { opacity: 0; transform: translateY(6px); }
+}
+
+.config-widget-kind-name {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 0.86);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary, inherit);
+}
+
+.config-widget-kind-have {
+    flex: none;
+    padding: 0 6px;
+    border: 1px solid color-mix(in srgb, var(--accent-success) 50%, transparent);
+    border-radius: var(--radius-pill, 999px);
+    font-size: calc(var(--font-size-text) * 0.72);
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--accent-success);
+}
+
+/* The drawing: the Unraid preview's tile, rows and bars, one per kind. */
+.config-widget-kind-sample {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-height: 3.6rem;
+    padding: 8px;
+    border: 1px solid var(--border-secondary, var(--border-primary));
+    border-radius: var(--layout-radius-xs, 6px);
+    background: var(--background-secondary);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-secondary);
+}
+
+.config-widget-kind-sample .unraid-mini-bar i {
+    animation-delay: calc(var(--i, 0) * 35ms + 0.15s);
+}
+
+.config-widget-kind-big {
+    font-size: calc(var(--font-size-text) * 1.5);
+    font-weight: 600;
+    color: var(--text-primary, inherit);
+    line-height: 1.1;
+}
+
+.config-widget-kind-good { color: var(--accent-success); }
+.config-widget-kind-warn { color: var(--accent-warning); }
+.config-widget-kind-bad { color: var(--accent-error); }
+
+.config-widget-kind-spark {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 22px;
+}
+
+.config-widget-kind-spark i {
+    flex: 1;
+    height: calc(var(--h, 50) * 1%);
+    border-radius: 2px 2px 0 0;
+    background: var(--accent-primary);
+    opacity: 0.75;
+    transform-origin: bottom;
+    animation: config-widget-kind-grow 0.7s ease-out both;
+    animation-delay: calc(var(--i, 0) * 35ms + var(--j, 0) * 50ms + 0.15s);
+}
+
+@keyframes config-widget-kind-grow {
+    from { transform: scaleY(0); }
+}
+
+.config-widget-kind-about {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 0.86);
     line-height: 1.45;
+    color: var(--text-muted, #888);
+}
+
+.config-widget-kind-foot {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: auto;
+}
+
+/* ── Widgets → Custom widget: where a figure comes from ─────────────────── */
+
+.config-widget-custom-flow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 3.5rem minmax(0, 1fr) 3.5rem minmax(0, 1fr);
+    align-items: center;
+    margin-top: 14px;
+}
+
+.config-widget-custom-node {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 6rem;
+    padding: 10px;
+    border: 1px solid var(--border-secondary, var(--border-primary));
+    border-radius: var(--radius-6, 10px);
+    background: var(--background-secondary);
+    font-size: var(--text-xs, 0.75rem);
+    color: var(--text-secondary);
+    animation: config-widget-kind-rise 0.4s ease both;
+}
+
+.config-widget-custom-node:nth-of-type(2) { animation-delay: 0.15s; }
+.config-widget-custom-node:nth-of-type(3) { animation-delay: 0.3s; }
+
+.config-widget-custom-node-label {
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary, var(--text-muted, #888));
+}
+
+.config-widget-custom-node-path { color: var(--accent-primary); }
+.config-widget-custom-node-host { color: var(--text-muted, #888); }
+
+.config-widget-custom-json {
+    white-space: pre;
+    overflow: hidden;
+}
+
+/* The two figures the paths pick out, lit in turn with the dot on the wire. */
+.config-widget-custom-json mark {
+    padding: 0 2px;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--accent-primary);
+    animation: config-widget-custom-pick 2.4s ease-in-out infinite;
+}
+
+@keyframes config-widget-custom-pick {
+    0%, 35% { background: transparent; }
+    50%, 100% { background: color-mix(in srgb, var(--accent-primary) 20%, transparent); }
+}
+
+.config-widget-custom-wire {
+    position: relative;
+    height: 2px;
+    margin: 0 6px;
+    background: var(--border-primary);
+}
+
+.config-widget-custom-wire::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    box-shadow: 0 0 8px var(--accent-primary);
+    animation: config-widget-custom-run 2.4s linear infinite;
+}
+
+.config-widget-custom-wire.is-second::after { animation-delay: 1.2s; }
+
+@keyframes config-widget-custom-run {
+    from { left: 0; }
+    to { left: calc(100% - 8px); }
+}
+
+.config-widget-custom-figures {
+    display: flex;
+    gap: 16px;
+}
+
+.config-widget-custom-figures b {
+    display: block;
+    font-size: calc(var(--font-size-text) * 1.5);
+    color: var(--text-primary, inherit);
+}
+
+.config-widget-custom-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: 10px;
+    margin: 16px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.config-widget-custom-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 14px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    border-radius: var(--radius-6, 10px);
+    background: var(--card-bg, rgba(127, 127, 127, 0.03));
+    animation: config-widget-kind-rise 0.35s ease both;
+    animation-delay: calc(var(--i, 0) * 60ms + 0.3s);
+}
+
+.config-widget-custom-icon {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    margin-bottom: 4px;
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--accent-primary);
+}
+
+.config-widget-custom-formats,
+.config-widget-custom-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.config-widget-custom-format {
+    padding: 1px 7px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
+    border-radius: 6px;
+    font-size: calc(var(--font-size-text) * 0.8);
+    color: var(--text-muted, #888);
+}
+
+.config-widget-custom-format.is-on {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.config-widget-custom-preset {
+    padding: 3px 9px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    border-radius: 7px;
+    background: var(--surface-2, var(--card-bg, rgba(127, 127, 127, 0.05)));
+    font-size: calc(var(--font-size-text) * 0.88);
+    animation: config-widget-kind-rise 0.3s ease both;
+    animation-delay: calc(var(--j, 0) * 40ms);
+}
+
+.config-widget-custom-preset.is-more { color: var(--text-muted, #888); }
+
+.config-widget-custom-limits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 22px;
+    color: var(--text-muted, #888);
+}
+
+.config-widget-custom-limits b {
+    color: var(--text-primary, inherit);
+}
+
+/* Stacked on a phone: three boxes one above the other, the wires dropped. */
+@media (max-width: 720px) {
+    .config-widget-custom-flow {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+    }
+    .config-widget-custom-wire { display: none; }
 }
 
 /* The settings, folded out under the row they belong to. Full width, since a
@@ -6439,6 +6932,7 @@ body.no-animations .config-new-features-panel-star {
 
 /* Which page a row belongs to, shown only while the list spans pages. */
 .config-widget-row-page {
+    flex: none;
     padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.4rem);
     border-radius: var(--radius-pill, 999px);
     background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
@@ -6829,12 +7323,6 @@ body.no-animations .config-new-features-panel-star {
     display: flex;
     flex-wrap: wrap;
     gap: 8px 16px;
-}
-
-@media (max-width: 640px) {
-    .config-widget-row-actions {
-        width: 100%;
-    }
 }
 
 /* A note under a setting, for the one that needs a word about what the grid
@@ -7435,18 +7923,15 @@ body.no-animations .config-new-features-panel-star {
  * time and remembering. Both screens now put every kind on the page under the
  * question it answers; the only difference is that one of them is clickable.
  */
-.config-widget-pick-group,
-.config-widget-type-group {
+.config-widget-pick-group {
     margin: 0 0 18px;
 }
 
-.config-widget-pick-group:last-child,
-.config-widget-type-group:last-child {
+.config-widget-pick-group:last-child {
     margin-bottom: 0;
 }
 
-.config-widget-pick-group-title,
-.config-widget-type-group-title {
+.config-widget-pick-group-title {
     margin: 0 0 8px;
     font-size: var(--font-size-small);
     font-weight: var(--font-weight-semibold, 600);
@@ -7494,8 +7979,7 @@ body.no-animations .config-new-features-panel-star {
     font-weight: var(--font-weight-semibold, 600);
 }
 
-.config-widget-pick-about,
-.config-widget-type-about {
+.config-widget-pick-about {
     color: var(--text-tertiary);
     font-size: var(--font-size-small);
     line-height: 1.5;
@@ -7509,62 +7993,21 @@ body.no-animations .config-new-features-panel-star {
     line-height: 1.5;
 }
 
-/* The reference: a name and a sentence, stacked rather than gridded — reading
-   is a column, choosing is a grid. */
-.config-widget-type-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin: 0;
-    padding: 0;
-}
-
-/* The name and the sentence read as a column; the button that adds the kind
-   sits beside them rather than under, so a list of thirteen stays a list of
-   thirteen rather than becoming thirteen rows with a button hanging off each. */
-.config-widget-type-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: start;
-    column-gap: 12px;
-    row-gap: 3px;
-    padding: 12px 14px;
-    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: var(--radius-6, 10px);
-    background: var(--card-bg, rgba(127, 127, 127, 0.03));
-}
-
-.config-widget-type-add {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-    align-self: center;
-}
-
-/* Narrow: the button drops under the sentence rather than squeezing it. */
-@media (max-width: 30rem) {
-    .config-widget-type-row {
-        grid-template-columns: 1fr;
-    }
-
-    .config-widget-type-add {
-        grid-column: 1;
-        grid-row: auto;
-        justify-self: start;
-        margin-top: 6px;
-    }
-}
-
-.config-widget-type-name {
-    font-weight: var(--font-weight-semibold, 600);
-}
-
 /* ── The Custom widget, explained at length ──────────────────────────────── */
 .config-widget-custom-ref {
-    padding: 14px 16px;
-    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
-    border-radius: var(--radius-6, 10px);
-    background: var(--card-bg, rgba(127, 127, 127, 0.03));
+    margin-top: 12px;
+    border-top: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    padding-top: 10px;
+}
+
+.config-widget-custom-summary {
+    cursor: pointer;
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.93);
+}
+
+.config-widget-custom-ref[open] > .config-widget-custom-summary {
+    margin-bottom: 10px;
 }
 
 .config-widget-custom-lead {
@@ -7574,14 +8017,6 @@ body.no-animations .config-new-features-panel-star {
     line-height: 1.6;
     max-width: 70ch;
     text-wrap: pretty;
-}
-
-/* The Custom widget is explained at length rather than in a row, so its Add
-   button cannot sit beside a sentence the way the others do. It closes the
-   section instead — every kind on this tab is addable from where it is
-   described, and this one was the exception. */
-.config-widget-custom-add {
-    margin: 14px 0 0;
 }
 
 .config-widget-custom-ref .config-widget-custom-lead:last-child {
@@ -8433,13 +8868,6 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
 .status-page-picker-item.is-active { background: color-mix(in srgb, var(--accent-primary) 16%, transparent); }
 .status-page-picker-meta { color: var(--text-muted); font-size: var(--font-size-small, 0.85em); }
 .status-page-picker-empty { padding: 5px 8px; color: var(--text-muted); }
-
-/* Widgets -> Types, arrived at from Config -> Unraid: the kind asked for. */
-.config-widget-type-row.is-pointed {
-    outline: 1px solid var(--accent-primary);
-    outline-offset: 2px;
-    border-radius: var(--layout-radius-xs, 6px);
-}
 
 /* Still, for whoever asked for stillness: the dots wait mid-line. */
 @media (prefers-reduced-motion: reduce) {

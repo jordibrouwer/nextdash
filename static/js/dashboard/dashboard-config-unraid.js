@@ -69,14 +69,14 @@
                 <ol class="unraid-steps">
                     ${step('key', 1, `${t('unraidStepKey', 'In Unraid, make an API key with the role Viewer:')} <strong>Settings → Management Access → API Keys</strong>.`)}
                     ${step('connect', 2, t('unraidStepConnect', 'Fill in the address and the key below, test the connection and save.'))}
-                    ${step('widgets', 3, `${t('unraidStepWidgets', 'Put Unraid widgets on a page.')} <button type="button" class="config-link-btn" data-unraid-goto-widgets>${t('unraidOpenTypes', 'Open Widgets → Types')}</button>`)}
+                    ${step('widgets', 3, `${t('unraidStepWidgets', 'Put Unraid widgets on a page.')} <button type="button" class="config-link-btn" data-unraid-goto-widgets>${t('unraidOpenCatalogue', 'Add an Unraid widget')}</button>`)}
                 </ol>
             </div>`;
     },
 
     /*
      * What you get: the seven tiles in miniature, with example figures, each
-     * a step from its own Add in Widgets -> Types. Decorative drawings beside
+     * a step from its own Add in the widget catalogue. Decorative drawings beside
      * real buttons, so the drawings are hidden from assistive tech.
      */
     renderUnraidPreview() {
@@ -95,7 +95,7 @@
             <div class="config-panel unraid-preview" data-unraid-preview data-unraid-panel="widgets"${this.unraidPanelHidden('widgets')}>
                 <h3 class="config-panel-title">${t('unraidPreviewTitle', 'What you get')}</h3>
                 <p class="config-panel-note">${t('unraidPreviewNote',
-                    'Seven widgets read this server, shown here with example figures. Add opens Widgets → Types on that kind.')}</p>
+                    'Seven widgets read this server, shown here with example figures. Add opens that kind in Widgets → Catalogue.')}</p>
                 <div class="unraid-minis">
                     ${tile('unraid', `${row('array', 'started', 'good')}${row('alerts', '2 unread', 'warn')}`)}
                     ${tile('unraidArray', `${bar(0.74)}${row('disk1', '74%')}`)}
@@ -112,42 +112,37 @@
     },
 
     /*
-     * Widgets -> Types, scrolled to the Unraid group or to one kind in it,
-     * whose Add then has the focus: one Enter from a widget on the page.
+     * The Add catalogue, scrolled to one kind in it (the Unraid card by
+     * default), whose card then has the focus: one Enter from a widget on the
+     * page.
      */
-    openUnraidWidgetTypes(type) {
-        this.widgetsTab = 'types';
+    async openUnraidWidgetTypes(type) {
+        // Widgets → Catalogue, narrowed to the Unraid group: the seven kinds
+        // drawn, each with its own Add.
+        this.widgetsTab = 'catalogue';
+        this.widgetKindFilter = 'unraid';
         this.selectSection('widgets');
-        let tries = 0;
-        const find = () => {
-            const body = document.getElementById('config-widgets-body');
-            if (!body) return null;
-            if (type) return body.querySelector(`[data-widget-add="${CSS.escape(type)}"]`);
-            return body.querySelector('[data-widget-add="unraid"]')?.closest('.config-widget-type-group') || null;
-        };
+        // The Widgets script loads on demand; the cards are not there until
+        // it has landed and the section has painted.
+        if (!(await this.ensureSection('widgets')) || this.section !== 'widgets') return;
         /*
-         * The Widgets section draws, then repaints once its list has loaded --
-         * which replaces the button that was just focused. So keep pointing
-         * at the current one until it has stayed put for a few frames.
+         * The section paints, then paints again once its widgets have loaded
+         * (the badges need them), which replaces the button just focused. So
+         * keep pointing at the current one until it has stayed put a while.
          */
+        const selector = `[data-widget-kind="${CSS.escape(type || 'unraid')}"] [data-widget-add]`;
         let pointed = null;
         let steady = 0;
+        let tries = 0;
         const tick = () => {
-            const el = find();
-            if (el && el !== pointed) {
-                pointed = el;
+            const add = document.querySelector(selector);
+            if (add && add !== pointed) {
+                pointed = add;
                 steady = 0;
-                el.scrollIntoView({ block: 'center' });
-                if (type) {
-                    el.focus({ preventScroll: true });
-                    const rowEl = el.closest('.config-widget-type-row');
-                    rowEl?.classList.add('is-pointed');
-                    setTimeout(() => rowEl?.classList.remove('is-pointed'), 2400);
-                }
-            } else if (el && type && document.activeElement !== el) {
-                el.focus({ preventScroll: true });
+                add.closest('[data-widget-kind]')?.scrollIntoView({ block: 'center' });
             }
-            steady = el ? steady + 1 : 0;
+            if (add && document.activeElement !== add) add.focus({ preventScroll: true });
+            steady = add ? steady + 1 : 0;
             if (steady < 20 && (tries += 1) < 120) requestAnimationFrame(tick);
         };
         requestAnimationFrame(tick);

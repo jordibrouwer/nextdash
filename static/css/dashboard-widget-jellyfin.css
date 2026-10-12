@@ -1,0 +1,160 @@
+/*
+ * The Jellyfin tile. Pictures sit in fixed ratios so nothing jumps while they
+ * load; what only fits when the tile is wide answers to the panel's container
+ * query through .dashboard-widget-wide-only, like every other tile.
+ */
+.jellyfin-panel { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.jellyfin-art {
+    position: relative;
+    display: block;
+    flex: none;
+    overflow: hidden;
+    border-radius: var(--radius-sm, 4px);
+    background: color-mix(in srgb, currentColor 10%, transparent);
+}
+.jellyfin-art--poster { width: 2.25rem; aspect-ratio: 2 / 3; }
+.jellyfin-art--backdrop { width: 100%; aspect-ratio: 16 / 9; }
+.jellyfin-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.jellyfin-art.is-missing { display: grid; place-items: center; }
+.jellyfin-art-initials { font-size: var(--font-size-small); color: var(--text-tertiary); }
+
+.jellyfin-badge {
+    position: absolute;
+    top: 0.2rem;
+    right: 0.2rem;
+    padding: 0 0.25rem;
+    border-radius: var(--radius-pill, 999px);
+    background: var(--accent-primary);
+    color: var(--bg-primary, #000);
+    font-size: 0.65rem;
+    line-height: 1.3;
+}
+.jellyfin-badge--played { left: 0.2rem; right: auto; background: var(--accent-success); }
+
+/*
+ * minmax(0, 1fr), not 1fr: a track's minimum is its content's, and a title is
+ * one unbroken line. A long one made the first column as wide as the title and
+ * shoved the second out of the tile.
+ */
+.jellyfin-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.25rem 1rem; }
+.jellyfin-row {
+    min-width: 0;
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    width: 100%;
+    padding: 0.25rem 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.jellyfin-row-text { display: flex; flex-direction: column; min-width: 0; }
+.jellyfin-title, .jellyfin-caption { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.jellyfin-meta { color: var(--text-tertiary); font-size: var(--font-size-small); }
+.jellyfin-overview {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: var(--text-secondary, inherit);
+    font-size: var(--font-size-small);
+}
+.jellyfin-stale { margin: 0; color: var(--accent-warning); font-size: var(--font-size-small); }
+
+.jellyfin-tabs { display: flex; gap: 0.75rem; }
+.jellyfin-tab {
+    padding: 0 0 0.1rem;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    background: none;
+    color: var(--text-tertiary);
+    font: inherit;
+    cursor: pointer;
+}
+.jellyfin-tab[aria-selected="true"] { color: inherit; border-bottom-color: var(--accent-primary); }
+
+.jellyfin-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem; }
+.jellyfin-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.4rem; }
+.jellyfin-poster {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.jellyfin-poster .jellyfin-art--poster { width: 100%; }
+.jellyfin-caption { font-size: var(--font-size-small); }
+
+/* Narrow grid: the title appears on focus, over the poster. */
+.jellyfin-grid .jellyfin-poster { position: relative; }
+.jellyfin-grid .jellyfin-poster:focus-visible::after,
+.jellyfin-grid .jellyfin-poster:hover::after {
+    content: attr(data-title);
+    position: absolute;
+    inset: auto 0 0 0;
+    padding: 0.2rem 0.3rem;
+    background: color-mix(in srgb, #000 65%, transparent);
+    color: #fff;
+    font-size: 0.7rem;
+}
+
+.jellyfin-hero-layout { display: grid; gap: 0.5rem; }
+.jellyfin-hero {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #fff;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.jellyfin-hero .jellyfin-art { width: 100%; }
+.jellyfin-hero-caption {
+    position: absolute;
+    inset: auto 0 0 0;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 0.6rem 0.4rem;
+    background: linear-gradient(transparent, color-mix(in srgb, #000 75%, transparent));
+}
+.jellyfin-hero-caption .jellyfin-meta,
+.jellyfin-hero-caption .jellyfin-overview { color: color-mix(in srgb, #fff 80%, transparent); }
+
+.jellyfin-detail {
+    width: min(32rem, calc(100vw - 2rem));
+    padding: 0;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md, 8px);
+    background: var(--bg-primary, Canvas);
+    color: inherit;
+}
+.jellyfin-detail::backdrop { background: color-mix(in srgb, #000 55%, transparent); }
+.jellyfin-detail > :not(.jellyfin-art) { margin: 0.5rem 1rem; }
+.jellyfin-detail .jellyfin-art--poster { width: 8rem; margin: 1rem auto 0; }
+.jellyfin-detail-title { font-size: 1.1rem; }
+.jellyfin-detail-overview { line-height: 1.5; }
+.jellyfin-detail-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-bottom: 1rem !important; }
+
+@container (min-width: 28rem) {
+    .jellyfin-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .jellyfin-row .jellyfin-art--poster { width: 3rem; }
+    .jellyfin-strip { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+    .jellyfin-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .jellyfin-grid .jellyfin-poster:focus-visible::after,
+    .jellyfin-grid .jellyfin-poster:hover::after { content: none; }
+    .jellyfin-hero-layout { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+    .jellyfin-list--side { grid-template-columns: minmax(0, 1fr); }
+}

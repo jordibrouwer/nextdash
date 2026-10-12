@@ -201,6 +201,7 @@ var dataFiles = map[string]dataFilePolicy{
 	"status-page-secrets.json":   dataNever, // the link's token: a restore makes a new link
 	"docker-events.json":         dataNever, // this host's container timeline
 	"docker-update-history.json": dataNever, // rollbacks name this host's image ids
+	"digest.json":                dataNever, // last week's digest; without it the next tick only records the slot
 	"activity.log":               dataNever,
 	"server.log":                 dataNever,
 }
@@ -884,6 +885,11 @@ func (h *Handlers) buildBackupZip() ([]byte, error) {
 			// megabytes, and a restore heals it from the source URL the preview
 			// cache still holds.
 			if info.Name() == previewImageDirName && filepath.Dir(path) == dataDir {
+				return filepath.SkipDir
+			}
+			// Jellyfin posters: the same decoration, back from the server on
+			// the next draw.
+			if info.Name() == jellyfinImageDirName && filepath.Dir(path) == dataDir {
 				return filepath.SkipDir
 			}
 			// The app-icon set mirrors and their cached icons: all of it comes

@@ -185,6 +185,8 @@
             if (isDoneToday()) return false;
             if (isSnoozed()) return false;
             if (dash()?.health?.isEnabled?.() === false) return false;
+            // The weekly digest offers the same links; on its day it goes first.
+            if (await global.DigestNotice?.holdsTheWeek?.()) return false;
             const counts = await reviewCounts();
             if (!counts || counts.total < MIN_TO_OFFER) return false;
             lastCounts = counts;

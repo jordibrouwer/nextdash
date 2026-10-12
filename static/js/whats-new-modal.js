@@ -149,116 +149,123 @@
         return String(html || '').replace(/<[^>]*>/g, '').trim().length;
     }
 
-    function renderItem({ badge, text, keys }, isKeys, { section, index } = {}) {
-        if (isKeys) {
-            return `
-                <li class="wn-entry wn-entry--keys">
-                    <span class="wn-keycap">${keys || ''}</span>
-                    <span class="wn-entry-title">${text}</span>
-                </li>
-            `;
-        }
-        const { title, body } = splitItemText(text);
-        const isFix = badge !== 'new';
-        // A dot instead of a chip: the badge cost seven characters of an
-        // already narrow column, and on a green accent its colour was the same
-        // as the version tag beside it. Filled means new, hollow means a fix,
-        // and the word is still there for anyone who cannot see the difference.
-        const badgeLabel = isFix
-            ? wnTranslate('dashboard.whatsNewBadgeFix', 'fix')
-            : wnTranslate('dashboard.whatsNewBadgeNew', 'new');
-        const folded = plainTextLength(body) > ITEM_BODY_FOLD_CHARS;
-        const bodyHtml = body
-            ? `<div class="wn-entry-body${folded ? ' is-folded' : ''}" data-wn-entry-body>${body}</div>`
-            : '';
-        const moreHtml = folded
-            ? `<button type="button" class="wn-entry-more" data-wn-entry-more
-                    aria-expanded="false">${wnTranslate('dashboard.whatsNewItemMore', 'more')}</button>`
-            : '';
-        return `
-            <li class="wn-entry wn-entry--${isFix ? 'fix' : 'new'}" data-wn-kind="${isFix ? 'fix' : 'new'}"${index === undefined ? '' : ` data-wn-sec="${index}"`}>
-                <span class="wn-badge${isFix ? ' wn-badge--fix' : ' wn-badge--new'}">${badgeLabel}</span>
-                <div class="wn-entry-main">
-                    ${section ? `<span class="wn-entry-section">${section}</span>` : ''}
-                    <div class="wn-entry-title">${title}</div>
-                    ${bodyHtml}
-                    ${moreHtml}
-                </div>
-            </li>
-        `;
-    }
-
-    function renderSections(sections, { anchors = false, offset = 0 } = {}) {
-        return (sections || []).map(({ title, items, kind }, i) => {
-            const index = i + offset;
-            const isKeys = kind === 'keys';
-            const count = (items || []).length;
-            const anchor = anchors ? ` data-wn-section="${index}"` : '';
-            return `
-            <section class="wn-group${isKeys ? ' wn-group--keys' : ''}"${anchor}>
-                <h4 class="wn-group-title">
-                    <span>${title}</span>
-                    <span class="wn-group-count" aria-hidden="true">${count}</span>
-                </h4>
-                <ul class="wn-entries">
-                    ${(items || []).map((item) => renderItem(item, isKeys)).join('')}
-                </ul>
-            </section>
-        `;
-        }).join('');
+    function escapeAttr(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
     }
 
     /*
-     * A release as a digest: what is new up top, the fixes underneath.
+     * An item's title and explanation.
      *
-     * Read as one list per section, a release made the reader work through a
-     * block of prose per change before reaching the next, and the new things
-     * sat between the fixes in whatever order the sections came. New changes
-     * are what someone opens this for, so they come first as cards with their
-     * explanation; a fix is mostly answered by its title, so the fixes follow
-     * as one line each with the explanation one click away. Shortcuts keep
-     * their own group, since a key is a different kind of thing.
-     *
-     * Every entry carries the index of the section it came from, which is what
-     * the section menu filters on.
+     * A release can give an item a short `title` of its own: the bold lead of
+     * the text is often a whole sentence, which is too long to headline a
+     * spotlight or a digest. The short title then stands in for the bold
+     * lead, which said the same thing at length; a text that is all lead
+     * stays whole as the explanation.
      */
-    function renderDigest(sections) {
-        const list = sections || [];
-        const added = [];
-        const fixed = [];
-        const keyGroups = [];
-        list.forEach((section, index) => {
-            if (section.kind === 'keys') {
-                keyGroups.push({ section, index });
-                return;
-            }
-            (section.items || []).forEach((item) => {
-                (item.badge === 'new' ? added : fixed).push({ item, title: section.title, index });
-            });
-        });
-        const block = (kind, label, entries, html) => `
-            <section class="wn-block wn-block--${kind}" data-wn-block>
-                <h4 class="wn-group-title">
-                    <span>${label}</span>
-                    <span class="wn-group-count" aria-hidden="true" data-wn-block-count>${entries}</span>
-                </h4>
-                ${html}
-            </section>`;
-        const parts = [];
-        if (added.length) {
-            parts.push(block('new', wnTranslate('dashboard.whatsNewBlockNew', 'new'), added.length,
-                `<ul class="wn-entries wn-cards">${added.map(({ item, title, index }) =>
-                    renderItem(item, false, { section: title, index })).join('')}</ul>`));
+    function itemParts(item) {
+        const short = String(item?.title || '').trim();
+        if (!short) return splitItemText(item?.text);
+        const raw = String(item?.text || '').trim();
+        const match = raw.match(/^<strong>[\s\S]*?<\/strong>\s*([\s\S]*)$/i);
+        if (!match || !match[1].trim()) return { title: short, body: raw };
+        // What followed the lead, as a sentence of its own.
+        const body = match[1].trim()
+            .replace(/^(?:[—–,;:-])\s*/, '')
+            .replace(/^((?:<[^>]+>)*)([a-z])/, (_, tags, ch) => tags + ch.toUpperCase());
+        return { title: short, body };
+    }
+
+    /*
+     * A button to the place the change lives, from the item's `link`: a hash
+     * route such as #config/monitoring/notifications, the same routes the
+     * search commands and deep links already use.
+     */
+    function goButtonHtml(item) {
+        const link = String(item?.link || '').trim();
+        if (!/^#[\w\-/?=&.]+$/.test(link)) return '';
+        const label = String(item?.linkLabel || '').trim()
+            || wnTranslate('dashboard.whatsNewGo', 'Show me');
+        return `<button type="button" class="wn-go" data-wn-go="${escapeAttr(link)}">${escapeAttr(label)} <span aria-hidden="true">→</span></button>`;
+    }
+
+    /** Media lives beside the release files, under media/, and nowhere else. */
+    function mediaPath(value) {
+        const path = String(value || '').trim();
+        return /^media\/[\w.-]+\.(png|jpe?g|webp|webm|mp4)$/i.test(path) ? path : '';
+    }
+
+    function prefersStill() {
+        return document.body.classList.contains('no-animations')
+            || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+    }
+
+    /*
+     * A screenshot or a short recording above a spotlight. The recording plays
+     * silently in a loop; with motion turned down, the still is shown instead.
+     */
+    function mediaHtml(media) {
+        if (!media || typeof media !== 'object') return '';
+        const image = mediaPath(media.image);
+        const video = mediaPath(media.video);
+        if (!image && !video) return '';
+        const alt = escapeAttr(media.alt || '');
+        if (video && (!image || !prefersStill())) {
+            const poster = image ? ` poster="${dataUrl(image)}"` : '';
+            return `<figure class="wn-media"><video class="wn-media-video" src="${dataUrl(video)}"${poster}
+                autoplay muted loop playsinline preload="metadata" aria-label="${alt}"></video></figure>`;
         }
-        keyGroups.forEach(({ section, index }) => {
-            parts.push(renderSections([section], { anchors: true, offset: index }));
-        });
-        if (fixed.length) {
-            parts.push(block('fix', wnTranslate('dashboard.whatsNewBlockFixed', 'fixed'), fixed.length,
-                `<ul class="wn-entries wn-fix-list">${fixed.map(({ item, title, index }) =>
-                    renderFixRow(item, { section: title, index })).join('')}</ul>`));
-        }
-        return parts.join('');
+        return `<figure class="wn-media"><img class="wn-media-img" src="${dataUrl(image)}" alt="${alt}"
+            loading="lazy" decoding="async"></figure>`;
+    }
+
+    function bodyHtml(body) {
+        if (!body) return '';
+        const folded = plainTextLength(body) > ITEM_BODY_FOLD_CHARS;
+        const more = folded
+            ? `<button type="button" class="wn-entry-more" data-wn-entry-more
+                    aria-expanded="false">${wnTranslate('dashboard.whatsNewItemMore', 'more')}</button>`
+            : '';
+        return `<div class="wn-entry-body${folded ? ' is-folded' : ''}" data-wn-entry-body>${body}</div>${more}`;
+    }
+
+    /*
+     * The change a release is about, given room: its picture, a short title,
+     * the explanation and a way to get there. Marked `highlight` in the data;
+     * the same items make up the "New in nextDash" part of the weekly digest.
+     */
+    function renderSpotlight({ item, section, index }) {
+        const { title, body } = itemParts(item);
+        const media = mediaHtml(item.media);
+        return `
+            <li class="wn-entry wn-entry--new wn-spot${media ? ' wn-spot--media' : ''}" data-wn-kind="new"
+                data-wn-sec="${index}" data-wn-section-name="${escapeAttr(section)}">
+                ${media}
+                <div class="wn-spot-text">
+                    <span class="wn-entry-section">${section}</span>
+                    <h4 class="wn-spot-title wn-entry-title">${title}</h4>
+                    ${body ? `<div class="wn-entry-body" data-wn-entry-body>${body}</div>` : ''}
+                    ${goButtonHtml(item)}
+                </div>
+            </li>`;
+    }
+
+    /** Any other new change: one row, its section in front, the detail folded. */
+    function renderNewRow({ item, section, index }) {
+        const { title, body } = itemParts(item);
+        return `
+            <li class="wn-entry wn-entry--new wn-entry--line" data-wn-kind="new"
+                data-wn-sec="${index}" data-wn-section-name="${escapeAttr(section)}">
+                <span class="wn-entry-section">${section}</span>
+                <div class="wn-entry-main">
+                    <div class="wn-entry-title">${title}</div>
+                    ${bodyHtml(body)}
+                </div>
+                ${goButtonHtml(item)}
+            </li>`;
     }
 
     /*
@@ -266,17 +273,18 @@
      * explanation opens under it on request, with the native disclosure so
      * keyboard and screen reader get it for free.
      */
-    function renderFixRow({ text }, { section, index }) {
-        const { title, body } = splitItemText(text);
+    function renderFixRow({ item, section, index }) {
+        const { title, body } = itemParts(item);
         const tag = `<span class="wn-entry-section">${section}</span>`;
+        const attrs = `data-wn-kind="fix" data-wn-sec="${index}" data-wn-section-name="${escapeAttr(section)}"`;
         if (!body) {
             return `
-                <li class="wn-entry wn-entry--fix wn-entry--row" data-wn-kind="fix" data-wn-sec="${index}">
+                <li class="wn-entry wn-entry--fix wn-entry--row" ${attrs}>
                     ${tag}<span class="wn-entry-title">${title}</span>
                 </li>`;
         }
         return `
-            <li class="wn-entry wn-entry--fix wn-entry--row" data-wn-kind="fix" data-wn-sec="${index}">
+            <li class="wn-entry wn-entry--fix wn-entry--row" ${attrs}>
                 <details class="wn-fix">
                     <summary>${tag}<span class="wn-entry-title">${title}</span></summary>
                     <div class="wn-entry-body" data-wn-entry-body>${body}</div>
@@ -284,47 +292,168 @@
             </li>`;
     }
 
-    /*
-     * The newest release, given the top of the modal.
-     *
-     * modalLead is written for every release already and used to sit in a
-     * bordered box below two other bordered boxes. It is the one sentence that
-     * says what this release was about, so it goes where a subtitle goes.
-     */
-    function renderHeadlineRelease({ tag, date, sections, modalLead }) {
-        const lead = String(modalLead || '').trim();
+    /** A group of shortcuts keeps its own block: a key is a different kind of thing. */
+    function renderKeyGroup({ title, items }, index) {
+        const rows = (items || []).map(({ text, keys }) => `
+                <li class="wn-entry wn-entry--keys">
+                    <span class="wn-keycap">${keys || ''}</span>
+                    <span class="wn-entry-title">${text}</span>
+                </li>`).join('');
         return `
-            <header class="wn-hero">
-                <div class="wn-hero-line">
-                    <h3 class="wn-hero-version">${tag}</h3>
-                    ${date ? `<p class="wn-hero-meta">${date}</p>` : ''}
-                    ${buildSectionSelectHtml(sections)}
-                </div>
-                ${lead ? `<p class="wn-hero-lead">${lead}</p>` : ''}
-            </header>
-            <div class="wn-groups">${renderDigest(sections)}</div>
-            ${buildSupportHtml()}
-        `;
+            <section class="wn-group wn-group--keys" data-wn-section="${index}"
+                data-wn-section-name="${escapeAttr(title)}" data-wn-kind="keys">
+                <h4 class="wn-group-title">
+                    <span>${title}</span>
+                    <span class="wn-group-count" aria-hidden="true">${(items || []).length}</span>
+                </h4>
+                <ul class="wn-entries">${rows}</ul>
+            </section>`;
     }
 
     /*
-     * One menu for the sections, where a row of tabs used to run off the
-     * right edge of the modal. Choosing one narrows the digest to it; the
-     * first choice shows everything again. Left out for a release with one
-     * section, where it would only repeat the heading.
+     * One release's changes: its spotlight first, the other new changes as
+     * rows under it, shortcuts in their own block, and the fixes last as one
+     * line each.
+     *
+     * `leads` is the release the modal opens on. When nothing in it is marked
+     * as a highlight its first new change stands in, so the top of the modal is
+     * never just a list; older releases only spotlight what was marked.
      */
-    function buildSectionSelectHtml(sections) {
-        const list = sections || [];
-        if (list.length < 2) return '';
-        const total = list.reduce((n, { items }) => n + (items || []).length, 0);
-        const options = list.map(({ title, items }, index) =>
-            `<option value="${index}">${title} (${(items || []).length})</option>`).join('');
-        const label = wnTranslate('dashboard.whatsNewSections', 'Sections');
+    function renderReleaseBody(sections, { leads = false } = {}) {
+        const added = [];
+        const fixed = [];
+        const keyGroups = [];
+        (sections || []).forEach((section, index) => {
+            if (section.kind === 'keys') {
+                keyGroups.push({ section, index });
+                return;
+            }
+            (section.items || []).forEach((item) => {
+                (item.badge === 'new' ? added : fixed).push({ item, section: section.title, index });
+            });
+        });
+        let spots = added.filter(({ item }) => item.highlight === true);
+        if (!spots.length && leads && added.length) spots = [added[0]];
+        const rest = added.filter((entry) => !spots.includes(entry));
+
+        const block = (kind, label, count, html) => `
+            <section class="wn-block wn-block--${kind}" data-wn-block>
+                <h4 class="wn-group-title">
+                    <span>${label}</span>
+                    <span class="wn-group-count" aria-hidden="true" data-wn-block-count>${count}</span>
+                </h4>
+                ${html}
+            </section>`;
+        const parts = [];
+        if (spots.length) {
+            parts.push(`
+            <section class="wn-block wn-block--spot" data-wn-block>
+                <ul class="wn-entries wn-spots">${spots.map(renderSpotlight).join('')}</ul>
+            </section>`);
+        }
+        if (rest.length) {
+            const label = spots.length
+                ? wnTranslate('dashboard.whatsNewBlockAlsoNew', 'also new')
+                : wnTranslate('dashboard.whatsNewBlockNew', 'new');
+            parts.push(block('new', label, rest.length,
+                `<ul class="wn-entries wn-lines">${rest.map(renderNewRow).join('')}</ul>`));
+        }
+        keyGroups.forEach(({ section, index }) => parts.push(renderKeyGroup(section, index)));
+        if (fixed.length) {
+            parts.push(block('fix', wnTranslate('dashboard.whatsNewBlockFixed', 'fixed'), fixed.length,
+                `<ul class="wn-entries wn-fix-list">${fixed.map(renderFixRow).join('')}</ul>`));
+        }
+        return parts.join('');
+    }
+
+    function countKinds(sections) {
+        let added = 0;
+        let fixed = 0;
+        (sections || []).forEach((section) => {
+            if (section.kind === 'keys') return;
+            (section.items || []).forEach((item) => {
+                if (item.badge === 'new') added += 1;
+                else fixed += 1;
+            });
+        });
+        return { added, fixed };
+    }
+
+    /*
+     * A release opened in full: the newest one with the big version as its
+     * headline, and every release the reader has not seen yet under it with a
+     * smaller header and an "unread" mark.
+     *
+     * modalLead is the one sentence that says what the release was about, so
+     * it goes where a subtitle goes.
+     */
+    function renderReleaseArticle(data, { headline = false, unread = false } = {}) {
+        const { tag, date, sections } = data || {};
+        const lead = String(data?.modalLead || '').trim();
+        const head = headline
+            ? `<header class="wn-hero">
+                    <div class="wn-hero-line">
+                        <h3 class="wn-hero-version">${tag}</h3>
+                        ${date ? `<p class="wn-hero-meta">${date}</p>` : ''}
+                    </div>
+                    ${lead ? `<p class="wn-hero-lead">${lead}</p>` : ''}
+                </header>`
+            : `<header class="wn-rel-head">
+                    <h3 class="wn-rel-version">${tag}</h3>
+                    ${date ? `<span class="wn-rel-date">${date}</span>` : ''}
+                    ${unread ? `<span class="wn-rel-unread">${wnTranslate('dashboard.whatsNewUnread', 'unread')}</span>` : ''}
+                </header>
+                ${lead ? `<p class="wn-rel-lead">${lead}</p>` : ''}`;
         return `
-            <select class="wn-section-select" data-wn-section-select aria-label="${label}">
-                <option value="">${wnTranslate('dashboard.whatsNewAllSections', 'All sections')} (${total})</option>
-                ${options}
-            </select>`;
+            <article class="wn-rel${headline ? ' wn-rel--headline' : ''}" data-wn-rel="${escapeAttr(tag)}"${unread ? ' data-wn-unread' : ''}>
+                ${head}
+                <div class="wn-groups">${renderReleaseBody(sections, { leads: headline })}</div>
+            </article>`;
+    }
+
+    /*
+     * What changed since the reader was last here, counted, when that is more
+     * than the one release the modal leads with. Someone who skipped three
+     * releases used to see only the newest; the ones between were a row each
+     * in Earlier that nobody opened.
+     */
+    function buildSinceHtml(releases) {
+        if (releases.length < 2) return '';
+        const totals = releases.reduce((sum, data) => {
+            const { added, fixed } = countKinds(data.sections);
+            return { added: sum.added + added, fixed: sum.fixed + fixed };
+        }, { added: 0, fixed: 0 });
+        return `
+            <p class="wn-since" data-wn-since>${wnTranslate(
+                'dashboard.whatsNewSince',
+                'Since your last visit: <strong>{releases} releases</strong>, {added} new and {fixed} fixed.',
+                { releases: releases.length, added: totals.added, fixed: totals.fixed }
+            )}</p>`;
+    }
+
+    /*
+     * One row of chips over every release that is open: all, only what is
+     * new, or one section. Left out when there is nothing to narrow.
+     */
+    function buildFilterHtml(releases) {
+        const names = [];
+        let total = 0;
+        releases.forEach((data) => {
+            (data.sections || []).forEach((section) => {
+                total += (section.items || []).length;
+                if (section.title && !names.includes(section.title)) names.push(section.title);
+            });
+        });
+        if (names.length < 2 && total < 4) return '';
+        const chip = (value, label, pressed = false) =>
+            `<button type="button" class="wn-chip" data-wn-filter-value="${escapeAttr(value)}" aria-pressed="${pressed}">${label}</button>`;
+        return `
+            <div class="wn-filter" role="group" data-wn-filter
+                aria-label="${escapeAttr(wnTranslate('dashboard.whatsNewSections', 'Sections'))}">
+                ${chip('', wnTranslate('dashboard.whatsNewFilterAll', 'All'), true)}
+                ${chip('kind:new', wnTranslate('dashboard.whatsNewFilterNew', 'New only'))}
+                ${names.length > 1 ? names.map((name) => chip(`sec:${name}`, name)).join('') : ''}
+            </div>`;
     }
 
     /*
@@ -356,45 +485,86 @@
     }
 
     /*
-     * The section menu, on the headline release only. It acts on the rendered
-     * digest: nothing is fetched or re-rendered.
+     * The open releases: the newest, then every unread one, then the support
+     * card. The filter and the "since your last visit" line sit above them.
      */
-    function bindHeadlineControls(root) {
-        const select = root?.querySelector('[data-wn-section-select]');
-        if (!select) return;
-        // The headline's own groups only: an older release opened below is
-        // drawn with the same markup, and its section numbers are its own.
-        const scope = root.querySelector(':scope > .wn-groups');
-        if (!scope) return;
-        select.addEventListener('change', () => {
-            const pick = select.value;
-            scope.querySelectorAll('[data-wn-sec]').forEach((li) => {
-                li.hidden = pick !== '' && li.getAttribute('data-wn-sec') !== pick;
+    function renderOpenReleases(releases) {
+        const [first, ...unread] = releases;
+        return `
+            ${buildSinceHtml(releases)}
+            ${buildFilterHtml(releases)}
+            ${renderReleaseArticle(first, { headline: true })}
+            ${unread.map((data) => renderReleaseArticle(data, { unread: true })).join('')}
+            ${buildSupportHtml()}
+        `;
+    }
+
+    /*
+     * The chips act on what is drawn: nothing is fetched or re-rendered. A
+     * release opened from Earlier is left alone; its rows are its own.
+     */
+    function bindFilter(root) {
+        const bar = root?.querySelector('[data-wn-filter]');
+        if (!bar) return;
+        bar.addEventListener('click', (event) => {
+            const chip = event.target.closest('[data-wn-filter-value]');
+            if (!chip) return;
+            bar.querySelectorAll('[data-wn-filter-value]').forEach((el) => {
+                el.setAttribute('aria-pressed', String(el === chip));
             });
-            scope.querySelectorAll('[data-wn-block]').forEach((block) => {
-                const shown = [...block.querySelectorAll('[data-wn-sec]')].filter((li) => !li.hidden).length;
-                block.hidden = shown === 0;
-                const count = block.querySelector('[data-wn-block-count]');
-                if (count) count.textContent = String(shown);
-            });
-            scope.querySelectorAll('[data-wn-section]').forEach((group) => {
-                group.hidden = pick !== '' && group.getAttribute('data-wn-section') !== pick;
+            const value = chip.getAttribute('data-wn-filter-value') || '';
+            const keep = (el) => {
+                if (!value) return true;
+                if (value === 'kind:new') return el.getAttribute('data-wn-kind') === 'new';
+                return `sec:${el.getAttribute('data-wn-section-name')}` === value;
+            };
+            root.querySelectorAll(':scope > .wn-rel').forEach((rel) => {
+                rel.querySelectorAll('li[data-wn-kind], .wn-group--keys').forEach((el) => {
+                    el.hidden = !keep(el);
+                });
+                rel.querySelectorAll('[data-wn-block]').forEach((block) => {
+                    const shown = [...block.querySelectorAll('li[data-wn-kind]')].filter((li) => !li.hidden).length;
+                    block.hidden = shown === 0;
+                    const count = block.querySelector('[data-wn-block-count]');
+                    if (count) count.textContent = String(shown);
+                });
+                rel.hidden = !rel.querySelector('li[data-wn-kind]:not([hidden]), .wn-group--keys:not([hidden])');
             });
             root.closest('.modal-body')?.scrollTo({ top: 0 });
         });
     }
 
     /*
+     * "Show me": close the notes and go where the change lives, through the
+     * same hash routes a deep link uses.
+     */
+    function bindGoButtons(root) {
+        root?.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-wn-go]');
+            if (!button || !root.contains(button)) return;
+            const link = button.getAttribute('data-wn-go') || '';
+            window.nextdashTrack?.('whats-new:go');
+            window.AppModal?.hide();
+            setTimeout(() => {
+                if (window.location.hash === link) {
+                    window.dispatchEvent(new HashChangeEvent('hashchange'));
+                } else {
+                    window.location.hash = link;
+                }
+            }, 0);
+        });
+    }
+
+    /*
      * An older release, opened from the list at the bottom.
      *
-     * Same body as the headline release without the hero -- the row it unfolds
-     * from already carries the tag and the date, and repeating them under the
-     * row that names them is the kind of doubling this redesign is removing.
+     * Same body as the open releases without the header -- the row it unfolds
+     * from already carries the tag and the date.
      */
-    function renderRelease({ tag, date, sections }) {
+    function renderRelease({ tag, sections }) {
         return `
-            <div class="wn-release" data-wn-release="${tag}">
-                <div class="wn-groups">${renderDigest(sections)}</div>
+            <div class="wn-release" data-wn-release="${escapeAttr(tag)}">
+                <div class="wn-groups">${renderReleaseBody(sections)}</div>
             </div>
         `;
     }
@@ -743,14 +913,48 @@
         `;
     }
 
-    function buildShellHtml(manifestEntries, headlineHtml) {
+    function buildShellHtml(earlierEntries, openHtml) {
         return `
             <div class="wn-content" data-wn-content tabindex="-1">
-                ${headlineHtml || ''}
-                ${buildEarlierHtml(manifestEntries.slice(1))}
+                ${openHtml || ''}
+                ${buildEarlierHtml(earlierEntries)}
                 ${buildFooterHtml()}
             </div>
         `;
+    }
+
+    /*
+     * At most this many releases open in full. Someone back after months gets
+     * the newest ones open and the rest as rows in Earlier, rather than a
+     * modal that takes an afternoon to scroll.
+     */
+    const MAX_OPEN_RELEASES = 6;
+
+    /** The release the reader last closed this modal on, as a tag, or ''. */
+    function readLastSeenTag() {
+        let token = window.DiscoverabilityState?.getLastWhatsNewRelease?.() || '';
+        if (!token) {
+            try {
+                token = localStorage.getItem(STORAGE_KEY) || '';
+            } catch {
+                token = '';
+            }
+        }
+        const match = String(token).match(/v\d+(?:\.\d+)+$/);
+        return match ? match[0] : '';
+    }
+
+    /*
+     * The releases to open: the newest, and every release after the one the
+     * reader last saw. A browser that never saw any gets only the newest --
+     * a new install has nothing to catch up on.
+     */
+    function pickOpenReleases(visible, lastSeenTag) {
+        if (!lastSeenTag) return visible.slice(0, 1);
+        const unread = visible.filter((entry) => compareReleaseTags(entry.tag || entry.id, lastSeenTag) > 0);
+        const open = unread.length ? unread : visible.slice(0, 1);
+        if (open[0] !== visible[0]) open.unshift(visible[0]);
+        return open.slice(0, MAX_OPEN_RELEASES);
     }
 
     /*
@@ -851,6 +1055,9 @@
         const onClose = typeof options.onClose === 'function' ? options.onClose : null;
         const onAbort = typeof options.onAbort === 'function' ? options.onAbort : null;
         const releaseToken = getReleaseToken();
+        // Read before anything marks this release seen: it decides which
+        // releases open in full.
+        const lastSeenTag = readLastSeenTag();
 
         if (!window.AppModal) {
             onAbort?.();
@@ -988,7 +1195,12 @@
                     ));
                     return;
                 }
-                return fetchRelease(visible[0].id).then((first) => {
+                const open = pickOpenReleases(visible, lastSeenTag);
+                // The newest has to load; an unread one that does not is
+                // left to its row in Earlier.
+                return Promise.all(open.map((entry, i) => (i === 0
+                    ? fetchRelease(entry.id)
+                    : fetchRelease(entry.id).catch(() => null)))).then((loaded) => {
                     if (!stillOurs()) {
                         return;
                     }
@@ -996,7 +1208,10 @@
                     if (!textEl) {
                         return;
                     }
-                    textEl.innerHTML = buildShellHtml(visible, renderHeadlineRelease(first));
+                    const shown = loaded.filter(Boolean);
+                    const shownIds = new Set(open.filter((_, i) => loaded[i]).map((entry) => entry.id));
+                    const earlier = visible.filter((entry) => !shownIds.has(entry.id));
+                    textEl.innerHTML = buildShellHtml(earlier, renderOpenReleases(shown));
                     liftFooter();
                     textEl.querySelector('.wn-content')?.removeAttribute('aria-busy');
                     const contentRoot = textEl.querySelector('[data-wn-content]');
@@ -1004,7 +1219,8 @@
                         contentRoot.focus({ preventScroll: true });
                     }
                     bindItemFolds(contentRoot);
-                    bindHeadlineControls(contentRoot);
+                    bindFilter(contentRoot);
+                    bindGoButtons(contentRoot);
                     bindEarlierList(contentRoot, sessionId);
                     // The shell replaced everything the skeleton had, footer
                     // included, so the live status bar has to be put back into

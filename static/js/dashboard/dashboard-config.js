@@ -63,6 +63,7 @@ class DashboardConfig {
         'widgets',
         'containers',
         'unraid',
+        'monitoring',
         'status-page',
         'stats',
         'help',
@@ -105,10 +106,32 @@ class DashboardConfig {
             datasetKey: 'dashboardConfigLogs',
             ready: () => window.DashboardConfigLogsReady === true,
         },
+        /*
+         * The widget editor, and the one panel that is more than a table of
+         * settings: Jellyfin's connect-then-choose flow, in a file of its own so
+         * the editor does not grow by a service at a time.
+         */
         widgets: {
-            file: 'js/dashboard/dashboard-config-widgets.js',
-            datasetKey: 'dashboardConfigWidgets',
-            ready: () => window.DashboardConfigWidgetsReady === true,
+            chain: [
+                {
+                    file: 'js/dashboard/dashboard-config-widgets.js',
+                    datasetKey: 'dashboardConfigWidgets',
+                    ready: () => window.DashboardConfigWidgetsReady === true,
+                },
+                {
+                    file: 'js/dashboard/dashboard-config-widget-jellyfin.js',
+                    datasetKey: 'dashboardConfigWidgetJellyfin',
+                    ready: () => window.DashboardConfigJellyfinReady === true,
+                },
+                {
+                    file: 'js/dashboard/dashboard-config-widget-catalogue.js',
+                    datasetKey: 'dashboardConfigWidgetCatalogue',
+                    ready: () => window.DashboardConfigWidgetCatalogueReady === true,
+                },
+            ],
+            ready: () => window.DashboardConfigWidgetsReady === true
+                && window.DashboardConfigJellyfinReady === true
+                && window.DashboardConfigWidgetCatalogueReady === true,
         },
         /*
          * Appearance's Background and Surface tabs, the theme browser built
@@ -178,7 +201,7 @@ class DashboardConfig {
      * be worth a second look. Cleared when the release is no longer recent,
      * for the same reason as the twinkle above.
      */
-    static NEW_SECTIONS = ['structure', 'containers', 'unraid', 'status-page'];
+    static NEW_SECTIONS = ['widgets', 'monitoring', 'status-page'];
 
     static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
 
@@ -245,6 +268,8 @@ class DashboardConfig {
         this._finders = null;
         // Behavior sub-tab, remembered the same way.
         this._behaviorTab = DashboardConfig.readRememberedTab('behavior') || 'general';
+        // Monitoring sub-tab, remembered the same way.
+        this._monitoringTab = DashboardConfig.readRememberedTab('monitoring') || 'checks';
         // Inbox sub-tab, remembered the same way.
         this._inboxTab = DashboardConfig.readRememberedTab('inbox') || 'collecting';
         // Containers sub-tab, remembered the same way.
@@ -432,6 +457,9 @@ class DashboardConfig {
         if (raw === 'config/behavior/display') return 'appearance';
         // Date & weather moved to Appearance; old links follow it there.
         if (raw === 'config/behavior/datetime') return 'appearance';
+        // Status & alerts left Behavior for a section of its own.
+        if (DashboardConfig.MONITORING_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)]
+            && raw.startsWith('config/behavior/')) return 'monitoring';
         if (raw === 'config') return 'overview';
         // Pages & tags was renamed when its Tags tab moved to Bookmarks. Links
         // handed out before that still name the old section, and a link that
@@ -464,8 +492,15 @@ class DashboardConfig {
         if (raw === 'config/behavior/layout') return 'layout';
         if (raw === 'config/behavior/display') return 'display';
         if (raw === 'config/behavior/datetime') return 'datetime';
+        // Same move as sectionFromHash above: the tab it lands on now.
+        if (raw.startsWith('config/behavior/')) {
+            const moved = DashboardConfig.MONITORING_FROM_BEHAVIOR[raw.slice('config/behavior/'.length)];
+            if (moved) return moved;
+        }
         // Branding lived on Display, then moved to Header with the browser tab.
         if (raw === 'config/appearance/branding') return 'header';
+        // Widgets → Types listed every kind; the Catalogue draws them now.
+        if (raw === 'config/widgets/types') return 'catalogue';
         // Same move as sectionFromHash above: the tab it lands on now.
         if (raw === 'config/data-backups/logs') return 'server';
         // Tags left Pages & tags for Bookmarks; an old link to it lands on the
@@ -543,6 +578,7 @@ class DashboardConfig {
     static get SUB_TABS() {
         return {
             behavior: DashboardConfig.BEHAVIOR_TABS,
+            monitoring: DashboardConfig.MONITORING_TABS,
             'structure': DashboardConfig.PT_TABS,
             appearance: DashboardConfig.APPEARANCE_TABS,
             stats: DashboardConfig.STATS_TABS,
@@ -555,9 +591,6 @@ class DashboardConfig {
             // news` opened the colophon and choosing the tab never reached the
             // address bar.
             about: DashboardConfig.ABOUT_TABS,
-            // The same trap About fell into: a section in SUB_TAB_STATE but not
-            // here has a tab that cannot be addressed, so the strip works and
-            // the address bar never follows it.
             widgets: DashboardConfig.WIDGETS_TABS,
             inbox: DashboardConfig.INBOX_TABS,
             containers: DashboardConfig.CONTAINERS_TABS,
@@ -589,7 +622,7 @@ class DashboardConfig {
      */
     static REMEMBERED_TAB_KEY = 'nextdash:config-tab-v1';
 
-    static REMEMBERED_TAB_SECTIONS = ['appearance', 'behavior', 'inbox', 'containers', 'status-page', 'unraid'];
+    static REMEMBERED_TAB_SECTIONS = ['appearance', 'behavior', 'monitoring', 'inbox', 'containers', 'status-page', 'unraid'];
 
     static readRememberedTab(section) {
         try {
@@ -647,6 +680,7 @@ class DashboardConfig {
 
     static SUB_TAB_STATE = {
         behavior: 'behaviorTab',
+        monitoring: 'monitoringTab',
         about: 'aboutTab',
         'structure': 'ptTab',
         appearance: 'appearanceTab',
@@ -670,6 +704,7 @@ class DashboardConfig {
      */
     static SUB_TAB_SECTION = {
         'data-behavior-tab': 'behavior',
+        'data-monitoring-tab': 'monitoring',
         'data-pt-tab': 'structure',
         'data-appearance-tab': 'appearance',
         'data-stats-tab': 'stats',
@@ -687,6 +722,7 @@ class DashboardConfig {
     /** data-* attribute on each section's sub-tab strip buttons. */
     static SUB_TAB_ATTR = {
         behavior: 'data-behavior-tab',
+        monitoring: 'data-monitoring-tab',
         'structure': 'data-pt-tab',
         appearance: 'data-appearance-tab',
         stats: 'data-stats-tab',
@@ -896,6 +932,9 @@ class DashboardConfig {
             if (section === 'behavior' && (subTab === 'layout' || subTab === 'display')) {
                 return { section: 'appearance', subTab };
             }
+            if (section === 'behavior' && DashboardConfig.MONITORING_FROM_BEHAVIOR[subTab]) {
+                return { section: 'monitoring', subTab: DashboardConfig.MONITORING_FROM_BEHAVIOR[subTab] };
+            }
             if (subTab) {
                 const tabs = DashboardConfig.SUB_TABS[section];
                 if (!tabs?.includes(subTab)) subTab = null;
@@ -1082,6 +1121,7 @@ class DashboardConfig {
      * lazy module loads.
      */
     resolveConfigOpenTarget(explicitSection) {
+        explicitSection = this.followMovedBehaviorTab(explicitSection);
         const hash = window.location.hash;
         const hashIsGeneric = DashboardConfig.isGenericConfigHash(hash);
         const hashSection = hashIsGeneric ? null : DashboardConfig.sectionFromHash(hash);
@@ -1100,6 +1140,42 @@ class DashboardConfig {
         return targetSection;
     }
 
+    /**
+     * Behavior, when the tab just asked of it has moved to Monitoring.
+     *
+     * Callers set the tab and then open the section (`behaviorTab = 'checks'`,
+     * then `openConfigView('behavior')`); the setter has already put the tab
+     * on Monitoring, and this sends the section after it. Once: the next plain
+     * open of Behavior opens Behavior.
+     */
+    followMovedBehaviorTab(section) {
+        if (section !== 'behavior' || !this._behaviorTabMoved) return section;
+        this._behaviorTabMoved = false;
+        return 'monitoring';
+    }
+
+    /**
+     * Draw the section just routed to, once its own file is here.
+     *
+     * A section that lives in a lazy file (SECTION_MODULES) cannot be drawn
+     * before that file has run: renderSection() would call a method that does
+     * not exist yet, throw after the heading had already changed, and leave the
+     * old section's body on screen under the new name. selectSection waits for
+     * it; a hash route has to as well.
+     */
+    renderWhenSectionLoaded() {
+        const section = this.section;
+        const mod = DashboardConfig.SECTION_MODULES[section];
+        if (!mod || mod.ready()) {
+            this.render();
+            return;
+        }
+        void this.ensureSection(section).then((ok) => {
+            if (!ok || this.section !== section || !this.isActiveView()) return;
+            this.render();
+        });
+    }
+
     /** Re-apply the section from the hash while the view is already open. */
     restoreConfigSectionFromHash() {
         const hash = window.location.hash;
@@ -1111,7 +1187,7 @@ class DashboardConfig {
                 }
                 if (stored.section !== this.section) {
                     this.section = stored.section;
-                    this.render();
+                    this.renderWhenSectionLoaded();
                 } else if (stored.subTab) {
                     this.render();
                 }
@@ -1133,7 +1209,7 @@ class DashboardConfig {
             if (!this.standalone) this.saveLastConfigLocation();
             if (!DashboardConfig.subTabFromHash(hash)) this.resetExpiredTab(section);
             this.section = section;
-            this.render();
+            this.renderWhenSectionLoaded();
         } else if (tabChanged || pageChanged) {
             this.render();
         }
@@ -1527,6 +1603,43 @@ class DashboardConfig {
      * is what happened to Help — eighth of nine, and left 36px past the right
      * edge with 112px of scroll still available.
      */
+    /**
+     * The sub-tab strips scroll on one line (config-view.css); keep the active
+     * tab in view and say on which side there is more.
+     *
+     * Scrolls the strip itself, as scrollActiveNavIntoView does, so the panel
+     * behind it never moves. Run after every render; the listeners are bound
+     * once per strip, and one resize listener covers every strip on screen.
+     */
+    syncSubtabStrips(root = document) {
+        const edges = (strip) => {
+            const more = strip.scrollWidth - strip.clientWidth;
+            strip.classList.toggle('has-more-before', more > 1 && strip.scrollLeft > 1);
+            strip.classList.toggle('has-more-after', more > 1 && strip.scrollLeft < more - 1);
+        };
+        root.querySelectorAll('.config-subtabs:not(.config-structure-tabs)').forEach((strip) => {
+            const active = strip.querySelector('.is-active, [aria-selected="true"]');
+            if (active && strip.scrollWidth > strip.clientWidth) {
+                const stripRect = strip.getBoundingClientRect();
+                const tabRect = active.getBoundingClientRect();
+                if (tabRect.left < stripRect.left || tabRect.right > stripRect.right) {
+                    strip.scrollLeft += tabRect.left - stripRect.left - 24;
+                }
+            }
+            if (!strip.dataset.edgesBound) {
+                strip.dataset.edgesBound = '1';
+                strip.addEventListener('scroll', () => edges(strip), { passive: true });
+            }
+            edges(strip);
+        });
+        if (!this._subtabResizeBound) {
+            this._subtabResizeBound = true;
+            window.addEventListener('resize', () => {
+                document.querySelectorAll('.config-subtabs:not(.config-structure-tabs)').forEach(edges);
+            }, { passive: true });
+        }
+    }
+
     scrollActiveNavIntoView() {
         const nav = document.querySelector('.config-nav');
         const btn = nav?.querySelector('.config-nav-item.is-active');
@@ -1855,6 +1968,19 @@ class DashboardConfig {
                 }
                 break;
             }
+            case 'monitoring': {
+                const body = document.getElementById('config-monitoring-body');
+                if (!body) {
+                    this.render();
+                    break;
+                }
+                body.innerHTML = this.renderMonitoringBody();
+                if (container) {
+                    this.bindControlPanels(container, 'behavior');
+                    this.bindFormKeyboard(container);
+                }
+                break;
+            }
             case 'structure':
                 this.clearListKeyboardSelection();
                 this.repaintPtBody();
@@ -2031,6 +2157,7 @@ class DashboardConfig {
             inbox: ['config.sectionInbox', 'Inbox'],
             appearance: ['config.sectionAppearance', 'Appearance'],
             behavior: ['config.sectionBehavior', 'Behavior'],
+            monitoring: ['config.sectionMonitoring', 'Monitoring'],
             'data-backups': ['config.sectionDataBackups', 'Data & backups'],
             widgets: ['config.sectionWidgets', 'Widgets'],
             containers: ['config.sectionContainers', 'Containers'],
@@ -2074,6 +2201,7 @@ class DashboardConfig {
     subTabHeaderLabel(section, tab) {
         switch (section) {
             case 'behavior': return this.behaviorTabLabel?.(tab) || tab;
+            case 'monitoring': return this.monitoringTabLabel?.(tab) || tab;
             case 'structure': return this.ptTabLabel?.(tab) || tab;
             case 'appearance': return this.appearanceTabLabel?.(tab) || tab;
             case 'stats': return this.statsTabLabel?.(tab) || tab;
@@ -2201,6 +2329,9 @@ class DashboardConfig {
         if (this.section === 'behavior') {
             return { section: 'behavior', tab: this.behaviorTab };
         }
+        if (this.section === 'monitoring') {
+            return { section: 'monitoring', tab: this.monitoringTab };
+        }
         // Bookmarks → View is a tab of settings like Behavior's.
         if (this.section === 'bookmarks' && !this.standalone && this.bmTab === 'view') {
             return { section: 'bookmarks', tab: 'view' };
@@ -2239,12 +2370,58 @@ class DashboardConfig {
         // frame are the same markup on every render — rebuilding them threw away
         // the scroll position and cost a layout pass per section switch, on a
         // view whose whole job is switching sections.
+        const refocus = this.captureFocusForRender(container);
         if (this.reuseShell(container)) {
             this.afterRender(container);
+            refocus();
             return;
         }
         container.innerHTML = this.renderShell();
         this.afterRender(container);
+        refocus();
+    }
+
+    /**
+     * Hand the focus to the same control once a render has replaced it.
+     *
+     * Several sections draw again on their own when data lands -- Appearance
+     * when the colour document or the surface meta arrives -- and each of
+     * those renders replaced the focused control with a copy, leaving the
+     * focus on <body>: a settings jump that had just reached its control lost
+     * it, and the sub-tab strip stopped answering the arrow keys. Restored in
+     * the same task as the render, so no key press can fall in between.
+     *
+     * The control is found again by its id, else by a data attribute that
+     * names exactly one element in the new markup. Nothing is done when the
+     * old control survived the render, when something else has taken the
+     * focus since, or when the new markup has no such control.
+     */
+    captureFocusForRender(container) {
+        const none = () => {};
+        const el = document.activeElement;
+        if (!el || el === document.body || !container.contains(el)) return none;
+        const selectors = [];
+        if (el.id) selectors.push(`#${CSS.escape(el.id)}`);
+        const tag = el.tagName.toLowerCase();
+        for (const { name, value } of el.attributes) {
+            // Set by the binders, not by the markup: they say nothing about
+            // which control this is.
+            if (!name.startsWith('data-') || name.endsWith('-bound') || name === 'data-label' || !value) continue;
+            selectors.push(`${tag}[${name}="${CSS.escape(value)}"]`);
+        }
+        if (!selectors.length) return none;
+        return () => {
+            if (el.isConnected) return;
+            const now = document.activeElement;
+            if (now && now !== document.body) return;
+            for (const sel of selectors) {
+                const found = container.querySelectorAll(sel);
+                if (found.length === 1) {
+                    found[0].focus({ preventScroll: true });
+                    return;
+                }
+            }
+        };
     }
 
     /**
@@ -2324,6 +2501,7 @@ class DashboardConfig {
         this.trackShellHeaderHeight(container);
         this.bindSectionNav(container);
         this.syncSectionNav(this.section);
+        this.syncSubtabStrips(container);
         this.bindTileActions(container);
         if (this.section === 'overview') {
             this.bindOverviewActions(container);
@@ -2368,6 +2546,8 @@ class DashboardConfig {
             }
         } else if (this.section === 'behavior') {
             this.bindBehaviorControls(container);
+        } else if (this.section === 'monitoring') {
+            this.bindMonitoringControls(container);
         } else if (this.section === 'structure') {
             this.bindPagesTags(container);
         } else if (this.section === 'bookmarks') {
@@ -2429,7 +2609,7 @@ class DashboardConfig {
 
     /** Footer hint on form-heavy sections (Behavior, Appearance, …). */
     bindFormKeyboardLegend(container) {
-        const formSections = new Set(['behavior', 'appearance', 'stats', 'data-backups', 'logs']);
+        const formSections = new Set(['behavior', 'monitoring', 'appearance', 'stats', 'data-backups', 'logs']);
         if (!formSections.has(this.section)) return;
         const body = container?.querySelector('#config-view-body') || document.getElementById('config-view-body');
         if (!body) return;
@@ -3382,6 +3562,7 @@ class DashboardConfig {
         { tab: 'start', titleKey: 'config.helpTipsTitle', fallback: 'Everyday keys' },
         { tab: 'config', titleKey: 'config.helpConfigTitle', fallback: 'Finding your way around config' },
         { tab: 'config', titleKey: 'config.helpBehaviorTitle', fallback: 'Behavior' },
+        { tab: 'config', titleKey: 'config.helpMonitoringConfigTitle', fallback: 'Monitoring' },
         { tab: 'appearance', titleKey: 'config.helpThemesTitle', fallback: 'Themes' },
         { tab: 'appearance', titleKey: 'config.helpHeaderTitle', fallback: 'Header & action buttons' },
         { tab: 'appearance', titleKey: 'config.helpAppearanceTitle', fallback: 'Grid, display & date' },
@@ -3403,6 +3584,7 @@ class DashboardConfig {
         { tab: 'health', titleKey: 'config.helpHealthTitle', fallback: 'Availability & health' },
         { tab: 'monitoring', titleKey: 'config.helpHealthStatsTitle', fallback: 'Uptime, trends & statistics' },
         { tab: 'monitoring', titleKey: 'config.helpNotificationsTitle', fallback: 'Alerts & notifications' },
+        { tab: 'monitoring', titleKey: 'config.helpDigestTitle', fallback: 'Weekly digest' },
         // These three render on the Inbox tab, not on Health — jumping to one
         // used to land a tab away from the thing it named.
         { tab: 'inbox', titleKey: 'config.helpInboxTitle', fallback: 'Inbox' },
@@ -3438,6 +3620,7 @@ class DashboardConfig {
     subTabLabel(section, tab) {
         switch (section) {
             case 'behavior': return this.behaviorTabLabel(tab);
+            case 'monitoring': return this.monitoringTabLabel(tab);
             case 'structure': return this.ptTabLabel(tab);
             case 'appearance': return this.appearanceTabLabel(tab);
             case 'stats': return this.statsTabLabel(tab);
@@ -3528,6 +3711,7 @@ class DashboardConfig {
         uptimeBadges: ['badge', 'svg', 'readme', 'embed', 'image', 'uptime', 'status'],
         quietHoursEnabled: ['quiet', 'night', 'sleep', 'hold', 'mute', 'alert', 'notification', 'summary'],
         remindersEnabled: ['remind', 'reminder', 'escalate', 'escalation', 'repeat', 'still down', 'alert'],
+        digestEnabled: ['digest', 'weekly', 'summary', 'report', 'monday', 'broken', 'updates', 'unused'],
         healthAutoRecheckIntervalHours: ['uptime', 'monitor', 'health', 'interval', 'recheck'],
         inboxViewFilter: ['inbox', 'filter', 'unread', 'opens'],
         inboxViewSort: ['inbox', 'sort', 'order', 'newest', 'oldest'],
@@ -4261,6 +4445,9 @@ class DashboardConfig {
         }
         if (this.section === 'behavior') {
             return this.renderBehavior();
+        }
+        if (this.section === 'monitoring') {
+            return this.renderMonitoring();
         }
         if (this.section === 'structure') {
             return this.renderPagesTags();
@@ -5507,6 +5694,13 @@ class DashboardConfig {
                     return;
                 }
             }
+            if (target.monitoringTab && target.section === 'monitoring') {
+                this.monitoringTab = target.monitoringTab;
+                if (this.section === 'monitoring') {
+                    this.render();
+                    return;
+                }
+            }
             // Pages & tags has its own strip too, and was the one section a
             // spotlight could name a tab for and not reach it.
             if (target.ptTab && target.section === 'structure') {
@@ -5579,6 +5773,7 @@ class DashboardConfig {
     /* ── Section navigation ────────────────────────────────────────────────── */
 
     selectSection(section, via = 'click') {
+        section = this.followMovedBehaviorTab(section);
         if (!DashboardConfig.SECTIONS.includes(section) || section === this.section) {
             return;
         }
@@ -12844,6 +13039,14 @@ class DashboardConfig {
         feedsEnabled: { info: ['feedsInfoTitle', 'feedsInfoMessage'], def: false },
         feedsMarkQuiet: { info: ['feedsMarkQuietInfoTitle', 'feedsMarkQuietInfoMessage'], def: false },
         healthAutoRecheckIntervalHours: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 24 },
+        // Weekly digest (digest.go)
+        digestEnabled: { info: ['digestEnabledInfoTitle', 'digestEnabledInfoMessage'], def: true },
+        digestWeekday: { def: 1 },
+        digestTime: { def: '08:00' },
+        digestHealth: { def: true },
+        digestUpdates: { def: true },
+        digestUsage: { def: true },
+        digestNews: { def: true },
         // Containers
         dockerViewEnabled: { def: true },
         dockerRefreshSeconds: { def: 5 },
@@ -14226,7 +14429,28 @@ class DashboardConfig {
             },
             {
                 section: 'behavior',
-                tab: 'status',
+                tab: 'fresh',
+                title: t('config.feedsTitle', 'Fresh'),
+                demoLocked: true,
+                note: t('config.feedsNote', 'A bookmark whose page advertises a feed can say how much it has published since you last opened it — a small count on the row, and a Fresh collection. Switching it on looks for feeds on the pages you have saved, then asks each one, hourly, with a conditional request a quiet site answers in a few hundred bytes. Off by default, because it is the one feature here that talks to other people\'s servers on your behalf.'),
+                controls: [
+                    { ...bool('feedsEnabled', 'config.feedsEnabledLabel', 'Show what is new since you last looked'), special: 'feeds' },
+                    // Off by default on purpose: most rows with a feed are
+                    // silent most of the time, and a mark on twenty of them is
+                    // the noise Fresh exists to avoid. For the reader who would
+                    // rather see who is taking part than ask one row at a time.
+                    { ...bool('feedsMarkQuiet', 'config.feedsMarkQuietLabel', 'Mark rows that publish, even when nothing is new'), special: 'render' },
+                    // Most bookmarks have no feed, so an empty Fresh is the
+                    // normal state and looks exactly like a broken feature.
+                    // This line is the difference: it says how many pages have
+                    // been asked and how many of them publish anything at all.
+                    { type: 'action', label: t('config.feedsCoverageLabel', 'Feeds found'),
+                      button: t('config.feedsFindNow', 'Find feeds now'), action: 'findFeeds' },
+                ],
+            },
+            {
+                section: 'monitoring',
+                tab: 'checks',
                 title: t('config.statusBrowserChecksTitle', 'Checks in this browser'),
                 demoLocked: true,
                 note: t('config.statusBrowserChecksNote', 'How the dashboard tests the bookmarks on screen while you have it open. Applies to bookmarks set to Periodic or Monitor; a bookmark set to Off is never tested.'),
@@ -14246,42 +14470,8 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
-                tab: 'status',
-                title: t('config.monitorEmphasisTitle', 'Monitored bookmarks on the dashboard'),
-                note: t('config.monitorEmphasisNote', 'How much a monitored bookmark stands out among the others. A monitor that is down is always marked, whichever you pick — this chooses how visible the healthy ones are.'),
-                appliesTo: t('config.appliesToMonitorOnly', 'Monitor only'),
-                controls: [
-                    {
-                        field: 'monitorEmphasis',
-                        type: 'cards',
-                        // Body attribute only, so it needs `chrome` — `render`
-                        // redraws the rows but never rewrites <body>.
-                        special: 'chrome',
-                        label: t('config.monitorEmphasisLabel', 'Emphasis'),
-                        options: [
-                            {
-                                value: 'problems',
-                                label: t('config.monitorEmphasisProblems', 'Only when there is a problem'),
-                                body: t('config.monitorEmphasisProblemsBody', 'A healthy monitor looks like any other bookmark. Only an outage draws the eye.'),
-                            },
-                            {
-                                value: 'always',
-                                label: t('config.monitorEmphasisAlways', 'Always stand out'),
-                                body: t('config.monitorEmphasisAlwaysBody', 'Every monitored bookmark gets its own accent edge, so you can see at a glance what you are watching.'),
-                            },
-                            {
-                                value: 'never',
-                                label: t('config.monitorEmphasisNever', 'Never stand out'),
-                                body: t('config.monitorEmphasisNeverBody', 'Monitoring stays entirely in the Health view. The dashboard shows no marking at all, not even for an outage.'),
-                            },
-                        ],
-                    },
-                ],
-            },
-            {
-                section: 'behavior',
-                tab: 'status',
+                section: 'monitoring',
+                tab: 'checks',
                 title: t('config.statusServerChecksTitle', 'Checks on the server'),
                 demoLocked: true,
                 note: t('config.statusServerChecksNote', 'Re-tests bookmarks on the server, so the Health view stays current without anyone having the dashboard open. On by default; it makes outbound requests, so switch it off if you would rather it did not.'),
@@ -14339,37 +14529,42 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
-                tab: 'fresh',
-                title: t('config.feedsTitle', 'Fresh'),
-                demoLocked: true,
-                note: t('config.feedsNote', 'A bookmark whose page advertises a feed can say how much it has published since you last opened it — a small count on the row, and a Fresh collection. Switching it on looks for feeds on the pages you have saved, then asks each one, hourly, with a conditional request a quiet site answers in a few hundred bytes. Off by default, because it is the one feature here that talks to other people\'s servers on your behalf.'),
+                section: 'monitoring',
+                tab: 'checks',
+                title: t('config.monitorEmphasisTitle', 'Monitored bookmarks on the dashboard'),
+                note: t('config.monitorEmphasisNote', 'How much a monitored bookmark stands out among the others. A monitor that is down is always marked, whichever you pick — this chooses how visible the healthy ones are.'),
+                appliesTo: t('config.appliesToMonitorOnly', 'Monitor only'),
                 controls: [
-                    { ...bool('feedsEnabled', 'config.feedsEnabledLabel', 'Show what is new since you last looked'), special: 'feeds' },
-                    // Off by default on purpose: most rows with a feed are
-                    // silent most of the time, and a mark on twenty of them is
-                    // the noise Fresh exists to avoid. For the reader who would
-                    // rather see who is taking part than ask one row at a time.
-                    { ...bool('feedsMarkQuiet', 'config.feedsMarkQuietLabel', 'Mark rows that publish, even when nothing is new'), special: 'render' },
-                    // Most bookmarks have no feed, so an empty Fresh is the
-                    // normal state and looks exactly like a broken feature.
-                    // This line is the difference: it says how many pages have
-                    // been asked and how many of them publish anything at all.
-                    { type: 'action', label: t('config.feedsCoverageLabel', 'Feeds found'),
-                      button: t('config.feedsFindNow', 'Find feeds now'), action: 'findFeeds' },
+                    {
+                        field: 'monitorEmphasis',
+                        type: 'cards',
+                        // Body attribute only, so it needs `chrome` — `render`
+                        // redraws the rows but never rewrites <body>.
+                        special: 'chrome',
+                        label: t('config.monitorEmphasisLabel', 'Emphasis'),
+                        options: [
+                            {
+                                value: 'problems',
+                                label: t('config.monitorEmphasisProblems', 'Only when there is a problem'),
+                                body: t('config.monitorEmphasisProblemsBody', 'A healthy monitor looks like any other bookmark. Only an outage draws the eye.'),
+                            },
+                            {
+                                value: 'always',
+                                label: t('config.monitorEmphasisAlways', 'Always stand out'),
+                                body: t('config.monitorEmphasisAlwaysBody', 'Every monitored bookmark gets its own accent edge, so you can see at a glance what you are watching.'),
+                            },
+                            {
+                                value: 'never',
+                                label: t('config.monitorEmphasisNever', 'Never stand out'),
+                                body: t('config.monitorEmphasisNeverBody', 'Monitoring stays entirely in the Health view. The dashboard shows no marking at all, not even for an outage.'),
+                            },
+                        ],
+                    },
                 ],
             },
             {
-                section: 'behavior',
-                tab: 'status',
-                title: t('config.generalGroupMonitorNotify', 'Downtime alerts'),
-                note: t('config.statusAlertsNote', 'Posts to a webhook when a monitored bookmark goes down and again when it recovers. Only monitored bookmarks raise alerts — Periodic flags a broken link in the Health view but never notifies.'),
-                appliesTo: t('config.appliesToMonitorOnly', 'Monitor only'),
-                controls: this.monitorNotifyControls(t, opt, { forIndex }),
-            },
-            {
-                section: 'behavior',
-                tab: 'status',
+                section: 'monitoring',
+                tab: 'schedules',
                 title: t('config.maintenanceTitle', 'Maintenance windows'),
                 note: t('config.maintenanceNote', 'Times when downtime is expected — a nightly backup, a weekly reboot. Checks still run and the heartbeat still records what happened, but failures inside a window raise no alert and do not count against uptime.'),
                 appliesTo: t('config.appliesToMonitorOnly', 'Monitor only'),
@@ -14378,8 +14573,30 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
-                tab: 'status',
+                section: 'monitoring',
+                tab: 'notifications',
+                title: t('config.generalGroupMonitorNotify', 'Downtime alerts'),
+                note: t('config.statusAlertsNote', 'Posts to a webhook when a monitored bookmark goes down and again when it recovers. Only monitored bookmarks raise alerts — Periodic flags a broken link in the Health view but never notifies.'),
+                appliesTo: t('config.appliesToMonitorOnly', 'Monitor only'),
+                controls: this.monitorNotifyControls(t, opt, { forIndex }),
+            },
+            {
+                section: 'monitoring',
+                tab: 'notifications',
+                title: t('config.pushNotifyTitle', 'Browser notifications'),
+                note: t('config.pushNotifyNote', 'Sends notifications to this browser, even when nextDash is closed. Requires HTTPS (or localhost) and permission per device.'),
+                controls: [
+                    bool('pushNotifyEnabled', 'config.pushNotifyEnabledLabel', 'Enable browser notifications'),
+                    bool('pushNotifyMonitor', 'config.pushNotifyMonitorLabel', 'Notify on downtime and recovery'),
+                    bool('pushNotifyBackup', 'config.pushNotifyBackupLabel', 'Notify on automatic backups'),
+                    bool('pushNotifyContainers', 'config.pushNotifyContainersLabel', 'Notify when a container stops, keeps restarting or turns unhealthy'),
+                    { field: 'pushNotifySubject', type: 'text', label: t('config.pushNotifySubjectLabel', 'Contact address for push services') },
+                    { type: 'pushDevice' },
+                ],
+            },
+            {
+                section: 'monitoring',
+                tab: 'schedules',
                 title: t('config.quietTitle', 'Quiet hours'),
                 note: t('config.quietNote', 'Notices that arrive in these hours are held, and one summary says what still plays and what recovered when they end. Unlike a maintenance window the downtime still counts. Outgoing webhooks always get every event.'),
                 appliesTo: t('config.appliesToAllNotices', 'Monitors, containers, Unraid, backups'),
@@ -14392,8 +14609,8 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
-                tab: 'status',
+                section: 'monitoring',
+                tab: 'notifications',
                 title: t('config.remindersTitle', 'Reminders'),
                 note: t('config.remindersNote', 'A monitor or container that is still down gets another message after a while, not a second alarm. Not during quiet hours: the summary that ends them says what is still down.'),
                 appliesTo: t('config.appliesToMonitorContainer', 'Monitors, containers'),
@@ -14415,17 +14632,36 @@ class DashboardConfig {
                 ],
             },
             {
-                section: 'behavior',
-                tab: 'status',
-                title: t('config.pushNotifyTitle', 'Browser notifications'),
-                note: t('config.pushNotifyNote', 'Sends notifications to this browser, even when nextDash is closed. Requires HTTPS (or localhost) and permission per device.'),
+                section: 'monitoring',
+                tab: 'notifications',
+                title: t('config.digestTitle', 'Weekly digest'),
+                note: t('config.digestNote', 'One message a week: links that broke, container updates and bookmarks nobody opens. Sent to your push and alert channels and shown once on the dashboard. Held until quiet hours end. Nothing is sent when there is nothing to say.'),
+                appliesTo: t('config.appliesToDigest', 'Monitors, containers, usage'),
                 controls: [
-                    bool('pushNotifyEnabled', 'config.pushNotifyEnabledLabel', 'Enable browser notifications'),
-                    bool('pushNotifyMonitor', 'config.pushNotifyMonitorLabel', 'Notify on downtime and recovery'),
-                    bool('pushNotifyBackup', 'config.pushNotifyBackupLabel', 'Notify on automatic backups'),
-                    bool('pushNotifyContainers', 'config.pushNotifyContainersLabel', 'Notify when a container stops, keeps restarting or turns unhealthy'),
-                    { field: 'pushNotifySubject', type: 'text', label: t('config.pushNotifySubjectLabel', 'Contact address for push services') },
-                    { type: 'pushDevice' },
+                    bool('digestEnabled', 'config.digestEnabledLabel', 'Send a weekly digest'),
+                    { field: 'digestWeekday', type: 'select', numeric: true, label: t('config.digestWeekdayLabel', 'On'), options: [
+                        opt(1, t('config.weekdayMon', 'Monday')), opt(2, t('config.weekdayTue', 'Tuesday')),
+                        opt(3, t('config.weekdayWed', 'Wednesday')), opt(4, t('config.weekdayThu', 'Thursday')),
+                        opt(5, t('config.weekdayFri', 'Friday')), opt(6, t('config.weekdaySat', 'Saturday')),
+                        opt(0, t('config.weekdaySun', 'Sunday')),
+                    ] },
+                    // Whole hours: there is no time control, and a digest does
+                    // not need a minute. The server reads any "HH:MM".
+                    { field: 'digestTime', type: 'select', label: t('config.digestTimeLabel', 'At'),
+                      options: Array.from({ length: 24 }, (_, hour) => {
+                          const value = `${String(hour).padStart(2, '0')}:00`;
+                          return opt(value, value);
+                      }) },
+                    bool('digestHealth', 'config.digestHealthLabel', 'Include broken links and certificates'),
+                    bool('digestUpdates', 'config.digestUpdatesLabel', 'Include container updates'),
+                    bool('digestUsage', 'config.digestUsageLabel', 'Include most opened, unused and Inbox'),
+                    bool('digestNews', 'config.digestNewsLabel', 'Include what is new in nextDash this week'),
+                    { type: 'action', action: 'showDigest',
+                      label: t('config.digestShowLabel', 'The latest digest'),
+                      button: t('config.digestShowButton', 'Show') },
+                    { type: 'action', action: 'sendDigest',
+                      label: t('config.digestTestLabel', 'Send a proof digest now'),
+                      button: t('config.digestTestButton', 'Send') },
                 ],
             },
             {
@@ -15566,6 +15802,37 @@ class DashboardConfig {
             });
         }
 
+        // The weekly digest as the dashboard shows it, without waiting for the card.
+        const showDigest = container.querySelector('[data-config-action="showDigest"]');
+        if (showDigest) {
+            showDigest.addEventListener('click', async () => {
+                const status = container.querySelector('[data-config-action-status="showDigest"]');
+                const shown = await window.DigestNotice?.openDigest?.();
+                if (status) status.textContent = shown ? '' : this.t('config.digestShowNone', 'No digest yet.');
+            });
+        }
+
+        // The weekly digest: one now, from live data, through the same channels.
+        const sendDigest = container.querySelector('[data-config-action="sendDigest"]');
+        if (sendDigest) {
+            sendDigest.addEventListener('click', async () => {
+                const status = container.querySelector('[data-config-action-status="sendDigest"]');
+                sendDigest.disabled = true;
+                try {
+                    const api = typeof window.nextDashFetch === 'function' ? window.nextDashFetch : fetch;
+                    const res = await api('/api/digest/test', { method: 'POST' });
+                    let text = this.t('config.digestTestFailed', 'Could not send the digest');
+                    if (res.status === 200) text = this.t('config.digestTestSent', 'Sent. It is on the dashboard too.');
+                    else if (res.status === 204) text = this.t('config.digestTestEmpty', 'Nothing to report right now.');
+                    if (status) status.textContent = text;
+                } catch (_) {
+                    if (status) status.textContent = this.t('config.digestTestFailed', 'Could not send the digest');
+                } finally {
+                    sendDigest.disabled = false;
+                }
+            });
+        }
+
         container.querySelectorAll('[data-config-action]').forEach((btn) => {
             const action = btn.getAttribute('data-config-action');
             if (action !== 'resetCategorySpreads') {
@@ -15866,10 +16133,27 @@ class DashboardConfig {
     // device-only switch joined privacy, which is where "what does this app do
     // on its own" is already answered.
     // The inbox's own settings moved to Config → Inbox; Fresh kept the tab.
-    static BEHAVIOR_TABS = ['general', 'search', 'fresh', 'status', 'privacy'];
+    // Status & alerts was split in two, then left for Monitoring.
+    static BEHAVIOR_TABS = ['general', 'search', 'fresh', 'privacy'];
 
     /** Behavior tabs that were folded into another one still open it. */
     static BEHAVIOR_TAB_ALIASES = { inbox: 'fresh' };
+
+    /*
+     * Monitoring: what is checked, how you hear of it, and when to keep
+     * quiet. Maintenance windows and quiet hours share a tab because both are
+     * a stretch of time set aside, the one for checks and the other for
+     * notices.
+     */
+    static MONITORING_TABS = ['checks', 'notifications', 'schedules'];
+
+    /*
+     * Behavior tabs that moved to Monitoring, and the tab each landed on.
+     * 'status' is the one before the split. Read by the hash, a saved
+     * location, a news entry and the behaviorTab setter, so an old id opens
+     * the new place from wherever it arrives.
+     */
+    static MONITORING_FROM_BEHAVIOR = { status: 'checks', checks: 'checks', notifications: 'notifications' };
 
     /**
      * Date & weather fields that need a fresh fetch rather than a redraw: each
@@ -15884,7 +16168,6 @@ class DashboardConfig {
             datetime: ['config.behaviorTabDateTime', 'Date & weather'],
             search: ['config.behaviorTabKeyboardSearch', 'Keyboard & search'],
             fresh: ['config.behaviorTabFresh', 'Fresh'],
-            status: ['config.behaviorTabStatusAlerts', 'Status & alerts'],
             privacy: ['config.behaviorTabPrivacySync', 'Privacy & sync'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
@@ -15910,9 +16193,8 @@ class DashboardConfig {
 
     renderBehaviorBody() {
         const panels = this.panelsFor('behavior', this.behaviorTab);
-        // The lead and the onboarding buttons are not settings, so they go with
-        // the full view and are dropped when only changed settings are wanted.
-        const lead = (this.behaviorTab === 'status' && !this.changedOnly) ? this.renderStatusModesLead() : '';
+        // The onboarding buttons are not settings, so they go with the full
+        // view and are dropped when only changed settings are wanted.
         // The two onboarding actions are buttons rather than settings, so they
         // cannot come from the schema; they follow the Onboarding panel on
         // Privacy & sync so the whole of onboarding sits together.
@@ -15920,10 +16202,41 @@ class DashboardConfig {
             ? this.renderOnboardingActions() : '';
         const webPanel = (this.behaviorTab === 'search' && !this.changedOnly && !String(this.settingsFilter || '').trim())
             ? this.renderWebSearchPanel() : '';
-        return lead
-            + this.renderControlPanels(panels, 'behavior')
+        return this.renderControlPanels(panels, 'behavior')
             + webPanel
             + trailing;
+    }
+
+    monitoringTabLabel(tab) {
+        const map = {
+            checks: ['config.monitoringTabChecks', 'Checks'],
+            notifications: ['config.monitoringTabNotifications', 'Notifications'],
+            schedules: ['config.monitoringTabSchedules', 'Schedules'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
+    }
+
+    renderMonitoring() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <p class="config-view-intro">${esc(this.t('config.monitoringIntro', 'How bookmarks are checked, how you hear when one goes down, and when to keep quiet. Every change applies immediately and is saved.'))}</p>
+            ${this.renderSectionTabStrip('monitoring')}
+            <div class="config-tabpage">
+                <div class="config-tabpage-main">
+                    <div id="config-monitoring-body" role="tabpanel" tabindex="0">${this.renderMonitoringBody()}</div>
+                    <div data-filter-elsewhere-host>${this.renderFilterElsewhere('monitoring')}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    renderMonitoringBody() {
+        const panels = this.panelsFor('monitoring', this.monitoringTab);
+        // The lead is not a setting, so it goes with the full view and is
+        // dropped when only changed settings are wanted.
+        const lead = (this.monitoringTab === 'checks' && !this.changedOnly) ? this.renderStatusModesLead() : '';
+        return lead + this.renderControlPanels(panels, 'behavior');
     }
 
     /**
@@ -16164,8 +16477,8 @@ class DashboardConfig {
     /**
      * The corner cards that answer once, and a way to ask for one again.
      *
-     * Each card remembers an answer in its own place: five in the synced list
-     * of promos, three in this browser's storage. Whichever it is, a card you
+     * Each card remembers an answer in its own place: three in the synced list
+     * of promos, two in this browser's storage. Whichever it is, a card you
      * waved away had no road back. Here the answered ones can be put back; the
      * card then turns up the next time its own moment comes, not at once.
      * Analytics is left out on purpose: it is an opt-in, not a hint.
@@ -16173,16 +16486,11 @@ class DashboardConfig {
     static NOTICE_CARDS = [
         { id: 'kept-pile', promo: 'kept-pile-v1', labelKey: 'config.noticeKeptPile', label: 'Kept links piling up' },
         { id: 'clock-weather', promo: 'clock-weather-v1', labelKey: 'config.noticeClockWeather', label: 'Clock and weather' },
-        { id: 'widgets-layout', promo: 'widgets-layout-try-v1', labelKey: 'config.noticeWidgetsLayout', label: 'Widgets layout' },
         { id: 'theme-browser', promo: 'theme-browser-try-v1', labelKey: 'config.noticeThemeBrowser', label: 'Theme browser' },
-        { id: 'fresh', promo: 'fresh-feeds-v1', labelKey: 'config.noticeFresh', label: 'Fresh feeds' },
-        { id: 'features', promo: 'features-overview-v1', labelKey: 'config.noticeFeatures', label: 'Feature overview' },
         { id: 'tag-suggestions', keys: ['tagSuggestionNoticeDoneOn', 'tagSuggestionNoticeSnoozeUntil', 'tagSuggestionNoticeSeenCount'],
           labelKey: 'config.noticeTagSuggestions', label: 'Tag suggestions' },
         { id: 'health-review', keys: ['nextdashHealthReviewDoneOn', 'nextdashHealthReviewSnoozeUntil'],
           labelKey: 'config.noticeHealthReview', label: 'Health review' },
-        { id: 'unchecked-bookmarks', keys: ['uncheckedBookmarksNoticeLastShownAt', 'uncheckedBookmarksNoticeDeclineCount', 'uncheckedBookmarksNoticeDismissedForever'],
-          labelKey: 'config.noticeUnchecked', label: 'Unchecked bookmarks' },
     ];
 
     /** Whether a card has been answered, snoozed or silenced. */
@@ -16325,6 +16633,26 @@ class DashboardConfig {
         });
         this.bindControlPanels(container, 'behavior');
         this.bindBehaviorActions(container);
+        this.bindFilterElsewhere(container);
+        this.bindFormKeyboard(container);
+    }
+
+    bindMonitoringControls(container) {
+        this.bindSubTabStrip(container, 'data-monitoring-tab', (tab) => {
+            if (tab === this.monitoringTab) return;
+            this.monitoringTab = tab;
+            this.restoreConfigHash();
+            const body = document.getElementById('config-monitoring-body');
+            if (!body) { this.render(); return; }
+            body.innerHTML = this.renderMonitoringBody();
+            this.syncSubTabStrip('data-monitoring-tab', this.monitoringTab);
+            this.repaintFilterElsewhere('monitoring');
+            this._fillShellHeadFromSection(document.getElementById('dashboard-layout') || document);
+            this.bindControlPanels(container, 'behavior');
+            this.bindFormKeyboard(container);
+            this.bindFormKeyboardLegend(container);
+        });
+        this.bindControlPanels(container, 'behavior');
         this.bindFilterElsewhere(container);
         this.bindFormKeyboard(container);
     }
@@ -16658,8 +16986,30 @@ class DashboardConfig {
     }
 
     set behaviorTab(tab) {
+        // A tab that left for Monitoring is set there instead, and Behavior
+        // keeps the tab it had: opening Behavior next sends the reader on
+        // (see the section setter).
+        const moved = DashboardConfig.MONITORING_FROM_BEHAVIOR[tab];
+        if (moved) {
+            this.monitoringTab = moved;
+            // Already on Behavior (the tab set after the open): the caller's
+            // render draws Monitoring.
+            if (this.section === 'behavior') this.section = 'monitoring';
+            else this._behaviorTabMoved = true;
+            return;
+        }
+        this._behaviorTabMoved = false;
+        // An old id ('inbox') opens the tab that holds those settings now.
+        tab = DashboardConfig.BEHAVIOR_TAB_ALIASES[tab] || tab;
         this._behaviorTab = tab;
         DashboardConfig.rememberTab('behavior', tab);
+    }
+
+    get monitoringTab() { return this._monitoringTab; }
+
+    set monitoringTab(tab) {
+        this._monitoringTab = tab;
+        DashboardConfig.rememberTab('monitoring', tab);
     }
 
     /**
@@ -16683,6 +17033,11 @@ class DashboardConfig {
      * branch of a tab dispatcher is a sentence nobody finds again.
      */
     static SECTION_TAB_NOTES = {
+        widgets: {
+            'widgets': ['config.widgetsNoteWidgets', 'The widgets on each page: show or hide them, rename them, and change what they count.'],
+            'catalogue': ['config.widgetsNoteCatalogue', 'Every kind nextDash can draw, with example figures. Add one to the page you are on.'],
+            'custom': ['config.widgetsNoteCustom', 'Read a figure out of any service that answers JSON, and show it as a tile.'],
+        },
         bookmarks: {
             /*
              * No note for the List tab, as Health's All has none: it cost a
@@ -16763,17 +17118,17 @@ class DashboardConfig {
     renderSectionTabStrip(section) {
         const esc = (v) => this.dash.escapeHtml(v);
         const isAppearance = section === 'appearance';
-        const current = isAppearance ? this.appearanceTab : this.behaviorTab;
+        const current = this[DashboardConfig.SUB_TAB_STATE[section]];
         const owner = isAppearance ? (DashboardConfig.APPEARANCE_SUBPAGES[current] || current) : current;
-        const tabs = (isAppearance ? DashboardConfig.APPEARANCE_TABS : DashboardConfig.BEHAVIOR_TABS)
+        const tabs = DashboardConfig.SUB_TABS[section]
             .filter((tab) => !(isAppearance && DashboardConfig.APPEARANCE_SUBPAGES[tab]));
-        const attr = isAppearance ? 'data-appearance-tab' : 'data-behavior-tab';
+        const attr = DashboardConfig.SUB_TAB_ATTR[section];
         const buttons = tabs.map((tab) => {
             const active = tab === owner;
             const isNew = DashboardConfig.NEW_THIS_RELEASE.section === section
                 && tab === DashboardConfig.NEW_THIS_RELEASE.tab;
             const stars = isNew ? this.renderNewFeaturesPanelStars() : '';
-            const label = isAppearance ? this.appearanceTabLabel(tab) : this.behaviorTabLabel(tab);
+            const label = this.subTabLabel(section, tab);
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}${isNew ? ' config-subtab--animated' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-${section}-body" ${attr}="${esc(tab)}">${esc(label)}${stars}</button>`;
         }).join('');
         return `<div class="config-subtabs" role="tablist">${buttons}</div>`;
@@ -16855,6 +17210,10 @@ class DashboardConfig {
                     void this.switchAppearanceTab(tab);
                 } else if (this.section === 'inbox') {
                     this.inboxTab = tab;
+                    this.restoreConfigHash();
+                    this.render();
+                } else if (this.section === 'monitoring') {
+                    this.monitoringTab = tab;
                     this.restoreConfigHash();
                     this.render();
                 } else {
@@ -17077,8 +17436,18 @@ class DashboardConfig {
         // panels never got it.
         const restoreFocus = this.captureControlPanelFocus();
         if (this.section === 'appearance') this.repaintAppearancePreview();
-        if (this.section === 'appearance' || this.section === 'behavior' || this.section === 'inbox') {
+        if (['appearance', 'behavior', 'monitoring', 'inbox'].includes(this.section)) {
             this.repaintFilterElsewhere(this.section);
+        }
+        if (this.section === 'monitoring') {
+            const body = document.getElementById('config-monitoring-body');
+            if (body) {
+                body.innerHTML = this.renderMonitoringBody();
+                this.bindControlPanels(container, 'behavior');
+                this.labelSettingsControls();
+                restoreFocus();
+            }
+            return;
         }
         if (this.section === 'behavior') {
             const body = document.getElementById('config-behavior-body');
@@ -17290,6 +17659,7 @@ class DashboardConfig {
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'notes']],
+        ['media', ['jellyfin']],
     ];
 
     renderPagesTags() {
@@ -19371,8 +19741,18 @@ class DashboardConfig {
 
     /* ── Categories (native, per page) ─────────────────────────────────────── */
 
-    /** The two halves of the Widgets section: the ones you have, and the kinds. */
-    static WIDGETS_TABS = ['widgets', 'types'];
+
+    /*
+     * The width of the Widgets section, in px, from which the list and the
+     * opened widget sit side by side. Measured against the section rather than
+     * the window: Config gives it about 890px in a 1280px window and 1080px in
+     * a 1500px one, and the list needs about 380px of that before a detail
+     * beside it leaves the row titles room to read.
+     */
+    static WIDGETS_WIDE_MIN = 960;
+
+    /** Config → Widgets: the ones you have, every kind there is, and the Custom one at length. */
+    static WIDGETS_TABS = ['widgets', 'catalogue', 'custom'];
 
     /** Config → Inbox: what is collected, the list, the side panel and clicks, the header icon. */
     static INBOX_TABS = ['collecting', 'list', 'panel', 'icon'];
@@ -19428,7 +19808,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /*
@@ -19656,6 +20036,31 @@ class DashboardConfig {
               label: ['config.widgetRows', 'Rows to show'],
               hint: ['config.widgetRssRowsHint',
                      'What is past this count folds into a “more” row that opens in place.'] },
+        ],
+        jellyfin: [
+            { key: 'layout', kind: 'choice', label: ['config.widgetJellyfinLayout', 'Layout'],
+              options: [
+                  ['list', ['config.widgetJellyfinLayoutList', 'List with posters']],
+                  ['strip', ['config.widgetJellyfinLayoutStrip', 'Poster strip, a tab per library']],
+                  ['hero', ['config.widgetJellyfinLayoutHero', 'Newest large, the rest as a list']],
+                  ['grid', ['config.widgetJellyfinLayoutGrid', 'Poster grid']],
+              ] },
+            { key: 'click', kind: 'choice', label: ['config.widgetJellyfinClick', 'A click'],
+              options: [
+                  ['open', ['config.widgetJellyfinClickOpen', 'Opens it in Jellyfin']],
+                  ['detail', ['config.widgetJellyfinClickDetail', 'Shows details here first']],
+              ] },
+            { key: 'target', kind: 'choice', label: ['config.widgetJellyfinTarget', 'Open in'],
+              options: [
+                  ['inherit', ['config.widgetJellyfinTargetInherit', 'Same as other links']],
+                  ['_blank', ['config.widgetJellyfinTargetBlank', 'A new tab']],
+                  ['_self', ['config.widgetJellyfinTargetSelf', 'This tab']],
+              ] },
+            { key: 'hideWatched', kind: 'bool', label: ['config.widgetJellyfinHideWatched', 'Hide what was watched'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetJellyfinRows', 'Items to show'],
+              hint: ['config.widgetJellyfinRowsHint', 'In the strip, per library.'] },
+            { key: 'ttl', kind: 'int', min: 60, max: 3600,
+              label: ['config.widgetJellyfinTtl', 'Ask Jellyfin every (seconds)'] },
         ],
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
@@ -26746,6 +27151,9 @@ class DashboardConfig {
         'config.helpNotificationsTitle': [
             { tab: 'health', panel: 'health', labelKey: 'config.helpHealthTitle', label: 'Availability & health' },
         ],
+        'config.helpDigestTitle': [
+            { tab: 'monitoring', panel: 'notifications', labelKey: 'config.helpNotificationsTitle', label: 'Alerts & notifications' },
+        ],
         'config.helpBmPanelTitle': [
             { tab: 'health', panel: 'health', labelKey: 'config.helpHealthTitle', label: 'Availability & health' },
         ],
@@ -26930,7 +27338,7 @@ class DashboardConfig {
             { kind: 'keys', value: ['Shift + S', 'Esc'], captionKey: 'config.helpArtConfigKeys', caption: 'In and out' },
         ],
         'config.helpBehaviorTitle': [
-            { kind: 'panelMap', value: 'tabs', captionKey: 'config.helpArtBehaviorTabs', caption: 'Five sub-tabs' },
+            { kind: 'panelMap', value: 'tabs', captionKey: 'config.helpArtBehaviorTabs', caption: 'Four tabs' },
             {
                 kind: 'toggles', value: [true, false, true],
                 captionKey: 'config.helpArtSavesInstantly', caption: 'Saved the moment you change it',
@@ -27290,6 +27698,20 @@ class DashboardConfig {
         ],
         // The page a visitor gets: a service that works and one that is down,
         // the two states the panel's prose keeps returning to.
+        // Monitoring is a section of three tabs, which is the whole article.
+        'config.helpMonitoringConfigTitle': [
+            { kind: 'panelMap', value: 'tabs', captionKey: 'config.helpArtMonitoringTabs', caption: 'Three tabs' },
+        ],
+        'config.helpDigestTitle': [
+            {
+                kind: 'flow',
+                value: [
+                    { k: 'config.helpArtDigestWeek', d: 'A week' },
+                    { k: 'config.helpArtDigestOne', d: 'One message' },
+                    { k: 'config.helpArtYourDevices', d: 'Your devices' },
+                ],
+            },
+        ],
         'config.helpStatusPageTitle': [
             {
                 kind: 'states',
@@ -27445,11 +27867,15 @@ class DashboardConfig {
     static HELP_PANEL_FEATURES = {
         'config.helpHealthTitle': {
             isOn: (s) => s.showStatus === true || s.healthAutoRecheckEnabled === true,
-            go: { section: 'behavior', behaviorTab: 'status' },
+            go: { section: 'monitoring', monitoringTab: 'checks' },
         },
         'config.helpNotificationsTitle': {
             isOn: (s) => s.monitorNotifyEnabled === true,
-            go: { section: 'behavior', behaviorTab: 'status' },
+            go: { section: 'monitoring', monitoringTab: 'notifications' },
+        },
+        'config.helpDigestTitle': {
+            isOn: (s) => s.digestEnabled !== false,
+            go: { section: 'monitoring', monitoringTab: 'notifications' },
         },
         'config.helpStatsPrivacyTitle': {
             isOn: (s) => s.analyticsOptIn === true,
@@ -27563,7 +27989,9 @@ class DashboardConfig {
         return this.helpPanel('config.helpConfigTitle', 'Finding your way around config',
             'config.helpConfigBody', '')
             + this.helpPanel('config.helpBehaviorTitle', 'Behavior',
-                'config.helpBehaviorBody', '');
+                'config.helpBehaviorBody', '')
+            + this.helpPanel('config.helpMonitoringConfigTitle', 'Monitoring',
+                'config.helpMonitoringConfigBody', '');
     }
 
     /**
@@ -27741,11 +28169,13 @@ class DashboardConfig {
                 </div>`)
             + this.helpPanel('config.helpNotificationsTitle', 'Alerts & notifications',
                 'config.helpNotificationsBody', '')
+            + this.helpPanel('config.helpDigestTitle', 'Weekly digest',
+                'config.helpDigestBody', '')
             + this.helpPanel('config.helpStatusPageTitle', 'The status page',
                 'config.helpStatusPageBody',
                 '<p>One page behind a secret link, for your household and friends: which services work, since when one is down, planned maintenance and 30 days of history. No accounts, and visitors can only read. Light or dark and the language follow their device.</p>'
                 + '<p><strong>What a visitor sees.</strong> Your title and notice, then your groups. Per service: the public name you gave it, its state, <em>Down since 14:03</em> while it is down, 30 day bars with the uptime percentage, and planned maintenance of the groups you linked. A link to the service and its response time only when you tick <strong>Link</strong> and <strong>Speed</strong>. Never error details, container images, internal addresses or anything else of your dashboard.</p>'
-                + '<p><strong>Setting it up.</strong> In Config → Status page, tick <strong>Turn the status page on</strong>, then <strong>Copy</strong> the link or scan the QR code. Under <strong>Groups and services</strong>, add a group and <strong>+ Add service</strong>: the picker lists monitored bookmarks and containers. A bookmark linked to a container is offered as one service, and the worse of the two counts. Under <strong>Maintenance shown on the page</strong>, tick the groups each window belongs to; the windows themselves live in Behavior → Status &amp; alerts.</p>'
+                + '<p><strong>Setting it up.</strong> In Config → Status page, tick <strong>Turn the status page on</strong>, then <strong>Copy</strong> the link or scan the QR code. Under <strong>Groups and services</strong>, add a group and <strong>+ Add service</strong>: the picker lists monitored bookmarks and containers. A bookmark linked to a container is offered as one service, and the worse of the two counts. Under <strong>Maintenance shown on the page</strong>, tick the groups each window belongs to; the windows themselves live in Monitoring → Schedules.</p>'
                 + '<p><strong>Who can open it.</strong> Anyone with the link. <strong>New link…</strong> stops the old one at once. <strong>Only from the home network</strong> keeps it inside your house.</p>')
             + this.helpPanel('config.helpStatusPageShareTitle', 'Sharing the status page safely',
                 'config.helpStatusPageShareBody',

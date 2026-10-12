@@ -44,7 +44,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
 
 **Keeping it current and tidy.** Image update checks run on an interval and show the release notes behind an update. Skip a version, hold a container, or let nextDash update it in a nightly window: each update is watched for five minutes and rolled back when the container stops, loops or turns unhealthy. The **Disk** tab shows what images, volumes, build cache and bind mounts take up, and clears it after naming what goes.
 
-**On the dashboard.** A homelab page can carry the **Containers** and **Container list** widgets, **Uptime**, **Certificates**, **Health**, **Processor**, **Memory** and **Disks**, seven **Unraid** widgets (overview, array, parity, shares, VMs, UPS and notifications) that read the server through its API, and a **Custom widget** that reads Sonarr, Plex, Pi-hole, Proxmox, Home Assistant and 36 more services — next to the bookmarks for all of them.
+**On the dashboard.** A homelab page can carry the **Containers** and **Container list** widgets, **Uptime**, **Certificates**, **Health**, **Processor**, **Memory** and **Disks**, seven **Unraid** widgets (overview, array, parity, shares, VMs, UPS and notifications) that read the server through its API, a **Jellyfin** widget that shows what was added lately with the posters from your own library, and a **Custom widget** that reads Sonarr, Plex, Pi-hole, Proxmox, Home Assistant and 36 more services — next to the bookmarks for all of them.
 
 <table border="0" width="100%">
   <tr>
@@ -287,7 +287,7 @@ More is on the way: deeper Unraid integration is being worked on for future vers
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-unraid-config.jpg" alt="Config: Unraid" width="100%" />
       <br />
-      <sub><b>One connection</b> <i>(Nordic Frost)</i> — Config → Unraid explains itself: nextDash and the server with data running between them, three steps ticked off as they are done, and the seven widgets in miniature, each with an Add that opens it in Widgets → Types.</sub>
+      <sub><b>One connection</b> <i>(Nordic Frost)</i> — Config → Unraid explains itself: nextDash and the server with data running between them, three steps ticked off as they are done, and the seven widgets in miniature, each with an Add that opens it in Widgets → Catalogue.</sub>
     </td>
   </tr>
 </table>
@@ -426,13 +426,13 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - Health lives in the **Bookmarks view**: filters for broken, stale, duplicated, unchecked and changed, a Health tab in the side panel, and Work through to clear a pile — broken, changed, stale, never opened — one bookmark at a time, each with the reason it is there. **Collection health** (Overview, Monitors, Trend) covers the whole collection; open one bookmark's own **Health in Large** for its uptime, response time, status codes and every check, with CSV export. *[Health and monitoring](MANUAL.md#11-the-bookmarks-view)*
 - **Uptime monitoring** with 30 days of history, response times, outages, certificate expiry, expected-response checks and drift detection. *[Manual §11.8](MANUAL.md#118-collection-health)*
 - **A status page** for the people who use your services: a read-only page behind a secret link with your groups of services, whether each one works, since when one is down, planned maintenance and 30 days of history. It shows no error details or internal addresses, refreshes itself every minute and follows the visitor’s language and light or dark. *[Manual §12.8](MANUAL.md#128-the-status-page)*
-- Alerts to Slack, Discord, Telegram, Gotify, ntfy, Pushover, Apprise (and from there mail, Matrix, Signal and a hundred more), a JSON receiver or your browser, with maintenance windows, quiet hours with one summary at the end, reminders for an outage that goes on, and per-bookmark muting. *[Manual §12.4](MANUAL.md#124-alerts)*
+- Alerts to Slack, Discord, Telegram, Gotify, ntfy, Pushover, Apprise (and from there mail, Matrix, Signal and a hundred more), a JSON receiver or your browser, with maintenance windows, quiet hours with one summary at the end, reminders for an outage that goes on, per-bookmark muting, and a weekly digest of what broke, what can be updated and what nobody opens. *[Manual §12.4](MANUAL.md#124-alerts)*
 - **Fresh** shows which bookmarked sites published something new. *[Manual §12.6](MANUAL.md#126-fresh)*
 - Keep a copy of a page on your own disk or in the Web Archive. *[Manual §12.7](MANUAL.md#127-keeping-a-copy-of-a-page)*
 
 **Widgets**
 
-- Thirty kinds: health, uptime, certificates, trend, inbox, Unsorted, feeds, sources, neglected, blind spots, duplicates, archive, trash, backups, processor, memory, disks, containers, container list, weather, calendar, RSS and **Notes** (Markdown with checkboxes and slash commands), and seven that read an **Unraid** server through its API — an overview, the array, parity, shares, VMs, UPS and its notifications — set up once under **Config → Unraid**. A row on the Unsorted or containers widget opens the Bookmarks or Containers view on it. *[Manual §15](MANUAL.md#15-widgets)*
+- Thirty-one kinds: health, uptime, certificates, trend, inbox, Unsorted, feeds, sources, neglected, blind spots, duplicates, archive, trash, backups, processor, memory, disks, containers, container list, weather, calendar, RSS, **Jellyfin** (what was added lately, with the posters from your library) and **Notes** (Markdown with checkboxes and slash commands), and seven that read an **Unraid** server through its API — an overview, the array, parity, shares, VMs, UPS and its notifications — set up once under **Config → Unraid**. A row on the Unsorted or containers widget opens the Bookmarks or Containers view on it. *[Manual §15](MANUAL.md#15-widgets)*
 - A widget set to two columns says more rather than the same thing larger: the load behind the processor's percentage, the container failing by name, the expiry date of a certificate, what the weather feels like. One column keeps the important half. *[Manual §15.2](MANUAL.md#152-adding-and-arranging)*
 - A **Custom widget** reads any service that answers with JSON, with 41 self-hosted services filled in — Sonarr, Plex, Pi-hole, Proxmox, Home Assistant, Uptime Kuma, Beszel and more — each tested against the service's recorded answer. *[Manual §15.5](MANUAL.md#155-the-custom-widget)*
 

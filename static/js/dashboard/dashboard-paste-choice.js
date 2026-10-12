@@ -7,6 +7,9 @@ class DashboardPasteChoice {
         this.overlay = null;
         this.pendingUrl = '';
         this._keydownHandler = null;
+        this._previewAbort = null;
+        this._previewTimer = 0;
+        this._previewSeq = 0;
     }
 
     t(key, fallback, params) {
@@ -97,6 +100,26 @@ class DashboardPasteChoice {
                     </div>
                     <div class="modal-body">
                         <div class="paste-choice-url" id="paste-choice-url" aria-live="polite"></div>
+                        <!--
+                            What the link is, while the choice is still open.
+                            Filled from /api/bookmark-preview, the same answer
+                            the hover card draws; the picture is the local
+                            copy under /data/preview-images/, never the remote
+                            address. Hidden when there is nothing to show.
+                        -->
+                        <div class="paste-choice-preview" id="paste-choice-preview" hidden>
+                            <div class="paste-choice-preview-text">
+                                <div class="paste-choice-preview-head">
+                                    <img class="paste-choice-preview-fav" alt="" decoding="async" hidden>
+                                    <span class="paste-choice-preview-domain"></span>
+                                </div>
+                                <div class="paste-choice-preview-title"></div>
+                                <div class="paste-choice-preview-desc"></div>
+                            </div>
+                            <div class="paste-choice-preview-thumb" hidden>
+                                <img alt="" decoding="async">
+                            </div>
+                        </div>
                         <p class="paste-choice-lead" id="paste-choice-lead"></p>
                         <!--
                             The two marks are the app's own: the plus the Add
@@ -200,6 +223,7 @@ class DashboardPasteChoice {
         }
         this.overlay.classList.add('show');
         this.overlay.setAttribute('aria-hidden', 'false');
+        this.loadPreview(url);
         this._keydownHandler = (e) => {
             if (!this.overlay?.classList.contains('show')) {
                 return;
@@ -230,10 +254,102 @@ class DashboardPasteChoice {
         this.overlay.classList.remove('show');
         this.overlay.setAttribute('aria-hidden', 'true');
         this.pendingUrl = '';
+        this.resetPreview();
         if (this._keydownHandler) {
             document.removeEventListener('keydown', this._keydownHandler, true);
             this._keydownHandler = null;
         }
+    }
+
+    /*
+     * Stop whatever preview is in flight and empty the card.
+     *
+     * The sequence number is what keeps a slow answer out of the wrong modal:
+     * aborting covers the fetch, but not a response already being parsed, and
+     * not the one-shot refill timer.
+     */
+    resetPreview() {
+        this._previewSeq += 1;
+        this._previewAbort?.abort();
+        this._previewAbort = null;
+        window.clearTimeout(this._previewTimer);
+        this._previewTimer = 0;
+        const box = this.overlay?.querySelector('#paste-choice-preview');
+        if (box) {
+            box.hidden = true;
+            box.classList.remove('is-loading');
+        }
+    }
+
+    async fetchPreview(url, seq) {
+        const controller = new AbortController();
+        this._previewAbort = controller;
+        try {
+            const response = await dashFetch(
+                `/api/bookmark-preview?url=${encodeURIComponent(url)}`,
+                { signal: controller.signal }
+            );
+            if (!response.ok) return null;
+            const preview = await response.json();
+            return seq === this._previewSeq ? preview : null;
+        } catch {
+            return null;
+        }
+    }
+
+    async loadPreview(url) {
+        this.resetPreview();
+        const seq = this._previewSeq;
+        const box = this.overlay?.querySelector('#paste-choice-preview');
+        if (!box || !/^https?:\/\//i.test(url)) return;
+        this.paintPreview(box, { url }, { loading: true });
+        const preview = await this.fetchPreview(url, seq);
+        if (seq !== this._previewSeq) return;
+        if (!this.paintPreview(box, preview)) return;
+        // The picture is fetched in the background on the first ask, so the
+        // first answer often names a source and no file yet. Ask once more,
+        // as the hover card does; never on a loop.
+        const helper = this.dash.preview;
+        if (helper?.previewMediaPending?.(preview)) {
+            this._previewTimer = window.setTimeout(async () => {
+                const fresh = await this.fetchPreview(url, seq);
+                if (fresh && seq === this._previewSeq) this.paintPreview(box, fresh);
+            }, 1200);
+        }
+    }
+
+    /** Draws the card; returns false when there is nothing worth showing. */
+    paintPreview(box, preview, { loading = false } = {}) {
+        const helper = this.dash.preview;
+        const decode = (v) => String(helper?.decodeEntities?.(v || '') ?? v ?? '').trim();
+        const title = loading ? '' : decode(preview?.title);
+        const desc = loading ? '' : decode(preview?.description);
+        const image = loading ? '' : (helper?.resolvePreviewImageSrc?.(preview?.image) || '');
+        if (!loading && !title && !desc && !image) {
+            box.hidden = true;
+            box.classList.remove('is-loading');
+            return false;
+        }
+        box.classList.toggle('is-loading', loading);
+        const domain = loading ? '' : (decode(preview?.siteName)
+            || String(preview?.domain || '').trim());
+        box.querySelector('.paste-choice-preview-domain').textContent = domain;
+        box.querySelector('.paste-choice-preview-title').textContent = title;
+        box.querySelector('.paste-choice-preview-desc').textContent = desc;
+
+        const fav = box.querySelector('.paste-choice-preview-fav');
+        const icon = loading ? '' : (helper?.resolvePreviewIconSrc?.(preview?.icon) || '');
+        fav.hidden = !icon;
+        if (icon) fav.src = icon;
+        else fav.removeAttribute('src');
+
+        const thumb = box.querySelector('.paste-choice-preview-thumb');
+        const img = thumb.querySelector('img');
+        thumb.hidden = !loading && !image;
+        if (image) img.src = image;
+        else img.removeAttribute('src');
+        box.hidden = false;
+        return true;
     }
 
     choose(destination) {

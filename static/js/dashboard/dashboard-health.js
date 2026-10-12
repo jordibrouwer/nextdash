@@ -883,31 +883,29 @@ class DashboardHealth {
     }
 
     /**
-     * Open Config → Behavior → Status & health.
+     * Open Config → Monitoring → Checks.
      *
-     * The subtab is set before the section opens, because Behavior's tab strip
-     * has no switch-to method of its own — it reads `behaviorTab` as it
-     * renders, which is the same order handleOverviewGo uses to reach this
-     * exact tab. Setting it afterwards would render General first and then
-     * jump, or not move at all when Config was already open.
+     * The section opens first and the tab is set after: the loader proxies
+     * openConfigView, so the real module -- and its monitoringTab field -- may
+     * only exist once that call has resolved. Opening Monitoring cold already
+     * lands on Checks, its first tab; the render is for a reader who left it
+     * on another tab a minute ago.
      *
-     * Falls back to a plain navigation when the config module has not loaded
-     * yet, so the link works on a cold view rather than doing nothing.
+     * Falls back to the address when the config module has not loaded yet, so
+     * the link works on a cold view rather than doing nothing.
      */
     async openStatusHealthSettings() {
         window.nextdashTrack?.('health:open-settings');
         const config = this.dash.config;
         if (typeof config?.openConfigView !== 'function') {
-            window.location.href = '/config#behavior';
+            window.location.hash = 'config/monitoring/checks';
             return;
         }
-        const opened = await config.openConfigView('behavior');
+        const opened = await config.openConfigView('monitoring');
         if (!opened) return;
-        // The loader proxies openConfigView, so the real module — and its
-        // behaviorTab field — may only exist once that call has resolved.
         const mod = config.instance || config;
-        if (mod && mod.behaviorTab !== 'status') {
-            mod.behaviorTab = 'status';
+        if (mod && mod.monitoringTab !== 'checks') {
+            mod.monitoringTab = 'checks';
             mod.render?.();
         }
     }

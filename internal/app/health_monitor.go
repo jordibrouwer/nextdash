@@ -310,12 +310,15 @@ func (h *Handlers) runDueMonitors() {
 		wg.Add(1)
 		go func(t monitorTarget) {
 			defer wg.Done()
-			sem <- struct{}{}
-			defer func() { <-sem }()
+			// The host first, then a slot: a check queued behind its own host
+			// must not sit on one of the eight while it waits, or one busy host
+			// (every service on one IP) starves the checks of every other.
 			if gate := hostGate(t.url); gate != nil {
 				gate <- struct{}{}
 				defer func() { <-gate }()
 			}
+			sem <- struct{}{}
+			defer func() { <-sem }()
 
 			result := h.pingURLExpecting(ctx, t.url, t.expect)
 			// A failure is confirmed before it is believed. Same goroutine, so

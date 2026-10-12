@@ -265,6 +265,12 @@ func (s *serverLogSink) appendLine(raw string) {
 	entry := parseServerLogLine(raw)
 
 	s.mu.Lock()
+	// A line without a stamp continues the one before it -- the stack under
+	// "http: panic serving" is a dozen of them. Unstamped, it stopped the age
+	// prune at the head of the ring and nothing behind it ever expired.
+	if entry.at.IsZero() && s.count > 0 {
+		entry.at = s.buf[(s.start+s.count-1)%len(s.buf)].at
+	}
 	entry.Seq = s.next
 	s.next++
 	s.pushLocked(entry)

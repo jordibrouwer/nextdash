@@ -28,6 +28,15 @@
      */
     renderWidgetsSection() {
         const esc = (v) => this.dash.escapeHtml(v);
+        // An old link or a stored 'types' meant the list of kinds, which is
+        // the Catalogue now; anything else unknown opens on your widgets.
+        if (!DashboardConfig.WIDGETS_TABS.includes(this.widgetsTab)) {
+            this.widgetsTab = this.widgetsTab === 'types' ? 'catalogue' : 'widgets';
+        }
+        // A redraw of a section already on screen knows its width; a first
+        // paint does not, and the observer bound after it settles the layout.
+        const current = document.getElementById('config-widgets-body');
+        if (current?.clientWidth) this._widgetWide = this.widgetsWideAt(current.clientWidth);
         const tabs = DashboardConfig.WIDGETS_TABS.map((tab) => {
             const active = tab === this.widgetsTab;
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-widgets-body" data-widgets-tab="${esc(tab)}">${esc(this.widgetsTabLabel(tab))}</button>`;
@@ -36,21 +45,49 @@
             <p class="config-view-intro">${esc(this.t('config.widgetsSectionIntro',
                 'Blocks on a page that hold something other than bookmarks — what is broken, what is waiting, what has gone quiet.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
-            <div id="config-widgets-body" role="tabpanel" tabindex="0">${this.renderWidgetsTab()}</div>
+            ${this.renderSectionTabNote('widgets', this.widgetsTab)}
+            <div class="config-tabpage">
+                <div class="config-tabpage-main">
+                    <div id="config-widgets-body" role="tabpanel" tabindex="0">${this.renderWidgetsTab()}</div>
+                </div>
+            </div>
         `;
     },
 
     renderWidgetsTab() {
-        return this.widgetsTab === 'types' ? this.renderWidgetTypeReference() : this.renderWidgetsEditor();
+        if (this.widgetsTab === 'catalogue') return this.renderWidgetCatalogueTab();
+        if (this.widgetsTab === 'custom') return this.renderCustomWidgetTab();
+        return this.renderWidgetsEditor();
     },
 
     widgetsTabLabel(tab) {
         const map = {
-            widgets: ['config.widgetsTabList', 'Widgets'],
-            types: ['config.widgetsTabTypes', 'Types'],
+            widgets: ['config.widgetsTabList', 'Your widgets'],
+            catalogue: ['config.widgetsTabCatalogue', 'Catalogue'],
+            custom: ['config.widgetsTabCustom', 'Custom widget'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
         return this.t(key, fallback);
+    },
+
+    /*
+     * Switch tabs. Only the body and the line under the strip change: the
+     * strip stays, so the button just clicked keeps its focus.
+     */
+    showWidgetsTab(tab) {
+        if (!DashboardConfig.WIDGETS_TABS.includes(tab) || tab === this.widgetsTab) return;
+        this.stopCustomProbeLive();
+        this.widgetsTab = tab;
+        this.restoreConfigHash();
+        this.repaintWidgetsBody();
+        this.syncSubTabStrip('data-widgets-tab', this.widgetsTab);
+        const strip = document.querySelector('[data-widgets-tab]')?.closest('.config-subtabs');
+        this.syncSectionTabNote('widgets', this.widgetsTab, strip?.parentElement);
+    },
+
+    bindWidgetsTabs(container) {
+        if (!container.querySelector('[data-widgets-tab]')) return;
+        this.bindSubTabStrip(container, 'data-widgets-tab', (tab) => this.showWidgetsTab(tab));
     },
 
     widgetTypeGroupLabel(group) {
@@ -60,6 +97,7 @@
             system: ['config.widgetGroupSystem', 'How is this machine doing?'],
             unraid: ['config.widgetGroupUnraid', 'How is the Unraid server doing?'],
             ambient: ['config.widgetGroupAmbient', "What's happening around you?"],
+            media: ['config.widgetGroupMedia', 'What is new to watch?'],
             // Custom widgets, and anything registered but not yet catalogued,
             // land here rather than dropping out of the list entirely.
             other: ['config.widgetGroupOther', 'Built by you'],
@@ -67,34 +105,6 @@
         };
         const [key, fallback] = map[group] || [group, group];
         return this.t(key, fallback);
-    },
-
-    renderWidgetTypeReference() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        // Each row carries the button that adds it, so reading about a kind and
-        // choosing it are not two screens apart. Reference and catalogue were
-        // the same thirteen names and the same thirteen sentences, twice.
-        const row = (type) => `
-            <li class="config-widget-type-row">
-                <span class="config-widget-type-name">${esc(this.widgetTypeName(type))}</span>
-                <span class="config-widget-type-about">${esc(this.widgetTypeAbout(type))}</span>
-                <button type="button" class="config-btn config-btn--small config-widget-type-add"
-                    data-widget-add="${esc(type)}"
-                    aria-label="${esc(this.t('config.widgetsAddNamed', 'Add {name}')
-                        .replace('{name}', this.widgetTypeName(type)))}">${
-                    esc(this.t('config.widgetsAddShort', 'Add'))}</button>
-            </li>`;
-        const groups = DashboardConfig.WIDGET_TYPE_GROUPS.map(([group, types]) => `
-            <section class="config-widget-type-group">
-                <h4 class="config-widget-type-group-title">${esc(this.widgetTypeGroupLabel(group))}</h4>
-                <ul class="config-widget-type-list">${types.map(row).join('')}</ul>
-            </section>`).join('');
-
-        return `
-            <p class="config-panel-note">${esc(this.t('config.widgetTypesIntro',
-                'Every kind of widget nextDash can draw. Add one straight from this list.'))}</p>
-            ${groups}
-            ${this.renderCustomWidgetReference()}`;
     },
 
     /*
@@ -127,9 +137,9 @@
             .join(' ');
 
         return `
-            <section class="config-widget-type-group config-widget-custom-ref">
-                <h4 class="config-widget-type-group-title">${t('config.widgetGroupCustom',
-                    'And anything else: the Custom widget')}</h4>
+            <details class="config-widget-custom-ref">
+                <summary class="config-widget-custom-summary">${t('config.widgetCustomRefSummary',
+                    'What can the Custom widget do?')}</summary>
                 <p class="config-widget-custom-lead">${t('config.widgetCustomRefLead',
                     'Every widget above reads something nextDash already knows. The Custom widget reads a figure out of any service that answers JSON, so a tile can show what your own machines are doing without waiting for nextDash to grow a widget for them.')}</p>
                 <ul class="config-widget-custom-points">
@@ -167,24 +177,140 @@
                 </ul>
                 <p class="config-widget-custom-lead">${t('config.widgetCustomRefLimits',
                     'What it will not do is change anything. A tile reads, and the two methods it offers are the two that ask a question. An answer has eight seconds to arrive and is read up to a megabyte.')}</p>
-                <p class="config-widget-custom-add">
-                    <button type="button" class="config-btn config-btn--small" data-widget-add="custom">${
-                        t('config.widgetsAddNamed', 'Add {name}')
-                            .replace('{name}', esc(this.widgetTypeName('custom')))}</button>
-                </p>
-            </section>`;
+            </details>`;
     },
 
-    bindWidgetsTabs(container) {
-        this.bindSubTabStrip(container, 'data-widgets-tab', (tab) => {
-            if (tab === this.widgetsTab) return;
-            this.widgetsTab = tab;
-            this.restoreConfigHash();
-            // Only the body changes. Repainting the strip as well would rebuild
-            // the buttons under the pointer that just clicked one.
-            this.repaintWidgetsBody();
-            this.syncSubTabStrip('data-widgets-tab', this.widgetsTab);
+    /*
+     * Wide or narrow, for a section this many px across. The 40px of slack
+     * keeps a width sitting on the line from flipping back and forth: once
+     * wide, it takes a clear step under the line to go narrow again.
+     */
+    widgetsWideAt(width) {
+        const min = DashboardConfig.WIDGETS_WIDE_MIN;
+        return this._widgetWide ? width >= min - 40 : width >= min;
+    },
+
+    /*
+     * Wide or narrow, from the width the section actually has rather than the
+     * window's: the config rail and the reader's font size both take from it.
+     * Repaints only when the answer changes, so dragging a window edge is not
+     * a repaint per pixel.
+     *
+     * A full render replaces the body, so a new body is observed in place of
+     * the old one; a repaint keeps it, and is left alone.
+     */
+    observeWidgetsWidth(body) {
+        if (typeof ResizeObserver === 'undefined') return;
+        if (this._widgetsWidthObserved === body && body.isConnected) return;
+        this._widgetsWidthObserver?.disconnect();
+        this._widgetsWidthObserved = body;
+
+        const settle = (width) => {
+            const wide = this.widgetsWideAt(width);
+            if (wide === Boolean(this._widgetWide)) return;
+            this._widgetWide = wide;
+            this.repaintWidgetsKeepingFocus();
+        };
+        this._widgetsWidthObserver = new ResizeObserver(([entry]) => {
+            if (!entry || !body.isConnected) {
+                this._widgetsWidthObserver?.disconnect();
+                this._widgetsWidthObserver = null;
+                this._widgetsWidthObserved = null;
+                return;
+            }
+            settle(entry.contentRect.width);
         });
+        this._widgetsWidthObserver.observe(body);
+        // The first paint came before anything had measured the body.
+        if (body.clientWidth) settle(body.clientWidth);
+    },
+
+    /*
+     * Move between the two layouts without losing the field being typed in.
+     *
+     * The detail is drawn from the draft, so a value typed but not yet
+     * committed by a change event is put into the draft first; then the field
+     * with the same id, now in the other place, gets the focus back.
+     */
+    repaintWidgetsKeepingFocus() {
+        const active = document.activeElement;
+        const body = document.getElementById('config-widgets-body');
+        const inside = active && body?.contains(active) ? active : null;
+        if (inside) {
+            // Whatever is being typed in, committed by the same path its change
+            // event takes -- a figure's row, a sign-in field and the answer
+            // filter each keep their value somewhere else.
+            if (inside.matches('[data-widget-setting]')) {
+                this.updateWidgetDraft(Number(inside.getAttribute('data-widget-index')), inside);
+            } else if (inside.matches('[data-custom-field]')) {
+                this.updateWidgetDraftField(Number(inside.getAttribute('data-custom-index')),
+                    Number(inside.getAttribute('data-custom-row')),
+                    inside.getAttribute('data-custom-field'), inside.value);
+            } else if (inside.matches('[data-widget-auth]')) {
+                const field = inside.getAttribute('data-widget-auth');
+                if (field !== 'kind' && field !== 'shared') {
+                    this.updateWidgetAuthField(Number(inside.getAttribute('data-widget-index')), field, inside.value);
+                }
+            } else if (inside.matches('[data-custom-find]')) {
+                const state = this.customProbeState(inside.getAttribute('data-custom-find'), { create: true });
+                if (state) state.find = inside.value;
+            }
+        }
+        // By id where the field has one, else by the attributes that name it:
+        // the row title and a figure's fields have no id of their own.
+        const selector = inside?.id ? `#${CSS.escape(inside.id)}`
+            : inside ? ['data-widget', 'data-index', 'data-custom-field', 'data-custom-index',
+                'data-custom-row', 'data-widget-auth', 'data-widget-index', 'data-custom-find']
+                .filter((attr) => inside.hasAttribute(attr))
+                .map((attr) => `[${attr}="${CSS.escape(inside.getAttribute(attr))}"]`).join('')
+            : '';
+        const caret = typeof inside?.selectionStart === 'number' ? inside.selectionStart : null;
+        this.repaintWidgetsBody();
+        const again = selector ? document.querySelector(`#config-widgets-body ${selector}`) : null;
+        if (!again) return;
+        // A title is saved on change, straight to the server, so one half typed
+        // has no draft to come back from: it is carried across by hand.
+        if (inside.matches('[data-widget="title"]')) again.value = inside.value;
+        again.focus();
+        if (caret != null && typeof again.setSelectionRange === 'function') {
+            try { again.setSelectionRange(caret, caret); } catch { /* number inputs refuse */ }
+        }
+    },
+
+    /*
+     * Which widget is open is kept by id, not by index.
+     *
+     * An index is a position in _widgetBlocks, and every delete or move shifts
+     * the positions after it -- so an index kept across one opened whichever
+     * widget slid into the gap, sometimes in another group. The index the rows
+     * and handlers use is worked out from the id on every render instead.
+     */
+    widgetIndexOfId(id) {
+        if (id == null) return null;
+        const index = (this._widgetBlocks || [])
+            .findIndex((block) => block?.isWidget && String(block.id) === String(id));
+        return index < 0 ? null : index;
+    },
+
+    /** The ids of the rows on screen, in the order they are shown. */
+    shownWidgetIds() {
+        return this.widgetRowsForDisplay().flatMap((g) => g.rows.map((r) => r.block.id));
+    },
+
+    /*
+     * The widget the side panel shows: the one chosen, if it is still in the
+     * list as filtered, else the first row shown. Worked out, never stored --
+     * a search that hides the chosen one gives it back when it is cleared.
+     */
+    widgetDetailIndex(chosen) {
+        const shown = this.widgetRowsForDisplay().flatMap((g) => g.rows.map((r) => r.index));
+        if (!shown.length) return null;
+        return shown.includes(chosen) ? chosen : shown[0];
+    },
+
+    /** Whether the reader opened this widget, as opposed to the panel showing it by default. */
+    widgetIsChosen(widget) {
+        return widget?.id != null && String(widget.id) === String(this._widgetOpenId);
     },
 
     /** Redraw the widgets section without refetching what it already has. */
@@ -194,6 +320,9 @@
         body.innerHTML = this.renderWidgetsTab();
         const container = document.getElementById('dashboard-layout');
         if (container) this.bindWidgetsEditor(container);
+        // Wide, a detail is on screen without anyone pressing Settings, so the
+        // disk chips that press would have asked for are asked for here.
+        if (this._widgetWide && this.widgetsTab === 'widgets') void this.fillWidgetSuggestions();
     },
 
     /*
@@ -225,6 +354,16 @@
                 esc(this.t('config.widgetsAllPages', 'All pages'))}</option>`
             : '');
 
+        // Wide, one widget is always open beside the list: the one chosen, or
+        // the first shown while that one is hidden or gone. Marked as the open
+        // row too, so the list says which one the panel is about. Narrow, only
+        // a chosen one opens -- the default the side panel showed does not
+        // follow the reader into the narrow layout.
+        const chosen = this.widgetIndexOfId(this._widgetOpenId);
+        const detailIndex = this._widgetWide && Array.isArray(this._widgetBlocks)
+            ? this.widgetDetailIndex(chosen) : null;
+        this._widgetSettingsOpen = this._widgetWide ? detailIndex : chosen;
+
         let body;
         if (this._widgetBlocks == null) {
             body = `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
@@ -240,49 +379,60 @@
                         'No widgets on this page yet.'))}</p>
                     <p class="config-widget-empty-hint">${esc(this.t('config.widgetsEmptyHint',
                         'A widget is a block beside your categories that holds something other than bookmarks.'))}</p>
+                    <p class="config-widget-empty-hint">${esc(this.t('config.widgetsIntro',
+                        'Where each one sits is arranged under Structure → categories, together with the categories it sits between.'))}</p>
                     ${this.renderWidgetAddButton()}
                 </div>`;
             } else {
                 const renderRow = (widget, index) => {
                     const enabled = widget.config?.enabled !== false;
                     const open = this._widgetSettingsOpen === index;
+                    const name = this.widgetRowLabel(widget);
+                    /*
+                     * Two checkboxes side by side, so each says what it is.
+                     * Without names they were the same bare box twice, and the
+                     * one a reader meant as "select" was as likely to be Shown
+                     * -- which writes to the server and hides the widget.
+                     */
+                    const settingsState = this._widgetWide
+                        ? `aria-pressed="${open ? 'true' : 'false'}"`
+                        : `aria-expanded="${open ? 'true' : 'false'}" aria-controls="config-widget-settings-${index}"`;
                     return `
                 <li class="config-widget-row${open ? ' is-open' : ''}${enabled ? '' : ' is-off'}"
                     data-widget-row="${index}">
-                    <div class="config-widget-row-head">
-                        <div class="config-widget-row-identity">
-                            <label class="config-widget-row-pick"
-                                title="${esc(this.t('config.widgetsSelectRow', 'Select this widget'))}">
-                                <input type="checkbox" data-widget-pick="${esc(widget.id)}"
-                                    ${this.widgetSelection.has(widget.id) ? 'checked' : ''}>
-                            </label>
-                            <span class="config-widget-row-kind">${esc(this.widgetTypeName(widget.type))}</span>
-                            ${this.isAllPagesView() && widget.pageName
-                                ? `<span class="config-widget-row-page" title="${
-                                    esc(this.t('config.widgetsPageLabel', 'Page'))}">${
-                                    esc(widget.pageName)}</span>`
-                                : ''}
+                    <div class="config-widget-row-line">
+                        <label class="config-widget-row-pick"
+                            title="${esc(this.t('config.widgetsSelectRow', 'Select this widget'))}">
+                            <input type="checkbox" data-widget-pick="${esc(widget.id)}"
+                                aria-label="${esc(this.t('config.widgetsSelectNamed', 'Select {name}').replace('{name}', name))}"
+                                ${this.widgetSelection.has(widget.id) ? 'checked' : ''}>
+                        </label>
+                        <label class="config-toggle config-toggle--inline config-widget-row-shown"
+                            title="${esc(this.t('config.widgetsEnabledHint', 'Show this widget on the dashboard'))}">
+                            <input type="checkbox" data-widget-enabled="${index}" ${enabled ? 'checked' : ''}
+                                aria-label="${esc(this.t('config.widgetsEnabledNamed', 'Show {name} on the dashboard').replace('{name}', name))}">
+                            <span aria-hidden="true">${esc(this.t('config.widgetsEnabled', 'Shown'))}</span>
+                        </label>
+                        <div class="config-widget-row-main">
                             <input type="text" class="config-text config-widget-row-title" data-widget="title"
-                                data-index="${index}" value="${esc(widget.title || '')}"
+                                id="config-widget-title-${index}" data-index="${index}" value="${esc(widget.title || '')}"
                                 aria-label="${esc(this.t('config.widgetsTitleLabel', 'Widget title'))}"
                                 placeholder="${esc(this.widgetTypeName(widget.type))}">
+                            <span class="config-widget-row-about">${esc(this.widgetTypeAbout(widget.type))}</span>
                         </div>
-                        <div class="config-widget-row-actions">
-                            <label class="config-toggle config-toggle--inline"
-                                title="${esc(this.t('config.widgetsEnabledHint', 'Show this widget on the dashboard'))}">
-                                <input type="checkbox" data-widget-enabled="${index}" ${enabled ? 'checked' : ''}>
-                                <span>${esc(this.t('config.widgetsEnabled', 'Shown'))}</span>
-                            </label>
-                            <button type="button" class="config-btn config-btn--small" data-widget-settings="${index}"
-                                aria-expanded="${open ? 'true' : 'false'}">${esc(
-                                this.t('config.widgetsConfigure', 'Settings'))}</button>
-                            <button type="button" class="config-btn config-btn--small config-btn--danger"
-                                data-widget-delete="${index}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
-                        </div>
+                        <span class="config-widget-row-kind">${esc(this.widgetTypeName(widget.type))}</span>
+                        ${this.isAllPagesView() && widget.pageName
+                            ? `<span class="config-widget-row-page" title="${
+                                esc(this.t('config.widgetsPageLabel', 'Page'))}">${
+                                esc(widget.pageName)}</span>`
+                            : ''}
+                        <button type="button" class="config-btn config-btn--small" data-widget-settings="${index}"
+                            ${settingsState}>${esc(
+                            this.t('config.widgetsConfigure', 'Settings'))}</button>
                     </div>
-                    <p class="config-widget-row-about">${esc(this.widgetTypeAbout(widget.type))}</p>
-                    <div class="config-widget-settings" ${open ? '' : 'hidden'}>${
-                        open ? this.renderWidgetSettings(widget, index) : ''}</div>
+                    <div class="config-widget-settings" id="config-widget-settings-${index}"
+                        ${open && !this._widgetWide ? '' : 'hidden'}>${
+                        open && !this._widgetWide ? this.renderWidgetDetail(widget, index) : ''}</div>
                 </li>`;
                 };
 
@@ -350,12 +500,27 @@
                 ${canAdd ? this.renderWidgetAddButton() : ''}
             </div>` : pagePicker;
 
+        const pageName = this.isAllPagesView()
+            ? this.t('config.widgetsAllPages', 'All pages')
+            : (pages.find((p) => Number(p.id) === Number(pageId))?.name || '');
+        const panelTitle = pageName
+            ? this.t('config.widgetsOnPage', 'Widgets on {page}').replace('{page}', pageName)
+            : this.t('config.sectionWidgets', 'Widgets');
+
+        const list = `
+            <section class="config-panel config-widgets-listpanel">
+                <h3 class="config-panel-title">${esc(panelTitle)}</h3>
+                ${toolbar}
+                ${body}
+            </section>`;
+        if (detailIndex == null) return list;
         return `
-            <p class="config-panel-note">${esc(this.t('config.widgetsIntro',
-                'Where each one sits is arranged under Pages & tags → categories, together with the categories it sits between.'))}</p>
-            ${toolbar}
-            ${body}
-        `;
+            <div class="config-widgets-split">
+                ${list}
+                <section class="config-panel config-widgets-detailpanel" aria-live="polite">
+                    ${this.renderWidgetDetail(this._widgetBlocks[detailIndex], detailIndex)}
+                </section>
+            </div>`;
     },
 
     /*
@@ -657,9 +822,8 @@
         }
 
         ids.forEach((id) => this.widgetSelection.delete(id));
-        // Indices shift once a row leaves, so an open panel would land on
-        // whichever widget slid into its place.
-        this._widgetSettingsOpen = null;
+        // The open widget is held by id, so the rows that stay keep theirs and
+        // one that left this page simply has nothing to open any more.
         const pageName = (this.dash.pages || [])
             .find((page) => Number(page.id) === target)?.name || target;
         this.notify(moving.length === 1
@@ -723,7 +887,7 @@
      * theme browser answers the same question the same way, for the same
      * reason.
      */
-    openWidgetCatalogue() {
+    openWidgetCatalogue({ focusType } = {}) {
         const esc = (v) => this.dash.escapeHtml(v);
         if (!window.AppModal?.show) return;
 
@@ -737,7 +901,11 @@
             confirmText: this.t('dashboard.close', 'Close'),
             modalClass: 'modal--widget-catalogue',
             modalMaxWidth: '52rem',
-            initialFocusSelector: '[data-widget-add]',
+            // The modal moves focus itself a frame or two after it opens, so
+            // the card asked for is named here rather than focused afterwards.
+            initialFocusSelector: focusType
+                ? `[data-widget-add="${CSS.escape(focusType)}"]`
+                : '[data-widget-add]',
         });
 
         // The overlay lives outside #config-widgets-body, so the tab's
@@ -750,6 +918,11 @@
             window.AppModal.hide();
             void this.addWidget(card.getAttribute('data-widget-add') || 'health');
         });
+
+        if (focusType) {
+            root.querySelector(`[data-widget-add="${CSS.escape(focusType)}"]`)
+                ?.scrollIntoView({ block: 'center' });
+        }
     },
 
     /** The catalogue itself: every kind, grouped under the question it answers. */
@@ -773,8 +946,9 @@
                     <h4 class="config-widget-pick-group-title">${esc(this.t('config.widgetGroupCustom',
                         'And anything else: the Custom widget'))}</h4>
                     <div class="config-widget-pick-grid">${card('custom')}</div>
-                    <p class="config-widget-pick-footnote">${esc(this.t('config.widgetsAddCustomNote',
-                        'Reads a figure out of any service that answers JSON, and can start from one of the services already known. The Types tab explains what it can do.'))}</p>
+                    <p class="config-widget-pick-footnote">${esc(this.t('config.widgetsAddCustomNoteInline',
+                        'Reads a figure out of any service that answers JSON, and can start from one of the services already known.'))}</p>
+                    ${this.renderCustomWidgetReference()}
                 </section>
             </div>`;
     },
@@ -1140,7 +1314,8 @@
     repaintCustomFields(index) {
         const block = (this._widgetBlocks || [])[index];
         if (!block) return;
-        const host = document.querySelector(`[data-widget-row="${index}"]`);
+        // The detail, wherever it stands: under its row, or beside the list.
+        const host = document.querySelector(`[data-widget-detail="${index}"]`);
         const group = host?.querySelector('.config-custom-field')?.closest('.config-custom-group');
         if (!group) return;
         const active = document.activeElement;
@@ -2069,6 +2244,35 @@
             title="${esc(this.t('config.settingInfoAria', 'More info'))}">ℹ</button>`;
     },
 
+    /*
+     * One widget, opened: what it is, its settings, and the way out.
+     *
+     * Drawn by one function for both places it can appear -- under its row on
+     * a narrow screen, beside the list on a wide one -- so the two can never
+     * offer different controls.
+     */
+    renderWidgetDetail(widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const name = this.widgetRowLabel(widget);
+        return `
+            <div class="config-widget-detail" data-widget-detail="${index}">
+                <div class="config-widget-detail-head">
+                    <h4 class="config-widget-detail-title">${esc(name)}
+                        <span class="config-widget-row-kind">${esc(this.widgetTypeName(widget.type))}</span></h4>
+                    <p class="config-widget-detail-about">${esc(this.widgetTypeAbout(widget.type))}</p>
+                </div>
+                <div class="config-widget-detail-section">
+                    ${this.renderWidgetSettings(widget, index)}
+                </div>
+                <div class="config-widget-detail-foot">
+                    <span class="config-widget-detail-where">${esc(this.t('config.widgetsIntro',
+                        'Where each one sits is arranged under Structure → categories, together with the categories it sits between.'))}</span>
+                    <button type="button" class="config-btn config-btn--small config-btn--danger"
+                        data-widget-delete="${index}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
+                </div>
+            </div>`;
+    },
+
     renderWidgetSettings(stored, index) {
         const esc = (v) => this.dash.escapeHtml(v);
         const fields = DashboardConfig.WIDGET_SETTINGS[stored.type] || [];
@@ -2208,6 +2412,9 @@
                     <div class="config-widget-checkset">${boxes}</div>
                 </div>`;
         }).join('');
+        if (widget.type === 'jellyfin' && typeof this.renderJellyfinSettings === 'function') {
+            return this.renderJellyfinSettings(widget, index, rows);
+        }
         if (widget.type === 'custom') {
             /*
              * Two groups rather than one grid of six unrelated boxes.
@@ -2606,6 +2813,7 @@
             calendar: 'What is coming up, from the ICS feed set in Appearance → Date & weather.',
             rss: 'The latest articles from the feeds you give it — headlines, with the whole entry on hover.',
             notes: 'A few lines of your own, with checkboxes for the ones that are tasks.',
+            jellyfin: 'What was added to Jellyfin lately — films, series and anime, with posters.',
             unraid: 'The Unraid server at a glance: array, parity, disks, alerts, VMs and the UPS, a line each.',
             unraidArray: 'Every disk of the Unraid array: how full, how warm, and which one is in trouble.',
             unraidParity: 'The last parity check, or the one running now, with its history when wide.',
@@ -2743,6 +2951,9 @@
      */
     bindWidgetsEditor(container) {
         const body = document.getElementById('config-widgets-body') || container;
+        // Before the guard: a full render brings a fresh body to observe.
+        const section = document.getElementById('config-widgets-body');
+        if (section) this.observeWidgetsWidth(section);
         if (!body || body.dataset.widgetsDelegated === 'true') return;
         body.dataset.widgetsDelegated = 'true';
 
@@ -2765,10 +2976,23 @@
             const catalogue = target.closest('[data-widget-catalogue]');
             if (catalogue) { this.openWidgetCatalogue(); return; }
 
+            // The Catalogue's group chips narrow the cards without a refetch.
+            const kindFilter = target.closest('[data-widget-kind-filter]');
+            if (kindFilter) {
+                this.widgetKindFilter = kindFilter.getAttribute('data-widget-kind-filter') || 'all';
+                this.repaintWidgetsBody();
+                body.querySelector(`[data-widget-kind-filter="${CSS.escape(this.widgetKindFilter)}"]`)?.focus();
+                return;
+            }
+
+            // A link from one tab to another, as the strip would.
+            const goto = target.closest('[data-widgets-goto]');
+            if (goto) { this.showWidgetsTab(goto.getAttribute('data-widgets-goto')); return; }
+
             const add = target.closest('[data-widget-add]');
             if (add) {
                 // The kind is on the control that was clicked -- a card in the
-                // catalogue overlay, or a row on the Types tab. It used to be
+                // catalogue overlay, wherever it was opened from. It used to be
                 // read from a dropdown beside a single Add button, which is
                 // what made choosing and adding two steps instead of one.
                 void this.addWidget(add.getAttribute('data-widget-add') || 'health');
@@ -2783,13 +3007,33 @@
              * state rather than a class toggle: a rename or a save elsewhere
              * must not close a panel someone is working in.
              */
+            const jellyfinConnect = target.closest('[data-jellyfin-connect]');
+            if (jellyfinConnect) {
+                void this.connectJellyfin?.(indexOn(jellyfinConnect, 'data-jellyfin-connect'));
+                return;
+            }
+
             const toggle = target.closest('[data-widget-settings]');
             if (toggle) {
                 const index = indexOn(toggle, 'data-widget-settings');
+                const id = (this._widgetBlocks || [])[index]?.id ?? null;
+                // Wide, choosing the widget already beside the list changes
+                // nothing -- and must not stop the probe running in it.
+                if (this._widgetWide && index === this._widgetSettingsOpen) {
+                    // Shown by default until now: choosing it is what lets it
+                    // do what an opened widget does, such as asking Jellyfin.
+                    if (String(this._widgetOpenId) !== String(id)) {
+                        this._widgetOpenId = id;
+                        this.repaintWidgetsBody();
+                    }
+                    return;
+                }
                 // Whatever was being watched, its panel is about to close or
                 // another is about to open over it.
                 this.stopCustomProbeLive();
-                this._widgetSettingsOpen = this._widgetSettingsOpen === index ? null : index;
+                // Wide, the button selects which widget the side panel shows;
+                // narrow, it folds that widget's detail in and out under the row.
+                this._widgetOpenId = this._widgetWide || this._widgetSettingsOpen !== index ? id : null;
                 this._widgetJustSaved = null;
                 this.repaintWidgetsBody();
                 // The disks live on the machine, not in the panel's own state,
@@ -2938,6 +3182,8 @@
                     this._widgetBlocks = null;
                     this._widgetLoadedFor = null;
                     this._widgetDrafts = {};
+                    // An index means nothing on another page's list.
+                    this._widgetOpenId = null;
                     this.repaintWidgetsBody();
                     void this.loadWidgetsEditor();
                 };
@@ -3290,11 +3536,16 @@
         // No id: the server mints one. Inventing one here would be a second
         // place that decides what a widget id looks like.
         if (!await this.saveWidgetBlocks(payload)) return;
+        // Added from the Catalogue or the Custom tab: the new widget is filled
+        // in on Your widgets, so that is where this lands.
+        if (this.widgetsTab !== 'widgets') {
+            this.widgetsTab = 'widgets';
+            this.restoreConfigHash();
+            this.syncSubTabStrip('data-widgets-tab', this.widgetsTab);
+            const strip = document.querySelector('[data-widgets-tab]')?.closest('.config-subtabs');
+            this.syncSectionTabNote('widgets', this.widgetsTab, strip?.parentElement);
+        }
         this._widgetLoadedFor = null;
-        // Switch to the list before it redraws: adding from the Types tab must
-        // land somewhere the new row exists.
-        this.widgetsTab = 'widgets';
-        this.syncSubTabStrip('data-widgets-tab', this.widgetsTab);
         await this.loadWidgetsEditor();
         /*
          * Open the new widget's settings straight away.
@@ -3307,7 +3558,7 @@
          * given its own feeds.
          */
         const added = this.lastWidgetIndex();
-        if (added >= 0) this._widgetSettingsOpen = added;
+        if (added >= 0) this._widgetOpenId = this._widgetBlocks[added].id;
         // After the dashboard redraw, not before: a full render replaces the
         // elements this is about to mark and focus, so revealing first left the
         // caret back on <body> and the mark gone within the same tick.
@@ -3396,7 +3647,7 @@
         if (!draft) return;
         const key = input.getAttribute('data-widget-setting');
         const kind = input.getAttribute('data-widget-kind');
-        const container = input.closest('.config-widget-settings') || document;
+        const container = input.closest('.config-widget-detail') || document;
 
         let value;
         if (kind === 'bool') {
@@ -3536,7 +3787,7 @@
 
     /** Shows or hides the fill-in note as the address is typed. */
     syncPlaceholderNote(index) {
-        const body = document.querySelector(`[data-widget-row="${index}"]`);
+        const body = document.querySelector(`[data-widget-detail="${index}"]`);
         if (!body) return;
         const group = body.querySelector('.config-custom-grid')?.parentElement;
         if (!group) return;
@@ -3863,7 +4114,7 @@
         // The tile is holding an answer it fetched under the old settings.
         this.dash.renderCore?.forgetWidgetCaches?.();
         this.repaintWidgetsBody();
-        await this.refreshDashboardBlocks();
+        await this.refreshDashboardBlocks({ keepConfig: true });
         this.notify(this.t('config.widgetSavedNotice', 'Widget saved.'), 'success');
     },
 
@@ -3888,7 +4139,10 @@
         blocks[index] = { ...blocks[index], title: next };
         this._widgetBlocks = blocks;
         if (!await this.saveWidgetRow(index)) return;
-        await this.refreshDashboardBlocks();
+        // The field already shows the new name, so config is not redrawn: that
+        // took the caret out of whatever field the reader had moved on to --
+        // a rename fires on leaving the title, which is exactly when they have.
+        await this.refreshDashboardBlocks({ keepConfig: true });
         /*
          * Said out loud, because this one writes straight to the server.
          *
@@ -3926,6 +4180,20 @@
 
         delete (this._widgetDrafts || {})[block.id];
 
+        /*
+         * What is open afterwards. Narrow, nothing: the detail was under the
+         * row that is gone, and opening a neighbour nobody asked for was a
+         * form appearing somewhere else on the page. Wide, the panel moves to
+         * the row that takes its place on screen, or the one above at the end.
+         */
+        if (this.widgetIsChosen(block) || this._widgetSettingsOpen === index) {
+            const shown = this.shownWidgetIds();
+            const at = shown.findIndex((id) => String(id) === String(block.id));
+            this._widgetOpenId = this._widgetWide && at >= 0
+                ? (shown[at + 1] ?? shown[at - 1] ?? null)
+                : null;
+        }
+
         // The page is read off the block before it goes: saveWidgetRow would
         // look at whatever row slid into this index.
         const fromPage = this.isAllPagesView() ? Number(block.pageId) : null;
@@ -3949,8 +4217,16 @@
      * Without this the grid keeps the blocks it loaded with, so a widget added
      * in config appears only after a reload -- and the reader has no way to know
      * that is why.
+     *
+     * `keepConfig` is for a caller that has already repainted the panel. With
+     * config on screen the dashboard's render is config's own, so redrawing
+     * would replace the rows a second time once this fetch lands -- after the
+     * Save button had already gone grey, which is a reader's cue to carry on
+     * typing. A label typed in that gap, not yet committed by a blur, was
+     * wiped. The grid is drawn afresh when config closes, from what is set
+     * here, so skipping the redraw costs it nothing.
      */
-    async refreshDashboardBlocks() {
+    async refreshDashboardBlocks({ keepConfig = false } = {}) {
         const d = this.dash;
         const pageId = Number(d.currentPageId);
         /*
@@ -3968,6 +4244,7 @@
             d.widgets = blocks.widgets || [];
             d.blockOrder = blocks.order || [];
             d.data?.updatePageDataCache?.(pageId, { blocks: { widgets: d.widgets, order: d.blockOrder } });
+            if (keepConfig && this.isActiveView?.()) return;
             d.renderDashboard?.({ animate: false, forceFull: true });
         } catch {
             // The dashboard keeps what it had; the next load corrects it.

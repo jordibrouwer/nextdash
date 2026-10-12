@@ -1060,7 +1060,9 @@ func scaleForFormat(value float64, format string) (float64, string) {
 func formatByteSize(value float64) string {
 	units := []string{"B", "KB", "MB", "GB", "TB", "PB"}
 	index := 0
-	for value >= 1024 && index < len(units)-1 {
+	// On the magnitude, as scaleForFormat does: a negative change in size
+	// read "-5000000 B" without a decimals setting and "-4.77 MB" with one.
+	for math.Abs(value) >= 1024 && index < len(units)-1 {
 		value /= 1024
 		index++
 	}
@@ -1088,7 +1090,7 @@ digits land.
 func formatBitRate(value float64) string {
 	units := []string{"bps", "Kbps", "Mbps", "Gbps", "Tbps"}
 	index := 0
-	for value >= 1000 && index < len(units)-1 {
+	for math.Abs(value) >= 1000 && index < len(units)-1 {
 		value /= 1000
 		index++
 	}

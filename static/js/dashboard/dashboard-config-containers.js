@@ -174,7 +174,7 @@
         const receiver = where.length
             ? `<p class="config-field-hint" data-docker-notify-receiver>${esc(this.t('config.dockerNotifyGoesTo', 'Notices go to {where}.').replace('{where}', where.join(' + ')))}</p>`
             : `<p class="config-field-hint config-field-hint--warn" data-docker-notify-receiver data-none>${esc(this.t('config.dockerNotifyNoReceiver',
-                'Nothing receives them yet: set a webhook under Behavior → Status → Downtime alerts, or switch on browser notifications with Containers.'))}</p>`;
+                'Nothing receives them yet: set a webhook under Monitoring → Notifications → Downtime alerts, or switch on browser notifications with Containers.'))}</p>`;
         const chips = names.map((name) => `
             <span class="config-docker-chip">
                 <span>${esc(name)}</span>

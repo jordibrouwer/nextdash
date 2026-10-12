@@ -49,6 +49,11 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.19.2 (2026-10-10)
+- Config: every section opens on its first tab when you were last there more than five minutes ago; come back sooner and it shows the tab you had open
+- Config: a link to Status page or Unraid always names the tab it shows
+- Bookmarks: click anywhere on a Tag suggestions row to see the bookmarks it means, not only on the count
+
 ### v1.19.1 (2026-10-10)
 - Containers: an update or rollback shows its steps and a short log of the download while it runs; a failed one stays open with the step that broke and why
 - Containers: updating a selection takes only the containers with an update on offer, and the closing notice names each one that failed and why
@@ -71,15 +76,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Action bar: five ways for the buttons to come into view (swell, from the middle, together, unfold, accordion), each shown on its own card under Config → Appearance → Action bar
 - Speed: the theme stylesheet is cached by the browser, a view's scripts download side by side, and a long dashboard no longer stalls while it draws
 - Icons: icon-set icons that showed a letter show the app icon again, and Inbox links whose icon went missing fetch it again
-
-### v1.18.3 (2026-10-09)
-- Action bar: the buttons can swell into view each time the bar appears (Config → Appearance → Action bar, off by default)
-- Dashboard: moving a block to another page is safe against a page switch and a double press; Undo after a background reload says so instead of undoing another device's change
-- Bookmarks: merging or deleting a category in Structure, and bulk moves to another page, act on the right items when the list refreshes meanwhile
-- Data: a page that briefly cannot be read is no longer cached as empty, and icons are kept while the inbox cannot be read
-- Reverse proxies: every X-Forwarded-For line is read, so a proxy that adds its own line no longer lets a visitor pick their rate-limit bucket
-- Inbox: always on now, its switch is gone; bulk Keep runs once on a double click, and promote says which links could not leave the Inbox
-- Bookmarks view: Show in list (was Show in Health) and the health widgets' Open in Bookmarks open it fully styled; Structure and Behavior sit above Inbox in Config
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>

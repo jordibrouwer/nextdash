@@ -2703,3 +2703,165 @@ body:not([data-depth="flat"]) .modal.whats-new-modal .wn-entries.wn-cards {
     color: var(--accent-primary);
     font-weight: 600;
 }
+
+/* ── What's new, spotlight and catch-up (2026-10) ──────────────────────────
+   The release the modal leads with puts its highlight first, with a picture
+   or a short recording and a button to where it lives. The other new changes
+   are rows, the fixes one line each. Releases the reader missed open under
+   it, counted in one line above, and a row of chips narrows all of them. */
+.wn-since {
+    margin: 0 0 var(--space-3, 0.75rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border-radius: var(--radius-5, 0.6rem);
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 30%, transparent);
+}
+.wn-since strong { color: var(--accent-primary); }
+
+.wn-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.4rem);
+    margin: 0 0 var(--space-3, 0.75rem);
+}
+.wn-chip {
+    padding: 0.15rem 0.7rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: calc(var(--font-size-controls) * 0.92);
+    cursor: pointer;
+}
+.wn-chip:hover { color: var(--text-primary); }
+.wn-chip[aria-pressed="true"] {
+    color: var(--text-primary);
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+.wn-chip:focus-visible, .wn-go:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+.modal.whats-new-modal .wn-rel[hidden] { display: none; }
+.wn-rel + .wn-rel,
+.wn-rel + .wn-support {
+    margin-top: var(--space-5, 1.5rem);
+}
+.wn-rel + .wn-rel {
+    padding-top: var(--space-4, 1rem);
+    border-top: 1px solid var(--border-primary);
+}
+.wn-rel-head {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.3rem) var(--space-3, 0.75rem);
+}
+.wn-rel-version {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 1.45);
+    font-weight: var(--font-weight-bold, 700);
+    color: var(--accent-primary);
+}
+.wn-rel-date { font-size: var(--font-size-controls); color: var(--text-tertiary); }
+.wn-rel-unread {
+    font-size: calc(var(--font-size-controls) * 0.85);
+    color: var(--accent-primary);
+}
+.wn-rel-unread::before { content: '● '; }
+.wn-rel-lead { margin: var(--space-1, 0.3rem) 0 0; color: var(--text-secondary); max-width: 62ch; }
+
+/* The spotlight: picture beside the text when there is room, above it when
+   there is not. */
+.modal.whats-new-modal .wn-entries.wn-spots { gap: var(--space-3, 0.75rem); }
+body:not([data-depth="flat"]) .modal.whats-new-modal .wn-entries.wn-spots {
+    padding: 0;
+    background: none;
+    box-shadow: none;
+}
+.modal.whats-new-modal .wn-entry.wn-spot {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-3, 0.75rem) var(--space-3-5, 0.9rem);
+}
+.modal.whats-new-modal .wn-entry.wn-spot--media {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    align-items: center;
+}
+@media (max-width: 720px) {
+    .modal.whats-new-modal .wn-entry.wn-spot--media { grid-template-columns: minmax(0, 1fr); }
+}
+.wn-media {
+    margin: 0;
+    border-radius: var(--radius-4, 0.45rem);
+    overflow: hidden;
+    background: var(--background-primary);
+    box-shadow: inset 0 0 0 1px var(--border-primary);
+    line-height: 0;
+}
+.wn-media-img,
+.wn-media-video {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+.wn-spot-text { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1-5, 0.4rem); min-width: 0; }
+.modal.whats-new-modal .wn-spot-title {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 1.2);
+    font-weight: var(--font-weight-bold, 700);
+    line-height: 1.3;
+    color: var(--text-primary);
+}
+.wn-rel:not(.wn-rel--headline) .wn-spot-title { font-size: calc(var(--font-size-text) * 1.05); }
+
+.wn-go {
+    flex: none;
+    align-self: flex-start;
+    margin-top: var(--space-1, 0.3rem);
+    padding: 0.25rem 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    border-radius: var(--radius-4, 0.45rem);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+    color: var(--accent-primary);
+    font: inherit;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold, 600);
+    white-space: nowrap;
+    cursor: pointer;
+}
+.wn-go:hover { background: color-mix(in srgb, var(--accent-primary) 20%, transparent); }
+
+/* Every other new change, one row: section, title and folded detail, button. */
+.modal.whats-new-modal .wn-entry.wn-entry--line {
+    display: grid;
+    grid-template-columns: 8.5rem minmax(0, 1fr) auto;
+    gap: var(--space-1, 0.3rem) var(--space-3, 0.75rem);
+    align-items: baseline;
+}
+.wn-entry--line .wn-entry-section { margin: 0; }
+.wn-entry--line .wn-go { margin-top: 0; }
+@media (max-width: 720px) {
+    .modal.whats-new-modal .wn-entry.wn-entry--line { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* The update line in the footer is a status, not an alarm: GitHub's rate
+   limit or a failed check reads in the warning colour, not as a red bar
+   under the notes. */
+.wn-foot .wn-update-check-status--error {
+    color: var(--accent-warning, #e0a040);
+    border-color: color-mix(in srgb, var(--accent-warning, #e0a040) 40%, transparent);
+    background: color-mix(in srgb, var(--accent-warning, #e0a040) 8%, transparent);
+}
+
+/* A chip hides rows with [hidden]; the row layouts above set display and
+   would otherwise win over it. */
+.modal.whats-new-modal .wn-entries .wn-entry[hidden],
+.modal.whats-new-modal .wn-groups .wn-block[hidden],
+.modal.whats-new-modal .wn-groups .wn-group[hidden] { display: none; }

@@ -267,7 +267,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 - [Tabs and saving](#172-tabs-and-saving)
 - [Finding a setting](#173-finding-a-setting)
 - [Config → Bookmarks](#174-config-bookmarks)
-- [Behavior](#175-behavior)
+- [Behavior and Monitoring](#175-behavior)
 - [Config → Inbox](#176-config-inbox)
 - [Config → Containers](#177-config-containers)
 - [Overview, Help and About](#178-overview-help-and-about)
@@ -489,7 +489,7 @@ Local addresses are checked once **Allow local bookmarks** is on ([§23.3](#233-
 
 There is one place where bad news goes, and both halves use it.
 
-**Where it goes.** Set it up once under **Behavior → Status & alerts**:
+**Where it goes.** Set it up once under **Monitoring → Notifications**:
 
 - **Downtime alerts** — Slack, Discord, Telegram, Gotify, **ntfy**, **Pushover**, **Apprise** (which passes an alert on to mail, Matrix, Signal and more — [§12.4](#124-alerts)) or your own JSON receiver. **Send test alert** proves the route. ntfy alerts carry **Open link** and **Health** buttons, and failures go out at a higher priority than recoveries.
 - **Browser notifications** — push to your phone, tablet or desktop, even with nextDash closed. Press **Enable on this device** on each device. On iPhone and iPad, add nextDash to the home screen first, and serve it over HTTPS ([§22](#22-phones-tablets-and-the-installed-app)).
@@ -506,7 +506,7 @@ There is one place where bad news goes, and both halves use it.
 
 For containers on your phone, also switch on **Notify when a container stops, keeps restarting or turns unhealthy** under the browser notifications.
 
-**Keeping it quiet.** nextDash leaves out what you did yourself: a stop you asked for is not a notice, nor is a crash the restart policy fixes within 30 seconds. One incident is one notice; four or more at once become one message, and a host that takes many bookmarks down together sends one downtime alert. Mute what you do not care about — a container with `m` or its row menu, a bookmark with **Do not alert me about this bookmark** — and it still shows its state on screen. **Config → Containers → Muted containers** says where container notices go, and **Hidden containers** keeps test containers out of the view and the widget count altogether. To hold notices overnight, or to be reminded of an outage that goes on, use **Quiet hours** and **Reminders** ([§12.5](#125-maintenance-windows)).
+**Keeping it quiet.** nextDash leaves out what you did yourself: a stop you asked for is not a notice, nor is a crash the restart policy fixes within 30 seconds. One incident is one notice; four or more at once become one message, and a host that takes many bookmarks down together sends one downtime alert. Mute what you do not care about — a container with `m` or its row menu, a bookmark with **Do not alert me about this bookmark** — and it still shows its state on screen. **Config → Containers → Muted containers** says where container notices go, and **Hidden containers** keeps test containers out of the view and the widget count altogether. To hold notices overnight, or to be reminded of an outage that goes on, use **Quiet hours** and **Reminders** ([§12.5](#125-maintenance-windows)). Once a week the **Weekly digest** sums it all up — what broke, what can be updated, what nobody opens ([§12.4](#weekly-digest)).
 
 **For other programs.** Outgoing webhooks send `health.down`, `health.up` and `health.cert-expiring`, signed, to anything that listens — Home Assistant, n8n, a script ([§19.3](#193-webhooks)).
 
@@ -707,7 +707,7 @@ Data is stored in `./data` next to the binary. `NEXTDASH_DATA_DIR` points it els
 4. **Your own bookmarks.** Import your browser's bookmark file under **Config → Data & backups** ([§19](#19-data-backups-and-import)), or add them with **+** and **&** ([§5](#5-adding-bookmarks)).
 5. **Config.** Press **`Shift + S`** or click the gear. Config is a view inside the dashboard; **`Escape`** takes you back.
 
-**The first hour.** Split your bookmarks across a few pages, give the ten you open daily a shortcut, and switch on link checking under Config → Behavior → Status & alerts. Everything else can wait until you know what you want.
+**The first hour.** Split your bookmarks across a few pages, give the ten you open daily a shortcut, and switch on link checking under Config → Monitoring → Checks. Everything else can wait until you know what you want.
 
 <details>
 <summary>📷 Screenshot — a new install on its first launch, full page</summary>
@@ -894,13 +894,11 @@ A bookmark row shows its icon, name, optional tags, the shortcut letters and, wh
 
 - **Link review** — *10 links to review* once five or more bookmarks need a decision. **Start** runs a session over the worst ten ([§11.7](#117-work-through-and-the-header-band)); **Not today** brings it back tomorrow; **Remind me in 30 days** puts it away for a month.
 - **Kept links** — ten or more links you kept have waited over a month in **Unsorted**. **Open Unsorted** shows them; the card never files or deletes anything.
-- **Checking** — once 20 or more bookmarks are not checked, an offer to switch them to **Periodic** ([§12.1](#121-availability-modes)).
 - **Tag suggestions** — a round of tag review when there is something worth accepting ([§10.4](#104-tag-suggestions)).
-- **Widgets layout** — an invitation to try the **Widgets** layout, which draws every category as a card. **Try it** applies it at once, and the same card puts the old layout back.
 - **Clock and weather** — asks for a town, a clock and a unit when no location is set.
 - **Install count** — says once that the daily count of installs is on, what leaves the server, and offers **Turn it off** ([§23.7](#237-what-nextdash-contacts)).
 - **Moving blocks** — once, a see-through copy of the first category glides to its next place to show that blocks can be moved, and a card under its `//` offers **Try it**. The first time you pick a block up, a card beside the landing box lists the keys until **Got it**.
-- **Others** — browser notifications, the theme browser, Fresh, spreading a category, the tour of what moved, and once you have eight bookmarks a pointer to the feature overview on nextdash.cc, which opens in a new tab.
+- **Others** — browser notifications, the theme browser, spreading a category and the tour of what moved.
 
 Each review card has a switch under Behavior → Privacy & sync → Onboarding. The same place lists every card with **Answered** or **Not shown yet**, and **Show again** brings an answered one back the next time its moment arrives.
 
@@ -993,7 +991,7 @@ This same form, titled **Promote bookmark**, is how an Unsorted bookmark from th
 
 ### 5.3 Paste a URL (`Ctrl + V`)
 
-With no field active, paste a URL on the dashboard. A dialog offers **Add bookmark** (`1` or `b`) or **Save to Inbox** (`2` or `i`). Set a fixed answer under **Config → Inbox → Collecting → Paste destination** — *Ask each time*, *Always add bookmark* or *Always save to Inbox*.
+With no field active, paste a URL on the dashboard. A dialog offers **Add bookmark** (`1` or `b`) or **Save to Inbox** (`2` or `i`). While you choose, a card shows what the link is — the site's icon and domain, its title, a line of description and its picture — from the same preview the hover card uses; it stays hidden when the site gives nothing to show. Set a fixed answer under **Config → Inbox → Collecting → Paste destination** — *Ask each time*, *Always add bookmark* or *Always save to Inbox*.
 
 <p align="center"><img src="screenshots/manual.md/05-paste-prompt.jpg" alt="The Save this link dialog after pasting an address: the address, the choices Add bookmark and Save to Inbox with their number keys, Remember my choice and Cancel" width="408"></p>
 <p align="center"><sub>Pasting an address on the dashboard asks where it goes: the full form, or the inbox.</sub></p>
@@ -1914,19 +1912,19 @@ Every bookmark has one of three modes:
 
 Set the mode in the bookmark form, the Bookmarks view's side panel, the right-click menu, with **`Shift + C`**, or with **`c`** in the Bookmarks view. On a monitored row the menu also shows the **check interval**: 5m, 15m, 30m, 1h, 6h or 24h.
 
-**Nothing checked at all?** Once 20 or more bookmarks are set to **Off**, a card in the bottom-left corner offers to switch them all to **Periodic** in one go, naming the count. It shows at most once a month; declining once brings it back next month, declining a second time offers to stop asking for good.
+**Nothing checked at all?** In the Bookmarks view, pick **Unchecked** under Health in the rail, tick every row with `X`, and set the checking to **Periodic** under **Edit…** ([§11.4](#114-selecting-several)).
 
-**Behavior → Status & alerts** holds the rest:
+**Config → Monitoring** holds the rest, on three tabs:
 
-| Group | Settings |
-|---|---|
-| **Checks in this browser** | How often, skip fast pings, retries for offline bookmarks |
-| **Monitored bookmarks on the dashboard** | How much they stand out: only when there is a problem (default), always, or never |
-| **Checks on the server** | Re-check in the background (on by default) and how often, the **check timeout** (5–30 s), **spot pages that answer 200 but say "not found"**, **Serve uptime badges** and when certificate warnings start |
-| **Downtime alerts** | See [§12.4](#124-alerts) |
-| **Maintenance windows** | See [§12.5](#125-maintenance-windows) |
-| **Quiet hours** and **Reminders** | See [§12.5](#125-maintenance-windows) |
-| **Browser notifications** | See [§12.4](#124-alerts) |
+| Tab | Group | Settings |
+|---|---|---|
+| **Checks** | **Checks in this browser** | How often, skip fast pings, retries for offline bookmarks |
+| | **Checks on the server** | Re-check in the background (on by default) and how often, the **check timeout** (5–30 s), **spot pages that answer 200 but say "not found"**, **Serve uptime badges** and when certificate warnings start |
+| | **Monitored bookmarks on the dashboard** | How much they stand out: only when there is a problem (default), always, or never |
+| **Notifications** | **Downtime alerts** and **Browser notifications** | See [§12.4](#124-alerts) |
+| | **Reminders** | See [§12.5](#reminders) |
+| | **Weekly digest** | See [§12.4](#weekly-digest) |
+| **Schedules** | **Maintenance windows** and **Quiet hours** | See [§12.5](#125-maintenance-windows) |
 
 <img src="screenshots/manual.md/12-health-tab.jpg" alt="The Health tab of a monitored bookmark: the score, the checking mode and interval, a bar for each of the last checks at 100 % with the response time, and the sections Why, Score breakdown, Checking, Monitor & history and Expectations" width="384" align="right">
 
@@ -1979,7 +1977,7 @@ One finding per check, in that order. The row badge reads *Moved*, *Retitled* or
 
 ### 12.4 Alerts
 
-**Downtime alerts** (Behavior → Status & alerts) post when a monitored bookmark goes down and again when it recovers, with how long it was down.
+**Downtime alerts** (Monitoring → Notifications) post when a monitored bookmark goes down and again when it recovers, with how long it was down.
 
 | Service | Needs |
 |---|---|
@@ -2004,7 +2002,7 @@ One finding per check, in that order. The row badge reads *Moved*, *Retitled* or
 
 <a id="browser-notifications"></a>
 
-**Browser notifications** reach a device even with nextDash closed. Switch them on from the dashboard card or under Behavior → Status & alerts, then press **Enable on this device** and allow notifications. A test notification follows.
+**Browser notifications** reach a device even with nextDash closed. Switch them on from the dashboard card or under Monitoring → Notifications, then press **Enable on this device** and allow notifications. A test notification follows.
 
 | Notifies about | Default |
 |---|---|
@@ -2021,11 +2019,21 @@ They need a secure context: Safari and every browser on iPhone and iPad require 
 
 </details>
 
+<a id="weekly-digest"></a>
+
+**Weekly digest.** Once a week nextDash sums up what needs you: links that broke, certificates that run out soon, container updates, what you opened most, bookmarks nobody opens, and links waiting in the Inbox. It is on by default and goes out on **Monday at 08:00**, in the time zone of the quiet hours.
+
+- **Where it arrives** — as a browser notification when those are on, through the service under **Downtime alerts**, and once on the dashboard as a card, *Your week in nextDash*, that names the one or two things that matter most. A digest that falls in quiet hours waits until they end; one that came due while the server was off goes out once, when it starts. A week with nothing to say sends nothing.
+- **Reading it** — **Read the digest** opens a window with a part per subject: what it means, the names behind the count, and a button to the view where you deal with it — **Open in Bookmarks** (with **Work through** for the broken links), **Open Containers**, **Review** for never opened and long unopened bookmarks, **Open Inbox**. Last comes **New in nextDash** when a release came out that week: the releases with their highlights, and **Open What's new**. It is news, so it does not count as a part to work through. After a button the digest shrinks to a bar in the bottom-left corner: *Weekly digest · 1 of 4 done*, and **Next** for the following part. The bar goes once every part is opened, or with **×**. Clicking the push notification opens the same window (`/#digest`).
+- **Setting it up** — Monitoring → Notifications → **Weekly digest**: **Send a weekly digest**, **On** (the day), **At** (the hour), and which parts go in — **Include broken links and certificates**, **Include container updates**, **Include most opened, unused and Inbox**, **Include what is new in nextDash this week**. **The latest digest → Show** opens the last one again; **Send a proof digest now → Send** builds one from today's data and sends it, without moving the week's own digest.
+
+On the day the digest comes out it goes first, and the daily review card ([§4](#corner-cards)) waits — both offer the same broken and unopened links.
+
 <a id="125-maintenance-windows"></a>
 
 ### 12.5 Maintenance windows
 
-A window is a recurring period when downtime is expected — days, a start and an end. An end before the start runs past midnight. The times are in **your** time zone: the browser's zone is saved with the windows when you change them, so a window you set for 02:00 is 02:00 where you are, even when the container itself runs on UTC. Windows apply to every monitor. Quiet hours use the same clock.
+A window is a recurring period when downtime is expected — days, a start and an end. Set windows under **Monitoring → Schedules**. An end before the start runs past midnight. The times are in **your** time zone: the browser's zone is saved with the windows when you change them, so a window you set for 02:00 is 02:00 where you are, even when the container itself runs on UTC. Windows apply to every monitor. Quiet hours use the same clock.
 
 <p align="center"><img src="screenshots/manual.md/12-maintenance.jpg" alt="The Maintenance windows panel: the days of the week, a window from 02:00 to 03:00 with room for a note, and Add window" width="860"></p>
 <p align="center"><sub>A maintenance window every night from two to three.</sub></p>
@@ -2034,7 +2042,7 @@ Inside a window, checks still run and the heartbeat still records them, but a fa
 
 <a id="quiet-hours"></a>
 
-**Quiet hours.** Under **Behavior → Status & alerts → Quiet hours**, **Hold notices during quiet hours** holds alerts from monitors, containers, Unraid and backups while a window is open — the same editor as maintenance windows. When the hours end, one summary says what is still going on and what recovered by itself. Unlike a maintenance window the downtime still counts. **Always let through** lists the kinds that break the quiet: an expired certificate, a mass outage (several at once) and a failed backup by default, and a container that stops or restarts if you tick it. A line under the list says whether it is quiet now, until when, and how many notices are held. Outgoing webhooks ([§19.3](#193-webhooks)) are outside it and get every event. A muted bookmark or container never raises a notice, and a maintenance window drops it before the quiet hours would hold it.
+**Quiet hours.** Under **Monitoring → Schedules → Quiet hours**, **Hold notices during quiet hours** holds alerts from monitors, containers, Unraid and backups while a window is open — the same editor as maintenance windows. When the hours end, one summary says what is still going on and what recovered by itself. Unlike a maintenance window the downtime still counts. **Always let through** lists the kinds that break the quiet: an expired certificate, a mass outage (several at once) and a failed backup by default, and a container that stops or restarts if you tick it. A line under the list says whether it is quiet now, until when, and how many notices are held. Outgoing webhooks ([§19.3](#193-webhooks)) are outside it and get every event. A muted bookmark or container never raises a notice, and a maintenance window drops it before the quiet hours would hold it.
 
 <p align="center"><img src="screenshots/manual.md/12-quiet-hours.jpg" alt="The Quiet hours panel: Hold notices during quiet hours ticked, a window from 02:00 to 03:00 on every day, and Always let through with an expired certificate, a mass outage and a failed backup ticked" width="860"></p>
 <p align="center"><sub>Quiet hours, and the kinds of notice that always get through.</sub></p>
@@ -2086,7 +2094,7 @@ The status page is one page behind a secret link, for your household and friends
 1. Under **Link and access**, tick **Turn the status page on**. The link appears with **Copy**, **Open** and a QR code to scan with a phone.
 2. Under **Top of the page**, give it a **Title** and, if you like, a **Notice** shown under it.
 3. Under **Groups and services**, **+ Add group**, then **+ Add service** in each group. The picker lists monitored bookmarks and containers; a bookmark without monitoring has no history to show, so it is not listed. A bookmark linked to a container (the same pairing as in the Containers view, [§14](#14-containers)) is offered as one service, and the worse of the two counts. The pairing is fixed when you add it. Give each service a **Public name**, and tick **Link** and **Speed** where you want them.
-4. Under **Maintenance shown on the page**, tick the groups each maintenance window belongs to. The windows themselves are set in **Behavior → Status & alerts** ([§12.5](#125-maintenance-windows)). A linked group shows *Planned maintenance* ahead of time and blue instead of red during it. Alerts are not affected.
+4. Under **Maintenance shown on the page**, tick the groups each maintenance window belongs to. The windows themselves are set in **Monitoring → Schedules** ([§12.5](#125-maintenance-windows)). A linked group shows *Planned maintenance* ahead of time and blue instead of red during it. Alerts are not affected.
 
 Everything saves as you go.
 
@@ -2479,7 +2487,7 @@ Every clean-up asks first and says how much it frees. Below the tiles, the image
 
 When a container **stops unexpectedly**, **keeps restarting** (three crashes in ten minutes) or **turns unhealthy**, nextDash sends a notice — and a second one when it recovers. A stop you or nextDash asked for is not a notice, and neither is a crash the restart policy fixes within 30 seconds. One notice per incident; four or more at once become one message.
 
-They go where Health's downtime alerts go: the alert webhook under **Behavior → Status & alerts → Downtime alerts** (with its presets), and browser notifications with **Notify when a container stops, keeps restarting or turns unhealthy** switched on. **Config → Containers → Notifications** switches them off. Mute a single container from its row menu, its side panel's ⋯ menu, or `m`; **Muted containers** lists them and says where notices go. Hidden containers and nextDash's own raise nothing.
+They go where Health's downtime alerts go: the alert webhook under **Monitoring → Notifications → Downtime alerts** (with its presets), and browser notifications with **Notify when a container stops, keeps restarting or turns unhealthy** switched on. **Config → Containers → Notifications** switches them off. Mute a single container from its row menu, its side panel's ⋯ menu, or `m`; **Muted containers** lists them and says where notices go. Hidden containers and nextDash's own raise nothing.
 
 **Running hot.** **Also when one uses too much CPU or memory** (on by default) sends a notice when a container stays above a line for a while — **CPU above** 90 % of every core, **Memory above** 90 % of its limit (the host's memory when it has none), **For at least** 10 minutes, each adjustable — and one when it is back under both. It reads the stats history, so it needs **Keep the last hour of CPU and memory** on. One notice per spell; the same mutes apply.
 
@@ -2581,6 +2589,12 @@ These read one server, set once under Config → Unraid ([§15.6](#156-unraid-wi
 <p align="center"><img src="screenshots/manual.md/15-weather.jpg" alt="The Weather tile: rain at 16 °C in Leiden and the next five days" width="380"> <img src="screenshots/manual.md/15-rss.jpg" alt="The RSS tile: five headlines, newest first, each with its age" width="380"></p>
 <p align="center"><sub>The Weather and RSS tiles.</sub></p>
 
+*What is new to watch?*
+
+| Kind | Shows |
+|---|---|
+| **Jellyfin** | What was added to your Jellyfin server lately, with the posters from your own library: a film or series with its poster, an episode under its series' poster. Four layouts — **list**, **strip** (a tab per library), **hero** (the newest large on its backdrop) and **grid**. See below |
+
 And the **Custom** widget, which reads any service that answers with JSON ([§15.5](#155-the-custom-widget)).
 
 A tile with a row limit shows what it left out (*5 of 12*). A figure on a tile is a link to the rows behind it.
@@ -2589,7 +2603,17 @@ A tile with a row limit shows what it left out (*5 of 12*). A figure on a tile i
 
 ### 15.2 Adding and arranging
 
-**Config → Widgets** lists your widgets. **Add a widget** opens the catalogue; the **Types** tab describes every kind with an *Add* button. The list has a search (title and type), a page picker (including **All pages**), a sort (grouped, page order, name, type) and a selection bar with **Show**, **Hide**, **Move to page…** and **Delete**.
+**Config → Widgets** has three tabs:
+
+| Tab | What it holds |
+|---|---|
+| **Your widgets** | The widgets you have, one line each. **Add a widget** opens the catalogue. A search (title and type), a page picker (including **All pages**), a sort (grouped, page order, name, type) and a selection bar with **Show**, **Hide**, **Move to page…** and **Delete** |
+| **Catalogue** | Every kind on one page, each with a small drawing of what it shows (made of example figures) and an **Add** button. The chips above the cards show one group |
+| **Custom widget** | What the Custom widget does and will not do, with an **Add** button ([§15.5](#155-the-custom-widget)) |
+
+A widget added from the Catalogue or the Custom widget tab lands on **Your widgets**, ready to be filled in. An old `/#config/widgets/types` address opens the Catalogue.
+
+On a wide screen the list and the open widget stand side by side: one widget is always open beside the list — the one you chose, or the first shown. Narrower, **Settings** on a row opens the widget under it. The width that counts is the section's own, not the window's.
 
 Each widget has a title, a width (one or two columns), the page it counts, a row count and the settings of its kind. With more than one page, **Page** above the width moves the widget to another page straight away, at the end of that page, with its sign-in and folded state; unsaved changes in the panel ask first. An **ℹ** explains the harder settings and **↺** resets them. The title and **Shown** save at once; the rest waits for **Save**.
 
@@ -2609,6 +2633,8 @@ Widgets share one order with the categories and are moved on the dashboard: drag
 **Calendar** — your server fetches the feed (the private ICS address from your calendar app, not its web page), shares one copy between widgets and refreshes it every 15 minutes. A recurring event shows its first stated occurrence. Changing the address redraws the widgets at once.
 
 **RSS** — your server fetches each feed and caches it for 15 minutes. A headline shows the feed's summary on hover or focus. Rows past the row count fold into a **more** row. A feed that fails does not empty the tile.
+
+**Jellyfin** — fill in the server's address and an API key (Jellyfin: Dashboard → API Keys) and press **Connect**. The server tries both and says *Connected to* the server's name and version, then fills the choices below: **Read as** (a user, or no one for the newest of everything) and the **Libraries** that exist, so nothing is typed by id. Then the **Layout**, what **A click** does (open the item in Jellyfin, or show its details here first), where it opens, **Hide what was watched**, **Items to show** (in the strip, per library) and how often to ask Jellyfin (a minute at least). The key stays on the server: the tile and its posters come through nextDash, which keeps the posters in `data/jellyfin-images/` (up to 200 MB, oldest out first, not in backups). When Jellyfin cannot be reached, the tile keeps the last list and says how old it is. Jellyfin also has a Custom widget preset for its library counts ([§15.5](#155-the-custom-widget)).
 
 <img src="screenshots/manual.md/15-notes.jpg" alt="The Notes tile: a short checklist with two items ticked and struck through, and Edit and Open large" width="380" align="left">
 
@@ -3267,10 +3293,11 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Appearance** | Look · Background · Surface · Grid · Rows · Header · Action bar · Date & weather ([§16](#16-appearance)) |
 | **Bookmarks** | View · Tags · Tag suggestions · Your rules · Settings · Local copies ([§17.4](#174-config-bookmarks)) |
 | **Structure** | Categories · Pages · Finders · Collections ([§9](#9-pages-categories-and-collections)) |
-| **Behavior** | General · Keyboard & search · Fresh · Status & alerts · Privacy & sync ([§17.5](#175-behavior)) |
+| **Behavior** | General · Keyboard & search · Fresh · Privacy & sync ([§17.5](#175-behavior)) |
+| **Monitoring** | Checks · Notifications · Schedules ([§17.5](#monitoring)) |
 | **Inbox** | Collecting · List · Panel & clicks · Header icon ([§17.6](#176-config-inbox)) |
 | **Data & backups** | Backups & data · Sources · Webhooks · Icons & previews · Trash · Reset ([§19](#19-data-backups-and-import)) |
-| **Widgets** | Widgets · Types ([§15](#15-widgets)) |
+| **Widgets** | Your widgets · Catalogue · Custom widget ([§15.2](#152-adding-and-arranging)) |
 | **Containers** | Connection · View · Updates · Alerts ([§17.7](#177-config-containers)) |
 | **Unraid** | The one Unraid server the Unraid widgets read ([§15.6](#156-unraid-widgets)) |
 | **Status page** | The read-only page for the people who use your services: its link, its top, groups and services, and linked maintenance ([§12.8](#128-the-status-page)) |
@@ -3279,7 +3306,7 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Logs** | Server logs · Activity trail ([§20](#20-logs)) |
 | **About** | About nextDash · News & features |
 
-Old addresses still land in the right place — for example `/#config/pages-tags` opens Structure, `/#config/data-backups/logs` opens Logs, and `/#config/behavior/fresh` opens Behavior → Fresh. The tab ids in addresses did not always change when tabs were renamed: Look is `general`, Grid `layout`, Rows `display`, Action bar `buttonbar`.
+Old addresses still land in the right place — for example `/#config/pages-tags` opens Structure, `/#config/data-backups/logs` opens Logs, `/#config/behavior/fresh` opens Behavior → Fresh, and `/#config/behavior/status` — Status & alerts, before it became a section of its own — opens Monitoring → Checks. The tab ids in addresses did not always change when tabs were renamed: Look is `general`, Grid `layout`, Rows `display`, Action bar `buttonbar`.
 
 <details>
 <summary>📷 Screenshot — Config → Appearance, full page</summary>
@@ -3292,7 +3319,7 @@ Old addresses still land in the right place — for example `/#config/pages-tags
 
 ### 17.2 Tabs and saving
 
-**Appearance** and **Behavior** open straight on their settings, in tabs, on the tab you had open in the last five minutes, or on the first one. Every setting of a tab is on it — the ones that change most first — with a short line under each saying what it does. Appearance keeps a live preview of the dashboard beside its tabs ([§16](#16-appearance)).
+**Appearance**, **Behavior** and **Monitoring** open straight on their settings, in tabs, on the tab you had open in the last five minutes, or on the first one. A row of tabs stays on one line; on a narrow screen it scrolls sideways. Every setting of a tab is on it — the ones that change most first — with a short line under each saying what it does. Appearance keeps a live preview of the dashboard beside its tabs ([§16](#16-appearance)).
 
 **Every change saves the moment you make it**, confirmed by a short message. The exceptions are forms with their own **Save** button — the bookmark form and a widget's settings. Config only writes what changed.
 
@@ -3309,7 +3336,7 @@ Old addresses still land in the right place — for example `/#config/pages-tags
 
 **`Ctrl/Cmd + Shift + K`** — or **Find settings** below the section rail — searches every section, tab, setting and help topic. It also finds settings by related words (*uptime*, *wallpaper*, *hotkey*) and by their current value (*8099*, *Monitor*), and shows that value beside the result.
 
-<p align="center"><img src="screenshots/manual.md/17-find-settings.jpg" alt="Find settings with quiet typed: one result, Hold notices during quiet hours, under Behavior › Status & alerts, with its value Off" width="840"></p>
+<p align="center"><img src="screenshots/manual.md/17-find-settings.jpg" alt="Find settings with quiet typed: one result, Hold notices during quiet hours, under Monitoring › Schedules, with its value Off" width="840"></p>
 <p align="center"><sub>Find settings shows where a setting lives and what it is set to.</sub></p>
 
 **Settings per device.** Settings live on the server, so every browser shows the same dashboard. **Keep settings on this device only** (Behavior → Privacy & sync) keeps appearance and layout in this browser instead. The few settings that stay shared — such as the custom favicon and font, collections, the action bar position, web search and container icons — carry an **all devices** mark.
@@ -3348,17 +3375,26 @@ The other tabs:
 
 <a id="175-behavior"></a>
 
-### 17.5 Behavior
+### 17.5 Behavior and Monitoring
 
 | Tab | Settings |
 |---|---|
 | **General** | Language; remember where you were on a page; **Lock layout**; open links in a new tab; allow localhost and private-network bookmarks; **Hypr mode**; **Notes widget → Notes are processed**, *On the server* (the default) or *In the browser*, which needs no requests while you type ([§15](#15-widgets)) |
 | **Keyboard & search** | Typing a bookmark shortcut, switch search mode, include finders, search unsorted bookmarks, fuzzy suggestions, prefer matches that start with the query, keep search open when empty, the search hint; **Web search** (engine, SearXNG address, Brave key, Test connection); and the keys: global shortcuts, shortcut hints on header links, the key legend under the grid |
 | **Fresh** | Show what is new since you last looked, mark rows that publish, find feeds now ([§12.6](#126-fresh)) |
-| **Status & alerts** | [§12.1](#121-availability-modes) |
 | **Privacy & sync** | **Count this install** (on by default, [§23.8](#238-analytics)), analytics, **Check GitHub for new releases**, posts from nextdash.cc; **Keep settings on this device only**; **Onboarding**: keyboard tips, the two review offers, every tour (replay it with its button), *Show quick-start card again*, and the list of corner cards — each **Answered** or **Not shown yet**, with **Show again** ([§4](#corner-cards)) |
 
 Paste-to-quick-add, the inbox and how a kept link is filed moved to **Config → Inbox** ([§17.6](#176-config-inbox)).
+
+<a id="monitoring"></a>
+
+**Monitoring** is everything about watching your bookmarks: how they are checked, how you hear when one goes down, and when to keep quiet. It used to be the Status & alerts tab of Behavior; old links and saved places open the matching Monitoring tab.
+
+| Tab | Settings |
+|---|---|
+| **Checks** | Checks in this browser, checks on the server, how monitored bookmarks stand out ([§12.1](#121-availability-modes)) |
+| **Notifications** | Downtime alerts, browser notifications, reminders, the weekly digest ([§12.4](#124-alerts)) |
+| **Schedules** | Maintenance windows and quiet hours ([§12.5](#125-maintenance-windows)) |
 
 <a id="176-config-inbox"></a>
 
@@ -3396,7 +3432,7 @@ Four tabs, with the same strip, keys and memory as Config → Inbox. It opens on
 <p align="center"><img src="screenshots/manual.md/14-connection.jpg" alt="The Connection panel under Config, Containers: Docker socket Connected, Actions On, Write token Not set with a warning, and This container nextdash" width="860"></p>
 <p align="center"><sub>Config → Containers → Connection: what the environment set, read only.</sub></p>
 
-The Unraid server has a section of its own, **Config → Unraid**: the Containers view does not use it, only the Unraid widgets do ([§15.6](#156-unraid-widgets)). Their *Set up Unraid* row opens it. It opens with **How it works** — nextDash and the server drawn as two boxes with data running between them, and three steps (a Viewer key, the address and key tested and saved, a widget on a page) that are ticked off as they are done — and **What you get**: the seven widgets in miniature with example figures, each with an **Add…** that opens Widgets → Types on that kind. **How it works** also says what a widget can do: refresh as often as you set, show as many rows as you choose, open that page in Unraid on a click, and show more when it is wide; with alerts switched on under **Connection**, a stopped array, disk or parity errors and Unraid's own notifications reach your alert channels.
+The Unraid server has a section of its own, **Config → Unraid**: the Containers view does not use it, only the Unraid widgets do ([§15.6](#156-unraid-widgets)). Their *Set up Unraid* row opens it. It opens with **How it works** — nextDash and the server drawn as two boxes with data running between them, and three steps (a Viewer key, the address and key tested and saved, a widget on a page) that are ticked off as they are done — and **What you get**: the seven widgets in miniature with example figures, each with an **Add…** that opens Widgets → Catalogue on that kind. **How it works** also says what a widget can do: refresh as often as you set, show as many rows as you choose, open that page in Unraid on a click, and show more when it is wide; with alerts switched on under **Connection**, a stopped array, disk or parity errors and Unraid's own notifications reach your alert channels.
 
 <details>
 <summary>📷 Screenshot — Config → Containers, full page</summary>
@@ -3437,9 +3473,9 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 
 <a id="whats-new"></a>
 
-**What's new.** After an upgrade the release notes open once. After that, the **★** button, `:whatsnew`, or *See what's new* under Help open them, newest first, with up to 50 earlier releases. New changes come first as cards with their explanation; fixes follow as one line each, with the explanation a click away. A menu narrows a release to one section. A small release can count towards the version number without appearing in this window; the [changelog](CHANGELOG.md) always has everything. With **Check GitHub for new releases** on (Behavior → Privacy & sync), a newer release adds a dot to ★ and a toast.
+**What's new.** After an upgrade the release notes open once. After that, the **★** button, `:whatsnew`, or *See what's new* under Help open them. Every release newer than the last one you saw opens in full, up to six: the newest with its version as the headline, the others under it marked *unread*, and a line that counts them — *Since your last visit: 3 releases, 9 new and 4 fixed.* Every older release is a row under **Earlier**, opened with a click. A small release can count towards the version number without appearing in this window; the [changelog](CHANGELOG.md) always has everything. With **Check GitHub for new releases** on (Behavior → Privacy & sync), a newer release adds a dot to ★ and a toast.
 
-The newest release comes first, with a one-line summary and how many things are *new* and how many are *fixes*. When it has both, the chips **All**, **New** and **Fixes** show only one kind; when it has several sections, a tab per section jumps to it. Each entry carries a *new* or *fix* mark — a long description folds behind **more** — and a section of keys lists each shortcut on its own key cap. At the end, a card says nextDash is made by one person and links to Ko-fi (a one-off gift, no account). Older releases open from the list below.
+A release opens with a one-line summary, then its **highlight** in a spotlight: a picture or a short silent recording (a still when motion is turned down), a short title, the explanation and a button to where the change lives. When the release the window opens on marks no highlight, its first new change stands in. The other new changes follow, one row each with their section in front and the detail folded; shortcuts have a block of their own, each key on its own cap; fixes come last, one line each, with the explanation a click away. A row of chips — **All**, **New only** and one per section — narrows what is open. After the last change, a card says nextDash is made by one person and links to Ko-fi (a one-off gift, no account).
 
 <a id="179-config-keys"></a>
 

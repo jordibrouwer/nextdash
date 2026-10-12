@@ -2,6 +2,39 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureDigestTitle",
+      "titleFallback": "One message a week about what needs you",
+      "whatKey": "config.overviewNewFeatureDigestWhat",
+      "whatFallback": "A link that broke, a certificate running out or an update waiting only showed when you went looking for it.",
+      "howKey": "config.overviewNewFeatureDigestHow",
+      "howFallback": "Once a week nextDash sums it up: links that broke, certificates that run out soon, container updates, what you opened most, bookmarks nobody opens and the Inbox. It arrives as a push, through your alert service and once as a card on the dashboard; each part opens the view where you deal with it.",
+      "enableKey": "config.overviewNewFeatureDigestEnable",
+      "enableFallback": "On by default, on Monday at 08:00. Change the day, the hour and what goes in under Monitoring → Notifications.",
+      "ctaKey": "config.overviewNewFeatureDigestCta",
+      "ctaFallback": "Open Weekly digest →",
+      "go": {
+        "section": "monitoring",
+        "monitoringTab": "notifications"
+      },
+      "since": "v1.19.4"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureMonitoringTitle",
+      "titleFallback": "Monitoring has a section of its own",
+      "whatKey": "config.overviewNewFeatureMonitoringWhat",
+      "whatFallback": "Checks, alerts, maintenance windows and quiet hours sat on one long tab inside Behavior.",
+      "howKey": "config.overviewNewFeatureMonitoringHow",
+      "howFallback": "Config → Monitoring splits them over three tabs: Checks, Notifications and Schedules. Old links to Behavior → Status & alerts land on the matching tab.",
+      "enableKey": "config.overviewNewFeatureMonitoringEnable",
+      "enableFallback": "Nothing to switch on: your settings moved with it.",
+      "ctaKey": "config.overviewNewFeatureMonitoringCta",
+      "ctaFallback": "Open Monitoring →",
+      "go": {
+        "section": "monitoring"
+      },
+      "since": "v1.19.4"
+    },
+    {
       "titleKey": "config.overviewNewFeatureActionBarStylesTitle",
       "titleFallback": "Five ways for the buttons to come into view",
       "whatKey": "config.overviewNewFeatureActionBarStylesWhat",

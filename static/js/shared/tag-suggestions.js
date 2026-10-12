@@ -138,6 +138,26 @@
     }
 
     /*
+     * The catalogue's entry for a host, or for the nearest parent that has one.
+     *
+     * The file names sites by their registrable domain; a bookmark is often on
+     * a subdomain of it -- docs.docker.com, wiki.archlinux.org -- and the
+     * subdomain says nothing the domain did not. Walks from the most specific
+     * suffix up and stops at two labels, so a bare TLD is never tried. Returns
+     * the key it matched on, so the caller can group on the site the catalogue
+     * knows rather than on every subdomain of it.
+     */
+    function lookupHost(byHost, host) {
+        const labels = host.split('.');
+        for (let i = 0; i <= labels.length - 2; i++) {
+            const key = labels.slice(i).join('.');
+            const entry = byHost.get(key);
+            if (entry) return { key, entry };
+        }
+        return null;
+    }
+
+    /*
      * Your word for the catalogue's subject, if you have one.
      *
      * The catalogue supplies the subject; the reader's own tags supply the
@@ -227,11 +247,19 @@
                 .map((proposal) => proposal.pattern));
             const vocabulary = new Set();
             rows.forEach((item) => tagsOf(item).forEach((tag) => vocabulary.add(tag)));
+            // Grouped by the catalogue's site, not the bookmark's host: a
+            // docs.docker.com link and a docker.com link are one row.
+            const bySite = new Map();
             groupByPattern(rows, patternsOf).forEach((members, pattern) => {
                 if (pattern.includes('/')) return;
                 if (settled.has(pattern)) return;
-                const entry = byHost.get(pattern);
-                if (!entry) return;
+                const found = lookupHost(byHost, pattern);
+                if (!found || settled.has(found.key)) return;
+                const site = bySite.get(found.key) || { entry: found.entry, members: [] };
+                site.members.push(...members);
+                bySite.set(found.key, site);
+            });
+            bySite.forEach(({ entry, members }, pattern) => {
                 const tag = inTheirWords(entry, vocabulary);
                 const keys = members
                     .filter((item) => !tagsOf(item).includes(tag))
