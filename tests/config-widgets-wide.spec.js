@@ -204,3 +204,83 @@ test.describe('narrow: the detail opens under its row', () => {
         await expect(side(page)).toHaveCount(0);
     });
 });
+
+/*
+ * The open widget is held by its id. Kept as an index, it drifted to whichever
+ * widget slid into the gap after a delete -- once in another group entirely.
+ */
+test.describe('which widget is open survives the list changing', () => {
+    test('narrow: a bulk delete of another widget keeps the open one open', async ({ page }) => {
+        await openWithWidgets(page, 820);
+        await row(page, 'Memory').locator('[data-widget-settings]').click();
+        await row(page, 'Processor').locator('[data-widget-pick]').check();
+        await page.locator('[data-widget-bulk="delete"]').click();
+        await page.locator('#config-confirm-modal [data-confirm="ok"]').click();
+        await expect(page.locator('.config-widget-row')).toHaveCount(2);
+        await expect(row(page, 'Memory').locator('.config-widget-detail')).toBeVisible();
+        await expect(page.locator('.config-widget-detail')).toHaveCount(1);
+    });
+
+    test('narrow: deleting the open widget closes the detail rather than opening a neighbour', async ({ page }) => {
+        await openWithWidgets(page, 820);
+        await row(page, 'Processor').locator('[data-widget-settings]').click();
+        await page.locator('.config-widget-detail [data-widget-delete]').click();
+        await page.locator('#config-confirm-modal [data-confirm="ok"]').click();
+        await expect(page.locator('.config-widget-row')).toHaveCount(2);
+        await expect(page.locator('.config-widget-detail')).toHaveCount(0);
+    });
+
+    test('wide: clearing a search gives back the widget that was chosen', async ({ page }) => {
+        await openWithWidgets(page, 1600);
+        await row(page, 'Notes').locator('[data-widget-settings]').click();
+        await page.locator('#config-widget-search').fill('mem');
+        await expect(side(page).locator('.config-widget-detail-title')).toContainText('Memory');
+        await page.locator('#config-widget-search').fill('');
+        await expect(side(page).locator('.config-widget-detail-title')).toContainText('Notes');
+    });
+
+    test('the widget shown by default does not follow into the narrow layout', async ({ page }) => {
+        await openWithWidgets(page, 1600);
+        await expect(side(page).locator('.config-widget-detail-title')).toContainText('Processor');
+        await page.setViewportSize({ width: 820, height: 900 });
+        await expect(side(page)).toHaveCount(0);
+        await expect(page.locator('.config-widget-detail')).toHaveCount(0);
+    });
+
+    test('a title half typed keeps its focus and text across the breakpoint', async ({ page }) => {
+        await openWithWidgets(page, 820);
+        const title = row(page, 'Notes').locator('[data-widget="title"]');
+        await title.click();
+        // End scrolls on macOS rather than moving the caret; put it at the end.
+        await title.evaluate((el) => el.setSelectionRange(el.value.length, el.value.length));
+        await page.keyboard.type(' list');
+        await page.setViewportSize({ width: 1600, height: 900 });
+        await expect(side(page)).toBeVisible();
+        await expect(page.locator('[data-widget="title"]:focus')).toHaveValue('Notes list');
+    });
+});
+
+test.describe('the controls on a row say what they are', () => {
+    test('select and shown are named after the widget, and shown says so in words', async ({ page }) => {
+        await openWithWidgets(page, 820);
+        const r = row(page, 'Memory');
+        await expect(r.locator('[data-widget-pick]')).toHaveAttribute('aria-label', /Memory/);
+        await expect(r.locator('[data-widget-enabled]')).toHaveAttribute('aria-label', /Memory/);
+        const pick = await r.locator('[data-widget-pick]').getAttribute('aria-label');
+        const shown = await r.locator('[data-widget-enabled]').getAttribute('aria-label');
+        expect(pick).not.toBe(shown);
+        await expect(r.locator('.config-widget-row-shown')).toContainText(/\S/);
+    });
+
+    test('Settings expands under the row when narrow and selects when wide', async ({ page }) => {
+        await openWithWidgets(page, 820);
+        const narrow = row(page, 'Memory').locator('[data-widget-settings]');
+        await expect(narrow).toHaveAttribute('aria-expanded', 'false');
+        await expect(narrow).toHaveAttribute('aria-controls', /config-widget-settings-/);
+        await page.setViewportSize({ width: 1600, height: 900 });
+        await expect(side(page)).toBeVisible();
+        const wide = row(page, 'Memory').locator('[data-widget-settings]');
+        await expect(wide).toHaveAttribute('aria-pressed', 'false');
+        expect(await wide.getAttribute('aria-expanded')).toBeNull();
+    });
+});

@@ -268,14 +268,17 @@ test.describe('the processor widget in config', () => {
         // Clicked only when the panel is closed: a widget added here arrives
         // with its settings open, and this button is a toggle -- clicking it
         // would hide the note this test is about to measure.
-        const toggle = page.locator(`[data-widget-settings="${idx}"]`);
-        if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
+        const isOpen = await page.locator(`[data-widget-row="${idx}"]`)
+            .evaluate((li) => li.classList.contains('is-open'));
+        if (!isOpen) await page.locator(`[data-widget-settings="${idx}"]`).click();
         await page.waitForTimeout(900);
 
+        // The detail, wherever it is drawn: under the row when the section is
+        // narrow, beside the list when it is wide.
         const shape = await page.evaluate((i) => {
-            const row = document.querySelector(`[data-widget-row="${i}"]`);
-            const note = row.querySelector('.config-widget-setup');
-            const body = row.querySelector('.config-widget-settings-body');
+            const detail = document.querySelector(`[data-widget-detail="${i}"]`);
+            const note = detail?.querySelector('.config-widget-setup');
+            const body = detail?.querySelector('.config-widget-settings-body');
             if (!note || !body) return null;
             return {
                 noteWidth: Math.round(note.getBoundingClientRect().width),

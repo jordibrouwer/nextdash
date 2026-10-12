@@ -6291,6 +6291,18 @@ body.no-animations .config-new-features-panel-star {
     min-width: 0;
 }
 
+/* .config-toggle carries a top margin for stacked settings; on one line it
+   pushed Shown below the select box and the title. */
+.config-widget-row-line .config-toggle {
+    margin-top: 0;
+}
+
+/* Said in words, so it does not read as a second select box beside the first. */
+.config-widget-row-shown span {
+    font-size: calc(var(--font-size-text) * 0.8);
+    color: var(--text-muted, #888);
+}
+
 .config-widget-row-main {
     display: flex;
     flex-direction: column;

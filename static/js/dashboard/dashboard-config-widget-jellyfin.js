@@ -85,8 +85,10 @@
         } else if (!setup && keyIsSaved && config.server) {
             // A saved widget opens with its choices already on screen: asked
             // once per widget and session, with the key the server holds.
+            // Only once the reader has opened it: a wide config shows the first
+            // widget by default, and that alone must not reach out to a server.
             this._jellyfinAsked = this._jellyfinAsked || {};
-            if (!this._jellyfinAsked[widget.id]) {
+            if (this.widgetIsChosen(widget) && !this._jellyfinAsked[widget.id]) {
                 this._jellyfinAsked[widget.id] = true;
                 setTimeout(() => void this.connectJellyfin(index), 0);
             }

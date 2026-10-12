@@ -76,7 +76,7 @@
 
     /*
      * What you get: the seven tiles in miniature, with example figures, each
-     * a step from its own Add in Widgets -> Types. Decorative drawings beside
+     * a step from its own Add in the widget catalogue. Decorative drawings beside
      * real buttons, so the drawings are hidden from assistive tech.
      */
     renderUnraidPreview() {
@@ -95,7 +95,7 @@
             <div class="config-panel unraid-preview" data-unraid-preview data-unraid-panel="widgets"${this.unraidPanelHidden('widgets')}>
                 <h3 class="config-panel-title">${t('unraidPreviewTitle', 'What you get')}</h3>
                 <p class="config-panel-note">${t('unraidPreviewNote',
-                    'Seven widgets read this server, shown here with example figures. Add opens Widgets → Types on that kind.')}</p>
+                    'Seven widgets read this server, shown here with example figures. Add opens the widget catalogue on that kind.')}</p>
                 <div class="unraid-minis">
                     ${tile('unraid', `${row('array', 'started', 'good')}${row('alerts', '2 unread', 'warn')}`)}
                     ${tile('unraidArray', `${bar(0.74)}${row('disk1', '74%')}`)}

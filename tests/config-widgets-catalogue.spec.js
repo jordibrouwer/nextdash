@@ -106,7 +106,9 @@ test.describe('the widget catalogue is a door, not the page', () => {
 
         const row = page.locator('.config-widget-row').filter({ hasText: 'RSS' });
         await expect(row).toHaveCount(1);
-        await expect(row.locator('[data-widget-settings]')).toHaveAttribute('aria-expanded', 'true');
+        // is-open in either layout: the button says aria-expanded when the
+        // detail folds out under it, aria-pressed when it sits beside the list.
+        await expect(row).toHaveClass(/is-open/);
         // The fields themselves, not just an expanded button.
         await expect(page.locator('.config-widget-detail textarea[data-widget-setting="feedUrls"]')).toBeVisible();
 
@@ -116,7 +118,7 @@ test.describe('the widget catalogue is a door, not the page', () => {
         await page.locator('.modal--widget-catalogue [data-widget-add="rss"]').click();
         await expect(page.locator('.config-widget-row').filter({ hasText: 'RSS' })).toHaveCount(2);
 
-        const open = page.locator('.config-widget-row [data-widget-settings][aria-expanded="true"]');
+        const open = page.locator('.config-widget-row.is-open [data-widget-settings]');
         await expect(open).toHaveCount(1);
         const areas = page.locator('textarea[data-widget-setting="feedUrls"]');
         await expect(areas).toHaveCount(1);

@@ -324,7 +324,6 @@ class DashboardConfig {
         this.statsInboxRange = 30;
         // Statistics sub-tab.
         this.statsTab = 'overview';
-        this.widgetsTab = 'widgets';
         // Grouped by default: the same headings the catalogue uses, so a long
         // list arrives already sorted into the questions each type answers.
         this.widgetSort = 'group';
@@ -583,10 +582,6 @@ class DashboardConfig {
             // news` opened the colophon and choosing the tab never reached the
             // address bar.
             about: DashboardConfig.ABOUT_TABS,
-            // The same trap About fell into: a section in SUB_TAB_STATE but not
-            // here has a tab that cannot be addressed, so the strip works and
-            // the address bar never follows it.
-            widgets: DashboardConfig.WIDGETS_TABS,
             inbox: DashboardConfig.INBOX_TABS,
             containers: DashboardConfig.CONTAINERS_TABS,
             'status-page': DashboardConfig.STATUS_PAGE_TABS,
@@ -684,7 +679,6 @@ class DashboardConfig {
         help: 'helpTab',
         logs: 'logsTab',
         bookmarks: 'bmTab',
-        widgets: 'widgetsTab',
         inbox: 'inboxTab',
         containers: 'containersTab',
         'status-page': 'statusPageTab',
@@ -707,7 +701,6 @@ class DashboardConfig {
         'data-help-tab': 'help',
         'data-logs-tab': 'logs',
         'data-bm-tab': 'bookmarks',
-        'data-widgets-tab': 'widgets',
         'data-inbox-tab': 'inbox',
         'data-containers-tab': 'containers',
         'data-sp-tab': 'status-page',
@@ -725,7 +718,6 @@ class DashboardConfig {
         help: 'data-help-tab',
         logs: 'data-logs-tab',
         bookmarks: 'data-bm-tab',
-        widgets: 'data-widgets-tab',
         inbox: 'data-inbox-tab',
         containers: 'data-containers-tab',
         'status-page': 'data-sp-tab',
@@ -19660,8 +19652,6 @@ class DashboardConfig {
 
     /* ── Categories (native, per page) ─────────────────────────────────────── */
 
-    /** The two halves of the Widgets section: the ones you have, and the kinds. */
-    static WIDGETS_TABS = ['widgets'];
 
     /*
      * The width of the Widgets section, in px, from which the list and the
