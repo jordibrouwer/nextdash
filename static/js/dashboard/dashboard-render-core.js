@@ -864,7 +864,7 @@ class DashboardRenderCore {
     forgetWidgetCaches() {
         const d = this.dash;
         delete d._widgetSources;
-        delete d._widgetJellyfin;
+        delete d._widgetMedia;
         delete d._widgetFeeds;
         delete d._widgetTrend;
         delete d._widgetInbox;

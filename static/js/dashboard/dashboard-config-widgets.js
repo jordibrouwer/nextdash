@@ -2412,8 +2412,9 @@
                     <div class="config-widget-checkset">${boxes}</div>
                 </div>`;
         }).join('');
-        if (widget.type === 'jellyfin' && typeof this.renderJellyfinSettings === 'function') {
-            return this.renderJellyfinSettings(widget, index, rows);
+        const mediaService = DashboardConfig.MEDIA_SERVICES?.[widget.type];
+        if (mediaService && typeof this.renderMediaSettings === 'function') {
+            return this.renderMediaSettings(widget, index, rows, mediaService);
         }
         if (widget.type === 'custom') {
             /*
@@ -3007,9 +3008,9 @@
              * state rather than a class toggle: a rename or a save elsewhere
              * must not close a panel someone is working in.
              */
-            const jellyfinConnect = target.closest('[data-jellyfin-connect]');
-            if (jellyfinConnect) {
-                void this.connectJellyfin?.(indexOn(jellyfinConnect, 'data-jellyfin-connect'));
+            const mediaConnect = target.closest('[data-media-connect]');
+            if (mediaConnect) {
+                void this.connectMedia?.(indexOn(mediaConnect, 'data-media-connect'));
                 return;
             }
 

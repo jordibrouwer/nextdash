@@ -30,7 +30,7 @@ func TestJellyfinImageServesWhatTheAnswerOffered(t *testing.T) {
 	if !strings.Contains(rec.Header().Get("Cache-Control"), "immutable") {
 		t.Error("a tagged picture is not cached for good")
 	}
-	entries, _ := os.ReadDir(filepath.Join(ResolveDataDir(), jellyfinImageDirName))
+	entries, _ := os.ReadDir(filepath.Join(ResolveDataDir(), mediaImageDirName, "jellyfin"))
 	if len(entries) != 1 {
 		t.Fatalf("%d files in the cache, want 1", len(entries))
 	}
@@ -102,7 +102,7 @@ func TestEvictImagesInDropsTheOldestFirst(t *testing.T) {
 
 func TestBackupLeavesJellyfinImagesOut(t *testing.T) {
 	h := newTestHandlers(t)
-	dir := filepath.Join(ResolveDataDir(), jellyfinImageDirName)
+	dir := filepath.Join(ResolveDataDir(), mediaImageDirName, "jellyfin")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -113,7 +113,7 @@ func TestBackupLeavesJellyfinImagesOut(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(string(data), jellyfinImageDirName+"/") {
+	if strings.Contains(string(data), mediaImageDirName+"/") {
 		t.Error("cached Jellyfin pictures went into the backup")
 	}
 }

@@ -108,7 +108,7 @@ class DashboardConfig {
         },
         /*
          * The widget editor, and the one panel that is more than a table of
-         * settings: Jellyfin's connect-then-choose flow, in a file of its own so
+         * settings: the media tiles' connect-then-choose flow, in a file of its own so
          * the editor does not grow by a service at a time.
          */
         widgets: {
@@ -119,9 +119,9 @@ class DashboardConfig {
                     ready: () => window.DashboardConfigWidgetsReady === true,
                 },
                 {
-                    file: 'js/dashboard/dashboard-config-widget-jellyfin.js',
-                    datasetKey: 'dashboardConfigWidgetJellyfin',
-                    ready: () => window.DashboardConfigJellyfinReady === true,
+                    file: 'js/dashboard/dashboard-config-widget-media.js',
+                    datasetKey: 'dashboardConfigWidgetMedia',
+                    ready: () => window.DashboardConfigMediaReady === true,
                 },
                 {
                     file: 'js/dashboard/dashboard-config-widget-catalogue.js',
@@ -130,7 +130,7 @@ class DashboardConfig {
                 },
             ],
             ready: () => window.DashboardConfigWidgetsReady === true
-                && window.DashboardConfigJellyfinReady === true
+                && window.DashboardConfigMediaReady === true
                 && window.DashboardConfigWidgetCatalogueReady === true,
         },
         /*

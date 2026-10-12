@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -30,80 +29,14 @@ label the tile shows.
 */
 
 const (
-	jellyfinTimeout     = 10 * time.Second
 	jellyfinMaxBody     = 4 << 20
 	jellyfinMaxOverview = 400
 	jellyfinDefaultRows = 6
 	jellyfinDefaultTTL  = 300
 )
 
-var (
-	errJellyfinNotSetUp    = errors.New("not set up")
-	errJellyfinNotAllowed  = errors.New("address not allowed")
-	errJellyfinRefused     = errors.New("key refused")
-	errJellyfinUnreachable = errors.New("unreachable")
-	errJellyfinNoLibraries = errors.New("no libraries")
-)
-
-// jellyfinErrorCode is what the tile is told: a short code it can word, never
-// the wrapped detail, which may name an internal address.
-func jellyfinErrorCode(err error) string {
-	for _, known := range []error{errJellyfinNotSetUp, errJellyfinNotAllowed, errJellyfinRefused, errJellyfinNoLibraries} {
-		if errors.Is(err, known) {
-			return known.Error()
-		}
-	}
-	return errJellyfinUnreachable.Error()
-}
-
 // JellyfinLibrary is one library a tile can show.
-type JellyfinLibrary struct {
-	ID             string `json:"id"`
-	Name           string `json:"name"`
-	CollectionType string `json:"collectionType,omitempty"`
-}
-
-// JellyfinItem is one new film, episode or series as the tile draws it.
-type JellyfinItem struct {
-	ID             string   `json:"id"`
-	Title          string   `json:"title"`
-	Subtitle       string   `json:"subtitle,omitempty"`
-	Kind           string   `json:"kind"`
-	Year           int      `json:"year,omitempty"`
-	Genres         []string `json:"genres,omitempty"`
-	RuntimeMinutes int      `json:"runtimeMinutes,omitempty"`
-	Overview       string   `json:"overview,omitempty"`
-	Library        string   `json:"library"`
-	LibraryID      string   `json:"libraryId"`
-	AddedAt        int64    `json:"addedAt"`
-	Played         bool     `json:"played,omitempty"`
-	// NewCount is how many episodes Jellyfin grouped into this line.
-	NewCount int    `json:"newCount,omitempty"`
-	Poster   string `json:"poster,omitempty"`
-	Backdrop string `json:"backdrop,omitempty"`
-	OpenURL  string `json:"openUrl"`
-}
-
-// JellyfinWidgetResult is what the tile draws.
-type JellyfinWidgetResult struct {
-	Items     []JellyfinItem    `json:"items"`
-	Libraries []JellyfinLibrary `json:"libraries"`
-	FetchedAt int64             `json:"fetchedAt"`
-	Error     string            `json:"error,omitempty"`
-	// Stale says the items are the last good answer and Error is why there
-	// is no newer one.
-	Stale bool `json:"stale,omitempty"`
-	// Partial says at least one library could not be read, so what is here is
-	// not all of it; the next read tries again soon.
-	Partial bool `json:"partial,omitempty"`
-}
-
-// jellyfinImageRef names one picture the proxy may fetch.
-type jellyfinImageRef struct {
-	Item string
-	Kind string // poster or backdrop
-	Tag  string
-}
+type JellyfinLibrary = MediaGroup
 
 type jellyfinSpec struct {
 	Server       string
@@ -154,53 +87,25 @@ func jellyfinMediaCollection(collectionType string) bool {
 }
 
 func (h *Handlers) jellyfinRequest(ctx context.Context, server string, credential HealthCredential, path string, query url.Values, accept string) (*http.Response, error) {
-	address := server + path
-	if len(query) > 0 {
-		address += "?" + query.Encode()
-	}
-	if err := validateHTTPURL(address, h.allowLocalBookmarks()); err != nil {
-		return nil, errJellyfinNotAllowed
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, address, nil)
-	if err != nil {
-		return nil, errJellyfinNotAllowed
-	}
-	req.Header.Set("Accept", accept)
-	req.Header.Set("User-Agent", "nextDash Widget/1.0")
-	applyHealthCredential(req, credential)
-	/*
-	 * The key is also sent the way current Jellyfin reads it.
-	 *
-	 * Jellyfin 10.11 answers 401 to X-Emby-Token and accepts only
-	 * Authorization: MediaBrowser Token="...", while older servers read the
-	 * header the panel files the key under. Both go out, so one stored key
-	 * works against either. Go drops Authorization itself when a redirect
-	 * leaves the host, which is the rule credentialRedirectCheck keeps for the
-	 * stored header.
-	 */
-	if token := strings.TrimSpace(req.Header.Get("X-Emby-Token")); token != "" && req.Header.Get("Authorization") == "" {
-		req.Header.Set("Authorization", `MediaBrowser Token="`+token+`"`)
-	}
-	client := h.outboundHTTPClient(jellyfinTimeout, 3)
-	// A key stored for this host does not follow a redirect to another.
-	client.CheckRedirect = credentialRedirectCheck(credential, client.CheckRedirect)
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", errJellyfinUnreachable, err)
-	}
-	switch {
-	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
-		resp.Body.Close()
-		return nil, fmt.Errorf("%w: HTTP %d from %s", errJellyfinRefused, resp.StatusCode, path)
-	case resp.StatusCode != http.StatusOK:
-		resp.Body.Close()
-		return nil, fmt.Errorf("%w: HTTP %d", errJellyfinUnreachable, resp.StatusCode)
-	}
-	return resp, nil
+	return h.mediaRequest(ctx, server, credential, path, query, accept, func(req *http.Request) {
+		/*
+		 * The key is also sent the way current Jellyfin reads it.
+		 *
+		 * Jellyfin 10.11 answers 401 to X-Emby-Token and accepts only
+		 * Authorization: MediaBrowser Token="...", while older servers read the
+		 * header the panel files the key under. Both go out, so one stored key
+		 * works against either. Go drops Authorization itself when a redirect
+		 * leaves the host, which is the rule credentialRedirectCheck keeps for the
+		 * stored header.
+		 */
+		if token := strings.TrimSpace(req.Header.Get("X-Emby-Token")); token != "" && req.Header.Get("Authorization") == "" {
+			req.Header.Set("Authorization", `MediaBrowser Token="`+token+`"`)
+		}
+	})
 }
 
 func (h *Handlers) jellyfinGet(ctx context.Context, server string, credential HealthCredential, path string, query url.Values, out any) error {
-	ctx, cancel := context.WithTimeout(ctx, jellyfinTimeout)
+	ctx, cancel := context.WithTimeout(ctx, mediaRequestTimeout)
 	defer cancel()
 	resp, err := h.jellyfinRequest(ctx, server, credential, path, query, "application/json")
 	if err != nil {
@@ -208,7 +113,7 @@ func (h *Handlers) jellyfinGet(ctx context.Context, server string, credential He
 	}
 	defer resp.Body.Close()
 	if err := json.NewDecoder(io.LimitReader(resp.Body, jellyfinMaxBody)).Decode(out); err != nil {
-		return fmt.Errorf("%w: %v", errJellyfinUnreachable, err)
+		return fmt.Errorf("%w: %v", errMediaUnreachable, err)
 	}
 	return nil
 }
@@ -241,8 +146,8 @@ type jellyfinRawItem struct {
 	groupedEpisodes int
 }
 
-func mapJellyfinItem(raw jellyfinRawItem, library JellyfinLibrary, server string, imageURL func(jellyfinImageRef) string) (JellyfinItem, []jellyfinImageRef) {
-	item := JellyfinItem{
+func mapJellyfinItem(raw jellyfinRawItem, library JellyfinLibrary, server string, imageURL func(mediaImageRef) string) (MediaItem, []mediaImageRef) {
+	item := MediaItem{
 		ID: raw.ID, Title: raw.Name, Kind: strings.ToLower(raw.Type), Year: raw.ProductionYear,
 		Genres: raw.Genres, Library: library.Name, LibraryID: library.ID,
 		Played: raw.UserData.Played, NewCount: raw.ChildCount,
@@ -262,26 +167,26 @@ func mapJellyfinItem(raw jellyfinRawItem, library JellyfinLibrary, server string
 		item.Subtitle = fmt.Sprintf("S%02dE%02d · %s", raw.ParentIndexNumber, raw.IndexNumber, raw.Name)
 	}
 
-	var refs []jellyfinImageRef
+	var refs []mediaImageRef
 	// An episode's own Primary is a 16:9 still; in a 2:3 frame it is the
 	// series poster that reads.
-	var poster jellyfinImageRef
+	var poster mediaImageRef
 	switch {
 	case raw.Type == "Episode" && raw.SeriesID != "" && raw.SeriesPrimaryImageTag != "":
-		poster = jellyfinImageRef{raw.SeriesID, "poster", raw.SeriesPrimaryImageTag}
+		poster = mediaImageRef{raw.SeriesID, "poster", raw.SeriesPrimaryImageTag}
 	case raw.Type != "Episode" && raw.ImageTags["Primary"] != "":
-		poster = jellyfinImageRef{raw.ID, "poster", raw.ImageTags["Primary"]}
+		poster = mediaImageRef{raw.ID, "poster", raw.ImageTags["Primary"]}
 	}
 	if poster.Item != "" {
 		item.Poster = imageURL(poster)
 		refs = append(refs, poster)
 	}
-	var backdrop jellyfinImageRef
+	var backdrop mediaImageRef
 	switch {
 	case len(raw.BackdropImageTags) > 0:
-		backdrop = jellyfinImageRef{raw.ID, "backdrop", raw.BackdropImageTags[0]}
+		backdrop = mediaImageRef{raw.ID, "backdrop", raw.BackdropImageTags[0]}
 	case raw.ParentBackdropItemID != "" && len(raw.ParentBackdropImageTags) > 0:
-		backdrop = jellyfinImageRef{raw.ParentBackdropItemID, "backdrop", raw.ParentBackdropImageTags[0]}
+		backdrop = mediaImageRef{raw.ParentBackdropItemID, "backdrop", raw.ParentBackdropImageTags[0]}
 	}
 	if backdrop.Item != "" {
 		item.Backdrop = imageURL(backdrop)
@@ -316,17 +221,17 @@ func jellyfinPickLibraries(views []JellyfinLibrary, chosen []string) []JellyfinL
 	return out
 }
 
-func (h *Handlers) fetchJellyfinLatest(ctx context.Context, spec jellyfinSpec, imageURL func(jellyfinImageRef) string) (JellyfinWidgetResult, map[jellyfinImageRef]bool, error) {
-	result := JellyfinWidgetResult{Items: []JellyfinItem{}, Libraries: []JellyfinLibrary{}}
-	images := map[jellyfinImageRef]bool{}
+func (h *Handlers) fetchJellyfinLatest(ctx context.Context, spec jellyfinSpec, imageURL func(mediaImageRef) string) (MediaResult, map[mediaImageRef]bool, error) {
+	result := MediaResult{Items: []MediaItem{}, Libraries: []JellyfinLibrary{}}
+	images := map[mediaImageRef]bool{}
 	// The key is enough. A user adds what they may see and what they have
 	// watched, and nothing more: without one the server lists every library.
 	if spec.Server == "" || spec.CredentialID == "" {
-		return result, images, errJellyfinNotSetUp
+		return result, images, errMediaNotSetUp
 	}
 	credential, ok := lookupHealthCredential(spec.CredentialID)
 	if !ok {
-		return result, images, errJellyfinNotSetUp
+		return result, images, errMediaNotSetUp
 	}
 
 	var all []JellyfinLibrary
@@ -359,7 +264,7 @@ func (h *Handlers) fetchJellyfinLatest(ctx context.Context, spec jellyfinSpec, i
 	}
 	result.Libraries = jellyfinPickLibraries(all, spec.Libraries)
 	if len(result.Libraries) == 0 {
-		return result, images, errJellyfinNoLibraries
+		return result, images, errMediaNoLibraries
 	}
 
 	/*
@@ -540,7 +445,7 @@ func (h *Handlers) JellyfinSetupHandler(w http.ResponseWriter, r *http.Request) 
 		if err != nil {
 			// The panel is told a short code; the cause stays in the log.
 			logWarn(logComponentWidgets, "Jellyfin setup for %s: %v", hostOf(stringOr(body["server"])), err)
-			answer.Error = jellyfinErrorCode(err)
+			answer.Error = mediaErrorCode(err)
 		}
 		_ = json.NewEncoder(w).Encode(answer)
 	}
@@ -552,11 +457,11 @@ func (h *Handlers) JellyfinSetupHandler(w http.ResponseWriter, r *http.Request) 
 	} else if stored, ok := lookupHealthCredential(stringOr(body["credentialId"])); ok {
 		credential = stored
 	} else {
-		reply(errJellyfinNotSetUp)
+		reply(errMediaNotSetUp)
 		return
 	}
 	if server == "" {
-		reply(errJellyfinNotSetUp)
+		reply(errMediaNotSetUp)
 		return
 	}
 

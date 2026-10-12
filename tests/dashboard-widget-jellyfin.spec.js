@@ -62,7 +62,7 @@ async function draw(page, { result, config = {}, width = 320 }) {
             await window.DashboardWidgets.jellyfin(body, { id: 'w_jf1', type: 'jellyfin', config }, d);
         } finally {
             window.fetch = realFetch;
-            delete d._widgetJellyfin;
+            delete d._widgetMedia;
         }
     }, { result, config, width });
     return page.locator('#jf-test');
@@ -120,15 +120,15 @@ test.describe('the Jellyfin widget', () => {
     test('the list shows titles, library and pictures, newest first', async ({ page }) => {
         await open(page);
         const tile = await draw(page, { result: answer(), config: { rows: 3 } });
-        const rows = tile.locator('[data-jellyfin-item]');
+        const rows = tile.locator('[data-media-item]');
         await expect(rows).toHaveCount(3);
         await expect(rows.nth(0)).toContainText('Dune: Part Two');
         await expect(rows.nth(1)).toContainText('Severance — S02E07 · Cold Harbor');
         await expect(rows.nth(2)).toContainText('+4');
         await expect(rows.nth(0).locator('img')).toHaveAttribute('loading', 'lazy');
         // No poster: initials stand in, not a broken image.
-        await expect(rows.nth(2).locator('.jellyfin-art')).toHaveClass(/is-missing/);
-        await expect(rows.nth(2).locator('.jellyfin-art')).toContainText('F');
+        await expect(rows.nth(2).locator('.media-art')).toHaveClass(/is-missing/);
+        await expect(rows.nth(2).locator('.media-art')).toContainText('F');
         expect(await rows.evaluateAll((els) => els.map((el) => el.tagName))).toEqual(['BUTTON', 'BUTTON', 'BUTTON']);
     });
 
@@ -150,8 +150,8 @@ test.describe('the Jellyfin widget', () => {
         await open(page);
         const result = answer({ error: 'unreachable', stale: true, fetchedAt: Date.now() - 12 * 60_000 });
         const tile = await draw(page, { result });
-        await expect(tile.locator('[data-jellyfin-item]').first()).toBeVisible();
-        await expect(tile.locator('.jellyfin-stale')).toContainText(/could not be reached.*12m/i);
+        await expect(tile.locator('[data-media-item]').first()).toBeVisible();
+        await expect(tile.locator('.media-stale')).toContainText(/could not be reached.*12m/i);
     });
 
     test('an empty answer says so', async ({ page }) => {
@@ -163,10 +163,10 @@ test.describe('the Jellyfin widget', () => {
     test('two columns show more per row than one', async ({ page }) => {
         await open(page);
         let tile = await draw(page, { result: answer(), config: { layout: 'list', rows: 4 }, width: 320 });
-        expect(await visible(tile, '.jellyfin-overview')).toBe(0);
+        expect(await visible(tile, '.media-overview')).toBe(0);
         tile = await draw(page, { result: answer(), config: { layout: 'list', rows: 4 }, width: 680 });
-        expect(await visible(tile, '.jellyfin-overview')).toBe(1);
-        await expect(tile.locator('.jellyfin-meta:visible').first()).toContainText('2024');
+        expect(await visible(tile, '.media-overview')).toBe(1);
+        await expect(tile.locator('.media-meta:visible').first()).toContainText('2024');
     });
 
     test('a long title does not push the second column out of the tile', async ({ page }) => {
@@ -178,7 +178,7 @@ test.describe('the Jellyfin widget', () => {
             const tile = await draw(page, { result, config: { layout, rows: 6 }, width: 680 });
             const geometry = await tile.evaluate((host) => {
                 const edge = host.getBoundingClientRect().right;
-                const rows = [...host.querySelectorAll('.jellyfin-row')].filter((el) => el.checkVisibility());
+                const rows = [...host.querySelectorAll('.media-row')].filter((el) => el.checkVisibility());
                 return {
                     inside: rows.every((row) => row.getBoundingClientRect().right <= edge + 1),
                     lefts: [...new Set(rows.map((row) => Math.round(row.getBoundingClientRect().left)))].length,
@@ -210,7 +210,7 @@ test.describe('the Jellyfin widget', () => {
         };
         for (const layout of ['grid', 'list', 'hero']) {
             const tile = await draw(page, { result, config: { layout, rows: 6 }, width: 680 });
-            const shown = await tile.locator('[data-jellyfin-item]').evaluateAll((els) => els.map((el) => el.dataset.jellyfinItem));
+            const shown = await tile.locator('[data-media-item]').evaluateAll((els) => els.map((el) => el.dataset.mediaItem));
             expect(shown, `${layout}: one show and one anime among the films`).toEqual(expect.arrayContaining(['tv1', 'an1']));
             expect(shown.length, `${layout}: still ${6} items`).toBe(6);
             // Newest first, as a timeline reads.
@@ -224,47 +224,47 @@ test.describe('the Jellyfin widget', () => {
         const result = answer({ partial: true });
         result.items = result.items.filter((item) => item.libraryId !== 'lib-anime');
         const tile = await draw(page, { result, config: { layout: 'strip' } });
-        await tile.locator('[data-jellyfin-tab="lib-anime"]').click();
-        await expect(tile.locator('.jellyfin-strip-empty')).toContainText(/could not be read/i);
-        await tile.locator('[data-jellyfin-tab="lib-tv"]').click();
-        await expect(tile.locator('[data-jellyfin-item]')).toHaveCount(1);
+        await tile.locator('[data-media-tab="lib-anime"]').click();
+        await expect(tile.locator('.media-strip-empty')).toContainText(/could not be read/i);
+        await tile.locator('[data-media-tab="lib-tv"]').click();
+        await expect(tile.locator('[data-media-item]')).toHaveCount(1);
     });
 
     test('strip: a tab per library, four posters narrow and eight wide', async ({ page }) => {
         await open(page);
         let tile = await draw(page, { result: answer(), config: { layout: 'strip', rows: 8 }, width: 320 });
-        await expect(tile.locator('[data-jellyfin-tab]')).toHaveText(['Films', 'Series', 'Anime']);
-        expect(await visible(tile, '[data-jellyfin-item]')).toBe(4);
+        await expect(tile.locator('[data-media-tab]')).toHaveText(['Films', 'Series', 'Anime']);
+        expect(await visible(tile, '[data-media-item]')).toBe(4);
 
         tile = await draw(page, { result: answer(), config: { layout: 'strip', rows: 8 }, width: 680 });
-        expect(await visible(tile, '[data-jellyfin-item]')).toBe(8);
+        expect(await visible(tile, '[data-media-item]')).toBe(8);
 
-        await tile.locator('[data-jellyfin-tab="lib-anime"]').click();
-        await expect(tile.locator('[data-jellyfin-tab="lib-anime"]')).toHaveAttribute('aria-selected', 'true');
-        await expect(tile.locator('[data-jellyfin-item]')).toHaveCount(1);
-        await expect(tile.locator('[data-jellyfin-tab="lib-anime"]')).toBeFocused();
+        await tile.locator('[data-media-tab="lib-anime"]').click();
+        await expect(tile.locator('[data-media-tab="lib-anime"]')).toHaveAttribute('aria-selected', 'true');
+        await expect(tile.locator('[data-media-item]')).toHaveCount(1);
+        await expect(tile.locator('[data-media-tab="lib-anime"]')).toBeFocused();
     });
 
     test('hero: the newest large with a backdrop, the rest as a list', async ({ page }) => {
         await open(page);
         let tile = await draw(page, { result: answer(), config: { layout: 'hero', rows: 3 }, width: 320 });
-        await expect(tile.locator('.jellyfin-hero')).toContainText('Dune: Part Two');
-        await expect(tile.locator('.jellyfin-hero .jellyfin-art--backdrop img')).toHaveCount(1);
-        await expect(tile.locator('.jellyfin-row')).toHaveCount(2);
-        expect(await visible(tile, '.jellyfin-hero .jellyfin-overview')).toBe(0);
+        await expect(tile.locator('.media-hero')).toContainText('Dune: Part Two');
+        await expect(tile.locator('.media-hero .media-art--backdrop img')).toHaveCount(1);
+        await expect(tile.locator('.media-row')).toHaveCount(2);
+        expect(await visible(tile, '.media-hero .media-overview')).toBe(0);
 
         tile = await draw(page, { result: answer(), config: { layout: 'hero', rows: 3 }, width: 680 });
-        expect(await visible(tile, '.jellyfin-hero .jellyfin-overview')).toBe(1);
+        expect(await visible(tile, '.media-hero .media-overview')).toBe(1);
     });
 
     test('grid: titles only when wide', async ({ page }) => {
         await open(page);
         let tile = await draw(page, { result: answer(), config: { layout: 'grid', rows: 6 }, width: 320 });
-        await expect(tile.locator('[data-jellyfin-item]')).toHaveCount(6);
-        expect(await visible(tile, '.jellyfin-caption')).toBe(0);
+        await expect(tile.locator('[data-media-item]')).toHaveCount(6);
+        expect(await visible(tile, '.media-caption')).toBe(0);
 
         tile = await draw(page, { result: answer(), config: { layout: 'grid', rows: 6 }, width: 680 });
-        expect(await visible(tile, '.jellyfin-caption')).toBe(6);
+        expect(await visible(tile, '.media-caption')).toBe(6);
     });
 
     test('a click opens Jellyfin where the widget says', async ({ page, context }) => {
@@ -277,7 +277,7 @@ test.describe('the Jellyfin widget', () => {
         let tile = await draw(page, { result: answer(), config: { target: '_blank', rows: 1 } });
         const [popup] = await Promise.all([
             context.waitForEvent('page'),
-            tile.locator('[data-jellyfin-item]').first().click(),
+            tile.locator('[data-media-item]').first().click(),
         ]);
         await popup.waitForURL(/jellyfin\.example\/web\//);
         await popup.close();
@@ -298,23 +298,23 @@ test.describe('the Jellyfin widget', () => {
 
         // _self: this tab.
         tile = await draw(page, { result: answer(), config: { target: '_self', rows: 1 } });
-        await tile.locator('[data-jellyfin-item]').first().click();
+        await tile.locator('[data-media-item]').first().click();
         await expect(page).toHaveURL(/jellyfin\.example\/web/);
     });
 
     test('detail: a card with the facts, closed with Escape, focus back on the item', async ({ page }) => {
         await open(page);
         const tile = await draw(page, { result: answer(), config: { click: 'detail', target: '_self', rows: 2 } });
-        const first = tile.locator('[data-jellyfin-item]').first();
+        const first = tile.locator('[data-media-item]').first();
         await first.focus();
         await page.keyboard.press('Enter');
 
-        const card = page.locator('dialog.jellyfin-detail[open]');
+        const card = page.locator('dialog.media-detail[open]');
         await expect(card).toBeVisible();
         await expect(card).toContainText('Dune: Part Two');
         await expect(card).toContainText('166 min');
         await expect(card).toContainText('Paul joins the Fremen.');
-        await expect(card.locator('[data-jellyfin-open]')).toBeFocused();
+        await expect(card.locator('[data-media-open]')).toBeFocused();
 
         await page.keyboard.press('Escape');
         await expect(card).toHaveCount(0);
@@ -377,12 +377,12 @@ test.describe('the Jellyfin widget', () => {
 
         await row.locator('[data-widget-setting="server"]').fill('http://jellyfin.lan:8096');
         await row.locator('[data-widget-auth="secret"]').fill('wrong');
-        await row.locator('[data-jellyfin-connect]').click();
-        await expect(row.locator('[data-jellyfin-status]')).toContainText(/refused/i);
+        await row.locator('[data-media-connect]').click();
+        await expect(row.locator('[data-media-status]')).toContainText(/refused/i);
 
         await row.locator('[data-widget-auth="secret"]').fill('k-123');
-        await row.locator('[data-jellyfin-connect]').click();
-        await expect(row.locator('[data-jellyfin-status]')).toContainText('Home');
+        await row.locator('[data-media-connect]').click();
+        await expect(row.locator('[data-media-status]')).toContainText('Home');
         // The typed key is still in its box after the panel redraws.
         await expect(row.locator('[data-widget-auth="secret"]')).toHaveValue('k-123');
         await row.locator('[data-widget-setting="userId"]').selectOption('u2');

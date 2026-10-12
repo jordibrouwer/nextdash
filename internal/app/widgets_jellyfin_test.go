@@ -185,7 +185,7 @@ func jellyfinTestSpec(t *testing.T, h *Handlers, fake *fakeJellyfin, config map[
 	return jellyfinSpecFrom(sanitizeWidgetConfig(WidgetTypeJellyfin, full))
 }
 
-func testImageURL(ref jellyfinImageRef) string {
+func testImageURL(ref mediaImageRef) string {
 	return "/img/" + ref.Item + "/" + ref.Kind + "/" + ref.Tag
 }
 
@@ -226,7 +226,7 @@ func TestFetchJellyfinLatestMapsEachKind(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	byID := map[string]JellyfinItem{}
+	byID := map[string]MediaItem{}
 	for _, item := range result.Items {
 		byID[item.ID] = item
 	}
@@ -253,7 +253,7 @@ func TestFetchJellyfinLatestMapsEachKind(t *testing.T) {
 	if episode.Poster != "/img/s1/poster/spt1" || episode.Backdrop != "/img/s1/backdrop/sbt1" {
 		t.Errorf("episode pictures: %q %q", episode.Poster, episode.Backdrop)
 	}
-	if images[jellyfinImageRef{Item: "e1", Kind: "poster", Tag: "ept1"}] {
+	if images[mediaImageRef{Item: "e1", Kind: "poster", Tag: "ept1"}] {
 		t.Error("the episode still was offered as a poster")
 	}
 
@@ -298,7 +298,7 @@ func TestFetchJellyfinWithoutAUser(t *testing.T) {
 		t.Fatal(err)
 	}
 	var ids []string
-	byID := map[string]JellyfinItem{}
+	byID := map[string]MediaItem{}
 	for _, item := range result.Items {
 		ids = append(ids, item.ID)
 		byID[item.ID] = item
@@ -377,8 +377,8 @@ func TestFetchJellyfinLatestReportsWhatWentWrong(t *testing.T) {
 	t.Run("deleted libraries", func(t *testing.T) {
 		spec := jellyfinTestSpec(t, h, fake, map[string]any{"libraries": []any{"lib-gone"}})
 		_, _, err := h.fetchJellyfinLatest(context.Background(), spec, testImageURL)
-		if jellyfinErrorCode(err) != "no libraries" {
-			t.Errorf("code = %q (%v)", jellyfinErrorCode(err), err)
+		if mediaErrorCode(err) != "no libraries" {
+			t.Errorf("code = %q (%v)", mediaErrorCode(err), err)
 		}
 	})
 	t.Run("refused key", func(t *testing.T) {
@@ -386,8 +386,8 @@ func TestFetchJellyfinLatestReportsWhatWentWrong(t *testing.T) {
 		fake.setStatus(http.StatusUnauthorized)
 		defer fake.setStatus(0)
 		_, _, err := h.fetchJellyfinLatest(context.Background(), spec, testImageURL)
-		if jellyfinErrorCode(err) != "key refused" {
-			t.Errorf("code = %q (%v)", jellyfinErrorCode(err), err)
+		if mediaErrorCode(err) != "key refused" {
+			t.Errorf("code = %q (%v)", mediaErrorCode(err), err)
 		}
 	})
 	t.Run("server error", func(t *testing.T) {
@@ -395,21 +395,21 @@ func TestFetchJellyfinLatestReportsWhatWentWrong(t *testing.T) {
 		fake.setStatus(http.StatusBadGateway)
 		defer fake.setStatus(0)
 		_, _, err := h.fetchJellyfinLatest(context.Background(), spec, testImageURL)
-		if jellyfinErrorCode(err) != "unreachable" {
-			t.Errorf("code = %q (%v)", jellyfinErrorCode(err), err)
+		if mediaErrorCode(err) != "unreachable" {
+			t.Errorf("code = %q (%v)", mediaErrorCode(err), err)
 		}
 	})
 	t.Run("local address not allowed", func(t *testing.T) {
 		spec := jellyfinTestSpec(t, h, fake, nil)
 		allowLocalForTest(t, h, false)
 		_, _, err := h.fetchJellyfinLatest(context.Background(), spec, testImageURL)
-		if jellyfinErrorCode(err) != "address not allowed" {
-			t.Errorf("code = %q (%v)", jellyfinErrorCode(err), err)
+		if mediaErrorCode(err) != "address not allowed" {
+			t.Errorf("code = %q (%v)", mediaErrorCode(err), err)
 		}
 	})
 	t.Run("nothing set up", func(t *testing.T) {
 		_, _, err := h.fetchJellyfinLatest(context.Background(), jellyfinSpecFrom(map[string]any{}), testImageURL)
-		if !errors.Is(err, errJellyfinNotSetUp) {
+		if !errors.Is(err, errMediaNotSetUp) {
 			t.Errorf("err = %v", err)
 		}
 	})
@@ -427,11 +427,11 @@ func jellyfinTestWidget(t *testing.T, h *Handlers, fake *fakeJellyfin, config ma
 	if err := h.store.SavePageBlocks(1, []Widget{widget}, nil); err != nil {
 		t.Fatal(err)
 	}
-	jellyfinForgetAll()
+	mediaForgetAll()
 	return widget.ID
 }
 
-func askJellyfinWidget(t *testing.T, h *Handlers, id string) JellyfinWidgetResult {
+func askJellyfinWidget(t *testing.T, h *Handlers, id string) MediaResult {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, "/api/widgets/jellyfin?pageId=1&id="+url.QueryEscape(id), nil)
 	rec := httptest.NewRecorder()
@@ -442,7 +442,7 @@ func askJellyfinWidget(t *testing.T, h *Handlers, id string) JellyfinWidgetResul
 	if strings.Contains(rec.Body.String(), jellyfinTestKey) {
 		t.Fatal("the API key is in the answer")
 	}
-	var result JellyfinWidgetResult
+	var result MediaResult
 	if err := json.Unmarshal(rec.Body.Bytes(), &result); err != nil {
 		t.Fatal(err)
 	}
@@ -474,7 +474,7 @@ func TestJellyfinWidgetHandlerKeepsTheLastGoodAnswer(t *testing.T) {
 	id := jellyfinTestWidget(t, h, fake, nil)
 
 	good := askJellyfinWidget(t, h, id)
-	jellyfinExpireAll()
+	mediaExpireAll()
 	fake.setStatus(http.StatusBadGateway)
 
 	stale := askJellyfinWidget(t, h, id)
@@ -498,16 +498,16 @@ func TestJellyfinWidgetHandlerDoesNotKeepAHalfAnswerForLong(t *testing.T) {
 	if !partial.Partial || len(partial.Items) != 3 {
 		t.Fatalf("expected the other libraries and a partial flag, got %+v", partial)
 	}
-	jellyfinWidgetCache.Lock()
-	entry := jellyfinWidgetCache.at[jellyfinCacheKey(1, id)]
+	mediaWidgetCache.Lock()
+	entry := mediaWidgetCache.at[mediaCacheKey("jellyfin", 1, id)]
 	wait := time.Until(entry.expires)
-	jellyfinWidgetCache.Unlock()
+	mediaWidgetCache.Unlock()
 	if wait > time.Minute {
 		t.Fatalf("a partial answer is kept for %v", wait)
 	}
 
 	fake.failParent = ""
-	jellyfinExpireAll()
+	mediaExpireAll()
 	full := askJellyfinWidget(t, h, id)
 	if full.Partial || len(full.Items) != 4 {
 		t.Fatalf("the retry did not complete the answer: %+v", full)
@@ -554,7 +554,7 @@ func TestJellyfinWidgetHandlerSaysWhenNotSetUp(t *testing.T) {
 	if err := h.store.SavePageBlocks(1, []Widget{{ID: "w_jf0000000002", Type: WidgetTypeJellyfin}}, nil); err != nil {
 		t.Fatal(err)
 	}
-	jellyfinForgetAll()
+	mediaForgetAll()
 	if got := askJellyfinWidget(t, h, "w_jf0000000002"); got.Error != "not set up" {
 		t.Fatalf("error = %q", got.Error)
 	}
