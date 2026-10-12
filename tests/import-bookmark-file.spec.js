@@ -28,6 +28,10 @@ const FILE = `<!DOCTYPE NETSCAPE-Bookmark-file-1>
 async function openBackups(page) {
     await markWhatsNewSeen(page);
     await page.goto('/');
+    await showBackups(page);
+}
+
+async function showBackups(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
@@ -39,6 +43,24 @@ async function openBackups(page) {
     await page.evaluate(() => {
         document.querySelectorAll('details[data-fold]').forEach((d) => { d.open = true; });
     });
+}
+
+/*
+ * Import the file and wait for the page to come back.
+ *
+ * The app reloads itself a second after an import ("Imported 2 ... Reloading"),
+ * and the rows are in the store before that. A test that went on as soon as it
+ * saw them was cut off by the reload: its next evaluate died with "Execution
+ * context was destroyed", or ran in the half-loaded page before the write
+ * token was there and got Unauthorized.
+ */
+async function importFile(page) {
+    const modal = await chooseFile(page);
+    const reloaded = page.waitForEvent('load', { timeout: 15_000 });
+    await modal.locator('[data-confirm="ok"]').click();
+    await reloaded;
+    await showBackups(page);
+    return modal;
 }
 
 async function chooseFile(page) {
@@ -58,7 +80,9 @@ test.describe('importing a bookmark file', () => {
         // Two, not three: the javascript: row is not a bookmark, and the count
         // is the server's — the same parse that is about to do the writing.
         await expect(modal).toContainText('2');
+        const reloaded = page.waitForEvent('load', { timeout: 15_000 });
         await modal.locator('[data-confirm="ok"]').click();
+        await reloaded;
 
         await expect.poll(async () => page.evaluate(async () => {
             const rows = await (await fetch('/api/bookmarks?page=1')).json();
@@ -96,7 +120,7 @@ test.describe('importing a bookmark file', () => {
      */
     test('exports a file the import can read again', async ({ page }) => {
         await openBackups(page);
-        await (await chooseFile(page)).locator('[data-confirm="ok"]').click();
+        await importFile(page);
         await expect.poll(async () => page.evaluate(async () => {
             const rows = await (await fetch('/api/bookmarks?page=1')).json();
             return rows.filter((b) => b.url.includes('e2e-import')).length;
@@ -131,7 +155,7 @@ test.describe('importing a bookmark file', () => {
 
     test('the confirm says how many are already here', async ({ page }) => {
         await openBackups(page);
-        await (await chooseFile(page)).locator('[data-confirm="ok"]').click();
+        await importFile(page);
         await expect.poll(async () => page.evaluate(async () => {
             const rows = await (await fetch('/api/bookmarks?page=1')).json();
             return rows.filter((b) => b.url.includes('e2e-import')).length;
