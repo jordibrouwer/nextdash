@@ -195,7 +195,7 @@ class DashboardConfig {
      * be worth a second look. Cleared when the release is no longer recent,
      * for the same reason as the twinkle above.
      */
-    static NEW_SECTIONS = ['containers', 'unraid', 'monitoring', 'status-page'];
+    static NEW_SECTIONS = ['widgets', 'monitoring', 'status-page'];
 
     static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
 
