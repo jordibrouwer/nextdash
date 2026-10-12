@@ -12,8 +12,8 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } 
  * so the tests do not change with every release's prose.
  */
 
-const VIDEO = fs.readFileSync(path.join(__dirname, '..', 'static', 'data', 'whats-new', 'media', 'v1.19.3-weekly-digest.webm'));
-const STILL = fs.readFileSync(path.join(__dirname, '..', 'static', 'data', 'whats-new', 'media', 'v1.19.3-weekly-digest.jpg'));
+const VIDEO = fs.readFileSync(path.join(__dirname, '..', 'static', 'data', 'whats-new', 'media', 'v1.19.4-weekly-digest.webm'));
+const STILL = fs.readFileSync(path.join(__dirname, '..', 'static', 'data', 'whats-new', 'media', 'v1.19.4-weekly-digest.jpg'));
 
 const RELEASES = {
     'v9.2.0': {

@@ -1,9 +1,36 @@
 {
-  "tag": "v1.19.3",
+  "tag": "v1.19.4",
   "date": "12 October 2026",
   "releasedAt": "2026-10-12",
-  "modalLead": "A <strong>weekly digest</strong> of what needs you, and all of monitoring in one place: <strong>Config → Monitoring</strong>.",
+  "modalLead": "A <strong>Jellyfin widget</strong> with the posters from your own library, a <strong>weekly digest</strong> of what needs you, and all of monitoring in one place: <strong>Config → Monitoring</strong>.",
   "sections": [
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>See what was added to your Jellyfin lately,</strong> with the real posters from your own library. Add the Jellyfin widget under Config → Widgets → Catalogue, fill in the address and an API key and press Connect. It shows a list, a strip with a tab per library, a grid, or the newest item large.",
+          "highlight": true,
+          "title": "New in Jellyfin, with real posters",
+          "link": "#config/widgets/catalogue",
+          "linkLabel": "Set it up",
+          "media": {
+            "image": "media/v1.19.4-jellyfin-widget.jpg",
+            "video": "media/v1.19.4-jellyfin-widget.webm",
+            "alt": "The Jellyfin widget on the dashboard: posters of what was added lately, with the library under each"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Config → Widgets has three tabs:</strong> Your widgets, Catalogue and Custom widget. The Catalogue shows every kind with a small picture of what it looks like, and the old Types tab folded into it. On a wide screen the list and the open widget stand side by side.",
+          "link": "#config/widgets"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Renaming a widget</strong> no longer takes the cursor away when you move on to the next field."
+        }
+      ]
+    },
     {
       "title": "Weekly digest",
       "items": [
@@ -15,8 +42,8 @@
           "link": "#config/monitoring/notifications",
           "linkLabel": "Set it up",
           "media": {
-            "image": "media/v1.19.3-weekly-digest.jpg",
-            "video": "media/v1.19.3-weekly-digest.webm",
+            "image": "media/v1.19.4-weekly-digest.jpg",
+            "video": "media/v1.19.4-weekly-digest.webm",
             "alt": "Config → Monitoring → Notifications, scrolled to the weekly digest"
           }
         },
@@ -27,6 +54,11 @@
         {
           "badge": "new",
           "text": "<strong>Pick the day, the hour and what goes in</strong> under Config → Monitoring → Notifications → Weekly digest. <strong>Send</strong> sends a proof digest right away. It is on by default, on Monday at 08:00.",
+          "link": "#config/monitoring/notifications"
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The digest names the week's nextDash releases</strong> in a part called New in nextDash, with a button that opens this window. Switch the part off under Config → Monitoring → Notifications → Weekly digest.",
           "link": "#config/monitoring/notifications"
         }
       ]
@@ -50,6 +82,19 @@
       ]
     },
     {
+      "title": "What's new",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A release's highlight gets a spotlight</strong> at the top of this window: a picture or a short clip, a line of explanation and a button to where it lives."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Every release since your last visit opens here,</strong> with a count of what is new and fixed. Older releases stay folded under Earlier."
+        }
+      ]
+    },
+    {
       "title": "Dashboard",
       "items": [
         {
@@ -68,6 +113,15 @@
         {
           "badge": "fix",
           "text": "<strong>Clean up disk space</strong> says <em>1 stopped container</em> and <em>1 image</em> when there is only one."
+        }
+      ]
+    },
+    {
+      "title": "Tag suggestions",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Tag suggestions know a subdomain</strong> by its parent domain: <em>docs.docker.com</em> gets the tags of <em>docker.com</em>."
         }
       ]
     }
