@@ -108,6 +108,22 @@ func TestContainerNotifierHealthAndOOM(t *testing.T) {
 	}
 }
 
+// A recreate (compose up --force-recreate, a pull) destroys the container and
+// starts a new one under the same name. What the old one announced still has
+// to be answered, or its open alert keeps being reminded about.
+func TestContainerNotifierRecreateAnswersWhatWasTold(t *testing.T) {
+	r := newNotifierRun(t)
+	r.ev("health_status: unhealthy", "web")
+	r.ev("kill", "web", "signal", "15").at(time.Second).ev("die", "web", "exitCode", "0").ev("stop", "web").ev("destroy", "web")
+	r.at(time.Second).ev("create", "web").ev("start", "web").ev("health_status: healthy", "web")
+	r.want("web is unhealthy", "web is healthy again")
+
+	r = newNotifierRun(t)
+	r.ev("die", "db", "exitCode", "1").at(2 * time.Minute).tick()
+	r.ev("destroy", "db").at(time.Second).ev("create", "db").ev("start", "db")
+	r.want("db stopped unexpectedly", "db is running again")
+}
+
 // Muted, hidden and nextDash's own container raise nothing, and a recovery is
 // only told for an incident that was.
 func TestContainerNotifierSkipsWhatIsNotAllowed(t *testing.T) {

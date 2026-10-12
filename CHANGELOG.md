@@ -134,6 +134,7 @@ The headline is the Jellyfin widget: connect it once and it shows what was added
 
 ### Monitoring
 
+- **fix — a recreated container answers what the old one announced.** `docker compose up --force-recreate` (or a pull) destroys the container and starts a new one under the same name; the `destroy` event wiped the notifier's memory of the *unhealthy* or *stopped unexpectedly* it had sent, so no *healthy again* / *running again* followed, the open alert stayed in `notify-open.json` and reminders said *still has a problem* about a container that ran fine. The watch is now kept while a notice is outstanding (`docker_notify.go`).
 - **new — the weekly digest names the week's nextDash releases.** A *New in nextDash* part, made from the same files the What's new window reads, lists every release that came out in the digest's week with the items marked as a highlight, or the release's one-line lead when nothing is marked. Its button opens What's new; it is news, so it does not count as something to work through. On by default (`digestNews`, `digest_news.go`).
 
 ### Docs

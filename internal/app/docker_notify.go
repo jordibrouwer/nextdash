@@ -260,7 +260,12 @@ func (n *containerNotifier) event(ev dockerEvent, now time.Time, allowed func(na
 			}
 		}
 	case action == "destroy":
-		delete(n.watch, name)
+		// A recreate keeps the name: the new container's start or healthy has
+		// to close what the old one announced, or its open alert is reminded
+		// about while it runs fine.
+		if !w.toldStop && !w.toldLoop && !w.toldHealth {
+			delete(n.watch, name)
+		}
 	}
 	return out
 }
