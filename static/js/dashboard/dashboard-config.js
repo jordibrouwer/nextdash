@@ -2349,12 +2349,58 @@ class DashboardConfig {
         // frame are the same markup on every render — rebuilding them threw away
         // the scroll position and cost a layout pass per section switch, on a
         // view whose whole job is switching sections.
+        const refocus = this.captureFocusForRender(container);
         if (this.reuseShell(container)) {
             this.afterRender(container);
+            refocus();
             return;
         }
         container.innerHTML = this.renderShell();
         this.afterRender(container);
+        refocus();
+    }
+
+    /**
+     * Hand the focus to the same control once a render has replaced it.
+     *
+     * Several sections draw again on their own when data lands -- Appearance
+     * when the colour document or the surface meta arrives -- and each of
+     * those renders replaced the focused control with a copy, leaving the
+     * focus on <body>: a settings jump that had just reached its control lost
+     * it, and the sub-tab strip stopped answering the arrow keys. Restored in
+     * the same task as the render, so no key press can fall in between.
+     *
+     * The control is found again by its id, else by a data attribute that
+     * names exactly one element in the new markup. Nothing is done when the
+     * old control survived the render, when something else has taken the
+     * focus since, or when the new markup has no such control.
+     */
+    captureFocusForRender(container) {
+        const none = () => {};
+        const el = document.activeElement;
+        if (!el || el === document.body || !container.contains(el)) return none;
+        const selectors = [];
+        if (el.id) selectors.push(`#${CSS.escape(el.id)}`);
+        const tag = el.tagName.toLowerCase();
+        for (const { name, value } of el.attributes) {
+            // Set by the binders, not by the markup: they say nothing about
+            // which control this is.
+            if (!name.startsWith('data-') || name.endsWith('-bound') || name === 'data-label' || !value) continue;
+            selectors.push(`${tag}[${name}="${CSS.escape(value)}"]`);
+        }
+        if (!selectors.length) return none;
+        return () => {
+            if (el.isConnected) return;
+            const now = document.activeElement;
+            if (now && now !== document.body) return;
+            for (const sel of selectors) {
+                const found = container.querySelectorAll(sel);
+                if (found.length === 1) {
+                    found[0].focus({ preventScroll: true });
+                    return;
+                }
+            }
+        };
     }
 
     /**
