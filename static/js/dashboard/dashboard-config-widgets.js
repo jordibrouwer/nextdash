@@ -2817,6 +2817,7 @@
             jellyfin: 'What was added to Jellyfin lately — films, series and anime, with posters.',
             sonarr: 'Episodes coming up and downloads in progress in Sonarr, with posters.',
             radarr: 'Films coming out and downloads in progress in Radarr, with posters.',
+            seerr: 'Requests in Overseerr or Jellyseerr — who asked, and whether it has arrived — with posters.',
             unraid: 'The Unraid server at a glance: array, parity, disks, alerts, VMs and the UPS, a line each.',
             unraidArray: 'Every disk of the Unraid array: how full, how warm, and which one is in trouble.',
             unraidParity: 'The last parity check, or the one running now, with its history when wide.',
@@ -3781,6 +3782,11 @@
     updateWidgetAuthField(index, field, value) {
         const draft = this.widgetDraft(index);
         if (!draft) return;
+        // A service that knows its key's shape can mend a careless copy of it
+        // (Seerr's base64 without its "==").
+        const type = (this._widgetBlocks || [])[index]?.type;
+        const normalize = DashboardConfig.MEDIA_SERVICES?.[type]?.normalizeKey;
+        if (field === 'secret' && typeof normalize === 'function') value = normalize(String(value || '').trim());
         draft.auth = { ...(draft.auth || {}), [field]: String(value || '') };
         if (field === 'headerName') this.syncSchemeHint(index, value);
         // A key typed is a change on its own: Save stayed off until something

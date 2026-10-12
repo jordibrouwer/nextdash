@@ -295,6 +295,19 @@ var widgetFields = map[WidgetType][]widgetField{
 	},
 	WidgetTypeSonarr: arrWidgetFields(),
 	WidgetTypeRadarr: arrWidgetFields(),
+	WidgetTypeSeerr: {
+		{Key: "server", Kind: "url"},
+		{Key: "credentialId", Kind: "string"},
+		{Key: "status", Kind: "string", Allowed: []string{"all", "pending", "approved", "available"}},
+		// A Seerr user id; absent means everyone's requests.
+		{Key: "requestedBy", Kind: "string"},
+		{Key: "mediaType", Kind: "string", Allowed: []string{"both", "movie", "tv"}},
+		{Key: "layout", Kind: "string", Allowed: []string{"list", "strip", "hero", "grid"}},
+		{Key: "click", Kind: "string", Allowed: []string{"open", "detail"}},
+		{Key: "target", Kind: "string", Allowed: []string{"inherit", "_blank", "_self"}},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+		{Key: "ttl", Kind: "int", Min: 60, Max: 3600},
+	},
 	WidgetTypeJellyfin: {
 		{Key: "server", Kind: "url"},
 		{Key: "credentialId", Kind: "string"},
@@ -591,7 +604,7 @@ func widgetTypeNames() []string {
 		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS, WidgetTypeNotes,
 		WidgetTypeUnraid, WidgetTypeUnraidArray, WidgetTypeUnraidParity, WidgetTypeUnraidShares,
 		WidgetTypeUnraidVMs, WidgetTypeUnraidUPS, WidgetTypeUnraidNotifications,
-		WidgetTypeJellyfin, WidgetTypeSonarr, WidgetTypeRadarr,
+		WidgetTypeJellyfin, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone
 		// to build by hand what is two entries above it.

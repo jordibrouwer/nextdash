@@ -85,6 +85,47 @@
             Config.MEDIA_SERVICES[id] = { id, name, header: 'X-Api-Key', placeholder, words: {} };
         });
 
+    /*
+     * Seerr: whose requests to show is chosen from the users Connect lists.
+     *
+     * Its key is base64 and ends in "==" -- the part a double-click to copy
+     * leaves behind, and without it Seerr answers 403 as to a wrong key. The
+     * padding is put back here, because a key that is base64 apart from its
+     * padding can only mean that.
+     */
+    Config.MEDIA_SERVICES.seerr = {
+        id: 'seerr',
+        name: 'Seerr',
+        header: 'X-Api-Key',
+        placeholder: 'http://seerr.local:5055',
+        words: {
+            keyWhere: ['config.widgetSeerrKeyWhere', 'Settings → General → API Key in Seerr, with the == at the end'],
+        },
+        normalizeKey(key) {
+            if (!/^[A-Za-z0-9+/]+$/.test(key) || key.length % 4 === 0) return key;
+            return key + '='.repeat(4 - (key.length % 4));
+        },
+        choices(panel, widget, index, setup, config, esc) {
+            const chosen = String(config.requestedBy || '');
+            const everyone = `<option value="" ${chosen ? '' : 'selected'}>${esc(panel.t(
+                'config.widgetSeerrEveryone', 'Everyone'))}</option>`;
+            const users = everyone + (setup.users || []).map((user) => `<option value="${esc(user.id)}" ${
+                user.id === chosen ? 'selected' : ''}>${esc(user.name)}</option>`).join('');
+            return `
+                <div class="config-widget-field">
+                    <label for="widget-${index}-media-requester">${esc(panel.t('config.widgetSeerrRequestedBy', 'Requested by'))}</label>
+                    <select id="widget-${index}-media-requester" class="config-select" data-widget-setting="requestedBy"
+                        data-widget-index="${index}" data-widget-kind="text">${users}</select>
+                </div>`;
+        },
+        connected(draft, answer) {
+            const users = answer.users || [];
+            if (draft.config.requestedBy && !users.some((user) => user.id === draft.config.requestedBy)) {
+                delete draft.config.requestedBy;
+            }
+        },
+    };
+
     const SHARED_WORDS = {
         server: ['config.widgetMediaServer', 'Address'],
         key: ['config.widgetMediaKey', 'API key'],

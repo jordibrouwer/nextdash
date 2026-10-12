@@ -136,6 +136,9 @@ const (
 	// downloading, with posters, through the same media tile as Jellyfin.
 	WidgetTypeSonarr WidgetType = "sonarr"
 	WidgetTypeRadarr WidgetType = "radarr"
+	// WidgetTypeSeerr shows requests in Overseerr or Jellyseerr: what was
+	// asked for, by whom, and whether it has arrived.
+	WidgetTypeSeerr  WidgetType = "seerr"
 	WidgetTypeCustom WidgetType = "custom"
 	// WidgetTypeNotes holds a short text of the reader's own, some lines of it
 	// tickable. The text is the widget's config, so it travels with the page.
@@ -184,6 +187,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeJellyfin:   {},
 	WidgetTypeSonarr:     {},
 	WidgetTypeRadarr:     {},
+	WidgetTypeSeerr:      {},
 
 	WidgetTypeUnraid:              {},
 	WidgetTypeUnraidArray:         {},

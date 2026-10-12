@@ -17659,7 +17659,7 @@ class DashboardConfig {
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'notes']],
-        ['media', ['jellyfin', 'sonarr', 'radarr']],
+        ['media', ['jellyfin', 'sonarr', 'radarr', 'seerr']],
     ];
 
     renderPagesTags() {
@@ -19808,7 +19808,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'sonarr', 'radarr', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'sonarr', 'radarr', 'seerr', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -19841,6 +19841,28 @@ class DashboardConfig {
         { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetMediaRows', 'Items to show'],
           hint: ['config.widgetMediaRowsHint', 'In the strip, per part.'] },
         { key: 'ttl', kind: 'int', min: 60, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
+    ];
+
+    /**
+     * Seerr's settings, mirroring WidgetTypeSeerr in widgets_config.go. The
+     * requester is chosen after Connect, so it is drawn by the media panel and
+     * not listed here.
+     */
+    static SEERR_SETTINGS = [
+        { key: 'status', kind: 'choice', label: ['config.widgetSeerrStatus', 'Show'],
+          options: [
+              ['all', ['config.widgetSeerrStatusAll', 'Every request']],
+              ['pending', ['config.widgetSeerrStatusPending', 'Waiting for approval']],
+              ['approved', ['config.widgetSeerrStatusApproved', 'Approved, on its way']],
+              ['available', ['config.widgetSeerrStatusAvailable', 'Arrived']],
+          ] },
+        { key: 'mediaType', kind: 'choice', label: ['config.widgetSeerrMediaType', 'Films or series'],
+          options: [
+              ['both', ['config.widgetSeerrMediaTypeBoth', 'Both']],
+              ['movie', ['config.widgetSeerrMediaTypeMovie', 'Films']],
+              ['tv', ['config.widgetSeerrMediaTypeTv', 'Series']],
+          ] },
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => !['show', 'days'].includes(field.key)),
     ];
 
     /*
@@ -20097,6 +20119,7 @@ class DashboardConfig {
         // Sonarr and Radarr ask the same questions; one table, two names.
         sonarr: DashboardConfig.ARR_SETTINGS,
         radarr: DashboardConfig.ARR_SETTINGS,
+        seerr: DashboardConfig.SEERR_SETTINGS,
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
               label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },
