@@ -1133,6 +1133,28 @@ class DashboardConfig {
         return 'monitoring';
     }
 
+    /**
+     * Draw the section just routed to, once its own file is here.
+     *
+     * A section that lives in a lazy file (SECTION_MODULES) cannot be drawn
+     * before that file has run: renderSection() would call a method that does
+     * not exist yet, throw after the heading had already changed, and leave the
+     * old section's body on screen under the new name. selectSection waits for
+     * it; a hash route has to as well.
+     */
+    renderWhenSectionLoaded() {
+        const section = this.section;
+        const mod = DashboardConfig.SECTION_MODULES[section];
+        if (!mod || mod.ready()) {
+            this.render();
+            return;
+        }
+        void this.ensureSection(section).then((ok) => {
+            if (!ok || this.section !== section || !this.isActiveView()) return;
+            this.render();
+        });
+    }
+
     /** Re-apply the section from the hash while the view is already open. */
     restoreConfigSectionFromHash() {
         const hash = window.location.hash;
@@ -1144,7 +1166,7 @@ class DashboardConfig {
                 }
                 if (stored.section !== this.section) {
                     this.section = stored.section;
-                    this.render();
+                    this.renderWhenSectionLoaded();
                 } else if (stored.subTab) {
                     this.render();
                 }
@@ -1166,7 +1188,7 @@ class DashboardConfig {
             if (!this.standalone) this.saveLastConfigLocation();
             if (!DashboardConfig.subTabFromHash(hash)) this.resetExpiredTab(section);
             this.section = section;
-            this.render();
+            this.renderWhenSectionLoaded();
         } else if (tabChanged || pageChanged) {
             this.render();
         }
