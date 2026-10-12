@@ -130,7 +130,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/dashboard/dashboard-config-unraid.js":                "52efcd46f01c",
 	"js/dashboard/dashboard-config-widget-catalogue.js":      "0a4ed3bee5ec",
 	"js/dashboard/dashboard-config-widget-jellyfin.js":       "08b22de335f6",
-	"js/dashboard/dashboard-config-widgets.js":               "d85111d6352d",
+	"js/dashboard/dashboard-config-widgets.js":               "dad05f1db88b",
 	"js/dashboard/dashboard-config.js":                       "487eaa87fcac",
 	"js/dashboard/dashboard-context-menu.js":                 "0551e56663ca",
 	"js/dashboard/dashboard-data.js":                         "b353fc3e2649",

@@ -4139,7 +4139,10 @@
         blocks[index] = { ...blocks[index], title: next };
         this._widgetBlocks = blocks;
         if (!await this.saveWidgetRow(index)) return;
-        await this.refreshDashboardBlocks();
+        // The field already shows the new name, so config is not redrawn: that
+        // took the caret out of whatever field the reader had moved on to --
+        // a rename fires on leaving the title, which is exactly when they have.
+        await this.refreshDashboardBlocks({ keepConfig: true });
         /*
          * Said out loud, because this one writes straight to the server.
          *
