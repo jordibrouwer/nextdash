@@ -130,6 +130,25 @@ test.describe('the tag suggestion engine', () => {
         expect(groups[0].keys.sort()).toEqual(['a', 'b']);
     });
 
+    test('the catalogue knows a subdomain by its parent domain, as one row', async ({ page }) => {
+        await open(page);
+        const got = await page.evaluate((rows) => ({
+            all: window.TagSuggestions.suggest(rows, {
+                catalogue: [{ tag: 'containers', aliases: [], hosts: ['docker.com'] }],
+            }),
+        }), items([
+            ['a', 'https://docs.docker.com/engine', []],
+            ['b', 'https://docker.com/', []],
+            ['c', 'https://notdocker.com/', []],
+            ['d', 'https://com/', []],
+        ]));
+        // The domain and its subdomain are one site to the catalogue, so one
+        // row; a host that merely ends in the same letters is another site.
+        expect(got.all).toHaveLength(1);
+        expect(got.all[0]).toMatchObject({ tag: 'containers', pattern: 'docker.com' });
+        expect(got.all[0].keys.sort()).toEqual(['a', 'b']);
+    });
+
     test('the catalogue speaks in the words you already use', async ({ page }) => {
         await open(page);
         const got = await page.evaluate((sets) => ({

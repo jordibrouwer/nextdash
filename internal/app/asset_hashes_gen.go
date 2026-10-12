@@ -287,7 +287,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/shared/tag-catalogue.js":                             "e7e7f194658e",
 	"js/shared/tag-suggest-chips.js":                         "8fb1b69f5324",
 	"js/shared/tag-suggest-live.js":                          "c70136e1956d",
-	"js/shared/tag-suggestions.js":                           "21f051790f71",
+	"js/shared/tag-suggestions.js":                           "b4fea9c7b343",
 	"js/shared/unsorted-page.js":                             "b061fae38d9e",
 	"js/shortcut-format.js":                                  "dcd76e1e1a9d",
 	"js/skeleton-loading.js":                                 "72467856fc22",
