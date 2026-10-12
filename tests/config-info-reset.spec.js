@@ -152,7 +152,7 @@ test.describe('config info + reset affordances', () => {
             // Monitoring → Notifications → Weekly digest. The switch carries the
             // ℹ; the day, the hour and the three parts under it read as part of
             // it, under a panel note that says what the digest holds.
-            'digestWeekday', 'digestTime', 'digestHealth', 'digestUpdates', 'digestUsage',
+            'digestWeekday', 'digestTime', 'digestHealth', 'digestUpdates', 'digestUsage', 'digestNews',
             // Behavior → General → Notes widget. One select under a group note
             // that says where a note is worked out, and what each choice costs.
             'notesProcessing',

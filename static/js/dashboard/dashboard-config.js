@@ -12978,6 +12978,7 @@ class DashboardConfig {
         digestHealth: { def: true },
         digestUpdates: { def: true },
         digestUsage: { def: true },
+        digestNews: { def: true },
         // Containers
         dockerViewEnabled: { def: true },
         dockerRefreshSeconds: { def: 5 },
@@ -14586,6 +14587,7 @@ class DashboardConfig {
                     bool('digestHealth', 'config.digestHealthLabel', 'Include broken links and certificates'),
                     bool('digestUpdates', 'config.digestUpdatesLabel', 'Include container updates'),
                     bool('digestUsage', 'config.digestUsageLabel', 'Include most opened, unused and Inbox'),
+                    bool('digestNews', 'config.digestNewsLabel', 'Include what is new in nextDash this week'),
                     { type: 'action', action: 'showDigest',
                       label: t('config.digestShowLabel', 'The latest digest'),
                       button: t('config.digestShowButton', 'Show') },

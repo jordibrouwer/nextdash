@@ -89,6 +89,7 @@
         if (g.neverOpened) parts.push(count(g.neverOpened, 'dashboard.digestLeadNever', '1 bookmark never opened', '{count} bookmarks never opened'));
         if (g.stale) parts.push(count(g.stale, 'dashboard.digestLeadStale', '1 bookmark not opened in {days} days', '{count} bookmarks not opened in {days} days').replace('{days}', String(g.staleDays || 90)));
         if (g.inbox) parts.push(count(g.inbox, 'dashboard.digestLeadInbox', '1 link in the Inbox', '{count} links in the Inbox'));
+        if (s.news?.releases?.length) parts.push(t('dashboard.digestLeadNews', 'nextDash {releases} is out', { releases: s.news.releases.join(', ') }));
         return parts;
     }
 
@@ -96,6 +97,8 @@
         const parts = leadParts(s).slice(0, 2);
         if (!parts.length) return '';
         const text = parts.join(', ');
+        // The name keeps its own spelling at the start of a sentence.
+        if (text.startsWith('nextDash')) return `${text}.`;
         return `${text.charAt(0).toUpperCase()}${text.slice(1)}.`;
     }
 
@@ -122,6 +125,10 @@
         }
         if (target === 'updates') {
             await d.docker?.openDockerView?.({ filter: 'updates' });
+            return;
+        }
+        if (target === 'whats-new') {
+            await global.openWhatsNewModal?.({ force: true });
             return;
         }
         history.replaceState(history.state, '', `${global.location.pathname}${global.location.search}#bookmarks?health=${encodeURIComponent(target)}`);
@@ -227,10 +234,21 @@
                 action: t('dashboard.digestOpenInbox', 'Open Inbox'), target: 'inbox',
             });
         }
+        // nextDash's own releases of the week, last: news, not something to do.
+        const news = s.news || {};
+        if (news.releases?.length) {
+            out.push({
+                id: 'news', icon: '✦', title: t('dashboard.digestNewsTitle', 'New in nextDash'),
+                note: t('dashboard.digestNewsNote', '{releases} came out this week.', { releases: news.releases.join(', ') }),
+                names: news.highlights,
+                action: t('dashboard.digestOpenWhatsNew', "Open What's new"), target: 'whats-new', info: true,
+            });
+        }
         return out;
     }
 
-    function todo(s) { return partList(s).filter((p) => p.action); }
+    // News carries a button but is not something to work through.
+    function todo(s) { return partList(s).filter((p) => p.action && !p.info); }
 
     function nextPart(s, progress) {
         return todo(s).find((p) => !progress.visited.includes(p.id)) || null;
@@ -280,6 +298,11 @@
         document.querySelectorAll('.digest-modal [data-digest-go]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 global.AppModal.hide?.();
+                // News opens What's new and leaves the to-do list as it was.
+                if (btn.getAttribute('data-digest-go') === 'whats-new') {
+                    void go('whats-new');
+                    return;
+                }
                 void visit(s, btn.getAttribute('data-digest-part-id'), btn.getAttribute('data-digest-go'));
             });
         });

@@ -36,6 +36,7 @@ type digestInput struct {
 	InboxCount    int
 	Updates       map[string]*dockerImageUpdate // nil when Docker is not in use
 	CertsExpiring []string                      // "host (5 days)" lines, already formatted
+	Releases      []whatsNewRelease             // nextDash's own recent releases, newest first
 }
 type digestSnapshot struct {
 	DueKey      string         `json:"dueKey"`
@@ -43,6 +44,7 @@ type digestSnapshot struct {
 	Health      *digestHealth  `json:"health,omitempty"`
 	Updates     *digestUpdates `json:"updates,omitempty"`
 	Usage       *digestUsage   `json:"usage,omitempty"`
+	News        *digestNews    `json:"news,omitempty"`
 }
 type digestHealth struct {
 	NewlyBroken      []string `json:"newlyBroken,omitempty"`
@@ -175,11 +177,15 @@ func buildDigest(in digestInput) digestSnapshot {
 			snap.Usage = u
 		}
 	}
+
+	if in.Settings.DigestNews {
+		snap.News = buildDigestNews(in.Releases, in.Now)
+	}
 	return snap
 }
 
 func (d digestSnapshot) empty() bool {
-	return d.Health == nil && d.Updates == nil && d.Usage == nil
+	return d.Health == nil && d.Updates == nil && d.Usage == nil && d.News == nil
 }
 
 // digestSample is the first digestNamesMax names, in order.
@@ -256,6 +262,16 @@ func digestNotice(d digestSnapshot) monitorNotification {
 			first(digestCount(u.Inbox, "link in the Inbox", "links in the Inbox"))
 			lines = append(lines, digestCount(u.Inbox, "link", "links")+" waiting in the Inbox.")
 		}
+	}
+	// Last in both: news about nextDash itself never outranks what needs the
+	// reader, and leads only a week where nothing else happened.
+	if n := d.News; n != nil {
+		first("nextDash " + strings.Join(n.Releases, ", ") + " is out")
+		line := "New in nextDash " + strings.Join(n.Releases, ", ")
+		if len(n.Highlights) > 0 {
+			line += ": " + joinCapped(n.Highlights, digestListCap)
+		}
+		lines = append(lines, line+".")
 	}
 	title := "Weekly digest"
 	if lead != "" {

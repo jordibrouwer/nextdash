@@ -89,7 +89,9 @@ func TestDigestWaitsOutQuietHours(t *testing.T) {
 }
 
 func TestEmptyDigestSendsNothingButMarksTheWeek(t *testing.T) {
-	h, sent := digestTestHandlers(t, "")
+	// News off: whether a shipped release falls in this week is up to the
+	// release dates in static/data/whats-new, not to this test.
+	h, sent := digestTestHandlers(t, `,"digestNews":false`)
 	now := time.Date(2026, 10, 12, 8, 5, 0, 0, time.UTC)
 	h.digestTick(context.Background(), now)
 	if len(*sent) != 0 || readDigestState().DueKey != "2026-10-12" {

@@ -75,6 +75,7 @@ func (h *Handlers) collectDigestInput(now time.Time) digestInput {
 		InboxCount:    len(h.store.GetInboxItems()),
 		Updates:       h.dockerUpdateSnapshot(),
 		CertsExpiring: digestCertLines(report.Certificates, now),
+		Releases:      readRecentWhatsNewReleases(now),
 	}
 }
 

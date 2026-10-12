@@ -258,3 +258,39 @@ test.describe('the digest and the review card', () => {
         await expect(page.locator('.digest-bar')).toBeVisible();
     });
 });
+
+/*
+ * nextDash's own releases of the week: last in the window, with a button to
+ * What's new, and not one of the parts the bar counts as to do.
+ */
+test.describe('the news part', () => {
+    test('names the week\'s releases and their highlights, and opens What\'s new', async ({ page }) => {
+        const snapshot = {
+            dueKey: '2026-10-12', generatedAt: Date.now(),
+            usage: { inbox: 2 },
+            news: { releases: ['v9.2.0'], highlights: ['A short title', 'Another one'] },
+        };
+        await page.route('**/api/digest/latest', (route) => route.fulfill({ json: snapshot }));
+        await loadDashboard(page);
+        await forgetSeen(page);
+        await page.evaluate(() => window.localStorage.removeItem('nextdashDigestProgress'));
+        expect(await renderCard(page)).toBe(true);
+        await expect(page.locator(CARD)).toContainText('nextDash v9.2.0 is out');
+
+        await page.locator(`${CARD} [data-digest-action="read"]`).click();
+        const win = page.locator('.digest-modal .digest-window');
+        const part = win.locator('[data-digest-part="news"]');
+        await expect(part).toContainText('New in nextDash');
+        await expect(part).toContainText('v9.2.0 came out this week');
+        await expect(part.locator('.digest-chip')).toHaveText(['A short title', 'Another one']);
+        // Last, after the parts that need the reader.
+        const ids = await win.locator('[data-digest-part]').evaluateAll((els) => els.map((el) => el.dataset.digestPart));
+        expect(ids[ids.length - 1]).toBe('news');
+        // The Inbox is the next thing to do, not the news.
+        await expect(win.locator('[data-digest-go="inbox"]')).toHaveClass(/is-next/);
+
+        await part.locator('[data-digest-go="whats-new"]').click();
+        await expect(page.locator('.whats-new-modal')).toBeVisible();
+        await expect(page.locator('.digest-bar')).toHaveCount(0);
+    });
+});

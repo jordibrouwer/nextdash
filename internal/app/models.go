@@ -987,6 +987,7 @@ type Settings struct {
 	DigestHealth  bool   `json:"digestHealth"`
 	DigestUpdates bool   `json:"digestUpdates"`
 	DigestUsage   bool   `json:"digestUsage"`
+	DigestNews    bool   `json:"digestNews"` // the week's nextDash releases (digest_news.go)
 	// RemindersEnabled repeats an outage that is still going: after
 	// RemindAfterMinutes, up to RemindMax times. Monitors and containers only.
 	RemindersEnabled   bool `json:"remindersEnabled"`
@@ -1864,6 +1865,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			DigestHealth:                   true,
 			DigestUpdates:                  true,
 			DigestUsage:                    true,
+			DigestNews:                     true,
 			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:           "off",
 			DockerViewEnabled:              true,
@@ -4414,6 +4416,7 @@ func (fs *FileStore) GetSettings() Settings {
 			DigestHealth:                    true,
 			DigestUpdates:                   true,
 			DigestUsage:                     true,
+			DigestNews:                      true,
 			HealthAutoRecheckIntervalHours:  defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:            "off",
 			DockerViewEnabled:               true,
@@ -4477,6 +4480,7 @@ func (fs *FileStore) GetSettings() Settings {
 			"digestHealth":  &settings.DigestHealth,
 			"digestUpdates": &settings.DigestUpdates,
 			"digestUsage":   &settings.DigestUsage,
+			"digestNews":    &settings.DigestNews,
 		} {
 			if _, ok := rawSettings[key]; !ok {
 				*field = true
