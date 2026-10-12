@@ -298,11 +298,17 @@ test.describe('moving blocks with the keyboard', () => {
         const widget = page.locator('#dashboard-layout .dashboard-widget').first();
         await expect(widget).toBeVisible();
         const id = await widget.getAttribute('data-widget-id');
-        // Make room to move right: put the widget first.
+        // Make room to move right: put the widget first, and the smart
+        // collections last. Left out of the order, a collection such as Today
+        // kept the slot the stored order gave it, and once an earlier test in
+        // this file had saved a move that slot was right after the widget:
+        // Alt+Right then moved it after Today, which this order does not count.
         await page.evaluate(async (wid) => {
             const rc = window.dashboardInstance.renderCore;
-            const order = rc.blockOrderFromDom().filter((b) => !b.startsWith('__smart_') && b !== wid);
-            await rc.commitBlockMove({ id: wid, order: [wid, ...order], announce: false });
+            const all = rc.blockOrderFromDom().filter((b) => b !== wid);
+            const smart = all.filter((b) => b.startsWith('__smart_'));
+            const order = all.filter((b) => !b.startsWith('__smart_'));
+            await rc.commitBlockMove({ id: wid, order: [wid, ...order, ...smart], announce: false });
         }, id);
         const before = await movableOrder(page);
         expect(before.indexOf(id)).toBe(0);
