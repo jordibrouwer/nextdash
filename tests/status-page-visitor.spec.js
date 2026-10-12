@@ -74,6 +74,11 @@ test.describe('status page for visitors', () => {
         await page.clock.runFor(61_000);
         await expect(page.locator('[data-status-overall]')).toHaveText('All services are working');
         expect(calls()).toBe(2);
+        // The line says "just now" for five seconds after a load, and the
+        // installed clock only runs at wall speed between runFor calls: left
+        // to itself, "ago" arrived about when this expect gave up. Ten seconds
+        // on is well past that and well short of the next refresh.
+        await page.clock.runFor(10_000);
         await expect(page.locator('[data-status-updated]')).toContainText('ago');
 
         const setHidden = (hidden) => page.evaluate((h) => {
