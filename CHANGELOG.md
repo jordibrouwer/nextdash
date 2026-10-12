@@ -141,12 +141,15 @@ The headline is the Jellyfin widget: connect it once and it shows what was added
 - **fix — the sub-tab strips stay on one line and scroll.** A section with many tabs wrapped them onto a second row on a narrow screen. The strip now scrolls sideways, keeps the active tab in view and fades the side where there is more (`syncSubtabStrips`, `config-view.css`).
 - **fix — Structure is no longer marked new in the section list.**
 - **fix — the new badge moves from Containers and Unraid to Widgets** (`NEW_SECTIONS`).
+- **fix — a redraw keeps the focus on the control it replaced.** Appearance draws again by itself when the colour document or the surface meta arrives, and each redraw swapped the focused control for a copy and left the focus on the page. A settings jump that had just reached its control lost it, and the tab strip stopped answering the arrow keys. The redraw now hands the focus to the matching control in the new markup.
+- **fix — a link to a section waits for the section before drawing it.** An address such as `#config/widgets` drew the section before its file had loaded, so the heading changed while the body of the previous section stayed under it. It now waits for the file, as picking the section from the list already did.
 
 ### Dashboard
 
 - **new — the paste choice shows what the pasted link is.** While you choose between bookmark and Inbox, a card shows the site's favicon, domain, title, description and picture, from the same `/api/bookmark-preview` answer the hover card draws, with the local copy of the picture. A slow answer never lands in a later modal, and a missing picture is asked for once more (`dashboard-paste-choice.js`).
 - **fix — four corner cards are gone**: the Widgets layout invitation, the Fresh offer, the pointer to the feature overview and the offer to check unchecked bookmarks (`widgets-layout-notice.js`, `fresh-notice.js`, `features-notice.js`, `unchecked-bookmarks-notice.js`, their specs, their strings in six languages and their rows in Config → Show again). Fresh, its tutorial and `POST /api/health/check-mode-all` stay.
 - **fix — a block's grip can be dragged with the mouse again under a header style other than the theme's.** The grip was sized in `em` against a font size of 0, so it was zero wide and the icon after it took every click (`category-header.css`).
+- **fix — cancelling a block move no longer takes the focus back from the title.** Escape on a block you were carrying put the focus back on its handle two frames later, whatever you had done in between, so Shift+Tab to the title and Enter folded nothing. The focus now returns only when the redraw dropped it.
 
 ### Containers
 
@@ -157,6 +160,10 @@ The headline is the Jellyfin widget: connect it once and it shows what was added
 
 - **new — a spotlight for the highlight.** An item a release marks as `highlight` gets room at the top: its picture or a short silent looping recording (the still with motion turned down), a short `title` of its own, the explanation and a button to where the change lives (`link`, `linkLabel`, a hash route such as `#config/monitoring/notifications`). Other new changes are one row each with their section in front and the detail folded; fixes are one line each, opened with a native disclosure; shortcuts keep their own block. When the release the window opens on marks nothing, its first new change stands in. Media lives under `static/data/whats-new/media/`. v1.19.3's weekly digest is the first spotlight, with a screenshot and a recording (`whats-new-modal.js`, `modal.css`).
 - **new — every release since your last visit opens.** The window opens each release newer than the last one you saw, the newest with the big version as its headline, and says *Since your last visit: n releases, x new and y fixed.* Older releases stay as rows under Earlier.
+
+### Bookmarks
+
+- **fix — the icon menu marks what was saved while the panel has focus.** A *Use letter* save that landed while the pencil had the focus left the menu marking *Automatic* until the panel was redrawn for another reason. The panel that is kept on a redraw now has its icon menu brought up to date in place.
 
 ### Tag suggestions
 
@@ -185,6 +192,8 @@ The headline is the Jellyfin widget: connect it once and it shows what was added
 - **tests — `tests/whats-new-media.spec.js`** takes the What's new pictures and recordings through the real UI, one release at a time against a copy of the demo data, from a plan in `tests/fixtures/whats-new-media/<tag>.js`. The shared steps moved out of `manual-screenshots.spec.js` into `tests/helpers/manual-shot-kit.js`.
 - **tests — `TestContainerNotifierRecreateAnswersWhatWasTold`, `TestRunDueMonitorsOneSlowHostDoesNotStarveTheOthers`, `TestServerLogRetentionPassesUnstampedLines`** and two negative cases in `TestCustomWidgetFormatting` cover the four fixes above; each fails without its fix.
 - **tests — `tests/config-tag-suggestions.spec.js`** also covers the catalogue matching a subdomain through its parent domain, as one row.
+- **tests — fixed sleeps became condition waits.** About six hundred `waitForTimeout` calls in the e2e suite wait for the state they were really waiting for: a tab's `aria-selected`, a save's response, a polled value. `scripts/validate-test-waits.cjs`, run in CI, fails a sleep that does not say with a `//` comment why the clock and not a condition. A few specs that raced the What's new window, the wall clock or the scroll lock were fixed on the way, and CI keeps the Playwright browser between runs.
+- **release — `release-to-main.sh` refuses a dev HEAD without green CI.** The script scanned for vulnerabilities but ran no tests, so a red, still running or never pushed HEAD went to main as it was. It now asks `gh` for the CI run on that exact commit and stops unless it completed successfully; `--skip-ci` is the way past it, like `--skip-scan`.
 
 ---
 
