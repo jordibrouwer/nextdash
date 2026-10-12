@@ -243,6 +243,48 @@ func TestImportFillsVariablesAndMakesANewPage(t *testing.T) {
 	}
 }
 
+// A Jellyfin widget travels with its address as a variable. The user and the
+// key name an account on one server, so neither goes along.
+func TestTemplateCarriesAJellyfinWidgetWithoutItsServerOrAccount(t *testing.T) {
+	h := newTestHandlers(t)
+	if err := h.store.SavePage(Page{ID: 6, Name: "Media"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.store.SavePageOrder(append(h.store.GetPageOrder(), 6)); err != nil {
+		t.Fatal(err)
+	}
+	widget := Widget{ID: "w_cccccccccccc", Type: WidgetTypeJellyfin, Title: "Media server", Config: map[string]any{
+		"server": "http://192.168.1.30:8096", "userId": "4f2a9c1e8b7d4e6f", "credentialId": "widget:w_cccccccccccc",
+		"libraries": []any{"lib-anime"}, "layout": "grid",
+	}}
+	if err := h.store.SavePageBlocks(6, []Widget{widget}, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	_, raw := exportTemplate(t, h, 6, TemplateExportOptions{})
+	text := string(raw)
+	for _, leak := range []string{"192.168.1.30", "4f2a9c1e8b7d4e6f", "widget:w_cccccccccccc"} {
+		if strings.Contains(text, leak) {
+			t.Errorf("the template carries %q:\n%s", leak, text)
+		}
+	}
+	if !strings.Contains(text, "{{media-server}}") || !strings.Contains(text, `"layout": "grid"`) {
+		t.Errorf("the template lost the address variable or the layout:\n%s", text)
+	}
+
+	code, result, body := importTemplate(t, h, raw, map[string]string{"media-server": "https://media.example.net"}, false)
+	if code != http.StatusOK {
+		t.Fatalf("import answered %d: %s", code, body)
+	}
+	widgets, _ := h.store.GetPageBlocks(result.PageID)
+	if len(widgets) != 1 || !strings.HasPrefix(fmt.Sprint(widgets[0].Config["server"]), "https://media.example.net") {
+		t.Fatalf("imported widget = %+v", widgets)
+	}
+	if _, kept := widgets[0].Config["userId"]; kept {
+		t.Error("the sender's account id arrived")
+	}
+}
+
 func TestImportRefusesWhatIsNotATemplate(t *testing.T) {
 	h := newTestHandlers(t)
 	for name, file := range map[string]string{

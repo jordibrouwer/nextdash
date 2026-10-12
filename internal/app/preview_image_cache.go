@@ -262,10 +262,15 @@ func (h *Handlers) pruneOrphanPreviewImages() int {
 }
 
 func evictPreviewImages(capBytes int64) (int, error) {
+	return evictImagesIn(previewImageDir(), capBytes)
+}
+
+// evictImagesIn trims a cache directory to capBytes, oldest file first. Shared
+// by the preview cache and the Jellyfin pictures.
+func evictImagesIn(dir string, capBytes int64) (int, error) {
 	if capBytes <= 0 {
 		return 0, nil
 	}
-	dir := previewImageDir()
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		if os.IsNotExist(err) {

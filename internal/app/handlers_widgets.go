@@ -100,8 +100,9 @@ func redactWidgetAddresses(widgets []Widget) []Widget {
 // private feed's address often carries its own key (?token=), and the RSS tile
 // reads its items by widget id, so it never needs the addresses either.
 var withheldWidgetKeys = map[WidgetType]map[string]bool{
-	WidgetTypeCustom: {"url": true, "credentialId": true},
-	WidgetTypeRSS:    {"feedUrls": true},
+	WidgetTypeCustom:   {"url": true, "credentialId": true},
+	WidgetTypeRSS:      {"feedUrls": true},
+	WidgetTypeJellyfin: {"server": true, "credentialId": true, "userId": true},
 }
 
 /*

@@ -298,6 +298,9 @@ func Run(files assetFS) {
 	// The RSS tile's feeds, read by widget id for the same reason: the
 	// addresses are stored, never sent with the request.
 	r.HandleFunc("/api/widgets/rss", handlers.RSSWidgetHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/widgets/jellyfin", handlers.JellyfinWidgetHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/widgets/jellyfin/image", handlers.JellyfinImageHandler).Methods("GET")
+	r.HandleFunc("/api/widgets/jellyfin/setup", handlers.JellyfinSetupHandler).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/health/credentials", handlers.HealthCredentialsHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
 	r.HandleFunc("/api/health/credentials/reveal", handlers.HealthCredentialRevealHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/webhooks", handlers.WebhooksHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")

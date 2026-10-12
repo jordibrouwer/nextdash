@@ -124,8 +124,15 @@ const (
 	 * that one counts what is new per feed and deliberately keeps no titles,
 	 * because Fresh is a checker and not a reader. This is the reader.
 	 */
-	WidgetTypeRSS    WidgetType = "rss"
-	WidgetTypeCustom WidgetType = "custom"
+	WidgetTypeRSS WidgetType = "rss"
+
+	/*
+	 * WidgetTypeJellyfin shows what was added to a Jellyfin server lately,
+	 * with posters. The key stays on this server: the tile reads by widget id
+	 * and its pictures come through /api/widgets/jellyfin/image.
+	 */
+	WidgetTypeJellyfin WidgetType = "jellyfin"
+	WidgetTypeCustom   WidgetType = "custom"
 	// WidgetTypeNotes holds a short text of the reader's own, some lines of it
 	// tickable. The text is the widget's config, so it travels with the page.
 	WidgetTypeNotes WidgetType = "notes"
@@ -170,6 +177,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeRSS:        {},
 	WidgetTypeCustom:     {},
 	WidgetTypeNotes:      {},
+	WidgetTypeJellyfin:   {},
 
 	WidgetTypeUnraid:              {},
 	WidgetTypeUnraidArray:         {},

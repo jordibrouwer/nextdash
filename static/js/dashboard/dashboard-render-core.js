@@ -30,6 +30,8 @@ class DashboardRenderCore {
         // than that would only ever redraw the same cached answer.
         calendar: { configKey: '', floor: 300, fallback: 900 },
         rss: { configKey: '', floor: 300, fallback: 900 },
+        // Its own ttl, like custom: one timer per widget on its own cadence.
+        jellyfin: { configKey: 'ttl', floor: 60, fallback: 300 },
         unraid: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
         unraidArray: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
         unraidParity: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
@@ -862,6 +864,7 @@ class DashboardRenderCore {
     forgetWidgetCaches() {
         const d = this.dash;
         delete d._widgetSources;
+        delete d._widgetJellyfin;
         delete d._widgetFeeds;
         delete d._widgetTrend;
         delete d._widgetInbox;
@@ -941,6 +944,7 @@ class DashboardRenderCore {
     static WIDGET_TYPE_NAMES = {
         containers: 'Container list',
         notes: 'Notes',
+        jellyfin: 'Jellyfin',
         unraid: 'Unraid',
         unraidArray: 'Unraid array',
         unraidParity: 'Parity',

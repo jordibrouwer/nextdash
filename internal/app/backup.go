@@ -887,6 +887,11 @@ func (h *Handlers) buildBackupZip() ([]byte, error) {
 			if info.Name() == previewImageDirName && filepath.Dir(path) == dataDir {
 				return filepath.SkipDir
 			}
+			// Jellyfin posters: the same decoration, back from the server on
+			// the next draw.
+			if info.Name() == jellyfinImageDirName && filepath.Dir(path) == dataDir {
+				return filepath.SkipDir
+			}
 			// The app-icon set mirrors and their cached icons: all of it comes
 			// back from the CDN, the same as cached previews.
 			if info.Name() == iconSetsDirName && filepath.Dir(path) == dataDir {

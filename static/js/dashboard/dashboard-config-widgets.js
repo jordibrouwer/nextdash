@@ -60,6 +60,7 @@
             system: ['config.widgetGroupSystem', 'How is this machine doing?'],
             unraid: ['config.widgetGroupUnraid', 'How is the Unraid server doing?'],
             ambient: ['config.widgetGroupAmbient', "What's happening around you?"],
+            media: ['config.widgetGroupMedia', 'What is new to watch?'],
             // Custom widgets, and anything registered but not yet catalogued,
             // land here rather than dropping out of the list entirely.
             other: ['config.widgetGroupOther', 'Built by you'],
@@ -2208,6 +2209,9 @@
                     <div class="config-widget-checkset">${boxes}</div>
                 </div>`;
         }).join('');
+        if (widget.type === 'jellyfin' && typeof this.renderJellyfinSettings === 'function') {
+            return this.renderJellyfinSettings(widget, index, rows);
+        }
         if (widget.type === 'custom') {
             /*
              * Two groups rather than one grid of six unrelated boxes.
@@ -2606,6 +2610,7 @@
             calendar: 'What is coming up, from the ICS feed set in Appearance → Date & weather.',
             rss: 'The latest articles from the feeds you give it — headlines, with the whole entry on hover.',
             notes: 'A few lines of your own, with checkboxes for the ones that are tasks.',
+            jellyfin: 'What was added to Jellyfin lately — films, series and anime, with posters.',
             unraid: 'The Unraid server at a glance: array, parity, disks, alerts, VMs and the UPS, a line each.',
             unraidArray: 'Every disk of the Unraid array: how full, how warm, and which one is in trouble.',
             unraidParity: 'The last parity check, or the one running now, with its history when wide.',
@@ -2783,6 +2788,12 @@
              * state rather than a class toggle: a rename or a save elsewhere
              * must not close a panel someone is working in.
              */
+            const jellyfinConnect = target.closest('[data-jellyfin-connect]');
+            if (jellyfinConnect) {
+                void this.connectJellyfin?.(indexOn(jellyfinConnect, 'data-jellyfin-connect'));
+                return;
+            }
+
             const toggle = target.closest('[data-widget-settings]');
             if (toggle) {
                 const index = indexOn(toggle, 'data-widget-settings');

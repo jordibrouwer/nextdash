@@ -106,10 +106,26 @@ class DashboardConfig {
             datasetKey: 'dashboardConfigLogs',
             ready: () => window.DashboardConfigLogsReady === true,
         },
+        /*
+         * The widget editor, and the one panel that is more than a table of
+         * settings: Jellyfin's connect-then-choose flow, in a file of its own so
+         * the editor does not grow by a service at a time.
+         */
         widgets: {
-            file: 'js/dashboard/dashboard-config-widgets.js',
-            datasetKey: 'dashboardConfigWidgets',
-            ready: () => window.DashboardConfigWidgetsReady === true,
+            chain: [
+                {
+                    file: 'js/dashboard/dashboard-config-widgets.js',
+                    datasetKey: 'dashboardConfigWidgets',
+                    ready: () => window.DashboardConfigWidgetsReady === true,
+                },
+                {
+                    file: 'js/dashboard/dashboard-config-widget-jellyfin.js',
+                    datasetKey: 'dashboardConfigWidgetJellyfin',
+                    ready: () => window.DashboardConfigJellyfinReady === true,
+                },
+            ],
+            ready: () => window.DashboardConfigWidgetsReady === true
+                && window.DashboardConfigJellyfinReady === true,
         },
         /*
          * Appearance's Background and Surface tabs, the theme browser built
@@ -17568,6 +17584,7 @@ class DashboardConfig {
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'notes']],
+        ['media', ['jellyfin']],
     ];
 
     renderPagesTags() {
@@ -19706,7 +19723,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /*
@@ -19934,6 +19951,31 @@ class DashboardConfig {
               label: ['config.widgetRows', 'Rows to show'],
               hint: ['config.widgetRssRowsHint',
                      'What is past this count folds into a “more” row that opens in place.'] },
+        ],
+        jellyfin: [
+            { key: 'layout', kind: 'choice', label: ['config.widgetJellyfinLayout', 'Layout'],
+              options: [
+                  ['list', ['config.widgetJellyfinLayoutList', 'List with posters']],
+                  ['strip', ['config.widgetJellyfinLayoutStrip', 'Poster strip, a tab per library']],
+                  ['hero', ['config.widgetJellyfinLayoutHero', 'Newest large, the rest as a list']],
+                  ['grid', ['config.widgetJellyfinLayoutGrid', 'Poster grid']],
+              ] },
+            { key: 'click', kind: 'choice', label: ['config.widgetJellyfinClick', 'A click'],
+              options: [
+                  ['open', ['config.widgetJellyfinClickOpen', 'Opens it in Jellyfin']],
+                  ['detail', ['config.widgetJellyfinClickDetail', 'Shows details here first']],
+              ] },
+            { key: 'target', kind: 'choice', label: ['config.widgetJellyfinTarget', 'Open in'],
+              options: [
+                  ['inherit', ['config.widgetJellyfinTargetInherit', 'Same as other links']],
+                  ['_blank', ['config.widgetJellyfinTargetBlank', 'A new tab']],
+                  ['_self', ['config.widgetJellyfinTargetSelf', 'This tab']],
+              ] },
+            { key: 'hideWatched', kind: 'bool', label: ['config.widgetJellyfinHideWatched', 'Hide what was watched'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetJellyfinRows', 'Items to show'],
+              hint: ['config.widgetJellyfinRowsHint', 'In the strip, per library.'] },
+            { key: 'ttl', kind: 'int', min: 60, max: 3600,
+              label: ['config.widgetJellyfinTtl', 'Ask Jellyfin every (seconds)'] },
         ],
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
