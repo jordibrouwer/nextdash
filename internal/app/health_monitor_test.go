@@ -459,3 +459,64 @@ func TestRetestAllOverCapTakesOldestChecked(t *testing.T) {
 		}
 	}
 }
+
+// A host whose checks queue behind each other must not hold the round's slots
+// while they wait. Twenty services on one slow address used to take all eight,
+// and a check on another host waited until they were through.
+func TestRunDueMonitorsOneSlowHostDoesNotStarveTheOthers(t *testing.T) {
+	release := make(chan struct{})
+	slow := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-release:
+		case <-r.Context().Done():
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer slow.Close()
+	defer func() {
+		select {
+		case <-release:
+		default:
+			close(release)
+		}
+	}()
+	fastHit := make(chan struct{}, 1)
+	fast := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case fastHit <- struct{}{}:
+		default:
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer fast.Close()
+
+	h, dir := healthRecheckTestHandlers(t, `{"allowLocalBookmarks":true}`)
+	var rows []string
+	for i := 0; i < 20; i++ {
+		rows = append(rows, fmt.Sprintf(`{"name":"S%d","url":"%s/s%d","monitor":true,"monitorIntervalMinutes":5}`, i, slow.URL, i))
+		if i == 16 {
+			// Another host name for the same loopback, so its own gate. Late,
+			// but not last: the scheduler runs the last goroutine started
+			// first, and a check started last gets a slot whatever the order.
+			fastURL := strings.Replace(fast.URL, "127.0.0.1", "localhost", 1)
+			rows = append(rows, fmt.Sprintf(`{"name":"Fast","url":"%s/","monitor":true,"monitorIntervalMinutes":5}`, fastURL))
+		}
+	}
+	body := `{"id":1,"name":"Page 1","bookmarks":[` + strings.Join(rows, ",") + `]}`
+	if err := os.WriteFile(filepath.Join(dir, "bookmarks-1.json"), []byte(body), 0o644); err != nil {
+		t.Fatalf("write bookmarks: %v", err)
+	}
+
+	done := make(chan struct{})
+	go func() {
+		h.runDueMonitors()
+		close(done)
+	}()
+	select {
+	case <-fastHit:
+	case <-time.After(time.Second):
+		t.Errorf("the other host was not checked while the slow one held its first check")
+	}
+	close(release)
+	<-done
+}
