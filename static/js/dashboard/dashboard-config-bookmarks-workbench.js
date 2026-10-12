@@ -724,6 +724,24 @@
         ].join('');
     },
 
+    /**
+     * Mark the icon choice in force on the menu already drawn, in place: the
+     * menu may be open, and its buttons may have the focus.
+     */
+    syncBmIconModeItems(panel, b) {
+        const menu = panel?.querySelector('[data-bm-icon-menu]');
+        if (!menu || !b) return;
+        const fresh = document.createElement('div');
+        fresh.innerHTML = this.renderBmIconModeItems(b);
+        fresh.querySelectorAll('[data-bm-panel-action]').forEach((next) => {
+            const action = next.getAttribute('data-bm-panel-action');
+            const item = menu.querySelector(`[data-bm-panel-action="${action}"]`);
+            if (!item || item.getAttribute('aria-checked') === next.getAttribute('aria-checked')) return;
+            item.setAttribute('aria-checked', next.getAttribute('aria-checked'));
+            item.textContent = next.textContent;
+        });
+    },
+
     /** Close the ⋯ menu, if it is open; true when there was one to close. */
     closeWorkbenchMoreMenu() {
         const panel = this._libPanel || document.getElementById('config-bm-panel');
@@ -755,6 +773,10 @@
         // Typing in the panel while the list repaints around it must not lose
         // the field; the same bookmark in the same mode is left alone.
         if (panel.dataset.bmPanelSig === sig && panel.contains(document.activeElement)) {
+            // The icon menu still says which choice is in force. A save of
+            // Use letter that landed while the pencil had the focus left the
+            // menu marking Automatic for as long as the panel stayed open.
+            if (mode === 'single') this.syncBmIconModeItems(panel, this.findBookmarkByKey(key));
             this.syncLibraryDrawer();
             return;
         }
