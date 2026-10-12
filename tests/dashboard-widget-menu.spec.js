@@ -167,7 +167,7 @@ test('Config → Widgets shows the title, the width and the switch the header se
     await expect(row.locator('[data-widget-enabled]')).not.toBeChecked();
 
     await row.locator('[data-widget-settings]').click();
-    await expect(row.locator('[data-widget-setting="columns"]')).toHaveValue('2', { timeout: 10_000 });
+    await expect(page.locator('.config-widget-detail').locator('[data-widget-setting="columns"]')).toHaveValue('2', { timeout: 10_000 });
 });
 
 /*

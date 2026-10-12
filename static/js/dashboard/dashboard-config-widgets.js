@@ -31,6 +31,10 @@
         // A stored or linked 'types' from before the tab was folded into the
         // catalogue lands on the list.
         this.widgetsTab = 'widgets';
+        // A redraw of a section already on screen knows its width; a first
+        // paint does not, and the observer bound after it settles the layout.
+        const current = document.getElementById('config-widgets-body');
+        if (current?.clientWidth) this._widgetWide = this.widgetsWideAt(current.clientWidth);
         return `
             <p class="config-view-intro">${esc(this.t('config.widgetsSectionIntro',
                 'Blocks on a page that hold something other than bookmarks — what is broken, what is waiting, what has gone quiet.'))}</p>
@@ -132,6 +136,81 @@
             </details>`;
     },
 
+    /*
+     * Wide or narrow, for a section this many px across. The 40px of slack
+     * keeps a width sitting on the line from flipping back and forth: once
+     * wide, it takes a clear step under the line to go narrow again.
+     */
+    widgetsWideAt(width) {
+        const min = DashboardConfig.WIDGETS_WIDE_MIN;
+        return this._widgetWide ? width >= min - 40 : width >= min;
+    },
+
+    /*
+     * Wide or narrow, from the width the section actually has rather than the
+     * window's: the config rail and the reader's font size both take from it.
+     * Repaints only when the answer changes, so dragging a window edge is not
+     * a repaint per pixel.
+     *
+     * A full render replaces the body, so a new body is observed in place of
+     * the old one; a repaint keeps it, and is left alone.
+     */
+    observeWidgetsWidth(body) {
+        if (typeof ResizeObserver === 'undefined') return;
+        if (this._widgetsWidthObserved === body && body.isConnected) return;
+        this._widgetsWidthObserver?.disconnect();
+        this._widgetsWidthObserved = body;
+
+        const settle = (width) => {
+            const wide = this.widgetsWideAt(width);
+            if (wide === Boolean(this._widgetWide)) return;
+            this._widgetWide = wide;
+            this.repaintWidgetsKeepingFocus();
+        };
+        this._widgetsWidthObserver = new ResizeObserver(([entry]) => {
+            if (!entry || !body.isConnected) {
+                this._widgetsWidthObserver?.disconnect();
+                this._widgetsWidthObserver = null;
+                this._widgetsWidthObserved = null;
+                return;
+            }
+            settle(entry.contentRect.width);
+        });
+        this._widgetsWidthObserver.observe(body);
+        // The first paint came before anything had measured the body.
+        if (body.clientWidth) settle(body.clientWidth);
+    },
+
+    /*
+     * Move between the two layouts without losing the field being typed in.
+     *
+     * The detail is drawn from the draft, so a value typed but not yet
+     * committed by a change event is put into the draft first; then the field
+     * with the same id, now in the other place, gets the focus back.
+     */
+    repaintWidgetsKeepingFocus() {
+        const active = document.activeElement;
+        const body = document.getElementById('config-widgets-body');
+        const inside = active && body?.contains(active) ? active : null;
+        if (inside?.matches?.('[data-widget-setting]')) {
+            this.updateWidgetDraft(Number(inside.getAttribute('data-widget-index')), inside);
+        }
+        const focusedId = inside?.id;
+        this.repaintWidgetsBody();
+        if (focusedId) document.getElementById(focusedId)?.focus();
+    },
+
+    /*
+     * The widget the side panel shows: the one opened, if it is still in the
+     * list as filtered, else the first row shown. Never a stale index -- a
+     * delete, a move or a search can each take the open one away.
+     */
+    widgetDetailIndex() {
+        const shown = this.widgetRowsForDisplay().flatMap((g) => g.rows.map((r) => r.index));
+        if (!shown.length) return null;
+        return shown.includes(this._widgetSettingsOpen) ? this._widgetSettingsOpen : shown[0];
+    },
+
     /** Redraw the widgets section without refetching what it already has. */
     repaintWidgetsBody() {
         const body = document.getElementById('config-widgets-body');
@@ -139,6 +218,9 @@
         body.innerHTML = this.renderWidgetsTab();
         const container = document.getElementById('dashboard-layout');
         if (container) this.bindWidgetsEditor(container);
+        // Wide, a detail is on screen without anyone pressing Settings, so the
+        // disk chips that press would have asked for are asked for here.
+        if (this._widgetWide) void this.fillWidgetSuggestions();
     },
 
     /*
@@ -169,6 +251,13 @@
                 this.isAllPagesView() ? ' selected' : ''}>${
                 esc(this.t('config.widgetsAllPages', 'All pages'))}</option>`
             : '');
+
+        // Wide, one widget is always open beside the list: the one chosen, or
+        // the first shown once that one has gone. Marked as the open row too,
+        // so the list says which one the panel is about.
+        const detailIndex = this._widgetWide && Array.isArray(this._widgetBlocks)
+            ? this.widgetDetailIndex() : null;
+        if (detailIndex != null) this._widgetSettingsOpen = detailIndex;
 
         let body;
         if (this._widgetBlocks == null) {
@@ -300,13 +389,20 @@
             ? this.t('config.widgetsOnPage', 'Widgets on {page}').replace('{page}', pageName)
             : this.t('config.sectionWidgets', 'Widgets');
 
-        return `
+        const list = `
             <section class="config-panel config-widgets-listpanel">
                 <h3 class="config-panel-title">${esc(panelTitle)}</h3>
                 ${toolbar}
                 ${body}
-            </section>
-        `;
+            </section>`;
+        if (detailIndex == null) return list;
+        return `
+            <div class="config-widgets-split">
+                ${list}
+                <section class="config-panel config-widgets-detailpanel" aria-live="polite">
+                    ${this.renderWidgetDetail(this._widgetBlocks[detailIndex], detailIndex)}
+                </section>
+            </div>`;
     },
 
     /*
@@ -1101,7 +1197,8 @@
     repaintCustomFields(index) {
         const block = (this._widgetBlocks || [])[index];
         if (!block) return;
-        const host = document.querySelector(`[data-widget-row="${index}"]`);
+        // The detail, wherever it stands: under its row, or beside the list.
+        const host = document.querySelector(`[data-widget-detail="${index}"]`);
         const group = host?.querySelector('.config-custom-field')?.closest('.config-custom-group');
         if (!group) return;
         const active = document.activeElement;
@@ -2737,6 +2834,9 @@
      */
     bindWidgetsEditor(container) {
         const body = document.getElementById('config-widgets-body') || container;
+        // Before the guard: a full render brings a fresh body to observe.
+        const section = document.getElementById('config-widgets-body');
+        if (section) this.observeWidgetsWidth(section);
         if (!body || body.dataset.widgetsDelegated === 'true') return;
         body.dataset.widgetsDelegated = 'true';
 
@@ -2789,7 +2889,11 @@
                 // Whatever was being watched, its panel is about to close or
                 // another is about to open over it.
                 this.stopCustomProbeLive();
-                this._widgetSettingsOpen = this._widgetSettingsOpen === index ? null : index;
+                // Wide, the button selects which widget the side panel shows;
+                // narrow, it folds that widget's detail in and out under the row.
+                this._widgetSettingsOpen = this._widgetWide
+                    ? index
+                    : (this._widgetSettingsOpen === index ? null : index);
                 this._widgetJustSaved = null;
                 this.repaintWidgetsBody();
                 // The disks live on the machine, not in the panel's own state,
@@ -2938,6 +3042,8 @@
                     this._widgetBlocks = null;
                     this._widgetLoadedFor = null;
                     this._widgetDrafts = {};
+                    // An index means nothing on another page's list.
+                    this._widgetSettingsOpen = null;
                     this.repaintWidgetsBody();
                     void this.loadWidgetsEditor();
                 };
@@ -3392,7 +3498,7 @@
         if (!draft) return;
         const key = input.getAttribute('data-widget-setting');
         const kind = input.getAttribute('data-widget-kind');
-        const container = input.closest('.config-widget-settings') || document;
+        const container = input.closest('.config-widget-detail') || document;
 
         let value;
         if (kind === 'bool') {
@@ -3532,7 +3638,7 @@
 
     /** Shows or hides the fill-in note as the address is typed. */
     syncPlaceholderNote(index) {
-        const body = document.querySelector(`[data-widget-row="${index}"]`);
+        const body = document.querySelector(`[data-widget-detail="${index}"]`);
         if (!body) return;
         const group = body.querySelector('.config-custom-grid')?.parentElement;
         if (!group) return;

@@ -96,8 +96,8 @@ async function addInConfig(page, type) {
     const toggle = page.locator('[data-widget-settings]').last();
     const index = await toggle.getAttribute('data-widget-settings');
     if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
-    await expect(page.locator(`[data-widget-row="${index}"] .config-widget-settings`)).toBeVisible();
-    return page.locator(`[data-widget-row="${index}"]`);
+    await expect(page.locator(`[data-widget-detail="${index}"]`)).toBeVisible();
+    return page.locator(`[data-widget-detail="${index}"]`);
 }
 
 test.describe('the Jellyfin widget', () => {
@@ -348,7 +348,7 @@ test.describe('the Jellyfin widget', () => {
         await page.locator('[data-widget-settings]').first().click();
 
         // No Connect clicked: the key is already filed, so the choices are asked for.
-        const row = page.locator('[data-widget-row]').first();
+        const row = page.locator('[data-widget-detail]').first();
         await expect(row.locator('[data-widget-setting="libraries"][value="lib-anime"]')).toBeVisible({ timeout: 15_000 });
         await expect(row.locator('[data-widget-setting="userId"]')).toHaveValue('');
 

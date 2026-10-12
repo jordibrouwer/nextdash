@@ -50,14 +50,14 @@ async function addCustom(page) {
      * had just been hidden.
      */
     if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
-    await expect(page.locator(`[data-widget-row="${index}"] [data-widget-setting="url"]`))
+    await expect(page.locator(`[data-widget-detail="${index}"] [data-widget-setting="url"]`))
         .toBeVisible();
     return index;
 }
 
 /** Choose "An API key" and name the header, the way the form is filled in. */
 async function chooseApiKey(page, index, headerName) {
-    const row = `[data-widget-row="${index}"]`;
+    const row = `[data-widget-detail="${index}"]`;
     await page.locator(`${row} [data-widget-auth="kind"]`).selectOption('header');
     const name = page.locator(`${row} [data-widget-auth="headerName"]`);
     await expect(name).toBeVisible();
@@ -71,7 +71,7 @@ test.describe('a widget’s stored key can be looked at', () => {
         const index = await addCustom(page);
         await chooseApiKey(page, index, 'Authorization');
 
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
         const key = page.locator(`${row} [data-widget-auth="secret"]`);
         await key.fill('Bearer typed-just-now');
 
@@ -94,7 +94,7 @@ test.describe('a widget’s stored key can be looked at', () => {
         const index = await addCustom(page);
         await chooseApiKey(page, index, 'Authorization');
 
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
         const key = page.locator(`${row} [data-widget-auth="secret"]`);
         await key.fill('Bearer stored-and-saved');
         await key.blur();
@@ -116,7 +116,7 @@ test.describe('a widget’s stored key can be looked at', () => {
         const index = await addCustom(page);
         await chooseApiKey(page, index, 'Authorization');
 
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
         const key = page.locator(`${row} [data-widget-auth="secret"]`);
         await key.fill('Bearer stored-and-saved');
         await key.blur();
@@ -140,7 +140,7 @@ test.describe('a widget’s stored key can be looked at', () => {
     test('an Authorization header says it wants a scheme in front', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         await chooseApiKey(page, index, 'X-Api-Key');
         // Not every key takes a scheme; only Authorization carries one.
@@ -157,7 +157,7 @@ test.describe('a preset seeds the scheme its header needs', () => {
     test('Speedtest Tracker fills in Bearer, ready for the token', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         await page.locator(`${row} [data-widget-preset]`).selectOption('speedtest');
 
@@ -173,7 +173,7 @@ test.describe('a preset seeds the scheme its header needs', () => {
     test('the scheme is the one that preset wants, not always Bearer', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
         const key = page.locator(`${row} [data-widget-auth="secret"]`);
 
         // Paperless takes "Token ", and a shared "Bearer " would be wrong for
@@ -188,7 +188,7 @@ test.describe('a preset seeds the scheme its header needs', () => {
     test('a preset whose header carries no scheme seeds nothing', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         // Sonarr's key goes in X-Api-Key whole; there is no scheme to add.
         await page.locator(`${row} [data-widget-preset]`).selectOption('sonarr');
@@ -200,7 +200,7 @@ test.describe('a preset seeds the scheme its header needs', () => {
     test('the seeded scheme alone is refused as a key', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         await page.locator(`${row} [data-widget-preset]`).selectOption('speedtest');
         await expect(page.locator(`${row} [data-widget-auth="secret"]`)).toHaveValue('Bearer ');
@@ -224,7 +224,7 @@ test.describe('a service whose key goes in the address', () => {
     test('still asks for the key in the sign-in block', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
 
@@ -237,7 +237,7 @@ test.describe('a service whose key goes in the address', () => {
     test('the address a preset writes never mentions the key', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
         const url = page.locator(`${row} [data-widget-setting="url"]`);
 
         /*
@@ -262,7 +262,7 @@ test.describe('a service whose key goes in the address', () => {
     test('the key is stored rather than written into the address', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
         const url = page.locator(`${row} [data-widget-setting="url"]`);
@@ -289,7 +289,7 @@ test.describe('a service whose key goes in the address', () => {
     test('the stored address key can be looked at too', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
         const url = page.locator(`${row} [data-widget-setting="url"]`);
@@ -309,7 +309,7 @@ test.describe('a service whose key goes in the address', () => {
     test('Plex asks for the token, not for the Accept header', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         /*
          * Plex was the worst of the four: its API key box asked for an Accept
@@ -338,7 +338,7 @@ test.describe('every preset that needs a credential asks for one', () => {
     test('no preset falls through to no sign-in block', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         const presets = await page.evaluate(() =>
             // Retired presets are not offered, so there is nothing to select.
@@ -365,7 +365,7 @@ test.describe('every preset that needs a credential asks for one', () => {
     test('no preset leaves a key for the reader to paste into the address', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
         const url = page.locator(`${row} [data-widget-setting="url"]`);
 
         const ids = await page.evaluate(() =>
@@ -399,7 +399,7 @@ test.describe('a figure can be rounded to a chosen number of decimals', () => {
     test('every figure has its own decimals control', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
         const decimals = page.locator(`${row} [data-custom-field="decimals"]`);
@@ -413,7 +413,7 @@ test.describe('a figure can be rounded to a chosen number of decimals', () => {
     test('the choice survives being saved and reopened', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
         const url = page.locator(`${row} [data-widget-setting="url"]`);
@@ -450,7 +450,7 @@ test.describe('a figure can be rounded to a chosen number of decimals', () => {
         const at = await reopened.getAttribute('data-widget-settings');
         await reopened.click();
 
-        const after = page.locator(`[data-widget-row="${at}"] [data-custom-field="decimals"]`);
+        const after = page.locator(`[data-widget-detail="${at}"] [data-custom-field="decimals"]`);
         await expect(after.nth(1)).toHaveValue('2', { timeout: 10_000 });
         // Zero is a real choice and must not read back as "nothing chosen".
         await expect(after.nth(2)).toHaveValue('0');
@@ -477,7 +477,7 @@ test.describe('a figure can be rounded to a chosen number of decimals', () => {
         await page.setViewportSize({ width: 1400, height: 1100 });
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
         await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
         await page.waitForSelector(`${row} .config-custom-field`);
 
@@ -527,7 +527,7 @@ test.describe('the figures table lines up', () => {
         await page.setViewportSize({ width: 1400, height: 1100 });
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
         await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
         await page.waitForSelector(`${row} .config-custom-field`);
 
@@ -550,7 +550,7 @@ test.describe('the figures table lines up', () => {
         await page.setViewportSize({ width: 1400, height: 1100 });
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
         await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
 
         /*
@@ -574,7 +574,7 @@ test.describe('the figures table lines up', () => {
     test('Data says which unit the service counts in', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
         await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
 
         // Only Data has a unit to choose; every other format asks for decimals
@@ -603,7 +603,7 @@ test.describe('trying an address uses the key on screen', () => {
     test('a typed key reaches the request before it is saved', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         const sent = [];
         await page.route('**/api/widgets/custom/test', async (route) => {
@@ -631,7 +631,7 @@ test.describe('trying an address uses the key on screen', () => {
     test('a service whose key goes in the address sends it as a parameter', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         const sent = [];
         await page.route('**/api/widgets/custom/test', async (route) => {
@@ -655,7 +655,7 @@ test.describe('trying an address uses the key on screen', () => {
     test('a seeded scheme on its own is not sent as a key', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         const sent = [];
         await page.route('**/api/widgets/custom/test', async (route) => {
@@ -689,7 +689,7 @@ test.describe('a service that hands out a session', () => {
     test('asks for the username and password, not for a cookie', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         await page.locator(`${row} [data-widget-preset]`).selectOption('qbittorrent');
 
@@ -705,7 +705,7 @@ test.describe('a service that hands out a session', () => {
     test('trying it sends the login, not a cookie', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         const sent = [];
         await page.route('**/api/widgets/custom/test', async (route) => {
@@ -736,7 +736,7 @@ test.describe('a service that hands out a session', () => {
     test('the login survives being saved and reopened', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         await page.locator(`${row} [data-widget-preset]`).selectOption('qbittorrent');
         const url = page.locator(`${row} [data-widget-setting="url"]`);
@@ -760,9 +760,9 @@ test.describe('a service that hands out a session', () => {
 
         // The account comes back; the password does not, like every other
         // password in this panel.
-        await expect(page.locator(`[data-widget-row="${at}"] [data-widget-auth="kind"]`))
+        await expect(page.locator(`[data-widget-detail="${at}"] [data-widget-auth="kind"]`))
             .toHaveValue('session', { timeout: 10_000 });
-        await expect(page.locator(`[data-widget-row="${at}"] [data-widget-auth="basicUser"]`))
+        await expect(page.locator(`[data-widget-detail="${at}"] [data-widget-auth="basicUser"]`))
             .toHaveValue('jordi');
     });
 });
@@ -792,7 +792,7 @@ test.describe('a refused request says what was refused', () => {
     test('a rate limit says to wait, not to check a token', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
         await page.locator(`${row} [data-widget-setting="url"]`).fill('https://example.test/api');
         await page.locator(`${row} [data-widget-setting="url"]`).blur();
 
@@ -805,7 +805,7 @@ test.describe('a refused request says what was refused', () => {
     test('a refusal still names the token, because that is the one thing to check', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
         await page.locator(`${row} [data-widget-setting="url"]`).fill('https://example.test/api');
         await page.locator(`${row} [data-widget-setting="url"]`).blur();
 
@@ -817,7 +817,7 @@ test.describe('a refused request says what was refused', () => {
     test('an error inside nextDash points at the log', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
         await page.locator(`${row} [data-widget-setting="url"]`).fill('https://example.test/api');
         await page.locator(`${row} [data-widget-setting="url"]`).blur();
 
@@ -845,7 +845,7 @@ test.describe('a preset that needs something filled into its address says so', (
     test('the note is there while the placeholder is, and goes when it does', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         await page.locator(`${row} [data-widget-preset]`).selectOption('homeassistant');
         await expect.poll(() => hasNote(page, row), { timeout: 10_000 }).toBe(true);
@@ -869,7 +869,7 @@ test.describe('a preset that needs something filled into its address says so', (
     test('the Home Assistant preset reads the whole state list', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         await page.locator(`${row} [data-widget-preset]`).selectOption('homeassistant');
 
@@ -894,7 +894,7 @@ test.describe('a preset that needs something filled into its address says so', (
     test('a preset with nothing to fill in says nothing', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         // Sonarr's address is complete as it arrives; only the host is replaced.
         await page.locator(`${row} [data-widget-preset]`).selectOption('sonarr');
@@ -904,7 +904,7 @@ test.describe('a preset that needs something filled into its address says so', (
     test('Proxmox says it too, with its own placeholder', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         await page.locator(`${row} [data-widget-preset]`).selectOption('proxmox');
         await expect(page.locator(`${row}`).locator('.config-widget-note-hint')
@@ -942,7 +942,7 @@ test.describe('a long answer can be searched', () => {
     test('typing a key shows the lines that mention it', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
         await page.locator(`${row} [data-widget-setting="url"]`).fill('https://example.test/api');
         await page.locator(`${row} [data-widget-setting="url"]`).blur();
 
@@ -964,7 +964,7 @@ test.describe('a long answer can be searched', () => {
     test('clearing the box brings the whole answer back', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
         await page.locator(`${row} [data-widget-setting="url"]`).fill('https://example.test/api');
         await page.locator(`${row} [data-widget-setting="url"]`).blur();
 
@@ -985,7 +985,7 @@ test.describe('a long answer can be searched', () => {
     test('a search that finds nothing says so', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
         await page.locator(`${row} [data-widget-setting="url"]`).fill('https://example.test/api');
         await page.locator(`${row} [data-widget-setting="url"]`).blur();
 
@@ -1022,7 +1022,7 @@ test.describe('a figure shows what its path found', () => {
         await page.setViewportSize({ width: 1500, height: 1100 });
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
         await page.locator(`${row} [data-widget-setting="url"]`).fill('https://example.test/api');
         await page.locator(`${row} [data-widget-setting="url"]`).blur();
         // A fresh custom widget has no figures, so both rows are added here --
@@ -1051,7 +1051,7 @@ test.describe('a figure shows what its path found', () => {
         await page.setViewportSize({ width: 1500, height: 1100 });
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
 
         /*
          * Not blank: an empty column under a heading reads as broken rather
@@ -1068,7 +1068,7 @@ test.describe('a figure shows what its path found', () => {
         await page.setViewportSize({ width: 1500, height: 1100 });
         await openWidgets(page);
         const index = await addCustom(page);
-        const row = `[data-widget-row="${index}"]`;
+        const row = `[data-widget-detail="${index}"]`;
         await page.locator(`${row} [data-widget-preset]`).selectOption('homeassistant');
         await page.waitForSelector(`${row} .config-custom-field`);
 

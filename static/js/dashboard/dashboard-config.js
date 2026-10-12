@@ -19663,6 +19663,15 @@ class DashboardConfig {
     /** The two halves of the Widgets section: the ones you have, and the kinds. */
     static WIDGETS_TABS = ['widgets'];
 
+    /*
+     * The width of the Widgets section, in px, from which the list and the
+     * opened widget sit side by side. Measured against the section rather than
+     * the window: Config gives it about 890px in a 1280px window and 1080px in
+     * a 1500px one, and the list needs about 380px of that before a detail
+     * beside it leaves the row titles room to read.
+     */
+    static WIDGETS_WIDE_MIN = 960;
+
     /** Config → Inbox: what is collected, the list, the side panel and clicks, the header icon. */
     static INBOX_TABS = ['collecting', 'list', 'panel', 'icon'];
 

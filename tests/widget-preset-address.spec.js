@@ -65,7 +65,7 @@ async function addCustom(page) {
      * had just been hidden.
      */
     if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
-    await expect(page.locator(`[data-widget-row="${index}"] [data-widget-setting="url"]`))
+    await expect(page.locator(`[data-widget-detail="${index}"] [data-widget-setting="url"]`))
         .toBeVisible();
     return index;
 }
@@ -74,9 +74,9 @@ test.describe('a preset’s path survives the host being replaced', () => {
     test('retyping the address as a bare host puts the path back', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const url = page.locator(`[data-widget-row="${index}"] [data-widget-setting="url"]`);
+        const url = page.locator(`[data-widget-detail="${index}"] [data-widget-setting="url"]`);
 
-        await page.locator(`[data-widget-row="${index}"] [data-widget-preset]`).selectOption('adguard');
+        await page.locator(`[data-widget-detail="${index}"] [data-widget-preset]`).selectOption('adguard');
         await expect(url).toHaveValue('http://adguard.local:3000/control/stats');
 
         // What someone actually does next: replace the sample with their own
@@ -91,9 +91,9 @@ test.describe('a preset’s path survives the host being replaced', () => {
         async ({ page }) => {
             await openWidgets(page);
             const index = await addCustom(page);
-            const url = page.locator(`[data-widget-row="${index}"] [data-widget-setting="url"]`);
+            const url = page.locator(`[data-widget-detail="${index}"] [data-widget-setting="url"]`);
 
-            await page.locator(`[data-widget-row="${index}"] [data-widget-preset]`).selectOption('adguard');
+            await page.locator(`[data-widget-detail="${index}"] [data-widget-preset]`).selectOption('adguard');
             // :80 is http's default, so URL.origin drops it. Someone who wrote
             // it meant it, and a box that silently deletes what was typed into
             // it reads as a box refusing the value.
@@ -106,9 +106,9 @@ test.describe('a preset’s path survives the host being replaced', () => {
     test('an address that names its own path is left alone', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const url = page.locator(`[data-widget-row="${index}"] [data-widget-setting="url"]`);
+        const url = page.locator(`[data-widget-detail="${index}"] [data-widget-setting="url"]`);
 
-        await page.locator(`[data-widget-row="${index}"] [data-widget-preset]`).selectOption('adguard');
+        await page.locator(`[data-widget-detail="${index}"] [data-widget-preset]`).selectOption('adguard');
         await url.fill('http://192.168.0.3/control/some-other-endpoint');
         await url.blur();
 
@@ -118,7 +118,7 @@ test.describe('a preset’s path survives the host being replaced', () => {
     test('without a preset the address is never rewritten', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const url = page.locator(`[data-widget-row="${index}"] [data-widget-setting="url"]`);
+        const url = page.locator(`[data-widget-detail="${index}"] [data-widget-setting="url"]`);
 
         // No preset chosen: nothing knows a path, so nothing may invent one.
         await url.fill('http://192.168.0.3');
@@ -130,16 +130,16 @@ test.describe('a preset’s path survives the host being replaced', () => {
     test('the restored path is what gets saved', async ({ page }) => {
         await openWidgets(page);
         const index = await addCustom(page);
-        const url = page.locator(`[data-widget-row="${index}"] [data-widget-setting="url"]`);
+        const url = page.locator(`[data-widget-detail="${index}"] [data-widget-setting="url"]`);
 
-        await page.locator(`[data-widget-row="${index}"] [data-widget-preset]`).selectOption('adguard');
+        await page.locator(`[data-widget-detail="${index}"] [data-widget-preset]`).selectOption('adguard');
         await url.fill('http://192.168.0.3:80');
         await url.blur();
 
         // AdGuard signs in with a username and password, and the panel refuses
         // to save a half-filled credential -- so this is the whole journey the
         // reader makes, not just the address half of it.
-        const row = page.locator(`[data-widget-row="${index}"]`);
+        const row = page.locator(`[data-widget-detail="${index}"]`);
         await row.locator('[data-widget-auth="basicUser"]').fill('someone');
         await row.locator('[data-widget-auth="secret"]').fill('a-password');
         await row.locator('[data-widget-save]').click();

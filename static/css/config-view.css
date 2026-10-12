@@ -6397,6 +6397,37 @@ body.no-animations .config-new-features-panel-star {
     color: var(--text-muted, #888);
 }
 
+/* Wide: the list and the opened widget side by side. Which layout is drawn is
+   decided in JS from the section's width (WIDGETS_WIDE_MIN), since the detail
+   is one node that moves between the row and this column. */
+.config-widgets-split {
+    display: grid;
+    grid-template-columns: minmax(20rem, 2fr) minmax(0, 3fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.config-widgets-split > .config-panel {
+    min-width: 0;
+}
+
+/* Stays in view while a long list scrolls beside it. */
+.config-widgets-detailpanel {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+}
+
+.config-widgets-detailpanel .config-widget-detail {
+    padding-top: 0;
+}
+
+/* Beside a detail panel the list is narrower: the type chip gives way first.
+   The page chip stays -- it only appears in All pages, where it is the one
+   thing a row says that the detail beside it does not. */
+.config-widgets-split .config-widget-row .config-widget-row-kind { display: none; }
+
 /* The settings, folded out under the row they belong to. Full width, since a
    checkset needs the room, and separated by a rule rather than a box so the row
    still reads as one thing. */

@@ -75,7 +75,7 @@ async function addWidget(page, type) {
      * had just been hidden.
      */
     if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
-    await expect(page.locator(`[data-widget-row="${index}"] .config-widget-settings`)).toBeVisible();
+    await expect(page.locator(`[data-widget-detail="${index}"]`)).toBeVisible();
     return index;
 }
 
@@ -134,7 +134,7 @@ test.describe('the widgets panel remembers a saved widget', () => {
         test(`the picker still names ${service}, which signs in with ${auth}`, async ({ page }) => {
             await openWidgets(page);
             const index = await addWidget(page, 'custom');
-            const row = page.locator(`[data-widget-row="${index}"]`);
+            const row = page.locator(`[data-widget-detail="${index}"]`);
 
             await row.locator('[data-widget-preset]').selectOption(service);
             // Named on the picker the moment it is applied, not only later:
@@ -152,7 +152,7 @@ test.describe('the widgets panel remembers a saved widget', () => {
             await page.reload({ waitUntil: 'networkidle' });
             await openWidgets(page, { keep: true });
             await page.locator(`[data-widget-settings="${index}"]`).click();
-            await expect(page.locator(`[data-widget-row="${index}"] [data-widget-preset]`))
+            await expect(page.locator(`[data-widget-detail="${index}"] [data-widget-preset]`))
                 .toHaveValue(service);
         });
     }
@@ -201,7 +201,7 @@ test.describe('a figure can be given a shape', () => {
     test('the size box offers a bar on a percentage and not on a count', async ({ page }) => {
         await openWidgets(page);
         const index = await addWidget(page, 'custom');
-        const row = page.locator(`[data-widget-row="${index}"]`);
+        const row = page.locator(`[data-widget-detail="${index}"]`);
         // Glances: three percentages, so the meter is on offer from the start.
         await row.locator('[data-widget-preset]').selectOption('glances');
         const shape = row.locator('[data-custom-field="shape"]').first();
@@ -218,7 +218,7 @@ test.describe('a figure can be given a shape', () => {
     test('a chosen shape is what gets stored', async ({ page }) => {
         await openWidgets(page);
         const index = await addWidget(page, 'custom');
-        const row = page.locator(`[data-widget-row="${index}"]`);
+        const row = page.locator(`[data-widget-detail="${index}"]`);
         await row.locator('[data-widget-preset]').selectOption('traefik');
 
         const shape = row.locator('[data-custom-field="shape"]').first();
@@ -257,7 +257,7 @@ test.describe('a figure already on a custom widget can be edited', () => {
      */
     async function customWithFields(page) {
         const index = await addWidget(page, 'custom');
-        const row = page.locator(`[data-widget-row="${index}"]`);
+        const row = page.locator(`[data-widget-detail="${index}"]`);
         await row.locator('[data-widget-preset]').selectOption('traefik');
         await expect(row.locator('[data-custom-field="format"]').first()).toBeVisible();
         await row.locator('[data-widget-save]').click();
@@ -333,7 +333,7 @@ test.describe('a stored widget key survives a save', () => {
         test(`${service}: Health first, then Save keeps the key`, async ({ page }) => {
             await openWidgets(page);
             const index = await addWidget(page, 'custom');
-            const row = page.locator(`[data-widget-row="${index}"]`);
+            const row = page.locator(`[data-widget-detail="${index}"]`);
             await row.locator('[data-widget-preset]').selectOption(service);
             await row.locator('[data-widget-auth="secret"]').fill('the-key');
             await row.locator('[data-widget-save]').click();
@@ -357,7 +357,7 @@ test.describe('a stored widget key survives a save', () => {
             await expect(page.locator('[data-widget-catalogue]')).toBeVisible();
             const toggle = page.locator(`[data-widget-settings="${index}"]`);
             if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
-            const again = page.locator(`[data-widget-row="${index}"]`);
+            const again = page.locator(`[data-widget-detail="${index}"]`);
             if (repick) await again.locator('[data-widget-preset]').selectOption(service);
             const label = again.locator('[data-custom-field="label"]').first();
             await label.fill(`${service} figure`);
@@ -386,7 +386,7 @@ test.describe('a stored widget key survives a save', () => {
 test('a key typed again keeps the preset header', async ({ page }) => {
     await openWidgets(page);
     const index = await addWidget(page, 'custom');
-    const row = page.locator(`[data-widget-row="${index}"]`);
+    const row = page.locator(`[data-widget-detail="${index}"]`);
     await row.locator('[data-widget-preset]').selectOption('plex');
     await row.locator('[data-widget-auth="secret"]').fill('first-token');
     await row.locator('[data-widget-save]').click();
@@ -401,7 +401,7 @@ test('a key typed again keeps the preset header', async ({ page }) => {
     await page.evaluate(async () => { await window.dashboardInstance.config.openConfigView('widgets'); });
     const toggle = page.locator(`[data-widget-settings="${index}"]`);
     if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
-    const again = page.locator(`[data-widget-row="${index}"]`);
+    const again = page.locator(`[data-widget-detail="${index}"]`);
     await again.locator('[data-widget-auth="secret"]').fill('second-token');
     await again.locator('[data-widget-auth="secret"]').blur();
     // The key alone is the edit: Save comes on for it.
@@ -418,7 +418,7 @@ test('a key typed again keeps the preset header', async ({ page }) => {
 test('a failed delete keeps the widget its key', async ({ page }) => {
     await openWidgets(page);
     const index = await addWidget(page, 'custom');
-    const row = page.locator(`[data-widget-row="${index}"]`);
+    const row = page.locator(`[data-widget-detail="${index}"]`);
     await row.locator('[data-widget-preset]').selectOption('sonarr');
     await row.locator('[data-widget-auth="secret"]').fill('the-key');
     await row.locator('[data-widget-save]').click();
@@ -457,15 +457,15 @@ test.describe('bug hunt 4: widget settings say what the tile does', () => {
     test('a default-on toggle draws ticked on a new widget', async ({ page }) => {
         await openWidgets(page);
         const index = await addWidget(page, 'disks');
-        await expect(page.locator(`[data-widget-row="${index}"] [data-widget-setting="showMeter"]`)).toBeChecked();
+        await expect(page.locator(`[data-widget-detail="${index}"] [data-widget-setting="showMeter"]`)).toBeChecked();
     });
 
     // The draft still held what was there when the panel opened.
     test('Save in the panel keeps a widget hidden from the row', async ({ page }) => {
         await openWidgets(page);
         const index = await addWidget(page, 'health');
-        const row = page.locator(`[data-widget-row="${index}"]`);
-        await row.locator(`[data-widget-enabled="${index}"]`).uncheck();
+        const row = page.locator(`[data-widget-detail="${index}"]`);
+        await page.locator(`[data-widget-enabled="${index}"]`).uncheck();
         await expect.poll(async () => (await lastStored(page))?.config?.enabled, { timeout: 10_000 }).toBe(false);
         await row.locator('[data-widget-setting="show"][value="content"]').uncheck();
         await row.locator('[data-widget-save]').click();
@@ -478,7 +478,7 @@ test.describe('bug hunt 4: widget settings say what the tile does', () => {
     test('the health tile shows the figures ticked for it', async ({ page }) => {
         await openWidgets(page);
         const index = await addWidget(page, 'health');
-        const row = page.locator(`[data-widget-row="${index}"]`);
+        const row = page.locator(`[data-widget-detail="${index}"]`);
         await row.locator('[data-widget-setting="show"][value="broken"]').uncheck();
         await row.locator('[data-widget-setting="show"][value="content"]').uncheck();
         await row.locator('[data-widget-save]').click();
