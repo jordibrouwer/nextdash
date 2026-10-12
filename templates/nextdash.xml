@@ -28,7 +28,7 @@ Key features:
 • Inbox to collect new links fast: triage them, or keep them under Bookmarks → Unsorted and file whole groups later
 • Bookmarks view with Health built in: finds broken, stale and duplicate links, with uptime monitoring and downtime alerts
 • Video bookmarks marked in the list, and played in the hover card without leaving the dashboard
-• Widgets beside your bookmarks: 28 built-in kinds (uptime, feeds, weather, calendar, disks, containers and more) plus a Custom widget for any JSON API
+• Widgets beside your bookmarks: 29 built-in kinds (uptime, feeds, weather, calendar, disks, containers and more) plus a Custom widget for any JSON API
 • Your Unraid server on the dashboard: seven widgets for the array, parity, shares, VMs, the UPS and notifications, with alerts
 • Web search in the search panel through your own SearXNG or the Brave Search API
 • Six interface languages: English, Dutch, German, French, Spanish and Chinese
@@ -49,6 +49,15 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.19.4 (2026-10-12)
+- Widgets: a Jellyfin widget shows what was added to your media server lately, with the posters from your own library
+- Widgets: Config → Widgets has the tabs Your widgets, Catalogue and Custom widget, with the list and the open widget side by side on a wide screen
+- Weekly digest: one message a week about broken links, certificates running out, container updates and bookmarks nobody opens, with a window to read it
+- Monitoring: Status &amp; alerts moved from Behavior to its own Config → Monitoring section with Checks, Notifications and Schedules
+- What's new: a release's highlight gets a picture or short clip, and every release since your last visit opens
+- Dashboard: pasting a link shows what it is before you choose Bookmark or Inbox
+- Fixes: the focus stays on the control you are using in Config, the block grip drags with the mouse again, and tag suggestions know a subdomain by its parent domain
+
 ### v1.19.2 (2026-10-10)
 - Config: every section opens on its first tab when you were last there more than five minutes ago; come back sooner and it shows the tab you had open
 - Config: a link to Status page or Unraid always names the tab it shows
@@ -71,11 +80,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Bookmarks: Shift+H opens the whole list, the same as the Bookmarks button, and also works with health checks off
 - Speed: Bookmarks starts loading when you point at its button, draws its list once, and no longer loads what only Appearance and the widget editor need
 - Views: Config, Bookmarks, Inbox and Containers open with a shorter fade
-
-### v1.18.4 (2026-10-09)
-- Action bar: five ways for the buttons to come into view (swell, from the middle, together, unfold, accordion), each shown on its own card under Config → Appearance → Action bar
-- Speed: the theme stylesheet is cached by the browser, a view's scripts download side by side, and a long dashboard no longer stalls while it draws
-- Icons: icon-set icons that showed a letter show the app icon again, and Inbox links whose icon went missing fetch it again
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -83,7 +87,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-10-10</Date>
+  <Date>2026-10-12</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
