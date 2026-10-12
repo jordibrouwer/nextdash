@@ -16402,8 +16402,8 @@ class DashboardConfig {
     /**
      * The corner cards that answer once, and a way to ask for one again.
      *
-     * Each card remembers an answer in its own place: five in the synced list
-     * of promos, three in this browser's storage. Whichever it is, a card you
+     * Each card remembers an answer in its own place: three in the synced list
+     * of promos, two in this browser's storage. Whichever it is, a card you
      * waved away had no road back. Here the answered ones can be put back; the
      * card then turns up the next time its own moment comes, not at once.
      * Analytics is left out on purpose: it is an opt-in, not a hint.
@@ -16411,16 +16411,11 @@ class DashboardConfig {
     static NOTICE_CARDS = [
         { id: 'kept-pile', promo: 'kept-pile-v1', labelKey: 'config.noticeKeptPile', label: 'Kept links piling up' },
         { id: 'clock-weather', promo: 'clock-weather-v1', labelKey: 'config.noticeClockWeather', label: 'Clock and weather' },
-        { id: 'widgets-layout', promo: 'widgets-layout-try-v1', labelKey: 'config.noticeWidgetsLayout', label: 'Widgets layout' },
         { id: 'theme-browser', promo: 'theme-browser-try-v1', labelKey: 'config.noticeThemeBrowser', label: 'Theme browser' },
-        { id: 'fresh', promo: 'fresh-feeds-v1', labelKey: 'config.noticeFresh', label: 'Fresh feeds' },
-        { id: 'features', promo: 'features-overview-v1', labelKey: 'config.noticeFeatures', label: 'Feature overview' },
         { id: 'tag-suggestions', keys: ['tagSuggestionNoticeDoneOn', 'tagSuggestionNoticeSnoozeUntil', 'tagSuggestionNoticeSeenCount'],
           labelKey: 'config.noticeTagSuggestions', label: 'Tag suggestions' },
         { id: 'health-review', keys: ['nextdashHealthReviewDoneOn', 'nextdashHealthReviewSnoozeUntil'],
           labelKey: 'config.noticeHealthReview', label: 'Health review' },
-        { id: 'unchecked-bookmarks', keys: ['uncheckedBookmarksNoticeLastShownAt', 'uncheckedBookmarksNoticeDeclineCount', 'uncheckedBookmarksNoticeDismissedForever'],
-          labelKey: 'config.noticeUnchecked', label: 'Unchecked bookmarks' },
     ];
 
     /** Whether a card has been answered, snoozed or silenced. */

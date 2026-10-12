@@ -129,6 +129,7 @@ A weekly digest sums up what needs you once a week: links that broke, certificat
 ### Dashboard
 
 - **new — the paste choice shows what the pasted link is.** While you choose between bookmark and Inbox, a card shows the site's favicon, domain, title, description and picture, from the same `/api/bookmark-preview` answer the hover card draws, with the local copy of the picture. A slow answer never lands in a later modal, and a missing picture is asked for once more (`dashboard-paste-choice.js`).
+- **fix — four corner cards are gone**: the Widgets layout invitation, the Fresh offer, the pointer to the feature overview and the offer to check unchecked bookmarks (`widgets-layout-notice.js`, `fresh-notice.js`, `features-notice.js`, `unchecked-bookmarks-notice.js`, their specs, their strings in six languages and their rows in Config → Show again). Fresh, its tutorial and `POST /api/health/check-mode-all` stay.
 - **fix — a block's grip can be dragged with the mouse again under a header style other than the theme's.** The grip was sized in `em` against a font size of 0, so it was zero wide and the icon after it took every click (`category-header.css`).
 
 ### Widgets
