@@ -95,6 +95,8 @@ test.describe('paste choice preview', () => {
         const title = page.locator('#paste-choice-preview .paste-choice-preview-title');
         await expect(title).toHaveText('Title of second.example.com');
         releases.get('https://first.example.com/')();
+        // Must not happen: the stale answer overwriting the title. Give it the
+        // moment it would take to land before checking it did not.
         await page.waitForTimeout(300);
         await expect(title).toHaveText('Title of second.example.com');
     });
