@@ -470,7 +470,7 @@ test('deleting a widget removes that widget', async ({ page }) => {
     });
 
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
-    await page.waitForSelector('[data-widget-delete]', { timeout: 15_000 });
+    await page.waitForSelector('[data-widget-settings]', { timeout: 15_000 });
     await expect(page.locator('.config-widget-row')).toHaveCount(2);
 
     // Confirmed through the app's own dialog, so the click is the real path.
@@ -478,7 +478,9 @@ test('deleting a widget removes that widget', async ({ page }) => {
         const cfg = window.dashboardInstance.config?.instance || window.dashboardInstance.config;
         cfg.confirmAction = async () => true;
     });
-    await page.locator('[data-widget-delete]').nth(1).click();
+    // Delete lives in the opened detail, so the second row is opened first.
+    await page.locator('.config-widget-row [data-widget-settings]').nth(1).click();
+    await page.locator('.config-widget-detail [data-widget-delete]').click();
 
     await expect.poll(async () => page.evaluate(async () => {
         const send = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;

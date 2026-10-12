@@ -6278,11 +6278,24 @@ body.no-animations .config-new-features-panel-star {
 .config-widget-row {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 12px 14px;
+    padding: 8px 12px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
     border-radius: var(--radius-6, 10px);
     background: var(--card-bg, rgba(127, 127, 127, 0.03));
+}
+
+.config-widget-row-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.config-widget-row-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
 }
 
 /* An open row is the one being worked on, so it reads as the foreground: a step
@@ -6303,30 +6316,11 @@ body.no-animations .config-new-features-panel-star {
 }
 
 /* Switched off is a state worth seeing in the list, not only in the checkbox. */
-.config-widget-row.is-off .config-widget-row-identity,
-.config-widget-row.is-off .config-widget-row-about {
+.config-widget-row.is-off .config-widget-row-line > :not([data-widget-settings]):not(.config-widget-row-shown) {
     opacity: 0.55;
 }
 
-.config-widget-row-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-}
-
-.config-widget-row-identity {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex: 1;
-    min-width: 14rem;
-}
-
-/* The type, as a quiet chip ahead of the name someone chose. It used to sit
-   after the title field on a line with no room, which is why it landed on top
-   of the toggle. */
+/* The type, as a quiet chip at the end of the line. */
 .config-widget-row-kind {
     flex: none;
     padding: 2px 8px;
@@ -6337,24 +6331,70 @@ body.no-animations .config-new-features-panel-star {
     white-space: nowrap;
 }
 
+/* Reads as the row's name until it is focused, the way bookmark names do. */
 .config-widget-row-title {
-    flex: 1;
-    min-width: 8rem;
+    border-color: transparent;
+    background: transparent;
+    font-weight: 600;
+    padding-inline: 4px;
 }
 
-.config-widget-row-actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
+.config-widget-row-title:hover,
+.config-widget-row-title:focus {
+    border-color: var(--border-color, rgba(128, 128, 128, 0.35));
 }
 
 .config-widget-row-about {
+    padding-inline: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: calc(var(--font-size-text) * 0.88);
+    color: var(--text-muted, #888);
+}
+
+@media (max-width: 640px) {
+    .config-widget-row-kind { display: none; }
+}
+
+/* One widget, opened: description, settings, and the way out. */
+.config-widget-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 10px;
+}
+
+.config-widget-detail-title {
     margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: calc(var(--font-size-text) * 1.0);
+    font-weight: 600;
+}
+
+.config-widget-detail-about {
+    margin: 2px 0 0;
     max-width: 68ch;
     font-size: calc(var(--font-size-text) * 0.88);
     color: var(--text-muted, #888);
-    line-height: 1.45;
+}
+
+.config-widget-detail-section {
+    border-top: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    padding-top: 12px;
+}
+
+.config-widget-detail-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-top: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    padding-top: 10px;
+    font-size: calc(var(--font-size-text) * 0.88);
+    color: var(--text-muted, #888);
 }
 
 /* The settings, folded out under the row they belong to. Full width, since a
@@ -6483,6 +6523,7 @@ body.no-animations .config-new-features-panel-star {
 
 /* Which page a row belongs to, shown only while the list spans pages. */
 .config-widget-row-page {
+    flex: none;
     padding: var(--space-hairline, 0.1rem) var(--space-1-5, 0.4rem);
     border-radius: var(--radius-pill, 999px);
     background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
@@ -6873,12 +6914,6 @@ body.no-animations .config-new-features-panel-star {
     display: flex;
     flex-wrap: wrap;
     gap: 8px 16px;
-}
-
-@media (max-width: 640px) {
-    .config-widget-row-actions {
-        width: 100%;
-    }
 }
 
 /* A note under a setting, for the one that needs a word about what the grid

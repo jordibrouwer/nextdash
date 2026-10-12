@@ -185,6 +185,8 @@
                         'No widgets on this page yet.'))}</p>
                     <p class="config-widget-empty-hint">${esc(this.t('config.widgetsEmptyHint',
                         'A widget is a block beside your categories that holds something other than bookmarks.'))}</p>
+                    <p class="config-widget-empty-hint">${esc(this.t('config.widgetsIntro',
+                        'Where each one sits is arranged under Structure → categories, together with the categories it sits between.'))}</p>
                     ${this.renderWidgetAddButton()}
                 </div>`;
             } else {
@@ -194,40 +196,36 @@
                     return `
                 <li class="config-widget-row${open ? ' is-open' : ''}${enabled ? '' : ' is-off'}"
                     data-widget-row="${index}">
-                    <div class="config-widget-row-head">
-                        <div class="config-widget-row-identity">
-                            <label class="config-widget-row-pick"
-                                title="${esc(this.t('config.widgetsSelectRow', 'Select this widget'))}">
-                                <input type="checkbox" data-widget-pick="${esc(widget.id)}"
-                                    ${this.widgetSelection.has(widget.id) ? 'checked' : ''}>
-                            </label>
-                            <span class="config-widget-row-kind">${esc(this.widgetTypeName(widget.type))}</span>
-                            ${this.isAllPagesView() && widget.pageName
-                                ? `<span class="config-widget-row-page" title="${
-                                    esc(this.t('config.widgetsPageLabel', 'Page'))}">${
-                                    esc(widget.pageName)}</span>`
-                                : ''}
+                    <div class="config-widget-row-line">
+                        <label class="config-widget-row-pick"
+                            title="${esc(this.t('config.widgetsSelectRow', 'Select this widget'))}">
+                            <input type="checkbox" data-widget-pick="${esc(widget.id)}"
+                                ${this.widgetSelection.has(widget.id) ? 'checked' : ''}>
+                        </label>
+                        <label class="config-toggle config-toggle--inline config-widget-row-shown"
+                            title="${esc(this.t('config.widgetsEnabledHint', 'Show this widget on the dashboard'))}">
+                            <input type="checkbox" data-widget-enabled="${index}" ${enabled ? 'checked' : ''}
+                                aria-label="${esc(this.t('config.widgetsEnabled', 'Shown'))}">
+                        </label>
+                        <div class="config-widget-row-main">
                             <input type="text" class="config-text config-widget-row-title" data-widget="title"
                                 data-index="${index}" value="${esc(widget.title || '')}"
                                 aria-label="${esc(this.t('config.widgetsTitleLabel', 'Widget title'))}"
                                 placeholder="${esc(this.widgetTypeName(widget.type))}">
+                            <span class="config-widget-row-about">${esc(this.widgetTypeAbout(widget.type))}</span>
                         </div>
-                        <div class="config-widget-row-actions">
-                            <label class="config-toggle config-toggle--inline"
-                                title="${esc(this.t('config.widgetsEnabledHint', 'Show this widget on the dashboard'))}">
-                                <input type="checkbox" data-widget-enabled="${index}" ${enabled ? 'checked' : ''}>
-                                <span>${esc(this.t('config.widgetsEnabled', 'Shown'))}</span>
-                            </label>
-                            <button type="button" class="config-btn config-btn--small" data-widget-settings="${index}"
-                                aria-expanded="${open ? 'true' : 'false'}">${esc(
-                                this.t('config.widgetsConfigure', 'Settings'))}</button>
-                            <button type="button" class="config-btn config-btn--small config-btn--danger"
-                                data-widget-delete="${index}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
-                        </div>
+                        <span class="config-widget-row-kind">${esc(this.widgetTypeName(widget.type))}</span>
+                        ${this.isAllPagesView() && widget.pageName
+                            ? `<span class="config-widget-row-page" title="${
+                                esc(this.t('config.widgetsPageLabel', 'Page'))}">${
+                                esc(widget.pageName)}</span>`
+                            : ''}
+                        <button type="button" class="config-btn config-btn--small" data-widget-settings="${index}"
+                            aria-expanded="${open ? 'true' : 'false'}">${esc(
+                            this.t('config.widgetsConfigure', 'Settings'))}</button>
                     </div>
-                    <p class="config-widget-row-about">${esc(this.widgetTypeAbout(widget.type))}</p>
-                    <div class="config-widget-settings" ${open ? '' : 'hidden'}>${
-                        open ? this.renderWidgetSettings(widget, index) : ''}</div>
+                    <div class="config-widget-settings" ${open && !this._widgetWide ? '' : 'hidden'}>${
+                        open && !this._widgetWide ? this.renderWidgetDetail(widget, index) : ''}</div>
                 </li>`;
                 };
 
@@ -295,11 +293,19 @@
                 ${canAdd ? this.renderWidgetAddButton() : ''}
             </div>` : pagePicker;
 
+        const pageName = this.isAllPagesView()
+            ? this.t('config.widgetsAllPages', 'All pages')
+            : (pages.find((p) => Number(p.id) === Number(pageId))?.name || '');
+        const panelTitle = pageName
+            ? this.t('config.widgetsOnPage', 'Widgets on {page}').replace('{page}', pageName)
+            : this.t('config.sectionWidgets', 'Widgets');
+
         return `
-            <p class="config-panel-note">${esc(this.t('config.widgetsIntro',
-                'Where each one sits is arranged under Pages & tags → categories, together with the categories it sits between.'))}</p>
-            ${toolbar}
-            ${body}
+            <section class="config-panel config-widgets-listpanel">
+                <h3 class="config-panel-title">${esc(panelTitle)}</h3>
+                ${toolbar}
+                ${body}
+            </section>
         `;
     },
 
@@ -2022,6 +2028,35 @@
             data-widget-index="${index}"
             aria-label="${esc(this.t('config.settingInfoAria', 'More info'))}"
             title="${esc(this.t('config.settingInfoAria', 'More info'))}">ℹ</button>`;
+    },
+
+    /*
+     * One widget, opened: what it is, its settings, and the way out.
+     *
+     * Drawn by one function for both places it can appear -- under its row on
+     * a narrow screen, beside the list on a wide one -- so the two can never
+     * offer different controls.
+     */
+    renderWidgetDetail(widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const name = this.widgetRowLabel(widget);
+        return `
+            <div class="config-widget-detail" data-widget-detail="${index}">
+                <div class="config-widget-detail-head">
+                    <h4 class="config-widget-detail-title">${esc(name)}
+                        <span class="config-widget-row-kind">${esc(this.widgetTypeName(widget.type))}</span></h4>
+                    <p class="config-widget-detail-about">${esc(this.widgetTypeAbout(widget.type))}</p>
+                </div>
+                <div class="config-widget-detail-section">
+                    ${this.renderWidgetSettings(widget, index)}
+                </div>
+                <div class="config-widget-detail-foot">
+                    <span class="config-widget-detail-where">${esc(this.t('config.widgetsIntro',
+                        'Where each one sits is arranged under Structure → categories, together with the categories it sits between.'))}</span>
+                    <button type="button" class="config-btn config-btn--small config-btn--danger"
+                        data-widget-delete="${index}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
+                </div>
+            </div>`;
     },
 
     renderWidgetSettings(stored, index) {

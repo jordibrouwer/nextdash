@@ -99,6 +99,36 @@ test.describe('the widgets tab', () => {
         expect(shape.sort).toBe('group');
     });
 
+    test('the list sits in a titled panel, with no loose note above it', async ({ page }) => {
+        await openWidgets(page);
+        await ensureWidget(page, 'health');
+        const panel = page.locator('#config-widgets-body .config-panel.config-widgets-listpanel');
+        await expect(panel).toBeVisible();
+        await expect(panel.locator('.config-panel-title')).toBeVisible();
+        await expect(page.locator('#config-widgets-body > .config-panel-note')).toHaveCount(0);
+    });
+
+    test('a row is one line: no Delete button on it', async ({ page }) => {
+        await openWidgets(page);
+        await ensureWidget(page, 'health');
+        const row = page.locator('.config-widget-row').first();
+        await expect(row.locator('[data-widget-delete]')).toHaveCount(0);
+        await expect(row.locator('[data-widget-settings]')).toBeVisible();
+        await expect(row.locator('[data-widget-enabled]')).toBeVisible();
+    });
+
+    test('Settings opens a detail with the description, the settings and Delete', async ({ page }) => {
+        await openWidgets(page);
+        await ensureWidget(page, 'health');
+        const toggle = page.locator('[data-widget-settings]').first();
+        if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
+        const detail = page.locator('.config-widget-detail').first();
+        await expect(detail.locator('.config-widget-detail-head')).toBeVisible();
+        await expect(detail.locator('.config-widget-settings-body')).toBeVisible();
+        await expect(detail.locator('.config-widget-detail-foot [data-widget-delete]')).toBeVisible();
+        await expect(detail.locator('.config-widget-detail-foot')).toContainText('Structure');
+    });
+
     /*
      * A widget with no title of its own is drawn under its type, so searching
      * for the type has to find it -- looking for "health" and finding nothing
