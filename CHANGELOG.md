@@ -140,6 +140,7 @@ The headline is the Jellyfin widget: connect it once and it shows what was added
 
 - **docs — Help follows v1.19.4**, in six languages: Widgets → Adding one names the three tabs and the side-by-side layout, The kinds counts thirty-one and adds *What is new to watch?* with Jellyfin, Weekly digest names the *New in nextDash* part and its switch, and Version describes the spotlight and every release since your last visit. Checks & health and the `tipMaintBulkCheck` tip no longer point at the removed corner card; they send unchecked bookmarks through the Bookmarks view instead.
 - **docs — MANUAL §4, §12.1, §12.4, §15.1, §15.2, §15.3, §17.1, §17.7 and §17.8**: the four removed corner cards are gone from the list, Config → Widgets has its three tabs and the wide layout, Jellyfin has a row and a set-up paragraph, the digest has its news part, and What's new its spotlight, the releases since your last visit and the **All** / **New only** / section chips.
+- **docs — translations** of the v1.19.4 strings, which only had an English fallback in the code: the Widgets tabs and Catalogue, the Custom widget tab, the Jellyfin settings and tile, the digest's *New in nextDash* part and its switch, and the What's new window's spotlight, chips and Ko-fi card — 100 keys in `en.json`, nl, de, fr, es and zh. The Jellyfin set-up errors now have fixed keys (`widgetJellyfinError*`) instead of one built from the server's error text.
 
 ### Tests
 

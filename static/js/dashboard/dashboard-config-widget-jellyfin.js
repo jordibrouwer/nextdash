@@ -42,14 +42,15 @@
         const id = (name) => `widget-${index}-jellyfin-${name}`;
 
         const errorWords = {
-            'key refused': 'Jellyfin refused that key.',
-            'address not allowed': 'That address is on your local network; allow local addresses first.',
-            'not set up': 'Fill in the address and the key first.',
+            'key refused': ['config.widgetJellyfinErrorKey', 'Jellyfin refused that key.'],
+            'address not allowed': ['config.widgetJellyfinErrorAddress',
+                'That address is on your local network; allow local addresses first.'],
+            'not set up': ['config.widgetJellyfinErrorNotSetUp', 'Fill in the address and the key first.'],
         };
         let status = '';
         if (setup?.error) {
-            status = this.t(`config.widgetJellyfinError.${setup.error}`,
-                errorWords[setup.error] || 'Jellyfin could not be reached.');
+            status = this.t(...(errorWords[setup.error]
+                || ['config.widgetJellyfinErrorUnreachable', 'Jellyfin could not be reached.']));
         } else if (setup) {
             status = this.t('config.widgetJellyfinConnected', 'Connected to {name} ({version}).')
                 .replace('{name}', setup.serverName || 'Jellyfin').replace('{version}', setup.version || '');
