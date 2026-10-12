@@ -239,7 +239,9 @@ test.describe('config dashboard view (scaffold)', () => {
         await page.locator('[data-config-section="appearance"]').click();
 
         expect(await page.evaluate(() => window.dashboardInstance.config.section)).toBe('appearance');
-        expect(await page.evaluate(() => window.location.hash)).toBe('#config/appearance/general');
+        // Appearance lives in a lazy file; the hash is written once it has
+        // landed and the section is drawn, not on the click itself.
+        await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('#config/appearance/general');
         await expect(page.locator('[data-config-section="appearance"]')).toHaveClass(/is-active/);
     });
 
