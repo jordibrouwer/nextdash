@@ -46,6 +46,9 @@
         close: ['dashboard.widgetMediaClose', 'Close'],
         actionOpen: ['widgetActionMediaOpen', 'Open in {name}'],
         actionDetails: ['widgetActionMediaDetails', 'Show details'],
+        perSecond: ['dashboard.widgetMediaPerSecond', '{size}/s'],
+        totalsActive: ['dashboard.widgetMediaTotalsActive', '{n} downloading'],
+        totalsPaused: ['dashboard.widgetMediaTotalsPaused', '{n} paused'],
     };
 
     const ERROR_WORDS = {
@@ -61,6 +64,10 @@
     /**
      * Register a service: { id, name, words: {key: [i18nKey, fallback]},
      * emptyGroup: {groupId: [i18nKey, fallback]} }. Returns its renderer.
+     *
+     * A download client adds { art: false, keepOrder: true, minTtl, ttl }: no
+     * pictures, the client's own order (its sort is a setting), and a faster
+     * refresh than the minute a library needs.
      */
     function register(service) {
         services[service.id] = service;
@@ -102,9 +109,26 @@
         return window.DashboardWidgetUtils?.rowLimit?.(widget, 6) || 6;
     }
 
-    function ttlMs(widget) {
+    function ttlMs(widget, service = serviceOf(widget)) {
         const ttl = Number(widget?.config?.ttl);
-        return (Number.isFinite(ttl) && ttl >= 60 ? ttl : 300) * 1000;
+        const floor = service.minTtl || 60;
+        return (Number.isFinite(ttl) && ttl >= floor ? ttl : (service.ttl || 300)) * 1000;
+    }
+
+    /** 1536 → "1.5 KB": one decimal, in the steps a file manager uses. */
+    function formatBytes(bytes) {
+        let n = Math.max(0, Number(bytes) || 0);
+        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        let unit = 0;
+        while (n >= 1024 && unit < units.length - 1) {
+            n /= 1024;
+            unit += 1;
+        }
+        return unit === 0 ? `${Math.round(n)} B` : `${n.toFixed(1)} ${units[unit]}`;
+    }
+
+    function speedText(dash, widget, bytes) {
+        return say(dash, widget, 'perSecond', { size: formatBytes(bytes) });
     }
 
     /** One answer per widget for its own TTL, so a repaint is not a round trip. */
@@ -119,7 +143,7 @@
             if (!res.ok) return null;
             const result = await res.json();
             // A half answer is looked at again soon, as the server does.
-            const keep = result.partial ? Math.min(ttlMs(widget), 30_000) : ttlMs(widget);
+            const keep = result.partial ? Math.min(ttlMs(widget, service), 30_000) : ttlMs(widget, service);
             dash._widgetMedia[key] = { result, until: Date.now() + keep };
             return result;
         } catch (error) {
@@ -163,7 +187,9 @@
         if (wide && item.year) parts.push(String(item.year));
         if (wide && item.genres?.length) parts.push(item.genres.slice(0, 2).join(', '));
         if (item.left) parts.push(item.left);
-        else parts.push(timeText(dash, widget, item));
+        else if (item.kind !== 'download') parts.push(timeText(dash, widget, item));
+        if (Number(item.speed) > 0) parts.push(speedText(dash, widget, item.speed));
+        if (wide && Number(item.size) > 0) parts.push(formatBytes(item.size));
         return parts.filter(Boolean).join(' · ');
     }
 
@@ -261,7 +287,9 @@
             text.appendChild(textBlock('span', 'media-meta', metaText(dash, widget, item)));
         }
         if (item.progress !== undefined && item.progress !== null) text.appendChild(progressBar(item));
-        row.append(picture(item, 'poster'), text);
+        if (serviceOf(widget).art === false) row.classList.add('media-row--bare');
+        else row.append(picture(item, 'poster'));
+        row.append(text);
         return row;
     }
 
@@ -275,7 +303,7 @@
      * the rest, and the result is put back in date order so it still reads as
      * a timeline.
      */
-    function pickMixed(items, count) {
+    function pickMixed(items, count, keepOrder = false) {
         const byGroup = new Map();
         items.forEach((item) => {
             if (!byGroup.has(item.libraryId)) byGroup.set(item.libraryId, []);
@@ -296,6 +324,13 @@
             if (aw || bw) return aw ? 1 : -1;
             return (Number(b.addedAt) || 0) - (Number(a.addedAt) || 0);
         };
+        if (keepOrder) {
+            // The client's order is the reader's sort; only the shares apply.
+            const kept = items.filter((item) => chosen.has(item)).slice(0, count);
+            items.filter((item) => !chosen.has(item)).slice(0, Math.max(0, count - kept.length))
+                .forEach((item) => kept.push(item));
+            return items.filter((item) => kept.includes(item));
+        }
         const leftovers = items.filter((item) => !chosen.has(item)).sort(newest);
         const picked = [...chosen].sort(newest);
         // Over quota when the shares do not divide evenly: the oldest go.
@@ -307,7 +342,8 @@
     function drawList(wrap, dash, widget, items) {
         const list = document.createElement('div');
         list.className = 'media-list';
-        pickMixed(items, rows(widget)).forEach((item) => list.appendChild(listRow(dash, widget, item)));
+        pickMixed(items, rows(widget), serviceOf(widget).keepOrder === true)
+            .forEach((item) => list.appendChild(listRow(dash, widget, item)));
         wrap.appendChild(list);
     }
 
@@ -347,7 +383,9 @@
                 });
                 tabs.appendChild(tab);
             });
-            wrap.prepend(tabs);
+            // Under a download client's totals, which stay on top.
+            const top = wrap.querySelector('.media-totals');
+            if (top) top.after(tabs); else wrap.prepend(tabs);
         }
 
         const shown = items.filter((item) => !current || item.libraryId === current)
@@ -359,6 +397,14 @@
             return;
         }
         const strip = document.createElement('div');
+        if (serviceOf(widget).art === false) {
+            strip.className = 'media-list media-strip';
+            items.filter((item) => !current || item.libraryId === current).slice(0, rows(widget))
+                .forEach((item) => strip.appendChild(listRow(dash, widget, item)));
+            const tabs = wrap.querySelector('.media-tabs');
+            if (tabs) tabs.after(strip); else wrap.prepend(strip);
+            return;
+        }
         strip.className = 'media-strip';
         shown.forEach((item, at) => {
             const cell = itemButton(dash, widget, item, 'media-poster');
@@ -437,6 +483,8 @@
             (item.genres || []).join(', '),
             item.library,
             item.left || (Number(item.when) > 0 ? whenText(dash, widget, item.when) : ''),
+            Number(item.speed) > 0 ? speedText(dash, widget, item.speed) : '',
+            Number(item.size) > 0 ? formatBytes(item.size) : '',
         ].filter(Boolean).join(' · ');
 
         const actions = document.createElement('div');
@@ -449,8 +497,8 @@
         closeButton.dataset.mediaClose = '';
         actions.append(openButton, closeButton);
 
+        if (serviceOf(widget).art !== false) dialog.append(picture(item, item.backdrop ? 'backdrop' : 'poster'));
         dialog.append(
-            picture(item, item.backdrop ? 'backdrop' : 'poster'),
             textBlock('h3', 'media-detail-title', titleText(item)),
             textBlock('p', 'media-meta', facts),
         );
@@ -481,6 +529,15 @@
         openButton.focus();
     }
 
+    /** The client's speeds and counts, above the lines. */
+    function totalsLine(dash, widget, totals) {
+        const parts = [`↓ ${speedText(dash, widget, totals.down)}`];
+        if (Number(totals.up) > 0) parts.push(`↑ ${speedText(dash, widget, totals.up)}`);
+        if (Number(totals.active) > 0) parts.push(say(dash, widget, 'totalsActive', { n: totals.active }));
+        if (Number(totals.paused) > 0) parts.push(say(dash, widget, 'totalsPaused', { n: totals.paused }));
+        return textBlock('p', 'media-totals', parts.join(' · '));
+    }
+
     async function render(body, widget, dash, service) {
         const pageId = Number(dash?.currentPageId) || Number(dash?.pages?.[0]?.id) || 1;
         sayIn(body, 'dashboard-widget-waiting', say(dash, widget, 'waiting'));
@@ -496,11 +553,14 @@
             return;
         }
         const layout = LAYOUTS[widget?.config?.layout] ? widget.config.layout : 'list';
+        const totals = result.totals && widget?.config?.hideTotals !== true
+            ? totalsLine(dash, widget, result.totals) : null;
         // The strip has a tab per group, and an empty tab says why itself.
         if (!items.length && layout !== 'strip') {
             const groups = Array.isArray(result.libraries) ? result.libraries : [];
             sayIn(body, 'dashboard-widget-empty',
                 emptyText(dash, widget, result, groups.length === 1 ? groups[0].id : ''));
+            if (totals) body.prepend(totals);
             return;
         }
 
@@ -508,6 +568,7 @@
         const wrap = utils?.panel ? utils.panel(body) : (body.replaceChildren(), body);
         wrap.classList.add('media-panel');
         LAYOUTS[layout](wrap, dash, widget, items, result);
+        if (totals) wrap.prepend(totals);
         if (result.stale) {
             wrap.appendChild(textBlock('p', 'media-stale',
                 `${errorText(dash, widget, result.error)} · ${agoText(dash, widget, result.fetchedAt)}`));
@@ -517,6 +578,7 @@
     window.DashboardMediaTile = {
         register,
         targetFor,
+        formatBytes,
         openDetail: (...args) => openDetail(...args),
     };
 })();

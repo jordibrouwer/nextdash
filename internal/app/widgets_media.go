@@ -85,6 +85,20 @@ type MediaItem struct {
 	Left string `json:"left,omitempty"`
 	// When is the date something is expected, ms. Set only for a calendar.
 	When int64 `json:"when,omitempty"`
+	// Speed is how fast a download moves, bytes a second; Size its whole size
+	// in bytes. The browser words both.
+	Speed int64 `json:"speed,omitempty"`
+	Size  int64 `json:"size,omitempty"`
+}
+
+// MediaTotals is the line on top of a download tile: the speeds of the
+// whole client and how many downloads each group holds, before rows cuts.
+type MediaTotals struct {
+	Down   int64 `json:"down"`
+	Up     int64 `json:"up"`
+	Active int   `json:"active"`
+	Paused int   `json:"paused"`
+	Done   int   `json:"done"`
 }
 
 // MediaGroup is one tab of a tile: a library, or a part of a service.
@@ -106,6 +120,8 @@ type MediaResult struct {
 	// Partial says at least one part could not be read, so what is here is
 	// not all of it; the next read tries again soon.
 	Partial bool `json:"partial,omitempty"`
+	// Totals is set by a download client only.
+	Totals *MediaTotals `json:"totals,omitempty"`
 }
 
 // mediaImageRef names one picture the proxy may fetch.
@@ -317,12 +333,38 @@ func (h *Handlers) mediaRequest(ctx context.Context, server string, credential H
 	if decorate != nil {
 		decorate(req)
 	}
+	// A service that signs in for a cookie (qBittorrent): the cached session,
+	// or a fresh one; a lapsed session is signed in again once below.
+	sessionKey, sent := "", ""
+	if credential.Session != nil {
+		sessionKey = credentialSessionKey(req.URL.Host, credential.Session)
+		cookie, ok := cachedCredentialSession(sessionKey)
+		if !ok {
+			if cookie, err = h.freshCredentialSession(ctx, req.URL, credential.Session, sessionKey, ""); err != nil {
+				return nil, fmt.Errorf("%w: sign-in: %v", errMediaRefused, err)
+			}
+		}
+		sent = cookie
+		req.Header.Set(sessionHeaderName(credential.Session), cookie)
+	}
 	client := h.outboundHTTPClient(mediaRequestTimeout, 3)
 	// A key stored for this host does not follow a redirect to another.
 	client.CheckRedirect = credentialRedirectCheck(credential, client.CheckRedirect)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", errMediaUnreachable, err)
+	}
+	if sessionKey != "" && (resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden) {
+		drainAndCloseResponse(resp)
+		fresh, err := h.freshCredentialSession(ctx, req.URL, credential.Session, sessionKey, sent)
+		if err != nil {
+			return nil, fmt.Errorf("%w: sign-in: %v", errMediaRefused, err)
+		}
+		retry := req.Clone(ctx)
+		retry.Header.Set(sessionHeaderName(credential.Session), fresh)
+		if resp, err = client.Do(retry); err != nil {
+			return nil, fmt.Errorf("%w: %v", errMediaUnreachable, err)
+		}
 	}
 	switch {
 	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:

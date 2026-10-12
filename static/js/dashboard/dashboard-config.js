@@ -17659,7 +17659,7 @@ class DashboardConfig {
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'notes']],
-        ['media', ['jellyfin', 'sonarr', 'radarr', 'seerr']],
+        ['media', ['jellyfin', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd']],
     ];
 
     renderPagesTags() {
@@ -19808,7 +19808,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'sonarr', 'radarr', 'seerr', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -19863,6 +19863,38 @@ class DashboardConfig {
               ['tv', ['config.widgetSeerrMediaTypeTv', 'Series']],
           ] },
         ...DashboardConfig.ARR_SETTINGS.filter((field) => !['show', 'days'].includes(field.key)),
+    ];
+
+    /**
+     * qBittorrent's and SABnzbd's settings, mirroring downloadWidgetFields in
+     * widgets_downloads.go. qBittorrent's category is chosen after Connect, so
+     * the media panel draws it.
+     */
+    static DOWNLOAD_SETTINGS = [
+        { key: 'filter', kind: 'choice', label: ['config.widgetDownloadsFilter', 'Show'],
+          options: [
+              ['all', ['config.widgetDownloadsFilterAll', 'Everything']],
+              ['active', ['config.widgetDownloadsFilterActive', 'What is downloading']],
+              ['paused', ['config.widgetDownloadsFilterPaused', 'What is paused']],
+              ['completed', ['config.widgetDownloadsFilterCompleted', 'What has finished']],
+          ] },
+        { key: 'sort', kind: 'choice', label: ['config.widgetDownloadsSort', 'Order'],
+          options: [
+              ['added', ['config.widgetDownloadsSortAdded', 'Newest first']],
+              ['progress', ['config.widgetDownloadsSortProgress', 'Furthest along first']],
+              ['speed', ['config.widgetDownloadsSortSpeed', 'Fastest first']],
+          ] },
+        { key: 'hideCompleted', kind: 'bool',
+          label: ['config.widgetDownloadsHideCompleted', 'Leave out what has finished'] },
+        { key: 'hideTotals', kind: 'bool',
+          label: ['config.widgetDownloadsHideTotals', 'Leave out the speeds on top'] },
+        { key: 'layout', kind: 'choice', label: ['config.widgetMediaLayout', 'Layout'],
+          options: [
+              ['list', ['config.widgetDownloadsLayoutList', 'One list']],
+              ['strip', ['config.widgetDownloadsLayoutStrip', 'A tab per part']],
+          ] },
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => ['click', 'target', 'rows'].includes(field.key)),
+        { key: 'ttl', kind: 'int', min: 15, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
     ];
 
     /*
@@ -20120,6 +20152,8 @@ class DashboardConfig {
         sonarr: DashboardConfig.ARR_SETTINGS,
         radarr: DashboardConfig.ARR_SETTINGS,
         seerr: DashboardConfig.SEERR_SETTINGS,
+        qbittorrent: DashboardConfig.DOWNLOAD_SETTINGS,
+        sabnzbd: DashboardConfig.DOWNLOAD_SETTINGS,
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
               label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },

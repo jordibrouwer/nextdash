@@ -2818,6 +2818,8 @@
             sonarr: 'Episodes coming up and downloads in progress in Sonarr, with posters.',
             radarr: 'Films coming out and downloads in progress in Radarr, with posters.',
             seerr: 'Requests in Overseerr or Jellyseerr — who asked, and whether it has arrived — with posters.',
+            qbittorrent: 'Torrents in qBittorrent — progress, speed and time left — with the speeds on top.',
+            sabnzbd: 'Downloads in SABnzbd — the queue and what finished last — with the speed on top.',
             unraid: 'The Unraid server at a glance: array, parity, disks, alerts, VMs and the UPS, a line each.',
             unraidArray: 'Every disk of the Unraid array: how full, how warm, and which one is in trouble.',
             unraidParity: 'The last parity check, or the one running now, with its history when wide.',
@@ -3246,6 +3248,12 @@
                  */
                 const picked = preset.value;
                 if (picked) this.applyWidgetPreset(indexOn(preset, 'data-widget-preset'), picked);
+                return;
+            }
+
+            const mediaAuth = target.closest('[data-media-auth]');
+            if (mediaAuth) {
+                this.setMediaAuthMode?.(indexOn(mediaAuth, 'data-widget-index'), mediaAuth.value);
                 return;
             }
 
@@ -3786,7 +3794,7 @@
         // (Seerr's base64 without its "==").
         const type = (this._widgetBlocks || [])[index]?.type;
         const normalize = DashboardConfig.MEDIA_SERVICES?.[type]?.normalizeKey;
-        if (field === 'secret' && typeof normalize === 'function') value = normalize(String(value || '').trim());
+        if (field === 'secret' && typeof normalize === 'function') value = normalize(String(value || '').trim(), draft.auth);
         draft.auth = { ...(draft.auth || {}), [field]: String(value || '') };
         if (field === 'headerName') this.syncSchemeHint(index, value);
         // A key typed is a change on its own: Save stayed off until something

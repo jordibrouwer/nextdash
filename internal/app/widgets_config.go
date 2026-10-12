@@ -293,8 +293,10 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "ttl", Kind: "int", Min: customWidgetMinTTL, Max: customWidgetMaxTTL},
 		{Key: "itemsPath", Kind: "string", MaxLen: widgetMaxPathLen},
 	},
-	WidgetTypeSonarr: arrWidgetFields(),
-	WidgetTypeRadarr: arrWidgetFields(),
+	WidgetTypeSonarr:      arrWidgetFields(),
+	WidgetTypeRadarr:      arrWidgetFields(),
+	WidgetTypeQBittorrent: downloadWidgetFields(),
+	WidgetTypeSABnzbd:     downloadWidgetFields(),
 	WidgetTypeSeerr: {
 		{Key: "server", Kind: "url"},
 		{Key: "credentialId", Kind: "string"},
@@ -605,6 +607,7 @@ func widgetTypeNames() []string {
 		WidgetTypeUnraid, WidgetTypeUnraidArray, WidgetTypeUnraidParity, WidgetTypeUnraidShares,
 		WidgetTypeUnraidVMs, WidgetTypeUnraidUPS, WidgetTypeUnraidNotifications,
 		WidgetTypeJellyfin, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr,
+		WidgetTypeQBittorrent, WidgetTypeSABnzbd,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone
 		// to build by hand what is two entries above it.

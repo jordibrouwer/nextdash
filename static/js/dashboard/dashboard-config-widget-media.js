@@ -1,5 +1,6 @@
 /**
- * Config → Widgets: the panel every media tile shares (Jellyfin, Sonarr, Radarr).
+ * Config → Widgets: the panel every media tile shares (Jellyfin, Sonarr, Radarr,
+ * Seerr, qBittorrent, SABnzbd).
  *
  * The key is an ordinary widget credential, in the header the service reads,
  * filed by the same Save that files every other widget's key, so it never
@@ -126,10 +127,72 @@
         },
     };
 
+    /*
+     * qBittorrent signs in with a username and password, the way every version
+     * does; 5.2 and later can take an API key instead, sent as a Bearer header.
+     * The category is chosen from the ones Connect lists.
+     */
+    Config.MEDIA_SERVICES.qbittorrent = {
+        id: 'qbittorrent',
+        name: 'qBittorrent',
+        placeholder: 'http://qbittorrent.local:8080',
+        authModes: {
+            login: { kind: 'session', session: {
+                loginPath: '/api/v2/auth/login', userField: 'username', passField: 'password', referer: true } },
+            key: { kind: 'header', headerName: 'Authorization' },
+        },
+        words: {
+            keyWhere: ['config.widgetQbittorrentKeyWhere', 'Options → WebUI → API key in qBittorrent 5.2 or later'],
+            'key refused': ['config.widgetQbittorrentErrorSignIn', 'qBittorrent refused that sign-in.'],
+        },
+        // The key alone is what qBittorrent shows; the header wants the scheme.
+        normalizeKey(key, auth) {
+            if (auth?.kind !== 'header' || !key || /^Bearer\s/i.test(key)) return key;
+            return `Bearer ${key}`;
+        },
+        choices(panel, widget, index, setup, config, esc) {
+            const chosen = String(config.category || '');
+            const all = `<option value="" ${chosen ? '' : 'selected'}>${esc(panel.t(
+                'config.widgetQbittorrentAllCategories', 'All categories'))}</option>`;
+            const options = all + (setup.categories || []).map((c) => `<option value="${esc(c.id)}" ${
+                c.id === chosen ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+            return `
+                <div class="config-widget-field">
+                    <label for="widget-${index}-media-category">${esc(panel.t('config.widgetQbittorrentCategory', 'Category'))}</label>
+                    <select id="widget-${index}-media-category" class="config-select" data-widget-setting="category"
+                        data-widget-index="${index}" data-widget-kind="text">${options}</select>
+                </div>`;
+        },
+        // A category that no longer exists is dropped rather than kept as a
+        // filter that shows nothing.
+        connected(draft, answer) {
+            const categories = answer.categories || [];
+            if (draft.config.category && !categories.some((c) => c.id === draft.config.category)) {
+                delete draft.config.category;
+            }
+        },
+    };
+
+    // SABnzbd takes its key in the address only; the server fills it in.
+    Config.MEDIA_SERVICES.sabnzbd = {
+        id: 'sabnzbd',
+        name: 'SABnzbd',
+        placeholder: 'http://sabnzbd.local:8080',
+        auth: { kind: 'query', queryName: 'apikey' },
+        words: {
+            keyWhere: ['config.widgetSabnzbdKeyWhere', 'Config → General → API Key in SABnzbd'],
+        },
+    };
+
     const SHARED_WORDS = {
         server: ['config.widgetMediaServer', 'Address'],
         key: ['config.widgetMediaKey', 'API key'],
         keyWhere: ['config.widgetMediaKeyWhere', 'Settings → General → API Key in {name}'],
+        user: ['config.widgetMediaUser', 'Username'],
+        password: ['config.widgetMediaPassword', 'Password'],
+        signIn: ['config.widgetMediaSignIn', 'Sign in with'],
+        modeLogin: ['config.widgetMediaModeLogin', 'Username and password'],
+        modeKey: ['config.widgetMediaModeKey', 'API key'],
         connect: ['config.widgetMediaConnect', 'Connect'],
         connecting: ['config.widgetMediaConnecting', 'Connecting…'],
         connected: ['config.widgetMediaConnected', 'Connected to {name} ({version}).'],
@@ -153,13 +216,87 @@
         return this._mediaSetup[block?.id] || null;
     },
 
-    /** The sign-in is always an API key in one header; there is nothing to pick. */
+    /*
+     * How this service signs in: a key in a header (most), a key in the
+     * address (SABnzbd), or a username and password (qBittorrent, which also
+     * takes a key from 5.2 -- the reader picks).
+     */
+    mediaAuthShape(service, auth) {
+        if (service.authModes) {
+            const mode = auth?.kind === 'header' ? 'key' : 'login';
+            return service.authModes[mode];
+        }
+        return service.auth || { kind: 'header', headerName: service.header };
+    },
+
     ensureMediaAuth(index, service) {
         const draft = this.widgetDraft(index);
         if (!draft) return;
-        if (draft.auth?.kind !== 'header' || draft.auth?.headerName !== service.header) {
-            draft.auth = { kind: 'header', headerName: service.header, secret: draft.auth?.secret || '' };
+        const want = this.mediaAuthShape(service, draft.auth);
+        const auth = draft.auth || {};
+        const same = auth.kind === want.kind
+            && (!want.headerName || auth.headerName === want.headerName)
+            && (!want.queryName || auth.queryName === want.queryName);
+        if (same) {
+            // A stored sign-in comes back without where to sign in.
+            if (want.session && !auth.session) draft.auth = { ...auth, session: want.session };
+            return;
         }
+        draft.auth = { ...want, secret: auth.secret || '', basicUser: auth.basicUser || '' };
+    },
+
+    /** qBittorrent: from username and password to a key, or back. */
+    setMediaAuthMode(index, mode) {
+        const block = (this._widgetBlocks || [])[index];
+        const service = Config.MEDIA_SERVICES[block?.type];
+        const draft = this.widgetDraft(index);
+        const shape = service?.authModes?.[mode];
+        if (!draft || !shape) return;
+        // What was typed for one is never sent as the other.
+        draft.auth = { ...shape, secret: '', basicUser: '' };
+        this.repaintWidgetsBody();
+        this.refreshWidgetSaveBar?.(index);
+    },
+
+    mediaAuthFields(service, index, draft, keyIsSaved, esc) {
+        const id = (name) => `widget-${index}-media-${name}`;
+        const auth = draft?.auth || {};
+        const kept = this.t('config.widgetAuthKept', 'Set — type to replace');
+        let mode = '';
+        if (service.authModes) {
+            const current = auth.kind === 'header' ? 'key' : 'login';
+            mode = `
+                <div class="config-widget-field">
+                    <label for="${id('auth')}">${esc(this.mediaWord(service, 'signIn'))}</label>
+                    <select id="${id('auth')}" class="config-select" data-media-auth data-widget-index="${index}">
+                        <option value="login" ${current === 'login' ? 'selected' : ''}>${esc(this.mediaWord(service, 'modeLogin'))}</option>
+                        <option value="key" ${current === 'key' ? 'selected' : ''}>${esc(this.mediaWord(service, 'modeKey'))}</option>
+                    </select>
+                </div>`;
+        }
+        if (auth.kind === 'session') {
+            return `${mode}
+                <div class="config-widget-field">
+                    <label for="${id('user')}">${esc(this.mediaWord(service, 'user'))}</label>
+                    <input type="text" id="${id('user')}" class="config-text" autocomplete="off" spellcheck="false"
+                        maxlength="200" data-widget-auth="basicUser" data-widget-index="${index}"
+                        value="${esc(auth.basicUser || '')}">
+                </div>
+                <div class="config-widget-field">
+                    <label for="${id('key')}">${esc(this.mediaWord(service, 'password'))}</label>
+                    <input type="password" id="${id('key')}" class="config-text" autocomplete="off"
+                        spellcheck="false" maxlength="1024" data-widget-auth="secret" data-widget-index="${index}"
+                        placeholder="${esc(keyIsSaved ? kept : '')}">
+                </div>`;
+        }
+        return `${mode}
+            <div class="config-widget-field">
+                <label for="${id('key')}">${esc(this.mediaWord(service, 'key'))}</label>
+                <input type="password" id="${id('key')}" class="config-text" autocomplete="off"
+                    spellcheck="false" maxlength="1024"
+                    data-widget-auth="secret" data-widget-index="${index}"
+                    placeholder="${esc(keyIsSaved ? kept : this.mediaWord(service, 'keyWhere'))}">
+            </div>`;
     },
 
     renderMediaSettings(widget, index, rows, service) {
@@ -205,15 +342,7 @@
                             data-widget-setting="server" data-widget-index="${index}" data-widget-kind="text"
                             value="${esc(config.server || '')}" placeholder="${esc(service.placeholder || '')}">
                     </div>
-                    <div class="config-widget-field">
-                        <label for="${id('key')}">${esc(this.mediaWord(service, 'key'))}</label>
-                        <input type="password" id="${id('key')}" class="config-text" autocomplete="off"
-                            spellcheck="false" maxlength="1024"
-                            data-widget-auth="secret" data-widget-index="${index}"
-                            placeholder="${esc(keyIsSaved
-                                ? this.t('config.widgetAuthKept', 'Set — type to replace')
-                                : this.mediaWord(service, 'keyWhere'))}">
-                    </div>
+                    ${this.mediaAuthFields(service, index, draft, keyIsSaved, esc)}
                 </div>
                 <div class="config-widget-field">
                     <button type="button" class="config-btn config-btn--small"
@@ -239,8 +368,15 @@
         this.ensureMediaAuth(index, service);
         const secret = String(draft.auth?.secret || '').trim();
         const payload = { server: String(draft.config?.server || '') };
-        if (secret) payload.draftCredential = { headers: { [service.header]: secret } };
-        else payload.credentialId = block.config?.credentialId || this.widgetCredentialId(block);
+        const auth = draft.auth || {};
+        if (secret && auth.kind === 'session') {
+            payload.draftCredential = { session: {
+                ...(auth.session || {}), user: String(auth.basicUser || '').trim(), password: secret } };
+        } else if (secret && auth.kind === 'query') {
+            payload.draftCredential = { query: { [auth.queryName]: secret } };
+        } else if (secret) {
+            payload.draftCredential = { headers: { [auth.headerName || service.header]: secret } };
+        } else payload.credentialId = block.config?.credentialId || this.widgetCredentialId(block);
 
         const status = document.querySelector(`[data-media-connect="${index}"]`)
             ?.parentElement?.querySelector('[data-media-status]');

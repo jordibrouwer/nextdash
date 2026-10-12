@@ -250,7 +250,7 @@ func templateWidgetURLs(widget Widget) []string {
 		if raw, ok := widget.Config["url"].(string); ok && raw != "" {
 			out = append(out, raw)
 		}
-	case WidgetTypeJellyfin, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr:
+	case WidgetTypeJellyfin, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr, WidgetTypeQBittorrent, WidgetTypeSABnzbd:
 		if raw, ok := widget.Config["server"].(string); ok && raw != "" {
 			out = append(out, raw)
 		}
@@ -384,6 +384,12 @@ func buildPageTemplate(page PageWithBookmarks, options TemplateExportOptions, ic
 			}
 			// A Seerr user id names nobody on another server.
 			delete(config, "requestedBy")
+		case WidgetTypeQBittorrent, WidgetTypeSABnzbd:
+			if raw, ok := config["server"].(string); ok {
+				config["server"] = templatizeURL(raw, variables)
+			}
+			// A category is a name on one client.
+			delete(config, "category")
 		case WidgetTypeRSS:
 			if list, ok := config["feedUrls"].([]any); ok {
 				out := make([]any, 0, len(list))
@@ -669,7 +675,7 @@ func (h *Handlers) planPageTemplateReplacing(tpl PageTemplate, rawValues map[str
 				filled, _ := fillTemplateURL(raw, values)
 				widget.Config["url"] = filled
 			}
-		case WidgetTypeJellyfin, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr:
+		case WidgetTypeJellyfin, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr, WidgetTypeQBittorrent, WidgetTypeSABnzbd:
 			if raw, ok := widget.Config["server"].(string); ok {
 				filled, _ := fillTemplateURL(raw, values)
 				widget.Config["server"] = filled

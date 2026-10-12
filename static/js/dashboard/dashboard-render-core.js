@@ -35,6 +35,9 @@ class DashboardRenderCore {
         sonarr: { configKey: 'ttl', floor: 60, fallback: 300 },
         radarr: { configKey: 'ttl', floor: 60, fallback: 300 },
         seerr: { configKey: 'ttl', floor: 60, fallback: 300 },
+        // A download moves while you watch it.
+        qbittorrent: { configKey: 'ttl', floor: 15, fallback: 30 },
+        sabnzbd: { configKey: 'ttl', floor: 15, fallback: 30 },
         unraid: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
         unraidArray: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
         unraidParity: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
@@ -951,6 +954,8 @@ class DashboardRenderCore {
         sonarr: 'Sonarr',
         radarr: 'Radarr',
         seerr: 'Seerr',
+        qbittorrent: 'qBittorrent',
+        sabnzbd: 'SABnzbd',
         unraid: 'Unraid',
         unraidArray: 'Unraid array',
         unraidParity: 'Parity',

@@ -1,0 +1,14 @@
+{
+ "movies": {
+  "name": "movies",
+  "savePath": "/data/torrents/movies"
+ },
+ "radarr": {
+  "name": "radarr",
+  "savePath": "/data/torrents/movies"
+ },
+ "sonarr": {
+  "name": "sonarr",
+  "savePath": "/data/torrents/tv"
+ }
+}

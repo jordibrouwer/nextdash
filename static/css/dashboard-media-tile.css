@@ -64,6 +64,14 @@
     font-size: var(--font-size-small);
 }
 .media-stale { margin: 0; color: var(--accent-warning); font-size: var(--font-size-small); }
+/* A download client: no pictures, so the text and its bar take the row. */
+.media-row--bare .media-row-text { flex: 1 1 auto; }
+.media-totals {
+    margin: 0 0 0.35rem;
+    color: var(--text-secondary, inherit);
+    font-size: var(--font-size-small);
+    font-variant-numeric: tabular-nums;
+}
 
 .media-tabs { display: flex; gap: 0.75rem; }
 .media-tab {
