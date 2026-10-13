@@ -78,6 +78,7 @@
         seerr: '1.20',
         qbittorrent: '1.20',
         sabnzbd: '1.20',
+        homeassistant: '1.20',
     };
 
     /** "v1.19.4" -> [1, 19]; anything else, an old date tag included, -> null. */

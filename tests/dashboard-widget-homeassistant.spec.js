@@ -41,8 +41,8 @@ function answer(extra = {}) {
 }
 
 /** Draws the tile with the answer stubbed; `action` answers the switch. */
-async function draw(page, { result, config = {}, action = { status: 200, body: { states: [] } } }) {
-    await page.evaluate(async ({ result, config, action }) => {
+async function draw(page, { result, next = null, config = {}, action = { status: 200, body: { states: [] } } }) {
+    await page.evaluate(async ({ result, next, config, action }) => {
         const d = window.dashboardInstance;
         window.__haSent = [];
         window.__haRealFetch = window.__haRealFetch || window.fetch;
@@ -54,8 +54,10 @@ async function draw(page, { result, config = {}, action = { status: 200, body: {
                 return new Response(JSON.stringify(action.body), { status: action.status, headers: { 'Content-Type': 'application/json' } });
             }
             if (text.includes('/api/widgets/homeassistant')) {
+                const loads = window.__haSent.filter((sent) => sent.load).length;
                 window.__haSent.push({ load: true, headers: init.headers || {} });
-                return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+                const reply = loads > 0 && next ? next : result;
+                return new Response(JSON.stringify(reply), { status: 200, headers: { 'Content-Type': 'application/json' } });
             }
             return realFetch(url, init);
         };
@@ -69,7 +71,7 @@ async function draw(page, { result, config = {}, action = { status: 200, body: {
         document.body.appendChild(host);
         delete d._widgetMedia;
         await window.DashboardWidgets.homeassistant(body, { id: 'w_hass00000001', type: 'homeassistant', config }, d);
-    }, { result, config, action });
+    }, { result, next, config, action });
     return page.locator('#ha-test');
 }
 
@@ -130,6 +132,21 @@ test.describe('the Home Assistant widget', () => {
             action: { status: 200, body: { states: [] } } });
         await tile.locator('[data-ha-run="scene.movie_night"]').click();
         await expect(tile.locator('[data-ha-run="scene.movie_night"]')).toHaveText('✓');
+    });
+
+    // A scene changes other lights; the tile asks again rather than wait for
+    // its next refresh, and stays on the tab the reader was on.
+    test('after a scene the tile reads Home Assistant again', async ({ page }) => {
+        await open(page);
+        const after = answer();
+        after.items = after.items.map((item) => (item.id === 'light.ceiling' ? { ...item, on: false, value: 'off' } : item));
+        const tile = await draw(page, { result: answer(), next: after, action: { status: 200, body: { states: [] } } });
+        await tile.locator('[data-media-tab="Living room"]').click();
+        await expect(tile.locator('[data-ha-toggle="light.ceiling"]')).toHaveAttribute('aria-pressed', 'true');
+        await tile.locator('[data-ha-run="scene.movie_night"]').click();
+        await expect(tile.locator('[data-ha-toggle="light.ceiling"]')).toHaveAttribute('aria-pressed', 'false', { timeout: 5000 });
+        await expect(tile.locator('[data-media-tab="Living room"]')).toHaveAttribute('aria-selected', 'true');
+        await expect(tile.locator('[data-ha-run="scene.movie_night"]')).toBeFocused();
     });
 
     test('without the write token the controls are view only', async ({ page }) => {

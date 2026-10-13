@@ -18,6 +18,8 @@
     'use strict';
 
     const NARROW_STRIP = 4;
+    // How long a scene's tick shows before the tile reads Home Assistant again.
+    const SCENE_REDRAW_MS = 1500;
     const WIDE_STRIP = 8;
 
     /*
@@ -363,7 +365,10 @@
         }
         if (!toggle) {
             button.textContent = say(dash, widget, 'started');
-            setTimeout(() => { button.textContent = say(dash, widget, 'start'); }, 2000);
+            // A scene or script changes other things than itself: once the
+            // tick has been seen, the tile reads Home Assistant again rather
+            // than show the old lights until its next refresh.
+            setTimeout(() => { void state.redraw?.(); }, SCENE_REDRAW_MS);
         }
     }
 
@@ -686,9 +691,26 @@
         return textBlock('p', 'media-totals', parts.join(' · '));
     }
 
-    async function render(body, widget, dash, service) {
+    /** Names the control that has focus, so a redraw can give it back. */
+    function focusKey(el) {
+        for (const name of ['haRun', 'haToggle', 'mediaTab', 'mediaItem']) {
+            if (el?.dataset?.[name] !== undefined) {
+                const attr = name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+                return `[data-${attr}="${CSS.escape(el.dataset[name])}"]`;
+            }
+        }
+        return '';
+    }
+
+    /*
+     * quiet: drawn again in place (after a scene), without the loading line
+     * in between, on the same tab and with focus where it was.
+     */
+    async function render(body, widget, dash, service, { quiet = false } = {}) {
         const pageId = Number(dash?.currentPageId) || Number(dash?.pages?.[0]?.id) || 1;
-        sayIn(body, 'dashboard-widget-waiting', say(dash, widget, 'waiting'));
+        const activeTab = body.querySelector('[data-media-tab][aria-selected="true"]')?.dataset.mediaTab;
+        const focused = body.contains(document.activeElement) ? focusKey(document.activeElement) : '';
+        if (!quiet) sayIn(body, 'dashboard-widget-waiting', say(dash, widget, 'waiting'));
 
         const result = await load(dash, widget, pageId, service);
         if (!result) {
@@ -696,7 +718,8 @@
             return;
         }
         const items = Array.isArray(result.items) ? result.items : [];
-        entityState.set(widget.id, { pageId, controls: result.controls === true });
+        entityState.set(widget.id, { pageId, controls: result.controls === true,
+            redraw: () => render(body, widget, dash, service, { quiet: true }) });
         if (result.error && !items.length) {
             sayIn(body, 'dashboard-widget-empty', errorText(dash, widget, result.error));
             return;
@@ -717,8 +740,9 @@
         const utils = window.DashboardWidgetUtils;
         const wrap = utils?.panel ? utils.panel(body) : (body.replaceChildren(), body);
         wrap.classList.add('media-panel');
-        LAYOUTS[layout](wrap, dash, widget, items, result);
+        LAYOUTS[layout](wrap, dash, widget, items, result, activeTab);
         if (totals) wrap.prepend(totals);
+        if (focused) wrap.querySelector(focused)?.focus({ preventScroll: true });
         if (result.stale) {
             wrap.appendChild(textBlock('p', 'media-stale',
                 `${errorText(dash, widget, result.error)} · ${agoText(dash, widget, result.fetchedAt)}`));

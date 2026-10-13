@@ -636,7 +636,7 @@ export.
 func TestAQueryCredentialFillsInTheAddress(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 
-	const secret = "746071e5e78f4f36b71b3536e46f1ec9"
+	const secret = "0123456789abcdef0123456789abcdef"
 	if err := saveHealthCredential("widget:sab", HealthCredential{
 		Label: "SABnzbd",
 		Query: map[string]string{"apikey": secret},
@@ -775,7 +775,7 @@ func TestCredentialSummaryNamesQueryParametersWithoutTheirValues(t *testing.T) {
 func TestRevealingHandsBackAQueryKey(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 
-	const secret = "746071e5e78f4f36b71b3536e46f1ec9"
+	const secret = "0123456789abcdef0123456789abcdef"
 	if err := saveHealthCredential("widget:sab", HealthCredential{
 		Query: map[string]string{"apikey": secret},
 	}); err != nil {

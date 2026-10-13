@@ -271,7 +271,7 @@ test.describe('a service whose key goes in the address', () => {
         await url.blur();
 
         const key = page.locator(`${row} [data-widget-auth="secret"]`);
-        await key.fill('746071e5e78f4f36b71b3536e46f1ec9');
+        await key.fill('0123456789abcdef0123456789abcdef');
         await key.blur();
         await page.locator(`${row} [data-widget-save]`).click();
         await expect.poll(async () => key.inputValue(), { timeout: 10_000 }).toBe('');
@@ -283,7 +283,7 @@ test.describe('a service whose key goes in the address', () => {
          * reason the credential file exists. The server puts the parameter on
          * as the request goes out.
          */
-        await expect(url).not.toHaveValue(/746071e5/);
+        await expect(url).not.toHaveValue(/0123456789ab/);
         await expect(url).not.toHaveValue(/apikey/);
     });
 
@@ -298,13 +298,13 @@ test.describe('a service whose key goes in the address', () => {
         await url.blur();
 
         const key = page.locator(`${row} [data-widget-auth="secret"]`);
-        await key.fill('746071e5e78f4f36b71b3536e46f1ec9');
+        await key.fill('0123456789abcdef0123456789abcdef');
         await key.blur();
         await page.locator(`${row} [data-widget-save]`).click();
         await expect.poll(async () => key.inputValue(), { timeout: 10_000 }).toBe('');
 
         await page.locator(`${row} [data-secret-reveal]`).click();
-        await expect(key).toHaveValue('746071e5e78f4f36b71b3536e46f1ec9', { timeout: 10_000 });
+        await expect(key).toHaveValue('0123456789abcdef0123456789abcdef', { timeout: 10_000 });
     });
 
     test('Plex asks for the token, not for the Accept header', async ({ page }) => {
@@ -425,7 +425,7 @@ test.describe('a figure can be rounded to a chosen number of decimals', () => {
         // without this the widget is never stored and the reload below finds
         // nothing, which looks exactly like the choice not surviving.
         const key = page.locator(`${row} [data-widget-auth="secret"]`);
-        await key.fill('746071e5e78f4f36b71b3536e46f1ec9');
+        await key.fill('0123456789abcdef0123456789abcdef');
         await key.blur();
 
         const decimals = page.locator(`${row} [data-custom-field="decimals"]`);
@@ -647,12 +647,12 @@ test.describe('trying an address uses the key on screen', () => {
 
         await page.locator(`${row} [data-widget-preset]`).selectOption('sabnzbd');
         const key = page.locator(`${row} [data-widget-auth="secret"]`);
-        await key.fill('746071e5e78f4f36b71b3536e46f1ec9');
+        await key.fill('0123456789abcdef0123456789abcdef');
         await key.blur();
         await page.locator(`${row} [data-custom-test]`).click();
         await expect.poll(() => sent.length, { timeout: 10_000 }).toBeGreaterThan(0);
 
-        expect(sent[0].draftCredential?.query?.apikey).toBe('746071e5e78f4f36b71b3536e46f1ec9');
+        expect(sent[0].draftCredential?.query?.apikey).toBe('0123456789abcdef0123456789abcdef');
     });
 
     test('a seeded scheme on its own is not sent as a key', async ({ page }) => {
