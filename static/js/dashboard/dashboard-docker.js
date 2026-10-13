@@ -180,6 +180,9 @@ class DashboardDocker {
         // already open or is only just mounting.
         if (filter) this.applyFilter(filter);
         this.startPolling();
+        // Not awaited: the view is already usable, and a slow script fetch
+        // must not hold up the navigation that asked for it.
+        void this.maybeShowTutorial();
         return true;
     }
 
@@ -246,7 +249,17 @@ class DashboardDocker {
         }
     }
 
-    /** The Tour button, and Config's replay: seen or not. It does not open by itself. */
+    /** First visit: the tour, once. Checked before the script is fetched at all. */
+    async maybeShowTutorial() {
+        if (window.DiscoverabilityState?.hasSeenTip?.(DashboardDocker.TUTORIAL_TIP_ID)) return;
+        if (this.dash.settings?.enableSessionTips === false) return;
+        if (!(await this.loadTutorial())) return;
+        // The reader may have left while the script came in.
+        if (this.dash.activeView !== DashboardDocker.VIEW) return;
+        window.ContainersTutorial?.maybeShow?.();
+    }
+
+    /** The Tour button, and Config's replay: seen or not. */
     async openTour() {
         if (!(await this.loadTutorial())) return;
         window.ContainersTutorial?.open?.();

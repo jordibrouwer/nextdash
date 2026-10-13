@@ -856,6 +856,23 @@
         global.nextdashTrack?.('containers-tutorial:finished', { outcome, step: state.index + 1 });
     }
 
+    /** The first visit to the view: once, with the same guards as the dashboard's tour. */
+    function maybeShow() {
+        if (global.DiscoverabilityState?.hasSeenTip?.(TIP_ID)) return false;
+        const d = global.dashboardInstance;
+        if (!d?.settings || d.settings.enableSessionTips === false) return false;
+        if (global.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
+        if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
+        if (d.searchComponent?.isActive?.()) return false;
+        if (!global.AppModal?.show) return false;
+
+        state = { index: 0, direction: 'forward', sawVersion: earlierTourSeen() };
+        finished = false;
+        render();
+        global.nextdashTrack?.('containers-tutorial:shown');
+        return true;
+    }
+
     /** The Tour button: open it on request, seen or not. */
     function open() {
         const d = global.dashboardInstance;
@@ -868,5 +885,5 @@
         return true;
     }
 
-    global.ContainersTutorial = { TIP_ID, PREVIOUS_TIP_IDS, open };
+    global.ContainersTutorial = { TIP_ID, PREVIOUS_TIP_IDS, maybeShow, open };
 }(typeof window !== 'undefined' ? window : globalThis));

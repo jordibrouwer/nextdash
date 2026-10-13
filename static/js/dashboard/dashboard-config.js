@@ -1315,6 +1315,9 @@ class DashboardConfig {
         d.pageNav?.setActiveConfigTab?.();
         await this.loadAndRender();
         this.restoreConfigHash();
+        // Not awaited: the view is already usable, and a slow script fetch
+        // must not hold up the navigation that asked for it.
+        void this.maybeShowLibraryTour?.();
         return true;
     }
 
@@ -2531,6 +2534,7 @@ class DashboardConfig {
             // The custom widget offers a credential by name; the names are two
             // dozen bytes and cheaper to have than to wait for.
             void this.loadCredentialNames();
+            void this.maybeShowWidgetsTutorial();
         } else if (this.section === 'appearance') {
             this.bindAppearanceControls(container);
             void this.loadThemeList();
@@ -16781,8 +16785,8 @@ class DashboardConfig {
             await this.dash.promos?.openDashboardTour?.();
             return;
         }
-        // The view tours no longer turn up by themselves on a visit, so "next
-        // time" would be never: go to the view and play it there, now.
+        // A view tour plays now, in its own view: waiting for "next time"
+        // would mean a visit the reader may not make for weeks.
         if (await this.playViewTour(tour.id)) return;
         this.notify(
             this.t('config.tourReplayDone', 'The {tour} tour will appear {where}.')
@@ -17657,6 +17661,13 @@ class DashboardConfig {
      * configuration; which pages you have kept is part of the collection.
      */
     // The list is the Bookmarks view's (#bookmarks); Config keeps what shapes it.
+    /*
+     * The one-time Bookmarks view tour's tip id, repeated from
+     * bookmarks-tutorial.js so the view can skip fetching the tour once it has
+     * been seen. Both must agree.
+     */
+    static LIBRARY_TOUR_TIP_ID = 'bookmarksTutorialV1';
+
     static BM_TABS = ['view', 'tags', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
 
     // Branding was a tab holding one panel with one toggle, a text field and an
@@ -19889,6 +19900,10 @@ class DashboardConfig {
 
     /** The Unraid section's sub-tabs; 'all' shows every card at once. */
     static UNRAID_TABS = ['all', 'connection', 'how', 'widgets'];
+
+    // Repeated from widgets-tutorial.js, which is checked before the script is
+    // fetched at all. Both must agree.
+    static WIDGETS_TUTORIAL_TIP_ID = 'widgetsTutorialV1';
 
     /*
      * The six guided tours, in one list.

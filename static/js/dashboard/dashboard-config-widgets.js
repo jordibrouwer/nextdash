@@ -3514,9 +3514,37 @@
     },
 
     /**
+     * The one-time tour, the first time this section is opened. The cheap
+     * guards run before the fetch, so a reader who has seen it, or has session
+     * tips off, never asks for the script at all.
+     */
+    async maybeShowWidgetsTutorial() {
+        // Once per visit to the section: binding runs again on every repaint
+        // of the tab, and a second call would replace the tour on screen.
+        if (this._widgetsTutorialAsked) return;
+        if (window.DiscoverabilityState?.hasSeenTip?.(DashboardConfig.WIDGETS_TUTORIAL_TIP_ID)) return;
+        if (this.dash.settings?.enableSessionTips === false) return;
+        this._widgetsTutorialAsked = true;
+        if (!(await this.loadWidgetsTour())) return;
+        window.WidgetsTutorial?.maybeShow?.();
+    },
+
+    /** Fetch the tour script once. False when it cannot be had. */
+    async loadWidgetsTour() {
+        if (typeof window.WidgetsTutorial !== 'undefined') return true;
+        try {
+            await window.LazyScript.loadScriptOnce('js/widgets-tutorial.js', 'widgetsTutorialModule',
+                () => typeof window.WidgetsTutorial !== 'undefined');
+            return true;
+        } catch {
+            // A tour that cannot be fetched is not worth an error toast.
+            return false;
+        }
+    },
+
+    /**
      * The Widgets tour, from the Tour button in the section's band or from
-     * Config's replay: seen or not. It does not open by itself; only the
-     * dashboard's tour does.
+     * Config's replay: seen or not.
      *
      * Here rather than on the dashboard because this is where a widget is
      * added, and because the thing worth saying -- that the custom tile reaches
@@ -3524,15 +3552,7 @@
      * widgets and one button. The script is fetched only when asked for.
      */
     async openWidgetsTour() {
-        if (typeof window.WidgetsTutorial === 'undefined') {
-            try {
-                await window.LazyScript.loadScriptOnce('js/widgets-tutorial.js', 'widgetsTutorialModule',
-                    () => typeof window.WidgetsTutorial !== 'undefined');
-            } catch {
-                // A tour that cannot be fetched is not worth an error toast.
-                return false;
-            }
-        }
+        if (!(await this.loadWidgetsTour())) return false;
         return window.WidgetsTutorial?.open?.() === true;
     },
 

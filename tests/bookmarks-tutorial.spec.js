@@ -3,15 +3,18 @@ const { test, expect } = require('./fixtures');
 const { prepareDashboardInteraction, markWhatsNewSeen } = require('./e2e-helpers');
 
 /**
- * The Bookmarks view tour. It no longer opens by itself on a first visit --
- * only the dashboard's own tour does that -- so the Tour button in the band is
- * the way in. The tip is left unseen here to prove the first visit stays quiet.
+ * The one-time Bookmarks view tour — shown the first time the view opens,
+ * unless the tip has already been marked seen.
+ *
+ * Every other spec marks it seen through dismissBlockingOverlays(), so it never
+ * lands on a list they want to click; this file is the one place that leaves
+ * it unseen, to exercise the tour itself.
  */
 
 const STEPS = 10;
 const TIP = 'bookmarksTutorialV1';
 
-async function openLibraryWithTourUnseen(page, { tour = true } = {}) {
+async function openLibraryWithTourUnseen(page) {
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
@@ -29,19 +32,14 @@ async function openLibraryWithTourUnseen(page, { tour = true } = {}) {
     }, TIP);
     await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
     await expect(page.locator('#config-bm-list')).toBeVisible({ timeout: 15_000 });
-    if (tour) await page.locator('[data-bm-tour]').click();
 }
 
 const modal = (page) => page.locator('#app-modal.show .bookmarks-tutorial-modal');
 const next = (page) => page.locator('.modal-actions .modal-button').first();
 
 test.describe('bookmarks view tutorial', () => {
-    test('stays shut on the first visit; Tour opens it, with ten steps', async ({ page }) => {
-        await openLibraryWithTourUnseen(page, { tour: false });
-        // A fixed wait: the tour must not open by itself, so there is nothing to wait for.
-        await page.waitForTimeout(700);
-        await expect(modal(page)).toHaveCount(0);
-        await page.locator('[data-bm-tour]').click();
+    test('shows on the first visit, with ten steps', async ({ page }) => {
+        await openLibraryWithTourUnseen(page);
         await expect(modal(page)).toBeVisible();
         await expect(page.locator('.bookmarks-tutorial-progress')).toHaveText(`Step 1 of ${STEPS}`);
         await expect(page.locator('.bookmarks-tutorial-dot')).toHaveCount(STEPS);
@@ -77,11 +75,53 @@ test.describe('bookmarks view tutorial', () => {
         expect(await page.evaluate((tip) => window.DiscoverabilityState.hasSeenTip(tip), TIP)).toBe(true);
     });
 
-    // The script is fetched when the tour is asked for, not on a visit.
-    test('the tour script is not fetched until Tour is pressed', async ({ page }) => {
+    test('does not show again once seen', async ({ page }) => {
+        await openLibraryWithTourUnseen(page);
+        await expect(modal(page)).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#app-modal.show')).toHaveCount(0);
+        expect(await page.evaluate((tip) => window.DiscoverabilityState.hasSeenTip(tip), TIP)).toBe(true);
+
+        await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
+        await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
+        await expect(page.locator('#config-bm-list')).toBeVisible();
+        // A fixed wait: the tour must not open, so there is nothing to wait for.
+        await page.waitForTimeout(700);
+        await expect(modal(page)).toHaveCount(0);
+    });
+
+    test('respects enableSessionTips: false', async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        await page.evaluate((tip) => {
+            window.dashboardInstance.settings.enableSessionTips = false;
+            window.__e2eWantTours = ['bookmarksTutorialV1'];
+            const state = window.DiscoverabilityState;
+            // Forgotten, not only left out: a tip marked on this page outlives an init.
+            state.forgetTip(tip, { persist: false });
+            const exported = state.exportState();
+            exported.seenTips = (exported.seenTips || []).filter((id) => id !== tip);
+            state.init(exported);
+        }, TIP);
+        await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
+        await expect(page.locator('#config-bm-list')).toBeVisible();
+        // A fixed wait: the tour must not open, so there is nothing to wait for.
+        await page.waitForTimeout(700);
+        await expect(modal(page)).toHaveCount(0);
+    });
+
+    // A session that has done the tour does not pay for its script again.
+    test('the tour script is not fetched once the tip is seen', async ({ page }) => {
         const requested = [];
         page.on('request', (r) => { if (r.url().includes('bookmarks-tutorial.js')) requested.push(r.url()); });
-        await openLibraryWithTourUnseen(page, { tour: false });
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        await page.evaluate(() => window.dashboardInstance.config.openLibraryView());
+        await expect(page.locator('#config-bm-list')).toBeVisible();
         // A fixed wait: the script must not be asked for, so there is nothing to wait for.
         await page.waitForTimeout(700);
         expect(requested).toEqual([]);

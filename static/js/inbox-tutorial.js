@@ -478,12 +478,24 @@
         global.nextdashTrack?.('inbox-tutorial:finished', { outcome, step: state.index + 1 });
     }
 
-    /**
-     * Open it on request, seen or not.
-     *
-     * The Tour button in the band, and Config's replay. It does not open by
-     * itself on a first visit: only the dashboard's tour does that.
-     */
+    /** The first visit to the view: once, with the same guards as the dashboard's tour. */
+    function maybeShow() {
+        if (global.DiscoverabilityState?.hasSeenTip?.(TIP_ID)) return false;
+        const d = global.dashboardInstance;
+        if (!d?.settings || d.settings.enableSessionTips === false) return false;
+        if (global.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
+        if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
+        if (d.searchComponent?.isActive?.()) return false;
+        if (!global.AppModal?.show) return false;
+
+        state = { index: 0, direction: 'forward' };
+        finished = false;
+        render();
+        global.nextdashTrack?.('inbox-tutorial:shown');
+        return true;
+    }
+
+    /** The Tour button in the band, and Config's replay: on request, seen or not. */
     function open() {
         const d = global.dashboardInstance;
         if (!global.AppModal?.show) return false;
@@ -495,5 +507,5 @@
         return true;
     }
 
-    global.InboxTutorial = { TIP_ID, open };
+    global.InboxTutorial = { TIP_ID, maybeShow, open };
 }(typeof window !== 'undefined' ? window : globalThis));

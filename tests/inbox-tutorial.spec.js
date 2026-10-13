@@ -3,14 +3,17 @@ const { test, expect } = require('./fixtures');
 const { prepareDashboardInteraction, markWhatsNewSeen } = require('./e2e-helpers');
 
 /**
- * The Inbox tour. It no longer opens by itself on a first visit -- only the
- * dashboard's own tour does that -- so the Tour button is the way in. The tip
- * is left unseen here to prove the first visit stays quiet.
+ * The one-time Inbox tutorial — a guided tour shown the first time the Inbox
+ * view opens, unless the tip has already been marked seen.
+ *
+ * Most test files mark it seen via dismissBlockingOverlays() so it never gets
+ * in the way of unrelated flows; this file is the one place that deliberately
+ * leaves it unseen, to exercise the tour itself.
  */
 
 const STEPS = 6;
 
-async function openInboxWithoutMarkingTutorialSeen(page, { tour = true } = {}) {
+async function openInboxWithoutMarkingTutorialSeen(page) {
     // What's new is a different overlay from the tutorial and this file has no
     // quarrel with it -- but it was never marked seen here, so it came up over
     // the dashboard and swallowed the click on the header icon. Every test in
@@ -46,22 +49,32 @@ async function openInboxWithoutMarkingTutorialSeen(page, { tour = true } = {}) {
     });
     await page.locator('#page-nav-inbox-btn').click();
     await expect(page.locator('.inbox-layout')).toBeVisible({ timeout: 15_000 });
-    if (tour) await page.locator('.inbox-actions-own [data-inbox-tour]').click();
 }
 
 const modal = (page) => page.locator('#app-modal.show .inbox-tutorial-modal');
 
 test.describe('inbox tutorial', () => {
-    test('stays shut on the first visit; Tour opens it, with six steps', async ({ page }) => {
-        await openInboxWithoutMarkingTutorialSeen(page, { tour: false });
-        // A fixed wait: the tour must not open by itself, so there is nothing to wait for.
-        await page.waitForTimeout(700);
-        await expect(modal(page)).toHaveCount(0);
-        await page.locator('.inbox-actions-own [data-inbox-tour]').click();
+    test('shows on first visit to the inbox, with six steps', async ({ page }) => {
+        await openInboxWithoutMarkingTutorialSeen(page);
+
         await expect(modal(page)).toBeVisible();
         await expect(page.locator('.inbox-tutorial-progress')).toHaveText(`Step 1 of ${STEPS}`);
         await expect(page.locator('.inbox-tutorial-dot')).toHaveCount(STEPS);
         await expect(page.locator('.inbox-tutorial-dot.is-active')).toHaveCount(1);
+    });
+
+    test('does not show again once seen', async ({ page }) => {
+        await openInboxWithoutMarkingTutorialSeen(page);
+        await expect(modal(page)).toBeVisible();
+        await page.locator('.modal-actions .modal-button', { hasText: 'Skip' }).click();
+        await expect(page.locator('#app-modal.show')).toHaveCount(0);
+
+        await page.evaluate(() => window.dashboardInstance.inbox.closeInboxView());
+        await page.locator('#page-nav-inbox-btn').click();
+        await expect(page.locator('.inbox-layout')).toBeVisible();
+        // Negative check: the tour must not open on its own; give a late auto-open time to show.
+        await page.waitForTimeout(700);
+        await expect(modal(page)).toHaveCount(0);
     });
 
     test('Next walks through every step in order, Back returns', async ({ page }) => {
@@ -117,15 +130,45 @@ test.describe('inbox tutorial', () => {
         expect(seen).toBe(true);
     });
 
+    test('respects enableSessionTips: false', async ({ page }) => {
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        // prepareDashboardInteraction already marked the tip seen — reset it so
+        // this test genuinely exercises the enableSessionTips guard rather than
+        // passing for the wrong reason.
+        await page.evaluate(() => {
+            window.dashboardInstance.settings.enableSessionTips = false;
+            const state = window.DiscoverabilityState;
+            if (state?.exportState) {
+                // Forgotten, not only left out: a tip marked on this page outlives an init.
+                state.forgetTip?.('inboxTutorialV3', { persist: false });
+                const exported = state.exportState();
+                exported.seenTips = (exported.seenTips || []).filter((id) => id !== 'inboxTutorialV3');
+                state.init?.(exported);
+            }
+        });
+        await page.locator('#page-nav-inbox-btn').click();
+        await expect(page.locator('.inbox-layout')).toBeVisible();
+        // Negative check: the tour must not open when session tips are off; give a late auto-open time to show.
+        await page.waitForTimeout(700);
+        await expect(modal(page)).toHaveCount(0);
+    });
+
     // The script is fetched on demand rather than riding along with the inbox
     // module, which bootstraps on every dashboard load for the unread badge.
-    test('the tour script is not fetched until Tour is pressed', async ({ page }) => {
+    // A session that has already done the tour must not pay for it again.
+    test('the tour script is not fetched once the tip is seen', async ({ page }) => {
         const requested = [];
         page.on('request', (r) => {
             if (r.url().includes('inbox-tutorial.js')) requested.push(r.url());
         });
 
-        await openInboxWithoutMarkingTutorialSeen(page, { tour: false });
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        await page.locator('#page-nav-inbox-btn').click();
+        await expect(page.locator('.inbox-layout')).toBeVisible();
         // Negative check: the tour script must not be requested; give a late fetch time to start.
         await page.waitForTimeout(700);
 
