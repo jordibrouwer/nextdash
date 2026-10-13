@@ -19779,6 +19779,11 @@ class DashboardConfig {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             this.dash.pages = (this.dash.pages || []).filter((p) => Number(p.id) !== Number(id));
             this.dash.pageNav?.renderPageNavigation?.();
+            // The page on screen: it stayed there, every edit on it a 404,
+            // until a reload. Go to the first page left.
+            if (Number(id) === Number(this.dash.currentPageId)) {
+                void this.dash.pageNav?.requestPageNavigation?.(this.dash.pages[0]?.id ?? 1);
+            }
 
             // The server puts the whole page in the trash -- bookmarks,
             // categories and widgets -- and the undo restores that entry. It

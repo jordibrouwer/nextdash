@@ -6,7 +6,8 @@ const auth = { 'X-NextDash-Token': WRITE_TOKEN };
 /**
  * Config → Structure saves categories and finders as whole lists, from what
  * the tab read. Something made on another device since was not in that list
- * and went with the next edit here.
+ * and went with the next edit here. And deleting the page on screen left it
+ * on screen.
  *
  * "Another device" is page.request: it talks to the server from outside the
  * tab, so nothing in the tab hears of it.
@@ -99,5 +100,34 @@ test.describe('Structure lists made elsewhere', () => {
         expect(after).toContain('Keep');
         expect(after).toContain('Phone');
         expect(after).not.toContain('Drop');
+    });
+
+    test('deleting the page on screen leaves it', async ({ page }) => {
+        const id = await newPage(page, 'Going away', [{ id: 'g', name: 'G' }]);
+        await page.request.post('/api/bookmarks/add', {
+            data: { page: id, bookmark: { name: 'Gone link', url: `https://going-away-${Date.now()}.example/`, category: 'g' } },
+            headers: auth,
+        });
+        await markWhatsNewSeen(page);
+        await page.goto(`/?_=${Date.now()}`);
+        await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 20_000 });
+        await page.evaluate((pid) => window.dashboardInstance.pageNav.requestPageNavigation(pid), id);
+        await page.waitForFunction((pid) => Number(window.dashboardInstance.currentPageId) === pid, id, { timeout: 10_000 });
+
+        await page.evaluate(() => {
+            const c = window.dashboardInstance.config;
+            c.ptTab = 'pages';
+            return c.openConfigView('structure');
+        });
+        await page.locator(`[data-page-delete="${id}"]`).click();
+        await confirmDelete(page);
+
+        await expect.poll(() => page.evaluate(() => Number(window.dashboardInstance.currentPageId)), { timeout: 10_000 })
+            .not.toBe(id);
+        const current = await page.evaluate(() => Number(window.dashboardInstance.currentPageId));
+        expect(await page.evaluate((cid) => window.dashboardInstance.pages.some((p) => Number(p.id) === cid), current)).toBe(true);
     });
 });
