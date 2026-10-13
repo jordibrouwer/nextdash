@@ -116,6 +116,7 @@
                     </div>
                     <div class="multi-select-toolbar config-bm-selbar" data-bm-selbar role="toolbar"
                          aria-label="${esc(this.t('dashboard.multiSelectToolbarAria', 'Selection actions'))}" hidden></div>
+                    <div class="config-bm-offers" id="config-bm-offers" hidden></div>
                     ${this.renderWorkbenchColumnHeads()}
                     <div id="config-bm-list">${this.renderBookmarksListSafe()}</div>
                 </section>
@@ -1984,7 +1985,8 @@
         // Every tag, and a count for the ones that do not fit; fitWorkbenchTags
         // decides which, once the row has a width.
         const tagChips = tags.map((t) => `<span class="config-bm-tag">${esc(t)}</span>`).join('')
-            + (tags.length ? '<span class="config-bm-tag config-bm-tag--more" hidden></span>' : '');
+            + (tags.length ? '<span class="config-bm-tag config-bm-tag--more" hidden></span>' : '')
+            + this.workbenchOfferChip(b, esc);
         const last = global.formatLastOpened?.(b.lastOpened, { t: this.lastOpenedTranslator() })
             || { label: '—', never: true };
         // Under a Health filter the reason earns the tags cell more than a
@@ -2131,32 +2133,230 @@
         });
     },
 
+    /* ── Tag suggestions in the rows ──────────────────────────────────── */
+
+    /**
+     * The best tag on offer for a row, or null: the engine's answer the
+     * Tags popover and the side panel give, minus what the row has. One per
+     * row -- the Tags column is a single line, and the side panel shows the
+     * rest with where each came from.
+     */
+    workbenchRowOffer(b) {
+        const live = global.TagSuggestLive;
+        if (!b || !live) return null;
+        const d = this.dash;
+        const offers = (d.unsortedBookmarks || []).includes(b)
+            ? (live.forBookmark?.(d, b) || [])
+            : (live.forDashBookmark?.(d, b) || []);
+        const have = new Set((b.tags || []).map((tag) => String(tag || '').trim().toLowerCase()));
+        return offers.find((offer) => offer?.tag && !have.has(String(offer.tag).toLowerCase())) || null;
+    },
+
+    workbenchOfferSource(offer) {
+        const kind = offer?.reason?.kind;
+        if (kind === 'online') return this.t('config.bmOfferFromOnline', 'Suggested by Wikidata');
+        if (kind === 'catalogue') return this.t('config.bmOfferFromCatalogue', 'Suggested by the catalogue');
+        if (kind === 'text') return this.t('config.bmOfferFromPage', 'Suggested by the page itself');
+        if (kind === 'rule') return this.t('config.bmOfferFromRule', 'Suggested by your rule');
+        return this.t('config.bmOfferFromYours', 'Suggested by your other tags');
+    },
+
+    /** A dashed chip after the tags: click adds the tag, × turns it down. */
+    workbenchOfferChip(b, esc) {
+        const offer = this.workbenchRowOffer(b);
+        if (!offer) return '';
+        const tag = String(offer.tag);
+        return `<span class="config-bm-tag config-bm-tag--offer" data-bm-offer="${esc(tag)}" title="${esc(this.workbenchOfferSource(offer))}">`
+            + `<button type="button" class="config-bm-offer-add" data-bm-offer-add tabindex="-1"`
+            + ` aria-label="${esc(this.t('config.bmOfferAdd', 'Add #{tag}').replace('{tag}', tag))}">+ ${esc(tag)}</button>`
+            + `<button type="button" class="config-bm-offer-refuse" data-bm-offer-refuse tabindex="-1"`
+            + ` aria-label="${esc(this.t('config.bmOfferRefuse', 'Turn down #{tag}').replace('{tag}', tag))}">×</button></span>`;
+    },
+
+    /**
+     * The catalogue and the words read from pages, fetched once, then the
+     * list drawn again with what they offer. No online lookup: opening the
+     * view is not a search the reader started.
+     */
+    ensureWorkbenchOfferSources() {
+        const live = global.TagSuggestLive;
+        if (!live?.ensureCatalogue || this._bmOfferSourcesAsked) return;
+        this._bmOfferSourcesAsked = true;
+        void Promise.all([live.ensureCatalogue(), live.storedKeywords?.()]).then(() => {
+            live.invalidate?.();
+            this.refreshWorkbenchOfferChips();
+        }).catch(() => {});
+    },
+
+    /**
+     * The offers in the rows already drawn, put in place without drawing the
+     * rows again: a repaint for this swapped every row out from under the
+     * pointer, the cursor and anyone measuring one.
+     */
+    refreshWorkbenchOfferChips() {
+        const list = document.getElementById('config-bm-list');
+        if (!list) return;
+        const esc = (v) => this.dash.escapeHtml(v);
+        list.querySelectorAll('.config-bm-row[data-bm-key]').forEach((row) => {
+            const cell = row.querySelector('.config-bm-tags');
+            // A Health filter puts the reason in this cell instead of tags.
+            if (!cell || cell.querySelector('.config-bm-reason')) return;
+            cell.querySelector('.config-bm-tag--offer')?.remove();
+            const html = this.workbenchOfferChip(this.findBookmarkByKey(row.getAttribute('data-bm-key')), esc);
+            if (html) cell.insertAdjacentHTML('beforeend', html);
+        });
+        this.fitWorkbenchTags(list);
+        this.syncWorkbenchOfferCount();
+    },
+
+    /** The offers standing in the rows the list shows. */
+    workbenchOfferPairs() {
+        return this.visibleBookmarks()
+            .map((b) => [b, this.workbenchRowOffer(b)])
+            .filter(([, offer]) => offer);
+    },
+
+    /**
+     * "12 tag suggestions in this list · Add all", a slim line over the
+     * column heads; gone when there are none. Not in the toolbar: that row
+     * is full, and the search box was what gave way.
+     */
+    syncWorkbenchOfferCount() {
+        const host = document.getElementById('config-bm-offers');
+        if (!host) return;
+        const count = this.workbenchOfferPairs().length;
+        host.hidden = !count;
+        if (!count) {
+            host.replaceChildren();
+            return;
+        }
+        const label = document.createElement('span');
+        label.textContent = count === 1
+            ? this.t('config.bmOffersOne', '1 tag suggestion in this list')
+            : this.t('config.bmOffersMany', '{n} tag suggestions in this list').replace('{n}', String(count));
+        const sep = document.createElement('span');
+        sep.textContent = '·';
+        const all = document.createElement('button');
+        all.type = 'button';
+        all.className = 'config-bm-offers-all';
+        all.setAttribute('data-bm-offers-all', '');
+        all.textContent = this.t('config.bmOffersAddAll', 'Add all');
+        // Read at the click: the list may have moved on since this was drawn.
+        all.addEventListener('click', () => void this.addWorkbenchOffers(this.workbenchOfferPairs()));
+        host.replaceChildren(label, sep, all);
+    },
+
+    /**
+     * Put the offered tags on, through the write every bulk edit here uses,
+     * with its undo. The ticks in the list are left as they were.
+     */
+    async addWorkbenchOffers(pairs) {
+        const adds = new Map();
+        pairs.forEach(([b, offer]) => {
+            if (b && offer?.tag) adds.set(this.bookmarkKey(b), String(offer.tag).toLowerCase());
+        });
+        if (!adds.size) return;
+        const picked = [...(this.dash.allBookmarks || []), ...(this.dash.unsortedBookmarks || [])]
+            .filter((b) => adds.has(this.bookmarkKey(b)));
+        if (!picked.length) return;
+        const ticked = new Set(this.bmSelected);
+        const snapshots = await this.mutateSelected(picked, (b) => {
+            const current = Array.isArray(b.tags) ? b.tags.map((tag) => String(tag).toLowerCase()) : [];
+            return { ...b, tags: [...new Set([...current, adds.get(this.bookmarkKey(b))])] };
+        });
+        ticked.forEach((key) => this.bmSelected.add(key));
+        const refresh = () => {
+            global.TagSuggestLive?.changed?.(this.dash);
+            this.repaintBookmarksList?.();
+        };
+        refresh();
+        const undo = this.bulkUndo(snapshots, 'config.tagSuggestionUndone', 'Tags put back.',
+            'config.bulkUndoFailed', 'Could not undo that.');
+        this.notify((picked.length === 1
+            ? this.t('config.bmOffersAddedOne', '1 bookmark got a tag.')
+            : this.t('config.bmOffersAddedMany', '{n} bookmarks got a tag.').replace('{n}', String(picked.length))), 'success', {
+            // The offers were worked out with the tags on; put back, they
+            // stand again.
+            undoCallback: async () => {
+                await undo?.();
+                refresh();
+            },
+            duration: 8000,
+        });
+    },
+
+    /** The offer on one row, by its key: the click, and `a`. */
+    async addWorkbenchRowOffer(key) {
+        const b = key ? this.findBookmarkByKey(key) : null;
+        const offer = this.workbenchRowOffer(b);
+        if (!offer) return false;
+        await this.addWorkbenchOffers([[b, offer]]);
+        return true;
+    },
+
+    /** Turned down here is turned down everywhere: the one refusal list. */
+    refuseWorkbenchRowOffer(key) {
+        const offer = this.workbenchRowOffer(key ? this.findBookmarkByKey(key) : null);
+        if (!offer) return;
+        void this.dismissTagSuggestion({ tag: offer.tag, pattern: offer.pattern }).then(() => {
+            global.TagSuggestLive?.changed?.(this.dash);
+            this.repaintBookmarksList?.();
+        });
+    },
+
     /**
      * Show as many whole tag chips per row as fit, then `+n` for the rest.
      *
      * Three passes over every row, so the layout is computed once: show all
      * chips (and a wide `+n` to measure), read every width, then hide.
+     *
+     * A tag on offer goes first: its room is taken before the row's own
+     * tags are fitted, since those can fold into `+n` and it cannot. In a
+     * cell too narrow even for that, it gives way -- the side panel still
+     * offers it.
      */
     fitWorkbenchTags(root) {
         const cells = [...(root || document).querySelectorAll('.config-bm-row .config-bm-tags')];
         if (!cells.length) return;
         cells.forEach((cell) => {
             cell.querySelectorAll('.config-bm-tag').forEach((chip) => { chip.hidden = false; });
+            cell.querySelector('.config-bm-tag--offer')?.style.removeProperty('max-width');
             const more = cell.querySelector('.config-bm-tag--more');
             if (more) more.textContent = '+99';
         });
         const plans = cells.map((cell) => {
-            const chips = [...cell.querySelectorAll('.config-bm-tag:not(.config-bm-tag--more)')];
+            const chips = [...cell.querySelectorAll('.config-bm-tag:not(.config-bm-tag--more):not(.config-bm-tag--offer)')];
             const more = cell.querySelector('.config-bm-tag--more');
+            const offer = cell.querySelector('.config-bm-tag--offer');
             const gap = parseFloat(getComputedStyle(cell).columnGap) || 0;
             return {
                 chips,
                 more,
+                offer,
                 gap,
                 avail: cell.clientWidth,
                 widths: chips.map((chip) => chip.getBoundingClientRect().width),
                 moreWidth: more ? more.getBoundingClientRect().width : 0,
+                // Its own width, not the squeezed one: it may shrink in the
+                // cell while everything else is shown for measuring.
+                offerWidth: offer ? (offer.querySelector('.config-bm-offer-add')?.scrollWidth || 0) + 2 : 0,
             };
+        });
+        plans.forEach((plan) => {
+            if (!plan.offer) return;
+            // The row's first tag stays: an offer never pushes all of the
+            // bookmark's own tags into `+n`. Then the `+n` for the rest, and
+            // what is left is the offer's -- a long name cut short to fit,
+            // and below a few letters it goes.
+            const first = plan.widths.length ? plan.widths[0] + plan.gap : 0;
+            const beside = plan.widths.length > 1 ? plan.moreWidth + plan.gap : 0;
+            const room = Math.min(plan.offerWidth, plan.avail - first - beside);
+            if (room < Math.min(56, plan.offerWidth)) {
+                plan.offer.hidden = true;
+                return;
+            }
+            if (room < plan.offerWidth) plan.offer.style.maxWidth = `${Math.floor(room)}px`;
+            plan.avail -= room + plan.gap;
         });
         plans.forEach(({ chips, more, gap, avail, widths, moreWidth }) => {
             if (!more) return;

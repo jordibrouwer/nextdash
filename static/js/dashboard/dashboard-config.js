@@ -3484,6 +3484,13 @@ class DashboardConfig {
                 this.openBookmarkByKey(this._bmKeyboardKey);
                 return true;
             }
+            // a: the tag on offer in this row, as a click on its chip.
+            if (e.key === 'a' && this.workbenchRowOffer?.(this.findBookmarkByKey(this._bmKeyboardKey))) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                void this.addWorkbenchRowOffer(this._bmKeyboardKey);
+                return true;
+            }
             /*
              * Health's own keys, brought in with its report (spec: "Keys").
              * Gated on the row actually carrying a report issue rather than
@@ -21291,6 +21298,7 @@ class DashboardConfig {
         if (live) live.textContent = this.renderBookmarkCountLabelSafe(shown, total);
         this.repaintWorkbenchRail?.();
         this.syncWorkbenchToolbar?.();
+        this.syncWorkbenchOfferCount?.();
     }
 
     clearBookmarkFilterChip(key) {
@@ -24006,6 +24014,7 @@ class DashboardConfig {
             ['i', this.t('config.bmKeyPanel', 'panel')],
             ['Enter', this.t('config.bookmarksKeyOpen', 'open')],
             ['d', this.t('config.bookmarksKeyDelete', 'delete')],
+            ['a', this.t('config.bmKeyAddSuggested', 'add suggested')],
             ['g / G', this.t('config.bookmarksKeyFirstLast', 'first / last')],
             ['/', this.t('config.bookmarksKeySearch', 'search')],
             ['Esc', this.t('config.bookmarksKeyClear', 'clear')],
@@ -24314,9 +24323,23 @@ class DashboardConfig {
         });
         this.fitWorkbenchTags?.(listRoot);
         this.fillWorkbenchContainers?.(listRoot);
+        this.syncWorkbenchOfferCount?.();
+        this.ensureWorkbenchOfferSources?.();
         // Delegated once per host: rows are replaced on every repaint.
         if (listRoot.dataset.bmRowsWired === '1') return;
         listRoot.dataset.bmRowsWired = '1';
+        // A tag on offer in a row, taken or turned down. In the capture phase,
+        // so the row's own click (select it, open the panel) does not follow.
+        listRoot.addEventListener('click', (e) => {
+            const add = e.target.closest('[data-bm-offer-add]');
+            const refuse = e.target.closest('[data-bm-offer-refuse]');
+            if (!add && !refuse) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const key = e.target.closest('.config-bm-row')?.getAttribute('data-bm-key');
+            if (add) void this.addWorkbenchRowOffer?.(key);
+            else this.refuseWorkbenchRowOffer?.(key);
+        }, true);
         listRoot.addEventListener('change', (e) => {
             const box = e.target.closest('[data-bm-tick]');
             if (!box) return;
