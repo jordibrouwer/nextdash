@@ -131,6 +131,10 @@ func respondBookmarkMutationError(w http.ResponseWriter, err error) bool {
 		http.Error(w, "Bookmark has changed; reload the health report", http.StatusConflict)
 		return false
 	}
+	if errors.Is(err, ErrBookmarkDuplicateURL) {
+		http.Error(w, "That URL is already on this page", http.StatusConflict)
+		return false
+	}
 	return respondStorePersistError(w, err)
 }
 
@@ -5782,8 +5786,14 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 		verified = h.pingURLExpecting(r.Context(), updatedURL, expectationFor(sourceBookmark).withSoftNotFound(softNotFoundEnabled(h.store.GetSettings())))
 	}
 
-	err := h.mutateHealthBookmark(req.PageID, at, req.URL, func(bookmark *Bookmark) error {
+	err := h.mutateHealthBookmarkOnPage(req.PageID, at, req.URL, func(page []Bookmark, at int) error {
+		bookmark := &page[at]
 		if updatedURL != "" && updatedURL != strings.TrimSpace(bookmark.URL) {
+			// Two old links redirecting to one home page both healed onto it,
+			// and the page then refused every save as a duplicate.
+			if urlTakenOnPage(page, at, updatedURL) {
+				return ErrBookmarkDuplicateURL
+			}
 			if req.KeepOriginalInNote {
 				appendBookmarkNote(bookmark, "Was: "+strings.TrimSpace(bookmark.URL))
 			}

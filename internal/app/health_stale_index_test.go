@@ -112,3 +112,17 @@ func TestBulkDeleteFindsAMovedRowByURLAndReturnsTrashIDs(t *testing.T) {
 		t.Fatalf("left = %+v", left)
 	}
 }
+
+// Two old links that redirect to one page both healed onto it, and the page
+// then refused every save as a duplicate. The second heal is refused instead.
+func TestAutoHealApplyRefusesAURLAlreadyOnThePage(t *testing.T) {
+	h, store := healthTestStore(t, staleTwoRows)
+	rec := postHealthJSON(h.AutoHealApply, `{"pageId":1,"index":1,"url":"https://b.example/","newUrl":"https://a.example/"}`)
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("status = %d %s, want 409", rec.Code, rec.Body.String())
+	}
+	rows := store.GetBookmarksByPage(1)
+	if rows[0].URL != "https://a.example/" || rows[1].URL != "https://b.example/" {
+		t.Fatalf("urls = %q %q, want unchanged", rows[0].URL, rows[1].URL)
+	}
+}
