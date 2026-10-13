@@ -17,6 +17,7 @@
     const PROMO_ID = 'install-count-v1';
     // Last in the corner's queue, behind the cards that invite something.
     const SHOW_DELAY_MS = 8000;
+    const WAIT_AFTER_ANALYTICS_DAYS = 2;
 
     function dash() {
         return global.dashboardInstance || null;
@@ -34,6 +35,18 @@
 
     function markAnswered() {
         global.DiscoverabilityState?.markSettingPromoSeen?.(PROMO_ID);
+    }
+
+    // Not on the heels of the analytics question: two privacy cards in one
+    // visit read as a pile. Counts from the day the analytics card was first
+    // shown. Installs that answered or opted in before that day was recorded
+    // have nothing to wait behind, so they get the card straight away.
+    function analyticsQuestionHasSettled() {
+        const d = dash();
+        const qs = d?.settings?.quickStart;
+        const askedAt = Number(qs?.analyticsAskedAt) || 0;
+        if (askedAt > 0) return Date.now() / 1000 >= askedAt + WAIT_AFTER_ANALYTICS_DAYS * 86400;
+        return d?.settings?.analyticsOptIn === true || qs?.analyticsChoiceMade === true;
     }
 
     function turnOff(card) {
@@ -59,6 +72,7 @@
             if (hasAnswered()) return false;
             const d = dash();
             if (d?.telemetryLockedOff === true) return false;
+            if (!analyticsQuestionHasSettled()) return false;
             return d?.settings?.installPingEnabled !== false;
         },
         onDismiss: markAnswered,

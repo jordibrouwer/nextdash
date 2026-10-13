@@ -1177,6 +1177,10 @@ type QuickStartState struct {
 	// How often the question has been put off, indexing a backoff schedule so
 	// each further hesitation waits longer than the last.
 	AnalyticsSnoozes int `json:"analyticsSnoozes,omitempty"`
+	// Unix seconds when the opt-in card was first put on screen. The install
+	// count card waits a couple of days after this so the two do not arrive
+	// together. Zero means never asked.
+	AnalyticsAskedAt int64 `json:"analyticsAskedAt,omitempty"`
 	// TemplatePicked is the first-start card's answer: a bundled template's
 	// id, or "keep" for the starter links. Empty means the card has not been
 	// answered and comes before the checklist.
