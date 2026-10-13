@@ -17057,6 +17057,12 @@ class DashboardConfig {
             'inbox': ['config.statsNoteInbox', 'What arrived, what you filed, and how long things wait before you get to them.'],
             'health': ['config.statsNoteHealth', 'Whether everything still answers, how reliably, and what is wearing out.'],
         },
+        containers: {
+            'connection': ['config.containersNoteConnection', 'How nextDash reaches Docker, and whether that connection works right now.'],
+            'view': ['config.containersNoteView', 'How the Containers view looks and refreshes, and which containers it leaves out.'],
+            'updates': ['config.containersNoteUpdates', 'When nextDash checks for newer images, and the token it uses for GitHub.'],
+            'alerts': ['config.containersNoteAlerts', 'What you are told when a container stops or fails, and which ones stay quiet.'],
+        },
         'data-backups': {
             'backups': ['config.dbNoteBackups', 'Snapshots of everything, made on a schedule or by hand. Restore one, or download it.'],
             'sources': ['config.dbNoteSources', 'Bring bookmarks in from a browser or a file, and send yours back out.'],
