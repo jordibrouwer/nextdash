@@ -527,7 +527,7 @@
                 tab.setAttribute('aria-selected', String(group.id === current));
                 tab.dataset.mediaTab = group.id;
                 tab.addEventListener('click', () => {
-                    wrap.querySelectorAll('.media-tabs, .media-strip, .media-strip-empty')
+                    wrap.querySelectorAll('.media-tabs, .media-strip, .media-strip-list, .media-strip-empty')
                         .forEach((el) => el.remove());
                     drawStrip(wrap, dash, widget, items, result, group.id);
                     // Keeps the reader where they were: a redraw would
@@ -551,7 +551,8 @@
         }
         const strip = document.createElement('div');
         if (serviceOf(widget).art === false) {
-            strip.className = 'media-list media-strip';
+            // Lines, not posters: a list of its own, not the strip's columns.
+            strip.className = 'media-list media-strip-list';
             items.filter((item) => !current || item.libraryId === current).slice(0, rows(widget))
                 .forEach((item) => strip.appendChild(listRow(dash, widget, item)));
             const tabs = wrap.querySelector('.media-tabs');

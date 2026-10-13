@@ -73,7 +73,9 @@
     font-variant-numeric: tabular-nums;
 }
 
-.media-tabs { display: flex; gap: 0.75rem; }
+/* One line of tabs; more rooms than fit scroll sideways rather than break a name. */
+.media-tabs { display: flex; gap: 0.75rem; overflow-x: auto; scrollbar-width: none; }
+.media-tab { white-space: nowrap; flex: none; }
 .media-tab {
     padding: 0 0 0.1rem;
     border: 0;

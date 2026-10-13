@@ -110,6 +110,23 @@ test.describe('the Home Assistant widget', () => {
         await expect(tile.locator('[data-media-item="light.garden"]').locator('..')).toHaveClass(/is-unavailable/);
     });
 
+    // A tab's lines stack, each the tile's width: the poster strip's columns
+    // squeezed four of them side by side.
+    test('a tab holds its lines one under the other', async ({ page }) => {
+        await open(page);
+        const tile = await draw(page, { result: answer() });
+        await tile.locator('[data-media-tab="Living room"]').click();
+        const rows = await tile.locator('.media-entity').evaluateAll((els) => els.map((el) => {
+            const box = el.getBoundingClientRect();
+            return { top: Math.round(box.top), width: Math.round(box.width) };
+        }));
+        expect(rows.length).toBe(3);
+        expect(rows[1].top).toBeGreaterThan(rows[0].top);
+        expect(rows[2].top).toBeGreaterThan(rows[1].top);
+        for (const row of rows) expect(row.width).toBeGreaterThan(250);
+        await expect(tile.locator('[data-media-item="light.ceiling"] .media-title')).toBeVisible();
+    });
+
     test('a switch goes through the server, and back when refused', async ({ page }) => {
         await open(page);
         let tile = await draw(page, { result: answer(), config: { layout: 'list' },
