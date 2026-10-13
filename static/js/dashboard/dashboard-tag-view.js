@@ -410,6 +410,7 @@
             }
             row.append(check, nameCell, tagsCell, page, opens, last, scoreCell);
             row.addEventListener('click', (e) => this.onRowClick(e, index));
+            row.addEventListener('contextmenu', (e) => this.openRowMenu(e, index));
             return row;
         }
 
@@ -504,6 +505,70 @@
             return this.selectedBookmarks()
                 .map((b) => this.dash.resolveBookmarkReference?.(b))
                 .filter(Boolean);
+        }
+
+        /* ── The dashboard's row actions ─────────────────────────────────── */
+
+        /**
+         * The Shift keys the dashboard grid answers on a bookmark row, by the
+         * context menu action each one runs there. e.code, like the grid, so
+         * the letter holds on any layout.
+         */
+        static ROW_KEYS = {
+            KeyE: 'edit',
+            KeyP: 'pin',
+            KeyT: 'tags',
+            KeyM: 'move',
+            KeyD: 'delete',
+            KeyC: 'check-mode',
+            KeyR: 'health',
+            KeyL: 'share',
+            KeyJ: 'qr',
+        };
+
+        /**
+         * What the menu and its popovers hang off: the row's name, not the
+         * row. A row spans the table, so nothing fits beside it and the
+         * popovers fell back to the window's corner.
+         */
+        rowElement(index) {
+            const row = this.shell?.body.querySelectorAll('.tag-view-row')[index];
+            return row?.querySelector('a.tag-view-open') || row || null;
+        }
+
+        /** The row's bookmark as the context menu wants it, or null. */
+        rowRef(index) {
+            const b = this.rows[index];
+            return b ? this.dash.resolveBookmarkReference?.(b) || null : null;
+        }
+
+        /**
+         * The dashboard's own right-click menu on a row, not a copy of it:
+         * the module the grid loads, given the bookmark this row stands for.
+         * Shift+right-click still gets the browser's menu, as in the grid.
+         */
+        openRowMenu(e, index) {
+            const d = this.dash;
+            if (e.shiftKey || d.uiHelpers?.isModalOpen?.()) return;
+            const row = this.rowElement(index);
+            const ref = this.rowRef(index);
+            if (!row || !ref) return;
+            e.preventDefault();
+            e.stopPropagation();
+            this.moveFocus(index);
+            void d.contextMenu?.load?.()
+                .then((menu) => menu.show(row, ref, menu.menuPointFor(e, row)))
+                .catch(() => {});
+        }
+
+        /** One of the menu's actions on a row, for the keys that name them. */
+        runRowAction(action, index = this.focusIndex) {
+            const row = this.rowElement(index);
+            const ref = this.rowRef(index);
+            if (!row || !ref) return;
+            void this.dash.contextMenu?.load?.()
+                .then((menu) => menu.runAction(action, row, ref))
+                .catch(() => {});
         }
 
         onRowClick(e, index) {
@@ -1235,9 +1300,10 @@
             if (this._keyHandler) document.removeEventListener('keydown', this._keyHandler, true);
             this._keyHandler = (e) => {
                 if (!this.isActiveView()) return;
-                if (e.ctrlKey || e.metaKey || e.altKey) return;
                 if (window.DashboardTagCloud?.modalOpen || d.isModalOpen?.() || d.searchComponent?.isActive?.()) return;
-                if (document.querySelector('dialog[open], .tag-view-manage-menu, #move-popover')) return;
+                // The row menu and the popovers it opens own their keys,
+                // Escape first among them.
+                if (document.querySelector('dialog[open], .tag-view-manage-menu, .move-popover, .bookmark-context-menu, #bookmark-check-mode-menu')) return;
                 const active = document.activeElement;
                 const tag = active?.tagName;
                 if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || active?.isContentEditable) return;
@@ -1245,6 +1311,21 @@
                     e.preventDefault();
                     e.stopImmediatePropagation();
                 };
+                // Ctrl/Cmd+C copies the row's URL, as on the dashboard, unless
+                // there is text selected to copy instead.
+                if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.code === 'KeyC'
+                    && this.focusIndex >= 0 && !String(window.getSelection?.() || '')) {
+                    swallow();
+                    this.runRowAction('copy-url');
+                    return;
+                }
+                if (e.ctrlKey || e.metaKey || e.altKey) return;
+                const rowAction = e.shiftKey ? DashboardTagView.ROW_KEYS[e.code] : (e.key === 'Delete' ? 'delete' : null);
+                if (rowAction && this.focusIndex >= 0) {
+                    swallow();
+                    this.runRowAction(rowAction);
+                    return;
+                }
                 switch (e.key) {
                     case 'Escape':
                         swallow();

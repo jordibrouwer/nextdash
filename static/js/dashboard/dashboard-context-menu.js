@@ -245,7 +245,11 @@ class DashboardContextMenu {
         // ignore what the user had already ticked. The entries call the same
         // multiSelect methods Shift+Z and the toolbar use, so all three routes
         // share one implementation of what a bulk move or delete means.
-        const multi = bookmarkRef.scope === 'current' ? d.multiSelect : null;
+        // Not on a tag view row: that view ticks its rows itself, and the grid's
+        // selection would act on rows that are not on screen.
+        const multi = bookmarkRef.scope === 'current' && !row?.closest?.('.tag-view-row')
+            ? d.multiSelect
+            : null;
         const rowIsSelected = !!multi && multi.has(multi.keyForRow(row));
         const selectionActions = (multi && rowIsSelected && multi.count() > 1)
             ? [

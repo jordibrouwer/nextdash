@@ -595,7 +595,78 @@ test.describe('selection, panel and edit', () => {
         await page.keyboard.press('Escape');
         await expect(view(page)).toHaveCount(0);
     });
+
+    test('right-click opens the dashboard row menu; its Tags… is the Tags popover', async ({ page }) => {
+        await row(page, 'Sel B').locator('.tag-view-page').click({ button: 'right' });
+        const menu = page.locator('#bookmark-context-menu');
+        await expect(menu).toBeVisible();
+        await expect(menu.locator('.move-popover-current-hint')).toHaveText('Sel B');
+        for (const name of ['Open in new tab', 'Edit', 'Tags…', 'Move to…', 'Delete']) {
+            await expect(menu.getByText(name, { exact: true }).first()).toBeVisible();
+        }
+        // The view ticks its own rows; the grid's Select would act on rows
+        // that are not on screen.
+        await expect(menu.getByText('Select', { exact: true })).toHaveCount(0);
+        await menu.getByText('Tags…', { exact: true }).click();
+        const popover = page.locator('#tag-popover');
+        await expect(popover).toBeVisible();
+        await expect(popover).toContainText('Suggested');
+        await page.keyboard.press('Escape');
+        await expect(popover).toHaveCount(0);
+        await expect(view(page)).toBeVisible();
+    });
+
+    test('Shift+T on a row from another page changes that bookmark and no other', async ({ page }) => {
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('Shift+T');
+        const popover = page.locator('#tag-popover');
+        await expect(popover).toContainText('Sel B');
+        const namesByUrl = () => page.evaluate(() => window.dashboardInstance.allBookmarks
+            .map((b) => `${b.pageId} ${b.url} ${b.name}`).sort());
+        const before = await namesByUrl();
+        await popover.locator(`[data-tag="${S}"]`).click();
+        await expect.poll(() => readTags(page, ids.other, `https://sel-b-${N}.example.com/`), { timeout: 10_000 }).not.toContain(S);
+        // The sync behind the popover asked a module the tag view never
+        // loads, took its promise for a yes, and wrote this bookmark's name
+        // and URL over every other one in memory.
+        expect(await namesByUrl()).toEqual(before);
+    });
+
+    test('Shift+M on a row from another page offers pages, and moves it from its own', async ({ page }) => {
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('Shift+M');
+        const popover = page.locator('#move-popover');
+        await expect(popover).toBeVisible();
+        await expect(popover.locator('.move-popover-item[data-type="category"]')).toHaveCount(0);
+        // Dispatched: the quick start card can come up over the popover's
+        // corner, and what is under test is the move, not the pointer.
+        await popover.locator(`.move-popover-item[data-type="page"][data-id="${ids.here}"]`).dispatchEvent('click');
+        await expect.poll(() => readUrls(page, ids.here), { timeout: 10_000 }).toContain(`https://sel-b-${N}.example.com/`);
+        await expect.poll(() => readUrls(page, ids.other)).not.toContain(`https://sel-b-${N}.example.com/`);
+    });
+
+    test('Shift+E opens the bookmark form, and Escape closes only that', async ({ page }) => {
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('Shift+E');
+        await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#bookmark-form-modal.show')).toHaveCount(0);
+        await expect(view(page)).toBeVisible();
+    });
 });
+
+async function readTags(page, id, url) {
+    return page.evaluate(async ({ pid, href }) => {
+        const body = await (await fetch(`/api/bookmarks?page=${pid}`)).json();
+        const hit = (Array.isArray(body) ? body : body.bookmarks || []).find((b) => b.url === href);
+        return hit?.tags || [];
+    }, { pid: id, href: url });
+}
 
 async function readUrls(page, id) {
     return page.evaluate(async (pid) => {
