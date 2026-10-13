@@ -38,6 +38,7 @@ class DashboardRenderCore {
         // A download moves while you watch it.
         qbittorrent: { configKey: 'ttl', floor: 15, fallback: 30 },
         sabnzbd: { configKey: 'ttl', floor: 15, fallback: 30 },
+        homeassistant: { configKey: 'ttl', floor: 15, fallback: 30 },
         unraid: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
         unraidArray: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
         unraidParity: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
@@ -933,6 +934,7 @@ class DashboardRenderCore {
         seerr: 'Seerr',
         qbittorrent: 'qBittorrent',
         sabnzbd: 'SABnzbd',
+        homeassistant: 'Home Assistant',
         unraid: 'Unraid',
         unraidArray: 'Unraid array',
         unraidParity: 'Parity',

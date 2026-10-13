@@ -184,6 +184,48 @@
         },
     };
 
+    /*
+     * Home Assistant: a long-lived token, and the entities chosen from the
+     * list Connect brings -- searched on the left, in the reader's own order
+     * on the right.
+     */
+    const HA_MAX = 60;
+    const HA_VISIBLE = 200;
+    Config.MEDIA_SERVICES.homeassistant = {
+        id: 'homeassistant',
+        name: 'Home Assistant',
+        header: 'Authorization',
+        placeholder: 'http://homeassistant.local:8123',
+        words: {
+            key: ['config.widgetHomeAssistantKey', 'Long-lived access token'],
+            keyWhere: ['config.widgetHomeAssistantKeyWhere',
+                'Profile → Security → Long-lived access tokens in Home Assistant'],
+            'key refused': ['config.widgetHomeAssistantErrorKey', 'Home Assistant refused that token.'],
+        },
+        normalizeKey(key) {
+            if (!key || /^Bearer\s/i.test(key)) return key;
+            return `Bearer ${key}`;
+        },
+        choices(panel, widget, index, setup, config, esc) {
+            const chosen = Array.isArray(config.entities) ? config.entities : [];
+            return `
+                <div class="config-widget-field config-ha-picker" data-ha-picker="${index}">
+                    <div class="config-ha-search">
+                        <span class="config-widget-field-label">${esc(panel.t('config.widgetHomeAssistantFind', 'Find'))}</span>
+                        <input type="search" class="config-text" data-ha-search data-widget-index="${index}"
+                            aria-label="${esc(panel.t('config.widgetHomeAssistantFind', 'Find'))}"
+                            placeholder="${esc(panel.t('config.widgetHomeAssistantFindHint', 'Name or id'))}">
+                        <div class="config-ha-chips" data-ha-chips="${index}">${panel.haChipsHtml(index, setup, esc)}</div>
+                        <div class="config-ha-results" data-ha-results="${index}">${panel.haResultsHtml(index, setup, chosen, esc)}</div>
+                    </div>
+                    <div class="config-ha-chosen">
+                        <span class="config-widget-field-label" data-ha-count="${index}">${esc(panel.haCountText(chosen))}</span>
+                        <ol class="config-ha-list" data-ha-list="${index}">${panel.haChosenHtml(index, setup, chosen, esc)}</ol>
+                    </div>
+                </div>`;
+        },
+    };
+
     const SHARED_WORDS = {
         server: ['config.widgetMediaServer', 'Address'],
         key: ['config.widgetMediaKey', 'API key'],
@@ -204,6 +246,140 @@
     };
 
     Object.assign(Config.prototype, {
+
+    haCountText(chosen) {
+        return this.t('config.widgetHomeAssistantChosen', 'In the tile ({n} of {max})')
+            .replace('{n}', String(chosen.length)).replace('{max}', String(HA_MAX));
+    },
+
+    haFilterState(index) {
+        this._haFilter = this._haFilter || {};
+        this._haFilter[index] = this._haFilter[index] || { query: '', domain: '' };
+        return this._haFilter[index];
+    },
+
+    haChipsHtml(index, setup, esc) {
+        const counts = {};
+        (setup.entities || []).forEach((e) => { counts[e.domain] = (counts[e.domain] || 0) + 1; });
+        const current = this.haFilterState(index).domain;
+        const domains = Object.keys(counts).sort((a, b) => counts[b] - counts[a]).slice(0, 10);
+        return ['', ...domains].map((domain) => `<button type="button" class="config-chip${
+            domain === current ? ' is-active' : ''}" data-ha-chip="${esc(domain)}" data-widget-index="${index}"
+            aria-pressed="${domain === current}">${esc(domain || this.t('config.widgetHomeAssistantAll', 'All'))}</button>`).join('');
+    },
+
+    haResultsHtml(index, setup, chosen, esc) {
+        const { query, domain } = this.haFilterState(index);
+        const q = query.trim().toLowerCase();
+        const matches = (setup.entities || []).filter((e) => (!domain || e.domain === domain)
+            && (!q || e.name.toLowerCase().includes(q) || e.id.includes(q)));
+        const full = chosen.length >= HA_MAX;
+        const rows = matches.slice(0, HA_VISIBLE).map((e) => {
+            const on = chosen.includes(e.id);
+            return `<label class="config-toggle config-toggle--inline config-ha-result">
+                <input type="checkbox" data-ha-pick="${esc(e.id)}" data-widget-index="${index}"
+                    ${on ? 'checked' : ''} ${!on && full ? 'disabled' : ''}>
+                <span>${esc(e.name)}</span><span class="config-ha-id">${esc(e.id)}</span>
+            </label>`;
+        }).join('');
+        const more = matches.length > HA_VISIBLE
+            ? `<p class="config-widget-note">${esc(this.t('config.widgetHomeAssistantMore',
+                '{n} more — search to narrow it down.').replace('{n}', String(matches.length - HA_VISIBLE)))}</p>` : '';
+        return rows + more;
+    },
+
+    haChosenHtml(index, setup, chosen, esc) {
+        const names = new Map((setup.entities || []).map((e) => [e.id, e.name]));
+        return chosen.map((id, at) => {
+            const known = names.has(id);
+            const name = known ? names.get(id) : `${id} (${this.t('config.widgetHomeAssistantNotFound', 'not found')})`;
+            return `<li class="config-ha-item${known ? '' : ' is-missing'}">
+                <span data-ha-chosen="${esc(id)}">${esc(name)}</span>
+                <button type="button" class="config-btn config-btn--icon" data-ha-move="${esc(id)}" data-ha-dir="up"
+                    data-widget-index="${index}" ${at === 0 ? 'disabled' : ''}
+                    aria-label="${esc(this.t('config.widgetHomeAssistantUp', 'Move up'))}">↑</button>
+                <button type="button" class="config-btn config-btn--icon" data-ha-move="${esc(id)}" data-ha-dir="down"
+                    data-widget-index="${index}" ${at === chosen.length - 1 ? 'disabled' : ''}
+                    aria-label="${esc(this.t('config.widgetHomeAssistantDown', 'Move down'))}">↓</button>
+                <button type="button" class="config-btn config-btn--icon" data-ha-remove="${esc(id)}"
+                    data-widget-index="${index}" aria-label="${esc(this.t('config.widgetHomeAssistantRemove', 'Remove'))}">✕</button>
+            </li>`;
+        }).join('');
+    },
+
+    /** Redraws the picker's parts in place: the search box keeps its focus. */
+    haRepaint(index, { results = true, chips = false } = {}) {
+        const block = (this._widgetBlocks || [])[index];
+        const draft = this.widgetDraft(index);
+        const setup = this.mediaSetupFor(block) || {};
+        const esc = (v) => this.dash.escapeHtml(v);
+        const chosen = Array.isArray(draft?.config?.entities) ? draft.config.entities : [];
+        const at = (name) => document.querySelector(`[data-${name}="${index}"]`);
+        if (results && at('ha-results')) at('ha-results').innerHTML = this.haResultsHtml(index, setup, chosen, esc);
+        if (chips && at('ha-chips')) at('ha-chips').innerHTML = this.haChipsHtml(index, setup, esc);
+        if (at('ha-list')) at('ha-list').innerHTML = this.haChosenHtml(index, setup, chosen, esc);
+        if (at('ha-count')) at('ha-count').textContent = this.haCountText(chosen);
+        this.refreshWidgetSaveBar?.(index);
+    },
+
+    haChange(index, change) {
+        const draft = this.widgetDraft(index);
+        if (!draft) return;
+        const list = Array.isArray(draft.config.entities) ? [...draft.config.entities] : [];
+        draft.config.entities = change(list).slice(0, HA_MAX);
+    },
+
+    /** One listener for the picker's boxes and buttons, bound once per panel. */
+    bindHomeAssistantPicker() {
+        if (this._haBound) return;
+        this._haBound = true;
+        const indexOf = (el) => Number(el.getAttribute('data-widget-index'));
+        document.addEventListener('input', (event) => {
+            const box = event.target.closest?.('[data-ha-search]');
+            if (!box) return;
+            const index = indexOf(box);
+            this.haFilterState(index).query = box.value;
+            this.haRepaint(index);
+        });
+        document.addEventListener('change', (event) => {
+            const pick = event.target.closest?.('[data-ha-pick]');
+            if (!pick) return;
+            const index = indexOf(pick);
+            const id = pick.getAttribute('data-ha-pick');
+            this.haChange(index, (list) => (pick.checked
+                ? (list.includes(id) ? list : [...list, id])
+                : list.filter((x) => x !== id)));
+            this.haRepaint(index);
+        });
+        document.addEventListener('click', (event) => {
+            const chip = event.target.closest?.('[data-ha-chip]');
+            const move = event.target.closest?.('[data-ha-move]');
+            const remove = event.target.closest?.('[data-ha-remove]');
+            if (chip) {
+                const index = indexOf(chip);
+                this.haFilterState(index).domain = chip.getAttribute('data-ha-chip');
+                this.haRepaint(index, { chips: true });
+            } else if (move) {
+                const index = indexOf(move);
+                const id = move.getAttribute('data-ha-move');
+                const step = move.getAttribute('data-ha-dir') === 'up' ? -1 : 1;
+                this.haChange(index, (list) => {
+                    const from = list.indexOf(id);
+                    const to = from + step;
+                    if (from < 0 || to < 0 || to >= list.length) return list;
+                    [list[from], list[to]] = [list[to], list[from]];
+                    return list;
+                });
+                this.haRepaint(index, { results: false });
+                document.querySelector(`[data-ha-move="${CSS.escape(id)}"][data-ha-dir="${step < 0 ? 'up' : 'down'}"]`)?.focus();
+            } else if (remove) {
+                const index = indexOf(remove);
+                const id = remove.getAttribute('data-ha-remove');
+                this.haChange(index, (list) => list.filter((x) => x !== id));
+                this.haRepaint(index);
+            }
+        });
+    },
 
     mediaWord(service, key, name = service.name) {
         const [i18n, fallback] = service.words?.[key] || SHARED_WORDS[key] || SHARED_WORDS.unreachable;
@@ -318,6 +494,7 @@
         }
 
         let choices = '';
+        if (service.id === 'homeassistant') this.bindHomeAssistantPicker();
         if (setup && !setup.error && typeof service.choices === 'function') {
             choices = service.choices(this, widget, index, setup, config, esc);
         } else if (!setup && keyIsSaved && config.server) {

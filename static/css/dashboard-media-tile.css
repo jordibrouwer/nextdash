@@ -176,3 +176,78 @@
     background: linear-gradient(to right, var(--accent-primary) calc(var(--p, 0) * 100%),
         color-mix(in srgb, currentColor 15%, transparent) 0);
 }
+
+/* Home Assistant: a line is its name (a button) and, beside it, a value, a
+   switch or a start button. */
+.media-entity { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
+.media-entity .media-entity-name { flex: 1 1 auto; min-width: 0; align-items: center; }
+.media-entity-glyph { flex: none; width: 1.4em; text-align: center; }
+.media-entity-value {
+    flex: none;
+    color: var(--text-secondary, inherit);
+    font-size: var(--font-size-small);
+    font-variant-numeric: tabular-nums;
+}
+.media-entity.is-unavailable, .media-entity.is-missing { opacity: 0.55; }
+.media-switch {
+    flex: none;
+    position: relative;
+    width: 2.1rem;
+    height: 1.15rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--border-color, rgba(127, 127, 127, 0.35));
+    cursor: pointer;
+}
+.media-switch::after {
+    content: '';
+    position: absolute;
+    top: 0.15rem;
+    left: 0.15rem;
+    width: 0.85rem;
+    height: 0.85rem;
+    border-radius: 50%;
+    background: var(--text-primary, #fff);
+    transition: transform 0.15s ease;
+}
+.media-switch[aria-pressed="true"] { background: var(--accent-primary, #3d8bd0); }
+.media-switch[aria-pressed="true"]::after { transform: translateX(0.95rem); }
+.media-switch[aria-busy="true"], .media-run[aria-busy="true"] { opacity: 0.6; cursor: progress; }
+.media-switch:disabled, .media-run:disabled { opacity: 0.45; cursor: not-allowed; }
+.media-run {
+    flex: none;
+    padding: 0.05rem 0.5rem;
+    border: 1px solid var(--accent-primary, #3d8bd0);
+    border-radius: 4px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+
+/* Config → Widgets: the Home Assistant picker. Search on the left, the
+   chosen entities in their order on the right; stacked when narrow. */
+.config-ha-picker { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; }
+@media (max-width: 720px) { .config-ha-picker { grid-template-columns: minmax(0, 1fr); } }
+.config-ha-search, .config-ha-chosen { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
+.config-ha-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.config-ha-results { max-height: 16rem; overflow-y: auto; display: flex; flex-direction: column; }
+.config-ha-result { display: flex; gap: 0.4rem; align-items: center; min-width: 0; }
+.config-ha-result > span:first-of-type { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.config-ha-id { margin-left: auto; color: var(--text-tertiary); font-size: var(--font-size-small); white-space: nowrap; }
+.config-ha-list { margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; gap: 0.2rem; }
+.config-ha-item { display: flex; align-items: center; gap: 0.3rem; }
+.config-ha-item > span { flex: 1 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.config-ha-item.is-missing > span { color: var(--text-tertiary); }
+.config-ha-chips .config-chip {
+    padding: 0.05rem 0.55rem;
+    border: 1px solid var(--border-color, rgba(127, 127, 127, 0.35));
+    border-radius: 999px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+.config-ha-chips .config-chip.is-active { border-color: var(--accent-primary, #3d8bd0); }

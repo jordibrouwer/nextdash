@@ -3002,6 +3002,7 @@
             radarr: 'Films coming out and downloads in progress in Radarr, with posters.',
             seerr: 'Requests in Overseerr or Jellyseerr — who asked, and whether it has arrived — with posters.',
             qbittorrent: 'Torrents in qBittorrent — progress, speed and time left — with the speeds on top.',
+            homeassistant: 'Entities from Home Assistant per room — values, and lights, switches and scenes to switch.',
             sabnzbd: 'Downloads in SABnzbd — the queue and what finished last — with the speed on top.',
             unraid: 'The Unraid server at a glance: array, parity, disks, alerts, VMs and the UPS, a line each.',
             unraidArray: 'Every disk of the Unraid array: how full, how warm, and which one is in trouble.',

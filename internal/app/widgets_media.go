@@ -1,10 +1,12 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -45,12 +47,13 @@ var (
 	errMediaRefused     = errors.New("key refused")
 	errMediaUnreachable = errors.New("unreachable")
 	errMediaNoLibraries = errors.New("no libraries")
+	errMediaNoEntities  = errors.New("no entities")
 )
 
 // mediaErrorCode is what the tile is told: a short code it can word, never
 // the wrapped detail, which may name an internal address.
 func mediaErrorCode(err error) string {
-	for _, known := range []error{errMediaNotSetUp, errMediaNotAllowed, errMediaRefused, errMediaNoLibraries} {
+	for _, known := range []error{errMediaNotSetUp, errMediaNotAllowed, errMediaRefused, errMediaNoLibraries, errMediaNoEntities} {
 		if errors.Is(err, known) {
 			return known.Error()
 		}
@@ -89,6 +92,16 @@ type MediaItem struct {
 	// in bytes. The browser words both.
 	Speed int64 `json:"speed,omitempty"`
 	Size  int64 `json:"size,omitempty"`
+	// Value is what an entity reads ("21.4 °C", "on"); Control what may be
+	// done with it ("toggle", "run"); On its switch; Icon a glyph key.
+	// Unavailable and Missing dim a line: Home Assistant cannot say, or the
+	// entity is gone.
+	Value       string `json:"value,omitempty"`
+	Control     string `json:"control,omitempty"`
+	On          bool   `json:"on,omitempty"`
+	Icon        string `json:"icon,omitempty"`
+	Unavailable bool   `json:"unavailable,omitempty"`
+	Missing     bool   `json:"missing,omitempty"`
 }
 
 // MediaTotals is the line on top of a download tile: the speeds of the
@@ -122,6 +135,9 @@ type MediaResult struct {
 	Partial bool `json:"partial,omitempty"`
 	// Totals is set by a download client only.
 	Totals *MediaTotals `json:"totals,omitempty"`
+	// Controls says this reader may switch things. Set per request, after
+	// the shared cache: never stored with the answer.
+	Controls bool `json:"controls,omitempty"`
 }
 
 // mediaImageRef names one picture the proxy may fetch.
@@ -164,6 +180,13 @@ var mediaWidgetCache = struct {
 // mediaCacheKey keeps two services apart even for the same widget id.
 func mediaCacheKey(service string, pageID int, widgetID string) string {
 	return service + ":" + strconv.Itoa(pageID) + ":" + widgetID
+}
+
+// mediaForget drops one tile's answer, so its next read asks the service.
+func mediaForget(service string, pageID int, widgetID string) {
+	mediaWidgetCache.Lock()
+	delete(mediaWidgetCache.at, mediaCacheKey(service, pageID, widgetID))
+	mediaWidgetCache.Unlock()
 }
 
 // mediaForgetAll empties the cache; tests use it between cases.
@@ -316,6 +339,22 @@ func (h *Handlers) serveMediaWidget(w http.ResponseWriter, r *http.Request, widg
 // mediaRequest makes one GET to a service: the address checked against the
 // local-network setting, the stored credential applied, a refusal named.
 func (h *Handlers) mediaRequest(ctx context.Context, server string, credential HealthCredential, path string, query url.Values, accept string, decorate func(*http.Request)) (*http.Response, error) {
+	return h.mediaSend(ctx, http.MethodGet, server, credential, path, query, nil, accept, decorate)
+}
+
+// mediaPost sends a JSON body under the same rules as mediaRequest: Home
+// Assistant's templates and its switches.
+func (h *Handlers) mediaPost(ctx context.Context, server string, credential HealthCredential, path string, body any) (*http.Response, error) {
+	raw, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	return h.mediaSend(ctx, http.MethodPost, server, credential, path, nil, raw, "application/json", func(req *http.Request) {
+		req.Header.Set("Content-Type", "application/json")
+	})
+}
+
+func (h *Handlers) mediaSend(ctx context.Context, method, server string, credential HealthCredential, path string, query url.Values, body []byte, accept string, decorate func(*http.Request)) (*http.Response, error) {
 	address := server + path
 	if len(query) > 0 {
 		address += "?" + query.Encode()
@@ -323,7 +362,11 @@ func (h *Handlers) mediaRequest(ctx context.Context, server string, credential H
 	if err := validateHTTPURL(address, h.allowLocalBookmarks()); err != nil {
 		return nil, errMediaNotAllowed
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, address, nil)
+	var reader io.Reader
+	if body != nil {
+		reader = bytes.NewReader(body)
+	}
+	req, err := http.NewRequestWithContext(ctx, method, address, reader)
 	if err != nil {
 		return nil, errMediaNotAllowed
 	}
@@ -361,6 +404,9 @@ func (h *Handlers) mediaRequest(ctx context.Context, server string, credential H
 			return nil, fmt.Errorf("%w: sign-in: %v", errMediaRefused, err)
 		}
 		retry := req.Clone(ctx)
+		if body != nil {
+			retry.Body = io.NopCloser(bytes.NewReader(body))
+		}
 		retry.Header.Set(sessionHeaderName(credential.Session), fresh)
 		if resp, err = client.Do(retry); err != nil {
 			return nil, fmt.Errorf("%w: %v", errMediaUnreachable, err)

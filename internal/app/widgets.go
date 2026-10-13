@@ -143,7 +143,10 @@ const (
 	// is busy with: progress, speed and time left, with totals on top.
 	WidgetTypeQBittorrent WidgetType = "qbittorrent"
 	WidgetTypeSABnzbd     WidgetType = "sabnzbd"
-	WidgetTypeCustom      WidgetType = "custom"
+	// WidgetTypeHomeAssistant shows chosen entities per room and switches a
+	// safe few of them.
+	WidgetTypeHomeAssistant WidgetType = "homeassistant"
+	WidgetTypeCustom        WidgetType = "custom"
 	// WidgetTypeNotes holds a short text of the reader's own, some lines of it
 	// tickable. The text is the widget's config, so it travels with the page.
 	WidgetTypeNotes WidgetType = "notes"
@@ -164,36 +167,37 @@ const (
 // stored: a widget whose type nothing renders is an invisible block that still
 // takes a place in the order.
 var knownWidgetTypes = map[WidgetType]struct{}{
-	WidgetTypeHealth:      {},
-	WidgetTypeUptime:      {},
-	WidgetTypeCerts:       {},
-	WidgetTypeTrend:       {},
-	WidgetTypeInbox:       {},
-	WidgetTypeUnsorted:    {},
-	WidgetTypeFeeds:       {},
-	WidgetTypeSources:     {},
-	WidgetTypeNeglected:   {},
-	WidgetTypeArchive:     {},
-	WidgetTypeTrash:       {},
-	WidgetTypeUnchecked:   {},
-	WidgetTypeDuplicates:  {},
-	WidgetTypeBackups:     {},
-	WidgetTypeCPU:         {},
-	WidgetTypeDisks:       {},
-	WidgetTypeMemory:      {},
-	WidgetTypeDocker:      {},
-	WidgetTypeContainers:  {},
-	WidgetTypeWeather:     {},
-	WidgetTypeCalendar:    {},
-	WidgetTypeRSS:         {},
-	WidgetTypeCustom:      {},
-	WidgetTypeNotes:       {},
-	WidgetTypeJellyfin:    {},
-	WidgetTypeSonarr:      {},
-	WidgetTypeRadarr:      {},
-	WidgetTypeSeerr:       {},
-	WidgetTypeQBittorrent: {},
-	WidgetTypeSABnzbd:     {},
+	WidgetTypeHealth:        {},
+	WidgetTypeUptime:        {},
+	WidgetTypeCerts:         {},
+	WidgetTypeTrend:         {},
+	WidgetTypeInbox:         {},
+	WidgetTypeUnsorted:      {},
+	WidgetTypeFeeds:         {},
+	WidgetTypeSources:       {},
+	WidgetTypeNeglected:     {},
+	WidgetTypeArchive:       {},
+	WidgetTypeTrash:         {},
+	WidgetTypeUnchecked:     {},
+	WidgetTypeDuplicates:    {},
+	WidgetTypeBackups:       {},
+	WidgetTypeCPU:           {},
+	WidgetTypeDisks:         {},
+	WidgetTypeMemory:        {},
+	WidgetTypeDocker:        {},
+	WidgetTypeContainers:    {},
+	WidgetTypeWeather:       {},
+	WidgetTypeCalendar:      {},
+	WidgetTypeRSS:           {},
+	WidgetTypeCustom:        {},
+	WidgetTypeNotes:         {},
+	WidgetTypeJellyfin:      {},
+	WidgetTypeSonarr:        {},
+	WidgetTypeRadarr:        {},
+	WidgetTypeSeerr:         {},
+	WidgetTypeQBittorrent:   {},
+	WidgetTypeSABnzbd:       {},
+	WidgetTypeHomeAssistant: {},
 
 	WidgetTypeUnraid:              {},
 	WidgetTypeUnraidArray:         {},

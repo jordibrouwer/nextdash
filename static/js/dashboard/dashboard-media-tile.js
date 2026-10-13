@@ -32,6 +32,7 @@
             '{name} is on your local network, and local addresses are not allowed yet. Allow them in Config first.'],
         refused: ['dashboard.widgetMediaRefused', '{name} refused the API key.'],
         noLibraries: ['dashboard.widgetMediaNoLibraries', 'Nothing chosen to show. Choose again in the settings.'],
+        noEntities: ['dashboard.widgetMediaNoEntities', 'Nothing chosen to show. Choose again in the settings.'],
         unreachable: ['dashboard.widgetMediaUnreachable', '{name} could not be reached.'],
         justNow: ['dashboard.widgetMediaJustNow', 'just now'],
         minutesAgo: ['dashboard.widgetMediaMinutesAgo', '{n}m'],
@@ -49,6 +50,28 @@
         perSecond: ['dashboard.widgetMediaPerSecond', '{size}/s'],
         totalsActive: ['dashboard.widgetMediaTotalsActive', '{n} downloading'],
         totalsPaused: ['dashboard.widgetMediaTotalsPaused', '{n} paused'],
+        switchLabel: ['dashboard.widgetMediaSwitchLabel', '{title} on or off'],
+        start: ['dashboard.widgetMediaStart', 'Start'],
+        started: ['dashboard.widgetMediaStarted', '✓'],
+        viewOnly: ['dashboard.widgetMediaViewOnly', 'View only'],
+        switchFailed: ['dashboard.widgetMediaSwitchFailed', 'Could not switch {title}.'],
+        notFound: ['dashboard.widgetMediaNotFound', 'not found'],
+        valueOn: ['dashboard.widgetMediaValueOn', 'on'],
+        valueOff: ['dashboard.widgetMediaValueOff', 'off'],
+        valueOpen: ['dashboard.widgetMediaValueOpen', 'open'],
+        valueClosed: ['dashboard.widgetMediaValueClosed', 'closed'],
+        valueDetected: ['dashboard.widgetMediaValueDetected', 'detected'],
+        valueClear: ['dashboard.widgetMediaValueClear', 'clear'],
+        valueLocked: ['dashboard.widgetMediaValueLocked', 'locked'],
+        valueUnlocked: ['dashboard.widgetMediaValueUnlocked', 'unlocked'],
+        valueUnavailable: ['dashboard.widgetMediaValueUnavailable', 'unavailable'],
+    };
+
+    /* A glyph per kind of entity; Home Assistant's own mdi: icons would need a font. */
+    const ENTITY_GLYPHS = {
+        light: '💡', switch: '🔌', fan: '🌀', toggle: '⏻', scene: '🎬', script: '📜',
+        temperature: '🌡', humidity: '💧', battery: '🔋', power: '⚡', energy: '⚡', illuminance: '☀',
+        door: '🚪', window: '🪟', motion: '🏃', lock: '🔒', cover: '▤', sensor: '◉',
     };
 
     const ERROR_WORDS = {
@@ -56,6 +79,7 @@
         'address not allowed': 'notAllowed',
         'key refused': 'refused',
         'no libraries': 'noLibraries',
+        'no entities': 'noEntities',
         unreachable: 'unreachable',
     };
 
@@ -138,7 +162,10 @@
         const held = dash._widgetMedia[key];
         if (held && held.until > Date.now()) return held.result;
         try {
-            const res = await fetch(`/api/widgets/${service.id}?pageId=${encodeURIComponent(pageId)}`
+            // With the write token: Home Assistant says from it whether this
+            // reader may switch, and a bare fetch would always read "no".
+            const send = typeof window.nextDashFetch === 'function' ? window.nextDashFetch : fetch;
+            const res = await send(`/api/widgets/${service.id}?pageId=${encodeURIComponent(pageId)}`
                 + `&id=${encodeURIComponent(widget.id)}`);
             if (!res.ok) return null;
             const result = await res.json();
@@ -272,7 +299,128 @@
         return button;
     }
 
+    /*
+     * An entity's line: its glyph and name as one button (open or details,
+     * like any line), and beside it -- not inside it -- its value, a switch or
+     * a start button, so each is its own stop for the keyboard.
+     */
+    const entityState = new Map();
+
+    function entityValueText(dash, widget, item) {
+        if (item.unavailable) return say(dash, widget, 'valueUnavailable');
+        const value = String(item.value || '');
+        const pairs = {
+            door: { on: 'valueOpen', off: 'valueClosed' },
+            window: { on: 'valueOpen', off: 'valueClosed' },
+            motion: { on: 'valueDetected', off: 'valueClear' },
+            lock: { locked: 'valueLocked', unlocked: 'valueUnlocked' },
+            cover: { open: 'valueOpen', closed: 'valueClosed' },
+        }[item.icon] || { on: 'valueOn', off: 'valueOff' };
+        return pairs[value] ? say(dash, widget, pairs[value]) : value;
+    }
+
+    function entityMessage(row, text) {
+        const panel = row.closest('.media-panel') || row.parentElement;
+        panel?.querySelector('.media-stale')?.remove();
+        if (text) panel?.appendChild(textBlock('p', 'media-stale', text));
+    }
+
+    async function entityAction(dash, widget, item, button, row) {
+        const state = entityState.get(widget.id) || {};
+        if (button.getAttribute('aria-busy') === 'true') return;
+        const toggle = item.control === 'toggle';
+        const before = button.getAttribute('aria-pressed');
+        button.setAttribute('aria-busy', 'true');
+        if (toggle) button.setAttribute('aria-pressed', before === 'true' ? 'false' : 'true');
+        entityMessage(row, '');
+        let ok = false;
+        let answer = null;
+        try {
+            const send = typeof window.nextDashFetch === 'function' ? window.nextDashFetch : fetch;
+            const res = await send('/api/widgets/homeassistant/action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pageId: state.pageId, id: widget.id, entity: item.id }),
+            });
+            ok = res.ok;
+            answer = ok ? await res.json().catch(() => null) : null;
+        } catch (_error) {
+            ok = false;
+        }
+        button.removeAttribute('aria-busy');
+        if (!ok) {
+            if (toggle) button.setAttribute('aria-pressed', before);
+            entityMessage(row, say(dash, widget, 'switchFailed', { title: item.title }));
+            return;
+        }
+        // The next read asks Home Assistant again rather than the old answer.
+        if (dash?._widgetMedia) delete dash._widgetMedia[`homeassistant:${state.pageId}:${widget.id}`];
+        const changed = (answer?.states || []).find((s) => s.id === item.id);
+        if (toggle && changed) {
+            item.on = !!changed.on;
+            item.value = changed.state;
+            button.setAttribute('aria-pressed', String(item.on));
+        }
+        if (!toggle) {
+            button.textContent = say(dash, widget, 'started');
+            setTimeout(() => { button.textContent = say(dash, widget, 'start'); }, 2000);
+        }
+    }
+
+    function entityRow(dash, widget, item) {
+        const state = entityState.get(widget.id) || {};
+        const row = document.createElement('div');
+        row.className = 'media-entity';
+        if (item.unavailable) row.classList.add('is-unavailable');
+        if (item.missing) row.classList.add('is-missing');
+
+        const name = itemButton(dash, widget, item, 'media-row media-row--bare media-entity-name');
+        name.appendChild(textBlock('span', 'media-entity-glyph', ENTITY_GLYPHS[item.icon] || ENTITY_GLYPHS.sensor));
+        const text = document.createElement('span');
+        text.className = 'media-row-text';
+        text.appendChild(textBlock('span', 'media-title', item.title));
+        const meta = [];
+        if (item.missing) meta.push(say(dash, widget, 'notFound'));
+        else if (widget?.config?.showLastChanged && Number(item.addedAt) > 0) meta.push(agoText(dash, widget, item.addedAt));
+        if (widget?.config?.layout === 'list') meta.unshift(item.library);
+        if (meta.filter(Boolean).length) text.appendChild(textBlock('span', 'media-meta', meta.filter(Boolean).join(' · ')));
+        name.appendChild(text);
+        row.appendChild(name);
+
+        let control = null;
+        if (item.control === 'toggle') {
+            control = document.createElement('button');
+            control.type = 'button';
+            control.className = 'media-switch';
+            control.dataset.haToggle = item.id;
+            control.setAttribute('aria-pressed', String(!!item.on));
+            control.setAttribute('aria-label', say(dash, widget, 'switchLabel', { title: item.title }));
+        } else if (item.control === 'run') {
+            control = textBlock('button', 'media-run', say(dash, widget, 'start'));
+            control.type = 'button';
+            control.dataset.haRun = item.id;
+            control.setAttribute('aria-label', `${say(dash, widget, 'start')}: ${item.title}`);
+        }
+        if (control) {
+            if (!state.controls) {
+                control.disabled = true;
+                control.title = say(dash, widget, 'viewOnly');
+            }
+            control.addEventListener('click', (event) => {
+                event.stopPropagation();
+                void entityAction(dash, widget, item, control, row);
+            });
+            row.appendChild(control);
+        } else if (!item.missing) {
+            const value = textBlock('span', 'media-entity-value', entityValueText(dash, widget, item));
+            value.dataset.haValue = item.id;
+            row.appendChild(value);
+        }
+        return row;
+    }
+
     function listRow(dash, widget, item, { extras = true } = {}) {
+        if (item.kind === 'entity') return entityRow(dash, widget, item);
         const row = itemButton(dash, widget, item, 'media-row');
         const text = document.createElement('span');
         text.className = 'media-row-text';
@@ -548,11 +696,13 @@
             return;
         }
         const items = Array.isArray(result.items) ? result.items : [];
+        entityState.set(widget.id, { pageId, controls: result.controls === true });
         if (result.error && !items.length) {
             sayIn(body, 'dashboard-widget-empty', errorText(dash, widget, result.error));
             return;
         }
-        const layout = LAYOUTS[widget?.config?.layout] ? widget.config.layout : 'list';
+        const chosen = widget?.config?.layout || service.defaultLayout;
+        const layout = LAYOUTS[chosen] ? chosen : 'list';
         const totals = result.totals && widget?.config?.hideTotals !== true
             ? totalsLine(dash, widget, result.totals) : null;
         // The strip has a tab per group, and an empty tab says why itself.
