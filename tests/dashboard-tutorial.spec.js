@@ -11,7 +11,7 @@ const { markWhatsNewSeen } = require('./e2e-helpers');
  * the one that decides whether it opens.
  */
 
-const STEPS = 21;
+const STEPS = 7;
 const TIP = 'dashboardTutorialV3';
 const modal = (page) => page.locator('#app-modal.show .dashboard-tutorial-modal');
 const next = (page) => page.locator('.modal-actions .modal-button').first();
@@ -60,13 +60,12 @@ test.describe('dashboard tour', () => {
         await expect(modal(page)).toBeVisible({ timeout: 10_000 });
     });
 
-    test('a reader who saw the earlier tour gets this one once, opening on what is new', async ({ page }) => {
+    test('a reader who saw the earlier tour gets this one once', async ({ page }) => {
         await page.addInitScript(() => { window.__e2eSeenTips = ['dashboardTutorialV2']; });
         await loadWithTourPending(page);
         expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenTip('dashboardTutorialV2'))).toBe(true);
         await expect(modal(page)).toBeVisible({ timeout: 10_000 });
-        await expect(page.locator('.dashboard-tutorial-step-title'))
-            .toHaveText('New: move categories and widgets where you want them');
+        await expect(page.locator('.dashboard-tutorial-step-title')).toHaveText('Pages, categories, bookmarks');
     });
 
     test('Next walks every step, and finishing marks it seen', async ({ page }) => {
@@ -81,27 +80,13 @@ test.describe('dashboard tour', () => {
             }
         }
         expect(titles).toEqual([
-            'New: move categories and widgets where you want them',
-            'New: search the web from the search panel',
-            'New: every app gets its own icon',
-            'New: recolour a theme, or save what is on screen',
-            'New: your Unraid server on the dashboard',
-            'The theme browser opens beside your dashboard',
-            'Every theme has a backdrop of its own',
-            'Looks, card glass and category headers',
             'Pages, categories, bookmarks',
             'Start typing',
-            'Shortcuts open a bookmark in two keys',
-            'A cursor, and Shift for everything',
-            'Adding: paste, +, or one line',
-            'The dashboard knows when a link breaks',
-            'All your bookmarks in one list',
-            'The inbox: links you have not placed yet',
-            'Containers: what runs on your server',
-            'More than links',
-            'The keys worth learning first',
-            'Make it yours in Config',
-            'The cheat sheet, and the tours',
+            'Two keys to open, Shift to act',
+            'Adding: paste, + or the extension',
+            'Tags: the cloud and a view per tag',
+            'Bookmarks, Inbox and Containers',
+            'Make it yours, and find help',
         ]);
         await next(page).click();
         await expect(page.locator('#app-modal.show')).toHaveCount(0);
@@ -190,9 +175,8 @@ test.describe('dashboard tour', () => {
                 await expect(page.locator('.dashboard-tutorial-dot').nth(i + 1)).toHaveClass(/is-active/);
             }
         }
-        // A command is typed as it is, in every language: :config help is a key, not a label.
-        // Unraid's own names for its disks and places (parity, disk1, array, cache) are
-        // written as Unraid shows them, like a container name.
+        // Bookmark names, tag names and keys are the reader's data or the
+        // keyboard, not labels, so they stay as they are in every language.
         const english = [...words].filter((w) => !w.startsWith(':')).filter((w) =>
             /\b(development|media|home lab|search|commands|finders|edit|move|tags|tick|delete|bookmark|inbox|containers|pages|add|config|recent|back|cheat|weather|unsorted|broken|stale|duplicates|never|promote|keep|triage|tours|guide|saved|default|opens|themes|backdrop|looks|cancel|apply|aurora|dunes|hexagons|glass|frosted|paper|plain|clean|underlined|boxed|neutrals|web|news|video|choose|letter|automatic|recolour|accent|running|shares|asks)\b/i.test(w));
         expect(english).toEqual([]);

@@ -6,10 +6,9 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * The one-time Widgets tour.
  *
  * The Widgets tab opens on your own widgets and one button, which says nothing
- * about the two things worth knowing: that thirteen types need no setup at all,
- * and that the fourteenth reaches any address answering JSON. The second is
- * invisible from the tab — the catalogue says "Custom" and leaves the reader to
- * guess what that reaches.
+ * about the two things worth knowing: that the catalogue holds ready-made
+ * widgets, many needing no setup, and that the custom widget reaches any
+ * address answering JSON.
  */
 
 async function openDashboard(page) {
@@ -56,7 +55,7 @@ test.describe('the widgets tour', () => {
         await expect(tour.locator('.widgets-tutorial-hero')).toBeVisible();
 
         // Walk to the end and close it.
-        for (let step = 0; step < 7; step += 1) {
+        for (let step = 0; step < 4; step += 1) {
             await next(page);
         }
         await expect(page.locator('#app-modal.show')).toHaveCount(0, { timeout: 10_000 });
@@ -89,7 +88,7 @@ test.describe('the widgets tour', () => {
         await expect(page.locator('#app-modal.show .widgets-tutorial-modal')).toBeVisible({ timeout: 15_000 });
 
         const seen = [];
-        for (let step = 0; step < 7; step += 1) {
+        for (let step = 0; step < 4; step += 1) {
             seen.push(await page.evaluate(() => {
                 const root = document.querySelector('.widgets-tutorial');
                 return {
@@ -101,7 +100,7 @@ test.describe('the widgets tour', () => {
             await next(page);
         }
 
-        expect(seen).toHaveLength(7);
+        expect(seen).toHaveLength(4);
         seen.forEach((step, i) => {
             expect(step.visual, `step ${i + 1} has no visual`).toBe(true);
             expect(step.words, `step ${i + 1} has no prose`).toBeGreaterThan(80);

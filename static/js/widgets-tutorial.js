@@ -6,12 +6,9 @@
  * them.
  *
  * Why it exists: the Widgets tab opens on a list of your own widgets and a
- * button, which says nothing about the two things worth knowing — that thirteen
- * of the types read data this install already has and need no setup at all, and
- * that the fourteenth points at any address answering JSON, which is what turns
- * the dashboard into a readout of the services you run. That second one is
- * invisible from the tab: the catalogue says "Custom" and leaves the reader to
- * guess what it can reach.
+ * button, which says nothing about the two things worth knowing -- that the
+ * catalogue holds ready-made widgets, many needing no setup, and that the
+ * custom widget points at any address answering JSON. Four short steps.
  *
  * The first step is deliberately an animation rather than prose. What a custom
  * widget does — ask an address, put the answer on the grid — is a movement, and
@@ -49,19 +46,6 @@
     /** A key hint, matching the chips under the grid. */
     const key = (k, label) =>
         `<span class="widgets-tutorial-key"><kbd>${esc(k)}</kbd>${esc(label)}</span>`;
-
-    /** A stand-in tile: a title bar and a row of figures, as on the dashboard. */
-    function tile(title, figures, extra = '') {
-        const cells = figures.map(([value, label]) => `
-            <span class="widgets-tutorial-stat">
-                <span class="widgets-tutorial-stat-value">${esc(value)}</span>
-                <span class="widgets-tutorial-stat-label">${esc(label)}</span>
-            </span>`).join('');
-        return `<span class="widgets-tutorial-tile${extra}">
-            <span class="widgets-tutorial-tile-title">// ${esc(title)}</span>
-            <span class="widgets-tutorial-tile-body">${cells}</span>
-        </span>`;
-    }
 
     /*
      * The opening animation: an address, a request travelling along the wire,
@@ -108,39 +92,28 @@
     function steps() {
         return [
             {
-                title: t('widgetsTutorialStep1Title', 'A block that answers “what is going on”'),
+                title: t('widgetsTour2WhatTitle', 'A block that shows what is going on'),
                 visual: heroVisual(),
-                body: `<p>${esc(t('widgetsTutorialStep1Body1',
-                    'A dashboard of links answers “where do I go”. A widget answers the other question: how much is waiting, what is down, how full the disk is. It sits among your categories, is dragged into place like one, and is one or two columns wide.'))}</p>
-                <p>${esc(t('widgetsTutorialStep1Body2',
-                    'Most of them need nothing set up at all. And one of them — the custom widget — points at any address on your network that answers with JSON, which is what puts the services you run on the page beside the links to them. Six short steps.'))}</p>`,
+                body: `<p>${esc(t('widgetsTour2WhatBody1',
+                    'A widget sits among your categories and shows what is going on: how much is waiting, what is down, how full the disk is.'))}</p>
+                <p>${esc(t('widgetsTour2WhatBody2',
+                    'Many need nothing set up at all. Click a figure and you land on the rows behind it.'))}</p>`,
             },
             {
-                title: t('widgetsTutorialStep2Title', 'Thirteen tiles that read what nextDash already keeps'),
-                visual: `<div class="widgets-tutorial-visual widgets-tutorial-visual--tiles">
-                    ${tile(t('widgetsTutorialTileHealth', 'health'), [['0', t('widgetsTutorialTileBroken', 'broken')], ['8', t('widgetsTutorialTileHealthy', 'healthy')]])}
-                    ${tile(t('widgetsTutorialTileInbox', 'inbox'), [['3', t('widgetsTutorialTileWaiting', 'waiting')], ['2d', t('widgetsTutorialTileOldest', 'oldest')]])}
+                title: t('widgetsTour2CatalogueTitle', 'A catalogue of ready-made widgets'),
+                visual: `<div class="widgets-tutorial-visual widgets-tutorial-visual--presets">
+                    ${[t('widgetsTour2KindHealth', 'Health'), t('widgetsTour2KindInbox', 'Inbox'), t('widgetsTour2KindWeather', 'Weather'),
+                        t('widgetsTour2KindCalendar', 'Calendar'), t('widgetsTour2KindFeeds', 'Feeds'), t('widgetsTour2KindDisks', 'Disks'),
+                        'Jellyfin', 'Sonarr', 'Radarr', 'Seerr', 'qBittorrent', 'SABnzbd', 'Unraid', 'Home Assistant']
+                        .map((name) => chip(name)).join('')}
                 </div>`,
-                body: `<p>${esc(t('widgetsTutorialStep2Body1',
-                    'Health, Uptime, Certificates and Trend report what the health view reports. Inbox says what is waiting, Feeds which feed went quiet, Sources which import failed. Neglected, Blind spots, Duplicates, Archive, Trash and Backups each name a kind of tidying.'))}</p>
-                <p>${esc(t('widgetsTutorialStep2Body2',
-                    'None of them polls anything new: the figures are already on disk and had nowhere to show. Click a figure and you land on the rows behind it, filtered.'))}</p>`,
+                body: `<p>${esc(t('widgetsTour2CatalogueBody1',
+                    'Some widgets read what nextDash already keeps: health, uptime, the inbox and feeds. Others show the machine, the weather or a calendar.'))}</p>
+                <p>${esc(t('widgetsTour2CatalogueBody2',
+                    'Media and home widgets read Jellyfin, Sonarr, Radarr, qBittorrent, Unraid or Home Assistant once you connect them. Add a widget opens the catalogue, with search.'))}</p>`,
             },
             {
-                title: t('widgetsTutorialStep3Title', 'Each one has a few settings, and no more'),
-                visual: `<div class="widgets-tutorial-visual">
-                    ${chip(t('widgetsTutorialChipPage', 'This page or all'))}
-                    ${chip(t('widgetsTutorialChipRows', 'Rows: 5'))}
-                    ${chip(t('widgetsTutorialChipWidth', 'One column / two'))}
-                    ${chip(t('widgetsTutorialChipShown', 'Shown'), ' is-on')}
-                </div>`,
-                body: `<p>${esc(t('widgetsTutorialStep3Body1',
-                    'What it counts, how many rows it shows, what it is called, how wide it is. Leave the title empty and the tile uses its type’s name. A tile that leaves rows out says how many, because five of twelve should not look like five of five.'))}</p>
-                <p>${esc(t('widgetsTutorialStep3Body2',
-                    'Shown takes a widget off the dashboard without deleting it or losing its settings — the same switch the Close entry on the dashboard writes.'))}</p>`,
-            },
-            {
-                title: t('widgetsTutorialStep4Title', 'The custom widget: any address that answers JSON'),
+                title: t('widgetsTour2CustomTitle', 'The custom widget: any address that answers JSON'),
                 visual: `<div class="widgets-tutorial-visual widgets-tutorial-visual--map">
                     <pre class="widgets-tutorial-json">{ "totalRecords": <b>7</b>,
   "cpu": { "load": <b>38</b> } }</pre>
@@ -150,50 +123,23 @@
                         ${chip('cpu.load')}
                     </span>
                 </div>`,
-                body: `<p>${esc(t('widgetsTutorialStep4Body1',
-                    'Give it an address, then name the fields you want by their path into the answer — totalRecords, cpu.load, data.0.name. Each becomes a figure on the tile, with a label you choose and a shape: a count, a percentage, bytes, a duration, a date, or plain text.'))}</p>
-                <p>${esc(t('widgetsTutorialStep4Body2',
-                    'A path into a list works too, so an endpoint that returns items can be drawn as rows rather than figures. Nothing is hard-coded per service: if it speaks JSON over HTTP, it can be a tile.'))}</p>`,
+                body: `<p>${esc(t('widgetsTour2CustomBody1',
+                    'Give it an address, then name the fields you want by their path, such as cpu.load. Presets fill this in for dozens of common services.'))}</p>
+                <p>${esc(t('widgetsTour2CustomBody2',
+                    'nextDash fetches the address itself, not your browser. The key stays on the server, and a service your browser cannot reach still works.'))}</p>`,
             },
             {
-                title: t('widgetsTutorialStep5Title', 'Forty-one services already written down'),
-                visual: `<div class="widgets-tutorial-visual widgets-tutorial-visual--presets">
-                    ${['Sonarr', 'Radarr', 'Plex', 'Jellyfin', 'Immich', 'qBittorrent', 'SABnzbd',
-                        'Pi-hole', 'AdGuard Home', 'Traefik', 'Proxmox VE', 'Uptime Kuma', 'Glances',
-                        'Syncthing', 'Nextcloud', 'Paperless-ngx', 'Home Assistant', 'Grafana', 'ntfy']
-                        .map((name) => chip(name)).join('')}
-                    ${chip(t('widgetsTutorialPresetsMore', '…and twenty-two more'), ' is-quiet')}
-                </div>`,
-                body: `<p>${esc(t('widgetsTutorialStep5Body1',
-                    'Pick a preset and the address shape, the fields and the labels arrive already written — media servers and downloaders, the network boxes, the machine itself, and the everyday apps. You edit it from there rather than starting at a blank form.'))}</p>
-                <p>${esc(t('widgetsTutorialStep5Body2',
-                    'A preset is a starting point, not a lock: change a path, drop a figure, point it at a different host. And a service nobody has written down yet is the same form with the fields left blank.'))}</p>`,
-            },
-            {
-                title: t('widgetsTutorialStep6Title', 'The request is made by the server, and the key stays there'),
-                visual: `<div class="widgets-tutorial-visual">
-                    ${chip(t('widgetsTutorialAuthHeader', 'Header'))}
-                    ${chip(t('widgetsTutorialAuthKey', 'API key'))}
-                    ${chip(t('widgetsTutorialAuthBasic', 'Username & password'))}
-                    <span class="widgets-tutorial-visual-hint">${esc(t('widgetsTutorialAuthHint', 'Kept on the machine running nextDash, out of the page and out of your backups'))}</span>
-                </div>`,
-                body: `<p>${esc(t('widgetsTutorialStep6Body1',
-                    'The tile’s address is fetched by nextDash itself, not by your browser. That is what lets a widget read a service your browser cannot reach at all, and it keeps the token out of a page anyone can view the source of.'))}</p>
-                <p>${esc(t('widgetsTutorialStep6Body2',
-                    'It inherits the same protections as every other outbound request — the address checks and the rate limit — and a widget that needs a sign-in says so on the tile rather than failing quietly.'))}</p>`,
-            },
-            {
-                title: t('widgetsTutorialStep7Title', 'On the page it behaves like a category'),
+                title: t('widgetsTour2PageTitle', 'On the page it behaves like a category'),
                 visual: `<div class="widgets-tutorial-visual widgets-tutorial-visual--keys">
                     ${key('F2', t('widgetsTutorialKeyRename', 'rename'))}
                     ${key('Shift+W', t('widgetsTutorialKeyWidth', 'one column or two'))}
                     ${key('Delete', t('widgetsTutorialKeyClose', 'close'))}
                     ${key('Enter', t('widgetsTutorialKeyFold', 'fold'))}
                 </div>`,
-                body: `<p>${esc(t('widgetsTutorialStep7Body1',
-                    'Drag the // in its title to move it among your categories, click the header to fold it away, and right-click it for rename, width, settings and close. The arrow keys walk into a tile and through its rows, and Enter on a row does what clicking it does.'))}</p>
-                <p>${esc(t('widgetsTutorialStep7Body2',
-                    'Everything here is also on this tab: Add a widget opens the catalogue, and the Catalogue tab draws each kind before you take it.'))}</p>`,
+                body: `<p>${esc(t('widgetsTour2PageBody1',
+                    'Drag the // in its title to move it, click the header to fold it, and right-click it for rename, width, settings and close.'))}</p>
+                <p>${esc(t('widgetsTour2PageBody2',
+                    'Shown, in Config → Widgets, takes a widget off the page without losing its settings. The Tour button above the list brings this tour back.'))}</p>`,
             },
         ];
     }

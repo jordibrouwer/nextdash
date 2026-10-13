@@ -9,9 +9,9 @@
  * suggests there is a side panel, a snooze clock or a keyboard to find. This
  * exists to say so once, at the only moment the reader is looking at it.
  *
- * It walks the loop in the order someone meets it: a link arrives, it is read
- * or put off, the side panel shows what it knows, and it leaves as a bookmark,
- * a kept link waiting in Bookmarks › Unsorted, or nothing at all.
+ * Four steps, in the order someone meets the loop: a link arrives, it is read
+ * or put off, it leaves as a bookmark, a kept link or nothing, and triage
+ * works through them one at a time.
  */
 (function (global) {
     'use strict';
@@ -91,7 +91,6 @@
         .itv-pill.is-dashed .itv-pill-box { stroke-dasharray: 3 2; }
         .itv-pill.is-danger .itv-pill-box { stroke: var(--accent-error, var(--border-primary)); stroke-opacity: 1; }
         .itv-panel { fill: var(--background-primary); stroke: var(--border-primary); stroke-width: 1; }
-        .itv-rule { stroke: var(--border-primary); stroke-width: 1; }
         .itv-icon-box { fill: var(--background-primary); stroke: var(--border-primary); stroke-width: 1; }
         .itv-icon { fill: none; stroke: var(--text-primary); stroke-width: 1.4; stroke-linejoin: round; stroke-linecap: round; }
         .itv-icon-group.is-active .itv-icon-box { stroke: var(--accent-primary); stroke-width: 1.5; }
@@ -110,9 +109,6 @@
         .itv-a-bump { animation-name: itv-bump; }
         .itv-a-read { animation-name: itv-read; }
         .itv-a-sleep { animation-name: itv-sleep; }
-        .itv-a-panel { animation-name: itv-panel; }
-        .itv-a-chip { animation-name: itv-chip; }
-        .itv-a-fly { animation-name: itv-fly; transform-origin: left center; }
         .itv-a-card { animation-name: itv-card; }
         .itv-a-press { animation-name: itv-press; }
 
@@ -126,15 +122,6 @@
         @keyframes itv-read { 0%, 26% { opacity: 1; } 38%, 84% { opacity: 0.45; } 96%, 100% { opacity: 1; } }
         /* A snoozed row slides off to sleep, and wakes again. */
         @keyframes itv-sleep { 0%, 44% { opacity: 1; transform: none; } 58%, 82% { opacity: 0; transform: translateX(-26px); } 96%, 100% { opacity: 1; transform: none; } }
-        /* The side panel slides in from the right. */
-        @keyframes itv-panel { 0%, 10% { opacity: 0; transform: translateX(46px); } 32%, 100% { opacity: 1; transform: none; } }
-        /* A suggested chip is taken: it firms up, briefly. */
-        @keyframes itv-chip { 0%, 52% { transform: none; } 60% { transform: scale(1.12); } 70%, 100% { transform: none; } }
-        /* A kept row flies to the Bookmarks icon, and a fresh one takes its place. */
-        @keyframes itv-fly { 0%, 20% { opacity: 1; transform: none; }
-            52% { opacity: 1; transform: translate(252px, -84px) scale(0.18); }
-            56%, 78% { opacity: 0; transform: translate(252px, -84px) scale(0.18); }
-            80% { opacity: 0; transform: none; } 94%, 100% { opacity: 1; transform: none; } }
         /* The triage card: one link out, the next one in. */
         @keyframes itv-card { 0%, 40% { opacity: 1; transform: none; } 50% { opacity: 0; transform: translateX(-22px); }
             54% { opacity: 0; transform: translateX(22px); } 66%, 100% { opacity: 1; transform: none; } }
@@ -263,7 +250,7 @@
 
     /**
      * Each step: a scene, a title, and two short paragraphs. The copy is new
-     * with this version of the tour, so its keys are too (inboxTour3*) --
+     * with this version of the tour, so its keys are too (inboxTour4*) --
      * reusing the old ones would have shown the old paragraphs in every
      * translated locale.
      */
@@ -273,7 +260,7 @@
         const del = t('inboxDelete', 'Delete');
         return [
             {
-                title: t('inboxTour3S1Title', 'A waiting room for links'),
+                title: t('inboxTour4ArriveTitle', 'A waiting room for links'),
                 visual: svg(`
                     ${pill(14, 26, t('inboxTutorialSourcePaste', 'Paste'), { w: 84 })}
                     ${pill(14, 64, t('inboxTutorialSourceExtension', 'Extension'), { w: 84 })}
@@ -287,13 +274,13 @@
                     ${row(262, 96, 204, 'Zig Language', { site: 'ziglang.org', motion: anim('drop', 0.7) })}
                     ${headerIcon(440, 12, 'inbox', { count: 2, active: true, motion: anim('bump', 0.4) })}
                 `, t('inboxTour3S1Alt', 'Links from three sources arrive as rows in the inbox')),
-                body: `<p>${esc(t('inboxTour3S1Body1',
-                    'Paste a URL on the dashboard, save one from the browser extension or a share sheet, and it lands here — one row per link — until you decide what it is for.'))}</p>
-                    <p>${esc(t('inboxTour3S1Body2',
-                    'Nothing here expires and nothing is a bookmark yet. The inbox icon in the header counts what is still unread.'))}</p>`,
+                body: `<p>${esc(t('inboxTour4ArriveBody1',
+                    'Paste a URL on the dashboard, or save one from the browser extension or a share sheet, and it lands here until you decide what it is for.'))}</p>
+                    <p>${esc(t('inboxTour4ArriveBody2',
+                    'Nothing here expires, and nothing is a bookmark yet. The inbox icon in the header counts what is unread.'))}</p>`,
             },
             {
-                title: t('inboxTour3S2Title', 'Read, snoozed, noted'),
+                title: t('inboxTour4LaterTitle', 'Read, snooze or note'),
                 visual: (() => {
                     const r = keyPair(360, 20, 'r', t('inboxTour3S2Read', 'read'));
                     const z = keyPair(360, 56, 'z', t('inboxTour3S2Snooze', 'snooze'));
@@ -307,37 +294,13 @@
                         ${label(104, 138, t('inboxTour3S2Caption', 'a snoozed link leaves every count until it wakes'), 'itv-caption')}
                     `, t('inboxTour3S2Alt', 'r marks a link read, z snoozes it, n adds a note'));
                 })(),
-                body: `<p>${esc(t('inboxTour3S2Body1',
-                    'A new link stays unread until you open it or press r. z snoozes it to a time you pick — tomorrow, the weekend, a date of your own — and it leaves every count until it wakes.'))}</p>
-                    <p>${esc(t('inboxTour3S2Body2',
-                    'n writes a line on why you saved it. The filters on the left narrow the list to any of these.'))}</p>`,
+                body: `<p>${esc(t('inboxTour4LaterBody1',
+                    'A link stays unread until you open it or press r. z snoozes it until a time you pick, and it leaves every count until then.'))}</p>
+                    <p>${esc(t('inboxTour4LaterBody2',
+                    'n adds a note on why you saved it. The side panel shows the focused link with its note and tags.'))}</p>`,
             },
             {
-                title: t('inboxTour3S3Title', 'The side panel'),
-                visual: svg(`
-                    ${rail(20, 32, 0)}
-                    ${row(104, 20, 170, 'Rust Book', { accent: true, unread: true })}
-                    ${row(104, 48, 170, 'Deno Manual')}
-                    ${row(104, 76, 170, 'Zig Language')}
-                    <g class="itv-anim itv-a-panel">
-                        <rect x="288" y="8" width="184" height="134" rx="8" class="itv-panel"/>
-                        ${label(300, 28, 'Rust Book', 'itv-heading')}
-                        ${label(300, 42, 'rust-lang.org')}
-                        ${pillRow(300, 50, [[t('inboxOpen', 'Open'), 'active'], [promote, 'plain'], [keep, 'plain']], 5)}
-                        <line x1="300" y1="80" x2="460" y2="80" class="itv-rule"/>
-                        ${label(300, 96, t('inboxDrawerNote', 'Note'), 'itv-title')}
-                        ${label(300, 116, t('inboxDrawerTags', 'Tags'), 'itv-title')}
-                        ${pill(344, 104, '#rust', { kind: 'active' })}
-                        ${pill(396, 104, '#docs', { kind: 'dashed', motion: anim('chip', 0.3) })}
-                    </g>
-                `, t('inboxTour3S3Alt', 'The focused row opens in a side panel with Open, Promote and Keep')),
-                body: `<p>${esc(t('inboxTour3S3Body1',
-                    'Focus a row and the panel on the right shows it: Open, Promote and Keep at the top, then the note, the tags and the details.'))}</p>
-                    <p>${esc(t('inboxTour3S3Body2',
-                    'Under the tags, dashed chips are suggestions — click one to add it.'))}</p>`,
-            },
-            {
-                title: t('inboxTour3S4Title', 'Every link leaves one of three ways'),
+                title: t('inboxTour4LeaveTitle', 'Every link leaves one of three ways'),
                 visual: svg(`
                     ${row(16, 64, 150, 'Rust Book', { accent: true, unread: true })}
                     ${arrow('M168,70 C206,32 222,28 250,28', { delay: 0 })}
@@ -350,30 +313,13 @@
                     ${pill(256, 112, del, { kind: 'danger', w: 76 })}
                     ${label(340, 126, t('inboxTour3S4Delete', 'gone, with Undo'))}
                 `, t('inboxTour3S4Alt', 'Promote, Keep or Delete')),
-                body: `<p>${esc(t('inboxTour3S4Body1',
-                    'Promote (p) opens the bookmark form with the address, title, note and tags filled in; you choose the page and category. Delete (d) throws it away, with Undo.'))}</p>
-                    <p>${esc(t('inboxTour3S4Body2',
-                    'Keep (Shift+K) is the third answer: worth holding on to, but not ready for a page yet.'))}</p>`,
+                body: `<p>${esc(t('inboxTour4LeaveBody1',
+                    'Promote (p) opens the bookmark form with the address, title, note and tags filled in. Delete (d) throws the link away, with Undo.'))}</p>
+                    <p>${esc(t('inboxTour4LeaveBody2',
+                    'Keep (Shift+K) files it under Bookmarks › Unsorted, for later. Shift+U opens that list.'))}</p>`,
             },
             {
-                title: t('inboxTour3S5Title', 'Kept links wait in Bookmarks › Unsorted'),
-                visual: svg(`
-                    ${row(24, 104, 176, 'Rust Book', { site: 'rust-lang.org', accent: true, motion: anim('fly') })}
-                    ${arrow('M112,100 C160,60 236,48 280,40', { dashed: true })}
-                    ${headerIcon(242, 8, 'inbox')}
-                    ${headerIcon(276, 8, 'bookmarks', { count: 3, active: true, motion: anim('bump', 0.1) })}
-                    ${label(318, 70, t('inboxTour3S5Bookmarks', 'Bookmarks'), 'itv-heading')}
-                    ${pill(318, 80, t('inboxTour3S5Unsorted', 'Unsorted'), { kind: 'active' })}
-                    ${keycap(318, 112, 'Shift+U')}
-                    ${label(384, 126, t('inboxTour3S5Opens', 'opens it'))}
-                `, t('inboxTour3S5Alt', 'A kept link flies to Bookmarks, where Shift+U opens Unsorted')),
-                body: `<p>${esc(t('inboxTour3S5Body1',
-                    'A kept link leaves the queue for good, note and tags included, and flies to the Bookmarks icon. A toast says where it went, with Undo.'))}</p>
-                    <p>${esc(t('inboxTour3S5Body2',
-                    'Shift+U opens Bookmarks on the Unsorted filter. Promote in a kept link’s side panel gives it a page, with the same form as here.'))}</p>`,
-            },
-            {
-                title: t('inboxTour3S6Title', 'Triage, and the keys'),
+                title: t('inboxTour4TriageTitle', 'Triage, and the keys'),
                 visual: (() => {
                     const rows = [
                         [['j / k', t('inboxKeyMove', 'move')], ['r', t('inboxTour3KeyRead', 'read')]],
@@ -398,10 +344,10 @@
                         ${pill(398, 118, t('inboxTour', 'Tour'), { kind: 'active', w: 66 })}
                     `, t('inboxTour3S6Alt', 'Triage shows one link at a time; the keys that work on it'));
                 })(),
-                body: `<p>${esc(t('inboxTour3S6Body1',
-                    't shows one link at a time: j and k move, r marks read, Shift+K keeps, p promotes, z snoozes, d deletes, Escape goes back to the list.'))}</p>
-                    <p class="inbox-tutorial-closing">${esc(t('inboxTour3S6Closing',
-                    'The legend under the list has every key, and Tour, above the list, brings this back whenever you want it.'))}</p>`,
+                body: `<p>${esc(t('inboxTour4TriageBody1',
+                    't shows one link at a time: j and k move, r marks it read, Shift+K keeps, p promotes, z snoozes and d deletes. Escape goes back to the list.'))}</p>
+                    <p class="inbox-tutorial-closing">${esc(t('inboxTour4Closing',
+                    'The legend under the list has every key, and the Tour button above it brings this tour back.'))}</p>`,
             },
         ];
     }

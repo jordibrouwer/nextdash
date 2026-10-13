@@ -11,7 +11,7 @@ const { prepareDashboardInteraction, markWhatsNewSeen } = require('./e2e-helpers
  * it unseen, to exercise the tour itself.
  */
 
-const STEPS = 10;
+const STEPS = 5;
 const TIP = 'bookmarksTutorialV1';
 
 async function openLibraryWithTourUnseen(page) {
@@ -38,7 +38,7 @@ const modal = (page) => page.locator('#app-modal.show .bookmarks-tutorial-modal'
 const next = (page) => page.locator('.modal-actions .modal-button').first();
 
 test.describe('bookmarks view tutorial', () => {
-    test('shows on the first visit, with ten steps', async ({ page }) => {
+    test('shows on the first visit, with five steps', async ({ page }) => {
         await openLibraryWithTourUnseen(page);
         await expect(modal(page)).toBeVisible();
         await expect(page.locator('.bookmarks-tutorial-progress')).toHaveText(`Step 1 of ${STEPS}`);
@@ -58,16 +58,11 @@ test.describe('bookmarks view tutorial', () => {
             }
         }
         expect(titles).toEqual([
-            'Your whole collection, one screen',
-            'The rail: filters that count',
+            'Every bookmark in one list',
             'Three ways to check a link',
-            'A failure says why',
-            'Pages that change behind your back',
-            'Every chart for one bookmark',
-            'Collection health',
+            'Charts and collection health',
             'Hear about it when it breaks',
             'Clear the backlog',
-            'The keys, and where this tour lives',
         ]);
         await expect(next(page)).toHaveText('Got it');
         await next(page).click();

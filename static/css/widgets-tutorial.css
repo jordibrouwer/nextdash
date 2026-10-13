@@ -198,13 +198,6 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
     background: var(--background-secondary);
 }
 
-.widgets-tutorial-visual-hint {
-    font-size: var(--text-xs, 0.72rem);
-    color: var(--text-tertiary);
-    flex: 1 1 12rem;
-    min-width: 0;
-}
-
 .widgets-tutorial-chip {
     font-size: var(--text-xs, 0.72rem);
     padding: var(--space-1, 0.2rem) var(--space-2, 0.55rem);
@@ -212,63 +205,6 @@ body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.widgets-
     border: 1px solid var(--border-secondary);
     color: var(--text-secondary);
     background: var(--background-primary);
-}
-
-.widgets-tutorial-chip.is-on {
-    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-secondary));
-    color: var(--text-primary);
-}
-
-.widgets-tutorial-chip.is-quiet {
-    color: var(--text-tertiary);
-    border-style: dashed;
-}
-
-/* Two stand-in tiles side by side, so "a widget" is a shape before it is a
-   sentence. */
-.widgets-tutorial-visual--tiles {
-    gap: var(--space-2, 0.5rem);
-}
-
-.widgets-tutorial-tile {
-    flex: 1 1 9rem;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1, 0.3rem);
-    padding: var(--space-2, 0.45rem) var(--space-2, 0.55rem);
-    border: 1px solid var(--border-secondary);
-    border-radius: var(--radius-5, 0.45rem);
-    background: var(--background-primary);
-}
-
-.widgets-tutorial-tile-title {
-    font-family: var(--font-mono, monospace);
-    font-size: var(--text-xs, 0.7rem);
-    color: var(--text-tertiary);
-}
-
-.widgets-tutorial-tile-body {
-    display: flex;
-    gap: var(--space-3, 0.75rem);
-}
-
-.widgets-tutorial-stat {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.15;
-}
-
-.widgets-tutorial-stat-value {
-    font-size: var(--text-md, 1rem);
-    font-weight: 600;
-    color: var(--text-primary);
-    font-variant-numeric: tabular-nums;
-}
-
-.widgets-tutorial-stat-label {
-    font-size: var(--text-2xs, 0.64rem);
-    color: var(--text-tertiary);
 }
 
 /* The JSON on the left, the paths it becomes on the right. */

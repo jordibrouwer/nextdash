@@ -11,7 +11,7 @@ const { prepareDashboardInteraction, markWhatsNewSeen } = require('./e2e-helpers
  * leaves it unseen, to exercise the tour itself.
  */
 
-const STEPS = 6;
+const STEPS = 4;
 
 async function openInboxWithoutMarkingTutorialSeen(page) {
     // What's new is a different overlay from the tutorial and this file has no
@@ -54,7 +54,7 @@ async function openInboxWithoutMarkingTutorialSeen(page) {
 const modal = (page) => page.locator('#app-modal.show .inbox-tutorial-modal');
 
 test.describe('inbox tutorial', () => {
-    test('shows on first visit to the inbox, with six steps', async ({ page }) => {
+    test('shows on first visit to the inbox, with four steps', async ({ page }) => {
         await openInboxWithoutMarkingTutorialSeen(page);
 
         await expect(modal(page)).toBeVisible();
@@ -90,10 +90,8 @@ test.describe('inbox tutorial', () => {
         }
         expect(titles).toEqual([
             'A waiting room for links',
-            'Read, snoozed, noted',
-            'The side panel',
+            'Read, snooze or note',
             'Every link leaves one of three ways',
-            'Kept links wait in Bookmarks › Unsorted',
             'Triage, and the keys',
         ]);
         await expect(page.locator('.inbox-tutorial-progress')).toHaveText(`Step ${STEPS} of ${STEPS}`);
