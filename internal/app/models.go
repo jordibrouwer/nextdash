@@ -2882,6 +2882,7 @@ func (fs *FileStore) getAllBookmarksChecked() ([]Bookmark, bool) {
 		pageID := fileID
 		for i := range pageWithBookmarks.Bookmarks {
 			pageWithBookmarks.Bookmarks[i].PageID = pageID
+			decodeBookmarkPreviewText(&pageWithBookmarks.Bookmarks[i])
 		}
 		allBookmarks = append(allBookmarks, pageWithBookmarks.Bookmarks...)
 	}

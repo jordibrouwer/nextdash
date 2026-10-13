@@ -63,3 +63,20 @@ func TestInboxTitlesAreNotDecodedTwice(t *testing.T) {
 		t.Fatalf("inbox = %+v", items)
 	}
 }
+
+// The all-pages read decodes too: /api/bookmarks?all=true, MCP and the digest
+// printed the entities while the page itself showed the characters. A bare
+// store, so no startup write has already rewritten the file.
+func TestAllBookmarksReadPreviewEntitiesAsCharacters(t *testing.T) {
+	dir := t.TempDir()
+	page := `{"page":{"id":1,"name":"main"},"bookmarks":[{"name":"x","url":"https://x.example",` +
+		`"previewTitle":"I&#039;m here","previewDesc":"Fish &amp; chips"}]}`
+	if err := os.WriteFile(filepath.Join(dir, "bookmarks-1.json"), []byte(page), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	store := &FileStore{settingsFile: filepath.Join(dir, "settings.json"), dataDir: dir, readCache: newStoreReadCache()}
+	all := store.GetAllBookmarks()
+	if len(all) != 1 || all[0].PreviewTitle != "I'm here" || all[0].PreviewDesc != "Fish & chips" {
+		t.Fatalf("all-bookmarks preview = %+v", all)
+	}
+}
