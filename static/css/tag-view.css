@@ -329,6 +329,18 @@
     font-weight: 700;
     color: var(--background-primary);
     background: color-mix(in srgb, var(--accent-primary) 80%, var(--text-primary));
+    overflow: hidden;
+}
+
+/* A favicon fills the box on its own; the coloured tile is for the letter. */
+.tag-view .tag-view-icon:has(img) {
+    background: none;
+}
+
+.tag-view .tag-view-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
 .tag-view .tag-view-open {

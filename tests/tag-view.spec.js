@@ -708,3 +708,29 @@ test.describe('on a touch phone', () => {
         await expect(page.locator('#tag-cloud-toggle-btn')).toBeHidden();
     });
 });
+
+// The rows carry the bookmark's own favicon, as the grid does; the letter is
+// only for a bookmark without one, or one whose file will not load.
+test('rows show the favicon, and the letter only without one', async ({ page }) => {
+    const tag = `tvicon${STAMP}`;
+    // One small PNG for any icon file, so the test does not depend on what
+    // the shared data directory holds.
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+    await page.route('**/data/icons/tv-icon-ok.png', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: png }));
+    await page.route('**/data/icons/tv-icon-gone.png', (route) => route.fulfill({ status: 404, body: '' }));
+    await openDashboard(page);
+    await seed(page, [
+        { url: `https://tv-icon-a-${STAMP}.example.com/`, name: 'Has icon', tags: [tag], icon: 'tv-icon-ok.png', page: 'here' },
+        { url: `https://tv-icon-b-${STAMP}.example.com/`, name: 'Broken icon', tags: [tag], icon: 'tv-icon-gone.png', page: 'here' },
+        { url: `https://tv-icon-c-${STAMP}.example.com/`, name: 'No icon', tags: [tag], iconMode: 'letter', page: 'here' },
+    ]);
+    await openDashboard(page, `/#tag/${tag}`);
+
+    const row = (name) => page.locator('#dashboard-layout .tag-view-row', { hasText: name });
+    await expect(row('Has icon').locator('img.tag-view-icon-img')).toHaveAttribute('src', /\/data\/icons\/tv-icon-ok\.png$/);
+    await expect.poll(() => row('Has icon').locator('img.tag-view-icon-img').evaluate((img) => img.naturalWidth)).toBe(1);
+    await expect(row('Broken icon').locator('img')).toHaveCount(0);
+    await expect(row('Broken icon').locator('.tag-view-icon')).toHaveText('B');
+    await expect(row('No icon').locator('img')).toHaveCount(0);
+    await expect(row('No icon').locator('.tag-view-icon')).toHaveText('N');
+});

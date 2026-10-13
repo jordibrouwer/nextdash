@@ -368,8 +368,7 @@
             check.appendChild(this.buildRowCheck(b, index));
 
             const nameCell = this.el('span', 'tag-view-cell tag-view-cell--name');
-            const icon = this.el('span', 'tag-view-icon', String(b.name || b.url || '?').trim().charAt(0).toUpperCase());
-            icon.setAttribute('aria-hidden', 'true');
+            const icon = this.buildRowIcon(b);
             const link = this.el('a', 'tag-view-open');
             link.href = d.safeBookmarkOpenHref?.(b.url) || '#';
             if (d.settings?.openInNewTab) {
@@ -412,6 +411,47 @@
             row.append(check, nameCell, tagsCell, page, opens, last, scoreCell);
             row.addEventListener('click', (e) => this.onRowClick(e, index));
             return row;
+        }
+
+        /**
+         * The bookmark's favicon, as the grid draws it (dashboard-bookmark-rows.js):
+         * its own file from /data/icons/, the letter when that will not load,
+         * and for a bookmark without one the letter the icon sets may swap.
+         */
+        buildRowIcon(b) {
+            const d = this.dash;
+            const icon = this.el('span', 'tag-view-icon');
+            icon.setAttribute('aria-hidden', 'true');
+            const letter = () => String(b.name || b.url || '?').trim().charAt(0).toUpperCase() || '?';
+            const styling = window.ThemeIconStyling?.getThemeIconStylingEntry?.(d.settings);
+            const style = () => {
+                if (styling?.enabled) window.ThemeIconStyling.applyThemeIconStylingToElement(icon, styling);
+            };
+            if (b.icon) {
+                const img = document.createElement('img');
+                img.className = 'tag-view-icon-img';
+                img.src = /^(https?:|data:|\/)/i.test(String(b.icon)) ? b.icon : `/data/icons/${encodeURIComponent(b.icon)}`;
+                img.alt = '';
+                img.loading = 'lazy';
+                img.decoding = 'async';
+                img.draggable = false;
+                img.addEventListener('error', () => {
+                    img.replaceWith(this.el('span', 'tag-view-icon-letter', letter()));
+                });
+                icon.appendChild(img);
+                style();
+                return icon;
+            }
+            // Inside the box rather than the box itself: the icon sets replace
+            // the element they are handed with their image.
+            const mark = this.el('span', 'tag-view-icon-letter', letter());
+            icon.appendChild(mark);
+            if (b.url && window.IconSetAuto && b.iconMode !== 'letter') {
+                mark.setAttribute('data-icon-auto-url', b.url);
+                window.IconSetAuto.queue(mark);
+                style();
+            }
+            return icon;
         }
 
         buildRowCheck(b, index) {
