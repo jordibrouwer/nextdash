@@ -27,6 +27,7 @@
     "test:workbench-model": "node tests/bookmark-workbench-model.test.cjs",
     "test:config-split": "node tests/config-section-plan.test.mjs",
     "test:block-move-model": "node tests/block-move-model.test.cjs",
+    "test:tag-cloud-model": "node tests/tag-cloud-model.test.cjs",
     "test:extension-build": "node tests/build-extension.test.mjs"
   },
   "devDependencies": {

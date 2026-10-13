@@ -500,12 +500,24 @@
             hidden
         >
             <div class="tag-cloud-modal-header">
-                <span id="tag-cloud-modal-title" class="tag-cloud-modal-title" data-i18n="dashboard.tagCloudModalTitle">Tags</span>
+                <span class="tag-cloud-modal-heading">
+                    <span id="tag-cloud-modal-title" class="tag-cloud-modal-title" data-i18n="dashboard.tagCloudModalTitle">Tags</span>
+                    <span id="tag-cloud-modal-count" class="tag-cloud-modal-count"></span>
+                    <span id="tag-cloud-modal-query" class="tag-cloud-modal-query" hidden></span>
+                </span>
                 <button type="button" id="tag-cloud-modal-close" class="tag-cloud-modal-close" data-i18n-aria="dashboard.tagCloudModalClose" aria-label="Close">×</button>
             </div>
             <div id="tag-cloud-modal-body" class="tag-cloud-modal-body tag-cloud-wordcloud"></div>
             <div class="tag-cloud-modal-footer">
-                <button type="button" id="tag-cloud-clear-filter" class="tag-cloud-clear-filter" hidden data-i18n="dashboard.tagCloudClearFilter">Clear tag filter</button>
+                <div class="tag-cloud-footer-row">
+                    <span class="tag-cloud-legend" aria-hidden="true">
+                        <span class="tag-cloud-legend-item"><kbd>↵</kbd><span data-i18n="dashboard.tagCloudLegendPick">pick</span></span>
+                        <span class="tag-cloud-legend-item"><kbd>⇧</kbd><kbd>↵</kbd><span data-i18n="dashboard.tagCloudLegendStack">stack</span></span>
+                        <span class="tag-cloud-legend-item"><kbd>a–z</kbd><span data-i18n="dashboard.tagCloudLegendFind">find</span></span>
+                        <span class="tag-cloud-legend-item"><kbd>esc</kbd><span data-i18n="dashboard.tagCloudLegendClose">close</span></span>
+                    </span>
+                    <button type="button" id="tag-cloud-clear-filter" class="tag-cloud-clear-filter" hidden data-i18n="dashboard.tagCloudClearFilter">Clear tag filter</button>
+                </div>
             </div>
         </div>
     </div>
@@ -650,6 +662,7 @@
     <!-- Registers the push service worker and keeps this device's subscription current. -->
     <script src="{{asset "js/push-notifications.js"}}" defer></script>
     <script src="{{asset "js/mobile-experience.js"}}" defer></script>
+    <script src="{{asset "js/shared/tag-cloud-model.js"}}" defer></script>
     <script src="{{asset "js/dashboard-tag-cloud.js"}}" defer></script>
     <script src="{{asset "js/dashboard-deep-link.js"}}" defer></script>
     <script src="{{asset "js/dashboard-history.js"}}" defer></script>

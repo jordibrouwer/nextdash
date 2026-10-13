@@ -548,9 +548,11 @@ test.describe('tag cloud and filter', () => {
         const words = page.locator('[data-tag-cloud]');
         await expect(words.first()).toBeVisible();
         await expect(words.first()).toHaveClass(/tag-cloud-word/);
-        // The cloud's own tier classes, not the stat-bar ones: they carry the
-        // colour gradation that makes a cloud readable.
-        await expect(words.first()).toHaveClass(/tag-cloud-word--tier-/);
+        // The cloud's own size classes, ranked the same way as the dashboard's,
+        // and no # in front of the word any more.
+        await expect(words.first()).toHaveClass(/\bis-L\b/);
+        const texts = await words.evaluateAll((els) => els.map((el) => el.textContent.trim()));
+        texts.forEach((text) => expect(text.startsWith('#'), text).toBe(false));
     });
 
     test('a selected tag is visibly marked, not just filtered', async ({ page }) => {

@@ -5356,7 +5356,7 @@ body.no-animations .config-new-features-panel-star {
     background: color-mix(in srgb, var(--accent-primary, #4A7038) 14%, transparent);
 }
 
-/* The shared rule underlines the label; inside the chip that reads as noise. */
+/* The selected chip keeps its label in the text colour; the border carries it. */
 .config-tag-cloud .tag-cloud-word.is-selected .tag-cloud-word-label {
     text-decoration: none;
 }

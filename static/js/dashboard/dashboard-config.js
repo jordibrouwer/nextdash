@@ -18106,22 +18106,6 @@ class DashboardConfig {
         return floor + (1 - floor) * Math.pow(Math.max(0, Math.min(1, ratio)), power);
     }
 
-    /**
-     * Tier class for a tag-cloud word.
-     *
-     * Separate from tierClassForScale, which returns the config-stat--tier-*
-     * names used by the stat bars: the cloud's own tiers carry the colour
-     * gradation that makes a cloud readable, and passing it a stat class meant
-     * every word rendered in the same colour.
-     */
-    static cloudTierForScale(scale) {
-        if (scale >= 0.82) return 'tag-cloud-word--tier-xl';
-        if (scale >= 0.62) return 'tag-cloud-word--tier-lg';
-        if (scale >= 0.42) return 'tag-cloud-word--tier-md';
-        if (scale >= 0.22) return 'tag-cloud-word--tier-sm';
-        return 'tag-cloud-word--tier-xs';
-    }
-
     static tierClassForScale(scale) {
         if (scale >= 0.82) return 'config-stat--tier-xl';
         if (scale >= 0.62) return 'config-stat--tier-lg';
@@ -18214,14 +18198,6 @@ class DashboardConfig {
 
     /* ── Tags & collections placeholders (native, built next) ──────────────── */
 
-    /** Stable per-tag tilt, so the cloud looks scattered but never reshuffles. */
-    static tagRotate(tag) {
-        let h = 0;
-        const s = String(tag || '');
-        for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) | 0;
-        return ((h % 9) - 4) * 0.55;
-    }
-
     /**
      * Tags matching the filter, in the chosen order.
      *
@@ -18250,25 +18226,29 @@ class DashboardConfig {
     renderTagCloud(tags) {
         const esc = (v) => this.dash.escapeHtml(v);
         if (!tags.length) return '';
-        const counts = tags.map((t) => t.count);
-        const max = Math.max(...counts);
-        const min = Math.min(...counts);
-        const words = [...tags]
+        // Ranked and ordered by the dashboard cloud's own model, so the two
+        // clouds size and place a tag the same way.
+        const model = window.TagCloudModel;
+        const ranked = [...tags]
             .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
-            .map((t, i) => {
-                const scale = DashboardConfig.scaleForCount(t.count, min, max);
+            .map((t) => ({ tag: t.tag, count: t.count }));
+        const classes = model.rankClasses(ranked);
+        const counts = new Map(ranked.map((t) => [t.tag, t.count]));
+        const words = model.orderForDisplay(ranked, classes)
+            .map((tag, i) => {
+                const count = counts.get(tag) || 0;
                 const label = this.t('config.tagBookmarkCount', '{count} bookmarks')
-                    .replace('{count}', String(t.count));
+                    .replace('{count}', String(count));
                 // Same .is-selected / aria-pressed pair the dashboard's own tag
                 // cloud uses, so the two clouds behave alike.
-                const selected = this._tagQuery === t.tag;
+                const selected = this._tagQuery === tag;
                 return `<button type="button"
-                    class="tag-cloud-word ${esc(DashboardConfig.cloudTierForScale(scale))}${selected ? ' is-selected' : ''}"
-                    data-tag-cloud="${esc(t.tag)}" role="listitem" aria-pressed="${selected ? 'true' : 'false'}"
-                    style="--tag-scale:${scale.toFixed(3)};--tag-rotate:${DashboardConfig.tagRotate(t.tag).toFixed(2)}deg;--tag-index:${i}"
-                    title="#${esc(t.tag)} — ${esc(label)}" aria-label="${esc(t.tag)}. ${esc(label)}">
-                    <span class="tag-cloud-word-hash" aria-hidden="true">#</span>
-                    <span class="tag-cloud-word-label">${esc(t.tag)}</span>
+                    class="tag-cloud-word is-${classes.get(tag)}${selected ? ' is-selected' : ''}"
+                    data-tag-cloud="${esc(tag)}" role="listitem" aria-pressed="${selected ? 'true' : 'false'}"
+                    style="--tag-index:${i}"
+                    title="${esc(tag)} — ${esc(label)}" aria-label="${esc(tag)}. ${esc(label)}">
+                    <span class="tag-cloud-word-label">${esc(tag)}</span>
+                    <span class="tag-cloud-word-count" aria-hidden="true">${count}</span>
                 </button>`;
             }).join('');
         return `<div class="tag-cloud-wordcloud config-tag-cloud" role="list">${words}</div>`;

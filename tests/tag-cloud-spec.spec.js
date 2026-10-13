@@ -3,17 +3,17 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
- * The word cloud, drawn the way the overlays spec draws it.
+ * The tag cloud, quieter.
  *
- * Two things separate the draft's cloud from what shipped. A tag that is
- * filtering the page is a filled pill there and was an underlined word here —
- * and in a cloud where size and colour already carry how often a tag is used,
- * an underline is a third quiet signal competing with two loud ones. A filled
- * pill is the only shape in the cloud, so it cannot be read as a heavier tag.
+ * It was a 2008 cloud: a # before every word, a tilt, a drift that never
+ * stopped, and one accent in five tints -- and with twenty-odd tags every word
+ * came out nearly the same size, because the size followed the count in a
+ * straight line. Now three sizes by rank, alphabetical inside each so a tag
+ * keeps its place, the count beside every word, and once a filter is on, the
+ * number each tag would add to it.
  *
- * And the draft closes its cloud with two figures on a rule: how many tags
- * there are, and how many are filtering. A cloud says which tags are big and
- * says nothing about either.
+ * A tag that is filtering is still the one filled pill in the cloud: size and
+ * colour say how often a tag is used, and the pill says something else.
  */
 
 async function openCloud(page) {
@@ -34,6 +34,16 @@ async function openCloud(page) {
     await expect.poll(() => page.locator('.tag-cloud-word').count()).toBeGreaterThan(1);
 }
 
+/** Through the key, the way it is opened. */
+async function openCloudWithKey(page) {
+    await openCloud(page);
+    await page.evaluate(() => window.DashboardTagCloud?.closeModal?.({ animate: false }));
+    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('/');
+    await expect(page.locator('#tag-cloud-modal')).toBeVisible();
+    await expect.poll(() => page.locator('.tag-cloud-word').count()).toBeGreaterThan(1);
+}
+
 const styleOf = (page, selector, props) => page.evaluate(([sel, list]) => {
     const el = document.querySelector(sel);
     if (!el) return null;
@@ -41,50 +51,90 @@ const styleOf = (page, selector, props) => page.evaluate(([sel, list]) => {
     return Object.fromEntries(list.map((p) => [p, cs[p]]));
 }, [selector, props]);
 
-test.describe('the word cloud', () => {
-    test('closes with what it adds up to', async ({ page }) => {
-        await openCloud(page);
+const chips = (page) => page.evaluate(() => [...document.querySelectorAll('#tag-cloud-modal .tag-cloud-word')].map((el) => ({
+    tag: el.dataset.tag,
+    size: ['L', 'M', 'S'].find((c) => el.classList.contains(`is-${c}`)) || null,
+    label: el.querySelector('.tag-cloud-word-label')?.textContent ?? '',
+    count: el.querySelector('.tag-cloud-word-count')?.textContent ?? '',
+    zero: el.classList.contains('is-zero'),
+    selected: el.classList.contains('is-selected'),
+    text: el.textContent,
+})));
 
-        const total = page.locator('.tag-cloud-total');
-        await expect(total, 'the cloud does not say how much of it there is').toHaveCount(1);
-        // Two figures at opposite ends of a rule.
-        const shape = await styleOf(page, '.tag-cloud-total', ['justifyContent', 'borderTopWidth']);
-        expect(shape.justifyContent).toBe('space-between');
-        expect(parseFloat(shape.borderTopWidth), 'no rule under the cloud').toBeGreaterThan(0);
-        await expect(total).toContainText(/\d/);
+test.describe('the word cloud', () => {
+    test('no #, no tilt, and nothing moving once it has opened', async ({ page }) => {
+        await openCloudWithKey(page);
+        const list = await chips(page);
+        list.forEach((c) => expect(c.text.trim().startsWith('#'), `${c.tag} still wears a #`).toBe(false));
+
+        await expect.poll(() => page.evaluate(() => document.getAnimations()
+            .filter((a) => a.effect?.target?.closest?.('#tag-cloud-modal .tag-cloud-word')).length)).toBe(0);
+        const transforms = await page.evaluate(() => [...document.querySelectorAll('#tag-cloud-modal .tag-cloud-word')]
+            .map((el) => getComputedStyle(el).transform));
+        transforms.forEach((tr) => expect(['none', 'matrix(1, 0, 0, 1, 0, 0)']).toContain(tr));
+    });
+
+    test('three sizes by rank, alphabetical inside each, a count beside every word', async ({ page }) => {
+        await openCloudWithKey(page);
+        const list = await chips(page);
+        expect(list.every((c) => c.size), 'a chip without a size').toBe(true);
+        expect(list.some((c) => c.size === 'L'), 'no large tag').toBe(true);
+
+        // Large, then medium, then small; A-Z inside each.
+        const order = { L: 0, M: 1, S: 2 };
+        for (let i = 1; i < list.length; i++) {
+            const a = list[i - 1]; const b = list[i];
+            expect(order[a.size] <= order[b.size], `${b.tag} (${b.size}) after ${a.tag} (${a.size})`).toBe(true);
+            if (a.size === b.size) expect(a.tag.localeCompare(b.tag), `${a.tag} before ${b.tag}`).toBeLessThan(0);
+        }
+        list.forEach((c) => {
+            expect(c.label).toBe(c.tag);
+            expect(c.count, `${c.tag} has no count`).toMatch(/^\d+$/);
+        });
+        await expect(page.locator('#tag-cloud-modal-count')).toHaveText(new RegExp(`·\\s*${list.length}$`));
+    });
+
+    test('with a filter on, each tag says what it would add', async ({ page }) => {
+        await openCloudWithKey(page);
+        const first = page.locator('#tag-cloud-modal .tag-cloud-word').first();
+        await first.click({ modifiers: ['Shift'] });
+        await expect(page.locator('#tag-cloud-modal .tag-cloud-word.is-selected')).toHaveCount(1);
+
+        const list = await chips(page);
+        const total = list.length;
+        list.filter((c) => !c.selected).forEach((c) => {
+            expect(c.count, `${c.tag}`).toMatch(/^\+\d+$/);
+            expect(c.zero, `${c.tag}: +0 and not dimmed, or dimmed with more`).toBe(c.count === '+0');
+        });
+        await expect(page.locator('#tag-cloud-modal-count')).toHaveText(new RegExp(`·\\s*1 of ${total}$`));
     });
 
     test('a tag that is filtering is a filled pill', async ({ page }) => {
-        await openCloud(page);
-        await page.evaluate(() => document.querySelector('.tag-cloud-word')?.click());
-        await page.evaluate(() => window.DashboardTagCloud?.openModal?.());
+        await openCloudWithKey(page);
+        await page.locator('#tag-cloud-modal .tag-cloud-word').first().click({ modifiers: ['Shift'] });
         await expect.poll(() => page.locator('.tag-cloud-word.is-selected').count()).toBe(1);
 
-        const pill = await styleOf(page, '.tag-cloud-word.is-selected',
-            ['backgroundColor', 'borderRadius', 'fontWeight', 'boxShadow']);
+        const pill = await styleOf(page, '.tag-cloud-word.is-selected', ['backgroundColor', 'borderRadius', 'fontWeight']);
         expect(pill.backgroundColor, 'the pill has no fill').not.toBe('rgba(0, 0, 0, 0)');
         expect(pill.borderRadius, 'the pill is not round').toBe('999px');
-        expect(pill.fontWeight).toBe('700');
-        expect(pill.boxShadow, 'the pill does not glow').not.toBe('none');
 
-        // On the accent, not in it, and no underline left over.
-        const label = await styleOf(page, '.tag-cloud-word.is-selected .tag-cloud-word-label',
-            ['color', 'textDecorationLine']);
+        // On the accent, not in it.
+        const label = await styleOf(page, '.tag-cloud-word.is-selected .tag-cloud-word-label', ['color']);
         const page_ = await styleOf(page, 'body', ['backgroundColor']);
-        expect(label.textDecorationLine, 'the underline is still there').toBe('none');
         expect(label.color, 'the label is not the page colour on the fill').toBe(page_.backgroundColor);
     });
 
-    test('and the count follows what is filtering', async ({ page }) => {
-        await openCloud(page);
-        const before = await page.locator('.tag-cloud-total').innerText();
-
-        await page.evaluate(() => document.querySelector('.tag-cloud-word')?.click());
-        await page.evaluate(() => window.DashboardTagCloud?.openModal?.());
-        await expect.poll(() => page.locator('.tag-cloud-word.is-selected').count()).toBe(1);
-
-        const after = await page.locator('.tag-cloud-total').innerText();
-        expect(after, 'the figure did not move when a tag was switched on').not.toBe(before);
+    test('closes with its keys, not with a tally', async ({ page }) => {
+        await openCloudWithKey(page);
+        await expect(page.locator('.tag-cloud-total')).toHaveCount(0);
+        const legend = page.locator('#tag-cloud-modal .tag-cloud-legend');
+        await expect(legend).toBeVisible();
+        expect(await legend.locator('kbd').count()).toBeGreaterThanOrEqual(4);
+        expect(await styleOf(page, '#tag-cloud-modal .tag-cloud-legend', ['display'])).toEqual({ display: 'flex' });
+        // The clear button joins the row only while something is filtering.
+        await expect(page.locator('#tag-cloud-clear-filter')).toBeHidden();
+        await page.locator('#tag-cloud-modal .tag-cloud-word').first().click({ modifiers: ['Shift'] });
+        await expect(page.locator('#tag-cloud-modal .tag-cloud-footer-row #tag-cloud-clear-filter')).toBeVisible();
     });
 });
 

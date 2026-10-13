@@ -139,14 +139,22 @@ body[data-tag-filter-active="true"] .tag-cloud-modal-backdrop.is-open {
     overflow-y: auto;
 }
 
-/* Word cloud: wrapped rows, accent palette, gentle drift */
+/*
+ * Three sizes by rank, and nothing else moving.
+ *
+ * The old cloud put a # before every word, tilted each one, kept them all
+ * drifting, and spread one accent over five tints -- with size and colour
+ * both saying "used a lot" and nothing saying anything else. Now size says
+ * rank, the accent marks only the largest, and the figure beside each word
+ * says how many (or, with a filter on, how many more).
+ */
 .tag-cloud-wordcloud {
     display: flex;
     flex-wrap: wrap;
     align-content: flex-start;
     justify-content: center;
     align-items: baseline;
-    gap: var(--space-2, 0.55rem) var(--space-3, 0.75rem);
+    gap: var(--space-1-5, 0.35rem) var(--space-4, 1rem);
     text-align: center;
     line-height: 1.35;
 }
@@ -154,149 +162,98 @@ body[data-tag-filter-active="true"] .tag-cloud-modal-backdrop.is-open {
 @keyframes tagCloudWordEnter {
     from {
         opacity: 0;
-        transform: rotate(var(--tag-rotate, 0deg)) translateY(6px) scale(0.92);
-    }
-    to {
-        opacity: 1;
-        transform: rotate(var(--tag-rotate, 0deg)) translateY(0) scale(1);
-    }
-}
-
-@keyframes tagCloudWordDrift {
-    0%,
-    100% {
-        transform: rotate(var(--tag-rotate, 0deg)) translateY(0);
-    }
-    50% {
-        transform: rotate(var(--tag-rotate, 0deg)) translateY(-2px);
+        transform: translateY(4px);
     }
 }
 
 .tag-cloud-word {
     display: inline-flex;
     align-items: baseline;
-    gap: 0.1em;
+    gap: 0.35em;
     border: none;
+    border-radius: var(--radius-4, 0.35rem);
     background: transparent;
     font-family: var(--font-family-main);
-    font-size: calc(0.82rem + var(--tag-scale, 0.5) * 1.55rem);
-    font-weight: calc(500 + var(--tag-scale, 0.5) * 300);
-    padding: 0.2em 0.28em;
+    padding: 0.15em 0.35em;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    letter-spacing: 0.02em;
     white-space: nowrap;
+    color: var(--text-primary);
     transition:
         color 0.15s ease,
-        text-shadow 0.15s ease,
-        transform 0.2s ease;
+        background-color 0.15s ease,
+        opacity 0.15s ease;
 }
 
-.tag-cloud-wordcloud--live .tag-cloud-word {
-    animation:
-        tagCloudWordEnter 0.32s ease backwards,
-        tagCloudWordDrift 4.5s ease-in-out infinite;
-    animation-delay:
-        calc(var(--tag-index, 0) * 0.025s),
-        calc(0.35s + var(--tag-index, 0) * 0.11s);
+.tag-cloud-word.is-L {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: var(--accent-primary);
 }
 
-body.no-animations .tag-cloud-wordcloud--live .tag-cloud-word {
+.tag-cloud-word.is-M {
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.tag-cloud-word.is-S {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.tag-cloud-modal-body.is-entering .tag-cloud-word {
+    animation: tagCloudWordEnter 0.28s ease backwards;
+    animation-delay: calc(var(--tag-index, 0) * 18ms);
+}
+
+body.no-animations .tag-cloud-modal-body.is-entering .tag-cloud-word {
     animation: none !important;
-}
-
-.tag-cloud-word-hash {
-    font-weight: var(--font-weight-bold);
-    font-size: 0.9em;
-    color: color-mix(in srgb, var(--accent-primary) 82%, var(--text-secondary));
 }
 
 .tag-cloud-word-label {
     line-height: 1.2;
-    color: color-mix(
-        in srgb,
-        var(--text-secondary) calc((1 - var(--tag-scale, 0.5)) * 45%),
-        var(--accent-primary) calc(25% + var(--tag-scale, 0.5) * 55%)
-    );
 }
 
-.tag-cloud-word--tier-xl .tag-cloud-word-label {
-    color: var(--accent-primary);
-}
-
-.tag-cloud-word--tier-lg .tag-cloud-word-label {
-    color: color-mix(in srgb, var(--accent-primary) 88%, var(--text-primary));
-}
-
-.tag-cloud-word--tier-xs .tag-cloud-word-label {
-    color: var(--text-secondary);
-}
-
-.tag-cloud-word--tier-xl {
-    letter-spacing: 0.03em;
+.tag-cloud-word-count {
+    font-size: 0.66rem;
+    font-weight: 400;
+    color: var(--text-tertiary);
+    font-variant-numeric: tabular-nums;
 }
 
 .tag-cloud-word:hover {
-    transform: rotate(var(--tag-rotate, 0deg)) scale(1.06) translateY(-1px);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
 }
 
-.tag-cloud-word:hover .tag-cloud-word-hash,
-.tag-cloud-word:hover .tag-cloud-word-label {
-    color: var(--accent-primary);
-    text-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) 45%, transparent);
+/* A tag that would add nothing to the filter, or does not match what is typed. */
+.tag-cloud-word.is-zero {
+    opacity: 0.38;
+}
+
+.tag-cloud-word.is-miss {
+    opacity: 0.18;
 }
 
 /*
- * A tag in the filter is a filled pill, which is what the overlays spec draws.
- *
- * It used to be the accent colour with an underline under it. In a cloud where
- * size and colour already carry how often a tag is used, an underline is a
- * third quiet signal competing with two loud ones -- and the one thing that is
- * not about frequency at all is which tags are filtering the page right now.
- * A filled pill is the only shape in the cloud, so it cannot be mistaken for a
- * heavier tag.
+ * A tag in the filter is a filled pill: the one shape in the cloud, so it
+ * cannot be mistaken for a heavier tag.
  */
 .tag-cloud-word.is-selected {
     background: var(--accent-primary);
     border-radius: var(--radius-pill, 999px);
-    padding: 0.15em 0.6em;
-    font-weight: 700;
-    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) 40%, transparent);
+    padding: 0.15em 0.7em;
 }
 
-.tag-cloud-word.is-selected .tag-cloud-word-hash,
+.tag-cloud-word.is-selected,
 .tag-cloud-word.is-selected .tag-cloud-word-label {
     /* On the accent, not in it: the page colour is what stays readable on a
        filled accent across every theme. */
     color: var(--background-primary);
 }
 
-/* The hover lift is a tag offering itself; a filled one is already taken. */
-.tag-cloud-word.is-selected:hover .tag-cloud-word-hash,
-.tag-cloud-word.is-selected:hover .tag-cloud-word-label {
-    color: var(--background-primary);
-    text-shadow: none;
-}
-
-/*
- * What the cloud adds up to, on a rule under it.
- *
- * The spec closes the cloud with two figures at opposite ends: how many tags
- * there are, and how many are filtering. Its own flex line, so it sits under
- * the words rather than wrapping among them.
- */
-.tag-cloud-total {
-    flex-basis: 100%;
-    display: flex;
-    justify-content: space-between;
-    gap: var(--space-3, 0.75rem);
-    margin-top: var(--space-3, 0.75rem);
-    padding-top: var(--space-2, 0.5rem);
-    border-top: 1px solid color-mix(in srgb, var(--border-primary) 45%, transparent);
-    font-size: var(--text-2xs, 0.62rem);
-    color: var(--text-tertiary);
-    opacity: 0.6;
-    white-space: nowrap;
+.tag-cloud-word.is-selected .tag-cloud-word-count {
+    color: color-mix(in srgb, var(--background-primary) 70%, var(--accent-primary));
 }
 
 .tag-cloud-word:focus,
@@ -314,34 +271,82 @@ body.no-animations .tag-cloud-wordcloud--live .tag-cloud-word {
 }
 
 .tag-cloud-modal-footer {
-    padding: var(--space-1-5, 0.35rem) var(--space-3, 0.65rem) var(--space-2, 0.55rem);
+    padding: var(--space-1-5, 0.4rem) var(--space-3, 0.75rem);
+    border-top: 1px solid var(--border-secondary, var(--border-primary));
     flex-shrink: 0;
 }
 
-.tag-cloud-clear-filter {
-    width: 100%;
+.tag-cloud-footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+    flex-wrap: wrap;
+}
+
+/* Keys in <kbd> chips, labels beside them: the legend convention. */
+.tag-cloud-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+    font-size: var(--text-2xs, 0.66rem);
+    color: var(--text-tertiary);
+}
+
+.tag-cloud-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+}
+
+.tag-cloud-legend kbd {
+    font-family: var(--font-family-main);
+    font-size: 0.95em;
+    line-height: 1.4;
+    padding: 0 0.4em;
     border: 1px solid var(--border-primary);
-    background: color-mix(in srgb, var(--background-secondary) 74%, transparent);
+    border-bottom-width: 2px;
+    border-radius: var(--radius-3, 0.25rem);
+    color: var(--text-secondary);
+    background: var(--background-primary);
+}
+
+.tag-cloud-modal-heading {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4em;
+    min-width: 0;
+}
+
+.tag-cloud-modal-count {
+    font-size: var(--font-size-small);
+    color: var(--text-tertiary);
+    font-variant-numeric: tabular-nums;
+}
+
+.tag-cloud-modal-query {
+    font-size: var(--font-size-small);
+    color: var(--accent-primary);
+}
+
+.tag-cloud-clear-filter {
+    border: 1px solid var(--border-primary);
+    background: transparent;
     color: var(--text-secondary);
     font-family: var(--font-family-main);
-    font-size: var(--font-size-small);
-    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.5rem);
-    border-radius: var(--radius-6, 0.65rem);
+    font-size: var(--text-2xs, 0.7rem);
+    padding: var(--space-hairline, 0.15rem) var(--space-2-5, 0.65rem);
+    border-radius: var(--radius-pill, 999px);
     cursor: pointer;
     transition:
-        background-color 0.2s ease,
-        border-color 0.2s ease,
-        color 0.2s ease,
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
+        border-color 0.15s ease,
+        color 0.15s ease;
 }
 
 .tag-cloud-clear-filter:hover {
-    background: color-mix(in srgb, var(--background-primary) 94%, transparent);
     border-color: var(--accent-primary);
     color: var(--text-primary);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
 }
 
 .tag-cloud-clear-filter:focus,
