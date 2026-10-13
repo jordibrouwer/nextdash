@@ -769,15 +769,18 @@ class DashboardHealthFocus {
 
     async remove() {
         await this.run(async (issue) => {
-            const key = this.health.issueKey(issue);
+            const pageId = Number(issue.pageId);
+            const url = this.health.canonicalUrl(issue.url);
             await this.health.deleteIssue(issue);
             // deleteIssue confirms first and reports nothing back, so whether
             // it happened is read from the refreshed report. Checked against
-            // this row's own key rather than a total, so a background refresh
-            // that changes the count for unrelated reasons cannot be mistaken
-            // for a delete that never ran.
-            const stillListed = (this.health.report?.issues || [])
-                .some((candidate) => this.health.issueKey(candidate) === key);
+            // this row's own page and URL rather than a total, so a background
+            // refresh that changes the count for unrelated reasons cannot be
+            // mistaken for a delete that never ran. Not by its key: the report
+            // numbers the rows afresh after a delete, the next row takes the
+            // key, and the delete went uncounted.
+            const stillListed = (this.health.report?.issues || []).some((candidate) =>
+                Number(candidate.pageId) === pageId && this.health.canonicalUrl(candidate.url) === url);
             if (stillListed) {
                 this.render();
             } else {
