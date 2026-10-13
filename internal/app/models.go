@@ -749,15 +749,18 @@ type Settings struct {
 	// The two cards that offer a review on their own. Both default on and are
 	// switched off in Config → Behavior → General, beside the session tips:
 	// that group is where everything which appears unasked is answered.
-	EnableTagSuggestionNotice bool   `json:"enableTagSuggestionNotice"` // The bulk-tag review offer
-	EnableHealthReviewNotice  bool   `json:"enableHealthReviewNotice"`  // The link-review offer
-	ShowShortcutTooltips      bool   `json:"showShortcutTooltips"`      // Keyboard-shortcut popovers on toolbar and header icons (default OFF since the shortcutTooltipsOffMigrated migration; opt-in in Config → Behavior or `:shortcuts on`)
-	ShowGridKeyLegend         bool   `json:"showGridKeyLegend"`
-	ShortcutOpenMode          string `json:"shortcutOpenMode,omitempty"`
-	RememberScrollPosition    bool   `json:"rememberScrollPosition"` // Return to where you were on a page instead of the top, after a page switch or a trip through Health, Inbox or config
-	UptimeBadges              bool   `json:"uptimeBadges"`           // Serve /badge/uptime.svg for monitored addresses to anyone who asks; off by default because it tells the web whether a host answers
-	DetectSoftNotFound        bool   `json:"detectSoftNotFound"`     // Judge whether a monitored page answering 200 is really a "page not found" template. Costs one bounded body read per check, which is why it is a choice
-	CertWarnDays              int    `json:"certWarnDays,omitempty"` // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save. The two tighter marks follow it // What typing a bookmark shortcut does: "instant" (default, opens the moment it matches), "delay" (opens after a short pause with no further key), "enter" (Enter opens). Empty reads as "instant"; installs carrying the v1.2.0 default are moved once, see migrateShortcutOpenModeDefaultInstant
+	EnableTagSuggestionNotice bool `json:"enableTagSuggestionNotice"` // The bulk-tag review offer
+	// Ask Wikidata about sites the tag catalogue does not know (host name
+	// only). On unless turned off; see tag_lookup.go.
+	TagLookupOnline          bool   `json:"tagLookupOnline"`
+	EnableHealthReviewNotice bool   `json:"enableHealthReviewNotice"` // The link-review offer
+	ShowShortcutTooltips     bool   `json:"showShortcutTooltips"`     // Keyboard-shortcut popovers on toolbar and header icons (default OFF since the shortcutTooltipsOffMigrated migration; opt-in in Config → Behavior or `:shortcuts on`)
+	ShowGridKeyLegend        bool   `json:"showGridKeyLegend"`
+	ShortcutOpenMode         string `json:"shortcutOpenMode,omitempty"`
+	RememberScrollPosition   bool   `json:"rememberScrollPosition"` // Return to where you were on a page instead of the top, after a page switch or a trip through Health, Inbox or config
+	UptimeBadges             bool   `json:"uptimeBadges"`           // Serve /badge/uptime.svg for monitored addresses to anyone who asks; off by default because it tells the web whether a host answers
+	DetectSoftNotFound       bool   `json:"detectSoftNotFound"`     // Judge whether a monitored page answering 200 is really a "page not found" template. Costs one bounded body read per check, which is why it is a choice
+	CertWarnDays             int    `json:"certWarnDays,omitempty"` // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save. The two tighter marks follow it // What typing a bookmark shortcut does: "instant" (default, opens the moment it matches), "delay" (opens after a short pause with no further key), "enter" (Enter opens). Empty reads as "instant"; installs carrying the v1.2.0 default are moved once, see migrateShortcutOpenModeDefaultInstant
 	// HealthCheckTimeoutSeconds is how long one availability check may take.
 	// 0 means the built-in default (3s), which is what every install had before
 	// this was a choice. Clamped to 2–30 on save.
@@ -1690,6 +1693,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShortcutOpenMode:          "instant",
 			RememberScrollPosition:    true,
 			DetectSoftNotFound:        true,
+			TagLookupOnline:           true,
 			ColumnsPerRow:             3,
 			FontSize:                  "m",
 			ShowTitle:                 true,
@@ -4004,6 +4008,7 @@ func (fs *FileStore) removeFactoryResetUserAssets() {
 	for _, name := range []string{
 		"preview-cache.json",
 		"health-cache.json",
+		"tag-lookup-cache.json",
 		"colors.json",
 		"favicon.ico",
 		"favicon.png",
@@ -4260,6 +4265,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShortcutOpenMode:                "instant",
 			RememberScrollPosition:          true,
 			DetectSoftNotFound:              true,
+			TagLookupOnline:                 true,
 			ColumnsPerRow:                   3,
 			FontSize:                        "m",
 			ShowTitle:                       true,
@@ -4483,6 +4489,8 @@ func (fs *FileStore) GetSettings() Settings {
 			// And two from 17-08 that shipped without an entry here.
 			"rememberScrollPosition": &settings.RememberScrollPosition,
 			"detectSoftNotFound":     &settings.DetectSoftNotFound,
+			// Looking up unknown sites for tag suggestions, on since it was built.
+			"tagLookupOnline": &settings.TagLookupOnline,
 			// Background re-checks, on since 5 October 2026.
 			"healthAutoRecheckEnabled": &settings.HealthAutoRecheckEnabled,
 			// The weekly digest, on since it was built.

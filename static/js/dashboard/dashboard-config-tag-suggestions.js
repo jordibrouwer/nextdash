@@ -36,6 +36,15 @@
             return t('config.tagSuggestionReasonCatalogue', 'the catalogue ({subject})')
                 .replace('{subject}', String(group.reason.subject || ''));
         }
+        if (group.reason.kind === 'online') {
+            // What Wikidata calls the site, when it says: "Dutch weather
+            // website" explains #weather better than the source alone.
+            return group.reason.about
+                ? t('config.tagSuggestionReasonOnlineAbout', 'Wikidata: {about}')
+                    .replace('{about}', String(group.reason.about))
+                : t('config.tagSuggestionReasonOnline', 'Wikidata ({subject})')
+                    .replace('{subject}', String(group.reason.subject || ''));
+        }
         if (group.reason.kind === 'text') {
             return t('config.tagSuggestionReasonText', 'the page text ({words})')
                 .replace('{words}', (group.reason.words || []).join(', '));

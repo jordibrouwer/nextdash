@@ -122,6 +122,11 @@
      * and a privacy tool -- and a bookmark has room for two suggestions, so
      * both are kept. A host written "=google.com" is exact: it answers for
      * itself and lends nothing to its subdomains.
+     *
+     * A host written "~drawio.com" was looked up online for this collection
+     * (TagCatalogue, internal/app/tag_lookup.go) rather than shipped. It is
+     * exact too -- it was asked about by name -- and its proposals say where
+     * they came from, with Wikidata's description of the site beside them.
      */
     function catalogueByHost(catalogue) {
         const byHost = new Map();
@@ -133,11 +138,13 @@
                 .filter(Boolean);
             (Array.isArray(entry?.hosts) ? entry.hosts : []).forEach((host) => {
                 const written = String(host).trim().toLowerCase();
-                const exact = written.startsWith('=');
-                const key = written.replace(/^=/, '').replace(/^www\./, '');
+                const online = written.startsWith('~');
+                const exact = online || written.startsWith('=');
+                const key = written.replace(/^[=~]/, '').replace(/^www\./, '');
                 if (!key) return;
+                const about = online ? String(entry?.about?.[key] || '') : '';
                 const list = byHost.get(key) || [];
-                if (!list.some((known) => known.tag === tag)) list.push({ tag, aliases, exact });
+                if (!list.some((known) => known.tag === tag)) list.push({ tag, aliases, exact, online, about });
                 byHost.set(key, list);
             });
         });
@@ -282,9 +289,13 @@
                     proposals.push({
                         tag,
                         pattern,
-                        reason: { kind: 'catalogue', subject: entry.tag },
+                        reason: entry.online
+                            ? { kind: 'online', subject: entry.tag, about: entry.about }
+                            : { kind: 'catalogue', subject: entry.tag },
                         keys,
-                        rank: 3,
+                        // A lookup is weaker evidence than the shipped file:
+                        // after it, before the page's own words.
+                        rank: entry.online ? 3.5 : 3,
                     });
                 });
             });

@@ -225,10 +225,22 @@ func (h *Handlers) TagCatalogue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	catalogue := loadTagCatalogue()
+	// The hosts the catalogue has nothing for: what the browser may ask
+	// /api/tags/lookup about, when the reader has that turned on.
+	unknown := []string{}
+	seen := map[string]bool{}
+	for _, raw := range hosts {
+		host := normalizeCatalogueHost(raw)
+		if host != "" && !seen[host] && len(catalogue.resolve(host)) == 0 {
+			seen[host] = true
+			unknown = append(unknown, host)
+		}
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
 	json.NewEncoder(w).Encode(map[string]any{
 		"version": catalogue.version,
 		"tags":    catalogue.subset(hosts),
+		"unknown": unknown,
 	})
 }

@@ -21896,6 +21896,12 @@ class DashboardConfig {
                 this._tagCatalogue = Array.isArray(tags) ? tags : [];
                 return this._tagCatalogue;
             });
+        // Online lookups land after the first answer; the panel redraws when
+        // they do rather than waiting for the next visit.
+        if (!this._tagCatalogueListening && window.TagCatalogue?.onChange) {
+            this._tagCatalogueListening = true;
+            window.TagCatalogue.onChange(() => this.onTagEvidenceChanged());
+        }
         return this._tagCataloguePromise;
     }
 

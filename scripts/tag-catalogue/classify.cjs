@@ -12,7 +12,7 @@
  *
  *   1. manual/*.json -- { "host": ["tag", ...] }. Handwork wins over
  *      everything, and an empty list keeps a host out entirely.
- *   2. Wikidata classes through qid-subjects.json, from both the per-class
+ *   2. Wikidata classes through internal/app/tag_qid_subjects.json, from both the per-class
  *      lists (byclass.json) and the per-host answers (wikidata.json).
  *   3. The short description in wikidata.json, matched against the subjects'
  *      own names and aliases: "Dutch weather website" says weather.
@@ -37,7 +37,7 @@ const root = path.join(here, '..', '..');
 const read = (file, fallback) => (fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : fallback);
 
 const catalogue = read(path.join(root, 'internal', 'app', 'tag_catalogue.json'));
-const qidSubjects = read(path.join(here, 'qid-subjects.json'));
+const qidSubjects = read(path.join(root, 'internal', 'app', 'tag_qid_subjects.json'));
 const wikidata = read(path.join(cacheDir, 'wikidata.json'), {});
 const byclass = read(path.join(cacheDir, 'byclass.json'), {});
 const bycountry = read(path.join(cacheDir, 'bycountry.json'), {});

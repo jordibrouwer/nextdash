@@ -46,6 +46,7 @@
         'inboxDedupeUrls',
         'inboxDeleteAfterPromote',
         'detectSoftNotFound',
+        'tagLookupOnline',
         'certWarnDays',
         'healthCheckTimeoutSeconds',
         'previewImageCacheMB',

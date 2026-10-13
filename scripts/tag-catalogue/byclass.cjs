@@ -8,7 +8,7 @@
  *
  * Asking per host stops scaling at a few tens of thousands: Wikidata rate
  * limits long before three hundred thousand hosts are through. Asking per
- * class turns it around -- one query per class in qid-subjects.json returns
+ * class turns it around -- one query per class in internal/app/tag_qid_subjects.json returns
  * every item of that class (instance of or industry) with an official
  * website, worldwide, in a few seconds. The CrUX ranking then decides which
  * of them matter.
@@ -24,7 +24,7 @@ const path = require('path');
 
 const ENDPOINT = 'https://query.wikidata.org/sparql';
 const AGENT = 'nextDash-catalogue-build/1.0 (https://github.com/jordibrouwer/nextDash)';
-const table = JSON.parse(fs.readFileSync(path.join(__dirname, 'qid-subjects.json'), 'utf8'));
+const table = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'internal', 'app', 'tag_qid_subjects.json'), 'utf8'));
 const classes = [
     ...Object.entries(table).filter(([q, tag]) => /^Q\d+$/.test(q) && tag).map(([q]) => q),
     ...(table._adult || []),
