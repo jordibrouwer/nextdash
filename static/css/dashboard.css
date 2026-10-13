@@ -5971,7 +5971,8 @@ body[data-grid-keys="shown"] .dashboard-legend-more {
 }
 
 .bookmark-link.grid-filter-hidden,
-.category.grid-filter-empty {
+.category.grid-filter-empty,
+.dashboard-widget.grid-filter-empty {
     display: none !important;
 }
 

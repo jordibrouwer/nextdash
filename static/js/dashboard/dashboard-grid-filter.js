@@ -229,6 +229,17 @@
                 block.classList.toggle(BLOCK_HIDDEN, Boolean(query) && !visible);
             });
 
+            /*
+             * Widgets step aside while a query is typed. They used to stay, on
+             * the reasoning that a reader filtering links should not lose the
+             * processor and disk tiles — but a filter is a question about links,
+             * and the tiles left around the answer made it harder to read. They
+             * come back the moment the query is empty, as categories do.
+             */
+            container.querySelectorAll('.category[data-widget-id], .dashboard-widget').forEach((block) => {
+                block.classList.toggle(BLOCK_HIDDEN, Boolean(query));
+            });
+
             this.highlight(rows, query);
 
             const label = document.querySelector('#grid-filter-bar .grid-filter-count');

@@ -91,19 +91,16 @@ test('the input keeps room for its placeholder', async ({ page }) => {
 });
 
 /**
- * The filter narrows bookmarks, and a widget is not one.
+ * The filter is a question about links, so widgets step aside while it asks.
  *
- * A block with no matching row is folded away, which is right for a category
- * and wrong for a widget: widgets deliberately carry the `category` class --
- * the masonry layout measures blocks by it and DragReorder selects by it -- and
- * they contain no `.bookmark-link` at all. So every widget counted as empty the
- * moment anything was typed, and a reader filtering their links watched the
- * processor, disks and container tiles disappear with them.
- *
- * The same trap `refreshAllCategorySpans` documents and guards against with
- * `:not([data-widget-id])`.
+ * They used to stay: a fix kept them, because widgets carry the `category`
+ * class and hold no `.bookmark-link`, so they were folded away as "empty" by
+ * accident. Jordi decided on 13 October 2026 that hiding them is what the
+ * filter should do, on purpose — but only while a query is typed, and every
+ * one of them has to come back when it is cleared. The second half is what
+ * keeps this from being the old accident again.
  */
-test('typing in the filter leaves the widgets alone', async ({ page }) => {
+test('typing in the filter hides the widgets, clearing it brings them back', async ({ page }) => {
     await dashboard(page);
 
     const seeded = await page.evaluate(() => {
@@ -120,34 +117,36 @@ test('typing in the filter leaves the widgets alone', async ({ page }) => {
     const shape = await page.evaluate(() => {
         const d = window.dashboardInstance;
         const filter = d.gridFilter;
-        // A term that matches at least one row, so this is a real narrowing
-        // rather than the everything-hidden case where the bug is invisible.
-        const first = document.querySelector('.bookmark-link');
+        // A term that matches at least one row, so the categories that are
+        // left show the narrowing worked and only the widgets went.
+        const first = document.querySelector('.bookmark-link .bookmark-text');
         const term = (first?.textContent || '').trim().split(/\s+/)[0].slice(0, 4).toLowerCase();
+
+        const seen = (selector) => [...document.querySelectorAll(selector)]
+            .filter((el) => el.offsetParent !== null).length;
+        const widgetsBefore = seen('.dashboard-widget');
 
         filter.open = true;
         filter.query = term;
         const hits = filter.apply();
-
-        const seen = (selector) => [...document.querySelectorAll(selector)]
-            .filter((el) => el.offsetParent !== null).length;
-        const out = {
-            term,
-            hits,
+        const during = {
             widgetsShown: seen('.dashboard-widget'),
-            widgetsTotal: document.querySelectorAll('.dashboard-widget').length,
-            categoriesShown: seen('.category:not(.dashboard-widget)'),
+            categoriesShown: seen('.category:not(.dashboard-widget):not([data-widget-id])'),
         };
 
         filter.query = '';
         filter.apply();
+        const widgetsAfter = seen('.dashboard-widget');
         filter.open = false;
-        return out;
+        return { term, hits, widgetsBefore, widgetsAfter, ...during };
     });
 
+    expect(shape.widgetsBefore).toBeGreaterThan(0);
     // The narrowing worked on the bookmarks...
     expect(shape.hits).toBeGreaterThan(0);
     expect(shape.categoriesShown).toBeGreaterThan(0);
-    // ...and left every widget where it was.
-    expect(shape.widgetsShown).toBe(shape.widgetsTotal);
+    // ...the widgets stepped aside while it did...
+    expect(shape.widgetsShown).toBe(0);
+    // ...and all of them came back with the empty query.
+    expect(shape.widgetsAfter).toBe(shape.widgetsBefore);
 });
