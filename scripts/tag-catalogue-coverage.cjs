@@ -32,7 +32,7 @@ const catalogue = JSON.parse(fs.readFileSync(
 
 const byHost = new Map();
 catalogue.forEach((entry) => {
-    entry.hosts.forEach((written) => {
+    entry.hosts.concat(entry.derived || []).forEach((written) => {
         const host = written.replace(/^=/, '');
         const list = byHost.get(host) || [];
         list.push({ tag: entry.tag, exact: written.startsWith('=') });

@@ -29,9 +29,13 @@ matches itself and lends nothing to its subdomains.
 var tagCatalogueJSON []byte
 
 type tagCatalogueSubject struct {
-	Tag      string   `json:"tag"`
-	Aliases  []string `json:"aliases"`
-	Hosts    []string `json:"hosts"`
+	Tag     string   `json:"tag"`
+	Aliases []string `json:"aliases"`
+	Hosts   []string `json:"hosts"`
+	// Derived is what the build (scripts/tag-catalogue) found for the
+	// subject, beside the hand-written Hosts. Both resolve alike; the answer
+	// to the browser folds them into Hosts.
+	Derived  []string `json:"derived,omitempty"`
 	Keywords []string `json:"keywords,omitempty"`
 }
 
@@ -68,7 +72,7 @@ func parseTagCatalogue(raw []byte) *tagCatalogue {
 	catalogue.version = doc.Version
 	catalogue.subjects = doc.Tags
 	for i, subject := range doc.Tags {
-		for _, written := range subject.Hosts {
+		for _, written := range subject.allHosts() {
 			exact := strings.HasPrefix(written, "=")
 			host := strings.TrimPrefix(written, "=")
 			catalogue.byHost[host] = append(catalogue.byHost[host], tagCatalogueHost{subject: i, written: written, exact: exact})
@@ -133,7 +137,7 @@ func (c *tagCatalogue) subset(hosts []string) []tagCatalogueSubject {
 	out := make([]tagCatalogueSubject, len(c.subjects))
 	for i, subject := range c.subjects {
 		picked := []string{}
-		for _, written := range subject.Hosts {
+		for _, written := range subject.allHosts() {
 			if wanted[i][written] {
 				picked = append(picked, written)
 			}
@@ -141,6 +145,13 @@ func (c *tagCatalogue) subset(hosts []string) []tagCatalogueSubject {
 		out[i] = tagCatalogueSubject{Tag: subject.Tag, Aliases: subject.Aliases, Hosts: picked, Keywords: subject.Keywords}
 	}
 	return out
+}
+
+func (s tagCatalogueSubject) allHosts() []string {
+	if len(s.Derived) == 0 {
+		return s.Hosts
+	}
+	return append(append([]string{}, s.Hosts...), s.Derived...)
 }
 
 // normalizeCatalogueHost is patternsFor's host: lower case, no www.

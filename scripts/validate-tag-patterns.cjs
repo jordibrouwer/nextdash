@@ -99,7 +99,12 @@ if (!entries) {
         seenKeywords.set(word, entry.tag);
     });
 
-    const hosts = Array.isArray(entry.hosts) ? entry.hosts : [];
+    // The hand-written hosts and what the build derived are checked alike:
+    // both resolve the same way, so both can collide the same way.
+    const hosts = [
+        ...(Array.isArray(entry.hosts) ? entry.hosts : []),
+        ...(Array.isArray(entry.derived) ? entry.derived : []),
+    ];
     if (!hosts.length) {
         problems.push(`${where}: no hosts, so it can never match`);
     }

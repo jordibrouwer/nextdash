@@ -112,3 +112,18 @@ func TestTagCatalogueEndpoint(t *testing.T) {
 		t.Errorf("POST with a host list: got %v", got)
 	}
 }
+
+// What the build derived resolves like a hand-written host, and the browser
+// sees one list.
+func TestTagCatalogueDerivedHostsResolveAndFoldIntoHosts(t *testing.T) {
+	catalogue := parseTagCatalogue([]byte(`{"version":2,"tags":[
+		{"tag":"news","aliases":[],"hosts":["nu.nl"],"derived":["nos.nl"]}
+	]}`))
+	if got := catalogue.subjectsFor("nos.nl"); !reflect.DeepEqual(got, []string{"news"}) {
+		t.Errorf("derived host: got %v", got)
+	}
+	subset := catalogue.subset([]string{"nos.nl", "nu.nl"})
+	if !reflect.DeepEqual(subset[0].Hosts, []string{"nu.nl", "nos.nl"}) || subset[0].Derived != nil {
+		t.Errorf("subset: hosts %v, derived %v", subset[0].Hosts, subset[0].Derived)
+	}
+}
