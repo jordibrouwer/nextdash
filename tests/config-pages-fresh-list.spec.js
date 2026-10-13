@@ -107,4 +107,18 @@ test.describe('the pages list in config', () => {
             .toBeGreaterThan(0);
         expect((await serverPages(page)).find((p) => p.id === second)?.name).toBe('Renamed on the phone');
     });
+
+    test('a page whose save fails is not left in the list', async ({ page }) => {
+        await pagesTab(page);
+        const before = await page.evaluate(() => window.dashboardInstance.pages.length);
+        await page.route('**/api/pages', (route) => (route.request().method() === 'POST'
+            ? route.fulfill({ status: 500, body: 'boom' })
+            : route.fallback()));
+        const refused = page.waitForResponse((r) => r.url().endsWith('/api/pages') && r.request().method() === 'POST');
+        await page.locator('[data-page-add]').click();
+        // The refused write, then a beat for what follows it.
+        await refused;
+        await page.waitForTimeout(500);
+        expect(await page.evaluate(() => window.dashboardInstance.pages.length)).toBe(before);
+    });
 });

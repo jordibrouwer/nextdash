@@ -19192,8 +19192,18 @@ class DashboardConfig {
         );
         const newPage = { id: maxId + 1, name };
         pages.push(newPage);
-        await this.savePages([newPage.id]);
+        if (!await this.savePages([newPage.id])) {
+            this.forgetUnsavedPage(newPage.id);
+        }
         this.repaintPtBody();
+    }
+
+    /** Take back a page this tab listed and the server never stored. */
+    forgetUnsavedPage(id) {
+        const pages = this.dash.pages || [];
+        const at = pages.findIndex((p) => Number(p.id) === Number(id));
+        if (at >= 0) pages.splice(at, 1);
+        this.dash.pageNav?.renderPageNavigation?.();
     }
 
     /* ── Page templates ────────────────────────────────────────────────────── */
@@ -19631,7 +19641,11 @@ class DashboardConfig {
             const sourceCategories = await catRes.json();
 
             pages.push(copy);
-            if (!await this.savePages([newId])) return;
+            if (!await this.savePages([newId])) {
+                this.forgetUnsavedPage(newId);
+                this.repaintPtBody();
+                return;
+            }
 
             const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             if (Array.isArray(sourceCategories) && sourceCategories.length) {
