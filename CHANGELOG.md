@@ -191,6 +191,8 @@ A tag gets a page of its own. The tag cloud is quieter — three sizes, counts, 
 - Translations for the tag view, the key legend and Help in all six languages.
 - The Unraid template carries the v1.19.5 changes.
 - A duplicated Docs block in the v1.8.0 section is removed.
+- README: the tag view, the 51,000-site catalogue with the Wikidata lookup, and the Home Assistant widget. MANUAL: the three-line key legend with `Shift + Z`, `Shift + K` for the tour, and the `Shift + F` bar.
+- **docs — `static/data/whats-new/v1.19.6.json` and its index entry,** with three highlights (the tag view, suggestions in the rows, Home Assistant) and their pictures from `tests/fixtures/whats-new-media/v1.19.6.js`; `whats-new-stub.js` moves `DASHBOARD_RELEASE` to v1.19.6 and `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v336`.
 - `go generate ./...` regenerated `asset_hashes_gen.go`.
 
 ---
