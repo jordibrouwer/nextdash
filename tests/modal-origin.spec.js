@@ -3,12 +3,12 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
- * A panel opened from a control starts at that control.
+ * A panel opened from a control is marked as such, and plays its rise.
  *
- * Fading in at the centre of the window leaves the reader hunting for where
- * the thing came from. ModalOrigin remembers the button that was pressed and
- * the panel grows out of it in 160ms — and only then: a key, a row or a menu
- * has no single point to grow from, so those open the way they always did.
+ * It used to grow out of the button that was pressed. Every modal the action
+ * bar opens now moves like the add-bookmark form instead (modalRise), but the
+ * mark stays: the class and `.show` land in the same tick, so it has to run as
+ * a keyframe rather than a transition. A key, a row or a menu sets no mark.
  */
 async function openDashboard(page) {
     await page.setViewportSize({ width: 1500, height: 900 });
@@ -29,7 +29,7 @@ const origin = (page, selector) => page.evaluate((sel) => {
     };
 }, selector);
 
-test('the search panel grows out of the search button', async ({ page }) => {
+test('the search panel opened from its button is marked, and rises', async ({ page }) => {
     await openDashboard(page);
 
     await page.locator('#search-button').click();
@@ -45,7 +45,7 @@ test('the search panel grows out of the search button', async ({ page }) => {
     // painted state to start from.
     expect(await page.evaluate(() => document.querySelector('#shortcut-search .search-container')
         .getAnimations().map((a) => a.animationName)), 'nothing is animating')
-        .toContain('search-from-origin');
+        .toContain('modalRise');
 });
 
 test('the same panel opened by key has no origin', async ({ page }) => {
@@ -58,7 +58,7 @@ test('the same panel opened by key has no origin', async ({ page }) => {
     expect(seen.marked, 'a keypress pointed the panel at a button').toBe(false);
 });
 
-test('a modal opened from the bar grows out of its button', async ({ page }) => {
+test('a modal opened from the bar is marked, and rises', async ({ page }) => {
     await openDashboard(page);
 
     /*
@@ -88,7 +88,7 @@ test('a modal opened from the bar grows out of its button', async ({ page }) => 
     expect(seen.x, 'no horizontal offset was written').toMatch(/-?\d+px/);
     expect(await page.evaluate(() => document.querySelector('#app-modal .modal')
         .getAnimations().map((a) => a.animationName)), 'nothing is animating')
-        .toContain('modal-from-origin');
+        .toContain('modalRise');
 });
 
 test('the mark goes when the panel does', async ({ page }) => {

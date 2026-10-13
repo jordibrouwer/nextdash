@@ -42,7 +42,7 @@
 body {
     --modal-enter-from: translateY(14px) scale(0.94);
     --modal-enter-transition:
-        opacity calc(200ms * var(--enter-scale, 0.5)) ease,
+        opacity calc(320ms * var(--enter-scale, 0.5)) cubic-bezier(0.2, 0.9, 0.25, 1.05),
         transform calc(320ms * var(--enter-scale, 0.5)) cubic-bezier(0.2, 0.9, 0.25, 1.05);
     --modal-scrim-transition:
         opacity calc(240ms * var(--enter-scale, 0.5)) ease,
@@ -108,35 +108,22 @@ body.no-animations :is(.bookmark-form-modal.show .bookmark-form-modal-dialog, .n
 }
 
 /*
- * Out of the control that opened it.
- *
- * ModalOrigin (modal.js) writes the offset from the panel's centre to the
- * button's; the panel plays that distance back in 160ms. A keyframe rather
- * than a transition: the class and `.show` land in the same tick, and a
- * transition started from a state the browser never painted does nothing at
- * all -- which is what "no animation" looked like.
+ * Opened from a control. ModalOrigin (modal.js) marks the panel from-origin;
+ * it plays as a keyframe rather than a transition, because the class and
+ * `.show` land in the same tick and a transition started from a state the
+ * browser never painted does nothing at all.
  */
-@keyframes modal-from-origin {
-    from {
-        transform:
-            translate(var(--modal-origin-x, 0), var(--modal-origin-y, 0))
-            scale(0.4);
-        opacity: 0;
-    }
-    to {
-        transform: translate(0, 0) scale(1);
-        opacity: 1;
-    }
-}
-
+/* Out of a button, the same rise as the add-bookmark form: every modal the
+   action bar opens moves alike (modalRise below). */
 .modal-overlay.show .modal.from-origin {
-    animation: modal-from-origin 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: modalRise calc(320ms * var(--enter-scale, 0.5)) cubic-bezier(0.2, 0.9, 0.25, 1.05) both;
     transform-origin: center;
 }
 
 /* Reduced motion and the no-animations setting: the panel simply appears where
    it belongs. The origin is a nicety, and a nicety is the first thing to go. */
-body.no-animations .modal-overlay.show .modal.from-origin {
+body.no-animations .modal-overlay.show .modal.from-origin,
+body.no-view-animations .modal-overlay.show .modal.from-origin {
     animation: none;
 }
 
@@ -2108,13 +2095,14 @@ body:not([data-depth="flat"]) .wn-earlier {
  */
 .modal-overlay.show .modal.header-sheet,
 .modal-overlay.show .modal.header-sheet.from-origin {
-    animation: header-sheet-drop 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: header-sheet-rise calc(320ms * var(--enter-scale, 0.5)) cubic-bezier(0.2, 0.9, 0.25, 1.05) both;
     transform: translateX(-50%) translateY(0);
 }
 
-@keyframes header-sheet-drop {
+/* modalRise with the centring carried through every frame. */
+@keyframes header-sheet-rise {
     from {
-        transform: translateX(-50%) translateY(-8px);
+        transform: translateX(-50%) translateY(14px) scale(0.94);
         opacity: 0;
     }
     to {
@@ -2124,7 +2112,9 @@ body:not([data-depth="flat"]) .wn-earlier {
 }
 
 body.no-animations .modal-overlay.show .modal.header-sheet,
-body.no-animations .modal-overlay.show .modal.header-sheet.from-origin {
+body.no-animations .modal-overlay.show .modal.header-sheet.from-origin,
+body.no-view-animations .modal-overlay.show .modal.header-sheet,
+body.no-view-animations .modal-overlay.show .modal.header-sheet.from-origin {
     animation: none;
 }
 

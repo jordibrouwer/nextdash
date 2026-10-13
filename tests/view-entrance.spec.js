@@ -238,3 +238,58 @@ test('Animations in views and modals is a switch of its own beside Enable animat
         await expect.poll(() => page.evaluate(async () => (await (await fetch('/api/settings')).json()).viewAnimationsEnabled)).toBe(true);
     }
 });
+
+/**
+ * The open motion on `selector`: its duration in ms, its curve and the scale
+ * it starts from -- whether it runs as a transition or as a keyframe.
+ */
+function openMotion(page, selector) {
+    return page.evaluate((sel) => {
+        const a = document.getAnimations().find((x) => (x.transitionProperty === 'transform' || x.animationName)
+            && x.effect?.target?.matches?.(sel)
+            && (x.transitionProperty === 'transform' || /transform/.test(JSON.stringify(x.effect.getKeyframes()))));
+        if (!a) return null;
+        const frames = a.effect.getKeyframes();
+        const first = frames.find((f) => f.transform) || {};
+        const easing = a.transitionProperty ? a.effect.getComputedTiming().easing : (frames[0]?.easing || '');
+        const m = /matrix\(([-\d.]+)/.exec(String(first.transform || ''));
+        const scale = m ? Number(m[1]) : (/scale\(([\d.]+)\)/.exec(String(first.transform || ''))?.[1] ?? null);
+        return { ms: Math.round(a.effect.getComputedTiming().duration), easing, scale: scale == null ? null : Number(scale) };
+    }, selector);
+}
+
+// Every modal the action bar opens arrives the way the add-bookmark form does;
+// the tag cloud keeps a motion of its own.
+test.describe('modals from the action bar move like the add-bookmark form', () => {
+    const BUTTONS = [
+        { name: 'Add bookmark', button: '#quick-add-toolbar-btn', panel: '.bookmark-form-modal.show .bookmark-form-modal-dialog' },
+        { name: 'Search', button: '#search-button', panel: '.shortcut-search.show .search-container' },
+        { name: 'Commands', button: '#commands-button', panel: '.shortcut-search.show .search-container' },
+        { name: 'Finders', button: '#finders-button', panel: '.shortcut-search.show .search-container' },
+        { name: 'Recent', button: '#recent-bookmarks-button', panel: '.modal-overlay.show .modal.recent-bookmarks-modal' },
+        { name: 'Pages', button: '#page-overview-header-btn', panel: '.modal-overlay.show .modal.page-overview-modal' },
+        { name: 'Help', button: '#help-button', panel: '.modal-overlay.show .modal.keyboard-cheat-sheet-modal' },
+    ];
+
+    // In the header, and docked at the side, where Recent and Pages open as
+    // sheets that keep their own centring.
+    for (const position of ['header', 'right']) for (const b of BUTTONS) {
+        test(`${b.name}, bar ${position}`, async ({ page }) => {
+            await openDashboard(page);
+            await page.evaluate(async (pos) => {
+                const d = window.dashboardInstance;
+                Object.assign(d.settings, { actionBarPosition: pos, maxHeaderActions: 9 });
+                d.visual?.applyVisualSettings?.();
+                await d.renderHeaderShortcuts?.();
+            }, position);
+            const button = page.locator(b.button);
+            test.skip(!(await button.isVisible()), `${b.name} is not on the bar here`);
+            await button.click();
+            await expect.poll(() => openMotion(page, b.panel), { timeout: 3000, intervals: [10] }).not.toBeNull();
+            const motion = await openMotion(page, b.panel);
+            expect(motion.ms).toBe(160);
+            expect(motion.easing).toBe('cubic-bezier(0.2, 0.9, 0.25, 1.05)');
+            expect(motion.scale).toBeCloseTo(0.94, 2);
+        });
+    }
+});

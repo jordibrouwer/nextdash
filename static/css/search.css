@@ -56,38 +56,25 @@
     max-height: min(70vh, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem));
     overflow: hidden;
     box-sizing: border-box;
-    /* exit: slide down toward toolbar */
-    transform: translateY(10px) scale(0.98);
+    /* Rises and grows in like the add-bookmark form (modal.css). */
+    transform: var(--modal-enter-from);
+    transform-origin: 50% 40%;
     opacity: 0;
-    transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+    transition: var(--modal-enter-transition);
 }
 
 /*
- * Out of the control that opened it, like every other panel.
- *
- * Same keyframe shape as the modals (modal.css): the class and `.show` arrive
+ * Opened from a button, the same rise as from a key: every modal the action
+ * bar opens moves like the add-bookmark form (modalRise, modal.css). A
+ * keyframe rather than the transition below: the class and `.show` arrive
  * together, so a transition would have no painted start state to run from.
- * Opened by key instead, the origin is unset and the ordinary rise below is
- * what plays.
  */
-@keyframes search-from-origin {
-    from {
-        transform:
-            translate(var(--modal-origin-x, 0), var(--modal-origin-y, 0))
-            scale(0.4);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-    }
-}
-
 .shortcut-search.show .search-container.from-origin {
-    animation: search-from-origin 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: modalRise calc(320ms * var(--enter-scale, 0.5)) cubic-bezier(0.2, 0.9, 0.25, 1.05) both;
 }
 
-body.no-animations .shortcut-search.show .search-container.from-origin {
+body.no-animations .shortcut-search.show .search-container.from-origin,
+body.no-view-animations .shortcut-search.show .search-container.from-origin {
     animation: none;
 }
 
@@ -100,8 +87,7 @@ body.no-animations .shortcut-search.show .search-container.from-origin {
 .shortcut-search.show .search-container {
     transform: translateY(0) scale(1);
     opacity: 1;
-    /* entrance: spring — vertraagt soepel aan het einde */
-    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
+    transition: var(--modal-enter-transition);
 }
 
 /*
