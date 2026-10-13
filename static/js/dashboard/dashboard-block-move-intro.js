@@ -22,7 +22,6 @@
     const COACH_TIP = 'blockMoveCoach';
     const TOUR_TIP = 'dashboardTutorialV3';
     // The gap dashboard-keyboard-tip.js keeps between tips.
-    const TIP_GAP_MS = 3 * 24 * 60 * 60 * 1000;
 
     const FIRST_CHECK_MS = 1500;
     const RETRY_MS = 1000;
@@ -110,8 +109,7 @@
         if (s.hasSeenTip(TIP_ID) || s.hasSeenTip(COACH_TIP)) return true;
         if (d?.settings?.enableSessionTips === false) return true;
         if (global.DemoLock?.on) return true;
-        const notBefore = Number(s.getTipsNotBefore?.() || 0);
-        return Boolean(notBefore && Date.now() < notBefore);
+        return s.tipsAllowedNow?.() === false;
     }
 
     function signature(grid, order) {
@@ -324,8 +322,8 @@
         teardown(r);
         finished = true;
         tips()?.markTipSeen?.(TIP_ID);
-        // A tip like the others: the next one waits out the usual gap.
-        tips()?.setTipsNotBefore?.(Date.now() + TIP_GAP_MS);
+        // A tip like the others: it counts toward the rate limit.
+        tips()?.noteTipShown?.();
         global.nextdashTrack?.('block-move-intro:closed', { outcome });
         // The demo counts how its intro ended in the demo's own words.
         if (global.DemoLock?.on) {

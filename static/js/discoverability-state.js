@@ -8,11 +8,15 @@
     const WHATS_NEW_LEGACY_KEY = 'nextdash:last-whats-new-dashboard-release';
     const TIPS_UNTIL_LEGACY_KEY = 'nextdash-tips-promo-until-v1';
     const TIPS_NOT_BEFORE_LEGACY_KEY = 'nextdash-tips-not-before-v1';
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const TIPS_WINDOW_MS = DAY_MS;
+    const TIPS_PER_WINDOW = 1;
 
     let state = {
         lastWhatsNewRelease: '',
         tipsPromoUntil: 0,
         tipsNotBefore: 0,
+        tipsShownAt: [],
         seenTips: [],
         seenSettingPromos: [],
     };
@@ -29,6 +33,7 @@
                 lastWhatsNewRelease: '',
                 tipsPromoUntil: 0,
                 tipsNotBefore: 0,
+                tipsShownAt: [],
                 seenTips: [],
                 seenSettingPromos: [],
             };
@@ -37,6 +42,9 @@
             lastWhatsNewRelease: String(raw.lastWhatsNewRelease || '').trim(),
             tipsPromoUntil: Number(raw.tipsPromoUntil) || 0,
             tipsNotBefore: Number(raw.tipsNotBefore) || 0,
+            tipsShownAt: Array.isArray(raw.tipsShownAt)
+                ? raw.tipsShownAt.map(Number).filter((ts) => ts > 0)
+                : [],
             seenTips: Array.isArray(raw.seenTips)
                 ? raw.seenTips.map((id) => String(id || '').trim()).filter(Boolean)
                 : [],
@@ -150,6 +158,29 @@
         }
     }
 
+    /*
+     * How often tips may appear: at most TIPS_PER_WINDOW in any rolling 24
+     * hours, so the first tip shows right away and the next one a day later. A
+     * rolling window rather than a calendar day: no time zone to get wrong. tipsNotBefore is still honoured so a gap set by
+     * an earlier version runs out instead of being dropped.
+     */
+    function tipsAllowedNow(now = Date.now()) {
+        if (state.tipsNotBefore > 0 && now < state.tipsNotBefore) return false;
+        const recent = (state.tipsShownAt || []).filter((ts) => now - ts < TIPS_WINDOW_MS);
+        return recent.length < TIPS_PER_WINDOW;
+    }
+
+    /** Count one tip as shown, for the rate limit. */
+    function noteTipShown(options = {}) {
+        const now = Date.now();
+        state.tipsShownAt = (state.tipsShownAt || []).filter((ts) => now - ts < TIPS_WINDOW_MS);
+        state.tipsShownAt.push(now);
+        applyToDashboardSettings();
+        if (options.persist !== false) {
+            schedulePersist();
+        }
+    }
+
     function getSeenTips() {
         return Array.isArray(state.seenTips) ? state.seenTips.slice() : [];
     }
@@ -215,6 +246,7 @@
         markedHere.clear();
         state.seenTips = [];
         setTipsNotBefore(0, { persist: false });
+        state.tipsShownAt = [];
         applyToDashboardSettings();
         if (options.persist !== false) {
             schedulePersist();
@@ -261,6 +293,7 @@
             lastWhatsNewRelease: state.lastWhatsNewRelease || undefined,
             tipsPromoUntil: state.tipsPromoUntil > 0 ? state.tipsPromoUntil : undefined,
             tipsNotBefore: state.tipsNotBefore > 0 ? state.tipsNotBefore : undefined,
+            tipsShownAt: state.tipsShownAt?.length ? state.tipsShownAt.slice() : undefined,
             seenTips: state.seenTips?.length ? state.seenTips.slice() : undefined,
             seenSettingPromos: state.seenSettingPromos?.length ? state.seenSettingPromos.slice() : undefined,
         };
@@ -374,6 +407,8 @@
         setTipsPromoUntil,
         getTipsNotBefore,
         setTipsNotBefore,
+        tipsAllowedNow,
+        noteTipShown,
         getSeenTips,
         hasSeenTip,
         markTipSeen,

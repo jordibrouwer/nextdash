@@ -1091,6 +1091,9 @@ type DiscoverabilityState struct {
 	LastWhatsNewRelease string `json:"lastWhatsNewRelease,omitempty"`
 	TipsPromoUntil      int64  `json:"tipsPromoUntil,omitempty"`
 	TipsNotBefore       int64  `json:"tipsNotBefore,omitempty"`
+	// TipsShownAt holds the recent tip times (Unix ms) behind the
+	// one-per-24-hours limit.
+	TipsShownAt []int64 `json:"tipsShownAt,omitempty"`
 	// SeenTips lists tip ids already shown as a session tip; each is shown once, ever.
 	SeenTips []string `json:"seenTips,omitempty"`
 	// SeenSettingPromos lists dismissed config setting highlight popovers.

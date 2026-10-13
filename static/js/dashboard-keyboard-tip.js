@@ -5,23 +5,19 @@
  * they are the same translated strings Config → Help renders, read from
  * window.ConfigHelpTips, so the two can never drift apart.
  *
- * What actually limits the frequency is TIP_GAP_MS, held server-side in
- * discoverabilityState.tipsNotBefore: after a tip, no other tip may appear for
- * several days, across reloads, tabs and devices. `shownThisLoad` below is only
- * a within-page-load guard so the auto-start timer and a manual call cannot both
+ * What actually limits the frequency is DiscoverabilityState.tipsAllowedNow(),
+ * held server-side: at most one tip in any 24 hours, across reloads, tabs and
+ * devices. `shownThisLoad` below is only a within-page-load guard so the auto-start timer and a manual call cannot both
  * fire; it is not the rate limit and resets on every reload.
  *
  * Deliberately conservative. v2026.07.17 removed every tour, spotlight and promo
  * balloon, so this only earns its place by staying rare and easy to switch off:
- * a multi-day gap between tips, each tip once ever, never over a modal or during
+ * one tip per 24 hours at most, each tip once ever, never over a modal or during
  * onboarding, and a single toggle in Config → General.
  */
 (function initKeyboardTip(global) {
     'use strict';
 
-    // The real rate limit: enough of a gap that a tip is a pleasant surprise
-    // rather than a fixture. Persisted server-side, so it holds across devices.
-    const TIP_GAP_MS = 3 * 24 * 60 * 60 * 1000;
     const SHOW_DELAY_MS = 6000;
     const RETRY_MS = 1500;
     const MAX_RETRIES = 20;
@@ -94,9 +90,7 @@
             if (document.querySelector('.quickstart-card')) return false;
         }
 
-        const notBefore = Number(global.DiscoverabilityState?.getTipsNotBefore?.() || 0);
-        if (notBefore && Date.now() < notBefore) return false;
-        return true;
+        return global.DiscoverabilityState?.tipsAllowedNow?.() !== false;
     }
 
     function show() {
@@ -140,7 +134,7 @@
         clearTimeout(timer);
         timer = null;
         global.DiscoverabilityState?.markTipSeen?.(id);
-        global.DiscoverabilityState?.setTipsNotBefore?.(Date.now() + TIP_GAP_MS);
+        global.DiscoverabilityState?.noteTipShown?.();
         global.nextdashTrack?.('tip:shown', { tip: id });
         return true;
     }
