@@ -17938,6 +17938,7 @@ class DashboardConfig {
             const data = await res.json();
             if (!Array.isArray(data)) throw new Error('finders: unexpected payload');
             this._finders = data;
+            this._findersSeen = new Set(data.map(DashboardConfig.finderKey));
             this._findersLoadFailed = false;
         } catch {
             // Not []: saveFinders posts the whole list, so a failed load that
@@ -18034,6 +18035,38 @@ class DashboardConfig {
         });
     }
 
+    /** What tells two finders apart: they have no id. */
+    static finderKey(f) {
+        return `${String(f?.shortcut || '').trim()}\n${String(f?.searchUrl || '').trim()}`;
+    }
+
+    /**
+     * Add the finders the server has and this tab never saw.
+     *
+     * The list is read once per tab and saved whole, so a finder added on
+     * another device or tab since went with the next edit here. One this tab
+     * saw and no longer lists was deleted or changed here, and stays so.
+     * Appended, so the rows' indexes hold; they show on the next repaint.
+     */
+    async addFindersMadeElsewhere() {
+        if (!this._findersSeen || !Array.isArray(this._finders)) return;
+        let server;
+        try {
+            const res = await fetch('/api/finders', { cache: 'no-store' });
+            if (!res.ok) return;
+            server = await res.json();
+        } catch {
+            return;
+        }
+        if (!Array.isArray(server)) return;
+        const have = new Set(this._finders.map(DashboardConfig.finderKey));
+        server.forEach((f) => {
+            const key = DashboardConfig.finderKey(f);
+            if (!have.has(key) && !this._findersSeen.has(key)) this._finders.push(f);
+        });
+        this._finders.forEach((f) => this._findersSeen.add(DashboardConfig.finderKey(f)));
+    }
+
     async saveFinders() {
         // Refuse to write what we never managed to read — see loadFinders.
         if (this._findersLoadFailed) {
@@ -18041,6 +18074,7 @@ class DashboardConfig {
                 'Finders could not be loaded, so they will not be saved. Reload and try again.'), 'error');
             return false;
         }
+        await this.addFindersMadeElsewhere();
         try {
             const res = await this.writeFetch('/api/finders', {
                 method: 'POST',

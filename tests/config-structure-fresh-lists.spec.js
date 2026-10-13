@@ -4,7 +4,7 @@ const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent, W
 const auth = { 'X-NextDash-Token': WRITE_TOKEN };
 
 /**
- * Config → Structure saves categories as whole lists, from what
+ * Config → Structure saves categories and finders as whole lists, from what
  * the tab read. Something made on another device since was not in that list
  * and went with the next edit here.
  *
@@ -70,5 +70,34 @@ test.describe('Structure lists made elsewhere', () => {
 
         const ids = (await (await page.request.get(`/api/categories?page=${id}`)).json()).map((c) => c.id);
         expect(ids).toEqual(['alpha']);
+    });
+
+    test('a finder made elsewhere survives a delete here', async ({ page }) => {
+        await page.request.post('/api/finders', {
+            data: [
+                { name: 'Keep', shortcut: 'fk', searchUrl: 'https://keep.example/?q=%s' },
+                { name: 'Drop', shortcut: 'fd', searchUrl: 'https://drop.example/?q=%s' },
+            ],
+            headers: auth,
+        });
+        await openStructureTab(page, 'finders');
+        await page.waitForSelector('#config-pt-body [data-finder-delete]', { timeout: 15_000 });
+
+        const current = await (await page.request.get('/api/finders')).json();
+        await page.request.post('/api/finders', {
+            data: [...current, { name: 'Phone', shortcut: 'fp', searchUrl: 'https://phone.example/?q=%s' }],
+            headers: auth,
+        });
+
+        const names = await page.locator('#config-pt-body [data-finder="name"]').evaluateAll((els) => els.map((e) => e.value));
+        const saved = page.waitForResponse((r) => r.url().endsWith('/api/finders') && r.request().method() === 'POST');
+        await page.locator(`#config-pt-body [data-finder-delete="${names.indexOf('Drop')}"]`).click();
+        await confirmDelete(page);
+        expect((await saved).ok()).toBe(true);
+
+        const after = (await (await page.request.get('/api/finders')).json()).map((f) => f.name);
+        expect(after).toContain('Keep');
+        expect(after).toContain('Phone');
+        expect(after).not.toContain('Drop');
     });
 });
