@@ -19072,7 +19072,7 @@ class DashboardConfig {
                     { previous: page.name, message: this.t('config.pageNameDuplicate', 'A page with this name already exists.') }
                 )) return;
                 page[key] = input.value;
-                void this.savePages();
+                void this.savePages([id]);
             });
         });
         const addBtn = container.querySelector('[data-page-add]');
@@ -19097,7 +19097,12 @@ class DashboardConfig {
      * answer -- and got undefined from every save, so a duplicate never went
      * past the page list: no categories, no bookmarks, no word.
      */
-    async savePages() {
+    async savePages(edited = []) {
+        // The whole list goes to the server, and the server takes every entry
+        // in it as the truth: a name changed on another device was put back
+        // by the next reorder here. Re-read first; only the pages this save
+        // is about keep this tab's version.
+        await this.refreshPagesInPlace(edited);
         try {
             const res = await this.writeFetch('/api/pages', {
                 method: 'POST',
@@ -19187,7 +19192,7 @@ class DashboardConfig {
         );
         const newPage = { id: maxId + 1, name };
         pages.push(newPage);
-        await this.savePages();
+        await this.savePages([newPage.id]);
         this.repaintPtBody();
     }
 
@@ -19626,7 +19631,7 @@ class DashboardConfig {
             const sourceCategories = await catRes.json();
 
             pages.push(copy);
-            if (!await this.savePages()) return;
+            if (!await this.savePages([newId])) return;
 
             const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             if (Array.isArray(sourceCategories) && sourceCategories.length) {

@@ -86,4 +86,25 @@ test.describe('the pages list in config', () => {
         expect(phoneRows).toEqual(['https://phone-only.example/']);
         expect(after.some((p) => p.id > phoneId && /copy/i.test(p.name))).toBe(true);
     });
+
+    test('a rename made elsewhere survives a reorder here', async ({ page }) => {
+        await pagesTab(page);
+        // Two pages to swap, at least.
+        if (await page.evaluate(() => window.dashboardInstance.pages.length) < 2) {
+            await page.evaluate(() => window.dashboardInstance.config.addPage());
+            await page.waitForFunction(() => window.dashboardInstance.pages.length >= 2);
+        }
+        const [first, second] = await page.evaluate(() => window.dashboardInstance.pages.slice(0, 2).map((p) => Number(p.id)));
+
+        const current = await pagesElsewhere(page);
+        await savePagesElsewhere(page, current.map((p) => (Number(p.id) === second ? { ...p, name: 'Renamed on the phone' } : p)));
+
+        // Move the first page down, from this tab.
+        await page.evaluate(() => window.dashboardInstance.config.render());
+        await page.locator(`[data-page-move="down"][data-id="${first}"]`).click();
+
+        await expect.poll(async () => (await serverPages(page)).map((p) => p.id).indexOf(first), { timeout: 10_000 })
+            .toBeGreaterThan(0);
+        expect((await serverPages(page)).find((p) => p.id === second)?.name).toBe('Renamed on the phone');
+    });
 });
