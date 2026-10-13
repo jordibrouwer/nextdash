@@ -365,6 +365,7 @@
                     : (body?.message || this.t('dockerActionFailed', 'Docker did not do that.')), 'error');
                 return;
             }
+            window.nextdashTrack?.('docker:prune', { kind });
             if (kind === 'containers-stopped') {
                 const failed = body?.failed || [];
                 this.notify(failed.length
@@ -441,6 +442,7 @@
                         : (body?.message || this.t('dockerActionFailed', 'Docker did not do that.')), 'error');
                     return;
                 }
+                window.nextdashTrack?.('docker:prune', { kind: 'volume' });
                 this.notify(this.t('dockerDiskVolumeRemoved', '{name} removed.', { name: vol.name }), 'success');
                 await this.load();
             });

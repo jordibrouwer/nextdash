@@ -677,6 +677,7 @@
     async runWidgetBulkAction(action) {
         const ids = this.selectedWidgetIds();
         if (!ids.length) return;
+        if (action !== 'clear') window.nextdashTrack?.('widget:bulk', { action, count: ids.length });
         const picked = new Set(ids);
 
         if (action === 'clear') {
@@ -894,6 +895,7 @@
     openWidgetCatalogue({ focusType } = {}) {
         const esc = (v) => this.dash.escapeHtml(v);
         if (!window.AppModal?.show) return;
+        window.nextdashTrack?.('widget:picker-open');
 
         const types = this.widgetCatalogueTypes();
         const fresh = this.newWidgetTypes?.() || [];
@@ -3741,6 +3743,8 @@
         // No id: the server mints one. Inventing one here would be a second
         // place that decides what a widget id looks like.
         if (!await this.saveWidgetBlocks(payload)) return;
+        // The type is one of WIDGET_TYPES; the title and config never go out.
+        window.nextdashTrack?.('widget:add', { type });
         // Added from the Catalogue or the Custom tab: the new widget is filled
         // in on Your widgets, so that is where this lands.
         if (this.widgetsTab !== 'widgets') {
@@ -4064,6 +4068,8 @@
         // configFor writes presetId along with the address and the figures, so
         // what the panel was started from survives being saved and reopened.
         Object.assign(draft.config, catalogue.configFor(preset, draft.config.url || ''));
+        // A preset id is a fixed entry in DashboardWidgetPresets, not user text.
+        window.nextdashTrack?.('widget:preset', { preset: preset.id });
         if (preset.auth === 'header') {
             /*
              * The scheme is filled in, the token is not.
@@ -4412,6 +4418,7 @@
             ? await this.savePageWidgetsAfterRemoval(fromPage, block.id)
             : await this.saveWidgetBlocks(this.widgetPayloadFromBlocks());
         if (!wrote) return;
+        window.nextdashTrack?.('widget:remove', { type: block.widget?.type || block.type || 'unknown' });
         // After the page save, from the block held above: forgotten first, a
         // failed save left the widget pointing at a key that was gone.
         await this.forgetWidgetCredential(block);

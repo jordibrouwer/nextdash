@@ -551,6 +551,7 @@ class DashboardRenderCore {
             }
             d.collapsedCategories[collapsedKey] = collapsed;
             d.saveCollapsedStates();
+            window.nextdashTrack?.(collapsed ? 'widget:collapse' : 'widget:expand', { type: widget.type || 'unknown' });
         };
 
         title.addEventListener('click', () => {
@@ -635,6 +636,22 @@ class DashboardRenderCore {
         const bodyWrap = document.createElement('div');
         bodyWrap.className = 'category-body';
         bodyWrap.appendChild(body);
+        /*
+         * Which widgets get used, not just placed.
+         *
+         * One listener on the body rather than one per renderer, so a new
+         * widget type is counted without remembering to. Only the type and
+         * whether a link or a button was hit go out -- never the address,
+         * the label or anything the widget is showing.
+         */
+        bodyWrap.addEventListener('click', (e) => {
+            const hit = e.target.closest?.('a[href], button, [role="button"]');
+            if (!hit || !bodyWrap.contains(hit)) return;
+            window.nextdashTrack?.('widget:click', {
+                type: widget.type || 'unknown',
+                target: hit.matches('a[href]') ? 'link' : 'button',
+            });
+        });
         block.appendChild(bodyWrap);
         d.categoryMenu?.bindWidget?.(block, widget);
         // Only the custom tile has a clock; the others are redrawn by whatever

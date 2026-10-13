@@ -647,6 +647,7 @@
             const text = this.lines.filter((l) => !l.el.hidden).map((l) => this.lineText(l)).join('\n');
             try {
                 await navigator.clipboard.writeText(text);
+                window.nextdashTrack?.('docker:logs-copy');
                 this.view.dash?.showNotification?.(this.t('dockerLogsCopied', 'Lines copied'), 'success', { duration: 2000 });
             } catch {
                 this.view.dash?.showNotification?.(this.t('dockerLogsCopyFailed', 'The browser did not allow copying.'), 'error');
@@ -654,6 +655,7 @@
         }
 
         download() {
+            window.nextdashTrack?.('docker:logs-download');
             const text = this.lines.map((l) => `${l.t} [${l.s}] ${l.m}`).join('\n');
             const url = URL.createObjectURL(new Blob([`${text}\n`], { type: 'text/plain' }));
             const a = document.createElement('a');
