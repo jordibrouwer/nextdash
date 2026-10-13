@@ -21989,13 +21989,15 @@ class DashboardConfig {
             const button = event.target.closest('[data-tag-suggestion-apply]');
             if (button) {
                 const index = Number(button.getAttribute('data-tag-suggestion-apply'));
-                void this.applyTagSuggestion((this._tagSuggestionGroups || [])[index]);
+                void this.keepTagSuggestionsPlace(button,
+                    () => this.applyTagSuggestion((this._tagSuggestionGroups || [])[index]));
                 return;
             }
             const refuse = event.target.closest('[data-tag-suggestion-dismiss]');
             if (refuse) {
                 const index = Number(refuse.getAttribute('data-tag-suggestion-dismiss'));
-                void this.dismissTagSuggestion((this._tagSuggestionGroups || [])[index]);
+                void this.keepTagSuggestionsPlace(refuse,
+                    () => this.dismissTagSuggestion((this._tagSuggestionGroups || [])[index]));
                 return;
             }
             if (event.target.closest('[data-tag-scan-start]')) {
@@ -22016,7 +22018,8 @@ class DashboardConfig {
             }
             const backOne = event.target.closest('[data-tag-suggestion-restore-one]');
             if (backOne) {
-                void this.restoreTagSuggestion(backOne.getAttribute('data-tag-suggestion-restore-one'));
+                void this.keepTagSuggestionsPlace(backOne,
+                    () => this.restoreTagSuggestion(backOne.getAttribute('data-tag-suggestion-restore-one')));
                 return;
             }
             const toggle = event.target.closest('[data-tag-suggestion-toggle]');
@@ -25161,6 +25164,102 @@ class DashboardConfig {
             duration: 8000,
         });
         this.renderTagSuggestionsSafe();
+    }
+
+    /*
+     * Stay where the reader was.
+     *
+     * Accepting or refusing a row writes, and a write repaints the whole view
+     * (refreshAfterBookmarkMutation): for a moment the suggestions panel is
+     * empty, the page is short, and the browser scrolls to the top. A reader
+     * working down a long list was thrown back to the start after every
+     * click. So the scroll position is held across the write and put back
+     * once the panel is drawn again, and the focus goes to the same kind of
+     * button on the row that took the clicked one's place -- or the one
+     * above it, at the end of the list -- so the keyboard stays there too.
+     */
+    async keepTagSuggestionsPlace(button, work) {
+        const y = window.scrollY;
+        const attr = ['data-tag-suggestion-apply', 'data-tag-suggestion-dismiss', 'data-tag-suggestion-restore-one']
+            .find((name) => button?.hasAttribute?.(name));
+        const all = attr ? [...document.querySelectorAll(`#config-bm-suggestions [${attr}]`)] : [];
+        const position = all.indexOf(button);
+        // Held tall while the view is drawn again, so there is nothing to
+        // scroll back from: the page never gets short enough to clamp.
+        const root = document.documentElement;
+        const held = root.style.minHeight;
+        root.style.minHeight = `${root.scrollHeight}px`;
+        try {
+            await work();
+        } finally {
+            // Two frames: the repaint and the panel's own draw after it.
+            await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+            window.scrollTo({ top: y, behavior: 'instant' });
+            root.style.minHeight = held;
+            if (attr && position >= 0) {
+                const now = [...document.querySelectorAll(`#config-bm-suggestions [${attr}]`)];
+                const next = now[Math.min(position, now.length - 1)];
+                next?.focus?.({ preventScroll: true });
+            }
+        }
+    }
+
+    /*
+     * The same round for the inbox.
+     *
+     * Inbox links are not bookmarks: their tags live on the inbox item and
+     * are written through the inbox's own route. So the round asks the
+     * catalogue and Wikidata about them the same way, and then hands what
+     * the engine proposes for each link to the inbox's own "apply
+     * suggestions" (dashboard-inbox.js), the one its selection bar uses.
+     */
+    /**
+     * The inbox module with its items in hand. It loads lazily, and the
+     * suggestions panel is often drawn before anyone opened the inbox.
+     */
+    async ensureInboxForTags() {
+        let inbox = this.dash.inbox;
+        try {
+            inbox = (await inbox?.load?.()) || inbox;
+            if (!inbox?._itemsLoaded) await inbox?.loadItems?.();
+        } catch {
+            // No inbox is an empty inbox here: the rest of the panel stands.
+        }
+        return inbox;
+    }
+
+    async runInboxTagSearch() {
+        const d = this.dash;
+        const inbox = await this.ensureInboxForTags();
+        const items = (inbox?.items || []).filter((item) => item?.url && item?.id);
+        if (!items.length) {
+            this.notify(this.t('config.tagSearchInboxEmpty', 'The inbox is empty.'), 'info');
+            return;
+        }
+        const live = window.TagSuggestLive;
+        if (!live || !window.TagCatalogue?.lookupRound) return;
+        await this.ensureTagCatalogue();
+        const round = await window.TagCatalogue.lookupRound(items.map((item) => item.url), {
+            title: this.t('config.tagSearchProgressTitle', 'Looking for tags…'),
+        });
+        if (round.busy) return;
+        live.invalidate();
+        const byTag = new Map();
+        items.forEach((item) => live.forInboxItem(d, item).slice(0, 2).forEach((offer) => {
+            byTag.set(offer.tag, [...(byTag.get(offer.tag) || []), item]);
+        }));
+        if (!byTag.size) {
+            this.notify(this.t('config.tagSearchNone', 'No new tags found for these bookmarks.'), 'info', { duration: 6000 });
+            return;
+        }
+        const linked = new Set([...byTag.values()].flat()).size;
+        if (this.tagSearchApplyNow() && typeof inbox?.applySuggestions === 'function') {
+            await inbox.applySuggestions([...byTag.entries()]);
+            this.renderTagSuggestionsSafe();
+            return;
+        }
+        this.notify(this.t('config.tagSearchInboxWaiting', '{n} inbox links have a tag suggestion waiting in the inbox.')
+            .replace('{n}', String(linked)), 'success', { duration: 8000 });
     }
 
     /*
