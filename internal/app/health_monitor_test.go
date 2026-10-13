@@ -520,3 +520,34 @@ func TestRunDueMonitorsOneSlowHostDoesNotStarveTheOthers(t *testing.T) {
 	close(release)
 	<-done
 }
+
+// Checks on one host queue behind each other and the round drops whatever is
+// still waiting at its deadline. In page order that was the same tail every
+// round, so those bookmarks never got a sample. The longest unchecked go first.
+func TestDueMonitorTargetsLongestUncheckedFirst(t *testing.T) {
+	h, dir := healthRecheckTestHandlers(t, `{}`)
+	pageJSON := `{"id":1,"name":"Page 1","bookmarks":[
+		{"name":"A","url":"https://host.example/a","monitor":true,"monitorIntervalMinutes":15},
+		{"name":"B","url":"https://host.example/b","monitor":true,"monitorIntervalMinutes":15},
+		{"name":"C","url":"https://host.example/c","monitor":true,"monitorIntervalMinutes":15}
+	]}`
+	if err := os.WriteFile(filepath.Join(dir, "bookmarks-1.json"), []byte(pageJSON), 0o644); err != nil {
+		t.Fatalf("write bookmarks: %v", err)
+	}
+	now := time.Now()
+	if err := h.appendHealthSamples(map[string][]HealthSample{
+		canonicalBookmarkURLKey("https://host.example/a"): {{T: msAgo(now, 20*time.Minute), Up: true}},
+		canonicalBookmarkURLKey("https://host.example/c"): {{T: msAgo(now, 60*time.Minute), Up: true}},
+	}); err != nil {
+		t.Fatalf("append: %v", err)
+	}
+
+	targets, _, _ := h.dueMonitorTargets(now)
+	var got []string
+	for _, target := range targets {
+		got = append(got, target.name)
+	}
+	if strings.Join(got, ",") != "B,C,A" {
+		t.Fatalf("order = %v, want B (never), C (60m), A (20m)", got)
+	}
+}
