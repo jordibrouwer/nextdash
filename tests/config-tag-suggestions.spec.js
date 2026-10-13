@@ -279,6 +279,60 @@ test.describe('the tag suggestion engine', () => {
         expect(got.halfBuilt).toBe(1);
     });
 
+    test('a site looked up online says where it came from, and a refusal keeps it down', async ({ page }) => {
+        await open(page);
+        const got = await page.evaluate((rows) => {
+            // What TagCatalogue merges in after a lookup: "~host", exact, with
+            // Wikidata's description beside it.
+            const catalogue = [
+                { tag: 'diagramming', aliases: [], hosts: ['~drawio.com'], about: { 'drawio.com': 'diagram editor' } },
+                { tag: 'editor', aliases: [], hosts: ['~drawio.com'] },
+            ];
+            const offer = (dismissed) => window.TagSuggestions.suggest(rows, { catalogue, dismissed })
+                .map((group) => ({ tag: group.tag, kind: group.reason.kind, about: group.reason.about, keys: group.keys.length }));
+            return {
+                fresh: offer([]),
+                refused: offer(['drawio.com|diagramming']),
+                subdomain: window.TagSuggestions.suggest([{ key: 'z', url: 'https://app.drawio.com/', tags: [] }], { catalogue }).length,
+            };
+        }, items([
+            ['a', 'https://drawio.com/', []],
+            ['b', 'https://drawio.com/blog', ['work']],
+        ]));
+        expect(got.fresh).toEqual([
+            { tag: 'diagramming', kind: 'online', about: 'diagram editor', keys: 2 },
+            { tag: 'editor', kind: 'online', about: '', keys: 2 },
+        ]);
+        // Turned down once, for one bookmark or for many: never offered
+        // again. The other subject of the same site still is.
+        expect(got.refused.map((group) => group.tag)).toEqual(['editor']);
+        // Looked up by name, so it lends nothing to a subdomain.
+        expect(got.subdomain).toBe(0);
+    });
+
+    test('a tag taken off one bookmark is not offered back to it, whatever groups the offer', async ({ page }) => {
+        await open(page);
+        const got = await page.evaluate((rows) => {
+            const catalogue = [{ tag: 'containers', aliases: [], hosts: ['docker.com'] }];
+            const keysFor = (dismissed) => window.TagSuggestions.suggest(rows, { catalogue, dismissed })
+                .flatMap((group) => group.keys).sort();
+            return {
+                fresh: keysFor([]),
+                // What the server records when #containers comes off the docs bookmark.
+                oneHost: keysFor(['docs.docker.com|containers']),
+                // A refusal on the site covers its subdomains too.
+                wholeSite: keysFor(['docker.com|containers']),
+            };
+        }, items([
+            ['docs', 'https://docs.docker.com/get-started', []],
+            ['hub', 'https://hub.docker.com/', []],
+            ['home', 'https://docker.com/', []],
+        ]));
+        expect(got.fresh).toEqual(['docs', 'home', 'hub']);
+        expect(got.oneHost).toEqual(['home', 'hub']);
+        expect(got.wholeSite).toEqual([]);
+    });
+
     test('a rule that only restates a group the app already noticed is one row, not two', async ({ page }) => {
         await open(page);
         const groups = await page.evaluate((rows) => window.TagSuggestions.suggest(rows, {
@@ -443,21 +497,59 @@ test.describe('the suggestions panel', () => {
         expect(edges.actions).toBe(1);
     });
 
+    test('one row per tag, however many sites propose it', async ({ page }) => {
+        await open(page);
+        await page.waitForFunction(() => !!window.ConfigTagSuggestions, null, { timeout: 15_000 });
+        const drawn = await page.evaluate(() => {
+            const host = document.createElement('div');
+            document.body.appendChild(host);
+            const catalogue = [
+                { tag: 'news', aliases: [], hosts: ['ad.example', 'nu.example'] },
+                { tag: 'social', aliases: [], hosts: ['gag.example'] },
+            ];
+            const rows = window.ConfigTagSuggestions.render(host, {
+                items: [
+                    { key: 'a', url: 'https://ad.example/', tags: [] },
+                    { key: 'b', url: 'https://nu.example/one', tags: [] },
+                    { key: 'c', url: 'https://nu.example/two', tags: [] },
+                    { key: 'd', url: 'https://gag.example/', tags: [] },
+                ],
+                rules: [],
+                catalogue,
+                t: (key, fallback) => fallback,
+            });
+            const result = {
+                rows: rows.map((row) => ({ tag: row.tag, sites: row.groups.length, keys: row.keys })),
+                drawn: host.querySelectorAll('[data-tag-suggestion]').length,
+                counts: [...host.querySelectorAll('.config-suggestion-count')].map((chip) => chip.textContent),
+            };
+            host.remove();
+            return result;
+        });
+        expect(drawn.rows).toEqual([
+            { tag: 'news', sites: 2, keys: 3 },
+            { tag: 'social', sites: 1, keys: 1 },
+        ]);
+        expect(drawn.drawn).toBe(2);
+        expect(drawn.counts).toEqual(['3', '1']);
+    });
+
     test('caps how many rows it draws, and says how many are waiting', async ({ page }) => {
         await open(page);
         await page.waitForFunction(() => !!window.ConfigTagSuggestions, null, { timeout: 15_000 });
         const drawn = await page.evaluate(() => {
             const host = document.createElement('div');
             document.body.appendChild(host);
-            // Thirty hosts, each three tagged and one not: thirty groups, more
-            // than the panel is willing to put on screen at once.
+            // Thirty hosts, each three tagged and one not, each with its own
+            // tag: thirty rows (one per tag), more than the panel is willing
+            // to put on screen at once.
             const rows = [];
             for (let h = 0; h < 30; h += 1) {
                 for (let i = 0; i < 4; i += 1) {
                     rows.push({
                         key: `h${h}-${i}`,
                         url: `https://host${h}.example/page${i}`,
-                        tags: i < 3 ? ['code'] : [],
+                        tags: i < 3 ? [`code${h}`] : [],
                     });
                 }
             }
@@ -482,33 +574,39 @@ test.describe('the suggestions panel', () => {
     test('the shipped catalogue is served, and the panel reads it', async ({ page }) => {
         await open(page);
         const doc = await page.evaluate(async () => {
-            const response = await fetch('/static/data/tag-patterns.json');
+            const response = await fetch('/api/tags/catalogue', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ hosts: ['github.com', 'www.google.com', 'mail.google.com'] }),
+            });
             return response.ok ? response.json() : null;
         });
-        expect(doc?.version).toBe(1);
+        expect(doc?.version).toBe(2);
         expect(Array.isArray(doc.tags)).toBe(true);
-        // Big enough to be worth shipping, and every entry usable: a subject
-        // with no hosts can never match, and a host under two subjects would
-        // propose whichever was read first.
+        // Every subject comes back, because page text is matched against all
+        // of them; only the asked hosts come with it.
         expect(doc.tags.length).toBeGreaterThan(300);
-        const hosts = new Set();
-        const twice = [];
-        doc.tags.forEach((entry) => {
-            expect(entry.hosts.length).toBeGreaterThan(0);
-            expect(entry.aliases).not.toContain(entry.tag);
-            entry.hosts.forEach((host) => {
-                if (hosts.has(host)) twice.push(host);
-                hosts.add(host);
-            });
-        });
-        expect(twice).toEqual([]);
+        const hosts = doc.tags.flatMap((entry) => entry.hosts);
+        expect(hosts.sort()).toEqual(['=google.com', 'github.com', 'mail.google.com']);
 
         // And it reaches the engine: a bookmark on a site the catalogue knows
-        // is offered that site's subject.
-        const proposed = await page.evaluate((catalogue) => window.TagSuggestions.suggest([
-            { key: 'a', url: 'https://github.com/trending', tags: [] },
-        ], { catalogue }).map((group) => group.tag), doc.tags);
-        expect(proposed.length).toBe(1);
+        // is offered that site's subject, and an exact host lends nothing to
+        // a subdomain the catalogue does not name.
+        const proposed = await page.evaluate((catalogue) => {
+            const tagsFor = (url) => window.TagSuggestions.suggest([
+                { key: 'a', url, tags: [] },
+            ], { catalogue }).map((group) => group.tag);
+            return {
+                github: tagsFor('https://github.com/trending'),
+                google: tagsFor('https://www.google.com/'),
+                mail: tagsFor('https://mail.google.com/mail/u/0/'),
+                account: tagsFor('https://myaccount.google.com/'),
+            };
+        }, doc.tags);
+        expect(proposed.github.length).toBe(1);
+        expect(proposed.google).toEqual(['search']);
+        expect(proposed.mail).toEqual(['email']);
+        expect(proposed.account).toEqual([]);
     });
 
     test('a proposal you turn down stays down, and comes back on request', async ({ page }) => {
@@ -591,7 +689,7 @@ test.describe('the suggestions panel', () => {
         });
         expect(drawn.groups).toBe(0);
         expect(drawn.rows).toBe(0);
-        expect(drawn.panelText).toContain('Nothing to propose yet');
+        expect(drawn.panelText).toContain('Nothing to review');
         expect(drawn.editorInPanel).toBe(false);
         expect(drawn.addButton).toBe(true);
         expect(drawn.emptyNote).toBe(true);
@@ -1004,12 +1102,13 @@ test.describe('the suggestions panel', () => {
         });
         await openSuggestionsTab(page);
 
-        for (const host of ['stay-open-a.example', 'stay-open-b.example']) {
-            const offered = page.locator('#config-bm-suggestions [data-tag-suggestion]').filter({ hasText: host });
-            await expect(offered).toHaveCount(1, { timeout: 15_000 });
-            await offered.locator('[data-tag-suggestion-dismiss]').click();
-            await expect(offered).toHaveCount(0, { timeout: 15_000 });
-        }
+        // Both sites propose #keep, so they share one row (one per tag);
+        // refusing it turns down each site on its own.
+        const offered = page.locator('#config-bm-suggestions [data-tag-suggestion]')
+            .filter({ hasText: 'stay-open-a.example' }).filter({ hasText: 'stay-open-b.example' });
+        await expect(offered).toHaveCount(1, { timeout: 15_000 });
+        await offered.locator('[data-tag-suggestion-dismiss]').click();
+        await expect(offered).toHaveCount(0, { timeout: 15_000 });
 
         await page.locator('[data-tag-suggestions-dismissed] > summary').click();
         const refused = (host) => page.locator('[data-tag-suggestion-refused]').filter({ hasText: host });
