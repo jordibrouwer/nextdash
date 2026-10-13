@@ -140,6 +140,33 @@ test.describe('getting there and back', () => {
         await expect(view(page)).toHaveCount(0);
         await expect.poll(() => currentPage(page)).toBe(ids.other);
     });
+
+    /*
+     * The pointer rests on a row and the view opens before the hover delay is
+     * up. The row goes without a mouseleave, so its timer still fired and the
+     * card of a bookmark no longer on screen opened over the tag view, and
+     * stayed there.
+     */
+    test('a row hovered as the view opens leaves no preview card over it', async ({ page }) => {
+        await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            Object.assign(d.settings, { linkPreviewMode: 'hover', showLinkPreviewCards: true, linkPreviewHoverDelayMs: 250 });
+            d.renderDashboard({ animate: false, forceFull: true });
+        });
+        const link = page.locator(`#dashboard-layout a.bookmark-open[href="https://tv-a-${STAMP}.example.com/"]`).first();
+        await page.evaluate((url) => {
+            const kn = window.dashboardInstance.keyboardNavigation;
+            kn.updateNavigableElements();
+            kn.currentIndex = kn.navigableElements.findIndex((el) => el.querySelector?.(`a[href="${url}"]`) || el.getAttribute?.('href') === url);
+            kn.highlightCurrentElement();
+        }, `https://tv-a-${STAMP}.example.com/`);
+        await link.hover();
+        await page.keyboard.press('t');
+        await expect(view(page)).toBeVisible();
+        // Past the hover delay and the preview fetch.
+        await page.waitForTimeout(1_500);
+        await expect(page.locator('#bookmark-preview-card.is-visible')).toHaveCount(0);
+    });
 });
 
 test('a cold load on #tag/<tag> shows bookmarks from every page', async ({ page }) => {

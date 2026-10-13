@@ -123,6 +123,7 @@ A tag gets a page of its own. The tag cloud is quieter — three sizes, counts, 
 - **fix — `/` with the header's tag button off** opened the cloud inside a hidden wrap.
 - **fix — a tag change in the tag popover renamed every bookmark in memory** that shared the old tag list; the rewrite now touches only the bookmark edited (`dashboard-bookmark-rows.js`).
 - **fix — Move to… for a bookmark on another page** offered the current page's categories; it now offers pages.
+- **fix — no preview card left over the tag view.** A tag picked in the cloud with the pointer coming to rest on a dashboard row opened the view before that row's hover delay was up; the row went without a mouseleave, its timer still fired, and the card of a bookmark no longer on screen stayed over the table. `showBookmarkPreviewCard` now refuses a row that is gone or hidden (`dashboard-preview.js`, `tag-view.spec.js`).
 
 ### Tag suggestions
 
