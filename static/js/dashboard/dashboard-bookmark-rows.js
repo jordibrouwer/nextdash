@@ -1470,6 +1470,25 @@ class DashboardBookmarkRows {
             return;
         }
         /*
+         * A bookmark from another page -- a tag view or smart collection row.
+         * The list below is this page's categories and moves by this page's
+         * index, so it would have filed the bookmark under a category it
+         * cannot reach. The tag filter's move knows other pages: it offers
+         * pages only, and moves the bookmark from where it is.
+         */
+        const remoteRef = this.resolveBookmarkReference(bookmark);
+        if (remoteRef?.scope === 'remote' && d.tagFilter?.showTagFilterBulkMovePopover) {
+            d.tagFilter.showTagFilterBulkMovePopover(anchorEl, {
+                refs: [remoteRef],
+                onMoveToPage: async (id) => {
+                    await d.tagFilter.bulkMoveTagFilterToPage(id, [remoteRef]);
+                    d.renderDashboard?.({ animate: false });
+                },
+                onMoveToCategory: (id) => d.applyBookmarkCategoryMove?.([remoteRef], id, { count: 1 }),
+            });
+            return;
+        }
+        /*
          * Which press this is, claimed before the await below.
          *
          * The guard above is the only thing stopping two popovers, and it is
