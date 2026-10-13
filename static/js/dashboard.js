@@ -1642,11 +1642,11 @@ class Dashboard {
     }
 
     _shouldSyncBookmarkMutation(bookmarkRef, candidate, previousUrlTrimmed) {
-        return this.inlineEdit._shouldSyncBookmarkMutation(...arguments);
+        return this.bookmarkRows._shouldSyncBookmarkMutation(...arguments);
     }
 
     _applyBookmarkMutationFields(target, source) {
-        return this.inlineEdit._applyBookmarkMutationFields(...arguments);
+        return this.bookmarkRows._applyBookmarkMutationFields(...arguments);
     }
 
     async confirmDeleteBookmarkInline(bookmark) {

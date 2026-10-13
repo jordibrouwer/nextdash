@@ -2776,40 +2776,6 @@ class DashboardInlineEdit {
         }
     }
 
-    _shouldSyncBookmarkMutation(bookmarkRef, candidate, previousUrlTrimmed) {
-        const d = this.dash;
-        if (!bookmarkRef || !candidate) {
-            return false;
-        }
-        const updatedPageId = Number(bookmarkRef.pageId || d.currentPageId);
-        const candidatePageId = Number(candidate.pageId || candidate.pageID || 0);
-        if (candidatePageId !== updatedPageId) {
-            return false;
-        }
-        const candidateUrl = String(candidate.url || '').trim();
-        return d.isSameBookmarkReference(bookmarkRef, candidate)
-            || (previousUrlTrimmed && candidateUrl === previousUrlTrimmed);
-    }
-
-
-    _applyBookmarkMutationFields(target, source) {
-        if (!target || !source) {
-            return;
-        }
-        target.name = source.name;
-        target.url = source.url;
-        target.icon = source.icon;
-        target.shortcut = source.shortcut;
-        target.category = source.category;
-        target.pinned = source.pinned;
-        target.checkStatus = source.checkStatus;
-        target.monitor = source.monitor;
-        target.monitorIntervalMinutes = source.monitorIntervalMinutes;
-        target.note = source.note || '';
-        target.tags = Array.isArray(source.tags) ? [...source.tags] : [];
-    }
-
-
     async confirmDeleteBookmarkInline(bookmark) {
         const d = this.dash;
         if (!bookmark) {

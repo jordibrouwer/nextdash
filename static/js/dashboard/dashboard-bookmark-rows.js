@@ -984,6 +984,47 @@ class DashboardBookmarkRows {
     }
 
 
+    /*
+     * These two lived in the inline-edit module, which loads on demand. Until
+     * it had, the lazy loader answered the question with a promise, which is
+     * truthy, so a tag change from the Tags popover synced its fields into
+     * every bookmark in memory: the whole library briefly carried one name.
+     * The tag view opens without that module, so it showed there first.
+     */
+    _shouldSyncBookmarkMutation(bookmarkRef, candidate, previousUrlTrimmed) {
+        const d = this.dash;
+        if (!bookmarkRef || !candidate) {
+            return false;
+        }
+        const updatedPageId = Number(bookmarkRef.pageId || d.currentPageId);
+        const candidatePageId = Number(candidate.pageId || candidate.pageID || 0);
+        if (candidatePageId !== updatedPageId) {
+            return false;
+        }
+        const candidateUrl = String(candidate.url || '').trim();
+        return d.isSameBookmarkReference(bookmarkRef, candidate)
+            || (previousUrlTrimmed && candidateUrl === previousUrlTrimmed);
+    }
+
+
+    _applyBookmarkMutationFields(target, source) {
+        if (!target || !source) {
+            return;
+        }
+        target.name = source.name;
+        target.url = source.url;
+        target.icon = source.icon;
+        target.shortcut = source.shortcut;
+        target.category = source.category;
+        target.pinned = source.pinned;
+        target.checkStatus = source.checkStatus;
+        target.monitor = source.monitor;
+        target.monitorIntervalMinutes = source.monitorIntervalMinutes;
+        target.note = source.note || '';
+        target.tags = Array.isArray(source.tags) ? [...source.tags] : [];
+    }
+
+
     syncEditedBookmarkAcrossCollections(bookmarkRef, previousUrl = '') {
         const d = this.dash;
         if (!bookmarkRef || !bookmarkRef.bookmark) {
