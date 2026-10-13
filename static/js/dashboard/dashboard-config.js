@@ -5994,7 +5994,7 @@ class DashboardConfig {
     async restoreList(url, rows) {
         const res = await this.writeFetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-NextDash-Undo': '1' },
             body: JSON.stringify(rows),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -24741,11 +24741,13 @@ class DashboardConfig {
      * PATCH rows of one page. A refusal (409) throws an Error carrying the
      * server's answer as `.conflict`, so the caller can say what collided.
      */
-    async patchRows(pageId, updates) {
+    async patchRows(pageId, updates, options = {}) {
         if (!updates.length) return { updated: 0 };
         const res = await this.writeFetch('/api/bookmarks', {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            // An undo puts back what was there; a tag it takes off is not one
+            // the reader turned down (internal/app/tag_refusals.go).
+            headers: { 'Content-Type': 'application/json', ...(options.undo ? { 'X-NextDash-Undo': '1' } : {}) },
             body: JSON.stringify({ page: Number(pageId), updates }),
         });
         if (res.status === 409) {
@@ -24993,7 +24995,7 @@ class DashboardConfig {
         return async () => {
             try {
                 for (const [pageId, updates] of undo) {
-                    await this.patchRows(pageId, updates);
+                    await this.patchRows(pageId, updates, { undo: true });
                 }
                 await this.refreshBookmarksAfterWrite();
                 // The suggestions panel is built from the tags an undo just put

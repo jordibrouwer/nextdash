@@ -408,8 +408,29 @@
         const refused = new Set((settings.dismissed || [])
             .map((entry) => String(entry).trim().toLowerCase())
             .filter(Boolean));
+        /*
+         * And per bookmark. A refusal names a site -- "docs.docker.com|containers"
+         * when the tag was taken off a bookmark there by hand -- while the
+         * proposal that would bring it back may be grouped on another pattern:
+         * the catalogue groups on docker.com. So a refusal also holds for every
+         * bookmark on that host or below it, whatever the proposal's pattern.
+         */
+        const hostOf = (item) => (patternsOf.get(item) || [])[0] || '';
+        const byItemKey = new Map(rows.map((item) => [item.key, item]));
+        const refusedHere = (key, tag) => {
+            const host = hostOf(byItemKey.get(key));
+            if (!host) return false;
+            const labels = host.split('.');
+            for (let i = 0; i <= labels.length - 2; i++) {
+                if (refused.has(`${labels.slice(i).join('.')}|${tag}`)) return true;
+            }
+            return false;
+        };
         const kept = refused.size
-            ? proposals.filter((proposal) => !refused.has(`${proposal.pattern}|${proposal.tag}`))
+            ? proposals
+                .filter((proposal) => !refused.has(`${proposal.pattern}|${proposal.tag}`))
+                .map((proposal) => ({ ...proposal, keys: proposal.keys.filter((key) => !refusedHere(key, proposal.tag)) }))
+                .filter((proposal) => proposal.keys.length)
             : proposals;
         kept.sort((a, b) => a.rank - b.rank || b.keys.length - a.keys.length);
 

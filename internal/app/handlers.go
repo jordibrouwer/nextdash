@@ -1558,6 +1558,7 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	logBookmarkSaveDiff(pageID, beforeBookmarks, bookmarks, r)
+	h.refuseRemovedTags(w, r, beforeBookmarks, bookmarks)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }

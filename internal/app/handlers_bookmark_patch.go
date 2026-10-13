@@ -201,6 +201,8 @@ func (h *Handlers) PatchBookmarks(w http.ResponseWriter, r *http.Request) {
 
 	applied := make(map[string]bool, len(byKey))
 	now := time.Now().UnixMilli()
+	// The page before and after, for the tags this patch took off.
+	var tagsBefore, tagsAfter []Bookmark
 	err := h.store.MutateBookmarksOnPage(request.Page, func(bookmarks []Bookmark) ([]Bookmark, error) {
 		for k := range applied {
 			delete(applied, k)
@@ -267,6 +269,7 @@ func (h *Handlers) PatchBookmarks(w http.ResponseWriter, r *http.Request) {
 				return nil, &bookmarkConflict{Kind: "duplicate_shortcut", URL: row.URL, Shortcut: sc, With: *hit}
 			}
 		}
+		tagsBefore, tagsAfter = bookmarks, next
 		return next, nil
 	})
 	var conflict *bookmarkConflict
@@ -279,6 +282,7 @@ func (h *Handlers) PatchBookmarks(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(applied) > 0 {
 		h.invalidateHealthReportCache()
+		h.refuseRemovedTags(w, r, tagsBefore, tagsAfter)
 	}
 
 	missing := make([]string, 0)
