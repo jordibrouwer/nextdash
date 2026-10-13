@@ -1676,7 +1676,26 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	request.Bookmark.Icon = sanitizeBookmarkIcon(request.Bookmark.Icon)
 	trimBookmarkTextFields(&request.Bookmark)
 
-	if !respondStorePersistError(w, h.store.AddBookmarkToPage(request.Page, request.Bookmark)) {
+	addErr := h.store.AddBookmarkToPage(request.Page, request.Bookmark)
+	if errors.Is(addErr, ErrBookmarkDuplicateURL) {
+		// The same answer as the check above, for an add of the same URL that
+		// landed between that check and this write.
+		logBookmarkSaveFailed(request.Page, "duplicate_url", r)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(map[string]any{
+			"error":    "duplicate_url",
+			"message":  "Bookmark URL already exists",
+			"samePage": true,
+			"conflict": map[string]any{
+				"url":      request.Bookmark.URL,
+				"pageId":   request.Page,
+				"pageName": pageNameForID(h.store, request.Page),
+			},
+		})
+		return
+	}
+	if !respondStorePersistError(w, addErr) {
 		return
 	}
 	request.Bookmark.PageID = request.Page
@@ -2063,7 +2082,7 @@ func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int
 		} else if shortcut != "" {
 			takenShortcuts[shortcut] = true
 		}
-		if !respondStorePersistError(w, h.store.AddBookmarkToPage(request.PageID, Bookmark{
+		addErr := h.store.AddBookmarkToPage(request.PageID, Bookmark{
 			Name:     bm.Name,
 			URL:      bm.URL,
 			Category: catID,
@@ -2078,7 +2097,14 @@ func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int
 			// in 1970.
 			CreatedAt: bm.CreatedAt,
 			UpdatedAt: bm.UpdatedAt,
-		})) {
+		})
+		if errors.Is(addErr, ErrBookmarkDuplicateURL) {
+			// Added since existingURLs was read: already there, as a skip is.
+			existingURLs[key] = struct{}{}
+			skipped++
+			continue
+		}
+		if !respondStorePersistError(w, addErr) {
 			return
 		}
 		existingURLs[key] = struct{}{}

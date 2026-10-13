@@ -2756,6 +2756,12 @@ func (fs *FileStore) AddBookmarkToPage(pageID int, bookmark Bookmark) error {
 		return fmt.Errorf("decode bookmarks page %d: %w", pageID, err)
 	}
 
+	// Checked again here, under the lock: the handlers look before they call,
+	// and two adds of one URL arriving together both saw it missing.
+	if urlTakenOnPage(pageWithBookmarks.Bookmarks, -1, bookmark.URL) {
+		return ErrBookmarkDuplicateURL
+	}
+
 	bookmark.PageID = pageID
 	if bookmark.UpdatedAt == 0 {
 		bookmark.UpdatedAt = time.Now().UnixMilli()

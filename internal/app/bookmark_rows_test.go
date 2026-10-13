@@ -3,6 +3,7 @@ package app
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -329,5 +330,20 @@ func TestPageWriteOrderPutsTheTargetFirst(t *testing.T) {
 	got := pageWriteOrder(changed, func(id int) int { return before[id] })
 	if len(got) != 3 || got[0] != 3 || got[2] != 2 {
 		t.Fatalf("order = %v, want the target (3) first and the source (2) last", got)
+	}
+}
+
+// AddBookmark looks for the URL before it writes, outside the store lock. Two
+// adds of one URL arriving together both saw it missing and both landed, and
+// the page then refused every save as a duplicate. The store checks again
+// under its lock.
+func TestAddBookmarkToPageRefusesAURLAlreadyThere(t *testing.T) {
+	_, store := patchTestHandlers(t)
+	seedPages(t, store, map[int][]Bookmark{7: {{Name: "A", URL: "https://a.example/"}}})
+	if err := store.AddBookmarkToPage(7, Bookmark{Name: "A again", URL: "https://A.example"}); !errors.Is(err, ErrBookmarkDuplicateURL) {
+		t.Fatalf("err = %v, want ErrBookmarkDuplicateURL", err)
+	}
+	if rows := store.GetBookmarksByPage(7); len(rows) != 1 {
+		t.Fatalf("rows = %+v, want the one", rows)
 	}
 }
