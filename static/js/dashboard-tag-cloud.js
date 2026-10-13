@@ -784,95 +784,56 @@
         },
 
         /**
-         * Hang the cloud under the header button, fully inside the window.
+         * The part of the window the cloud may use: all of it, less the action
+         * bar and a margin around it.
          *
-         * Right-aligned to the button rather than left, because the actions sit
-         * at the right end of the bar: left-aligned, a wide cloud would run off
-         * the screen before the clamp caught it and land somewhere it was never
-         * anchored to.
+         * The cloud used to hang from its button, and with the button in the
+         * bar that put it over the bar -- and for a bar docked to the bottom or
+         * a side, half off the page. It is a panel of its own now, so it only
+         * has to keep out of the bar's way.
          */
-        positionModalUnderHeaderButton(rect, margin, vw, vh, maxW) {
-            let left = rect.right - maxW;
-            if (left + maxW > vw - margin) left = vw - margin - maxW;
-            if (left < margin) left = margin;
-
-            const top = rect.bottom + margin;
-            // What is left of the window under the button, and never taller.
-            const maxH = Math.max(160, Math.round(vh - top - margin));
-            this.syncModalSize(maxH);
-
-            this.modal.style.left = `${Math.round(left)}px`;
-            this.modal.style.right = 'auto';
-            this.modal.style.top = `${Math.round(top)}px`;
-            this.modal.style.bottom = 'auto';
-        },
-
-        /**
-         * Open away from a docked bar, fully inside the window.
-         *
-         * The button stands in the same group wherever the bar is, so the
-         * header's "hang under it" also ran for a bar at the bottom of the
-         * window -- and put the cloud under the window's edge. A bottom dock
-         * opens it above the button; a side column beside it, towards the page.
-         * A dock that has slid away still has a place to open from: the edge it
-         * slid into, which the clamps below keep the cloud inside of.
-         */
-        positionModalBesideDock(place, rect, margin, vw, vh, maxW) {
-            if (place === 'bottom') {
-                const edge = Math.min(rect.top, vh - margin);
-                const maxH = Math.max(160, Math.round(edge - margin * 2));
-                this.syncModalSize(maxH);
-                const centre = rect.left + rect.width / 2;
-                let left = centre - maxW / 2;
-                left = Math.min(Math.max(left, margin), vw - margin - maxW);
-                this.modal.style.left = `${Math.round(left)}px`;
-                this.modal.style.right = 'auto';
-                this.modal.style.top = 'auto';
-                this.modal.style.bottom = `${Math.round(vh - edge + margin)}px`;
-                return;
-            }
-            const maxH = Math.max(160, Math.round(vh - margin * 2));
-            this.syncModalSize(maxH);
-            const modalH = this.modal.offsetHeight || 200;
-            let left = place === 'left'
-                ? Math.max(rect.right, 0) + margin
-                : Math.min(rect.left, vw) - margin - maxW;
-            left = Math.min(Math.max(left, margin), vw - margin - maxW);
-            let top = rect.top + rect.height / 2 - modalH / 2;
-            top = Math.min(Math.max(top, margin), vh - margin - modalH);
-            this.modal.style.left = `${Math.round(left)}px`;
-            this.modal.style.right = 'auto';
-            this.modal.style.top = `${Math.round(top)}px`;
-            this.modal.style.bottom = 'auto';
-        },
-
-        positionModal() {
-            if (!this.modal || !this.toggle) return;
-            const rect = this.toggle.getBoundingClientRect();
-            const margin = 10;
+        availableArea(margin) {
             const vw = window.innerWidth;
             const vh = window.innerHeight;
+            const area = { top: margin, left: margin, right: vw - margin, bottom: vh - margin };
+            const bar = this.toggle?.closest('.header-shortcuts') || document.querySelector('.header-shortcuts');
+            const r = bar?.getBoundingClientRect();
+            if (r && r.width > 0 && r.height > 0) {
+                if (r.width >= r.height) {
+                    if (r.top + r.height / 2 < vh / 2) area.top = Math.max(area.top, r.bottom + margin);
+                    else area.bottom = Math.min(area.bottom, r.top - margin);
+                } else if (r.left + r.width / 2 < vw / 2) {
+                    area.left = Math.max(area.left, r.right + margin);
+                } else {
+                    area.right = Math.min(area.right, r.left - margin);
+                }
+            }
+            return area;
+        },
+
+        /** Centred in what the window leaves it, a little above the middle. */
+        positionModal() {
+            if (!this.modal) return;
+            const margin = 16;
+            const area = this.availableArea(margin);
+            const areaW = Math.max(240, area.right - area.left);
+            const areaH = Math.max(160, area.bottom - area.top);
 
             const tagCount = this.body?.querySelectorAll('.tag-cloud-word').length || 0;
-            const idealW = 320 + Math.sqrt(tagCount) * 42;
-            const maxW = Math.min(Math.max(idealW, 300), Math.min(680, vw - margin * 2));
-            this.modal.style.width = `${Math.round(maxW)}px`;
-            this.modal.style.maxWidth = `${Math.round(maxW)}px`;
+            const idealW = 360 + Math.sqrt(tagCount) * 46;
+            const width = Math.min(Math.max(idealW, 320), 720, areaW);
+            this.modal.style.width = `${Math.round(width)}px`;
+            this.modal.style.maxWidth = `${Math.round(width)}px`;
 
-            // The button always stands in the header group (setupDOM moves it
-            // there), so the cloud is a dropdown from it: under the button for a
-            // header bar, beside it for a docked one, clamped into the window.
-            let place = document.body.getAttribute('data-action-bar') || 'header';
-            // On a phone the side columns stand at the bottom.
-            if ((place === 'left' || place === 'right')
-                && window.matchMedia?.('(max-width: 700px)').matches) {
-                place = 'bottom';
-            }
-            if (place === 'bottom' || place === 'left' || place === 'right') {
-                this.positionModalBesideDock(place, rect, margin, vw, vh, maxW);
-            } else {
-                this.positionModalUnderHeaderButton(rect, margin, vw, vh, maxW);
-            }
+            this.syncModalSize(Math.min(areaH, Math.round(window.innerHeight * 0.8)));
+            const height = this.modal.offsetHeight || 240;
+            const left = area.left + (areaW - width) / 2;
+            const top = area.top + Math.max(0, (areaH - height) * 0.42);
+
+            this.modal.style.left = `${Math.round(left)}px`;
+            this.modal.style.right = 'auto';
+            this.modal.style.top = `${Math.round(top)}px`;
+            this.modal.style.bottom = 'auto';
         },
 
         getTagCountLabel(count) {
@@ -988,9 +949,37 @@
             }
             const current = this.normalizeActiveTags();
             const next = current.length === 1 && current[0] === normalized ? [] : [normalized];
+            /*
+             * A pick into a view carries on into it: the picked word travels to
+             * the view's title while the page cross-fades (View Transitions),
+             * where the browser has them and animations are on. Either way the
+             * cloud goes at once -- a cloud still fading out over the view held
+             * the keyboard for its last 180ms.
+             */
+            const chip = this.getTagChips().find((el) => el.dataset.tag === normalized);
+            if (next.length && this.canAnimatePick()) {
+                if (chip) chip.style.viewTransitionName = 'tag-pick';
+                const root = document.documentElement;
+                const transition = document.startViewTransition(async () => {
+                    this.closeModal({ animate: false });
+                    if (chip) chip.style.viewTransitionName = '';
+                    root.dataset.tagPick = '1';
+                    await dash?.setTagFilters?.(next);
+                });
+                const done = () => { delete root.dataset.tagPick; };
+                Promise.resolve(transition?.finished).then(done, done);
+                return;
+            }
+            this.closeModal({ animate: false });
             void Promise.resolve(dash?.setTagFilters?.(next)).then(() => {
-                this.closeModal({ focusBookmarks: true });
+                if (!next.length) this.restoreBookmarkFocus();
             });
+        },
+
+        canAnimatePick() {
+            if (typeof document.startViewTransition !== 'function') return false;
+            if (document.body.classList.contains('no-animations')) return false;
+            return !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         },
 
         clearDashboardFilter({ animate = true, closeModal = false, focusBookmarks = false } = {}) {

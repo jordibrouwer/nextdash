@@ -163,76 +163,29 @@ async function cloudSettled(page) {
  * different places, because the key and the button reached the placement code
  * in different states. One dropdown now, from either.
  */
-test.describe('where the cloud opens', () => {
-    async function readCloud(page) {
-        // The cloud scales in when it opens, and a box read mid-animation is a
-        // smaller box in a different place -- which is a moving target, not a
-        // placement. Let it settle first: no running animation, and the same
-        // box on several reads in a row.
-        await cloudSettled(page);
-        return page.evaluate(() => {
-            const modal = document.getElementById('tag-cloud-modal');
-            const button = document.getElementById('tag-cloud-toggle-btn');
-            const m = modal.getBoundingClientRect();
-            const b = button.getBoundingClientRect();
-            return {
-                top: Math.round(m.top), left: Math.round(m.left),
-                right: Math.round(m.right), bottom: Math.round(m.bottom),
-                buttonBottom: Math.round(b.bottom), buttonRight: Math.round(b.right),
-                width: Math.round(document.documentElement.clientWidth),
-                height: Math.round(window.innerHeight),
-            };
-        });
-    }
-
-    test('under the button, whole, whichever way it is opened', async ({ page }) => {
-        await openCloud(page);
-        const viaCode = await readCloud(page);
-
-        // Under the button rather than over the page it belongs to.
-        expect(viaCode.top, 'the cloud does not hang from the button')
-            .toBeGreaterThanOrEqual(viaCode.buttonBottom);
-        // Whole: nothing of it is outside the window on either axis.
-        expect(viaCode.left, 'the cloud runs off the left edge').toBeGreaterThanOrEqual(0);
-        expect(viaCode.right, 'the cloud runs off the right edge').toBeLessThanOrEqual(viaCode.width);
-        expect(viaCode.bottom, 'the cloud runs off the bottom').toBeLessThanOrEqual(viaCode.height);
-
-        // The key and the button put it in the same place.
-        await page.keyboard.press('Escape');
-        await expect.poll(() => page.evaluate(
-            () => document.getElementById('tag-cloud-modal').classList.contains('is-open'),
-        )).toBe(false);
-
-        await page.locator('#tag-cloud-toggle-btn').click();
-        await expect.poll(() => page.evaluate(
-            () => document.getElementById('tag-cloud-modal').classList.contains('is-open'),
-        )).toBe(true);
-        const viaButton = await readCloud(page);
-
-        await page.keyboard.press('Escape');
-        await expect.poll(() => page.evaluate(
-            () => document.getElementById('tag-cloud-modal').hidden,
-        )).toBe(true);
-        await page.keyboard.press('/');
-        await expect.poll(() => page.evaluate(
-            () => document.getElementById('tag-cloud-modal').classList.contains('is-open'),
-        )).toBe(true);
-        const viaKey = await readCloud(page);
-
-        expect({ top: viaKey.top, left: viaKey.left },
-            'the key and the button open the cloud in different places')
-            .toEqual({ top: viaButton.top, left: viaButton.left });
-    });
-});
-
 /*
- * From a docked bar the cloud opens away from the edge.
+ * The cloud opens in the middle of the window, clear of the action bar.
  *
- * The button stands in the same group wherever the bar is, and the cloud hung
- * under it every time -- which for a bar at the bottom put it under the window.
+ * It used to hang from its button, which put it over the bar it came from --
+ * and for a bar docked at the bottom or the side, half over the page edge. It
+ * is a panel of its own now: centred, whole, and never on top of the bar.
  */
-for (const place of ['bottom', 'left', 'right']) {
-    test(`from a bar docked ${place}, the cloud opens whole and clear of the button`, async ({ page }) => {
+async function readCloud(page) {
+    await cloudSettled(page);
+    return page.evaluate(() => {
+        const m = document.getElementById('tag-cloud-modal').getBoundingClientRect();
+        const bar = document.querySelector('.header-shortcuts')?.getBoundingClientRect();
+        return {
+            m: { top: m.top, left: m.left, right: m.right, bottom: m.bottom, cx: m.left + m.width / 2 },
+            bar: bar ? { top: bar.top, left: bar.left, right: bar.right, bottom: bar.bottom } : null,
+            w: document.documentElement.clientWidth,
+            h: window.innerHeight,
+        };
+    });
+}
+
+for (const place of ['header', 'bottom', 'left', 'right']) {
+    test(`with the bar ${place === 'header' ? 'in the header' : `docked ${place}`}, the cloud opens centred and clear of it`, async ({ page }) => {
         await page.setViewportSize({ width: 1500, height: 1000 });
         await markWhatsNewSeen(page);
         await page.goto('/');
@@ -241,36 +194,86 @@ for (const place of ['bottom', 'left', 'right']) {
         await dismissBlockingOverlays(page);
         await page.evaluate((where) => {
             Object.assign(window.dashboardInstance.settings,
-                { showTagCloudButton: true, actionBarPosition: where, actionBarAutoHideSeconds: 0 });
+                { showTagCloudButton: true, actionBarPosition: where, actionBarAutoHideSeconds: 0, maxHeaderActions: 8 });
             window.dashboardInstance.setupDOM?.();
         }, place);
         await expect(page.locator('#tag-cloud-toggle-btn')).toBeVisible();
         await page.locator('#tag-cloud-toggle-btn').click();
         await expect.poll(() => page.locator('.tag-cloud-word').count()).toBeGreaterThan(1);
-        await cloudSettled(page);
 
-        const seen = await page.evaluate(() => {
-            const m = document.getElementById('tag-cloud-modal').getBoundingClientRect();
-            const b = document.getElementById('tag-cloud-toggle-btn').getBoundingClientRect();
-            return {
-                m: { top: m.top, left: m.left, right: m.right, bottom: m.bottom },
-                b: { top: b.top, left: b.left, right: b.right, bottom: b.bottom },
-                w: document.documentElement.clientWidth,
-                h: window.innerHeight,
-            };
-        });
-        const { m, b } = seen;
+        const { m, bar, w, h } = await readCloud(page);
         expect(m.top, 'off the top').toBeGreaterThanOrEqual(0);
         expect(m.left, 'off the left').toBeGreaterThanOrEqual(0);
-        expect(m.right, 'off the right').toBeLessThanOrEqual(seen.w);
-        expect(m.bottom, 'off the bottom').toBeLessThanOrEqual(seen.h);
-        const overlaps = !(m.right <= b.left || m.left >= b.right || m.bottom <= b.top || m.top >= b.bottom);
-        expect(overlaps, 'the cloud covers its own button').toBe(false);
-        if (place === 'bottom') expect(m.bottom).toBeLessThanOrEqual(b.top);
-        if (place === 'left') expect(m.left).toBeGreaterThanOrEqual(b.right);
-        if (place === 'right') expect(m.right).toBeLessThanOrEqual(b.left);
+        expect(m.right, 'off the right').toBeLessThanOrEqual(w);
+        expect(m.bottom, 'off the bottom').toBeLessThanOrEqual(h);
+        const overlaps = bar && !(m.right <= bar.left || m.left >= bar.right || m.bottom <= bar.top || m.top >= bar.bottom);
+        expect(overlaps, 'the cloud covers the action bar').toBeFalsy();
+        if (place === 'header' || place === 'bottom') {
+            expect(Math.abs(m.cx - w / 2), 'not centred across the window').toBeLessThanOrEqual(2);
+        }
     });
 }
+
+test('the key and the button open it in the same place', async ({ page }) => {
+    await openCloud(page);
+    const viaCode = await readCloud(page);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#tag-cloud-modal')).toBeHidden();
+    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('/');
+    await expect(page.locator('#tag-cloud-modal')).toBeVisible();
+    const viaKey = await readCloud(page);
+    expect({ top: Math.round(viaKey.m.top), left: Math.round(viaKey.m.left) })
+        .toEqual({ top: Math.round(viaCode.m.top), left: Math.round(viaCode.m.left) });
+});
+
+/*
+ * It arrives and it leaves with a movement, and a pick carries on into the
+ * tag's view instead of cutting to it. Measured as behaviour, not pixels:
+ * there is a transition when animations are on, and none when they are off.
+ */
+test('opening is animated, and not when animations are off', async ({ page }) => {
+    await openCloud(page);
+    const moving = await page.evaluate(() => {
+        const cs = getComputedStyle(document.getElementById('tag-cloud-modal'));
+        return parseFloat(cs.transitionDuration) > 0 && /transform/.test(cs.transitionProperty + cs.transition);
+    });
+    expect(moving, 'the cloud appears without a transition').toBe(true);
+    await page.keyboard.press('Escape');
+    await page.evaluate(() => document.body.classList.add('no-animations'));
+    await page.evaluate(() => window.DashboardTagCloud.openModal());
+    const still = await page.evaluate(() => parseFloat(getComputedStyle(document.getElementById('tag-cloud-modal')).transitionDuration));
+    expect(still).toBe(0);
+});
+
+test('a pick carries on into the view with a transition', async ({ page }) => {
+    await openCloud(page);
+    await page.evaluate(() => {
+        window.__transitions = 0;
+        const real = document.startViewTransition?.bind(document);
+        document.startViewTransition = (cb) => {
+            window.__transitions += 1;
+            return real ? real(cb) : (cb(), { finished: Promise.resolve(), ready: Promise.resolve(), updateCallbackDone: Promise.resolve() });
+        };
+    });
+    await page.locator('#tag-cloud-modal .tag-cloud-word').first().click();
+    await expect(page.locator('#dashboard-layout .lvs.tag-view')).toBeVisible();
+    expect(await page.evaluate(() => window.__transitions)).toBe(1);
+    // And the view itself arrives: its rows come in, then hold still.
+    await expect.poll(() => page.evaluate(() => document.querySelector('.lvs.tag-view')?.classList.contains('is-entering'))).toBe(false);
+});
+
+test('with animations off a pick cuts straight to the view', async ({ page }) => {
+    await openCloud(page);
+    await page.evaluate(() => {
+        document.body.classList.add('no-animations');
+        window.__transitions = 0;
+        document.startViewTransition = (cb) => { window.__transitions += 1; cb(); return { finished: Promise.resolve() }; };
+    });
+    await page.locator('#tag-cloud-modal .tag-cloud-word').first().click();
+    await expect(page.locator('#dashboard-layout .lvs.tag-view')).toBeVisible();
+    expect(await page.evaluate(() => window.__transitions)).toBe(0);
+});
 
 /*
  * Closing the cloud puts the reader back on the grid.

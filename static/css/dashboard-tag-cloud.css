@@ -34,14 +34,15 @@ body.no-animations .tag-cloud-toggle-btn .search-button-icon {
     color: var(--accent-primary);
 }
 
-/* Backdrop (click outside) */
+/* Backdrop (click outside). No blur on it: a blurred layer swallows clicks in
+   Safari, and the cloud is a panel over the page, not a page of its own. */
 .tag-cloud-modal-backdrop {
     position: fixed;
     inset: 0;
     z-index: 1000;
-    background: rgba(0, 0, 0, 0.22);
+    background: rgba(0, 0, 0, 0.38);
     opacity: 0;
-    transition: opacity 0.18s ease;
+    transition: opacity 0.24s ease;
     pointer-events: none;
 }
 
@@ -50,11 +51,7 @@ body.no-animations .tag-cloud-toggle-btn .search-button-icon {
     pointer-events: auto;
 }
 
-body[data-tag-filter-active="true"] .tag-cloud-modal-backdrop.is-open {
-    pointer-events: none;
-}
-
-/* Anchored modal — matches dashboard button surfaces */
+/* A centred panel: it rises and grows in from just below where it lands. */
 .tag-cloud-modal {
     position: fixed;
     z-index: 1002;
@@ -67,13 +64,13 @@ body[data-tag-filter-active="true"] .tag-cloud-modal-backdrop.is-open {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: var(--radius-6, 0.65rem);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45), 0 2px 10px rgba(0, 0, 0, 0.2);
     opacity: 0;
-    transform: translateY(8px) scale(0.97);
-    transform-origin: bottom left;
+    transform: translateY(14px) scale(0.94);
+    transform-origin: 50% 40%;
     transition:
-        opacity 0.18s ease,
-        transform 0.22s ease;
+        opacity 0.2s ease,
+        transform 0.32s cubic-bezier(0.2, 0.9, 0.25, 1.05);
     pointer-events: auto;
     overflow: hidden;
 }
@@ -359,4 +356,30 @@ body.no-animations .tag-cloud-modal-body.is-entering .tag-cloud-word {
     outline-offset: 2px;
     border-color: var(--accent-primary);
     color: var(--text-primary);
+}
+
+/*
+ * A pick carries on into the tag's view (View Transitions): the picked word
+ * travels to the view's title while the page cross-fades under it. The word
+ * and the title share one name only for the length of that transition.
+ */
+::view-transition-group(tag-pick) {
+    animation-duration: 0.36s;
+    animation-timing-function: cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 0.26s;
+}
+
+html[data-tag-pick] .tag-view .tag-view-title {
+    view-transition-name: tag-pick;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tag-cloud-modal,
+    .tag-cloud-modal-backdrop {
+        transition: none;
+    }
 }
