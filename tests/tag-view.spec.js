@@ -660,6 +660,109 @@ test.describe('selection, panel and edit', () => {
     });
 });
 
+test.describe('tag suggestions in the rows', () => {
+    let S; let N; let ids; let OFFER;
+    const urlA = () => `https://sug-a-${N}.example.com/`;
+    const urlB = () => `https://sug-b-${N}.example.com/`;
+    const row = (page, name) => page.locator('.tag-view-row', { hasText: name });
+
+    test.beforeEach(async ({ page }) => {
+        N = `${STAMP}${Math.random().toString(36).slice(2, 7)}`;
+        S = `tvsug${N}`;
+        OFFER = `sugrule${N}`;
+        await openDashboard(page);
+        ids = await seed(page, [
+            { url: urlA(), name: 'Sug A', tags: [S], page: 'here', lastOpened: Date.now() - 1000 },
+            { url: urlB(), name: 'Sug B', tags: [S], page: 'other', lastOpened: Date.now() - 2000 },
+        ]);
+        // A rule per site: the one source that needs neither the catalogue
+        // nor the network, so the offer is the same on every run.
+        await page.evaluate(async (rules) => {
+            const d = window.dashboardInstance;
+            d.settings.tagRules = [...(d.settings.tagRules || []), ...rules];
+            await d.saveSettings?.();
+        }, [
+            { pattern: `sug-a-${N}.example.com`, tag: OFFER },
+            { pattern: `sug-b-${N}.example.com`, tag: OFFER },
+        ]);
+        await page.route('**/api/tags/lookup', (route) => route.fulfill({ json: { enabled: true, results: {} } }));
+        await openDashboard(page);
+        await openTagView(page, [S]);
+        await expect.poll(() => rowNames(page)).toEqual(['Sug A', 'Sug B']);
+    });
+
+    test('each row shows its offer, with where it came from; the header counts them', async ({ page }) => {
+        const offer = row(page, 'Sug B').locator(`.tag-view-offer[data-offer="${OFFER}"]`);
+        await expect(offer).toBeVisible();
+        await expect(offer).toContainText('your rule');
+        await expect(page.locator('.tag-view .tag-view-offer-count')).toContainText('2 tag suggestions');
+    });
+
+    test('a click on an offer puts the tag on that bookmark, on its own page', async ({ page }) => {
+        await row(page, 'Sug B').locator('.tag-view-chip--offer').click();
+        await expect.poll(() => readTags(page, ids.other, urlB()), { timeout: 10_000 }).toContain(OFFER);
+        expect(await readTags(page, ids.here, urlA())).not.toContain(OFFER);
+        await expect(row(page, 'Sug B').locator('.tag-view-offer')).toHaveCount(0);
+        await expect(row(page, 'Sug B').locator('.tag-view-chip', { hasText: OFFER })).toBeVisible();
+    });
+
+    test('× turns the offer down for good, in the shared refusal list', async ({ page }) => {
+        await row(page, 'Sug A').locator('.tag-view-offer').hover();
+        await row(page, 'Sug A').locator('.tag-view-offer-refuse').click();
+        await expect(row(page, 'Sug A').locator('.tag-view-offer')).toHaveCount(0);
+        await expect.poll(() => page.evaluate(async () => (await (await fetch('/api/settings')).json()).dismissedTagSuggestions || []))
+            .toContain(`sug-a-${N}.example.com|${OFFER}`);
+        expect(await readTags(page, ids.here, urlA())).not.toContain(OFFER);
+    });
+
+    test('Add all, and a on the focused row', async ({ page }) => {
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('a');
+        await expect.poll(() => readTags(page, ids.here, urlA()), { timeout: 10_000 }).toContain(OFFER);
+        await expect(page.locator('.tag-view .tag-view-offer-count')).toContainText('1 tag suggestion');
+        await page.locator('.tag-view [data-tag-view-add-all]').click();
+        await expect.poll(() => readTags(page, ids.other, urlB()), { timeout: 10_000 }).toContain(OFFER);
+        await expect(page.locator('.tag-view .tag-view-offer-count')).toBeHidden();
+    });
+
+    test('Find tags ▾ runs the round for the rows, and adds what it finds when told to', async ({ page }) => {
+        await page.evaluate(() => localStorage.setItem('nextdash.tagSearch.applyNow', 'true'));
+        await page.locator('.tag-view [data-tag-view-find]').click();
+        const menu = page.locator('.tag-view-find-menu');
+        await expect(menu).toBeVisible();
+        await expect(menu.locator('[data-find="apply-now"]')).toBeChecked();
+        await menu.locator('[data-find="lookup"]').click();
+        await expect.poll(() => readTags(page, ids.here, urlA()), { timeout: 10_000 }).toContain(OFFER);
+        await expect.poll(() => readTags(page, ids.other, urlB()), { timeout: 10_000 }).toContain(OFFER);
+    });
+
+    test('with "add right away" off, a round leaves the offers in the rows', async ({ page }) => {
+        await row(page, 'Sug A').locator('.tag-view-check').click();
+        await page.locator('.tag-view [data-tag-view-find]').click();
+        await page.locator('.tag-view-find-menu [data-find="apply-now"]').uncheck();
+        await page.keyboard.press('Escape');
+        await page.locator('.tag-view .tag-view-selbar').getByRole('button', { name: 'Find tags' }).click();
+        await expect(page.locator('#app-notification.show')).toContainText('has a tag suggestion');
+        expect(await readTags(page, ids.here, urlA())).not.toContain(OFFER);
+        await expect(row(page, 'Sug A').locator('.tag-view-offer')).toBeVisible();
+    });
+
+    test('the panel offers the same, with Find tags and Read page', async ({ page }) => {
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('i');
+        const tags = page.locator('[data-lvs-drawer="tag-view"] [data-lvs-section="tags"]');
+        await expect(tags.locator(`.tag-view-offer[data-offer="${OFFER}"]`)).toBeVisible();
+        await expect(tags.getByRole('button', { name: 'Find tags' })).toBeVisible();
+        await expect(tags.getByRole('button', { name: 'Read page' })).toBeVisible();
+        await tags.locator('.tag-view-chip--offer').click();
+        await expect.poll(() => readTags(page, ids.here, urlA()), { timeout: 10_000 }).toContain(OFFER);
+        // Drawn again with the tag on, the offer gone.
+        await expect(tags.locator('.tag-view-offer')).toHaveCount(0);
+    });
+});
+
 async function readTags(page, id, url) {
     return page.evaluate(async ({ pid, href }) => {
         const body = await (await fetch(`/api/bookmarks?page=${pid}`)).json();

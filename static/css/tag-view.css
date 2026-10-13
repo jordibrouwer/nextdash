@@ -392,6 +392,108 @@
     color: var(--text-primary);
 }
 
+/* A tag on offer: dashed, in the accent, with where it came from. */
+.tag-view .tag-view-offer,
+[data-lvs-drawer="tag-view"] .tag-view-offer {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+}
+
+.tag-view .tag-view-chip--offer,
+[data-lvs-drawer="tag-view"] .tag-view-chip--offer {
+    border-style: dashed;
+    border-color: color-mix(in srgb, var(--accent-primary) 70%, transparent);
+    color: var(--accent-primary);
+}
+
+.tag-view .tag-view-offer-source,
+[data-lvs-drawer="tag-view"] .tag-view-offer-source {
+    margin-left: 0.4em;
+    color: var(--text-tertiary);
+    font-size: 0.9em;
+}
+
+.tag-view .tag-view-offer-refuse,
+[data-lvs-drawer="tag-view"] .tag-view-offer-refuse {
+    border: 0;
+    background: transparent;
+    color: var(--text-tertiary);
+    font: inherit;
+    font-size: 0.85em;
+    padding: 0 0.25em;
+    cursor: pointer;
+    opacity: 0;
+}
+
+.tag-view .tag-view-offer:hover .tag-view-offer-refuse,
+.tag-view .tag-view-offer-refuse:focus-visible,
+[data-lvs-drawer="tag-view"] .tag-view-offer-refuse {
+    opacity: 1;
+}
+
+.tag-view .tag-view-offer-refuse:hover,
+[data-lvs-drawer="tag-view"] .tag-view-offer-refuse:hover {
+    color: var(--accent-error, var(--text-primary));
+}
+
+@media (hover: none) {
+    .tag-view .tag-view-offer-refuse {
+        opacity: 1;
+    }
+}
+
+.tag-view .tag-view-offer-count {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4em;
+    margin-left: var(--space-4, 1rem);
+    color: var(--accent-primary);
+    white-space: nowrap;
+}
+
+.tag-view .tag-view-offer-count[hidden] {
+    display: none;
+}
+
+.tag-view .tag-view-offer-count strong {
+    font-weight: 600;
+}
+
+.tag-view .tag-view-offer-all {
+    border: 0;
+    background: transparent;
+    color: var(--accent-primary);
+    font: inherit;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+
+.tag-view-find-menu .tag-view-find-label {
+    display: flex;
+    flex-direction: column;
+}
+
+.tag-view-find-menu .tag-view-find-hint {
+    color: var(--text-tertiary);
+    font-size: 0.85em;
+}
+
+.tag-view-find-menu .tag-view-find-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    cursor: pointer;
+}
+
+[data-lvs-drawer="tag-view"] .tag-view-panel-find {
+    display: flex;
+    gap: 0.5em;
+    margin-top: 0.6em;
+}
+
 .tag-view .tag-view-page {
     color: var(--text-secondary);
     font-size: 0.9em;

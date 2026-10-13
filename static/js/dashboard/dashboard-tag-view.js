@@ -203,6 +203,7 @@
             if (!shell) return;
             const matches = this.matches();
             const shown = this.shown(matches);
+            this.ensureSuggestionSources(matches);
             this.renderHeader(shell, matches, shown);
             this.renderRail(shell, matches);
             this.updateCount(shown.length, matches.length);
@@ -394,6 +395,7 @@
                     });
                     tagsCell.appendChild(chip);
                 });
+            this.suggestionsFor(b).forEach((offer) => tagsCell.appendChild(this.buildOfferChip(b, offer)));
 
             const pageId = Number(b.pageId ?? b.pageID) || Number(d.currentPageId);
             const page = this.el('span', 'tag-view-cell tag-view-page', this.pageName(pageId));
@@ -571,6 +573,353 @@
                 .catch(() => {});
         }
 
+        /* ── Tag suggestions ───────────────────────────────────────────── */
+
+        /**
+         * What is on offer for a row: the engine's answer, as the Tags popover
+         * and the Tag suggestions tab give it, minus what the row already has.
+         * Local only -- the catalogue in memory, your rules, your other tags
+         * and pages already read. Find tags is what asks further.
+         */
+        suggestionsFor(b) {
+            const live = window.TagSuggestLive;
+            if (!b || typeof live?.forDashBookmark !== 'function') return [];
+            const have = new Set((b.tags || []).map((tag) => String(tag || '').trim().toLowerCase()));
+            const seen = new Set();
+            return live.forDashBookmark(this.dash, b).filter((offer) => {
+                const tag = String(offer?.tag || '').toLowerCase();
+                if (!tag || have.has(tag) || seen.has(tag)) return false;
+                seen.add(tag);
+                return true;
+            }).slice(0, 3);
+        }
+
+        /**
+         * The catalogue's answer for these sites and the words read from
+         * their pages, fetched once per set of bookmarks. No online lookup:
+         * opening a view is not a search the reader started.
+         */
+        ensureSuggestionSources(matches) {
+            const live = window.TagSuggestLive;
+            if (!live?.ensureCatalogue) return;
+            const urls = matches.map((b) => b.url).filter(Boolean);
+            const signature = urls.slice().sort().join('\n');
+            if (this._suggestSignature === signature) return;
+            this._suggestSignature = signature;
+            void Promise.all([
+                live.ensureCatalogue(urls, { lookup: false, overlay: false }),
+                live.storedKeywords?.(),
+            ]).then(() => {
+                live.invalidate?.();
+                if (this.isActiveView()) this.render();
+            }).catch(() => {});
+        }
+
+        sourceOf(offer) {
+            const kind = offer?.reason?.kind;
+            if (kind === 'online') return this.t('dashboard.tagSourceOnline', 'Wikidata');
+            if (kind === 'catalogue') return this.t('dashboard.tagSourceCatalogue', 'catalogue');
+            if (kind === 'text') return this.t('dashboard.tagSourcePage', 'the page');
+            if (kind === 'rule') return this.t('dashboard.tagSourceRule', 'your rule');
+            return this.t('dashboard.tagSourceYours', 'your tags');
+        }
+
+        /** A suggestion in a row: click adds it, × turns it down for good. */
+        buildOfferChip(b, offer) {
+            const wrap = this.el('span', 'tag-view-offer');
+            wrap.dataset.offer = offer.tag;
+            const add = this.el('button', 'tag-view-chip tag-view-chip--offer');
+            add.type = 'button';
+            add.append(document.createTextNode(`+ ${offer.tag}`), this.el('span', 'tag-view-offer-source', this.sourceOf(offer)));
+            add.title = this.t('dashboard.tagViewOfferAdd', 'Add #{tag}').replace('{tag}', offer.tag);
+            add.addEventListener('click', (e) => {
+                e.stopPropagation();
+                void this.addSuggestions([[b, [offer]]]);
+            });
+            const no = this.el('button', 'tag-view-offer-refuse', '×');
+            no.type = 'button';
+            no.setAttribute('aria-label', this.t('dashboard.tagViewOfferRefuse', 'Turn down #{tag}').replace('{tag}', offer.tag));
+            no.addEventListener('click', (e) => {
+                e.stopPropagation();
+                void this.refuseSuggestion(offer);
+            });
+            wrap.append(add, no);
+            return wrap;
+        }
+
+        /** "5 tag suggestions · Add all", beside the stats; nothing when none. */
+        buildOfferCount(shown) {
+            const pairs = shown.map((b) => [b, this.suggestionsFor(b)]).filter(([, offers]) => offers.length);
+            const line = this.el('span', 'tag-view-offer-count');
+            const total = pairs.reduce((sum, [, offers]) => sum + offers.length, 0);
+            if (!total) {
+                line.hidden = true;
+                return line;
+            }
+            line.appendChild(this.el('strong', '', total === 1
+                ? this.t('dashboard.tagViewOffersOne', '1 tag suggestion')
+                : this.t('dashboard.tagViewOffersMany', '{n} tag suggestions').replace('{n}', String(total))));
+            const all = this.el('button', 'tag-view-offer-all', this.t('dashboard.tagViewOffersAddAll', 'Add all'));
+            all.type = 'button';
+            all.setAttribute('data-tag-view-add-all', '');
+            all.addEventListener('click', () => void this.addSuggestions(pairs));
+            line.append(this.el('span', '', '·'), all);
+            return line;
+        }
+
+        /** Shared with the Tag suggestions tab: one choice, remembered once. */
+        applyNow() {
+            try {
+                return localStorage.getItem('nextdash.tagSearch.applyNow') !== 'false';
+            } catch {
+                return true;
+            }
+        }
+
+        setApplyNow(on) {
+            try {
+                localStorage.setItem('nextdash.tagSearch.applyNow', on ? 'true' : 'false');
+            } catch { /* a browser refusing storage keeps the default */ }
+        }
+
+        openFindMenu(anchor) {
+            const d = this.dash;
+            d._closeActionPopovers?.();
+            document.querySelector('.tag-view-manage-menu')?.remove();
+            const list = (this.rows || []).slice();
+            const n = String(list.length);
+            const pop = this.el('div', 'move-popover tag-view-manage-menu tag-view-find-menu');
+            pop.setAttribute('role', 'menu');
+            const entry = (key, label, hint, run) => {
+                const item = this.el('div', 'move-popover-item');
+                item.setAttribute('role', 'menuitem');
+                item.setAttribute('data-find', key);
+                item.tabIndex = -1;
+                const text = this.el('span', 'tag-view-find-label');
+                text.appendChild(this.el('span', '', label));
+                if (hint) text.appendChild(this.el('span', 'tag-view-find-hint', hint));
+                item.appendChild(text);
+                item.addEventListener('click', () => { close(); run(); });
+                pop.appendChild(item);
+                return item;
+            };
+            const items = [
+                entry('lookup', this.t('dashboard.tagViewFindThese', 'Find tags for these {n}').replace('{n}', n),
+                    this.t('dashboard.tagViewFindTheseHint', 'catalogue, then online'), () => void this.findTags(list)),
+                entry('read', this.t('dashboard.tagViewReadThese', 'Read pages of these {n}').replace('{n}', n),
+                    this.t('dashboard.tagViewReadTheseHint', 'slower: asks each site'), () => void this.readPages(list)),
+            ];
+            const toggle = this.el('label', 'move-popover-item tag-view-find-toggle');
+            const box = this.el('input');
+            box.type = 'checkbox';
+            box.checked = this.applyNow();
+            box.setAttribute('data-find', 'apply-now');
+            box.addEventListener('change', () => this.setApplyNow(box.checked));
+            toggle.append(box, this.el('span', '', this.t('dashboard.tagViewApplyNow', 'Add found tags right away')));
+            pop.append(this.el('div', 'move-popover-divider'), toggle);
+            const close = () => {
+                pop.remove();
+                document.removeEventListener('keydown', onKey, true);
+                document.removeEventListener('click', onOutside, true);
+            };
+            const onKey = (e) => {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    close();
+                    anchor.focus();
+                }
+            };
+            const onOutside = (e) => {
+                if (!pop.contains(e.target) && e.target !== anchor) close();
+            };
+            document.body.appendChild(pop);
+            // Under the button, its right edge on the button's: beside it, a
+            // menu this wide ran off the window, since the button sits in the
+            // header's right-hand corner.
+            const rect = anchor.getBoundingClientRect();
+            const width = pop.offsetWidth || 260;
+            const left = Math.max(8, Math.min(rect.right - width, window.innerWidth - width - 8));
+            pop.style.left = `${Math.round(left)}px`;
+            pop.style.top = `${Math.round(rect.bottom + 4)}px`;
+            document.addEventListener('keydown', onKey, true);
+            setTimeout(() => document.addEventListener('click', onOutside, true), 0);
+            items[0]?.focus?.();
+        }
+
+        /**
+         * The catalogue, then the sites it does not know online, on the
+         * progress overlay -- the round the Bookmarks view runs, for these.
+         */
+        async findTags(list) {
+            const catalogue = window.TagCatalogue;
+            const targets = (list || []).filter((b) => b?.url);
+            if (!targets.length || typeof catalogue?.lookupRound !== 'function') return;
+            const round = await catalogue.lookupRound(targets.map((b) => b.url), {
+                title: this.t('dashboard.tagViewFindTitle', 'Looking for tags…'),
+            });
+            if (round?.busy) {
+                this.dash.showNotification?.(this.t('dashboard.tagViewFindBusy', 'A search is already running.'), 'info');
+                return;
+            }
+            window.TagSuggestLive?.invalidate?.();
+            await this.afterSearch(targets, round?.off
+                ? this.t('dashboard.tagViewFindNoneOff', 'No tags found. Looking up online is off, so only the catalogue was asked.')
+                : this.t('dashboard.tagViewFindNone', 'No new tags found for these bookmarks.'));
+        }
+
+        /**
+         * Read each page for what it says it is about, four at a time. The
+         * words are stored with the page's preview, so the suggestions they
+         * lead to stay after a reload, and the Tag suggestions tab sees them.
+         */
+        async readPages(list) {
+            const targets = (list || []).filter((b) => b?.url);
+            if (!targets.length) return;
+            const overlay = window.ProgressOverlay;
+            const total = targets.length;
+            let done = 0;
+            let stopped = false;
+            const status = () => this.t('dashboard.tagViewReadProgress', '{done} of {total}')
+                .replace('{done}', String(done)).replace('{total}', String(total));
+            const end = overlay?.begin
+                ? overlay.begin(this.t('dashboard.tagViewReadTitle', 'Reading pages…'), status(), {
+                    onCancel: () => { stopped = true; },
+                    cancelLabel: this.t('dashboard.tagViewReadStop', 'Stop'),
+                })
+                : () => {};
+            const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const queue = targets.slice();
+            const worker = async () => {
+                while (queue.length && !stopped) {
+                    const b = queue.shift();
+                    try {
+                        await fetcher(`/api/bookmark-preview?refresh=1&url=${encodeURIComponent(b.url)}`);
+                    } catch { /* a page that cannot be read adds nothing */ }
+                    done += 1;
+                    overlay?.update?.(done, total, status());
+                }
+            };
+            try {
+                await Promise.all([worker(), worker(), worker(), worker()]);
+            } finally {
+                end();
+            }
+            const live = window.TagSuggestLive;
+            live?.forgetKeywords?.();
+            await live?.storedKeywords?.();
+            live?.invalidate?.();
+            await this.afterSearch(targets, this.t('dashboard.tagViewReadNone', 'The pages do not say what they are about either.'));
+        }
+
+        /** Add what the round found, or show it in the rows to choose from. */
+        async afterSearch(targets, noneMessage) {
+            const pairs = targets.map((b) => [b, this.suggestionsFor(b)]).filter(([, offers]) => offers.length);
+            this.render();
+            this.refreshPanel();
+            if (!pairs.length) {
+                this.dash.showNotification?.(noneMessage, 'info', { duration: 6000 });
+                return;
+            }
+            if (this.applyNow()) {
+                await this.addSuggestions(pairs);
+                return;
+            }
+            const count = pairs.length;
+            this.dash.showNotification?.((count === 1
+                ? this.t('dashboard.tagViewFoundOne', '1 bookmark has a tag suggestion.')
+                : this.t('dashboard.tagViewFoundMany', '{n} bookmarks have a tag suggestion.').replace('{n}', String(count))), 'success', { duration: 6000 });
+        }
+
+        /**
+         * Put the offered tags on, one write per page, and offer the undo.
+         * The PATCH adds tags rather than replacing the list, so a row changed
+         * elsewhere in the meantime keeps that change too.
+         */
+        async addSuggestions(pairs) {
+            const d = this.dash;
+            const byPage = new Map();
+            pairs.forEach(([b, offers]) => {
+                const tags = [...new Set(offers.map((offer) => String(offer.tag || '').toLowerCase()).filter(Boolean))];
+                if (!b?.url || !tags.length) return;
+                const pageId = Number(b.pageId ?? b.pageID) || Number(d.currentPageId);
+                const updates = byPage.get(pageId) || [];
+                updates.push({ url: b.url, addTags: tags });
+                byPage.set(pageId, updates);
+            });
+            if (!byPage.size) return;
+            const write = (undo) => Promise.all([...byPage].map(([pageId, updates]) => {
+                const body = undo
+                    ? updates.map(({ url, addTags }) => ({ url, removeTags: addTags }))
+                    : updates;
+                return nextDashFetch('/api/bookmarks', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', ...(undo ? { 'X-NextDash-Undo': '1' } : {}) },
+                    body: JSON.stringify({ page: pageId, updates: body }),
+                }).then((res) => {
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                });
+            }));
+            const settle = async () => {
+                await this.reloadAfterRewrite();
+                window.TagSuggestLive?.changed?.(d);
+                this.render();
+                this.refreshPanel();
+            };
+            try {
+                await write(false);
+            } catch {
+                d.showNotification?.(this.t('dashboard.tagViewAddFailed', 'Could not add the tags.'), 'error');
+                await settle();
+                return;
+            }
+            await settle();
+            const count = [...byPage.values()].reduce((sum, updates) => sum + updates.length, 0);
+            d.showNotification?.((count === 1
+                ? this.t('dashboard.tagViewAddedOne', '1 bookmark got a tag.')
+                : this.t('dashboard.tagViewAddedMany', '{n} bookmarks got a tag.').replace('{n}', String(count))), 'success', {
+                duration: 8000,
+                undoCallback: async () => {
+                    try {
+                        await write(true);
+                    } finally {
+                        await settle();
+                    }
+                },
+            });
+        }
+
+        /** Turned down here is turned down everywhere: the one refusal list. */
+        async refuseSuggestion(offer) {
+            const d = this.dash;
+            const key = window.TagSuggestLive?.dismissKey?.(offer);
+            if (!key || !d.settings) return;
+            const before = Array.isArray(d.settings.dismissedTagSuggestions) ? d.settings.dismissedTagSuggestions : [];
+            if (before.includes(key)) return;
+            d.settings.dismissedTagSuggestions = [...before, key];
+            await d.saveSettings?.();
+            window.TagSuggestLive?.changed?.(d);
+            this.render();
+            this.refreshPanel();
+            d.showNotification?.(this.t('dashboard.tagViewRefused', 'Suggestion turned down.'), 'success', {
+                duration: 8000,
+                undoCallback: async () => {
+                    d.settings.dismissedTagSuggestions = before;
+                    await d.saveSettings?.();
+                    window.TagSuggestLive?.changed?.(d);
+                    this.render();
+                    this.refreshPanel();
+                },
+            });
+        }
+
+        /** The side panel draws once; after a tag change it is drawn again. */
+        refreshPanel() {
+            if (!this.drawer?.isOpen?.()) return;
+            const index = (this.rows || []).findIndex((b) => this.keyOf(b) === this.drawer._key);
+            if (index >= 0) this.openPanel(index);
+        }
+
         onRowClick(e, index) {
             if (e.target.closest('a, button, input')) return;
             if (e.shiftKey) {
@@ -623,6 +972,9 @@
                         this.selected = new Set();
                     },
                 });
+            });
+            button(this.t('dashboard.tagViewFindSelected', 'Find tags'), 'tag-view-selbar-find', () => {
+                void this.findTags(this.selectedBookmarks());
             });
             button(this.t('dashboard.tagViewDeleteSelected', 'Delete'), 'tag-view-selbar-danger', async () => {
                 const refs = this.selectedRefs();
@@ -690,7 +1042,19 @@
                         });
                         chips.appendChild(chip);
                     });
+                    this.suggestionsFor(b).forEach((offer) => chips.appendChild(this.buildOfferChip(b, offer)));
                     tagsBody.appendChild(chips);
+                    // The same two searches as the header's, for this one.
+                    const searches = this.el('div', 'tag-view-panel-find');
+                    const search = (label, run) => {
+                        const btn = this.el('button', 'lvs-action', label);
+                        btn.type = 'button';
+                        btn.addEventListener('click', run);
+                        searches.appendChild(btn);
+                    };
+                    search(this.t('dashboard.tagViewFindOne', 'Find tags'), () => void this.findTags([b]));
+                    search(this.t('dashboard.tagViewReadOne', 'Read page'), () => void this.readPages([b]));
+                    tagsBody.appendChild(searches);
 
                     const issue = this.healthIssue(b);
                     const score = this.scoreOf(b);
@@ -753,6 +1117,7 @@
             ['x', 'dashboard.tagViewKeySelect', 'select'],
             ['i', 'dashboard.tagViewKeyPanel', 'panel'],
             ['e', 'dashboard.tagViewKeyEdit', 'edit'],
+            ['a', 'dashboard.tagViewKeyAddSuggested', 'add suggested'],
             ['/', 'dashboard.tagViewKeySearch', 'search'],
             ['esc', 'dashboard.tagViewKeyBack', 'back'],
         ];
@@ -972,7 +1337,7 @@
             const typing = title?.querySelector('.tag-view-add')?.contains(document.activeElement);
             if (title && !typing) title.replaceChildren(this.buildTitle());
             const description = shell.root.querySelector('.lvs-description');
-            if (description) description.replaceChildren(this.buildStats(matches));
+            if (description) description.replaceChildren(this.buildStats(matches), this.buildOfferCount(shown));
             this.buildActions(shell.headerActions, shown);
         }
 
@@ -1140,6 +1505,13 @@
             copy.disabled = !shown.length;
             copy.addEventListener('click', () => d.tagFilter?.copyTagFilterLinksToClipboard?.(this._shownForActions));
             host.appendChild(copy);
+            const find = this.el('button', 'lvs-action tag-view-find-btn', this.t('dashboard.tagViewFindTags', 'Find tags ▾'));
+            find.type = 'button';
+            find.disabled = !shown.length;
+            find.setAttribute('data-tag-view-find', '');
+            find.setAttribute('aria-haspopup', 'menu');
+            find.addEventListener('click', () => this.openFindMenu(find));
+            host.appendChild(find);
             if (this.tags.length === 1) {
                 const manage = this.el('button', 'lvs-action tag-view-manage-btn', this.t('dashboard.tagViewManage', 'Manage tag ▾'));
                 manage.type = 'button';
@@ -1351,6 +1723,14 @@
                         swallow();
                         this.openPanel(this.focusIndex);
                         return;
+                    case 'a': {
+                        const b = this.rows[this.focusIndex];
+                        const offers = b ? this.suggestionsFor(b) : [];
+                        if (!offers.length) return;
+                        swallow();
+                        void this.addSuggestions([[b, offers]]);
+                        return;
+                    }
                     case 'e':
                         if (this.focusIndex < 0) return;
                         swallow();
