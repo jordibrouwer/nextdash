@@ -9390,6 +9390,36 @@ body[data-action-bar="bottom"] #dashboard-layout {
     margin-top: var(--space-1, 0.25rem);
 }
 
+/* Read page: shown where the chips would be when there are none -- same
+   dashed pill, so it reads as one more suggestion to take or leave. */
+.tag-suggest-search {
+    border: 1px dashed var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: var(--font-size-small, 0.75rem);
+    line-height: 1;
+    padding: 0.3em 0.75em;
+    cursor: pointer;
+}
+
+.tag-suggest-search:hover:not(:disabled),
+.tag-suggest-search:focus-visible {
+    color: var(--text-primary);
+    border-color: var(--accent-color, var(--border-primary));
+}
+
+.tag-suggest-search:disabled {
+    cursor: progress;
+    opacity: 0.6;
+}
+
+.tag-suggest-none {
+    color: var(--text-muted, var(--text-secondary));
+    font-size: var(--font-size-small, 0.75rem);
+}
+
 .tag-suggest-chip {
     display: inline-flex;
     align-items: center;
