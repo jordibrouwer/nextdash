@@ -49,3 +49,25 @@ func TestMaintenanceNextOccurrence(t *testing.T) {
 		t.Fatal("a window two days out is beyond a one-day horizon")
 	}
 }
+
+// On the day the clocks change, midnight plus three hours is not 03:00. The
+// window has to start at the wall-clock time covers() opens it at.
+func TestMaintenanceNextOccurrenceKeepsWallClockAcrossDST(t *testing.T) {
+	loc, err := time.LoadLocation("Europe/Amsterdam")
+	if err != nil {
+		t.Skip("no zone data")
+	}
+	// Sunday 25 Oct 2026: clocks go back from 03:00 to 02:00.
+	now := time.Date(2026, 10, 25, 0, 30, 0, 0, loc)
+	w := MaintenanceWindow{Start: "03:00", End: "05:00"}
+	start, end, _, ok := w.nextOccurrence(now, 24*time.Hour)
+	if !ok {
+		t.Fatal("no occurrence")
+	}
+	if start.Hour() != 3 || start.Minute() != 0 || end.Hour() != 5 {
+		t.Fatalf("window = %v – %v, want 03:00 – 05:00 local", start, end)
+	}
+	if !w.covers(start) || w.covers(start.Add(-time.Minute)) {
+		t.Fatalf("start %v disagrees with covers()", start)
+	}
+}
