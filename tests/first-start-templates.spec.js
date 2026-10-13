@@ -142,3 +142,33 @@ test('the import dialog offers the bundled templates and fills them from one add
     });
     expect(ha).toBe('http://10.0.0.2:8123/');
 });
+
+/**
+ * The card and the Shift+F bar both sit above the grid, and the card used to
+ * win the spot right above it: it re-places itself every 500ms with
+ * `grid.before(card)`, so a filter bar opened under it was overtaken half a
+ * second later and ended up above the card, away from the rows it filters.
+ * The bars belong to the grid; the card goes above all of them.
+ */
+test('the filter bar stays between the card and the grid', async ({ page, request }) => {
+    await freshInstall(page, request);
+    await expect(card(page)).toBeVisible();
+
+    await page.evaluate(() => document.activeElement?.blur?.());
+    await page.keyboard.press('Shift+F');
+    await expect(page.locator('#grid-filter-bar')).toBeVisible();
+    // Two of the card's 500ms checks, so a move would have happened.
+    await page.waitForTimeout(1200);
+
+    const order = await page.evaluate(() => {
+        const bar = document.getElementById('grid-filter-bar');
+        const grid = document.getElementById('dashboard-layout');
+        const cardEl = document.querySelector('.first-start-card');
+        return {
+            barRightAboveGrid: bar?.nextElementSibling === grid,
+            cardAboveBar: Boolean(cardEl && bar
+                && (cardEl.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING)),
+        };
+    });
+    expect(order).toEqual({ barRightAboveGrid: true, cardAboveBar: true });
+});
