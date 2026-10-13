@@ -129,3 +129,52 @@ test('the inbox selection bar tags a whole queue by what is suggested for it', a
             .filter((item) => String(item.url).includes(`/${n}-`) && (item.tags || []).includes('reading')).length;
     }, stamp), { timeout: 20_000 }).toBe(2);
 });
+
+/*
+ * Shift+T on a site nothing knows: Suggested looks it up, finds nothing, and
+ * offers Read page as a row to land on. A .example host never leaves the
+ * server, so this asks no one outside.
+ */
+test('the tag popover offers Read page when nothing is known about a site', async ({ page }) => {
+    await markWhatsNewSeen(page);
+    await page.goto('/');
+    await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        // Into a category the page already shows, so the row is drawn.
+        const category = (window.dashboardInstance.allBookmarks || [])
+            .find((b) => Number(b.pageId) === 1 && b.category)?.category || '';
+        await api('/api/bookmarks/add', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page: 1, bookmark: { name: 'Quiet tags', url: 'https://quiet-tags.example/x', category } }),
+        });
+        await window.dashboardInstance?.data?.refreshAfterBookmarkAdded?.(1);
+    });
+    const row = page.locator('.bookmark-link:has(a[href*="quiet-tags.example"])').first();
+    await expect(row).toBeVisible({ timeout: 15_000 });
+    await row.evaluate((el) => window.dashboardInstance.keyboardNavigation.selectBookmarkRow(el));
+
+    await page.keyboard.press('Shift+T');
+    const popover = page.locator('#tag-popover');
+    await expect(popover).toBeVisible({ timeout: 5_000 });
+    const readPage = popover.locator('[data-action="read-page"]');
+    await expect(readPage).toBeVisible({ timeout: 15_000 });
+    await expect(readPage).toHaveClass(/is-focused/);
+
+    await page.keyboard.press('Enter');
+    await expect(popover.locator('.tag-popover-suggested'))
+        .toContainText('does not say what it is about', { timeout: 20_000 });
+    await expect(popover).toBeVisible();
+
+    await page.evaluate(() => window.dashboardInstance?._tagPopoverCleanup?.());
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        await api('/api/bookmarks', {
+            method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page: 1, bookmark: { url: 'https://quiet-tags.example/x' } }),
+        });
+    });
+});

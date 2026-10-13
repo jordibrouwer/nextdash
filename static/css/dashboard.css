@@ -585,6 +585,61 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
     padding-bottom: var(--space-1-5, 0.35rem);
 }
 
+/* Where a suggestion came from, small at the end of its row. */
+.tag-popover-item-source {
+    margin-left: auto;
+    padding-left: var(--space-2, 0.5rem);
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: calc(var(--font-size-controls) * 0.72);
+}
+
+/* What the Suggested section is doing: a line of words, and while it waits
+   a thin bar under them -- inside the popover, which the overlay would
+   cover. */
+.tag-popover-status {
+    display: grid;
+    gap: 0.3rem;
+    padding: var(--space-1-5, 0.35rem) var(--space-3, 0.85rem);
+    color: var(--text-secondary);
+    font-size: calc(var(--font-size-controls) * 0.82);
+}
+
+.tag-popover-status-bar {
+    position: relative;
+    display: block;
+    height: 3px;
+    overflow: hidden;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-secondary) 20%, transparent);
+}
+
+.tag-popover-status-bar::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 40%;
+    border-radius: 2px;
+    background: var(--accent-color, var(--text-primary));
+    animation: tag-popover-status-sweep 1.1s ease-in-out infinite;
+}
+
+@keyframes tag-popover-status-sweep {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(250%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tag-popover-status-bar::after {
+        animation: none;
+        width: 100%;
+        opacity: 0.5;
+    }
+}
+
+.tag-popover-action .tag-popover-item-label {
+    color: var(--accent-color, var(--text-primary));
+}
+
 .tag-popover-current-tags {
     display: flex;
     flex-wrap: wrap;

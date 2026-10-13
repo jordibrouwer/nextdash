@@ -156,6 +156,9 @@ test.describe('dashboard grid shortcuts', () => {
         await expect.poll(async () => page.evaluate(() => (
             document.activeElement?.id === 'tag-popover'
         ))).toBe(true);
+        // Suggested looks the site up after opening, and moves the cursor to
+        // what it finds; wait for that, or the arrow below races it.
+        await expect(page.locator('#tag-popover .tag-popover-status-bar')).toHaveCount(0, { timeout: 15_000 });
 
         const itemCount = await page.locator('#tag-popover .move-popover-item').count();
         if (itemCount > 1) {

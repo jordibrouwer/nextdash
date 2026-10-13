@@ -350,7 +350,9 @@
         if (fresh.length && !lookupOff && options.lookup !== false) {
             fresh.forEach((host) => lookedUp.add(host));
             const before = revision;
-            const end = global.ProgressOverlay?.begin
+            // A caller that shows its own progress (the tag popover) passes
+            // overlay: false; the overlay would cover it.
+            const end = global.ProgressOverlay?.begin && options.overlay !== false
                 ? global.ProgressOverlay.begin(overlayTitle(), fresh.join(', '))
                 : () => {};
             try {
