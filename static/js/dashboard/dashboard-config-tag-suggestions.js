@@ -392,6 +392,10 @@
             const wrap = document.createElement('details');
             wrap.className = 'config-suggestion-rules';
             wrap.setAttribute('data-tag-suggestions-dismissed', '');
+            // Drawn open if the reader left it open: the panel is replaced whole
+            // after every write, and "Offer again" on one of three refusals
+            // used to fold the list shut under the next one.
+            wrap.open = !!ctx.refusedOpen;
 
             const head = document.createElement('summary');
             head.className = 'config-suggestions-summary';

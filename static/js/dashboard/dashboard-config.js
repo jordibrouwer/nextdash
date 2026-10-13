@@ -21784,6 +21784,7 @@ class DashboardConfig {
             keywords: this.tagKeywordsByItemKey(),
             scan: this._tagScanState || null,
             expanded: this._tagSuggestionOpen || new Set(),
+            refusedOpen: !!this._tagSuggestionsRefusedOpen,
             excluded: this._tagSuggestionExcluded || new Set(),
             t: (key, fallback) => this.t(key, fallback),
         });
@@ -21855,6 +21856,18 @@ class DashboardConfig {
                 }
             });
         }
+        /*
+         * Whether "Turned down" is open, kept here rather than in the DOM.
+         *
+         * A turn-down or an "Offer again" redraws the panel twice -- once with
+         * the config view, once after the save -- and each drew the list folded.
+         * `toggle` does not bubble, so it is caught on the way down.
+         */
+        host.addEventListener('toggle', (event) => {
+            const wrap = event.target;
+            if (!wrap?.matches?.('[data-tag-suggestions-dismissed]')) return;
+            this._tagSuggestionsRefusedOpen = wrap.open;
+        }, true);
         /*
          * The count chip answers the keyboard too.
          *

@@ -984,5 +984,43 @@ test.describe('the suggestions panel', () => {
             (window.dashboardInstance.settings.dismissedTagSuggestions || [])
                 .filter((one) => one.includes('refuse-one.example')).length)).toBe(0);
     });
+
+    test('the turned-down list stays open while refusals are taken back one by one', async ({ page }) => {
+        await open(page);
+        await waitForConfigReady(page);
+        await page.evaluate(async () => {
+            for (const host of ['stay-open-a.example', 'stay-open-b.example']) {
+                for (const path of ['a', 'b', 'c', 'd']) {
+                    await window.dashboardInstance.config.writeFetch('/api/bookmarks/add', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ page: 1, bookmark: {
+                            name: path.toUpperCase(), url: `https://${host}/${path}`, tags: path === 'd' ? [] : ['keep'],
+                        } }),
+                    });
+                }
+            }
+            await window.dashboardInstance?.data?.refreshAfterBookmarkAdded?.(1);
+        });
+        await openSuggestionsTab(page);
+
+        for (const host of ['stay-open-a.example', 'stay-open-b.example']) {
+            const offered = page.locator('#config-bm-suggestions [data-tag-suggestion]').filter({ hasText: host });
+            await expect(offered).toHaveCount(1, { timeout: 15_000 });
+            await offered.locator('[data-tag-suggestion-dismiss]').click();
+            await expect(offered).toHaveCount(0, { timeout: 15_000 });
+        }
+
+        await page.locator('[data-tag-suggestions-dismissed] > summary').click();
+        const refused = (host) => page.locator('[data-tag-suggestion-refused]').filter({ hasText: host });
+        await expect(refused('stay-open-a.example')).toBeVisible({ timeout: 15_000 });
+        await refused('stay-open-a.example').locator('[data-tag-suggestion-restore-one]').click();
+
+        // Taken back and redrawn; the other refusal is still in reach.
+        await expect(page.locator('#config-bm-suggestions [data-tag-suggestion]')
+            .filter({ hasText: 'stay-open-a.example' })).toHaveCount(1, { timeout: 15_000 });
+        await expect(refused('stay-open-a.example')).toHaveCount(0);
+        await expect(refused('stay-open-b.example')).toBeVisible();
+    });
 });
 
