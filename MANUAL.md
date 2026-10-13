@@ -841,7 +841,7 @@ The header has three zones.
 | Search | `>` | The search panel |
 | Commands | `:` | The command palette |
 | Finders | `?` | Finders |
-| Tag cloud | `/` | The tag cloud |
+| Tag cloud | `/` | The tag cloud; pick a tag to open its tag view |
 | Recent | `*` | Recent bookmarks — from every view |
 | Pages | `,` | The pages panel |
 | Fold all | `.` | Folds or unfolds every category and widget |
@@ -1139,7 +1139,7 @@ Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to 
 | `Shift + A` | The theme browser |
 | `>` `:` `?` | Search, commands, finders — from every view |
 | `+` · `Shift + B` · `&` | Full bookmark form · from anywhere · quick add |
-| `/` | Tag cloud |
+| `/` | Tag cloud (type to find a tag, `Enter` opens its tag view, `Shift + Enter` stacks) |
 | `*` | Recent bookmarks — from every view |
 | `,` | Pages panel (`n` there makes a new page) |
 | `!` or `F1` | Cheat sheet |
@@ -1373,7 +1373,7 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 | `:new` / `:add` | Full form / quick add |
 | `:edit` · `:move` · `:copy` · `:note` · `:pin` · `:unpin` · `:remove` | On the selected bookmark |
 | `:tag` · `:tag work` · `:tag +name` · `:tag -name` | List tags, browse a tag, add or remove a tag on the selected bookmark |
-| `:filter <tag>` / `:filter clear` | The dashboard tag filter |
+| `:filter <tag>` | The tag view for a tag |
 | `:find <text>` / `:find clear` | Filter this page |
 | `:open all` · `:open pinned` · `:open tag <name>` · `:open category <name>` · `:open last [n]` | Open several in tabs (at most 15 at once) |
 | `:page <name or n>` · `:page new <name>` | Switch page · create one |
@@ -1581,23 +1581,37 @@ A file is at most 2 MB.
 
 - Set them in the bookmark form, the side panel in the Bookmarks view, with `Shift + T`, or with `:tag +name`. The form, the side panel, `Shift + T` and the selection's tag picker each show the tags this bookmark is likely to want, under **Suggested**; `Shift + T` opens at the top of its list, with those first.
 - Stored in lower case, trimmed, without duplicates. Autocomplete offers the tags you already use.
-- **Tags on rows** (Appearance → Rows) shows them as chips on the dashboard — the first few, then a count. Click a chip to filter.
+- **Tags on rows** (Appearance → Rows) shows them as chips on the dashboard — the first few, then a count. The chips are labels only; to see everything with a tag, use the tag cloud (`/`) or select the bookmark and press `t`.
 
 <a id="102-filtering-by-tag"></a>
 
 ### 10.2 Filtering by tag
 
-- **The tag cloud** (`/`) shows every tag in your library, from every page, in three sizes: the most used are largest. Each tag has its count beside it, and within a size tags stand in A–Z order.
-- Click a tag, or press `Enter` on it, to show its bookmarks: the cloud closes and the dashboard lists them. Click it again to clear the filter.
-- `Shift`+click or `Shift + Enter` adds a tag to the filter or removes it, and keeps the cloud open. The dashboard then shows bookmarks with **any** of the tags. Each other tag shows **+N**: how many bookmarks it would add. A tag that would add nothing is dimmed.
+**The tag cloud.** `/` opens it, centred in the window. It shows every tag in your library, from every page, in three sizes: the most used are largest. Each tag has its count beside it, and within a size tags stand in A–Z order.
+
+- Click a tag, or press `Enter` on it, to open that tag's **tag view**.
+- `Shift`+click or `Shift + Enter` stacks tags instead of opening: the view then shows bookmarks with **any** of them. Each other tag shows **+N**: how many bookmarks it would add. A tag that would add nothing is dimmed.
 - Type a few letters to find a tag. Tags that do not match are dimmed, and the first match is selected. `Backspace` removes a letter, and `Escape` clears what you typed before it closes the cloud.
-- The filter shows bookmarks from **all pages** in one list. A bookmark from another page shows that page's name. Chips under the page title remove one tag each, and `Escape` on the dashboard clears the filter.
-- While a tag filter is active, a toolbar offers **Open**, **Copy links**, **Move** and **Delete** for everything shown. Each bookmark stays on its own page, and you cannot drag rows to reorder them. **Move** offers categories only when every bookmark shown is on the current page.
-- `t` on a selected bookmark filters by its tag.
-- `tag:work` in search narrows results without changing the dashboard.
+- The cloud is for desktop windows. On a phone, open a tag view with a `#tag/` link or `:filter <tag>`.
+
+**The tag view.** It lists the bookmarks that carry the tag, from **all pages**, in one table. A tag you stacked shows as pills, each with a **×** to take it out, and **+ tag** adds another, with suggestions.
+
+- The **header** shows where you came from, the tag (or tags), and a line of figures: how many bookmarks, on how many pages, what was opened last and most, and how many are broken. **Open all** opens every bookmark shown, **Copy links** copies their addresses, and **Manage tag** can **Rename** the tag, **Merge into another tag**, or **Remove from all bookmarks**. Each of these can be undone.
+- The **rail** on the side lists **Related tags** (click one to switch to it, `Shift`+click to add it), the **Pages** the bookmarks live on, and a **Health** filter for broken or never opened bookmarks.
+- The **toolbar** has a search box (`/` jumps to it), a count such as "12 of 40", and a sort menu. Clicking a column head sorts by it too. The table shows each bookmark's name and site, its other tags, its page, how often and when it was last opened, and its score.
+- Move with `↑` `↓`, `g` and `G` jump to the first and last row, `Enter` opens the bookmark, `i` opens its side panel (details, tags, health, with **Open** and **Edit**), and `e` opens the bookmark form.
+- `x` ticks a row. `Alt`+click ticks one, `Shift`+click ticks a range, and the tick in the header ticks everything shown. A bar then offers **Open**, **Move to…**, **Delete** and **Clear**. **Move to…** takes a page; categories belong to one page, so they are offered only when every bookmark is on the same one.
+- `Escape` lets go of one thing at a time: the side panel, then the selection. After that it leaves the view and takes you back to the page you opened it from. In the search box, `Escape` first clears what you typed. The home icon and your browser's Back button do the same.
+- Ways in: the tag cloud, `t` on a selected bookmark (it opens the view for that bookmark's tag), or `:filter <tag>`.
+- The view's address is `#tag/<tag>` (several tags are joined with `+`). Bookmark it or share it, and it opens on the same tag.
+- Tag chips on dashboard rows are labels only; they are not clickable.
+- `tag:work` in search narrows results without opening the view.
 
 <p align="center"><img src="screenshots/manual.md/08-tag-cloud.jpg" alt="The tag cloud: every tag in three sizes, each with its count, and the keys along the bottom" width="512"></p>
 <p align="center"><sub>The tag cloud (<kbd>/</kbd>): the most used tags are largest, and each shows its count.</sub></p>
+
+<p align="center"><img src="screenshots/manual.md/08-tag-view.jpg" alt="The tag view: a header with the tag and its figures, related tags and pages in a rail, and a table of bookmarks" width="720"></p>
+<p align="center"><sub>The tag view: every bookmark with the tag, from all pages, with related tags and pages in the rail.</sub></p>
 
 <a id="103-managing-tags"></a>
 
@@ -4192,7 +4206,7 @@ Open dashboard tabs poll `GET /api/data-revision` and refresh when bookmarks cha
 
 ### Bookmarks seem to be missing
 
-Usually a filter: a tag filter on the dashboard (`Escape` clears it), `Shift + F`, a filter in the Bookmarks view's rail, or a limit on items per category. Deleted bookmarks are in the trash for 30 days.
+Usually a filter: a tag view (`Escape` leaves it), `Shift + F`, a filter in the Bookmarks view's rail, or a limit on items per category. Deleted bookmarks are in the trash for 30 days.
 
 <a id="an-import-says-0-new"></a>
 
@@ -4570,7 +4584,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 | Term | Meaning | Explained in |
 |---|---|---|
 | Tag | A free label on a bookmark, stored in lower case. | [§10.1](#101-tags-on-a-bookmark) |
-| Tag cloud | Every tag from every page, in three sizes with counts; pick one to filter, Shift to stack, type to find. | [§10.2](#102-filtering-by-tag) |
+| Tag cloud and tag view | Every tag from every page in three sizes with counts; pick one to open its tag view — all its bookmarks from every page in a table, with related tags, bulk actions and rename, merge or remove for the tag. Shift to stack, type to find. | [§10.2](#102-filtering-by-tag) |
 | Tag collection | A group nextDash makes of every tag that enough bookmarks use. | [§9.7](#97-custom-and-tag-collections) |
 | Tag suggestions | Proposals for one tag for a whole group of bookmarks, from your own rules and other sources. | [§10.4](#104-tag-suggestions) |
 | Theme | A colour scheme; 164 families each come in a light and a dark half, picked on the Look tab or in the theme browser. | [§16.1](#161-themes) |

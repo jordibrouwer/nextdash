@@ -698,6 +698,24 @@ test('08 tag cloud', async ({ page }) => {
     await snap(page, cloud, '08-tag-cloud.jpg', { pad: 0, maxHeight: Math.floor(cloudBox.height) - 4 });
 });
 
+test('08 tag view', async ({ page }) => {
+    await prepare(page);
+    await openDashboard(page);
+    // Opened the way a reader opens it: the cloud, then a pick.
+    await page.keyboard.press('/');
+    await page.locator('#tag-cloud-modal.is-open').waitFor();
+    await page.waitForTimeout(600);
+    await page.locator('#tag-cloud-modal [data-tag="homelab"]').first().click();
+    const view = page.locator('#dashboard-layout .tag-view');
+    await view.waitFor();
+    await view.locator('.tag-view-row').first().waitFor();
+    // The morph and the rows settling in.
+    await page.waitForTimeout(1_200);
+    await page.mouse.move(5, 5);
+    await page.evaluate(() => document.activeElement?.blur?.());
+    await snap(page, view, '08-tag-view.jpg', { pad: 0 });
+});
+
 const WEB_RESULTS = [
     { title: 'Maps of the world - OpenStreetMap', url: 'https://www.openstreetmap.org/', snippet: 'OpenStreetMap is a map of the world, created by people like you and free to use.', domain: 'openstreetmap.org' },
     { title: 'Topographic maps for hiking', url: 'https://topo.maps.example/', snippet: 'Contour lines, trails and huts, for every country in Europe.', domain: 'topo.maps.example' },
