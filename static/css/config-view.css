@@ -7295,15 +7295,16 @@ body.no-animations .config-new-features-panel-star {
     padding: var(--space-1-5, 0.34rem) var(--space-2, 0.55rem);
 }
 
-/* A proposal reads as a row of a table: five columns in the same places on
-   every line. The row itself is a Health-style .config-crud-row (config-view.css,
-   --table rules above) -- touching, bottom-rule, hover-revealed actions --
-   so only the column template stays here. */
+/* A proposal reads as a row of a table: four columns in the same places on
+   every line -- the tag, its sites with where it came from under them, the
+   count, and Apply/refuse. The row itself is a Health-style .config-crud-row
+   (touching, bottom rule); its actions are always shown, since accepting is
+   the whole point of the list. */
 .config-suggestion-row--proposal {
     display: grid;
-    grid-template-columns: minmax(5rem, 8rem) minmax(6rem, 1fr) auto minmax(6rem, max-content) auto;
+    grid-template-columns: minmax(6rem, 10rem) minmax(8rem, 1fr) auto auto;
+    align-items: center;
     gap: var(--space-2, 0.55rem) var(--space-3, 0.85rem);
-    cursor: pointer;
 }
 
 /*
@@ -7322,7 +7323,7 @@ body.no-animations .config-new-features-panel-star {
 @supports (grid-template-columns: subgrid) {
     .config-suggestions-list--proposals {
         display: grid;
-        grid-template-columns: minmax(5rem, 8rem) minmax(6rem, 1fr) auto minmax(6rem, max-content) auto;
+        grid-template-columns: minmax(6rem, 10rem) minmax(8rem, 1fr) auto auto;
     }
 
     .config-suggestions-list--proposals > .config-suggestion-row--proposal {
@@ -7403,8 +7404,165 @@ body.no-animations .config-new-features-panel-star {
     font-variant-numeric: tabular-nums;
 }
 
+/* The sites, and under them where the proposal came from: one cell, two
+   lines, both left-aligned, so the column has one edge. */
+.config-suggestion-where {
+    display: grid;
+    min-width: 0;
+    gap: 0.05rem;
+}
+
+.config-suggestion-where .config-suggestion-pattern {
+    color: var(--text-primary);
+    font-size: calc(var(--font-size-text) * 0.9);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .config-suggestion-reason {
-    text-align: right;
+    font-size: calc(var(--font-size-text) * 0.78);
+}
+
+/* The one line above the list: what is waiting, then the menus. */
+.config-tag-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem) var(--space-3, 0.85rem);
+    margin: 0 0 var(--space-2, 0.5rem);
+}
+
+.config-tag-toolbar .config-suggestions-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.6rem;
+    flex: 1 1 14rem;
+    margin: 0;
+}
+
+.config-tag-toolbar-note {
+    color: var(--text-muted, #888);
+    font-weight: normal;
+    font-size: calc(var(--font-size-text) * 0.86);
+}
+
+.config-tag-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+/* Where things stand: three quiet lines between the toolbar and the list. */
+.config-tag-facts {
+    margin: 0 0 var(--space-3, 0.85rem);
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.86);
+}
+
+.config-tag-facts p {
+    margin: 0.1rem 0;
+}
+
+/* A menu under a button: <details>, so it opens from the keyboard too. */
+.config-tag-menu {
+    position: relative;
+}
+
+.config-tag-menu > summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.config-tag-menu > summary::-webkit-details-marker {
+    display: none;
+}
+
+.config-tag-menu-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.3rem);
+    z-index: 20;
+    display: grid;
+    min-width: 17rem;
+    max-width: min(24rem, 90vw);
+    padding: 0.3rem;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.35));
+    border-radius: var(--layout-radius-sm, 8px);
+    /* The same surface as the Bookmarks view's own menus. */
+    background: var(--background-modal, var(--background-primary));
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+}
+
+/* Narrow: the toolbar wraps and its buttons sit at the left, so the menu
+   opens to the right of its button rather than off the screen. */
+@media (max-width: 720px) {
+    .config-tag-menu-panel {
+        left: 0;
+        right: auto;
+    }
+}
+
+.config-tag-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.35rem 0.6rem;
+    border: 0;
+    border-radius: 5px;
+    background: none;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: calc(var(--font-size-text) * 0.9);
+    text-align: left;
+    cursor: pointer;
+}
+
+.config-tag-menu-item:hover:not(:disabled),
+.config-tag-menu-item:focus-visible {
+    background: color-mix(in srgb, var(--accent-color, #4a90d9) 14%, transparent);
+}
+
+.config-tag-menu-item:disabled {
+    color: var(--text-muted, #888);
+    cursor: default;
+}
+
+.config-tag-menu-item.is-danger {
+    color: var(--danger-color, #e66b6b);
+}
+
+.config-tag-menu-check {
+    color: var(--text-secondary);
+}
+
+.config-tag-menu-rule {
+    margin: 0.25rem 0;
+    border: 0;
+    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.3));
+}
+
+.config-tag-menu-hint {
+    margin: 0.25rem 0.6rem 0.2rem;
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.78);
+}
+
+/* Under the list: the cap note, and Apply all at the right. */
+.config-tag-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.config-tag-foot .config-widget-field-hint {
+    margin: 0;
+    flex: 1 1 14rem;
 }
 
 /* Apply and its refusal sit together at the end of the row: the pair is one
@@ -7423,9 +7581,9 @@ body.no-animations .config-new-features-panel-star {
         grid-template-columns: minmax(5rem, 8rem) 1fr auto;
     }
 
-    .config-suggestion-reason {
-        grid-column: 1 / -2;
-        text-align: left;
+    .config-suggestion-row--proposal .config-suggestion-actions {
+        grid-column: 1 / -1;
+        justify-self: end;
     }
 }
 

@@ -128,9 +128,21 @@ func TestTagLookupDropsAdultSites(t *testing.T) {
 func TestTagLookupNeverSendsPrivateOrKnownHosts(t *testing.T) {
 	h := newTestHandlers(t)
 	calls, asked := fakeWikidata(t, map[string][]map[string]string{})
-	lookupForTest(t, h, "nas.lan", "immich.tail1234.ts.net", "router", "192.168.1.1", "100.100.1.2", "google.com", "www.github.com")
+	body, _ := json.Marshal(map[string]any{"hosts": []string{"nas.lan", "immich.tail1234.ts.net", "router", "192.168.1.1", "100.100.1.2", "google.com", "www.github.com"}})
+	rec := httptest.NewRecorder()
+	h.TagLookup(rec, httptest.NewRequest(http.MethodPost, "/api/tags/lookup", strings.NewReader(string(body))))
 	if calls.Load() != 0 {
 		t.Errorf("asked Wikidata about %v; private and catalogued hosts must stay home", *asked)
+	}
+	var out struct {
+		Skipped []string `json:"skipped"`
+	}
+	json.Unmarshal(rec.Body.Bytes(), &out)
+	// Named as skipped, so the browser can say "not looked up"; a name
+	// without a dot is no site at all and drops out before that.
+	want := []string{"nas.lan", "immich.tail1234.ts.net", "192.168.1.1", "100.100.1.2"}
+	if !reflect.DeepEqual(out.Skipped, want) {
+		t.Errorf("skipped %v, want %v", out.Skipped, want)
 	}
 }
 

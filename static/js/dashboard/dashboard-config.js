@@ -21853,7 +21853,9 @@ class DashboardConfig {
     /** The bulk bar, likewise — it is drawn from three places. */
     /** What the engine needs: a key, an address and the tags it already has. */
     tagSuggestionItems() {
-        return (this.dash.allBookmarks || []).map((b) => ({
+        // Unsorted too: a link kept without a page is the one most in need of
+        // a tag, and its row in the list is just as much the reader's.
+        return [...(this.dash.allBookmarks || []), ...(this.dash.unsortedBookmarks || [])].map((b) => ({
             key: this.bookmarkKey(b),
             url: b.url,
             // Carried for the expanded row: a list of addresses is a list
@@ -21876,8 +21878,25 @@ class DashboardConfig {
             expanded: this._tagSuggestionOpen || new Set(),
             refusedOpen: !!this._tagSuggestionsRefusedOpen,
             excluded: this._tagSuggestionExcluded || new Set(),
+            counts: this.tagSearchCounts(),
+            catalogueStats: window.TagCatalogue?.stats?.() || null,
+            unknownHosts: window.TagCatalogue?.unknown?.() || [],
+            lookupOnline: this.dash.settings?.tagLookupOnline !== false,
+            applyNow: this.tagSearchApplyNow(),
             t: (key, fallback) => this.t(key, fallback),
         });
+    }
+
+    /** How many bookmarks carry tags and how many do not, for the tab's counts. */
+    tagSearchCounts() {
+        const all = (this.dash.allBookmarks || []).filter((b) => b?.url);
+        const untagged = all.filter((b) => !(Array.isArray(b.tags) && b.tags.length)).length;
+        return {
+            tagged: all.length - untagged,
+            untagged,
+            unsorted: (this.dash.unsortedBookmarks || []).filter((b) => b?.url).length,
+            inbox: (this.dash.inbox?.items || []).filter((item) => item?.url).length,
+        };
     }
 
     /*
@@ -21918,6 +21937,16 @@ class DashboardConfig {
             || (container.id === 'config-bm-suggestions' ? container : null);
         if (!host) return;
         this.renderTagSuggestionsSafe();
+        // The toolbar's menus close when the reader clicks anywhere else or
+        // presses Escape, as a menu does. Bound once for the document.
+        if (!this._tagMenuCloserBound) {
+            this._tagMenuCloserBound = true;
+            const closeMenus = (except) => document
+                .querySelectorAll('#config-bm-suggestions details.config-tag-menu[open]')
+                .forEach((menu) => { if (menu !== except) menu.removeAttribute('open'); });
+            document.addEventListener('click', (event) => closeMenus(event.target.closest?.('details.config-tag-menu')));
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeMenus(null); });
+        }
         /*
          * Unticking a member of an expanded group.
          *
@@ -21926,6 +21955,14 @@ class DashboardConfig {
          * it. What is still ticked is read again when Apply runs.
          */
         host.addEventListener('change', (event) => {
+            if (event.target.closest?.('[data-tag-search-apply]')) {
+                this.setTagSearchApplyNow(event.target.checked);
+                return;
+            }
+            if (event.target.closest?.('[data-tag-lookup-online]')) {
+                void this.setBehavior('tagLookupOnline', event.target.checked).then(() => this.renderTagSuggestionsSafe());
+                return;
+            }
             const box = event.target.closest?.('[data-tag-suggestion-member]');
             if (!box) return;
             const id = box.getAttribute('data-tag-suggestion-member');
@@ -21944,6 +21981,11 @@ class DashboardConfig {
                 }
             });
         }
+        // The inbox count in the toolbar and the facts: drawn again once the
+        // inbox has loaded, since nothing else here waits for it.
+        void this.ensureInboxForTags().then(() => {
+            if (document.getElementById('config-bm-suggestions')) this.renderTagSuggestionsSafe();
+        });
         if (!this._tagCatalogue) {
             void this.ensureTagCatalogue().then(() => {
                 if (document.getElementById('config-bm-suggestions')) {
@@ -21990,14 +22032,29 @@ class DashboardConfig {
             if (button) {
                 const index = Number(button.getAttribute('data-tag-suggestion-apply'));
                 void this.keepTagSuggestionsPlace(button,
-                    () => this.applyTagSuggestion((this._tagSuggestionGroups || [])[index]));
+                    () => this.applyTagSuggestion(this.tagSuggestionRowGroups(index)));
                 return;
             }
             const refuse = event.target.closest('[data-tag-suggestion-dismiss]');
             if (refuse) {
                 const index = Number(refuse.getAttribute('data-tag-suggestion-dismiss'));
                 void this.keepTagSuggestionsPlace(refuse,
-                    () => this.dismissTagSuggestion((this._tagSuggestionGroups || [])[index]));
+                    () => this.dismissTagSuggestion(this.tagSuggestionRowGroups(index)));
+                return;
+            }
+            const applyAll = event.target.closest('[data-tag-suggestions-apply-all]');
+            if (applyAll) {
+                const rows = (this._tagSuggestionGroups || []).slice(0, window.ConfigTagSuggestions?.MAX_ROWS || 25);
+                void this.applyTagSuggestion(rows.flatMap((row) => (row.groups || []).map(({ group }) => group)));
+                return;
+            }
+            // A choice made in one of the toolbar's menus closes it.
+            if (event.target.closest('.config-tag-menu-panel [role="menuitem"]')) {
+                event.target.closest('details')?.removeAttribute('open');
+            }
+            const search = event.target.closest('[data-tag-search]');
+            if (search) {
+                void this.runTagSearch(search.getAttribute('data-tag-search'));
                 return;
             }
             if (event.target.closest('[data-tag-scan-start]')) {
@@ -22106,12 +22163,16 @@ class DashboardConfig {
     tagSuggestionGroupCount() {
         if (!window.TagSuggestions) return 0;
         try {
-            return window.TagSuggestions.suggest(this.tagSuggestionItems(), {
+            const groups = window.TagSuggestions.suggest(this.tagSuggestionItems(), {
                 rules: this.dash.settings?.tagRules || [],
                 catalogue: this._tagCatalogue || [],
                 dismissed: this.dash.settings?.dismissedTagSuggestions || [],
                 keywords: this.tagKeywordsByItemKey(),
-            }).length;
+            });
+            // Counted as the panel shows them: one per tag.
+            return window.ConfigTagSuggestions?.mergeByTag
+                ? window.ConfigTagSuggestions.mergeByTag(groups).length
+                : groups.length;
         } catch (err) {
             return 0;
         }
@@ -25125,8 +25186,16 @@ class DashboardConfig {
      * not fill in. The undo, the snapshots and the page-by-page write are the
      * same either way.
      */
-    async applyTagSuggestion(group) {
-        if (!group?.tag || !Array.isArray(group.keys) || !group.keys.length) return;
+    /** The engine groups behind one row of the panel (one tag, its sites). */
+    tagSuggestionRowGroups(index) {
+        const row = (this._tagSuggestionGroups || [])[index];
+        return (row?.groups || []).map(({ group }) => group);
+    }
+
+    async applyTagSuggestion(groupOrGroups) {
+        const groups = (Array.isArray(groupOrGroups) ? groupOrGroups : [groupOrGroups])
+            .filter((group) => group?.tag && Array.isArray(group.keys) && group.keys.length);
+        if (!groups.length) return;
         /*
          * Only the ones still ticked.
          *
@@ -25137,7 +25206,13 @@ class DashboardConfig {
          * whole row and tag forty-six by hand.
          */
         const left = new Set(this._tagSuggestionExcluded || []);
-        const keys = group.keys.filter((key) => !left.has(`${group.pattern}|${group.tag}|${key}`));
+        // bookmark key -> the tags this apply adds to it.
+        const adds = new Map();
+        groups.forEach((group) => group.keys.forEach((key) => {
+            if (left.has(`${group.pattern}|${group.tag}|${key}`)) return;
+            adds.set(key, [...(adds.get(key) || []), group.tag]);
+        }));
+        const keys = [...adds.keys()];
         // Unticking every member and then pressing Apply is a reasonable thing
         // to do by accident, and it used to do nothing at all -- no tag, no
         // toast, no reason given.
@@ -25147,7 +25222,8 @@ class DashboardConfig {
             return;
         }
         const wanted = new Set(keys);
-        const picked = (this.dash.allBookmarks || []).filter((b) => wanted.has(this.bookmarkKey(b)));
+        const picked = [...(this.dash.allBookmarks || []), ...(this.dash.unsortedBookmarks || [])]
+            .filter((b) => wanted.has(this.bookmarkKey(b)));
         if (!picked.length) return;
         // mutateSelected clears the selection, which is right for the bulk bar
         // -- that is what it was acting on. This panel acts on a group of its
@@ -25155,7 +25231,7 @@ class DashboardConfig {
         const ticked = new Set(this.bmSelected);
         const snapshots = await this.mutateSelected(picked, (b) => {
             const current = Array.isArray(b.tags) ? b.tags.map((tag) => String(tag).toLowerCase()) : [];
-            return { ...b, tags: [...new Set([...current, group.tag])] };
+            return { ...b, tags: [...new Set([...current, ...(adds.get(this.bookmarkKey(b)) || [])])] };
         });
         ticked.forEach((key) => this.bmSelected.add(key));
         this.notify(this.t('config.tagSuggestionApplied', 'Tags added.'), 'success', {
@@ -25164,6 +25240,119 @@ class DashboardConfig {
             duration: 8000,
         });
         this.renderTagSuggestionsSafe();
+    }
+
+    /*
+     * Whether a search round adds what it finds straight away.
+     *
+     * One answer per browser rather than a setting: it is how this reader
+     * likes to work at this desk, not something the collection holds. On
+     * unless turned off -- the round is something they asked for, and one
+     * undo takes it all back.
+     */
+    tagSearchApplyNow() {
+        try {
+            return localStorage.getItem('nextdash.tagSearch.applyNow') !== 'false';
+        } catch {
+            return true;
+        }
+    }
+
+    setTagSearchApplyNow(on) {
+        try {
+            localStorage.setItem('nextdash.tagSearch.applyNow', on ? 'true' : 'false');
+        } catch { /* a browser refusing storage keeps the default */ }
+    }
+
+    /** The bookmarks a round runs over: 'all', 'untagged', or a list. */
+    tagSearchTargets(scope) {
+        if (Array.isArray(scope)) return scope.filter((b) => b?.url);
+        if (scope === 'unsorted') return (this.dash.unsortedBookmarks || []).filter((b) => b?.url);
+        const all = (this.dash.allBookmarks || []).filter((b) => b?.url);
+        if (scope === 'untagged') return all.filter((b) => !(Array.isArray(b.tags) && b.tags.length));
+        return all;
+    }
+
+    /*
+     * Look for tags for these bookmarks, and add them or offer them.
+     *
+     * The catalogue first, then Wikidata for the sites it does not know
+     * (TagCatalogue.lookupRound, on the progress overlay). What comes out is
+     * whatever the engine proposes for these bookmarks once the round has
+     * landed -- the same proposals the suggestions tab shows, so a tag the
+     * reader turned down, or took off by hand, is never added: the engine
+     * drops those before anything else sees them.
+     *
+     * With "add straight away" on, every bookmark that has a proposal gets it
+     * in one write and one undo; off, the toast says how many are waiting and
+     * opens the tab.
+     */
+    async runTagSearch(scope) {
+        if (scope === 'inbox') {
+            await this.runInboxTagSearch();
+            return;
+        }
+        const targets = this.tagSearchTargets(scope);
+        if (!targets.length) {
+            this.notify(this.t('config.tagSearchNothing', 'No bookmarks to look for tags for.'), 'info');
+            return;
+        }
+        if (!window.TagCatalogue?.lookupRound || !window.TagSuggestions?.suggest) return;
+        await Promise.all([this.ensureTagCatalogue(), this.ensureTagKeywords?.()]);
+        const round = await window.TagCatalogue.lookupRound(targets.map((b) => b.url), {
+            title: this.t('config.tagSearchProgressTitle', 'Looking for tags…'),
+        });
+        if (round.busy) {
+            this.notify(this.t('config.tagSearchBusy', 'A search is already running.'), 'info');
+            return;
+        }
+
+        const wanted = new Set(targets.map((b) => this.bookmarkKey(b)));
+        const groups = window.TagSuggestions.suggest(this.tagSuggestionItems(), {
+            rules: this.dash.settings?.tagRules || [],
+            catalogue: this._tagCatalogue || [],
+            dismissed: this.dash.settings?.dismissedTagSuggestions || [],
+            keywords: this.tagKeywordsByItemKey(),
+        });
+        const tagsFor = new Map();
+        groups.forEach((group) => (group.keys || []).forEach((key) => {
+            if (!wanted.has(key)) return;
+            tagsFor.set(key, [...(tagsFor.get(key) || []), group.tag]);
+        }));
+        this.renderTagSuggestionsSafe();
+        this.syncTagSuggestionCount?.();
+
+        if (!tagsFor.size) {
+            this.notify(round.off
+                ? this.t('config.tagSearchNoneOff', 'No tags found. Looking up online is off, so only the catalogue was asked.')
+                : this.t('config.tagSearchNone', 'No new tags found for these bookmarks.'), 'info', { duration: 6000 });
+            return;
+        }
+        if (!this.tagSearchApplyNow()) {
+            this.notify(this.t('config.tagSearchWaiting', '{n} bookmarks have a tag suggestion waiting.')
+                .replace('{n}', String(tagsFor.size)), 'success', {
+                duration: 10000,
+                actionLabel: this.t('config.tagSearchReview', 'Review'),
+                onAction: () => this.openTagSuggestionsTab(),
+            });
+            return;
+        }
+        const picked = [...(this.dash.allBookmarks || []), ...(this.dash.unsortedBookmarks || [])]
+            .filter((b) => tagsFor.has(this.bookmarkKey(b)));
+        const ticked = new Set(this.bmSelected);
+        const snapshots = await this.mutateSelected(picked, (b) => {
+            const current = Array.isArray(b.tags) ? b.tags.map((tag) => String(tag).toLowerCase()) : [];
+            return { ...b, tags: [...new Set([...current, ...tagsFor.get(this.bookmarkKey(b))])] };
+        });
+        ticked.forEach((key) => this.bmSelected.add(key));
+        this.notify(this.t('config.tagSearchApplied', '{n} bookmarks got a tag.')
+            .replace('{n}', String(picked.length)), 'success', {
+            undoCallback: this.bulkUndo(snapshots, 'config.tagSuggestionUndone', 'Tags put back.',
+                'config.bulkUndoFailed', 'Could not undo that.'),
+            duration: 10000,
+        });
+        this.renderTagSuggestionsSafe();
+        this.syncTagSuggestionCount?.();
     }
 
     /*
@@ -25262,6 +25451,14 @@ class DashboardConfig {
             .replace('{n}', String(linked)), 'success', { duration: 8000 });
     }
 
+    /** Config → Bookmarks → Tag suggestions, from wherever the reader is. */
+    openTagSuggestionsTab() {
+        if (this.bmTab === 'tag-suggestions' && document.getElementById('config-bm-suggestions')) return;
+        this.bmTab = 'tag-suggestions';
+        this.render?.();
+        this.restoreConfigHash?.();
+    }
+
     /*
      * A rule is a setting, so it is written the way every other setting is.
      *
@@ -25339,12 +25536,16 @@ class DashboardConfig {
      * the button sits beside Apply, so a slip is as likely in one direction as
      * the other.
      */
-    async dismissTagSuggestion(group) {
-        if (!group?.tag || !group?.pattern) return;
-        const key = `${group.pattern}|${group.tag}`.toLowerCase();
+    async dismissTagSuggestion(groupOrGroups) {
+        // One row can stand for several sites; each is turned down on its own,
+        // the way a refusal has always been stored.
+        const keys = (Array.isArray(groupOrGroups) ? groupOrGroups : [groupOrGroups])
+            .filter((group) => group?.tag && group?.pattern)
+            .map((group) => `${group.pattern}|${group.tag}`.toLowerCase());
         const before = this.dash.settings?.dismissedTagSuggestions || [];
-        if (before.includes(key)) return;
-        await this.setBehavior('dismissedTagSuggestions', [...before, key]);
+        const fresh = [...new Set(keys)].filter((key) => !before.includes(key));
+        if (!fresh.length) return;
+        await this.setBehavior('dismissedTagSuggestions', [...before, ...fresh]);
         this.renderTagSuggestionsSafe();
         this.syncTagSuggestionCount();
         this.notify(this.t('config.tagSuggestionDismissed', 'Suggestion turned down.'), 'success', {
@@ -25358,14 +25559,15 @@ class DashboardConfig {
     }
 
     /** Show or hide the bookmarks a proposal covers. */
-    toggleTagSuggestionMembers(group) {
-        if (!group?.tag || !group?.pattern) return;
-        const id = `${group.pattern}|${group.tag}`;
+    toggleTagSuggestionMembers(row) {
+        if (!row?.tag) return;
+        const id = `tag:${row.tag}`;
         this._tagSuggestionOpen = this._tagSuggestionOpen || new Set();
         if (this._tagSuggestionOpen.has(id)) this._tagSuggestionOpen.delete(id);
         else this._tagSuggestionOpen.add(id);
         this.renderTagSuggestionsSafe();
     }
+
 
     /*
      * Take one refusal back.

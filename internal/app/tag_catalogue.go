@@ -154,6 +154,18 @@ func (s tagCatalogueSubject) allHosts() []string {
 	return append(append([]string{}, s.Hosts...), s.Derived...)
 }
 
+// countKnown is how many of these hosts the catalogue resolves.
+func countKnown(c *tagCatalogue, hosts []string) int {
+	known := map[string]bool{}
+	for _, raw := range hosts {
+		host := normalizeCatalogueHost(raw)
+		if host != "" && !known[host] && len(c.resolve(host)) > 0 {
+			known[host] = true
+		}
+	}
+	return len(known)
+}
+
 // normalizeCatalogueHost is patternsFor's host: lower case, no www.
 func normalizeCatalogueHost(host string) string {
 	host = strings.ToLower(strings.TrimSpace(host))
@@ -242,5 +254,13 @@ func (h *Handlers) TagCatalogue(w http.ResponseWriter, r *http.Request) {
 		"version": catalogue.version,
 		"tags":    catalogue.subset(hosts),
 		"unknown": unknown,
+		// For the panel's own words: how big the catalogue is, and how much
+		// of this collection it knows.
+		"stats": map[string]int{
+			"sites":    len(catalogue.byHost),
+			"subjects": len(catalogue.subjects),
+			"yours":    len(seen) + countKnown(catalogue, hosts),
+			"unknown":  len(unknown),
+		},
 	})
 }

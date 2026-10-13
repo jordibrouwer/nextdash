@@ -101,8 +101,17 @@ func TestTagCatalogueEndpoint(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 	h.TagCatalogue(rec, httptest.NewRequest(http.MethodGet, "/api/tags/catalogue", nil))
+	var withStats struct {
+		Stats map[string]int `json:"stats"`
+	}
+	json.Unmarshal(rec.Body.Bytes(), &withStats)
 	if got := decode(rec); !reflect.DeepEqual(got["search"], []string{"=google.com"}) {
 		t.Errorf("GET from the stored collection: got %v", got)
+	}
+	// The panel's words: the catalogue's size, and how much of the
+	// collection it knows -- google.com among the collection's sites.
+	if s := withStats.Stats; s["sites"] < 1000 || s["subjects"] < 400 || s["yours"] < 1 || s["unknown"] > s["yours"] {
+		t.Errorf("stats: %v", s)
 	}
 
 	rec = httptest.NewRecorder()

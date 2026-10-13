@@ -106,13 +106,15 @@
     /**
      * Fetch the shipped catalogue, sharing config's one copy and its promise.
      * Pass the addresses of links the server has not stored yet -- a draft in
-     * an add form -- and their hosts are asked about as well.
+     * an add form -- and their hosts are asked about as well, online too
+     * unless options.lookup is false: a stored bookmark looked at in a panel
+     * is not a search the reader started.
      */
-    function ensureCatalogue(urls) {
+    function ensureCatalogue(urls, options) {
         const load = global.TagCatalogue?.load;
         if (typeof load !== 'function') return Promise.resolve([]);
         const more = urls?.length && global.TagCatalogue?.ensureHosts
-            ? global.TagCatalogue.ensureHosts(urls).then(load)
+            ? global.TagCatalogue.ensureHosts(urls, options).then(load)
             : load();
         return more.then((catalogue) => {
             // A catalogue that arrives after the first answer was drawn makes

@@ -173,113 +173,353 @@
         container.appendChild(list);
     }
 
-    function renderList(t, groups, ctx) {
-        // Same Health-style table as Structure's Categories and Pages: one
-        // touching 46px line per proposal, Apply/No thanks out of sight until
-        // the row is reached. The column template (tag, pattern, count,
-        // reason) stays a subgrid so long hosts don't shove the columns
-        // around; only the row's own box (border, hover, height) is shared.
+    /*
+     * The engine's groups, one row per tag.
+     *
+     * The engine groups by site and tag, which is the unit a refusal and a
+     * rule are stored under -- and which drew #news five times for five news
+     * sites. The reader decides per tag, so the rows are per tag; the groups
+     * stay underneath, and Apply, refuse and the member ticks still act on
+     * each of them, so a refusal is still remembered per site.
+     */
+    function mergeByTag(groups) {
+        const rows = [];
+        const byTag = new Map();
+        (groups || []).forEach((group, index) => {
+            let row = byTag.get(group.tag);
+            if (!row) {
+                row = { tag: group.tag, groups: [], keys: 0 };
+                byTag.set(group.tag, row);
+                rows.push(row);
+            }
+            row.groups.push({ group, index });
+            row.keys += (group.keys || []).length;
+        });
+        return rows;
+    }
+
+    /** Where a row's proposal comes from, once for all its sites. */
+    function rowReason(t, row) {
+        const reasons = [...new Set(row.groups.map(({ group }) => reasonText(t, group)))];
+        return reasons.length === 1
+            ? reasons[0]
+            : t('config.tagSuggestionReasonSeveral', 'several sources');
+    }
+
+    function renderList(t, rows, ctx) {
+        // One line per tag: the tag, the sites with where it came from under
+        // them, the number of bookmarks, and Apply/refuse -- always shown, in
+        // the same four columns on every row (the subgrid in config-view.css).
         const list = document.createElement('ul');
         list.className = 'config-crud-list config-crud-list--table config-suggestions-list config-suggestions-list--proposals';
-        groups.slice(0, MAX_ROWS).forEach((group, index) => {
-            const row = document.createElement('li');
-            row.className = 'config-crud-row config-suggestion-row config-suggestion-row--proposal';
-            row.setAttribute('data-tag-suggestion', String(index));
+        rows.slice(0, MAX_ROWS).forEach((row, index) => {
+            const line = document.createElement('li');
+            line.className = 'config-crud-row config-suggestion-row config-suggestion-row--proposal';
+            line.setAttribute('data-tag-suggestion', String(index));
 
             const tag = document.createElement('span');
             tag.className = 'config-suggestion-tag';
-            tag.textContent = `#${group.tag}`;
+            tag.textContent = `#${row.tag}`;
 
-            const pattern = document.createElement('span');
-            pattern.className = 'config-suggestion-pattern';
-            // A page-text row is grouped by subject across sites, so there is
-            // no host to name in this column.
-            pattern.textContent = group.pattern === 'page-text'
+            const where = document.createElement('span');
+            where.className = 'config-suggestion-where';
+            const sites = document.createElement('span');
+            sites.className = 'config-suggestion-pattern';
+            const names = row.groups.map(({ group }) => (group.pattern === 'page-text'
                 ? t('config.tagSuggestionAcrossSites', 'across sites')
-                : group.pattern;
-
-            /*
-             * The number alone, in a chip.
-             *
-             * Fifteen rows each ending in the word "bookmark" is fifteen
-             * copies of a word the column already means. The full phrase stays
-             * as the accessible name, because a bare "3" read aloud is not a
-             * count of anything.
-             */
-            const count = document.createElement('span');
-            count.className = 'config-suggestion-count';
-            count.textContent = String(group.keys.length);
-            count.setAttribute('aria-label', group.keys.length === 1
-                ? t('config.tagSuggestionCountOne', '1 bookmark')
-                : t('config.tagSuggestionCount', '{n} bookmarks').replace('{n}', String(group.keys.length)));
-            count.title = count.getAttribute('aria-label');
-
+                : group.pattern));
+            sites.textContent = names.length > 3
+                ? `${names.slice(0, 3).join(', ')} ${t('config.tagSuggestionMoreSites', '+{n} more').replace('{n}', String(names.length - 3))}`
+                : names.join(', ');
+            sites.title = names.join(', ');
             const why = document.createElement('span');
             why.className = 'config-suggestion-reason';
-            why.textContent = reasonText(t, group);
-
-            const apply = document.createElement('button');
-            apply.type = 'button';
-            apply.className = 'config-btn config-btn--small';
-            apply.setAttribute('data-tag-suggestion-apply', String(index));
-            apply.textContent = t('config.tagSuggestionApply', 'Apply');
-
-            const dismiss = document.createElement('button');
-            dismiss.type = 'button';
-            dismiss.className = 'config-btn config-btn--small';
-            dismiss.setAttribute('data-tag-suggestion-dismiss', String(index));
-            dismiss.textContent = t('config.tagSuggestionDismiss', 'No thanks');
-
-            const actions = document.createElement('span');
-            actions.className = 'config-suggestion-actions config-crud-row-actions';
-            actions.append(apply, dismiss);
-
-            row.append(tag, pattern, count, why, actions);
-            list.appendChild(row);
+            why.textContent = rowReason(t, row);
+            where.append(sites, why);
 
             /*
-             * What the row is actually offering, on request.
-             *
-             * "47 bookmarks" is a number to take on trust, and a group with
-             * one wrong member left the reader nothing to do but refuse the
-             * whole row. Expanding names them, and each carries a tick: what
-             * stays ticked is what Apply writes.
+             * The number of bookmarks, in a chip that opens the list of them.
+             * The full phrase is the accessible name, because a bare "3" read
+             * aloud is not a count of anything.
              */
-            const id = `${group.pattern}|${group.tag}`;
+            const id = `tag:${row.tag}`;
             const open = ctx.expanded?.has?.(id);
-            // The count is the handle: it is the thing the reader is being
-            // asked to take on trust, so it is the thing that opens the proof.
+            const count = document.createElement('span');
+            count.className = 'config-suggestion-count';
+            count.textContent = String(row.keys);
+            count.setAttribute('aria-label', row.keys === 1
+                ? t('config.tagSuggestionCountOne', '1 bookmark')
+                : t('config.tagSuggestionCount', '{n} bookmarks').replace('{n}', String(row.keys)));
             count.setAttribute('data-tag-suggestion-toggle', String(index));
             count.setAttribute('aria-expanded', open ? 'true' : 'false');
             count.setAttribute('role', 'button');
             count.tabIndex = 0;
             count.title = t('config.tagSuggestionMembersAria', 'Show which bookmarks this covers');
+
+            const apply = document.createElement('button');
+            apply.type = 'button';
+            apply.className = 'config-btn config-btn--small config-btn--primary';
+            apply.setAttribute('data-tag-suggestion-apply', String(index));
+            apply.textContent = t('config.tagSuggestionApply', 'Apply');
+
+            const dismiss = document.createElement('button');
+            dismiss.type = 'button';
+            dismiss.className = 'config-btn config-btn--small config-btn--ghost';
+            dismiss.setAttribute('data-tag-suggestion-dismiss', String(index));
+            dismiss.setAttribute('aria-label', t('config.tagSuggestionDismiss', 'No thanks'));
+            dismiss.title = t('config.tagSuggestionDismiss', 'No thanks');
+            dismiss.textContent = '✕';
+
+            const actions = document.createElement('span');
+            actions.className = 'config-suggestion-actions';
+            actions.append(apply, dismiss);
+
+            line.append(tag, where, count, actions);
+            list.appendChild(line);
             if (!open) return;
 
+            /*
+             * What the row is offering, on request, each with a tick: what
+             * stays ticked is what Apply writes. Ticks are kept per site
+             * group, as they always were.
+             */
             const byKey = new Map((ctx.items || []).map((item) => [item.key, item]));
             const members = document.createElement('li');
             members.className = 'config-suggestion-members';
             members.setAttribute('data-tag-suggestion-members', String(index));
-            group.keys.forEach((key) => {
-                const item = byKey.get(key);
-                const line = document.createElement('label');
-                line.className = 'config-suggestion-member';
-                const box = document.createElement('input');
-                box.type = 'checkbox';
-                box.checked = !ctx.excluded?.has?.(`${id}|${key}`);
-                box.setAttribute('data-tag-suggestion-member', `${id}|${key}`);
-                const name = document.createElement('span');
-                name.className = 'config-suggestion-member-name';
-                name.textContent = item?.name || item?.url || key;
-                const where = document.createElement('span');
-                where.className = 'config-suggestion-member-url';
-                where.textContent = item?.url || '';
-                line.append(box, name, where);
-                members.appendChild(line);
+            row.groups.forEach(({ group }) => {
+                const groupId = `${group.pattern}|${group.tag}`;
+                group.keys.forEach((key) => {
+                    const item = byKey.get(key);
+                    const member = document.createElement('label');
+                    member.className = 'config-suggestion-member';
+                    const box = document.createElement('input');
+                    box.type = 'checkbox';
+                    box.checked = !ctx.excluded?.has?.(`${groupId}|${key}`);
+                    box.setAttribute('data-tag-suggestion-member', `${groupId}|${key}`);
+                    const name = document.createElement('span');
+                    name.className = 'config-suggestion-member-name';
+                    name.textContent = item?.name || item?.url || key;
+                    const url = document.createElement('span');
+                    url.className = 'config-suggestion-member-url';
+                    url.textContent = item?.url || '';
+                    member.append(box, name, url);
+                    members.appendChild(member);
+                });
             });
             list.appendChild(members);
         });
         return list;
+    }
+
+    /*
+     * A small menu: a button that opens a list of actions under it.
+     *
+     * A <details> rather than a popover of its own, so it opens and closes
+     * from the keyboard with no script; the config listener closes it when a
+     * choice is made or the reader clicks elsewhere.
+     */
+    function menu(label, className, attr) {
+        const wrap = document.createElement('details');
+        wrap.className = `config-tag-menu ${className || ''}`.trim();
+        if (attr) wrap.setAttribute(attr, '');
+        const summary = document.createElement('summary');
+        summary.className = 'config-btn config-btn--small';
+        summary.textContent = label;
+        const panel = document.createElement('div');
+        panel.className = 'config-tag-menu-panel';
+        panel.setAttribute('role', 'menu');
+        wrap.append(summary, panel);
+        return { wrap, panel };
+    }
+
+    function menuButton(text, attr, value, extraClass) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('role', 'menuitem');
+        button.className = `config-tag-menu-item ${extraClass || ''}`.trim();
+        button.setAttribute(attr, value || '');
+        button.textContent = text;
+        return button;
+    }
+
+    function menuCheck(text, attr, checked) {
+        const label = document.createElement('label');
+        label.className = 'config-tag-menu-item config-tag-menu-check';
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        box.setAttribute(attr, '');
+        box.checked = !!checked;
+        const span = document.createElement('span');
+        span.textContent = text;
+        label.append(box, span);
+        return label;
+    }
+
+    function menuRule() {
+        const hr = document.createElement('hr');
+        hr.className = 'config-tag-menu-rule';
+        return hr;
+    }
+
+    /*
+     * The one line above the list: how many are waiting, and the two menus.
+     *
+     * "Find tags" holds what a reader starts -- a search for the untagged or
+     * for everything, whether it adds straight away, and reading the pages.
+     * "⋯" holds what is set once and left: looking up online, and forgetting
+     * the words a page round stored.
+     */
+    function renderToolbar(t, rows, ctx) {
+        const bar = document.createElement('div');
+        bar.className = 'config-tag-toolbar';
+        bar.setAttribute('data-tag-search-card', '');
+
+        const counts = ctx.counts || {};
+        const summary = document.createElement('p');
+        summary.className = 'config-suggestions-title';
+        summary.setAttribute('data-tag-suggestions-count', '');
+        const waiting = document.createElement('strong');
+        waiting.textContent = rows.length
+            ? t('config.tagSuggestionsSummaryCount', '{n} to review').replace('{n}', String(rows.length))
+            : t('config.tagSuggestionsNoneWaiting', 'Nothing to review');
+        const untagged = document.createElement('span');
+        untagged.className = 'config-tag-toolbar-note';
+        untagged.textContent = t('config.tagSearchUntaggedNote', '{n} bookmarks without tags')
+            .replace('{n}', String(counts.untagged || 0));
+        summary.append(waiting, untagged);
+        bar.appendChild(summary);
+
+        const actions = document.createElement('div');
+        actions.className = 'config-tag-toolbar-actions';
+
+        const find = menu(`⌕ ${t('config.tagSearchMenu', 'Find tags')}`, 'config-tag-menu--find', 'data-tag-find-menu');
+        find.wrap.querySelector('summary').classList.add('config-btn--primary');
+        const total = (counts.tagged || 0) + (counts.untagged || 0);
+        const noTags = menuButton(t('config.tagSearchUntagged', 'Bookmarks without tags ({n})').replace('{n}', String(counts.untagged || 0)),
+            'data-tag-search', 'untagged');
+        noTags.disabled = !counts.untagged;
+        const unsorted = menuButton(t('config.tagSearchUnsorted', 'Unsorted ({n})').replace('{n}', String(counts.unsorted || 0)),
+            'data-tag-search', 'unsorted');
+        unsorted.disabled = !counts.unsorted;
+        const inbox = menuButton(t('config.tagSearchInbox', 'Inbox ({n})').replace('{n}', String(counts.inbox || 0)),
+            'data-tag-search', 'inbox');
+        inbox.disabled = !counts.inbox;
+        find.panel.append(
+            noTags,
+            menuButton(t('config.tagSearchAll', 'All bookmarks ({n})').replace('{n}', String(total)), 'data-tag-search', 'all'),
+            unsorted,
+            inbox,
+            menuCheck(t('config.tagSearchApplyNowShort', 'Add what it finds straight away'), 'data-tag-search-apply', ctx.applyNow !== false),
+            menuRule(),
+        );
+        // Reading the pages: a different cost (each page is fetched), so a
+        // different item, under the rule.
+        if (ctx.scan && ctx.scan.pending > 0) {
+            const read = menuButton(t('config.tagScanStartN', 'Read their pages ({n} not read yet)')
+                .replace('{n}', String(ctx.scan.pending)), 'data-tag-scan-start');
+            read.disabled = !!ctx.scan.running;
+            find.panel.appendChild(read);
+        } else if (ctx.scan) {
+            find.panel.appendChild(menuButton(t('config.tagScanAgain', 'Read them again'), 'data-tag-scan-again'));
+        }
+        const hint = document.createElement('p');
+        hint.className = 'config-tag-menu-hint';
+        hint.textContent = ctx.lookupOnline
+            ? t('config.tagSearchHintOnline', 'The catalogue first, then Wikidata for sites it does not know. Only the site name leaves your server.')
+            : t('config.tagSearchHintOffline', 'The catalogue only: looking up online is off (⋯).');
+        find.panel.appendChild(hint);
+
+        const more = menu('⋯', 'config-tag-menu--more', 'data-tag-more-menu');
+        more.wrap.querySelector('summary').setAttribute('aria-label', t('config.tagSuggestionsMore', 'More'));
+        more.panel.append(
+            menuCheck(t('config.tagLookupOnlineLabel', 'Look up unknown sites on Wikidata'), 'data-tag-lookup-online', ctx.lookupOnline),
+        );
+        if (ctx.scan && ctx.scan.pending === 0) {
+            more.panel.append(menuRule(), menuButton(t('config.tagScanForget', 'Forget the keywords'), 'data-tag-keywords-clear', '', 'is-danger'));
+        }
+
+        const info = document.createElement('button');
+        info.type = 'button';
+        info.className = 'config-info-btn';
+        info.setAttribute('data-tag-suggestions-info', '');
+        info.setAttribute('aria-label', t('config.settingInfoAria', 'More info'));
+        info.title = t('config.settingInfoAria', 'More info');
+        info.textContent = 'ℹ';
+
+        actions.append(find.wrap, more.wrap, info);
+        bar.appendChild(actions);
+        return bar;
+    }
+
+    /*
+     * Where things stand, in words: the collection, the catalogue against it,
+     * and the rest of what feeds the list. Three short lines under the
+     * toolbar, quiet so the list stays the thing to look at.
+     */
+    function renderFacts(t, ctx) {
+        const facts = document.createElement('div');
+        facts.className = 'config-tag-facts';
+        facts.setAttribute('data-tag-suggestions-facts', '');
+        const line = (text) => {
+            const p = document.createElement('p');
+            p.textContent = text;
+            facts.appendChild(p);
+        };
+        const fmt = (n) => Number(n || 0).toLocaleString();
+
+        const counts = ctx.counts || {};
+        const total = (counts.tagged || 0) + (counts.untagged || 0);
+        let collection = t('config.tagFactsCollection', '{total} bookmarks: {tagged} with tags, {untagged} without.')
+            .replace('{total}', fmt(total))
+            .replace('{tagged}', fmt(counts.tagged))
+            .replace('{untagged}', fmt(counts.untagged));
+        if (counts.unsorted || counts.inbox) {
+            collection += ' ' + t('config.tagFactsWaiting', 'Waiting to be filed: {unsorted} in Unsorted, {inbox} in the inbox.')
+                .replace('{unsorted}', fmt(counts.unsorted))
+                .replace('{inbox}', fmt(counts.inbox));
+        }
+        line(collection);
+
+        let stats = ctx.catalogueStats;
+        if (stats && stats.sites) {
+            // Counted over the same bookmarks as the line above, so the two
+            // lines agree; the server's own count also takes in the inbox
+            // and Unsorted.
+            const hosts = new Set();
+            (ctx.items || []).forEach((item) => {
+                const host = (global.TagSuggestions?.patternsFor?.(item.url) || [])[0];
+                if (host) hosts.add(host);
+            });
+            const unknownSet = new Set(ctx.unknownHosts || []);
+            const yours = hosts.size;
+            const unknownHere = [...hosts].filter((host) => unknownSet.has(host)).length;
+            const known = yours - unknownHere;
+            stats = { ...stats, yours, unknown: unknownHere };
+            let text = t('config.tagFactsCatalogue', 'The catalogue names {sites} sites in {subjects} subjects, and knows {known} of your {yours} sites.')
+                .replace('{sites}', fmt(stats.sites))
+                .replace('{subjects}', fmt(stats.subjects))
+                .replace('{known}', fmt(known))
+                .replace('{yours}', fmt(stats.yours));
+            if (stats.unknown) {
+                text += ' ' + (ctx.lookupOnline
+                    ? t('config.tagFactsUnknownOnline', 'Find tags looks the other {n} up on Wikidata, by site name only.')
+                    : t('config.tagFactsUnknownOffline', 'The other {n} are not looked up: looking up online is off (⋯).'))
+                    .replace('{n}', fmt(stats.unknown));
+            }
+            line(text);
+        }
+
+        const extra = [];
+        if (ctx.scan && ctx.scan.pending > 0) {
+            extra.push(t('config.tagFactsUnread', '{n} pages not read for keywords yet').replace('{n}', fmt(ctx.scan.pending)));
+        }
+        const refused = (ctx.dismissed || []).length;
+        if (refused) {
+            extra.push(t('config.tagFactsRefused', '{n} turned down, never offered again').replace('{n}', fmt(refused)));
+        }
+        if (extra.length) line(`${extra.join(' · ')}.`);
+        return facts;
     }
 
     function render(container, ctx) {
@@ -291,100 +531,41 @@
             dismissed: ctx.dismissed,
             keywords: ctx.keywords,
         });
+        const rows = mergeByTag(groups);
         container.replaceChildren();
         container.hidden = false;
 
-        const head = document.createElement('div');
-        head.className = 'config-suggestions-head';
+        container.appendChild(renderToolbar(t, rows, ctx));
+        container.appendChild(renderFacts(t, ctx));
 
-        const intro = document.createElement('p');
-        intro.className = 'config-widget-field-hint';
-        intro.textContent = t('config.tagSuggestionsIntro',
-            'Proposals only — nothing is tagged until you press Apply.');
-
-        const info = document.createElement('button');
-        info.type = 'button';
-        info.className = 'config-info-btn';
-        info.setAttribute('data-tag-suggestions-info', '');
-        info.setAttribute('aria-label', t('config.settingInfoAria', 'More info'));
-        info.title = t('config.settingInfoAria', 'More info');
-        info.textContent = 'ℹ';
-
-        head.append(intro, info);
-        container.appendChild(head);
-
-        if (groups.length) {
-            const count = document.createElement('p');
-            count.className = 'config-suggestions-title';
-            count.setAttribute('data-tag-suggestions-count', '');
-            count.textContent = t('config.tagSuggestionsSummaryCount', '{n} to review')
-                .replace('{n}', String(groups.length));
-            container.appendChild(count);
-            container.appendChild(renderList(t, groups, ctx));
-            if (groups.length > MAX_ROWS) {
+        if (rows.length) {
+            container.appendChild(renderList(t, rows, ctx));
+            const foot = document.createElement('div');
+            foot.className = 'config-tag-foot';
+            if (rows.length > MAX_ROWS) {
                 const more = document.createElement('p');
                 more.className = 'config-widget-field-hint';
                 more.setAttribute('data-tag-suggestions-capped', '');
                 more.textContent = t('config.tagSuggestionsCapped',
                     'Showing the {shown} biggest suggestions of {total}. Accept some and the rest move up.')
                     .replace('{shown}', String(MAX_ROWS))
-                    .replace('{total}', String(groups.length));
-                container.appendChild(more);
+                    .replace('{total}', String(rows.length));
+                foot.appendChild(more);
             }
+            const all = document.createElement('button');
+            all.type = 'button';
+            all.className = 'config-btn config-btn--small';
+            all.setAttribute('data-tag-suggestions-apply-all', '');
+            all.textContent = t('config.tagSuggestionsApplyAll', 'Apply all {n}')
+                .replace('{n}', String(Math.min(rows.length, MAX_ROWS)));
+            foot.appendChild(all);
+            container.appendChild(foot);
         } else {
             const empty = document.createElement('p');
             empty.className = 'config-widget-field-hint';
-            empty.textContent = t('config.tagSuggestionsEmpty',
-                'Nothing to propose yet. Give three bookmarks from the same site the same tag and the rest of that site is offered it — or write a rule below and it proposes at once.');
+            empty.textContent = t('config.tagSuggestionsEmptySearch',
+                'Nothing to review. Find tags looks them up for your bookmarks; three bookmarks from one site with the same tag also offer it to the rest of that site.');
             container.appendChild(empty);
-        }
-
-        if (ctx.scan && ctx.scan.pending > 0) {
-            // A row rather than a line of prose: it offers an action, the rows
-            // above it offer actions, and it lines up with them.
-            const scan = document.createElement('div');
-            scan.className = 'config-suggestion-row config-suggestion-row--scan';
-            scan.setAttribute('data-tag-scan', '');
-            const cost = document.createElement('span');
-            cost.className = 'config-suggestion-scan-text';
-            cost.textContent = t('config.tagScanCost', '{n} bookmarks have no keywords yet.')
-                .replace('{n}', String(ctx.scan.pending));
-            const start = document.createElement('button');
-            start.type = 'button';
-            start.className = 'config-btn config-btn--small';
-            start.setAttribute('data-tag-scan-start', '');
-            // Stopping lives on the progress overlay the round puts up, so
-            // this stays one button rather than changing meaning mid-round.
-            start.textContent = t('config.tagScanStart', 'Read their pages');
-            start.disabled = !!ctx.scan.running;
-            scan.append(cost, start);
-            container.appendChild(scan);
-        } else if (ctx.scan) {
-            /*
-             * Nothing left to read: the round is done, and the only thing this
-             * row still has to offer is the way back out.
-             */
-            const done = document.createElement('div');
-            done.className = 'config-suggestion-row config-suggestion-row--scan';
-            done.setAttribute('data-tag-scan', '');
-            const said = document.createElement('span');
-            said.className = 'config-suggestion-scan-text';
-            said.textContent = t('config.tagScanAllRead', 'Every page has been read.');
-            const again = document.createElement('button');
-            again.type = 'button';
-            again.className = 'config-btn config-btn--small';
-            again.setAttribute('data-tag-scan-again', '');
-            again.textContent = t('config.tagScanAgain', 'Read them again');
-            const forget = document.createElement('button');
-            forget.type = 'button';
-            forget.className = 'config-btn config-btn--small config-btn--danger';
-            forget.setAttribute('data-tag-keywords-clear', '');
-            forget.textContent = t('config.tagScanForget', 'Forget the keywords');
-            const actions = document.createElement('span');
-            actions.className = 'config-suggestion-actions';
-            actions.append(again, forget);
-            done.append(said, actions);
-            container.appendChild(done);
         }
 
         /*
@@ -455,8 +636,8 @@
             container.appendChild(wrap);
         }
 
-        return groups;
+        return rows;
     }
 
-    global.ConfigTagSuggestions = { render, renderRules, MAX_ROWS };
+    global.ConfigTagSuggestions = { render, renderRules, mergeByTag, MAX_ROWS };
 })(window);

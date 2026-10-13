@@ -92,6 +92,17 @@
     display: none;
 }
 
+/* A tag search's lines: what it found stands out from what it passed over. */
+.tag-lookup-line {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+.tag-lookup-line.is-found {
+    color: var(--text-primary);
+}
+
 /*
  * The way out, for the work that has one.
  *

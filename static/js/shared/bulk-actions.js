@@ -24,6 +24,7 @@
      */
     const ACTIONS = [
         { id: 'edit', key: 'config.bmSelEdit', label: 'Edit…', surfaces: [BOOKMARKS] },
+        { id: 'find-tags', key: 'config.bmSelFindTags', label: 'Find tags', surfaces: [BOOKMARKS] },
         { id: 'move', key: 'dashboard.multiSelectMove', label: 'Move', surfaces: [DASHBOARD], popup: true },
         { id: 'tags', key: 'dashboard.multiSelectTags', label: 'Tags', surfaces: [DASHBOARD], popup: true },
         { id: 'pin', key: 'dashboard.multiSelectPin', label: 'Pin', surfaces: [DASHBOARD, BOOKMARKS] },

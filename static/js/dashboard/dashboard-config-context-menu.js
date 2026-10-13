@@ -125,6 +125,7 @@ class DashboardConfigContextMenu {
             return [
                 { id: 'bulk-move', label: this.t('config.contextMoveSelected', 'Move {count} selected…', { count }), icon: '→' },
                 { id: 'bulk-tags', label: this.t('config.contextTagSelected', 'Tag {count} selected…', { count }), icon: '#' },
+                { id: 'bulk-find-tags', label: this.t('config.contextFindTagsSelected', 'Find tags for {count}', { count }), icon: '⌕' },
                 { id: 'bulk-pin', label: this.t('config.contextPinSelected', 'Pin or unpin {count} selected', { count }), icon: 'pin' },
                 { id: 'bulk-status', divider: true, label: this.t('config.contextStatusSelected', 'Checking for {count} selected…', { count }), icon: '◉' },
                 { id: 'bulk-export', label: this.t('config.contextExportSelected', 'Export {count} as CSV', { count }), icon: '⤓' },
@@ -167,6 +168,9 @@ class DashboardConfigContextMenu {
                 ...(c.isUnsortedBookmark?.(bookmark)
                     ? [{ id: 'promote', label: this.t('config.contextPromote', 'Promote…'), icon: '⇪' }] : []),
                 { id: 'edit', label: this.t('config.edit', 'Edit'), icon: '✎' },
+                // With or without tags: one already tagged can still be
+                // missing one, and what it was refused stays refused.
+                { id: 'find-tags', label: this.t('config.contextFindTags', 'Find tags'), icon: '⌕' },
             ]),
             ...group([
                 { id: 'check-mode', label: this.checkModeLabel(bookmark), icon: '◉', submenu: true },
@@ -581,6 +585,13 @@ class DashboardConfigContextMenu {
                 break;
             case 'bulk-status':
                 c.focusWorkbenchBulkField('checkMode');
+                break;
+            case 'bulk-find-tags':
+                await c.runTagSearch(c.bookmarksFromKeys([...c.bmSelected]));
+                c.afterSelectionChange();
+                break;
+            case 'find-tags':
+                await c.runTagSearch([bookmark]);
                 break;
             case 'bulk-pin':
             case 'bulk-export':

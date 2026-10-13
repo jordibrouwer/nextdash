@@ -889,6 +889,11 @@
                 void this.runBmHealthBulk?.(action);
                 return;
             }
+            if (action === 'find-tags') {
+                void this.runTagSearch(this.bookmarksFromKeys([...this.bmSelected]))
+                    .then(() => this.afterSelectionChange());
+                return;
+            }
             void this.handleBulkAction(action).then(() => this.afterSelectionChange());
         });
     },
@@ -971,7 +976,9 @@
         const chips = global.TagSuggestChips;
         if (!host || !b || !live || !chips) return;
         const url = String(b.url || '').trim();
-        await live.ensureCatalogue([url]);
+        // The catalogue only: opening a bookmark is not asking the internet
+        // about it. The button below is.
+        await live.ensureCatalogue([url], { lookup: false });
         const keywords = (await live.storedKeywords())[url] || [];
         // The panel may have moved on to another bookmark while this waited.
         if (!host.isConnected || panel.dataset.bmPanelKey !== key) return;
@@ -996,6 +1003,34 @@
                 void chips.refuse(this.dash, offer, { onUpdated: () => { void this.fillWorkbenchSuggestions(panel); } });
             },
         });
+        /*
+         * A search for this one bookmark, with or without tags: the catalogue
+         * and Wikidata, as the round in Tag suggestions does. Beside the
+         * chips, so what it finds lands where the reader is looking.
+         */
+        let find = host.parentElement?.querySelector(':scope > [data-bm-find-tags]');
+        if (!find) {
+            find = document.createElement('button');
+            find.type = 'button';
+            find.className = 'config-btn config-btn--small';
+            find.setAttribute('data-bm-find-tags', '');
+            find.textContent = this.t('config.bmFindTags', 'Find tags');
+            find.addEventListener('click', async () => {
+                // The panel's bookmark now, not the one it showed when the
+                // button was made: the panel is reused as the cursor moves.
+                const now = panel.dataset.bmPanelKey;
+                const current = now ? this.findBookmarkByKey(now) : null;
+                if (!current) return;
+                find.disabled = true;
+                try {
+                    await this.runTagSearch([current]);
+                } finally {
+                    find.disabled = false;
+                }
+                void this.fillWorkbenchSuggestions(panel);
+            });
+            host.after(find);
+        }
     },
 
     /**

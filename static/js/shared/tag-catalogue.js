@@ -41,8 +41,9 @@
     let lookupRunning = false;
     let lookupOff = false;
     // The collection's hosts the catalogue has nothing for, as the server
-    // last said.
+    // last said, and the catalogue's size against the collection.
     let unknownHosts = [];
+    let stats = null;
 
     function t(key, fallback) {
         const lang = global.dashboardInstance?.language;
@@ -88,6 +89,7 @@
                 catalogue = Array.isArray(data?.tags) ? data.tags : [];
                 revision += 1;
                 unknownHosts = Array.isArray(data?.unknown) ? data.unknown : [];
+                stats = data?.stats || null;
                 return catalogue;
             })
             .catch(() => {
@@ -131,41 +133,104 @@
                 delay: options.delay,
             })
             : () => {};
+        /*
+         * What the round is doing, a line at a time under the bar: what it
+         * found, what it did not, and what it skipped because the reader once
+         * turned it down. Only the latest few stay, so a long round does not
+         * grow the overlay off the screen.
+         */
+        const lines = [];
+        const draw = () => {
+            // Only while the overlay is up: detail() creates the overlay when
+            // there is none, and a round that finished inside the delay would
+            // leave an empty one standing.
+            const shown = document.getElementById('nextdash-progress-overlay');
+            if (!shown || shown.hidden) return;
+            overlay?.update?.(done, total, status());
+            const box = overlay?.detail?.();
+            if (!box) return;
+            box.replaceChildren(...lines.map(([text, ok]) => {
+                const line = document.createElement('div');
+                line.className = ok ? 'tag-lookup-line is-found' : 'tag-lookup-line';
+                line.textContent = text;
+                return line;
+            }));
+        };
+        const say = (text, ok) => {
+            lines.push([text, ok]);
+            if (lines.length > 6) lines.shift();
+            draw();
+        };
+        /*
+         * The overlay appears after its delay and clears what was written
+         * under it before then -- and the catalogue's part of a round is often
+         * done by that time. So the round keeps its own state and draws it
+         * again once the overlay is up, rather than showing "0 of 101" until
+         * the first answer from Wikidata.
+         */
+        const redraw = setTimeout(draw, (Number.isFinite(options.delay) ? options.delay : 300) + 30);
         let off = false;
         try {
-            for (let i = 0; i < hosts.length && !stopped; i += LOOKUP_BATCH) {
-                const batch = hosts.slice(i, i + LOOKUP_BATCH);
+            // First the catalogue, in one request: whatever it knows needs no
+            // lookup, and what it does not know is all that goes to Wikidata.
+            const subset = await askSubset(hosts);
+            const unknown = new Set(subset?.unknown || hosts);
+            const known = hosts.filter((host) => !unknown.has(host));
+            if (known.length) {
+                done += known.length;
+                found += known.length;
+                say(t('config.tagLookupFromCatalogue', '✓ {n} sites known to the catalogue')
+                    .replace('{n}', String(known.length)), true);
+                draw();
+            }
+            const ask = hosts.filter((host) => unknown.has(host));
+            const refused = refusedSet();
+            for (let i = 0; i < ask.length && !stopped && !off; i += LOOKUP_BATCH) {
+                const batch = ask.slice(i, i + LOOKUP_BATCH);
                 const data = await askLookup(batch);
                 if (data?.enabled === false) {
                     off = true;
+                    say(t('config.tagLookupOffLine', 'Looking up online is off; only the catalogue was used.'), false);
                     break;
                 }
+                if (!data) break;
+                const results = data.results || {};
+                const home = new Set(data.skipped || []);
+                batch.forEach((host) => {
+                    if (home.has(host)) {
+                        say(t('config.tagLookupLocalLine', '· {host}: on your own network, not looked up').replace('{host}', host), false);
+                        return;
+                    }
+                    const tags = results[host]?.tags || [];
+                    const open = tags.filter((tag) => !refused.has(`${host}|${tag}`));
+                    if (open.length) {
+                        found += 1;
+                        say(`✓ ${host} → ${open.map((tag) => `#${tag}`).join(' ')}`, true);
+                    } else if (tags.length) {
+                        say(t('config.tagLookupRefusedLine', '· {host}: turned down before, skipped').replace('{host}', host), false);
+                    } else {
+                        say(t('config.tagLookupNothingLine', '· {host}: nothing found').replace('{host}', host), false);
+                    }
+                });
                 done += batch.length;
-                found += countOffered(data?.results);
-                overlay?.update?.(done, total, status());
+                draw();
                 // The service was unreachable: stop rather than hammer it.
-                if (!data || data.pending) break;
+                if (data.pending) {
+                    say(t('config.tagLookupUnreachable', 'Wikidata did not answer; try again later.'), false);
+                    break;
+                }
             }
         } finally {
+            clearTimeout(redraw);
             end();
             lookupRunning = false;
         }
         return { asked: done, found, stopped, off };
     }
 
-    /*
-     * How many sites came back with a tag the reader has not turned down.
-     *
-     * A refusal is stored as "site|tag" (dismissedTagSuggestions) and the
-     * engine drops every proposal it names, so a site whose only finds were
-     * refused before will propose nothing -- and the count says so rather
-     * than promising a suggestion that never appears.
-     */
-    function countOffered(results) {
-        const refused = new Set((global.dashboardInstance?.settings?.dismissedTagSuggestions || [])
+    function refusedSet() {
+        return new Set((global.dashboardInstance?.settings?.dismissedTagSuggestions || [])
             .map((entry) => String(entry).trim().toLowerCase()));
-        return Object.entries(results || {}).filter(([host, found]) =>
-            (found?.tags || []).some((tag) => !refused.has(`${host}|${tag}`))).length;
     }
 
     /** One request to the lookup; merges what it found and tells the listeners. */
@@ -231,11 +296,11 @@
      * Make sure the catalogue knows about these addresses, for links the
      * server has not stored. Resolves to true when anything new arrived.
      */
-    async function ensureHosts(urls) {
-        await load();
-        const hosts = [...new Set((urls || []).map(hostOf).filter((host) => host && !asked.has(host)))];
-        if (!hosts.length) return false;
-        hosts.forEach((host) => asked.add(host));
+    /**
+     * Ask the server what the catalogue knows about these hosts and merge it
+     * into the copy. Resolves to the answer ({ tags, unknown }) or null.
+     */
+    async function askSubset(hosts) {
         let data = null;
         try {
             const response = await fetch('/api/tags/catalogue', {
@@ -247,10 +312,8 @@
         } catch {
             data = null;
         }
-        if (!Array.isArray(data?.tags)) {
-            hosts.forEach((host) => asked.delete(host));
-            return false;
-        }
+        if (!Array.isArray(data?.tags)) return null;
+        hosts.forEach((host) => asked.add(host));
         const known = bySubject();
         let added = false;
         data.tags.forEach((entry) => {
@@ -270,10 +333,21 @@
             });
         });
         if (added) revision += 1;
+        data.added = added;
+        return data;
+    }
+
+    async function ensureHosts(urls, options = {}) {
+        await load();
+        const hosts = [...new Set((urls || []).map(hostOf).filter((host) => host && !asked.has(host)))];
+        if (!hosts.length) return false;
+        const data = await askSubset(hosts);
+        if (!data) return false;
+        let added = data.added;
         // A draft is waiting for its answer, so its own lookup is not queued
         // behind the collection's: asked now, and awaited.
         const fresh = (data.unknown || []).filter((host) => !lookedUp.has(host));
-        if (fresh.length && !lookupOff) {
+        if (fresh.length && !lookupOff && options.lookup !== false) {
             fresh.forEach((host) => lookedUp.add(host));
             const before = revision;
             const end = global.ProgressOverlay?.begin
@@ -313,5 +387,10 @@
         return unknownHosts.slice();
     }
 
-    global.TagCatalogue = { load, now, ensureHosts, version, onChange, lookupRound, unknown };
+    /** { sites, subjects, yours, unknown } as the server last said, or null. */
+    function catalogueStats() {
+        return stats;
+    }
+
+    global.TagCatalogue = { load, now, ensureHosts, version, onChange, lookupRound, unknown, stats: catalogueStats };
 })(window);

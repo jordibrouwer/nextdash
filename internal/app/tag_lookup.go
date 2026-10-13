@@ -468,6 +468,9 @@ func (h *Handlers) TagLookup(w http.ResponseWriter, r *http.Request) {
 	catalogue := loadTagCatalogue()
 	results := map[string]tagLookupEntry{}
 	var ask []string
+	// Hosts that stay home -- the LAN, a tailnet, no dot -- named so the
+	// browser can say "not looked up" rather than "nothing found".
+	skipped := []string{}
 	seen := map[string]bool{}
 	for _, raw := range body.Hosts {
 		host := normalizeCatalogueHost(raw)
@@ -481,9 +484,14 @@ func (h *Handlers) TagLookup(w http.ResponseWriter, r *http.Request) {
 			}
 			continue
 		}
-		if len(ask) < tagLookupMaxBatch && !tagLookupPrivate(ctx, host) {
-			ask = append(ask, host)
+		if len(ask) >= tagLookupMaxBatch {
+			continue
 		}
+		if tagLookupPrivate(ctx, host) {
+			skipped = append(skipped, host)
+			continue
+		}
+		ask = append(ask, host)
 	}
 	pending := 0
 	if len(ask) > 0 {
@@ -499,5 +507,5 @@ func (h *Handlers) TagLookup(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	json.NewEncoder(w).Encode(map[string]any{"enabled": true, "results": results, "pending": pending})
+	json.NewEncoder(w).Encode(map[string]any{"enabled": true, "results": results, "pending": pending, "skipped": skipped})
 }
