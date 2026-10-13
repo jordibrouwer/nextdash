@@ -5158,8 +5158,8 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .moda
     max-width: 100%;
     margin: 0;
     max-height: min(70vh, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem));
-    transform: translateY(10px) scale(0.98);
-    transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+    transform: var(--modal-enter-from);
+    transition: var(--modal-enter-transition);
 }
 
 /* What's new is narrower than the two it shares the shell with: it is a single
@@ -5202,7 +5202,7 @@ body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.recent-bookmarks-
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.keyboard-cheat-sheet-modal) .modal,
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.whats-new-modal) .modal {
     transform: translateY(0) scale(1);
-    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
+    transition: var(--modal-enter-transition);
 }
 
 /* The header sheets keep their transform: it is their centring, not motion. */
@@ -5306,13 +5306,13 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) .
     max-width: 100%;
     margin: 0;
     max-height: min(70vh, calc(100vh - 4rem));
-    transform: translateY(10px) scale(0.98);
-    transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+    transform: var(--modal-enter-from);
+    transition: var(--modal-enter-transition);
 }
 
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.page-overview-modal) .modal:not(.page-overview-sheet) {
     transform: translateY(0) scale(1);
-    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
+    transition: var(--modal-enter-transition);
 }
 
 body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) .modal:not(.page-overview-sheet) {
