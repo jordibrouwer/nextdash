@@ -1,6 +1,9 @@
 package app
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -148,5 +151,32 @@ func TestPrecomputedAssetHashesMatchRuntime(t *testing.T) {
 		if got := assetHash(rel); got != want {
 			t.Fatalf("assetHash(%q) = %q, want precomputed %q", rel, got, want)
 		}
+	}
+}
+
+// Without pages.json the order is made up from the page files. It was taken
+// from a map, so the tabs came back shuffled and were saved that way.
+func TestDefaultPageOrderIsByID(t *testing.T) {
+	dir := t.TempDir()
+	for id := 1; id <= 9; id++ {
+		page := fmt.Sprintf(`{"page":{"id":%d,"name":"P%d"},"bookmarks":[]}`, id, id)
+		if err := os.WriteFile(filepath.Join(dir, fmt.Sprintf("bookmarks-%d.json", id)), []byte(page), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	store := &FileStore{
+		settingsFile:  filepath.Join(dir, "settings.json"),
+		dataDir:       dir,
+		pageOrderFile: filepath.Join(dir, "pages.json"),
+		readCache:     newStoreReadCache(),
+	}
+	pages := store.GetPages()
+	for i, page := range pages {
+		if page.ID != i+1 {
+			t.Fatalf("pages = %+v, want ids 1..9 in order", pages)
+		}
+	}
+	if order := store.GetPageOrder(); fmt.Sprint(order) != "[1 2 3 4 5 6 7 8 9]" {
+		t.Fatalf("saved order = %v", order)
 	}
 }

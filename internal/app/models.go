@@ -3373,6 +3373,9 @@ func (fs *FileStore) getPages() []Page {
 		for id := range pageMap {
 			order = append(order, id)
 		}
+		// By id: map order is random, and the tabs came back shuffled and
+		// were saved that way.
+		sort.Ints(order)
 		// Save the default order (best effort during read path)
 		_ = fs.savePageOrder(order)
 	}
