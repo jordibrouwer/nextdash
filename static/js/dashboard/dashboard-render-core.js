@@ -1067,6 +1067,9 @@ class DashboardRenderCore {
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
         container.classList.remove('inbox-layout', 'config-layout');
+        // Which page this grid is, for the incremental path: a block of the
+        // same id on another page is not the same block.
+        container.dataset.renderedPageId = String(d.currentPageId);
 
         d._abortInlineEditForRender();
         window.DashboardSmartWhyPopover?.hide?.();

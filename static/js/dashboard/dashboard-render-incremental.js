@@ -36,6 +36,12 @@ class DashboardRenderIncremental {
         if (!container || container.querySelector('.tag-filter-view')) {
             return false;
         }
+        // Another page's grid. Every new page has a category called "others",
+        // so the structure matched, and a switch kept the page it left: its
+        // folded categories, icons and sort controls on the page it opened.
+        if (container.dataset.renderedPageId !== String(d.currentPageId)) {
+            return false;
+        }
         if (container.querySelector('.empty-state')) {
             return false;
         }
