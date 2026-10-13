@@ -948,6 +948,8 @@
             }
             bar.appendChild(this.el('span', 'tag-view-selbar-count',
                 this.t('dashboard.tagViewSelected', '{n} selected').replace('{n}', String(count))));
+            // `tag-view:bulk`: which action, and how many rows as a band.
+            const track = (action, n = this.selected.size) => window.nextdashTrack?.('tag-view:bulk', { action, count: n });
             const button = (label, cls, run) => {
                 const btn = this.el('button', `lvs-action ${cls}`.trim(), label);
                 btn.type = 'button';
@@ -956,6 +958,7 @@
                 return btn;
             };
             button(this.t('dashboard.tagViewOpenSelected', 'Open'), '', () => {
+                track('open');
                 d.openBookmarksInNewTabs?.(this.selectedBookmarks());
             });
             button(this.t('dashboard.tagViewMoveSelected', 'Move to…'), '', (e, btn) => {
@@ -963,17 +966,20 @@
                 d.tagFilter?.showTagFilterBulkMovePopover?.(btn, {
                     refs,
                     onMoveToPage: async (id) => {
+                        track('move-page', refs.length);
                         await d.tagFilter.bulkMoveTagFilterToPage(id, refs);
                         this.selected = new Set();
                         this.render();
                     },
                     onMoveToCategory: (id) => {
+                        track('move-category', refs.length);
                         d.applyBookmarkCategoryMove?.(refs, id, { count: refs.length });
                         this.selected = new Set();
                     },
                 });
             });
             button(this.t('dashboard.tagViewFindSelected', 'Find tags'), 'tag-view-selbar-find', () => {
+                track('find-tags');
                 void this.findTags(this.selectedBookmarks());
             });
             button(this.t('dashboard.tagViewDeleteSelected', 'Delete'), 'tag-view-selbar-danger', async () => {
@@ -1496,14 +1502,19 @@
                 // Read at the click: the list may have changed since these were drawn.
                 btn.addEventListener('click', () => {
                     const now = d.buildOpenTabsPlans?.(this._shownForActions, { all: 'tagFilterOpenAll', first: 'tagFilterOpenFirst' }) || [];
-                    d.openBookmarksInNewTabs?.((now[i] || now[now.length - 1])?.bookmarks || []);
+                    const picked = (now[i] || now[now.length - 1])?.bookmarks || [];
+                    window.nextdashTrack?.('tag-view:bulk', { action: 'open-shown', count: picked.length });
+                    d.openBookmarksInNewTabs?.(picked);
                 });
                 host.appendChild(btn);
             });
             const copy = this.el('button', 'lvs-action', d.language?.t?.('dashboard.tagFilterCopyLinks') || 'Copy links');
             copy.type = 'button';
             copy.disabled = !shown.length;
-            copy.addEventListener('click', () => d.tagFilter?.copyTagFilterLinksToClipboard?.(this._shownForActions));
+            copy.addEventListener('click', () => {
+                window.nextdashTrack?.('tag-view:bulk', { action: 'copy', count: this._shownForActions?.length || 0 });
+                d.tagFilter?.copyTagFilterLinksToClipboard?.(this._shownForActions);
+            });
             host.appendChild(copy);
             const find = this.el('button', 'lvs-action tag-view-find-btn', this.t('dashboard.tagViewFindTags', 'Find tags ▾'));
             find.type = 'button';

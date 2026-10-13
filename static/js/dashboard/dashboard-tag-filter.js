@@ -85,6 +85,17 @@ class DashboardTagFilter {
         }
 
         /*
+         * `tag-filter`, from every way in (cloud, `t` on a row, :filter).
+         * Only how the set changed and how many tags it now holds go out --
+         * a tag is the reader's own word and never leaves.
+         */
+        const before = this.normalizeTagFilters(d._tagFilters).length;
+        window.nextdashTrack?.('tag-filter', {
+            action: normalized.length === 0 ? 'clear' : (normalized.length > before ? 'add' : 'remove'),
+            count: normalized.length,
+        });
+
+        /*
          * The one way in to the tag view. The cloud, `t` on a row and
          * :filter all come through here, so the view is opened in one place
          * rather than at each of them. Tags on: open it, or follow the new
@@ -386,6 +397,8 @@ class DashboardTagFilter {
         // Recorded after the save so a delete that did not persist cannot leave
         // a phantom trash entry. The undo below is the fast path; the 30-day
         // trash (this same record()) is what catches it after the toast is gone.
+        // After the confirm and the save: only a delete that happened counts.
+        window.nextdashTrack?.('tag-view:bulk', { action: 'delete', count: trashed.length });
         await window.DashboardTrash?.record(trashed, 'tag-filter');
         d.showGroupedNotification(
             'tag-filter-delete',
