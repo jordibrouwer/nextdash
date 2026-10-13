@@ -21,6 +21,9 @@
 
     let cache = null;
     let cacheStamp = '';
+    // The words read from pages, once loaded (storedKeywords), by address.
+    let keywordsByURL = null;
+    let keywordsRevision = 0;
 
     function keyFor(scope, id) {
         return `${scope}:${id}`;
@@ -100,6 +103,7 @@
             (settings.tagRules || []).length,
             (settings.dismissedTagSuggestions || []).length,
             global.TagCatalogue?.version?.() || 0,
+            keywordsRevision,
         ].join(':');
     }
 
@@ -144,10 +148,12 @@
         if (global.TagSuggestions?.suggest) {
             let groups = [];
             try {
+                const keywords = keywordsByItemKey(dash);
                 groups = global.TagSuggestions.suggest(itemsFor(dash), {
                     rules: dash?.settings?.tagRules || [],
                     catalogue: global.TagCatalogue?.now?.() || [],
                     dismissed: dash?.settings?.dismissedTagSuggestions || [],
+                    ...(keywords ? { keywords } : {}),
                 });
             } catch {
                 // A malformed rule or catalogue costs the suggestions and
@@ -199,9 +205,34 @@
             keywordsPromise = fetch('/api/tags/keywords', { cache: 'no-cache' })
                 .then((res) => (res.ok ? res.json() : null))
                 .then((data) => data?.keywords || {})
-                .catch(() => ({}));
+                .catch(() => ({}))
+                .then((words) => {
+                    keywordsByURL = words;
+                    keywordsRevision += 1;
+                    return words;
+                });
         }
         return keywordsPromise;
+    }
+
+    /*
+     * The words read so far, by the engine's own keys, once something has
+     * loaded them. Before that, none: the per-row answers are drawn without
+     * a fetch, and the pages a reader had read show up as soon as anyone
+     * asks for the words (the tag view does, when it opens).
+     */
+    function keywordsByItemKey(dash) {
+        if (!keywordsByURL) return null;
+        const byKey = {};
+        (dash?.allBookmarks || []).forEach((bookmark, index) => {
+            const words = keywordsByURL[String(bookmark?.url || '').trim()];
+            if (words && words.length) byKey[keyFor('dash', index)] = words;
+        });
+        (dash?.unsortedBookmarks || []).forEach((bookmark) => {
+            const words = keywordsByURL[String(bookmark?.url || '').trim()];
+            if (words && words.length) byKey[bookmarkKey(bookmark)] = words;
+        });
+        return byKey;
     }
 
     function forgetKeywords() {
