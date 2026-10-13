@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 // healthTestStore seeds a single-page store and returns handlers for it.
@@ -200,5 +201,44 @@ func TestHealthReasonPenaltiesSumToScore(t *testing.T) {
 		if issue.Score != want {
 			t.Fatalf("%s: score = %d, but penalties sum to %d (want score %d)", issue.Name, issue.Score, total, want)
 		}
+	}
+}
+
+// panicOnceStore fails the first page listing, the way a bug in the report
+// build would.
+type panicOnceStore struct {
+	Store
+	panicked bool
+}
+
+func (s *panicOnceStore) GetPages() []Page {
+	if !s.panicked {
+		s.panicked = true
+		panic("build failed")
+	}
+	return s.Store.GetPages()
+}
+
+// net/http recovers a handler's panic and the server carries on. The build
+// flag did not: it stayed set, and every later report request waited on it
+// for good.
+func TestHealthReportBuildPanicDoesNotBlockTheNextOne(t *testing.T) {
+	h, store := healthTestStore(t, staleTwoRows)
+	h.store = &panicOnceStore{Store: store}
+
+	func() {
+		defer func() { _ = recover() }()
+		h.loadBookmarkHealthReport(true)
+	}()
+
+	done := make(chan struct{})
+	go func() {
+		h.loadBookmarkHealthReport(true)
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the report build after a panic never started")
 	}
 }

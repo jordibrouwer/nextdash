@@ -472,6 +472,21 @@ func (h *Handlers) loadBookmarkHealthReport(forceRefresh bool) BookmarkHealthRep
 	}
 	h.healthReportBuilding = true
 	h.healthReportBuildMu.Unlock()
+	// Deferred, so a build that panics still lets the waiters go. Cleared
+	// after the store below as before; net/http recovers the panic, and
+	// without this every later report request waited on the flag for good.
+	released := false
+	release := func() {
+		if released {
+			return
+		}
+		released = true
+		h.healthReportBuildMu.Lock()
+		h.healthReportBuilding = false
+		h.healthReportBuildCond.Broadcast()
+		h.healthReportBuildMu.Unlock()
+	}
+	defer release()
 
 	h.healthReportMu.RLock()
 	invalidationsBefore := h.healthReportInvalidations
@@ -504,10 +519,7 @@ func (h *Handlers) loadBookmarkHealthReport(forceRefresh bool) BookmarkHealthRep
 	h.healthReportGen = generation
 	h.healthReportMu.Unlock()
 
-	h.healthReportBuildMu.Lock()
-	h.healthReportBuilding = false
-	h.healthReportBuildCond.Broadcast()
-	h.healthReportBuildMu.Unlock()
+	release()
 
 	// After the waiters are released, not before: recording touches the disk and
 	// holding the build flag across it would make every concurrent reader wait on
