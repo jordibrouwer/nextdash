@@ -976,9 +976,9 @@
         const chips = global.TagSuggestChips;
         if (!host || !b || !live || !chips) return;
         const url = String(b.url || '').trim();
-        // The catalogue only: opening a bookmark is not asking the internet
-        // about it. The button below is.
-        await live.ensureCatalogue([url], { lookup: false });
+        // The catalogue, and online for a site it does not know; Find tags
+        // below asks again on request.
+        await live.ensureCatalogue([url]);
         const keywords = (await live.storedKeywords())[url] || [];
         // The panel may have moved on to another bookmark while this waited.
         if (!host.isConnected || panel.dataset.bmPanelKey !== key) return;
