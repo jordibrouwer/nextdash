@@ -871,6 +871,13 @@ class DashboardData {
             // no setting behind it.
             isEnabled: () => true,
         },
+        {
+            view: 'tags',
+            layoutClass: 'tag-view-layout',
+            // #tag/a+b: a tag's view, opened from the hash once the grid is up.
+            matchesHash: (hash) => hash.startsWith('#tag/'),
+            isEnabled: () => true,
+        },
     ];
 
     /**
@@ -1374,7 +1381,6 @@ class DashboardData {
         }
 
         d.updateHealthBadge?.();
-        d.updateTagFilterIndicator?.();
     }
 
     _bookmarkMutationPageIds(options = {}) {

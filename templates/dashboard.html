@@ -144,6 +144,7 @@
     <link rel="stylesheet" href="{{asset "css/widgets-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/health-view.css"}}">
     <link rel="stylesheet" href="{{asset "css/docker-view.css"}}">
+    <link rel="stylesheet" href="{{asset "css/tag-view.css"}}">
     <link rel="stylesheet" href="{{asset "vendor/uplot/1.6.32/uPlot.min.css"}}">
     <link rel="stylesheet" href="{{asset "css/nd-chart.css"}}">
     <link rel="stylesheet" href="{{asset "css/config-view.css"}}">
@@ -220,7 +221,6 @@
                 <div class="header-top-primary skeleton-hide-while-loading">
                     <div id="date-element" class="date"></div>
                     <div id="dashboard-mini-status" class="dashboard-mini-status" aria-live="polite"></div>
-                    <div id="tag-filter-indicator" class="tag-filter-indicator" hidden></div>
                     <div id="status-loading-indicator" class="status-loading-indicator">
                         <span class="status-loading-text" data-i18n="dashboard.checkingStatus">checking status</span>
                         <span class="status-loading-dots"></span>
@@ -663,6 +663,8 @@
     <script src="{{asset "js/push-notifications.js"}}" defer></script>
     <script src="{{asset "js/mobile-experience.js"}}" defer></script>
     <script src="{{asset "js/shared/tag-cloud-model.js"}}" defer></script>
+    <script src="{{asset "js/shared/tag-view-model.js"}}" defer></script>
+    <script src="{{asset "js/shared/tag-rewrite.js"}}" defer></script>
     <script src="{{asset "js/dashboard-tag-cloud.js"}}" defer></script>
     <script src="{{asset "js/dashboard-deep-link.js"}}" defer></script>
     <script src="{{asset "js/dashboard-history.js"}}" defer></script>
@@ -680,6 +682,7 @@
     <script src="{{asset "js/dashboard/dashboard-config-loader.js"}}" defer></script>
     <script src="{{asset "js/dashboard/docker-search-index.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-docker-loader.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-tag-view-loader.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-paste-choice.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-page-nav.js"}}" defer></script>
     <script src="{{asset "js/dashboard-trash.js"}}" defer></script>

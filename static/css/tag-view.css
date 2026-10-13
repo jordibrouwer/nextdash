@@ -1,0 +1,753 @@
+/* The tag view (dashboard-tag-view.js). The shell (list-view-shell.css) draws
+   the header, rail and list; this is only what the tag view adds to it. */
+
+/* ── Header: the tag, the add control, what the set adds up to ─────────── */
+
+.tag-view .tag-view-title-wrap {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
+}
+
+.tag-view .tag-view-title {
+    color: var(--accent-primary);
+}
+
+.tag-view .tag-view-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    padding: 0.1em 0.3em 0.1em 0.7em;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    font-size: 0.8em;
+    color: var(--text-primary);
+}
+
+.tag-view .tag-view-pill-x {
+    border: 0;
+    background: transparent;
+    color: var(--text-tertiary);
+    font: inherit;
+    line-height: 1;
+    padding: 0 0.3em;
+    border-radius: var(--radius-pill, 999px);
+    cursor: pointer;
+}
+
+.tag-view .tag-view-pill-x:hover {
+    color: var(--accent-error, var(--text-primary));
+}
+
+.tag-view .tag-view-or {
+    font-size: 0.6em;
+    font-weight: 400;
+    color: var(--text-tertiary);
+}
+
+.tag-view .tag-view-add {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    font-size: var(--text-sm, 0.85rem);
+    font-weight: 400;
+}
+
+.tag-view .tag-view-add-btn {
+    border: 1px dashed var(--border-primary);
+    background: transparent;
+    color: var(--text-tertiary);
+    font: inherit;
+    padding: 0.15em 0.7em;
+    border-radius: var(--radius-pill, 999px);
+    cursor: pointer;
+}
+
+.tag-view .tag-view-add-btn:hover,
+.tag-view .tag-view-add-btn:focus-visible {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+
+.tag-view .tag-view-add-input {
+    width: 12rem;
+    font: inherit;
+    color: var(--text-primary);
+    background: var(--background-primary);
+    border: 1px solid var(--accent-primary);
+    border-radius: var(--radius-pill, 999px);
+    padding: 0.15em 0.8em;
+    outline: none;
+}
+
+.tag-view .tag-view-add-suggestions {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 30;
+    min-width: 12rem;
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 6px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.tag-view .tag-view-add-suggestions:empty {
+    display: none;
+}
+
+.tag-view .tag-view-add-option {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    text-align: left;
+    padding: 0.3em 0.6em;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.tag-view .tag-view-add-option.is-active,
+.tag-view .tag-view-add-option:hover {
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--text-primary);
+}
+
+.tag-view .tag-view-add-option-count {
+    color: var(--text-tertiary);
+    font-variant-numeric: tabular-nums;
+}
+
+.tag-view .tag-view-stats {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem) var(--space-4, 1rem);
+}
+
+.tag-view .tag-view-stat strong {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.tag-view .tag-view-stat--health strong {
+    color: var(--accent-success, var(--text-primary));
+}
+
+.tag-view .tag-view-stat--broken strong {
+    color: var(--accent-error, var(--text-primary));
+}
+
+.tag-view-manage-menu .move-popover-item.is-danger {
+    color: var(--accent-error, var(--text-primary));
+}
+
+.tag-view-modal-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5, 0.4rem);
+}
+
+.tag-view-modal-field input,
+.tag-view-modal-field select {
+    font: inherit;
+    padding: var(--space-1-5, 0.4rem) var(--space-2, 0.5rem);
+    color: var(--text-primary);
+    background: var(--background-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 6px);
+}
+
+.tag-view .tag-view-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-6, 2rem) var(--space-4, 1rem);
+    color: var(--text-secondary);
+}
+
+/* ── Rail ─────────────────────────────────────────────────────────────── */
+
+.tag-view .tag-view-rail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1rem);
+}
+
+.tag-view .tag-view-rail-item {
+    flex-wrap: wrap;
+    row-gap: 3px;
+}
+
+.tag-view .tag-view-rail-item[hidden] {
+    display: none;
+}
+
+.tag-view .tag-view-rail-bar {
+    flex-basis: 100%;
+    height: 2px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--border-primary) 70%, transparent);
+    overflow: hidden;
+}
+
+.tag-view .tag-view-rail-bar i {
+    display: block;
+    height: 100%;
+    background: var(--accent-primary);
+    opacity: 0.55;
+}
+
+.tag-view .tag-view-rail-more {
+    color: var(--text-tertiary);
+}
+
+.tag-view .lvs-filter-count {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────────────── */
+
+.tag-view .tag-view-search {
+    flex: 1 1 16rem;
+    min-width: 0;
+}
+
+.tag-view .tag-view-count {
+    color: var(--text-tertiary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* ── Table ────────────────────────────────────────────────────────────── */
+
+.tag-view .tag-view-table {
+    --tag-view-cols: 1.75rem minmax(0, 2.4fr) minmax(0, 1.6fr) minmax(5rem, 0.8fr) 4rem 7.5rem 3.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.tag-view .tag-view-colhead,
+.tag-view .tag-view-row {
+    display: grid;
+    grid-template-columns: var(--tag-view-cols);
+    align-items: center;
+    column-gap: var(--space-3, 0.75rem);
+    padding: 0 var(--space-2, 0.5rem);
+}
+
+.tag-view .tag-view-colhead {
+    padding-block: var(--space-1-5, 0.4rem);
+    border-bottom: 1px solid var(--border-primary);
+    font-size: var(--text-2xs, 0.7rem);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+.tag-view .tag-view-col {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    padding: 0;
+    text-align: left;
+}
+
+.tag-view button.tag-view-col {
+    cursor: pointer;
+}
+
+.tag-view button.tag-view-col:hover,
+.tag-view .tag-view-col[aria-sort="ascending"],
+.tag-view .tag-view-col[aria-sort="descending"] {
+    color: var(--text-primary);
+}
+
+.tag-view .tag-view-col--opens,
+.tag-view .tag-view-col--last,
+.tag-view .tag-view-col--score {
+    justify-content: flex-end;
+}
+
+.tag-view .tag-view-col-arrow {
+    color: var(--accent-primary);
+}
+
+.tag-view .tag-view-row {
+    min-height: 2.4rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 55%, transparent);
+    cursor: default;
+    transition: background-color 0.12s ease;
+}
+
+.tag-view .tag-view-row:hover {
+    background: color-mix(in srgb, var(--accent-primary) 6%, transparent);
+}
+
+.tag-view .tag-view-row.is-focused {
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+    box-shadow: inset 2px 0 0 var(--accent-primary);
+}
+
+.tag-view .tag-view-cell {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tag-view .tag-view-cell--name {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    overflow: hidden;
+}
+
+.tag-view .tag-view-icon {
+    flex: 0 0 auto;
+    width: 1.25rem;
+    height: 1.25rem;
+    display: grid;
+    place-items: center;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--background-primary);
+    background: color-mix(in srgb, var(--accent-primary) 80%, var(--text-primary));
+}
+
+.tag-view .tag-view-open {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.tag-view .tag-view-open:hover .tag-view-name,
+.tag-view .tag-view-open:focus-visible .tag-view-name {
+    color: var(--accent-primary);
+}
+
+.tag-view .tag-view-open:focus-visible {
+    outline: none;
+}
+
+.tag-view .tag-view-host {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-tertiary);
+    font-size: 0.86em;
+}
+
+.tag-view .tag-view-tags {
+    display: flex;
+    gap: 4px;
+}
+
+.tag-view .tag-view-chip {
+    flex: 0 0 auto;
+    border: 1px solid color-mix(in srgb, var(--border-primary) 80%, transparent);
+    border-radius: var(--radius-pill, 999px);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.78em;
+    padding: 0 0.6em;
+    cursor: pointer;
+}
+
+.tag-view .tag-view-chip:hover {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+
+.tag-view .tag-view-page {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.tag-view .tag-view-opens,
+.tag-view .tag-view-last,
+.tag-view .tag-view-score {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+}
+
+.tag-view .tag-view-score-badge {
+    display: inline-block;
+    min-width: 2rem;
+    text-align: center;
+    font-size: 0.78em;
+    font-weight: 700;
+    padding: 0 0.4em;
+    border-radius: var(--radius-pill, 999px);
+    border: 1px solid currentColor;
+}
+
+.tag-view .tag-view-score-badge.is-good { color: var(--accent-success, var(--text-secondary)); }
+.tag-view .tag-view-score-badge.is-warn { color: var(--accent-warning, var(--text-secondary)); }
+.tag-view .tag-view-score-badge.is-bad { color: var(--accent-error, var(--text-secondary)); }
+
+.tag-view .tag-view-nomatch {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-5, 1.5rem) var(--space-2, 0.5rem);
+    color: var(--text-secondary);
+}
+
+/* Keys in <kbd> chips, labels beside them: the legend convention. */
+.tag-view .tag-view-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem) var(--space-4, 1rem);
+    margin-top: var(--space-3, 0.75rem);
+    font-size: var(--text-2xs, 0.7rem);
+    color: var(--text-tertiary);
+}
+
+.tag-view .tag-view-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+}
+
+.tag-view .tag-view-legend kbd {
+    font-family: var(--font-family-main);
+    font-size: 0.95em;
+    padding: 0 0.4em;
+    border: 1px solid var(--border-primary);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    color: var(--text-secondary);
+    background: var(--background-primary);
+}
+
+/* The shell's own rail parts the tag view does not use, and the crumb it does:
+   the shell keeps the crumb for a collapsed header, the tag view names where
+   it came from above the title. */
+.tag-view .lvs-rail > .lvs-summary:empty,
+.tag-view .lvs-rail > .lvs-group--filters {
+    display: none;
+}
+
+.tag-view .lvs-header-text > .lvs-crumb {
+    display: block;
+    order: -1;
+    font-size: var(--text-2xs, 0.7rem);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+.tag-view .lvs-header-text {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Arriving ─────────────────────────────────────────────────────────── */
+
+@keyframes tagViewRise {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+}
+
+.tag-view.is-entering .lvs-header,
+.tag-view.is-entering .lvs-rail,
+.tag-view.is-entering .tag-view-colhead {
+    animation: tagViewRise 0.28s ease backwards;
+}
+
+.tag-view.is-entering .lvs-rail {
+    animation-delay: 60ms;
+}
+
+.tag-view.is-entering .tag-view-row {
+    animation: tagViewRise 0.3s ease backwards;
+    animation-delay: calc(80ms + var(--row-index, 0) * 22ms);
+}
+
+body.no-animations .tag-view.is-entering *,
+body.no-animations .tag-view.is-entering {
+    animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tag-view.is-entering * {
+        animation: none !important;
+    }
+}
+
+/* ── Selection ────────────────────────────────────────────────────────── */
+
+.tag-view .tag-view-check,
+.tag-view .tag-view-check-all {
+    width: 0.95rem;
+    height: 0.95rem;
+    padding: 0;
+    border: 1px solid var(--border-primary);
+    border-radius: 3px;
+    background: transparent;
+    cursor: pointer;
+    display: inline-grid;
+    place-items: center;
+}
+
+.tag-view .tag-view-check[aria-checked="true"],
+.tag-view .tag-view-check-all[aria-checked="true"] {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.tag-view .tag-view-check-all[aria-checked="mixed"]::after {
+    content: '';
+    width: 55%;
+    height: 2px;
+    background: var(--accent-primary);
+}
+
+.tag-view .tag-view-check:focus-visible,
+.tag-view .tag-view-check-all:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+.tag-view .tag-view-row.is-selected {
+    background: color-mix(in srgb, var(--accent-primary) 13%, transparent);
+}
+
+.tag-view .tag-view-selbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-2, 0.5rem);
+    padding: var(--space-1-5, 0.4rem) var(--space-3, 0.75rem);
+    border: 1px solid var(--accent-primary);
+    border-radius: var(--layout-radius-sm, 6px);
+    background: color-mix(in srgb, var(--accent-primary) 9%, var(--background-primary));
+}
+
+.tag-view .tag-view-selbar[hidden] {
+    display: none;
+}
+
+.tag-view .tag-view-selbar-count {
+    flex: 1 1 auto;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.tag-view .tag-view-selbar-danger {
+    color: var(--accent-error, var(--text-primary));
+    border-color: color-mix(in srgb, var(--accent-error, var(--border-primary)) 50%, var(--border-primary));
+}
+
+/* ── Side panel ───────────────────────────────────────────────────────── */
+
+.tag-view-facts {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+    margin: 0;
+}
+
+.tag-view-facts dt {
+    color: var(--text-tertiary);
+}
+
+.tag-view-facts dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+    color: var(--text-primary);
+}
+
+.tag-view-panel-tags {
+    flex-wrap: wrap;
+}
+
+.tag-view-panel-tags .tag-view-chip,
+[data-lvs-drawer="tag-view"] .tag-view-chip {
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.85em;
+    padding: 0.05em 0.7em;
+    cursor: pointer;
+}
+
+[data-lvs-drawer="tag-view"] .tag-view-chip.is-active {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+/* ── Narrow screens: two-line rows, the rail as one strip ─────────────── */
+
+@media (max-width: 720px) {
+    .tag-view .lvs-header {
+        flex-wrap: wrap;
+    }
+
+    .tag-view .lvs-header-actions {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    /* The shell folds secondary actions away on a phone; the tag view has
+       only three, and all of them earn their place. */
+    .tag-view .lvs-header-actions .lvs-action:not(.lvs-action--primary):not(.lvs-action--overflow) {
+        display: inline-flex;
+    }
+
+    .tag-view .lvs-header-actions .lvs-action--primary {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+
+    /* Rail: one strip that scrolls sideways, every group's chips in a row. */
+    .tag-view .tag-view-rail {
+        flex-direction: row;
+        gap: var(--space-3, 0.75rem);
+        overflow-x: auto;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+    }
+
+    .tag-view .tag-view-rail::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tag-view .tag-view-rail-group,
+    .tag-view .tag-view-rail-group .lvs-group-list {
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
+        flex: 0 0 auto;
+    }
+
+    .tag-view .tag-view-rail-group .lvs-group-title {
+        padding: 0 2px;
+        font-size: var(--text-2xs, 0.66rem);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        white-space: nowrap;
+    }
+
+    .tag-view .tag-view-rail-item {
+        width: auto;
+        flex: 0 0 auto;
+        flex-wrap: nowrap;
+        gap: 0.4em;
+        padding: 0.2em 0.7em;
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-pill, 999px);
+        white-space: nowrap;
+    }
+
+    .tag-view .tag-view-rail-item[hidden] {
+        display: none;
+    }
+
+    .tag-view .tag-view-rail-bar {
+        display: none;
+    }
+
+    .tag-view .lvs-toolbar-slot {
+        flex-wrap: wrap;
+    }
+
+    .tag-view .tag-view-search {
+        flex: 1 1 100%;
+    }
+
+    .tag-view .tag-view-count {
+        flex: 1 1 auto;
+    }
+
+    /* Rows: name and score on top; host, page, last opened and tags under it. */
+    .tag-view .tag-view-colhead {
+        display: none;
+    }
+
+    .tag-view .tag-view-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 3px var(--space-2, 0.5rem);
+        padding-block: var(--space-2, 0.5rem);
+    }
+
+    .tag-view .tag-view-cell--check { order: 0; flex: 0 0 auto; }
+    .tag-view .tag-view-cell--name { display: contents; }
+    .tag-view .tag-view-icon { order: 1; }
+    .tag-view .tag-view-open { order: 2; flex: 1 1 calc(100% - 6.5rem); }
+    .tag-view .tag-view-score { order: 3; flex: 0 0 auto; }
+
+    .tag-view .tag-view-host {
+        order: 4;
+        margin-left: calc(0.95rem + 1.25rem + 2 * var(--space-2, 0.5rem));
+        font-size: 0.8em;
+        flex: 0 1 auto;
+        max-width: 42%;
+    }
+
+    .tag-view .tag-view-page,
+    .tag-view .tag-view-last {
+        order: 5;
+        flex: 0 0 auto;
+        font-size: 0.8em;
+        color: var(--text-tertiary);
+        text-align: left;
+    }
+
+    .tag-view .tag-view-page::before,
+    .tag-view .tag-view-last::before {
+        content: '· ';
+    }
+
+    .tag-view .tag-view-last { order: 6; }
+    .tag-view .tag-view-opens { display: none; }
+
+    .tag-view .tag-view-tags {
+        order: 7;
+        flex: 1 1 0;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    /* The selection bar stays in reach while the list scrolls. */
+    .tag-view .tag-view-selbar {
+        position: sticky;
+        bottom: var(--space-2, 0.5rem);
+        z-index: 5;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    .tag-view .tag-view-legend {
+        display: none;
+    }
+}

@@ -66,7 +66,7 @@ async function typeQuery(page, text) {
     for (const ch of text) await page.keyboard.press(ch);
 }
 
-test('Enter filters on that one tag, closes, and lands on the grid', async ({ page }) => {
+test('Enter picks that one tag, closes, and lands on its view', async ({ page }) => {
     await openWithKey(page);
     await typeQuery(page, 'qqbeta');
     expect(await focusedTag(page)).toBe('qqbeta');
@@ -74,6 +74,7 @@ test('Enter filters on that one tag, closes, and lands on the grid', async ({ pa
 
     await expect(cloud(page)).toBeHidden();
     await expect.poll(() => filters(page)).toEqual(['qqbeta']);
+    await expect.poll(() => page.evaluate(() => location.hash)).toBe('#tag/qqbeta');
     await expect.poll(() => page.evaluate(() => Boolean(document.activeElement?.closest?.('#dashboard-layout')))).toBe(true);
 });
 
@@ -81,9 +82,9 @@ test('Shift+Enter stacks and keeps the cloud open', async ({ page }) => {
     await openWithKey(page);
     await typeQuery(page, 'qqalpha');
     await page.keyboard.press('Shift+Enter');
+    // The pick took the typing with it; the cloud stays for the next tag.
     await expect(cloud(page)).toBeVisible();
-    await page.keyboard.press('Escape'); // the query, not the cloud
-    await expect(cloud(page)).toBeVisible();
+    await expect(page.locator('#tag-cloud-modal-query')).toBeHidden();
     await typeQuery(page, 'qqgamma');
     await page.keyboard.press('Shift+Enter');
 
@@ -101,7 +102,9 @@ test('a plain click replaces the filter; clicking the only tag again clears it',
     await expect.poll(() => filters(page)).toEqual(['qqgamma']);
     await expect(cloud(page)).toBeHidden();
 
-    await openWithKey(page);
+    // In the tag view / is its search; the cloud is the header button there.
+    await page.locator('#tag-cloud-toggle-btn').click();
+    await expect(chip(page, 'qqgamma')).toBeVisible();
     await chip(page, 'qqgamma').click();
     await expect.poll(() => filters(page)).toEqual([]);
 });

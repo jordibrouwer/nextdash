@@ -315,29 +315,6 @@ class DashboardRenderCore {
     }
 
 
-    _copyDashboardGridLayoutToElement(target, sourceGrid) {
-        const d = this.dash;
-        if (!target || !sourceGrid) {
-            return;
-        }
-        const layoutClasses = [...sourceGrid.classList].filter((cls) =>
-            cls === 'dashboard-grid'
-            || cls === 'packed-columns'
-            || cls.startsWith('columns-')
-            || cls.startsWith('density-')
-        );
-        target.className = `tag-filter-view-body ${layoutClasses.join(' ')} layout-default`.trim();
-        target.setAttribute('role', 'grid');
-        target.setAttribute(
-            'aria-label',
-            d.formatDashboardLabel('tagFilterGridLabel', {}, 'Filtered bookmarks')
-        );
-    }
-
-    /**
-     * Tag filter: one equal-width dashboard column per chunk (10 bookmarks), not round-robin.
-     */
-
     /**
      * Planned category/smart-collection blocks for the main grid (no DOM).
      * @returns {{ category: object, bookmarks: object[] }[]}
@@ -1023,6 +1000,14 @@ class DashboardRenderCore {
             d.inbox.render();
             return;
         }
+        // A data change while a tag's view is open redraws the view.
+        if (d.activeView === 'tags' && d.tagView) {
+            if (blockForInlineEdit) {
+                return;
+            }
+            d.tagView.render();
+            return;
+        }
         // The Bookmarks view ('library') is the config module's too.
         if ((d.activeView === 'config' || d.activeView === 'library') && d.config?.isEnabled?.()) {
             if (blockForInlineEdit) {
@@ -1077,17 +1062,6 @@ class DashboardRenderCore {
         // to a row no longer in the page.
         d.preview?.hideBookmarkPreviewCard?.();
 
-        if (d.hasActiveTagFilters()) {
-            d._categoryListsCache = null;
-            d.renderTagFilterDashboard(container, options);
-            // After the render, not before: the indicator hides itself when the
-            // grid's own banner is on screen, and that banner is built in there.
-            d.updateTagFilterIndicator();
-            return;
-        }
-
-        d.updateTagFilterIndicator();
-
         // Clear container
         container.innerHTML = '';
         d._categoryListsCache = null;
@@ -1100,8 +1074,7 @@ class DashboardRenderCore {
          * panel was laid out as a single ~290px column track in a 1400px
          * window instead of spanning the page.
          */
-        container.classList.remove('page-transition', 'tag-filter-layout', 'tag-filter-view',
-            'packed-masonry');
+        container.classList.remove('page-transition', 'packed-masonry');
 
         // Widgets, or a category just made and pinned on screen, are something
         // to draw: returning here for want of bookmarks left an RSS or weather
@@ -1382,12 +1355,6 @@ class DashboardRenderCore {
         const categoryLists = this._getCategoryLists();
         categoryLists.forEach((listElement) => {
             if (listElement.getAttribute('data-smart-collection') === 'true') {
-                return;
-            }
-            // The tag filter is one list across every page: an order across
-            // pages means nothing, and syncBookmarksFromDom would write it into
-            // the page on screen.
-            if (listElement.closest('.tag-filter-view')) {
                 return;
             }
             const categoryId = listElement.getAttribute('data-category-id') || '';
@@ -1794,7 +1761,7 @@ class DashboardRenderCore {
         // column by column, which is not the order the blocks are stored in.
         const els = this.readCategoryElementsInOrder(grid)
             // Views over bookmarks have no place of their own (see applyBlockOrder).
-            .filter((el) => !el.matches?.('[data-virtual-category="true"], [data-tag-filter-chunk="true"]'));
+            .filter((el) => !el.matches?.('[data-virtual-category="true"]'));
         return els
             .map((el) => String(el.getAttribute('data-widget-id')
                 || el.getAttribute('data-category-id') || ''))
@@ -2820,8 +2787,7 @@ class DashboardRenderCore {
         const d = this.dash;
         const animate = d._renderAnimationsEnabled === true;
         const categoryDiv = document.createElement('div');
-        const isTagFilterChunk = category.tagFilterChunk === true;
-        categoryDiv.className = isTagFilterChunk ? 'category tag-filter-chunk' : 'category';
+        categoryDiv.className = 'category';
         if (animate) {
             categoryDiv.classList.add('animate-enter');
         }
@@ -2835,9 +2801,6 @@ class DashboardRenderCore {
         if (isSmartCollection) {
             categoryDiv.setAttribute('data-smart-collection', 'true');
         }
-        if (isTagFilterChunk) {
-            categoryDiv.setAttribute('data-tag-filter-chunk', 'true');
-        }
         // Other and an unknown category are views over bookmarks, built last
         // on every render (applyBlockOrder): there is no place of theirs to move.
         const isVirtualBlock = category.isVirtualCategory === true && !isSmartCollection;
@@ -2848,9 +2811,7 @@ class DashboardRenderCore {
             ? `smart:${category.id}`
             : `${d.currentPageId}:${category.id}`;
         let isCollapsed;
-        if (isTagFilterChunk) {
-            isCollapsed = false;
-        } else if (d.settings.alwaysCollapseCategories) {
+        if (d.settings.alwaysCollapseCategories) {
             isCollapsed = true;
         } else if (collapsedKey in d.collapsedCategories) {
             isCollapsed = d.collapsedCategories[collapsedKey];
@@ -2865,7 +2826,6 @@ class DashboardRenderCore {
         }
         categoryDiv.setAttribute('data-collapsed', isCollapsed ? 'true' : 'false');
 
-        if (!isTagFilterChunk) {
         // Category title
         const titleElement = document.createElement('h2');
         titleElement.className = isSmartCollection ? 'category-title smart-collection-title' : 'category-title';
@@ -3060,7 +3020,6 @@ class DashboardRenderCore {
         }
 
         categoryDiv.appendChild(titleElement);
-        }
 
         // Bookmarks list
         const bookmarksList = document.createElement('div');
@@ -3092,8 +3051,8 @@ class DashboardRenderCore {
 
         // Cap long categories: hide rows past the limit behind a "show more" toggle
         // so one big category doesn't tower over the others. Smart collections have
-        // their own limits and tag-filter chunks are already split, so skip both.
-        if (!isSmartCollection && !isTagFilterChunk) {
+        // their own limits, so they skip it.
+        if (!isSmartCollection) {
             this.applyCategoryItemLimit(bookmarksList, category);
         }
 
@@ -3111,7 +3070,7 @@ class DashboardRenderCore {
                 emptyEl.className = 'smart-collection-empty';
                 emptyEl.textContent = msg;
                 bookmarksList.appendChild(emptyEl);
-            } else if (!isTagFilterChunk) {
+            } else {
                 const emptyEl = document.createElement('div');
                 emptyEl.className = 'empty-state--category';
                 const textSpan = document.createElement('span');
@@ -3135,12 +3094,8 @@ class DashboardRenderCore {
         categoryBody.appendChild(bookmarksList);
         categoryDiv.appendChild(categoryBody);
         // Spread across columns — last, because it also puts the marker in the
-        // header, and the header does not exist until here. Not for tag-filter
-        // chunks: those are equal-width slices of one filtered list, not
-        // categories the user arranged.
-        if (!isTagFilterChunk) {
-            window.DashboardCategorySpan?.applyCategorySpan(d, categoryDiv, category, bookmarks.length);
-        }
+        // header, and the header does not exist until here.
+        window.DashboardCategorySpan?.applyCategorySpan(d, categoryDiv, category, bookmarks.length);
         if (isSmartCollection) d.categoryMenu?.bindCollection?.(categoryDiv, category);
         else d.categoryMenu?.bindCategory(categoryDiv, category);
         return categoryDiv;

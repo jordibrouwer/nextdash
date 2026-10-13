@@ -157,27 +157,6 @@ test.describe('the live status line', () => {
         expect(state.text).toContain(String(state.rows));
     });
 
-    test('the count follows the grid when a tag filter narrows it', async ({ page }) => {
-        await openDashboard(page);
-
-        const result = await page.evaluate(async () => {
-            const d = window.dashboardInstance;
-            const el = document.getElementById('dashboard-mini-status');
-            const before = el.textContent;
-
-            const tag = (d.bookmarks || []).flatMap((b) => b.tags || [])[0];
-            if (!tag) return { skipped: true };
-            d._tagFilters = [tag];
-            d.renderDashboard();
-            await new Promise((resolve) => setTimeout(resolve, 300));
-
-            return { before, after: el.textContent };
-        });
-
-        test.skip(result.skipped === true, 'fixture has no tagged bookmarks');
-        expect(result.after).not.toBe(result.before);
-    });
-
     // A guard against noise this change could introduce rather than against the
     // original gap: the line is aria-live, so refreshing it on every render
     // would re-announce the date and page name each time the grid repainted.

@@ -123,24 +123,9 @@
             || isInlineEditActive();
     }
 
-    function getTagFilterViewBody() {
-        const layout = document.getElementById('dashboard-layout');
-        if (!layout?.classList.contains('tag-filter-view')) {
-            return null;
-        }
-        return layout.querySelector('.tag-filter-view-body');
-    }
-
     function applyDashboardInert(active) {
-        const tagFilterBody = getTagFilterViewBody();
-        const inertTagFilterBodyOnly = active && tagFilterBody;
-
         DASHBOARD_INERT_SELECTORS.forEach((selector) => {
             document.querySelectorAll(selector).forEach((el) => {
-                if (selector === '#dashboard-layout' && inertTagFilterBodyOnly) {
-                    el.removeAttribute('inert');
-                    return;
-                }
                 if (active) {
                     el.setAttribute('inert', '');
                 } else {
@@ -148,12 +133,6 @@
                 }
             });
         });
-
-        if (inertTagFilterBodyOnly) {
-            tagFilterBody.setAttribute('inert', '');
-        } else if (tagFilterBody) {
-            tagFilterBody.removeAttribute('inert');
-        }
     }
 
     /** Sync inert from open search / app modal — safe to call repeatedly. */

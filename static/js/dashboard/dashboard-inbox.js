@@ -4946,7 +4946,6 @@ class DashboardInbox {
         this.scheduleWakeRefresh();
 
         d._abortInlineEditForRender?.();
-        d.updateTagFilterIndicator?.();
 
         // The sentinel from the previous render is about to be thrown away with
         // the body's contents; an observer still watching it would keep the

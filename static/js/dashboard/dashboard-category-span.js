@@ -34,7 +34,7 @@
 
     /** Whether this category is allowed to run across columns. */
     function isCategorySpread(dash, category) {
-        if (!dash || !category || category.tagFilterChunk === true) {
+        if (!dash || !category) {
             return false;
         }
         const id = String(category.id ?? '');
@@ -412,7 +412,7 @@
          * pass, whatever its own setting said. Its width is the widget
          * builder's to decide, and this has no category to decide it from.
          */
-        scope.querySelectorAll('.category[data-category-id]:not([data-tag-filter-chunk="true"]):not([data-widget-id])').forEach((el) => {
+        scope.querySelectorAll('.category[data-category-id]:not([data-widget-id])').forEach((el) => {
             const before = effectiveSpanFromElement(el);
             const after = applyCategorySpan(dash, el, categoryFromEl(dash, el), countFromElement(el));
             if (before !== after) {
@@ -491,7 +491,7 @@
      */
     function resolveFocusedCategoryEl(dash, options) {
         const fallbackToFirst = options?.fallbackToFirst !== false;
-        const selector = '#dashboard-layout .category[data-category-id]:not([data-tag-filter-chunk="true"])';
+        const selector = '#dashboard-layout .category[data-category-id]';
         const kn = dash?.keyboardNavigation;
         if (kn && Number.isFinite(kn.currentIndex) && kn.currentIndex >= 0) {
             const fromNav = kn.navigableElements?.[kn.currentIndex]?.closest?.(selector);

@@ -2363,7 +2363,7 @@ class DashboardConfig {
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
         this.closeWorkbenchOverlaysOffList();
-        container.classList.remove('inbox-layout', 'tag-filter-layout');
+        container.classList.remove('inbox-layout');
         container.classList.add('config-layout', 'page-transition');
         container.classList.toggle('library-layout', this.standalone);
         // Only the parts that changed. The rail, the search button and the panel
@@ -18397,53 +18397,18 @@ class DashboardConfig {
 
     /**
      * Rename (to != null) or delete (to == null) a tag across every bookmark.
-     *
-     * On the server, on only the rows that carry it: this used to read every
-     * page, change the list here and write every page back -- the ones without
-     * the tag too -- from a copy that could already be out of date. The answer
-     * names the rows and the tags they had, which is the undo.
+     * The write and its undo live in shared/tag-rewrite.js, which the tag view
+     * uses too; what stays here is what the tags tab redraws afterwards.
      */
     async rewriteTag(from, to) {
-        const reload = async () => {
-            this._tagList = null;
-            await this.loadTagsManager();
-            await this.refreshBookmarksAfterWrite({ silent: true });
-            this.dash.renderDashboard?.({ animate: false });
-        };
-        try {
-            const res = await this.writeFetch('/api/tags/rewrite', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ from, to: to || '' }),
-            });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const body = await res.json().catch(() => ({}));
-            const changed = Array.isArray(body.changed) ? body.changed : [];
-            if (!changed.length) return;
-            const undo = new Map();
-            changed.forEach((row) => {
-                const pid = String(row.pageId);
-                if (!undo.has(pid)) undo.set(pid, []);
-                undo.get(pid).push({ url: row.url, fields: { tags: Array.isArray(row.tags) ? row.tags : [] } });
-            });
-            this.notify(to
-                ? this.t('config.tagRenamed', 'Tag renamed.')
-                : this.t('config.tagDeleted', 'Tag deleted.'), 'success', {
-                duration: 8000,
-                undoCallback: async () => {
-                    try {
-                        for (const [pageId, updates] of undo) await this.patchRows(pageId, updates);
-                        await reload();
-                        this.notify(this.t('config.tagRewriteUndone', 'Tags put back.'), 'success');
-                    } catch {
-                        this.notify(this.t('config.bulkUndoFailed', 'Could not undo that.'), 'error');
-                    }
-                },
-            });
-            await reload();
-        } catch {
-            this.notify(this.t('config.tagsSaveError', 'Could not update the tag.'), 'error');
-        }
+        await window.TagRewrite.rewrite(this.dash, from, to, {
+            onDone: async () => {
+                this._tagList = null;
+                await this.loadTagsManager();
+                await this.refreshBookmarksAfterWrite({ silent: true });
+                this.dash.renderDashboard?.({ animate: false });
+            },
+        });
     }
 
     collectionsSchema() {

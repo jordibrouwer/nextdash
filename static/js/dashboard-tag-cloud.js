@@ -543,12 +543,13 @@
         },
 
         isEligible() {
-            // The / FAB filters the bookmarks grid, so it has nothing to do
-            // outside the dashboard -- gated here, at the source, rather than
-            // at each caller (the toggle button's own CSS, handleSlashKey, and
-            // the tag-filter-indicator chip all read this one answer).
+            // The cloud picks tags for the grid and for the tag view, so it has
+            // nothing to do in the other views -- gated here, at the source,
+            // rather than at each caller (the toggle button's own CSS and
+            // handleSlashKey both read this one answer).
             const dash = window.dashboardInstance;
-            return this.isFeatureAvailable() && (!dash || dash.isBookmarksView());
+            // The tag view is a filter's own page: the cloud changes its tags there.
+            return this.isFeatureAvailable() && (!dash || dash.isBookmarksView() || dash.activeView === 'tags');
         },
 
         syncFromSettings() {
@@ -568,14 +569,13 @@
             if (!eligible) {
                 this.closeModal({ animate: false });
                 /*
-                 * Only when the feature is gone, not when a view is merely on
-                 * top of it. This runs on every view transition, so clearing on
-                 * plain ineligibility threw the tag filter away the moment you
-                 * opened config, inbox or health -- and the header chip that
-                 * exists to show the filter in exactly those views had nothing
-                 * left to show.
+                 * The cloud is a desktop thing; the tag view is not. A phone
+                 * (or a library still loading, which reads as "no tags")
+                 * makes the cloud ineligible, and clearing the filter then
+                 * closed a tag view opened from a link or :filter. The view
+                 * owns its tags while it is open.
                  */
-                if (!this.isFeatureAvailable()) {
+                if (!this.isFeatureAvailable() && window.dashboardInstance?.activeView !== 'tags') {
                     this.clearDashboardFilter({ animate: false });
                 }
                 return;
@@ -603,7 +603,7 @@
             // the cloud filters the grid. Pressed from config, health or inbox
             // it takes you back to the page it acts on and opens there.
             const dash = window.dashboardInstance;
-            if (this.isFeatureAvailable() && dash && !dash.isBookmarksView()) {
+            if (this.isFeatureAvailable() && dash && !dash.isBookmarksView() && dash.activeView !== 'tags') {
                 void Promise.resolve(dash.requestPageNavigation(dash.currentPageId))
                     .then(() => {
                         this.syncFromSettings();

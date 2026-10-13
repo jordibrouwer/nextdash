@@ -34,7 +34,7 @@
     }
 
     function getCategorySortMode(dash, category) {
-        if (!dash || !category || category.isSmartCollection === true || category.tagFilterChunk === true) {
+        if (!dash || !category || category.isSmartCollection === true) {
             return 'order';
         }
         const id = String(category.id ?? '');
@@ -409,7 +409,7 @@
     }
 
     function ensureCategorySortControls(dash, categoryEl, category, renderCore) {
-        if (!categoryEl || !category || category.isSmartCollection === true || category.tagFilterChunk === true) {
+        if (!categoryEl || !category || category.isSmartCollection === true) {
             return;
         }
         if (!categoryEl.querySelector('.category-sort-controls')) {
@@ -435,7 +435,7 @@
     }
 
     function updateCategorySortUi(dash, categoryEl, category) {
-        if (!categoryEl || !category || category.isSmartCollection === true || category.tagFilterChunk === true) {
+        if (!categoryEl || !category || category.isSmartCollection === true) {
             return;
         }
         const sortMode = getCategorySortMode(dash, category);

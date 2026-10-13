@@ -260,6 +260,9 @@ class Dashboard {
         this.docker = typeof window.createDashboardDockerLoader === 'function'
             ? window.createDashboardDockerLoader(this)
             : null;
+        this.tagView = typeof window.createDashboardTagViewLoader === 'function'
+            ? window.createDashboardTagViewLoader(this)
+            : null;
         // Config is loaded on first open (dashboard-config-loader.js); the stub
         // answers the shell's pre-open calls so this stays a plain assignment.
         this.config = typeof window.createDashboardConfigLoader === 'function'
@@ -293,7 +296,6 @@ class Dashboard {
         `;
         return svg;
     }
-
 
 
     isCoarsePointer() {
@@ -339,8 +341,6 @@ class Dashboard {
             // reported the category as deleted while it was on screen.
             void this.consumeDashboardDeepLink();
             this.setupPageShortcuts();
-            this.setupTagFilterEscapeShortcut();
-            this.setupTagFilterIndicator();
             this.setupReorderUndoShortcut();
             this.setupPasteToQuickAdd();
             this.inbox.setupEscapeShortcut();
@@ -504,6 +504,10 @@ class Dashboard {
             } else if (bootHash === 'unsorted') {
                 // The Inbox's Kept tab's old address: Bookmarks → Unsorted now.
                 await this.openUnsortedBookmarks({ replace: true });
+            } else if (bootHash.startsWith('tag/') && this.activeView !== 'tags') {
+                // A tag's view, from a shared link or a reload.
+                const tags = window.TagViewModel?.tagsFromHash?.(bootHash) || [];
+                if (tags.length) await this.tagView?.openTagView?.(tags, { fromHash: true });
             }
 
             if (this.config?.isEnabled?.()
@@ -584,7 +588,6 @@ class Dashboard {
 
         container.appendChild(wrap);
     }
-
 
 
     /**
@@ -909,7 +912,6 @@ class Dashboard {
     }
 
 
-
     isVisibleBlockingOverlay(el) {
         return this.uiHelpers.isVisibleBlockingOverlay(...arguments);
     }
@@ -1004,8 +1006,6 @@ class Dashboard {
     }
 
 
-
-
     getInlineContextTipsForCurrentPage() {
         return this.setup.getInlineContextTipsForCurrentPage(...arguments);
     }
@@ -1084,6 +1084,16 @@ class Dashboard {
                     this.searchComponent?.openSearchWithQuery?.(query, { web });
                 }
                 return;
+            }
+            // A tag's view: #tag/a+b. While it is open a new address is a new
+            // set of tags, not a new view.
+            if (hash.startsWith('tag/')) {
+                const tags = window.TagViewModel?.tagsFromHash?.(hash) || [];
+                if (!tags.length) return;
+                if (this.activeView === 'tags') {
+                    return this.tagView?.updateTags?.(tags, { fromHash: true });
+                }
+                return this.tagView?.openTagView?.(tags, { fromHash: true });
             }
             // The Health view's old address: the Bookmarks view, on its filter.
             if (hash === 'health' || hash.startsWith('health/')) {
@@ -1225,6 +1235,10 @@ class Dashboard {
         }
         if (previous === 'inbox' && view !== 'inbox') {
             this.inbox?.instance?.onLeaveDrawer?.();
+        }
+        // The tag view's tags are the view: leaving it, whichever way, ends them.
+        if (previous === 'tags' && view !== 'tags') {
+            this.tagView?.onLeave?.();
         }
         if (!options.silent) {
             this.visual?.onActiveViewChanged?.(previous, view);
@@ -1488,18 +1502,6 @@ class Dashboard {
         return this.tagFilter.getBookmarksForTagFilter(...arguments);
     }
 
-    renderTagFilterDashboard(container, options = {}) {
-        return this.tagFilter.renderTagFilterDashboard(...arguments);
-    }
-
-    setupTagFilterEscapeShortcut() {
-        return this.tagFilter.setupTagFilterEscapeShortcut(...arguments);
-    }
-
-    setupTagFilterIndicator() {
-        return this.tagFilter.setupTagFilterIndicator(...arguments);
-    }
-
     formatTagFilterCountLabel(count) {
         return this.tagFilter.formatTagFilterCountLabel(...arguments);
     }
@@ -1534,22 +1536,6 @@ class Dashboard {
 
     showTagFilterBulkMovePopover(anchorEl) {
         return this.tagFilter.showTagFilterBulkMovePopover(...arguments);
-    }
-
-    _appendTagFilterToolbarButton(actions, { label, className = '', onClick }) {
-        return this.tagFilter._appendTagFilterToolbarButton(...arguments);
-    }
-
-    renderTagFilterBanner(wrap, { tags, count = 0 } = {}) {
-        return this.tagFilter.renderTagFilterBanner(...arguments);
-    }
-
-    updateTagFilterIndicator() {
-        return this.tagFilter.updateTagFilterIndicator(...arguments);
-    }
-
-    _distributeTagFilterColumnBlocks(container, chunkBlocks, { animate = false, gridLayout = null } = {}) {
-        return this.tagFilter._distributeTagFilterColumnBlocks(...arguments);
     }
 
     isInlineEditActive() {
@@ -2025,10 +2011,6 @@ class Dashboard {
 
     _distributeDashboardColumnBlocks(container, columnBlocks, { animate = false, gridLayout = null } = {}) {
         return this.renderCore._distributeDashboardColumnBlocks(...arguments);
-    }
-
-    _copyDashboardGridLayoutToElement(target, sourceGrid) {
-        return this.renderCore._copyDashboardGridLayoutToElement(...arguments);
     }
 
     renderDashboard(options = {}) {

@@ -77,7 +77,7 @@
             if (!rc.isCategoryBlockId(bid)) continue;
             const block = grid.querySelector(`.category[data-category-id="${CSS.escape(bid)}"]`);
             const handle = block?.querySelector('button.category-reorder-handle');
-            if (!block || !handle || block.matches('[data-virtual-category="true"], [data-tag-filter-chunk="true"]')) continue;
+            if (!block || !handle || block.matches('[data-virtual-category="true"]')) continue;
             // The first one in the visual order is the one shown; if the reader
             // has scrolled past it, the intro waits rather than pointing off screen.
             const r = handle.getBoundingClientRect();
