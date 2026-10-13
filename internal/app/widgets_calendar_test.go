@@ -343,3 +343,39 @@ func TestParseICSCancelledAndOutlookDisplayNameZone(t *testing.T) {
 		t.Fatalf("start = %v, want 08:00Z", time.UnixMilli(events[0].Start).UTC())
 	}
 }
+
+// A reader who leaves while the feed is loading cancels their request. That
+// used to cancel the fetch too, and the failure was cached for every other
+// calendar widget for a minute.
+func TestCalendarFetchOutlivesTheRequestThatStartedIt(t *testing.T) {
+	h := newTestHandlers(t)
+	allowLocalForTest(t, h, true)
+
+	service := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/calendar")
+		_, _ = w.Write([]byte(icsFixture(time.Now().UTC())))
+	}))
+	defer service.Close()
+
+	settings := h.store.GetSettings()
+	settings.CalendarIcsUrl = service.URL
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.store.SavePageBlocks(1, []Widget{{ID: "w_ca0000000001", Type: WidgetTypeCalendar}}, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	req := httptest.NewRequest(http.MethodGet, "/api/widgets/calendar?pageId=1&id=w_ca0000000001", nil).WithContext(ctx)
+	h.CalendarWidgetHandler(httptest.NewRecorder(), req)
+
+	entry, ok := calendarFeedCached(service.URL, time.Now())
+	if !ok {
+		t.Fatal("nothing cached for the feed")
+	}
+	if entry.err != "" {
+		t.Fatalf("a left request cached a failure for everyone: %q", entry.err)
+	}
+}
