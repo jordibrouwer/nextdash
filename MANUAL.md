@@ -1587,13 +1587,17 @@ A file is at most 2 MB.
 
 ### 10.2 Filtering by tag
 
-- **The tag cloud** (`/`) sizes each tag by use. Click or press `Enter` on several; the dashboard shows bookmarks with **any** of them. Chips under the page title remove one tag each; `Escape` on the dashboard clears the filter.
-- While a tag filter is active, a toolbar offers **Open**, **Copy links**, **Move** and **Delete** for everything shown.
+- **The tag cloud** (`/`) shows every tag in your library, from every page, in three sizes: the most used are largest. Each tag has its count beside it, and within a size tags stand in A–Z order.
+- Click a tag, or press `Enter` on it, to show its bookmarks: the cloud closes and the dashboard lists them. Click it again to clear the filter.
+- `Shift`+click or `Shift + Enter` adds a tag to the filter or removes it, and keeps the cloud open. The dashboard then shows bookmarks with **any** of the tags. Each other tag shows **+N**: how many bookmarks it would add. A tag that would add nothing is dimmed.
+- Type a few letters to find a tag. Tags that do not match are dimmed, and the first match is selected. `Backspace` removes a letter, and `Escape` clears what you typed before it closes the cloud.
+- The filter shows bookmarks from **all pages** in one list. A bookmark from another page shows that page's name. Chips under the page title remove one tag each, and `Escape` on the dashboard clears the filter.
+- While a tag filter is active, a toolbar offers **Open**, **Copy links**, **Move** and **Delete** for everything shown. Each bookmark stays on its own page, and you cannot drag rows to reorder them. **Move** offers categories only when every bookmark shown is on the current page.
 - `t` on a selected bookmark filters by its tag.
 - `tag:work` in search narrows results without changing the dashboard.
 
-<p align="center"><img src="screenshots/manual.md/08-tag-cloud.jpg" alt="The tag cloud: every tag in use, the most used ones largest, and the total of 21 tags" width="512"></p>
-<p align="center"><sub>The tag cloud (<kbd>/</kbd>): the more a tag is used, the larger it is.</sub></p>
+<p align="center"><img src="screenshots/manual.md/08-tag-cloud.jpg" alt="The tag cloud: every tag in three sizes, each with its count, and the keys along the bottom" width="512"></p>
+<p align="center"><sub>The tag cloud (<kbd>/</kbd>): the most used tags are largest, and each shows its count.</sub></p>
 
 <a id="103-managing-tags"></a>
 
@@ -4566,7 +4570,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 | Term | Meaning | Explained in |
 |---|---|---|
 | Tag | A free label on a bookmark, stored in lower case. | [§10.1](#101-tags-on-a-bookmark) |
-| Tag cloud | Every tag sized by use; pick several to show bookmarks with any of them. | [§10.2](#102-filtering-by-tag) |
+| Tag cloud | Every tag from every page, in three sizes with counts; pick one to filter, Shift to stack, type to find. | [§10.2](#102-filtering-by-tag) |
 | Tag collection | A group nextDash makes of every tag that enough bookmarks use. | [§9.7](#97-custom-and-tag-collections) |
 | Tag suggestions | Proposals for one tag for a whole group of bookmarks, from your own rules and other sources. | [§10.4](#104-tag-suggestions) |
 | Theme | A colour scheme; 164 families each come in a light and a dark half, picked on the Look tab or in the theme browser. | [§16.1](#161-themes) |
