@@ -2389,9 +2389,6 @@ class DashboardInbox {
         // answer with a redirect — so the outcome travels in the URL and is
         // reported once, on arrival.
         this.reportCaptureOutcome();
-        // Not awaited: the view is already usable, and a slow script fetch must
-        // not hold up the navigation that asked for it.
-        void this.maybeShowTutorial();
         return true;
     }
 
@@ -2440,8 +2437,8 @@ class DashboardInbox {
      */
     /**
      * The Tour button: the same tour, on request, whether or not it has been
-     * seen. Loaded on demand like the first-visit showing, so a session that
-     * never asks for it never fetches it.
+     * seen. Loaded on demand, so a session that never asks for it never
+     * fetches it. It does not open by itself on a first visit.
      */
     async openTour() {
         if (typeof window.InboxTutorial === 'undefined') {
@@ -2454,21 +2451,6 @@ class DashboardInbox {
         }
         this._trackAction('tour');
         window.InboxTutorial?.open?.();
-    }
-
-    async maybeShowTutorial() {
-        if (window.DiscoverabilityState?.hasSeenTip?.(DashboardInbox.TUTORIAL_TIP_ID)) return;
-        if (this.dash.settings?.enableSessionTips === false) return;
-        if (typeof window.InboxTutorial === 'undefined') {
-            try {
-                await window.LazyScript.loadScriptOnce('js/inbox-tutorial.js', 'inboxTutorialModule',
-                    () => typeof window.InboxTutorial !== 'undefined');
-            } catch {
-                // A tour that cannot be fetched is not worth an error toast.
-                return;
-            }
-        }
-        window.InboxTutorial?.maybeShow?.();
     }
 
     async leaveInboxView(pageId) {

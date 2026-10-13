@@ -1315,9 +1315,6 @@ class DashboardConfig {
         d.pageNav?.setActiveConfigTab?.();
         await this.loadAndRender();
         this.restoreConfigHash();
-        // Not awaited: the view is already usable, and a slow script fetch
-        // must not hold up the navigation that asked for it.
-        void this.maybeShowLibraryTour?.();
         return true;
     }
 
@@ -2273,11 +2270,16 @@ class DashboardConfig {
         // The Bookmarks view's band carries the way to Collection health too,
         // the way Health's band carries Work through and Rot report.
         const healthButton = this.standalone ? (this.renderLibraryHeaderActions?.() || '') : '';
-        const markup = context
+        // Widgets has a tour and no view band of its own to hang it on, so
+        // it rides here, after whatever else the band carries.
+        const widgetsTour = this.section === 'widgets'
+            ? `<button type="button" class="lvs-action" data-widgets-tour title="${this.dash.escapeHtml(this.t('config.widgetsTourHint', 'A tour of widgets'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
+            : '';
+        const markup = (context
             ? this.renderChangedFilterBar(context.section, context.tab)
             : (this.section === 'bookmarks'
                 ? `${healthButton}<span class="config-bm-header-badge">${this.dash.escapeHtml(String(this.configBookmarkPool().length))}</span>`
-                : '');
+                : '')) + widgetsTour;
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
         }
@@ -2295,7 +2297,8 @@ class DashboardConfig {
         if (actions && actions.dataset.bmHealthWired !== '1') {
             actions.dataset.bmHealthWired = '1';
             actions.addEventListener('click', (e) => {
-                if (e.target.closest('[data-bm-open-health-modal]')) this.openBmHealthModal?.();
+                if (e.target.closest('[data-widgets-tour]')) void this.openWidgetsTour?.();
+                else if (e.target.closest('[data-bm-open-health-modal]')) this.openBmHealthModal?.();
                 else if (e.target.closest('[data-bm-open-structure]')) this.openStructureModal?.('pages');
                 else this.handleLibraryHeaderClick?.(e);
             });
@@ -2528,7 +2531,6 @@ class DashboardConfig {
             // The custom widget offers a credential by name; the names are two
             // dozen bytes and cheaper to have than to wait for.
             void this.loadCredentialNames();
-            void this.maybeShowWidgetsTutorial();
         } else if (this.section === 'appearance') {
             this.bindAppearanceControls(container);
             void this.loadThemeList();
@@ -16608,8 +16610,10 @@ class DashboardConfig {
             ? this.dash.settings?.quickStart?.dismissed === true
             : window.DiscoverabilityState?.hasSeenTip?.(id) === true);
 
+        // The view tours play on request, so their buttons never wait.
+        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'widgetsTutorialV1']);
         const buttons = DashboardConfig.GUIDED_TOURS.map((tour) => {
-            const replayable = seen(tour.id);
+            const replayable = onRequest.has(tour.id) || seen(tour.id);
             const label = esc(this.t(tour.labelKey, tour.label));
             return `<button type="button" class="config-btn config-btn--small"
                         data-replay-tour="${esc(tour.id)}" ${replayable ? '' : 'disabled'}
@@ -16777,6 +16781,9 @@ class DashboardConfig {
             await this.dash.promos?.openDashboardTour?.();
             return;
         }
+        // The view tours no longer turn up by themselves on a visit, so "next
+        // time" would be never: go to the view and play it there, now.
+        if (await this.playViewTour(tour.id)) return;
         this.notify(
             this.t('config.tourReplayDone', 'The {tour} tour will appear {where}.')
                 .replace('{tour}', this.t(tour.labelKey, tour.label))
@@ -16786,6 +16793,36 @@ class DashboardConfig {
         // The row draws from the seen list, so the button that was just used
         // has to go quiet rather than inviting a second press.
         this.render();
+    }
+
+    /**
+     * Open a view and play its tour there. True when the tour id is one of
+     * these; the caller falls back to "it will appear" for the rest.
+     */
+    async playViewTour(id) {
+        const d = this.dash;
+        switch (id) {
+            case 'inboxTutorialV3':
+                this.closeConfigView();
+                if ((await d.inbox?.openInboxView?.()) === false) return true;
+                await d.inbox?.instance?.openTour?.();
+                return true;
+            case 'bookmarksTutorialV1':
+                await this.openLibraryView();
+                await this.openLibraryTour?.();
+                return true;
+            case 'containersTutorialV3':
+                this.closeConfigView();
+                if ((await d.docker?.openDockerView?.()) === false) return true;
+                await d.docker?.instance?.openTour?.();
+                return true;
+            case 'widgetsTutorialV1':
+                await this.openConfigView('widgets');
+                await this.openWidgetsTour?.();
+                return true;
+            default:
+                return false;
+        }
     }
 
     /** Apply a behaviour setting: mutate, run any special apply, save. */
@@ -17620,13 +17657,6 @@ class DashboardConfig {
      * configuration; which pages you have kept is part of the collection.
      */
     // The list is the Bookmarks view's (#bookmarks); Config keeps what shapes it.
-    /*
-     * The one-time Bookmarks view tour's tip id, repeated from
-     * bookmarks-tutorial.js so the view can skip fetching the tour once it has
-     * been seen. Both must agree.
-     */
-    static LIBRARY_TOUR_TIP_ID = 'bookmarksTutorialV1';
-
     static BM_TABS = ['view', 'tags', 'tag-suggestions', 'tag-rules', 'settings', 'local-copies'];
 
     // Branding was a tab holding one panel with one toggle, a text field and an
@@ -19859,10 +19889,6 @@ class DashboardConfig {
 
     /** The Unraid section's sub-tabs; 'all' shows every card at once. */
     static UNRAID_TABS = ['all', 'connection', 'how', 'widgets'];
-
-    // Repeated from widgets-tutorial.js, which is checked before the script is
-    // fetched at all. Both must agree.
-    static WIDGETS_TUTORIAL_TIP_ID = 'widgetsTutorialV1';
 
     /*
      * The six guided tours, in one list.

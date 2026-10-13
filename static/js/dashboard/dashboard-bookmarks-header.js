@@ -92,17 +92,7 @@
             }
         },
 
-        /** First visit: the tour, once. Checked before the script is fetched at all. */
-        async maybeShowLibraryTour() {
-            if (global.DiscoverabilityState?.hasSeenTip?.(global.DashboardConfig.LIBRARY_TOUR_TIP_ID)) return;
-            if (this.dash.settings?.enableSessionTips === false) return;
-            if (!(await this.loadLibraryTour())) return;
-            // The reader may have left while the script came in.
-            if (this.dash.activeView !== global.DashboardConfig.LIBRARY_VIEW) return;
-            global.BookmarksTutorial?.maybeShow?.();
-        },
-
-        /** The Tour button: seen or not. */
+        /** The Tour button, and Config's replay: seen or not. It does not open by itself. */
         async openLibraryTour() {
             if (!(await this.loadLibraryTour())) return;
             global.BookmarksTutorial?.open?.();

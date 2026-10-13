@@ -266,27 +266,19 @@
     }
 
     /**
-     * Called from the config panel when the Widgets section opens.
-     *
-     * Same guard order as the other tours: the seen-check first because it is
-     * the cheapest, then the settings, then the things that would make popping a
-     * modal wrong at this moment.
+     * The Tour button in the Widgets band, and Config's replay: on request,
+     * seen or not. It does not open by itself; only the dashboard's tour does.
      */
-    function maybeShow() {
-        if (global.DiscoverabilityState?.hasSeenTip?.(TIP_ID)) return false;
+    function open() {
         const d = global.dashboardInstance;
-        if (!d?.settings || d.settings.enableSessionTips === false) return false;
-        if (global.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
-        if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
-        if (d.searchComponent?.isActive?.()) return false;
         if (!global.AppModal?.show) return false;
-
+        if (typeof d?.isModalOpen === 'function' && d.isModalOpen()) return false;
         state = { index: 0 };
         finished = false;
         render();
-        global.nextdashTrack?.('widgets-tutorial:shown');
+        global.nextdashTrack?.('widgets-tutorial:opened');
         return true;
     }
 
-    global.WidgetsTutorial = { TIP_ID, maybeShow };
+    global.WidgetsTutorial = { TIP_ID, open };
 }(typeof window !== 'undefined' ? window : globalThis));

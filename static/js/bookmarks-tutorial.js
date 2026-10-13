@@ -548,23 +548,6 @@
         global.nextdashTrack?.('bookmarks-tutorial:finished', { outcome, step: state.index + 1 });
     }
 
-    /** Called by the Bookmarks view once its list has drawn; same guards as the inbox tour. */
-    function maybeShow() {
-        if (global.DiscoverabilityState?.hasSeenTip?.(TIP_ID)) return false;
-        const d = global.dashboardInstance;
-        if (!d?.settings || d.settings.enableSessionTips === false) return false;
-        if (global.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
-        if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
-        if (d.searchComponent?.isActive?.()) return false;
-        if (!global.AppModal?.show) return false;
-
-        state = { index: 0, direction: 'forward' };
-        finished = false;
-        render();
-        global.nextdashTrack?.('bookmarks-tutorial:shown');
-        return true;
-    }
-
     /** The Tour button: open it on request, seen or not. */
     function open() {
         const d = global.dashboardInstance;
@@ -577,5 +560,5 @@
         return true;
     }
 
-    global.BookmarksTutorial = { TIP_ID, maybeShow, open };
+    global.BookmarksTutorial = { TIP_ID, open };
 }(typeof window !== 'undefined' ? window : globalThis));

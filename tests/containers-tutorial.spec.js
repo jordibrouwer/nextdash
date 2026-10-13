@@ -4,18 +4,15 @@ const { prepareDashboardInteraction, markWhatsNewSeen } = require('./e2e-helpers
 const { mockDocker } = require('./helpers/docker-mock');
 
 /**
- * The one-time Containers view tour — shown the first time the view opens,
- * unless the tip has already been marked seen. The same shape as
- * containers-tutorial.spec.js, over the Containers view with Docker mocked.
- *
- * Every other spec gets the tip seen from the fixture, so it never lands on a
- * list they want to click; this file is the one place that asks for it.
+ * The Containers view tour, over the view with Docker mocked. It no longer
+ * opens by itself on a first visit -- only the dashboard's own tour does that --
+ * so the Tour button in the band is the way in.
  */
 
 const STEPS = 15;
 const TIP = 'containersTutorialV3';
 
-async function openViewWithTourUnseen(page, { sawEarlier = null } = {}) {
+async function openViewWithTourUnseen(page, { sawEarlier = null, tour = true } = {}) {
     await mockDocker(page);
     await markWhatsNewSeen(page);
     await page.goto('/');
@@ -35,14 +32,19 @@ async function openViewWithTourUnseen(page, { sawEarlier = null } = {}) {
     }, { tip: TIP, sawEarlier });
     await page.evaluate(() => window.dashboardInstance.docker.openDockerView());
     await expect(page.locator('[data-docker-row]').first()).toBeVisible({ timeout: 15_000 });
+    if (tour) await page.locator('[data-docker-tour]').click();
 }
 
 const modal = (page) => page.locator('#app-modal.show .containers-tutorial-modal');
 const next = (page) => page.locator('.modal-actions .modal-button').first();
 
 test.describe('containers view tutorial', () => {
-    test('shows on the first visit, with fifteen steps', async ({ page }) => {
-        await openViewWithTourUnseen(page);
+    test('stays shut on the first visit; Tour opens it, with fifteen steps', async ({ page }) => {
+        await openViewWithTourUnseen(page, { tour: false });
+        // A fixed wait: the tour must not open by itself, so there is nothing to wait for.
+        await page.waitForTimeout(700);
+        await expect(modal(page)).toHaveCount(0);
+        await page.locator('[data-docker-tour]').click();
         await expect(modal(page)).toBeVisible();
         await expect(page.locator('.containers-tutorial-progress')).toHaveText(`Step 1 of ${STEPS}`);
         await expect(page.locator('.containers-tutorial-dot')).toHaveCount(STEPS);
@@ -83,55 +85,11 @@ test.describe('containers view tutorial', () => {
         expect(await page.evaluate((tip) => window.DiscoverabilityState.hasSeenTip(tip), TIP)).toBe(true);
     });
 
-    test('does not show again once seen', async ({ page }) => {
-        await openViewWithTourUnseen(page);
-        await expect(modal(page)).toBeVisible();
-        await page.keyboard.press('Escape');
-        await expect(page.locator('#app-modal.show')).toHaveCount(0);
-        expect(await page.evaluate((tip) => window.DiscoverabilityState.hasSeenTip(tip), TIP)).toBe(true);
-
-        await page.evaluate(() => window.dashboardInstance.docker.closeDockerView());
-        await page.evaluate(() => window.dashboardInstance.docker.openDockerView());
-        await expect(page.locator('[data-docker-row]').first()).toBeVisible();
-        // A fixed wait: the tour must not open, so there is nothing to wait for.
-        await page.waitForTimeout(700);
-        await expect(modal(page)).toHaveCount(0);
-    });
-
-    test('respects enableSessionTips: false', async ({ page }) => {
-        await mockDocker(page);
-        await markWhatsNewSeen(page);
-        await page.goto('/');
-        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-        await prepareDashboardInteraction(page);
-        await page.evaluate((tip) => {
-            window.dashboardInstance.settings.enableSessionTips = false;
-            window.__e2eWantTours = ['containersTutorialV3'];
-            const state = window.DiscoverabilityState;
-            // Forgotten, not only left out: a tip marked on this page outlives an init.
-            state.forgetTip(tip, { persist: false });
-            const exported = state.exportState();
-            exported.seenTips = (exported.seenTips || []).filter((id) => id !== tip);
-            state.init(exported);
-        }, TIP);
-        await page.evaluate(() => window.dashboardInstance.docker.openDockerView());
-        await expect(page.locator('[data-docker-row]').first()).toBeVisible();
-        // A fixed wait: the tour must not open, so there is nothing to wait for.
-        await page.waitForTimeout(700);
-        await expect(modal(page)).toHaveCount(0);
-    });
-
-    // A session that has done the tour does not pay for its script again.
-    test('the tour script is not fetched once the tip is seen', async ({ page }) => {
+    // The script is fetched when the tour is asked for, not on a visit.
+    test('the tour script is not fetched until Tour is pressed', async ({ page }) => {
         const requested = [];
         page.on('request', (r) => { if (r.url().includes('containers-tutorial.js')) requested.push(r.url()); });
-        await mockDocker(page);
-        await markWhatsNewSeen(page);
-        await page.goto('/');
-        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-        await prepareDashboardInteraction(page);
-        await page.evaluate(() => window.dashboardInstance.docker.openDockerView());
-        await expect(page.locator('[data-docker-row]').first()).toBeVisible();
+        await openViewWithTourUnseen(page, { tour: false });
         // A fixed wait: proving the script is never requested needs time to pass.
         await page.waitForTimeout(700);
         expect(requested).toEqual([]);

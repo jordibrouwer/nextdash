@@ -3514,37 +3514,26 @@
     },
 
     /**
-     * The one-time tour, the first time this section is opened.
-     *
-     * The cheap guards are repeated before the fetch so a reader who has seen
-     * it, or has session tips off, never asks for the script at all; everything
-     * else — an open modal, active search, a phone — is left to the module,
-     * which checks the same tip id again.
+     * The Widgets tour, from the Tour button in the section's band or from
+     * Config's replay: seen or not. It does not open by itself; only the
+     * dashboard's tour does.
      *
      * Here rather than on the dashboard because this is where a widget is
-     * added, and because the thing worth saying — that the custom tile reaches
-     * any address answering JSON — is invisible from a list of your own
-     * widgets and one button.
+     * added, and because the thing worth saying -- that the custom tile reaches
+     * any address answering JSON -- is invisible from a list of your own
+     * widgets and one button. The script is fetched only when asked for.
      */
-    async maybeShowWidgetsTutorial() {
-        // Once per visit to the section, whatever the section does afterwards:
-        // binding runs again on every repaint of the tab, and a second call
-        // lands while the first tour is still on screen -- replacing it with a
-        // fresh copy whose Skip then acts on a step nobody is looking at.
-        if (this._widgetsTutorialAsked) return;
-        if (window.DiscoverabilityState?.hasSeenTip?.(DashboardConfig.WIDGETS_TUTORIAL_TIP_ID)) return;
-        if (this.dash.settings?.enableSessionTips === false) return;
-        this._widgetsTutorialAsked = true;
+    async openWidgetsTour() {
         if (typeof window.WidgetsTutorial === 'undefined') {
             try {
                 await window.LazyScript.loadScriptOnce('js/widgets-tutorial.js', 'widgetsTutorialModule',
                     () => typeof window.WidgetsTutorial !== 'undefined');
             } catch {
                 // A tour that cannot be fetched is not worth an error toast.
-                return;
+                return false;
             }
         }
-        window.WidgetsTutorial?.maybeShow?.();
+        return window.WidgetsTutorial?.open?.() === true;
     },
 
     /*

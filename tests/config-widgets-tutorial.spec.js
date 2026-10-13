@@ -3,7 +3,9 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
- * The one-time Widgets tour.
+ * The Widgets tour. It no longer opens by itself the first time the section
+ * does -- only the dashboard's own tour does that -- so the Tour button in the
+ * section's band is the way in.
  *
  * The Widgets tab opens on your own widgets and one button, which says nothing
  * about the two things worth knowing: that thirteen types need no setup at all,
@@ -35,6 +37,9 @@ const openWidgetsSection = (page) => page.evaluate(async () => {
     await window.dashboardInstance.config.openConfigView('widgets');
 });
 
+/** The section's Tour button, in the band. */
+const pressTour = (page) => page.locator('[data-widgets-tour]').click();
+
 /** The confirm button — first in the row, Next until the last step. */
 const next = async (page) => {
     const progress = page.locator('#app-modal.show .widgets-tutorial-progress');
@@ -46,11 +51,15 @@ const next = async (page) => {
 };
 
 test.describe('the widgets tour', () => {
-    test('opens the first time the Widgets section does, and only then', async ({ page }) => {
+    test('stays shut on the first visit; Tour in the band opens it', async ({ page }) => {
         await openDashboard(page);
         await openWidgetsSection(page);
-
         const tour = page.locator('#app-modal.show .widgets-tutorial-modal');
+        // A fixed wait: the tour must not open by itself, so there is nothing to wait for.
+        await page.waitForTimeout(800);
+        await expect(tour).toHaveCount(0);
+
+        await pressTour(page);
         await expect(tour).toBeVisible({ timeout: 15_000 });
         // The animation leads, because what a custom widget does is a movement.
         await expect(tour.locator('.widgets-tutorial-hero')).toBeVisible();
@@ -67,21 +76,15 @@ test.describe('the widgets tour', () => {
         // test's own race, not the app's.
         await page.evaluate(async () => { await window.DiscoverabilityState?.persistNow?.(); });
 
-        // Second visit: the tab is just the tab.
-        await page.evaluate(async () => {
-            await window.dashboardInstance.config.openConfigView('overview');
-            await window.dashboardInstance.config.openConfigView('widgets');
-        });
-        // A fixed wait: the tour must not come back, so there is nothing to wait for.
-        await page.waitForTimeout(800);
-        // The modal element stays in the document once used; what matters is
-        // that it is not shown again.
-        await expect(page.locator('#app-modal.show .widgets-tutorial-modal')).toHaveCount(0);
+        // Seen or not, the button brings it back.
+        await pressTour(page);
+        await expect(tour).toBeVisible({ timeout: 15_000 });
     });
 
     test('every step carries a visual beside its prose', async ({ page }) => {
         await openDashboard(page);
         await openWidgetsSection(page);
+        await pressTour(page);
         await expect(page.locator('#app-modal.show .widgets-tutorial-modal')).toBeVisible({ timeout: 15_000 });
 
         const seen = [];
@@ -106,13 +109,4 @@ test.describe('the widgets tour', () => {
         expect(seen.map((s) => s.title).join(' ')).toContain('JSON');
     });
 
-    test('says nothing when session tips are off', async ({ page }) => {
-        await openDashboard(page);
-        await page.evaluate(() => { window.dashboardInstance.settings.enableSessionTips = false; });
-        await openWidgetsSection(page);
-        // A fixed wait: the tour must stay away, so there is nothing to wait for.
-        await page.waitForTimeout(900);
-
-        await expect(page.locator('#app-modal.show .widgets-tutorial-modal')).toHaveCount(0);
-    });
 });
