@@ -4,9 +4,9 @@ const { prepareDashboardInteraction } = require('./e2e-helpers');
 /*
  * One tour at a time.
  *
- * Six tours exist and five of them could be seen exactly once: Health, Inbox,
- * Fresh, Widgets and the column-spread hint each record a tip id the first time
- * they run and never offer themselves again. The only way back was "Show
+ * Several tours could be seen exactly once: Inbox, Widgets and the others
+ * each record a tip id the first time they run and never offer themselves
+ * again. The only way back was "Show
  * quick-start card again", which empties the whole seen list and brings the
  * welcome card with it — far more than someone means by "show me that one
  * again".
@@ -46,7 +46,7 @@ test.describe('a single tour can be replayed', () => {
         await page.evaluate(() => {
             const s = window.DiscoverabilityState;
             s.markTipSeen('inboxTutorialV3', { persist: false });
-            s.markTipSeen('freshTutorialV1', { persist: false });
+            s.markTipSeen('dashboardTutorialV3', { persist: false });
             s.markTipSeen('tipSearch', { persist: false });
         });
 
@@ -63,7 +63,7 @@ test.describe('a single tour can be replayed', () => {
 
         // The others are untouched — that is the whole difference from the
         // reset button sitting above these.
-        expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenTip('freshTutorialV1'))).toBe(true);
+        expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenTip('dashboardTutorialV3'))).toBe(true);
         expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenTip('tipSearch'))).toBe(true);
     });
 
@@ -71,6 +71,11 @@ test.describe('a single tour can be replayed', () => {
         await openBehaviorGeneral(page);
 
         await page.evaluate(() => {
+            // The fixture keeps the dashboard tour seen through every init
+            // unless a spec asks for it, and a tip marked on this page
+            // outlives an init unless it is forgotten.
+            window.__e2eWantTours = ['dashboardTutorialV3'];
+            window.DiscoverabilityState.forgetTip('dashboardTutorialV3', { persist: false });
             window.DiscoverabilityState.init({ seenTips: ['inboxTutorialV3'] });
             window.dashboardInstance.config.render();
         });
@@ -78,7 +83,7 @@ test.describe('a single tour can be replayed', () => {
         // Seen: replayable. Unseen: shown, but not as a button that pretends to
         // put back something that was never taken away.
         await expect(page.locator('[data-replay-tour="inboxTutorialV3"]')).toBeEnabled({ timeout: 10_000 });
-        await expect(page.locator('[data-replay-tour="freshTutorialV1"]')).toBeDisabled();
+        await expect(page.locator('[data-replay-tour="dashboardTutorialV3"]')).toBeDisabled();
     });
 
     // What has changed has no view to wait in and no card to offer it any

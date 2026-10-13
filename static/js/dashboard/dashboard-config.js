@@ -19917,12 +19917,8 @@ class DashboardConfig {
           whereKey: 'config.tourWhereBookmarks', where: 'the next time you open the Bookmarks view' },
         { id: 'containersTutorialV3', labelKey: 'config.tourContainers', label: 'Containers',
           whereKey: 'config.tourWhereContainers', where: 'the next time you open the Containers view' },
-        { id: 'freshTutorialV1', labelKey: 'config.tourFresh', label: 'Fresh',
-          whereKey: 'config.tourWhereFresh', where: 'the next time you open Fresh' },
         { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets',
           whereKey: 'config.tourWhereWidgets', where: 'the next time you open Config → Widgets' },
-        { id: 'spreadTutorialV1', labelKey: 'config.tourSpread', label: 'Spreading a category',
-          whereKey: 'config.tourWhereSpread', where: 'the next time you spread a category across columns' },
     ];
 
     /** The types a reader may add. Mirrors the server's register. */
@@ -28629,15 +28625,8 @@ class DashboardConfig {
     }
 
     renderHelpOrganizing() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        // The walkthrough the corner card offers, kept reachable after the card
-        // has been dismissed — which is the state most readers of this page are
-        // in. Same pattern as the cheat sheet button above it.
         return this.helpPanel('config.helpWorkspaceTitle', 'Structure',
-            'config.helpWorkspaceBody', '',
-            `<div class="config-actions">
-                <button type="button" class="config-btn" data-help-action="spread-tour">${esc(this.t('config.helpSpreadTour', 'Walk me through spreading a category'))}</button>
-            </div>`)
+            'config.helpWorkspaceBody', '')
             + this.helpPanel('config.helpMoveTitle', 'Moving categories and widgets',
                 'config.helpMoveBody', '')
             + this.helpPanel('config.helpBookmarksTitle', 'Bookmarks',
@@ -28766,7 +28755,6 @@ class DashboardConfig {
      * in help by a factor of seven, and the one people scrolled past.
      */
     renderHelpMonitoring() {
-        const esc = (v) => this.dash.escapeHtml(v);
         return this.helpPanel('config.helpHealthStatsTitle', 'Uptime, trends & statistics',
             'config.helpHealthStatsBody', '')
             + this.helpPanel('config.helpHealthExpectTitle', 'When "up" is not good enough',
@@ -28781,10 +28769,7 @@ class DashboardConfig {
             // its switch is rather than where its subject is: it is a thing the
             // dashboard does with a bookmark, like everything else on this tab.
             + this.helpPanel('config.helpFreshTitle', 'Fresh',
-                'config.helpFreshBody', '',
-                `<div class="config-actions">
-                    <button type="button" class="config-btn" data-help-action="fresh-tour">${esc(this.t('config.helpFreshTour', 'Walk me through Fresh'))}</button>
-                </div>`)
+                'config.helpFreshBody', '')
             + this.helpPanel('config.helpNotificationsTitle', 'Alerts & notifications',
                 'config.helpNotificationsBody', '')
             + this.helpPanel('config.helpDigestTitle', 'Weekly digest',
@@ -29489,13 +29474,6 @@ class DashboardConfig {
                     // view first or it would open behind it.
                     this.closeConfigView();
                     this.dash.showKeyboardCheatSheet?.();
-                } else if (action === 'fresh-tour') {
-                    window.FreshTutorial?.open?.();
-                } else if (action === 'spread-tour') {
-                    // Config is a view on this same page and the walkthrough is
-                    // a modal over it, so this one can stay where it is — the
-                    // reader lands back on this panel when it closes.
-                    window.SpreadTutorial?.open?.();
                 }
             });
         });

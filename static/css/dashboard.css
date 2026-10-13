@@ -4901,7 +4901,7 @@ body[data-show-recent-button="false"][data-show-cheatsheet-button="false"][data-
    bookmarks dashboard. Gone in every full-container view, keyed off the same
    layout class each one already stamps on #dashboard-layout -- no new class or
    attribute needed. :has() reading #dashboard-layout from up at body is the
-   same trick fresh-tutorial.css and inbox-tutorial.css already use. display:none,
+   same trick inbox-tutorial.css already uses. display:none,
    not opacity, so Tab cannot land in it either. What's New (outside
    .button-container) is untouched. */
 body:has(#dashboard-layout.config-layout) .button-container,
