@@ -4653,6 +4653,15 @@ body.no-animations .bookmarks-list.reorder-container::after {
     line-height: 1.2;
 }
 
+/* The page a tag-filter match lives on, when it is not the one showing. */
+.bookmark-page-origin {
+    flex: 0 0 auto;
+    margin-left: 0.5em;
+    font-size: 0.72em;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+}
+
 /*
  * The link preview card.
  *

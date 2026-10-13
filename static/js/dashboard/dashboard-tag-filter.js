@@ -129,9 +129,12 @@ class DashboardTagFilter {
         if (!required.length || !Array.isArray(d.bookmarks)) {
             return [];
         }
+        // Every page, the same pool the cloud counts from: the current page
+        // first, so a bookmark on two pages keeps its current-page row.
+        const pool = window.DashboardTagCloud?.getBookmarkPool?.() ?? d.bookmarks;
         const seen = new Set();
         const matched = [];
-        for (const bookmark of d.bookmarks) {
+        for (const bookmark of pool) {
             const bookmarkTags = new Set(
                 (bookmark.tags || [])
                     .map((raw) => String(raw || '').trim().toLowerCase())
@@ -193,7 +196,7 @@ class DashboardTagFilter {
             const emptyText = d.formatDashboardLabel(
                 'tagFilterEmpty',
                 { tags: tagsLabel },
-                'No bookmarks with {tags} on this page.'
+                'No bookmarks with {tags}.'
             );
             const text = document.createElement('p');
             text.className = 'empty-state--tag-filter-text';
@@ -370,7 +373,37 @@ class DashboardTagFilter {
         const d = this.dash;
         return this.getBookmarksForTagFilters()
             .map((bookmark) => d.resolveBookmarkReference(bookmark))
-            .filter((ref) => ref && ref.scope === 'current' && ref.index >= 0);
+            .filter((ref) => ref && (
+                (ref.scope === 'current' && ref.index >= 0) || ref.scope === 'remote'
+            ));
+    }
+
+
+    /**
+     * Delete matches that live on other pages, one request each.
+     *
+     * Their page is not the list on screen, so there is nothing to splice and
+     * save; each goes through the store's own single delete, which is atomic
+     * under its lock. Answers the refs that went.
+     */
+    async _deleteRemoteRefs(refs) {
+        const d = this.dash;
+        const headers = { 'Content-Type': 'application/json' };
+        const outcomes = await Promise.allSettled(refs.map(async (ref) => {
+            const res = await dashFetch('/api/bookmarks', {
+                method: 'DELETE',
+                headers,
+                body: JSON.stringify({ page: Number(ref.pageId), bookmark: { ...ref.bookmark } }),
+            });
+            if (!res.ok) throw new Error('delete failed');
+            return ref;
+        }));
+        const done = new Set(outcomes.filter((o) => o.status === 'fulfilled').map((o) => o.value));
+        done.forEach((ref) => {
+            d.removeBookmarkFromAllBookmarks(ref);
+            d.data?.invalidatePageDataCache?.(Number(ref.pageId));
+        });
+        return done;
     }
 
 
@@ -389,7 +422,7 @@ class DashboardTagFilter {
                 message: d.formatDashboardLabel(
                     'tagFilterDeleteConfirm',
                     { count },
-                    `Delete ${count} bookmark(s) on this page?`
+                    `Delete ${count} bookmark(s)?`
                 ),
                 confirmText: d.configLabel('delete', 'Delete'),
                 cancelText: d.formatDashboardLabel('cancel', {}, 'Cancel'),
@@ -399,7 +432,7 @@ class DashboardTagFilter {
                 d.formatDashboardLabel(
                     'tagFilterDeleteConfirm',
                     { count },
-                    `Delete ${count} bookmark(s) on this page?`
+                    `Delete ${count} bookmark(s)?`
                 )
             );
         }
@@ -413,32 +446,52 @@ class DashboardTagFilter {
             return;
         }
 
-        // Captured before the splices, which renumber every index behind them.
-        const trashed = refs.map((ref) => ({
+        // The filter spans every page: rows on the page showing are spliced and
+        // saved as one list, rows on other pages go one delete at a time.
+        const currentRefs = refs.filter((ref) => ref.scope === 'current');
+        const remoteRefs = refs.filter((ref) => ref.scope === 'remote');
+        const toEntry = (ref) => ({
             pageId: Number(ref.pageId ?? d.currentPageId),
-            index: ref.index,
+            index: ref.scope === 'current' ? ref.index : -1,
             bookmark: { ...ref.bookmark },
-        }));
-
-        d.ensureBookmarkMutationSnapshot();
-        const sorted = [...refs].sort((a, b) => b.index - a.index);
-        sorted.forEach((ref) => {
-            d.removeBookmarkFromAllBookmarks(ref);
-            d.bookmarks.splice(ref.index, 1);
         });
 
-        d._inlineEditGlobalCleanup?.();
-        d.inlineEditingBookmarkIndex = null;
-        d.renderDashboard();
-
-        const saved = await d.saveBookmarkOrder();
-        if (!saved) {
-            // saveBookmarkOrder rolls d.bookmarks back, but allBookmarks has no
-            // snapshot of its own -- without this the global-shortcut list stayed
-            // missing the rows the failed delete had removed.
-            [...trashed].sort((a, b) => a.index - b.index).forEach((entry) => {
-                d.restoreBookmarkInAllBookmarks(entry.bookmark, entry.pageId);
+        let trashed = [];
+        if (currentRefs.length) {
+            // Captured before the splices, which renumber every index behind them.
+            const currentEntries = currentRefs.map(toEntry);
+            d.ensureBookmarkMutationSnapshot();
+            const sorted = [...currentRefs].sort((a, b) => b.index - a.index);
+            sorted.forEach((ref) => {
+                d.removeBookmarkFromAllBookmarks(ref);
+                d.bookmarks.splice(ref.index, 1);
             });
+
+            d._inlineEditGlobalCleanup?.();
+            d.inlineEditingBookmarkIndex = null;
+            d.renderDashboard();
+
+            const saved = await d.saveBookmarkOrder();
+            if (saved) {
+                trashed = currentEntries;
+            } else {
+                // saveBookmarkOrder rolls d.bookmarks back, but allBookmarks has no
+                // snapshot of its own -- without this the global-shortcut list stayed
+                // missing the rows the failed delete had removed.
+                [...currentEntries].sort((a, b) => a.index - b.index).forEach((entry) => {
+                    d.restoreBookmarkInAllBookmarks(entry.bookmark, entry.pageId);
+                });
+            }
+        }
+        if (remoteRefs.length) {
+            const gone = await this._deleteRemoteRefs(remoteRefs);
+            trashed = trashed.concat(remoteRefs.filter((ref) => gone.has(ref)).map(toEntry));
+            if (gone.size) {
+                void d.data?.fetchAndStoreDataRevision?.();
+                d.renderDashboard();
+            }
+        }
+        if (!trashed.length) {
             return;
         }
         // Recorded after the save so a delete that did not persist cannot leave
@@ -447,7 +500,7 @@ class DashboardTagFilter {
         await window.DashboardTrash?.record(trashed, 'tag-filter');
         d.showGroupedNotification(
             'tag-filter-delete',
-            count,
+            trashed.length,
             (n) => d.formatDashboardLabel('tagFilterDeleted', { count: n }, `Deleted ${n} bookmark(s)`),
             'success',
             {
@@ -518,7 +571,8 @@ class DashboardTagFilter {
                 headers,
                 // See the forward move: add-then-delete puts the URL on both
                 // pages for as long as it takes to run.
-                body: JSON.stringify({ page: sourcePageId, bookmark: bookmarkPayload, allowDuplicate: true }),
+                // A tag-filter move took each match from its own page.
+                body: JSON.stringify({ page: Number(ref.pageId ?? sourcePageId), bookmark: bookmarkPayload, allowDuplicate: true }),
             });
             if (!addRes.ok) {
                 throw new Error('add failed');
@@ -535,14 +589,15 @@ class DashboardTagFilter {
         }));
 
         const restored = outcomes.filter((o) => o.status === 'fulfilled').length;
-        d.data?.invalidatePageDataCache?.(sourcePageId);
+        const sources = new Set(refs.map((ref) => Number(ref.pageId ?? sourcePageId)));
+        sources.forEach((id) => d.data?.invalidatePageDataCache?.(id));
         d.data?.invalidatePageDataCache?.(targetPageId);
         void d.data?.fetchAndStoreDataRevision?.();
         await d.loadAllBookmarks();
         // Reloaded only when it is the page showing: loading it navigates, and
         // an undo clicked from a third page jumped there.
         const showing = Number(d.currentPageId);
-        if (showing === Number(sourcePageId) || showing === Number(targetPageId)) {
+        if (sources.has(showing) || showing === Number(targetPageId)) {
             await d.data?.loadPageBookmarks?.(showing);
         }
         d.renderDashboard();
@@ -560,14 +615,16 @@ class DashboardTagFilter {
 
     async bulkMoveTagFilterToPage(targetPageId, refsIn = null) {
         const d = this.dash;
-        const refs = refsIn || this.getTagFilterBookmarkRefs();
-        if (!refs.length) {
-            return;
-        }
-
         const targetId = Number(targetPageId);
         const sourcePageId = Number(d.currentPageId);
-        if (!Number.isFinite(targetId) || targetId <= 0 || targetId === sourcePageId) {
+        if (!Number.isFinite(targetId) || targetId <= 0) {
+            return;
+        }
+        // Each match leaves from its own page; one already on the target stays.
+        const fromPage = (ref) => Number(ref.pageId ?? sourcePageId);
+        const refs = (refsIn || this.getTagFilterBookmarkRefs())
+            .filter((ref) => fromPage(ref) !== targetId);
+        if (!refs.length) {
             return;
         }
 
@@ -603,7 +660,7 @@ class DashboardTagFilter {
             const deleteRes = await dashFetch('/api/bookmarks', {
                 method: 'DELETE',
                 headers,
-                body: JSON.stringify({ page: sourcePageId, bookmark: bookmarkPayload }),
+                body: JSON.stringify({ page: fromPage(ref), bookmark: bookmarkPayload }),
             });
             if (!deleteRes.ok) {
                 // The copy on the target page is now the only way to avoid
@@ -627,12 +684,13 @@ class DashboardTagFilter {
         // a background reload meanwhile replaces d.bookmarks, and a page switch
         // makes it another page's list altogether.
         movedRefs.forEach((ref) => d.removeBookmarkFromAllBookmarks(ref));
-        d.data?.invalidatePageDataCache?.(sourcePageId);
+        new Set(movedRefs.map(fromPage)).forEach((id) => d.data?.invalidatePageDataCache?.(id));
         d.data?.invalidatePageDataCache?.(targetId);
-        if (Number(d.currentPageId) === Number(sourcePageId)) {
+        const leftThisPage = movedRefs.filter((ref) => fromPage(ref) === Number(d.currentPageId));
+        if (leftThisPage.length) {
             const key = (b) => `${b?.url}\u0000${b?.category ?? ''}`;
             const gone = new Map();
-            movedRefs.forEach((ref) => gone.set(key(ref.bookmark), (gone.get(key(ref.bookmark)) || 0) + 1));
+            leftThisPage.forEach((ref) => gone.set(key(ref.bookmark), (gone.get(key(ref.bookmark)) || 0) + 1));
             const remaining = (d.bookmarks || []).filter((b) => {
                 const n = gone.get(key(b)) || 0;
                 if (!n) return true;
@@ -644,6 +702,10 @@ class DashboardTagFilter {
         }
         void d.data?.fetchAndStoreDataRevision?.();
         await d.loadAllBookmarks();
+        // Moved onto the page showing: its own list has to hear about it.
+        if (targetId === Number(d.currentPageId)) {
+            await d.data?.loadPageBookmarks?.(targetId, { forceFetch: true, skipRender: true });
+        }
         d.renderDashboard();
 
         const targetPage = (d.pages || []).find((page) => Number(page.id) === targetId);
@@ -709,8 +771,16 @@ class DashboardTagFilter {
             return (val && val !== key) ? val : fallback;
         };
 
-        const realCategories = (d.categories || []).filter((category) => !category.isSmartCollection);
-        const otherPages = (d.pages || []).filter((page) => String(page.id) !== String(d.currentPageId));
+        // The tag filter spans every page. Categories belong to the page on
+        // screen, so they are offered only when every match stands on it; and
+        // when some do not, that page is a destination like any other.
+        const allHere = refs.every((ref) => ref.scope !== 'remote');
+        const realCategories = allHere
+            ? (d.categories || []).filter((category) => !category.isSmartCollection)
+            : [];
+        const otherPages = (d.pages || []).filter((page) => (
+            !allHere || String(page.id) !== String(d.currentPageId)
+        ));
 
         const pop = document.createElement('div');
         pop.id = 'move-popover';
@@ -732,6 +802,20 @@ class DashboardTagFilter {
         pop.appendChild(currentHint);
 
         const items = [];
+
+        if (!allHere) {
+            const catLabel = document.createElement('div');
+            catLabel.className = 'move-popover-section-label';
+            catLabel.textContent = t('dashboard.movePopoverCategorySection', 'Category');
+            pop.appendChild(catLabel);
+            const hint = document.createElement('div');
+            hint.className = 'move-popover-current-hint move-popover-category-hint';
+            hint.textContent = t(
+                'dashboard.tagFilterMoveCategoryOtherPages',
+                'Some of these are on other pages. Categories belong to one page; move them to a page instead.'
+            );
+            pop.appendChild(hint);
+        }
 
         if (realCategories.length > 0) {
             const catLabel = document.createElement('div');
@@ -906,7 +990,7 @@ class DashboardTagFilter {
         const countLabel = this.formatTagFilterCountLabel(count);
         const tagsLabel = this.formatTagFilterTagsLabel(normalized);
         const groupAria = (d.language?.t('dashboard.tagFilterGroupAria')
-            || 'Active tag filters: {tags}, {count} on this page')
+            || 'Active tag filters: {tags}, {count}')
             .replace('{tags}', tagsLabel)
             .replace('{count}', countLabel);
 

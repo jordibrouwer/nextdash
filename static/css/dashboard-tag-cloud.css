@@ -9,7 +9,10 @@
     overflow: visible;
 }
 
-body[data-show-tag-cloud-button="true"] .dashboard-tag-cloud-wrap.is-eligible {
+body[data-show-tag-cloud-button="true"] .dashboard-tag-cloud-wrap.is-eligible,
+/* `/` opens the cloud with the header button switched off too; the wrap
+   carries the cloud, so it stands while the cloud is open, button or not. */
+body[data-tag-cloud-modal-open="true"] .dashboard-tag-cloud-wrap {
     display: block;
 }
 

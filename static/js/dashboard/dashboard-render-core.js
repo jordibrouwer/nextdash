@@ -1384,6 +1384,12 @@ class DashboardRenderCore {
             if (listElement.getAttribute('data-smart-collection') === 'true') {
                 return;
             }
+            // The tag filter is one list across every page: an order across
+            // pages means nothing, and syncBookmarksFromDom would write it into
+            // the page on screen.
+            if (listElement.closest('.tag-filter-view')) {
+                return;
+            }
             const categoryId = listElement.getAttribute('data-category-id') || '';
             const sortMode = d.settings?.lockLayout ? 'locked' : (window.DashboardCategorySort?.getCategorySortMode(d, { id: categoryId }) || 'order');
             if (sortMode !== 'order') {

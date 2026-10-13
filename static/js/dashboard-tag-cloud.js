@@ -492,11 +492,18 @@
         getBookmarkPool() {
             const dash = window.dashboardInstance;
             if (!dash) return [];
-            const pool = dash.settings?.globalShortcuts
-                ? dash.allBookmarks
-                : dash.allBookmarks?.length
-                  ? dash.allBookmarks
-                  : dash.bookmarks;
+            /*
+             * The page on screen from its own list, every other page from the
+             * cross-page one. The current page's rows are the ones edits land
+             * in first, so they win over their copies in allBookmarks; the
+             * filter view reads this same pool, which is what lets a tag that
+             * lives on another page show its bookmarks instead of an empty grid.
+             */
+            const current = Array.isArray(dash.bookmarks) ? dash.bookmarks : [];
+            const currentId = Number(dash.currentPageId);
+            const others = (Array.isArray(dash.allBookmarks) ? dash.allBookmarks : [])
+                .filter((bookmark) => Number(bookmark?.pageId ?? bookmark?.pageID) !== currentId);
+            const pool = [...current, ...others];
             // Kept bookmarks carry tags of their own and are tagged from their
             // own view, but they are not filed yet -- listing their tags here
             // would put a route to them on the dashboard, which is the one
@@ -634,6 +641,7 @@
             this.syncActiveTagsFromDashboard();
             this.renderWordCloud();
             this.playEntrance();
+            this.ensureEveryPageLoaded();
             this.updateClearButton();
             // The × is not a name. The template carries an English label; this
             // keeps it in the current language when the language changed later.
@@ -656,6 +664,21 @@
             window.FocusTrapUtils?.syncDashboardInert?.();
             window.dashboardInstance?.language?.applyTranslations?.();
             this.focusInitialChip();
+        },
+
+        /**
+         * The cloud and its filter are about the whole library, and startup
+         * skips loading other pages when no setting asks for them -- which is
+         * the case for `/` with the header button switched off. Fetched here,
+         * once, and the cloud and an active filter redrawn when it lands.
+         */
+        ensureEveryPageLoaded() {
+            const dash = window.dashboardInstance;
+            if (!dash || dash._unsortedLoaded || !dash.data?.deferredLoadAllBookmarks) return;
+            void dash.data.deferredLoadAllBookmarks().then(() => {
+                if (this.modalOpen) this.renderWordCloud();
+                if (dash.hasActiveTagFilters?.()) dash.renderDashboard?.({ animate: false });
+            }).catch(() => {});
         },
 
         restoreBookmarkFocus() {

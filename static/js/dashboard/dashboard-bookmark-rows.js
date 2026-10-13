@@ -637,6 +637,21 @@ class DashboardBookmarkRows {
         }
         openLink.appendChild(textSpan);
 
+        // The tag filter lists every page in one flat list; a row from another
+        // page says which one, so it is not mistaken for one of this page's.
+        if (String(categoryId || '').startsWith('__tag_filter_chunk_')) {
+            const originId = Number(bookmark?.pageId ?? bookmark?.pageID);
+            if (originId && originId !== Number(d.currentPageId)) {
+                const originName = (d.pages || []).find((p) => Number(p.id) === originId)?.name;
+                if (originName) {
+                    const origin = document.createElement('span');
+                    origin.className = 'bookmark-page-origin';
+                    origin.textContent = originName;
+                    openLink.appendChild(origin);
+                }
+            }
+        }
+
         this.ensureBookmarkOpenDelegation();
 
         if (d.settings.openInNewTab) {
