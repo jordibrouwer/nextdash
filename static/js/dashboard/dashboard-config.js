@@ -19113,6 +19113,43 @@ class DashboardConfig {
         }
     }
 
+    /**
+     * Bring dash.pages up to what the server holds, keeping this tab's order.
+     *
+     * The list is the one this tab loaded, and a page made, renamed or
+     * deleted on another device since is not in it. Pages named in `keep`
+     * stay as this tab has them (the edit being saved, a page just added);
+     * the rest take the server's entry, a page gone there is dropped, and one
+     * new there goes at the end. In place, because callers hold the array.
+     * A failed read leaves the list as it was.
+     */
+    async refreshPagesInPlace(keep = []) {
+        const pages = this.dash.pages || (this.dash.pages = []);
+        let fresh;
+        try {
+            const res = await fetch('/api/pages', { cache: 'no-store' });
+            if (!res.ok) return;
+            fresh = await res.json();
+        } catch {
+            return;
+        }
+        if (!Array.isArray(fresh)) return;
+        const kept = new Set(keep.map(Number));
+        const byId = new Map(fresh.map((p) => [Number(p.id), p]));
+        const merged = [];
+        const seen = new Set();
+        pages.forEach((page) => {
+            const id = Number(page.id);
+            seen.add(id);
+            if (kept.has(id)) merged.push(page);
+            else if (byId.has(id)) merged.push(byId.get(id));
+        });
+        fresh.forEach((page) => {
+            if (!seen.has(Number(page.id))) merged.push(page);
+        });
+        pages.splice(0, pages.length, ...merged);
+    }
+
     /*
      * The highest page id in use, the trash included.
      *
@@ -19122,6 +19159,10 @@ class DashboardConfig {
      * for good -- while an undo inside the toast wrote the old page over the new.
      */
     async highestPageId() {
+        // Fresh: a page made on another device since this tab loaded is not
+        // in dash.pages, its id was handed out again, and a duplicate then
+        // wrote its bookmarks over that page's.
+        await this.refreshPagesInPlace();
         const pages = this.dash.pages || [];
         let maxId = pages.length ? Math.max(...pages.map((p) => Number(p.id) || 0)) : 0;
         try {
@@ -19136,8 +19177,9 @@ class DashboardConfig {
     }
 
     async addPage() {
-        const pages = this.dash.pages || [];
         const maxId = await this.highestPageId();
+        // Read after: highestPageId brings the list up to date.
+        const pages = this.dash.pages || (this.dash.pages = []);
         // Deleting page 3 of 3 and adding again would otherwise reuse "Page 3".
         const name = DashboardConfig.uniqueNameFrom(
             `${this.t('config.pagePrefix', 'Page')} ${maxId + 1}`,
@@ -19562,8 +19604,9 @@ class DashboardConfig {
             { confirmLabel: this.t('config.pageDuplicateWith', 'With bookmarks') }
         ) === true;
 
-        const pages = this.dash.pages || [];
         const maxId = await this.highestPageId();
+        // Read after: highestPageId brings the list up to date.
+        const pages = this.dash.pages || (this.dash.pages = []);
         const newId = maxId + 1;
         const name = DashboardConfig.uniqueNameFrom(
             this.t('config.pageDuplicateName', '{name} copy').replace('{name}', source.name || ''),
