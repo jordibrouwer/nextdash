@@ -877,6 +877,23 @@ html[data-theme] body:not([data-depth="flat"]) .lvs-drawer-frame {
  * playViewEntrance), so whatever the view paints in that window animates,
  * and a later repaint does not.
  */
+/*
+ * Appearance → Animation speed scales every duration and delay below.
+ * Normal, the default, is half the original pace; Slow is the original.
+ * Kept in step with Dashboard.ENTRANCE_SCALE in dashboard.js.
+ */
+body {
+    --enter-scale: 0.5;
+}
+
+body[data-animation-speed="slow"] {
+    --enter-scale: 1;
+}
+
+body[data-animation-speed="fast"] {
+    --enter-scale: 0.25;
+}
+
 @keyframes lvsRise {
     from {
         opacity: 0;
@@ -885,16 +902,16 @@ html[data-theme] body:not([data-depth="flat"]) .lvs-drawer-frame {
 }
 
 body[data-view-entering] :is(.lvs-header, .lvs-rail, .lvs-toolbar, .config-bm-rail, .config-bm-toolbar, .tag-view-colhead) {
-    animation: lvsRise 0.28s ease backwards;
+    animation: lvsRise calc(280ms * var(--enter-scale)) ease backwards;
 }
 
 body[data-view-entering] :is(.lvs-rail, .config-bm-rail) {
-    animation-delay: 60ms;
+    animation-delay: calc(60ms * var(--enter-scale));
 }
 
 body[data-view-entering] :is(.tag-view-row, .config-bm-row, .inbox-item, .docker-row) {
-    animation: lvsRise 0.3s ease backwards;
-    animation-delay: calc(80ms + var(--row-index, var(--lvs-enter-i, 14)) * 22ms);
+    animation: lvsRise calc(300ms * var(--enter-scale)) ease backwards;
+    animation-delay: calc((80ms + var(--row-index, var(--lvs-enter-i, 14)) * 22ms) * var(--enter-scale));
 }
 
 /* The first rows of each list follow one another; the rest come with the 15th. */

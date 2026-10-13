@@ -51,6 +51,8 @@ class DashboardVisual {
             window.VisualSettings.applyBackgroundOpacity(d.settings.backgroundOpacity);
             window.VisualSettings.applyFontWeight(d.settings.fontWeight);
             window.VisualSettings.applyAnimations(d.settings.animationsEnabled !== false);
+            window.VisualSettings.applyAnimationSpeed?.(d.settings.animationSpeed);
+            window.VisualSettings.applyViewAnimations?.(d.settings.viewAnimationsEnabled !== false);
         } else {
             const opacity = Number(d.settings.backgroundOpacity ?? 1);
             const clampedOpacity = window.VisualSettings?.clampBackgroundOpacity

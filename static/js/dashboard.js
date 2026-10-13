@@ -57,6 +57,9 @@ class Dashboard {
     /** The views that rise in on arrival; see playViewEntrance. */
     static ENTRANCE_VIEWS = new Set(['tags', 'library', 'inbox', 'docker']);
 
+    /** Kept in step with --enter-scale in list-view-shell.css. */
+    static ENTRANCE_SCALE = { slow: 1, normal: 0.5, fast: 0.25 };
+
     constructor() {
         this.bookmarks = [];
         this._bookmarksReady = false;
@@ -1259,12 +1262,15 @@ class Dashboard {
     playViewEntrance(view) {
         const body = document.body;
         clearTimeout(this._viewEntranceTimer);
-        if (!Dashboard.ENTRANCE_VIEWS.has(view) || body.classList.contains('no-animations')) {
+        if (!Dashboard.ENTRANCE_VIEWS.has(view) || body.classList.contains('no-animations')
+            || body.classList.contains('no-view-animations')) {
             delete body.dataset.viewEntering;
             return;
         }
         body.dataset.viewEntering = view;
-        this._viewEntranceTimer = setTimeout(() => { delete body.dataset.viewEntering; }, 900);
+        // Long enough for the last row to land at the chosen pace.
+        const scale = Dashboard.ENTRANCE_SCALE[body.dataset.animationSpeed] ?? Dashboard.ENTRANCE_SCALE.normal;
+        this._viewEntranceTimer = setTimeout(() => { delete body.dataset.viewEntering; }, Math.round(900 * scale) + 100);
     }
 
     /**

@@ -356,6 +356,20 @@
         document.body.classList.toggle('no-animations', enabled === false);
     }
 
+    /** The pace of the arrivals: slow, normal (the default) or fast. */
+    function normalizeAnimationSpeed(value) {
+        return value === 'slow' || value === 'fast' ? value : 'normal';
+    }
+
+    function applyAnimationSpeed(value) {
+        document.body.dataset.animationSpeed = normalizeAnimationSpeed(value);
+    }
+
+    /** Views and modals arriving; the site-wide no-animations still wins. */
+    function applyViewAnimations(enabled) {
+        document.body.classList.toggle('no-view-animations', enabled === false);
+    }
+
     /*
      * Fetch the generated theme stylesheet again.
      *
@@ -457,6 +471,9 @@
         applyBackgroundOpacity,
         applyFontWeight,
         applyAnimations,
+        applyAnimationSpeed,
+        applyViewAnimations,
+        normalizeAnimationSpeed,
         applyAutoDarkMode,
         reloadThemeCSS
     };

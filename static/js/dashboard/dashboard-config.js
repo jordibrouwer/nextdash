@@ -3677,6 +3677,8 @@ class DashboardConfig {
         { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
         { field: 'colorizeStatus', labelKey: 'colorizeStatus', fallback: 'Colour status on bookmark rows', section: 'appearance', subTab: 'display' },
         { field: 'animationsEnabled', labelKey: 'enableAnimations', fallback: 'Enable animations', section: 'appearance', subTab: 'general' },
+        { field: 'viewAnimationsEnabled', labelKey: 'viewAnimations', fallback: 'Animations in views and modals', section: 'appearance', subTab: 'general' },
+        { field: 'animationSpeed', labelKey: 'animationSpeedLabel', fallback: 'Animation speed', section: 'appearance', subTab: 'general' },
         { field: 'enableCustomTitle', labelKey: 'enableCustomTitle', fallback: 'Use a custom page title', section: 'appearance', subTab: 'header' },
         { field: 'customTitle', labelKey: 'customTitleLabel', fallback: 'Title', section: 'appearance', subTab: 'header' },
         { field: 'enableCustomFavicon', labelKey: 'uploadFaviconLabel', fallback: 'Custom favicon', section: 'appearance', subTab: 'header' },
@@ -10069,6 +10071,21 @@ class DashboardConfig {
                     </label>
                     ${this.appearanceAff('animationsEnabled')}
                 </div>
+                <div class="config-field-row">
+                    <label class="config-toggle">
+                        <input type="checkbox" data-appearance-toggle="viewAnimationsEnabled" ${s.viewAnimationsEnabled !== false ? 'checked' : ''}>
+                        <span>${esc(this.t('config.viewAnimations', 'Animations in views and modals'))}</span>
+                    </label>
+                    ${this.appearanceAff('viewAnimationsEnabled')}
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.animationSpeedLabel', 'Animation speed'))}</span>
+                    <select class="config-select" data-appearance-select="animationSpeed">
+                        ${[['slow', 'animationSpeedSlow', 'Slow'], ['normal', 'animationSpeedNormal', 'Normal'], ['fast', 'animationSpeedFast', 'Fast']]
+                            .map(([value, key, fallback]) => `<option value="${value}"${(window.VisualSettings?.normalizeAnimationSpeed?.(s.animationSpeed) ?? 'normal') === value ? ' selected' : ''}>${esc(this.t(`config.${key}`, fallback))}</option>`).join('')}
+                    </select>
+                    ${this.appearanceAff('animationSpeed')}
+                </div>
             </div>
 
             <div class="config-panel">
@@ -12365,6 +12382,11 @@ class DashboardConfig {
             case 'themeDepth': this.setSurface('themeDepth', value); break;
             case 'glowStrength': this.setSurface('glowStrength', value); break;
             case 'themeEffects': this.setSurface('themeEffects', value); break;
+            case 'animationSpeed':
+                this.dash.settings.animationSpeed = 'normal';
+                window.VisualSettings?.applyAnimationSpeed?.('normal');
+                this.persistAppearance();
+                break;
             case 'inkGap':
                 this.dash.settings.inkGap = DashboardConfig.inkGapStepFor(value);
                 window.ThemeLoader?.applyInkGap?.(this.dash.settings.inkGap);
@@ -12630,6 +12652,10 @@ class DashboardConfig {
                 d.settings.animationsEnabled = value;
                 d.visual?.applyVisualSettings?.();
                 break;
+            case 'viewAnimationsEnabled':
+                d.settings.viewAnimationsEnabled = value;
+                d.visual?.applyVisualSettings?.();
+                break;
             case 'enableCustomTitle':
                 d.settings.enableCustomTitle = value;
                 d.pageNav?.updateDocumentTitle?.();
@@ -12744,6 +12770,13 @@ class DashboardConfig {
             const mode = value === 'off' ? 'off' : 'follow';
             this.dash.settings.themeBackdrop = mode;
             window.ThemeLoader?.applyThemeBackdrop?.(mode);
+            this.persistAppearance();
+            return;
+        }
+        if (name === 'animationSpeed') {
+            const speed = window.VisualSettings?.normalizeAnimationSpeed?.(value) ?? 'normal';
+            this.dash.settings.animationSpeed = speed;
+            window.VisualSettings?.applyAnimationSpeed?.(speed);
             this.persistAppearance();
             return;
         }
@@ -13210,6 +13243,8 @@ class DashboardConfig {
         randomThemeMode: { info: ['randomThemeModeInfoTitle', 'randomThemeModeInfoMessage'], def: 'off' },
         themeIconStyling: { info: ['iconStylingInfoTitle', 'iconStylingInfoMessage'] },
         animationsEnabled: { info: ['enableAnimationsInfoTitle', 'enableAnimationsInfoMessage'], def: true },
+        viewAnimationsEnabled: { info: ['viewAnimationsInfoTitle', 'viewAnimationsInfoMessage'], def: true },
+        animationSpeed: { info: ['animationSpeedInfoTitle', 'animationSpeedInfoMessage'], def: 'normal' },
         fontPreset: { info: ['fontPresetInfoTitle', 'fontPresetInfoMessage'], def: 'source-code-pro' },
         fontWeight: { info: ['fontWeightInfoTitle', 'fontWeightInfoMessage'], def: 'normal' },
         backgroundType: { info: ['backgroundPickerInfoTitle', 'backgroundPickerInfoMessage'], def: 'none' },

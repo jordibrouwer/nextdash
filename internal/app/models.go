@@ -477,6 +477,8 @@ type Settings struct {
 	HyprMode                        bool   `json:"hyprMode"`                                // Launcher mode for PWA usage
 	LockLayout                      bool   `json:"lockLayout"`                              // Disable drag-and-drop reordering of bookmarks and categories
 	AnimationsEnabled               bool   `json:"animationsEnabled"`                       // Enable or disable animations globally
+	AnimationSpeed                  string `json:"animationSpeed"`                          // Pace of the arrivals (views rising in): slow, normal or fast
+	ViewAnimationsEnabled           bool   `json:"viewAnimationsEnabled"`                   // The views rising in on arrival; animationsEnabled still switches off everything
 	EnableCustomTitle               bool   `json:"enableCustomTitle"`                       // Enable custom page title
 	CustomTitle                     string `json:"customTitle"`                             // Custom page title
 	ShowPageInTitle                 bool   `json:"showPageInTitle"`                         // Show current page name in title
@@ -1735,6 +1737,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			HyprMode:                        false,
 			LockLayout:                      false,
 			AnimationsEnabled:               true,
+			AnimationSpeed:                  "normal",
+			ViewAnimationsEnabled:           true,
 			EnableCustomTitle:               false,
 			CustomTitle:                     "",
 			ShowPageInTitle:                 false,
@@ -4305,6 +4309,8 @@ func (fs *FileStore) GetSettings() Settings {
 			HyprMode:                        false,
 			LockLayout:                      false,
 			AnimationsEnabled:               true,
+			AnimationSpeed:                  "normal",
+			ViewAnimationsEnabled:           true,
 			EnableCustomTitle:               false,
 			CustomTitle:                     "",
 			ShowPageInTitle:                 false,
@@ -4510,6 +4516,10 @@ func (fs *FileStore) GetSettings() Settings {
 			settings.ActionBarPosition = defaultActionBarUpgrade
 		}
 		// The bar was always drawn before this switch existed.
+		// Animations in views came after the site-wide switch; on until turned off.
+		if _, ok := rawSettings["viewAnimationsEnabled"]; !ok {
+			settings.ViewAnimationsEnabled = true
+		}
 		if _, ok := rawSettings["actionBarEnabled"]; !ok {
 			settings.ActionBarEnabled = true
 		}
@@ -5085,6 +5095,11 @@ func (fs *FileStore) GetSettings() Settings {
 			settings.BackgroundPattern = "auto"
 		}
 		settings.FavoriteThemes = normalizeFavoriteThemes(settings.FavoriteThemes)
+		switch settings.AnimationSpeed {
+		case "slow", "normal", "fast":
+		default:
+			settings.AnimationSpeed = "normal"
+		}
 		if _, ok := rawSettings["densityMode"]; !ok || (settings.DensityMode != "comfortable" && settings.DensityMode != "compact" && settings.DensityMode != "dense" && settings.DensityMode != "auto") {
 			settings.DensityMode = "compact"
 		}
