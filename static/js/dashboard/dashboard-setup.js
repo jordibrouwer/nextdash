@@ -625,6 +625,19 @@ class DashboardSetup {
                 }
                 return;
             }
+
+            // Shift+K replays the dashboard tour. T was taken by a selected
+            // row's tags and G by the last row, so K it is. Only over the
+            // grid the tour explains: in the Inbox list Shift+K keeps a row.
+            if (e.shiftKey && e.code === 'KeyK') {
+                if (d.isBookmarksView?.() && d.promos?.openDashboardTour) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + K');
+                    void d.promos.openDashboardTour();
+                }
+                return;
+            }
             if (key >= '1' && key <= '9') {
                 if (d.keyboardNavigation?.isGChordActive?.()) {
                     return;

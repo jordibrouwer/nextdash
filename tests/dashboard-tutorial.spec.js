@@ -132,6 +132,27 @@ test.describe('dashboard tour', () => {
         await expect(modal(page)).toBeVisible();
     });
 
+    test('Shift+K plays it again from the dashboard, seen or not', async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 15_000 });
+        await page.keyboard.press('Shift+K');
+        await expect(modal(page)).toBeVisible();
+    });
+
+    test('Shift+K leaves the other views alone', async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 15_000 });
+        await page.keyboard.press('Shift+H');
+        await expect(page.locator('body')).toHaveAttribute('data-active-view', 'library', { timeout: 10_000 });
+        await page.keyboard.press('Shift+K');
+        // Nothing to poll for when it does not open: give it the time the
+        // lazy script takes, then look.
+        await page.waitForTimeout(1500);
+        await expect(modal(page)).toHaveCount(0);
+    });
+
     test('the scenes animate, and stand still under reduced motion', async ({ page }) => {
         await loadWithTourPending(page);
         await expect(modal(page)).toBeVisible({ timeout: 10_000 });

@@ -52,7 +52,7 @@ test.describe('the dashboard key legend', () => {
         await expect(legend(page).locator('.dashboard-legend-line')).toHaveCount(3);
         // Every group names the keys a first visit needs, without a keystroke.
         const text = await legend(page).innerText();
-        for (const key of ['!', '>', '/', '*', '?', ':', '1–9', 'Shift+B', 'Shift+N', 'Shift+Z']) {
+        for (const key of ['!', '>', '/', '*', '?', ':', '1–9', 'Shift+B', 'Shift+N', 'Shift+Z', 'Shift+K']) {
             expect(text).toContain(key);
         }
         // The rows that act on a row wait until the keyboard is in use.

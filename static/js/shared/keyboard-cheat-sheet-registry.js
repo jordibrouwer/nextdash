@@ -83,6 +83,13 @@
                     print: true,
                     printFallback: 'Open the theme browser',
                 },
+                {
+                    keys: 'Shift + K',
+                    cheatKey: 'navDashboardTour',
+                    fallback: 'Take the dashboard tour again',
+                    print: true,
+                    printFallback: 'Dashboard tour',
+                },
                 { keys: 'Shift + ← / →', cheatKey: 'navPrevNextPage', fallback: 'Previous / next page', print: true },
                 { keys: ',', cheatKey: 'navPageOverview', fallback: 'Page overview with bookmark counts', print: true, printFallback: 'Page overview' },
                 { keys: 'n', cheatKey: 'navPageOverviewNewPage', fallback: 'Create a new page from the page overview' },

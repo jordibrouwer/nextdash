@@ -57,6 +57,7 @@
         { line: 1, keys: 'Enter', legendKey: 'dashboardKeyOpen', cheatKey: 'dvOpen', fallback: 'open' },
         { line: 1, keys: 'x', legendKey: 'dashboardKeySelect', cheatKey: 'dvSelect', fallback: 'select' },
         { line: 1, keys: '!', legendKey: 'dashboardKeyCheatSheet', cheatKey: 'dvCheatSheet', fallback: 'all keys' },
+        { line: 1, keys: 'Shift+K', legendKey: 'dashboardKeyTour', cheatKey: 'dvTour', fallback: 'tour' },
         { line: 1, keys: 'Shift+Z', legendKey: 'dashboardKeyHideLegend', cheatKey: 'dvHideLegend', fallback: 'hide legend' },
         { line: 2, keys: '>', legendKey: 'dashboardKeySearch', cheatKey: 'dvSearch', fallback: 'search' },
         { line: 2, keys: '/', legendKey: 'dashboardKeyTags', cheatKey: 'dvTags', fallback: 'tags' },
