@@ -238,6 +238,27 @@
             ],
         },
         {
+            id: 'sectionTagView',
+            titleKey: 'sectionTagView',
+            titleFallback: 'Tag view',
+            contextId: 'tag-view',
+            print: true,
+            rows: [
+                { keys: '↑ / ↓  ·  g / G', cheatKey: 'tvMove', fallback: 'Move through the rows / first or last row', print: true },
+                { keys: 'Enter', cheatKey: 'tvOpen', fallback: 'Open the bookmark under the cursor', print: true },
+                { keys: 'i', cheatKey: 'tvPanel', fallback: 'Open or close the side panel' },
+                { keys: 'x', cheatKey: 'tvSelect', fallback: 'Select a row, for the bulk actions' },
+                { keys: 'e / Shift + E', cheatKey: 'tvEdit', fallback: 'Edit the bookmark' },
+                { keys: 'a', cheatKey: 'tvAddTags', fallback: 'Add the suggested tags to the bookmark under the cursor', print: true },
+                { keys: '/', cheatKey: 'tvSearch', fallback: 'Search within these bookmarks' },
+                { keys: 'Shift + P / T / M', cheatKey: 'tvRowKeys', fallback: 'On a row, as on the dashboard: pin, tags, move' },
+                { keys: 'Shift + D / C / R / L / J', cheatKey: 'tvRowKeysMore', fallback: 'On a row: delete, check mode, show health, share link, QR code' },
+                { keys: 'Delete', cheatKey: 'tvDelete', fallback: 'Delete the bookmark (undo is offered)' },
+                { keys: 'Ctrl + C', cheatKey: 'tvCopyUrl', fallback: 'Copy the URL of the row under the cursor' },
+                { keys: 'Esc', cheatKey: 'tvEsc', fallback: 'Close the panel, clear the selection, then leave the view', print: true },
+            ],
+        },
+        {
             id: 'sectionInboxView',
             titleKey: 'sectionInboxView',
             titleFallback: 'Inbox view',
@@ -390,7 +411,7 @@
                 { keys: ':tag +name / :tag -name', printOmit: true, cheatKey: 'cbTagMutate', fallback: 'Add or remove a tag on the focused bookmark — :tag +name / :tag -name' },
                 { keys: ':category / :cat', cheatKey: 'cbCategory', fallback: 'Jump to a category or smart collection by number or name' },
                 { keys: ':category new <name>', printOmit: true, cheatKey: 'cbCategoryNew', fallback: 'Create a category on the current page (c does the same)' },
-                { keys: ':filter <tag> / :filter clear', cheatKey: 'cbFilter', fallback: 'Apply or clear dashboard tag filter (OR logic, same as tag cloud)' },
+                { keys: ':filter <tag> / :filter clear', cheatKey: 'cbFilter', fallback: 'Open the tag view for a tag, or clear it' },
                 { keys: ':remove', printOmit: true, cheatKey: 'cbRemove', fallback: 'Delete the focused bookmark' },
                 { keys: ':find <text> / :find clear', cheatKey: 'cbFind', fallback: 'Filter bookmark tiles on the current page — :find clear removes the filter' },
                 { keys: ':open all / :open pinned', cheatKey: 'cbOpenAll', fallback: 'Open every bookmark or pinned bookmarks on the current page (capped at 15)' },
@@ -499,6 +520,7 @@
         if (ctx.triageOpen) return 'inbox-triage';
         if (ctx.activeView === 'inbox') return 'inbox';
         if (ctx.activeView === 'library') return 'library';
+        if (ctx.activeView === 'tags') return 'tag-view';
         if (ctx.activeView === 'docker') return 'docker';
         if (ctx.activeView === 'config') return 'config';
         return 'bookmarks';

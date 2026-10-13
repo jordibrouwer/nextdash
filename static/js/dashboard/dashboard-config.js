@@ -28428,8 +28428,8 @@ class DashboardConfig {
         ],
         'config.helpInboxTourTitle': [
             {
-                kind: 'steps', value: ['', '', '', '', ''],
-                captionKey: 'config.helpArtTourSteps', caption: 'Five steps, shown once',
+                kind: 'steps', value: ['', '', '', ''],
+                captionKey: 'config.helpArtTourSteps', caption: 'Four steps, shown once',
             },
         ],
         'config.helpCaptureTitle': [
