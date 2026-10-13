@@ -1296,3 +1296,63 @@ test.describe('tablet', () => {
         await shot(page, '22-tablet.jpg');
     });
 });
+
+/*
+ * Added with the tag suggestions in the rows, the Home Assistant tile and the
+ * animation speed.
+ */
+
+test('10 tag view offers', async ({ page }) => {
+    await prepare(page);
+    await openDashboard(page);
+    await page.keyboard.press('/');
+    await page.locator('#tag-cloud-modal.is-open').waitFor();
+    await page.waitForTimeout(600);
+    const tags = await page.locator('#tag-cloud-modal [data-tag]').evaluateAll((els) => els.map((el) => el.getAttribute('data-tag')));
+    await page.keyboard.press('Escape');
+    // The first tag whose view has something to offer; the demo has few.
+    let found = null;
+    for (const tag of tags) {
+        await page.goto(`/#tag/${encodeURIComponent(tag)}`);
+        await page.locator('#dashboard-layout .tag-view .tag-view-row').first().waitFor();
+        await page.waitForTimeout(1_500);
+        if (await page.locator('.tag-view-offer-count:not([hidden])').count()) { found = tag; break; }
+    }
+    console.log(`tag view with offers: ${found}`);
+    if (!found) throw new Error('no tag view has offers in the demo data');
+    await page.mouse.move(5, 5);
+    await snap(page, page.locator('#dashboard-layout .tag-view'), '10-tag-view-offers.jpg', { pad: 0 });
+});
+
+test.describe('home assistant tile', () => {
+    test.use({ dataPatch: 'homeassistant' });
+    test('15 home assistant', async ({ page }) => {
+        await prepare(page);
+        const minute = 60_000;
+        const now = NOW.getTime();
+        const items = [
+            { id: 'light.ceiling', title: 'Ceiling light', kind: 'entity', library: 'Living room', libraryId: 'Living room', addedAt: now - 5 * minute, value: 'on', control: 'toggle', on: true, icon: 'light', openUrl: 'http://homeassistant.local:8123/history' },
+            { id: 'sensor.temperature', title: 'Temperature', kind: 'entity', library: 'Living room', libraryId: 'Living room', addedAt: now - 2 * minute, value: '21.4 °C', icon: 'temperature', openUrl: 'http://homeassistant.local:8123/history' },
+            { id: 'light.reading', title: 'Reading lamp', kind: 'entity', library: 'Living room', libraryId: 'Living room', addedAt: now - 40 * minute, value: 'off', control: 'toggle', on: false, icon: 'light', openUrl: 'http://homeassistant.local:8123/history' },
+            { id: 'scene.movie_night', title: 'Movie night', kind: 'entity', library: 'Living room', libraryId: 'Living room', control: 'run', icon: 'scene', openUrl: 'http://homeassistant.local:8123/history' },
+            { id: 'binary_sensor.back_door', title: 'Back door', kind: 'entity', library: 'Kitchen', libraryId: 'Kitchen', value: 'off', icon: 'door', openUrl: 'http://homeassistant.local:8123/history' },
+        ];
+        await page.route('**/api/widgets/homeassistant?**', (route) => route.fulfill({ json: {
+            fetchedAt: now, controls: true, libraries: [{ id: 'Kitchen', name: 'Kitchen' }, { id: 'Living room', name: 'Living room' }], items,
+        } }));
+        await openDashboard(page, '#4');
+        const tile = page.locator('[data-widget-type="homeassistant"]').first();
+        await tile.waitFor();
+        await page.waitForTimeout(800);
+        await snap(page, tile, '15-home-assistant.jpg', { pad: 10 });
+    });
+});
+
+test('17 animation speed', async ({ page }) => {
+    await prepare(page);
+    await openConfig(page, 'appearance');
+    const field = page.locator('[data-appearance-select="animationSpeed"]').first();
+    await field.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(400);
+    await snap(page, page.locator('.config-field-row', { has: page.locator('[data-appearance-toggle="viewAnimationsEnabled"]') }).locator('xpath=..'), '17-animation-speed.jpg', { pad: 14 });
+});

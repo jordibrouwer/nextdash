@@ -886,7 +886,7 @@ A bookmark row shows its icon, name, optional tags, the shortcut letters and, wh
 
 **A key legend** under the grid shows the four most useful keys once you start moving with the keyboard; switch it under Behavior → Keyboard & search.
 
-**Occasional tips.** Now and then the dashboard shows one keyboard tip, never the same one twice. Switch them off under Behavior → Privacy & sync → Onboarding.
+**Occasional tips.** Now and then the dashboard shows one keyboard tip: at most one in any 24 hours, counted across your devices, never the same one twice and never over a modal. Switch them off under Behavior → Privacy & sync → Onboarding.
 
 <a id="corner-cards"></a>
 
@@ -896,9 +896,9 @@ A bookmark row shows its icon, name, optional tags, the shortcut letters and, wh
 - **Kept links** — ten or more links you kept have waited over a month in **Unsorted**. **Open Unsorted** shows them; the card never files or deletes anything.
 - **Tag suggestions** — a round of tag review when there is something worth accepting ([§10.4](#104-tag-suggestions)).
 - **Clock and weather** — asks for a town, a clock and a unit when no location is set.
-- **Install count** — says once that the daily count of installs is on, what leaves the server, and offers **Turn it off** ([§23.7](#237-what-nextdash-contacts)).
+- **Install count** — says once that the daily count of installs is on, what leaves the server, and offers **Turn it off** ([§23.7](#237-what-nextdash-contacts)). It waits two days after the analytics question, so the two privacy cards never arrive in one visit.
 - **Moving blocks** — once, a see-through copy of the first category glides to its next place to show that blocks can be moved, and a card under its `//` offers **Try it**. The first time you pick a block up, a card beside the landing box lists the keys until **Got it**.
-- **Others** — browser notifications, the theme browser, spreading a category and the tour of what moved.
+- **Others** — browser notifications, the theme browser and the tour of what moved.
 
 Each review card has a switch under Behavior → Privacy & sync → Onboarding. The same place lists every card with **Answered** or **Not shown yet**, and **Show again** brings an answered one back the next time its moment arrives.
 
@@ -1245,7 +1245,7 @@ A toolbar appears with **Move**, **Tags**, **Pin**, **Checking**, **Open**, **Co
 
 ### 7.6 The cheat sheet
 
-**`!`** or **`F1`** opens the cheat sheet with a filter box. It opens on the section for the view you are in, and lists more than 200 keys and commands across Navigation, Bookmarks, Widgets, Selecting several, the **Bookmarks view**, the **Inbox view** and **Inbox triage**, the **Containers view**, the Config view, search modes and every command. A printable version is linked at the top of Config → Help and at the top of this manual. Keys cannot be rebound.
+**`!`** or **`F1`** opens the cheat sheet with a filter box. It opens on the section for the view you are in, and lists more than 200 keys and commands across Navigation, Bookmarks, Widgets, Selecting several, the **Bookmarks view**, the **Tag view**, the **Inbox view** and **Inbox triage**, the **Containers view**, the Config view, search modes and every command. A printable version is linked at the top of Config → Help and at the top of this manual. Keys cannot be rebound.
 
 While a panel is open, the grid behind it does not react. `Tab` stays inside the panel, and `Escape` closes it and puts focus back where it was.
 
@@ -1599,7 +1599,8 @@ A file is at most 2 MB.
 - The **header** shows where you came from, the tag (or tags), and a line of figures: how many bookmarks, on how many pages, what was opened last and most, and how many are broken. **Open all** opens every bookmark shown, **Copy links** copies their addresses, and **Manage tag** can **Rename** the tag, **Merge into another tag**, or **Remove from all bookmarks**. Each of these can be undone.
 - The **rail** on the side lists **Related tags** (click one to switch to it, `Shift`+click to add it), the **Pages** the bookmarks live on, and a **Health** filter for broken or never opened bookmarks.
 - The **toolbar** has a search box (`/` jumps to it), a count such as "12 of 40", and a sort menu. Clicking a column head sorts by it too. The table shows each bookmark's name and site, its other tags, its page, how often and when it was last opened, and its score.
-- Move with `↑` `↓`, `g` and `G` jump to the first and last row, `Enter` opens the bookmark, `i` opens its side panel (details, tags, health, with **Open** and **Edit**), and `e` opens the bookmark form.
+- Move with `↑` `↓`, `g` and `G` jump to the first and last row, `Enter` opens the bookmark, `i` opens its side panel (details, tags, health, with **Open** and **Edit**), and `e` opens the bookmark form. `a` adds the suggested tags of the focused row ([§10.4](#104-tag-suggestions)). Each row carries the site's icon.
+- On a row, `Shift` plus `E`, `P`, `T`, `M`, `D`, `C`, `R`, `L` or `J` does what it does on the dashboard: edit, pin, tags, move, delete, check mode, health, share link and QR code. `Delete` deletes, `Ctrl/Cmd + C` copies the address, and the row menu is the dashboard's. The cheat sheet has a **Tag view** section with all of it ([§7.6](#76-the-cheat-sheet)).
 - `x` ticks a row. `Alt`+click ticks one, `Shift`+click ticks a range, and the tick in the header ticks everything shown. A bar then offers **Open**, **Move to…**, **Delete** and **Clear**. **Move to…** takes a page; categories belong to one page, so they are offered only when every bookmark is on the same one.
 - `Escape` lets go of one thing at a time: the side panel, then the selection. After that it leaves the view and takes you back to the page you opened it from. In the search box, `Escape` first clears what you typed. The home icon and your browser's Back button do the same.
 - Ways in: the tag cloud, `t` on a selected bookmark (it opens the view for that bookmark's tag), or `:filter <tag>`.
@@ -1627,10 +1628,16 @@ A file is at most 2 MB.
 
 - **Your rules** (the **Your rules** tab) — `github.com → #code`, a site or a site plus one section. They win over everything.
 - **Your own tags** — when most tagged bookmarks on a site share a tag, the rest are offered it.
-- **A shipped list** of 463 subjects and the sites that belong to them. Your own words win: a subject called `dev` is offered as `#code` if that is what you use.
+- **A shipped catalogue** of 471 subjects and some 51,000 sites that belong to them. Your own words win: a subject called `dev` is offered as `#code` if that is what you use.
+- **Wikidata** (on by default) — for a site the catalogue does not know, the server asks Wikidata once what it is. Only the host name leaves the server, and only for hosts on the public internet; an address on your network never goes out. Answers are kept for 90 days, and for 30 when Wikidata does not know the site. Switch it off with **Look up unknown sites on Wikidata** in this tab's menu.
 - **Read their pages** (optional) — fetches the pages nothing else can place and files them by what they are about. It says what it will cost, shows progress and can be stopped. Only a dozen keywords per page are kept.
 
 Each row names its source and its count. A click on the row or its count opens the group, so single bookmarks can be left out. **Apply** tags the rest (undo in the toast); **No thanks** stops the proposal from coming back, and refusals are listed with a way back. At most 25 rows show at a time. **Forget the scanned keywords** (here or under Data & backups → Icons & previews) clears what *Read their pages* kept.
+
+**In the rows.** The tag view and the Bookmarks view show offers in the rows themselves: a dashed chip after a row's tags — click it to add the tag, **×** to turn it down — and a line over the list, *7 tag suggestions · Add all*. A tag you take off by hand is not offered again. These offers come from the catalogue, your rules, your own tags and pages already read; opening a view never goes online by itself. **Find tags** asks further: in the tag view its menu offers *Find tags for these N* (the catalogue, then Wikidata) and *Read pages of these N* (slower, it asks each site), with **Add found tags right away**; the row menu and the selection bar do the same for one row or the ones you ticked, and so does the Bookmarks view in its side panel and selection bar. In the bookmark form and the tag popover, **Read page** reads that one page when nothing else turns up.
+
+<p align="center"><img src="screenshots/manual.md/10-tag-view-offers.jpg" alt="The tag view for dev: a line reading 3 tag suggestions and Add all under the figures, and dashed suggestion chips after the tags of three rows" width="720"></p>
+<p align="center"><sub>Suggestions in the rows of the tag view, with <b>Add all</b> and <b>Find tags</b>.</sub></p>
 
 The same proposals appear, one bookmark at a time, in the bookmark form, the Bookmarks view's side panel, `Shift + T` and the selection's tag picker ([§10.1](#101-tags-on-a-bookmark)). Turning one down there counts as **No thanks** here, and the list on this tab follows.
 
@@ -1810,7 +1817,7 @@ Beside it, the **Collection ▾** menu gathers what a whole-collection toolbar u
 - **Checks** — **Retest all**, **Open broken links…**, **Fetch previews…**, **Checking off…**.
 - **Export CSV**, **Refresh report** (`Shift + R`), and **Health settings**.
 
-An **ⓘ** beside the menu explains the view, and **Tour** next to it plays a ten-step walkthrough of it ([§17](#view-tours)).
+An **ⓘ** beside the menu explains the view, and **Tour** next to it plays a five-step walkthrough of it ([§17](#view-tours)).
 
 <a id="118-collection-health"></a>
 
@@ -2083,7 +2090,7 @@ Inside a window, checks still run and the heartbeat still records them, but a fa
 - A bookmark with news carries a count on its row, and the **Fresh** collection lists them, newest first. Opening the bookmark clears the count.
 - Feeds are polled on the background re-check interval with conditional requests. A feed that fails five times in a row is dropped; the Feeds widget shows it with **Retry**.
 - The bookmark editor shows a **Feed** line when there is one. `status:feed` / `-status:feed` search for them. **Mark rows that publish** (off by default) puts a quiet dot on those rows.
-- Fresh stores no articles, only counts. It is off by default because it contacts other servers on a schedule. A walkthrough is under Config → Help → Monitoring.
+- Fresh stores no articles, only counts. It is off by default because it contacts other servers on a schedule. The guide is under Config → Help → Monitoring.
 
 <a id="127-keeping-a-copy-of-a-page"></a>
 
@@ -2267,7 +2274,7 @@ An Unsorted bookmark stays off the dashboard, the tag cloud, smart collections a
 
 Inbox settings moved to their own config section — **Config → Inbox** ([§17.6](#176-config-inbox)): showing it in the header, quick-adding a pasted URL, keeping links without filing them, filing a kept link where its neighbours already are, the paste destination, and removing an inbox entry once it is promoted.
 
-The first visit plays a five-step tour: the waiting room the inbox is, the three ways a link leaves (promote, keep, delete), where a kept link goes (Bookmarks → Unsorted), how to keep one, and the keys. **Tour**, above the list, plays it again; so does Behavior → Privacy & sync → Onboarding.
+The first visit plays a four-step tour: the waiting room the inbox is, reading, snoozing and noting a link, the three ways a link leaves (promote, keep, delete) and where a kept link goes (Bookmarks → Unsorted), and triage with its keys. **Tour**, above the list, plays it again; so does Behavior → Privacy & sync → Onboarding.
 
 <sub>[↑ Contents](#table-of-contents)</sub>
 
@@ -2289,7 +2296,7 @@ The **Containers view** shows the Docker containers on the machine nextDash runs
 
 ### 14.1 Opening it
 
-Open it with **`Shift + Y`**, the Containers icon in the header, `:docker`, or `/#docker`. Search also finds containers by name, and the **Containers** widget's tile opens the view. Two tabs sit above the list: **Containers** and **Disk** ([§14.7](#147-disk)). The **ℹ** beside **Tour** in the header gives a five-part reference: the list, acting on containers, the side panel, updates and Disk. **Tour** plays a fifteen-step walkthrough with moving drawings — offered once on your first visit, and once more after an upgrade that changed the view ([§17](#view-tours)).
+Open it with **`Shift + Y`**, the Containers icon in the header, `:docker`, or `/#docker`. Search also finds containers by name, and the **Containers** widget's tile opens the view. Two tabs sit above the list: **Containers** and **Disk** ([§14.7](#147-disk)). The **ℹ** beside **Tour** in the header gives a five-part reference: the list, acting on containers, the side panel, updates and Disk. **Tour** plays a six-step walkthrough with moving drawings — offered once on your first visit ([§17](#view-tours)).
 
 <a id="142-the-list"></a>
 
@@ -2616,6 +2623,15 @@ These read one server, set once under Config → Unraid ([§15.6](#156-unraid-wi
 | **Seerr** | Requests in Overseerr or Jellyseerr, under *Pending*, *Approved* and *Available*, with who asked and the poster. Show every request or one state, films, series or both, from everyone or one person |
 | **qBittorrent**, **SABnzbd** | What is downloading, paused and finished, with progress, speed and time left, and the client's speeds and counts on top. As one list or a tab per part (*Downloading*, *Paused*, *Done*). Without posters, and in the order you choose |
 
+*What is going on at home?*
+
+| Kind | Shows |
+|---|---|
+| **Home Assistant** | The entities you choose, with their value and since when, as loose items with their room, or a tab per room. Lights, switches, fans, scenes and scripts can be switched from the tile; locks, covers, doors and sensors only report |
+
+<p align="center"><img src="screenshots/manual.md/15-home-assistant.jpg" alt="The Home Assistant tile: a ceiling light switched on, a temperature of 21.4 °C, a reading lamp switched off, a Start button for the scene Movie night and a closed back door, each with its room" width="380"></p>
+<p align="center"><sub>The Home Assistant tile: loose items, each with its room.</sub></p>
+
 And the **Custom** widget, which reads any service that answers with JSON ([§15.5](#155-the-custom-widget)).
 
 A tile with a row limit shows what it left out (*5 of 12*). A figure on a tile is a link to the rows behind it.
@@ -2667,6 +2683,8 @@ Widgets share one order with the categories and are moved on the dashboard: drag
 | SABnzbd | Config → General → API Key | — |
 
 Then the settings of the kind. Sonarr and Radarr: **Show** (what is coming, what is downloading, or both) and **Look ahead** (1–30 days). Seerr: **Show** (every request, waiting for approval, approved and on its way, or arrived) and **Films or series**. qBittorrent and SABnzbd: **Show** (everything, downloading, paused or finished), **Order** (newest, furthest along or fastest first), **Leave out what has finished**, **Leave out the speeds on top**, and a layout of **One list** or **A tab per part**. All of them: **A click** (open the item in the service, or show its details here first), where it opens, **Items to show** and **Refresh every** — a minute at least for the first three, 15 seconds for the download clients, which change while you look. The keys stay on the server, as with Jellyfin. Seerr's posters come from TMDB, which your server fetches without any key. A failure keeps the last answer and says how old it is; a refused key or sign-in says so on the tile.
+
+**Home Assistant** — fill in the address of your Home Assistant (`http://homeassistant.local:8123`) and a **long-lived access token** (Home Assistant: your profile, under Security) and press **Connect**. The server lists your entities in a searchable list you can narrow by kind (lights, switches, sensors, scenes and so on); pick up to 60 and set their order with ↑ and ↓. Then the **Layout** (a **list** of loose items, or a **strip** with a tab per room), **Group by** (room, kind or nothing), **Show when it last changed**, what **A click** does, where it opens, **Items to show** and **Refresh every** (15 seconds at least, 30 by default). Lights, switches, fans and `input_boolean` entities switch with one click and a scene or a script has a **Start** button; switching needs the write token, like the other actions. A lock, a cover or a door is shown and never operated. The token stays on the server.
 
 <img src="screenshots/manual.md/15-notes.jpg" alt="The Notes tile: a short checklist with two items ticked and struck through, and Edit and Open large" width="380" align="left">
 
@@ -3164,11 +3182,16 @@ it was drawn for, and picking a theme brings its answer with it.
 | **Glow** | **Follow the theme** (default) · Off · Soft · Full — how far the theme's colour carries around a surface. Flat has no glow. |
 | **Effects** | **Follow the theme** (default) · Off · Held back · Full — how loudly the character is drawn: the shine, the glow, the grain, and how round the corners are. Off leaves the palette and nothing else. |
 | **Enable animations** | On · Off — off stills the motion across the app |
+| **Animations in views and modals** | On (default) · Off — the Bookmarks, Inbox, Containers and tag views, and the modals, rise in as they open. **Enable animations** off still wins. |
+| **Animation speed** | Slow · **Normal** (default) · Fast — how quickly those views and modals come in. |
 | **Card glass** | **Follow the theme** (default) · Own — at depth Glass, how solid the panes are (**Opacity**) and how far the page blurs behind them (**Blur**), with **A thin edge round the panes** if you like. **Text on a pane** shows the contrast that is left, and warns when it gets low. With a layout that draws no cards (Default, Compact, Masonry, List), *Own* gives every category a pane of its own; the **Layout preset** is repeated here for that reason. When the theme on screen is not at depth Glass, a button offers to switch to it. |
 | **Use these for every theme** | Off (default), depth, glow, effects, the backdrop and the card glass belong to the theme you are on and each theme keeps its own; on, they hold across the whole install and a theme brings nothing of its own. |
 | **This theme** | **Back to the theme's own** puts them back to what the theme asks for. |
 | **Text contrast** | Soft · Normal · High · Maximum — how far the fainter text sits from its surface |
 | **Favicon harmonization** | Off · On, with **Muted**, **Tinted** or **Overlay** and an intensity. Stored per theme, so the light and dark halves are set separately. |
+
+<p align="center"><img src="screenshots/manual.md/17-animation-speed.jpg" alt="Appearance, Text and motion: Enable animations, Animations in views and modals and the Animation speed choice set to Normal" width="560"></p>
+<p align="center"><sub>Appearance → Text and motion: the two switches and the speed.</sub></p>
 
 While Depth, Glow and Effects say *Follow the theme*, changing one belongs to
 the theme on screen: switch away and back and it is still there, and every
@@ -3485,9 +3508,9 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 
 **Help** covers Getting started, Tips, Configuring, Appearance, Structure & bookmarks, the **Bookmarks view**, Widgets, Search & keyboard, **Checks & health**, Monitoring, Inbox, **Containers**, Statistics, Data & hosting and Logs. The search above the tabs covers every tab and About. Each topic has a 🔗 button that copies a link to it. A topic about something that can be switched off says whether it is on for you, with a button to the setting. **Tips** lists every keyboard tip, grouped, with its own filter. **Saving a link from anywhere** (Inbox tab) builds a bookmarklet for this install.
 
-**Guided tours.** Six walkthroughs run over the real page rather than a picture of it: *What has changed*, *First steps*, *Inbox*, *Fresh*, *Widgets* and *Spreading a category*. Replay any of them from **Behavior → Privacy & sync → Onboarding**, or by name from the command palette — `:changes` opens the first. *What has changed* is the one offered by a card in the corner after an upgrade that moved things: its steps say where things now are, and where a default changed the step hands the old arrangement back in one click. The release notes stay separate — see *What's new* below.
+**Guided tours.** Seven tours run over the real page rather than a picture of it: *What has changed*, *First steps*, *The dashboard*, *Inbox*, *Bookmarks view*, *Containers* and *Widgets*. Each is short, four to seven steps, and covers the main things; the rest is in Help. Replay any of them from **Behavior → Privacy & sync → Onboarding**, or by name from the command palette — `:changes` opens the first. *What has changed* is the one offered by a card in the corner after an upgrade that moved things: its steps say where things now are, and where a default changed the step hands the old arrangement back in one click. The release notes stay separate — see *What's new* below.
 
-**The dashboard tour.** Twenty steps with moving drawings, offered once after the quick-start card: it opens on what is new — web search, app icons, the theme editor and the Unraid widgets — then the theme browser, the backdrops and the looks, then walks pages and categories, search, shortcuts, the cursor, adding, link checks, the Bookmarks view, the inbox, Containers, widgets, the first keys to learn, Config and the cheat sheet. After an update to a version that changed it, every reader is offered it once more, after the release notes have been read. Replay it from the same Onboarding list or with `:tour`.
+**The dashboard tour.** Seven steps with moving drawings, offered once after the quick-start card: pages, categories and bookmarks; typing to search; two keys to open and Shift to act; adding by paste, `+` or the extension; the tag cloud and a view per tag; the Bookmarks, Inbox and Containers views; and making it yours, with the cheat sheet and Help. Replay it from the same Onboarding list or with `:tour`.
 
 
 <details>
@@ -3499,7 +3522,7 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 
 <a id="view-tours"></a>
 
-**The Bookmarks view and Containers tours.** Two more tours play as drawings in a window, offered once on your first visit to each view. A **Tour** button beside the **ℹ** at the top of the view plays it again whenever you want. The Bookmarks view tour has ten steps: the rail, the three ways to check a link, a failure that says why, pages that change, the charts for one bookmark, Collection health, alerts, clearing the backlog and the keys. The Containers tour has fifteen: the list, its state at a glance, acting on containers, the side panel, updates, Config, your columns, a web UI and its bookmark, updates at night with a rollback, app icons, the charts, logs and Disk. After an upgrade that changed Containers, the tour is offered once more; its first step says it is an update, and the new or changed steps carry a **New** mark. **Behavior → Privacy & sync → Onboarding** replays each tour, these two included.
+**The view tours.** The Bookmarks view, Containers, the Inbox and Config → Widgets each have a tour of their own, drawn in a window and offered once, the first time you visit. A **Tour** button beside the **ℹ** at the top of the view plays it again whenever you want. The Bookmarks view tour has five steps: the list and its rail, the three ways to check a link, charts and collection health, alerts, and clearing the backlog. The Containers tour has six: the list, acting on containers, the side panel, updates with a way back, Disk, and settings and alerts. The Inbox tour has four and the Widgets tour four: what a widget shows, the catalogue, the Custom widget, and how a widget behaves on the page. **Behavior → Privacy & sync → Onboarding** replays each of them.
 
 **About** has two tabs: **About nextDash** (what the project is, and links to nextdash.cc, GitHub, jordibrw.nl and Ko-fi) and **News & features** (every post from nextdash.cc, every release and every setting worth switching on, with source filters, and a button that bookmarks nextdash.cc so Fresh counts its posts).
 
@@ -4089,7 +4112,7 @@ It starts closed because it answers questions about every bookmark. The `Origin`
 
 nextDash can send **anonymous usage statistics** to a self-hosted [Umami](https://umami.is) instance at `stats.nextdash.cc`. It is **off until you turn it on**. The aim is to learn which features are used and what can be improved.
 
-**Install count** — separate from the analytics below, and **on by default**. Once a day the server sends one request to `stats.nextdash.cc` with a random install id and the release you run, so the project can say how many installs exist. On Unraid, which sets `HOST_OS=Unraid` in every container, it also says Unraid. Nothing else: no address, no settings, no bookmarks, no counts. The id lives in the file `install-id` in the data folder; delete it for a new one. Turn it off under **Behavior → Privacy & sync → Count this install**, or for the whole server with `DISABLE_TELEMETRY=true`, which also stops the analytics below.
+**Install count** — separate from the analytics below, and **on by default**. Once a day the server sends one request to `stats.nextdash.cc` with a random install id and the release you run, so the project can say how many installs exist. On Unraid, which sets `HOST_OS=Unraid` in every container, it also says Unraid. Nothing else: no address, no settings, no bookmarks, no counts. The id lives in the file `install-id` in the data folder; delete it for a new one. The card that announces it waits two days after the analytics question. Turn it off under **Behavior → Privacy & sync → Count this install**, or for the whole server with `DISABLE_TELEMETRY=true`, which also stops the analytics below.
 
 - **Turning it on or off** — the card on the dashboard (*Turn on*, *What is recorded?*, *No thanks*), **Config → Behavior → Privacy & sync → Privacy-friendly analytics**, or `:telemetry on` / `:telemetry off`. The page reloads, because the tracker script is only added to the page when analytics is on. Closing the card without answering asks again later; an answer is final.
 - **For the whole server** — `DISABLE_TELEMETRY=true` (also `1`, `yes`, `on`) turns it off for everyone and greys out the switch.

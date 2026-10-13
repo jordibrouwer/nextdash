@@ -246,6 +246,25 @@ function tidyDemoData(dir, patch) {
         ]);
     }
 
+    // One shot only: a page with the Home Assistant tile (its answer is mocked).
+    if (patch === 'homeassistant') {
+        const pages = readJSON(path.join(dir, 'pages.json'));
+        pages.order = [...(pages.order || []), 4];
+        writeJSON(path.join(dir, 'pages.json'), pages);
+        const widgets = [{
+            id: 'w_h00000000001',
+            type: 'homeassistant',
+            config: { server: 'http://homeassistant.local:8123', layout: 'list', groupBy: 'none', entities: ['light.ceiling', 'sensor.temperature', 'light.reading', 'scene.movie_night', 'binary_sensor.back_door'] },
+        }];
+        writeJSON(path.join(dir, 'bookmarks-4.json'), {
+            page: { id: 4, name: 'Home' },
+            categories: [],
+            widgets,
+            blockOrder: widgets.map((w) => w.id),
+            bookmarks: [],
+        });
+    }
+
     // One shot only: a page of the seven Unraid widgets.
     if (patch === 'unraid') {
         const pages = readJSON(path.join(dir, 'pages.json'));
