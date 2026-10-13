@@ -1,1 +1,109 @@
-{}
+{
+  "_comment": "Wikidata class -> catalogue subject. \"\" = known, says nothing about what a site is for. _adult = classes that drop a site outright.",
+  "_adult": ["Q4373046", "Q11074464", "Q185529", "Q30941437", "Q90404711", "Q84326403", "Q110643339", "Q185029", "Q1045537"],
+
+  "Q4830453": "", "Q35127": "", "Q891723": "", "Q6881511": "", "Q43229": "", "Q783794": "", "Q726870": "",
+  "Q431289": "", "Q620615": "", "Q163740": "", "Q1194970": "", "Q5": "", "Q658255": "", "Q1589009": "",
+  "Q19967801": "", "Q21980538": "", "Q167270": "", "Q1668024": "", "Q75": "", "Q186165": "", "Q189210": "",
+  "Q18388277": "", "Q11661": "", "Q80700183": "", "Q173799": "", "Q56611700": "", "Q122759350": "",
+  "Q118140435": "", "Q1145523": "", "Q459221": "", "Q219577": "", "Q161726": "", "Q167037": "",
+  "Q170584": "", "Q123819226": "", "Q123819222": "", "Q65553774": "", "Q334453": "", "Q6832945": "",
+  "Q20983877": "", "Q10929058": "", "Q11024": "", "Q11016": "", "Q336": "", "Q21157865": "",
+  "Q110702998": "", "Q1641122": "", "Q241317": "", "Q218616": "", "Q341": "", "Q40056": "", "Q21743174": "",
+  "Q166142": "", "Q7397": "", "Q187939": "", "Q618779": "", "Q211236": "", "Q349": "", "Q1172284": "",
+  "Q11660": "", "Q870780": "", "Q117246174": "", "Q1513879": "", "Q115305900": "", "Q5583816": "",
+  "Q19509097": "", "Q137183855": "", "Q14167874": "", "Q515": "", "Q1549591": "", "Q769603": "",
+  "Q7897276": "", "Q180673": "", "Q1136601": "", "Q21561328": "", "Q35657": "", "Q1006876": "",
+  "Q21272231": "", "Q1002812": "", "Q21503295": "", "Q27020041": "", "Q18608583": "", "Q112144412": "",
+  "Q104605989": "", "Q877998": "", "Q134468886": "", "Q10876391": "", "Q15078788": "", "Q110484020": "",
+
+  "Q11032": "news", "Q1110794": "news", "Q17232649": "news", "Q1153191": "news", "Q11030": "news",
+  "Q11033": "news", "Q192283": "news", "Q1193236": "news", "Q38926": "news", "Q28933155": "news",
+  "Q1684600": "news", "Q1358344": "news", "Q2085381": "publishing", "Q3972943": "publishing",
+  "Q4202064": "publishing", "Q96888669": "journals", "Q737498": "journals", "Q5633421": "journals",
+  "Q45400320": "open-access", "Q41298": "magazine", "Q1002697": "magazine", "Q847906": "magazine",
+  "Q1714118": "magazine", "Q12340140": "magazine", "Q6545508": "magazine", "Q9397629": "fashion",
+  "Q3267592": "cars", "Q2155573": "news", "Q5380486": "entertainment-news", "Q95155801": "factcheck",
+
+  "Q1616075": "television", "Q2001305": "television", "Q561068": "television", "Q1254874": "television",
+  "Q5009242": "television", "Q721830": "television", "Q15416": "television", "Q5398426": "television",
+  "Q1126006": "broadcasting", "Q14350": "radio", "Q1061197": "radio", "Q841645": "streaming",
+  "Q59152282": "streaming", "Q723685": "streaming", "Q63241860": "streaming", "Q220499": "streaming",
+  "Q559856": "video", "Q15590336": "music", "Q746359": "music", "Q59825643": "music",
+  "Q24634210": "podcasts", "Q1331793": "media", "Q56611639": "media", "Q19595701": "media",
+  "Q11396960": "media", "Q11424": "", "Q130735522": "moviedatabase", "Q1414426": "moviedatabase",
+  "Q41253": "cinema", "Q20679540": "cinema", "Q24354": "theatre",
+
+  "Q126793": "shopping", "Q507619": "shopping", "Q484847": "ecommerce", "Q4382945": "ecommerce",
+  "Q212930": "ecommerce", "Q3390477": "shopping", "Q213441": "shopping", "Q216107": "shopping",
+  "Q2549179": "shopping", "Q108255949": "shopping", "Q41795373": "secondhand", "Q220695": "shopping",
+  "Q587992": "price-comparison", "Q125265855": "classifieds", "Q11828862": "fashion",
+  "Q76213285": "fashion", "Q12684": "fashion", "Q1618899": "fashion", "Q607081": "fashion",
+  "Q76216568": "shoes", "Q5915560": "shoes", "Q161439": "jewelry", "Q12752882": "beauty",
+  "Q18043413": "grocery", "Q27970162": "diy", "Q811530": "diy", "Q76215292": "home", "Q14745": "home",
+  "Q42414514": "bookstore", "Q131590040": "pets", "Q132180130": "auto-parts", "Q64027599": "cars",
+  "Q73768396": "electronics", "Q5358497": "electronics", "Q132898730": "electronics",
+  "Q56598901": "electronics",
+
+  "Q837171": "finance", "Q57774188": "finance", "Q43015": "finance", "Q806718": "banking",
+  "Q22687": "banking", "Q730038": "banking", "Q650241": "banking", "Q16319025": "fintech",
+  "Q986008": "payments", "Q29584334": "finance", "Q2073644": "broker", "Q11691": "markets",
+  "Q2143354": "insurance", "Q2518196": "insurance", "Q43183": "insurance",
+  "Q1660132": "real-estate", "Q1660104": "real-estate", "Q61061942": "real-estate",
+
+  "Q3220391": "social", "Q202833": "social", "Q92438": "microblogging", "Q6576792": "online-community",
+  "Q168210": "forum", "Q2462003": "messaging", "Q30849": "blog", "Q847959": "books",
+
+  "Q7094076": "reference", "Q8513": "reference", "Q615699": "reference", "Q171": "reference",
+  "Q15633582": "reference", "Q123407493": "reference", "Q106513246": "reference",
+  "Q3327521": "dictionary", "Q212805": "library", "Q1789476": "library", "Q47307": "genealogy",
+  "Q33270056": "genealogy", "Q29043181": "sports", "Q55341040": "game-database",
+
+  "Q7889": "games", "Q941594": "games", "Q1137109": "games", "Q210167": "games", "Q1368944": "games",
+  "Q175173": "games", "Q1610017": "games", "Q130500293": "games", "Q72398691": "gaming-news",
+  "Q81989119": "game-deals", "Q84324516": "modding",
+
+  "Q880371": "desktop-apps", "Q1058914": "desktop-apps", "Q1254596": "cloud", "Q483639": "cloud",
+  "Q914359": "cloud-storage", "Q1343205": "file-transfer", "Q2721136": "photography",
+  "Q5892272": "hosting", "Q3077240": "git", "Q9143": "dev", "Q638608": "dev", "Q3814081": "android",
+  "Q207170": "documents", "Q4182287": "search", "Q19541": "search",
+
+  "Q2401742": "telecom", "Q2401749": "telecom", "Q1058891": "telecom", "Q11371": "telecom",
+  "Q418": "telecom", "Q1941618": "telecom",
+
+  "Q46970": "flights", "Q1757562": "flights", "Q644371": "flights", "Q94993988": "flights",
+  "Q1248784": "flights", "Q49389": "travel", "Q9323634": "travel", "Q1276157": "travel",
+  "Q217107": "travel", "Q118710708": "travel", "Q1495452": "hotels", "Q1631129": "hotels",
+  "Q27686": "hotels", "Q57590076": "hotels", "Q946499": "cruises", "Q291240": "car-rental",
+  "Q10438042": "transit", "Q178512": "transit", "Q17102188": "trains", "Q3565868": "trains",
+  "Q177777": "shipping",
+
+  "Q18534542": "restaurants", "Q18509232": "restaurants", "Q11707": "restaurants",
+  "Q171141": "restaurants", "Q81799": "restaurants", "Q18654742": "restaurants",
+  "Q76212517": "coffee", "Q41958": "restaurants", "Q540912": "grocery", "Q10932402": "food-delivery",
+
+  "Q190117": "cars", "Q786820": "cars", "Q10429667": "cars", "Q786803": "cars",
+
+  "Q31207": "health", "Q15067276": "health", "Q4287745": "health", "Q1774587": "health",
+
+  "Q327333": "government", "Q20857065": "government", "Q1752939": "government",
+  "Q7603694": "government", "Q123155338": "government", "Q3343298": "government",
+  "Q2659904": "government", "Q573607": "tax", "Q20858006": "government", "Q3907564": "government",
+  "Q110417190": "government", "Q19414242": "government", "Q2039348": "government", "Q493522": "government", "Q15726209": "school",
+  "Q1951366": "energy", "Q1326624": "energy", "Q474883": "energy",
+
+  "Q38723": "university", "Q875538": "university", "Q3918": "university", "Q62078547": "university",
+  "Q5341295": "education", "Q2385804": "education", "Q1068473": "education", "Q1074158": "education",
+  "Q28754053": "education", "Q57285129": "education",
+
+  "Q708676": "charities",
+
+  "Q39835986": "sports", "Q2485448": "sports", "Q15991290": "sports", "Q623109": "sports",
+  "Q476028": "soccer", "Q17156793": "sports", "Q114466": "sports",
+
+  "Q189409": "gambling", "Q11416": "gambling", "Q770881": "gambling",
+  "Q7243180": "events", "Q62069207": "events",
+
+  "Q1340449": "consumer", "Q3491832": "consumer", "Q580148": "jobs", "Q5412217": "freelance",
+  "Q7163": "politics"
+}

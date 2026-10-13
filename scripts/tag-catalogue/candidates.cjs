@@ -4,11 +4,12 @@
 /**
  * Step 1 of the catalogue build: which sites to consider.
  *
- *   node scripts/tag-catalogue/candidates.cjs <crux-dir> [--max-rank 10000] [cc ...]
+ *   node scripts/tag-catalogue/candidates.cjs <crux-dir> [--max-rank 10000] [cc[:rank] ...]
  *
  * <crux-dir> holds one <cc>.csv.gz per country from the Chrome UX Report top
  * lists (origin,rank; rank is a bucket: 1000, 5000, 10000, ...). Reads the
- * countries named, keeps origins up to --max-rank, reduces each to a bare host
+ * countries named, keeps origins up to --max-rank (or the rank after the
+ * country, cn:50000), reduces each to a bare host
  * the way patternsFor() does, and writes cache/candidates.json:
  *
  *   { "nu.nl": { "nl": 1000, "be": 10000 }, ... }
@@ -36,14 +37,16 @@ if (at >= 0) {
 const countries = args.length ? args : ['us', 'gb', 'nl', 'be'];
 
 const out = {};
-countries.forEach((cc) => {
+countries.forEach((spec) => {
+    const [cc, own] = spec.split(':');
+    const limit = own ? Number(own) : maxRank;
     const file = path.join(dir, `${cc}.csv.gz`);
     const lines = zlib.gunzipSync(fs.readFileSync(file)).toString('utf8').split('\n');
     let kept = 0;
     lines.slice(1).forEach((line) => {
         const [origin, rankText] = line.split(',');
         const rank = Number(rankText);
-        if (!origin || !rank || rank > maxRank) return;
+        if (!origin || !rank || rank > limit) return;
         let host;
         try {
             host = new URL(origin).hostname.toLowerCase().replace(/^www\./, '');
@@ -55,7 +58,7 @@ countries.forEach((cc) => {
         if (!out[host][cc] || rank < out[host][cc]) out[host][cc] = rank;
         kept += 1;
     });
-    console.log(`${cc}: ${kept} origins up to rank ${maxRank}`);
+    console.log(`${cc}: ${kept} origins up to rank ${limit}`);
 });
 
 const cache = path.join(__dirname, 'cache');
