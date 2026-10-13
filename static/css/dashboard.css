@@ -5823,14 +5823,20 @@ body[data-grid-keys="shown"] .dashboard-legend-more {
 }
 
 /* ── Filter this page (Shift+F) ─────────────────────────────────────────────
-   A slim bar above the grid, not a panel: it narrows what is already on screen
-   and disappears again with one Escape. Rows and empty categories are hidden
-   with a class rather than re-rendered, so the layout, the keyboard cursor and
-   any selection survive the filter. */
+   A bar above the grid, not a panel: it narrows what is already on screen and
+   disappears again with Escape. Rows and empty categories are hidden with a
+   class rather than re-rendered, so the layout, the keyboard cursor and any
+   selection survive the filter.
+
+   Drawn as a row of the prompt family (> search, : commands, ? finders): the
+   same mode pill, the same prompt weight, the same <kbd> chips. It does not
+   float like they do, but it is the same kind of thing and should look it.
+   The mode colour is --accent-warning, so every look carries its own. */
 .grid-filter-bar {
+    --grid-filter-accent: var(--accent-warning);
     display: flex;
     align-items: center;
-    gap: var(--space-2, 0.5rem);
+    gap: var(--space-3, 0.75rem);
     /* It sits above the grid rather than in it. The width and the offset are
        measured from the grid and handed here by dashboard-grid-filter.js: the
        grid's own width comes from how many fixed-width columns fit, which no
@@ -5839,12 +5845,33 @@ body[data-grid-keys="shown"] .dashboard-legend-more {
     width: var(--grid-filter-width, 100%);
     box-sizing: border-box;
     /* The offset comes after the shorthand, which would otherwise reset it. */
-    margin: 0 0 var(--space-2, 0.6rem);
+    margin: 0 0 var(--space-3, 0.75rem);
     margin-left: var(--grid-filter-offset, 0);
-    padding: var(--space-1, 0.3rem) var(--space-2, 0.5rem);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--layout-radius-sm, 8px);
-    background: var(--background-secondary);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.85rem);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 75%, transparent);
+    border-radius: var(--radius-5, 8px);
+    background: color-mix(in srgb, var(--background-modal, var(--background-secondary)) 90%, transparent);
+    transition: border-color 120ms ease;
+}
+
+.grid-filter-bar:focus-within {
+    border-color: color-mix(in srgb, var(--grid-filter-accent) 45%, var(--border-primary));
+}
+
+/* The same pill as .search-prefix in search.css, in this mode's colour. */
+.grid-filter-prefix {
+    flex-shrink: 0;
+    font-family: var(--font-family-main);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    padding: 2px 6px;
+    border-radius: var(--radius-3, 4px);
+    color: var(--grid-filter-accent);
+    background: color-mix(in srgb, var(--grid-filter-accent) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--grid-filter-accent) 35%, transparent);
 }
 
 .grid-filter-input {
@@ -5853,23 +5880,76 @@ body[data-grid-keys="shown"] .dashboard-legend-more {
     border: 0;
     background: transparent;
     color: var(--text-primary);
-    font-family: inherit;
-    font-size: var(--text-sm, 0.85rem);
+    caret-color: var(--accent-primary);
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-bookmark, var(--text-md, 1rem));
+    font-weight: var(--font-weight-semibold);
     padding: var(--space-hairline, 0.15rem) 0;
+}
+
+.grid-filter-input::placeholder {
+    color: var(--text-tertiary);
+    font-weight: normal;
 }
 
 .grid-filter-input:focus {
     outline: none;
 }
 
+/* Native search fields draw their own clear button; the bar has one already. */
+.grid-filter-input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* "6 of 16", as a chip in the mode's colour. Empty until a query applies. */
 .grid-filter-count {
-    color: var(--text-tertiary);
-    font-size: var(--text-xs, 0.75rem);
+    flex-shrink: 0;
+    font-size: var(--text-xs, 0.72rem);
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    padding: var(--space-hairline, 0.1rem) var(--space-2, 0.5rem);
+    border-radius: var(--radius-pill, 999px);
+    color: var(--grid-filter-accent);
+    border: 1px solid color-mix(in srgb, var(--grid-filter-accent) 35%, transparent);
+}
+
+.grid-filter-count:empty {
+    display: none;
+}
+
+/* The keyboard legend shape used across the app: <kbd> chips beside a label. */
+.grid-filter-keys {
+    display: flex;
+    flex-shrink: 0;
+    gap: var(--space-3, 0.75rem);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-tertiary);
     white-space: nowrap;
 }
 
+.grid-filter-keys kbd {
+    font-family: inherit;
+    font-size: var(--text-xs, 0.7rem);
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.32rem);
+    border-radius: var(--radius-3, 0.25rem);
+    border: 1px solid var(--border-secondary);
+    background: var(--background-secondary);
+    color: var(--text-secondary);
+}
+
+.grid-filter-keys kbd + kbd {
+    margin-left: 2px;
+}
+
+@media (max-width: 575px) {
+    .grid-filter-keys {
+        display: none;
+    }
+}
+
 .grid-filter-clear {
+    flex-shrink: 0;
     border: 0;
     background: transparent;
     color: var(--text-secondary);
@@ -5880,6 +5960,13 @@ body[data-grid-keys="shown"] .dashboard-legend-more {
 }
 
 .grid-filter-clear:hover {
+    color: var(--text-primary);
+}
+
+/* The query in the names that are left; painted by the CSS Highlight API from
+   dashboard-grid-filter.js, so the rows themselves are never edited. */
+::highlight(grid-filter-hit) {
+    background-color: color-mix(in srgb, var(--accent-warning) 28%, transparent);
     color: var(--text-primary);
 }
 

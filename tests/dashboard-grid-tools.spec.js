@@ -29,8 +29,10 @@ test.describe('filtering the page you are on', () => {
         // From the row's own text: the grid prints the name inside .bookmark-text,
         // and the filter matches on what the row shows rather than on a field.
         const term = await page.evaluate(() => {
-            const row = document.querySelector('.bookmark-link');
-            return (row?.textContent || '').trim().split(/\s+/)[0].slice(0, 4);
+            // The name, not the whole row: a letter icon prints its letter
+            // in front of the name, and "YYou" is in the row but not the name.
+            const name = document.querySelector('.bookmark-link .bookmark-text');
+            return (name?.textContent || '').trim().split(/\s+/)[0].slice(0, 4);
         });
         expect(term.length).toBeGreaterThan(1);
         await page.keyboard.press('Shift+F');
@@ -45,10 +47,26 @@ test.describe('filtering the page you are on', () => {
         expect(visible).toBeGreaterThan(0);
         expect(visible).toBeLessThanOrEqual(total);
 
+        // The bar says which mode it is, and what Escape does here.
+        await expect(page.locator('#grid-filter-bar .grid-filter-prefix')).toHaveText('FILTER');
+        await expect(page.locator('#grid-filter-bar .grid-filter-keys kbd')).toHaveCount(3);
+
+        // The term is marked in the names that are left — painted over the
+        // row, never written into it, so the row's own text is unchanged.
+        const marked = () => page.evaluate(() => {
+            const hl = globalThis.CSS?.highlights?.get('grid-filter-hit');
+            return hl ? [...hl].map((r) => r.toString()) : [];
+        });
+        const hits = await marked();
+        expect(hits.length).toBeGreaterThan(0);
+        for (const hit of hits) expect(hit.toLowerCase()).toBe(term.toLowerCase());
+        expect(await page.locator('.bookmark-link mark').count()).toBe(0);
+
         // First Escape clears the query, the second closes the bar: a typo does
         // not cost you the bar as well.
         await page.locator('.grid-filter-input').press('Escape');
         await expect(page.locator('.grid-filter-count')).toHaveText('');
+        expect(await marked()).toEqual([]);
         expect(await page.locator('.bookmark-link:not(.grid-filter-hidden)').count()).toBe(total);
         await page.locator('.grid-filter-input').press('Escape');
         await expect(page.locator('#grid-filter-bar')).toHaveCount(0);

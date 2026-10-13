@@ -1745,6 +1745,8 @@
     "gridFilterPlaceholder": "Filter this page…",
     "gridFilterClear": "Clear the filter",
     "gridFilterCount": "{count} of {total}",
+    "gridFilterKeyClear": "clear",
+    "gridFilterKeyClose": "close",
     "multiSelectPin": "Pin",
     "multiSelectUnpin": "Unpin",
     "multiSelectPinned": "Pinned {count} bookmark(s)",
