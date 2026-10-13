@@ -5722,21 +5722,50 @@ body[data-g-chord="armed"]::after {
    rows announce what they do on their own. */
 .dashboard-legend {
     display: none;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--space-1, 0.3rem) var(--space-4, 0.9rem);
-    margin: var(--space-4, 1rem) 0 var(--space-1, 0.25rem);
-    font-size: var(--text-xs, 0.72rem);
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1-5, 0.35rem);
+    /* Room above, on purpose: the legend is a footnote to the page, and it
+       should read as resting below it rather than as its last row. */
+    margin: calc(var(--space-6, 2rem) * 2) 0 var(--space-4, 1rem);
+    padding-top: var(--space-3, 0.75rem);
+    border-top: 1px solid var(--border-secondary);
+    font-size: var(--text-xs, 0.75rem);
     color: var(--text-tertiary);
-    opacity: 0.75;
 }
 
-/* Only once the keyboard is in use: KeyboardNavigation stamps this at the first
-   cursor move and clears it on Enter. Without it the line sat under the grid
-   all day — under seven bookmarks, as tall as the thing it explained. No rule
-   above it either, which is what made it read as a section of its own. */
-body[data-grid-keys="shown"] .dashboard-legend {
+/* Only while the dashboard view itself is open. The grid's container outlives
+   a switch to the Bookmarks view, Inbox, Containers or config, and the legend
+   sat under whatever replaced the grid. setActiveView stamps the view on
+   <body>. */
+body[data-active-view="bookmarks"] .dashboard-legend {
     display: flex;
+}
+
+/* Not on a phone or tablet: there is no keyboard to teach. touch-layout is the
+   one flag that covers both (phone-layout is phones only). */
+body[data-touch-layout="true"] .dashboard-legend {
+    display: none;
+}
+
+/* One row per group, wrapping like the legends of the other views. */
+.dashboard-legend-line {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-1-5, 0.35rem) var(--space-4, 1rem);
+}
+
+/* The rows that presume the keyboard is in use: KeyboardNavigation stamps
+   data-grid-keys at the first cursor move and clears it on Enter. Before that
+   the legend shows the entry points only -- under seven bookmarks the whole
+   manual was as tall as the thing it explained. */
+.dashboard-legend-more {
+    display: none;
+}
+
+body[data-grid-keys="shown"] .dashboard-legend-more {
+    display: inline;
 }
 
 .dashboard-legend kbd {

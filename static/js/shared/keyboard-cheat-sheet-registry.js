@@ -89,6 +89,7 @@
                 { keys: "' or Shift + O", cheatKey: 'navToggleActionBar', fallback: 'Slide a docked action bar out of view, or bring it back', print: true, printFallback: 'Show or hide the action bar' },
                 { keys: '<', cheatKey: 'navOpenConfig', fallback: 'Open config (< is Shift+,; in config < returns here)' },
                 { keys: '.', cheatKey: 'navCollapseAll', fallback: 'Collapse or expand all categories' },
+                { keys: 'Shift + Z', cheatKey: 'navToggleGridLegend', fallback: 'Show or hide the key legend under the bookmarks' },
                 { keys: 'Shift + N', cheatKey: 'navAddCategory', fallback: 'Add a category to the current page' },
                 { keys: '↑ / ↓  ·  k / j', cheatKey: 'navFocusUpDown', fallback: 'Move focus up / down through bookmarks', print: true, printKeys: '↑ ↓ ← →  ·  k j', printFallback: 'Move focus' },
                 { keys: '← / →', cheatKey: 'navFocusLeftRight', fallback: 'Move focus left / right in grid' },

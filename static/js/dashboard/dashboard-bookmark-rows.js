@@ -1382,10 +1382,11 @@ class DashboardBookmarkRows {
      * sheet behind `!` — but the dashboard is also the shortest view, and a
      * ten-entry legend under seven bookmarks reads as clutter rather than help.
      *
-     * So it is off by default, four entries long, and even when switched on it
-     * stays hidden until the keyboard is actually used: KeyboardNavigation
-     * stamps data-grid-keys on <body> at the first cursor move and clears it
-     * again on Enter, when the reader has arrived where they were going.
+     * So it is grouped into three lines, on for fresh installs, and the rows
+     * that presume the keyboard is in use (`more`) stay hidden until it is:
+     * KeyboardNavigation stamps data-grid-keys on <body> at the first cursor
+     * move and clears it again on Enter, when the reader has arrived where
+     * they were going. Shift+Z switches the whole legend off and on.
      *
      * Rebuilt only when the text changes: this runs on every render, and the
      * legend is constant unless the language does.
@@ -1396,19 +1397,25 @@ class DashboardBookmarkRows {
         if (!grid || !host || !window.KeyboardViewLegends) {
             return;
         }
-        // Off unless asked for: on a dashboard with seven bookmarks the legend
-        // was as tall as the grid above it, which is a manual, not a hint.
+        // Existing installs keep it off: it is on only where it was switched
+        // on or the install is new.
         if (d.settings?.showGridKeyLegend !== true) {
             host.querySelector(':scope > .dashboard-legend')?.remove();
             return;
         }
-        const pairs = window.KeyboardViewLegends.toLegendPairs(
-            window.KeyboardViewLegends.DASHBOARD_VIEW,
-            (key, fallback) => d.formatDashboardLabel?.(key, {}, fallback) ?? fallback,
-        );
-        const html = pairs
-            .map(([keys, label]) => `<span><kbd>${d.escapeHtml(keys)}</kbd> ${d.escapeHtml(label)}</span>`)
-            .join('');
+        const rows = window.KeyboardViewLegends.DASHBOARD_VIEW;
+        const lines = [...new Set(rows.map((row) => row.line || 1))].sort();
+        const html = lines.map((line) => {
+            const spans = rows
+                .filter((row) => (row.line || 1) === line)
+                .map((row) => {
+                    const label = d.formatDashboardLabel?.(row.legendKey, {}, row.fallback) ?? row.fallback;
+                    const more = row.more ? ' class="dashboard-legend-more"' : '';
+                    return `<span${more}><kbd>${d.escapeHtml(row.keys)}</kbd> ${d.escapeHtml(label)}</span>`;
+                })
+                .join('');
+            return `<span class="dashboard-legend-line">${spans}</span>`;
+        }).join('');
         let legend = host.querySelector(':scope > .dashboard-legend');
         if (!legend) {
             legend = document.createElement('p');

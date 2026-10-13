@@ -551,6 +551,17 @@ class DashboardSetup {
                 return;
             }
 
+            // Shift+Z switches the key legend under the grid off and on. Z because
+            // every other Shift letter was taken, and the legend is the one thing
+            // here that is for looking at, not for acting on.
+            if (e.shiftKey && e.code === 'KeyZ' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.nextdashRecordKey?.('Shift + Z');
+                void d.toggleGridKeyLegend?.();
+                return;
+            }
+
             if (e.shiftKey && e.code === 'KeyI') {
                 if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
                     e.preventDefault();

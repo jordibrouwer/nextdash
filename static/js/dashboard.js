@@ -276,6 +276,7 @@ class Dashboard {
             : null;
         this.pasteChoice = new DashboardPasteChoice(this);
         this.activeView = 'bookmarks';
+        document.body?.setAttribute('data-active-view', 'bookmarks');
         this.weatherService = typeof window.WeatherService === 'function' ? new window.WeatherService() : null;
         this.weatherRefreshTimer = null;
         this.dateTimeRefreshTimer = null;
@@ -1211,6 +1212,8 @@ class Dashboard {
             return previous;
         }
         this.activeView = view;
+        // CSS that belongs to one view only (the grid's key legend) keys off this.
+        document.body?.setAttribute('data-active-view', view);
         window.nextdashTrackNav?.('view', view);
         // Leaving config stamps where you were, whichever route took you out —
         // the header buttons and page tabs switch view without config being
@@ -1381,6 +1384,37 @@ class Dashboard {
                 || 'Search mode: letters find shortcuts');
         this.showNotification(label, 'success', { duration: 2000 });
     }
+    /**
+     * Shift+Z: switch the key legend under the grid off or on.
+     *
+     * The same stored value as Behavior -> General -> Show grid key legend, so
+     * the key and the checkbox cannot disagree. Switching it off is the point
+     * of the key: the legend teaches while you are learning, and then it is in
+     * the way.
+     */
+    async toggleGridKeyLegend() {
+        this.settings = this.settings || {};
+        const next = this.settings.showGridKeyLegend !== true;
+        this.settings.showGridKeyLegend = next;
+        try {
+            // saveSettings resolves false on a failed save rather than rejecting.
+            if ((await this.saveSettings()) === false) throw new Error('not saved');
+        } catch (err) {
+            this.settings.showGridKeyLegend = !next;
+            this.showNotification(
+                this.t?.('dashboard.gridKeyLegendToggleFailed', 'Could not save the key legend setting')
+                    || 'Could not save the key legend setting',
+                'error',
+            );
+            return;
+        }
+        this.renderDashboard?.({ animate: false });
+        const label = next
+            ? (this.t?.('dashboard.gridKeyLegendOn', 'Key legend on') || 'Key legend on')
+            : (this.t?.('dashboard.gridKeyLegendOff', 'Key legend off') || 'Key legend off');
+        this.showNotification(label, 'success', { duration: 2000 });
+    }
+
     setupConfigStructureReloadListener() {
         return this.configSync.setupConfigStructureReloadListener(...arguments);
     }
