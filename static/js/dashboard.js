@@ -54,6 +54,9 @@ function prefersReducedMotion() {
 const _sessionTags = new Set();
 
 class Dashboard {
+    /** The views that rise in on arrival; see playViewEntrance. */
+    static ENTRANCE_VIEWS = new Set(['tags', 'library', 'inbox', 'docker']);
+
     constructor() {
         this.bookmarks = [];
         this._bookmarksReady = false;
@@ -1243,7 +1246,25 @@ class Dashboard {
         if (!options.silent) {
             this.visual?.onActiveViewChanged?.(previous, view);
         }
+        this.playViewEntrance(view);
         return previous;
+    }
+
+    /**
+     * The list views rise in on arrival: header, rail and toolbar, then the
+     * rows one after another (list-view-shell.css). An attribute on <body>
+     * rather than a class on the layout, which each view rewrites as it
+     * mounts; whatever the view paints in the window animates.
+     */
+    playViewEntrance(view) {
+        const body = document.body;
+        clearTimeout(this._viewEntranceTimer);
+        if (!Dashboard.ENTRANCE_VIEWS.has(view) || body.classList.contains('no-animations')) {
+            delete body.dataset.viewEntering;
+            return;
+        }
+        body.dataset.viewEntering = view;
+        this._viewEntranceTimer = setTimeout(() => { delete body.dataset.viewEntering; }, 900);
     }
 
     /**

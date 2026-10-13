@@ -110,7 +110,6 @@
             this.setTags(next);
             if (!fromHash) this.writeHash({ push: true });
             this.render();
-            this.playEntrance();
             window.scrollTo({ top: 0, behavior: 'instant' });
             // The view is where the reader is now; the keys start here.
             if (!window.DashboardTagCloud?.modalOpen) {
@@ -152,14 +151,6 @@
          * and then it holds still. Once per opening -- a redraw after a filter
          * or a keystroke is not an arrival.
          */
-        playEntrance() {
-            const root = this.shell?.root;
-            if (!root || document.body.classList.contains('no-animations')) return;
-            root.classList.add('is-entering');
-            clearTimeout(this._entranceTimer);
-            this._entranceTimer = setTimeout(() => root.classList.remove('is-entering'), 700);
-        }
-
         /** Another view, or the grid, took the layout: the tags go with the view. */
         onLeave() {
             this.drawer?.destroy?.();

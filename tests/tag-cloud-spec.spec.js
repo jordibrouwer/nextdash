@@ -260,7 +260,7 @@ test('a pick carries on into the view with a transition', async ({ page }) => {
     await expect(page.locator('#dashboard-layout .lvs.tag-view')).toBeVisible();
     expect(await page.evaluate(() => window.__transitions)).toBe(1);
     // And the view itself arrives: its rows come in, then hold still.
-    await expect.poll(() => page.evaluate(() => document.querySelector('.lvs.tag-view')?.classList.contains('is-entering'))).toBe(false);
+    await expect.poll(() => page.evaluate(() => document.body.dataset.viewEntering || null)).toBe(null);
 });
 
 test('with animations off a pick cuts straight to the view', async ({ page }) => {

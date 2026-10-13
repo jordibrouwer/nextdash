@@ -465,41 +465,6 @@
     flex-direction: column;
 }
 
-/* ── Arriving ─────────────────────────────────────────────────────────── */
-
-@keyframes tagViewRise {
-    from {
-        opacity: 0;
-        transform: translateY(6px);
-    }
-}
-
-.tag-view.is-entering .lvs-header,
-.tag-view.is-entering .lvs-rail,
-.tag-view.is-entering .tag-view-colhead {
-    animation: tagViewRise 0.28s ease backwards;
-}
-
-.tag-view.is-entering .lvs-rail {
-    animation-delay: 60ms;
-}
-
-.tag-view.is-entering .tag-view-row {
-    animation: tagViewRise 0.3s ease backwards;
-    animation-delay: calc(80ms + var(--row-index, 0) * 22ms);
-}
-
-body.no-animations .tag-view.is-entering *,
-body.no-animations .tag-view.is-entering {
-    animation: none !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .tag-view.is-entering * {
-        animation: none !important;
-    }
-}
-
 /* ── Selection ────────────────────────────────────────────────────────── */
 
 .tag-view .tag-view-check,
