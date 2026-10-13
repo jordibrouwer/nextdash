@@ -884,7 +884,7 @@ Categories and widgets stand in columns — as many as **Columns per row** allow
 
 A bookmark row shows its icon, name, optional tags, the shortcut letters and, when checked, its status and ping. How the row looks is set under **Appearance → Rows** ([§16](#16-appearance)).
 
-**A key legend** under the grid shows the four most useful keys once you start moving with the keyboard; switch it under Behavior → Keyboard & search.
+**A key legend** under the grid shows the keys in three lines, on the dashboard view only. The keys that assume you use the keyboard appear at your first cursor move. `Shift + Z` switches the legend off and on, and so does Behavior → Keyboard & search. It is on for new installs.
 
 **Occasional tips.** Now and then the dashboard shows one keyboard tip: at most one in any 24 hours, counted across your devices, never the same one twice and never over a modal. Switch them off under Behavior → Privacy & sync → Onboarding.
 
@@ -1147,6 +1147,8 @@ Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to 
 | `Shift + N` | Add a category to this page |
 | `'` or `Shift + O` | Slide a docked action bar away or back |
 | `Shift + F` | Filter this page in place |
+| `Shift + Z` | Key legend under the grid off or on |
+| `Shift + K` | Play the dashboard tour again |
 | `Shift + Q` | Switch whether letters search names or shortcuts |
 | `Esc` | Close the panel; on a bare grid, go to the first page; on the first page, open search |
 
@@ -1327,7 +1329,7 @@ Filters combine with each other and with plain words: `tag:dev -status:pinned ap
 ### 8.3 Beyond the current page
 
 - **`@`** at the start searches every page; each result names its page.
-- **`Shift + F`** is the opposite: a bar above the grid that hides non-matching rows on this page and keeps the layout and cursor. `Escape` clears it, a second `Escape` closes it.
+- **`Shift + F`** is the opposite: a bar above the grid that hides non-matching rows on this page and keeps the layout and cursor. Widgets step aside while it filters, and the matching letters are marked in the names that are left. `Escape` clears it, a second `Escape` closes it.
 - **`:find text`** does the same from the command palette.
 
 <a id="searching-the-web"></a>
