@@ -1256,7 +1256,14 @@ class DashboardData {
         }
     }
 
-    async loadAllBookmarks(options = {}) {
+    loadAllBookmarks(options = {}) {
+        const d = this.dash;
+        const loadId = (d._allBookmarksLoadId = (d._allBookmarksLoadId || 0) + 1);
+        d._allBookmarksLoad = this._loadAllBookmarksOnce(loadId, options);
+        return d._allBookmarksLoad;
+    }
+
+    async _loadAllBookmarksOnce(loadId, options = {}) {
         const d = this.dash;
         const { rethrow = false } = options;
         try {
@@ -1277,6 +1284,14 @@ class DashboardData {
              * them: the Unsorted view, and search when the reader allows it.
              */
             const loaded = await allBookmarksRes.json();
+            // A newer load started while this one was on its way: its answer
+            // is the newer one. Several callers do not wait, so two can be in
+            // flight, and the older landing last dropped a bookmark just added.
+            // Its caller waits for that one instead, so it reads the list it
+            // was waiting for.
+            if (loadId !== d._allBookmarksLoadId) {
+                return d._allBookmarksLoad;
+            }
             const rows = Array.isArray(loaded) ? loaded : [];
             const isUnsorted = (bookmark) => window.UnsortedPage?.isUnsorted?.(bookmark) === true;
             d.allBookmarks = rows.filter((bookmark) => !isUnsorted(bookmark));
@@ -1304,6 +1319,10 @@ class DashboardData {
                 d.updateSearchComponent();
             }
         } catch (error) {
+            // Superseded: the newer load answers, failure or not.
+            if (loadId !== d._allBookmarksLoadId) {
+                return d._allBookmarksLoad;
+            }
             if (rethrow) {
                 throw error;
             }

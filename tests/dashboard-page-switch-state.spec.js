@@ -71,3 +71,40 @@ test.describe('switching pages', () => {
         await expect(others, 'the fold of the page left behind came along').toHaveAttribute('data-collapsed', 'false');
     });
 });
+
+test.describe('the all-pages list', () => {
+    /**
+     * Several callers do not wait for it, so two loads can be in flight. The
+     * older one answering last used to win, and a bookmark just added was not
+     * in the list search reads.
+     */
+    test('an older answer arriving last does not replace a newer one', async ({ page }) => {
+        await openDashboard(page);
+
+        let calls = 0;
+        await page.route('**/api/bookmarks?all=true', async (route) => {
+            calls += 1;
+            if (calls === 1) {
+                // The older answer: before the bookmark existed, and late.
+                await new Promise((resolve) => setTimeout(resolve, 1500));
+                return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+            }
+            return route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify([{ name: 'Newest', url: 'https://newest.example/', pageId: 1, category: '' }]),
+            });
+        });
+
+        const urls = await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            const older = d.loadAllBookmarks();
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            const newer = d.loadAllBookmarks();
+            await Promise.all([older, newer]);
+            return (d.allBookmarks || []).map((b) => b.url);
+        });
+        expect(calls).toBe(2);
+        expect(urls).toContain('https://newest.example/');
+    });
+});
