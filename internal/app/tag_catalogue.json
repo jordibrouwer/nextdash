@@ -1,5 +1,8 @@
 {
-  "version": 1,
+  "version": 2,
+  "meta": {
+    "note": "Hosts prefixed with = match that host only, not its subdomains. A host may sit under at most two subjects."
+  },
   "tags": [
     {
       "tag": "academic-jobs",
@@ -203,6 +206,7 @@
         "androidauthority.com",
         "androidpolice.com",
         "apkmirror.com",
+        "play.google.com",
         "xda-developers.com"
       ],
       "keywords": [
@@ -2698,8 +2702,10 @@
         "antora.org",
         "docusaurus.io",
         "gitbook.com",
+        "learn.microsoft.com",
         "mkdocs.org",
-        "readthedocs.org"
+        "readthedocs.org",
+        "support.microsoft.com"
       ],
       "keywords": [
         "api-reference",
@@ -2984,9 +2990,12 @@
       "hosts": [
         "fastmail.com",
         "gmail.com",
+        "mail.google.com",
+        "mail.yahoo.com",
         "mailcow.email",
         "mailgun.com",
         "outlook.com",
+        "outlook.live.com",
         "proton.me",
         "protonmail.com",
         "sendgrid.com",
@@ -5377,7 +5386,7 @@
         "apple"
       ],
       "hosts": [
-        "apple.com",
+        "=apple.com",
         "brew.sh",
         "macports.org",
         "support.apple.com"
@@ -5939,7 +5948,9 @@
         "bandcamp.com",
         "deezer.com",
         "guitarcenter.com",
+        "music.amazon.com",
         "music.apple.com",
+        "music.youtube.com",
         "musiciansfriend.com",
         "pandora.com",
         "reverb.com",
@@ -6135,6 +6146,8 @@
         "cbsnews.com",
         "cnn.com",
         "nbcnews.com",
+        "news.google.com",
+        "news.yahoo.com",
         "npr.org",
         "reuters.com",
         "theguardian.com"
@@ -6204,6 +6217,7 @@
       "hosts": [
         "bear.app",
         "evernote.com",
+        "keep.google.com",
         "notion.so",
         "obsidian.md",
         "simplenote.com"
@@ -7886,10 +7900,53 @@
     {
       "tag": "search",
       "aliases": [
+        "web-search",
         "search-engine",
+        "search-engines",
+        "zoekmachine",
+        "suchmaschine",
+        "moteur-de-recherche",
+        "buscador"
+      ],
+      "hosts": [
+        "ask.com",
+        "baidu.com",
+        "bing.com",
+        "duckduckgo.com",
+        "ecosia.org",
+        "=google.at",
+        "=google.be",
+        "=google.ch",
+        "=google.co.uk",
+        "=google.com",
+        "=google.de",
+        "=google.es",
+        "=google.fr",
+        "=google.nl",
+        "kagi.com",
+        "metager.org",
+        "mojeek.com",
+        "qwant.com",
+        "search.brave.com",
+        "search.yahoo.com",
+        "searx.space",
+        "startpage.com",
+        "swisscows.com",
+        "yandex.com"
+      ],
+      "keywords": [
+        "search-results",
+        "serp",
+        "web-index"
+      ]
+    },
+    {
+      "tag": "search-tech",
+      "aliases": [
         "full-text-search",
         "indexing",
-        "elasticsearch"
+        "elasticsearch",
+        "search-index"
       ],
       "hosts": [
         "algolia.com",
@@ -8084,7 +8141,14 @@
       ],
       "hosts": [
         "alibaba.com",
-        "amazon.com",
+        "=amazon.ca",
+        "=amazon.co.uk",
+        "=amazon.com",
+        "=amazon.de",
+        "=amazon.es",
+        "=amazon.fr",
+        "=amazon.it",
+        "=amazon.nl",
         "ebay.com",
         "target.com",
         "walmart.com"
@@ -9764,7 +9828,7 @@
         "win11"
       ],
       "hosts": [
-        "microsoft.com",
+        "=microsoft.com",
         "neowin.net",
         "windowscentral.com"
       ],

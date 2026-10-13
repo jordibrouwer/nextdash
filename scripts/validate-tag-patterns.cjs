@@ -5,9 +5,9 @@
  * The shipped tag catalogue, checked.
  *
  * Three things go wrong in a hand-written data file of this size, and none of
- * them shows up in the browser. A host named under two subjects makes the
- * catalogue propose whichever entry happened to be read first, which is
- * arbitrary and silently wrong. A host written the way it is typed rather
+ * them shows up in the browser. A host named under three subjects offers more
+ * than the two tags a bookmark has room for, so one of them is silently
+ * dropped. A host written the way it is typed rather
  * than the way it is matched — with a scheme, a `www.`, a path — can never
  * fire, because patternsFor() in static/js/shared/tag-suggestions.js reduces
  * a URL to a bare host before comparing. And a tag repeated in its own
@@ -21,14 +21,15 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.join(__dirname, '..');
-const file = path.join(root, 'static', 'data', 'tag-patterns.json');
+const file = path.join(root, 'internal', 'app', 'tag_catalogue.json');
 const doc = JSON.parse(fs.readFileSync(file, 'utf8'));
 
 const WORD = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 // A registrable domain or a subdomain of one: labels split by dots, ending in
-// letters. Deliberately narrow — an address with a scheme, a slash, a port or
+// letters, with an optional leading = for a host that matches itself only and
+// lends nothing to its subdomains. Deliberately narrow — an address with a scheme, a slash, a port or
 // a capital is the mistake this is here to catch, not a shape to accept.
-const HOST = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
+const HOST = /^=?[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
 
 let failed = false;
 const problems = [];
@@ -36,8 +37,8 @@ const seenTags = new Map();
 const seenHosts = new Map();
 const seenKeywords = new Map();
 
-if (doc.version !== 1) {
-    problems.push(`version is ${JSON.stringify(doc.version)}, want 1`);
+if (doc.version !== 2) {
+    problems.push(`version is ${JSON.stringify(doc.version)}, want 2`);
 }
 const entries = Array.isArray(doc.tags) ? doc.tags : null;
 if (!entries) {
@@ -108,16 +109,23 @@ if (!entries) {
                 + '(no scheme, no www., no path, no port)');
             return;
         }
-        if (host.startsWith('www.')) {
+        if (host.startsWith('www.') || host.startsWith('=www.')) {
             problems.push(`${where}: host ${host} carries www., which patternsFor() strips`);
             return;
         }
-        const owner = seenHosts.get(host);
-        if (owner) {
-            problems.push(`${host}: claimed by both ${owner} and ${entry.tag}`);
+        // Exact or not, it is the same site: =google.com and google.com under
+        // two subjects is two subjects for one host.
+        const bare = host.replace(/^=/, '');
+        const owners = seenHosts.get(bare) || [];
+        if (owners.includes(entry.tag)) {
+            problems.push(`${where}: host ${bare} listed twice`);
             return;
         }
-        seenHosts.set(host, entry.tag);
+        if (owners.length >= 2) {
+            problems.push(`${bare}: claimed by ${owners.join(', ')} and ${entry.tag}; two subjects at most`);
+            return;
+        }
+        seenHosts.set(bare, owners.concat(entry.tag));
     });
 });
 
@@ -127,9 +135,9 @@ if (problems.length) {
 }
 
 if (failed) {
-    console.error(`\n${problems.length} problem(s) in static/data/tag-patterns.json`);
+    console.error(`\n${problems.length} problem(s) in internal/app/tag_catalogue.json`);
     process.exit(1);
 }
 
-console.log(`  ok tag-patterns.json: ${seenTags.size} tags, ${seenHosts.size} hosts, `
+console.log(`  ok tag_catalogue.json: ${seenTags.size} tags, ${seenHosts.size} hosts, `
     + `${seenKeywords.size} keywords, no collisions`);

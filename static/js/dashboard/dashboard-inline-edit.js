@@ -1099,7 +1099,7 @@ class DashboardInlineEdit {
                 chips?.render(tagsSuggest, []);
                 return;
             }
-            await live.ensureCatalogue();
+            await live.ensureCatalogue([url]);
             if (!draftKeywords.length) {
                 draftKeywords = (await live.storedKeywords())[url] || [];
             }

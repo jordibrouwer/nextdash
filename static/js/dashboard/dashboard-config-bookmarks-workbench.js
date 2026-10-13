@@ -970,8 +970,8 @@
         const live = global.TagSuggestLive;
         const chips = global.TagSuggestChips;
         if (!host || !b || !live || !chips) return;
-        await live.ensureCatalogue();
         const url = String(b.url || '').trim();
+        await live.ensureCatalogue([url]);
         const keywords = (await live.storedKeywords())[url] || [];
         // The panel may have moved on to another bookmark while this waited.
         if (!host.isConnected || panel.dataset.bmPanelKey !== key) return;

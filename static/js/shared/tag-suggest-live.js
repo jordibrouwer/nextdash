@@ -99,15 +99,22 @@
             (dash?.inbox?.items || []).length,
             (settings.tagRules || []).length,
             (settings.dismissedTagSuggestions || []).length,
-            (global.TagCatalogue?.now?.() || []).length,
+            global.TagCatalogue?.version?.() || 0,
         ].join(':');
     }
 
-    /** Fetch the shipped catalogue, sharing config's one copy and its promise. */
-    function ensureCatalogue() {
+    /**
+     * Fetch the shipped catalogue, sharing config's one copy and its promise.
+     * Pass the addresses of links the server has not stored yet -- a draft in
+     * an add form -- and their hosts are asked about as well.
+     */
+    function ensureCatalogue(urls) {
         const load = global.TagCatalogue?.load;
         if (typeof load !== 'function') return Promise.resolve([]);
-        return load().then((catalogue) => {
+        const more = urls?.length && global.TagCatalogue?.ensureHosts
+            ? global.TagCatalogue.ensureHosts(urls).then(load)
+            : load();
+        return more.then((catalogue) => {
             // A catalogue that arrives after the first answer was drawn makes
             // that answer stale: it was computed without the largest of the
             // four sources.

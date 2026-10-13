@@ -112,11 +112,16 @@
     }
 
     /*
-     * host -> {tag, aliases}, built once per call.
+     * host -> [{tag, aliases, exact}], built once per call.
      *
      * The catalogue ships as a list of subjects, each naming the sites that
      * belong to it; matching goes the other way, so it is turned inside out
      * here rather than scanned per bookmark.
+     *
+     * A host may sit under two subjects -- duckduckgo.com is a search engine
+     * and a privacy tool -- and a bookmark has room for two suggestions, so
+     * both are kept. A host written "=google.com" is exact: it answers for
+     * itself and lends nothing to its subdomains.
      */
     function catalogueByHost(catalogue) {
         const byHost = new Map();
@@ -127,18 +132,21 @@
                 .map((alias) => String(alias).trim().toLowerCase())
                 .filter(Boolean);
             (Array.isArray(entry?.hosts) ? entry.hosts : []).forEach((host) => {
-                const key = String(host).trim().toLowerCase().replace(/^www\./, '');
-                // First entry wins: a host named twice in a shipped file is a
-                // mistake in the file, and picking one quietly beats proposing
-                // two subjects for one site.
-                if (key && !byHost.has(key)) byHost.set(key, { tag, aliases });
+                const written = String(host).trim().toLowerCase();
+                const exact = written.startsWith('=');
+                const key = written.replace(/^=/, '').replace(/^www\./, '');
+                if (!key) return;
+                const list = byHost.get(key) || [];
+                if (!list.some((known) => known.tag === tag)) list.push({ tag, aliases, exact });
+                byHost.set(key, list);
             });
         });
         return byHost;
     }
 
     /*
-     * The catalogue's entry for a host, or for the nearest parent that has one.
+     * The catalogue's entries for a host, or for the nearest parent that has
+     * any it lends out.
      *
      * The file names sites by their registrable domain; a bookmark is often on
      * a subdomain of it -- docs.docker.com, wiki.archlinux.org -- and the
@@ -146,13 +154,18 @@
      * suffix up and stops at two labels, so a bare TLD is never tried. Returns
      * the key it matched on, so the caller can group on the site the catalogue
      * knows rather than on every subdomain of it.
+     *
+     * But not every domain speaks for its subdomains: google.com is a search
+     * engine and mail.google.com is not. An exact entry is passed over on a
+     * parent, and the walk goes on up. The server's resolve() in
+     * internal/app/tag_catalogue.go walks the same way.
      */
     function lookupHost(byHost, host) {
         const labels = host.split('.');
         for (let i = 0; i <= labels.length - 2; i++) {
             const key = labels.slice(i).join('.');
-            const entry = byHost.get(key);
-            if (entry) return { key, entry };
+            const entries = (byHost.get(key) || []).filter((entry) => i === 0 || !entry.exact);
+            if (entries.length) return { key, entries };
         }
         return null;
     }
@@ -255,22 +268,24 @@
                 if (settled.has(pattern)) return;
                 const found = lookupHost(byHost, pattern);
                 if (!found || settled.has(found.key)) return;
-                const site = bySite.get(found.key) || { entry: found.entry, members: [] };
+                const site = bySite.get(found.key) || { entries: found.entries, members: [] };
                 site.members.push(...members);
                 bySite.set(found.key, site);
             });
-            bySite.forEach(({ entry, members }, pattern) => {
-                const tag = inTheirWords(entry, vocabulary);
-                const keys = members
-                    .filter((item) => !tagsOf(item).includes(tag))
-                    .map((item) => item.key);
-                if (!keys.length) return;
-                proposals.push({
-                    tag,
-                    pattern,
-                    reason: { kind: 'catalogue', subject: entry.tag },
-                    keys,
-                    rank: 3,
+            bySite.forEach(({ entries, members }, pattern) => {
+                entries.forEach((entry) => {
+                    const tag = inTheirWords(entry, vocabulary);
+                    const keys = members
+                        .filter((item) => !tagsOf(item).includes(tag))
+                        .map((item) => item.key);
+                    if (!keys.length) return;
+                    proposals.push({
+                        tag,
+                        pattern,
+                        reason: { kind: 'catalogue', subject: entry.tag },
+                        keys,
+                        rank: 3,
+                    });
                 });
             });
         }

@@ -118,7 +118,7 @@ var demoAllowedWrites = []string{
 	"/api/inbox", "/api/inbox/batch", "/api/logs", "/api/onboarding/template",
 	"/api/pages", "/api/pages/template", "/api/pages/{id:[0-9]+}", "/api/pages/{id:[0-9]+}/blocks",
 	"/api/pages/{id:[0-9]+}/template", "/api/previews/clear", "/api/previews/images/clear",
-	"/api/settings", "/api/tags/keywords/clear", "/api/tags/rewrite", "/api/tags/scan", "/api/tags/scan/reset",
+	"/api/settings", "/api/tags/catalogue", "/api/tags/keywords/clear", "/api/tags/rewrite", "/api/tags/scan", "/api/tags/scan/reset",
 	"/api/track-clienterror", "/api/track-keys", "/api/track-nav", "/api/track-open", "/api/track-search",
 	"/api/track-session", "/api/trash", "/api/trash/restore",
 	"/api/widgets/notes/command", "/api/widgets/notes/render",
