@@ -20705,6 +20705,7 @@ class DashboardConfig {
                 const key = String(missing[i].id);
                 if (r.status === 'fulfilled') {
                     map.set(key, r.value);
+                    this.noteCategoriesSeen(key, r.value);
                     failed.delete(key);
                 } else {
                     // See loadFinders: an empty list here is a write
@@ -20782,7 +20783,47 @@ class DashboardConfig {
         this._catByPage = null;
         this._catFailedPages = null;
         this._catLoadedFor = null;
+        this._catSeen = null;
         this._catGeneration = (this._catGeneration || 0) + 1;
+    }
+
+    /** Remember which categories this tab has had for a page. */
+    noteCategoriesSeen(pageId, list) {
+        if (!this._catSeen) this._catSeen = new Map();
+        const key = String(pageId);
+        const seen = this._catSeen.get(key) || new Set();
+        (list || []).forEach((c) => seen.add(String(c.id)));
+        this._catSeen.set(key, seen);
+    }
+
+    /**
+     * Add to `list` the categories the server has and this tab never saw.
+     *
+     * The save sends the whole list and the server takes it as the truth, so
+     * a category made on another device since this tab read the list went
+     * with the next edit here -- and its bookmarks were left pointing at
+     * nothing. One this tab saw and no longer lists was deleted here, and
+     * stays deleted. A failed read leaves the list as it is.
+     */
+    async addCategoriesMadeElsewhere(pageId, list) {
+        // Without a record of what this tab read, a delete made here cannot
+        // be told from a category made elsewhere: leave the list alone.
+        const seen = this._catSeen?.get(String(pageId));
+        if (!seen) return false;
+        let server;
+        try {
+            const res = await fetch(`/api/categories?page=${encodeURIComponent(pageId)}`, { cache: 'no-store' });
+            if (!res.ok) return false;
+            server = await res.json();
+        } catch {
+            return false;
+        }
+        if (!Array.isArray(server)) return false;
+        const have = new Set(list.map((c) => String(c.id)));
+        const extra = server.filter((c) => !have.has(String(c.id)) && !seen.has(String(c.id)));
+        list.push(...extra);
+        this.noteCategoriesSeen(pageId, list);
+        return extra.length > 0;
     }
 
     bindCategoriesEditor(container) {
@@ -20971,6 +21012,8 @@ class DashboardConfig {
                     duration: 8000,
                     undoCallback: async () => {
                         try {
+                            // The undo writes the whole list too.
+                            await this.addCategoriesMadeElsewhere(pageId, before);
                             await this.restoreList(
                                 `/api/categories?page=${encodeURIComponent(pageId)}`,
                                 before
@@ -21027,6 +21070,7 @@ class DashboardConfig {
                 'Categories could not be loaded, so they will not be saved. Reload and try again.'), 'error');
             return false;
         }
+        if (await this.addCategoriesMadeElsewhere(pageId, list) && this.ptTab === 'categories') this.repaintPtBody();
         const payload = JSON.stringify(list);
         try {
             const res = await this.writeFetch(`/api/categories?page=${encodeURIComponent(pageId)}`, {

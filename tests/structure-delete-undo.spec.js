@@ -236,11 +236,15 @@ test.describe('Category delete is recoverable', () => {
         }, id);
         await confirmModal(page);
 
-        await expect(undoButton(page)).toBeVisible();
+        // The delete's own toast: opening config can show a tip whose
+        // "Cheat sheet" action is an .app-notification-action too.
+        const deleted = page.locator('.app-notification:visible').filter({ hasText: /deleted|verwijderd/i });
+        const undo = deleted.locator('.app-notification-action').first();
+        await expect(undo).toBeVisible();
         expect(await categoryIds(page, pageId)).not.toContain(id);
 
-        await undoButton(page).click();
-        expect(await categoryIds(page, pageId)).toContain(id);
+        await undo.click();
+        await expect.poll(() => categoryIds(page, pageId)).toContain(id);
     });
 });
 
