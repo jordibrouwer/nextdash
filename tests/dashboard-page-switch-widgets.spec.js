@@ -49,10 +49,11 @@ async function otherPageId(page) {
 }
 
 test.describe('switching pages', () => {
-    test('keeps the widgets when the block list does not arrive', async ({ page }) => {
+    test('a reload keeps the widgets when the block list does not arrive', async ({ page }) => {
         await openDashboard(page);
-        const target = await otherPageId(page);
-        test.skip(target === null, 'needs a second page');
+        // The page on screen, reloaded: its own widgets are the right ones to
+        // keep. A switch to another page is the next test.
+        const target = await page.evaluate(() => Number(window.dashboardInstance.currentPageId));
 
         // Give the page a widget to lose.
         await page.evaluate(() => {
@@ -81,6 +82,45 @@ test.describe('switching pages', () => {
         // Not emptied by a request that never answered.
         const widgets = await page.evaluate(() => (window.dashboardInstance.widgets || []).length);
         expect(widgets).toBeGreaterThan(0);
+    });
+
+    /**
+     * Kept on a switch, though, they were the page being left -- drawn on the
+     * new page as if they were its own, with every edit to them refused.
+     */
+    test('a switch does not draw the last page\'s widgets when the block list does not arrive', async ({ page }) => {
+        await openDashboard(page);
+        const target = await otherPageId(page);
+        test.skip(target === null, 'needs a second page');
+
+        // The page being left, with a widget of its own on screen.
+        await page.route('**/api/pages/*/blocks', (route) => {
+            if (route.request().url().includes(`/api/pages/${target}/blocks`)) {
+                return route.fulfill({ status: 503, contentType: 'application/json', body: '{"error":"unavailable"}' });
+            }
+            return route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ widgets: [{ id: 'w-left-behind', type: 'uptime' }], order: ['w-left-behind'] }),
+            });
+        });
+        await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            return d.data.loadPageBookmarks(d.currentPageId, { forceFetch: true });
+        });
+        await expect(page.locator('#dashboard-layout [data-widget-id="w-left-behind"]')).toHaveCount(1);
+
+        // The switch, as the tab does it.
+        await page.evaluate((id) => window.dashboardInstance.pageNav.requestPageNavigation(id), target);
+        await page.waitForFunction(
+            (id) => Number(window.dashboardInstance.currentPageId) === Number(id),
+            target,
+            { timeout: 10_000 },
+        );
+
+        await expect(page.locator('#dashboard-layout [data-widget-id="w-left-behind"]')).toHaveCount(0);
+        expect(await page.evaluate(() => (window.dashboardInstance.widgets || []).map((w) => w.id)))
+            .not.toContain('w-left-behind');
     });
 
     /**

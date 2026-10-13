@@ -983,19 +983,26 @@ class DashboardData {
         // undefined means the block list was not answered for -- a dropped
         // request on a slow link. Emptying the page on that turned a lost
         // request into "this page has no widgets", which is why they sometimes
-        // vanished on a page switch. Keep what is on screen and let the next
-        // load correct it. A real answer, including one that genuinely carries
-        // no widgets, still replaces them.
+        // vanished on a reload. On the same page, keep what is on screen and
+        // let the next load correct it; on a switch, what is on screen is the
+        // other page's, and is cleared. A real answer, including one that
+        // genuinely carries no widgets, still replaces them.
         const blocks = options.blocks;
         if (blocks !== undefined) {
             d.widgets = Array.isArray(blocks?.widgets) ? blocks.widgets : [];
             d.blockOrder = Array.isArray(blocks?.order) ? blocks.order : [];
             d._blocksPageId = targetPageId;
+        } else if (d._blocksPageId != null && Number(d._blocksPageId) !== targetPageId) {
+            // Not answered, on a switch: what is on screen is the page being
+            // left, and it was drawn here as this one's. Nothing is better than
+            // that; the next load brings this page's own.
+            d.widgets = [];
+            d.blockOrder = [];
         }
-        // Otherwise the widgets on screen stay, and _blocksPageId still names
-        // the page they belong to. On a switch that is another page: the
-        // writes that send the whole list (saveWidgetPatch, the block order)
-        // check it, or editing one wrote that page's widgets over this one's.
+        // _blocksPageId still names the page the last answer was for. After an
+        // unanswered switch that is another page: the writes that send the
+        // whole list (saveWidgetPatch, the block order) check it, or a save
+        // here would write that page's widgets over this one's.
         // 'default' is the placeholder the instance is constructed with,
         // before the first page has actually loaded — that first load is not
         // a switch away from anything, so it does not count as nav.
