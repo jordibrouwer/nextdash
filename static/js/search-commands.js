@@ -2346,7 +2346,7 @@ class SearchCommandsComponent {
             { id: categoryId }
         ) || 'order';
         const next = normalized === current && normalized !== 'order' ? 'order' : normalized;
-        window.DashboardCategorySort?.setCategorySortMode?.(dashboard, categoryId, next);
+        window.DashboardCategorySort?.setCategorySortMode?.(dashboard, categoryId, next, { via: 'command' });
         if (typeof dashboard.renderDashboard === 'function') {
             dashboard.renderDashboard();
         }

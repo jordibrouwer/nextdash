@@ -66,6 +66,11 @@
         const id = String(categoryId ?? '');
         const current = getCategorySortMode(dash, { id });
         const next = options.toggle && current === normalized ? 'order' : normalized;
+        // Every way in passes through here, so the count cannot miss one. The
+        // mode is one of VALID_MODES; the category itself never goes out.
+        if (next !== current) {
+            window.nextdashTrack?.('category:sort', { mode: next, via: options.via || 'menu' });
+        }
 
         if (isPersistedCategory(dash, id)) {
             const cat = (dash.categories || []).find((entry) => String(entry.id) === id);
