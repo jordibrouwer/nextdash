@@ -54,3 +54,6 @@ nextDash.code-workspace
 # They are for whoever is doing the work, not for anyone cloning it.
 docs/
 screenshots/unraid-themes
+
+# Tag catalogue build: downloads and lookups, rebuilt on demand
+scripts/tag-catalogue/cache/
