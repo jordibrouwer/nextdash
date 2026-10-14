@@ -506,8 +506,10 @@ test.describe('the table', () => {
     test('the keys are a legend along the bottom', async ({ page }) => {
         const legend = page.locator('.tag-view .tag-view-legend');
         await expect(legend).toBeVisible();
-        expect(await legend.locator('kbd').count()).toBeGreaterThanOrEqual(5);
-        expect(await legend.evaluate((el) => getComputedStyle(el).display)).toBe('flex');
+        // Retried, not read once: the view redraws when its tag suggestions
+        // land, and a legend read mid-redraw was a detached one with no style.
+        await expect.poll(() => legend.locator('kbd').count()).toBeGreaterThanOrEqual(5);
+        await expect(legend).toHaveCSS('display', 'flex');
     });
 });
 
