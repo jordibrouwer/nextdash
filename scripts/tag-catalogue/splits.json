@@ -1,5 +1,5 @@
 {
-  "note": "Broad subject -> the finer subjects split.cjs moves its derived hosts to, by the Wikidata classes (P31) or leagues (P118) of each host's main item. First match wins, so the narrowest child comes first. A child with existing: true is a subject the catalogue already has: it is not created and keeps its own parent. Written from a sample of 300 hosts per subject (split-facts.cjs --report), 14 October 2026.",
+  "note": "Broad subject -> the finer subjects split.cjs moves its derived hosts to, by the Wikidata classes (P31) or leagues (P118) of each host's main item. First match wins, so the narrowest child comes first. A child with existing: true is a subject the catalogue already has: it is not created and keeps its own parent. Written from a sample of 300 hosts per subject (split-facts.cjs --report), 14 October 2026. Sports split by sport (P641) before the federation and league children, so a hockey federation goes to ice-hockey.",
   "splits": {
     "soccer": [
       {
@@ -969,6 +969,150 @@
         ],
         "leagues": [
           "Q1215884"
+        ]
+      },
+      {
+        "tag": "soccer",
+        "existing": true,
+        "sports": [
+          "Q2736"
+        ]
+      },
+      {
+        "tag": "basketball",
+        "existing": true,
+        "sports": [
+          "Q5372"
+        ]
+      },
+      {
+        "tag": "baseball",
+        "existing": true,
+        "sports": [
+          "Q5369"
+        ]
+      },
+      {
+        "tag": "tennis",
+        "existing": true,
+        "sports": [
+          "Q847"
+        ]
+      },
+      {
+        "tag": "golf",
+        "existing": true,
+        "sports": [
+          "Q5377"
+        ]
+      },
+      {
+        "tag": "cycling",
+        "existing": true,
+        "sports": [
+          "Q2215841",
+          "Q215184"
+        ]
+      },
+      {
+        "tag": "chess",
+        "existing": true,
+        "sports": [
+          "Q718"
+        ]
+      },
+      {
+        "tag": "esports",
+        "existing": true,
+        "sports": [
+          "Q300920"
+        ]
+      },
+      {
+        "tag": "skiing",
+        "existing": true,
+        "sports": [
+          "Q186222"
+        ]
+      },
+      {
+        "tag": "ice-hockey",
+        "aliases": [
+          "hockey",
+          "ijshockey",
+          "nhl"
+        ],
+        "keywords": [],
+        "sports": [
+          "Q41466"
+        ]
+      },
+      {
+        "tag": "rugby",
+        "aliases": [
+          "rugby-union",
+          "rugby-league"
+        ],
+        "keywords": [],
+        "sports": [
+          "Q5849",
+          "Q10962"
+        ]
+      },
+      {
+        "tag": "cricket",
+        "aliases": [
+          "ipl",
+          "test-cricket"
+        ],
+        "keywords": [],
+        "sports": [
+          "Q5375"
+        ]
+      },
+      {
+        "tag": "motorsport",
+        "aliases": [
+          "racing",
+          "motor-racing",
+          "autosport",
+          "formula-1",
+          "f1",
+          "motogp"
+        ],
+        "keywords": [],
+        "sports": [
+          "Q5367",
+          "Q17163326"
+        ]
+      },
+      {
+        "tag": "martial-arts",
+        "aliases": [
+          "judo",
+          "karate",
+          "taekwondo",
+          "mma",
+          "vechtsport"
+        ],
+        "keywords": [],
+        "sports": [
+          "Q11420",
+          "Q11419",
+          "Q36389",
+          "Q114466"
+        ]
+      },
+      {
+        "tag": "athletics",
+        "aliases": [
+          "track-and-field",
+          "atletiek",
+          "leichtathletik"
+        ],
+        "keywords": [],
+        "sports": [
+          "Q542"
         ]
       },
       {

@@ -658,6 +658,1333 @@
         "lobste.rs",
         "slashdot.org"
       ]
+    },
+    {
+      "tag": "typescript",
+      "aliases": [
+        "ts"
+      ],
+      "keywords": [
+        "tsconfig",
+        "type-annotations"
+      ],
+      "hosts": [
+        "typescriptlang.org"
+      ]
+    },
+    {
+      "tag": "nodejs",
+      "aliases": [
+        "node",
+        "node-js"
+      ],
+      "keywords": [
+        "npm",
+        "express"
+      ],
+      "hosts": [
+        "nodejs.org",
+        "nodejs.dev",
+        "expressjs.com"
+      ]
+    },
+    {
+      "tag": "deno",
+      "aliases": [],
+      "keywords": [],
+      "hosts": [
+        "deno.com",
+        "deno.land"
+      ]
+    },
+    {
+      "tag": "bun",
+      "aliases": [
+        "bunjs"
+      ],
+      "keywords": [],
+      "hosts": [
+        "bun.sh",
+        "bun.com"
+      ]
+    },
+    {
+      "tag": "react",
+      "aliases": [
+        "reactjs",
+        "react-js"
+      ],
+      "keywords": [
+        "jsx"
+      ],
+      "hosts": [
+        "react.dev",
+        "reactjs.org",
+        "reactnative.dev"
+      ]
+    },
+    {
+      "tag": "vue",
+      "aliases": [
+        "vuejs",
+        "vue-js",
+        "nuxt"
+      ],
+      "keywords": [
+        "single-file-components"
+      ],
+      "hosts": [
+        "vuejs.org",
+        "nuxt.com"
+      ]
+    },
+    {
+      "tag": "svelte",
+      "aliases": [
+        "sveltekit"
+      ],
+      "keywords": [],
+      "hosts": [
+        "svelte.dev",
+        "kit.svelte.dev"
+      ]
+    },
+    {
+      "tag": "angular",
+      "aliases": [
+        "angularjs"
+      ],
+      "keywords": [],
+      "hosts": [
+        "angular.dev",
+        "angular.io"
+      ]
+    },
+    {
+      "tag": "nextjs",
+      "aliases": [
+        "next-js"
+      ],
+      "keywords": [],
+      "hosts": [
+        "nextjs.org"
+      ]
+    },
+    {
+      "tag": "tailwind",
+      "aliases": [
+        "tailwindcss"
+      ],
+      "keywords": [
+        "utility-classes"
+      ],
+      "hosts": [
+        "tailwindcss.com",
+        "tailwindui.com"
+      ]
+    },
+    {
+      "tag": "css",
+      "aliases": [
+        "stylesheets",
+        "css3"
+      ],
+      "keywords": [
+        "flexbox",
+        "grid-layout",
+        "selectors"
+      ],
+      "hosts": [
+        "css-tricks.com",
+        "caniuse.com",
+        "web.dev"
+      ]
+    },
+    {
+      "tag": "frontend",
+      "aliases": [
+        "front-end",
+        "frontend-dev"
+      ],
+      "keywords": [],
+      "hosts": [
+        "frontendmasters.com",
+        "smashingmagazine.com"
+      ]
+    },
+    {
+      "tag": "django",
+      "aliases": [],
+      "keywords": [],
+      "hosts": [
+        "djangoproject.com",
+        "djangopackages.org"
+      ]
+    },
+    {
+      "tag": "flask",
+      "aliases": [],
+      "keywords": [],
+      "hosts": [
+        "flask.palletsprojects.com"
+      ]
+    },
+    {
+      "tag": "fastapi",
+      "aliases": [],
+      "keywords": [],
+      "hosts": [
+        "fastapi.tiangolo.com"
+      ]
+    },
+    {
+      "tag": "rails",
+      "aliases": [
+        "ruby-on-rails",
+        "ror"
+      ],
+      "keywords": [],
+      "hosts": [
+        "rubyonrails.org",
+        "guides.rubyonrails.org"
+      ]
+    },
+    {
+      "tag": "laravel",
+      "aliases": [],
+      "keywords": [],
+      "hosts": [
+        "laravel.com",
+        "laracasts.com"
+      ]
+    },
+    {
+      "tag": "spring",
+      "aliases": [
+        "spring-boot"
+      ],
+      "keywords": [],
+      "hosts": [
+        "spring.io"
+      ]
+    },
+    {
+      "tag": "kotlin",
+      "aliases": [],
+      "keywords": [],
+      "hosts": [
+        "kotlinlang.org"
+      ]
+    },
+    {
+      "tag": "c",
+      "aliases": [
+        "c-lang",
+        "clang"
+      ],
+      "keywords": [],
+      "hosts": [
+        "open-std.org"
+      ]
+    },
+    {
+      "tag": "elixir",
+      "aliases": [
+        "phoenix"
+      ],
+      "keywords": [],
+      "hosts": [
+        "elixir-lang.org",
+        "hexdocs.pm",
+        "phoenixframework.org"
+      ]
+    },
+    {
+      "tag": "erlang",
+      "aliases": [],
+      "keywords": [],
+      "hosts": [
+        "erlang.org"
+      ]
+    },
+    {
+      "tag": "haskell",
+      "aliases": [],
+      "keywords": [],
+      "hosts": [
+        "haskell.org",
+        "hackage.haskell.org"
+      ]
+    },
+    {
+      "tag": "scala",
+      "aliases": [],
+      "keywords": [],
+      "hosts": [
+        "scala-lang.org"
+      ]
+    },
+    {
+      "tag": "clojure",
+      "aliases": [],
+      "keywords": [],
+      "hosts": [
+        "clojure.org"
+      ]
+    },
+    {
+      "tag": "lua",
+      "aliases": [],
+      "keywords": [],
+      "hosts": [
+        "lua.org"
+      ]
+    },
+    {
+      "tag": "r-lang",
+      "aliases": [
+        "rstats",
+        "r-programming"
+      ],
+      "keywords": [
+        "cran",
+        "tidyverse"
+      ],
+      "hosts": [
+        "r-project.org",
+        "cran.r-project.org",
+        "posit.co",
+        "tidyverse.org"
+      ]
+    },
+    {
+      "tag": "julia",
+      "aliases": [
+        "julialang"
+      ],
+      "keywords": [],
+      "hosts": [
+        "julialang.org"
+      ]
+    },
+    {
+      "tag": "zig",
+      "aliases": [
+        "ziglang"
+      ],
+      "keywords": [],
+      "hosts": [
+        "ziglang.org"
+      ]
+    },
+    {
+      "tag": "dart",
+      "aliases": [],
+      "keywords": [],
+      "hosts": [
+        "dart.dev"
+      ]
+    },
+    {
+      "tag": "flutter",
+      "aliases": [],
+      "keywords": [],
+      "hosts": [
+        "flutter.dev"
+      ]
+    },
+    {
+      "tag": "perl",
+      "aliases": [],
+      "keywords": [],
+      "hosts": [
+        "perl.org",
+        "metacpan.org"
+      ]
+    },
+    {
+      "tag": "shell",
+      "aliases": [
+        "bash",
+        "zsh",
+        "shell-scripting"
+      ],
+      "keywords": [
+        "shellcheck"
+      ],
+      "hosts": [
+        "shellcheck.net",
+        "explainshell.com"
+      ]
+    },
+    {
+      "tag": "sql",
+      "aliases": [
+        "sql-queries"
+      ],
+      "keywords": [
+        "joins",
+        "queries"
+      ],
+      "hosts": [
+        "sqlzoo.net",
+        "use-the-index-luke.com"
+      ]
+    },
+    {
+      "tag": "postgres",
+      "aliases": [
+        "postgresql",
+        "psql"
+      ],
+      "keywords": [],
+      "hosts": [
+        "postgresql.org",
+        "neon.tech",
+        "supabase.com"
+      ]
+    },
+    {
+      "tag": "mysql",
+      "aliases": [
+        "mariadb"
+      ],
+      "keywords": [],
+      "hosts": [
+        "mysql.com",
+        "mariadb.org",
+        "mariadb.com"
+      ]
+    },
+    {
+      "tag": "sqlite",
+      "aliases": [],
+      "keywords": [],
+      "hosts": [
+        "sqlite.org"
+      ]
+    },
+    {
+      "tag": "mongodb",
+      "aliases": [
+        "mongo"
+      ],
+      "keywords": [],
+      "hosts": [
+        "mongodb.com"
+      ]
+    },
+    {
+      "tag": "redis",
+      "aliases": [
+        "valkey"
+      ],
+      "keywords": [],
+      "hosts": [
+        "redis.io",
+        "valkey.io"
+      ]
+    },
+    {
+      "tag": "elasticsearch",
+      "aliases": [
+        "opensearch",
+        "elastic"
+      ],
+      "keywords": [],
+      "hosts": [
+        "opensearch.org"
+      ]
+    },
+    {
+      "tag": "kafka",
+      "aliases": [
+        "apache-kafka"
+      ],
+      "keywords": [],
+      "hosts": [
+        "kafka.apache.org",
+        "confluent.io"
+      ]
+    },
+    {
+      "tag": "devops",
+      "aliases": [
+        "sre",
+        "platform-engineering"
+      ],
+      "keywords": [
+        "on-call",
+        "deployments"
+      ],
+      "hosts": [
+        "devops.com",
+        "sre.google"
+      ]
+    },
+    {
+      "tag": "aws",
+      "aliases": [
+        "amazon-web-services"
+      ],
+      "keywords": [],
+      "hosts": [
+        "aws.amazon.com",
+        "console.aws.amazon.com",
+        "docs.aws.amazon.com"
+      ]
+    },
+    {
+      "tag": "azure",
+      "aliases": [
+        "microsoft-azure"
+      ],
+      "keywords": [],
+      "hosts": [
+        "azure.microsoft.com",
+        "portal.azure.com"
+      ]
+    },
+    {
+      "tag": "gcp",
+      "aliases": [
+        "google-cloud"
+      ],
+      "keywords": [],
+      "hosts": [
+        "cloud.google.com",
+        "console.cloud.google.com"
+      ]
+    },
+    {
+      "tag": "cloudflare",
+      "aliases": [],
+      "keywords": [],
+      "hosts": [
+        "cloudflare.com",
+        "dash.cloudflare.com",
+        "developers.cloudflare.com"
+      ]
+    },
+    {
+      "tag": "terraform",
+      "aliases": [
+        "opentofu",
+        "hcl"
+      ],
+      "keywords": [],
+      "hosts": [
+        "terraform.io",
+        "developer.hashicorp.com",
+        "opentofu.org",
+        "registry.terraform.io"
+      ]
+    },
+    {
+      "tag": "ansible",
+      "aliases": [],
+      "keywords": [
+        "playbook"
+      ],
+      "hosts": [
+        "ansible.com",
+        "docs.ansible.com",
+        "galaxy.ansible.com"
+      ]
+    },
+    {
+      "tag": "nix",
+      "aliases": [
+        "nixos",
+        "nixpkgs"
+      ],
+      "keywords": [
+        "flakes"
+      ],
+      "hosts": [
+        "nixos.org",
+        "nixos.wiki",
+        "search.nixos.org"
+      ]
+    },
+    {
+      "tag": "vim",
+      "aliases": [
+        "neovim",
+        "nvim"
+      ],
+      "keywords": [
+        "vimrc"
+      ],
+      "hosts": [
+        "vim.org",
+        "neovim.io"
+      ]
+    },
+    {
+      "tag": "emacs",
+      "aliases": [],
+      "keywords": [
+        "elisp"
+      ],
+      "hosts": [
+        "emacswiki.org"
+      ]
+    },
+    {
+      "tag": "vscode",
+      "aliases": [
+        "vs-code",
+        "visual-studio-code"
+      ],
+      "keywords": [],
+      "hosts": [
+        "code.visualstudio.com",
+        "marketplace.visualstudio.com"
+      ]
+    },
+    {
+      "tag": "jetbrains",
+      "aliases": [
+        "intellij",
+        "pycharm",
+        "webstorm"
+      ],
+      "keywords": [],
+      "hosts": [
+        "jetbrains.com"
+      ]
+    },
+    {
+      "tag": "regex",
+      "aliases": [
+        "regular-expressions",
+        "regexp"
+      ],
+      "keywords": [],
+      "hosts": [
+        "regex101.com",
+        "regexr.com",
+        "regular-expressions.info"
+      ]
+    },
+    {
+      "tag": "game-dev",
+      "aliases": [
+        "gamedev",
+        "game-development"
+      ],
+      "keywords": [
+        "game-engine",
+        "sprites"
+      ],
+      "hosts": [
+        "gamedev.net",
+        "gamedeveloper.com"
+      ]
+    },
+    {
+      "tag": "unity",
+      "aliases": [
+        "unity3d"
+      ],
+      "keywords": [],
+      "hosts": [
+        "unity.com",
+        "unity3d.com",
+        "assetstore.unity.com"
+      ]
+    },
+    {
+      "tag": "godot",
+      "aliases": [
+        "godot-engine"
+      ],
+      "keywords": [],
+      "hosts": [
+        "godotengine.org"
+      ]
+    },
+    {
+      "tag": "unreal",
+      "aliases": [
+        "unreal-engine",
+        "ue5"
+      ],
+      "keywords": [],
+      "hosts": [
+        "unrealengine.com"
+      ]
+    },
+    {
+      "tag": "mobile-dev",
+      "aliases": [
+        "app-development",
+        "ios-dev",
+        "android-dev"
+      ],
+      "keywords": [
+        "app-store",
+        "xcode",
+        "android-studio"
+      ],
+      "hosts": [
+        "developer.android.com",
+        "reactnative.dev"
+      ]
+    },
+    {
+      "tag": "cheatsheets",
+      "aliases": [
+        "cheat-sheets"
+      ],
+      "keywords": [],
+      "hosts": [
+        "devhints.io",
+        "cheat.sh",
+        "tldr.sh",
+        "quickref.me"
+      ]
+    },
+    {
+      "tag": "api-docs",
+      "aliases": [
+        "api-reference"
+      ],
+      "keywords": [],
+      "hosts": [
+        "devdocs.io",
+        "readme.com"
+      ]
+    },
+    {
+      "tag": "cybersecurity",
+      "aliases": [
+        "infosec",
+        "cyber-security"
+      ],
+      "keywords": [
+        "pentest",
+        "exploit"
+      ],
+      "hosts": [
+        "owasp.org",
+        "sans.org",
+        "mitre.org",
+        "attack.mitre.org",
+        "cve.org",
+        "nvd.nist.gov"
+      ]
+    },
+    {
+      "tag": "ctf",
+      "aliases": [
+        "capture-the-flag"
+      ],
+      "keywords": [],
+      "hosts": [
+        "ctftime.org",
+        "picoctf.org",
+        "hackthebox.com",
+        "tryhackme.com",
+        "overthewire.org"
+      ]
+    },
+    {
+      "tag": "osint",
+      "aliases": [],
+      "keywords": [],
+      "hosts": [
+        "osintframework.com",
+        "bellingcat.com"
+      ]
+    },
+    {
+      "tag": "privacy-tools",
+      "aliases": [],
+      "keywords": [],
+      "hosts": [
+        "privacyguides.org",
+        "privacytools.io"
+      ]
+    },
+    {
+      "tag": "electronics-diy",
+      "aliases": [
+        "diy-electronics",
+        "maker",
+        "makers"
+      ],
+      "keywords": [
+        "soldering",
+        "breadboard",
+        "microcontroller",
+        "pcb"
+      ],
+      "hosts": [
+        "adafruit.com",
+        "sparkfun.com",
+        "instructables.com",
+        "hackster.io",
+        "pcbway.com",
+        "jlcpcb.com",
+        "kicad.org",
+        "easyeda.com"
+      ]
+    },
+    {
+      "tag": "arduino",
+      "aliases": [],
+      "keywords": [
+        "sketch",
+        "microcontroller"
+      ],
+      "hosts": [
+        "arduino.cc"
+      ]
+    },
+    {
+      "tag": "esp32",
+      "aliases": [
+        "esp8266",
+        "espressif"
+      ],
+      "keywords": [],
+      "hosts": [
+        "espressif.com",
+        "randomnerdtutorials.com"
+      ]
+    },
+    {
+      "tag": "raspberrypi",
+      "aliases": [],
+      "keywords": [],
+      "hosts": [
+        "raspberrypi.com",
+        "pimoroni.com"
+      ]
+    },
+    {
+      "tag": "mechanical-keyboards",
+      "aliases": [
+        "keyboards",
+        "mechkeys"
+      ],
+      "keywords": [
+        "keycaps",
+        "switches",
+        "qmk"
+      ],
+      "hosts": [
+        "keychron.com",
+        "geekhack.org",
+        "deskthority.net",
+        "qmk.fm",
+        "zmk.dev",
+        "keebtalk.com"
+      ]
+    },
+    {
+      "tag": "audio-gear",
+      "aliases": [
+        "hifi",
+        "headphones",
+        "audiophile"
+      ],
+      "keywords": [
+        "headphones",
+        "dac",
+        "amplifier",
+        "speakers"
+      ],
+      "hosts": [
+        "audiosciencereview.com",
+        "head-fi.org",
+        "headphones.com",
+        "squig.link",
+        "whathifi.com"
+      ]
+    },
+    {
+      "tag": "drones",
+      "aliases": [
+        "fpv",
+        "uav"
+      ],
+      "keywords": [
+        "quadcopter",
+        "fpv"
+      ],
+      "hosts": [
+        "dji.com",
+        "oscarliang.com",
+        "betaflight.com"
+      ]
+    },
+    {
+      "tag": "semiconductors",
+      "aliases": [
+        "chips",
+        "chipmakers"
+      ],
+      "keywords": [
+        "wafer",
+        "foundry",
+        "lithography"
+      ],
+      "hosts": [
+        "tsmc.com",
+        "asml.com",
+        "semianalysis.com",
+        "semiengineering.com"
+      ]
+    },
+    {
+      "tag": "quantum-computing",
+      "aliases": [
+        "quantum"
+      ],
+      "keywords": [
+        "qubit",
+        "quantum-computer"
+      ],
+      "hosts": [
+        "quantum.ibm.com",
+        "quantumai.google",
+        "thequantuminsider.com"
+      ]
+    },
+    {
+      "tag": "robotics",
+      "aliases": [
+        "robots"
+      ],
+      "keywords": [
+        "actuator",
+        "ros"
+      ],
+      "hosts": [
+        "ros.org",
+        "robots.ieee.org",
+        "bostondynamics.com"
+      ]
+    },
+    {
+      "tag": "retro-computing",
+      "aliases": [
+        "retrocomputing",
+        "vintage-computers"
+      ],
+      "keywords": [
+        "commodore",
+        "amiga",
+        "msx"
+      ],
+      "hosts": [
+        "vogons.org",
+        "lemon64.com",
+        "eab.abime.net",
+        "retrocomputing.stackexchange.com"
+      ]
+    },
+    {
+      "tag": "homelab",
+      "aliases": [
+        "home-lab"
+      ],
+      "keywords": [
+        "rack",
+        "proxmox",
+        "homelab"
+      ],
+      "hosts": [
+        "homelab.wiki",
+        "labgopher.com"
+      ]
+    },
+    {
+      "tag": "linux-distros",
+      "aliases": [
+        "distros",
+        "linux-distributions"
+      ],
+      "keywords": [],
+      "hosts": [
+        "ubuntu.com",
+        "debian.org",
+        "archlinux.org",
+        "wiki.archlinux.org",
+        "fedoraproject.org",
+        "linuxmint.com",
+        "opensuse.org",
+        "distrowatch.com",
+        "alpinelinux.org",
+        "pop.system76.com",
+        "endeavouros.com",
+        "nixos.org"
+      ]
+    },
+    {
+      "tag": "apple",
+      "aliases": [
+        "macbook",
+        "iphone",
+        "ipad"
+      ],
+      "keywords": [
+        "iphone",
+        "ipad",
+        "macbook"
+      ],
+      "hosts": [
+        "apple.com",
+        "9to5mac.com",
+        "macrumors.com",
+        "appleinsider.com",
+        "iculture.nl"
+      ]
+    },
+    {
+      "tag": "google",
+      "aliases": [
+        "pixel",
+        "chromebook"
+      ],
+      "keywords": [],
+      "hosts": [
+        "blog.google",
+        "store.google.com",
+        "9to5google.com"
+      ]
+    },
+    {
+      "tag": "open-source",
+      "aliases": [
+        "oss",
+        "foss",
+        "opensource"
+      ],
+      "keywords": [
+        "license",
+        "contributors",
+        "maintainers"
+      ],
+      "hosts": [
+        "opensource.org",
+        "fsf.org",
+        "gnu.org",
+        "apache.org",
+        "linuxfoundation.org",
+        "sourcehut.org",
+        "codeberg.org"
+      ]
+    },
+    {
+      "tag": "rust",
+      "hosts": [
+        "github.com/rust-lang"
+      ]
+    },
+    {
+      "tag": "golang",
+      "hosts": [
+        "github.com/golang"
+      ]
+    },
+    {
+      "tag": "python",
+      "hosts": [
+        "github.com/python"
+      ]
+    },
+    {
+      "tag": "nodejs",
+      "hosts": [
+        "github.com/nodejs"
+      ]
+    },
+    {
+      "tag": "deno",
+      "hosts": [
+        "github.com/denoland"
+      ]
+    },
+    {
+      "tag": "svelte",
+      "hosts": [
+        "github.com/sveltejs"
+      ]
+    },
+    {
+      "tag": "vue",
+      "hosts": [
+        "github.com/vuejs"
+      ]
+    },
+    {
+      "tag": "angular",
+      "hosts": [
+        "github.com/angular"
+      ]
+    },
+    {
+      "tag": "django",
+      "hosts": [
+        "github.com/django"
+      ]
+    },
+    {
+      "tag": "rails",
+      "hosts": [
+        "github.com/rails"
+      ]
+    },
+    {
+      "tag": "laravel",
+      "hosts": [
+        "github.com/laravel"
+      ]
+    },
+    {
+      "tag": "spring",
+      "hosts": [
+        "github.com/spring-projects"
+      ]
+    },
+    {
+      "tag": "jetbrains",
+      "hosts": [
+        "github.com/jetbrains"
+      ]
+    },
+    {
+      "tag": "vim",
+      "hosts": [
+        "github.com/neovim",
+        "github.com/vim"
+      ]
+    },
+    {
+      "tag": "kubernetes",
+      "hosts": [
+        "github.com/kubernetes"
+      ]
+    },
+    {
+      "tag": "terraform",
+      "hosts": [
+        "github.com/hashicorp",
+        "github.com/opentofu"
+      ]
+    },
+    {
+      "tag": "ansible",
+      "hosts": [
+        "github.com/ansible"
+      ]
+    },
+    {
+      "tag": "nix",
+      "hosts": [
+        "github.com/nixos"
+      ]
+    },
+    {
+      "tag": "godot",
+      "hosts": [
+        "github.com/godotengine"
+      ]
+    },
+    {
+      "tag": "postgres",
+      "hosts": [
+        "github.com/postgres"
+      ]
+    },
+    {
+      "tag": "redis",
+      "hosts": [
+        "github.com/redis"
+      ]
+    },
+    {
+      "tag": "tailwind",
+      "hosts": [
+        "github.com/tailwindlabs"
+      ]
+    },
+    {
+      "tag": "kotlin",
+      "hosts": [
+        "github.com/kotlin"
+      ]
+    },
+    {
+      "tag": "elixir",
+      "hosts": [
+        "github.com/elixir-lang",
+        "github.com/phoenixframework"
+      ]
+    },
+    {
+      "tag": "haskell",
+      "hosts": [
+        "github.com/haskell"
+      ]
+    },
+    {
+      "tag": "zig",
+      "hosts": [
+        "github.com/ziglang"
+      ]
+    },
+    {
+      "tag": "flutter",
+      "hosts": [
+        "github.com/flutter"
+      ]
+    },
+    {
+      "tag": "dart",
+      "hosts": [
+        "github.com/dart-lang"
+      ]
+    },
+    {
+      "tag": "julia",
+      "hosts": [
+        "github.com/julialang"
+      ]
+    },
+    {
+      "tag": "smart-home",
+      "hosts": [
+        "github.com/home-assistant",
+        "github.com/esphome",
+        "github.com/koenkk"
+      ]
+    },
+    {
+      "tag": "media-server",
+      "hosts": [
+        "github.com/jellyfin",
+        "github.com/sonarr",
+        "github.com/radarr",
+        "github.com/lidarr",
+        "github.com/prowlarr",
+        "github.com/overseerr",
+        "github.com/tautulli"
+      ]
+    },
+    {
+      "tag": "self-hosted",
+      "hosts": [
+        "github.com/linuxserver",
+        "github.com/awesome-selfhosted",
+        "github.com/immich-app",
+        "github.com/nextcloud",
+        "github.com/paperless-ngx",
+        "github.com/louislam",
+        "github.com/gethomepage",
+        "github.com/portainer"
+      ]
+    },
+    {
+      "tag": "ai",
+      "hosts": [
+        "github.com/ollama",
+        "github.com/huggingface",
+        "github.com/openai",
+        "github.com/anthropics",
+        "github.com/open-webui",
+        "github.com/ggml-org",
+        "github.com/comfyanonymous",
+        "github.com/automatic1111",
+        "github.com/lmstudio-ai",
+        "github.com/mistralai"
+      ]
+    },
+    {
+      "tag": "networking",
+      "hosts": [
+        "github.com/pi-hole",
+        "github.com/adguardteam",
+        "github.com/traefik",
+        "github.com/nginxproxymanager",
+        "github.com/tailscale",
+        "github.com/juanfont",
+        "github.com/wg-easy"
+      ]
+    },
+    {
+      "tag": "monitoring",
+      "hosts": [
+        "github.com/grafana",
+        "github.com/prometheus",
+        "github.com/netdata"
+      ]
+    },
+    {
+      "tag": "containers",
+      "hosts": [
+        "github.com/docker",
+        "github.com/moby",
+        "github.com/containers",
+        "github.com/podman-desktop"
+      ]
+    },
+    {
+      "tag": "security",
+      "hosts": [
+        "github.com/owasp",
+        "github.com/dani-garcia",
+        "github.com/bitwarden",
+        "github.com/goauthentik",
+        "github.com/authelia",
+        "github.com/crowdsecurity"
+      ]
+    },
+    {
+      "tag": "raspberrypi",
+      "hosts": [
+        "github.com/raspberrypi"
+      ]
+    },
+    {
+      "tag": "arduino",
+      "hosts": [
+        "github.com/arduino"
+      ]
+    },
+    {
+      "tag": "esp32",
+      "hosts": [
+        "github.com/espressif"
+      ]
+    },
+    {
+      "tag": "mechanical-keyboards",
+      "hosts": [
+        "github.com/qmk",
+        "github.com/zmkfirmware"
+      ]
+    },
+    {
+      "tag": "mobile-apps",
+      "aliases": [
+        "apps",
+        "app",
+        "mobile-app",
+        "android-apps",
+        "iphone-apps",
+        "ios-apps"
+      ],
+      "keywords": [
+        "app-store",
+        "google-play",
+        "download-the-app"
+      ],
+      "hosts": []
     }
   ]
 }

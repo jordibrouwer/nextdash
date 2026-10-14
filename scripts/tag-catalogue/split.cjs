@@ -7,8 +7,8 @@
  *   node scripts/tag-catalogue/split.cjs
  *   node scripts/tag-catalogue/apply.cjs
  *
- * splits.json gives each child the Wikidata classes (instance of, P31) or,
- * for clubs, the leagues (P118) that make a site one of its kind. Per class
+ * splits.json gives each child the Wikidata classes (instance of, P31), the
+ * leagues (P118) or the sports (P641) that make a site one of its kind. Per class
  * or league one query fetches every item of it with an official website
  * (P856), the way byclass.cjs builds the catalogue: a few dozen queries
  * instead of one per host. A derived host of the broad subject that turns up
@@ -64,7 +64,7 @@ function hostOf(site) {
     }
 }
 
-/** Every host whose item is of this class (P31) or plays in this league (P118). */
+/** Every host whose item is of this class (P31), in this league (P118) or of this sport (P641). */
 async function hostsFor(key) {
     if (cache[key]) return cache[key];
     const [prop, q] = key.split(':');
@@ -98,7 +98,11 @@ async function main() {
         const counts = {};
         const sets = [];
         for (const kid of kids) {
-            const keys = [...(kid.classes || []).map((q) => `P31:${q}`), ...(kid.leagues || []).map((q) => `P118:${q}`)];
+            const keys = [
+                ...(kid.classes || []).map((q) => `P31:${q}`),
+                ...(kid.leagues || []).map((q) => `P118:${q}`),
+                ...(kid.sports || []).map((q) => `P641:${q}`),
+            ];
             const hosts = new Set();
             for (const key of keys) (await hostsFor(key)).forEach((host) => hosts.add(host));
             sets.push([kid.tag, hosts]);

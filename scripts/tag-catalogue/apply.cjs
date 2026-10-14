@@ -13,6 +13,8 @@
  * - subjects.json: new hand-written subjects and their sites, added when
  *   missing; never removed.
  * - parents.json: each subject's broader subject, written as `parent`.
+ * - manual/splits.json and manual/classes.json: where split.cjs and
+ *   import-classes.cjs put each host, written in the same way as cleanup.
  * - manual/cleanup.json: derived hosts that were filed wrongly. Each is taken
  *   out of every subject's `derived` and put under the subjects listed, or
  *   under none for []. classify.cjs reads the same file as handwork, so a
@@ -34,6 +36,8 @@ const cleanup = readJSON('manual', 'cleanup.json');
 const splitsFile = path.join(__dirname, 'splits.json');
 const splitDefs = fs.existsSync(splitsFile) ? readJSON('splits.json').splits : {};
 const splitHosts = fs.existsSync(path.join(__dirname, 'manual', 'splits.json')) ? readJSON('manual', 'splits.json') : {};
+// Well-known sites of whole Wikidata classes (import-classes.cjs).
+const classHosts = fs.existsSync(path.join(__dirname, 'manual', 'classes.json')) ? readJSON('manual', 'classes.json') : {};
 
 const { subjects } = readJSON('subjects.json');
 const splitSubjects = Object.values(splitDefs).flat().filter(({ existing }) => !existing)
@@ -52,7 +56,7 @@ doc.tags.sort((a, b) => (a.tag < b.tag ? -1 : a.tag > b.tag ? 1 : 0));
 const bySubject = new Map(doc.tags.map((entry) => [entry.tag, entry]));
 let moved = 0;
 let dropped = 0;
-Object.entries({ ...splitHosts, ...cleanup }).forEach(([host, tags]) => {
+Object.entries({ ...splitHosts, ...classHosts, ...cleanup }).forEach(([host, tags]) => {
     doc.tags.forEach((entry) => {
         if (entry.derived) entry.derived = entry.derived.filter((written) => written.replace(/^=/, '') !== host);
     });

@@ -587,7 +587,9 @@ test.describe('the suggestions panel', () => {
         // of them; only the asked hosts come with it.
         expect(doc.tags.length).toBeGreaterThan(300);
         const hosts = doc.tags.flatMap((entry) => entry.hosts);
-        expect(hosts.sort()).toEqual(['=google.com', 'github.com', 'mail.google.com']);
+        // Sections (github.com/rust-lang) travel with their host.
+        expect(hosts.filter((host) => !host.includes('/')).sort()).toEqual(['=google.com', 'github.com', 'mail.google.com']);
+        expect(hosts.filter((host) => host.includes('/')).every((host) => host.startsWith('github.com/'))).toBe(true);
 
         // And it reaches the engine: a bookmark on a site the catalogue knows
         // is offered that site's subject, and an exact host lends nothing to
