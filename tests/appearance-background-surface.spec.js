@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, setChip } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, setChip, openConfigPanel } = require('./e2e-helpers');
 
 /**
  * Appearance → Background and Surface, and the category header on Rows.
@@ -74,6 +74,7 @@ test.describe('the Background and Surface tabs', () => {
 
     test('a chosen backdrop reaches the page and survives a reload', async ({ page }) => {
         await openTab(page, 'background');
+        await openConfigPanel(page, 'Backdrop');
 
         await page.locator('[data-backdrop-mode="pick"]').click();
         await expect(page.locator('.config-backdrop-thumb')).toHaveCount(26);
@@ -85,6 +86,8 @@ test.describe('the Background and Surface tabs', () => {
         expect(await page.getAttribute('body', 'data-backdrop-recipe')).toBe('hexagons');
 
         await openTab(page, 'background');
+        // Opened by its header before the reload, and remembered.
+        await expect(page.locator('[data-backdrop-mode="pick"]')).toBeVisible();
         await expect(page.locator('.config-backdrop-thumb.is-active')).toHaveAttribute('data-backdrop-recipe', 'hexagons');
 
         await page.locator('[data-backdrop-mode="follow"]').click();
@@ -97,6 +100,7 @@ test.describe('the Background and Surface tabs', () => {
 
     test('the sliders are live, saved, and there when the page comes back', async ({ page }) => {
         await openTab(page, 'background');
+        await openConfigPanel(page, 'Backdrop');
 
         await openFine(page, 'backdrop');
         await page.locator('[data-backdrop-tuning="strength"]').fill('0.5');
@@ -120,6 +124,7 @@ test.describe('the Background and Surface tabs', () => {
 
     test('a new variant is saved and fetches the stylesheet again', async ({ page }) => {
         await openTab(page, 'background');
+        await openConfigPanel(page, 'Backdrop');
 
         await openFine(page, 'backdrop');
         const refetch = page.waitForRequest((req) => req.url().includes('/api/theme.css'));
@@ -138,6 +143,7 @@ test.describe('the Background and Surface tabs', () => {
         await expect.poll(() => page.getAttribute('body', 'data-depth')).toBe('glass');
         await expect(page.locator('[data-glass-depth-hint]')).toHaveCount(0);
 
+        await openConfigPanel(page, 'Card glass');
         await page.locator('[data-glass-mode="own"]').click();
         // The choice repaints the tab when its save comes back, and a slider
         // moved before that is a slider that is then replaced.
@@ -160,11 +166,13 @@ test.describe('the Background and Surface tabs', () => {
         await openTab(page, 'surface');
         await page.locator('[data-glass-mode="follow"]').click();
         await expect.poll(() => rootVar(page, '--theme-surface-alpha')).toBe('');
+        await openConfigPanel(page, page.locator('[data-appearance-action="reset-theme-surfaces"]'));
         await page.locator('[data-appearance-action="reset-theme-surfaces"]').click();
     });
 
     test('the category header: a style, a count, and both come back', async ({ page }) => {
         await openTab(page, 'display');
+        await openConfigPanel(page, page.locator('[data-behavior-field="categoryHeaderStyle"]'));
 
         await page.locator('[data-behavior-field="categoryHeaderStyle"]').selectOption('underlined');
         await setChip(page.locator('[data-behavior-field="showCategoryCount"]'), true);
@@ -189,6 +197,7 @@ test.describe('the Background and Surface tabs', () => {
 
     test('hiding the icon takes it off every header', async ({ page }) => {
         await openTab(page, 'display');
+        await openConfigPanel(page, page.locator('[data-behavior-field="showCategoryIcon"]'));
         await setChip(page.locator('[data-behavior-field="showCategoryIcon"]'), false);
         await expect.poll(() => page.getAttribute('body', 'data-cat-icon')).toBe('off');
         await expect.poll(async () => (await stored(page)).showCategoryIcon, { timeout: 5_000 }).toBe(false);

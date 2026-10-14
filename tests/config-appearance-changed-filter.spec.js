@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, openConfigPanel } = require('./e2e-helpers');
 
 /**
  * "Only changed" works on Appearance, not just Behavior.
@@ -121,8 +121,10 @@ test.describe('appearance only-changed filter', () => {
         await expect(page.locator('[data-appearance-bg="gradient"]')).toBeVisible();
         await expect(page.locator('[data-appearance-select="backgroundPattern"]')).toBeHidden();
 
-        // Turning it back off brings everything back.
+        // Turning it back off brings everything back -- folded as it was
+        // left, so the pattern is one header click away.
         await page.locator(toggle).click();
+        await openConfigPanel(page, 'Pattern');
         await expect(page.locator('[data-appearance-select="backgroundPattern"]')).toBeVisible();
 
         await resetField(page, 'backgroundType', 'none');

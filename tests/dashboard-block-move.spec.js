@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent, waitForConfigReady } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent, waitForConfigReady, openConfigPanel } = require('./e2e-helpers');
 
 const blockSel = '#dashboard-layout .category[data-category-id]:not([data-smart-collection="true"])';
 
@@ -317,6 +317,7 @@ test.describe('moving blocks on the dashboard', () => {
         await page.waitForSelector('#config-appearance-body', { timeout: 20_000 });
         await page.click('[data-appearance-tab="display"]');
         const style = page.locator('[data-behavior-field="categoryHeaderStyle"]');
+        await openConfigPanel(page, style);
         await style.selectOption('underlined');
         await expect.poll(() => page.getAttribute('body', 'data-cat-head')).toBe('underlined');
         try {

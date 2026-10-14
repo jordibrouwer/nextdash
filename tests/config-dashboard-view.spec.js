@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, markConfigSettingPromosSeen } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, markConfigSettingPromosSeen, openConfigPanel } = require('./e2e-helpers');
 
 /**
  * Config as a dashboard view — Phase 1 scaffold.
@@ -391,6 +391,7 @@ test.describe('config dashboard view (scaffold)', () => {
     test('the appearance section renders theme and font-size controls', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
+        await openConfigPanel(page, 'Type');
 
         await expect(page.locator('[data-appearance-theme="light"]')).toBeVisible();
         await expect(page.locator('[data-appearance-theme="dark"]')).toBeVisible();
@@ -566,6 +567,7 @@ test.describe('config dashboard view (scaffold)', () => {
     test('appearance exposes the full control set', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
+        await openConfigPanel(page, 'Type');
 
         await expect(page.locator('[data-appearance-select="fontPreset"]')).toBeVisible();
         await expect(page.locator('[data-appearance-weight="bold"]')).toBeVisible();
@@ -580,9 +582,11 @@ test.describe('config dashboard view (scaffold)', () => {
         await page.locator('[data-appearance-tab="background"]').click();
         await expect(page.locator('[data-appearance-bg="gradient"]')).toBeVisible();
         await expect(page.locator('[data-appearance-range="backgroundOpacity"]')).toBeVisible();
+        await openConfigPanel(page, 'Backdrop');
         await expect(page.locator('[data-backdrop-mode="pick"]')).toBeVisible();
         await page.locator('[data-appearance-tab="surface"]').click();
         await expect(page.locator('[data-appearance-select="themeDepth"]')).toBeVisible();
+        await openConfigPanel(page, 'Card glass');
         // The card glass sliders sit under Fine-tune, folded until opened.
         await expect(page.locator('[data-glass-range="alpha"]')).toBeHidden();
         await page.locator('[data-fine="glass"] [data-fine-toggle]').click();
@@ -594,6 +598,7 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('[data-behavior-field="launcherIconSize"]')).toBeVisible();
 
         await page.locator('[data-appearance-tab="general"]').click();
+        await openConfigPanel(page, 'Text and motion');
         await expect(page.locator('[data-appearance-toggle="animationsEnabled"]')).toBeVisible();
 
         await page.locator('[data-appearance-tab="display"]').click();
@@ -603,6 +608,7 @@ test.describe('config dashboard view (scaffold)', () => {
         // browser tab says of the page.
         await page.locator('[data-appearance-tab="header"]').click();
         await expect(page.locator('[data-appearance-tab="branding"]')).toHaveCount(0);
+        await openConfigPanel(page, 'Browser tab & branding');
         await expect(page.locator('[data-appearance-toggle="enableCustomTitle"]')).toBeVisible();
         await expect(page.locator('[data-appearance-text="customTitle"]')).toBeVisible();
         await expect(page.locator('[data-appearance-action="upload-favicon"]')).toBeVisible();
@@ -650,6 +656,7 @@ test.describe('config dashboard view (scaffold)', () => {
         });
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
+        await openConfigPanel(page, 'Type');
 
         await page.locator('[data-appearance-select="fontPreset"]').selectOption('jetbrains-mono');
 
@@ -718,6 +725,7 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('[data-behavior-field="densityMode"]')).toBeVisible();
 
         await page.locator('[data-appearance-tab="display"]').click();
+        await openConfigPanel(page, 'Bookmark display');
         await expect(page.locator('[data-behavior-field="showStatus"]')).toBeVisible();
         await expect(page.locator('[data-appearance-toggle="showIcons"]')).toBeVisible();
     });
@@ -775,6 +783,7 @@ test.describe('config dashboard view (scaffold)', () => {
         // Date & weather lives under Appearance now.
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = 'datetime', window.dashboardInstance.config).openConfigView('appearance'));
 
+        await openConfigPanel(page, 'Date & time');
         await page.locator('[data-behavior-field="dateFormat"]').selectOption('iso');
 
         await expect.poll(() => saved && saved.dateFormat).toBe('iso');
@@ -791,6 +800,7 @@ test.describe('config dashboard view (scaffold)', () => {
         });
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
+        await openConfigPanel(page, 'Type');
 
         await page.locator('[data-appearance-font="xl"]').click();
 

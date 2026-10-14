@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen, openConfigPanel } = require('./e2e-helpers');
 
 const PROMO_ID = 'random-theme-v2';
 const STORAGE_KEY = `nextdash:config-setting-promo-seen-v1:${PROMO_ID}`;
@@ -114,6 +114,7 @@ test.describe('Config setting promo', () => {
         // Header, where the custom title lives: that toggle is what proves the
         // tab stayed.
         await page.locator('[data-appearance-tab="header"]').click();
+        await openConfigPanel(page, 'Browser tab & branding');
         await expect(page.locator('[data-appearance-toggle="enableCustomTitle"]')).toBeVisible();
 
         // The reveal retries for several seconds; outlast them.

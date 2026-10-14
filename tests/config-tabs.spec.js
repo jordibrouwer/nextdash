@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen, openConfigPanel } = require('./e2e-helpers');
 
 /**
  * Config → Appearance and Behavior open straight on a tab of settings.
@@ -29,6 +29,9 @@ test('Appearance opens on its first tab, with the settings already there', async
     await expect(page.locator('[data-appearance-tab]')).toHaveText(
         ['Theme & type', 'Background', 'Surfaces', 'Layout', 'Rows', 'Link previews', 'Header', 'Action bar', 'Date & weather']);
     await expect(page.locator('[data-appearance-tab="general"]')).toHaveAttribute('aria-selected', 'true');
+    // The first panel is open; the rest fold until their header is clicked.
+    await expect(page.locator('[data-appearance-select="theme"], [data-theme-picker-button]').first()).toBeVisible();
+    await openConfigPanel(page, 'Type');
     await expect(page.locator('[data-appearance-select="fontPreset"]')).toBeVisible();
     await expect(page.locator('.config-preview')).toHaveAttribute('data-preview-focus', 'all');
 });

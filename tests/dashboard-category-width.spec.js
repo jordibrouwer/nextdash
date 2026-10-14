@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel } = require('./e2e-helpers');
 
 /**
  * A category can spread across several grid columns.
@@ -210,6 +210,7 @@ test.describe('spreading is a switch, the width follows from the content', () =>
             c.appearanceTab = 'layout';
             c.render();
         });
+        await openConfigPanel(page, 'Categories across columns');
         await page.waitForSelector('[data-behavior-field="categoryItemLimit"]', { timeout: 15_000 });
         // And the other way round: with spreading in use, config refuses to
         // offer Unlimited rather than letting the two contradict each other.
@@ -690,6 +691,7 @@ test.describe('config points the way to the new setting', () => {
             c.appearanceTab = 'layout';
             c.render();
         });
+        await openConfigPanel(page, 'Categories across columns');
         await page.waitForSelector('[data-behavior-field="categoryItemLimit"]', { timeout: 15_000 });
 
         // The twinkle marked the way to categories across columns when that was
@@ -760,6 +762,7 @@ test.describe('config sets the switch too', () => {
         // are on rather than everything you own.
         await expect(page.locator('[data-behavior-field="categorySpreadResetScope"]')).toHaveValue('page');
 
+        await openConfigPanel(page, 'Categories across columns');
         await page.locator('[data-config-action="resetCategorySpreads"]').click();
         await page.locator('#config-confirm-modal [data-confirm="ok"]').click();
         // Asserted against the stored file rather than the copy in memory: what

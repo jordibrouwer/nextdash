@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen, openConfigPanel } = require('./e2e-helpers');
 
 /**
  * The refresh interval is only read when the timer is armed, so changing it has
@@ -31,6 +31,7 @@ test('changing the weather refresh interval re-arms the timer live', async ({ pa
     // Change it through the config path, not by hand.
     await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.locator('[data-appearance-tab="datetime"]').click();
+    await openConfigPanel(page, 'Weather');
     const input = page.locator('[data-behavior-field="weatherRefreshMinutes"]');
     await input.scrollIntoViewIfNeeded();
     await input.fill('5');

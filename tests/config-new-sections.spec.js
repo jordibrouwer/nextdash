@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel } = require('./e2e-helpers');
 
 async function loadDashboard(page) {
     await page.goto('/');
@@ -313,6 +313,7 @@ test.describe('config: sections restored from the old config', () => {
         await loadDashboard(page);
         await openSection(page, 'appearance');
         await page.locator('[data-appearance-tab="layout"]').click();
+        await openConfigPanel(page, 'Categories across columns');
 
         const preset = page.locator('[data-behavior-field="layoutPreset"]');
         const limit = page.locator('[data-behavior-field="categoryItemLimit"]');
@@ -351,6 +352,7 @@ test.describe('config: sections restored from the old config', () => {
         });
         await loadDashboard(page);
         await openAppearanceTab(page, 'layout');
+        await openConfigPanel(page, 'Categories across columns');
 
         await page.locator('[data-behavior-field="categoryItemLimit"]').selectOption('25');
         await expect
@@ -534,6 +536,7 @@ test.describe('config: font size applies live', () => {
             panel: await sizeOf(page, '.config-panel-title'),
         };
 
+        await openConfigPanel(page, 'Type');
         await page.locator('[data-appearance-font="xl"]').click();
         await expect.poll(() => page.evaluate(() =>
             document.body.classList.contains('font-size-xl'))).toBe(true);
@@ -556,6 +559,7 @@ test.describe('config: font size applies live', () => {
             document.body.classList.contains('font-size-m'))).toBe(true);
         const base = await sizeOf(page, '.config-view-section-title');
 
+        await openConfigPanel(page, 'Type');
         await page.locator('[data-appearance-font="xs"]').click();
         await expect.poll(() => page.evaluate(() =>
             document.body.classList.contains('font-size-xs'))).toBe(true);
@@ -565,6 +569,7 @@ test.describe('config: font size applies live', () => {
     test('the size survives reopening the view', async ({ page }) => {
         await loadDashboard(page);
         await openSection(page, 'appearance');
+        await openConfigPanel(page, 'Type');
         await page.locator('[data-appearance-font="l"]').click();
         // The class swap is what changes the size, and it lands a recalc after
         // the click — measuring straight away read the size the view still had,

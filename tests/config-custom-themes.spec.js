@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel } = require('./e2e-helpers');
 
 /**
  * Start from no custom themes.
@@ -53,8 +53,8 @@ test.describe('custom theme editor', () => {
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
-        // Eight on the strip; Custom themes is a page of Look, reached from it.
-        await expect(page.locator('[data-appearance-tab]')).toHaveCount(8);
+        // Nine on the strip; Custom themes is a page of Theme & type, reached from it.
+        await expect(page.locator('[data-appearance-tab]')).toHaveCount(9);
         await expect(page.locator('[data-appearance-tab="general"]')).toBeVisible();
         await expect(page.locator('[data-appearance-tab="background"]')).toBeVisible();
         await expect(page.locator('[data-appearance-tab="surface"]')).toBeVisible();
@@ -286,6 +286,9 @@ test.describe('custom theme editor', () => {
             await window.dashboardInstance.saveSettings?.();
         }, customId);
 
+        // Favicons moved to Rows.
+        await page.locator('[data-appearance-tab="display"]').click();
+        await openConfigPanel(page, 'Favicons');
         await page.locator('[data-appearance-toggle-icons="on"]').click();
         await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
 
@@ -316,15 +319,21 @@ test.describe('custom theme editor', () => {
             await window.dashboardInstance.saveSettings?.();
         }, customId);
 
+        // Favicons moved to Rows.
+        await page.locator('[data-appearance-tab="display"]').click();
+        await openConfigPanel(page, 'Favicons');
         await page.locator('[data-appearance-toggle-icons="on"]').click();
         await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
         await expect.poll(() => page.evaluate((id) =>
             window.dashboardInstance.config.iconStylingEntry()?.enabled === true)).toBe(true);
 
+        // Custom themes is reached from Theme & type; the favicons are on Rows.
+        await page.locator('[data-appearance-tab="general"]').click();
         await page.locator('[data-appearance-goto="custom-themes"]').click();
         await expect(page.locator('[data-theme-add]')).toBeVisible();
 
-        await page.locator('[data-appearance-tab="general"]').click();
+        await page.locator('[data-appearance-tab="display"]').click();
+        await openConfigPanel(page, 'Favicons');
         await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
         expect(await page.evaluate((id) =>
             window.dashboardInstance.config.iconStylingEntry()?.enabled === true)).toBe(true);
@@ -342,6 +351,9 @@ test.describe('custom theme editor', () => {
         await expect.poll(() => page.evaluate((id) =>
             window.dashboardInstance.settings.theme === id, customId)).toBe(true);
 
+        // Favicons moved to Rows.
+        await page.locator('[data-appearance-tab="display"]').click();
+        await openConfigPanel(page, 'Favicons');
         await page.locator('[data-appearance-toggle-icons="on"]').click();
         await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
 
@@ -372,6 +384,9 @@ test.describe('custom theme editor', () => {
         await expect.poll(() => page.evaluate((id) =>
             window.dashboardInstance.settings.theme === id, customId)).toBe(true);
 
+        // Favicons moved to Rows.
+        await page.locator('[data-appearance-tab="display"]').click();
+        await openConfigPanel(page, 'Favicons');
         await page.locator('[data-appearance-toggle-icons="on"]').click();
         await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
         await expect.poll(() => page.evaluate((id) =>

@@ -1,6 +1,6 @@
 const { test, expect } = require('./fixtures');
 const { mockDocker } = require('./helpers/docker-mock');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel } = require('./e2e-helpers');
 
 /**
  * The list views arrive the way the tag view does: the header, rail and
@@ -157,6 +157,7 @@ test.describe('animation speed', () => {
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
         await page.waitForSelector('#config-appearance-body', { timeout: 20_000 });
         await page.click('[data-appearance-tab="general"]');
+        await openConfigPanel(page, 'Text and motion');
         const select = page.locator('[data-appearance-select="animationSpeed"]');
         await expect(select).toHaveValue('normal');
         await expect(select.locator('option')).toHaveCount(3);
@@ -220,6 +221,7 @@ test('Animations in views and modals is a switch of its own beside Enable animat
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
     await page.waitForSelector('#config-appearance-body', { timeout: 20_000 });
     await page.click('[data-appearance-tab="general"]');
+    await openConfigPanel(page, 'Text and motion');
     const views = page.locator('[data-appearance-toggle="viewAnimationsEnabled"]');
     await expect(views).toBeChecked();
     try {

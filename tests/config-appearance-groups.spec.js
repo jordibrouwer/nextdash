@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen, openConfigPanel } = require('./e2e-helpers');
 
 /**
  * Appearance's tab strip reads in three labelled groups, and a few settings
@@ -52,7 +52,7 @@ test.describe('the grouped strip', () => {
 
     test('Rows no longer holds the link preview panel', async ({ page }) => {
         await open(page, '#config/appearance/display');
-        await expect(page.locator('[data-behavior-field="showStatus"]')).toBeVisible();
+        await expect(page.locator('[data-behavior-field="showStatus"]')).toHaveCount(1);
         await expect(page.locator('[data-behavior-field="linkPreviewMode"]')).toHaveCount(0);
     });
 });
@@ -75,13 +75,14 @@ test.describe('settings that moved home', () => {
         await expect(panel.locator('[data-appearance-toggle-icons]').first()).toBeVisible();
         await expect(panel.locator('[data-appearance-toggle="colorizeStatus"]')).toBeVisible();
         await tab(page, 'general').click();
-        await expect(page.locator('[data-appearance-select="fontPreset"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-select="fontPreset"]')).toHaveCount(1);
         await expect(page.locator('[data-appearance-toggle-icons]')).toHaveCount(0);
         await expect(page.locator('[data-appearance-toggle="showIcons"]')).toHaveCount(0);
     });
 
     test('Browser tab & branding is one panel on Header', async ({ page }) => {
         await open(page, '#config/appearance/header');
+        await openConfigPanel(page, 'Browser tab & branding');
         const panel = page.locator('#config-appearance-body .config-panel', { has: page.locator('[data-appearance-text="customTitle"]') });
         await expect(panel.locator('.config-panel-title')).toHaveText('Browser tab & branding');
         await expect(panel.locator('[data-appearance-toggle="showPageInTitle"]')).toBeVisible();
@@ -105,6 +106,7 @@ test.describe('settings that moved home', () => {
 
     test('the page-title switch writes its setting', async ({ page }) => {
         await open(page, '#config/appearance/header');
+        await openConfigPanel(page, 'Browser tab & branding');
         const box = page.locator('[data-appearance-toggle="showPageInTitle"]');
         const saved = () => page.evaluate(async () => (await (await fetch('/api/settings')).json()).showPageInTitle === true);
         const before = await box.isChecked();

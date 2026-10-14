@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, openConfigPanel } = require('./e2e-helpers');
 
 /**
  * Chip groups: the "Show this" switches of the action bar, the header, the
@@ -80,6 +80,7 @@ test.describe('chip groups', () => {
 
     test('one reset for the group puts back only the chips that differ', async ({ page }) => {
         await openTab(page, 'display');
+        await openConfigPanel(page, chip(page, 'showStatus'));
         // Row status: online/offline and ping times ship on.
         const status = chip(page, 'showStatus');
         const ping = chip(page, 'showPing');
@@ -109,6 +110,7 @@ test.describe('chip groups', () => {
             window.dashboardInstance.config.countTabMatches('appearance', 'display', 'ping times'))).toBe(1);
 
         await page.locator('[data-settings-filter]').first().fill('');
+        await openConfigPanel(page, chip(page, 'showStatusLoading'));
         await chip(page, 'showStatusLoading').click();
         await settingsSaved(page);
         await expect(page.locator('.config-changed-count')).toContainText('differ from the default');
@@ -121,6 +123,7 @@ test.describe('chip groups', () => {
         })).toBe(1);
 
         await page.locator('.config-view-head [data-config-action="toggle-changed"]').click();
+        await openConfigPanel(page, chip(page, 'showStatusLoading'));
         await chip(page, 'showStatusLoading').click();
         await settingsSaved(page);
     });

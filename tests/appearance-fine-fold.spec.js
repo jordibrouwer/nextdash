@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, openConfigPanel } = require('./e2e-helpers');
 
 /**
  * Fine-tune folds on Appearance → Background and Surface.
@@ -21,6 +21,10 @@ async function openTab(page, tab) {
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
     await page.waitForSelector('#config-appearance-body', { timeout: 20_000 });
     await page.click(`[data-appearance-tab="${tab}"]`);
+    // The folds live inside panels that fold themselves; open the one that
+    // holds the fold, through its header.
+    const holder = { background: 'Backdrop', surface: 'Card glass' }[tab];
+    if (holder) await openConfigPanel(page, holder);
 }
 
 const head = (id) => `[data-fine="${id}"] [data-fine-toggle]`;

@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel } = require('./e2e-helpers');
 
 /**
  * The appearance controls change the page while you are looking at it.
@@ -41,7 +41,9 @@ async function appearanceControls(page, tab = 'surface') {
     await page.click(`[data-appearance-tab="${tab}"]`);
     await page.waitForSelector(tab === 'general'
         ? '[data-appearance-select="inkGap"]'
-        : tab === 'background' ? '[data-backdrop-mode]' : '[data-appearance-select="themeDepth"]', { timeout: 20_000 });
+        : tab === 'background' ? '[data-backdrop-mode]' : '[data-appearance-select="themeDepth"]',
+    // Attached: a control in a folded panel is drawn but not shown.
+    { state: 'attached', timeout: 20_000 });
 }
 
 const stillLive = (page) => page.evaluate(() => window.__notReloaded === true);
@@ -86,7 +88,8 @@ test.describe('appearance controls apply live', () => {
         // A select now, drawn like Depth and Glow above it: the slider offered
         // twenty-nine steps for a question with four answers.
         const select = page.locator('[data-appearance-select="inkGap"]');
-        await select.waitFor({ timeout: 20_000 });
+        await select.waitFor({ state: 'attached', timeout: 20_000 });
+        await openConfigPanel(page, 'Text and motion');
 
         // Read off a painted element, not off the property: --text-tertiary is
         // an oklch(from ...) expression and comes back as its own text, the
@@ -113,6 +116,7 @@ test.describe('appearance controls apply live', () => {
 
     test('the backdrop goes off and on again in place', async ({ page }) => {
         await appearanceControls(page, 'background');
+        await openConfigPanel(page, 'Backdrop');
 
         await page.locator('[data-backdrop-mode="off"]').click();
         await expect.poll(() => page.getAttribute('body', 'data-theme-backdrop')).toBe('off');

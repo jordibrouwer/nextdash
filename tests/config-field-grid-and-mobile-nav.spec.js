@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, openConfigPanel } = require('./e2e-helpers');
 
 /**
  * Three related bits of config polish:
@@ -38,6 +38,10 @@ test.describe('config fields line up in a grid', () => {
     test('controls in one panel share a left edge', async ({ page }) => {
         await openSection(page, 'appearance');
         await openSubTab(page, 'data-appearance-tab', 'datetime');
+        // Date & time and Weather fold; open them so their selects are
+        // measured with the rest.
+        await openConfigPanel(page, 'Date & time');
+        await openConfigPanel(page, 'Weather');
 
         // Date format, time format and weather source are three selects with
         // labels of very different lengths in the same panel.

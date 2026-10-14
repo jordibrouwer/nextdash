@@ -122,6 +122,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **fix — the settings filter survives a repaint of Background and Surface.** `applyDomSettingsFilter` looked for the body inside the container it was handed, and a repaint hands it the body itself.
 - **new — chip groups.** Runs of *Show the … button* switches are one row of chips: the action bar (9), the header buttons (4), the category header extras (3), the row status (3) and the date line (2). Each chip is still its own setting; the group has one ↺ for the chips that differ and one ℹ that lists what each chip does. The link preview fields and the Bookmarks view's columns and rail blocks use the same chips over their one list (schema control `chips`, `setChip` helper).
 - **fix — the filter finds a single chip.** Typing one chip's name hid its group's label row, and with it the whole panel; the label row now reads its chips too (`applyDomSettingsFilter`).
+- **new — panels fold, and say what they are set to.** On every Appearance tab the first panel is open and the rest fold to a header with one line of their current values, changed values first; a panel opened or folded by hand stays that way, per tab, in this browser. The filter, Only changed, Find settings and a link to `#config/appearance/<tab>/<panel>` open the panel they land in, and **Reset panel** in a folded header does not open it (`applyAppearanceFolds`, `PANEL_SUMMARY_BY_TYPE`, `openConfigPanel` e2e helper).
 
 ---
 

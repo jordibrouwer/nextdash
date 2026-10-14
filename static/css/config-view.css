@@ -712,6 +712,118 @@
 }
 
 /*
+ * Appearance's folding panels (applyAppearanceFolds). The heading holds a real
+ * button; the summary line and "Reset panel" stand beside it in one row, so
+ * the reset is not inside the control that folds. Folded, the panel is its
+ * header and the line saying what it is set to.
+ */
+.config-panel--fold {
+    padding-block: 12px;
+}
+
+.config-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.config-panel-head > .config-panel-title {
+    flex: 0 1 auto;
+    min-width: 0;
+    margin: 0;
+}
+
+.config-panel-fold {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+    padding: 4px 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.config-panel-fold-chevron {
+    flex: none;
+    width: 0.7em;
+    color: var(--text-muted, #888);
+    font-size: 1.1em;
+    line-height: 1;
+    text-align: center;
+    transition: transform 0.15s ease;
+}
+
+.config-panel-fold-chevron::before {
+    content: "›";
+}
+
+.config-panel-fold[aria-expanded="true"] > .config-panel-fold-chevron {
+    transform: rotate(90deg);
+}
+
+.config-panel-fold:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 2px;
+    border-radius: var(--radius-4, 6px);
+}
+
+.config-panel-summary {
+    flex: 1 1 0;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.86);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.config-panel-summary:empty {
+    visibility: hidden;
+}
+
+.config-panel-head > .config-panel-reset {
+    float: none;
+    flex: none;
+    margin-left: auto;
+}
+
+.config-panel-body {
+    margin-top: 12px;
+}
+
+/* Only when the reader opens it: a repaint after each change must not replay
+   it. A fade and a short drop, never a height animation. */
+.config-panel--fold.is-unfolding > .config-panel-body {
+    animation: config-panel-unfold 0.16s ease;
+}
+
+@keyframes config-panel-unfold {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: none; }
+}
+
+body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
+    animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-panel--fold.is-unfolding > .config-panel-body {
+        animation: none;
+    }
+
+    .config-panel-fold-chevron {
+        transition: none;
+    }
+}
+
+/*
  * The "Only changed" toggle and its count, above a tab of settings. A row of
  * its own rather than part of the first panel: it acts on every panel below it.
  */

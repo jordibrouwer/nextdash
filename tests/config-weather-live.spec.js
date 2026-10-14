@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel } = require('./e2e-helpers');
 
 /**
  * Weather is the one Date & weather setting that is not read at render time: it
@@ -48,6 +48,7 @@ async function openDateWeatherTab(page, settings = {}) {
     }, settings);
     await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.locator('[data-appearance-tab="datetime"]').click();
+    await openConfigPanel(page, 'Weather');
     await expect(page.locator('[data-behavior-field="weatherLocation"]')).toBeVisible();
 }
 
@@ -91,6 +92,7 @@ test.describe('weather settings apply without a reload', () => {
         await expect(page.locator('#date-element')).toContainText('Berlin', { timeout: 10_000 });
 
         asked.length = 0;
+        await openConfigPanel(page, 'Date & time');
         await page.selectOption('[data-behavior-field="timeFormat"]', '12h');
         // Fixed wait: the check is that no request is sent.
         await page.waitForTimeout(1500);

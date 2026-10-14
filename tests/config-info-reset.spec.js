@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel } = require('./e2e-helpers');
 
 async function loadDashboard(page) {
     await page.goto('/');
@@ -51,6 +51,7 @@ test.describe('config info + reset affordances', () => {
             (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance');
         });
         await page.locator('[data-appearance-tab="datetime"]').click();
+        await openConfigPanel(page, 'Date & time');
 
         const resetBtn = page.locator('[data-reset-field="dateFormat"]');
         await expect(resetBtn).toHaveClass(/is-visible/);
@@ -65,6 +66,7 @@ test.describe('config info + reset affordances', () => {
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         await page.locator('[data-appearance-tab="datetime"]').click();
+        await openConfigPanel(page, 'Weather');
         await expect(page.locator('[data-info-field="weatherRefreshMinutes"]')).toBeVisible();
         await page.locator('[data-info-field="weatherRefreshMinutes"]').click();
         await expect(page.locator('#app-modal .modal-text')).toContainText(/1440/);
@@ -168,6 +170,7 @@ test.describe('config info + reset affordances', () => {
         expect(order.indexOf('datetime')).toBe(order.indexOf('buttonbar') + 1);
 
         await page.locator('[data-appearance-tab="datetime"]').click();
+        await openConfigPanel(page, 'Weather');
         await expect(page.locator('[data-behavior-field="weatherLocation"]')).toBeVisible();
 
         await page.evaluate(() => (window.dashboardInstance.config.behaviorTab = window.dashboardInstance.config.behaviorTab || 'general', window.dashboardInstance.config).openConfigView('behavior'));
@@ -202,6 +205,7 @@ test.describe('config info + reset affordances', () => {
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         // fontPreset and backgroundType carry info entries in the old config.
+        await openConfigPanel(page, 'Type');
         await expect(page.locator('[data-info-field="fontPreset"]')).toBeVisible();
         await expect(page.locator('[data-info-field="autoDarkMode"]')).toBeVisible();
         // The background moved to its own tab.

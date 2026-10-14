@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen, openConfigPanel } = require('./e2e-helpers');
 
 /**
  * Config → Appearance.
@@ -152,6 +152,7 @@ test.describe('the picker owes what a select gives free', () => {
 test.describe('a size you can see before you pick it', () => {
     test('focusing a type size shows it, leaving puts it back', async ({ page }) => {
         await openAppearance(page);
+        await openConfigPanel(page, 'Type');
         // applyFontSize swaps a font-size-* class on <body>, so that is what
         // changing size looks like from here.
         const read = () => page.evaluate(() => ({

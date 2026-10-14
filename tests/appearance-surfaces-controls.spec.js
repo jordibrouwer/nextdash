@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, openConfigPanel } = require('./e2e-helpers');
 
 /**
  * Appearance → Theme, drawn as one kind of control.
@@ -26,6 +26,7 @@ async function openAppearance(page) {
     await page.waitForSelector('.config-view', { timeout: 20_000 });
     await expect(page.locator('[data-appearance-tab="general"]')).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('[data-appearance-select="inkGap"]')).toBeAttached();
+    await openConfigPanel(page, 'Text and motion');
 }
 
 /** The repaint after a change runs when its save settles: wait for that before touching the page again. */
@@ -158,6 +159,7 @@ test('the reset puts the value back and repaints the page', async ({ page }) => 
     expect(await page.evaluate(() => document.body.getAttribute('data-glow'))).toBe('full');
 
     // The one button puts all three back to what the theme asks for.
+    await openConfigPanel(page, page.locator('[data-appearance-action="reset-theme-surfaces"]'));
     await page.locator('[data-appearance-action="reset-theme-surfaces"]').click();
     await expect.poll(() => page.evaluate(
         () => document.body.getAttribute('data-depth')), { timeout: 5_000 }).not.toBe('flat');
@@ -168,6 +170,7 @@ test('the reset puts the value back and repaints the page', async ({ page }) => 
     // the server's 0.47: 0.44, which the select used to call Normal, fails AA
     // on the dark theme's top surface.
     await openTab(page, 'general');
+    await openConfigPanel(page, 'Text and motion');
     const reset = (field) => page.locator(`[data-reset-field="${field}"]`);
     await expect(reset('inkGap')).toHaveClass(/is-visible/);
     await reset('inkGap').click();

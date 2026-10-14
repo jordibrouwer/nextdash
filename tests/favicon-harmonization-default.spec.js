@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel } = require('./e2e-helpers');
 
 /**
  * Favicon harmonisation is on unless a theme says otherwise.
@@ -79,6 +79,7 @@ test.describe('favicon harmonisation defaults to on', () => {
         await pickTheme(page, 'absinthe-dark');
         await page.locator('[data-appearance-tab="display"]').click();
 
+        await openConfigPanel(page, 'Favicons');
         await page.locator('[data-appearance-toggle-icons="off"]').click();
         // One Escape leaves config; there is no start screen in front of the tab.
         await page.keyboard.press('Escape');

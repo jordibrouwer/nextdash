@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel } = require('./e2e-helpers');
 
 /**
  * How far a row's accent carries is a preference about rows.
@@ -80,6 +80,7 @@ test.describe('how a row lights up', () => {
             c.switchAppearanceTab?.('display');
         });
         const strongChoice = page.locator('[data-behavior-field="rowHighlight"][data-behavior-value="strong"]');
+        await openConfigPanel(page, strongChoice);
         await expect(strongChoice).toBeVisible({ timeout: 20_000 });
         await strongChoice.click();
 

@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel } = require('./e2e-helpers');
 
 /**
  * Settings in this view save the moment they change, with no Save button, so the
@@ -97,6 +97,7 @@ test.describe('config save feedback', () => {
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
+        await openConfigPanel(page, 'Type');
         await page.locator('[data-appearance-font="l"]').click();
         await expect(state(page)).toHaveClass(/is-saved/);
     });

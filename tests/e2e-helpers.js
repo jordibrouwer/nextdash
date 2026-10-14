@@ -629,7 +629,46 @@ async function setChip(locator, on) {
     await expect(locator).toHaveAttribute('aria-pressed', on ? 'true' : 'false');
 }
 
+/**
+ * Open a folded Config → Appearance panel the way a reader does: by clicking
+ * its header.
+ *
+ * Appearance panels fold, and only the first one on a tab starts open, so a
+ * test that reaches for a control further down has to open its panel first.
+ * `target` is the panel's title — a string matched whole, ignoring case, or a
+ * RegExp — or a
+ * locator for something inside the panel. An open panel is left open.
+ * Never set the remembered open state in localStorage instead: that skips
+ * the path a reader takes.
+ */
+async function openConfigPanel(page, target) {
+    const panels = page.locator('#config-appearance-body .config-panel--fold');
+    let panel;
+    if (typeof target === 'string' || target instanceof RegExp) {
+        const name = typeof target === 'string'
+            ? new RegExp(`^\\s*${target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'i')
+            : target;
+        panel = panels.filter({ has: page.locator('.config-panel-title', { hasText: name }) }).first();
+    } else {
+        panel = panels.filter({ has: target }).first();
+    }
+    const button = panel.locator(':scope > .config-panel-head .config-panel-fold');
+    await button.waitFor({ state: 'visible' });
+    if (await button.getAttribute('aria-expanded') !== 'true') {
+        await button.click();
+    }
+    const body = panel.locator(':scope > .config-panel-body');
+    await body.waitFor({ state: 'visible' });
+    // Let the short unfold settle, so a click that follows lands where the
+    // control will stay.
+    await body.evaluate((el) => Promise.all(el.getAnimations()
+        .filter((a) => a.effect?.getTiming?.().iterations !== Infinity)
+        .map((a) => a.finished.catch(() => {}))));
+    return panel;
+}
+
 module.exports = {
+    openConfigPanel,
     setChip,
     answerNoCategory,
     GITHUB_STUB_PORT,

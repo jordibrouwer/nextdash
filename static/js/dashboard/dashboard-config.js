@@ -737,6 +737,18 @@ class DashboardConfig {
         unraid: 'data-unraid-tab',
     };
 
+    /**
+     * The Appearance panel a link points into: a fold key as the third
+     * segment (#config/appearance/<tab>/<panel>), or the panel holding a
+     * setting for an old link that named it as a tab of its own.
+     */
+    static appearancePanelFromHash(hash) {
+        const raw = String(hash || '').replace(/^#/, '');
+        if (raw === 'config/appearance/branding') return { field: 'enableCustomTitle' };
+        const match = raw.match(/^config\/appearance\/[a-z-]+\/([a-z0-9-]+)$/);
+        return match ? { panel: match[1] } : null;
+    }
+
     /** Apply a sub-tab from the hash, if the section has one. */
     applySubTabFromHash(hash) {
         const section = DashboardConfig.sectionFromHash(hash);
@@ -750,6 +762,11 @@ class DashboardConfig {
         // A sub-tab named in the URL is as deliberate as clicking one, so a
         // promo's ensureSubTab must not steer away from it.
         window.ConfigSettingPromo?.markSubTabChosen?.();
+        // A link to one Appearance panel opens it once the tab is drawn.
+        if (section === 'appearance') {
+            const target = DashboardConfig.appearancePanelFromHash(hash);
+            this._pendingAppearancePanel = target ? { ...target, tab } : null;
+        }
         if (this[prop] === tab) return false;
         this[prop] = tab;
         return true;
@@ -4325,7 +4342,10 @@ class DashboardConfig {
         }
         const focusEl = focusSelector ? document.querySelector(focusSelector) : null;
         if (focusEl) {
-            // A setting inside a Fine-tune fold: open it, or there is nothing to scroll to.
+            // A folded Appearance panel is opened first, then a Fine-tune
+            // fold inside it: until both are, the control is not on screen
+            // to scroll to or focus.
+            this.revealFoldedPanel(focusEl);
             this.revealFine(focusEl);
             focusEl.scrollIntoView({ block: 'nearest', behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth' });
             if (typeof focusEl.focus === 'function') {
@@ -10755,6 +10775,9 @@ class DashboardConfig {
             ? container
             : container.querySelector('#config-appearance-body');
         this.applyAppearanceChangedFilter(body);
+        // Last of the passes over the body: the filters above decide which
+        // panels have a hit, and a panel with one is opened.
+        this.applyAppearanceFolds(body);
         this.bindFormKeyboard(container);
         // The Background and Surface tabs bind what is new on them.
         this.bindFineFolds(container);
@@ -15334,8 +15357,14 @@ class DashboardConfig {
             const reset = locked ? '' : this.renderPanelResetAction(panel, changedFields);
             const lockChip = locked ? window.DemoLock.chip(panel.kind) : '';
             const body = controls.map((c) => renderControl(c, changedFields)).join('');
+            // Appearance folds its panels, and a folded one says what it is set
+            // to. Read from the declaration rather than the drawn controls, so
+            // it covers the controls the filter has just left out as well.
+            const fold = this.section === 'appearance'
+                ? ` data-fold-summary="${esc(this.panelValueSummary(panel))}"`
+                : '';
             return `
-            <div class="config-panel${panel.highlight ? ' config-panel--animated' : ''}${locked ? ' config-panel--demo-locked' : ''}">
+            <div class="config-panel${panel.highlight ? ' config-panel--animated' : ''}${locked ? ' config-panel--demo-locked' : ''}"${fold}>
                 ${stars}
                 <h3 class="config-panel-title">${esc(panel.title)}${badge}${reset}${lockChip}</h3>
                 ${note}
@@ -15673,6 +15702,305 @@ class DashboardConfig {
             note.textContent = this.t('config.changedNoneOnTab', 'Nothing on this tab differs from its default.');
             host.appendChild(note);
         }
+    }
+
+    /**
+     * What one schema control contributes to its folded panel's summary line,
+     * by control type.
+     *
+     * A type with no entry contributes nothing, so a control type added later
+     * renders and folds without having to be taught to summarise itself first;
+     * it adds its own entry here when it has something worth saying. Called
+     * with the config as `this`, the control, and its current value.
+     */
+    static PANEL_SUMMARY_BY_TYPE = {
+        checkbox(c, value) { return value ? c.label : ''; },
+        select(c, value) { return this.summaryOptionLabel(c, value); },
+        cards(c, value) { return this.summaryOptionLabel(c, value); },
+        checkset(c, value) {
+            const options = c.options || [];
+            // Absent is all of them, as the checklist draws it.
+            const on = Array.isArray(value)
+                ? options.filter((o) => value.map(String).includes(String(o.value))).length
+                : options.length;
+            return `${c.label} ${on}/${options.length}`;
+        },
+        number(c, value) {
+            if (value === undefined || value === null || value === '') return '';
+            return `${c.label} ${value}${c.unit || ''}`;
+        },
+        // Each chip is its own setting, so the group says how many are on.
+        chips(c) {
+            const items = c.items || [];
+            const s = this.dash.settings || {};
+            return `${c.label} ${items.filter((i) => s[i.field]).length}/${items.length}`;
+        },
+        // A Fine-tune fold says how far it is from the defaults, not each slider.
+        fine(c) {
+            const s = this.dash.settings || {};
+            const off = DashboardConfig.flatControls(c.controls)
+                .filter((x) => x?.field && this.fieldMeta(x.field)?.def !== undefined
+                    && !this.isFieldDefault(x.field, s[x.field])).length;
+            return off ? this.t('config.fineChanged', '{n} changed').replace('{n}', off) : '';
+        },
+    };
+
+    /** The label of the option a select or a set of cards stands on. */
+    summaryOptionLabel(control, value) {
+        const options = control.options || [];
+        const hit = options.find((o) => String(o.value) === String(value)) || options[0];
+        return hit ? String(hit.label || '') : '';
+    }
+
+    /**
+     * One line saying what a schema panel is set to: the first four things it
+     * shows, joined with " · ". Read from the declaration, so it holds for the
+     * controls the filter has left out of the markup.
+     */
+    panelValueSummary(panel) {
+        const s = this.dash.settings || {};
+        const parts = [];
+        for (const c of panel?.controls || []) {
+            const summarise = c && DashboardConfig.PANEL_SUMMARY_BY_TYPE[c.type];
+            // Chips and Fine-tune have no field of their own; they read theirs.
+            if (!summarise || (!c.field && c.type !== 'chips' && c.type !== 'fine')) continue;
+            const value = !c.field ? undefined
+                : (s[c.field] !== undefined ? s[c.field] : this.fieldMeta(c.field)?.def);
+            const text = String(summarise.call(this, c, value) || '').trim();
+            if (!text) continue;
+            // A Fine-tune line is only written when something in it differs.
+            const changed = c.type === 'fine' || this.controlFields(c)
+                .some((f) => this.fieldMeta(f)?.def !== undefined && !this.isFieldDefault(f, s[f]));
+            parts.push({ text, changed });
+        }
+        // What differs from the default comes first, so a change in a long
+        // panel is not the fifth thing and cut off the line.
+        return [...parts.filter((p) => p.changed), ...parts.filter((p) => !p.changed)]
+            .slice(0, 4).map((p) => p.text).join(' · ');
+    }
+
+    /**
+     * The same line for a hand-written panel, read off its drawn controls:
+     * the option a select or a row of choices stands on, the label of a ticked
+     * switch, a slider's label and the value beside it. A panel that wants
+     * something else says so with its own data-fold-summary.
+     */
+    domPanelSummary(root) {
+        if (!root) return '';
+        const rowSelector = '.config-field, .config-field-row';
+        // The sliders under Fine-tune are not read one by one: the fold says
+        // how many differ, as it does on its own header.
+        const rows = [...root.querySelectorAll(rowSelector)]
+            .filter((row) => !row.parentElement?.closest(rowSelector) && !row.closest('.config-fine-body'));
+        const parts = [];
+        const text = (el) => String(el?.textContent || '').replace(/\s+/g, ' ').trim();
+        const fine = text(root.querySelector('.config-fine-summary'));
+        if (fine && !/^at defaults$/i.test(fine) && fine !== this.t('config.fineDefault', 'At defaults')) {
+            parts.push(`${this.t('config.fineTitle', 'Fine-tune')} ${fine}`);
+        }
+        for (const row of rows) {
+            if (parts.length >= 4) break;
+            const label = text(row.querySelector('.config-field-label'));
+            const select = row.querySelector('select, [data-theme-picker-button]');
+            const choice = row.querySelector('.config-choice.is-active, .config-choice[aria-pressed="true"]');
+            const range = row.querySelector('input[type="range"]');
+            const box = row.querySelector('.config-toggle input[type="checkbox"]');
+            let part = '';
+            if (select) part = text(select.selectedOptions ? select.selectedOptions[0] : select);
+            else if (choice) part = text(choice);
+            else if (range) part = [label, text(row.querySelector('.config-range-value')) || range.value].filter(Boolean).join(' ');
+            else if (box) part = box.checked ? text(box.closest('.config-toggle')?.querySelector('span')) : '';
+            if (part) parts.push(part);
+        }
+        return parts.join(' · ');
+    }
+
+    static APPEARANCE_OPEN_KEY = 'nextdash.config.appearance.open.';
+
+    /**
+     * Which panels the reader left open on one Appearance tab, or null when
+     * they have not chosen yet. A convenience of this browser, not a setting:
+     * kept in localStorage, and in memory as well, so a browser that refuses
+     * storage still keeps the choice for as long as the page is open.
+     */
+    appearanceOpenPanels(tab) {
+        this._appearanceOpen = this._appearanceOpen || {};
+        if (this._appearanceOpen[tab]) return this._appearanceOpen[tab];
+        try {
+            const list = JSON.parse(localStorage.getItem(DashboardConfig.APPEARANCE_OPEN_KEY + tab) || 'null');
+            if (Array.isArray(list)) this._appearanceOpen[tab] = new Set(list.map(String));
+        } catch { /* blocked or unreadable: the default stands */ }
+        return this._appearanceOpen[tab] || null;
+    }
+
+    rememberAppearanceOpenPanels(tab, keys) {
+        this._appearanceOpen = this._appearanceOpen || {};
+        this._appearanceOpen[tab] = new Set(keys);
+        try {
+            localStorage.setItem(DashboardConfig.APPEARANCE_OPEN_KEY + tab, JSON.stringify([...keys]));
+        } catch { /* kept in memory only */ }
+    }
+
+    /** True while the filter or "Only changed" decides which panels are open. */
+    appearanceFoldsForced() {
+        return Boolean(this.changedOnly || String(this.settingsFilter || '').trim());
+    }
+
+    /**
+     * Fold the panels of the Appearance tab on screen.
+     *
+     * A pass over the rendered body rather than a second shape in every
+     * renderer: the schema panels and the hand-written ones on Look,
+     * Background and Surface all come out as a .config-panel with its title
+     * first, and every repaint of the body lands in bindAppearanceControls,
+     * which calls this. The header is a real button rather than a <details>
+     * summary, because it also carries "Reset panel", which must not toggle.
+     *
+     * Custom themes is an editor with its own layout, and stays unfolded.
+     */
+    applyAppearanceFolds(body) {
+        if (!body || this.appearanceTab === 'custom-themes') return;
+        const panels = [...body.querySelectorAll('.config-panel')]
+            .filter((panel) => !panel.parentElement?.closest('.config-panel'));
+        const used = new Set();
+        panels.forEach((panel, i) => this.makeAppearancePanelFoldable(panel, i, used));
+        this.syncAppearanceFolds(body);
+        this.openAppearancePanelFromLink(body);
+    }
+
+
+    /** Open, once, the panel a link pointed into, and bring it on screen. */
+    openAppearancePanelFromLink(body) {
+        const pending = this._pendingAppearancePanel;
+        if (!pending || pending.tab !== this.appearanceTab) return;
+        this._pendingAppearancePanel = null;
+        const selector = pending.field ? this.settingsJumpControlSelector(pending.field) : null;
+        const el = selector
+            ? document.querySelector(selector)
+            : body.querySelector(`.config-panel--fold[data-fold-key="${CSS.escape(pending.panel || '')}"]`);
+        const panel = el?.closest('.config-panel--fold');
+        if (!panel) return;
+        this.revealFoldedPanel(panel);
+        requestAnimationFrame(() => panel.scrollIntoView({ block: 'nearest' }));
+    }
+
+    makeAppearancePanelFoldable(panel, index, used) {
+        if (panel.hasAttribute('data-fold-key')) {
+            used.add(panel.getAttribute('data-fold-key'));
+            return;
+        }
+        const title = panel.querySelector(':scope > .config-panel-title');
+        if (!title) return;
+        const reset = title.querySelector('.config-panel-reset');
+        reset?.remove();
+        // Keyed by its title, which is what stays put when panels move between
+        // tabs or change order; the index only breaks a tie.
+        let key = String(title.textContent || '').trim().toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `panel-${index}`;
+        if (used.has(key)) key = `${key}-${index}`;
+        used.add(key);
+        const bodyId = `config-fold-${this.appearanceTab}-${key}`;
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'config-panel-fold';
+        button.setAttribute('aria-controls', bodyId);
+        // The chevron is drawn by CSS on an empty, hidden span, so it is in
+        // neither the button's name nor the title's text.
+        const chevron = document.createElement('span');
+        chevron.className = 'config-panel-fold-chevron';
+        chevron.setAttribute('aria-hidden', 'true');
+        button.appendChild(chevron);
+        while (title.firstChild) button.appendChild(title.firstChild);
+        title.appendChild(button);
+
+        const head = document.createElement('div');
+        head.className = 'config-panel-head';
+        panel.insertBefore(head, title);
+        head.appendChild(title);
+        const summary = document.createElement('p');
+        summary.className = 'config-panel-summary';
+        summary.id = `${bodyId}-summary`;
+        head.appendChild(summary);
+        if (reset) head.appendChild(reset);
+
+        const inner = document.createElement('div');
+        inner.className = 'config-panel-body';
+        inner.id = bodyId;
+        [...panel.childNodes].forEach((node) => {
+            if (node === head) return;
+            // The twinkle is drawn over the whole panel, folded or not.
+            if (node.nodeType === 1 && node.classList.contains('config-new-features-panel-stars')) return;
+            inner.appendChild(node);
+        });
+        panel.appendChild(inner);
+        panel.classList.add('config-panel--fold');
+        panel.setAttribute('data-fold-key', key);
+
+        button.addEventListener('click', () => this.toggleAppearancePanel(panel));
+        // The rest of the header row opens it too, for a pointer; the button
+        // is what the keyboard and a screen reader meet.
+        head.addEventListener('click', (e) => {
+            if (e.target.closest('button, a, input, select, label')) return;
+            this.toggleAppearancePanel(panel);
+        });
+    }
+
+    /** Open or fold every panel on the body to match the state it should be in. */
+    syncAppearanceFolds(body) {
+        if (!body) return;
+        const panels = [...body.querySelectorAll('.config-panel--fold')];
+        if (!panels.length) return;
+        const forced = this.appearanceFoldsForced();
+        const chosen = this.appearanceOpenPanels(this.appearanceTab);
+        panels.forEach((panel, i) => {
+            const open = forced || (chosen ? chosen.has(panel.getAttribute('data-fold-key')) : i === 0);
+            this.setAppearancePanelOpen(panel, open);
+        });
+    }
+
+    setAppearancePanelOpen(panel, open) {
+        const button = panel.querySelector(':scope > .config-panel-head .config-panel-fold');
+        const inner = panel.querySelector(':scope > .config-panel-body');
+        const summary = panel.querySelector(':scope > .config-panel-head .config-panel-summary');
+        if (!button || !inner) return;
+        button.setAttribute('aria-expanded', open ? 'true' : 'false');
+        inner.hidden = !open;
+        panel.classList.toggle('is-folded', !open);
+        if (!summary) return;
+        // Written when it folds, so it says what the panel was just left at.
+        const text = open ? '' : (panel.hasAttribute('data-fold-summary')
+            ? panel.getAttribute('data-fold-summary')
+            : this.domPanelSummary(inner));
+        summary.textContent = text;
+        if (text) button.setAttribute('aria-describedby', summary.id);
+        else button.removeAttribute('aria-describedby');
+    }
+
+    /**
+     * Open or fold one panel, and remember how the tab's panels are left —
+     * unless the filter is deciding, when the choice lasts until it is cleared.
+     */
+    toggleAppearancePanel(panel, open) {
+        const next = open === undefined ? panel.classList.contains('is-folded') : Boolean(open);
+        this.setAppearancePanelOpen(panel, next);
+        panel.classList.toggle('is-unfolding', next);
+        if (next) {
+            panel.querySelector(':scope > .config-panel-body')?.addEventListener('animationend',
+                () => panel.classList.remove('is-unfolding'), { once: true });
+        }
+        if (this.appearanceFoldsForced()) return;
+        const body = panel.closest('#config-appearance-body');
+        if (!body) return;
+        const keys = [...body.querySelectorAll('.config-panel--fold:not(.is-folded)')]
+            .map((p) => p.getAttribute('data-fold-key'));
+        this.rememberAppearanceOpenPanels(this.appearanceTab, keys);
+    }
+
+    /** Open the folded panel an element sits in, so a jump to it lands on something visible. */
+    revealFoldedPanel(el) {
+        const panel = el?.closest?.('.config-panel--fold.is-folded');
+        if (panel) this.toggleAppearancePanel(panel, true);
     }
 
     /** The "Only changed" toggle above a tab of settings. */
@@ -16686,6 +17014,9 @@ class DashboardConfig {
         const rows = [...host.querySelectorAll(rowSelector)]
             .filter((row) => !row.parentElement?.closest(rowSelector));
         const panels = host.querySelectorAll('.config-panel');
+        // The filter is typed without a repaint, so the folds follow it here:
+        // open while it narrows, back to how the reader left them when cleared.
+        this.syncAppearanceFolds(host);
         if (!query) {
             rows.forEach((row) => row.removeAttribute('hidden'));
             host.querySelectorAll('.config-chips[hidden]').forEach((el) => el.removeAttribute('hidden'));

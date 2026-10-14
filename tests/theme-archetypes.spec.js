@@ -2,7 +2,7 @@
 const { test, expect } = require('./fixtures');
 const {
     markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays,
-    waitForConfigReady, markConfigSettingPromosSeen,
+    waitForConfigReady, markConfigSettingPromosSeen, openConfigPanel,
 } = require('./e2e-helpers');
 
 /**
@@ -140,6 +140,7 @@ test('Reset puts a theme back to the surfaces it ships with', async ({ page }) =
     await page.selectOption('[data-appearance-select="themeDepth"]', 'flat');
     await expect.poll(async () => (await drawn(page)).depth).toBe('flat');
 
+    await openConfigPanel(page, page.locator('[data-appearance-action="reset-theme-surfaces"]'));
     await page.locator('[data-appearance-action="reset-theme-surfaces"]').click();
 
     await expect.poll(async () => (await drawn(page)).depth,
