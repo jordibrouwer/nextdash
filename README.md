@@ -150,7 +150,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-config-appearance.jpg" alt="Config: Appearance" width="100%" />
       <br />
-      <sub><b>Config → Appearance</b> <i>(Sea Glass, light)</i> — Eight tabs — Look, Background, Surface, Grid, Rows, Header, Action bar, Date &amp; weather — with a small live preview of your dashboard beside them. Every change applies and saves at once.</sub>
+      <sub><b>Config → Appearance</b> <i>(Sea Glass, light)</i> — Nine tabs in three groups — Look, Bookmarks, Header &amp; bars — whose panels fold to a line of their values, with a small live preview of your dashboard beside them. Every change applies and saves at once.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-config-statistics.jpg" alt="Config: Statistics" width="100%" />
@@ -455,7 +455,8 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - **A theme browser that is a look studio.** It opens beside the dashboard and changes the page live: the theme, its backdrop, depth and card glass, the category headers and the type. Twelve ready-made looks set them in one go; Compare shows what you had, and nothing is saved until Apply. *[Theme browser](MANUAL.md#the-theme-browser)*
 - 26 backdrops drawn in each theme's own colours, from aurora and dunes to stars and hexagons, each theme with one picked for it — or choose your own and tune it with intensity, scale, blur and tint. *[Manual §16.4](MANUAL.md#164-type-and-background)*
 - Character, depth, glow, effects, card glass and contrast for any theme; category header styles, layout presets, columns, density and fonts. *[Manual §16.3](MANUAL.md#163-surfaces)*
-- A header you arrange yourself: four page-switcher styles, and action buttons in a dock, a side column, the header or one menu. *[Manual §4](MANUAL.md#4-the-dashboard)*
+- A header you arrange yourself: four page-switcher styles, and action buttons in a dock, a side column, the header or one menu, in five sizes. *[Manual §4](MANUAL.md#4-the-dashboard)*
+- **Appearance in nine tabs, three groups.** Panels fold to a line of their values, runs of switches are chips, and a list of panels sits above the preview on long tabs. *[Manual §16](MANUAL.md#16-appearance)*
 - Six languages: English, Dutch, German, French, Spanish and Chinese. *[Manual §17](MANUAL.md#17-config)*
 
 **Data**

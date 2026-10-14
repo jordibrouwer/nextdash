@@ -528,7 +528,7 @@ test('16 look studio', async ({ page }) => {
 test('16 theme editor', async ({ page }) => {
     await prepare(page);
     await openConfig(page, 'appearance');
-    await subtab(page, 'Look').click();
+    await subtab(page, 'Theme & type').click();
     await page.getByRole('button', { name: /Open the theme editor/ }).first().click();
     // Recolour the theme on screen: its colours open below.
     await page.locator('[data-theme-base-select]').selectOption('matrix-bluepill-dark');
@@ -1127,7 +1127,7 @@ test.describe('spread', () => {
 test('full 04 density', async ({ page }) => {
     await prepare(page);
     await openConfig(page, 'appearance');
-    await subtab(page, 'Grid').click();
+    await subtab(page, 'Layout').click();
     // The Compact preset alone changes little at the demo's row height; Dense
     // beside it is what makes the page visibly tighter.
     await page.locator('select[data-behavior-field="layoutPreset"]').selectOption('compact');
@@ -1351,8 +1351,33 @@ test.describe('home assistant tile', () => {
 test('17 animation speed', async ({ page }) => {
     await prepare(page);
     await openConfig(page, 'appearance');
+    // Text and motion folds: open it by its header, the way a reader does.
+    await page.locator('#config-appearance-body .config-panel--fold', { has: page.locator('.config-panel-title', { hasText: /^\s*Text and motion\s*$/ }) })
+        .locator(':scope > .config-panel-head .config-panel-fold').click();
     const field = page.locator('[data-appearance-select="animationSpeed"]').first();
     await field.scrollIntoViewIfNeeded();
     await page.waitForTimeout(400);
     await snap(page, page.locator('.config-field-row', { has: page.locator('[data-appearance-toggle="viewAnimationsEnabled"]') }).locator('xpath=..'), '17-animation-speed.jpg', { pad: 14 });
+});
+
+test('16 appearance rows', async ({ page }) => {
+    await prepare(page);
+    await openConfig(page, 'appearance');
+    await subtab(page, 'Rows').click();
+    // Category header folds: open it by its header, the way a reader does.
+    await page.locator('#config-appearance-body .config-panel--fold', { has: page.locator('.config-panel-title', { hasText: /^\s*Category header\s*$/ }) })
+        .locator(':scope > .config-panel-head .config-panel-fold').click();
+    await page.setViewportSize({ width: 1440, height: 1290 });
+    await page.waitForTimeout(600);
+    await shot(page, '16-appearance-rows.jpg');
+});
+
+test('16 appearance action bar', async ({ page }) => {
+    await prepare(page);
+    await openConfig(page, 'appearance');
+    await subtab(page, 'Action bar').click();
+    await page.locator('#config-appearance-body .config-panel--fold').first().waitFor();
+    await page.setViewportSize({ width: 1440, height: 1100 });
+    await page.waitForTimeout(600);
+    await shot(page, '16-appearance-action-bar.jpg');
 });
