@@ -22747,6 +22747,8 @@ class DashboardConfig {
             // Carried for the expanded row: a list of addresses is a list
             // nobody reads, and the name is what the reader gave it.
             name: b.name || '',
+            // What the page calls itself: a self-hosted app is known by it.
+            title: b.previewTitle || '',
             tags: Array.isArray(b.tags) ? b.tags : [],
         }));
     }

@@ -179,3 +179,41 @@ func TestTagCatalogueSubsetCarriesParents(t *testing.T) {
 		t.Errorf("subset: parent %q, hosts %v", subset[1].Parent, subset[1].Hosts)
 	}
 }
+
+// Every app names catalogue subjects, at most two, and ids are unique: the
+// engine resolves an app's tags through the catalogue's tree, and a tag that
+// is not a subject would have no aliases and no parent to find the reader's
+// word by.
+func TestTagAppsNameCatalogueSubjects(t *testing.T) {
+	subjects := map[string]bool{}
+	for _, subject := range loadTagCatalogue().subjects {
+		subjects[subject.Tag] = true
+	}
+	apps := loadTagApps()
+	if len(apps) < 200 {
+		t.Fatalf("only %d apps loaded", len(apps))
+	}
+	ids := map[string]bool{}
+	for _, app := range apps {
+		if app.ID == "" || ids[app.ID] {
+			t.Errorf("app id %q is empty or used twice", app.ID)
+		}
+		ids[app.ID] = true
+		if len(app.Tags) == 0 || len(app.Tags) > 2 {
+			t.Errorf("%s: %d tags", app.ID, len(app.Tags))
+		}
+		for _, tag := range app.Tags {
+			if !subjects[tag] {
+				t.Errorf("%s: tag %q is not a catalogue subject", app.ID, tag)
+			}
+		}
+		if len(app.Names) == 0 && len(app.Labels) == 0 {
+			t.Errorf("%s: nothing to recognise it by", app.ID)
+		}
+		for _, name := range app.Names {
+			if name != strings.ToLower(name) {
+				t.Errorf("%s: name %q is not lower case", app.ID, name)
+			}
+		}
+	}
+}

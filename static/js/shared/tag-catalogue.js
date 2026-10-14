@@ -87,6 +87,11 @@
             .then((response) => (response.ok ? response.json() : null))
             .then((data) => {
                 catalogue = Array.isArray(data?.tags) ? data.tags : [];
+                // The apps known by name (tag_apps.json) travel on the same
+                // array: every caller hands the engine `catalogue`, and the
+                // engine reads `catalogue.apps` when it is given no list of
+                // its own.
+                catalogue.apps = Array.isArray(data?.apps) ? data.apps : [];
                 revision += 1;
                 unknownHosts = Array.isArray(data?.unknown) ? data.unknown : [];
                 stats = data?.stats || null;

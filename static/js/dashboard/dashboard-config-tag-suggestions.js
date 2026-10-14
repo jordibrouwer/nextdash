@@ -28,6 +28,10 @@
 
     function reasonText(t, group) {
         if (group.reason.kind === 'rule') return t('config.tagSuggestionReasonRule', 'your rule');
+        if (group.reason.kind === 'app') {
+            return t('config.tagSuggestionReasonApp', 'recognised as {app}')
+                .replace('{app}', String(group.reason.app || ''));
+        }
         if (group.reason.kind === 'catalogue') {
             // The subject is named as well as the source, because the tag on
             // the row may be the reader's own word for it rather than the
@@ -225,9 +229,11 @@
             where.className = 'config-suggestion-where';
             const sites = document.createElement('span');
             sites.className = 'config-suggestion-pattern';
-            const names = row.groups.map(({ group }) => (group.pattern === 'page-text'
-                ? t('config.tagSuggestionAcrossSites', 'across sites')
-                : group.pattern));
+            const names = row.groups.map(({ group }) => {
+                if (group.pattern === 'page-text') return t('config.tagSuggestionAcrossSites', 'across sites');
+                if (group.pattern.startsWith('app:')) return group.reason.app || group.pattern.slice(4);
+                return group.pattern;
+            });
             sites.textContent = names.length > 3
                 ? `${names.slice(0, 3).join(', ')} ${t('config.tagSuggestionMoreSites', '+{n} more').replace('{n}', String(names.length - 3))}`
                 : names.join(', ');
@@ -608,9 +614,10 @@
                 row.setAttribute('data-tag-suggestion-refused', String(entry));
                 const text = document.createElement('span');
                 text.className = 'config-suggestion-rule-text';
-                text.textContent = `${pattern === 'page-text'
-                    ? t('config.tagSuggestionAcrossSites', 'across sites')
-                    : pattern} → #${tag}`;
+                let where = pattern;
+                if (pattern === 'page-text') where = t('config.tagSuggestionAcrossSites', 'across sites');
+                else if (pattern.startsWith('app:')) where = pattern.slice(4);
+                text.textContent = `${where} → #${tag}`;
                 const back = document.createElement('button');
                 back.type = 'button';
                 back.className = 'config-btn config-btn--small';

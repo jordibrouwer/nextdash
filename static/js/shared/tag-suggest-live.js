@@ -61,6 +61,7 @@
                 key: keyFor('dash', index),
                 url: bookmark.url,
                 name: bookmark.name || '',
+                title: bookmark.previewTitle || '',
                 tags: tagsOf(bookmark),
             });
         });
@@ -70,6 +71,7 @@
                 key: bookmarkKey(bookmark),
                 url: bookmark.url,
                 name: bookmark.name || '',
+                title: bookmark.previewTitle || '',
                 tags: tagsOf(bookmark),
             });
         });

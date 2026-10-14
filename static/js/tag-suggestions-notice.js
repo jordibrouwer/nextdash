@@ -146,6 +146,8 @@
         const items = d.allBookmarks.map((b, index) => ({
             key: `${b.pageId}::${b.url}::${index}`,
             url: b.url,
+            name: b.name || '',
+            title: b.previewTitle || '',
             tags: Array.isArray(b.tags) ? b.tags : [],
         }));
         try {

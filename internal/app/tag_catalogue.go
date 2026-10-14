@@ -28,6 +28,40 @@ matches itself and lends nothing to its subdomains.
 //go:embed tag_catalogue.json
 var tagCatalogueJSON []byte
 
+/*
+The apps the engine recognises by name rather than by host.
+
+A self-hosted app lives at an address no catalogue can know --
+192.168.1.20:8989, sonarr.home.lan -- so it is matched on what it is called:
+the page title or the bookmark's name, the first label of the host, and on a
+private host its default port. The list is small, so it goes to the browser
+whole with every catalogue answer, and the engine (tag-suggestions.js,
+matchApps) does the matching.
+*/
+
+//go:embed tag_apps.json
+var tagAppsJSON []byte
+
+type tagApp struct {
+	ID     string   `json:"id"`
+	App    string   `json:"app"`
+	Tags   []string `json:"tags"`
+	Names  []string `json:"names,omitempty"`
+	Labels []string `json:"labels,omitempty"`
+	Ports  []int    `json:"ports,omitempty"`
+	Common bool     `json:"common,omitempty"`
+}
+
+var loadTagApps = sync.OnceValue(func() []tagApp {
+	var doc struct {
+		Apps []tagApp `json:"apps"`
+	}
+	if err := json.Unmarshal(tagAppsJSON, &doc); err != nil {
+		return []tagApp{}
+	}
+	return doc.Apps
+})
+
 type tagCatalogueSubject struct {
 	Tag     string   `json:"tag"`
 	Aliases []string `json:"aliases"`
@@ -257,6 +291,7 @@ func (h *Handlers) TagCatalogue(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]any{
 		"version": catalogue.version,
 		"tags":    catalogue.subset(hosts),
+		"apps":    loadTagApps(),
 		"unknown": unknown,
 		// For the panel's own words: how big the catalogue is, and how much
 		// of this collection it knows.

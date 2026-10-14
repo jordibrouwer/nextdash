@@ -627,6 +627,7 @@
 
         sourceOf(offer) {
             const kind = offer?.reason?.kind;
+            if (kind === 'app') return String(offer.reason.app || '');
             if (kind === 'online') return this.t('dashboard.tagSourceOnline', 'Wikidata');
             if (kind === 'catalogue') return this.t('dashboard.tagSourceCatalogue', 'catalogue');
             if (kind === 'text') return this.t('dashboard.tagSourcePage', 'the page');
