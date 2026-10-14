@@ -26,7 +26,7 @@
     padding: 0 0.25rem;
     border-radius: var(--radius-pill, 999px);
     background: var(--accent-primary);
-    color: var(--bg-primary, #000);
+    color: var(--background-primary, #000);
     font-size: 0.65rem;
     line-height: 1.3;
 }
@@ -143,14 +143,41 @@
 .media-hero-caption .media-meta,
 .media-hero-caption .media-overview { color: color-mix(in srgb, #fff 80%, transparent); }
 
+/*
+ * The detail card lives on <body>, outside every widget, so it names the
+ * app's own colours itself. margin: auto puts it back in the middle: the
+ * global reset's margin: 0 is what had it sitting in the corner.
+ */
 .media-detail {
     width: min(32rem, calc(100vw - 2rem));
+    max-height: calc(100vh - 2rem);
+    margin: auto;
     padding: 0;
+    overflow: auto;
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-md, 8px);
-    background: var(--bg-primary, Canvas);
-    color: inherit;
+    background: var(--background-primary, #111);
+    color: var(--text-primary, inherit);
+    font-family: inherit;
+    box-shadow: 0 1rem 3rem color-mix(in srgb, #000 45%, transparent);
 }
+.media-detail .media-art--backdrop { border-radius: var(--radius-md, 8px) var(--radius-md, 8px) 0 0; }
+.media-detail .media-meta { color: var(--text-secondary, inherit); }
+.media-detail-overview { color: var(--text-secondary, inherit); }
+/* Its own buttons: config-btn lives in the views bundle, which the dashboard
+   has not loaded until Config is opened. */
+.media-detail-btn {
+    padding: 0.4rem 0.9rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md, 8px);
+    background: transparent;
+    color: var(--text-primary, inherit);
+    font: inherit;
+    cursor: pointer;
+}
+.media-detail-btn:hover { border-color: var(--accent-primary); }
+.media-detail-btn:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 1px; }
+.media-detail-btn--primary { border-color: var(--accent-primary); color: var(--accent-primary); }
 .media-detail::backdrop { background: color-mix(in srgb, #000 55%, transparent); }
 .media-detail > :not(.media-art) { margin: 0.5rem 1rem; }
 .media-detail .media-art--poster { width: 8rem; margin: 1rem auto 0; }

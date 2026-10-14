@@ -322,6 +322,40 @@ test.describe('the Jellyfin widget', () => {
         await expect(first).toBeFocused();
     });
 
+    // The card wears the dashboard's own colours and sits in the middle, before
+    // Config has ever loaded its stylesheet: it was a white box in the corner.
+    test('detail: the card is styled like the app, centred', async ({ page }) => {
+        await open(page);
+        const tile = await draw(page, { result: answer(), config: { click: 'detail', rows: 2 } });
+        await tile.locator('[data-media-item]').first().click();
+        const card = page.locator('dialog.media-detail[open]');
+        await expect(card).toBeVisible();
+        const look = await card.evaluate((el) => {
+            const box = el.getBoundingClientRect();
+            const style = getComputedStyle(el);
+            const open = el.querySelector('[data-media-open]');
+            const appBg = getComputedStyle(document.documentElement).getPropertyValue('--background-primary').trim();
+            const probe = document.createElement('div');
+            probe.style.background = appBg;
+            document.body.appendChild(probe);
+            const want = getComputedStyle(probe).backgroundColor;
+            probe.remove();
+            return {
+                bg: style.backgroundColor, want,
+                left: box.left, right: document.documentElement.clientWidth - box.right,
+                top: box.top, bottom: document.documentElement.clientHeight - box.bottom,
+                buttonPadding: parseFloat(getComputedStyle(open).paddingLeft),
+                buttonBorder: getComputedStyle(open).borderTopStyle,
+            };
+        });
+        expect(look.bg).toBe(look.want);
+        // Horizontally within the scrollbar gutter the scroll lock keeps.
+        expect(Math.abs(look.left - look.right)).toBeLessThan(16);
+        expect(Math.abs(look.top - look.bottom)).toBeLessThan(4);
+        expect(look.buttonPadding).toBeGreaterThan(4);
+        expect(look.buttonBorder).toBe('solid');
+    });
+
     test('a saved widget opens with its choices, and no user is a choice', async ({ page }) => {
         await page.route('**/api/widgets/jellyfin/setup', async (route) => {
             await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
