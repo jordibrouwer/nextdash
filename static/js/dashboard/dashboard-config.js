@@ -10015,6 +10015,8 @@ class DashboardConfig {
             : '';
         const preview = !subpageOf && window.ConfigPreview
             ? `<aside class="config-tabpage-side" aria-label="${esc(this.t('config.previewLabel', 'Preview'))}">
+                   <nav class="config-panel-index" data-panel-index hidden
+                        aria-label="${esc(this.t('config.panelIndexLabel', 'On this tab'))}"></nav>
                    <p class="config-tabpage-side-label">${esc(this.t('config.previewLabel', 'Preview'))}</p>
                    <div data-config-preview>${window.ConfigPreview.render(this, this.appearanceTab)}</div>
                </aside>`
@@ -15866,8 +15868,67 @@ class DashboardConfig {
         panels.forEach((panel, i) => this.makeAppearancePanelFoldable(panel, i, used));
         this.syncAppearanceFolds(body);
         this.openAppearancePanelFromLink(body);
+        this.renderAppearancePanelIndex(body);
     }
 
+    /** A tab needs more panels than this before it gets an index. */
+    static APPEARANCE_INDEX_MIN_PANELS = 4;
+
+    /**
+     * The list of a long tab's panels above the preview, marking the one in
+     * view.
+     *
+     * Only past three panels: with their summaries, three folded panels fit on
+     * one screen and a list of them would only repeat it. Built from the
+     * panels on screen, so the filter and "Only changed" narrow it too.
+     * Choosing an entry opens that panel and brings it into view.
+     */
+    renderAppearancePanelIndex(body) {
+        this._panelIndexObserver?.disconnect();
+        this._panelIndexObserver = null;
+        const nav = document.querySelector('[data-panel-index]');
+        if (!nav || !body) return;
+        const panels = [...body.querySelectorAll('.config-panel--fold')].filter((p) => !p.hidden);
+        if (panels.length < DashboardConfig.APPEARANCE_INDEX_MIN_PANELS) {
+            nav.hidden = true;
+            nav.replaceChildren();
+            return;
+        }
+        const esc = (v) => this.dash.escapeHtml(v);
+        const titleOf = (panel) => String(panel.querySelector('.config-panel-fold')?.textContent || '').trim();
+        nav.innerHTML = panels.map((panel) => `
+            <button type="button" class="config-panel-index-item" data-panel-index-key="${esc(panel.getAttribute('data-fold-key'))}">${esc(titleOf(panel))}</button>`).join('');
+        nav.hidden = false;
+        const markKey = (key) => nav.querySelectorAll('[data-panel-index-key]').forEach((btn) => {
+            if (key && btn.getAttribute('data-panel-index-key') === key) btn.setAttribute('aria-current', 'true');
+            else btn.removeAttribute('aria-current');
+        });
+        let holdUntil = 0;
+        nav.querySelectorAll('[data-panel-index-key]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const key = btn.getAttribute('data-panel-index-key');
+                const panel = body.querySelector(`.config-panel--fold[data-fold-key="${CSS.escape(key)}"]`);
+                if (!panel) return;
+                if (panel.classList.contains('is-folded')) this.toggleAppearancePanel(panel, true);
+                panel.scrollIntoView({ block: 'start', behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth' });
+                panel.querySelector('.config-panel-fold')?.focus({ preventScroll: true });
+                // The chosen entry stays marked while the scroll runs: a last
+                // panel too short to reach the top would otherwise hand the
+                // mark to the one above it.
+                markKey(key);
+                holdUntil = Date.now() + 1000;
+            });
+        });
+        // The entry for the topmost panel still on screen is the current one.
+        if (typeof IntersectionObserver !== 'function') return;
+        const seen = new Map();
+        this._panelIndexObserver = new IntersectionObserver((entries) => {
+            entries.forEach((e) => seen.set(e.target, e.isIntersecting));
+            if (Date.now() < holdUntil) return;
+            markKey(panels.find((p) => seen.get(p))?.getAttribute('data-fold-key'));
+        });
+        panels.forEach((p) => this._panelIndexObserver.observe(p));
+    }
 
     /** Open, once, the panel a link pointed into, and bring it on screen. */
     openAppearancePanelFromLink(body) {
@@ -17022,6 +17083,7 @@ class DashboardConfig {
             host.querySelectorAll('.config-chips[hidden]').forEach((el) => el.removeAttribute('hidden'));
             panels.forEach((panel) => panel.removeAttribute('hidden'));
             this.syncFineFolds(host);
+            this.renderAppearancePanelIndex(host);
             return;
         }
         rows.forEach((row) => {
@@ -17051,6 +17113,7 @@ class DashboardConfig {
             if (visible || titleMatch) anyVisible = true;
         });
         this.syncFineFolds(host);
+        this.renderAppearancePanelIndex(host);
         if (!anyVisible) {
             const note = document.createElement('p');
             note.className = 'config-panel-empty';

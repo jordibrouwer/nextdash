@@ -88,6 +88,41 @@
     top: 12px;
 }
 
+/* The panels of a long tab, above the preview; the one in view is marked. */
+.config-panel-index {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: 0 0 14px;
+    padding-left: 10px;
+    border-left: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+}
+
+.config-panel-index[hidden] {
+    display: none;
+}
+
+.config-panel-index-item {
+    padding: 3px 0;
+    border: 0;
+    background: none;
+    color: var(--text-muted, inherit);
+    font: inherit;
+    font-size: 0.85em;
+    text-align: left;
+    cursor: pointer;
+}
+
+.config-panel-index-item:hover,
+.config-panel-index-item[aria-current="true"] {
+    color: var(--accent-color, var(--text-primary, inherit));
+}
+
+.config-panel-index-item:focus-visible {
+    outline: 2px solid var(--accent-color, currentColor);
+    outline-offset: 2px;
+}
+
 .config-tabpage-side-label {
     margin: 0 0 6px;
     font-size: 0.8em;
@@ -414,6 +449,11 @@
     .config-tabpage-side {
         position: static;
         order: -1;
+    }
+
+    /* No column to stand in beside the settings; the panels say enough. */
+    .config-panel-index {
+        display: none;
     }
 }
 
