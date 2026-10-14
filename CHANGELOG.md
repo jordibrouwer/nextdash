@@ -168,6 +168,7 @@ A tag gets a page of its own. The tag cloud is quieter — three sizes, counts, 
 - **fix — two adds of the same URL at once** no longer both land: the duplicate check is repeated under the store lock and answers as the first check does (`handlers.go`, `ErrBookmarkDuplicateURL`).
 - **fix — preview text in the all-pages read** had its HTML entities left undecoded (`models.go`).
 - **fix — the default page order is by id,** not Go's random map order, which shuffled the tabs and saved them that way.
+- **fix — the Bookmarks view draws when it opens before the inbox has loaded.** `:health refresh` (and an old `#health` link) opened it with the header half drawn and no fresh scan: the tag counts read `inbox.items` through the inbox's lazy loader, which handed back a function, and `.filter` on it threw. The loader now answers `items` with an empty list until the module is there (`dashboard-inbox-loader.js`, `health-view-redirect.spec.js`).
 
 ### Health
 
