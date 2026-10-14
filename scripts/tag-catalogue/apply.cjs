@@ -38,10 +38,17 @@ const splitDefs = fs.existsSync(splitsFile) ? readJSON('splits.json').splits : {
 const splitHosts = fs.existsSync(path.join(__dirname, 'manual', 'splits.json')) ? readJSON('manual', 'splits.json') : {};
 // Well-known sites of whole Wikidata classes (import-classes.cjs).
 const classHosts = fs.existsSync(path.join(__dirname, 'manual', 'classes.json')) ? readJSON('manual', 'classes.json') : {};
-// Sites from Lobsters' tags and from curated lists (harvest-lobsters.cjs, harvest-awesome.cjs).
-const harvested = ['lobsters.json', 'awesome.json', 'directories.json']
-    .filter((name) => fs.existsSync(path.join(__dirname, 'manual', name)))
-    .reduce((all, name) => ({ ...all, ...readJSON('manual', name) }), {});
+// Sites from Lobsters, curated lists, app stores, DEV.to and GitHub topics
+// (the harvest-*.cjs scripts).
+// Placeholder domains turn up in harvested links (a DEV.to post with
+// example.com as its canonical URL); they are nobody's site, so they get no
+// subject, which also takes out what an earlier run filed.
+const PLACEHOLDER = /(^|\.)(example\.(com|org|net)|localhost|test|invalid)$/;
+const harvested = Object.fromEntries(Object.entries(
+    ['lobsters.json', 'awesome.json', 'directories.json', 'app-indexes.json', 'devto.json', 'github-topics.json']
+        .filter((name) => fs.existsSync(path.join(__dirname, 'manual', name)))
+        .reduce((all, name) => ({ ...all, ...readJSON('manual', name) }), {}),
+).map(([entry, tags]) => [entry, PLACEHOLDER.test(entry.split('/')[0]) ? [] : tags]));
 
 const { subjects } = readJSON('subjects.json');
 const splitSubjects = Object.values(splitDefs).flat().filter(({ existing }) => !existing)
