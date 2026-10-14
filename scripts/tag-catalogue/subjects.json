@@ -295,6 +295,369 @@
         "tteck.github.io",
         "community-scripts.github.io"
       ]
+    },
+    {
+      "tag": "tech",
+      "aliases": [
+        "technology",
+        "techniek",
+        "technologie",
+        "technik"
+      ],
+      "keywords": [
+        "gadgets",
+        "smartphone",
+        "laptop",
+        "chip",
+        "processor",
+        "software-update"
+      ],
+      "hosts": [
+        "youtube.com/@linustechtips",
+        "youtube.com/@mkbhd",
+        "youtube.com/@techlinked",
+        "youtube.com/@jeffgeerling",
+        "youtube.com/@gamersnexus",
+        "youtube.com/@hardwareunboxed",
+        "youtube.com/@networkchuck",
+        "youtube.com/@christitustech",
+        "youtube.com/@rossmanngroup",
+        "youtube.com/@dave2d",
+        "youtube.com/@unboxtherapy",
+        "youtube.com/@ijustine",
+        "youtube.com/@austinevans",
+        "youtube.com/@shortcircuit",
+        "youtube.com/@fireship",
+        "youtube.com/@t3dotgg",
+        "youtube.com/@theprimetimeagen",
+        "youtube.com/@distrotube",
+        "youtube.com/@thelinuxexp",
+        "youtube.com/@techhut",
+        "youtube.com/@mrwhosetheboss",
+        "youtube.com/@jerryrigeverything",
+        "youtube.com/@techquickie"
+      ]
+    },
+    {
+      "tag": "tech-news",
+      "aliases": [
+        "technews",
+        "tech-nieuws",
+        "tech-blogs",
+        "techblog"
+      ],
+      "keywords": [
+        "review",
+        "hands-on",
+        "announced",
+        "launch",
+        "smartphone",
+        "chipmaker"
+      ],
+      "hosts": [
+        "theverge.com",
+        "arstechnica.com",
+        "techcrunch.com",
+        "wired.com",
+        "engadget.com",
+        "gizmodo.com",
+        "techradar.com",
+        "zdnet.com",
+        "cnet.com",
+        "thenextweb.com",
+        "mashable.com",
+        "digitaltrends.com",
+        "9to5mac.com",
+        "9to5google.com",
+        "macrumors.com",
+        "appleinsider.com",
+        "androidauthority.com",
+        "androidpolice.com",
+        "xda-developers.com",
+        "theregister.com",
+        "slashdot.org",
+        "news.ycombinator.com",
+        "lobste.rs",
+        "heise.de",
+        "golem.de",
+        "tweakers.net",
+        "computerbase.de",
+        "numerama.com",
+        "frandroid.com",
+        "01net.com",
+        "xataka.com",
+        "404media.co",
+        "restofworld.org",
+        "techmeme.com",
+        "theinformation.com",
+        "venturebeat.com",
+        "siliconangle.com",
+        "howtogeek.com",
+        "makeuseof.com",
+        "neowin.net",
+        "ghacks.net",
+        "windowscentral.com",
+        "thurrott.com",
+        "phoronix.com",
+        "lwn.net",
+        "omgubuntu.co.uk",
+        "itsfoss.com",
+        "iculture.nl",
+        "androidplanet.nl",
+        "computable.nl",
+        "bright.nl",
+        "nu.nl/tech",
+        "pcworld.com",
+        "pcmag.com",
+        "tomsguide.com"
+      ]
+    },
+    {
+      "tag": "hardware",
+      "aliases": [
+        "pc-hardware",
+        "computer-hardware",
+        "pc-building"
+      ],
+      "keywords": [
+        "gpu",
+        "cpu",
+        "benchmark",
+        "motherboard",
+        "ssd",
+        "overclocking"
+      ],
+      "hosts": [
+        "tomshardware.com",
+        "anandtech.com",
+        "techpowerup.com",
+        "guru3d.com",
+        "servethehome.com",
+        "notebookcheck.net",
+        "hardware.info",
+        "hardwareluxx.de",
+        "kitguru.net",
+        "overclock3d.net",
+        "linustechtips.com",
+        "rtings.com",
+        "chipsandcheese.com",
+        "pcpartpicker.com"
+      ]
+    },
+    {
+      "tag": "smartphones",
+      "aliases": [
+        "phones",
+        "mobile-phones",
+        "telefoons"
+      ],
+      "keywords": [
+        "smartphone",
+        "battery-life",
+        "camera-test",
+        "specs"
+      ],
+      "hosts": [
+        "gsmarena.com",
+        "phonearena.com"
+      ]
+    },
+    {
+      "tag": "infosec-news",
+      "aliases": [
+        "security-news",
+        "cybersecurity-news",
+        "infosec"
+      ],
+      "keywords": [
+        "ransomware",
+        "vulnerability",
+        "breach",
+        "malware",
+        "cve",
+        "phishing"
+      ],
+      "hosts": [
+        "bleepingcomputer.com",
+        "krebsonsecurity.com",
+        "thehackernews.com",
+        "darkreading.com",
+        "securityweek.com",
+        "therecord.media",
+        "schneier.com",
+        "security.nl",
+        "grahamcluley.com",
+        "cyberscoop.com",
+        "securityaffairs.com",
+        "risky.biz"
+      ]
+    },
+    {
+      "tag": "internet",
+      "aliases": [
+        "internet-tools",
+        "network-tools",
+        "web-tools"
+      ],
+      "keywords": [
+        "outage",
+        "dns",
+        "ip-address",
+        "whois",
+        "bandwidth",
+        "latency"
+      ],
+      "hosts": [
+        "downdetector.com",
+        "allestoringen.nl",
+        "isitdownrightnow.com",
+        "downforeveryoneorjustme.com",
+        "speedtest.net",
+        "fast.com",
+        "whatismyipaddress.com",
+        "ipinfo.io",
+        "dnschecker.org",
+        "whois.com",
+        "who.is",
+        "ripe.net",
+        "icann.org",
+        "internetsociety.org",
+        "bgp.he.net",
+        "mxtoolbox.com",
+        "testmy.net"
+      ]
+    },
+    {
+      "tag": "science-news",
+      "aliases": [
+        "sciencenews",
+        "wetenschapsnieuws",
+        "popular-science"
+      ],
+      "keywords": [
+        "researchers",
+        "study",
+        "discovery",
+        "scientists",
+        "peer-reviewed"
+      ],
+      "hosts": [
+        "sciencedaily.com",
+        "phys.org",
+        "newscientist.com",
+        "sciencenews.org",
+        "quantamagazine.org",
+        "scientificamerican.com",
+        "livescience.com",
+        "sciencealert.com",
+        "nautil.us",
+        "eos.org",
+        "smithsonianmag.com",
+        "popsci.com",
+        "scientias.nl",
+        "kijkmagazine.nl",
+        "nemokennislink.nl",
+        "spektrum.de",
+        "futura-sciences.com",
+        "theconversation.com",
+        "bigthink.com",
+        "astronomy.com",
+        "universetoday.com",
+        "earthsky.org"
+      ]
+    },
+    {
+      "tag": "science",
+      "hosts": [
+        "youtube.com/@veritasium",
+        "youtube.com/@kurzgesagt",
+        "youtube.com/@vsauce",
+        "youtube.com/@smartereveryday",
+        "youtube.com/@3blue1brown",
+        "youtube.com/@minutephysics",
+        "youtube.com/@scishow",
+        "youtube.com/@pbsspacetime",
+        "youtube.com/@numberphile",
+        "youtube.com/@computerphile",
+        "youtube.com/@tomscottgo",
+        "youtube.com/@stevemould",
+        "youtube.com/@markrober",
+        "youtube.com/@nilered",
+        "youtube.com/@sabinehossenfelder",
+        "youtube.com/@scottmanley",
+        "youtube.com/@everydayastronaut",
+        "youtube.com/@realengineering",
+        "youtube.com/@practicalengineeringchannel",
+        "youtube.com/@coolworldslab",
+        "youtube.com/@whatdamath",
+        "youtube.com/@theactionlab",
+        "youtube.com/@standupmaths",
+        "youtube.com/@sixtysymbols",
+        "youtube.com/@cgpgrey",
+        "youtube.com/@electroboom",
+        "youtube.com/@alphaphoenixchannel",
+        "youtube.com/@tibees",
+        "youtube.com/@drbecky",
+        "youtube.com/@periodicvideos",
+        "youtube.com/@kylehill"
+      ]
+    },
+    {
+      "tag": "self-hosted",
+      "hosts": [
+        "youtube.com/@jims-garage",
+        "youtube.com/@lawrencesystems",
+        "youtube.com/@craftcomputing",
+        "youtube.com/@servethehomevideo",
+        "youtube.com/@wolfgangschannel",
+        "youtube.com/@hardwarehaven",
+        "youtube.com/@raidowl",
+        "youtube.com/@apalrdsadventures",
+        "youtube.com/@2guystek",
+        "youtube.com/@dbtechyt",
+        "youtube.com/@technotim"
+      ]
+    },
+    {
+      "tag": "social",
+      "hosts": [
+        "facebook.com",
+        "instagram.com",
+        "x.com",
+        "twitter.com",
+        "threads.com",
+        "threads.net",
+        "bsky.app",
+        "mastodon.social",
+        "mastodon.online",
+        "joinmastodon.org",
+        "tiktok.com",
+        "snapchat.com",
+        "pinterest.com",
+        "tumblr.com",
+        "linkedin.com",
+        "vk.com",
+        "weibo.com",
+        "lemmy.world",
+        "pixelfed.social",
+        "bere.al",
+        "nextdoor.com",
+        "misskey.io"
+      ]
+    },
+    {
+      "tag": "hardware",
+      "hosts": [
+        "tweakers.net"
+      ]
+    },
+    {
+      "tag": "community",
+      "hosts": [
+        "news.ycombinator.com",
+        "lobste.rs",
+        "slashdot.org"
+      ]
     }
   ]
 }

@@ -1,4 +1,5 @@
 {
+  "01net.com": [],
   "177milkstreet.com": [
     "recipes"
   ],
@@ -10,10 +11,13 @@
   "3cx.com": [
     "voip"
   ],
+  "404media.co": [],
   "45cat.com": [
     "music"
   ],
   "47.99.53.145": [],
+  "9to5google.com": [],
+  "9to5mac.com": [],
   "abcmouse.com": [
     "education"
   ],
@@ -24,9 +28,13 @@
     "design-tools",
     "desktop-apps"
   ],
+  "airbus.com": [
+    "aviation"
+  ],
   "albumoftheyear.org": [
     "music"
   ],
+  "allestoringen.nl": [],
   "amazon.co.jp": [
     "shopping"
   ],
@@ -39,6 +47,10 @@
   "amnesty.nl": [
     "charities"
   ],
+  "anandtech.com": [],
+  "androidauthority.com": [],
+  "androidplanet.nl": [],
+  "androidpolice.com": [],
   "anisearch.com": [
     "anime"
   ],
@@ -46,15 +58,18 @@
     "anime"
   ],
   "anthropic.com": [],
+  "appleinsider.com": [],
   "archive.is": [
     "archive"
   ],
   "archive.md": [
     "archive"
   ],
+  "arstechnica.com": [],
   "arts.cornell.edu": [
     "university"
   ],
+  "astronomy.com": [],
   "au.yahoo.com": [
     "news"
   ],
@@ -74,12 +89,15 @@
   "besoccer.com": [
     "soccer"
   ],
+  "bgp.he.net": [],
   "bibliocommons.com": [
     "library"
   ],
   "bigpark.com": [
     "games"
   ],
+  "bigthink.com": [],
+  "bleepingcomputer.com": [],
   "books.google.com.ar": [
     "ebooks"
   ],
@@ -89,6 +107,7 @@
   "books.google.it": [
     "ebooks"
   ],
+  "bright.nl": [],
   "businessinsider.de": [
     "business",
     "news"
@@ -108,10 +127,14 @@
   "chess.ca": [
     "chess"
   ],
+  "chipsandcheese.com": [],
   "claude.ai": [],
+  "cnet.com": [],
   "comics.org": [
     "comics"
   ],
+  "computable.nl": [],
+  "computerbase.de": [],
   "corporate.orange.be": [
     "telecom"
   ],
@@ -124,43 +147,61 @@
   "cursor.com": [
     "editor"
   ],
+  "cyberscoop.com": [],
   "cyclingweekly.co.uk": [
     "cycling",
     "magazine"
   ],
+  "darkreading.com": [],
   "deepmind.google": [],
   "deepseek.com": [],
   "deliveroo.co.uk": [
     "food-delivery"
   ],
+  "digitaltrends.com": [],
   "diplomatie.gouv.fr": [
     "government"
   ],
+  "dnschecker.org": [],
+  "downdetector.com": [],
+  "downforeveryoneorjustme.com": [],
+  "earthsky.org": [],
   "economie.gouv.fr": [
     "government"
   ],
   "elevenlabs.io": [],
+  "engadget.com": [],
+  "eos.org": [],
   "espn.co.uk": [
     "sports"
   ],
   "espn.com.ar": [
     "sports"
   ],
+  "fast.com": [],
   "figshare.com": [
     "research-data"
   ],
   "fonts.adobe.com": [
     "typography"
   ],
+  "frandroid.com": [],
+  "futura-sciences.com": [],
+  "ghacks.net": [],
+  "gizmodo.com": [],
+  "golem.de": [],
   "golf.de": [
     "golf"
   ],
   "golf.se": [
     "golf"
   ],
+  "grahamcluley.com": [],
   "greenpeace.com.tw": [
     "environment"
   ],
+  "gsmarena.com": [],
+  "guru3d.com": [],
   "gutenberg.net.au": [
     "ebooks"
   ],
@@ -168,10 +209,20 @@
     "electronics",
     "online-community"
   ],
+  "hardware.info": [],
+  "hardwareluxx.de": [],
+  "heise.de": [],
   "hk.space.museum": [
     "museums"
   ],
+  "howtogeek.com": [],
+  "icann.org": [],
+  "iculture.nl": [],
   "igloocoolers.com": [],
+  "internetsociety.org": [],
+  "ipinfo.io": [],
+  "isitdownrightnow.com": [],
+  "itsfoss.com": [],
   "johnson.cornell.edu": [
     "university"
   ],
@@ -186,6 +237,9 @@
     "flights",
     "travel"
   ],
+  "kijkmagazine.nl": [],
+  "kitguru.net": [],
+  "krebsonsecurity.com": [],
   "legifrance.gouv.fr": [
     "law",
     "government"
@@ -193,12 +247,19 @@
   "library.cornell.edu": [
     "library"
   ],
+  "linustechtips.com": [],
   "littlewoods.com": [
     "shopping"
   ],
+  "livescience.com": [],
+  "lobste.rs": [],
+  "lwn.net": [],
+  "macrumors.com": [],
+  "makeuseof.com": [],
   "marriott.com.cn": [
     "hotels"
   ],
+  "mashable.com": [],
   "mega.io": [
     "cloud-storage",
     "file-transfer"
@@ -218,6 +279,7 @@
   "musik-sammler.de": [
     "music"
   ],
+  "mxtoolbox.com": [],
   "myheritage.fr": [
     "genealogy"
   ],
@@ -227,15 +289,23 @@
   "nationaltheatre.org.au": [
     "theatre"
   ],
+  "nautil.us": [],
+  "nemokennislink.nl": [],
+  "neowin.net": [],
   "news.cornell.edu": [
     "university"
   ],
+  "news.ycombinator.com": [],
+  "newscientist.com": [],
   "nintendo.pt": [
     "games"
   ],
+  "notebookcheck.net": [],
+  "numerama.com": [],
   "nysaes.cals.cornell.edu": [
     "university"
   ],
+  "omgubuntu.co.uk": [],
   "openai.com": [],
   "opencode.ai": [
     "dev"
@@ -252,15 +322,23 @@
   "orange.ro": [
     "telecom"
   ],
+  "overclock3d.net": [],
   "oxfam.org.uk": [
     "charities"
   ],
   "packagist.org": [
     "php"
   ],
+  "pcmag.com": [],
+  "pcpartpicker.com": [],
+  "pcworld.com": [],
+  "phonearena.com": [],
+  "phoronix.com": [],
+  "phys.org": [],
   "pop.culture.gouv.fr": [
     "reference"
   ],
+  "popsci.com": [],
   "proton.com": [
     "email",
     "privacy"
@@ -268,6 +346,7 @@
   "punchbowl.com": [
     "events"
   ],
+  "quantamagazine.org": [],
   "raspberrypi.org": [
     "raspberrypi"
   ],
@@ -277,6 +356,21 @@
   "resolver.library.cornell.edu": [
     "library"
   ],
+  "restofworld.org": [],
+  "ripe.net": [],
+  "risky.biz": [],
+  "rtings.com": [],
+  "schneier.com": [],
+  "sciencealert.com": [],
+  "sciencedaily.com": [],
+  "sciencenews.org": [],
+  "scientias.nl": [],
+  "scientificamerican.com": [],
+  "security.nl": [],
+  "securityaffairs.com": [],
+  "securityweek.com": [],
+  "servethehome.com": [],
+  "siliconangle.com": [],
   "siv.archives-nationales.culture.gouv.fr": [
     "archive"
   ],
@@ -356,6 +450,10 @@
     "flights",
     "travel"
   ],
+  "slashdot.org": [],
+  "smithsonianmag.com": [],
+  "speedtest.net": [],
+  "spektrum.de": [],
   "stanley1913.com": [],
   "swift.com": [
     "payments"
@@ -363,6 +461,10 @@
   "t-mobile.pl": [
     "telecom"
   ],
+  "techcrunch.com": [],
+  "techmeme.com": [],
+  "techpowerup.com": [],
+  "techradar.com": [],
   "telefonica.de": [
     "telecom"
   ],
@@ -372,16 +474,25 @@
   "tennis.com.au": [
     "tennis"
   ],
+  "testmy.net": [],
+  "theconversation.com": [],
   "thefa.com": [
     "soccer"
   ],
+  "thehackernews.com": [],
+  "theinformation.com": [],
+  "thenextweb.com": [],
   "thepinknews.com": [
     "news"
   ],
+  "therecord.media": [],
+  "theregister.com": [],
+  "theverge.com": [],
   "threads.com": [
     "microblogging",
     "social"
   ],
+  "thurrott.com": [],
   "time.gov": [
     "timezone"
   ],
@@ -391,8 +502,13 @@
   "timeanddate.de": [
     "timezone"
   ],
+  "tomsguide.com": [],
+  "tomshardware.com": [],
   "tro.matrix.com.br": [],
+  "tweakers.net": [],
   "ultimaker.com": [],
+  "universetoday.com": [],
+  "venturebeat.com": [],
   "verizon.net": [
     "telecom"
   ],
@@ -412,9 +528,14 @@
     "shopping",
     "grocery"
   ],
+  "whatismyipaddress.com": [],
+  "who.is": [],
+  "whois.com": [],
+  "windowscentral.com": [],
   "windsurf.com": [
     "editor"
   ],
+  "wired.com": [],
   "wolfram.com": [
     "math"
   ],
@@ -422,6 +543,8 @@
     "university"
   ],
   "x.ai": [],
+  "xataka.com": [],
+  "xda-developers.com": [],
   "yahoo.com": [
     "news"
   ],
@@ -431,6 +554,7 @@
   "yelp.co.uk": [
     "restaurants"
   ],
+  "zdnet.com": [],
   "zendesk.co.jp": [
     "helpdesk"
   ],

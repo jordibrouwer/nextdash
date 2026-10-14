@@ -3643,6 +3643,7 @@
         "android-dev",
         "play-store"
       ],
+      "parent": "tech",
       "hosts": [
         "android.com",
         "androidauthority.com",
@@ -4198,6 +4199,7 @@
         "airspace"
       ],
       "derived": [
+        "airbus.com",
         "flightaware.com"
       ]
     },
@@ -5631,7 +5633,6 @@
         "dolcacatalunya.com",
         "elifesciences.org",
         "emerce.nl",
-        "engadget.com",
         "enworld.org",
         "extremetech.com",
         "fdesouche.com",
@@ -8045,7 +8046,6 @@
         "instituteforgovernment.org.uk",
         "international-alert.org",
         "internationalafricaninstitute.org",
-        "internetsociety.org",
         "interpal.org",
         "inuitbroadcasting.ca",
         "ipa.world",
@@ -10581,7 +10581,8 @@
         "indiehackers.com",
         "lobste.rs",
         "news.ycombinator.com",
-        "scribophile.com"
+        "scribophile.com",
+        "slashdot.org"
       ],
       "keywords": [
         "karma",
@@ -10807,12 +10808,10 @@
         "opencritic.com",
         "otterbox.com",
         "paireyewear.com",
-        "pcworld.com",
         "productreview.com.au",
         "ratemyprofessors.com",
         "restaurantguru.com",
         "retty.me",
-        "rtings.com",
         "squaretrade.com",
         "sweepskings.com",
         "tabelog.com",
@@ -11326,7 +11325,6 @@
         "clickhouse.com",
         "docs.influxdata.com",
         "duckdb.org",
-        "gsmarena.com",
         "letras.com",
         "litestream.io",
         "nationaldaycalendar.com",
@@ -14351,6 +14349,7 @@
         "circuits",
         "embedded"
       ],
+      "parent": "tech",
       "hosts": [
         "adafruit.com",
         "arduino.cc",
@@ -14406,7 +14405,6 @@
         "ams-osram.com",
         "ams.com",
         "amstrad.com",
-        "anandtech.com",
         "anker.com",
         "antec.com",
         "aoc.com",
@@ -14469,7 +14467,6 @@
         "cobyusa.com",
         "compal.com",
         "compaq.com",
-        "computerbase.de",
         "comviq.se",
         "continentaledison.fr",
         "coolblue.be",
@@ -14813,7 +14810,6 @@
         "thorens.com",
         "tigo.com",
         "tobii.com",
-        "tomshardware.com",
         "tomtom.com",
         "tp-link.com",
         "tracfone.com",
@@ -14827,7 +14823,6 @@
         "turtlebeach.com",
         "tw.giga-byte.com",
         "tw1.shuttle.com",
-        "tweakers.net",
         "tyan.com",
         "u-blox.com",
         "u.com.my",
@@ -14907,7 +14902,6 @@
         "healthspan.co.uk",
         "mail.aol.com",
         "mail.com",
-        "mxtoolbox.com",
         "poczta.interia.pl",
         "proton.com"
       ]
@@ -15589,8 +15583,7 @@
       ],
       "derived": [
         "ficbook.net",
-        "fimfiction.net",
-        "gizmodo.com"
+        "fimfiction.net"
       ]
     },
     {
@@ -20075,7 +20068,6 @@
         "steamdeckhq.com",
         "stopgame.ru",
         "svg.com",
-        "techradar.com",
         "thegamer.com",
         "thegamesmachine.it",
         "timeextension.com",
@@ -23040,6 +23032,40 @@
       ]
     },
     {
+      "tag": "hardware",
+      "aliases": [
+        "pc-hardware",
+        "computer-hardware",
+        "pc-building"
+      ],
+      "parent": "tech",
+      "hosts": [
+        "anandtech.com",
+        "chipsandcheese.com",
+        "guru3d.com",
+        "hardware.info",
+        "hardwareluxx.de",
+        "kitguru.net",
+        "linustechtips.com",
+        "notebookcheck.net",
+        "overclock3d.net",
+        "pcpartpicker.com",
+        "rtings.com",
+        "servethehome.com",
+        "techpowerup.com",
+        "tomshardware.com",
+        "tweakers.net"
+      ],
+      "keywords": [
+        "gpu",
+        "cpu",
+        "benchmark",
+        "motherboard",
+        "ssd",
+        "overclocking"
+      ]
+    },
+    {
       "tag": "health",
       "aliases": [
         "wellness",
@@ -25523,6 +25549,37 @@
       ]
     },
     {
+      "tag": "infosec-news",
+      "aliases": [
+        "security-news",
+        "cybersecurity-news",
+        "infosec"
+      ],
+      "parent": "security",
+      "hosts": [
+        "bleepingcomputer.com",
+        "cyberscoop.com",
+        "darkreading.com",
+        "grahamcluley.com",
+        "krebsonsecurity.com",
+        "risky.biz",
+        "schneier.com",
+        "security.nl",
+        "securityaffairs.com",
+        "securityweek.com",
+        "thehackernews.com",
+        "therecord.media"
+      ],
+      "keywords": [
+        "ransomware",
+        "vulnerability",
+        "breach",
+        "malware",
+        "cve",
+        "phishing"
+      ]
+    },
+    {
       "tag": "insurance",
       "aliases": [
         "insurer",
@@ -25943,6 +26000,42 @@
       ]
     },
     {
+      "tag": "internet",
+      "aliases": [
+        "internet-tools",
+        "network-tools",
+        "web-tools"
+      ],
+      "parent": "tech",
+      "hosts": [
+        "allestoringen.nl",
+        "bgp.he.net",
+        "dnschecker.org",
+        "downdetector.com",
+        "downforeveryoneorjustme.com",
+        "fast.com",
+        "icann.org",
+        "internetsociety.org",
+        "ipinfo.io",
+        "isitdownrightnow.com",
+        "mxtoolbox.com",
+        "ripe.net",
+        "speedtest.net",
+        "testmy.net",
+        "whatismyipaddress.com",
+        "who.is",
+        "whois.com"
+      ],
+      "keywords": [
+        "outage",
+        "dns",
+        "ip-address",
+        "whois",
+        "bandwidth",
+        "latency"
+      ]
+    },
+    {
       "tag": "internships",
       "aliases": [
         "entry-level",
@@ -26011,6 +26104,7 @@
         "apple-mobile",
         "app-store"
       ],
+      "parent": "tech",
       "hosts": [
         "cocoapods.org",
         "developer.apple.com",
@@ -27182,7 +27276,6 @@
         "scielo.org.co",
         "scielo.org.mx",
         "sciencefocus.com",
-        "sciencenews.org",
         "sciencepress.mnhn.fr",
         "scientiamarina.revistas.csic.es",
         "scientificexploration.org",
@@ -27221,7 +27314,6 @@
         "sora.unm.edu",
         "sp.lyellcollection.org",
         "sparrow.up.poznan.pl",
-        "spektrum.de",
         "srdata.nist.gov",
         "ssag.se",
         "stat.ucla.edu",
@@ -27949,6 +28041,7 @@
         "open-source-os",
         "unix"
       ],
+      "parent": "tech",
       "hosts": [
         "archlinux.org",
         "debian.org",
@@ -27968,7 +28061,6 @@
       "derived": [
         "askubuntu.com",
         "freedesktop.org",
-        "lwn.net",
         "nixos.org"
       ]
     },
@@ -28194,6 +28286,7 @@
         "homebrew",
         "apple"
       ],
+      "parent": "tech",
       "hosts": [
         "=apple.com",
         "brew.sh",
@@ -28207,9 +28300,6 @@
         "dock",
         "spotlight",
         "keychain"
-      ],
-      "derived": [
-        "macrumors.com"
       ]
     },
     {
@@ -28283,7 +28373,6 @@
         "aif.ru",
         "aip.nu",
         "aiptcomics.com",
-        "airbus.com",
         "airforcesmonthly.co.uk",
         "airlinerworld.com",
         "ajour.ch",
@@ -28376,7 +28465,6 @@
         "asianews.network",
         "asiatimes.com",
         "asimovs.com",
-        "astronomy.com",
         "astrowoche.de",
         "athleticsweekly.com",
         "atl.nu",
@@ -29120,7 +29208,6 @@
         "hansischergeschichtsverein.de",
         "hant.se",
         "happinez.nl",
-        "hardwareluxx.de",
         "harpersbazaar.com",
         "harpersbazaar.fr",
         "harpweek.com",
@@ -29183,7 +29270,6 @@
         "hotvideo.fr",
         "houseandgarden.co.uk",
         "housebeautiful.com",
-        "howtogeek.com",
         "hpdetijd.nl",
         "hrf.net",
         "hrf.se",
@@ -29472,7 +29558,6 @@
         "magshop.com.au",
         "main-echo.de",
         "mainpost.de",
-        "makeuseof.com",
         "makezine.com",
         "malmo.se",
         "managertoday.com.tw",
@@ -29754,7 +29839,6 @@
         "payex.se",
         "pcgames.de",
         "pcgameshardware.de",
-        "pcmag.com",
         "pcmarket.com.hk",
         "pcplus.co.uk",
         "pcpowerplay.com.au",
@@ -29873,7 +29957,6 @@
         "qnews.com.au",
         "qthemusic.com",
         "qualenergia.it",
-        "quantamagazine.org",
         "quatrorodas.abril.com.br",
         "quattroruote.it",
         "quechoisir.org",
@@ -30005,7 +30088,6 @@
         "schweizermonat.ch",
         "science-et-vie-junior.fr",
         "science-et-vie.com",
-        "sciencealert.com",
         "sciencesetavenir.fr",
         "scooptw.com",
         "scotsindependent.scot",
@@ -30066,7 +30148,6 @@
         "smart.businessweekly.com.tw",
         "smedias.ie",
         "smhi.se",
-        "smithsonianmag.com",
         "sn-online.de",
         "soapoperadigest.com",
         "socialdemokraterna.se",
@@ -30202,7 +30283,6 @@
         "thebigissue.org.au",
         "thebrooklynrail.org",
         "thecaterer.com",
-        "theconversation.com",
         "thecricketer.com",
         "thediplomat.com",
         "thedrinksbusiness.com",
@@ -30438,7 +30518,6 @@
         "wigantoday.net",
         "wineenthusiast.com",
         "winter-verlag.de",
-        "wired.com",
         "witaj-sprachzentrum.de",
         "wiw.pl",
         "wiwo.de",
@@ -30482,7 +30561,6 @@
         "zagladazydow.pl",
         "zak.de",
         "zalp.ch",
-        "zdnet.com",
         "zeitschrift-osteuropa.de",
         "zendalibros.com",
         "zerohora.com",
@@ -30957,7 +31035,6 @@
       "derived": [
         "100.se",
         "3arts.com",
-        "404media.co",
         "8531.cn",
         "88rising.com",
         "9now.com.au",
@@ -31082,7 +31159,6 @@
         "elevensports.com",
         "endemolfrance.com",
         "endemolshinegroup.com",
-        "engadget.com",
         "enthusiastgaming.com",
         "entravision.com",
         "erf.de",
@@ -33970,11 +34046,9 @@
       ],
       "derived": [
         "bandmix.com",
-        "dnschecker.org",
         "docs.netgate.com",
         "mikrotik.com",
         "modelmayhem.com",
-        "mxtoolbox.com",
         "openwrt.org",
         "serverfault.com",
         "showdns.net",
@@ -34157,7 +34231,6 @@
         "commentaire.fr",
         "compact-online.de",
         "company.vice.com",
-        "computerbase.de",
         "condorfilms.com",
         "consumeraffairs.com",
         "contacto.lu",
@@ -34268,7 +34341,6 @@
         "globalsouthworld.com.br",
         "gmanetwork.com",
         "gnttv.com",
-        "golem.de",
         "goodmorningamerica.com",
         "goodyfeed.com",
         "gript.ie",
@@ -34283,7 +34355,6 @@
         "haymarket.com",
         "hdl.handle.net",
         "hearst.com",
-        "heise.de",
         "hindsamachar.in",
         "historia.fr",
         "hitc.com",
@@ -34372,7 +34443,6 @@
         "lynnnews.co.uk",
         "m.dailyhunt.in",
         "mac4ever.com",
-        "macrumors.com",
         "macworld.com",
         "mailtoday.in",
         "mangalam.com",
@@ -34463,7 +34533,6 @@
         "paesesera.it",
         "panchjanya.com",
         "pazienti.it",
-        "pcworld.com",
         "pd.cpim.org",
         "perlentaucher.de",
         "perthnow.com.au",
@@ -34531,7 +34600,6 @@
         "sante-medecine.journaldesfemmes.fr",
         "sbr.com.sg",
         "sbs.com.au",
-        "sciencedaily.com",
         "scoremediaandgaming.com",
         "sevengroup.com.au",
         "sevenwestmedia.com.au",
@@ -34542,7 +34610,6 @@
         "sky.de",
         "skynet.be",
         "skynewsarabia.com",
-        "slashdot.org",
         "smartdroid.de",
         "sn.at",
         "speakout.hk",
@@ -34585,7 +34652,6 @@
         "taskandpurpose.com",
         "teaonews.co.nz",
         "techadvisor.com",
-        "techradar.com",
         "techweb.com.cn",
         "tehelka.com",
         "telegraph.co.uk",
@@ -34605,7 +34671,6 @@
         "thenationaldesk.com",
         "thenewslens.com",
         "thepinknews.com",
-        "theregister.com",
         "theskimm.com",
         "thestandnews.com",
         "thestarphoenix.com",
@@ -34625,7 +34690,6 @@
         "tn.com.ar",
         "today.com",
         "today.line.me",
-        "tomshardware.com",
         "topick.hket.com",
         "torstar.com",
         "townsquaremedia.com",
@@ -34640,7 +34704,6 @@
         "tvn24.pl",
         "tvn24bis.pl",
         "tvp.info",
-        "tweakers.net",
         "twreporter.org",
         "tx.group",
         "tz.de",
@@ -37381,15 +37444,12 @@
         "24.hu",
         "24tv.ua",
         "338canada.com",
-        "404media.co",
         "444.hu",
         "47news.jp",
         "4p.de",
         "4players.de",
         "5min.at",
         "66.ru",
-        "9to5google.com",
-        "9to5mac.com",
         "a24.com",
         "aamacau.com",
         "abcnyheter.no",
@@ -37405,12 +37465,10 @@
         "altaveu.com",
         "altinget.se",
         "altnews.in",
-        "androidplanet.nl",
         "aostasera.it",
         "apache.be",
         "aponet.de",
         "appledaily.com.tw",
-        "appleinsider.com",
         "ara.cat",
         "arabic.china.org.cn",
         "arbetsvarlden.se",
@@ -37419,7 +37477,6 @@
         "archdaily.com.br",
         "ariase.com",
         "aristeguinoticias.com",
-        "arstechnica.com",
         "arte.it",
         "articulo14.es",
         "ascii.jp",
@@ -37486,7 +37543,6 @@
         "clareherald.com",
         "cleantechnica.com",
         "closermag.fr",
-        "cnet.com",
         "cnetfrance.fr",
         "cnn.co.jp",
         "cnn.gr",
@@ -37584,7 +37640,6 @@
         "fox19.com",
         "fr.timesofisrael.com",
         "francebleu.fr",
-        "frandroid.com",
         "french.china.org.cn",
         "friatider.se",
         "fromthemurkydepths.co.uk",
@@ -37623,7 +37678,6 @@
         "hotcars.com",
         "hotnews.ro",
         "houtensnieuws.nl",
-        "howtogeek.com",
         "hoyaragon.es",
         "hr.de",
         "huffingtonpost.es",
@@ -37716,15 +37770,12 @@
         "liveuamap.com",
         "looopings.nl",
         "lto.de",
-        "lwn.net",
         "m3.se",
         "madridiario.es",
-        "makeuseof.com",
         "manchestermill.co.uk",
         "marathi.thebetterindia.com",
         "maroelamedia.co.za",
         "marsactu.fr",
-        "mashable.com",
         "masrawy.com",
         "mediapart.fr",
         "mediapartrvj4bsgolbxixw57ru7fh4jqckparke4vs365guu6ho64yd.onion",
@@ -37798,7 +37849,6 @@
         "nownews.com",
         "ntrzacatecas.com",
         "ntv.ca",
-        "numerama.com",
         "nuvol.com",
         "nyadagbladet.se",
         "nymag.com",
@@ -37825,7 +37875,6 @@
         "penzcentrum.hu",
         "periodicocubano.com",
         "persona-media.com",
-        "phoronix.com",
         "pianetalecce.it",
         "pinkbike.com",
         "pjmedia.com",
@@ -37957,13 +38006,11 @@
         "thefp.com",
         "thegamer.com",
         "thehub.ca",
-        "theinformation.com",
         "theins.ru",
         "theintercept.com",
         "themarkup.org",
         "thenewdaily.com.au",
         "thenewsminute.com",
-        "thenextweb.com",
         "theobjective.com",
         "theprint.in",
         "theshaderoom.com",
@@ -37972,7 +38019,6 @@
         "thetoc.gr",
         "thetravel.com",
         "thetyee.ca",
-        "theverge.com",
         "thewire.in",
         "thewitnesshk.com",
         "thinkbroadband.com",
@@ -38004,7 +38050,6 @@
         "udiscovermusic.com",
         "umanity.jp",
         "unherd.com",
-        "universetoday.com",
         "usine-digitale.fr",
         "valigiablu.it",
         "varesenews.it",
@@ -38031,7 +38076,6 @@
         "whatculture.com",
         "wijzijndestad.com",
         "wikitribune.com",
-        "wired.com",
         "wnd.com",
         "wnti.ch",
         "worldofreel.com",
@@ -39804,13 +39848,11 @@
         "podme.com",
         "podomatic.com",
         "portaly.cc",
-        "quantamagazine.org",
         "ramseysolutions.com",
         "redbull.com",
         "rmfon.pl",
         "rokerreport.sbnation.com",
         "sciencefocus.com",
-        "scientias.nl",
         "shows.acast.com",
         "skeptic.com",
         "slate.com",
@@ -40104,7 +40146,6 @@
         "mutuionline.it",
         "my-best.com",
         "parcel2go.com",
-        "pcpartpicker.com",
         "prestitionline.it",
         "pricerunner.se",
         "segugio.it",
@@ -43347,7 +43388,6 @@
         "santiebeati.it",
         "scamadviser.com",
         "schnittberichte.com",
-        "sciencenews.org",
         "scilit.com",
         "scp-wiki.wikidot.com",
         "scryfall.com",
@@ -43403,7 +43443,6 @@
         "tci.ncl.edu.tw",
         "tcrf.net",
         "teatroallascala.org",
-        "techpowerup.com",
         "tela-botanica.org",
         "termcat.cat",
         "terraria.wiki.gg",
@@ -45413,6 +45452,37 @@
         "popsci.com",
         "science.org",
         "scientificamerican.com",
+        "youtube.com/@3blue1brown",
+        "youtube.com/@alphaphoenixchannel",
+        "youtube.com/@cgpgrey",
+        "youtube.com/@computerphile",
+        "youtube.com/@coolworldslab",
+        "youtube.com/@drbecky",
+        "youtube.com/@electroboom",
+        "youtube.com/@everydayastronaut",
+        "youtube.com/@kurzgesagt",
+        "youtube.com/@kylehill",
+        "youtube.com/@markrober",
+        "youtube.com/@minutephysics",
+        "youtube.com/@nilered",
+        "youtube.com/@numberphile",
+        "youtube.com/@pbsspacetime",
+        "youtube.com/@periodicvideos",
+        "youtube.com/@practicalengineeringchannel",
+        "youtube.com/@realengineering",
+        "youtube.com/@sabinehossenfelder",
+        "youtube.com/@scishow",
+        "youtube.com/@scottmanley",
+        "youtube.com/@sixtysymbols",
+        "youtube.com/@smartereveryday",
+        "youtube.com/@standupmaths",
+        "youtube.com/@stevemould",
+        "youtube.com/@theactionlab",
+        "youtube.com/@tibees",
+        "youtube.com/@tomscottgo",
+        "youtube.com/@veritasium",
+        "youtube.com/@vsauce",
+        "youtube.com/@whatdamath",
         "zooniverse.org"
       ],
       "keywords": [
@@ -45423,8 +45493,47 @@
       ],
       "derived": [
         "codehs.com",
-        "gizmodo.com",
         "mheducation.com"
+      ]
+    },
+    {
+      "tag": "science-news",
+      "aliases": [
+        "sciencenews",
+        "wetenschapsnieuws",
+        "popular-science"
+      ],
+      "parent": "science",
+      "hosts": [
+        "astronomy.com",
+        "bigthink.com",
+        "earthsky.org",
+        "eos.org",
+        "futura-sciences.com",
+        "kijkmagazine.nl",
+        "livescience.com",
+        "nautil.us",
+        "nemokennislink.nl",
+        "newscientist.com",
+        "phys.org",
+        "popsci.com",
+        "quantamagazine.org",
+        "sciencealert.com",
+        "sciencedaily.com",
+        "sciencenews.org",
+        "scientias.nl",
+        "scientificamerican.com",
+        "smithsonianmag.com",
+        "spektrum.de",
+        "theconversation.com",
+        "universetoday.com"
+      ],
+      "keywords": [
+        "researchers",
+        "study",
+        "discovery",
+        "scientists",
+        "peer-reviewed"
       ]
     },
     {
@@ -45721,6 +45830,17 @@
         "tteck.github.io",
         "unraid.net",
         "wiki.servarr.com",
+        "youtube.com/@2guystek",
+        "youtube.com/@apalrdsadventures",
+        "youtube.com/@craftcomputing",
+        "youtube.com/@dbtechyt",
+        "youtube.com/@hardwarehaven",
+        "youtube.com/@jims-garage",
+        "youtube.com/@lawrencesystems",
+        "youtube.com/@raidowl",
+        "youtube.com/@servethehomevideo",
+        "youtube.com/@technotim",
+        "youtube.com/@wolfgangschannel",
         "yunohost.org"
       ],
       "keywords": [
@@ -48469,6 +48589,25 @@
         "tasmota.github.io",
         "z-wave.me",
         "zigbee2mqtt.io"
+      ]
+    },
+    {
+      "tag": "smartphones",
+      "aliases": [
+        "phones",
+        "mobile-phones",
+        "telefoons"
+      ],
+      "parent": "tech",
+      "hosts": [
+        "gsmarena.com",
+        "phonearena.com"
+      ],
+      "keywords": [
+        "smartphone",
+        "battery-life",
+        "camera-test",
+        "specs"
       ]
     },
     {
@@ -52165,11 +52304,27 @@
         "profiles"
       ],
       "hosts": [
+        "bere.al",
         "bsky.app",
         "facebook.com",
         "instagram.com",
+        "joinmastodon.org",
+        "lemmy.world",
+        "linkedin.com",
+        "mastodon.online",
         "mastodon.social",
-        "mewe.com"
+        "mewe.com",
+        "misskey.io",
+        "nextdoor.com",
+        "pinterest.com",
+        "pixelfed.social",
+        "snapchat.com",
+        "threads.net",
+        "tiktok.com",
+        "tumblr.com",
+        "twitter.com",
+        "vk.com",
+        "x.com"
       ],
       "keywords": [
         "follower",
@@ -54155,6 +54310,123 @@
       ],
       "derived": [
         "birdandblendtea.com"
+      ]
+    },
+    {
+      "tag": "tech",
+      "aliases": [
+        "technology",
+        "techniek",
+        "technologie",
+        "technik"
+      ],
+      "hosts": [
+        "youtube.com/@austinevans",
+        "youtube.com/@christitustech",
+        "youtube.com/@dave2d",
+        "youtube.com/@distrotube",
+        "youtube.com/@fireship",
+        "youtube.com/@gamersnexus",
+        "youtube.com/@hardwareunboxed",
+        "youtube.com/@ijustine",
+        "youtube.com/@jeffgeerling",
+        "youtube.com/@jerryrigeverything",
+        "youtube.com/@linustechtips",
+        "youtube.com/@mkbhd",
+        "youtube.com/@mrwhosetheboss",
+        "youtube.com/@networkchuck",
+        "youtube.com/@rossmanngroup",
+        "youtube.com/@shortcircuit",
+        "youtube.com/@t3dotgg",
+        "youtube.com/@techhut",
+        "youtube.com/@techlinked",
+        "youtube.com/@techquickie",
+        "youtube.com/@thelinuxexp",
+        "youtube.com/@theprimetimeagen",
+        "youtube.com/@unboxtherapy"
+      ],
+      "keywords": [
+        "gadgets",
+        "smartphone",
+        "laptop",
+        "chip",
+        "processor",
+        "software-update"
+      ]
+    },
+    {
+      "tag": "tech-news",
+      "aliases": [
+        "technews",
+        "tech-nieuws",
+        "tech-blogs",
+        "techblog"
+      ],
+      "parent": "tech",
+      "hosts": [
+        "01net.com",
+        "404media.co",
+        "9to5google.com",
+        "9to5mac.com",
+        "androidauthority.com",
+        "androidplanet.nl",
+        "androidpolice.com",
+        "appleinsider.com",
+        "arstechnica.com",
+        "bright.nl",
+        "cnet.com",
+        "computable.nl",
+        "computerbase.de",
+        "digitaltrends.com",
+        "engadget.com",
+        "frandroid.com",
+        "ghacks.net",
+        "gizmodo.com",
+        "golem.de",
+        "heise.de",
+        "howtogeek.com",
+        "iculture.nl",
+        "itsfoss.com",
+        "lobste.rs",
+        "lwn.net",
+        "macrumors.com",
+        "makeuseof.com",
+        "mashable.com",
+        "neowin.net",
+        "news.ycombinator.com",
+        "nu.nl/tech",
+        "numerama.com",
+        "omgubuntu.co.uk",
+        "pcmag.com",
+        "pcworld.com",
+        "phoronix.com",
+        "restofworld.org",
+        "siliconangle.com",
+        "slashdot.org",
+        "techcrunch.com",
+        "techmeme.com",
+        "techradar.com",
+        "theinformation.com",
+        "thenextweb.com",
+        "theregister.com",
+        "theverge.com",
+        "thurrott.com",
+        "tomsguide.com",
+        "tweakers.net",
+        "venturebeat.com",
+        "windowscentral.com",
+        "wired.com",
+        "xataka.com",
+        "xda-developers.com",
+        "zdnet.com"
+      ],
+      "keywords": [
+        "review",
+        "hands-on",
+        "announced",
+        "launch",
+        "smartphone",
+        "chipmaker"
       ]
     },
     {
@@ -64289,6 +64561,7 @@
         "pc",
         "win11"
       ],
+      "parent": "tech",
       "hosts": [
         "=microsoft.com",
         "neowin.net",

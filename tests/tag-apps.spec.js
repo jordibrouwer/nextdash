@@ -107,3 +107,16 @@ test('the Bookmarks view offers #self-hosted on a Sonarr bookmark, and says why'
     await expect(offer).toBeVisible({ timeout: 10_000 });
     await expect(offer).toHaveAttribute('title', 'Recognised as Sonarr');
 });
+
+test('a YouTube channel gets its own subject, the rest of YouTube the site\'s', async ({ page }) => {
+    await open(page);
+    const got = await offers(page, [
+        ['channel', 'https://www.youtube.com/@veritasium/videos'],
+        ['video', 'https://www.youtube.com/watch?v=abc'],
+        ['tech', 'https://www.theverge.com/2026/10/14/review'],
+    ]);
+    expect(got.channel).toContain('science');
+    expect(got.channel || []).not.toContain('video');
+    expect(got.video).toContain('video');
+    expect(got.tech).toContain('tech-news');
+});

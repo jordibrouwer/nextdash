@@ -11,7 +11,6 @@
     "running": "sports",
     "skiing": "sports",
     "diving": "sports",
-
     "python": "dev",
     "javascript": "dev",
     "java": "dev",
@@ -45,7 +44,6 @@
     "algorithms": "dev",
     "containers": "dev",
     "kubernetes": "containers",
-
     "classical-music": "music",
     "music-news": "music",
     "music-discovery": "music",
@@ -59,7 +57,6 @@
     "vinyl": "music",
     "live-concerts": "music",
     "musicvideos": "music",
-
     "indiegames": "games",
     "game-deals": "games",
     "game-database": "games",
@@ -72,7 +69,6 @@
     "emulation": "games",
     "achievements": "games",
     "esports": "games",
-
     "banking": "finance",
     "investing": "finance",
     "markets": "finance",
@@ -99,14 +95,12 @@
     "student-loan": "finance",
     "expenses": "finance",
     "emerging-markets": "finance",
-
     "medicine": "health",
     "mental-health": "health",
     "nutrition": "health",
     "pharmacy": "health",
     "telehealth": "health",
     "fitness": "health",
-
     "tabloid": "news",
     "opinion": "news",
     "factcheck": "news",
@@ -114,14 +108,12 @@
     "world": "news",
     "entertainment-news": "news",
     "newspaper-archives": "news",
-
     "flights": "travel",
     "hotels": "travel",
     "car-rental": "travel",
     "cruises": "travel",
     "vacation-rentals": "travel",
     "luggage": "travel",
-
     "ecommerce": "shopping",
     "grocery": "shopping",
     "deals": "shopping",
@@ -135,7 +127,6 @@
     "bookstore": "shopping",
     "comicstore": "shopping",
     "retail": "shopping",
-
     "university": "education",
     "school": "education",
     "courses": "education",
@@ -145,7 +136,6 @@
     "coding": "education",
     "kids-coding": "coding",
     "certifications": "education",
-
     "physics": "science",
     "chemistry": "science",
     "biology": "science",
@@ -163,7 +153,6 @@
     "anthropology": "science",
     "psychology": "science",
     "linguistics": "science",
-
     "preprints": "research",
     "journals": "research",
     "open-access": "research",
@@ -172,28 +161,23 @@
     "bibliometrics": "research",
     "research-data": "research",
     "thesis": "research",
-
     "passwords": "security",
     "encryption": "security",
     "vpn": "security",
     "auth": "security",
     "ssl": "security",
     "fraud": "security",
-
     "hosting": "cloud",
     "cloud-storage": "cloud",
     "domains": "hosting",
-
     "television": "media",
     "radio": "media",
     "broadcasting": "media",
-
     "cinema": "film",
     "moviedatabase": "film",
     "filmfestival": "film",
     "screenplays": "film",
     "documentary": "film",
-
     "ebooks": "books",
     "audiobooks": "books",
     "book-summaries": "books",
@@ -201,38 +185,30 @@
     "webnovel": "books",
     "manga": "comics",
     "webcomics": "comics",
-
     "podcast-database": "podcasts",
     "podcast-hosting": "podcasts",
     "streaming-tools": "livestream",
-
     "food-delivery": "restaurants",
     "baking": "recipes",
     "meal-kits": "recipes",
-
     "gardening": "home",
     "cleaning": "home",
     "moving": "home",
     "smart-home": "home",
-
     "sewing": "crafts",
     "woodworking": "crafts",
-
     "pet-adoption": "pets",
     "pet-insurance": "pets",
     "veterinary": "pets",
-
     "auto-parts": "cars",
     "motorcycles": "cars",
     "automotive": "cars",
-
     "camping": "outdoors",
     "climbing": "outdoors",
     "fishing": "outdoors",
     "hunting": "outdoors",
     "birdwatching": "outdoors",
     "boating": "outdoors",
-
     "recruiting": "jobs",
     "resume": "jobs",
     "internships": "jobs",
@@ -240,63 +216,62 @@
     "freelance": "jobs",
     "remote-work": "jobs",
     "compensation": "jobs",
-
     "legal": "law",
     "litigation": "law",
     "patents": "law",
     "bankruptcy": "law",
     "antitrust": "law",
     "compliance": "law",
-
     "elections": "politics",
     "geopolitics": "politics",
     "policy": "politics",
-
     "icons": "design-tools",
     "color": "design-tools",
     "typography": "design-tools",
     "stockphotos": "design-tools",
     "diagramming": "design-tools",
     "photo-editing": "design-tools",
-
     "art-tutorial": "art",
     "pixelart": "art",
     "illustration": "art",
-
     "microblogging": "social",
     "forum": "social",
     "online-community": "social",
     "influencer": "social",
-
     "video-call": "messaging",
     "voip": "messaging",
     "chat": "messaging",
-
     "torrents": "torrent",
-
     "big-data": "data-science",
     "data-viz": "data-science",
     "data-visualization": "data-science",
     "open-data": "data-science",
-
     "nas": "self-hosted",
     "files": "self-hosted",
     "file-transfer": "files",
-
     "torrent": "downloads",
     "usenet": "downloads",
-
     "read-later": "reading",
     "rss": "reading",
-
     "notes": "productivity",
     "tasks": "productivity",
     "project-management": "productivity",
     "time-tracking": "productivity",
     "time-blocking": "productivity",
     "focus": "productivity",
-
     "insurtech": "insurance",
-    "reinsurance": "insurance"
+    "reinsurance": "insurance",
+    "tech-news": "tech",
+    "hardware": "tech",
+    "smartphones": "tech",
+    "internet": "tech",
+    "android": "tech",
+    "ios": "tech",
+    "macos": "tech",
+    "linux": "tech",
+    "windows": "tech",
+    "electronics": "tech",
+    "infosec-news": "security",
+    "science-news": "science"
   }
 }
