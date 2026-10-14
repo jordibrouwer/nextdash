@@ -1105,6 +1105,107 @@ class DashboardInbox {
         });
     }
 
+    /* ── Tag suggestions in the rows ──────────────────────────────────── */
+
+    /**
+     * The best tag on offer for a row, or null: what the Bookmarks view shows
+     * in its Tags column (shared/tag-offer-row.js), from the engine the
+     * drawer's chips use. One per row; the drawer shows the rest.
+     */
+    rowOffer(item) {
+        const live = window.TagSuggestLive;
+        if (!item || !live || !window.TagOfferRow) return null;
+        return window.TagOfferRow.pick(live.forInboxItem(this.dash, item), item.tags);
+    }
+
+    /** The Tags cell: the row's own tags, `+n` for the rest, then the offer. */
+    rowTagsHtml(item) {
+        const esc = (v) => this.escape(v);
+        const tags = (Array.isArray(item?.tags) ? item.tags : []).map((tag) => String(tag).trim()).filter(Boolean);
+        const offer = this.rowOffer(item);
+        const chips = tags.map((tag) => `<span class="inbox-row-tag">${esc(tag)}</span>`).join('')
+            + (tags.length ? '<span class="inbox-row-tag inbox-row-tag--more" hidden></span>' : '')
+            + (offer ? window.TagOfferRow.chipHtml(offer, {
+                esc,
+                t: (key, fallback) => this.t(key, fallback),
+                data: 'inbox',
+            }) : '');
+        return `<span class="inbox-item-tagcell">${chips}</span>`;
+    }
+
+    fitRowTags(list) {
+        const kit = window.TagOfferRow;
+        if (!kit || !list) return;
+        const refit = () => kit.fit([...list.querySelectorAll('.inbox-item-tagcell')],
+            { tag: '.inbox-row-tag', more: '.inbox-row-tag--more' });
+        refit();
+        this._tagFitObserver?.disconnect();
+        this._tagFitObserver = kit.observe(list, refit);
+    }
+
+    offerPairs(items) {
+        return (items || []).map((item) => [item, this.rowOffer(item)]).filter(([, offer]) => offer);
+    }
+
+    syncOfferCount(host, filtered) {
+        window.TagOfferRow?.renderCount(host, this.offerPairs(filtered).length, {
+            t: (key, fallback) => this.t(key, fallback),
+            data: 'inbox',
+            // Read at the click: the list may have moved on since this was drawn.
+            onAddAll: () => void this.addRowOffers(this.offerPairs(this.getFilteredItems())),
+        });
+    }
+
+    /**
+     * Put the offered tags on, one batch per tag (the batch adds the same
+     * tags to every id it is given), and offer the undo.
+     */
+    async addRowOffers(pairs) {
+        const byTag = new Map();
+        pairs.forEach(([item, offer]) => {
+            const tag = String(offer?.tag || '').toLowerCase();
+            if (!item?.id || !tag) return;
+            byTag.set(tag, [...(byTag.get(tag) || []), item.id]);
+        });
+        if (!byTag.size) return;
+        const write = (undo) => Promise.all([...byTag].map(([tag, ids]) => this.batchInbox('tag', ids, undo
+            ? { removeTags: [tag] }
+            : { addTags: [tag] })));
+        const settle = () => {
+            window.TagSuggestLive?.changed?.(this.dash);
+            if (this.isActiveView()) this.render();
+        };
+        let results;
+        try {
+            results = await write(false);
+        } catch {
+            this.dash.showErrorNotification?.(this.t('dashboard.inboxTagsFailed', 'Could not save tags'));
+            settle();
+            return;
+        }
+        settle();
+        const count = results.reduce((sum, { done }) => sum + done.length, 0);
+        if (!count) return;
+        this.dash.showNotification?.((count === 1
+            ? this.t('dashboard.inboxOffersAddedOne', '1 link got a tag.')
+            : this.t('dashboard.inboxOffersAddedMany', '{n} links got a tag.').replace('{n}', String(count))), 'success', {
+            duration: 8000,
+            undoCallback: async () => {
+                try {
+                    await write(true);
+                } finally {
+                    settle();
+                }
+            },
+        });
+    }
+
+    /** Turned down here is turned down everywhere: the one refusal list. */
+    refuseRowOffer(item) {
+        const offer = this.rowOffer(item);
+        if (offer) void this.dismissSuggestedTag(offer);
+    }
+
     /**
      * Copy a shareable link to one item.
      *
@@ -2346,13 +2447,19 @@ class DashboardInbox {
         }
     }
 
-    /** The shipped catalogue, once per tab, shared with config's own panel. */
+    /**
+     * The shipped catalogue and the words read from pages, once per tab,
+     * shared with config's own panel. No online lookup: opening the view is
+     * not a search the reader started.
+     */
     ensureSuggestCatalogue() {
-        if (this._catalogueAsked) return;
+        const live = window.TagSuggestLive;
+        if (this._catalogueAsked || !live?.ensureCatalogue) return;
         this._catalogueAsked = true;
-        void window.TagSuggestLive?.ensureCatalogue?.().then(() => {
+        void Promise.all([live.ensureCatalogue(), live.storedKeywords?.()]).then(() => {
+            live.invalidate?.();
             if (this.isActiveView()) this.render();
-        });
+        }).catch(() => {});
     }
 
     async openInboxView() {
@@ -2849,6 +2956,13 @@ class DashboardInbox {
             e.preventDefault();
             e.stopImmediatePropagation();
             void this.editTags(selected);
+            return true;
+        }
+        // a: the tag on offer in this row, as a click on its chip.
+        if (e.key === 'a' && selected && this.rowOffer(selected)) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            void this.addRowOffers([[selected, this.rowOffer(selected)]]);
             return true;
         }
         if (e.key === 'g' || e.key === 'Home') {
@@ -5089,8 +5203,13 @@ class DashboardInbox {
             section.appendChild(groupList);
             list.appendChild(section);
         });
+        const offers = document.createElement('div');
+        offers.className = 'inbox-offers';
+        body.appendChild(offers);
+        this.syncOfferCount(offers, filtered);
         body.appendChild(this.renderColumnHeads());
         body.appendChild(list);
+        this.fitRowTags(list);
 
         if (filtered.length > this.visibleLimit) {
             const sentinel = document.createElement('div');
@@ -5112,7 +5231,7 @@ class DashboardInbox {
         if (legendAt === 'above') {
             const legend = this.renderLegend();
             legend.classList.add('is-above');
-            body.insertBefore(legend, body.querySelector('.inbox-colhead, .inbox-feed') || body.firstChild);
+            body.insertBefore(legend, body.querySelector('.inbox-offers, .inbox-colhead, .inbox-feed') || body.firstChild);
         } else if (legendAt !== 'off') {
             body.appendChild(this.renderLegend());
         }
@@ -5230,6 +5349,7 @@ class DashboardInbox {
                 ? this.t('config.bmDetailsAddress', 'Address')
                 : this.t('config.bmGroupBySite', 'Site'), 'domain']);
         }
+        cells.push(['inbox-colhead-tags', this.t('dashboard.inboxColTags', 'Tags')]);
         cells.push(['inbox-colhead-when', this.t('dashboard.inboxExportColAdded', 'Added'), 'added']);
         const sortable = this.filter !== 'snoozed';
         cells.forEach(([cls, label, key]) => {
@@ -5348,6 +5468,7 @@ class DashboardInbox {
                 ${thumb}
                 <h3 class="inbox-item-title" id="${this.escape(titleId)}">${this.escape(title)}</h3>
                 ${domain ? `<button type="button" class="inbox-item-domain inbox-item-domain-btn" data-inbox-domain="${this.escape(this.itemDomain(item))}">${this.escape(domain)}</button>` : ''}
+                ${this.rowTagsHtml(item)}
                 <span class="inbox-item-when"${addedLabel && !snoozed ? ` title="${this.escape(this.t('dashboard.inboxAddedOn', 'Added on {date}', { date: addedLabel }))}"` : ''}>${this.escape(when)}</span>
             </div>
         `;
@@ -5410,8 +5531,19 @@ class DashboardInbox {
         // bindPointerNavigation (pointerover); a per-card mouseenter would be a
         // redundant second binding for the same behaviour.
 
+        // A tag on offer, taken or turned down; the row's own click (select,
+        // open the panel) does not follow.
+        card.querySelector('[data-inbox-offer-add]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            void this.addRowOffers([[item, this.rowOffer(item)]]);
+        });
+        card.querySelector('[data-inbox-offer-refuse]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.refuseRowOffer(item);
+        });
+
         card.addEventListener('click', (e) => {
-            if (e.target.closest('.inbox-action-btn, .inbox-item-domain-btn, .inbox-item-check, a')) {
+            if (e.target.closest('.inbox-action-btn, .inbox-item-domain-btn, .inbox-item-check, .tag-offer, a')) {
                 return;
             }
             this.selectItemById(item.id);

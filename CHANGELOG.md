@@ -213,6 +213,7 @@ Five more media widgets join Jellyfin on one shared base: Sonarr and Radarr show
 
 ### Tag suggestions
 
+- **new — tag suggestions in the inbox rows.** The inbox gains a Tags column, as the Bookmarks view has: the row's own tags, `+n` for what does not fit, and a dashed chip with the tag on offer (click to add, **×** to turn down, the source as its tooltip). A line *N tag suggestions in this list · Add all* sits over the column heads, and `a` adds the offer of the row under the cursor; every add offers **Undo**. Opening the inbox now also loads the words read from pages, as the Bookmarks view does (`dashboard-inbox.js`, `dashboard-inbox.css`, `keyboard-view-legends.js`, `inbox-row-offers.spec.js`).
 - **new — one row-offer chip for both views.** The chip, the count line, the fitting of the Tags column and the source label move out of the Bookmarks view into `shared/tag-offer-row.js` and `tag-offer.css`, which the inbox uses too (`dashboard-config-bookmarks-workbench.js`, `config-bookmarks-workbench.css`).
 
 ### Translations

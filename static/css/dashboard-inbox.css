@@ -1019,7 +1019,7 @@ html[data-theme] body[data-depth="glass"] #dashboard-layout .inbox-item.feed-row
 
 .inbox-item-line1 {
     display: grid;
-    grid-template-columns: 1.1rem 1.4rem minmax(0, 1.6fr) minmax(0, 1fr) auto;
+    grid-template-columns: 1.1rem 1.4rem minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) auto;
     align-items: center;
     gap: var(--space-3, 0.75rem);
     min-height: 1.8rem;
@@ -1066,7 +1066,7 @@ html[data-theme] body[data-depth="glass"] #dashboard-layout .inbox-item.feed-row
    inset, so each stands over its column. */
 .inbox-colhead {
     display: grid;
-    grid-template-columns: 1.1rem 1.4rem minmax(0, 1.6fr) minmax(0, 1fr) auto;
+    grid-template-columns: 1.1rem 1.4rem minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) auto;
     align-items: center;
     gap: var(--space-3, 0.75rem);
     min-height: 2rem;
@@ -1076,6 +1076,56 @@ html[data-theme] body[data-depth="glass"] #dashboard-layout .inbox-item.feed-row
 
 .inbox-colhead .inbox-colhead-when {
     justify-self: end;
+}
+
+/* Title, site, tags, when: placed by column rather than in order, so a row
+   with its site hidden (Config → Inbox) keeps its tags under the heading. */
+.inbox-item-line1 .inbox-item-title,
+.inbox-colhead .inbox-colhead-title {
+    grid-row: 1;
+    grid-column: 3;
+}
+
+.inbox-item-line1 .inbox-item-domain-btn,
+.inbox-colhead .inbox-colhead-site {
+    grid-row: 1;
+    grid-column: 4;
+}
+
+.inbox-item-tagcell,
+.inbox-colhead .inbox-colhead-tags {
+    grid-row: 1;
+    grid-column: 5;
+}
+
+.inbox-item-line1 .inbox-item-when,
+.inbox-colhead .inbox-colhead-when {
+    grid-row: 1;
+    grid-column: 6;
+}
+
+/* The Tags cell, as in the Bookmarks view: whole chips, `+n` for the rest,
+   a tag on offer (tag-offer.css) last. TagOfferRow.fit decides which show. */
+.inbox-item-tagcell {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    overflow: hidden;
+    min-width: 0;
+}
+
+.inbox-row-tag {
+    flex: none;
+    padding: 1px 7px;
+    border-radius: var(--radius-pill, 999px);
+    background: var(--surface-3, var(--background-secondary));
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+    white-space: nowrap;
+}
+
+.inbox-row-tag[hidden] {
+    display: none;
 }
 
 .inbox-item-when {
@@ -1114,13 +1164,22 @@ html[data-theme] body[data-depth="glass"] #dashboard-layout .inbox-item.feed-row
         grid-column: 3;
     }
 
-    .inbox-item-when {
+    .inbox-item-line1 .inbox-item-when {
         grid-row: 1;
         grid-column: 4;
     }
 
     .inbox-item-line1 .inbox-item-domain-btn {
-        grid-column: 3 / -1;
+        grid-row: 2;
+        grid-column: 3;
+    }
+
+    /* Tags share the second line with the site, at its end. */
+    .inbox-item-tagcell {
+        grid-row: 2;
+        grid-column: 4;
+        justify-content: flex-end;
+        max-width: 50vw;
     }
 
     .inbox-item .inbox-item-line2 {

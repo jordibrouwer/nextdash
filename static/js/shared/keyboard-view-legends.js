@@ -25,6 +25,7 @@
         // Both of these were right-click only, which a phone has not got.
         { keys: 'u', legendKey: 'inboxKeyUnread', cheatKey: 'ivUnread', fallback: 'mark unread' },
         { keys: 'l', legendKey: 'inboxKeyTags', cheatKey: 'ivTags', fallback: 'tags' },
+        { keys: 'a', legendKey: 'inboxKeyAddOffer', cheatKey: 'ivAddOffer', fallback: 'add suggested tag' },
         { keys: 'R', legendKey: 'inboxKeyRefresh', cheatKey: 'ivRefresh', fallback: 'refresh' },
         { keys: 'g / G / Home / End', legendKey: 'inboxKeyFirstLast', cheatKey: 'ivFirstLast', fallback: 'first / last' },
         { keys: 't', legendKey: 'inboxKeyTriage', cheatKey: 'ivTriage', fallback: 'triage' },
