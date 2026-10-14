@@ -117,6 +117,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 - **new — Appearance groups its tabs.** Nine tabs under three labels — **Look** (Theme & type, Background, Surfaces), **Bookmarks** (Layout, Rows, Link previews) and **Header & bars** (Header, Action bar, Date & weather) — and link preview cards have a tab of their own. Look, Surface and Grid are renamed Theme & type, Surfaces and Layout; the old ids and words still open them (`APPEARANCE_TAB_GROUPS`, `previews`, `renderSectionTabStrip`).
 - **new — settings moved to where they belong.** Clock placement leads Date & weather instead of sitting on Header; **Show favicons**, the offline colour and favicon harmonisation are one **Favicons** panel on Rows; the browser tab title, custom title and favicon upload are one **Browser tab & branding** panel on Header.
+- **new — label and control side by side.** Appearance rows put the label and a one-line explanation on the left and the control on the right, in one shared column; a longer explanation is cut with an ellipsis and stays whole in its tooltip and the ℹ. Under 600px the control goes under its label (`config-tabs.css`, `renderControlPanels`).
 
 ---
 

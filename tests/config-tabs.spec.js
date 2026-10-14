@@ -172,7 +172,11 @@ test('the preview follows the tab and the setting', async ({ page }) => {
 test('every schema setting carries a short line saying what it does', async ({ page }) => {
     await open(page, '#config/appearance/header');
     const row = page.locator('[data-behavior-field="showPageTabs"]').locator('xpath=ancestor::div[contains(@class,"config-field-row")]');
-    await expect(row.locator('xpath=following-sibling::p[1]')).toHaveClass(/config-field-hint/);
+    // In Appearance the line sits inside the row, beside the control, and
+    // carries its whole sentence as a title for when the line is cut short.
+    const hint = row.locator(':scope > .config-field-hint');
+    await expect(hint).toHaveCount(1);
+    await expect(hint).toHaveAttribute('title', /\S/);
 });
 
 test('the filter names the other tabs a setting is on, and goes there', async ({ page }) => {

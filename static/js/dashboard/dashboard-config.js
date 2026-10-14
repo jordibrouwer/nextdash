@@ -12252,7 +12252,7 @@ class DashboardConfig {
         // The same short line the schema rows carry, for the hand-written ones
         // that have no note of their own under them.
         const summary = DashboardConfig.APPEARANCE_OWN_NOTES.has(field) ? '' : this.fieldSummary(field);
-        const hint = summary ? `<p class="config-field-hint config-field-hint--inline">${esc(summary)}</p>` : '';
+        const hint = summary ? `<p class="config-field-hint config-field-hint--inline" title="${esc(summary)}">${esc(summary)}</p>` : '';
         return `<span class="config-field-affordances" data-appearance-aff="${esc(field)}">${aff}</span>${hint}`;
     }
 
@@ -14967,7 +14967,15 @@ class DashboardConfig {
             const dataAttrs = `data-${prefix}-field="${esc(c.field)}" data-${prefix}-special="${esc(c.special || '')}"`;
             const aff = this.renderFieldAffordances(c.field, val);
             const summary = this.fieldSummary(c.field);
-            const hint = summary ? `<p class="config-field-hint">${esc(summary)}</p>` : '';
+            // In Appearance the hint sits inside its row, under the label and
+            // beside the control; one line, cut with an ellipsis, the whole
+            // sentence in the title. Elsewhere it stays a paragraph below.
+            const hintInRow = Boolean(summary) && this.section === 'appearance';
+            const hintHtml = summary
+                ? `<p class="config-field-hint${hintInRow ? ' config-field-hint--inline' : ''}"${hintInRow ? ` title="${esc(summary)}"` : ''}>${esc(summary)}</p>`
+                : '';
+            const hint = hintInRow ? '' : hintHtml;
+            const rowHint = hintInRow ? hintHtml : '';
             // A drawing of what the current value does, for the settings whose
             // difference is a shape rather than a word. It repaints on change
             // (see bindControlPanels), so it is the answer to "what will this
@@ -14984,6 +14992,7 @@ class DashboardConfig {
                             <span>${esc(c.label)}${badge}</span>
                         </label>
                         <span class="config-field-affordances">${aff}</span>
+                        ${rowHint}
                     </div>${art}${hint}`;
             }
             // Big labelled choice buttons, for a small set of options where the
@@ -15040,6 +15049,7 @@ class DashboardConfig {
                     <span class="config-field-label">${esc(c.label)}</span>
                     ${control}
                     <span class="config-field-affordances">${aff}</span>
+                    ${rowHint}
                 </div>${art}${hint}`;
         };
         // `note` explains the panel; `appliesTo` names the availability modes the
