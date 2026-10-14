@@ -128,6 +128,15 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **fix — the Appearance tabs wrap instead of scrolling.** On one scrolling line half of the nine tabs sat past the edge; now a group that does not fit moves to the next line whole, its label over its tabs, so every tab is on screen down to phone width (`config-view.css`).
 - **new — the action bar animation is a dropdown.** Picking a style plays it on the real bar at once, so the six cards that each played it again are gone and the panel is about half as tall.
 - **new — *Show the action buttons* leads the action bar settings,** above where the bar stands and how large its buttons are: it decides whether any of the rest matters.
+- **new — five action bar button sizes.** **Button size** in Appearance → Action bar runs from extra small to extra large; medium is the default, one step up from the 28px squares the bar had, which are now small. An install from before the setting gets medium (`actionBarSize`).
+- **new — the key chips on the action buttons start off,** for new installs too; turn them on in Appearance and they stay (`showActionKeys`).
+- **fix — the Media detail card uses the app's colours.** It sits on `<body>`, outside every widget, so it named variables that were not there: it was transparent, in the corner and with unstyled buttons. It now takes the app's background, text and border, sits in the middle, and has its own buttons (`dashboard-media-tile.css`).
+
+### Docs
+
+- `MANUAL.md` §16 and §17 describe the nine Appearance tabs in three groups, the folding panels, the chips, the action bar button sizes and the Link previews tab; two new screenshots (`16-appearance-rows.jpg`, `16-appearance-action-bar.jpg`) and eight retaken.
+- `Config → Help → Grid, display & date` and the theme topic follow the new tab names in all six languages; the new Appearance strings (tab and group names, chips, button sizes, Fine-tune) are translated in nl, de, fr, zh and es, and the cross-references in Help, tips and the overview now name Layout, Surfaces and Link previews.
+- `README.md` and its Appearance screenshot show the grouped tabs.
 
 ---
 
