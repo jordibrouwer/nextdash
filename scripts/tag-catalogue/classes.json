@@ -1,11 +1,17 @@
 {
-  "note": "Subject -> Wikidata classes whose items with an official website and at least minLinks Wikipedia articles import-classes.cjs files under it. Classes found and counted on 14 October 2026; broad classes ask for 5 sitelinks, specific ones for 3.",
+  "note": "Subject -> Wikidata classes whose items with an official website and at least minLinks Wikipedia articles import-classes.cjs files under it. Classes found and counted on 14 October 2026; broad classes ask for 5 sitelinks, specific ones for 3. PROP:QID takes another property than P31: P452 is industry, which is how Wikidata files most big companies.",
   "subjects": {
     "ai": [
       {
         "minLinks": 3,
         "classes": [
           "Q21169670"
+        ]
+      },
+      {
+        "minLinks": 3,
+        "classes": [
+          "P452:Q11660"
         ]
       }
     ],
@@ -24,6 +30,12 @@
         "minLinks": 3,
         "classes": [
           "Q1346018"
+        ]
+      },
+      {
+        "minLinks": 3,
+        "classes": [
+          "P452:Q483639"
         ]
       }
     ],
@@ -48,6 +60,12 @@
         "minLinks": 3,
         "classes": [
           "Q93249"
+        ]
+      },
+      {
+        "minLinks": 3,
+        "classes": [
+          "P452:Q3510521"
         ]
       }
     ],
@@ -125,6 +143,14 @@
         ]
       }
     ],
+    "electronics": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "P452:Q5358497"
+        ]
+      }
+    ],
     "email": [
       {
         "minLinks": 3,
@@ -150,6 +176,12 @@
           "Q210167",
           "Q1137109"
         ]
+      },
+      {
+        "minLinks": 3,
+        "classes": [
+          "P452:Q941594"
+        ]
       }
     ],
     "git": [
@@ -166,6 +198,12 @@
         "minLinks": 3,
         "classes": [
           "Q1055701"
+        ]
+      },
+      {
+        "minLinks": 3,
+        "classes": [
+          "P452:Q132898730"
         ]
       }
     ],
@@ -280,6 +318,12 @@
           "Q1389311",
           "Q1191383"
         ]
+      },
+      {
+        "minLinks": 3,
+        "classes": [
+          "P452:Q2986369"
+        ]
       }
     ],
     "smartphones": [
@@ -313,6 +357,17 @@
         "classes": [
           "Q7397"
         ]
+      },
+      {
+        "minLinks": 3,
+        "classes": [
+          "P452:Q880371",
+          "P452:Q11661",
+          "P452:Q11016",
+          "P452:Q56611700",
+          "P452:Q5268834",
+          "P452:Q638608"
+        ]
       }
     ],
     "telecom": [
@@ -326,6 +381,12 @@
         "minLinks": 5,
         "classes": [
           "Q2401749"
+        ]
+      },
+      {
+        "minLinks": 3,
+        "classes": [
+          "P452:Q418"
         ]
       }
     ],

@@ -29,17 +29,42 @@
   "1stplace.co.jp": [
     "tech"
   ],
+  "1tvch.ru": [
+    "telecom"
+  ],
+  "2015games.net": [
+    "games",
+    "game-studios"
+  ],
+  "24sevenoffice.com": [
+    "tech"
+  ],
   "2gis.ru": [
     "desktop-apps"
   ],
   "2gzyxa5ihm7nsggfxnu52rck2vv4rvmdlkiu3zzui5du4xyclen53wid.onion": [
     "dev"
   ],
+  "2xlgames.com": [
+    "game-studios"
+  ],
+  "360.cn": [
+    "desktop-apps",
+    "tech"
+  ],
+  "360.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "360.yahoo.com": [
     "webdev"
   ],
   "360totalsecurity.com": [
     "cybersecurity"
+  ],
+  "37.com": [
+    "games",
+    "game-studios"
   ],
   "386bsd.org": [
     "open-source"
@@ -78,6 +103,9 @@
   "5pb.jp": [
     "game-studios"
   ],
+  "63moons.com": [
+    "tech"
+  ],
   "64studio.com": [
     "linux"
   ],
@@ -96,15 +124,29 @@
   "a-a-p.org": [
     "dev"
   ],
-  "aaeon.com": [
-    "electronics",
+  "a-mobile.biz": [
+    "telecom"
+  ],
+  "a1.by": [
     "tech"
+  ],
+  "a4tech.com": [
+    "electronics",
+    "hardware"
+  ],
+  "aaai.org": [
+    "publishing",
+    "ai"
   ],
   "aarogyasetu.gov.in": [
     "mobile-apps"
   ],
   "abbyy.cn": [
     "desktop-apps"
+  ],
+  "abbyy.com": [
+    "desktop-apps",
+    "tech"
   ],
   "abcathome.com": [
     "tech"
@@ -125,6 +167,10 @@
   ],
   "abisource.com": [
     "dev"
+  ],
+  "abit.com.tw": [
+    "electronics",
+    "hardware"
   ],
   "abiword.github.io": [
     "open-source"
@@ -158,8 +204,8 @@
   "academic.live.com": [
     "tech"
   ],
-  "access-company.com": [
-    "browser"
+  "accenture.com": [
+    "tech"
   ],
   "accessgames.co.jp": [
     "game-studios"
@@ -186,10 +232,17 @@
   "acme.com": [
     "devops"
   ],
+  "acquia.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "acquire.co.jp": [
     "game-studios"
   ],
   "acronis.com": [
+    "cybersecurity"
+  ],
+  "acs-inc.com": [
     "tech"
   ],
   "act-r.psy.cmu.edu": [
@@ -198,8 +251,14 @@
   "act.com": [
     "tech"
   ],
+  "actel.com": [
+    "semiconductors"
+  ],
   "actian.com": [
     "database"
+  ],
+  "activegamingmedia.com": [
+    "game-studios"
   ],
   "activestate.com": [
     "desktop-apps",
@@ -208,11 +267,30 @@
   "activevirusshield.com": [
     "cybersecurity"
   ],
+  "activisionblizzard.com": [
+    "games",
+    "game-studios"
+  ],
+  "actuate.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "adacore.com": [
     "dev"
   ],
   "adaic.org": [
     "dev"
+  ],
+  "adaptec.com": [
+    "electronics",
+    "hardware"
+  ],
+  "adapteva.com": [
+    "semiconductors"
+  ],
+  "adaptiveinsights.com": [
+    "desktop-apps",
+    "tech"
   ],
   "adaware.com": [
     "tech"
@@ -223,8 +301,17 @@
   "adblockplus.org": [
     "mobile-apps"
   ],
+  "adcash.com": [
+    "tech"
+  ],
+  "adeltaz1.wixsite.com": [
+    "game-studios"
+  ],
   "adempiere.io": [
     "open-source"
+  ],
+  "adina.com": [
+    "tech"
   ],
   "adium.im": [
     "messaging"
@@ -239,6 +326,23 @@
     "desktop-apps",
     "tech"
   ],
+  "advania.com": [
+    "tech"
+  ],
+  "advania.is": [
+    "tech"
+  ],
+  "advania.no": [
+    "tech"
+  ],
+  "advania.se": [
+    "desktop-apps",
+    "tech"
+  ],
+  "advantech.com": [
+    "electronics",
+    "hardware"
+  ],
   "adventuregamestudio.co.uk": [
     "game-dev"
   ],
@@ -247,6 +351,10 @@
   ],
   "aegisub.org": [
     "open-source"
+  ],
+  "aeriagames.net": [
+    "games",
+    "game-studios"
   ],
   "aerospike.com": [
     "database"
@@ -272,6 +380,9 @@
   "afterstep.org": [
     "open-source"
   ],
+  "agatsuma-games.jp": [
+    "game-studios"
+  ],
   "agavi.org": [
     "webdev"
   ],
@@ -290,18 +401,27 @@
   "agi.com": [
     "tech"
   ],
-  "agneovo.com": [
-    "electronics",
-    "tech"
-  ],
   "agnitum.com": [
     "tech"
   ],
   "agnitum.ru": [
     "tech"
   ],
+  "ah-soft.com": [
+    "tech"
+  ],
   "ahmia.fi": [
     "open-source"
+  ],
+  "ahnlab.com": [
+    "tech"
+  ],
+  "ahrefs.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "ai.google": [
+    "ai"
   ],
   "aide.github.io": [
     "open-source"
@@ -358,6 +478,9 @@
   "aisto.com": [
     "tech"
   ],
+  "aixtron.com": [
+    "semiconductors"
+  ],
   "ajax.asp.net": [
     "dev"
   ],
@@ -367,14 +490,25 @@
   "akabeesoft2.com": [
     "game-studios"
   ],
+  "akamai.com": [
+    "hosting",
+    "tech"
+  ],
   "akismet.com": [
     "webdev"
   ],
   "akka.io": [
     "dev"
   ],
+  "aksysgames.com": [
+    "video-games",
+    "game-studios"
+  ],
   "alacritty.org": [
     "open-source"
+  ],
+  "aladdin.com": [
+    "cybersecurity"
   ],
   "aladin.cds.unistra.fr": [
     "open-source"
@@ -388,7 +522,14 @@
   "alawar.com": [
     "game-studios"
   ],
+  "albatron.com.tw": [
+    "electronics",
+    "hardware"
+  ],
   "alchemist-net.co.jp": [
+    "game-studios"
+  ],
+  "alcot.biz": [
     "game-studios"
   ],
   "aldor.org": [
@@ -396,6 +537,9 @@
   ],
   "alerts.live.com": [
     "tech"
+  ],
+  "aleutia.com": [
+    "hardware"
   ],
   "alexa.com": [
     "reference",
@@ -419,11 +563,24 @@
   "alienvault.com": [
     "open-source"
   ],
+  "alienware.com": [
+    "electronics",
+    "hardware"
+  ],
   "alinux.pw": [
     "linux"
   ],
   "alios.cn": [
     "linux"
+  ],
+  "alitech.com": [
+    "semiconductors"
+  ],
+  "allgeier-holding.de": [
+    "tech"
+  ],
+  "allied-telesis.co.jp": [
+    "hardware"
   ],
   "allroundautomations.com": [
     "dev"
@@ -443,10 +600,33 @@
   "alphafold.com": [
     "tech"
   ],
+  "alphasights.com": [
+    "tech"
+  ],
   "alpineapp.email": [
     "email"
   ],
   "altaba.com": [
+    "tech"
+  ],
+  "altair.com": [
+    "desktop-apps",
+    "ai"
+  ],
+  "altargames.com": [
+    "game-studios"
+  ],
+  "altarinteractive.com": [
+    "game-studios"
+  ],
+  "alteclansing.com": [
+    "hardware"
+  ],
+  "altera.com": [
+    "semiconductors"
+  ],
+  "alteryx.com": [
+    "desktop-apps",
     "tech"
   ],
   "altlinux.ru": [
@@ -458,6 +638,13 @@
   "altools.co.kr": [
     "desktop-apps"
   ],
+  "altoscomputing.com": [
+    "electronics",
+    "hardware"
+  ],
+  "altova.com": [
+    "tech"
+  ],
   "altron.co.jp": [
     "game-studios"
   ],
@@ -468,6 +655,9 @@
     "open-source"
   ],
   "alvion.co.jp": [
+    "game-studios"
+  ],
+  "am.bandainamco-am.co.jp": [
     "game-studios"
   ],
   "amadeus.com": [
@@ -484,6 +674,9 @@
   ],
   "amavis.org": [
     "cybersecurity"
+  ],
+  "amazongamestudios.com": [
+    "game-studios"
   ],
   "ambermd.org": [
     "tech"
@@ -515,6 +708,9 @@
   "aminoapps.com": [
     "mobile-apps"
   ],
+  "amlogic.com": [
+    "semiconductors"
+  ],
   "amnesiagame.com": [
     "open-source"
   ],
@@ -527,14 +723,6 @@
   "amperecomputing.com": [
     "semiconductors"
   ],
-  "ams-osram.com": [
-    "electronics",
-    "tech"
-  ],
-  "ams.com": [
-    "electronics",
-    "tech"
-  ],
   "ams.org": [
     "dev"
   ],
@@ -544,6 +732,13 @@
   "amusementvision.com": [
     "game-studios"
   ],
+  "analog.com": [
+    "semiconductors"
+  ],
+  "analogue.co": [
+    "games",
+    "game-studios"
+  ],
   "anbernic.com": [
     "hardware"
   ],
@@ -551,6 +746,9 @@
     "open-source"
   ],
   "ancient.co.jp": [
+    "game-studios"
+  ],
+  "andamiro.com": [
     "game-studios"
   ],
   "andcards.com": [
@@ -568,6 +766,9 @@
   "anghami.com": [
     "mobile-apps"
   ],
+  "angstrem.ru": [
+    "semiconductors"
+  ],
   "angstrom-distribution.org": [
     "linux"
   ],
@@ -580,8 +781,14 @@
   "anim8or.com": [
     "desktop-apps"
   ],
+  "aninogames.com": [
+    "game-studios"
+  ],
   "anobii.com": [
     "social"
+  ],
+  "anomali.com": [
+    "cybersecurity"
   ],
   "anon.inf.tu-dresden.de": [
     "mobile-apps"
@@ -592,11 +799,21 @@
   "anonymityanywhere.com": [
     "linux"
   ],
+  "anonymizer.com": [
+    "cybersecurity"
+  ],
+  "anritsu.com": [
+    "telecom"
+  ],
   "answers.wikia.com": [
     "search"
   ],
   "ansys.com": [
     "tech"
+  ],
+  "antec.com": [
+    "electronics",
+    "hardware"
   ],
   "antennapod.org": [
     "mobile-apps"
@@ -623,12 +840,16 @@
   "anubis.techaro.lol": [
     "open-source"
   ],
+  "anuman-interactive.com": [
+    "games",
+    "game-studios"
+  ],
   "anylogic.com": [
     "tech"
   ],
   "anysphere.inc": [
     "desktop-apps",
-    "tech"
+    "ai"
   ],
   "aokp.co": [
     "open-source"
@@ -636,9 +857,12 @@
   "aolserver.github.io": [
     "open-source"
   ],
+  "aoni.co.jp": [
+    "game-studios"
+  ],
   "aopen.com": [
     "electronics",
-    "tech"
+    "hardware"
   ],
   "apachefriends.org": [
     "open-source"
@@ -655,17 +879,30 @@
   "apophysis.org": [
     "open-source"
   ],
+  "app.hap.ne.jp": [
+    "game-studios"
+  ],
   "app.net": [
     "social"
   ],
   "apparmor.net": [
     "open-source"
   ],
+  "appen.com": [
+    "ai"
+  ],
   "appeon.com": [
     "dev"
   ],
   "appimage.org": [
     "open-source"
+  ],
+  "applixgroup.com": [
+    "tech"
+  ],
+  "applovin.com": [
+    "desktop-apps",
+    "tech"
   ],
   "apps.ankiweb.net": [
     "edtech",
@@ -685,6 +922,10 @@
   ],
   "apptainer.org": [
     "containers"
+  ],
+  "apptio.com": [
+    "desktop-apps",
+    "tech"
   ],
   "appveyor.com": [
     "devops"
@@ -710,8 +951,18 @@
   "aqsis.org": [
     "open-source"
   ],
+  "aquafadas.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "aquamacs.org": [
     "editor"
+  ],
+  "aquaplus.jp": [
+    "game-studios"
+  ],
+  "aquria.co.jp": [
+    "game-studios"
   ],
   "arabic-gpt.ai": [
     "open-source"
@@ -746,11 +997,19 @@
   "arcolinux.com": [
     "linux"
   ],
+  "arcsoft.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "arcsystemworks.com": [
     "game-studios"
   ],
   "arcsystemworks.jp": [
     "game-studios"
+  ],
+  "ardence.com": [
+    "desktop-apps",
+    "tech"
   ],
   "ardour.org": [
     "open-source"
@@ -763,6 +1022,9 @@
   ],
   "argouml.tigris.org": [
     "open-source"
+  ],
+  "ariamusic.co.jp": [
+    "game-studios"
   ],
   "arika.co.jp": [
     "game-studios"
@@ -779,10 +1041,20 @@
   "armbian.com": [
     "linux"
   ],
+  "armorgames.com": [
+    "games",
+    "game-studios"
+  ],
   "aros.org": [
     "linux"
   ],
+  "arrive.no": [
+    "tech"
+  ],
   "ars-grin.gov": [
+    "tech"
+  ],
+  "ars.electronica.art": [
     "tech"
   ],
   "ars.ru": [
@@ -794,8 +1066,17 @@
   "artepiazza.com": [
     "game-studios"
   ],
+  "artificialstudios.com": [
+    "game-studios"
+  ],
+  "artix.com": [
+    "game-studios"
+  ],
   "artixlinux.org": [
     "linux"
+  ],
+  "artland.co.jp": [
+    "game-studios"
   ],
   "artofillusion.org": [
     "open-source"
@@ -809,11 +1090,20 @@
   "arts-project.org": [
     "dev"
   ],
+  "artsvision.co.jp": [
+    "game-studios"
+  ],
   "artweaver.de": [
     "desktop-apps"
   ],
+  "arvancloud.ir": [
+    "cloud"
+  ],
   "arzest.jp": [
     "game-studios"
+  ],
+  "asadal.com": [
+    "tech"
   ],
   "asahi-net.or.jp": [
     "game-studios"
@@ -821,14 +1111,31 @@
   "asahilinux.org": [
     "linux"
   ],
+  "ascii.co.jp": [
+    "game-studios"
+  ],
   "asciimw.kadokawa.co.jp": [
     "game-studios"
+  ],
+  "ascon.net": [
+    "tech"
   ],
   "aseprite.org": [
     "desktop-apps"
   ],
+  "asetek.com": [
+    "electronics",
+    "hardware"
+  ],
+  "ashampoo.de": [
+    "desktop-apps",
+    "tech"
+  ],
   "asharp.martincarlisle.com": [
     "dev"
+  ],
+  "ashmanov.com": [
+    "tech"
   ],
   "asic-linux.com.mx": [
     "open-source"
@@ -842,8 +1149,7 @@
   "asl.org.il": [
     "open-source"
   ],
-  "asmedia.com.tw": [
-    "electronics",
+  "asm.com": [
     "semiconductors"
   ],
   "asmik-ace.co.jp": [
@@ -851,6 +1157,9 @@
   ],
   "asmjs.org": [
     "dev"
+  ],
+  "asoriba.com": [
+    "tech"
   ],
   "asp-net.co.jp": [
     "game-studios"
@@ -861,9 +1170,19 @@
   "aspectc.org": [
     "dev"
   ],
-  "asrock.com": [
-    "electronics",
+  "aspentech.com": [
+    "dev",
     "tech"
+  ],
+  "asphere.co": [
+    "game-studios"
+  ],
+  "asseco.pl": [
+    "tech"
+  ],
+  "assettocorsa.gg": [
+    "video-games",
+    "game-studios"
   ],
   "asterisk.org": [
     "open-source"
@@ -877,18 +1196,20 @@
   "astralinux.ru": [
     "linux"
   ],
+  "astri.org": [
+    "tech"
+  ],
   "astronomie.be": [
     "tech"
   ],
   "astropy.org": [
     "python"
   ],
+  "astrumonline.ru": [
+    "game-studios"
+  ],
   "asturix.com": [
     "linux"
-  ],
-  "asus.com": [
-    "electronics",
-    "tech"
   ],
   "atariage.com": [
     "game-studios"
@@ -896,8 +1217,15 @@
   "atarimagazines.com": [
     "desktop-apps"
   ],
+  "atempo.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "athena-game.co.jp": [
     "game-studios"
+  ],
+  "athinasat.com": [
+    "telecom"
   ],
   "atlasvpn.com": [
     "tech"
@@ -911,6 +1239,10 @@
   "ats-lang.org": [
     "dev"
   ],
+  "attachmategroup.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "atunes.org": [
     "desktop-apps"
   ],
@@ -923,6 +1255,12 @@
   "audacityteam.org": [
     "open-source"
   ],
+  "audio-technica.co.jp": [
+    "electronics"
+  ],
+  "audiocodes.com": [
+    "tech"
+  ],
   "august-soft.com": [
     "game-studios"
   ],
@@ -932,11 +1270,18 @@
   "auroraos.ru": [
     "smartphones"
   ],
+  "authy.com": [
+    "passwords",
+    "tech"
+  ],
   "autodesk.it": [
     "tech"
   ],
   "autodock.scripps.edu": [
     "open-source"
+  ],
+  "autoform.com": [
+    "tech"
   ],
   "autohotkey.com": [
     "desktop-apps"
@@ -950,14 +1295,23 @@
   "av-comparatives.org": [
     "tech"
   ],
+  "avagotech.com": [
+    "tech"
+  ],
   "avahi.org": [
     "open-source"
   ],
   "avaloniaui.net": [
     "dev"
   ],
+  "avangard.org": [
+    "electronics"
+  ],
   "avantbrowser.com": [
     "browser"
+  ],
+  "avantgardengames.com": [
+    "game-studios"
   ],
   "avast.ua": [
     "cybersecurity"
@@ -968,11 +1322,7 @@
   ],
   "avg.com": [
     "desktop-apps",
-    "tech"
-  ],
-  "avid.com": [
-    "electronics",
-    "desktop-apps"
+    "cybersecurity"
   ],
   "avira.com": [
     "desktop-apps",
@@ -990,8 +1340,14 @@
   "avs4you.com": [
     "desktop-apps"
   ],
+  "awem.com": [
+    "tech"
+  ],
   "awstats.org": [
     "open-source"
+  ],
+  "axact.com": [
+    "tech"
   ],
   "axcrypt.net": [
     "privacy"
@@ -1002,10 +1358,22 @@
   "axis.yahoo.com": [
     "desktop-apps"
   ],
+  "axisworld.co.id": [
+    "telecom"
+  ],
+  "axtelcorp.mx": [
+    "tech"
+  ],
   "ayna.com": [
     "search"
   ],
+  "azercell.com": [
+    "telecom"
+  ],
   "azercosmos.az": [
+    "telecom"
+  ],
+  "azertelecom.az": [
     "telecom"
   ],
   "b2evolution.net": [
@@ -1047,8 +1415,14 @@
   "bada.com": [
     "smartphones"
   ],
+  "baichuan-ai.com": [
+    "tech"
+  ],
   "baikalelectronics.ru": [
-    "semiconductors"
+    "electronics"
+  ],
+  "balabit.com": [
+    "tech"
   ],
   "ballerina.io": [
     "dev"
@@ -1063,17 +1437,33 @@
     "social",
     "mobile-apps"
   ],
+  "bandainamco.co.jp": [
+    "game-studios"
+  ],
   "bandainamcostudios.com": [
     "game-studios"
   ],
+  "bandlab.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "bandshed.net": [
     "linux"
+  ],
+  "banglalion4g.com": [
+    "telecom"
+  ],
+  "bankid.no": [
+    "tech"
   ],
   "banpresto.co.jp": [
     "game-studios"
   ],
   "banshee-project.org": [
     "desktop-apps"
+  ],
+  "barco.com": [
+    "tech"
   ],
   "barcodinglife.org": [
     "tech"
@@ -1084,6 +1474,13 @@
   ],
   "barebox.org": [
     "open-source"
+  ],
+  "barkinglizards.com": [
+    "games",
+    "game-studios"
+  ],
+  "barracuda.com": [
+    "cybersecurity"
   ],
   "basealt.ru": [
     "linux"
@@ -1103,11 +1500,23 @@
   "basilisk.cebix.net": [
     "open-source"
   ],
+  "basistech.com": [
+    "tech"
+  ],
   "batocera.org": [
     "linux"
   ],
   "battle.net": [
     "video-games"
+  ],
+  "battlegoat.com": [
+    "game-studios"
+  ],
+  "bayan.com.ph": [
+    "telecom"
+  ],
+  "bayanat.com.sa": [
+    "telecom"
   ],
   "bazel.build": [
     "open-source"
@@ -1124,11 +1533,18 @@
   "bbpress.org": [
     "open-source"
   ],
+  "bbumgames.com": [
+    "game-studios"
+  ],
   "bcachefs.org": [
     "open-source"
   ],
   "bdsoft.com": [
     "dev"
+  ],
+  "bea.com": [
+    "dev",
+    "tech"
   ],
   "beanshell.org": [
     "dev"
@@ -1136,8 +1552,17 @@
   "bearshare.com": [
     "tech"
   ],
+  "beatshapers.com": [
+    "game-studios"
+  ],
   "bebo.com": [
     "social"
+  ],
+  "bechtle.com": [
+    "tech"
+  ],
+  "beddit.com": [
+    "tech"
   ],
   "bedita.com": [
     "webdev"
@@ -1148,15 +1573,21 @@
   "beeper.com": [
     "tech"
   ],
+  "beetrain.co.jp": [
+    "game-studios"
+  ],
   "bellard.org": [
     "dev"
+  ],
+  "beltelecom.by": [
+    "telecom"
   ],
   "bemyeyes.com": [
     "mobile-apps"
   ],
   "benchmarks.ul.com": [
     "games",
-    "tech"
+    "game-studios"
   ],
   "bennugd.org": [
     "game-dev"
@@ -1170,6 +1601,26 @@
   ],
   "bereal.com": [
     "mobile-apps"
+  ],
+  "bergsala.dk": [
+    "games",
+    "game-studios"
+  ],
+  "bergsala.eu": [
+    "games",
+    "game-studios"
+  ],
+  "bergsala.fi": [
+    "games",
+    "game-studios"
+  ],
+  "bergsala.no": [
+    "games",
+    "game-studios"
+  ],
+  "bergsala.se": [
+    "games",
+    "game-studios"
   ],
   "berkeley.ora.com": [
     "browser"
@@ -1188,6 +1639,10 @@
   ],
   "bezeq.co.il": [
     "telecom"
+  ],
+  "bfgtech.com": [
+    "electronics",
+    "hardware"
   ],
   "bhuvan.nrsc.gov.in": [
     "tech"
@@ -1209,11 +1664,19 @@
   "bigbluebutton.org": [
     "desktop-apps"
   ],
+  "bigfinishgames.com": [
+    "video-games",
+    "game-studios"
+  ],
   "bignox.com": [
     "tech"
   ],
   "bigo.tv": [
     "mobile-apps"
+  ],
+  "bigpark.com": [
+    "games",
+    "tech"
   ],
   "bigworldtech.com": [
     "game-studios",
@@ -1256,6 +1719,13 @@
   "bird.co": [
     "tech"
   ],
+  "birdstep.com": [
+    "tech"
+  ],
+  "bit-composer.com": [
+    "video-games",
+    "game-studios"
+  ],
   "bitchat.free": [
     "mobile-apps"
   ],
@@ -1265,6 +1735,15 @@
   "bitcoinxc.org": [
     "tech"
   ],
+  "bitdefender.com": [
+    "cybersecurity"
+  ],
+  "bitdefender.com.tr": [
+    "cybersecurity"
+  ],
+  "bite.lt": [
+    "telecom"
+  ],
   "bitkeeper.org": [
     "git"
   ],
@@ -1273,6 +1752,10 @@
   ],
   "bitlord.com": [
     "desktop-apps"
+  ],
+  "bitmain.com": [
+    "desktop-apps",
+    "tech"
   ],
   "bitnami.com": [
     "package-manager"
@@ -1286,6 +1769,9 @@
   ],
   "bitspirit.cc": [
     "desktop-apps"
+  ],
+  "bittium.com": [
+    "tech"
   ],
   "bitweaver.org": [
     "webdev"
@@ -1302,6 +1788,10 @@
   "blackarch.org": [
     "linux"
   ],
+  "blackbaud.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "blackberry.com": [
     "desktop-apps",
     "tech"
@@ -1309,8 +1799,14 @@
   "blackbirdinteractive.com": [
     "game-studios"
   ],
+  "blackbox.com": [
+    "tech"
+  ],
   "blackboxframework.org": [
     "dev"
+  ],
+  "blackelement.net": [
+    "game-studios"
   ],
   "blackle.com": [
     "search"
@@ -1351,6 +1847,9 @@
   "blitzbasic.com": [
     "dev"
   ],
+  "blizoo.bg": [
+    "telecom"
+  ],
   "blockchain.com": [
     "crypto",
     "open-source"
@@ -1379,14 +1878,35 @@
   "bluej.org": [
     "dev"
   ],
+  "bluemammoth.com": [
+    "game-studios"
+  ],
   "blueskyrangers.com": [
     "game-studios"
   ],
   "bluespice.com": [
     "open-source"
   ],
+  "bluestacks.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "blueyonder.com": [
     "tech"
+  ],
+  "blur.com": [
+    "games",
+    "game-studios"
+  ],
+  "blyk.com": [
+    "telecom"
+  ],
+  "bmc.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "bnfw.co.jp": [
+    "game-studios"
   ],
   "bobbylight.github.io": [
     "editor"
@@ -1409,7 +1929,14 @@
   "boinc.ibercivis.es": [
     "open-source"
   ],
+  "bokehgamestudio.co.jp": [
+    "game-studios"
+  ],
   "boldsystems.org": [
+    "tech"
+  ],
+  "bolt.eu": [
+    "food-delivery",
     "tech"
   ],
   "bombus-im.org": [
@@ -1421,12 +1948,18 @@
   "bookmooch.com": [
     "social"
   ],
+  "boomtv.ro": [
+    "telecom"
+  ],
   "boost.org": [
     "dev"
   ],
   "borland.com": [
     "desktop-apps",
     "dev"
+  ],
+  "bosch.com": [
+    "semiconductors"
   ],
   "bosslinux.in": [
     "linux"
@@ -1449,31 +1982,42 @@
   "brainfuck.org": [
     "dev"
   ],
+  "brastel.jp": [
+    "telecom"
+  ],
+  "braze.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "brewmp.com": [
     "smartphones"
   ],
+  "bricklin.com": [
+    "tech"
+  ],
+  "bridgealliance.com": [
+    "telecom"
+  ],
   "brightfort.com": [
+    "tech"
+  ],
+  "brightloom.io": [
+    "desktop-apps",
     "tech"
   ],
   "brlcad.org": [
     "open-source"
   ],
-  "broadcom.com": [
-    "privacy"
-  ],
   "brocade.com": [
     "devops"
+  ],
+  "broccoli.co.jp": [
+    "game-studios"
   ],
   "brow.sh": [
     "browser"
   ],
-  "browser.nokia.com": [
-    "browser"
-  ],
   "browser.qq.com": [
-    "browser"
-  ],
-  "browser.samsung.com": [
     "browser"
   ],
   "browserquest.herokuapp.com": [
@@ -1485,6 +2029,9 @@
   ],
   "bsplayer.com": [
     "desktop-apps"
+  ],
+  "btcl.gov.bd": [
+    "telecom"
   ],
   "bucharest.ubisoft.com": [
     "game-studios"
@@ -1498,8 +2045,14 @@
   "bugbear.fi": [
     "game-studios"
   ],
+  "bugcrowd.com": [
+    "cybersecurity"
+  ],
   "bugzilla.org": [
     "open-source"
+  ],
+  "buhlergroup.com": [
+    "tech"
   ],
   "buildout.org": [
     "dev"
@@ -1509,6 +2062,13 @@
   ],
   "buka.ru": [
     "game-studios"
+  ],
+  "bukalapak.com": [
+    "tech"
+  ],
+  "bull.com": [
+    "electronics",
+    "hardware"
   ],
   "bulletphysics.org": [
     "game-dev"
@@ -1532,14 +2092,27 @@
   "burp.renderfarming.net": [
     "open-source"
   ],
+  "busbud.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "bushiroad.co.jp": [
+    "game-studios"
+  ],
   "business.adobe.com": [
     "webdev"
+  ],
+  "businessobjects.com": [
+    "tech"
   ],
   "busybox.net": [
     "open-source"
   ],
   "butterproject.org": [
     "desktop-apps"
+  ],
+  "bwi.de": [
+    "tech"
   ],
   "bwrcs.eecs.berkeley.edu": [
     "open-source"
@@ -1574,6 +2147,12 @@
   ],
   "ca.norton.com": [
     "cybersecurity"
+  ],
+  "cabforum.org": [
+    "cybersecurity"
+  ],
+  "cablevisionfibertel.com.ar": [
+    "telecom"
   ],
   "cachyos.org": [
     "linux"
@@ -1613,6 +2192,10 @@
   ],
   "cairographics.org": [
     "dev"
+  ],
+  "caixamagica.pt": [
+    "desktop-apps",
+    "tech"
   ],
   "cakephp.org": [
     "webdev"
@@ -1665,6 +2248,9 @@
   "camstudio.org": [
     "desktop-apps"
   ],
+  "canaan.io": [
+    "hardware"
+  ],
   "canada.ca": [
     "airports",
     "open-source"
@@ -1672,12 +2258,18 @@
   "canaima.softwarelibre.gob.ve": [
     "linux"
   ],
+  "canaldigital.no": [
+    "telecom"
+  ],
+  "cancom.de": [
+    "tech"
+  ],
   "canon-europe.com": [
     "tech"
   ],
-  "canonical.com": [
+  "canopylabs.com": [
     "desktop-apps",
-    "linux"
+    "tech"
   ],
   "cantera.org": [
     "open-source"
@@ -1696,6 +2288,9 @@
   ],
   "captureone.com": [
     "tech"
+  ],
+  "carbonblack.com": [
+    "cybersecurity"
   ],
   "carbyne.com": [
     "tech"
@@ -1728,6 +2323,9 @@
   "catseye.tc": [
     "dev"
   ],
+  "cattle-call.co.jp": [
+    "game-studios"
+  ],
   "cauldron.sk": [
     "game-studios"
   ],
@@ -1743,6 +2341,9 @@
   "ccache.dev": [
     "dev"
   ],
+  "cchubnigeria.com": [
+    "tech"
+  ],
   "ccsd.cnrs.fr": [
     "desktop-apps",
     "tech"
@@ -1750,11 +2351,25 @@
   "cdk.github.io": [
     "open-source"
   ],
+  "cdp.com": [
+    "tech"
+  ],
   "cdpred.com": [
     "game-dev"
   ],
+  "cdprojekt.com": [
+    "games",
+    "game-studios"
+  ],
   "cdsware.cern.ch": [
     "dev"
+  ],
+  "cdv.de": [
+    "video-games",
+    "game-studios"
+  ],
+  "ceedo.com": [
+    "tech"
   ],
   "cegid.com": [
     "desktop-apps",
@@ -1769,6 +2384,9 @@
   "cellprofiler.org": [
     "open-source"
   ],
+  "celtel.com": [
+    "telecom"
+  ],
   "cemu.info": [
     "open-source"
   ],
@@ -1776,11 +2394,29 @@
     "government",
     "tech"
   ],
+  "centauriproduction.com": [
+    "game-studios"
+  ],
+  "centertelecom.ru": [
+    "telecom"
+  ],
   "centos.org": [
     "linux"
   ],
+  "centric.eu": [
+    "tech"
+  ],
+  "centtech.com": [
+    "electronics"
+  ],
   "ceph.io": [
     "open-source"
+  ],
+  "ceragon.com": [
+    "telecom"
+  ],
+  "cerebras.ai": [
+    "ai"
   ],
   "ceylon-lang.org": [
     "dev"
@@ -1801,13 +2437,17 @@
     "search"
   ],
   "chai-research.com": [
-    "tech"
+    "ai"
   ],
   "chain.link": [
     "tech"
   ],
   "chainer.org": [
     "dev"
+  ],
+  "chaintech.com.tw": [
+    "electronics",
+    "hardware"
   ],
   "chakralinux.org": [
     "linux"
@@ -1820,6 +2460,9 @@
   ],
   "chapel-lang.org": [
     "dev"
+  ],
+  "charlesgames.net": [
+    "game-studios"
   ],
   "charmm.org": [
     "tech"
@@ -1838,7 +2481,7 @@
   ],
   "checkmarx.com": [
     "desktop-apps",
-    "tech"
+    "cybersecurity"
   ],
   "checkmk.com": [
     "open-source"
@@ -1851,6 +2494,10 @@
   ],
   "cherokee-project.com": [
     "devops"
+  ],
+  "cherry.de": [
+    "electronics",
+    "hardware"
   ],
   "cherryos.com": [
     "tech"
@@ -1869,6 +2516,9 @@
   ],
   "chimera-linux.org": [
     "linux"
+  ],
+  "chinakejian.net": [
+    "telecom"
   ],
   "chinaredflag.cn": [
     "linux"
@@ -1903,21 +2553,38 @@
   "cilkplus.org": [
     "dev"
   ],
+  "cimatron.com": [
+    "tech"
+  ],
   "cing.co.jp": [
+    "game-studios"
+  ],
+  "cipsoft.com": [
+    "games",
     "game-studios"
   ],
   "circuitpython.org": [
     "tech"
   ],
+  "circus-co.jp": [
+    "video-games",
+    "game-studios"
+  ],
+  "cirquent.com": [
+    "tech"
+  ],
+  "cirrus.com": [
+    "semiconductors"
+  ],
   "cirt.net": [
     "open-source"
   ],
-  "cisco.com": [
-    "telecom",
-    "tech"
-  ],
   "cisco.github.io": [
     "dev"
+  ],
+  "cision.com": [
+    "desktop-apps",
+    "tech"
   ],
   "citadel.org": [
     "desktop-apps"
@@ -1929,6 +2596,9 @@
     "open-source"
   ],
   "citeulike.org": [
+    "tech"
+  ],
+  "citicguoaninfo.com": [
     "tech"
   ],
   "citra-emu.org": [
@@ -1968,9 +2638,15 @@
   "claphanz.co.jp": [
     "game-studios"
   ],
-  "claris.com": [
+  "clario.co": [
+    "cybersecurity"
+  ],
+  "clarizen.com": [
     "desktop-apps",
-    "database"
+    "tech"
+  ],
+  "clarochile.cl": [
+    "telecom"
   ],
   "claroline.com": [
     "open-source"
@@ -1980,6 +2656,9 @@
   ],
   "classilla.org": [
     "tech"
+  ],
+  "clavister.com": [
+    "cybersecurity"
   ],
   "claws-mail.org": [
     "email"
@@ -2006,7 +2685,7 @@
     "open-source"
   ],
   "clickteam.com": [
-    "game-dev"
+    "tech"
   ],
   "climateprediction.net": [
     "open-source"
@@ -2047,6 +2726,9 @@
   "cloudantivirus.com": [
     "cybersecurity"
   ],
+  "cloudbric.com": [
+    "cybersecurity"
+  ],
   "cloudcompare.org": [
     "desktop-apps"
   ],
@@ -2062,6 +2744,10 @@
   "cloverstudio.co.jp": [
     "game-studios"
   ],
+  "club-3d.com": [
+    "electronics",
+    "hardware"
+  ],
   "clubhouse.com": [
     "mobile-apps"
   ],
@@ -2071,9 +2757,15 @@
   "clusterlabs.org": [
     "open-source"
   ],
+  "cm.games": [
+    "game-studios"
+  ],
   "cmake.org": [
     "reference",
     "open-source"
+  ],
+  "cmdweb.de": [
+    "tech"
   ],
   "cmsimple.dk": [
     "open-source"
@@ -2087,11 +2779,21 @@
   "cmucl.org": [
     "dev"
   ],
+  "cmune.com": [
+    "games",
+    "game-studios"
+  ],
   "cmus.github.io": [
     "desktop-apps"
   ],
+  "cna.ne.jp": [
+    "telecom"
+  ],
   "cntk.ai": [
     "tech"
+  ],
+  "co.ge": [
+    "telecom"
   ],
   "cobra-language.com": [
     "dev"
@@ -2113,6 +2815,13 @@
     "desktop-apps",
     "tech"
   ],
+  "code42.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "codeanywhere.com": [
+    "tech"
+  ],
   "codeblocks.org": [
     "dev"
   ],
@@ -2120,6 +2829,14 @@
     "tech"
   ],
   "codecguide.com": [
+    "tech"
+  ],
+  "codechef.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "codegear.com": [
+    "desktop-apps",
     "tech"
   ],
   "codeigniter.com": [
@@ -2143,6 +2860,10 @@
   "codesys.com": [
     "dev"
   ],
+  "codeweavers.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "coffeescript.org": [
     "dev"
   ],
@@ -2155,8 +2876,16 @@
   "coinsbee.com": [
     "mobile-apps"
   ],
+  "coleco.com": [
+    "games",
+    "game-studios"
+  ],
   "colinux.org": [
     "open-source"
+  ],
+  "collab.net": [
+    "desktop-apps",
+    "tech"
   ],
   "collaboraoffice.com": [
     "open-source"
@@ -2173,12 +2902,18 @@
   "colossalorder.fi": [
     "game-studios"
   ],
+  "columbitech.com": [
+    "cybersecurity"
+  ],
   "comaps.app": [
     "mobile-apps"
   ],
   "comarch.pl": [
     "desktop-apps",
     "tech"
+  ],
+  "comcept.co.jp": [
+    "game-studios"
   ],
   "comeaucomputing.com": [
     "dev"
@@ -2213,6 +2948,16 @@
   "community.voltdb.com": [
     "database"
   ],
+  "commvault.com": [
+    "tech"
+  ],
+  "compal.com": [
+    "electronics",
+    "hardware"
+  ],
+  "company.nexon.com": [
+    "game-studios"
+  ],
   "company.wizards.com": [
     "boardgames",
     "game-studios"
@@ -2223,6 +2968,9 @@
   ],
   "compcert.org": [
     "dev"
+  ],
+  "compello.com": [
+    "tech"
   ],
   "compiere.com": [
     "open-source"
@@ -2239,11 +2987,23 @@
   "comptel.com": [
     "tech"
   ],
+  "compunetix.com": [
+    "telecom"
+  ],
   "compuphase.com": [
     "dev"
   ],
+  "computacenter.com": [
+    "tech"
+  ],
+  "compuware.com": [
+    "tech"
+  ],
   "comsenz.com": [
     "webdev"
+  ],
+  "conatel.gob.ve": [
+    "telecom"
   ],
   "conceptbase.cc": [
     "database"
@@ -2263,6 +3023,12 @@
   ],
   "conemu.github.io": [
     "open-source"
+  ],
+  "conexant.com": [
+    "semiconductors"
+  ],
+  "confinity.com": [
+    "tech"
   ],
   "conitec.net": [
     "game-dev"
@@ -2306,6 +3072,13 @@
   "conversations.im": [
     "mobile-apps"
   ],
+  "cooliris.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "copernic.com": [
+    "tech"
+  ],
   "copperhead.co": [
     "smartphones"
   ],
@@ -2324,6 +3097,9 @@
   "coreos.com": [
     "linux"
   ],
+  "coresecurity.com": [
+    "cybersecurity"
+  ],
   "coronawarn.app": [
     "mobile-apps"
   ],
@@ -2333,8 +3109,28 @@
   "corp.mobile.rakuten.co.jp": [
     "telecom"
   ],
+  "corp.oberon-media.com": [
+    "games",
+    "game-studios"
+  ],
+  "corp.rakuten.co.jp": [
+    "tech"
+  ],
+  "corporate.epson": [
+    "electronics"
+  ],
+  "corporate.jp.sharp": [
+    "semiconductors"
+  ],
+  "corporate.orange.be": [
+    "telecom",
+    "tech"
+  ],
   "corporate.pokemon.co.jp": [
     "game-studios"
+  ],
+  "corporate.wowow.co.jp": [
+    "telecom"
   ],
   "coscom.uz": [
     "telecom"
@@ -2342,11 +3138,18 @@
   "cosmologyathome.org": [
     "tech"
   ],
+  "costargroup.com": [
+    "real-estate",
+    "tech"
+  ],
   "couchbase.com": [
     "database"
   ],
   "courier-mta.org": [
     "open-source"
+  ],
+  "covad.com": [
+    "telecom"
   ],
   "covid19.nhs.uk": [
     "mobile-apps"
@@ -2356,6 +3159,9 @@
   ],
   "coyotelinux.com": [
     "linux"
+  ],
+  "cp.gree.net": [
+    "tech"
   ],
   "cp2k.org": [
     "open-source"
@@ -2373,6 +3179,27 @@
   "cr.yp.to": [
     "open-source"
   ],
+  "crafts-meister.co.jp": [
+    "game-studios"
+  ],
+  "craneballs.com": [
+    "game-studios"
+  ],
+  "crashlytics.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "crawfish.co.uk": [
+    "games",
+    "game-studios"
+  ],
+  "cray.com": [
+    "tech"
+  ],
+  "crazymonkeystudios.com": [
+    "games",
+    "game-studios"
+  ],
   "crdroid.net": [
     "open-source"
   ],
@@ -2382,17 +3209,40 @@
   "creative-assembly.com": [
     "game-studios"
   ],
+  "creatstudios.ru": [
+    "game-studios"
+  ],
   "creatures.co.jp": [
+    "game-studios"
+  ],
+  "cri-mw.co.jp": [
     "game-studios"
   ],
   "crimsoneditor.com": [
     "editor"
   ],
+  "criticalreflex.com": [
+    "game-studios"
+  ],
   "criu.org": [
     "open-source"
   ],
+  "criware.cn": [
+    "games",
+    "game-studios"
+  ],
+  "criware.com": [
+    "game-studios"
+  ],
   "croteam.com": [
     "game-studios"
+  ],
+  "crowdoptic.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "crowdstrike.com": [
+    "cybersecurity"
   ],
   "crummy.com": [
     "dev"
@@ -2403,6 +3253,9 @@
   "cryengine.com": [
     "game-dev"
   ],
+  "crypto.ch": [
+    "tech"
+  ],
   "crypto.com": [
     "mobile-apps"
   ],
@@ -2410,7 +3263,7 @@
     "open-source"
   ],
   "crypton.co.jp": [
-    "tech"
+    "game-studios"
   ],
   "cryptool.org": [
     "open-source"
@@ -2449,6 +3302,10 @@
   "cshd.cyberstep.com": [
     "game-studios"
   ],
+  "csiamerica.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "csm.ornl.gov": [
     "open-source"
   ],
@@ -2457,6 +3314,12 @@
   ],
   "cstr.ed.ac.uk": [
     "open-source"
+  ],
+  "ctc-g.co.jp": [
+    "tech"
+  ],
+  "ctron.com": [
+    "tech"
   ],
   "cube.univie.ac.at": [
     "tech"
@@ -2472,6 +3335,10 @@
   ],
   "cucumber.io": [
     "open-source"
+  ],
+  "cuffs.co.jp": [
+    "video-games",
+    "game-studios"
   ],
   "cumulusnetworks.com": [
     "desktop-apps",
@@ -2492,6 +3359,9 @@
   "cvsweb.openbsd.org": [
     "open-source"
   ],
+  "cwc.com": [
+    "telecom"
+  ],
   "cweb.canon.jp": [
     "tech"
   ],
@@ -2500,6 +3370,12 @@
   ],
   "cyanogenmod.org": [
     "linux"
+  ],
+  "cyberagent.co.jp": [
+    "tech"
+  ],
+  "cyberark.com": [
+    "tech"
   ],
   "cyberbotics.com": [
     "open-source"
@@ -2510,17 +3386,45 @@
   "cyberduck.io": [
     "open-source"
   ],
+  "cybereason.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "cyberfront.co.jp": [
+    "game-studios"
+  ],
   "cyberghostvpn.com": [
+    "tech"
+  ],
+  "cyberhead.co.jp": [
+    "game-studios"
+  ],
+  "cyberoam.com": [
+    "cybersecurity"
+  ],
+  "cybertrust.co.jp": [
+    "cybersecurity"
+  ],
+  "cybozu.co.jp": [
     "tech"
   ],
   "cyclone.thelanguage.org": [
     "dev"
   ],
+  "cygames.co.jp": [
+    "game-studios"
+  ],
   "cygnused.de": [
     "editor"
   ],
+  "cypress.com": [
+    "semiconductors"
+  ],
   "cypronia.com": [
     "game-studios"
+  ],
+  "cyren.com": [
+    "tech"
   ],
   "cyta.com.cy": [
     "telecom"
@@ -2533,6 +3437,10 @@
   ],
   "cyworld.com": [
     "social"
+  ],
+  "d2l.com": [
+    "dev",
+    "tech"
   ],
   "d4e.co.jp": [
     "game-studios"
@@ -2552,6 +3460,10 @@
   "danbricklin.com": [
     "dev"
   ],
+  "danger.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "dangermouse.net": [
     "dev"
   ],
@@ -2560,6 +3472,12 @@
   ],
   "darcs.net": [
     "git"
+  ],
+  "darkfallnewdawn.com": [
+    "game-studios"
+  ],
+  "darkmatter.ae": [
+    "cybersecurity"
   ],
   "darktable.org": [
     "desktop-apps"
@@ -2584,19 +3502,28 @@
     "desktop-apps",
     "tech"
   ],
-  "databricks.com": [
-    "desktop-apps",
-    "tech"
-  ],
   "dataeast-corp.co.jp": [
     "game-studios"
   ],
   "dataiku.com": [
     "desktop-apps",
+    "ai"
+  ],
+  "dataix.eu": [
     "tech"
+  ],
+  "datam.co.jp": [
+    "game-studios"
   ],
   "dataphor.org": [
     "database"
+  ],
+  "datarespons.com": [
+    "tech"
+  ],
+  "datastax.com": [
+    "desktop-apps",
+    "tech"
   ],
   "datatransferproject.dev": [
     "dev"
@@ -2607,6 +3534,10 @@
   "dataviva.info": [
     "webdev"
   ],
+  "datel.co.uk": [
+    "games",
+    "game-studios"
+  ],
   "datev.de": [
     "desktop-apps",
     "tech"
@@ -2616,6 +3547,10 @@
   ],
   "davix.secviz.org": [
     "linux"
+  ],
+  "davka.com": [
+    "games",
+    "game-studios"
   ],
   "dawnaerospace.com": [
     "tech"
@@ -2638,6 +3573,10 @@
   ],
   "dd-wrt.com": [
     "linux"
+  ],
+  "de.gamigo.com": [
+    "games",
+    "game-studios"
   ],
   "de.hypotheses.org": [
     "webdev"
@@ -2682,6 +3621,13 @@
   "decidim.org": [
     "open-source"
   ],
+  "deconstructeam.com": [
+    "game-studios"
+  ],
+  "deepcool.com": [
+    "electronics",
+    "hardware"
+  ],
   "deepin.com": [
     "linux"
   ],
@@ -2692,7 +3638,7 @@
     "dev"
   ],
   "deepseekai.jp": [
-    "tech"
+    "ai"
   ],
   "deepsilver.com": [
     "game-studios"
@@ -2706,8 +3652,22 @@
   "deli.tavvva.net": [
     "linux"
   ],
+  "delicious-monster.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "delltechnologies.com": [
+    "tech"
+  ],
   "delorie.com": [
     "dev"
+  ],
+  "delorme.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "delrina.com": [
+    "tech"
   ],
   "delta.chat": [
     "open-source"
@@ -2715,14 +3675,37 @@
   "deltasoft.com": [
     "linux"
   ],
+  "dena.com": [
+    "dev",
+    "tech"
+  ],
+  "denel.co.za": [
+    "tech"
+  ],
   "denemo.org": [
     "open-source"
+  ],
+  "denso-ten.com": [
+    "electronics"
+  ],
+  "dentsu.co.jp": [
+    "game-studios"
   ],
   "designexpress.eu": [
     "desktop-apps"
   ],
+  "deskera.com": [
+    "tech"
+  ],
   "desura.games": [
     "video-games"
+  ],
+  "detalion.com": [
+    "game-studios"
+  ],
+  "deutschepost.de": [
+    "shipping",
+    "tech"
   ],
   "dev.wavemaker.com": [
     "webdev"
@@ -2764,6 +3747,9 @@
   "devil-linux.org": [
     "linux"
   ],
+  "devoteam.com": [
+    "ai"
+  ],
   "devsisters.com": [
     "game-studios"
   ],
@@ -2773,11 +3759,23 @@
   "dfiles.com": [
     "cloud-storage"
   ],
+  "dfki.de": [
+    "ai"
+  ],
+  "dfx.co.jp": [
+    "game-studios"
+  ],
   "dhondt.de": [
     "open-source"
   ],
   "dialog-semiconductor.com": [
     "semiconductors"
+  ],
+  "dialog.org": [
+    "tech"
+  ],
+  "dialogic.com": [
+    "telecom"
   ],
   "dialogscript.com": [
     "dev"
@@ -2800,11 +3798,52 @@
   "digi-communications.ro": [
     "telecom"
   ],
+  "digi.com": [
+    "hardware"
+  ],
   "digicelgroup.com": [
     "telecom"
   ],
+  "digifinland.fi": [
+    "tech"
+  ],
+  "digimind.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "digion.com": [
+    "tech"
+  ],
+  "digitalbros.com": [
+    "games",
+    "game-studios"
+  ],
+  "digitalcombatsimulator.com": [
+    "video-games",
+    "game-studios"
+  ],
+  "digitalfuel.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "digitalhappiness.net": [
+    "game-studios"
+  ],
+  "digitalmaniastudio.com": [
+    "game-studios"
+  ],
+  "digitalmars.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "digitalmedia.hr": [
     "desktop-apps"
+  ],
+  "digitalresearch.biz": [
+    "tech"
+  ],
+  "digitalsurf.com": [
+    "tech"
   ],
   "digsby.com": [
     "tech"
@@ -2815,7 +3854,18 @@
   "dillo-browser.org": [
     "browser"
   ],
+  "dimdim.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "dimps.co.jp": [
+    "game-studios"
+  ],
+  "dinamic.com": [
+    "games",
+    "game-studios"
+  ],
+  "dingo.co.jp": [
     "game-studios"
   ],
   "dingtalk.com": [
@@ -2845,11 +3895,21 @@
   "discoverbing.com": [
     "tech"
   ],
+  "discoverydn.com": [
+    "tech"
+  ],
   "discuz.net": [
     "webdev"
   ],
+  "dishhdasia.com": [
+    "telecom"
+  ],
+  "disneyconnect.com": [
+    "games",
+    "game-studios"
+  ],
   "displaylink.com": [
-    "tech"
+    "semiconductors"
   ],
   "displaysocial.com": [
     "social"
@@ -2872,6 +3932,9 @@
   "djezzy.dz": [
     "telecom"
   ],
+  "djuice.com": [
+    "telecom"
+  ],
   "dlang.org": [
     "dev"
   ],
@@ -2880,6 +3943,10 @@
   ],
   "dlubal.com": [
     "tech"
+  ],
+  "dmarket.com": [
+    "games",
+    "game-studios"
   ],
   "dmm-corp.com": [
     "game-studios"
@@ -2929,6 +3996,9 @@
   "dokeos.com": [
     "open-source"
   ],
+  "dolce.ro": [
+    "telecom"
+  ],
   "dolibarr.org": [
     "open-source"
   ],
@@ -2958,6 +4028,9 @@
   ],
   "dotclear.org": [
     "webdev"
+  ],
+  "dotgears.com": [
+    "game-studios"
   ],
   "dotgnu.org": [
     "open-source"
@@ -3004,9 +4077,6 @@
   "dragon-lang.org": [
     "dev"
   ],
-  "dragonflybsd.org": [
-    "linux"
-  ],
   "dragora.org": [
     "linux"
   ],
@@ -3031,6 +4101,10 @@
   "dreambooth.github.io": [
     "tech"
   ],
+  "dreamcatchergames.com": [
+    "video-games",
+    "game-studios"
+  ],
   "dreamlinux.info": [
     "linux"
   ],
@@ -3046,11 +4120,17 @@
   "dri.freedesktop.org": [
     "dev"
   ],
+  "drive.ai": [
+    "ai"
+  ],
   "drive5.com": [
     "tech"
   ],
   "drizzle.org": [
     "database"
+  ],
+  "drmovie.biz": [
+    "game-studios"
   ],
   "drools.org": [
     "open-source"
@@ -3070,8 +4150,18 @@
   "dspace.org": [
     "open-source"
   ],
+  "dsv.ru": [
+    "telecom"
+  ],
   "dubsmash.com": [
     "tech"
+  ],
+  "dutchgamegarden.nl": [
+    "games",
+    "game-studios"
+  ],
+  "dvb.org": [
+    "telecom"
   ],
   "dvbviewer.com": [
     "tech"
@@ -3100,6 +4190,9 @@
   "dxo.com": [
     "desktop-apps"
   ],
+  "dynabook.com": [
+    "hardware"
+  ],
   "dynatrace.com": [
     "desktop-apps",
     "tech"
@@ -3107,11 +4200,21 @@
   "dyne.org": [
     "linux"
   ],
+  "dynexsemi.com": [
+    "semiconductors"
+  ],
+  "e-estonia.com": [
+    "tech"
+  ],
   "e.foundation": [
     "linux"
   ],
   "e107.org": [
     "open-source"
+  ],
+  "e3expo.com": [
+    "games",
+    "game-studios"
   ],
   "eagate.573.jp": [
     "game-studios"
@@ -3128,16 +4231,30 @@
   "easports.com": [
     "tech"
   ],
+  "easportsbig.com": [
+    "games",
+    "game-studios"
+  ],
   "easyphp.org": [
     "open-source"
   ],
+  "eatapp.co": [
+    "desktop-apps",
+    "tech"
+  ],
   "eblong.com": [
     "game-dev"
+  ],
+  "ebscoind.com": [
+    "tech"
   ],
   "echo.nextapp.com": [
     "open-source"
   ],
   "echolink.org": [
+    "tech"
+  ],
+  "ecis.eu": [
     "tech"
   ],
   "ecl.common-lisp.dev": [
@@ -3169,7 +4286,7 @@
   ],
   "ecs.com.tw": [
     "electronics",
-    "tech"
+    "hardware"
   ],
   "ect.bell-labs.com": [
     "dev"
@@ -3207,6 +4324,10 @@
   "egroupware.org": [
     "desktop-apps"
   ],
+  "eidosmedia.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "einstein.phys.uwm.edu": [
     "open-source"
   ],
@@ -3219,23 +4340,61 @@
   "ekiga.org": [
     "messaging"
   ],
+  "ekosystem.com": [
+    "video-games",
+    "game-studios"
+  ],
+  "ekwb.com": [
+    "electronics"
+  ],
   "el.pdf24.org": [
     "tech"
   ],
   "elby.ch": [
     "tech"
   ],
+  "elco.co.il": [
+    "electronics"
+  ],
+  "elcoteq.com": [
+    "electronics"
+  ],
   "elecbyte.com": [
     "game-dev"
+  ],
+  "elecom.co.jp": [
+    "tech"
+  ],
+  "elecond.ru": [
+    "electronics"
+  ],
+  "electric-cloud.com": [
+    "desktop-apps",
+    "tech"
   ],
   "electricsheep.org": [
     "open-source"
   ],
+  "electrocompaniet.com": [
+    "electronics"
+  ],
+  "electrocompaniet.no": [
+    "electronics"
+  ],
+  "electrosignal.ru": [
+    "electronics"
+  ],
   "eleks.com": [
     "tech"
   ],
+  "elektronmash.kiev.ua": [
+    "electronics"
+  ],
   "element.io": [
     "open-source"
+  ],
+  "elementai.com": [
+    "ai"
   ],
   "elementary.io": [
     "linux"
@@ -3246,11 +4405,17 @@
   "eleuther.ai": [
     "open-source"
   ],
+  "elf-game.co.jp": [
+    "game-studios"
+  ],
   "elgg.org": [
     "social"
   ],
   "eligis.com": [
     "dev"
+  ],
+  "elion.ee": [
+    "telecom"
   ],
   "elivecd.org": [
     "linux"
@@ -3263,6 +4428,15 @@
   ],
   "elmerfem.org": [
     "open-source"
+  ],
+  "elna.co.jp": [
+    "electronics"
+  ],
+  "elpida.com": [
+    "semiconductors"
+  ],
+  "elsa.com": [
+    "hardware"
   ],
   "elsewhere.org": [
     "desktop-apps"
@@ -3283,6 +4457,14 @@
   "emacs-w3m.namazu.org": [
     "browser"
   ],
+  "emagic.de": [
+    "games",
+    "game-studios"
+  ],
+  "emc.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "emclient.com": [
     "email"
   ],
@@ -3298,6 +4480,9 @@
   "emmet.io": [
     "open-source"
   ],
+  "emmicroelectronic.com": [
+    "semiconductors"
+  ],
   "emoj.li": [
     "mobile-apps"
   ],
@@ -3306,6 +4491,13 @@
   ],
   "emsisoft.com": [
     "cybersecurity"
+  ],
+  "emt.ee": [
+    "telecom"
+  ],
+  "emu.com": [
+    "electronics",
+    "hardware"
   ],
   "emulation64.com": [
     "open-source"
@@ -3326,6 +4518,15 @@
   "en.bignox.com": [
     "tech"
   ],
+  "en.bushiroad.com": [
+    "game-studios"
+  ],
+  "en.frontwing.jp": [
+    "game-studios"
+  ],
+  "en.gs-group.com": [
+    "telecom"
+  ],
   "en.hypotheses.org": [
     "webdev"
   ],
@@ -3335,20 +4536,37 @@
   "en.sourceforge.jp": [
     "open-source"
   ],
+  "endeca.com": [
+    "tech"
+  ],
   "endian.com": [
     "linux"
   ],
   "endomondo.com": [
     "mobile-apps"
   ],
+  "enea.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "enermax.com": [
+    "electronics",
+    "hardware"
+  ],
   "eng.bestway.com.ua": [
     "game-studios"
+  ],
+  "eng.sibirtelecom.ru": [
+    "telecom"
   ],
   "eng.targem.ru": [
     "game-studios"
   ],
   "engardelinux.org": [
     "linux"
+  ],
+  "english.dbtel.com": [
+    "telecom"
   ],
   "englishlive-ef.com": [
     "desktop-apps"
@@ -3374,11 +4592,24 @@
   "enterbrain.co.jp": [
     "game-studios"
   ],
+  "enterprisedb.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "entityframeworktutorial.net": [
     "dev"
   ],
+  "entrust.com": [
+    "cybersecurity"
+  ],
   "enyojs.com": [
     "javascript"
+  ],
+  "eogbot.info": [
+    "tech"
+  ],
+  "eolith.co.kr": [
+    "game-studios"
   ],
   "eos.io": [
     "open-source"
@@ -3387,11 +4618,22 @@
     "government",
     "tech"
   ],
+  "epam.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "epic-jp.net": [
     "game-studios"
   ],
+  "epic.com": [
+    "tech"
+  ],
   "epicbrowser.com": [
     "browser"
+  ],
+  "epicor.com": [
+    "desktop-apps",
+    "tech"
   ],
   "epics-controls.org": [
     "open-source"
@@ -3401,6 +4643,28 @@
   ],
   "epics.jp": [
     "game-studios"
+  ],
+  "episerver.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "eplan.pl": [
+    "desktop-apps",
+    "tech"
+  ],
+  "epoch.jp": [
+    "game-studios"
+  ],
+  "eposgamestudios.com": [
+    "game-studios"
+  ],
+  "eposnow.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "epox.com": [
+    "electronics",
+    "hardware"
   ],
   "eprints.org": [
     "open-source"
@@ -3417,6 +4681,9 @@
   "eric-ide.python-projects.org": [
     "dev"
   ],
+  "ericom.com": [
+    "tech"
+  ],
   "erights.org": [
     "dev"
   ],
@@ -3431,6 +4698,9 @@
   ],
   "erpnext.com": [
     "open-source"
+  ],
+  "ertelecom.ru": [
+    "telecom"
   ],
   "es.aptoide.com": [
     "android",
@@ -3454,13 +4724,32 @@
   ],
   "eset.com": [
     "desktop-apps",
-    "cybersecurity"
+    "tech"
+  ],
+  "esi-group.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "esmc.eu": [
+    "semiconductors"
   ],
   "esobi.com": [
     "tech"
   ],
   "esri.com": [
     "cloud",
+    "tech"
+  ],
+  "essential.com": [
+    "tech"
+  ],
+  "esstech.com": [
+    "electronics"
+  ],
+  "esterel-technologies.com": [
+    "tech"
+  ],
+  "estsoft.com": [
     "tech"
   ],
   "eterm.org": [
@@ -3484,11 +4773,22 @@
   "etoileos.com": [
     "linux"
   ],
+  "etoro.com": [
+    "finance",
+    "tech"
+  ],
+  "etron.com": [
+    "electronics",
+    "semiconductors"
+  ],
   "ettercap-project.org": [
     "open-source"
   ],
   "ettercap.github.io": [
     "open-source"
+  ],
+  "eu.ntt.com": [
+    "tech"
   ],
   "eucalyptus.cloud": [
     "open-source"
@@ -3499,20 +4799,50 @@
   "euler-math-toolbox.de": [
     "open-source"
   ],
+  "eurotech.com": [
+    "electronics",
+    "hardware"
+  ],
   "evasi0n.com": [
     "tech"
   ],
   "events.live.com": [
     "tech"
   ],
+  "everex.com": [
+    "electronics",
+    "hardware"
+  ],
+  "evogae.com": [
+    "game-studios"
+  ],
   "evolution.genetics.washington.edu": [
     "open-source"
+  ],
+  "evry.com": [
+    "tech"
+  ],
+  "exact.com": [
+    "desktop-apps",
+    "tech"
   ],
   "exactaudiocopy.de": [
     "tech"
   ],
+  "exadel.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "exaile.org": [
     "desktop-apps"
+  ],
+  "exaktent.com": [
+    "games",
+    "game-studios"
+  ],
+  "exalead.fr": [
+    "search",
+    "tech"
   ],
   "examu.co.jp": [
     "game-studios"
@@ -3525,6 +4855,13 @@
   ],
   "exist-db.org": [
     "database"
+  ],
+  "exlibris.com.cn": [
+    "desktop-apps",
+    "tech"
+  ],
+  "exlibrisgroup.com": [
+    "tech"
   ],
   "exone.com": [
     "tech"
@@ -3544,6 +4881,9 @@
   "exxen.com": [
     "mobile-apps"
   ],
+  "eye-techit.co.uk": [
+    "tech"
+  ],
   "eyrie.org": [
     "open-source"
   ],
@@ -3557,6 +4897,10 @@
     "cybersecurity"
   ],
   "f5.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "fabasoft.com": [
     "desktop-apps",
     "tech"
   ],
@@ -3581,6 +4925,13 @@
   "factorcode.org": [
     "dev"
   ],
+  "factset.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "fairchildsemi.com": [
+    "semiconductors"
+  ],
   "fakku.net": [
     "game-studios"
   ],
@@ -3590,16 +4941,40 @@
   "falkon.org": [
     "browser"
   ],
+  "falllinestudio.go.com": [
+    "games",
+    "game-studios"
+  ],
   "familiar.handhelds.org": [
     "linux"
   ],
+  "familysoft.co.jp": [
+    "game-studios"
+  ],
+  "fandango.lat": [
+    "tech"
+  ],
+  "fandc.co.jp": [
+    "game-studios"
+  ],
   "fantom.org": [
     "dev"
+  ],
+  "faronics.com": [
+    "desktop-apps",
+    "tech"
   ],
   "fastandeasyhacking.com": [
     "open-source"
   ],
   "fastcopy.jp": [
+    "tech"
+  ],
+  "fasten.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "fastsearch.com": [
     "tech"
   ],
   "fatfreeframework.com": [
@@ -3628,6 +5003,12 @@
   ],
   "fefe.de": [
     "open-source"
+  ],
+  "felistella.co.jp": [
+    "game-studios"
+  ],
+  "fellowtraveller.games": [
+    "game-studios"
   ],
   "fengoffice.com": [
     "webdev"
@@ -3666,6 +5047,9 @@
   "figlet.org": [
     "open-source"
   ],
+  "figure.ai": [
+    "tech"
+  ],
   "fiio.com": [
     "electronics",
     "tech"
@@ -3678,6 +5062,9 @@
     "open-source"
   ],
   "filecoin.io": [
+    "tech"
+  ],
+  "finam.ru": [
     "tech"
   ],
   "fingersoft.com": [
@@ -3695,6 +5082,9 @@
   "firech.at": [
     "mobile-apps"
   ],
+  "fireeye.com": [
+    "cybersecurity"
+  ],
   "firefox.com": [
     "browser"
   ],
@@ -3704,8 +5094,20 @@
   "firegiant.com": [
     "dev"
   ],
+  "fireglowgames.com": [
+    "game-studios"
+  ],
+  "firma.volny.cz": [
+    "telecom"
+  ],
   "firstclass.com": [
     "tech"
+  ],
+  "firstmedia.co.id": [
+    "telecom"
+  ],
+  "firstmedia.com": [
+    "telecom"
   ],
   "fisglobal.com": [
     "dev"
@@ -3728,6 +5130,9 @@
   "flatassembler.net": [
     "desktop-apps"
   ],
+  "flexenclosure.com": [
+    "telecom"
+  ],
   "fli4l.de": [
     "linux"
   ],
@@ -3740,8 +5145,15 @@
   "flitto.com": [
     "mobile-apps"
   ],
+  "flixbus.com": [
+    "travel",
+    "tech"
+  ],
   "flock.co": [
     "desktop-apps"
+  ],
+  "floodg.com": [
+    "game-studios"
   ],
   "floorp.app": [
     "browser"
@@ -3791,8 +5203,14 @@
   "fontlab.com": [
     "tech"
   ],
+  "foolstheory.com": [
+    "game-studios"
+  ],
   "forbidden.co.uk": [
     "desktop-apps"
+  ],
+  "forcepoint.com": [
+    "cybersecurity"
   ],
   "ford.com": [
     "car-brands",
@@ -3804,14 +5222,27 @@
   "forfone.com": [
     "messaging"
   ],
+  "forter.com": [
+    "cybersecurity"
+  ],
   "forth-standard.org": [
     "dev"
+  ],
+  "forticom.net": [
+    "tech"
+  ],
+  "fortinet.com": [
+    "cybersecurity"
   ],
   "fortran-lang.org": [
     "dev"
   ],
   "forum.codeigniter.com": [
     "open-source"
+  ],
+  "forum.metastock.com": [
+    "desktop-apps",
+    "tech"
   ],
   "forum.pellesc.de": [
     "dev"
@@ -3825,10 +5256,35 @@
   "foundationdb.org": [
     "database"
   ],
+  "founder.com": [
+    "finance",
+    "tech"
+  ],
+  "founder.net": [
+    "finance",
+    "tech"
+  ],
+  "foundertech.com": [
+    "tech"
+  ],
   "fox-toolkit.org": [
     "dev"
   ],
+  "foxit.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "foxmail.com": [
+    "tech"
+  ],
+  "foxnext.com": [
+    "game-studios"
+  ],
+  "foxtel.com.au": [
+    "tv-series",
+    "telecom"
+  ],
+  "fpt.com.vn": [
     "tech"
   ],
   "fr.aptoide.com": [
@@ -3848,6 +5304,10 @@
   "fr.swarmapp.com": [
     "mobile-apps"
   ],
+  "frame.work": [
+    "electronics",
+    "hardware"
+  ],
   "framework.com": [
     "desktop-apps"
   ],
@@ -3862,6 +5322,9 @@
   ],
   "freebasic.net": [
     "dev"
+  ],
+  "freebirdgames.com": [
+    "game-studios"
   ],
   "freecad.org": [
     "open-source"
@@ -3951,6 +5414,14 @@
   "fritzing.org": [
     "open-source"
   ],
+  "friv.com": [
+    "games",
+    "game-studios"
+  ],
+  "frog.co": [
+    "desktop-apps",
+    "tech"
+  ],
   "frogwares.com": [
     "game-studios"
   ],
@@ -3959,6 +5430,9 @@
     "cloud-storage"
   ],
   "fromsoftware.jp": [
+    "game-studios"
+  ],
+  "frontwing.jp": [
     "game-studios"
   ],
   "frostbite.com": [
@@ -3985,6 +5459,16 @@
   "fsv.global": [
     "tech"
   ],
+  "ft.fo": [
+    "telecom"
+  ],
+  "ftdichip.com": [
+    "semiconductors"
+  ],
+  "ftlgames.com": [
+    "games",
+    "game-studios"
+  ],
   "ftp.nluug.nl": [
     "open-source"
   ],
@@ -4000,7 +5484,16 @@
   "fuelphp.com": [
     "open-source"
   ],
+  "fujitsu-siemens.com": [
+    "tech"
+  ],
   "funcom.com": [
+    "game-studios"
+  ],
+  "fundacionctic.org": [
+    "tech"
+  ],
+  "fungp.com": [
     "game-studios"
   ],
   "funimation.com": [
@@ -4016,6 +5509,9 @@
   "funtoo.org": [
     "linux"
   ],
+  "furyu.jp": [
+    "game-studios"
+  ],
   "fusionforge.org": [
     "git"
   ],
@@ -4025,11 +5521,39 @@
   "futuregames.cz": [
     "game-studios"
   ],
+  "futurice.com": [
+    "tech"
+  ],
+  "fwinc.co.jp": [
+    "game-studios"
+  ],
   "fwupd.org": [
     "package-manager"
   ],
+  "fxinteractive.com": [
+    "games",
+    "game-studios"
+  ],
+  "fyto.com": [
+    "game-studios"
+  ],
+  "g-collections.com": [
+    "video-games",
+    "game-studios"
+  ],
   "g.ho.st": [
     "tech"
+  ],
+  "g2a.co": [
+    "games",
+    "game-studios"
+  ],
+  "g2a.com": [
+    "games",
+    "game-studios"
+  ],
+  "g42.ai": [
+    "ai"
   ],
   "g95.org": [
     "dev"
@@ -4037,14 +5561,27 @@
   "gabontelecom.ga": [
     "telecom"
   ],
+  "gae.co.jp": [
+    "game-studios"
+  ],
   "gaia-gis.it": [
     "open-source"
   ],
   "gaijinent.com": [
     "game-studios"
   ],
+  "gaikai.com": [
+    "games",
+    "game-studios"
+  ],
+  "gainward.com": [
+    "hardware"
+  ],
   "gajim.org": [
     "open-source"
+  ],
+  "gakken.co.jp": [
+    "game-studios"
   ],
   "gala.biz": [
     "game-studios"
@@ -4052,9 +5589,8 @@
   "galaxyproject.org": [
     "open-source"
   ],
-  "galaxystore.samsung.com": [
-    "android",
-    "package-manager"
+  "galaxytech.com": [
+    "hardware"
   ],
   "gallery.live.com": [
     "tech"
@@ -4071,11 +5607,33 @@
   "gambitscheme.org": [
     "dev"
   ],
+  "game-insight.com": [
+    "game-studios"
+  ],
+  "game.de": [
+    "games",
+    "game-studios"
+  ],
+  "game.qq.com": [
+    "games",
+    "game-studios"
+  ],
+  "game.zoo.jp": [
+    "game-studios"
+  ],
   "gamearts.co.jp": [
+    "game-studios"
+  ],
+  "gameawards.se": [
+    "games",
     "game-studios"
   ],
   "gamebryo.com": [
     "game-dev"
+  ],
+  "gamefly.com": [
+    "games",
+    "game-studios"
   ],
   "gamefreak.co.jp": [
     "game-studios"
@@ -4086,6 +5644,12 @@
   ],
   "gamemaker.io": [
     "game-dev"
+  ],
+  "gamepark.com": [
+    "game-studios"
+  ],
+  "gamepot.co.jp": [
+    "game-studios"
   ],
   "gameranger.com": [
     "tech"
@@ -4099,8 +5663,30 @@
   "gamesalad.com": [
     "game-dev"
   ],
+  "gamescom-cologne.com": [
+    "games",
+    "game-studios"
+  ],
   "gamesforwindows.com": [
     "tech"
+  ],
+  "gamesplanet.com": [
+    "games",
+    "game-studios"
+  ],
+  "gamestation.co.uk": [
+    "games",
+    "game-studios"
+  ],
+  "gamestudio.co.jp": [
+    "game-studios"
+  ],
+  "gamevil.com": [
+    "game-studios"
+  ],
+  "gameware.autodesk.com": [
+    "games",
+    "game-studios"
   ],
   "gams.com": [
     "desktop-apps"
@@ -4123,6 +5709,25 @@
   "garagegames.com": [
     "game-dev"
   ],
+  "garena.co.id": [
+    "game-studios"
+  ],
+  "garena.my": [
+    "game-studios"
+  ],
+  "garena.ph": [
+    "game-studios"
+  ],
+  "garena.sg": [
+    "game-studios"
+  ],
+  "garena.tw": [
+    "games",
+    "game-studios"
+  ],
+  "garena.vn": [
+    "game-studios"
+  ],
   "gargoyle-router.com": [
     "linux"
   ],
@@ -4138,6 +5743,9 @@
   ],
   "gazebosim.org": [
     "open-source"
+  ],
+  "gazprom.ru": [
+    "telecom"
   ],
   "gcompris.net": [
     "open-source"
@@ -4192,12 +5800,23 @@
   "gendarmerie.interieur.gouv.fr": [
     "linux"
   ],
+  "gendesign.co.jp": [
+    "game-studios"
+  ],
   "gendigital.com": [
     "desktop-apps",
-    "tech"
+    "cybersecurity"
   ],
   "generic-mapping-tools.org": [
     "open-source"
+  ],
+  "genesi.company": [
+    "electronics",
+    "hardware"
+  ],
+  "genesys.com": [
+    "desktop-apps",
+    "tech"
   ],
   "geneweb.org": [
     "open-source"
@@ -4277,6 +5896,10 @@
   "gethomebank.org": [
     "open-source"
   ],
+  "getmany.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "getmoai.com": [
     "game-dev"
   ],
@@ -4297,6 +5920,9 @@
   ],
   "getrailo.org": [
     "dev"
+  ],
+  "getronics.com": [
+    "tech"
   ],
   "getsession.org": [
     "open-source"
@@ -4323,11 +5949,18 @@
     "social",
     "mobile-apps"
   ],
+  "gf.com": [
+    "semiconductors"
+  ],
   "gforge.com": [
     "git"
   ],
   "gftp.org": [
     "open-source"
+  ],
+  "ghibli.jp": [
+    "games",
+    "game-studios"
   ],
   "ghidra-sre.org": [
     "open-source"
@@ -4344,11 +5977,17 @@
   "ghostscript.com": [
     "open-source"
   ],
+  "ghostship.dk": [
+    "game-studios"
+  ],
   "ghostzilla.com": [
     "browser"
   ],
   "ghs.com": [
     "linux"
+  ],
+  "gi-de.com": [
+    "tech"
   ],
   "gigamesh.eu": [
     "desktop-apps"
@@ -4356,11 +5995,22 @@
   "gigapan.com": [
     "tech"
   ],
+  "gigaspaces.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "gigatribe.com": [
     "tech"
   ],
+  "gilat.com": [
+    "telecom"
+  ],
   "ginac.de": [
     "dev"
+  ],
+  "gingersoftware.com": [
+    "desktop-apps",
+    "tech"
   ],
   "git.gnome.org": [
     "open-source"
@@ -4410,8 +6060,36 @@
   "glfw.org": [
     "dev"
   ],
+  "glitch.com": [
+    "tech"
+  ],
+  "global.fujitsu": [
+    "electronics"
+  ],
+  "global.sharp": [
+    "electronics",
+    "semiconductors"
+  ],
+  "global1.shuttle.com": [
+    "electronics",
+    "hardware"
+  ],
   "globaleaks.org": [
     "open-source"
+  ],
+  "globalgamingfactory.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "globalmarinesystems.com": [
+    "telecom"
+  ],
+  "globalvr.com": [
+    "games",
+    "game-studios"
+  ],
+  "globant.com": [
+    "tech"
   ],
   "glop.org": [
     "desktop-apps"
@@ -4426,11 +6104,17 @@
   "gmobile.vn": [
     "telecom"
   ],
+  "gmodecorp.com": [
+    "game-studios"
+  ],
   "gmplib.org": [
     "dev"
   ],
   "gmsh.info": [
     "desktop-apps"
+  ],
+  "gmv.com": [
+    "cybersecurity"
   ],
   "gnewsense.org": [
     "linux"
@@ -4486,6 +6170,9 @@
   "go.sap.com": [
     "tech"
   ],
+  "go.wepay.com": [
+    "tech"
+  ],
   "go.yandex": [
     "search"
   ],
@@ -4504,6 +6191,9 @@
   "gojek.com": [
     "mobile-apps"
   ],
+  "golantelecom.co.il": [
+    "telecom"
+  ],
   "goldbug.sf.net": [
     "messaging"
   ],
@@ -4515,6 +6205,9 @@
   ],
   "gondor.apana.org.au": [
     "open-source"
+  ],
+  "gonzo.co.jp": [
+    "game-studios"
   ],
   "goo.ne.jp": [
     "search"
@@ -4536,6 +6229,9 @@
     "tech"
   ],
   "goto.de": [
+    "tech"
+  ],
+  "gotocompany.com": [
     "tech"
   ],
   "gpe.linuxtogo.org": [
@@ -4578,6 +6274,10 @@
     "food-delivery",
     "tech"
   ],
+  "graftgold.com": [
+    "games",
+    "game-studios"
+  ],
   "grafx2.eu": [
     "desktop-apps"
   ],
@@ -4596,14 +6296,29 @@
   "granularlinux.com": [
     "linux"
   ],
+  "granzella.co.jp": [
+    "game-studios"
+  ],
+  "graphcore.ai": [
+    "semiconductors"
+  ],
   "grapheneos.org": [
     "open-source"
   ],
   "graphicsmagick.org": [
     "open-source"
   ],
+  "graphinica.com": [
+    "game-studios"
+  ],
+  "graphisoft.com": [
+    "tech"
+  ],
   "graphite.sil.org": [
     "dev"
+  ],
+  "graphteccorp.com": [
+    "hardware"
   ],
   "graphviz.org": [
     "open-source"
@@ -4641,6 +6356,9 @@
   "greenfoot.org": [
     "dev"
   ],
+  "greenpacket.com": [
+    "telecom"
+  ],
   "greenstone.org": [
     "library",
     "open-source"
@@ -4649,6 +6367,9 @@
     "open-source"
   ],
   "grev.co.jp": [
+    "game-studios"
+  ],
+  "grezzo.co.jp": [
     "game-studios"
   ],
   "grgen.net": [
@@ -4661,20 +6382,33 @@
   "gridcoin.world": [
     "open-source"
   ],
+  "grip-games.com": [
+    "game-studios"
+  ],
   "grml.org": [
     "linux"
   ],
   "gromacs.org": [
     "open-source"
   ],
+  "groovegames.com": [
+    "games",
+    "game-studios"
+  ],
   "groovy-lang.org": [
     "open-source"
   ],
   "group-ib.com": [
-    "tech"
+    "cybersecurity"
   ],
   "group-office.com": [
     "desktop-apps"
+  ],
+  "group.muroosystems.com": [
+    "tech"
+  ],
+  "group.softbank": [
+    "tech"
   ],
   "groups.live.com": [
     "tech"
@@ -4722,6 +6456,9 @@
   "gstreamer.freedesktop.org": [
     "dev"
   ],
+  "gtc.am": [
+    "tech"
+  ],
   "gtk-gnutella.sourceforge.io": [
     "open-source"
   ],
@@ -4755,11 +6492,24 @@
   "gulpjs.com": [
     "javascript"
   ],
+  "gumstix.com": [
+    "electronics",
+    "hardware"
+  ],
+  "gunfiregames.com": [
+    "game-studios"
+  ],
+  "gungho.co.jp": [
+    "game-studios"
+  ],
   "gunicorn.org": [
     "devops"
   ],
   "gurobi.com": [
     "desktop-apps",
+    "tech"
+  ],
+  "gurtam.com": [
     "tech"
   ],
   "gust.jp": [
@@ -4798,6 +6548,12 @@
   "habitica.com": [
     "open-source"
   ],
+  "hackerearth.com": [
+    "tech"
+  ],
+  "hackingteam.com": [
+    "tech"
+  ],
   "hacklang.org": [
     "dev"
   ],
@@ -4816,6 +6572,9 @@
   "hallab.co.jp": [
     "game-studios"
   ],
+  "halma.com": [
+    "tech"
+  ],
   "hamiltonlabs.com": [
     "dev"
   ],
@@ -4827,6 +6586,12 @@
   ],
   "hamstercombat.io": [
     "desktop-apps"
+  ],
+  "hanamicron.com": [
+    "semiconductors"
+  ],
+  "hanbitsoft.com": [
+    "game-studios"
   ],
   "hancom.com": [
     "desktop-apps"
@@ -4882,6 +6647,9 @@
   "harrisgeospatial.com": [
     "dev"
   ],
+  "harvey.ai": [
+    "ai"
+  ],
   "hashcash.org": [
     "tech"
   ],
@@ -4894,6 +6662,9 @@
   "hauptwerk.com": [
     "tech"
   ],
+  "havenco.com": [
+    "tech"
+  ],
   "haxe.org": [
     "dev"
   ],
@@ -4904,11 +6675,24 @@
     "streaming",
     "mobile-apps"
   ],
+  "hcltech.com": [
+    "dev",
+    "tech"
+  ],
   "hcltechsw.com": [
     "webdev"
   ],
+  "hcompany.ai": [
+    "ai"
+  ],
+  "hct.co.kr": [
+    "semiconductors"
+  ],
   "healthvault.com": [
     "tech"
+  ],
+  "heartbeat.co.jp": [
+    "game-studios"
   ],
   "hec.usace.army.mil": [
     "tech"
@@ -4918,6 +6702,9 @@
   ],
   "hello.com": [
     "messaging"
+  ],
+  "hellonepalgsm.com": [
+    "telecom"
   ],
   "help.adobe.com": [
     "tech"
@@ -4935,11 +6722,18 @@
   "hercules-390.eu": [
     "open-source"
   ],
+  "herinteractive.com": [
+    "video-games",
+    "game-studios"
+  ],
   "heritrix.readthedocs.io": [
     "open-source"
   ],
   "heroinewarrior.com": [
     "desktop-apps"
+  ],
+  "hes.net": [
+    "game-studios"
   ],
   "hexadrive.jp": [
     "game-studios"
@@ -4968,11 +6762,24 @@
   "highcharts.com": [
     "javascript"
   ],
+  "hightail.com": [
+    "tech"
+  ],
   "hilgraeve.com": [
     "tech"
   ],
   "hily.com": [
     "desktop-apps"
+  ],
+  "himax.com.tw": [
+    "semiconductors"
+  ],
+  "hindiolympiad.com": [
+    "education",
+    "tech"
+  ],
+  "hinterland.com": [
+    "game-studios"
   ],
   "hipstamatic.app": [
     "mobile-apps"
@@ -4980,21 +6787,42 @@
   "hirensbootcd.org": [
     "linux"
   ],
+  "hisdigital.com": [
+    "hardware"
+  ],
   "hitachivantara.com": [
     "electronics",
-    "tech"
+    "hardware"
+  ],
+  "hitcents.com": [
+    "game-studios"
   ],
   "hitmanpro.com": [
     "cybersecurity"
   ],
+  "hive.is": [
+    "telecom"
+  ],
   "hkmap.live": [
     "mobile-apps"
+  ],
+  "hmizate.ma": [
+    "tech"
   ],
   "hnsky.org": [
     "tech"
   ],
+  "hoechst.de": [
+    "tech"
+  ],
+  "holdings.panasonic": [
+    "game-studios"
+  ],
   "hollywood-mal.com": [
     "dev"
+  ],
+  "holtek.com": [
+    "semiconductors"
   ],
   "home.att.ne.jp": [
     "tech"
@@ -5008,12 +6836,28 @@
   "honeyd.org": [
     "open-source"
   ],
-  "honor.com": [
-    "electronics",
-    "smartphones"
+  "hopinacademy.org": [
+    "tech"
   ],
   "horde.org": [
     "open-source"
+  ],
+  "hori.co.uk": [
+    "games",
+    "game-studios"
+  ],
+  "hori.jp": [
+    "game-studios"
+  ],
+  "horizon.cc": [
+    "semiconductors"
+  ],
+  "hortonworks.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "hot.si": [
+    "telecom"
   ],
   "hotpot.uvic.ca": [
     "tech"
@@ -5046,10 +6890,6 @@
   "hsqldb.org": [
     "database"
   ],
-  "htc.com": [
-    "electronics",
-    "tech"
-  ],
   "html-tidy.org": [
     "open-source"
   ],
@@ -5072,6 +6912,9 @@
   "hu.pdf24.org": [
     "tech"
   ],
+  "huanju.cn": [
+    "tech"
+  ],
   "huaweimobileservices.com": [
     "tech"
   ],
@@ -5085,7 +6928,7 @@
     "tech"
   ],
   "humain.ai": [
-    "tech"
+    "ai"
   ],
   "humdi.net": [
     "open-source"
@@ -5096,14 +6939,25 @@
   "humongous.com": [
     "game-studios"
   ],
+  "hunex.co.jp": [
+    "game-studios"
+  ],
   "hydrogen-music.org": [
     "desktop-apps"
+  ],
+  "hyland.com": [
+    "desktop-apps",
+    "tech"
   ],
   "hylang.org": [
     "dev"
   ],
   "hyperbola.info": [
     "linux"
+  ],
+  "hyperhippo.ca": [
+    "video-games",
+    "game-studios"
   ],
   "hyperion-entertainment.com": [
     "game-studios"
@@ -5142,6 +6996,19 @@
   "i3wm.org": [
     "open-source"
   ],
+  "iam.ma": [
+    "tech"
+  ],
+  "ianywhere.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "ibagroupit.com": [
+    "tech"
+  ],
+  "ibermatica.com": [
+    "tech"
+  ],
   "ibrowse-dev.net": [
     "browser"
   ],
@@ -5169,6 +7036,9 @@
   "icefaces.org": [
     "open-source"
   ],
+  "iceflake.com": [
+    "game-studios"
+  ],
   "icinga.com": [
     "open-source"
   ],
@@ -5178,8 +7048,14 @@
   "icofx.ro": [
     "tech"
   ],
+  "iconectiv.com": [
+    "telecom"
+  ],
   "icu.unicode.org": [
     "dev"
+  ],
+  "idbiintech.com": [
+    "tech"
   ],
   "idea.uab.es": [
     "linux"
@@ -5196,6 +7072,15 @@
   "idempiere.org": [
     "tech"
   ],
+  "identity.digital": [
+    "tech"
+  ],
+  "idera.com": [
+    "tech"
+  ],
+  "idknet.com": [
+    "telecom"
+  ],
   "idris-lang.org": [
     "dev"
   ],
@@ -5203,32 +7088,71 @@
     "desktop-apps",
     "tech"
   ],
+  "idt.com": [
+    "semiconductors"
+  ],
   "idx.dev": [
     "dev"
   ],
   "ieasytech.com": [
     "tech"
   ],
+  "ient.com": [
+    "games",
+    "game-studios"
+  ],
   "ietab.mozdev.org": [
     "browser"
+  ],
+  "iflytek.com": [
+    "tech"
   ],
   "ifnotnil.com": [
     "dev"
   ],
+  "igalia.com": [
+    "dev",
+    "tech"
+  ],
   "igap.net": [
     "messaging"
+  ],
+  "igate.com": [
+    "tech"
+  ],
+  "igel.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "igg.com": [
+    "game-studios"
   ],
   "igniterealtime.org": [
     "open-source"
   ],
+  "igport.co.jp": [
+    "game-studios"
+  ],
   "igrsoft.com": [
     "tech"
+  ],
+  "iguanabee.com": [
+    "game-studios"
+  ],
+  "ihstowers.com": [
+    "telecom"
   ],
   "iina.io": [
     "desktop-apps"
   ],
+  "iiyama.com": [
+    "hardware"
+  ],
   "ijg.org": [
     "dev"
+  ],
+  "ikegami.co.jp": [
+    "game-studios"
   ],
   "ikiwiki.info": [
     "open-source"
@@ -5236,10 +7160,19 @@
   "ikvm.org": [
     "open-source"
   ],
+  "ilca.co.jp": [
+    "game-studios"
+  ],
   "ilias.de": [
     "open-source"
   ],
   "illusion.co.jp": [
+    "game-studios"
+  ],
+  "illusionlabs.com": [
+    "game-studios"
+  ],
+  "illuvium.io": [
     "game-studios"
   ],
   "image-line.com": [
@@ -5255,7 +7188,14 @@
   "imagemagick.org": [
     "desktop-apps"
   ],
+  "imagicalab.co.jp": [
+    "game-studios"
+  ],
   "imagineer.co.jp": [
+    "game-studios"
+  ],
+  "imangistudios.com": [
+    "games",
     "game-studios"
   ],
   "imesh.com": [
@@ -5266,6 +7206,9 @@
   ],
   "imperiaonline.bg": [
     "game-studios"
+  ],
+  "imperva.com": [
+    "cybersecurity"
   ],
   "impredicative.com": [
     "dev"
@@ -5286,11 +7229,31 @@
   "incredimail.com": [
     "email"
   ],
+  "indiagames.com": [
+    "game-studios"
+  ],
+  "indie-fund.com": [
+    "games",
+    "game-studios"
+  ],
+  "indiegala.com": [
+    "games",
+    "game-studios"
+  ],
   "indieszero.co.jp": [
     "game-studios"
   ],
+  "indrive.com": [
+    "tech"
+  ],
   "inference.org.uk": [
     "desktop-apps"
+  ],
+  "infineon.cn": [
+    "semiconductors"
+  ],
+  "inflection.ai": [
+    "ai"
   ],
   "influxdata.com": [
     "database"
@@ -5304,6 +7267,9 @@
   "infogram.com": [
     "tech"
   ],
+  "infopark.in": [
+    "tech"
+  ],
   "infor.com": [
     "desktop-apps",
     "tech"
@@ -5311,14 +7277,42 @@
   "inform7.com": [
     "dev"
   ],
+  "informatica.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "informationbuilders.com": [
+    "tech"
+  ],
   "infrarecorder.org": [
     "open-source"
+  ],
+  "ingenic.cn": [
+    "semiconductors"
   ],
   "inis.co.jp": [
     "game-studios"
   ],
   "inkscape.org": [
     "desktop-apps"
+  ],
+  "inno3d.com": [
+    "electronics",
+    "hardware"
+  ],
+  "innofactor.com": [
+    "tech"
+  ],
+  "innowise.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "inria.fr": [
+    "education",
+    "cybersecurity"
+  ],
+  "inside.gameduell.com": [
+    "game-studios"
   ],
   "insider.windows.com": [
     "dev"
@@ -5329,8 +7323,14 @@
   "insitu.lri.fr": [
     "linux"
   ],
+  "inslawinc.com": [
+    "tech"
+  ],
   "instantbird.com": [
     "messaging"
+  ],
+  "instaphone.com": [
+    "telecom"
   ],
   "instead-hub.github.io": [
     "game-dev"
@@ -5344,14 +7344,32 @@
   "instreamly.com": [
     "tech"
   ],
+  "intego.com": [
+    "cybersecurity"
+  ],
   "intel.arkm.com": [
-    "tech"
+    "ai"
   ],
   "intellicad.org": [
     "desktop-apps"
   ],
-  "intersystems.com": [
-    "database"
+  "intentia.com": [
+    "tech"
+  ],
+  "interchannel.co.jp": [
+    "game-studios"
+  ],
+  "intergraph.com": [
+    "tech"
+  ],
+  "interiornight.com": [
+    "game-studios"
+  ],
+  "internetforum.eu": [
+    "tech"
+  ],
+  "intersil.com": [
+    "semiconductors"
   ],
   "intertelecom.ua": [
     "telecom"
@@ -5360,12 +7378,18 @@
     "desktop-apps",
     "tech"
   ],
+  "intervideo.com": [
+    "tech"
+  ],
   "intetics.com": [
     "desktop-apps",
     "tech"
   ],
   "inti.co.jp": [
     "game-studios"
+  ],
+  "intracom.gr": [
+    "telecom"
   ],
   "intsys.co.jp": [
     "game-studios"
@@ -5383,6 +7407,13 @@
   "inveniosoftware.org": [
     "dev"
   ],
+  "inventorsoft.co": [
+    "tech"
+  ],
+  "investors.esi-group.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "invictus.com": [
     "game-studios"
   ],
@@ -5391,6 +7422,15 @@
   ],
   "invisioncommunity.com": [
     "tech"
+  ],
+  "invisionpower.com": [
+    "tech"
+  ],
+  "invoxia.com": [
+    "electronics"
+  ],
+  "inwi.ma": [
+    "telecom"
   ],
   "iobit.com": [
     "desktop-apps",
@@ -5404,6 +7444,9 @@
   ],
   "iolanguage.org": [
     "dev"
+  ],
+  "iona.com": [
+    "tech"
   ],
   "iopus.com": [
     "desktop-apps"
@@ -5435,11 +7478,21 @@
   "ippolit.wikispaces.com": [
     "tech"
   ],
+  "iptp.com": [
+    "telecom"
+  ],
   "ipxe.org": [
     "open-source"
   ],
   "ipython.org": [
     "open-source"
+  ],
+  "ir.elsewedyelectric.com": [
+    "electronics"
+  ],
+  "ir.people-incorporated.com": [
+    "media",
+    "tech"
   ],
   "iraf-community.github.io": [
     "tech"
@@ -5453,6 +7506,9 @@
   "iridiumbrowser.de": [
     "browser"
   ],
+  "ironport.com": [
+    "cybersecurity"
+  ],
   "isc.org": [
     "open-source"
   ],
@@ -5464,6 +7520,9 @@
   ],
   "ispconfig.org": [
     "open-source"
+  ],
+  "iss.net": [
+    "tech"
   ],
   "it.aptoide.com": [
     "android",
@@ -5478,6 +7537,14 @@
   "it.wiser.org": [
     "social"
   ],
+  "italiaonline.it": [
+    "media",
+    "tech"
+  ],
+  "itautec.com.br": [
+    "desktop-apps",
+    "tech"
+  ],
   "itdesign.de": [
     "desktop-apps"
   ],
@@ -5486,6 +7553,16 @@
   ],
   "itk.org": [
     "dev"
+  ],
+  "itmagination.com": [
+    "tech"
+  ],
+  "itsgames.com": [
+    "games",
+    "game-studios"
+  ],
+  "itssl.org": [
+    "tech"
   ],
   "ivpn.net": [
     "vpn"
@@ -5496,7 +7573,17 @@
   "ixigua.com": [
     "mobile-apps"
   ],
+  "ixit.co.jp": [
+    "game-studios"
+  ],
+  "iyogi.com": [
+    "tech"
+  ],
   "izapya.com": [
+    "tech"
+  ],
+  "izotope.com": [
+    "desktop-apps",
     "tech"
   ],
   "ja.pdf24.org": [
@@ -5514,6 +7601,9 @@
   "jabbim.com": [
     "open-source"
   ],
+  "jabong.com": [
+    "tech"
+  ],
   "jabref.org": [
     "open-source"
   ],
@@ -5526,6 +7616,9 @@
   "jadeworld.com": [
     "dev"
   ],
+  "jae.com": [
+    "electronics"
+  ],
   "jahia.com": [
     "webdev"
   ],
@@ -5535,8 +7628,18 @@
   "jakarta.ee": [
     "webdev"
   ],
+  "jakks.com": [
+    "games",
+    "game-studios"
+  ],
   "jalecogames.co.jp": [
     "game-studios"
+  ],
+  "jalinfotec.co.jp": [
+    "tech"
+  ],
+  "jamf.com": [
+    "tech"
   ],
   "jami.net": [
     "open-source"
@@ -5574,18 +7677,20 @@
   "jax.readthedocs.io": [
     "python"
   ],
-  "jboss.org": [
-    "desktop-apps",
-    "open-source"
-  ],
   "jbpm.org": [
     "open-source"
+  ],
+  "jcetglobal.com": [
+    "semiconductors"
   ],
   "jchempaint.github.io": [
     "open-source"
   ],
   "jcreator.com": [
     "dev"
+  ],
+  "jcstaff.co.jp": [
+    "game-studios"
   ],
   "jdom.org": [
     "open-source"
@@ -5632,6 +7737,10 @@
   "jmeubank.github.io": [
     "dev"
   ],
+  "jmicron.com": [
+    "electronics",
+    "hardware"
+  ],
   "jmodelica.org": [
     "dev"
   ],
@@ -5674,6 +7783,9 @@
   "jolicloud.com": [
     "linux"
   ],
+  "jolla.com": [
+    "electronics"
+  ],
   "jonas.ow2.org": [
     "open-source"
   ],
@@ -5690,11 +7802,21 @@
     "music",
     "mobile-apps"
   ],
+  "joyent.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "joymax.com": [
     "game-studios"
   ],
+  "joyy.com": [
+    "tech"
+  ],
   "jp.norton.com": [
     "cybersecurity"
+  ],
+  "jp.ricoh.com": [
+    "electronics"
   ],
   "jqlang.org": [
     "open-source"
@@ -5738,6 +7860,12 @@
   "juhanurmihxlp77nkq76byazcldy2hlmovfu2epvl5ankdibsot4csyd.onion": [
     "open-source"
   ],
+  "juniojpn.com": [
+    "game-studios"
+  ],
+  "juniper.net": [
+    "tech"
+  ],
   "junit.org": [
     "dev"
   ],
@@ -5754,8 +7882,17 @@
   "justgetflux.com": [
     "tech"
   ],
+  "justsystems.com": [
+    "tech"
+  ],
   "justyo.co": [
     "mobile-apps"
+  ],
+  "jvc.com": [
+    "electronics"
+  ],
+  "jvc.net": [
+    "electronics"
   ],
   "jwz.org": [
     "open-source"
@@ -5765,6 +7902,13 @@
   ],
   "jython.org": [
     "dev"
+  ],
+  "kabam.com": [
+    "games",
+    "game-studios"
+  ],
+  "kadokawagames.co.jp": [
+    "game-studios"
   ],
   "kaffe.org": [
     "open-source"
@@ -5789,17 +7933,26 @@
     "desktop-apps",
     "tech"
   ],
+  "kamagames.com": [
+    "game-studios"
+  ],
   "kamailio.org": [
     "open-source"
   ],
   "kame.net": [
     "open-source"
   ],
+  "kamikazedouga.co.jp": [
+    "game-studios"
+  ],
   "kanotix.com": [
     "linux"
   ],
   "kaosx.us": [
     "linux"
+  ],
+  "kapsch.net": [
+    "tech"
   ],
   "kaseya.com": [
     "desktop-apps",
@@ -5815,6 +7968,9 @@
   "kaylees.site": [
     "browser"
   ],
+  "kaztranscom.kz": [
+    "telecom"
+  ],
   "kbasic.org": [
     "dev"
   ],
@@ -5829,6 +7985,10 @@
   ],
   "kdewebdev.org": [
     "tech"
+  ],
+  "keengames.com": [
+    "games",
+    "game-studios"
   ],
   "keenswh.com": [
     "game-studios"
@@ -5852,11 +8012,17 @@
   "kemco-games.com": [
     "game-studios"
   ],
+  "kenproduction.co.jp": [
+    "game-studios"
+  ],
   "kentico.com": [
     "webdev"
   ],
   "kepler-interactive.com": [
     "game-studios"
+  ],
+  "kepler.space": [
+    "telecom"
   ],
   "keras.io": [
     "ai"
@@ -5876,6 +8042,10 @@
   "keyprocess.kadokawa.co.jp": [
     "game-studios"
   ],
+  "keywordsstudios.com": [
+    "games",
+    "game-studios"
+  ],
   "kheops-studio.com": [
     "game-studios"
   ],
@@ -5891,8 +8061,19 @@
   "kinemaster.com": [
     "desktop-apps"
   ],
+  "kineocam.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "kineticnovel.jp": [
     "game-studios"
+  ],
+  "kingdee.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "kingmax.com": [
+    "hardware"
   ],
   "kinodv.org": [
     "desktop-apps"
@@ -5902,6 +8083,15 @@
   ],
   "kionix.com": [
     "semiconductors"
+  ],
+  "kioxia-holdings.com": [
+    "semiconductors"
+  ],
+  "kioxia.com": [
+    "semiconductors"
+  ],
+  "kirooworld.com": [
+    "game-studios"
   ],
   "kismac-ng.org": [
     "tech"
@@ -5915,14 +8105,30 @@
   "kitenet.net": [
     "desktop-apps"
   ],
+  "kitware.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "kivy.org": [
     "dev"
+  ],
+  "kiwi.com": [
+    "travel",
+    "tech"
+  ],
+  "kkcg.com": [
+    "gambling",
+    "tech"
   ],
   "klaviyo.com": [
     "cloud",
     "tech"
   ],
   "klingai.com": [
+    "tech"
+  ],
+  "klipfolio.com": [
+    "desktop-apps",
     "tech"
   ],
   "kmeleonbrowser.org": [
@@ -5949,6 +8155,9 @@
   "knopper.net": [
     "linux"
   ],
+  "knowit.fi": [
+    "tech"
+  ],
   "ko.pdf24.org": [
     "tech"
   ],
@@ -5967,6 +8176,12 @@
   ],
   "koffice.org": [
     "open-source"
+  ],
+  "kog.co.kr": [
+    "game-studios"
+  ],
+  "kogado.com": [
+    "game-studios"
   ],
   "kogics.net": [
     "dev"
@@ -6004,6 +8219,9 @@
   "kr.ncsoft.com": [
     "game-studios"
   ],
+  "kr.nexstreaming.com": [
+    "tech"
+  ],
   "krafton.com": [
     "game-studios"
   ],
@@ -6035,6 +8253,9 @@
     "music",
     "mobile-apps"
   ],
+  "kujtesa.com": [
+    "telecom"
+  ],
   "kumbiaphp.com": [
     "dev"
   ],
@@ -6046,6 +8267,9 @@
   ],
   "kwort.org": [
     "linux"
+  ],
+  "kyotoanimation.co.jp": [
+    "game-studios"
   ],
   "l3cos.com": [
     "tech"
@@ -6065,17 +8289,31 @@
   "labs.adobe.com": [
     "tech"
   ],
+  "lacie.com": [
+    "electronics",
+    "hardware"
+  ],
   "ladspa.org": [
     "open-source"
   ],
   "ladybird.org": [
     "browser"
   ],
+  "laion.ai": [
+    "ai"
+  ],
   "lakka.tv": [
     "linux"
   ],
   "lalescu.ro": [
     "open-source"
+  ],
+  "laminarresearch.com": [
+    "games",
+    "game-studios"
+  ],
+  "lamit.ro": [
+    "telecom"
   ],
   "lammps.org": [
     "open-source"
@@ -6104,11 +8342,17 @@
   "latexeditor.org": [
     "editor"
   ],
+  "latticesemi.com": [
+    "semiconductors"
+  ],
   "launchy.net": [
     "desktop-apps"
   ],
   "lavabit.com": [
     "email"
+  ],
+  "lavasoft.com": [
+    "cybersecurity"
   ],
   "lawson.com": [
     "tech"
@@ -6119,6 +8363,9 @@
   "lazpaint.github.io": [
     "desktop-apps"
   ],
+  "lazybeargames.com": [
+    "game-studios"
+  ],
   "lcamtuf.coredump.cx": [
     "dev"
   ],
@@ -6127,6 +8374,14 @@
   ],
   "ldraw.org": [
     "tech"
+  ],
+  "leadtek.com": [
+    "electronics",
+    "hardware"
+  ],
+  "leadtek.com.cn": [
+    "electronics",
+    "hardware"
   ],
   "leaf.aquaplus.jp": [
     "game-studios"
@@ -6143,11 +8398,25 @@
   "leaseweb.com": [
     "cloud"
   ],
+  "lectra.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "lede-project.org": [
     "linux"
   ],
+  "legato.ai": [
+    "ai"
+  ],
+  "lego.com": [
+    "video-games",
+    "game-studios"
+  ],
   "lemkesoft.de": [
     "desktop-apps"
+  ],
+  "lemonskystudios.com": [
+    "game-studios"
   ],
   "lesscss.org": [
     "dev"
@@ -6155,11 +8424,18 @@
   "lesta.games": [
     "game-studios"
   ],
+  "letiarts.com": [
+    "game-studios"
+  ],
   "level5.co.jp": [
     "game-studios"
   ],
   "lexico.mobi": [
     "dev"
+  ],
+  "lexware.de": [
+    "desktop-apps",
+    "tech"
   ],
   "lezhin.com": [
     "publishing",
@@ -6182,7 +8458,13 @@
   "lg3d-core.dev.java.net": [
     "linux"
   ],
+  "lgcns.com": [
+    "tech"
+  ],
   "lhcathome.cern.ch": [
+    "tech"
+  ],
+  "lhsystems.de": [
     "tech"
   ],
   "liballeg.org": [
@@ -6257,6 +8539,9 @@
   "licq.org": [
     "messaging"
   ],
+  "liddai.com": [
+    "ai"
+  ],
   "liebao.cn": [
     "browser"
   ],
@@ -6272,7 +8557,7 @@
   ],
   "lifelock.norton.com": [
     "desktop-apps",
-    "tech"
+    "cybersecurity"
   ],
   "liferay.com": [
     "open-source"
@@ -6295,6 +8580,12 @@
   "lightning.ai": [
     "python"
   ],
+  "lighton.ai": [
+    "ai"
+  ],
+  "lightricks.com": [
+    "tech"
+  ],
   "lightscribe.com": [
     "tech"
   ],
@@ -6310,6 +8601,9 @@
   "lightzoneproject.org": [
     "desktop-apps"
   ],
+  "lik-sang.com": [
+    "game-studios"
+  ],
   "lilypond.org": [
     "open-source"
   ],
@@ -6318,6 +8612,10 @@
   ],
   "linaro.org": [
     "open-source"
+  ],
+  "lindy.com": [
+    "electronics",
+    "hardware"
   ],
   "lineageos.org": [
     "open-source"
@@ -6430,6 +8728,9 @@
   "linuxvirtualserver.org": [
     "open-source"
   ],
+  "linx.com.br": [
+    "tech"
+  ],
   "liquidfeedback.org": [
     "webdev"
   ],
@@ -6446,7 +8747,7 @@
     "open-source"
   ],
   "lisuantech.com": [
-    "tech"
+    "semiconductors"
   ],
   "litech.org": [
     "open-source"
@@ -6478,6 +8779,9 @@
   "livestation.com": [
     "tech"
   ],
+  "lkavalon.com": [
+    "game-studios"
+  ],
   "llama.com": [
     "tech"
   ],
@@ -6489,6 +8793,10 @@
   ],
   "loadstone-gps.com": [
     "open-source"
+  ],
+  "lobotomysoftware.com": [
+    "games",
+    "game-studios"
   ],
   "localwiki.org": [
     "tech"
@@ -6520,8 +8828,14 @@
   "lolcode.org": [
     "dev"
   ],
+  "looker.com": [
+    "tech"
+  ],
   "losslesscut.app": [
     "desktop-apps"
+  ],
+  "lotte.co.jp": [
+    "electronics"
   ],
   "lotuslive.com": [
     "tech"
@@ -6531,6 +8845,9 @@
   ],
   "lpmuds.net": [
     "dev"
+  ],
+  "lsi.com": [
+    "semiconductors"
   ],
   "lsof.readthedocs.io": [
     "open-source"
@@ -6544,15 +8861,37 @@
   "ltsp.org": [
     "open-source"
   ],
+  "ltt.ly": [
+    "telecom"
+  ],
+  "ltutech.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "luatex.org": [
     "open-source"
   ],
   "lubuntu.me": [
     "linux"
   ],
+  "lucent.com": [
+    "electronics"
+  ],
   "lucid.co": [
     "cloud",
     "tech"
+  ],
+  "ludia.com": [
+    "games",
+    "game-studios"
+  ],
+  "ludicorp.com.mx": [
+    "dev",
+    "tech"
+  ],
+  "ludoid.fr": [
+    "games",
+    "game-studios"
   ],
   "luminous-productions.com": [
     "game-studios"
@@ -6566,6 +8905,10 @@
   "lunascape.org": [
     "browser"
   ],
+  "lusha.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "lustre.org": [
     "open-source"
   ],
@@ -6574,6 +8917,9 @@
   ],
   "luxcorerender.org": [
     "open-source"
+  ],
+  "luxoft.com": [
+    "tech"
   ],
   "lv2plug.in": [
     "open-source"
@@ -6618,22 +8964,47 @@
   "maartenbaert.be": [
     "open-source"
   ],
+  "macecraft.com": [
+    "tech"
+  ],
   "mackichan.com": [
     "editor"
   ],
   "macom.com": [
     "semiconductors"
   ],
+  "maconomy.com": [
+    "tech"
+  ],
+  "macplay.com": [
+    "games",
+    "game-studios"
+  ],
   "macromates.com": [
     "editor"
   ],
-  "macronix.com": [
+  "macromedia.com": [
+    "desktop-apps",
     "tech"
+  ],
+  "macronix.com": [
+    "semiconductors"
+  ],
+  "macsoftgames.com": [
+    "games",
+    "game-studios"
+  ],
+  "madcatz.com": [
+    "games",
+    "game-studios"
   ],
   "madewithmarmalade.com": [
     "game-dev"
   ],
   "madfingergames.com": [
+    "game-studios"
+  ],
+  "madhouse.co.jp": [
     "game-studios"
   ],
   "madore.org": [
@@ -6648,10 +9019,16 @@
   "mageia.org": [
     "linux"
   ],
+  "mages.co.jp": [
+    "game-studios"
+  ],
   "magiciso.com": [
     "tech"
   ],
   "magicleap.com": [
+    "tech"
+  ],
+  "magicsoftware.com": [
     "tech"
   ],
   "magisto.com": [
@@ -6661,10 +9038,20 @@
     "desktop-apps",
     "tech"
   ],
+  "magnussoft.com": [
+    "games",
+    "game-studios"
+  ],
   "mahara.org": [
     "open-source"
   ],
+  "mahindrasatyam.com": [
+    "tech"
+  ],
   "mahou.co.jp": [
+    "game-studios"
+  ],
+  "maiet.co.kr": [
     "game-studios"
   ],
   "mail.live.com": [
@@ -6697,11 +9084,20 @@
   "makerdao.com": [
     "open-source"
   ],
+  "maktoob.yahoo.com": [
+    "tech"
+  ],
   "malariacontrol.net": [
     "open-source"
   ],
   "maltego.com": [
     "tech"
+  ],
+  "maltron.com": [
+    "hardware"
+  ],
+  "maluuba.com": [
+    "ai"
   ],
   "malwarebytes.com": [
     "desktop-apps",
@@ -6716,6 +9112,12 @@
   "mamp.info": [
     "open-source"
   ],
+  "mamut.com": [
+    "tech"
+  ],
+  "mandiant.com": [
+    "cybersecurity"
+  ],
   "mandrivaclub.nl": [
     "linux"
   ],
@@ -6728,11 +9130,18 @@
   "manus.im": [
     "tech"
   ],
+  "mapinfo.com": [
+    "tech"
+  ],
   "maplesoft.com": [
     "dev"
   ],
   "mapnik.org": [
     "desktop-apps"
+  ],
+  "mapr.com": [
+    "desktop-apps",
+    "tech"
   ],
   "maps.me": [
     "mobile-apps"
@@ -6749,13 +9158,27 @@
   "marble.kde.org": [
     "desktop-apps"
   ],
+  "marketo.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "marlinfw.org": [
     "open-source"
+  ],
+  "marratech.com": [
+    "desktop-apps",
+    "tech"
   ],
   "marutukku.org": [
     "privacy"
   ],
   "marv.jp": [
+    "game-studios"
+  ],
+  "marvell.com": [
+    "semiconductors"
+  ],
+  "marza.com": [
     "game-studios"
   ],
   "mascom.bw": [
@@ -6785,6 +9208,10 @@
   "mathomatic.org": [
     "dev"
   ],
+  "mathworks.it": [
+    "dev",
+    "tech"
+  ],
   "matplotlib.org": [
     "open-source"
   ],
@@ -6794,11 +9221,18 @@
   "matrixssl.org": [
     "privacy"
   ],
+  "matrox.com": [
+    "electronics",
+    "hardware"
+  ],
   "matt.ucc.asn.au": [
     "open-source"
   ],
   "mattmahoney.net": [
     "open-source"
+  ],
+  "mausu.net": [
+    "game-studios"
   ],
   "mautic.org": [
     "desktop-apps"
@@ -6806,6 +9240,10 @@
   "max.ru": [
     "online-community",
     "mobile-apps"
+  ],
+  "maxdata.de": [
+    "electronics",
+    "hardware"
   ],
   "maxdb.sap.com": [
     "database"
@@ -6822,11 +9260,25 @@
   "maxthon.com": [
     "browser"
   ],
+  "maxtor.com": [
+    "electronics",
+    "hardware"
+  ],
   "maxwellrender.com": [
     "tech"
   ],
+  "mayak.com.ua": [
+    "electronics"
+  ],
+  "mazin-go.com": [
+    "game-studios"
+  ],
   "mbed.org": [
     "tech"
+  ],
+  "mcafee.com": [
+    "desktop-apps",
+    "cybersecurity"
   ],
   "mcnp.lanl.gov": [
     "tech"
@@ -6840,6 +9292,10 @@
   "measat.com": [
     "telecom"
   ],
+  "mecc.co": [
+    "games",
+    "game-studios"
+  ],
   "media-vision.co.jp": [
     "game-studios"
   ],
@@ -6851,6 +9307,9 @@
   ],
   "mediacoderhq.com": [
     "desktop-apps"
+  ],
+  "mediafactory.co.jp": [
+    "game-studios"
   ],
   "mediafire.com": [
     "file-transfer",
@@ -6881,11 +9340,30 @@
   "meerkatapp.co": [
     "tech"
   ],
+  "meesho.com": [
+    "tech"
+  ],
   "meetro.com": [
     "messaging"
   ],
+  "megafon.com": [
+    "telecom"
+  ],
+  "megafon.ru": [
+    "telecom"
+  ],
   "megaupload.com": [
     "cloud-storage"
+  ],
+  "megvii.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "meiko.com": [
+    "hardware"
+  ],
+  "melco-hd.jp": [
+    "hardware"
   ],
   "meldmerge.org": [
     "open-source"
@@ -6897,6 +9375,9 @@
     "tech"
   ],
   "mempool.space": [
+    "tech"
+  ],
+  "mendix.com": [
     "tech"
   ],
   "meneame.net": [
@@ -6944,10 +9425,6 @@
   "messengerkids.com": [
     "messaging"
   ],
-  "meta.com": [
-    "video-games",
-    "tech"
-  ],
   "meta.wikimedia.org": [
     "reference",
     "browser"
@@ -6961,8 +9438,27 @@
   "metamath.org": [
     "open-source"
   ],
+  "metamatrix.com": [
+    "tech"
+  ],
   "metaseq.net": [
     "desktop-apps"
+  ],
+  "metastock.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "meteor.su": [
+    "electronics"
+  ],
+  "mgame.com": [
+    "game-studios"
+  ],
+  "mgts.ru": [
+    "telecom"
+  ],
+  "mgx.ae": [
+    "ai"
   ],
   "mhlw.go.jp": [
     "health",
@@ -6977,11 +9473,21 @@
   "micrium.com": [
     "tech"
   ],
-  "microchip.com": [
-    "dev"
+  "microcabin.co.jp": [
+    "game-studios"
+  ],
+  "microforte.com": [
+    "game-studios"
   ],
   "microg.org": [
     "open-source"
+  ],
+  "microland.com": [
+    "tech"
+  ],
+  "micromania.fr": [
+    "games",
+    "game-studios"
   ],
   "micromind.com": [
     "browser"
@@ -6998,15 +9504,32 @@
   "micropython.org": [
     "open-source"
   ],
+  "micros.com": [
+    "hardware"
+  ],
   "microsoftstart.com": [
     "desktop-apps"
+  ],
+  "microtek.com.tw": [
+    "electronics",
+    "hardware"
   ],
   "midnight-commander.org": [
     "open-source"
   ],
-  "mikrotik.com": [
-    "networking",
-    "linux"
+  "mig.me": [
+    "tech"
+  ],
+  "mightanddelight.com": [
+    "video-games",
+    "game-studios"
+  ],
+  "mikogo.ru": [
+    "desktop-apps",
+    "tech"
+  ],
+  "mikron.ru": [
+    "semiconductors"
   ],
   "miktex.org": [
     "desktop-apps"
@@ -7026,6 +9549,17 @@
   ],
   "mimer.com": [
     "database"
+  ],
+  "mimimi-productions.de": [
+    "video-games",
+    "game-studios"
+  ],
+  "mimimi.games": [
+    "games",
+    "game-studios"
+  ],
+  "mindcti.com": [
+    "tech"
   ],
   "mindmanager.com": [
     "tech"
@@ -7078,6 +9612,9 @@
   "mitchell.jp": [
     "game-studios"
   ],
+  "mitra.bukalapak.com": [
+    "tech"
+  ],
   "mitro.co": [
     "open-source"
   ],
@@ -7103,6 +9640,9 @@
   "mj.ucw.cz": [
     "open-source"
   ],
+  "mki.co.jp": [
+    "tech"
+  ],
   "mkvtoolnix.download": [
     "open-source"
   ],
@@ -7127,6 +9667,13 @@
   "mobile.telekom.ro": [
     "telecom"
   ],
+  "mobile21.co.jp": [
+    "game-studios"
+  ],
+  "mobileiron.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "mobilepay.dk": [
     "desktop-apps"
   ],
@@ -7141,6 +9688,10 @@
   ],
   "mobilizon.org": [
     "open-source"
+  ],
+  "mobipocket.com": [
+    "desktop-apps",
+    "tech"
   ],
   "mobirise.com": [
     "tech"
@@ -7175,6 +9726,12 @@
   "modula3.org": [
     "dev"
   ],
+  "module.ru": [
+    "electronics"
+  ],
+  "modumobile.com": [
+    "telecom"
+  ],
   "modx.com": [
     "webdev"
   ],
@@ -7186,6 +9743,9 @@
   ],
   "mojopac.com": [
     "tech"
+  ],
+  "moldtelecom.md": [
+    "telecom"
   ],
   "molmovdb.org": [
     "cloud",
@@ -7215,6 +9775,9 @@
   "monetdb.org": [
     "database"
   ],
+  "monimoto.com": [
+    "electronics"
+  ],
   "monkey.org": [
     "tech"
   ],
@@ -7229,6 +9792,9 @@
   ],
   "monogame.net": [
     "dev"
+  ],
+  "monolithicpower.com": [
+    "semiconductors"
   ],
   "monolithsoft.co.jp": [
     "game-studios"
@@ -7264,14 +9830,27 @@
   "mosaic.mcom.com": [
     "browser"
   ],
+  "moscow.megafon.ru": [
+    "telecom"
+  ],
   "mosh.org": [
     "open-source"
   ],
   "mosix.cs.huji.ac.il": [
     "tech"
   ],
+  "mossjp.co.jp": [
+    "game-studios"
+  ],
+  "most.lagosstate.gov.ng": [
+    "tech"
+  ],
   "motif.ics.com": [
     "dev"
+  ],
+  "motioncomputing.fr": [
+    "electronics",
+    "hardware"
   ],
   "motorolasolutions.com": [
     "telecom",
@@ -7292,6 +9871,9 @@
   ],
   "mozillalabs.com": [
     "editor"
+  ],
+  "mozillamessaging.com": [
+    "tech"
   ],
   "mp3tag.de": [
     "desktop-apps"
@@ -7314,18 +9896,27 @@
   "mplayerhq.hu": [
     "desktop-apps"
   ],
+  "mrgoodliving.com": [
+    "game-studios"
+  ],
   "msg.chem.iastate.edu": [
     "tech"
   ],
-  "msi.com": [
-    "electronics",
+  "msgentertainment.com": [
+    "media",
     "tech"
+  ],
+  "mstelcom.co.ao": [
+    "telecom"
   ],
   "msydqstlz2kzerdg.onion": [
     "open-source"
   ],
   "msys2.org": [
     "open-source"
+  ],
+  "mtel.ba": [
+    "telecom"
   ],
   "mtl4.org": [
     "tech"
@@ -7336,10 +9927,24 @@
   "mtn.com.sy": [
     "telecom"
   ],
+  "mto-power.com": [
+    "game-studios"
+  ],
   "mts.ru": [
     "telecom"
   ],
+  "mtsindia.in": [
+    "telecom"
+  ],
   "mtwo.co.jp": [
+    "game-studios"
+  ],
+  "mu.se": [
+    "dev",
+    "tech"
+  ],
+  "muckyfoot.com": [
+    "games",
     "game-studios"
   ],
   "mucommander.com": [
@@ -7363,6 +9968,9 @@
   "mumble.net": [
     "dev"
   ],
+  "mundfish.com": [
+    "game-studios"
+  ],
   "munin-monitoring.org": [
     "open-source"
   ],
@@ -7375,6 +9983,9 @@
   "musescore.org": [
     "open-source"
   ],
+  "music.sega.co.jp": [
+    "game-studios"
+  ],
   "musical.ly": [
     "mobile-apps"
   ],
@@ -7386,6 +9997,10 @@
   ],
   "musl.libc.org": [
     "open-source"
+  ],
+  "mutato.com": [
+    "games",
+    "game-studios"
   ],
   "mutt.org": [
     "email"
@@ -7408,11 +10023,17 @@
   "my.adobeconnect.com": [
     "desktop-apps"
   ],
+  "my.games": [
+    "game-studios"
+  ],
   "my.live.com": [
     "tech"
   ],
   "mybatis.org": [
     "open-source"
+  ],
+  "myca.com": [
+    "tech"
   ],
   "myeclipseide.com": [
     "dev"
@@ -7424,11 +10045,17 @@
     "genealogy",
     "social"
   ],
+  "myob.com.au": [
+    "tech"
+  ],
   "mypaint.app": [
     "desktop-apps"
   ],
   "mysejahtera.malaysia.gov.my": [
     "mobile-apps"
+  ],
+  "mysky.com.ph": [
+    "telecom"
   ],
   "myspace.com": [
     "social"
@@ -7445,6 +10072,9 @@
   "mywot.com": [
     "tech"
   ],
+  "n-land.co.jp": [
+    "game-studios"
+  ],
   "nadesi.com": [
     "dev"
   ],
@@ -7452,11 +10082,17 @@
     "desktop-apps",
     "tech"
   ],
+  "nagarro.com": [
+    "tech"
+  ],
   "nagios.org": [
     "open-source"
   ],
   "namecoin.org": [
     "open-source"
+  ],
+  "namesys.com": [
+    "tech"
   ],
   "nanaon-sha.com": [
     "game-studios"
@@ -7467,12 +10103,21 @@
   "nanoav.ru": [
     "cybersecurity"
   ],
+  "nanosemantics.ai": [
+    "ai"
+  ],
+  "napsteam.com": [
+    "game-studios"
+  ],
   "napster.com": [
     "tech"
   ],
   "narus.com": [
     "desktop-apps",
     "tech"
+  ],
+  "national.com": [
+    "semiconductors"
   ],
   "nativescript.org": [
     "javascript"
@@ -7493,6 +10138,9 @@
   "navit-project.org": [
     "open-source"
   ],
+  "nbcuni.co.jp": [
+    "game-studios"
+  ],
   "nbd.sourceforge.io": [
     "tech"
   ],
@@ -7502,17 +10150,29 @@
   "ncftpd.com": [
     "open-source"
   ],
+  "ncrvoyix.com": [
+    "tech"
+  ],
   "ncsa.illinois.edu": [
     "browser"
   ],
   "nd.ru": [
     "game-studios"
   ],
+  "nebius.group": [
+    "ai"
+  ],
   "nec.com": [
     "game-studios"
   ],
   "nedit.org": [
     "editor"
+  ],
+  "nekki.com": [
+    "game-studios"
+  ],
+  "nema.fo": [
+    "telecom"
   ],
   "nemerle.org": [
     "dev"
@@ -7526,8 +10186,18 @@
   "neo4j.com": [
     "open-source"
   ],
+  "neogeo.co.jp": [
+    "game-studios"
+  ],
+  "neogeo.com.br": [
+    "games",
+    "game-studios"
+  ],
   "neon.kde.org": [
     "linux"
+  ],
+  "neongiant.se": [
+    "game-studios"
   ],
   "neooffice.org": [
     "desktop-apps"
@@ -7551,8 +10221,20 @@
     "desktop-apps",
     "tech"
   ],
+  "ness.com": [
+    "tech"
+  ],
   "net-snmp.org": [
     "open-source"
+  ],
+  "net1.co.id": [
+    "telecom"
+  ],
+  "net1.dk": [
+    "telecom"
+  ],
+  "net1.ph": [
+    "telecom"
   ],
   "netbsd.org": [
     "linux"
@@ -7563,6 +10245,10 @@
   "netfilter.org": [
     "open-source"
   ],
+  "netguru.co": [
+    "dev",
+    "tech"
+  ],
   "netiq.com": [
     "tech"
   ],
@@ -7572,11 +10258,18 @@
   "netlog.com": [
     "social"
   ],
+  "netmanage.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "netmarble.net": [
     "game-studios"
   ],
   "netmf.github.io": [
     "dev"
+  ],
+  "netowl.com": [
+    "tech"
   ],
   "netrunner.com": [
     "linux"
@@ -7596,11 +10289,21 @@
   "networkmanager.dev": [
     "open-source"
   ],
+  "networx.bg": [
+    "telecom"
+  ],
+  "netwrix.fr": [
+    "tech"
+  ],
   "neuraldesigner.com": [
     "desktop-apps"
   ],
   "neuron.yale.edu": [
     "open-source"
+  ],
+  "neusoft.com": [
+    "dev",
+    "tech"
   ],
   "nevercenter.com": [
     "desktop-apps"
@@ -7617,12 +10320,34 @@
   "newtondynamics.com": [
     "open-source"
   ],
+  "nex-ent.co.jp": [
+    "game-studios"
+  ],
+  "nexign.com": [
+    "telecom"
+  ],
   "nexon.co.jp": [
     "game-studios"
   ],
   "nexoya.com": [
     "desktop-apps",
+    "ai"
+  ],
+  "nexperia.com": [
+    "semiconductors"
+  ],
+  "nexters.com": [
+    "game-studios"
+  ],
+  "nextgentel.no": [
+    "telecom"
+  ],
+  "nextlimit.com": [
+    "desktop-apps",
     "tech"
+  ],
+  "ngm-mobile.com": [
+    "electronics"
   ],
   "ngspice.sourceforge.io": [
     "open-source"
@@ -7630,11 +10355,22 @@
   "nhibernate.info": [
     "open-source"
   ],
+  "nhinteractive.com": [
+    "games",
+    "game-studios"
+  ],
   "ni.com": [
     "tech"
   ],
+  "nianticlabs.com": [
+    "games",
+    "game-studios"
+  ],
   "nibris.net": [
     "game-studios"
+  ],
+  "nice.com": [
+    "tech"
   ],
   "nichibutsu.co.jp": [
     "game-studios"
@@ -7642,6 +10378,9 @@
   "nicovideo.jp": [
     "video",
     "mobile-apps"
+  ],
+  "nicta.com.au": [
+    "tech"
   ],
   "nigertelecoms.ne": [
     "telecom"
@@ -7658,11 +10397,23 @@
   "nim-lang.org": [
     "dev"
   ],
+  "nimblebit.com": [
+    "game-studios"
+  ],
+  "nimblegiant.com": [
+    "game-studios"
+  ],
   "nimblex.net": [
     "linux"
   ],
   "nimbuzz.com": [
     "tech"
+  ],
+  "nine.com": [
+    "hardware"
+  ],
+  "ninetology.com": [
+    "telecom"
   ],
   "ning.com": [
     "social"
@@ -7675,6 +10426,10 @@
   ],
   "ninja-ide.org": [
     "dev"
+  ],
+  "ninjakiwi.com": [
+    "video-games",
+    "game-studios"
   ],
   "nintendo-cube.co.jp": [
     "game-studios"
@@ -7713,6 +10468,9 @@
   "nng.com": [
     "tech"
   ],
+  "nnit.com": [
+    "tech"
+  ],
   "no.norton.com": [
     "cybersecurity"
   ],
@@ -7728,8 +10486,8 @@
   "noggin.com": [
     "mobile-apps"
   ],
-  "nokia.com": [
-    "tech"
+  "noise-games.com": [
+    "game-studios"
   ],
   "nomachine.com": [
     "tech"
@@ -7746,11 +10504,14 @@
   "nordeus.com": [
     "game-studios"
   ],
+  "nordicsemi.com": [
+    "semiconductors"
+  ],
   "nordpass.com": [
     "passwords"
   ],
   "norton.com": [
-    "tech"
+    "cybersecurity"
   ],
   "noscript.net": [
     "open-source"
@@ -7774,6 +10535,9 @@
     "notes",
     "desktop-apps"
   ],
+  "nournews.ir": [
+    "telecom"
+  ],
   "nouveau.freedesktop.org": [
     "open-source"
   ],
@@ -7783,11 +10547,23 @@
   "nova.gr": [
     "telecom"
   ],
+  "nova.is": [
+    "telecom"
+  ],
+  "novabase.com": [
+    "tech"
+  ],
+  "novabase.pt": [
+    "tech"
+  ],
   "novakid.fr": [
     "tech"
   ],
   "novarama.com": [
     "game-studios"
+  ],
+  "novator-tm.com": [
+    "electronics"
   ],
   "novelai.net": [
     "tech"
@@ -7801,11 +10577,26 @@
   "nowpro.co.jp": [
     "game-studios"
   ],
+  "nowsecure.com": [
+    "cybersecurity"
+  ],
+  "nprotect.com": [
+    "tech"
+  ],
+  "nsogroup.com": [
+    "tech"
+  ],
+  "nssol.nipponsteel.com": [
+    "tech"
+  ],
   "ntc.party": [
     "open-source"
   ],
   "ntop.org": [
     "open-source"
+  ],
+  "ntreev.com": [
+    "game-studios"
   ],
   "nu2.nu": [
     "tech"
@@ -7832,6 +10623,9 @@
   "nuitka.net": [
     "python"
   ],
+  "nuix.com": [
+    "tech"
+  ],
   "nullsoft.com": [
     "desktop-apps",
     "tech"
@@ -7845,6 +10639,9 @@
   "nura.eco": [
     "linux"
   ],
+  "nuvoton.com": [
+    "semiconductors"
+  ],
   "nuxeo.com": [
     "open-source"
   ],
@@ -7854,11 +10651,15 @@
   "nvu.en.softonic.com": [
     "open-source"
   ],
+  "nwtelecom.ru": [
+    "telecom"
+  ],
   "nxos.org": [
     "linux"
   ],
-  "nxp.com": [
-    "dev"
+  "nyko.com": [
+    "games",
+    "game-studios"
   ],
   "nymtech.net": [
     "tech"
@@ -7884,6 +10685,10 @@
   "ocaml.org": [
     "open-source"
   ],
+  "oclc.org": [
+    "search",
+    "tech"
+  ],
   "ocrszoftver.hu": [
     "desktop-apps"
   ],
@@ -7899,6 +10704,10 @@
   "octobercms.com": [
     "webdev"
   ],
+  "oculus.com": [
+    "video-games",
+    "electronics"
+  ],
   "ode.org": [
     "dev"
   ],
@@ -7912,6 +10721,9 @@
     "desktop-apps",
     "open-source"
   ],
+  "ofcr.co.jp": [
+    "game-studios"
+  ],
   "office.hancom.com": [
     "desktop-apps"
   ],
@@ -7924,15 +10736,24 @@
   "ognl.orphan.software": [
     "open-source"
   ],
+  "oiv.hr": [
+    "telecom"
+  ],
+  "olacabs.com": [
+    "tech"
+  ],
   "olat.org": [
     "open-source"
   ],
-  "olivetti.com": [
+  "olidata.com": [
     "electronics",
-    "tech"
+    "hardware"
   ],
   "olivevideoeditor.org": [
     "desktop-apps"
+  ],
+  "olm.co.jp": [
+    "game-studios"
   ],
   "olvid.io": [
     "tech"
@@ -7959,10 +10780,21 @@
   "omicronlab.com": [
     "tech"
   ],
+  "omidyar.com": [
+    "finance",
+    "tech"
+  ],
+  "omneky.com": [
+    "ai"
+  ],
   "omnetpp.org": [
     "open-source"
   ],
   "omnilayer.org": [
+    "tech"
+  ],
+  "omninet.de": [
+    "dev",
     "tech"
   ],
   "omnirom.org": [
@@ -7970,6 +10802,20 @@
   ],
   "omnis.net": [
     "dev"
+  ],
+  "omron.co.jp": [
+    "electronics"
+  ],
+  "on2.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "onair.aero": [
+    "tech"
+  ],
+  "onavo.com": [
+    "desktop-apps",
+    "tech"
   ],
   "one.al": [
     "telecom"
@@ -7986,11 +10832,37 @@
   "onehippo.org": [
     "webdev"
   ],
+  "onespan.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "onexgen.com": [
+    "ai"
+  ],
   "onida.com": [
     "tech"
   ],
+  "onkio.co.jp": [
+    "game-studios"
+  ],
+  "online.tm": [
+    "telecom"
+  ],
   "onnx.ai": [
     "open-source"
+  ],
+  "onsemi.com": [
+    "cars",
+    "semiconductors"
+  ],
+  "onvif.org": [
+    "tech"
+  ],
+  "ookla.com": [
+    "tech"
+  ],
+  "ooredoo.ps": [
+    "telecom"
   ],
   "ooredoo.tn": [
     "telecom"
@@ -8112,6 +10984,10 @@
   ],
   "openimageio.org": [
     "desktop-apps"
+  ],
+  "openinventionnetwork.com": [
+    "desktop-apps",
+    "tech"
   ],
   "openinventor.com": [
     "dev"
@@ -8293,15 +11169,25 @@
   "openzfs.org": [
     "open-source"
   ],
-  "oppo.com": [
-    "electronics",
-    "smartphones"
+  "opnet.com": [
+    "hardware"
+  ],
+  "opower.com": [
+    "desktop-apps",
+    "tech"
   ],
   "opus-repository.org": [
     "open-source"
   ],
-  "orange.eg": [
-    "mobile-apps"
+  "orange-business.com": [
+    "tech"
+  ],
+  "orange.be": [
+    "telecom",
+    "tech"
+  ],
+  "orange.jo": [
+    "tech"
   ],
   "orangedatamining.com": [
     "open-source"
@@ -8312,6 +11198,9 @@
   ],
   "orbit.psi.edu": [
     "tech"
+  ],
+  "orbitel.bg": [
+    "telecom"
   ],
   "orbot.app": [
     "mobile-apps"
@@ -8334,8 +11223,16 @@
   "originlab.com": [
     "tech"
   ],
+  "originpc.com": [
+    "electronics",
+    "hardware"
+  ],
   "orkut.com": [
     "social"
+  ],
+  "orrick.com": [
+    "finance",
+    "tech"
   ],
   "orthanc-server.com": [
     "desktop-apps"
@@ -8348,6 +11245,9 @@
   ],
   "os.vidalinux.org": [
     "linux"
+  ],
+  "oscilloquartz.com": [
+    "telecom"
   ],
   "oscommerce.com": [
     "open-source"
@@ -8379,7 +11279,13 @@
   "ossec.net": [
     "open-source"
   ],
+  "ossianstudios.com": [
+    "game-studios"
+  ],
   "ote.gr": [
+    "telecom"
+  ],
+  "otenet.gr": [
     "telecom"
   ],
   "otter-browser.org": [
@@ -8392,14 +11298,38 @@
     "health",
     "tech"
   ],
+  "ourresearch.org": [
+    "tech"
+  ],
+  "outerra.com": [
+    "tech"
+  ],
   "outfit7.com": [
     "game-studios"
   ],
   "ovirt.org": [
     "open-source"
   ],
+  "ovosonico.com": [
+    "game-studios"
+  ],
+  "owasp.org.cn": [
+    "cybersecurity"
+  ],
   "owlcat.games": [
     "game-studios"
+  ],
+  "oxylabs.io": [
+    "tech"
+  ],
+  "oyika.com": [
+    "tech"
+  ],
+  "oyika.id": [
+    "tech"
+  ],
+  "oyikathailand.com": [
+    "tech"
   ],
   "ozark.hendrix.edu": [
     "open-source"
@@ -8413,12 +11343,24 @@
   "p9f.org": [
     "open-source"
   ],
+  "pa-works.jp": [
+    "game-studios"
+  ],
+  "pace.com": [
+    "tech"
+  ],
   "packardbell.com": [
     "electronics",
-    "tech"
+    "hardware"
   ],
   "pacman.archlinux.page": [
     "package-manager"
+  ],
+  "pacnet.com": [
+    "telecom"
+  ],
+  "pactera.com": [
+    "tech"
   ],
   "padrinorb.com": [
     "webdev"
@@ -8444,11 +11386,27 @@
   "palemoon.org": [
     "browser"
   ],
+  "palette.clearrave.co.jp": [
+    "game-studios"
+  ],
+  "palit.biz": [
+    "electronics",
+    "hardware"
+  ],
+  "paloaltonetworks.com": [
+    "cybersecurity"
+  ],
   "palringo.com": [
     "mobile-apps"
   ],
+  "paltelgroup.ps": [
+    "telecom"
+  ],
   "pan.rebelbase.com": [
     "open-source"
+  ],
+  "panda.cn": [
+    "tech"
   ],
   "pandasecurity.com": [
     "desktop-apps",
@@ -8456,6 +11414,10 @@
   ],
   "pandorafms.com": [
     "open-source"
+  ],
+  "pangeasoft.net": [
+    "video-games",
+    "game-studios"
   ],
   "pango.network": [
     "tech"
@@ -8479,6 +11441,13 @@
   "parabola.nu": [
     "linux"
   ],
+  "paragon-software.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "parallax.com": [
+    "tech"
+  ],
   "parallels.com": [
     "tech"
   ],
@@ -8490,6 +11459,10 @@
   ],
   "pardus.org.tr": [
     "linux"
+  ],
+  "parisgamesweek.com": [
+    "games",
+    "game-studios"
   ],
   "parrot.org": [
     "open-source"
@@ -8506,6 +11479,10 @@
   "parsijoo.ir": [
     "search"
   ],
+  "parsons.com": [
+    "desktop-apps",
+    "cybersecurity"
+  ],
   "partedmagic.com": [
     "linux"
   ],
@@ -8517,6 +11494,12 @@
   ],
   "pascalabc.net": [
     "dev"
+  ],
+  "pasemi.com": [
+    "semiconductors"
+  ],
+  "pasha-holding.az": [
+    "tech"
   ],
   "pasportaservo.org": [
     "open-source"
@@ -8591,6 +11574,9 @@
   "peachpie.io": [
     "dev"
   ],
+  "peak.games": [
+    "game-studios"
+  ],
   "pearlabyss.com": [
     "game-studios"
   ],
@@ -8600,12 +11586,15 @@
   "peerblock.com": [
     "desktop-apps"
   ],
-  "pegatroncorp.com": [
-    "electronics",
+  "pega.com": [
+    "desktop-apps",
     "tech"
   ],
   "pekwm.se": [
     "desktop-apps"
+  ],
+  "peltarion.com": [
+    "tech"
   ],
   "pencil2d.org": [
     "desktop-apps"
@@ -8615,6 +11604,15 @@
   ],
   "penneo.com": [
     "tech"
+  ],
+  "pentasecurity.co.jp": [
+    "cybersecurity"
+  ],
+  "pentasecurity.co.kr": [
+    "cybersecurity"
+  ],
+  "pentasecurity.com": [
+    "cybersecurity"
   ],
   "pentavision.co.kr": [
     "game-studios"
@@ -8646,11 +11644,21 @@
   "percona.com": [
     "database"
   ],
+  "peregrine.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "periscope.tv": [
     "mobile-apps"
   ],
+  "perle.com": [
+    "tech"
+  ],
   "perma.cc": [
     "open-source"
+  ],
+  "perotsystems.com": [
+    "tech"
   ],
   "pervasivedb.com": [
     "database"
@@ -8667,11 +11675,17 @@
   "pgadmin.org": [
     "open-source"
   ],
+  "pgroup.com": [
+    "tech"
+  ],
   "phacility.com": [
     "git"
   ],
   "phalcon.io": [
     "webdev"
+  ],
+  "phantagram.com": [
+    "game-studios"
   ],
   "phantomjs.org": [
     "dev"
@@ -8684,6 +11698,10 @@
   ],
   "phaser.io": [
     "game-dev"
+  ],
+  "phenomic.de": [
+    "games",
+    "game-studios"
   ],
   "phex.org": [
     "open-source"
@@ -8746,6 +11764,9 @@
   "phusionpassenger.com": [
     "devops"
   ],
+  "piacci.co.jp": [
+    "game-studios"
+  ],
   "picard.musicbrainz.org": [
     "open-source"
   ],
@@ -8797,6 +11818,10 @@
   "pitivi.org": [
     "desktop-apps"
   ],
+  "pivotal.io": [
+    "desktop-apps",
+    "tech"
+  ],
   "pivotanimator.net": [
     "tech"
   ],
@@ -8805,6 +11830,9 @@
   ],
   "pixartargentina.com.ar": [
     "linux"
+  ],
+  "pixela.co.jp": [
+    "hardware"
   ],
   "pixelfed.org": [
     "open-source"
@@ -8817,6 +11845,12 @@
   ],
   "pixia.jp": [
     "desktop-apps"
+  ],
+  "pixiv.co.jp": [
+    "tech"
+  ],
+  "pixonic.com": [
+    "tech"
   ],
   "pkgsrc.org": [
     "package-manager"
@@ -8841,8 +11875,18 @@
   "pl32.de": [
     "desktop-apps"
   ],
+  "plagiarismcheck.org": [
+    "desktop-apps",
+    "tech"
+  ],
+  "planar.com": [
+    "tech"
+  ],
   "planetplanet.org": [
     "open-source"
+  ],
+  "planisware.com": [
+    "tech"
   ],
   "plantation-productions.com": [
     "dev"
@@ -8852,6 +11896,9 @@
   ],
   "plasma-mobile.org": [
     "smartphones"
+  ],
+  "platformahd.ru": [
+    "telecom"
   ],
   "platformio.org": [
     "dev"
@@ -8874,10 +11921,17 @@
   "playcanvas.com": [
     "game-dev"
   ],
+  "playcast-media.com": [
+    "cloud"
+  ],
   "playchess.com": [
     "devops"
   ],
   "playdead.com": [
+    "game-studios"
+  ],
+  "playfirst.com": [
+    "video-games",
     "game-studios"
   ],
   "playframework.com": [
@@ -8892,6 +11946,12 @@
   "playonlinux.com": [
     "desktop-apps"
   ],
+  "playtech.com": [
+    "tech"
+  ],
+  "playtika.com": [
+    "game-studios"
+  ],
   "playtonicgames.com": [
     "game-studios"
   ],
@@ -8904,12 +11964,15 @@
   "plesk.com": [
     "tech"
   ],
+  "plextor.com": [
+    "electronics",
+    "hardware"
+  ],
+  "plgn.ru": [
+    "telecom"
+  ],
   "plib.sf.net": [
     "game-dev"
-  ],
-  "plm.automation.siemens.com": [
-    "desktop-apps",
-    "tech"
   ],
   "plone.org": [
     "open-source"
@@ -8921,13 +11984,17 @@
     "tech"
   ],
   "pmcs.com": [
-    "semiconductors"
+    "electronics"
   ],
   "pmd.github.io": [
     "open-source"
   ],
   "pnotepad.org": [
     "desktop-apps"
+  ],
+  "pny.com": [
+    "electronics",
+    "hardware"
   ],
   "poedit.net": [
     "desktop-apps"
@@ -8937,6 +12004,9 @@
   ],
   "pointclouds.org": [
     "dev"
+  ],
+  "pointofview-fr.com": [
+    "hardware"
   ],
   "pokemongolive.com": [
     "mobile-apps"
@@ -8949,6 +12019,9 @@
   ],
   "polarisoffice.com": [
     "desktop-apps"
+  ],
+  "politec.com": [
+    "tech"
   ],
   "polkadot.com": [
     "tech"
@@ -9004,6 +12077,10 @@
   "poser.smithmicro.com": [
     "desktop-apps"
   ],
+  "positivotecnologia.com.br": [
+    "electronics",
+    "hardware"
+  ],
   "postcss.org": [
     "dev"
   ],
@@ -9032,6 +12109,10 @@
   "powerchip.com": [
     "semiconductors"
   ],
+  "powercolor.com": [
+    "electronics",
+    "hardware"
+  ],
   "powerdns.com": [
     "desktop-apps"
   ],
@@ -9041,8 +12122,14 @@
   "powerpoint.cloud.microsoft": [
     "mobile-apps"
   ],
+  "powerquest.com": [
+    "tech"
+  ],
   "powersimtech.com": [
     "tech"
+  ],
+  "ppi.co.jp": [
+    "game-studios"
   ],
   "ppp.samba.org": [
     "tech"
@@ -9075,11 +12162,17 @@
   "preyproject.com": [
     "desktop-apps"
   ],
+  "pricingpartners.com": [
+    "tech"
+  ],
   "primefaces.org": [
     "webdev"
   ],
   "primopdf.com": [
     "tech"
+  ],
+  "princeton.co.jp": [
+    "hardware"
   ],
   "prisma-ai.com": [
     "mobile-apps"
@@ -9093,6 +12186,12 @@
   ],
   "privoxy.org": [
     "open-source"
+  ],
+  "pro-baobab.jp": [
+    "game-studios"
+  ],
+  "pro-net.co.jp": [
+    "game-studios"
   ],
   "process-one.net": [
     "open-source"
@@ -9108,6 +12207,9 @@
   ],
   "procreate.art": [
     "desktop-apps"
+  ],
+  "production-ig.co.jp": [
+    "game-studios"
   ],
   "proftpd.org": [
     "open-source"
@@ -9127,6 +12229,9 @@
   "project-redcap.org": [
     "tech"
   ],
+  "project-sora.co.jp": [
+    "game-studios"
+  ],
   "project.net": [
     "desktop-apps"
   ],
@@ -9138,6 +12243,12 @@
   ],
   "projects.gnome.org": [
     "open-source"
+  ],
+  "proletariat.com": [
+    "game-studios"
+  ],
+  "proofpoint.com": [
+    "cybersecurity"
   ],
   "prope.jp": [
     "game-studios"
@@ -9176,6 +12287,9 @@
   "pspad.com": [
     "editor"
   ],
+  "psycho-cop.net": [
+    "game-studios"
+  ],
   "pt.aptoide.com": [
     "android",
     "open-source"
@@ -9186,8 +12300,14 @@
   "pt.swarmapp.com": [
     "mobile-apps"
   ],
+  "ptelco.net": [
+    "telecom"
+  ],
   "ptgui.com": [
     "desktop-apps"
+  ],
+  "ptsecurity.ru": [
+    "tech"
   ],
   "ptvgroup.com": [
     "tech"
@@ -9201,8 +12321,14 @@
   "pukiwiki.sourceforge.io": [
     "open-source"
   ],
+  "pulltop.com": [
+    "game-studios"
+  ],
   "punbb.informer.com": [
     "webdev"
+  ],
+  "punch-line.org": [
+    "game-studios"
   ],
   "puppylinux.com": [
     "linux"
@@ -9224,6 +12350,10 @@
   ],
   "purevpn.com": [
     "vpn"
+  ],
+  "puri.sm": [
+    "electronics",
+    "hardware"
   ],
   "putty.software": [
     "desktop-apps"
@@ -9286,6 +12416,9 @@
   "q7basic.org": [
     "dev"
   ],
+  "qad.com": [
+    "tech"
+  ],
   "qah.uni-muenster.de": [
     "tech"
   ],
@@ -9321,6 +12454,13 @@
   ],
   "qlb-repl.herokuapp.com": [
     "dev"
+  ],
+  "qlik.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "qlogic.com": [
+    "hardware"
   ],
   "qmmp.ylsoftware.com": [
     "desktop-apps"
@@ -9358,6 +12498,16 @@
   "quahl.com": [
     "mobile-apps"
   ],
+  "qualys.com": [
+    "cybersecurity"
+  ],
+  "quantatw.com": [
+    "tech"
+  ],
+  "quantel.com": [
+    "dev",
+    "tech"
+  ],
   "quantum-espresso.org": [
     "open-source"
   ],
@@ -9376,6 +12526,9 @@
   "quassel-irc.org": [
     "open-source"
   ],
+  "quazal.com": [
+    "tech"
+  ],
   "qubes-os.org": [
     "linux"
   ],
@@ -9384,6 +12537,10 @@
   ],
   "quest-kk.com": [
     "game-studios"
+  ],
+  "quickheal.co.in": [
+    "desktop-apps",
+    "tech"
   ],
   "quickoffice.com": [
     "desktop-apps"
@@ -9397,11 +12554,17 @@
   "quodlibet.readthedocs.io": [
     "desktop-apps"
   ],
+  "qureate.co.jp": [
+    "game-studios"
+  ],
   "qutebrowser.org": [
     "browser"
   ],
   "qutim.org": [
     "open-source"
+  ],
+  "qwest.com": [
+    "telecom"
   ],
   "r-studio.com": [
     "tech"
@@ -9412,6 +12575,12 @@
   "racket-lang.org": [
     "dev"
   ],
+  "racom.eu": [
+    "tech"
+  ],
+  "rada.com": [
+    "tech"
+  ],
   "radare.org": [
     "open-source"
   ],
@@ -9420,7 +12589,7 @@
   ],
   "radgametools.com": [
     "games",
-    "tech"
+    "game-studios"
   ],
   "radiant.robotrenegade.com": [
     "open-source"
@@ -9431,20 +12600,29 @@
   "radimrehurek.com": [
     "open-source"
   ],
+  "radisys.com": [
+    "tech"
+  ],
   "radview.com": [
     "tech"
+  ],
+  "radware.com": [
+    "cybersecurity"
   ],
   "ragtime.de": [
     "tech"
   ],
   "raiclabs.com": [
-    "tech"
+    "ai"
   ],
   "rainlendar.net": [
     "desktop-apps"
   ],
   "rainmeter.net": [
     "open-source"
+  ],
+  "rakeingrass.com": [
+    "game-studios"
   ],
   "raknet.com": [
     "game-dev"
@@ -9455,14 +12633,24 @@
   "rakudo.org": [
     "open-source"
   ],
+  "ralinktech.com": [
+    "semiconductors"
+  ],
   "ramtron.com": [
     "semiconductors"
   ],
   "rand-mh.sourceforge.io": [
     "email"
   ],
+  "randmcnally.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "ranger.fm": [
     "open-source"
+  ],
+  "rankstelecom.com": [
+    "telecom"
   ],
   "rapidminer.com": [
     "open-source"
@@ -9470,8 +12658,14 @@
   "rapidpg.com.my": [
     "tech"
   ],
+  "rapidus.inc": [
+    "semiconductors"
+  ],
   "rappi.com.mx": [
     "food-delivery",
+    "tech"
+  ],
+  "raritan.com": [
     "tech"
   ],
   "rarlab.com": [
@@ -9489,13 +12683,26 @@
   "rawtherapee.com": [
     "desktop-apps"
   ],
+  "rawthrills.com": [
+    "video-games",
+    "game-studios"
+  ],
   "raylib.com": [
     "dev"
+  ],
+  "rbw-cgi.it": [
+    "game-studios"
+  ],
+  "rcn.com": [
+    "telecom"
   ],
   "rdesktop.org": [
     "open-source"
   ],
   "rdio.com": [
+    "tech"
+  ],
+  "rdm.com": [
     "tech"
   ],
   "reactos.org": [
@@ -9514,6 +12721,10 @@
     "desktop-apps",
     "open-source"
   ],
+  "realtek.com": [
+    "electronics",
+    "hardware"
+  ],
   "realvnc.com": [
     "open-source"
   ],
@@ -9525,6 +12736,9 @@
   ],
   "recalbox.com": [
     "linux"
+  ],
+  "recordedfuture.com": [
+    "cybersecurity"
   ],
   "recoverytoolbox.com": [
     "tech"
@@ -9540,10 +12754,6 @@
   ],
   "redbarrelsgames.com": [
     "game-studios"
-  ],
-  "redhat.com": [
-    "desktop-apps",
-    "linux"
   ],
   "rediff.com": [
     "desktop-apps",
@@ -9563,11 +12773,22 @@
   "redmine.org": [
     "desktop-apps"
   ],
+  "redoctane.com": [
+    "games",
+    "game-studios"
+  ],
+  "redorb.com": [
+    "games",
+    "game-studios"
+  ],
   "redox-os.org": [
     "linux"
   ],
   "redshift-live.com": [
     "tech"
+  ],
+  "redthreadgames.com": [
+    "game-studios"
   ],
   "reduce-algebra.com": [
     "open-source"
@@ -9581,8 +12802,14 @@
   "reflector.net": [
     "tech"
   ],
+  "regista.co.jp": [
+    "game-studios"
+  ],
   "reia-lang.org": [
     "dev"
+  ],
+  "rejet.jp": [
+    "game-studios"
   ],
   "rejetto.com": [
     "devops"
@@ -9593,6 +12820,10 @@
   "remedygames.com": [
     "game-studios"
   ],
+  "remitly.com": [
+    "android",
+    "tech"
+  ],
   "remmina.org": [
     "open-source"
   ],
@@ -9601,6 +12832,9 @@
   ],
   "renderware.com": [
     "game-dev"
+  ],
+  "renesas.com": [
+    "semiconductors"
   ],
   "renpy.org": [
     "game-dev"
@@ -9656,14 +12890,27 @@
   "rhino3d.com": [
     "desktop-apps"
   ],
+  "rhondasoftware.com": [
+    "tech"
+  ],
   "riak.com": [
     "open-source"
+  ],
+  "rib-software.com": [
+    "desktop-apps",
+    "tech"
   ],
   "richard.jones.name": [
     "open-source"
   ],
   "ricochet.im": [
     "messaging"
+  ],
+  "ricoh.com": [
+    "electronics"
+  ],
+  "right-stuff.co.jp": [
+    "game-studios"
   ],
   "ring-lang-081.osdn.jp": [
     "dev"
@@ -9673,6 +12920,9 @@
   ],
   "ringid.com": [
     "messaging"
+  ],
+  "riotforgegames.com": [
+    "game-studios"
   ],
   "ripple.com": [
     "desktop-apps",
@@ -9684,11 +12934,21 @@
   "rising.com.cn": [
     "tech"
   ],
+  "ritek.com": [
+    "electronics",
+    "hardware"
+  ],
   "ritlabs.com": [
     "email"
   ],
   "riverbankcomputing.com": [
     "python"
+  ],
+  "riverbed.com": [
+    "tech"
+  ],
+  "riverhillsoft.co.jp": [
+    "game-studios"
   ],
   "rj-texted.se": [
     "editor"
@@ -9708,12 +12968,11 @@
   "robomindacademy.com": [
     "tech"
   ],
+  "roborock.com": [
+    "tech"
+  ],
   "robotframework.org": [
     "dev"
-  ],
-  "rock-chips.com": [
-    "electronics",
-    "tech"
   ],
   "rockbox.org": [
     "open-source"
@@ -9746,8 +13005,19 @@
     "electronics",
     "desktop-apps"
   ],
+  "rol.net.mv": [
+    "telecom"
+  ],
+  "roland.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "roland65.free.fr": [
     "open-source"
+  ],
+  "romerogames.ie": [
+    "games",
+    "game-studios"
   ],
   "rosa.ru": [
     "linux"
@@ -9762,11 +13032,25 @@
   "rotana.net": [
     "mobile-apps"
   ],
+  "rotel.com": [
+    "electronics"
+  ],
   "roundcube.net": [
     "email"
   ],
   "rovio.com": [
     "game-studios"
+  ],
+  "roxio.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "roxorgames.com": [
+    "games",
+    "game-studios"
+  ],
+  "royaltypewriters.com": [
+    "tech"
   ],
   "rpgmakerweb.com": [
     "game-dev"
@@ -9776,6 +13060,9 @@
   ],
   "rpm.org": [
     "open-source"
+  ],
+  "rsa.com": [
+    "cybersecurity"
   ],
   "rsync.samba.org": [
     "open-source"
@@ -9808,7 +13095,7 @@
     "open-source"
   ],
   "rubrik.com": [
-    "tech"
+    "cybersecurity"
   ],
   "rubyforge.org": [
     "dev"
@@ -9822,8 +13109,17 @@
   "runtu.org": [
     "linux"
   ],
+  "ruselectronics.ru": [
+    "electronics"
+  ],
   "rusneb.ru": [
     "mobile-apps"
+  ],
+  "russobit-m.ru": [
+    "game-studios"
+  ],
+  "rwandatel.rw": [
+    "telecom"
   ],
   "rxvt.net": [
     "open-source"
@@ -9833,6 +13129,10 @@
   ],
   "ryujinx.org": [
     "open-source"
+  ],
+  "s3graphics.com": [
+    "electronics",
+    "hardware"
   ],
   "s9y.org": [
     "webdev"
@@ -9849,14 +13149,30 @@
   "sablevm.org": [
     "open-source"
   ],
+  "sacom.co.jp": [
+    "game-studios"
+  ],
+  "safelayer.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "safemoon.net": [
     "tech"
+  ],
+  "safenet-inc.com": [
+    "cybersecurity"
   ],
   "safersurf.com": [
     "tech"
   ],
+  "saforum.org": [
+    "tech"
+  ],
   "saga-gis.org": [
     "open-source"
+  ],
+  "sagaplanets.product.co.jp": [
+    "game-studios"
   ],
   "sage.com": [
     "desktop-apps",
@@ -9865,11 +13181,17 @@
   "sahanafoundation.org": [
     "open-source"
   ],
+  "saic.com": [
+    "tech"
+  ],
   "sailfishos.org": [
     "linux"
   ],
   "sakailms.org": [
     "open-source"
+  ],
+  "salam.sa": [
+    "telecom"
   ],
   "salamweb.com": [
     "tech"
@@ -9886,8 +13208,14 @@
   "samba.org": [
     "desktop-apps"
   ],
+  "sammy.co.jp": [
+    "game-studios"
+  ],
   "samsungknox.com": [
     "tech"
+  ],
+  "samsungsales.co.kr": [
+    "electronics"
   ],
   "samsungtizenos.com": [
     "smartphones"
@@ -9895,20 +13223,26 @@
   "samy.pl": [
     "desktop-apps"
   ],
-  "sandisk.com": [
-    "electronics",
-    "tech"
-  ],
   "sane-project.org": [
     "dev"
   ],
+  "sanyo-av.com": [
+    "electronics"
+  ],
   "sapphiretech.com": [
     "electronics",
-    "tech"
+    "hardware"
+  ],
+  "sarbakan.com": [
+    "games",
+    "game-studios"
+  ],
+  "sarvam.ai": [
+    "ai"
   ],
   "sas.com": [
     "desktop-apps",
-    "tech"
+    "ai"
   ],
   "sasg.com": [
     "dev"
@@ -9919,6 +13253,9 @@
   "sayonara-player.com": [
     "desktop-apps"
   ],
+  "sbctelecom.com": [
+    "telecom"
+  ],
   "sbiyono.sbi": [
     "tech"
   ],
@@ -9928,11 +13265,28 @@
   "scala-sbt.org": [
     "open-source"
   ],
+  "scala.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "scalable-networks.com": [
+    "tech"
+  ],
   "scale.com": [
+    "tech"
+  ],
+  "scality.com": [
     "tech"
   ],
   "scapy.net": [
     "open-source"
+  ],
+  "scarabresearch.com": [
+    "tech"
+  ],
+  "scene7.com": [
+    "desktop-apps",
+    "tech"
   ],
   "scheme.org": [
     "dev"
@@ -10001,6 +13355,10 @@
   "sdcc.sf.net": [
     "dev"
   ],
+  "sdl.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "sdolvtfhatvsysc6l34d65ymdwxcujausv7k5jk4cy5ttzhjoi6fzvyd.onion": [
     "open-source"
   ],
@@ -10018,6 +13376,19 @@
   ],
   "seaside.st": [
     "webdev"
+  ],
+  "seasonic.com": [
+    "electronics"
+  ],
+  "sector3studios.com": [
+    "games",
+    "game-studios"
+  ],
+  "secunia.com": [
+    "cybersecurity"
+  ],
+  "securecomputing.com": [
+    "cybersecurity"
   ],
   "securedrop.org": [
     "open-source"
@@ -10044,11 +13415,20 @@
   "sega.com": [
     "game-studios"
   ],
+  "segafave.co.jp": [
+    "game-studios"
+  ],
+  "segasammy.co.jp": [
+    "game-studios"
+  ],
   "segawow.com": [
     "game-studios"
   ],
   "seibu-kaihatsu.co.jp": [
     "game-studios"
+  ],
+  "selectel.ru": [
+    "telecom"
   ],
   "selflanguage.org": [
     "dev"
@@ -10056,16 +13436,29 @@
   "semantic-mediawiki.org": [
     "open-source"
   ],
+  "semiconductors.org": [
+    "semiconductors"
+  ],
+  "semrush.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "sencha.com": [
     "javascript"
   ],
   "sensetime.com": [
     "desktop-apps",
-    "tech"
+    "ai"
   ],
   "sensetime.jp": [
     "desktop-apps",
-    "tech"
+    "ai"
+  ],
+  "sensory.com": [
+    "ai"
+  ],
+  "sentinelone.com": [
+    "cybersecurity"
   ],
   "sentz.com": [
     "open-source"
@@ -10095,6 +13488,12 @@
   "setl.org": [
     "dev"
   ],
+  "sevenstudios.com": [
+    "game-studios"
+  ],
+  "seventeam.com.tw": [
+    "tech"
+  ],
   "sf-xpaint.sf.net": [
     "desktop-apps"
   ],
@@ -10106,10 +13505,14 @@
   ],
   "sgi.com": [
     "electronics",
-    "tech"
+    "hardware"
   ],
   "sglang.io": [
     "tech"
+  ],
+  "shaba.com": [
+    "games",
+    "game-studios"
   ],
   "shadowsocks.org": [
     "open-source"
@@ -10117,6 +13520,10 @@
   "shamela.ws": [
     "library",
     "desktop-apps"
+  ],
+  "shandagames.com": [
+    "games",
+    "game-studios"
   ],
   "sharelatex.com": [
     "editor"
@@ -10130,6 +13537,10 @@
   ],
   "shedskin.github.io": [
     "open-source"
+  ],
+  "sherpa.ai": [
+    "desktop-apps",
+    "tech"
   ],
   "shibboleth.net": [
     "open-source"
@@ -10164,14 +13575,36 @@
   "shotcut.org": [
     "desktop-apps"
   ],
+  "shoten.kadokawa.co.jp": [
+    "game-studios"
+  ],
   "shoutcast.com": [
     "desktop-apps"
   ],
   "showroom-live.com": [
     "mobile-apps"
   ],
+  "showtimearabia.com": [
+    "telecom"
+  ],
   "shr-project.org": [
     "linux"
+  ],
+  "shuttle-japan.jp": [
+    "electronics",
+    "hardware"
+  ],
+  "shuttle.com": [
+    "electronics",
+    "hardware"
+  ],
+  "shuttle.eu": [
+    "electronics",
+    "hardware"
+  ],
+  "shuttlecomputers.com": [
+    "electronics",
+    "hardware"
   ],
   "siag.nu": [
     "desktop-apps"
@@ -10192,6 +13625,9 @@
   "sifive.com": [
     "semiconductors"
   ],
+  "sigact.acm.org": [
+    "tech"
+  ],
   "sigaint.org": [
     "email"
   ],
@@ -10200,6 +13636,9 @@
   ],
   "sigil-ebook.com": [
     "desktop-apps"
+  ],
+  "sigmaphoto.com": [
+    "electronics"
   ],
   "signalr.net": [
     "dev"
@@ -10210,8 +13649,30 @@
   "silex.me": [
     "webdev"
   ],
+  "silibank.com": [
+    "tech"
+  ],
+  "silicon-power.com": [
+    "tech"
+  ],
+  "siliconstudio.co.jp": [
+    "game-studios"
+  ],
+  "silk.ge": [
+    "telecom"
+  ],
+  "silknet.com": [
+    "telecom"
+  ],
   "silkypix.isl.co.jp": [
     "desktop-apps"
+  ],
+  "silvaco.com": [
+    "tech"
+  ],
+  "silverstonetek.com": [
+    "electronics",
+    "hardware"
   ],
   "silverstripe.com": [
     "open-source"
@@ -10221,6 +13682,12 @@
   ],
   "sim-im.org": [
     "open-source"
+  ],
+  "simcorp.com": [
+    "tech"
+  ],
+  "similarweb.com": [
+    "tech"
   ],
   "simplelinux.my": [
     "linux"
@@ -10249,18 +13716,36 @@
   "singular.uni-kl.de": [
     "open-source"
   ],
+  "siragon.com": [
+    "hardware"
+  ],
+  "sirf.com": [
+    "tech"
+  ],
   "sironta.com": [
     "desktop-apps"
+  ],
+  "sis.gov.eg": [
+    "tech"
+  ],
+  "siscog.pt": [
+    "tech"
   ],
   "sisense.com": [
     "desktop-apps",
     "tech"
   ],
+  "sistema.com": [
+    "electronics"
+  ],
   "siteadvisor.com": [
     "tech"
   ],
   "sitecore.net": [
-    "webdev"
+    "tech"
+  ],
+  "sixapart.com": [
+    "tech"
   ],
   "sixdegrees.com": [
     "social"
@@ -10268,8 +13753,14 @@
   "sk1project.org": [
     "desktop-apps"
   ],
+  "skbroadband.com": [
+    "telecom"
+  ],
   "skencil.org": [
     "desktop-apps"
+  ],
+  "skhynix.com": [
+    "semiconductors"
   ],
   "skia.org": [
     "open-source"
@@ -10296,6 +13787,12 @@
     "streaming",
     "mobile-apps"
   ],
+  "skywatcher.com": [
+    "tech"
+  ],
+  "skyworksinc.com": [
+    "semiconductors"
+  ],
   "slackpkg.org": [
     "open-source"
   ],
@@ -10304,6 +13801,10 @@
   ],
   "slamd64.com": [
     "linux"
+  ],
+  "slantsixgames.com": [
+    "games",
+    "game-studios"
   ],
   "slax.org": [
     "linux"
@@ -10347,17 +13848,40 @@
   "smartcat.com": [
     "tech"
   ],
+  "smartcity.ae": [
+    "tech"
+  ],
   "smartdraw.com": [
     "tech"
   ],
   "smarteiffel.loria.fr": [
     "dev"
   ],
+  "smarterphone.com": [
+    "tech"
+  ],
+  "smartick.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "smartick.es": [
+    "desktop-apps",
+    "tech"
+  ],
   "smartmatic.com": [
     "tech"
   ],
+  "smarttel.com.np": [
+    "telecom"
+  ],
   "smarty.net": [
     "dev"
+  ],
+  "sme.co.jp": [
+    "game-studios"
+  ],
+  "smee.com.cn": [
+    "semiconductors"
   ],
   "smics.com": [
     "semiconductors"
@@ -10365,11 +13889,21 @@
   "smilegate.com": [
     "game-studios"
   ],
+  "smithmicro.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "smoothwall.org": [
     "linux"
   ],
   "smplayer.info": [
     "open-source"
+  ],
+  "snap.com": [
+    "tech"
+  ],
+  "snapp.ir": [
+    "tech"
   ],
   "snappy.com": [
     "desktop-apps"
@@ -10383,8 +13917,14 @@
   "snes9x.com": [
     "tech"
   ],
+  "snkusa.com": [
+    "game-studios"
+  ],
   "snobol4.org": [
     "dev"
+  ],
+  "snom.com": [
+    "telecom"
   ],
   "snomed.org": [
     "tech"
@@ -10401,14 +13941,33 @@
   "soar.eecs.umich.edu": [
     "tech"
   ],
+  "socatel.cf": [
+    "telecom"
+  ],
+  "socialtext.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "socket.io": [
     "dev"
   ],
   "socserv.mcmaster.ca": [
     "open-source"
   ],
+  "sofel.co.jp": [
+    "game-studios"
+  ],
+  "soft2bet.com": [
+    "tech"
+  ],
   "soft8soft.com": [
     "desktop-apps"
+  ],
+  "softcamp.co.kr": [
+    "cybersecurity"
+  ],
+  "softclub.ru": [
+    "game-studios"
   ],
   "softether.org": [
     "open-source"
@@ -10426,8 +13985,17 @@
     "documents",
     "tech"
   ],
+  "softmax.co.kr": [
+    "game-studios"
+  ],
+  "softnyx.net": [
+    "game-studios"
+  ],
   "softronix.com": [
     "desktop-apps"
+  ],
+  "softserveinc.com": [
+    "tech"
   ],
   "softtek.com": [
     "desktop-apps",
@@ -10451,8 +14019,15 @@
   "sogo.nu": [
     "desktop-apps"
   ],
+  "solarwinds.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "soler7.com": [
     "tech"
+  ],
+  "solidclouds.com": [
+    "game-studios"
   ],
   "soliditylang.org": [
     "dev"
@@ -10472,6 +14047,12 @@
   "sonarqube.org": [
     "open-source"
   ],
+  "sonatafy.com": [
+    "tech"
+  ],
+  "sonda.com": [
+    "tech"
+  ],
   "sonicfoundry.com": [
     "tech"
   ],
@@ -10481,6 +14062,9 @@
   "sonicvisualiser.org": [
     "open-source"
   ],
+  "sonicwall.com": [
+    "cybersecurity"
+  ],
   "sonika-vocaloid.com": [
     "tech"
   ],
@@ -10489,6 +14073,9 @@
   ],
   "sonyentertainmentnetwork.com": [
     "tech"
+  ],
+  "sonymusic.co.jp": [
+    "game-studios"
   ],
   "sophos.com": [
     "desktop-apps",
@@ -10503,6 +14090,10 @@
   "soundconverter.org": [
     "open-source"
   ],
+  "soundhound.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "soundjam.com": [
     "desktop-apps"
   ],
@@ -10515,11 +14106,22 @@
   "sourcefilmmaker.com": [
     "desktop-apps"
   ],
+  "sourcefire.com": [
+    "cybersecurity"
+  ],
   "sourcemage.org": [
     "linux"
   ],
+  "southernlinc.com": [
+    "telecom",
+    "tech"
+  ],
   "soylentnews.org": [
     "webdev"
+  ],
+  "soyo.com.cn": [
+    "electronics",
+    "hardware"
   ],
   "spacemacs.org": [
     "editor"
@@ -10527,11 +14129,18 @@
   "spacy.io": [
     "open-source"
   ],
+  "sparkle.com.tw": [
+    "electronics",
+    "hardware"
+  ],
   "sparkmailapp.com": [
     "email"
   ],
   "sparkylinux.org": [
     "linux"
+  ],
+  "spatial.com": [
+    "tech"
   ],
   "species.wikimedia.org": [
     "mobile-apps"
@@ -10557,6 +14166,10 @@
   "spicyhorse.com": [
     "game-studios"
   ],
+  "spideroak.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "spike-chunsoft.co.jp": [
     "game-studios"
   ],
@@ -10575,6 +14188,9 @@
   "spip.net": [
     "open-source"
   ],
+  "spirent.com": [
+    "telecom"
+  ],
   "splus.ir": [
     "messaging"
   ],
@@ -10587,11 +14203,18 @@
   "sports-tracker.com": [
     "tech"
   ],
+  "spotfire.tibco.com": [
+    "tech"
+  ],
   "spring-fragrance.mints.ne.jp": [
     "desktop-apps"
   ],
   "springrts.com": [
     "game-dev"
+  ],
+  "sproing.com": [
+    "games",
+    "game-studios"
   ],
   "sproutcore.com": [
     "dev"
@@ -10610,6 +14233,10 @@
   ],
   "sqlobject.org": [
     "dev"
+  ],
+  "squad.com.mx": [
+    "games",
+    "game-studios"
   ],
   "square-enix.co.jp": [
     "game-studios"
@@ -10636,19 +14263,53 @@
   "srware.net": [
     "browser"
   ],
+  "srzudm.ru": [
+    "electronics"
+  ],
+  "ss-alpha.co.jp": [
+    "game-studios"
+  ],
+  "ssaglobal.com": [
+    "tech"
+  ],
   "ssicentral.com": [
     "tech"
+  ],
+  "ssw.co.jp": [
+    "tech"
+  ],
+  "st-comet.com": [
+    "game-studios"
+  ],
+  "st-hibari.co.jp": [
+    "game-studios"
   ],
   "stantondj.com": [
     "tech"
   ],
+  "star-arcade.com": [
+    "game-studios"
+  ],
   "stardroid.app": [
+    "tech"
+  ],
+  "starlingbank.com": [
+    "banking",
     "tech"
   ],
   "staroffice.com": [
     "desktop-apps"
   ],
   "starrynight.com": [
+    "tech"
+  ],
+  "starschema.com": [
+    "tech"
+  ],
+  "starship.xyz": [
+    "tech"
+  ],
+  "startimestv.com": [
     "tech"
   ],
   "staruml.io": [
@@ -10674,6 +14335,9 @@
   ],
   "stazsoftware.com": [
     "dev"
+  ],
+  "stcompany.ru": [
+    "telecom"
   ],
   "stealthnet.de": [
     "open-source"
@@ -10706,11 +14370,11 @@
   "stockfishchess.org": [
     "desktop-apps"
   ],
-  "store.nokia.com": [
-    "tech"
+  "stoicstudio.com": [
+    "game-studios"
   ],
-  "store.orange.eg": [
-    "mobile-apps"
+  "stonesoft.com": [
+    "cybersecurity"
   ],
   "store.ovi.com": [
     "tech"
@@ -10718,6 +14382,10 @@
   "store.steamchina.com": [
     "game-deals",
     "video-games"
+  ],
+  "stores.horiusa.com": [
+    "games",
+    "game-studios"
   ],
   "storify.com": [
     "social"
@@ -10737,11 +14405,17 @@
   "streetcomplete.app": [
     "mobile-apps"
   ],
+  "streumon-studio.com": [
+    "game-studios"
+  ],
   "stripesframework.atlassian.net": [
     "open-source"
   ],
   "strongswan.org": [
     "open-source"
+  ],
+  "studio-ego.jp": [
+    "game-studios"
   ],
   "studio-onoma.com": [
     "game-studios"
@@ -10749,8 +14423,20 @@
   "studio.zerobrane.com": [
     "dev"
   ],
+  "studio4c.co.jp": [
+    "game-studios"
+  ],
+  "studiowildcard.com": [
+    "game-studios"
+  ],
+  "stunlock.com": [
+    "game-studios"
+  ],
   "stunnel.org": [
     "open-source"
+  ],
+  "stylecube.jp": [
+    "game-studios"
   ],
   "stylus-lang.com": [
     "dev"
@@ -10767,6 +14453,9 @@
   "success.mindtouch.com": [
     "webdev"
   ],
+  "suddenlink.com": [
+    "telecom"
+  ],
   "sudo.ws": [
     "open-source"
   ],
@@ -10779,14 +14468,27 @@
   "sugarsync.com": [
     "tech"
   ],
+  "sugon.com": [
+    "tech"
+  ],
   "sulake.com": [
     "game-studios"
   ],
   "sumatrapdfreader.org": [
     "open-source"
   ],
+  "sumcosi.com": [
+    "semiconductors"
+  ],
+  "sumologic.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "sumtotalsystems.com": [
+    "tech"
+  ],
   "sun-denshi.co.jp": [
-    "game-studios"
+    "electronics"
   ],
   "sunbelt-software.com": [
     "tech"
@@ -10801,6 +14503,9 @@
     "electronics",
     "hardware"
   ],
+  "superoffice.com": [
+    "tech"
+  ],
   "superpi.net": [
     "tech"
   ],
@@ -10809,6 +14514,9 @@
   ],
   "support.sas.com": [
     "dev"
+  ],
+  "sure.com": [
+    "telecom"
   ],
   "surespot.me": [
     "messaging"
@@ -10822,9 +14530,8 @@
   "suricata.io": [
     "open-source"
   ],
-  "suse.com": [
-    "dev",
-    "linux"
+  "sut-tv.com": [
+    "telecom"
   ],
   "suzak.co.jp": [
     "game-studios"
@@ -10841,11 +14548,17 @@
   "sview.ru": [
     "open-source"
   ],
+  "svyazinvest.ru": [
+    "telecom"
+  ],
   "sw.aveva.com": [
     "tech"
   ],
   "sw.kovidgoyal.net": [
     "open-source"
+  ],
+  "swarm.space": [
+    "telecom"
   ],
   "swarmapp.com": [
     "mobile-apps"
@@ -10865,6 +14578,9 @@
   "swift-lang.org": [
     "dev"
   ],
+  "swift-xi.com": [
+    "tech"
+  ],
   "swift.ws": [
     "browser"
   ],
@@ -10875,12 +14591,22 @@
     "payments",
     "mobile-apps"
   ],
+  "switch.com": [
+    "tech"
+  ],
   "swtch.com": [
     "editor"
   ],
   "sybase.com": [
     "desktop-apps",
     "database"
+  ],
+  "sybase.de": [
+    "desktop-apps",
+    "tech"
+  ],
+  "sybogames.com": [
+    "game-studios"
   ],
   "syllable.org": [
     "linux"
@@ -10897,6 +14623,10 @@
   ],
   "symbian.org": [
     "smartphones"
+  ],
+  "symbol.com": [
+    "electronics",
+    "hardware"
   ],
   "symless.com": [
     "desktop-apps"
@@ -10915,10 +14645,24 @@
   ],
   "synaptics.com": [
     "electronics",
-    "tech"
+    "hardware"
+  ],
+  "synetic.de": [
+    "games",
+    "game-studios"
   ],
   "synfig.org": [
     "desktop-apps"
+  ],
+  "synnexcorp.com": [
+    "tech"
+  ],
+  "synopsys.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "syriantelecom.com.sy": [
+    "telecom"
   ],
   "syriatel.sy": [
     "telecom"
@@ -10927,10 +14671,6 @@
     "linux"
   ],
   "system-rescue.org": [
-    "linux"
-  ],
-  "system76.com": [
-    "electronics",
     "linux"
   ],
   "systemax.jp": [
@@ -10942,11 +14682,24 @@
   "systemed.net": [
     "open-source"
   ],
+  "systemgroup.net": [
+    "tech"
+  ],
+  "t-systems.com": [
+    "tech"
+  ],
   "tabii.com": [
     "mobile-apps"
   ],
+  "taboola.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "tack.sf.net": [
     "open-source"
+  ],
+  "tadirantele.com": [
+    "telecom"
   ],
   "tads.org": [
     "dev"
@@ -10981,6 +14734,9 @@
   "tamtam.chat": [
     "messaging"
   ],
+  "tandberg.com": [
+    "electronics"
+  ],
   "tandesoft.co.jp": [
     "game-studios"
   ],
@@ -11005,6 +14761,9 @@
   "tarot.freeshell.org": [
     "editor"
   ],
+  "tasco.com": [
+    "tech"
+  ],
   "tasker.joaoapps.com": [
     "mobile-apps"
   ],
@@ -11019,6 +14778,17 @@
   ],
   "tatanka.com.br": [
     "browser"
+  ],
+  "tatemultimedia.com": [
+    "games",
+    "game-studios"
+  ],
+  "tattelecom.ru": [
+    "telecom"
+  ],
+  "tatung.com": [
+    "electronics",
+    "hardware"
   ],
   "tausoft.org": [
     "open-source"
@@ -11038,6 +14808,9 @@
   "tcl-lang.org": [
     "dev"
   ],
+  "tcl.com": [
+    "tech"
+  ],
   "tcoffee.org": [
     "open-source"
   ],
@@ -11049,9 +14822,6 @@
   ],
   "tcts.fpms.ac.be": [
     "open-source"
-  ],
-  "te.eg": [
-    "mobile-apps"
   ],
   "team-mediaportal.com": [
     "open-source"
@@ -11080,8 +14850,20 @@
   "technorati.com": [
     "search"
   ],
+  "teck.co.jp": [
+    "game-studios"
+  ],
+  "tecmo.co.jp": [
+    "game-studios"
+  ],
   "tecnosoft.com": [
     "game-studios"
+  ],
+  "teichiku.co.jp": [
+    "game-studios"
+  ],
+  "tekever.com": [
+    "tech"
   ],
   "tekla.com": [
     "tech"
@@ -11089,13 +14871,34 @@
   "telecom.com.ar": [
     "telecom"
   ],
+  "telecom.mu": [
+    "telecom"
+  ],
   "telecomarmenia.am": [
+    "telecom"
+  ],
+  "telecomputing.no": [
+    "tech"
+  ],
+  "telefonica.co": [
+    "telecom"
+  ],
+  "telekabel.com.mk": [
+    "telecom"
+  ],
+  "telekom.gov.ct.tr": [
     "telecom"
   ],
   "telekom.me": [
     "telecom"
   ],
+  "telekom.mk": [
+    "telecom"
+  ],
   "telekom.sk": [
+    "telecom"
+  ],
+  "telemessage.com": [
     "telecom"
   ],
   "telenor.dk": [
@@ -11104,10 +14907,38 @@
   "telepathy.freedesktop.org": [
     "open-source"
   ],
+  "telerik.com": [
+    "dev",
+    "tech"
+  ],
+  "teles.com": [
+    "tech"
+  ],
+  "telesystem-world.com": [
+    "electronics"
+  ],
+  "televideo.com": [
+    "hardware"
+  ],
+  "telia.ee": [
+    "telecom"
+  ],
   "telia.lt": [
     "telecom"
   ],
+  "telindus.be": [
+    "tech"
+  ],
+  "telio.no": [
+    "telecom"
+  ],
+  "telkomcel.tl": [
+    "telecom"
+  ],
   "telkomsel.co.id": [
+    "telecom"
+  ],
+  "telkomtelstra.co.id": [
     "telecom"
   ],
   "tellico-project.org": [
@@ -11117,8 +14948,25 @@
     "social",
     "mobile-apps"
   ],
+  "telvent.com": [
+    "tech"
+  ],
+  "tenable.com": [
+    "cybersecurity"
+  ],
+  "tencent.com": [
+    "games",
+    "game-studios"
+  ],
   "tensorflow.org": [
     "dev"
+  ],
+  "teo.lt": [
+    "telecom"
+  ],
+  "teradici.com": [
+    "electronics",
+    "hardware"
   ],
   "teratermproject.github.io": [
     "open-source"
@@ -11129,11 +14977,25 @@
   "termux.dev": [
     "mobile-apps"
   ],
+  "terracom.rw": [
+    "telecom"
+  ],
+  "tespa.org": [
+    "game-studios"
+  ],
   "testlink.org": [
     "open-source"
   ],
   "testng.org": [
     "dev"
+  ],
+  "tetris.com": [
+    "video-games",
+    "game-studios"
+  ],
+  "tetrisonline.com": [
+    "games",
+    "game-studios"
   ],
   "texmacs.org": [
     "editor"
@@ -11159,17 +15021,42 @@
   "tgries.de": [
     "tech"
   ],
+  "tgs.cesa.or.jp": [
+    "games",
+    "game-studios"
+  ],
   "th.pdf24.org": [
     "tech"
   ],
   "thc.org": [
     "open-source"
   ],
+  "the9.com": [
+    "game-studios"
+  ],
+  "theantcommandos.com": [
+    "games",
+    "game-studios"
+  ],
+  "theastronausts.com": [
+    "game-studios"
+  ],
+  "theesa.com": [
+    "games",
+    "game-studios"
+  ],
+  "thegamebakers.com": [
+    "video-games",
+    "game-studios"
+  ],
   "theia-ide.org": [
     "dev"
   ],
   "thekonst.net": [
     "messaging"
+  ],
+  "theoddgentlemen.com": [
+    "game-studios"
   ],
   "theopencd.org": [
     "tech"
@@ -11187,20 +15074,44 @@
   "theproduct.de": [
     "game-dev"
   ],
+  "thermalright.com": [
+    "electronics",
+    "hardware"
+  ],
   "theswitch.com": [
     "tech"
   ],
   "theunarchiver.com": [
     "desktop-apps"
   ],
+  "thinglink.com": [
+    "tech"
+  ],
   "thinkfree.com": [
     "desktop-apps"
+  ],
+  "thinkingrabbit.jp": [
+    "game-studios"
+  ],
+  "thirtyfirstunion.com": [
+    "game-studios"
   ],
   "thonny.org": [
     "dev"
   ],
+  "thoughtworks.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "threejs.org": [
     "javascript"
+  ],
+  "threewavesoftware.com": [
+    "games",
+    "game-studios"
+  ],
+  "thtf.com.cn": [
+    "tech"
   ],
   "thunderbird.net": [
     "email"
@@ -11208,11 +15119,12 @@
   "thuraya.com": [
     "telecom"
   ],
-  "ti.com": [
-    "dev"
-  ],
   "tianocore.org": [
     "open-source"
+  ],
+  "tibco.com": [
+    "desktop-apps",
+    "tech"
   ],
   "tic80.com": [
     "open-source"
@@ -11220,17 +15132,38 @@
   "tidalcycles.org": [
     "open-source"
   ],
+  "tieto.com": [
+    "tech"
+  ],
+  "tigertelematics.com": [
+    "game-studios"
+  ],
   "tigervnc.org": [
     "desktop-apps"
   ],
   "tightvnc.com": [
     "desktop-apps"
   ],
+  "tigo.cl": [
+    "telecom"
+  ],
+  "tigo.com.cl": [
+    "telecom"
+  ],
+  "tilera.com": [
+    "semiconductors"
+  ],
   "tiltedmill.com": [
     "game-studios",
     "game-dev"
   ],
   "tim.sm": [
+    "telecom"
+  ],
+  "timesinternet.in": [
+    "tech"
+  ],
+  "timortelecom.tp": [
     "telecom"
   ],
   "tin.org": [
@@ -11241,6 +15174,9 @@
   ],
   "tinfoilhat.shmoo.com": [
     "linux"
+  ],
+  "tinno.com": [
+    "telecom"
   ],
   "tinycorelinux.net": [
     "linux"
@@ -11266,14 +15202,33 @@
   "tlen.pl": [
     "tech"
   ],
+  "tm.softbank.jp": [
+    "telecom"
+  ],
+  "tmaxsoft.com": [
+    "tech"
+  ],
   "tmpgenc.pegasys-inc.com": [
     "desktop-apps"
+  ],
+  "tnx.cc": [
+    "game-studios"
   ],
   "toaplangames.co.jp": [
     "game-studios"
   ],
+  "toei-anim.co.jp": [
+    "games",
+    "game-studios"
+  ],
+  "togeproductions.com": [
+    "game-studios"
+  ],
   "togethersoft.com": [
     "dev"
+  ],
+  "tokai-com.co.jp": [
+    "game-studios"
   ],
   "tokuma.jp": [
     "game-studios"
@@ -11281,11 +15236,18 @@
   "tokutek.com": [
     "database"
   ],
+  "tokyo-shoseki.co.jp": [
+    "game-studios"
+  ],
   "tokyorpgfactory.com": [
     "game-studios"
   ],
   "tomahawk-player.org": [
     "desktop-apps"
+  ],
+  "tommo.com": [
+    "games",
+    "game-studios"
   ],
   "toms.net": [
     "linux"
@@ -11295,6 +15257,12 @@
   ],
   "toncoin.org": [
     "tech"
+  ],
+  "tondi.ee": [
+    "electronics"
+  ],
+  "tonga-broadcasting.net": [
+    "telecom"
   ],
   "toogoodtogo.com": [
     "mobile-apps"
@@ -11315,6 +15283,10 @@
   "toolkit.translatehouse.org": [
     "open-source"
   ],
+  "toonboom.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "toontalk.com": [
     "dev"
   ],
@@ -11323,6 +15295,10 @@
   ],
   "topologilinux.com": [
     "linux"
+  ],
+  "topware.com": [
+    "video-games",
+    "game-studios"
   ],
   "tor2web.org": [
     "open-source"
@@ -11363,11 +15339,21 @@
   "tose.co.jp": [
     "game-studios"
   ],
+  "toshiba.com": [
+    "electronics"
+  ],
+  "totvs.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "toutiao.com": [
     "mobile-apps"
   ],
   "tox.chat": [
     "dev"
+  ],
+  "tpv-tech.com": [
+    "electronics"
   ],
   "tr.norton.com": [
     "cybersecurity"
@@ -11399,6 +15385,9 @@
   "transkribus.org": [
     "tech"
   ],
+  "transmeta.com": [
+    "semiconductors"
+  ],
   "treasure-inc.co.jp": [
     "game-studios"
   ],
@@ -11412,11 +15401,21 @@
   "tri-crescendo.co.jp": [
     "game-studios"
   ],
+  "triangleservice.co.jp": [
+    "game-studios"
+  ],
   "tribler.org": [
     "desktop-apps"
   ],
   "tricentis.com": [
     "desktop-apps"
+  ],
+  "tridentmicro.com": [
+    "electronics",
+    "hardware"
+  ],
+  "trigem.co.kr": [
+    "hardware"
   ],
   "triller.co": [
     "mobile-apps"
@@ -11433,8 +15432,21 @@
   "trino.io": [
     "open-source"
   ],
+  "trip.com": [
+    "airports",
+    "tech"
+  ],
   "tripdatabase.com": [
     "tech"
+  ],
+  "triplea-2002.com": [
+    "game-studios"
+  ],
+  "tripplite.com": [
+    "hardware"
+  ],
+  "tripwire.com": [
+    "cybersecurity"
   ],
   "trisquel.info": [
     "linux"
@@ -11450,6 +15462,10 @@
   ],
   "tron.network": [
     "tech"
+  ],
+  "trublu.com.au": [
+    "video-games",
+    "game-studios"
   ],
   "truebasic.com": [
     "dev"
@@ -11479,8 +15495,14 @@
   "tryton.org": [
     "open-source"
   ],
+  "tse.com.er": [
+    "telecom"
+  ],
   "tsql.info": [
     "dev"
+  ],
+  "tsuburaya-prod.com": [
+    "game-studios"
   ],
   "tsung.erlang-projects.org": [
     "dev"
@@ -11490,6 +15512,12 @@
   ],
   "ttcn-3.org": [
     "dev"
+  ],
+  "tufin.com": [
+    "cybersecurity"
+  ],
+  "tulip.com": [
+    "hardware"
   ],
   "tunisietelecom.tn": [
     "telecom"
@@ -11525,14 +15553,14 @@
   "turtle4privacy.org": [
     "desktop-apps"
   ],
+  "tusas.com": [
+    "telecom"
+  ],
   "tuta.com": [
     "email"
   ],
   "tux4kids.com": [
     "open-source"
-  ],
-  "tuxedocomputers.com": [
-    "tech"
   ],
   "tuxera.com": [
     "open-source"
@@ -11563,6 +15591,10 @@
   "tw.wpsoffice.com": [
     "desktop-apps"
   ],
+  "tw1.shuttle.com": [
+    "electronics",
+    "hardware"
+  ],
   "twiki.org": [
     "open-source"
   ],
@@ -11581,11 +15613,26 @@
   "txt2tags.org": [
     "open-source"
   ],
+  "txtgroup.com": [
+    "tech"
+  ],
+  "tyan.com": [
+    "electronics",
+    "hardware"
+  ],
+  "tylertech.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "typemoon.com": [
     "game-studios"
   ],
   "typo3.org": [
     "open-source"
+  ],
+  "u-blox.com": [
+    "electronics",
+    "hardware"
   ],
   "u-boot-project.org": [
     "open-source"
@@ -11595,13 +15642,6 @@
   ],
   "uberstudent.org": [
     "linux"
-  ],
-  "ubi.com": [
-    "game-studios",
-    "game-dev"
-  ],
-  "ubisoftgroup.com": [
-    "game-dev"
   ],
   "ubuntu-mate.org": [
     "linux"
@@ -11648,8 +15688,16 @@
   "ucweb.com": [
     "tech"
   ],
+  "udcoled.com": [
+    "electronics",
+    "hardware"
+  ],
   "udig.refractions.net": [
     "open-source"
+  ],
+  "uds.se": [
+    "games",
+    "game-studios"
   ],
   "ufficiozero.org": [
     "linux"
@@ -11657,11 +15705,36 @@
   "ufmod.sourceforge.io": [
     "desktop-apps"
   ],
+  "ufotable.com": [
+    "game-studios"
+  ],
+  "uipath.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "uj.com.tw": [
+    "games",
+    "game-studios"
+  ],
+  "uk.boonty.com": [
+    "games",
+    "game-studios"
+  ],
   "uk.norton.com": [
     "cybersecurity"
   ],
+  "uklon.eu": [
+    "tech"
+  ],
+  "ukroboronprom.com.ua": [
+    "electronics"
+  ],
   "ukui.org": [
     "linux"
+  ],
+  "ulead.com": [
+    "desktop-apps",
+    "tech"
   ],
   "uloz.to": [
     "cloud-storage"
@@ -11678,14 +15751,23 @@
   "ultraedit.com": [
     "editor"
   ],
+  "ultraleap.com": [
+    "ai"
+  ],
   "ultrasurf.us": [
     "tech"
   ],
   "ulyssesapp.com": [
     "editor"
   ],
+  "umbra3d.com": [
+    "game-studios"
+  ],
   "umbraco.com": [
     "open-source"
+  ],
+  "umc.com": [
+    "semiconductors"
   ],
   "umlet.com": [
     "open-source"
@@ -11695,6 +15777,10 @@
   ],
   "unbound.net": [
     "open-source"
+  ],
+  "undeadlabs.com": [
+    "video-games",
+    "game-studios"
   ],
   "underscorejs.org": [
     "javascript"
@@ -11708,24 +15794,50 @@
   "ungoogled-software.github.io": [
     "browser"
   ],
+  "uniadex.co.jp": [
+    "tech"
+  ],
   "unifoundry.com": [
     "open-source"
+  ],
+  "unify.com": [
+    "desktop-apps",
+    "tech"
   ],
   "unigine.com": [
     "game-dev"
   ],
   "unigroup.com.cn": [
-    "tech"
+    "semiconductors"
+  ],
+  "uninett.no": [
+    "telecom"
   ],
   "unionpayintl.com": [
     "banking",
     "mobile-apps"
+  ],
+  "unisoft.com": [
+    "dev",
+    "tech"
+  ],
+  "unisys.com": [
+    "tech"
+  ],
+  "unit4.com": [
+    "tech"
   ],
   "unityd.org": [
     "linux"
   ],
   "univention.com": [
     "linux"
+  ],
+  "universal-777.com": [
+    "game-studios"
+  ],
+  "upl-gravedigger.hp.infoseek.co.jp": [
+    "game-studios"
   ],
   "upower.freedesktop.org": [
     "open-source"
@@ -11735,6 +15847,9 @@
   ],
   "uproxy.org": [
     "browser"
+  ],
+  "upstage.ai": [
+    "ai"
   ],
   "uptodown.com": [
     "tech"
@@ -11763,8 +15878,22 @@
   "userstyles.org": [
     "browser"
   ],
+  "userway.org": [
+    "tech"
+  ],
   "ushahidi.com": [
     "desktop-apps"
+  ],
+  "usi.ru": [
+    "telecom"
+  ],
+  "ust.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "usu.com": [
+    "desktop-apps",
+    "tech"
   ],
   "utils.kde.org": [
     "open-source"
@@ -11775,11 +15904,18 @@
   "ututo.org": [
     "linux"
   ],
+  "utvignition.com": [
+    "games",
+    "game-studios"
+  ],
   "uvnc.com": [
     "desktop-apps"
   ],
   "uzbl.org": [
     "browser"
+  ],
+  "v-storage.bnarts.jp": [
+    "game-studios"
   ],
   "v.qq.com": [
     "streaming",
@@ -11812,6 +15948,10 @@
   "valgrind.org": [
     "dev"
   ],
+  "valnetinc.com": [
+    "news",
+    "tech"
+  ],
   "valo-cd.fi": [
     "tech"
   ],
@@ -11833,6 +15973,13 @@
   "vanpool.co.jp": [
     "game-studios"
   ],
+  "vap.co.jp": [
+    "game-studios"
+  ],
+  "varonis.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "vassalengine.org": [
     "game-dev"
   ],
@@ -11844,6 +15991,10 @@
   ],
   "vcvrack.com": [
     "open-source"
+  ],
+  "vd-dev.com": [
+    "games",
+    "game-studios"
   ],
   "vdodown.com": [
     "open-source"
@@ -11857,6 +16008,14 @@
   ],
   "vectorworks.net": [
     "desktop-apps"
+  ],
+  "veeam.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "veeva.com": [
+    "desktop-apps",
+    "tech"
   ],
   "vegascreativesoftware.com": [
     "desktop-apps"
@@ -11876,11 +16035,21 @@
   "vergecurrency.com": [
     "open-source"
   ],
+  "verint.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "versata.com": [
+    "tech"
+  ],
   "vertx.io": [
     "dev"
   ],
   "veyon.io": [
     "open-source"
+  ],
+  "vgentertainment.com": [
+    "game-studios"
   ],
   "vgough.github.io": [
     "open-source"
@@ -11888,14 +16057,27 @@
   "vi.pdf24.org": [
     "tech"
   ],
+  "viaeuropa.net": [
+    "tech"
+  ],
+  "viaeuropa.se": [
+    "tech"
+  ],
   "viaf.org": [
     "search"
+  ],
+  "vicarious.com": [
+    "ai"
   ],
   "vice-emu.sourceforge.io": [
     "open-source"
   ],
   "viciousengine.com": [
     "game-dev"
+  ],
+  "videogameseurope.eu": [
+    "games",
+    "game-studios"
   ],
   "videoscribe.co": [
     "desktop-apps",
@@ -11906,6 +16088,9 @@
   ],
   "vidiq.com": [
     "browser"
+  ],
+  "vigophotonics.com": [
+    "electronics"
   ],
   "vimperator.org": [
     "tech"
@@ -11922,6 +16107,10 @@
   "viola.org": [
     "browser"
   ],
+  "virgilio.it": [
+    "media",
+    "tech"
+  ],
   "virt-manager.org": [
     "open-source"
   ],
@@ -11937,6 +16126,16 @@
   "virtuemart.net": [
     "open-source"
   ],
+  "virtusa.com": [
+    "tech"
+  ],
+  "virtutech.com": [
+    "desktop-apps",
+    "tech"
+  ],
+  "virustotal.com": [
+    "cybersecurity"
+  ],
   "virustotal.github.io": [
     "desktop-apps"
   ],
@@ -11945,6 +16144,9 @@
   ],
   "vis.com.tw": [
     "semiconductors"
+  ],
+  "visco.co.jp": [
+    "game-studios"
   ],
   "visma.com": [
     "tech"
@@ -11973,8 +16175,20 @@
   "vixta.org": [
     "linux"
   ],
+  "vkmobile.com": [
+    "telecom"
+  ],
   "vlang.io": [
     "dev"
+  ],
+  "vng.com.vn": [
+    "tech"
+  ],
+  "vnpt.com.vn": [
+    "telecom"
+  ],
+  "vocapia.com": [
+    "tech"
   ],
   "vodafone.al": [
     "telecom"
@@ -12007,6 +16221,9 @@
     "electronics",
     "hardware"
   ],
+  "voshod-krlz.ru": [
+    "electronics"
+  ],
   "vpascal.com": [
     "dev"
   ],
@@ -12018,6 +16235,10 @@
   ],
   "vscodium.com": [
     "dev"
+  ],
+  "vsl.co.at": [
+    "desktop-apps",
+    "tech"
   ],
   "vsta.org": [
     "linux"
@@ -12055,16 +16276,19 @@
   ],
   "wacom.com": [
     "electronics",
-    "tech"
+    "hardware"
   ],
   "wacom.ir": [
-    "tech"
+    "hardware"
   ],
   "waf.io": [
     "open-source"
   ],
   "wagtail.io": [
     "webdev"
+  ],
+  "wahoofitness.com": [
+    "tech"
   ],
   "wakanda.github.io": [
     "database"
@@ -12094,17 +16318,39 @@
   "waridtel.com": [
     "telecom"
   ],
+  "waridtel.com.bd": [
+    "telecom"
+  ],
+  "watchguard.com": [
+    "cybersecurity"
+  ],
   "waterfox.com": [
     "mobile-apps"
   ],
   "watir.com": [
     "tech"
   ],
+  "waves.com": [
+    "desktop-apps",
+    "tech"
+  ],
   "wavpack.com": [
     "open-source"
   ],
+  "wayfinder.org": [
+    "tech"
+  ],
+  "wballiance.com": [
+    "telecom"
+  ],
   "wdc.com": [
     "desktop-apps"
+  ],
+  "weathercompany.com": [
+    "tech"
+  ],
+  "web-giga.com": [
+    "game-studios"
   ],
   "web.igap.net": [
     "messaging"
@@ -12117,6 +16363,9 @@
   ],
   "webalizer.net": [
     "open-source"
+  ],
+  "webel-india.com": [
+    "tech"
   ],
   "weberp.org": [
     "open-source"
@@ -12136,8 +16385,15 @@
   "webpack.js.org": [
     "javascript"
   ],
+  "webroot.com": [
+    "desktop-apps",
+    "cybersecurity"
+  ],
   "websitebaker.org": [
     "open-source"
+  ],
+  "webstandards.org": [
+    "tech"
   ],
   "webtoolkit.eu": [
     "webdev"
@@ -12147,6 +16403,10 @@
   ],
   "webtrees.net": [
     "open-source"
+  ],
+  "webtrekk.com": [
+    "dev",
+    "tech"
   ],
   "webyog.com": [
     "tech"
@@ -12169,6 +16429,9 @@
   "wesnoth.org": [
     "open-source"
   ],
+  "westone.co.jp": [
+    "game-studios"
+  ],
   "wetv.vip": [
     "streaming",
     "mobile-apps"
@@ -12188,8 +16451,14 @@
   "wherigo.com": [
     "tech"
   ],
+  "whidbeytel.com": [
+    "telecom"
+  ],
   "whiley.org": [
     "dev"
+  ],
+  "whirlpool.co.jp": [
+    "game-studios"
   ],
   "whispersystems.org": [
     "privacy"
@@ -12199,6 +16468,9 @@
   ],
   "whonix.org": [
     "linux"
+  ],
+  "whoopeecamp.co.jp": [
+    "game-studios"
   ],
   "whoscall.com": [
     "tech"
@@ -12273,6 +16545,9 @@
   "wikiwand.com": [
     "tech"
   ],
+  "wikiworkersunited.org": [
+    "tech"
+  ],
   "wildfly.org": [
     "open-source"
   ],
@@ -12282,8 +16557,14 @@
   "winamp.com": [
     "desktop-apps"
   ],
+  "winbond.com": [
+    "semiconductors"
+  ],
   "wincdemu.sysprogs.org": [
     "open-source"
+  ],
+  "wincor-nixdorf.com": [
+    "tech"
   ],
   "wind.gr": [
     "telecom"
@@ -12300,6 +16581,10 @@
   "windowsphone.com": [
     "smartphones"
   ],
+  "windriver.com": [
+    "dev",
+    "tech"
+  ],
   "windscribe.com": [
     "vpn"
   ],
@@ -12315,8 +16600,14 @@
   "wings3d.com": [
     "desktop-apps"
   ],
+  "wingtech.com": [
+    "semiconductors"
+  ],
   "wingware.com": [
     "dev"
+  ],
+  "winky.co.jp": [
+    "game-studios"
   ],
   "winmerge.org": [
     "open-source"
@@ -12354,11 +16645,14 @@
   "wiring.org.co": [
     "dev"
   ],
-  "wistron.com": [
-    "electronics",
-    "tech"
+  "withpersona.com": [
+    "cybersecurity"
   ],
   "wizet.com": [
+    "game-studios"
+  ],
+  "wizworks.com": [
+    "video-games",
     "game-studios"
   ],
   "wmcloud.org": [
@@ -12366,10 +16660,6 @@
   ],
   "wmii.suckless.org": [
     "open-source"
-  ],
-  "wolfram.com": [
-    "math",
-    "tech"
   ],
   "wolfsonmicro.com": [
     "semiconductors"
@@ -12391,6 +16681,9 @@
     "documents",
     "desktop-apps"
   ],
+  "worddive.com": [
+    "tech"
+  ],
   "wordfast.com": [
     "tech"
   ],
@@ -12406,6 +16699,10 @@
   "workflowy.com": [
     "tech"
   ],
+  "workingdesigns.com": [
+    "video-games",
+    "game-studios"
+  ],
   "workplace.com": [
     "tech"
   ],
@@ -12416,7 +16713,7 @@
     "open-source"
   ],
   "world.casio.com": [
-    "tech"
+    "electronics"
   ],
   "world.openfoodfacts.org": [
     "reference",
@@ -12431,7 +16728,15 @@
   "worldwidetelescope.org": [
     "tech"
   ],
+  "wortmann.de": [
+    "electronics",
+    "hardware"
+  ],
   "wp.netscape.com": [
+    "tech"
+  ],
+  "wrike.com": [
+    "desktop-apps",
     "tech"
   ],
   "writer.live.com": [
@@ -12447,7 +16752,7 @@
     "tech"
   ],
   "www-01.ibm.com": [
-    "database"
+    "tech"
   ],
   "www-03.ibm.com": [
     "tech"
@@ -12459,6 +16764,12 @@
     "open-source"
   ],
   "www16.big.or.jp": [
+    "game-studios"
+  ],
+  "www2.funai.co.jp": [
+    "electronics"
+  ],
+  "www4.tokai.or.jp": [
     "game-studios"
   ],
   "www8.hp.com": [
@@ -12500,6 +16811,10 @@
   ],
   "xabber.com": [
     "messaging"
+  ],
+  "xamarin.com": [
+    "desktop-apps",
+    "tech"
   ],
   "xandros.com": [
     "linux"
@@ -12559,6 +16874,12 @@
   "xerobank.com": [
     "browser"
   ],
+  "xfab.com": [
+    "semiconductors"
+  ],
+  "xfabulous.com": [
+    "semiconductors"
+  ],
   "xfce.org": [
     "linux"
   ],
@@ -12571,11 +16892,18 @@
   "xfree86.org": [
     "open-source"
   ],
+  "xfxforce.com": [
+    "electronics",
+    "hardware"
+  ],
   "xgboost.ai": [
     "dev"
   ],
   "xigmanas.com": [
     "open-source"
+  ],
+  "xilinx.com": [
+    "semiconductors"
   ],
   "xinetd.org": [
     "open-source"
@@ -12594,6 +16922,9 @@
   "xiuxiu.meitu.com": [
     "tech"
   ],
+  "xlab.si": [
+    "tech"
+  ],
   "xlr.sf.net": [
     "dev"
   ],
@@ -12608,6 +16939,9 @@
   ],
   "xmule.ws": [
     "desktop-apps"
+  ],
+  "xn--j5b5azb0a2a4bbb.xn--54b7fta0cc": [
+    "telecom"
   ],
   "xojo.com": [
     "dev"
@@ -12636,6 +16970,18 @@
   "xrdp.org": [
     "open-source"
   ],
+  "xs4all.nl": [
+    "telecom",
+    "tech"
+  ],
+  "xseedgames.com": [
+    "video-games",
+    "game-studios"
+  ],
+  "xsgames.biz": [
+    "games",
+    "game-studios"
+  ],
   "xstream.codehaus.org": [
     "open-source"
   ],
@@ -12644,6 +16990,9 @@
   ],
   "xuexi.cn": [
     "mobile-apps"
+  ],
+  "xunlei.com": [
+    "tech"
   ],
   "xvid.com": [
     "open-source"
@@ -12676,6 +17025,9 @@
   "yarnpkg.com": [
     "open-source"
   ],
+  "yarz.ru": [
+    "electronics"
+  ],
   "yasm.tortall.net": [
     "open-source"
   ],
@@ -12693,6 +17045,9 @@
   "yesodweb.com": [
     "webdev"
   ],
+  "yeswehack.com": [
+    "cybersecurity"
+  ],
   "yettel.hu": [
     "telecom"
   ],
@@ -12705,14 +17060,30 @@
   "yiiframework.com": [
     "webdev"
   ],
+  "ymtc.com": [
+    "semiconductors"
+  ],
   "yoctoproject.org": [
     "open-source"
+  ],
+  "yokogawa.com": [
+    "tech"
+  ],
+  "yonyou.com": [
+    "tech"
   ],
   "yooz.ir": [
     "search"
   ],
+  "yota.ru": [
+    "telecom"
+  ],
   "youos.com": [
     "tech"
+  ],
+  "yoyogames.com": [
+    "games",
+    "game-studios"
   ],
   "ysflight.com": [
     "tech"
@@ -12732,8 +17103,14 @@
   "yukes.co.jp": [
     "game-studios"
   ],
+  "yuki-web.co.jp": [
+    "game-studios"
+  ],
   "yum.baseurl.org": [
     "open-source"
+  ],
+  "yummly.com": [
+    "tech"
   ],
   "yunshanfu.unionpay.com": [
     "mobile-apps"
@@ -12750,9 +17127,15 @@
   "z.qzone.com": [
     "social"
   ],
+  "z8games.com": [
+    "game-studios"
+  ],
   "zabbix.com": [
     "desktop-apps",
     "open-source"
+  ],
+  "zalman.com": [
+    "hardware"
   ],
   "zammad-foundation.org": [
     "open-source"
@@ -12769,12 +17152,19 @@
   "zaproxy.org": [
     "dev"
   ],
+  "zaumstudio.com": [
+    "game-studios"
+  ],
   "zazzle.co.uk": [
     "ecommerce",
     "webdev"
   ],
   "zcashph5mxqjjby2.onion": [
     "open-source"
+  ],
+  "zebra.com": [
+    "electronics",
+    "hardware"
   ],
   "zebra.org": [
     "open-source"
@@ -12797,14 +17187,15 @@
     "helpdesk",
     "tech"
   ],
+  "zenimax.com": [
+    "games",
+    "game-studios"
+  ],
   "zenstudios.com": [
     "game-studios"
   ],
   "zentyal.com": [
     "linux"
-  ],
-  "zenui.asus.com": [
-    "tech"
   ],
   "zenwalk.org": [
     "linux"
@@ -12814,6 +17205,9 @@
   ],
   "zeroc.com": [
     "open-source"
+  ],
+  "zerodium.com": [
+    "cybersecurity"
   ],
   "zeromq.org": [
     "dev"
@@ -12829,6 +17223,15 @@
     "online-community",
     "tech"
   ],
+  "ziffdavis.com": [
+    "tech"
+  ],
+  "zight.com": [
+    "cloud"
+  ],
+  "ziilabs.com": [
+    "hardware"
+  ],
   "ziku.la": [
     "webdev"
   ],
@@ -12841,20 +17244,33 @@
   "zillions-of-games.com": [
     "game-dev"
   ],
+  "zilog.com": [
+    "semiconductors"
+  ],
   "zim-wiki.org": [
     "editor"
   ],
   "zimbra.com": [
     "desktop-apps"
   ],
+  "zimperium.com": [
+    "cybersecurity"
+  ],
   "zinf.org": [
     "desktop-apps"
+  ],
+  "zinkia.com": [
+    "games",
+    "game-studios"
   ],
   "zipgenius.com": [
     "desktop-apps"
   ],
   "zipgenius.it": [
     "desktop-apps"
+  ],
+  "zlango.com": [
+    "tech"
   ],
   "zlib.net": [
     "dev"
@@ -12864,6 +17280,12 @@
   ],
   "zodb.org": [
     "database"
+  ],
+  "zoetrope-interactive.com": [
+    "game-studios"
+  ],
+  "zoinkgames.com": [
+    "game-studios"
   ],
   "zonealarm.com": [
     "cybersecurity"
@@ -12880,12 +17302,21 @@
   "zong.com.pk": [
     "telecom"
   ],
+  "zoo.co.jp": [
+    "game-studios"
+  ],
   "zoom-inc.co.jp": [
     "game-studios"
+  ],
+  "zoom.co.jp": [
+    "electronics"
   ],
   "zoom.com": [
     "video-call",
     "messaging"
+  ],
+  "zootfly.com": [
+    "game-studios"
   ],
   "zope.dev": [
     "webdev"
@@ -12893,8 +17324,35 @@
   "zorin.com": [
     "linux"
   ],
+  "zotac.com": [
+    "electronics",
+    "hardware"
+  ],
+  "zscaler.com": [
+    "cybersecurity"
+  ],
   "zuggy.wz.cz": [
     "desktop-apps"
+  ],
+  "zuken.co.jp": [
+    "tech"
+  ],
+  "zuken.co.kr": [
+    "tech"
+  ],
+  "zuken.com": [
+    "tech"
+  ],
+  "zuken.com.cn": [
+    "desktop-apps",
+    "tech"
+  ],
+  "zuken.com.tw": [
+    "desktop-apps",
+    "tech"
+  ],
+  "zuntata.jp": [
+    "game-studios"
   ],
   "zuora.com": [
     "cloud",
@@ -12902,6 +17360,9 @@
   ],
   "zwoastro.com": [
     "desktop-apps",
+    "tech"
+  ],
+  "zylab.com": [
     "tech"
   ],
   "zynaddsubfx.sourceforge.io": [

@@ -69,18 +69,25 @@ function hostOf(site) {
     }
 }
 
-/** [host, item, sitelinks] for every item of the class with a website and enough sitelinks. */
-async function itemsOf(q, minLinks) {
-    const key = `${q}:${minLinks}`;
+/*
+ * [host, item, sitelinks] for every item of the class with a website and
+ * enough sitelinks. A class is a QID (instance of, P31) or PROP:QID for
+ * another property: P452:Q880371 is every item whose industry is software,
+ * which is how Wikidata files most big companies -- as a business in an
+ * industry, not as a kind of company.
+ */
+async function itemsOf(spec, minLinks) {
+    const key = `${spec}:${minLinks}`;
     if (cache[key]) return cache[key];
+    const [prop, q] = spec.includes(':') ? spec.split(':') : ['P31', spec];
     const rows = await sparql(`SELECT ?item ?site ?links WHERE {
-  ?item wdt:P31 wd:${q} ; wdt:P856 ?site ; wikibase:sitelinks ?links .
+  ?item wdt:${prop} wd:${q} ; wdt:P856 ?site ; wikibase:sitelinks ?links .
   FILTER(?links >= ${minLinks})
 }`);
     cache[key] = rows.map((row) => [hostOf(row.site.value), row.item.value.split('/').pop(), Number(row.links.value)])
         .filter(([host]) => host && /\./.test(host) && !/^\d+\.\d+\.\d+\.\d+$/.test(host));
     fs.writeFileSync(cacheFile, JSON.stringify(cache));
-    console.log(`  ${q}: ${cache[key].length}`);
+    console.log(`  ${spec}: ${cache[key].length}`);
     await sleep(800);
     return cache[key];
 }

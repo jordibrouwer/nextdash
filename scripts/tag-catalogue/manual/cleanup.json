@@ -158,6 +158,10 @@
   "deliveroo.co.uk": [
     "food-delivery"
   ],
+  "dell.com": [
+    "hardware",
+    "electronics"
+  ],
   "digitaltrends.com": [],
   "diplomatie.gouv.fr": [
     "government"
@@ -170,6 +174,7 @@
     "government"
   ],
   "elevenlabs.io": [],
+  "emerce.nl": [],
   "engadget.com": [],
   "eos.org": [],
   "espn.co.uk": [
@@ -187,6 +192,9 @@
   ],
   "frandroid.com": [],
   "futura-sciences.com": [],
+  "garmin.com": [
+    "electronics"
+  ],
   "ghacks.net": [],
   "gizmodo.com": [],
   "golem.de": [],
@@ -216,6 +224,14 @@
     "museums"
   ],
   "howtogeek.com": [],
+  "hp.com": [
+    "hardware",
+    "electronics"
+  ],
+  "ibm.com": [
+    "tech",
+    "cloud"
+  ],
   "icann.org": [],
   "iculture.nl": [],
   "igloocoolers.com": [],
@@ -244,6 +260,7 @@
     "law",
     "government"
   ],
+  "lesnumeriques.com": [],
   "library.cornell.edu": [
     "library"
   ],
@@ -253,8 +270,13 @@
   ],
   "livescience.com": [],
   "lobste.rs": [],
+  "logitech.com": [
+    "hardware",
+    "electronics"
+  ],
   "lwn.net": [],
   "macrumors.com": [],
+  "macworld.com": [],
   "makeuseof.com": [],
   "marriott.com.cn": [
     "hotels"
@@ -268,6 +290,10 @@
   "meme.yahoo.com": [],
   "meta.wikimedia.org": [
     "reference"
+  ],
+  "mi.com": [
+    "electronics",
+    "smartphones"
   ],
   "mistral.ai": [],
   "monmaster.gouv.fr": [

@@ -49,7 +49,7 @@
     "console.aws.amazon.com": ["aws", "cloud"],
     "kdp.amazon.com": ["self-publishing"],
     "advertising.amazon.com": [],
-    "microsoft.com": ["windows"],
+    "microsoft.com": ["tech", "windows"],
     "learn.microsoft.com": ["docs"],
     "azure.microsoft.com": ["azure", "cloud"],
     "teams.microsoft.com": ["chat"],
