@@ -283,6 +283,8 @@
         "isekai"
       ],
       "derived": [
+        "anisearch.com",
+        "anisearch.de",
         "danbooru.donmai.us",
         "gaiaonline.com",
         "gelbooru.com",
@@ -416,6 +418,11 @@
       "keywords": [
         "wayback",
         "ephemera"
+      ],
+      "derived": [
+        "archive.is",
+        "archive.md",
+        "siv.archives-nationales.culture.gouv.fr"
       ]
     },
     {
@@ -2122,20 +2129,12 @@
         "paperback"
       ],
       "derived": [
-        "45cat.com",
-        "albumoftheyear.org",
-        "anisearch.com",
-        "anisearch.de",
         "babelio.com",
         "booknode.com",
-        "comics.org",
         "fantasticfiction.com",
         "fictiondb.com",
         "lubimyczytac.pl",
-        "meta.wikimedia.org",
         "moly.hu",
-        "musicbrainz.org",
-        "musik-sammler.de",
         "netgalley.com",
         "onlinebookclub.org",
         "readgeek.com",
@@ -2204,7 +2203,6 @@
         "martinus.sk",
         "maruzenjunkudo.co.jp",
         "negozi.libraccio.it",
-        "oxfam.org.uk",
         "paperplus.co.nz",
         "porrua.mx",
         "powells.com",
@@ -2415,6 +2413,7 @@
         "apmex.com",
         "brandalley.co.uk",
         "brastop.com",
+        "businessinsider.de",
         "dhgate.com",
         "ezcater.com",
         "meccabingo.com",
@@ -2627,7 +2626,6 @@
         "msrp"
       ],
       "derived": [
-        "47.99.53.145",
         "7-eleven.com",
         "76.com",
         "9ff.de",
@@ -2731,6 +2729,7 @@
         "autosan.pl",
         "autoscout24.ch",
         "autoshow.ca",
+        "autotrader.co.uk",
         "autoweek.nl",
         "auverland.com",
         "avatr.com",
@@ -3585,7 +3584,6 @@
         "prodrive.com",
         "pros.lacentrale.fr",
         "proterra.com",
-        "proton.com",
         "puch.at",
         "pumaautomoveis.com.br",
         "pumaenergy.com.au",
@@ -4032,6 +4030,7 @@
         "alzheimersresearchuk.org",
         "amberleymuseum.co.uk",
         "americanhumanist.org",
+        "amnesty.nl",
         "amorc.org",
         "amywinehousefoundation.org",
         "anaphylaxis.org.uk",
@@ -4769,6 +4768,7 @@
         "osjct.co.uk",
         "osq.org",
         "oswestryschool.org.uk",
+        "oxfam.org.uk",
         "pancreaticcancer.org.uk",
         "parkinsons.org.uk",
         "parkrun.com",
@@ -4814,7 +4814,6 @@
         "rambert.org.uk",
         "ramblers.org.uk",
         "raobgle.org.uk",
-        "raspberrypi.org",
         "ratcliffe-college.co.uk",
         "rbcs.org.uk",
         "rbo.org.uk",
@@ -5339,6 +5338,10 @@
         "opening",
         "gambit",
         "endgame"
+      ],
+      "derived": [
+        "chess.at",
+        "chess.ca"
       ]
     },
     {
@@ -5403,7 +5406,6 @@
         "aberystwythartscentre.co.uk",
         "academycinemas.co.nz",
         "academymusicgroup.com",
-        "acehotel.com",
         "acmi.net.au",
         "actonecinema.co.uk",
         "adk.de",
@@ -5756,7 +5758,6 @@
         "hippodromefoundation.org",
         "historicelitchtheatre.org",
         "historicparktheatre.com",
-        "hk.space.museum",
         "hkac.org.hk",
         "hkcec.com",
         "hkw.de",
@@ -5909,7 +5910,6 @@
         "musichall.org",
         "mwpai.org",
         "myvue.com",
-        "nationaltheatre.org.au",
         "natlab.nl",
         "ncgmovies.com",
         "newamsterdamtheatre.com",
@@ -6612,9 +6612,6 @@
       "keywords": [
         "capstone",
         "instructor"
-      ],
-      "derived": [
-        "opencode.ai"
       ]
     },
     {
@@ -6747,6 +6744,7 @@
       ],
       "derived": [
         "bleedingcool.com",
+        "comics.org",
         "ridibooks.com",
         "toomics.com"
       ]
@@ -6979,7 +6977,6 @@
         "tw.my-best.com",
         "veronicasuperguide.nl",
         "wongnai.com",
-        "yelp.co.uk",
         "zeelool.com"
       ]
     },
@@ -7005,9 +7002,7 @@
         "kubelet"
       ],
       "derived": [
-        "igloocoolers.com",
-        "linuxserver.io",
-        "stanley1913.com"
+        "linuxserver.io"
       ]
     },
     {
@@ -7132,7 +7127,6 @@
       "derived": [
         "barclaycard.co.uk",
         "crowdfunder.co.uk",
-        "punchbowl.com",
         "quidco.com",
         "swagbucks.com",
         "topcashback.co.uk"
@@ -7349,6 +7343,7 @@
       "derived": [
         "canyon.com",
         "cyclingnews.com",
+        "cyclingweekly.co.uk",
         "lavuelta.es"
       ]
     },
@@ -7454,6 +7449,7 @@
         "letras.com",
         "litestream.io",
         "nationaldaycalendar.com",
+        "redis.com",
         "use-the-index-luke.com"
       ]
     },
@@ -7587,7 +7583,6 @@
       ],
       "derived": [
         "evri.com",
-        "just-eat.co.uk",
         "milkandmore.co.uk",
         "parcelforce.com",
         "picnic.app",
@@ -7644,6 +7639,10 @@
         "moodboard",
         "icon-set",
         "layout"
+      ],
+      "derived": [
+        "adobe.com",
+        "autodesk.com"
       ]
     },
     {
@@ -7709,7 +7708,6 @@
         "atempo.com",
         "attachmategroup.com",
         "audiokinetic.com",
-        "authy.com",
         "avaloq.com",
         "avast.com",
         "aveva.com",
@@ -7720,7 +7718,6 @@
         "bandlab.com",
         "barebones.com",
         "bentley.com",
-        "bibliocommons.com",
         "bitmain.com",
         "blackbaud.com",
         "blackberry.com",
@@ -7994,7 +7991,6 @@
         "redcort.com",
         "redhat.com",
         "rediff.com",
-        "redis.com",
         "redislabs.com",
         "rib-software.com",
         "ridewithvia.com",
@@ -8120,7 +8116,6 @@
         "yellowtab.de",
         "zabbix.com",
         "zend.com",
-        "zendesk.co.jp",
         "zippia.com",
         "zoho.com",
         "zohocorp.com",
@@ -8149,15 +8144,9 @@
         "open-source"
       ],
       "derived": [
-        "3cx.com",
-        "adobe.com",
         "aldec.com",
         "aspentech.com",
-        "authy.com",
-        "autodesk.com",
         "bea.com",
-        "bibliocommons.com",
-        "bigpark.com",
         "cangjie-lang.cn",
         "ccl.northwestern.edu",
         "charm.qu-bit.co.uk",
@@ -8222,6 +8211,7 @@
         "oberon.ch",
         "omninet.de",
         "oocities.org",
+        "opencode.ai",
         "opera.com",
         "orc.csres.utexas.edu",
         "pari.math.u-bordeaux.fr",
@@ -8266,7 +8256,6 @@
         "webtrekk.com",
         "wiki.portal.chalmers.se",
         "windriver.com",
-        "wolfram.com",
         "xl.inf.ethz.ch",
         "ziglang.org"
       ]
@@ -8766,6 +8755,12 @@
         "library-loan",
         "digital-lending",
         "bookshelf"
+      ],
+      "derived": [
+        "books.google.com.ar",
+        "books.google.com.au",
+        "books.google.it",
+        "gutenberg.net.au"
       ]
     },
     {
@@ -8856,8 +8851,6 @@
         "allegro.sk",
         "alltricks.fr",
         "alza.cz",
-        "amazon.co.jp",
-        "amazon.sg",
         "americanmusical.com",
         "ammareal.fr",
         "ansichtskartenversand.com",
@@ -8976,7 +8969,6 @@
         "decathlon.ca",
         "decathlon.fr",
         "decitre.fr",
-        "deliveroo.co.uk",
         "depot-online.de",
         "dermstore.com",
         "digikala.com",
@@ -10172,6 +10164,7 @@
         "mitchell.k12.sd.us",
         "mmu.ac.uk",
         "molloy.edu",
+        "monmaster.gouv.fr",
         "moore.army.mil",
         "mpg-dortmund.de",
         "mpg.de",
@@ -10517,7 +10510,6 @@
         "xaiu.edu.cn",
         "xjjtedu.com",
         "yau.edu.cn",
-        "ycombinator.com",
         "yibinu.edu.cn",
         "ylsy.hnu.edu.cn",
         "yorksj.ac.uk",
@@ -10689,7 +10681,6 @@
         "coolblue.nl",
         "coolermaster.com",
         "coros.com",
-        "corporate.orange.be",
         "cpc.farnell.com",
         "creality.com",
         "creative.com",
@@ -10784,6 +10775,7 @@
         "gsma.com",
         "gumstix.com",
         "h2owireless.com",
+        "hackaday.io",
         "haier.com",
         "hannstar.com",
         "hauppauge.com",
@@ -10911,10 +10903,6 @@
         "oppo.com",
         "opti.com",
         "optus.com.au",
-        "orange.be",
-        "orange.es",
-        "orange.pl",
-        "orange.ro",
         "orgill.com",
         "orientelectric.com",
         "originpc.com",
@@ -11007,7 +10995,6 @@
         "symbol.com",
         "synaptics.com",
         "system76.com",
-        "t-mobile.pl",
         "taiwanmobile.com",
         "tatung.com",
         "tbaytel.net",
@@ -11017,8 +11004,6 @@
         "teknikmagasinet.se",
         "telcel.com",
         "telecable.es",
-        "telefonica.de",
-        "telekom.com",
         "telenet.be",
         "telenor.se",
         "telia.se",
@@ -11071,10 +11056,6 @@
         "visible.com",
         "vivo.com",
         "vivo.com.br",
-        "vodafone.com.au",
-        "vodafone.es",
-        "vodafone.ie",
-        "vodafone.pt",
         "voodoopc.com",
         "vtech.com",
         "wacom.com",
@@ -11132,7 +11113,8 @@
         "mail.aol.com",
         "mail.com",
         "mxtoolbox.com",
-        "poczta.interia.pl"
+        "poczta.interia.pl",
+        "proton.com"
       ]
     },
     {
@@ -11465,6 +11447,7 @@
         "rainforest"
       ],
       "derived": [
+        "greenpeace.com.tw",
         "historicenvironment.scot"
       ]
     },
@@ -11546,6 +11529,7 @@
         "in.bookmyshow.com",
         "ingresso.com",
         "koleo.pl",
+        "punchbowl.com",
         "seatgeek.com",
         "showpass.com",
         "skiddle.com",
@@ -14995,6 +14979,7 @@
         "chattairport.com",
         "chautauqua.ny.us",
         "chc.ca",
+        "cheapflights.co.uk",
         "cheboyganairport.com",
         "cherbourg.aeroport.fr",
         "cherokeecountyairport.com",
@@ -16061,6 +16046,8 @@
         "karrathaairport.com.au",
         "kathrinstadt-airport.8m.com",
         "katowice-airport.com",
+        "kayak.co.uk",
+        "kayak.com.ar",
         "kbcr.gov",
         "kcfe.org",
         "kdair.com",
@@ -16864,6 +16851,24 @@
         "skymaster.com.br",
         "skypark.org",
         "skyregional.com",
+        "skyscanner.ae",
+        "skyscanner.ch",
+        "skyscanner.co.in",
+        "skyscanner.com.au",
+        "skyscanner.de",
+        "skyscanner.dk",
+        "skyscanner.es",
+        "skyscanner.fi",
+        "skyscanner.fr",
+        "skyscanner.ie",
+        "skyscanner.it",
+        "skyscanner.jp",
+        "skyscanner.net",
+        "skyscanner.nl",
+        "skyscanner.no",
+        "skyscanner.pl",
+        "skyscanner.ru",
+        "skyscanner.se",
         "skyserviceairlines.com",
         "skytaxi.aero",
         "skytraders.com.au",
@@ -17423,6 +17428,7 @@
         "goflink.com",
         "grab.com",
         "hungerstation.com",
+        "just-eat.co.uk",
         "justeattakeaway.com",
         "mealsonwheelsamerica.org",
         "nococinomas.es",
@@ -17457,10 +17463,7 @@
         "fumble"
       ],
       "derived": [
-        "besoccer.com",
-        "littlewoods.com",
-        "ncefl.org.uk",
-        "thefa.com"
+        "ncefl.org.uk"
       ]
     },
     {
@@ -17510,8 +17513,6 @@
         "alternatehistory.com",
         "anime-planet.com",
         "animesuki.com",
-        "anisearch.com",
-        "anisearch.de",
         "arca.live",
         "aspergerforum.se",
         "aufeminin.com",
@@ -17713,6 +17714,7 @@
       ],
       "derived": [
         "10bet.co.uk",
+        "1win.com",
         "1xbet.com",
         "49s.co.uk",
         "888casino.com",
@@ -17963,7 +17965,6 @@
         "johren.net",
         "maplestoryworlds.nexon.com",
         "myabandonware.com",
-        "nintendo.pt",
         "nutaku.com",
         "nutaku.net",
         "nuuvem.com",
@@ -18196,6 +18197,7 @@
         "bigfinishgames.com",
         "bigfishgames.com",
         "bighugegames.com",
+        "bigpark.com",
         "bigpoint.net",
         "bigworldtech.com",
         "biligame.com",
@@ -18325,7 +18327,6 @@
         "crypticstudios.com",
         "crystaldynamics.com",
         "crytek.com",
-        "cs.cornell.edu",
         "cubicle7.co.uk",
         "cuffs.co.jp",
         "cultures2.de",
@@ -19015,6 +19016,7 @@
         "nintendo.es",
         "nintendo.fr",
         "nintendo.it",
+        "nintendo.pt",
         "nintendogs.nintendo.es",
         "nitrome.com",
         "nitrotype.com",
@@ -20089,11 +20091,12 @@
         "aaa.com",
         "americangolf.co.uk",
         "europeantour.com",
+        "golf.de",
+        "golf.se",
         "pdga.com",
         "presidentscup.com",
         "puregym.com",
-        "taylormadegolf.com",
-        "thefa.com"
+        "taylormadegolf.com"
       ]
     },
     {
@@ -20758,6 +20761,7 @@
         "cuijk.nl",
         "culemborg.nl",
         "cultura.gob.es",
+        "culture.gouv.fr",
         "culture.gov.taipei",
         "culture.ntpc.gov.tw",
         "culture.tainan.gov.tw",
@@ -20888,6 +20892,7 @@
         "dintur.se",
         "dinxperlo.nl",
         "diplomatie.belgium.be",
+        "diplomatie.gouv.fr",
         "dirksland.nl",
         "disa.mil",
         "dison.be",
@@ -20993,6 +20998,7 @@
         "echt-susteren.nl",
         "eci.gov.in",
         "economie.fgov.be",
+        "economie.gouv.fr",
         "economy-ni.gov.uk",
         "ecorp.sos.ga.gov",
         "ecy.wa.gov",
@@ -21804,6 +21810,7 @@
         "leforem.be",
         "legalaffairs.gov.taipei",
         "legalaid.on.ca",
+        "legifrance.gouv.fr",
         "leicestershire.gov.uk",
         "leics.police.uk",
         "leiderdorp.nl",
@@ -22235,7 +22242,6 @@
         "nyc.gov",
         "nychealthandhospitals.org",
         "nyj.ndrc.gov.cn",
-        "nysaes.cals.cornell.edu",
         "nystateofhealth.ny.gov",
         "nzblood.co.nz",
         "nzbn.govt.nz",
@@ -22863,7 +22869,6 @@
         "tienen.be",
         "tii.ie",
         "tilburg.nl",
-        "time.gov",
         "tinlot.be",
         "tintigny.be",
         "tioh.army.mil",
@@ -24904,7 +24909,8 @@
       ],
       "derived": [
         "dice.fm",
-        "seetickets.com"
+        "seetickets.com",
+        "zendesk.co.jp"
       ]
     },
     {
@@ -25148,6 +25154,7 @@
         "abbeycourthotel.co.uk",
         "abodeexeter.co.uk",
         "accorhotels.com",
+        "acehotel.com",
         "adagio-city.com",
         "adaremanor.com",
         "adolphus.com",
@@ -27204,7 +27211,6 @@
         "garrard.com",
         "goldsmiths.co.uk",
         "graff.com",
-        "igloocoolers.com",
         "jamesavery.com",
         "johnhardy.com",
         "joyeriasanchez.com",
@@ -27318,9 +27324,6 @@
         "gratitude",
         "mood",
         "handwritten"
-      ],
-      "derived": [
-        "thepinknews.com"
       ]
     },
     {
@@ -27475,7 +27478,6 @@
         "archeo.ens.fr",
         "archinte.jamanetwork.com",
         "architecture.yale.edu",
-        "archive.md",
         "arctic.synergiesprairies.ca",
         "arctic.ucalgary.ca",
         "ardeajournal.nl",
@@ -27489,7 +27491,6 @@
         "arrs.org",
         "arss.fr",
         "arthritis.org",
-        "arts.cornell.edu",
         "asabe.org",
         "asanet.org",
         "asce.org",
@@ -27524,7 +27525,6 @@
         "baumeister.de",
         "bcbs.com",
         "beck.de",
-        "bees.library.cornell.edu",
         "behavioralandbrainfunctions.com",
         "beilstein-journals.org",
         "bfsujournals.com",
@@ -27739,7 +27739,6 @@
         "econ.ntu.edu.tw",
         "econ.sinica.edu.tw",
         "economics-sociology.eu",
-        "economie.gouv.fr",
         "econtent.hogrefe.com",
         "econtheory.org",
         "ecoscience.ulaval.ca",
@@ -27983,7 +27982,6 @@
         "jmm.sagepub.com",
         "jnm.snmjournals.org",
         "jodesign.org.tw",
-        "johnson.cornell.edu",
         "jonmd.com",
         "jos.org.cn",
         "jour.hhu.edu.cn",
@@ -28167,7 +28165,6 @@
         "nar.oxfordjournals.org",
         "nasonline.org",
         "nationaalherbarium.nl",
-        "nationalgeographic.it",
         "naturalis.nl",
         "naturalsciences.be",
         "natuurtijdschriften.nl",
@@ -28373,7 +28370,6 @@
         "research.calacademy.org",
         "research.ebsco.com",
         "researching.cn",
-        "resolver.library.cornell.edu",
         "revistas.igme.es",
         "revistas.juridicas.unam.mx",
         "revistas.navarra.es",
@@ -28478,7 +28474,6 @@
         "site.uit.no",
         "sites.uclouvain.be",
         "sjes.springeropen.com",
-        "skyandtelescope.com",
         "slavicreview.illinois.edu",
         "smc.math.ca",
         "smf.emath.fr",
@@ -28623,7 +28618,6 @@
         "www2.ametsoc.org",
         "www2.filg.uj.edu.pl",
         "www2.ihp.sinica.edu.tw",
-        "www2.johnson.cornell.edu",
         "www2.lehigh.edu",
         "www2.uchicago.edu",
         "www3.nd.edu",
@@ -28874,7 +28868,8 @@
         "legislature"
       ],
       "derived": [
-        "dol.ny.gov"
+        "dol.ny.gov",
+        "legifrance.gouv.fr"
       ]
     },
     {
@@ -28970,7 +28965,9 @@
         "babelscores.com",
         "bam-portal.de",
         "base-search.net",
+        "bees.library.cornell.edu",
         "biblat.unam.mx",
+        "bibliocommons.com",
         "biblioteca.galiciana.gal",
         "bibliotecadigital.jcyl.es",
         "bibliotecafloridablanca.um.es",
@@ -28987,6 +28984,7 @@
         "cambridge.org",
         "capitalcollections.org.uk",
         "catalogue.bnf.fr",
+        "cdl.library.cornell.edu",
         "ceeol.com",
         "celt.ucc.ie",
         "cervantesvirtual.com",
@@ -28998,7 +28996,6 @@
         "clarivate.com",
         "classiques.uqam.ca",
         "cnki.net",
-        "comics.org",
         "cqvip.com",
         "crossref.org",
         "ctext.org",
@@ -29059,6 +29056,7 @@
         "lacito.vjf.cnrs.fr",
         "lattes.cnpq.br",
         "liberliber.it",
+        "library.cornell.edu",
         "library.manchester.ac.uk",
         "librarygems.be",
         "liburuklik.euskadi.eus",
@@ -29103,6 +29101,7 @@
         "rekhta.org",
         "repository.naturalis.nl",
         "reseau-mirabel.info",
+        "resolver.library.cornell.edu",
         "rilm.org",
         "ripm.org",
         "rism.info",
@@ -29588,7 +29587,6 @@
         "americanthinker.com",
         "amica.it",
         "amielandmelburn.org.uk",
-        "amnesty.nl",
         "amren.com",
         "amshistorica.cib.unibo.it",
         "amshistorica.unibo.it",
@@ -29632,7 +29630,6 @@
         "architecturalrecord.com",
         "architectureau.com",
         "architektura.muratorplus.pl",
-        "archive.is",
         "archives-numerisees.loire-atlantique.fr",
         "archives-socialistes.fr",
         "archives.creuse.fr",
@@ -29666,7 +29663,6 @@
         "atnf.csiro.au",
         "atribuna.com.br",
         "attitude.co.uk",
-        "au.youth.yahoo.com",
         "augsburger-allgemeine.de",
         "aurealis.com.au",
         "austrianwings.info",
@@ -29691,7 +29687,6 @@
         "autorevue.at",
         "autosport.com",
         "autosprint.corrieredellosport.it",
-        "autotrader.co.uk",
         "autovisie.nl",
         "autoweek.com",
         "autozeitung.de",
@@ -29795,9 +29790,6 @@
         "bondia.ad",
         "bonniersbokklubb.se",
         "booklistonline.com",
-        "books.google.com.ar",
-        "books.google.com.au",
-        "books.google.it",
         "boote-magazin.de",
         "bossip.com",
         "bostadsratterna.se",
@@ -29891,7 +29883,6 @@
         "cbm.sb-roscoff.fr",
         "cbr.com",
         "cdaction.pl",
-        "cdl.library.cornell.edu",
         "ceeol.com",
         "cellesche-zeitung.de",
         "celticfamilymagazine.com",
@@ -30022,7 +30013,6 @@
         "ctwant.com",
         "cuina.cat",
         "culturanavarra.es",
-        "culture.gouv.fr",
         "curbsideclassic.com",
         "currentaffairs.org",
         "cusp.hk",
@@ -30122,7 +30112,6 @@
         "diglib.cib.unibo.it",
         "dili360.com",
         "dip-badajoz.es",
-        "diplomatie.gouv.fr",
         "directa.cat",
         "discovermagazine.com",
         "discreteanalysisjournal.com",
@@ -30479,7 +30468,6 @@
         "gnz.de",
         "goed.at",
         "gofeminin.de",
-        "golf.se",
         "gong.de",
         "gonline.uol.com.br",
         "goodhousekeeping.com",
@@ -30872,7 +30860,6 @@
         "leeuwardercourant.nl",
         "lefilmfrancais.com",
         "legacy.esperanto.org.uk",
-        "legifrance.gouv.fr",
         "legislature.mi.gov",
         "legorafi.fr",
         "legrandcontinent.eu",
@@ -31017,7 +31004,6 @@
         "mein-schoener-garten.de",
         "meinbezirk.at",
         "melodieundrhythmus.com",
-        "members.home.nl",
         "mensfitness.co.uk",
         "mensfitness.com",
         "menshealth.com",
@@ -31123,6 +31109,7 @@
         "nakkheeran.in",
         "national-geographic.pl",
         "nationalclubgolfer.com",
+        "nationalgeographic.it",
         "nationalinterest.org",
         "nationalmuseum.se",
         "nato.int",
@@ -31672,6 +31659,7 @@
         "skogsstyrelsen.se",
         "skolanemsav.bzh",
         "skolverket.se",
+        "skyandtelescope.com",
         "sl.nsw.gov.au",
         "slamonline.com",
         "slate.com",
@@ -32443,7 +32431,8 @@
         "coolmathgames.com",
         "mheducation.com",
         "mymaths.co.uk",
-        "omnicalculator.com"
+        "omnicalculator.com",
+        "wolfram.com"
       ]
     },
     {
@@ -32489,9 +32478,6 @@
       ],
       "derived": [
         "100.se",
-        "177milkstreet.com",
-        "1win.com",
-        "222.247.56.59",
         "3arts.com",
         "404media.co",
         "8531.cn",
@@ -32863,7 +32849,6 @@
         "valenciaplaza.com",
         "vanguardanimation.com",
         "vanguardfilms.com",
-        "verizon.net",
         "viacom.com",
         "viaplaygroup.com",
         "virgilio.it",
@@ -33380,6 +33365,7 @@
         "beenverified.com",
         "britishironworkcentre.co.uk",
         "constitutioncenter.org",
+        "hk.space.museum",
         "intelius.com",
         "patientsknowbest.com",
         "peoplefinders.com",
@@ -34053,6 +34039,7 @@
         "atlantico.fr",
         "atlantico.net",
         "atresmedia.com",
+        "au.yahoo.com",
         "auburnpub.com",
         "augustachronicle.com",
         "ausnews.de",
@@ -34237,6 +34224,7 @@
         "businessday.ng",
         "businessdesk.co.nz",
         "businessinsider.com.pl",
+        "businessinsider.de",
         "businessinsider.es",
         "businessinsider.jp",
         "businessinsider.nl",
@@ -34482,7 +34470,6 @@
         "ctvnews.ca",
         "cubainformacion.tv",
         "cuisine.journaldesfemmes.fr",
-        "culture.gouv.fr",
         "cumhuriyet.com.tr",
         "cumulus.com",
         "curacao.nu",
@@ -36076,7 +36063,6 @@
         "news.cn",
         "news.co.uk",
         "news.com.au",
-        "news.cornell.edu",
         "news.de",
         "news.kbs.co.kr",
         "news.mynavi.jp",
@@ -36712,7 +36698,6 @@
         "sita.sk",
         "site.securities.com",
         "sitkasentinel.com",
-        "siv.archives-nationales.culture.gouv.fr",
         "sj-r.com",
         "skaraborgslanstidning.se",
         "skd.se",
@@ -37054,6 +37039,7 @@
         "theoregonjournal.com",
         "thepaper.cn",
         "thepeterboroughexaminer.com",
+        "thepinknews.com",
         "theportugalnews.com",
         "thepost.co.za",
         "theprint.in",
@@ -37428,6 +37414,7 @@
         "wz.de",
         "xornal.com",
         "xtramagazine.com",
+        "yahoo.com",
         "yakimaherald.com",
         "ydr.com",
         "yen.com.gh",
@@ -38454,9 +38441,6 @@
         "contributors",
         "maintainers",
         "upstream"
-      ],
-      "derived": [
-        "opencode.ai"
       ]
     },
     {
@@ -38621,6 +38605,7 @@
         "passphrase"
       ],
       "derived": [
+        "authy.com",
         "vaultwarden.net"
       ]
     },
@@ -39192,7 +39177,6 @@
         "bookriot.com",
         "buechereien.wien.gv.at",
         "bumingbai.net",
-        "businessinsider.de",
         "buymeacoffee.com",
         "buzzfeed.com",
         "catalunya.com",
@@ -39222,7 +39206,6 @@
         "masrawy.com",
         "mega64.com",
         "merseysideskeptics.org.uk",
-        "meta.wikimedia.org",
         "mmafighting.com",
         "natemat.pl",
         "nationalarchives.gov.uk",
@@ -39465,7 +39448,8 @@
       ],
       "derived": [
         "adguard.com",
-        "duck.ai"
+        "duck.ai",
+        "proton.com"
       ]
     },
     {
@@ -40060,7 +40044,6 @@
         "fieldmuseum.org",
         "fifthestate.org",
         "fightthenewdrug.org",
-        "figshare.com",
         "firstsecondbooks.com",
         "fischerverlage.de",
         "fisiocritici.it",
@@ -40143,7 +40126,6 @@
         "guji.com.cn",
         "gulfpub.com",
         "gusfishergallery.auckland.ac.nz",
-        "gutenberg.net.au",
         "gwo.pl",
         "habe.euskadi.eus",
         "hachette.com",
@@ -40348,7 +40330,6 @@
         "libertyfund.org",
         "library.aut.ac.nz",
         "library.columbia.edu",
-        "library.cornell.edu",
         "library.duke.edu",
         "library.georgetown.edu",
         "library.illinois.edu",
@@ -40961,8 +40942,7 @@
       "derived": [
         "askubuntu.com",
         "serverfault.com",
-        "superuser.com",
-        "thepinknews.com"
+        "superuser.com"
       ]
     },
     {
@@ -41231,7 +41211,6 @@
         "gjsd.net",
         "gong971.de",
         "goodkarmabrands.com",
-        "greenpeace.com.tw",
         "grimeton.org",
         "grootnieuwsradio.nl",
         "grparlamento.rai.it",
@@ -41872,6 +41851,9 @@
       "keywords": [
         "gpio",
         "soldering"
+      ],
+      "derived": [
+        "raspberrypi.org"
       ]
     },
     {
@@ -42100,6 +42082,7 @@
         "simmer"
       ],
       "derived": [
+        "177milkstreet.com",
         "americastestkitchen.com",
         "chowhound.com",
         "food.com",
@@ -42107,14 +42090,12 @@
         "hillspet.com",
         "hollandandbarrett.com",
         "janespatisserie.com",
-        "just-eat.co.uk",
         "nigella.com",
         "nisbets.co.uk",
         "preppykitchen.com",
         "ratings.food.gov.uk",
         "servsafe.com",
         "smartandfinal.com",
-        "stanley1913.com",
         "thecookierookie.com",
         "thedailymeal.com",
         "thekitchn.com",
@@ -42385,8 +42366,6 @@
         "erogamescape.dyndns.org",
         "es.openfoodfacts.org",
         "eservices.sabam.be",
-        "espn.co.uk",
-        "espn.com.ar",
         "eurohockey.com",
         "euskaltzaindia.eus",
         "exoplanetarchive.ipac.caltech.edu",
@@ -42553,6 +42532,7 @@
         "memoiredeshommes.defense.gouv.fr",
         "memorialdemocratic.gencat.cat",
         "memoriav.ch",
+        "meta.wikimedia.org",
         "mhdb.mh.sinica.edu.tw",
         "milesplit.com",
         "minecraft.wiki",
@@ -42756,7 +42736,6 @@
         "thezay.org",
         "thwiki.cc",
         "tianyancha.com",
-        "timeanddate.de",
         "tolkiengateway.net",
         "topdoctors.co.uk",
         "toxnet.nlm.nih.gov",
@@ -42971,6 +42950,9 @@
         "curated",
         "archived",
         "versioned"
+      ],
+      "derived": [
+        "figshare.com"
       ]
     },
     {
@@ -44119,6 +44101,7 @@
         "yannick-alleno.com",
         "yardhouse.com",
         "yardsalepizza.com",
+        "yelp.co.uk",
         "ygfchina.com",
         "yoccos.com",
         "yochi.com.au",
@@ -44192,7 +44175,6 @@
         "chisholmhunter.co.uk",
         "couponfollow.com",
         "lightinthebox.com",
-        "littlewoods.com",
         "postoffice.co.uk",
         "protyre.co.uk",
         "rainbowshops.com",
@@ -44691,12 +44673,9 @@
         "intermediair.nl",
         "jooble.org",
         "kagi2pv5bdcxxqla5itjzje2cgdccuwept5ub6patvmvn3qgmgjd6vid.onion",
-        "kayak.co.uk",
-        "kayak.com.ar",
         "kiddle.co",
         "libgen.is",
         "mojeek.co.uk",
-        "monmaster.gouv.fr",
         "naver.com",
         "ndlsearch.ndl.go.jp",
         "oaister.org",
@@ -44719,24 +44698,6 @@
         "search.google",
         "seeqpod.com",
         "seznam.cz",
-        "skyscanner.ae",
-        "skyscanner.ch",
-        "skyscanner.co.in",
-        "skyscanner.com.au",
-        "skyscanner.de",
-        "skyscanner.dk",
-        "skyscanner.es",
-        "skyscanner.fi",
-        "skyscanner.fr",
-        "skyscanner.ie",
-        "skyscanner.it",
-        "skyscanner.jp",
-        "skyscanner.net",
-        "skyscanner.nl",
-        "skyscanner.no",
-        "skyscanner.pl",
-        "skyscanner.ru",
-        "skyscanner.se",
         "so.com",
         "sogou.com",
         "soso.com",
@@ -45375,6 +45336,9 @@
         "alza.cz",
         "amac.nl",
         "amanhecer.pt",
+        "amazon.co.jp",
+        "amazon.in",
+        "amazon.sg",
         "ambientweather.net",
         "amcal.com.au",
         "america-today.com",
@@ -46765,6 +46729,7 @@
         "liquorland.com.au",
         "liquormarts.ca",
         "littleburgundyshoes.com",
+        "littlewoods.com",
         "livera.nl",
         "liverpool.com.mx",
         "livingspaces.com",
@@ -51592,6 +51557,7 @@
         "the-nomads.co.uk",
         "theants.co.uk",
         "thebarkers.com.au",
+        "thefa.com",
         "thegowfers.com",
         "theleafe.co.uk",
         "themillers.co.uk",
@@ -51654,7 +51620,6 @@
         "trevisocalcio.tv",
         "trezefc.com.br",
         "tricordiano.com.br",
-        "tro.matrix.com.br",
         "trurocity.co.uk",
         "tsc-zweibruecken.com",
         "tsg-backnang-fussball.de",
@@ -52230,7 +52195,6 @@
         "gemeinsamerleben.com",
         "geni.com",
         "gettr.com",
-        "hackaday.io",
         "hackster.io",
         "healthunlocked.com",
         "hootsuite.com",
@@ -52257,11 +52221,9 @@
         "maimai.cn",
         "marshmallow-qa.com",
         "meetup.com",
-        "meme.yahoo.com",
         "mixi.jp",
         "mocospace.com",
         "my.mail.ru",
-        "myheritage.fr",
         "nebenan.de",
         "nk.pl",
         "odaibako.net",
@@ -52318,7 +52280,6 @@
         "xiaohongshu.com",
         "xing.com",
         "yaklass.ru",
-        "yelp.co.uk",
         "yikyakapp.com",
         "yy.com",
         "zalo.me",
@@ -52393,6 +52354,9 @@
         "launch",
         "satellite",
         "nebula"
+      ],
+      "derived": [
+        "skyandtelescope.com"
       ]
     },
     {
@@ -52629,8 +52593,6 @@
         "championat.com",
         "champrugby.com",
         "chargers.com",
-        "chess.at",
-        "chess.ca",
         "chessscotland.com",
         "chicagobears.com",
         "chiefs.com",
@@ -52892,7 +52854,6 @@
         "goifl.com",
         "goinvaders.de",
         "goldenbaseball.com",
-        "golf.de",
         "golfdata.se",
         "gopack.com",
         "gopfl.com",
@@ -53362,7 +53323,6 @@
         "teamusa.org",
         "tenis.pt",
         "tennesseetitans.com",
-        "tennis.com.au",
         "tennis.org.tw",
         "tenniscanada.com",
         "tennishk.org",
@@ -53603,7 +53563,8 @@
         "bootstrapped"
       ],
       "derived": [
-        "openrent.co.uk"
+        "openrent.co.uk",
+        "ycombinator.com"
       ]
     },
     {
@@ -53734,13 +53695,11 @@
         "miniseries"
       ],
       "derived": [
-        "abcmouse.com",
         "abema.tv",
         "acfun.cn",
         "aha.video",
         "airamerica.com",
         "allelitewrestling.com",
-        "amazon.co.jp",
         "angel.com",
         "ani.gamer.com.tw",
         "animatetimes.com",
@@ -53786,7 +53745,6 @@
         "filmin.cat",
         "filmin.es",
         "flixtor.li",
-        "fonts.adobe.com",
         "funimation.com",
         "gagaoolala.com",
         "gaia.com",
@@ -54735,7 +54693,6 @@
         "sunmobile.com.hk",
         "sunrise.ch",
         "superdrugmobile.com",
-        "swift.com",
         "swisscom.ch",
         "symphonyteleca.com",
         "t-mobile.pl",
@@ -54951,7 +54908,6 @@
         "13wmaz.com",
         "14-tagebuecher.de",
         "14news.com",
-        "177milkstreet.com",
         "19-2.radio-canada.ca",
         "192tv.nl",
         "1tv.ru",
@@ -55073,7 +55029,6 @@
         "alsace.france3.fr",
         "alsumaria.tv",
         "altbalaji.com",
-        "amazon.in",
         "amcchannels.es",
         "amcglobalmedia.com",
         "amcplus.com",
@@ -55107,7 +55062,6 @@
         "arabic.rt.com",
         "aragontelevision.es",
         "aratuon.com.br",
-        "archive.is",
         "ardalpha.de",
         "ardemadrid.movistarplus.es",
         "ardmediathek.de",
@@ -55137,7 +55091,6 @@
         "attheraces.com",
         "atv.at",
         "atv.com.tr",
-        "au.yahoo.com",
         "australianidol.com.au",
         "automaistv.com.br",
         "automoto-lachaine.fr",
@@ -56473,7 +56426,6 @@
         "nationalgeographic.de",
         "nationalgeographic.es",
         "nationalgeographic.fr",
-        "nationalgeographic.it",
         "nationalgeographic.pt",
         "nationalgeographicbrasil.com",
         "nationalgeographicla.com",
@@ -57748,7 +57700,6 @@
         "xite.com",
         "xite.nl",
         "xxltv.fr",
-        "yahoo.com",
         "yb983.com",
         "yesnetwork.com",
         "yle.fi",
@@ -57831,6 +57782,7 @@
         "backhand"
       ],
       "derived": [
+        "tennis.com.au",
         "usopen.org",
         "wimbledon.com"
       ]
@@ -58635,7 +58587,6 @@
         "polktheatre.org",
         "polyforumsiqueiros.com",
         "pontio.co.uk",
-        "pop.culture.gouv.fr",
         "portland5.com",
         "posthuistheater.nl",
         "ppacri.org",
@@ -59210,7 +59161,9 @@
         "meridian"
       ],
       "derived": [
-        "time.is"
+        "time.gov",
+        "time.is",
+        "timeanddate.de"
       ]
     },
     {
@@ -60162,7 +60115,6 @@
         "maidofthemist.com",
         "margaritavilleatsea.com",
         "marinobus.it",
-        "marriott.com.cn",
         "micazu.nl",
         "msccruises.com",
         "musement.com",
@@ -60436,7 +60388,6 @@
         "dean"
       ],
       "derived": [
-        "202.199.224.4",
         "247sports.com",
         "24orebs.com",
         "4tu.nl",
@@ -60570,6 +60521,7 @@
         "artacademy.edu",
         "artcenter.edu",
         "arts.ac.uk",
+        "arts.cornell.edu",
         "aru.ac.uk",
         "asbury.edu",
         "ash-berlin.eu",
@@ -60953,6 +60905,7 @@
         "cranfield.ac.uk",
         "creighton.edu",
         "crownschool.uchicago.edu",
+        "cs.cornell.edu",
         "csfederalismo.it",
         "csi.ca",
         "csjmu.ac.in",
@@ -61848,6 +61801,7 @@
         "jntuh.ac.in",
         "jnu.edu.cn",
         "johncabot.edu",
+        "johnson.cornell.edu",
         "johnsonu.edu",
         "johnstown.pitt.edu",
         "jordan.sae.edu",
@@ -62294,6 +62248,7 @@
         "newmanu.edu",
         "newpaltz.edu",
         "newport.ac.uk",
+        "news.cornell.edu",
         "nfu.edu.tw",
         "ngndgccollege.edu.in",
         "ngu.edu",
@@ -62418,6 +62373,7 @@
         "nxu.edu.cn",
         "nyenrode.nl",
         "nyit.edu",
+        "nysaes.cals.cornell.edu",
         "oak.edu",
         "oakland.edu",
         "oakwood.edu",
@@ -64058,6 +64014,7 @@
         "www11.georgetown.edu",
         "www2.cortland.edu",
         "www2.hpu.edu.cn",
+        "www2.johnson.cornell.edu",
         "www2.lehigh.edu",
         "www2.ntin.edu.tw",
         "www2.ufjf.br",
@@ -64322,8 +64279,7 @@
         "vlipsy.com",
         "worldstarhiphop.com",
         "youku.com",
-        "youku.tv",
-        "zoom.com"
+        "youku.tv"
       ]
     },
     {
@@ -64415,6 +64371,9 @@
         "pbx",
         "softphone",
         "dial-tone"
+      ],
+      "derived": [
+        "3cx.com"
       ]
     },
     {
@@ -64834,7 +64793,6 @@
         "poferries.com",
         "presidentscup.com",
         "seetickets.com",
-        "time.is",
         "whathifi.com",
         "zeelool.com"
       ]
