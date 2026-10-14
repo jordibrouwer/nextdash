@@ -246,6 +246,14 @@ test.describe('bookmark panel: scrolling stays in it', () => {
 
   test('scrolled content stops short of its top and bottom edges', async ({ page }) => {
     const { bookmarks } = await open(page);
+    // The session tip comes up over the bottom of the screen at a moment of
+    // its own (at most one a day, so sometimes not at all); compared while it
+    // fades in, the strips differ. Off for this test.
+    await page.evaluate(() => {
+        window.dashboardInstance.settings.enableSessionTips = false;
+        // One may already be up from the load.
+        window.AppNotification?.hide?.();
+    });
     await page.setViewportSize({ width: 1280, height: 520 });
     await pick(page, bookmarks[1].name);
     // The drawer slides in: let it settle before measuring its edge.
@@ -261,11 +269,7 @@ test.describe('bookmark panel: scrolling stays in it', () => {
     await expect.poll(() => page.locator('.lvs-drawer-host[data-lvs-drawer="library"]').evaluate((host) =>
       host.getAnimations({ subtree: true }).filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).length),
     { timeout: 5_000 }).toBe(0);
-    // The once-a-release tip comes up over the bottom of the screen and fades
-    // in; compared while it does, the strips differ. Wait until it is up and still.
-    const tip = page.locator('#app-notification.show');
-    await expect(tip).toBeVisible({ timeout: 10_000 });
-    await expect.poll(() => tip.evaluate((el) => el.getAnimations().length)).toBe(0);
+    await expect(page.locator('#app-notification.show')).toHaveCount(0);
     const box = await frame.boundingBox();
     // The middle of each edge, from the edge a few pixels in: the corners are
     // rounded, and scrolled content has to stop short of the edge.
