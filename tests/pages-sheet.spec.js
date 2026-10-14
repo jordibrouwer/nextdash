@@ -67,6 +67,12 @@ async function openSheet(page) {
         lastBox = now;
         return settled;
     }, { intervals: [50, 100] }).toBe(true);
+    // And until it has finished rising in: two equal reads can land inside
+    // the rise, where every row is still drawn at its 0.94 scale.
+    await page.waitForFunction(() => {
+        const el = document.querySelector('.page-overview-sheet');
+        return el && el.getAnimations({ subtree: true }).every((a) => a.playState !== 'running');
+    });
 }
 
 const sheet = (page) => page.evaluate(() => {
