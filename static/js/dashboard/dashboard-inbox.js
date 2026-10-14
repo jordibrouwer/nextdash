@@ -2470,7 +2470,7 @@ class DashboardInbox {
                 live?.invalidate?.();
                 const typing = document.activeElement?.matches?.('input, textarea, [contenteditable="true"]');
                 if (this.isActiveView() && !typing) this.render();
-            });
+            }, { wait: 250 });
         }
         if (this._catalogueAsked || !live?.ensureCatalogue) return;
         this._catalogueAsked = true;

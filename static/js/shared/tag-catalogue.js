@@ -174,6 +174,9 @@
             // First the catalogue, in one request: whatever it knows needs no
             // lookup, and what it does not know is all that goes to Wikidata.
             const subset = await askSubset(hosts);
+            // What the catalogue knew is on screen at once, before the first
+            // answer from Wikidata.
+            if (subset?.added) changed();
             const unknown = new Set(subset?.unknown || hosts);
             const known = hosts.filter((host) => !unknown.has(host));
             if (known.length) {
@@ -472,9 +475,22 @@
      * Be told when the copy grows after the first answer -- an online lookup
      * landing. Returns the way to stop listening.
      */
-    function onChange(listener) {
-        listeners.add(listener);
-        return () => listeners.delete(listener);
+    function onChange(listener, options = {}) {
+        // A round answers in batches, and a view redrawn for each one is
+        // redrawn again before the eye has read it: wait is the pause that
+        // folds a burst of changes into one call.
+        let timer = null;
+        const wrapped = options.wait > 0
+            ? () => {
+                clearTimeout(timer);
+                timer = setTimeout(listener, options.wait);
+            }
+            : listener;
+        listeners.add(wrapped);
+        return () => {
+            clearTimeout(timer);
+            listeners.delete(wrapped);
+        };
     }
 
     /** The collection's sites the catalogue has nothing for. */

@@ -22800,7 +22800,7 @@ class DashboardConfig {
         // they do rather than waiting for the next visit.
         if (!this._tagCatalogueListening && window.TagCatalogue?.onChange) {
             this._tagCatalogueListening = true;
-            window.TagCatalogue.onChange(() => this.onTagEvidenceChanged());
+            window.TagCatalogue.onChange(() => this.onTagEvidenceChanged(), { wait: 250 });
         }
         return this._tagCataloguePromise;
     }

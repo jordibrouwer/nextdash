@@ -108,3 +108,56 @@ test('links that were already there when the browser first looked are left alone
     await page.waitForTimeout(7_000);
     expect(calls).toBe(0);
 });
+
+test('a round started from a button puts each answer on its row as it arrives', async ({ page }) => {
+    let release = () => {};
+    const held = new Promise((resolve) => { release = resolve; });
+    let calls = 0;
+    await page.route('**/api/tags/catalogue', (route) => {
+        if (route.request().method() !== 'POST') return route.continue();
+        const hosts = route.request().postDataJSON()?.hosts || [];
+        return route.fulfill({ json: { tags: [], unknown: hosts } });
+    });
+    await page.route('**/api/tags/lookup', async (route) => {
+        const hosts = route.request().postDataJSON()?.hosts || [];
+        calls += 1;
+        // The second batch is held back: the first must already be on screen.
+        if (calls === 2) await held;
+        route.fulfill({
+            json: {
+                enabled: true,
+                results: Object.fromEntries(hosts.map((h) => [h, { tags: ['gardening'], about: 'a garden site' }])),
+            },
+        });
+    });
+    await bootstrap(page);
+    // 60 sites: the round asks 50 at a time, so there are two batches.
+    const items = Array.from({ length: 60 }, (_, i) => ({
+        id: `live-${i}`, url: `https://live-${i}.example/a`, title: `Live ${i}`, addedAt: Date.now() - i * 1000, tags: [],
+    }));
+    // The queue the server would send, so the view's own loads keep it.
+    await page.route('**/api/inbox', (route) => (route.request().method() === 'GET'
+        ? route.fulfill({ json: { items } })
+        : route.continue()));
+    await page.evaluate(async () => {
+        const inbox = window.dashboardInstance.inbox;
+        await inbox.openInboxView();
+        await inbox.loadItems();
+    });
+    // The list shows fifty rows, newest first: Live 0 to Live 49.
+    await expect(page.locator('.inbox-item')).toHaveCount(50, { timeout: 15_000 });
+    await page.evaluate((rows) => {
+        // Oldest first, so the first batch is Live 59 to Live 10: the rows on
+        // screen from Live 10 on are answered first, Live 0 to Live 9 after.
+        window.TagCatalogue.lookupRound(rows.map((r) => r.url).reverse(), { delay: 60_000 });
+    }, items);
+
+    const offerOn = (name) => page.locator('.inbox-item', { hasText: name }).locator('[data-inbox-offer="gardening"]');
+    // The inbox redraws itself every few seconds anyway; the answer has to be
+    // on the row sooner than that.
+    await expect(offerOn('Live 49')).toHaveCount(1, { timeout: 3_000 });
+    // The held batch has not answered, and its rows have no offer yet.
+    await expect(offerOn('Live 0')).toHaveCount(0);
+    release();
+    await expect(offerOn('Live 0')).toHaveCount(1, { timeout: 15_000 });
+});

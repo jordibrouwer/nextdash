@@ -610,7 +610,7 @@
                     live.invalidate?.();
                     const typing = document.activeElement?.matches?.('input, textarea, [contenteditable="true"]');
                     if (this.isActiveView() && !typing) this.render();
-                });
+                }, { wait: 250 });
             }
             const urls = matches.map((b) => b.url).filter(Boolean);
             const signature = urls.slice().sort().join('\n');
