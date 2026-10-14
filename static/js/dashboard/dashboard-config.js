@@ -3848,7 +3848,7 @@ class DashboardConfig {
 
         this.behaviorSchema({ forIndex: true }).forEach((panel) => {
             const section = panel.section || 'behavior';
-            (panel.controls || []).forEach((c) => {
+            DashboardConfig.flatControls(panel.controls).forEach((c) => {
                 if (!c.field || c.type === 'note' || c.type === 'pushDevice'
                     || c.type === 'maintenanceWindows') return;
                 push(c.field, c.label, section, panel.tab || 'general');
@@ -4223,6 +4223,8 @@ class DashboardConfig {
             randomThemeMode: '[data-appearance-randommode]',
             fontSize: '[data-appearance-font]',
             theme: '[data-appearance-select="theme"]',
+            backdropTuning: '[data-backdrop-tuning="strength"]',
+            cardGlass: '[data-glass-range="alpha"]',
         };
         if (groups[field]) candidates.push(groups[field]);
 
@@ -4317,6 +4319,8 @@ class DashboardConfig {
         }
         const focusEl = focusSelector ? document.querySelector(focusSelector) : null;
         if (focusEl) {
+            // A setting inside a Fine-tune fold: open it, or there is nothing to scroll to.
+            this.revealFine(focusEl);
             focusEl.scrollIntoView({ block: 'nearest', behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth' });
             if (typeof focusEl.focus === 'function') {
                 focusEl.focus({ preventScroll: true });
@@ -10747,6 +10751,7 @@ class DashboardConfig {
         this.applyAppearanceChangedFilter(body);
         this.bindFormKeyboard(container);
         // The Background and Surface tabs bind what is new on them.
+        this.bindFineFolds(container);
         this.bindLookControls?.(container);
     }
 
@@ -13310,6 +13315,121 @@ class DashboardConfig {
         return DashboardConfig.FIELD_META[field] || null;
     }
 
+    /** A panel's controls with every `fine` fold opened out into its members. */
+    static flatControls(controls) {
+        return (controls || []).flatMap((c) => (c && c.type === 'fine' ? DashboardConfig.flatControls(c.controls) : [c]));
+    }
+
+    /**
+     * Keep the controls `keep` accepts, folds included: a `fine` keeps only its
+     * accepted members (and remembers all of them as `_all`, for the summary)
+     * and goes when none is left.
+     */
+    static pruneControls(controls, keep) {
+        return (controls || []).flatMap((c) => {
+            if (!c || c.type !== 'fine') return keep(c) ? [c] : [];
+            const kept = DashboardConfig.pruneControls(c.controls, keep);
+            return kept.length ? [{ ...c, controls: kept, _all: c._all || c.controls }] : [];
+        });
+    }
+
+    /* ── Fine-tune folds ───────────────────────────────────────────────────── */
+
+    /**
+     * Whether a Fine-tune fold is open. Per fold, per viewer: the choice lives
+     * in localStorage (a convenience, so every access is guarded) and in memory,
+     * which keeps it across a repaint when storage is unavailable.
+     */
+    isFineOpen(id) {
+        this._fineOpen = this._fineOpen || {};
+        if (id in this._fineOpen) return this._fineOpen[id];
+        try { return localStorage.getItem(`nextdash.config.appearance.fine.${id}`) === '1'; } catch (_) { return false; }
+    }
+
+    setFineOpen(id, open) {
+        this._fineOpen = this._fineOpen || {};
+        this._fineOpen[id] = Boolean(open);
+        try { localStorage.setItem(`nextdash.config.appearance.fine.${id}`, open ? '1' : '0'); } catch (_) { /* works without it */ }
+    }
+
+    /**
+     * The fold around slider detail. A button rather than <details>: a
+     * repaint rewrites the body, and the state has to come from here, not from
+     * a DOM node that is about to be replaced. `forceOpen` is a filter hit or
+     * Only changed; it opens the fold without touching what the reader chose.
+     */
+    renderFineFold({ id, changed, body, forceOpen }) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const open = Boolean(forceOpen) || this.isFineOpen(id);
+        const summary = changed
+            ? this.t('config.fineChanged', '{n} changed').replace('{n}', String(changed))
+            : this.t('config.fineDefault', 'At defaults');
+        return `
+            <div class="config-fine" data-fine="${esc(id)}">
+                <button type="button" class="config-fine-head" data-fine-toggle
+                        aria-expanded="${open}" aria-controls="config-fine-${esc(id)}">
+                    <span class="config-fine-title">${esc(this.t('config.fineTitle', 'Fine-tune'))}</span>
+                    <small class="config-fine-summary">${esc(summary)}</small>
+                    <span class="config-fine-chevron" aria-hidden="true"></span>
+                </button>
+                <div class="config-fine-body" id="config-fine-${esc(id)}"${open ? '' : ' hidden'}>${body}</div>
+            </div>`;
+    }
+
+    /** Wire the folds under `container`; bound once per element. */
+    bindFineFolds(container) {
+        container.querySelectorAll('[data-fine-toggle]').forEach((btn) => {
+            if (btn.dataset.fineBound === '1') return;
+            btn.dataset.fineBound = '1';
+            btn.addEventListener('click', () => {
+                const fold = btn.closest('[data-fine]');
+                const open = btn.getAttribute('aria-expanded') !== 'true';
+                this.setFineOpen(fold.dataset.fine, open);
+                this.paintFineFold(fold, open);
+            });
+        });
+    }
+
+    /** Recount the changed rows in the fold holding `el` while a slider moves. */
+    refreshFineSummary(el) {
+        const fold = el.closest('[data-fine]');
+        const summary = fold?.querySelector('.config-fine-summary');
+        if (!summary) return;
+        const n = fold.querySelectorAll('.config-fine-body [data-fine-changed]').length;
+        summary.textContent = n
+            ? this.t('config.fineChanged', '{n} changed').replace('{n}', String(n))
+            : this.t('config.fineDefault', 'At defaults');
+    }
+
+    paintFineFold(fold, open) {
+        fold.querySelector('[data-fine-toggle]')?.setAttribute('aria-expanded', String(open));
+        const body = fold.querySelector('.config-fine-body');
+        if (body) body.hidden = !open;
+    }
+
+    /** Open the fold holding `el`, if any (a jump to a setting inside it). */
+    revealFine(el) {
+        const fold = el?.closest?.('[data-fine]');
+        if (!fold) return;
+        this.setFineOpen(fold.dataset.fine, true);
+        this.paintFineFold(fold, true);
+    }
+
+    /**
+     * Fold state after a DOM filter pass over the hand-written bodies: a fold
+     * with a visible row opens while the filter or Only changed is on, one
+     * with none goes, and with both off each goes back to the reader's choice.
+     */
+    syncFineFolds(host) {
+        const narrowed = this.changedOnly || Boolean(String(this.settingsFilter || '').trim());
+        host.querySelectorAll('[data-fine]').forEach((fold) => {
+            const rows = [...fold.querySelectorAll('.config-fine-body .config-field, .config-fine-body .config-field-row')];
+            const hit = rows.some((row) => !row.hasAttribute('hidden') && !row.hasAttribute('data-appearance-filtered'));
+            fold.toggleAttribute('hidden', narrowed && !hit);
+            this.paintFineFold(fold, narrowed ? hit : this.isFineOpen(fold.dataset.fine));
+        });
+    }
+
     /** Whether a field's current value differs from its installation default. */
     isFieldDefault(field, value) {
         const meta = this.fieldMeta(field);
@@ -13380,7 +13500,7 @@ class DashboardConfig {
     /** Fields in one schema panel that differ from their default. */
     panelChangedFields(panel) {
         const s = this.dash.settings || {};
-        return (panel.controls || [])
+        return DashboardConfig.flatControls(panel.controls)
             .filter((c) => c.field && c.type !== 'note' && c.type !== 'pushDevice'
                 && c.type !== 'maintenanceWindows')
             .filter((c) => {
@@ -14958,6 +15078,17 @@ class DashboardConfig {
                         <span class="config-field-hint" data-config-action-status="${esc(c.action)}"></span>
                     </div>`;
             }
+            // Slider detail folded under one line: the same fold the
+            // hand-written Background and Surface bodies use.
+            if (c.type === 'fine') {
+                const all = c._all || c.controls || [];
+                return this.renderFineFold({
+                    id: c.id,
+                    changed: this.panelChangedFields({ controls: all }).length,
+                    forceOpen: this.changedOnly || Boolean(String(this.settingsFilter || '').trim()),
+                    body: (c.controls || []).map(renderControl).join(''),
+                });
+            }
             // deviceSpecificSettings is kept in this browser rather than in the
             // settings object it is rendered from, so reading it the ordinary
             // way would draw the box unchecked however it is set.
@@ -15062,11 +15193,11 @@ class DashboardConfig {
             // applies-to badge stay: they explain the controls that remain.
             if (this.changedOnly && !changedFields.length) return '';
             const filtered = String(this.settingsFilter || '').trim()
-                ? panel.controls.filter((c) => this.controlMatchesFilter(c))
+                ? DashboardConfig.pruneControls(panel.controls, (c) => this.controlMatchesFilter(c))
                 : panel.controls;
             if (!filtered.length) return '';
             const controls = this.changedOnly
-                ? filtered.filter((c) => changedFields.includes(c.field))
+                ? DashboardConfig.pruneControls(filtered, (c) => changedFields.includes(c.field))
                 : filtered;
 
             const badge = panel.appliesTo
@@ -15276,6 +15407,7 @@ class DashboardConfig {
     }
 
     bindControlPanels(container, prefix) {
+        this.bindFineFolds(container);
         container.querySelectorAll(`[data-${prefix}-field]`).forEach((el) => {
             const field = el.getAttribute(`data-${prefix}-field`);
             const type = el.getAttribute(`data-${prefix}-type`);
@@ -15389,6 +15521,8 @@ class DashboardConfig {
             if (panel.querySelector('[data-behavior-field]')) return;
             let kept = 0;
             panel.querySelectorAll('.config-field, .config-field-row').forEach((row) => {
+                // Slider detail with no field of its own: the row says so.
+                if (row.hasAttribute('data-fine-changed')) { kept += 1; return; }
                 const aff = row.querySelector('[data-appearance-aff]');
                 const field = aff?.getAttribute('data-appearance-aff');
                 if (field && !this.isFieldDefault(field, s[field])) { kept += 1; return; }
@@ -15398,6 +15532,7 @@ class DashboardConfig {
         });
         // The tiles are navigation, not settings.
         host.querySelectorAll('.config-tiles').forEach(hide);
+        this.syncFineFolds(host);
 
         // The toggle is disabled when a tab has nothing changed, so this is
         // reachable only by arriving with the filter already on — from the
@@ -16337,7 +16472,7 @@ class DashboardConfig {
         const manual = this.manualFieldsFor(section, tab);
         const changed = panels.reduce((n, p) => n + this.panelChangedFields(p).length, 0)
             + manual.filter((f) => !this.isFieldDefault(f, this.dash.settings?.[f])).length;
-        const total = panels.reduce((n, p) => n + (p.controls || [])
+        const total = panels.reduce((n, p) => n + DashboardConfig.flatControls(p.controls)
             .filter((c) => c.field && this.fieldMeta(c.field)?.def !== undefined).length, 0)
             + manual.length;
         if (!total) return '';
@@ -16379,7 +16514,11 @@ class DashboardConfig {
      * "webhook" is reading the page.
      */
     applyDomSettingsFilter(container) {
-        const host = container.querySelector('#config-appearance-body');
+        // A body repaint hands in the body itself, which has no descendant by
+        // that id; without this the filter was lost on every such repaint.
+        const host = container.id === 'config-appearance-body'
+            ? container
+            : container.querySelector('#config-appearance-body');
         if (!host) return;
         const query = String(this.settingsFilter || '').trim().toLowerCase();
         this.repaintFilterElsewhere('appearance');
@@ -16395,6 +16534,7 @@ class DashboardConfig {
         if (!query) {
             rows.forEach((row) => row.removeAttribute('hidden'));
             panels.forEach((panel) => panel.removeAttribute('hidden'));
+            this.syncFineFolds(host);
             return;
         }
         rows.forEach((row) => {
@@ -16413,6 +16553,7 @@ class DashboardConfig {
             panel.toggleAttribute('hidden', !visible && !titleMatch);
             if (visible || titleMatch) anyVisible = true;
         });
+        this.syncFineFolds(host);
         if (!anyVisible) {
             const note = document.createElement('p');
             note.className = 'config-panel-empty';
@@ -17304,7 +17445,7 @@ class DashboardConfig {
         let n = 0;
         this.panelsFor(section, tab).forEach((panel) => {
             const changed = this.changedOnly ? this.panelChangedFields(panel) : null;
-            (panel.controls || []).forEach((c) => {
+            DashboardConfig.flatControls(panel.controls).forEach((c) => {
                 if (!c || !c.field) return;
                 if (changed && !changed.includes(c.field)) return;
                 if (query && !this.controlMatchesFilter(c)) return;

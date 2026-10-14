@@ -8839,6 +8839,66 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
     text-align: right;
 }
 
+/*
+ * Fine-tune: slider detail folded under one line inside a panel. The header is
+ * a plain button with no blur or backdrop-filter of its own, so Safari's
+ * hit-test bug for such elements cannot swallow its clicks. The body only
+ * shows or hides; there is no height animation to turn off for reduced motion.
+ */
+.config-fine {
+    margin: 8px 0 2px;
+    border: 1px dashed var(--border-color, var(--border-primary));
+    border-radius: 8px;
+}
+
+.config-fine[hidden],
+.config-fine-body[hidden],
+.config-fine-body [hidden] {
+    display: none;
+}
+
+.config-fine-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 10px;
+    border: 0;
+    background: transparent;
+    color: var(--text-muted, var(--text-secondary));
+    font: inherit;
+    font-size: calc(var(--font-size-text) * 0.93);
+    text-align: left;
+    cursor: pointer;
+}
+
+.config-fine-head:hover {
+    color: var(--text-primary);
+}
+
+.config-fine-summary {
+    flex: 1 1 auto;
+    opacity: 0.75;
+}
+
+.config-fine-chevron {
+    flex: 0 0 auto;
+    width: 6px;
+    height: 6px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg);
+}
+
+.config-fine-head[aria-expanded="true"] .config-fine-chevron {
+    transform: rotate(-135deg);
+}
+
+.config-fine-body {
+    padding: 4px 10px 8px;
+    border-top: 1px dashed var(--border-color, var(--border-primary));
+}
+
 .config-glass-badge {
     font-variant-numeric: tabular-nums;
     padding: 2px 8px;

@@ -26,6 +26,13 @@ async function openTab(page, tab) {
     await page.click(`[data-appearance-tab="${tab}"]`);
 }
 
+/** Open a Fine-tune fold by its header, the way a reader does; leaves an open one alone. */
+async function openFine(page, id) {
+    const head = page.locator(`[data-fine="${id}"] [data-fine-toggle]`);
+    if ((await head.getAttribute('aria-expanded')) !== 'true') await head.click();
+    await expect(head).toHaveAttribute('aria-expanded', 'true');
+}
+
 async function reloadDashboard(page) {
     await page.reload();
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
@@ -91,6 +98,7 @@ test.describe('the Background and Surface tabs', () => {
     test('the sliders are live, saved, and there when the page comes back', async ({ page }) => {
         await openTab(page, 'background');
 
+        await openFine(page, 'backdrop');
         await page.locator('[data-backdrop-tuning="strength"]').fill('0.5');
         await page.locator('[data-backdrop-tuning="blur"]').fill('10');
         await expect.poll(() => rootVar(page, '--bd-strength')).toBe('0.5');
@@ -104,6 +112,7 @@ test.describe('the Background and Surface tabs', () => {
         expect(await page.evaluate(() => getComputedStyle(document.body).filter)).toBe('none');
 
         await openTab(page, 'background');
+        await openFine(page, 'backdrop');
         await page.locator('[data-backdrop-reset]').click();
         await expect.poll(() => rootVar(page, '--bd-blur')).toBe('0px');
         await expect.poll(async () => (await stored(page)).backdropTuning?.strength, { timeout: 5_000 }).toBe(1);
@@ -112,6 +121,7 @@ test.describe('the Background and Surface tabs', () => {
     test('a new variant is saved and fetches the stylesheet again', async ({ page }) => {
         await openTab(page, 'background');
 
+        await openFine(page, 'backdrop');
         const refetch = page.waitForRequest((req) => req.url().includes('/api/theme.css'));
         await page.locator('[data-backdrop-tuning="seed"]').fill('7');
         await refetch;
@@ -136,6 +146,7 @@ test.describe('the Background and Surface tabs', () => {
         await expect(page.locator('[data-glass-mode="own"]')).toHaveClass(/is-active/);
         // The repaint runs when the save promise settles, so wait for that.
         await page.waitForFunction(() => !window.dashboardInstance.config._settingsSavePromise);
+        await openFine(page, 'glass');
         await page.locator('[data-glass-range="alpha"]').fill('0.4');
         await expect.poll(() => rootVar(page, '--theme-surface-alpha')).toBe('0.4');
         await expect(page.locator('[data-glass-contrast]')).not.toBeEmpty();

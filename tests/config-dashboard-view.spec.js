@@ -583,6 +583,9 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('[data-backdrop-mode="pick"]')).toBeVisible();
         await page.locator('[data-appearance-tab="surface"]').click();
         await expect(page.locator('[data-appearance-select="themeDepth"]')).toBeVisible();
+        // The card glass sliders sit under Fine-tune, folded until opened.
+        await expect(page.locator('[data-glass-range="alpha"]')).toBeHidden();
+        await page.locator('[data-fine="glass"] [data-fine-toggle]').click();
         await expect(page.locator('[data-glass-range="alpha"]')).toBeVisible();
 
         await page.locator('[data-appearance-tab="layout"]').click();
