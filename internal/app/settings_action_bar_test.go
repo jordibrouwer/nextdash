@@ -209,3 +209,40 @@ func TestActionBarIntroSwitchedOnInV1183BecomesSwell(t *testing.T) {
 		t.Fatalf("a style picked since wins: actionBarIntroStyle = %q, want off", got)
 	}
 }
+
+func TestActionBarSizeKeepsKnownSizesAndTurnsTheRestMedium(t *testing.T) {
+	for _, size := range []string{"xs", "s", "m", "l", "xl"} {
+		s := Settings{ActionBarSize: size}
+		clampBookmarkSettings(&s)
+		if s.ActionBarSize != size {
+			t.Fatalf("clamp changed %q to %q", size, s.ActionBarSize)
+		}
+	}
+	for _, size := range []string{"", "xxl", "L"} {
+		s := Settings{ActionBarSize: size}
+		clampBookmarkSettings(&s)
+		if s.ActionBarSize != "m" {
+			t.Fatalf("clamp: %q became %q, want m", size, s.ActionBarSize)
+		}
+	}
+}
+
+func TestActionBarSizeIsMediumWhenNeverStored(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Chdir(t.TempDir())
+	if got := NewStore().GetSettings().ActionBarSize; got != "m" {
+		t.Fatalf("fresh install: actionBarSize = %q, want m", got)
+	}
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Chdir(t.TempDir())
+	seedSettingsFile(t, map[string]any{"currentPage": 1})
+	if got := NewStore().GetSettings().ActionBarSize; got != "m" {
+		t.Fatalf("existing install: actionBarSize = %q, want m", got)
+	}
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Chdir(t.TempDir())
+	seedSettingsFile(t, map[string]any{"currentPage": 1, "actionBarSize": "xl"})
+	if got := NewStore().GetSettings().ActionBarSize; got != "xl" {
+		t.Fatalf("stored xl: actionBarSize = %q", got)
+	}
+}

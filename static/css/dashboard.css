@@ -8297,7 +8297,22 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
     display: none;
 }
 
-/* The actions are one box of 28px squares, the way the draft draws them. */
+/*
+ * The actions are one box of squares, the way the draft draws them.
+ *
+ * Five sizes (setting actionBarSize, on <body> as data-action-bar-size). s is
+ * the 28px the bar was drawn at before the setting; m, one step up, is the
+ * default.
+ */
+body {
+    --action-button-size: 32px;
+    --action-glyph-size: 20px;
+}
+body[data-action-bar-size="xs"] { --action-button-size: 24px; --action-glyph-size: 16px; }
+body[data-action-bar-size="s"]  { --action-button-size: 28px; --action-glyph-size: 18px; }
+body[data-action-bar-size="l"]  { --action-button-size: 38px; --action-glyph-size: 22px; }
+body[data-action-bar-size="xl"] { --action-button-size: 44px; --action-glyph-size: 26px; }
+
 .dashboard-section.section-controls .header-shortcuts {
     display: flex;
     align-items: center;
@@ -8317,8 +8332,8 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: var(--action-button-size);
+    height: var(--action-button-size);
     padding: 0;
     border: none;
     border-radius: var(--radius-6, 10px);
@@ -8356,6 +8371,12 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
     width: 18px;
     height: 18px;
     stroke-width: 2.2;
+}
+
+/* On the action bar the glyph grows with the button (actionBarSize). */
+.header-actions .header-shortcuts .header-action-glyph {
+    width: var(--action-glyph-size);
+    height: var(--action-glyph-size);
 }
 
 /*
