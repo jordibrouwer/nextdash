@@ -434,6 +434,7 @@ test.describe('config dashboard view (scaffold)', () => {
     test('favicon harmonization is configurable and stored per theme', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
+        await page.locator('[data-appearance-tab="display"]').click();
 
         await expect(page.locator('[data-appearance-toggle-icons="on"]')).toBeVisible();
 
@@ -463,6 +464,7 @@ test.describe('config dashboard view (scaffold)', () => {
     test('favicon harmonization stays enabled after leaving config', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
+        await page.locator('[data-appearance-tab="display"]').click();
 
         await page.locator('[data-appearance-toggle-icons="on"]').click();
         await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
@@ -472,6 +474,7 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('#dashboard-layout.config-layout')).toHaveCount(0);
 
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
+        await page.locator('[data-appearance-tab="display"]').click();
         await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
     });
 
@@ -484,6 +487,7 @@ test.describe('config dashboard view (scaffold)', () => {
         test.skip(!hasIcon, 'needs at least one bookmark with a favicon');
 
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
+        await page.locator('[data-appearance-tab="display"]').click();
 
         await page.locator('[data-appearance-toggle-icons="on"]').click();
         await page.locator('[data-appearance-iconstyle="muted"]').click();
@@ -508,6 +512,7 @@ test.describe('config dashboard view (scaffold)', () => {
     test('favicon harmonization stays enabled while random theme mode rotates themes', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
+        await page.locator('[data-appearance-tab="display"]').click();
 
         await page.evaluate(() => window.dashboardInstance.config.setRandomThemeMode('view'));
         await expect.poll(() => page.evaluate(() =>
@@ -531,12 +536,14 @@ test.describe('config dashboard view (scaffold)', () => {
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
+        await page.locator('[data-appearance-tab="display"]').click();
         await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
     });
 
     test('the icon-styling preview is driven by the real theme CSS', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
+        await page.locator('[data-appearance-tab="display"]').click();
 
         await page.locator('[data-appearance-toggle-icons="on"]').click();
         await page.locator('[data-appearance-iconstyle="muted"]').click();

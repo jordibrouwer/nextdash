@@ -193,7 +193,7 @@ test.describe('the settings schema declares its section', () => {
         const appearance = [...new Set(
             panels.filter((p) => p.section === 'appearance').map((p) => p.tab)
         )].sort();
-        expect(appearance).toEqual(['buttonbar', 'datetime', 'display', 'header', 'layout']);
+        expect(appearance).toEqual(['buttonbar', 'datetime', 'display', 'header', 'layout', 'previews']);
     });
 
     test('panelsFor keeps a shared tab name in its own section', async ({ page }) => {

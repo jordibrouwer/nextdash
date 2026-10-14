@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.19.7 — 14 October 2026](#v1197--14-october-2026)
 - [v1.19.6 — 14 October 2026](#v1196--14-october-2026)
 - [v1.19.5 — 12 October 2026](#v1195--12-october-2026)
 - [v1.19.4 — 12 October 2026](#v1194--12-october-2026)
@@ -107,6 +108,15 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.19.7 — 14 October 2026
+
+### Appearance
+
+- **new — Appearance groups its tabs.** Nine tabs under three labels — **Look** (Theme & type, Background, Surfaces), **Bookmarks** (Layout, Rows, Link previews) and **Header & bars** (Header, Action bar, Date & weather) — and link preview cards have a tab of their own. Look, Surface and Grid are renamed Theme & type, Surfaces and Layout; the old ids and words still open them (`APPEARANCE_TAB_GROUPS`, `previews`, `renderSectionTabStrip`).
+- **new — settings moved to where they belong.** Clock placement leads Date & weather instead of sitting on Header; **Show favicons**, the offline colour and favicon harmonisation are one **Favicons** panel on Rows; the browser tab title, custom title and favicon upload are one **Browser tab & branding** panel on Header.
 
 ---
 

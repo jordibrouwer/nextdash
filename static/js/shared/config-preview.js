@@ -26,6 +26,7 @@
         surface: 'all',
         layout: 'grid',
         display: 'rows',
+        previews: 'rows',
         header: 'head',
         datetime: 'clock',
         buttonbar: 'actions',

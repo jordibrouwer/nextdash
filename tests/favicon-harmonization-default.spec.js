@@ -67,6 +67,8 @@ test.describe('favicon harmonisation defaults to on', () => {
     test('and the toggle says so, rather than reading off', async ({ page }) => {
         await loadDashboard(page);
         await pickTheme(page, 'absinthe-dark');
+        // Favicons are a panel on Rows.
+        await page.locator('[data-appearance-tab="display"]').click();
 
         await expect(page.locator('[data-appearance-toggle-icons="on"]'))
             .toHaveAttribute('aria-pressed', 'true');
@@ -75,6 +77,7 @@ test.describe('favicon harmonisation defaults to on', () => {
     test('switching it off is still an off, and survives a reload', async ({ page }) => {
         await loadDashboard(page);
         await pickTheme(page, 'absinthe-dark');
+        await page.locator('[data-appearance-tab="display"]').click();
 
         await page.locator('[data-appearance-toggle-icons="off"]').click();
         // One Escape leaves config; there is no start screen in front of the tab.

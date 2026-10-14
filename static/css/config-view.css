@@ -2087,6 +2087,38 @@
     mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent);
 }
 
+/*
+ * Appearance's strip: three labelled groups on one scrolling line. The label
+ * is small and muted so the tab names stay what the eye reads; a rule between
+ * groups says where one ends. Presentation wrappers only -- the buttons stay
+ * the tablist's own children as far as the keyboard is concerned.
+ */
+.config-subtabs--grouped {
+    gap: 14px;
+}
+
+.config-subtab-group {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 4px;
+}
+
+.config-subtab-group + .config-subtab-group {
+    padding-left: 14px;
+    border-left: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+}
+
+.config-subtab-group-label {
+    padding-right: 6px;
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.8);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    opacity: 0.8;
+}
+
 .config-subtab {
     padding: 7px 14px;
     border: none;

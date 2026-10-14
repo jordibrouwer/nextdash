@@ -2327,7 +2327,7 @@ class DashboardConfig {
      */
     _changedFilterContext() {
         if (this.section === 'appearance') {
-            const tab = ['general', 'background', 'surface', 'layout', 'buttonbar', 'datetime', 'display', 'header'].includes(this.appearanceTab)
+            const tab = ['general', 'background', 'surface', 'layout', 'buttonbar', 'datetime', 'display', 'previews', 'header'].includes(this.appearanceTab)
                 ? this.appearanceTab
                 : null;
             return tab ? { section: 'appearance', tab } : null;
@@ -3692,6 +3692,7 @@ class DashboardConfig {
         { field: 'animationsEnabled', labelKey: 'enableAnimations', fallback: 'Enable animations', section: 'appearance', subTab: 'general' },
         { field: 'viewAnimationsEnabled', labelKey: 'viewAnimations', fallback: 'Animations in views and modals', section: 'appearance', subTab: 'general' },
         { field: 'animationSpeed', labelKey: 'animationSpeedLabel', fallback: 'Animation speed', section: 'appearance', subTab: 'general' },
+        { field: 'showPageInTitle', labelKey: 'showPageInTitleLabel', fallback: 'Show the page name in the browser title', section: 'appearance', subTab: 'header' },
         { field: 'enableCustomTitle', labelKey: 'enableCustomTitle', fallback: 'Use a custom page title', section: 'appearance', subTab: 'header' },
         { field: 'customTitle', labelKey: 'customTitleLabel', fallback: 'Title', section: 'appearance', subTab: 'header' },
         { field: 'enableCustomFavicon', labelKey: 'uploadFaviconLabel', fallback: 'Custom favicon', section: 'appearance', subTab: 'header' },
@@ -10021,6 +10022,9 @@ class DashboardConfig {
         if (this.appearanceTab === 'display') {
             return shell(this.renderAppearanceDisplayBody());
         }
+        if (this.appearanceTab === 'previews') {
+            return shell(this.renderControlPanels(this.panelsFor('appearance', 'previews'), 'behavior'));
+        }
         if (this.appearanceTab === 'header') {
             return shell(this.renderAppearanceToolbarBody());
         }
@@ -10103,12 +10107,6 @@ class DashboardConfig {
             </div>
 
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.appearanceFaviconsTitle', 'Favicons'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.appearanceFaviconsNote', 'How far the icons on your bookmark rows are pulled toward the theme.'))}</p>
-                ${this.renderIconStyling()}
-            </div>
-
-            <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceTypeTitle', 'Type'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.appearanceTypeNote', 'The typeface, weight, and size used across the dashboard. Upload a font file to use one that is not listed.'))}</p>
                 ${this.renderTypeFields()}
@@ -10128,20 +10126,28 @@ class DashboardConfig {
      */
     renderAppearanceToolbarBody() {
         // The browser tab's title and favicon came over from Display: they are
-        // the other half of what the page says about itself.
+        // the other half of what the page says about itself. One panel holds
+        // all of it, whichever of the settings the schema or this file draws.
         return this.renderControlPanels(this.panelsFor('appearance', 'header'), 'behavior')
             + this.renderAppearanceBrandingBody();
     }
 
-    /** The branding panel, appended to Display since it lost its own tab. */
+    /** Browser tab & branding: what the tab says and the icon it wears. */
     renderAppearanceBrandingBody() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
         return `
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.generalGroupBranding', 'Branding'))}</h3>
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceBrowserTabBrandingTitle', 'Browser tab & branding'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.appearanceBrandingNote', 'The page title and favicon this dashboard uses in the browser tab.'))}</p>
                 <div class="config-field-row">
+                    <label class="config-toggle">
+                        <input type="checkbox" data-appearance-toggle="showPageInTitle" ${s.showPageInTitle ? 'checked' : ''}>
+                        <span>${esc(this.t('config.showPageInTitleLabel', 'Show the page name in the browser title'))}</span>
+                    </label>
+                    ${this.appearanceAff('showPageInTitle')}
+                </div>
+                <div class="config-field-row" style="margin-top:10px">
                     <label class="config-toggle">
                         <input type="checkbox" data-appearance-toggle="enableCustomTitle" ${s.enableCustomTitle ? 'checked' : ''}>
                         <span>${esc(this.t('config.enableCustomTitle', 'Use a custom page title'))}</span>
@@ -10194,14 +10200,15 @@ class DashboardConfig {
         const s = this.dash.settings || {};
         return `
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.appearanceDisplayQuickTitle', 'Quick display options'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.appearanceDisplayQuickNote', 'Everyday bookmark row options. Toolbar and tab visibility live on their own tab.'))}</p>
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceFaviconsTitle', 'Favicons'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.appearanceFaviconsRowsNote', 'Whether bookmark rows show their icons, and how far those icons are pulled toward the theme.'))}</p>
                 ${this.renderRowToggles()}
+                ${this.renderIconStyling()}
             </div>
             ${this.renderControlPanels(this.panelsFor('appearance', 'display'), 'behavior')}`;
     }
 
-    /** Icons and status colour on bookmark rows: on Display, and in the studio. */
+    /** Icons and status colour on bookmark rows: on Rows, and in the studio. */
     renderRowToggles() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
@@ -10721,7 +10728,7 @@ class DashboardConfig {
         // live setter (via applyAppearanceField), which repaints the section so
         // the ↺ visibility refreshes.
         this.bindAffordances(container, null, (field, def) => this.applyAppearanceField(field, def));
-        if (['layout', 'buttonbar', 'datetime', 'display', 'header'].includes(this.appearanceTab)) {
+        if (['layout', 'buttonbar', 'datetime', 'display', 'previews', 'header'].includes(this.appearanceTab)) {
             this.bindControlPanels(container, 'behavior');
         } else {
             // bindControlPanels brings the toggle with it; the tabs without
@@ -10966,11 +10973,12 @@ class DashboardConfig {
 
     appearanceTabLabel(tab) {
         const map = {
-            general: ['config.appearanceTabLook', 'Look'],
+            general: ['config.appearanceTabLook', 'Theme & type'],
             background: ['config.appearanceTabBackground', 'Background'],
-            surface: ['config.appearanceTabSurface', 'Surface'],
-            layout: ['config.appearanceTabGrid', 'Grid'],
+            surface: ['config.appearanceTabSurface', 'Surfaces'],
+            layout: ['config.appearanceTabGrid', 'Layout'],
             display: ['config.appearanceTabRows', 'Rows'],
+            previews: ['config.appearanceTabPreviews', 'Link previews'],
             header: ['config.appearanceTabHeader', 'Header'],
             buttonbar: ['config.appearanceTabActionBar', 'Action bar'],
             datetime: ['config.appearanceTabDateTime', 'Date & weather'],
@@ -12674,6 +12682,10 @@ class DashboardConfig {
                 d.settings.enableCustomTitle = value;
                 d.pageNav?.updateDocumentTitle?.();
                 break;
+            case 'showPageInTitle':
+                d.settings.showPageInTitle = value;
+                d.pageNav?.updateDocumentTitle?.();
+                break;
             default:
                 return;
         }
@@ -13892,9 +13904,12 @@ class DashboardConfig {
                 //
                 // On the Header tab now, which is where the header is set; Date
                 // & weather keeps what the line says.
+                //
+                // Back on Date & weather, first: it is the clock, and the
+                // panels under it set what the clock says.
                 section: 'appearance',
-                tab: 'header',
-                order: 10,
+                tab: 'datetime',
+                order: -10,
                 title: t('config.appearanceClockPlacementTitle', 'Clock & weather'),
                 note: t('config.generalGroupHeaderClockNote', 'Where the clock and the weather stand in the header above the bookmarks.'),
                 controls: [
@@ -14091,17 +14106,6 @@ class DashboardConfig {
                 ],
             },
             {
-                // What the browser's own tab says, beside the custom title and
-                // favicon that Header draws under it.
-                section: 'appearance',
-                tab: 'header',
-                order: 20,
-                title: t('config.appearanceBrowserTabTitle', 'Browser tab'),
-                controls: [
-                    bool('showPageInTitle', 'config.showPageInTitleLabel', 'Show the page name in the browser title'),
-                ],
-            },
-            {
                 // What a category is called above its bookmarks. First on the
                 // tab: it is the one setting here that changes how the whole
                 // page reads, and the rest are about a single row.
@@ -14135,7 +14139,7 @@ class DashboardConfig {
             },
             {
                 section: 'appearance',
-                tab: 'display',
+                tab: 'previews',
                 title: t('config.linkPreviewGroup', 'Link preview cards'),
                 note: t('config.linkPreviewGroupNote',
                     'A card beside a bookmark with what the page says and what nextDash knows about it.'),
@@ -17224,15 +17228,31 @@ class DashboardConfig {
         const tabs = DashboardConfig.SUB_TABS[section]
             .filter((tab) => !(isAppearance && DashboardConfig.APPEARANCE_SUBPAGES[tab]));
         const attr = DashboardConfig.SUB_TAB_ATTR[section];
-        const buttons = tabs.map((tab) => {
+        const button = (tab) => {
             const active = tab === owner;
             const isNew = DashboardConfig.NEW_THIS_RELEASE.section === section
                 && tab === DashboardConfig.NEW_THIS_RELEASE.tab;
             const stars = isNew ? this.renderNewFeaturesPanelStars() : '';
             const label = this.subTabLabel(section, tab);
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}${isNew ? ' config-subtab--animated' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-${section}-body" ${attr}="${esc(tab)}">${esc(label)}${stars}</button>`;
-        }).join('');
-        return `<div class="config-subtabs" role="tablist">${buttons}</div>`;
+        };
+        if (isAppearance) {
+            // One tablist, grouped by presentation wrappers: the labels are
+            // aria-hidden because the tab names carry the meaning, and the
+            // arrow keys walk the buttons as one list across the groups.
+            const labels = {
+                look: this.t('config.appearanceGroupLook', 'Look'),
+                bookmarks: this.t('config.appearanceGroupBookmarks', 'Bookmarks'),
+                chrome: this.t('config.appearanceGroupChrome', 'Header & bars'),
+            };
+            const groups = DashboardConfig.APPEARANCE_TAB_GROUPS.map((group) => {
+                const inGroup = group.tabs.filter((tab) => tabs.includes(tab));
+                if (!inGroup.length) return '';
+                return `<div class="config-subtab-group" role="presentation" data-appearance-group="${esc(group.key)}"><span class="config-subtab-group-label" aria-hidden="true">${esc(labels[group.key])}</span>${inGroup.map(button).join('')}</div>`;
+            }).join('');
+            return `<div class="config-subtabs config-subtabs--grouped" role="tablist">${groups}</div>`;
+        }
+        return `<div class="config-subtabs" role="tablist">${tabs.map(button).join('')}</div>`;
     }
 
     /**
@@ -17571,6 +17591,7 @@ class DashboardConfig {
                 layout: () => this.renderAppearanceLayoutBody(),
                 buttonbar: () => this.renderAppearanceActionBarBody(),
                 display: () => this.renderAppearanceDisplayBody(),
+                previews: () => this.renderControlPanels(this.panelsFor('appearance', 'previews'), 'behavior'),
                 datetime: () => this.renderControlPanels(this.panelsFor('appearance', 'datetime'), 'behavior'),
             }[this.appearanceTab];
             // General is rebuilt through render(): its body is one block from
@@ -17697,7 +17718,18 @@ class DashboardConfig {
     // on the strip are Look, Grid, Rows, Header, Action bar and Date & weather.
     // Custom themes is last and is not on the strip: it is a page inside Look,
     // reached from Look's own button, with a way back to it.
-    static APPEARANCE_TABS = ['general', 'background', 'surface', 'layout', 'display', 'header', 'buttonbar', 'datetime', 'custom-themes'];
+    static APPEARANCE_TABS = ['general', 'background', 'surface', 'layout', 'display', 'previews', 'header', 'buttonbar', 'datetime', 'custom-themes'];
+
+    /*
+     * The strip reads in three labelled groups, in the order of the tabs
+     * above. Custom themes is a page of Theme & type and is not listed; a tab
+     * missing here would simply not be drawn.
+     */
+    static APPEARANCE_TAB_GROUPS = [
+        { key: 'look', tabs: ['general', 'background', 'surface'] },
+        { key: 'bookmarks', tabs: ['layout', 'display', 'previews'] },
+        { key: 'chrome', tabs: ['header', 'buttonbar', 'datetime'] },
+    ];
 
     /** Tabs a section keeps addressable but does not draw on its strip. */
     static APPEARANCE_SUBPAGES = { 'custom-themes': 'general' };
@@ -17721,6 +17753,13 @@ class DashboardConfig {
         rows: 'display',
         'action-bar': 'buttonbar',
         custom: 'custom-themes',
+        // Link preview cards left Rows for a tab of their own.
+        'link-previews': 'previews',
+        'link-preview': 'previews',
+        // The strip's newer words for the same tabs.
+        'theme-type': 'general',
+        surfaces: 'surface',
+        'bookmarks-layout': 'layout',
     };
 
     static STATS_TABS = ['overview', 'usage', 'collection', 'inbox', 'health'];
