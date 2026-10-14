@@ -465,13 +465,30 @@
             // Grouped by the catalogue's site, not the bookmark's host: a
             // docs.docker.com link and a docker.com link are one row.
             const bySite = new Map();
-            groupByPattern(rows, patternsOf).forEach((members, pattern) => {
+            const groups = groupByPattern(rows, patternsOf);
+            /*
+             * A section of a site first: youtube.com/@veritasium is science
+             * while youtube.com is video. The catalogue names such a section
+             * as host plus first segment, the second pattern patternsFor
+             * gives; a bookmark it answers for is not asked about its host.
+             */
+            const bySection = new Set();
+            groups.forEach((members, pattern) => {
+                if (!pattern.includes('/') || settled.has(pattern)) return;
+                const entries = byHost.get(pattern);
+                if (!entries?.length) return;
+                bySite.set(pattern, { entries, members: [...members] });
+                members.forEach((item) => bySection.add(item.key));
+            });
+            groups.forEach((members, pattern) => {
                 if (pattern.includes('/')) return;
                 if (settled.has(pattern)) return;
+                const rest = members.filter((item) => !bySection.has(item.key));
+                if (!rest.length) return;
                 const found = lookupHost(byHost, pattern);
                 if (!found || settled.has(found.key)) return;
                 const site = bySite.get(found.key) || { entries: found.entries, members: [] };
-                site.members.push(...members);
+                site.members.push(...rest);
                 bySite.set(found.key, site);
             });
             bySite.forEach(({ entries, members }, pattern) => {

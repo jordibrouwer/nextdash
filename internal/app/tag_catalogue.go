@@ -87,6 +87,10 @@ type tagCatalogue struct {
 	version  int
 	subjects []tagCatalogueSubject
 	byHost   map[string][]tagCatalogueHost
+	// sections is the entries written as host plus first path segment
+	// (youtube.com/@veritasium), by their host: a site can carry a section
+	// whose subject is not the site's own.
+	sections map[string][]tagCatalogueHost
 }
 
 // tagCatalogueMaxHosts bounds one POST. A collection of several thousand
@@ -103,7 +107,7 @@ func parseTagCatalogue(raw []byte) *tagCatalogue {
 		Version int                   `json:"version"`
 		Tags    []tagCatalogueSubject `json:"tags"`
 	}
-	catalogue := &tagCatalogue{byHost: map[string][]tagCatalogueHost{}}
+	catalogue := &tagCatalogue{byHost: map[string][]tagCatalogueHost{}, sections: map[string][]tagCatalogueHost{}}
 	if err := json.Unmarshal(raw, &doc); err != nil {
 		return catalogue
 	}
@@ -113,7 +117,12 @@ func parseTagCatalogue(raw []byte) *tagCatalogue {
 		for _, written := range subject.allHosts() {
 			exact := strings.HasPrefix(written, "=")
 			host := strings.TrimPrefix(written, "=")
-			catalogue.byHost[host] = append(catalogue.byHost[host], tagCatalogueHost{subject: i, written: written, exact: exact})
+			entry := tagCatalogueHost{subject: i, written: written, exact: exact}
+			if site, _, isSection := strings.Cut(host, "/"); isSection {
+				catalogue.sections[site] = append(catalogue.sections[site], entry)
+				continue
+			}
+			catalogue.byHost[host] = append(catalogue.byHost[host], entry)
 		}
 	}
 	return catalogue
@@ -165,7 +174,8 @@ same way the server did.
 func (c *tagCatalogue) subset(hosts []string) []tagCatalogueSubject {
 	wanted := make([]map[string]bool, len(c.subjects))
 	for _, host := range hosts {
-		for _, entry := range c.resolve(host) {
+		entries := append(c.resolve(host), c.sections[normalizeCatalogueHost(host)]...)
+		for _, entry := range entries {
 			if wanted[entry.subject] == nil {
 				wanted[entry.subject] = map[string]bool{}
 			}

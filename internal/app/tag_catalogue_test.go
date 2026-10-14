@@ -217,3 +217,23 @@ func TestTagAppsNameCatalogueSubjects(t *testing.T) {
 		}
 	}
 }
+
+// A section of a site -- youtube.com/@channel -- travels with its host, so the
+// engine can tell a science channel from the video site it sits on; it is not
+// a host of its own.
+func TestTagCatalogueSectionsTravelWithTheirHost(t *testing.T) {
+	catalogue := parseTagCatalogue([]byte(`{"version":3,"tags":[
+		{"tag":"video","aliases":[],"hosts":["youtube.com"]},
+		{"tag":"science","aliases":[],"hosts":["youtube.com/@veritasium"]}
+	]}`))
+	if got := catalogue.subjectsFor("youtube.com"); !reflect.DeepEqual(got, []string{"video"}) {
+		t.Errorf("host: got %v", got)
+	}
+	subset := catalogue.subset([]string{"www.youtube.com"})
+	if !reflect.DeepEqual(subset[1].Hosts, []string{"youtube.com/@veritasium"}) {
+		t.Errorf("section not in subset: %v", subset[1].Hosts)
+	}
+	if subset := catalogue.subset([]string{"vimeo.com"}); len(subset[1].Hosts) != 0 {
+		t.Errorf("section sent for another host: %v", subset[1].Hosts)
+	}
+}
