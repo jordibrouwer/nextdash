@@ -67,10 +67,15 @@ body.no-view-animations {
     }
 }
 
+/*
+ * backwards, not both: the keyframes have only a `from`, so the end is the
+ * dialog's own style anyway, and a forwards fill would keep a finished
+ * animation holding its transform for as long as the form is open.
+ */
 .bookmark-form-modal.show .bookmark-form-modal-dialog,
 .notes-modal,
 .docker-logs-modal[open] {
-    animation: modalRise calc(320ms * var(--enter-scale, 0.5)) cubic-bezier(0.2, 0.9, 0.25, 1.05) both;
+    animation: modalRise calc(320ms * var(--enter-scale, 0.5)) cubic-bezier(0.2, 0.9, 0.25, 1.05) backwards;
     transform-origin: 50% 40%;
 }
 
