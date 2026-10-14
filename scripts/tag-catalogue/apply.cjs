@@ -45,7 +45,7 @@ const classHosts = fs.existsSync(path.join(__dirname, 'manual', 'classes.json'))
 // subject, which also takes out what an earlier run filed.
 const PLACEHOLDER = /(^|\.)(example\.(com|org|net)|localhost|test|invalid)$/;
 const harvested = Object.fromEntries(Object.entries(
-    ['lobsters.json', 'awesome.json', 'directories.json', 'app-indexes.json', 'devto.json', 'github-topics.json']
+    ['lobsters.json', 'awesome.json', 'directories.json', 'app-indexes.json', 'devto.json', 'github-topics.json', 'selfhostedworld.json']
         .filter((name) => fs.existsSync(path.join(__dirname, 'manual', name)))
         .reduce((all, name) => ({ ...all, ...readJSON('manual', name) }), {}),
 ).map(([entry, tags]) => [entry, PLACEHOLDER.test(entry.split('/')[0]) ? [] : tags]));
