@@ -5,8 +5,67 @@ on:
     branches: [dev]
   pull_request:
     branches: [dev]
+  # Run a few specs on their own, without the rest of the suite:
+  #   gh workflow run ci.yml --ref dev -f specs="tests/tag-view.spec.js tests/inbox-keep.spec.js"
+  workflow_dispatch:
+    inputs:
+      specs:
+        description: 'Spec files or file:line, space-separated (empty: the whole suite)'
+        required: false
+        default: ''
+
+# A newer push to the same branch makes the run still going pointless; it is
+# cancelled rather than left to finish a quarter of an hour later.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
+  # Which e2e run this push needs. A push that only touches tests/ runs the
+  # specs it changed (and those that import a changed helper) instead of the
+  # whole suite: fixing one test used to cost a full fifteen-minute run. Any
+  # change outside tests/ runs everything, as does a pull request.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.pick.outputs.mode }}
+      args: ${{ steps.pick.outputs.args }}
+      shards: ${{ steps.pick.outputs.shards }}
+      total: ${{ steps.pick.outputs.total }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Pick the e2e run
+        id: pick
+        env:
+          EVENT: ${{ github.event_name }}
+          SPECS: ${{ github.event.inputs.specs }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          mode=full; args=""
+          if [ "$EVENT" = workflow_dispatch ] && [ -n "$SPECS" ]; then
+            mode=specs; args="$SPECS"
+          elif [ "$EVENT" = push ] && [ -n "$BEFORE" ] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            files=$(git diff --name-only "$BEFORE" "$SHA")
+            if [ -n "$files" ] && ! printf '%s\n' "$files" | grep -qv '^tests/'; then
+              mode=changed; args="--only-changed=$BEFORE --pass-with-no-tests"
+            fi
+          fi
+          if [ "$mode" = full ]; then
+            shards='[1,2,3,4,5,6,7,8,9,10,11,12]'; total=12
+          else
+            shards='[1]'; total=1
+          fi
+          echo "e2e: $mode $args"
+          {
+            echo "mode=$mode"
+            echo "args=$args"
+            echo "shards=$shards"
+            echo "total=$total"
+          } >> "$GITHUB_OUTPUT"
+
   validate-json:
     runs-on: ubuntu-latest
     steps:
@@ -93,8 +152,11 @@ jobs:
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
 
   e2e:
+    needs: changes
     runs-on: ubuntu-latest
-    # Six runners, each with its own machine. Inside a runner, Playwright runs
+    # Twelve runners for the whole suite (six took ten to fourteen minutes
+    # each, nearly all of it in the tests), one for a push that only changed
+    # tests or a run of named specs; see the changes job. Inside a runner, Playwright runs
     # four workers (PW_WORKERS defaults to 4 in playwright.config.js), and
     # tests/worker-server.js gives each its own server, port and data
     # directory, so the workers cannot touch each other's store.
@@ -116,10 +178,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6]
-    name: e2e (${{ matrix.shard }}/6)
+        shard: ${{ fromJSON(needs.changes.outputs.shards) }}
+    name: e2e (${{ matrix.shard }}/${{ needs.changes.outputs.total }})
     steps:
       - uses: actions/checkout@v7
+        with:
+          # --only-changed compares with the commit before the push.
+          fetch-depth: ${{ needs.changes.outputs.mode == 'changed' && 0 || 1 }}
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
@@ -149,7 +214,14 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
       - name: Run Playwright tests
-        run: xvfb-run npx playwright test --shard=${{ matrix.shard }}/6
+        env:
+          # From the changes job: nothing, --only-changed=<sha>, or the specs
+          # typed into a manual run. Through the environment, not pasted into
+          # the script, so a typed value cannot become a command.
+          ARGS: ${{ needs.changes.outputs.args }}
+          SHARD: ${{ matrix.shard }}/${{ needs.changes.outputs.total }}
+        # $ARGS unquoted on purpose: it is a list of words.
+        run: xvfb-run npx playwright test --shard="$SHARD" $ARGS
       - name: Upload report
         if: failure()
         uses: actions/upload-artifact@v7
