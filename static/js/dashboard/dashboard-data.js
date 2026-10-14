@@ -1303,6 +1303,7 @@ class DashboardData {
             const isUnsorted = (bookmark) => window.UnsortedPage?.isUnsorted?.(bookmark) === true;
             d.allBookmarks = rows.filter((bookmark) => !isUnsorted(bookmark));
             d.unsortedBookmarks = rows.filter(isUnsorted);
+            window.TagSuggestLive?.autoSearch?.(d);
             // Startup skips this whole load when no setting needs other pages'
             // bookmarks; readers of unsortedBookmarks (the Unsorted widget) ask
             // this flag before trusting an empty list.

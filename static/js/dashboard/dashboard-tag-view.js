@@ -602,6 +602,16 @@
         ensureSuggestionSources(matches) {
             const live = window.TagSuggestLive;
             if (!live?.ensureCatalogue) return;
+            // A quiet lookup (TagCatalogue.autoLookup) lands after the view is
+            // drawn; the offers are redrawn when it does.
+            if (!this._catalogueListening && window.TagCatalogue?.onChange) {
+                this._catalogueListening = true;
+                window.TagCatalogue.onChange(() => {
+                    live.invalidate?.();
+                    const typing = document.activeElement?.matches?.('input, textarea, [contenteditable="true"]');
+                    if (this.isActiveView() && !typing) this.render();
+                });
+            }
             const urls = matches.map((b) => b.url).filter(Boolean);
             const signature = urls.slice().sort().join('\n');
             if (this._suggestSignature === signature) return;

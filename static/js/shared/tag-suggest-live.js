@@ -293,7 +293,45 @@
         dash?.config?.onTagEvidenceChanged?.();
     }
 
+    /*
+     * Links that arrived since this browser first looked, handed to the quiet
+     * lookup (TagCatalogue.autoLookup).
+     *
+     * The starting point is fixed the first time this runs: what was already
+     * filed then is the reader's to search for with the button, not a backlog
+     * to work through behind their back. Called wherever the collection or the
+     * inbox has just been read; the lookup remembers which hosts it has tried.
+     */
+    const AUTO_SINCE_KEY = 'nextdash.tagAuto.since';
+
+    function autoSince() {
+        try {
+            let since = Number(localStorage.getItem(AUTO_SINCE_KEY));
+            if (!since) {
+                since = Date.now();
+                localStorage.setItem(AUTO_SINCE_KEY, String(since));
+            }
+            return since;
+        } catch {
+            return Infinity;
+        }
+    }
+
+    function autoSearch(dash) {
+        if (!global.TagCatalogue?.autoLookup || dash?.settings?.tagLookupOnline === false) return;
+        const since = autoSince();
+        const urls = [];
+        (dash?.allBookmarks || []).concat(dash?.unsortedBookmarks || []).forEach((bookmark) => {
+            if (bookmark?.url && Number(bookmark.createdAt) > since) urls.push(bookmark.url);
+        });
+        (dash?.inbox?.items || []).forEach((item) => {
+            if (item?.url && Number(item.addedAt) > since) urls.push(item.url);
+        });
+        if (urls.length) global.TagCatalogue.autoLookup(urls);
+    }
+
     global.TagSuggestLive = {
+        autoSearch,
         ensureCatalogue,
         invalidate,
         byKey,

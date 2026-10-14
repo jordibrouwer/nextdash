@@ -1913,6 +1913,7 @@ class DashboardInbox {
                 });
                 this._itemsLoaded = true;
                 delete this.dash._widgetInbox;
+                window.TagSuggestLive?.autoSearch?.(this.dash);
                 return this.items;
             } finally {
                 this._fetchPromise = null;
@@ -2461,6 +2462,16 @@ class DashboardInbox {
      */
     ensureSuggestCatalogue() {
         const live = window.TagSuggestLive;
+        // A quiet lookup (TagCatalogue.autoLookup) lands after the view is
+        // drawn; the Tags column is redrawn when it does.
+        if (!this._catalogueListening && window.TagCatalogue?.onChange) {
+            this._catalogueListening = true;
+            window.TagCatalogue.onChange(() => {
+                live?.invalidate?.();
+                const typing = document.activeElement?.matches?.('input, textarea, [contenteditable="true"]');
+                if (this.isActiveView() && !typing) this.render();
+            });
+        }
         if (this._catalogueAsked || !live?.ensureCatalogue) return;
         this._catalogueAsked = true;
         void Promise.all([live.ensureCatalogue(), live.storedKeywords?.()]).then(() => {

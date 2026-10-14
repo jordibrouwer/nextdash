@@ -23152,6 +23152,12 @@ class DashboardConfig {
      */
     onTagEvidenceChanged() {
         this._tagKeywordsPromise = null;
+        // The Bookmarks list shows an offer per row; a quiet lookup that lands
+        // while it is open adds to them.
+        if (document.getElementById('config-bm-offers')) {
+            window.TagSuggestLive?.invalidate?.();
+            this.repaintBookmarksList?.();
+        }
         if (document.getElementById('config-bm-suggestions')) {
             void this.ensureTagKeywords().then(() => {
                 this.renderTagSuggestionsSafe();

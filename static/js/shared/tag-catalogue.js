@@ -365,6 +365,99 @@
         return added;
     }
 
+    /*
+     * The quiet round for links that just arrived.
+     *
+     * Nobody asked for it, so it shows nothing: no overlay, no notice, and it
+     * never writes a tag. What it finds lands in the same copy the button's
+     * round fills, and changed() lets the open views offer it as chips.
+     *
+     * Bounded on every side. A host is tried once per thirty days (the
+     * server's own cache keeps a miss for as long), a round takes at most
+     * twenty, and a round already running -- the reader's own -- is never
+     * pushed aside. What does not fit waits for the next trigger.
+     */
+    const AUTO_MAX_HOSTS = 20;
+    const AUTO_DEBOUNCE_MS = 5000;
+    const AUTO_PAUSE_MS = 10 * 60 * 1000;
+    const AUTO_TRIED_KEY = 'nextdash.tagAuto.tried';
+    const AUTO_TRIED_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+    const autoQueue = new Set();
+    let autoTimer = null;
+    let autoRunning = false;
+    let autoPausedUntil = 0;
+
+    function autoTried() {
+        try {
+            const raw = JSON.parse(localStorage.getItem(AUTO_TRIED_KEY) || '{}');
+            return raw && typeof raw === 'object' ? raw : {};
+        } catch {
+            return {};
+        }
+    }
+
+    function autoRemember(hosts) {
+        const now = Date.now();
+        const tried = autoTried();
+        Object.keys(tried).forEach((host) => {
+            if (now - Number(tried[host]) > AUTO_TRIED_TTL_MS) delete tried[host];
+        });
+        hosts.forEach((host) => { tried[host] = now; });
+        try {
+            localStorage.setItem(AUTO_TRIED_KEY, JSON.stringify(tried));
+        } catch { /* storage refused: the session's own sets still hold */ }
+    }
+
+    async function autoFlush() {
+        autoTimer = null;
+        if (lookupOff || autoRunning || !autoQueue.size || Date.now() < autoPausedUntil) return;
+        // The reader's own round comes first; look again when it is over.
+        if (lookupRunning) {
+            autoTimer = setTimeout(autoFlush, AUTO_DEBOUNCE_MS);
+            return;
+        }
+        autoRunning = true;
+        try {
+            await load();
+            const tried = autoTried();
+            const now = Date.now();
+            const hosts = [...autoQueue]
+                .filter((host) => !lookedUp.has(host) && !(now - Number(tried[host]) < AUTO_TRIED_TTL_MS))
+                .slice(0, AUTO_MAX_HOSTS);
+            autoQueue.clear();
+            if (!hosts.length) return;
+            const subset = await askSubset(hosts);
+            if (!subset) return;
+            if (subset.added) changed();
+            const fresh = (subset.unknown || []).filter((host) => !lookedUp.has(host));
+            fresh.forEach((host) => lookedUp.add(host));
+            if (fresh.length) {
+                const data = await askLookup(fresh);
+                if (!data) return;
+                if (data.enabled === false) return;
+                if (data.pending) {
+                    autoPausedUntil = Date.now() + AUTO_PAUSE_MS;
+                    // Not tried: Wikidata did not answer, so ask again later.
+                    fresh.forEach((host) => lookedUp.delete(host));
+                    autoRemember(hosts.filter((host) => !fresh.includes(host)));
+                    return;
+                }
+            }
+            autoRemember(hosts);
+        } finally {
+            autoRunning = false;
+        }
+    }
+
+    /** Queue the addresses of new links; the round runs after a short pause. */
+    function autoLookup(urls) {
+        if (lookupOff) return;
+        (urls || []).map(hostOf).filter(Boolean).forEach((host) => autoQueue.add(host));
+        if (!autoQueue.size) return;
+        clearTimeout(autoTimer);
+        autoTimer = setTimeout(autoFlush, AUTO_DEBOUNCE_MS);
+    }
+
     /** What has already landed, for a caller that draws synchronously. */
     function now() {
         return catalogue || [];
@@ -394,5 +487,5 @@
         return stats;
     }
 
-    global.TagCatalogue = { load, now, ensureHosts, version, onChange, lookupRound, unknown, stats: catalogueStats };
+    global.TagCatalogue = { load, now, ensureHosts, version, onChange, lookupRound, autoLookup, unknown, stats: catalogueStats };
 })(window);
