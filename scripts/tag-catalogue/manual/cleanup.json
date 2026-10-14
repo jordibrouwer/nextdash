@@ -255,6 +255,9 @@
   "oxfam.org.uk": [
     "charities"
   ],
+  "packagist.org": [
+    "php"
+  ],
   "pop.culture.gouv.fr": [
     "reference"
   ],

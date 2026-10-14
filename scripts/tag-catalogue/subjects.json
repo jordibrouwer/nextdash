@@ -1,61 +1,300 @@
 {
-  "note": "Hand-written subjects that are new to the catalogue, with their sites. apply.cjs adds a subject that is missing and adds the hosts it lacks; it never removes. A host stays under at most two subjects.",
+  "note": "Hand-written subjects and sites. apply.cjs adds a subject that is missing (with these aliases and keywords) and adds the hosts a subject lacks, existing subjects included; it never removes. A host stays under at most two subjects.",
   "subjects": [
     {
       "tag": "ai",
-      "aliases": ["artificial-intelligence", "llm", "llms", "genai", "machine-learning", "ml", "chatbots"],
-      "keywords": ["llm", "chatbot", "prompt", "inference", "fine-tuning", "embeddings", "transformer", "generative"],
+      "aliases": [
+        "artificial-intelligence",
+        "llm",
+        "llms",
+        "genai",
+        "machine-learning",
+        "ml",
+        "chatbots"
+      ],
+      "keywords": [
+        "llm",
+        "chatbot",
+        "prompt",
+        "inference",
+        "fine-tuning",
+        "embeddings",
+        "transformer",
+        "generative"
+      ],
       "hosts": [
-        "chatgpt.com", "chat.openai.com", "openai.com", "platform.openai.com",
-        "claude.ai", "anthropic.com",
-        "gemini.google.com", "aistudio.google.com", "ai.google.dev", "deepmind.google", "notebooklm.google.com",
+        "chatgpt.com",
+        "chat.openai.com",
+        "openai.com",
+        "platform.openai.com",
+        "claude.ai",
+        "anthropic.com",
+        "gemini.google.com",
+        "aistudio.google.com",
+        "ai.google.dev",
+        "deepmind.google",
+        "notebooklm.google.com",
         "copilot.microsoft.com",
-        "perplexity.ai", "poe.com", "mistral.ai", "grok.com", "x.ai", "meta.ai",
-        "deepseek.com", "qwen.ai", "kimi.com",
-        "huggingface.co", "replicate.com", "together.ai", "groq.com", "openrouter.ai", "cohere.com", "fireworks.ai",
-        "stability.ai", "midjourney.com", "runwayml.com", "ideogram.ai", "leonardo.ai",
-        "elevenlabs.io", "suno.com", "udio.com", "pika.art",
-        "lmarena.ai", "artificialanalysis.ai", "paperswithcode.com",
-        "cursor.com", "windsurf.com", "v0.dev", "lovable.dev", "bolt.new", "phind.com",
-        "character.ai", "pi.ai",
-        "ollama.com", "openwebui.com", "lmstudio.ai", "comfy.org", "localai.io", "anythingllm.com", "librechat.ai"
+        "perplexity.ai",
+        "poe.com",
+        "mistral.ai",
+        "grok.com",
+        "x.ai",
+        "meta.ai",
+        "deepseek.com",
+        "qwen.ai",
+        "kimi.com",
+        "huggingface.co",
+        "replicate.com",
+        "together.ai",
+        "groq.com",
+        "openrouter.ai",
+        "cohere.com",
+        "fireworks.ai",
+        "stability.ai",
+        "midjourney.com",
+        "runwayml.com",
+        "ideogram.ai",
+        "leonardo.ai",
+        "elevenlabs.io",
+        "suno.com",
+        "udio.com",
+        "pika.art",
+        "lmarena.ai",
+        "artificialanalysis.ai",
+        "paperswithcode.com",
+        "cursor.com",
+        "windsurf.com",
+        "v0.dev",
+        "lovable.dev",
+        "bolt.new",
+        "phind.com",
+        "character.ai",
+        "pi.ai",
+        "ollama.com",
+        "openwebui.com",
+        "lmstudio.ai",
+        "comfy.org",
+        "localai.io",
+        "anythingllm.com",
+        "librechat.ai"
       ]
     },
     {
       "tag": "nas",
-      "aliases": ["network-storage", "homeserver", "home-server"],
-      "keywords": ["raid", "zfs", "btrfs", "storage-pool", "smb", "nfs", "hdd"],
-      "hosts": ["synology.com", "qnap.com", "truenas.com", "unraid.net", "openmediavault.org", "asustor.com", "terra-master.com", "ugreen.com"]
+      "aliases": [
+        "network-storage",
+        "homeserver",
+        "home-server"
+      ],
+      "keywords": [
+        "raid",
+        "zfs",
+        "btrfs",
+        "storage-pool",
+        "smb",
+        "nfs",
+        "hdd"
+      ],
+      "hosts": [
+        "synology.com",
+        "qnap.com",
+        "truenas.com",
+        "unraid.net",
+        "openmediavault.org",
+        "asustor.com",
+        "terra-master.com",
+        "ugreen.com"
+      ]
     },
     {
       "tag": "files",
-      "aliases": ["file-sync", "filesync", "file-manager", "file-hosting"],
-      "keywords": ["webdav", "file-sharing", "sync", "folders", "upload", "file-manager"],
-      "hosts": ["nextcloud.com", "owncloud.com", "seafile.com", "syncthing.net", "filebrowser.org", "paperless-ngx.com", "stirlingpdf.com"]
+      "aliases": [
+        "file-sync",
+        "filesync",
+        "file-manager",
+        "file-hosting"
+      ],
+      "keywords": [
+        "webdav",
+        "file-sharing",
+        "sync",
+        "folders",
+        "upload",
+        "file-manager"
+      ],
+      "hosts": [
+        "nextcloud.com",
+        "owncloud.com",
+        "seafile.com",
+        "syncthing.net",
+        "filebrowser.org",
+        "paperless-ngx.com",
+        "stirlingpdf.com"
+      ]
     },
     {
       "tag": "downloads",
-      "aliases": ["downloading", "download-manager", "downloaders"],
-      "keywords": ["downloader", "download-queue", "magnet", "nzb", "segmented"],
-      "hosts": ["jdownloader.org", "pyload.net", "nzbget.com"]
+      "aliases": [
+        "downloading",
+        "download-manager",
+        "downloaders"
+      ],
+      "keywords": [
+        "downloader",
+        "download-queue",
+        "magnet",
+        "nzb",
+        "segmented"
+      ],
+      "hosts": [
+        "jdownloader.org",
+        "pyload.net",
+        "nzbget.com"
+      ]
     },
     {
       "tag": "productivity",
-      "aliases": ["gtd", "getting-things-done", "organisation", "organization"],
-      "keywords": ["todo", "kanban", "planner", "habits", "workflow", "inbox-zero"],
-      "hosts": ["vikunja.io", "bookstackapp.com", "planka.app", "grocy.info", "docmost.com", "silverbullet.md", "triliumnotes.org"]
+      "aliases": [
+        "gtd",
+        "getting-things-done",
+        "organisation",
+        "organization"
+      ],
+      "keywords": [
+        "todo",
+        "kanban",
+        "planner",
+        "habits",
+        "workflow",
+        "inbox-zero"
+      ],
+      "hosts": [
+        "vikunja.io",
+        "bookstackapp.com",
+        "planka.app",
+        "grocy.info",
+        "docmost.com",
+        "silverbullet.md",
+        "triliumnotes.org"
+      ]
     },
     {
       "tag": "reading",
-      "aliases": ["articles", "reading-list", "longreads"],
-      "keywords": ["read-later", "highlights", "articles", "feeds", "reader-mode"],
-      "hosts": ["wallabag.org", "readeck.org", "miniflux.app", "freshrss.org", "tt-rss.org"]
+      "aliases": [
+        "articles",
+        "reading-list",
+        "longreads"
+      ],
+      "keywords": [
+        "read-later",
+        "highlights",
+        "articles",
+        "feeds",
+        "reader-mode"
+      ],
+      "hosts": [
+        "wallabag.org",
+        "readeck.org",
+        "miniflux.app",
+        "freshrss.org",
+        "tt-rss.org"
+      ]
     },
     {
       "tag": "3d-printing",
-      "aliases": ["3dprinting", "3d-printer", "additive-manufacturing", "3dprint"],
-      "keywords": ["filament", "slicer", "stl", "gcode", "nozzle", "resin", "3d-printer"],
-      "hosts": ["printables.com", "thingiverse.com", "makerworld.com", "prusa3d.com", "bambulab.com", "octoprint.org", "cults3d.com", "klipper3d.org", "myminifactory.com", "ultimaker.com", "creality.com", "mainsail.xyz", "docs.fluidd.xyz"]
+      "aliases": [
+        "3dprinting",
+        "3d-printer",
+        "additive-manufacturing",
+        "3dprint"
+      ],
+      "keywords": [
+        "filament",
+        "slicer",
+        "stl",
+        "gcode",
+        "nozzle",
+        "resin",
+        "3d-printer"
+      ],
+      "hosts": [
+        "printables.com",
+        "thingiverse.com",
+        "makerworld.com",
+        "prusa3d.com",
+        "bambulab.com",
+        "octoprint.org",
+        "cults3d.com",
+        "klipper3d.org",
+        "myminifactory.com",
+        "ultimaker.com",
+        "creality.com",
+        "mainsail.xyz",
+        "docs.fluidd.xyz"
+      ]
+    },
+    {
+      "tag": "cloud",
+      "hosts": [
+        "console.aws.amazon.com",
+        "portal.azure.com",
+        "console.cloud.google.com",
+        "dash.cloudflare.com",
+        "cloud.digitalocean.com",
+        "console.hetzner.cloud",
+        "hetzner.com",
+        "app.netlify.com",
+        "vercel.com",
+        "fly.io",
+        "render.com",
+        "railway.com",
+        "cloud.oracle.com",
+        "console.scaleway.com",
+        "linode.com",
+        "vultr.com",
+        "ovhcloud.com"
+      ]
+    },
+    {
+      "tag": "package-manager",
+      "hosts": [
+        "npmjs.com",
+        "pypi.org",
+        "crates.io",
+        "pkg.go.dev",
+        "rubygems.org",
+        "packagist.org",
+        "nuget.org",
+        "hub.docker.com",
+        "ghcr.io",
+        "artifacthub.io",
+        "formulae.brew.sh",
+        "flathub.org",
+        "snapcraft.io",
+        "aur.archlinux.org",
+        "jsr.io",
+        "hex.pm",
+        "pub.dev",
+        "mvnrepository.com"
+      ]
+    },
+    {
+      "tag": "self-hosted",
+      "hosts": [
+        "selfh.st",
+        "awesome-selfhosted.net",
+        "linuxserver.io",
+        "noted.lol",
+        "perfectmediaserver.com",
+        "trash-guides.info",
+        "servarr.com",
+        "wiki.servarr.com",
+        "technotim.live",
+        "yunohost.org",
+        "tteck.github.io",
+        "community-scripts.github.io"
+      ]
     }
   ]
 }

@@ -6517,13 +6517,27 @@
         "hosting-provider"
       ],
       "hosts": [
+        "app.netlify.com",
         "aws.amazon.com",
         "azure.microsoft.com",
+        "cloud.digitalocean.com",
         "cloud.google.com",
+        "cloud.oracle.com",
+        "console.aws.amazon.com",
+        "console.cloud.google.com",
+        "console.hetzner.cloud",
+        "console.scaleway.com",
+        "dash.cloudflare.com",
         "digitalocean.com",
+        "fly.io",
         "hetzner.com",
         "linode.com",
         "oracle.com",
+        "ovhcloud.com",
+        "portal.azure.com",
+        "railway.com",
+        "render.com",
+        "vercel.com",
         "vultr.com"
       ],
       "keywords": [
@@ -37832,7 +37846,6 @@
         "my.mail.ru",
         "ok.ru",
         "openhistoricalmap.org",
-        "packagist.org",
         "pinkbike.com",
         "playwaze.com",
         "sabre-roads.org.uk",
@@ -38677,8 +38690,25 @@
       ],
       "parent": "dev",
       "hosts": [
+        "artifacthub.io",
+        "aur.archlinux.org",
         "chocolatey.org",
+        "crates.io",
+        "flathub.org",
         "flatpak.org",
+        "formulae.brew.sh",
+        "ghcr.io",
+        "hex.pm",
+        "hub.docker.com",
+        "jsr.io",
+        "mvnrepository.com",
+        "npmjs.com",
+        "nuget.org",
+        "packagist.org",
+        "pkg.go.dev",
+        "pub.dev",
+        "pypi.org",
+        "rubygems.org",
         "scoop.sh",
         "snapcraft.io"
       ],
@@ -39206,6 +39236,9 @@
         "artisan",
         "eloquent",
         "middleware"
+      ],
+      "derived": [
+        "packagist.org"
       ]
     },
     {
@@ -45053,10 +45086,19 @@
       ],
       "hosts": [
         "casaos.io",
+        "community-scripts.github.io",
         "nextcloud.com",
+        "noted.lol",
+        "perfectmediaserver.com",
         "portainer.io",
+        "servarr.com",
+        "technotim.live",
+        "trash-guides.info",
         "truenas.com",
-        "unraid.net"
+        "tteck.github.io",
+        "unraid.net",
+        "wiki.servarr.com",
+        "yunohost.org"
       ],
       "keywords": [
         "docker-compose",
