@@ -16,6 +16,8 @@
     'use strict';
 
     const MAIN_PAGE_ID = 1;
+    // Bars that belong to the grid and sit right above it; the card stays above them.
+    const GRID_BARS = '#grid-filter-bar, .multi-select-toolbar';
     const SERVER = '{server}';
 
     function t(key, fallback, params) {
@@ -109,11 +111,24 @@
             this.pageTimer = setInterval(() => this.place(), 500);
         }
 
-        /** Keep the card above main's blocks, and out of sight elsewhere. */
+        /**
+         * Keep the card above main's blocks, and out of sight elsewhere.
+         *
+         * Above the grid's own bars too. The Shift+F filter and the selection
+         * toolbar are inserted right before the grid, and this used to demand
+         * that spot for itself: every 500ms it moved back under them, which
+         * left the filter bar above the card, away from the rows it filters.
+         */
         place() {
             if (!this.el) return;
             const grid = document.getElementById('dashboard-layout');
-            if (grid && this.el.nextElementSibling !== grid) grid.before(this.el);
+            let anchor = grid;
+            while (anchor?.previousElementSibling
+                && anchor.previousElementSibling !== this.el
+                && anchor.previousElementSibling.matches(GRID_BARS)) {
+                anchor = anchor.previousElementSibling;
+            }
+            if (anchor && this.el.nextElementSibling !== anchor) anchor.before(this.el);
             const onMain = Number(this.dash?.currentPageId) === MAIN_PAGE_ID && this.dash?.activeView !== 'config';
             this.el.hidden = !onMain;
         }

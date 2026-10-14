@@ -128,6 +128,8 @@
     function coolDownAfterShowing() {
         const qs = state();
         if (!qs) return;
+        // First showing only: the install count card counts its wait from here.
+        if (!(Number(qs.analyticsAskedAt) > 0)) qs.analyticsAskedAt = nowSeconds();
         const until = nowSeconds() + SHOWN_COOLDOWN_DAYS * 86400;
         if (until <= (Number(qs.analyticsAskAfter) || 0)) return;
         qs.analyticsAskAfter = until;

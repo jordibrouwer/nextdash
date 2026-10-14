@@ -87,11 +87,12 @@ var demoDeniedWrites = []string{
 	// Sending or fetching on the visitor's behalf.
 	"/api/push/subscribe", "/api/push/unsubscribe", "/api/push/test",
 	"/api/webhooks", "/api/webhooks/test", "/api/health/test-notification", "/api/digest/test",
-	"/api/widgets/custom/test", "/api/widgets/jellyfin/setup", "/api/widgets/sonarr/setup", "/api/widgets/radarr/setup", "/api/widgets/seerr/setup", "/api/widgets/qbittorrent/setup", "/api/widgets/sabnzbd/setup", "/api/unraid/test", "/api/unraid/settings",
+	"/api/widgets/custom/test", "/api/widgets/jellyfin/setup", "/api/widgets/sonarr/setup", "/api/widgets/radarr/setup", "/api/widgets/seerr/setup", "/api/widgets/qbittorrent/setup", "/api/widgets/sabnzbd/setup", "/api/widgets/homeassistant/setup", "/api/widgets/homeassistant/action", "/api/unraid/test", "/api/unraid/settings",
 	"/api/sources/{id}", "/api/sources/{id}/run", "/api/sources/{id}/forget",
 	"/api/feeds/poll", "/api/feeds/retry", "/api/previews/refresh", "/api/bookmarks/prefetch-icons",
 	"/api/health/retest-all", "/api/health/auto-heal-apply", "/api/health/check-url",
 	"/api/health/archive-save", "/api/health/archive-settings", "/api/archives/capture", "/api/archives/",
+	"/api/tags/lookup",
 	"/mcp",
 	// Secrets.
 	"/api/health/credentials", "/api/web-search/brave-key",
@@ -118,7 +119,7 @@ var demoAllowedWrites = []string{
 	"/api/inbox", "/api/inbox/batch", "/api/logs", "/api/onboarding/template",
 	"/api/pages", "/api/pages/template", "/api/pages/{id:[0-9]+}", "/api/pages/{id:[0-9]+}/blocks",
 	"/api/pages/{id:[0-9]+}/template", "/api/previews/clear", "/api/previews/images/clear",
-	"/api/settings", "/api/tags/keywords/clear", "/api/tags/rewrite", "/api/tags/scan", "/api/tags/scan/reset",
+	"/api/settings", "/api/tags/catalogue", "/api/tags/keywords/clear", "/api/tags/rewrite", "/api/tags/scan", "/api/tags/scan/reset",
 	"/api/track-clienterror", "/api/track-keys", "/api/track-nav", "/api/track-open", "/api/track-search",
 	"/api/track-session", "/api/trash", "/api/trash/restore",
 	"/api/widgets/notes/command", "/api/widgets/notes/render",

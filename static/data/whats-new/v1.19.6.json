@@ -1,0 +1,122 @@
+{
+  "tag": "v1.19.6",
+  "date": "14 October 2026",
+  "releasedAt": "2026-10-14",
+  "modalLead": "Every tag gets a <strong>view of its own</strong>, with its bookmarks from every page. Tag suggestions know some <strong>51,000 sites</strong> and show up in the rows. And a <strong>Home Assistant</strong> widget switches lights and scenes from the dashboard.",
+  "sections": [
+    {
+      "title": "Tags",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A view for every tag.</strong> Pick a tag in the cloud and see every bookmark with it, from all pages, in one table: related tags, open all, copy links, and rename, merge or remove the tag, with undo.",
+          "highlight": true,
+          "title": "A view for every tag",
+          "media": {
+            "image": "media/v1.19.6-tag-view.jpg",
+            "alt": "The tag view for homelab: every bookmark with the tag from every page, with related tags beside it"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A quieter tag cloud.</strong> Three sizes, a count beside each tag, and typing finds one. Shift+click stacks tags and shows how many bookmarks each would add."
+        }
+      ]
+    },
+    {
+      "title": "Tag suggestions",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Suggestions in the rows.</strong> The tag view and the Bookmarks view show suggested tags right after a bookmark's own: click to add, × to turn down, or <strong>Add all</strong>. <strong>Find tags</strong> looks up the rows on screen.",
+          "highlight": true,
+          "title": "Tag suggestions right in the rows",
+          "link": "#bookmarks",
+          "linkLabel": "Open Bookmarks",
+          "media": {
+            "image": "media/v1.19.6-tag-suggestions.jpg",
+            "alt": "The Bookmarks view with suggested tags after the rows’ own tags, and Add all over the list"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The inbox gets a Tags column,</strong> with the same suggested tags and <strong>Add all</strong> as the Bookmarks view. <code>a</code> adds the suggestion of the link under the cursor.",
+          "link": "#inbox"
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A catalogue of some 51,000 sites,</strong> and Wikidata for the sites it does not know. Only the site's name leaves your server, and you can switch the lookup off in the tags tab.",
+          "link": "#config/bookmarks/tags"
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A tag you take off stays off.</strong> The suggestions no longer offer it again for that bookmark."
+        }
+      ]
+    },
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Home Assistant on your dashboard.</strong> Connect with an access token, pick up to 60 entities and lay them out per room. Lights, switches, fans, scenes and scripts switch from the tile; doors, locks and sensors show their state.",
+          "highlight": true,
+          "title": "Switch Home Assistant from your dashboard",
+          "link": "#config/widgets/catalogue",
+          "linkLabel": "Set it up",
+          "media": {
+            "image": "media/v1.19.6-home-assistant.jpg",
+            "alt": "The Home Assistant tile: lights, a scene and sensors, with switches on the tile"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A key legend under the grid.</strong> Three lines with the keys that matter; Shift+Z switches it off and on."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Shift+F filters the page in the search bar's style,</strong> with the match marked in the names that are left."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Shorter tours</strong> that cover the main features. Shift+K plays the dashboard tour again; each view has a Tour button."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Choose the animation speed,</strong> or switch off the animations in views and modals.",
+          "link": "#config/appearance/general"
+        }
+      ]
+    },
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Two devices no longer undo each other's work:</strong> new pages, renamed pages, categories and finders made on one device survive a save on another."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Switching pages</strong> no longer keeps the folded categories and widgets of the page you left."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Monitoring</strong> checks every service in turn on a busy host, and maintenance windows keep their hours when the clocks change."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A calendar widget</strong> no longer fails for a minute after a reload."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The inbox shows a link saved from the extension or another tab</strong> as soon as you open it, without a reload."
+        }
+      ]
+    }
+  ]
+}

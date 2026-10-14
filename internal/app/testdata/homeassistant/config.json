@@ -1,0 +1,16 @@
+{
+ "location_name": "Home",
+ "version": "2026.10.1",
+ "unit_system": {
+  "length": "km",
+  "accumulated_precipitation": "mm",
+  "area": "m\u00b2",
+  "mass": "g",
+  "pressure": "Pa",
+  "temperature": "\u00b0C",
+  "volume": "L",
+  "wind_speed": "m/s"
+ },
+ "time_zone": "Europe/Amsterdam",
+ "state": "RUNNING"
+}

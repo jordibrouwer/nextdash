@@ -1,5 +1,6 @@
 /**
- * Tag filter view, banner, bulk actions.
+ * The tag filter: which tags are on, the bookmarks they reach on every page,
+ * and the bulk actions on them. The tag view (dashboard-tag-view.js) draws it.
  */
 class DashboardTagFilter {
     constructor(dashboard) {
@@ -83,16 +84,50 @@ class DashboardTagFilter {
             }
         }
 
-        d._tagFilters = normalized;
-        this._syncTagFilterDomAttributes();
-        window.DashboardTagCloud?.setActiveTags?.(normalized);
-        if (normalized.length === 0) {
-            const container = document.getElementById('dashboard-layout');
-            if (container?.classList.contains('tag-filter-view')) {
-                this.unmountTagFilterView(container);
+        /*
+         * `tag-filter`, from every way in (cloud, `t` on a row, :filter).
+         * Only how the set changed and how many tags it now holds go out --
+         * a tag is the reader's own word and never leaves.
+         */
+        const before = this.normalizeTagFilters(d._tagFilters).length;
+        window.nextdashTrack?.('tag-filter', {
+            action: normalized.length === 0 ? 'clear' : (normalized.length > before ? 'add' : 'remove'),
+            count: normalized.length,
+        });
+
+        /*
+         * The one way in to the tag view. The cloud, `t` on a row and
+         * :filter all come through here, so the view is opened in one place
+         * rather than at each of them. Tags on: open it, or follow the new
+         * set when it is already open. Tags off: leave it.
+         */
+        if (d.tagView) {
+            // Written before anything is awaited: the first open loads the
+            // view's module, and a second pick in that time (Shift in the
+            // cloud) read the old list and dropped the first tag.
+            if (normalized.length) {
+                d._tagFilters = normalized;
+                window.DashboardTagCloud?.setActiveTags?.(normalized);
+            }
+            if (!normalized.length) {
+                if (d.activeView === 'tags') {
+                    d.tagView.closeTagView();
+                    return;
+                }
+            } else if (d.activeView === 'tags') {
+                await d.tagView.updateTags(normalized);
+                return;
+            } else {
+                await d.tagView.openTagView(normalized, { returnPageId: d.currentPageId });
+                return;
             }
         }
-        d.renderDashboard({ animate: Boolean(animate), full: normalized.length === 0 });
+
+        // No view to show them in (and none open): nothing is filtering.
+        d._tagFilters = [];
+        this._syncTagFilterDomAttributes();
+        window.DashboardTagCloud?.setActiveTags?.([]);
+        void animate;
     }
 
 
@@ -129,9 +164,12 @@ class DashboardTagFilter {
         if (!required.length || !Array.isArray(d.bookmarks)) {
             return [];
         }
+        // Every page, the same pool the cloud counts from: the current page
+        // first, so a bookmark on two pages keeps its current-page row.
+        const pool = window.DashboardTagCloud?.getBookmarkPool?.() ?? d.bookmarks;
         const seen = new Set();
         const matched = [];
-        for (const bookmark of d.bookmarks) {
+        for (const bookmark of pool) {
             const bookmarkTags = new Set(
                 (bookmark.tags || [])
                     .map((raw) => String(raw || '').trim().toLowerCase())
@@ -153,146 +191,6 @@ class DashboardTagFilter {
 
     getBookmarksForTagFilter(tag) {
         return this.getBookmarksForTagFilters([tag]);
-    }
-
-
-    unmountTagFilterView(container) {
-        const d = this.dash;
-        container.classList.remove('tag-filter-view', 'tag-filter-layout');
-        container.querySelector('#tag-filter-banner')?.remove();
-        container.querySelector('#tag-filter-toolbar')?.remove();
-        container.querySelectorAll('.tag-filter-chunk, .empty-state--tag-filter').forEach((node) => node.remove());
-        d.updateTagFilterIndicator();
-        d._categoryListsCache = null;
-    }
-
-
-    renderTagFilterDashboard(container, options = {}) {
-        const d = this.dash;
-        const animate = options && options.animate === true;
-        d._renderAnimationsEnabled = animate;
-        const tags = d._tagFilters;
-        const matched = this.getBookmarksForTagFilters(tags);
-        const CHUNK_SIZE = 10;
-
-        container.innerHTML = '';
-        container.classList.remove('page-transition', 'tag-filter-layout');
-        const gridLayout = d.syncDashboardGridLayout();
-        container.classList.add('tag-filter-view');
-
-        const banner = document.createElement('div');
-        banner.className = 'tag-filter-banner';
-        banner.id = 'tag-filter-banner';
-        this.renderTagFilterBanner(banner, { tags, count: matched.length });
-        container.appendChild(banner);
-
-        if (matched.length === 0) {
-            const empty = document.createElement('div');
-            empty.className = 'empty-state empty-state--tag-filter';
-            const tagsLabel = this.formatTagFilterTagsListForMessage(tags);
-            const emptyText = d.formatDashboardLabel(
-                'tagFilterEmpty',
-                { tags: tagsLabel },
-                'No bookmarks with {tags} on this page.'
-            );
-            const text = document.createElement('p');
-            text.className = 'empty-state--tag-filter-text';
-            text.textContent = emptyText;
-            empty.appendChild(text);
-
-            const actions = document.createElement('div');
-            actions.className = 'empty-state--tag-filter-actions';
-
-            const clearBtn = document.createElement('button');
-            clearBtn.type = 'button';
-            clearBtn.className = 'empty-state--tag-filter-btn';
-            clearBtn.textContent = d.formatDashboardLabel('tagFilterEmptyClear', {}, 'Clear tag filter');
-            clearBtn.addEventListener('click', () => this.clearTagFilter());
-            actions.appendChild(clearBtn);
-
-            if (window.DashboardTagCloud?.openModal) {
-                const browseBtn = document.createElement('button');
-                browseBtn.type = 'button';
-                browseBtn.className = 'empty-state--tag-filter-btn';
-                browseBtn.textContent = d.formatDashboardLabel('tagFilterEmptyBrowseTags', {}, 'Browse tags');
-                browseBtn.addEventListener('click', () => window.DashboardTagCloud.openModal());
-                actions.appendChild(browseBtn);
-            }
-
-            empty.appendChild(actions);
-            container.appendChild(empty);
-            if (d.language?.applyTranslations) {
-                d.language.applyTranslations();
-            }
-            d.updateSearchComponent();
-            this.updateTagFilterIndicator();
-            return;
-        }
-
-        const chunkBlocks = [];
-        for (let offset = 0; offset < matched.length; offset += CHUNK_SIZE) {
-            const chunk = matched.slice(offset, offset + CHUNK_SIZE);
-            const chunkIndex = Math.floor(offset / CHUNK_SIZE);
-            chunkBlocks.push(
-                d.createCategoryElement(
-                    {
-                        id: `__tag_filter_chunk_${chunkIndex}`,
-                        name: '',
-                        tagFilterChunk: true,
-                    },
-                    chunk
-                )
-            );
-        }
-
-        const body = document.createElement('div');
-        d._copyDashboardGridLayoutToElement(body, container);
-        this._distributeTagFilterColumnBlocks(body, chunkBlocks, { animate, gridLayout });
-        container.appendChild(body);
-
-        if (animate) {
-            requestAnimationFrame(() => {
-                container.classList.add('page-transition');
-                setTimeout(() => container.classList.remove('page-transition'), ANIM.PAGE_TRANSITION);
-            });
-        }
-
-        d.updateSearchComponent();
-        this.updateTagFilterIndicator();
-        d.syncBookmarkGridA11y();
-        d.keyboardNavigation?.scheduleUpdate?.();
-        window.FocusTrapUtils?.scheduleSyncDashboardInert?.();
-        if (window.DashboardTagCloud?.modalOpen) {
-            window.DashboardTagCloud.positionModal?.();
-        }
-        if (d.statusMonitor) {
-            if (d.statusMonitorInitialized) {
-                d.statusMonitor.updateBookmarks(matched);
-            } else {
-                d.statusMonitor.init(matched);
-                d.statusMonitorInitialized = true;
-            }
-        }
-    }
-
-
-    setupTagFilterEscapeShortcut() {
-        const d = this.dash;
-        document.addEventListener('keydown', (e) => {
-            if (e.key !== 'Escape') return;
-            if (window.DashboardTagCloud?.modalOpen) return;
-            if (d.isModalOpen()) return;
-            if (d.searchComponent && d.searchComponent.isActive()) return;
-            if (!this.hasActiveTagFilters()) return;
-            e.preventDefault();
-            e.stopPropagation();
-            window.DashboardTagCloud?.clearDashboardFilter?.({ focusBookmarks: true });
-        });
-    }
-
-
-    setupTagFilterIndicator() {
-        this.updateTagFilterIndicator();
     }
 
 
@@ -322,9 +220,10 @@ class DashboardTagFilter {
     }
 
 
-    copyTagFilterLinksToClipboard() {
+    /** The tag view passes what its list shows; without a list, every match. */
+    copyTagFilterLinksToClipboard(list = null) {
         const d = this.dash;
-        const urls = this.getTagFilterMatchedBookmarksWithUrls()
+        const urls = (Array.isArray(list) ? list.filter((b) => b && String(b.url || '').trim()) : this.getTagFilterMatchedBookmarksWithUrls())
             .map((bookmark) => window.BookmarkUrlUtils?.safeHttpResourceUrl?.(bookmark.url)
                 || String(bookmark.url || '').trim())
             .filter(Boolean);
@@ -370,13 +269,47 @@ class DashboardTagFilter {
         const d = this.dash;
         return this.getBookmarksForTagFilters()
             .map((bookmark) => d.resolveBookmarkReference(bookmark))
-            .filter((ref) => ref && ref.scope === 'current' && ref.index >= 0);
+            .filter((ref) => ref && (
+                (ref.scope === 'current' && ref.index >= 0) || ref.scope === 'remote'
+            ));
     }
 
 
-    async bulkDeleteTagFilterBookmarks() {
+    /**
+     * Delete matches that live on other pages, one request each.
+     *
+     * Their page is not the list on screen, so there is nothing to splice and
+     * save; each goes through the store's own single delete, which is atomic
+     * under its lock. Answers the refs that went.
+     */
+    async _deleteRemoteRefs(refs) {
         const d = this.dash;
-        let refs = this.getTagFilterBookmarkRefs();
+        const headers = { 'Content-Type': 'application/json' };
+        const outcomes = await Promise.allSettled(refs.map(async (ref) => {
+            const res = await dashFetch('/api/bookmarks', {
+                method: 'DELETE',
+                headers,
+                body: JSON.stringify({ page: Number(ref.pageId), bookmark: { ...ref.bookmark } }),
+            });
+            if (!res.ok) throw new Error('delete failed');
+            return ref;
+        }));
+        const done = new Set(outcomes.filter((o) => o.status === 'fulfilled').map((o) => o.value));
+        done.forEach((ref) => {
+            d.removeBookmarkFromAllBookmarks(ref);
+            d.data?.invalidatePageDataCache?.(Number(ref.pageId));
+        });
+        return done;
+    }
+
+
+    /** The tag view passes its selection; without one, every match. */
+    async bulkDeleteTagFilterBookmarks(refsIn = null) {
+        const d = this.dash;
+        const fresh = () => (Array.isArray(refsIn)
+            ? refsIn.map((ref) => d.resolveBookmarkReference(ref.bookmark)).filter(Boolean)
+            : this.getTagFilterBookmarkRefs());
+        let refs = fresh();
         if (!refs.length) {
             return;
         }
@@ -389,7 +322,7 @@ class DashboardTagFilter {
                 message: d.formatDashboardLabel(
                     'tagFilterDeleteConfirm',
                     { count },
-                    `Delete ${count} bookmark(s) on this page?`
+                    `Delete ${count} bookmark(s)?`
                 ),
                 confirmText: d.configLabel('delete', 'Delete'),
                 cancelText: d.formatDashboardLabel('cancel', {}, 'Cancel'),
@@ -399,7 +332,7 @@ class DashboardTagFilter {
                 d.formatDashboardLabel(
                     'tagFilterDeleteConfirm',
                     { count },
-                    `Delete ${count} bookmark(s) on this page?`
+                    `Delete ${count} bookmark(s)?`
                 )
             );
         }
@@ -408,46 +341,68 @@ class DashboardTagFilter {
         }
         // Again after the dialog: a background refresh while it was open
         // replaces d.bookmarks, and the old indexes then spliced other rows.
-        refs = this.getTagFilterBookmarkRefs();
+        refs = fresh();
         if (!refs.length) {
             return;
         }
 
-        // Captured before the splices, which renumber every index behind them.
-        const trashed = refs.map((ref) => ({
+        // The filter spans every page: rows on the page showing are spliced and
+        // saved as one list, rows on other pages go one delete at a time.
+        const currentRefs = refs.filter((ref) => ref.scope === 'current');
+        const remoteRefs = refs.filter((ref) => ref.scope === 'remote');
+        const toEntry = (ref) => ({
             pageId: Number(ref.pageId ?? d.currentPageId),
-            index: ref.index,
+            index: ref.scope === 'current' ? ref.index : -1,
             bookmark: { ...ref.bookmark },
-        }));
-
-        d.ensureBookmarkMutationSnapshot();
-        const sorted = [...refs].sort((a, b) => b.index - a.index);
-        sorted.forEach((ref) => {
-            d.removeBookmarkFromAllBookmarks(ref);
-            d.bookmarks.splice(ref.index, 1);
         });
 
-        d._inlineEditGlobalCleanup?.();
-        d.inlineEditingBookmarkIndex = null;
-        d.renderDashboard();
-
-        const saved = await d.saveBookmarkOrder();
-        if (!saved) {
-            // saveBookmarkOrder rolls d.bookmarks back, but allBookmarks has no
-            // snapshot of its own -- without this the global-shortcut list stayed
-            // missing the rows the failed delete had removed.
-            [...trashed].sort((a, b) => a.index - b.index).forEach((entry) => {
-                d.restoreBookmarkInAllBookmarks(entry.bookmark, entry.pageId);
+        let trashed = [];
+        if (currentRefs.length) {
+            // Captured before the splices, which renumber every index behind them.
+            const currentEntries = currentRefs.map(toEntry);
+            d.ensureBookmarkMutationSnapshot();
+            const sorted = [...currentRefs].sort((a, b) => b.index - a.index);
+            sorted.forEach((ref) => {
+                d.removeBookmarkFromAllBookmarks(ref);
+                d.bookmarks.splice(ref.index, 1);
             });
+
+            d._inlineEditGlobalCleanup?.();
+            d.inlineEditingBookmarkIndex = null;
+            d.renderDashboard();
+
+            const saved = await d.saveBookmarkOrder();
+            if (saved) {
+                trashed = currentEntries;
+            } else {
+                // saveBookmarkOrder rolls d.bookmarks back, but allBookmarks has no
+                // snapshot of its own -- without this the global-shortcut list stayed
+                // missing the rows the failed delete had removed.
+                [...currentEntries].sort((a, b) => a.index - b.index).forEach((entry) => {
+                    d.restoreBookmarkInAllBookmarks(entry.bookmark, entry.pageId);
+                });
+            }
+        }
+        if (remoteRefs.length) {
+            const gone = await this._deleteRemoteRefs(remoteRefs);
+            trashed = trashed.concat(remoteRefs.filter((ref) => gone.has(ref)).map(toEntry));
+            if (gone.size) {
+                void d.data?.fetchAndStoreDataRevision?.();
+                d.renderDashboard();
+            }
+        }
+        if (!trashed.length) {
             return;
         }
         // Recorded after the save so a delete that did not persist cannot leave
         // a phantom trash entry. The undo below is the fast path; the 30-day
         // trash (this same record()) is what catches it after the toast is gone.
+        // After the confirm and the save: only a delete that happened counts.
+        window.nextdashTrack?.('tag-view:bulk', { action: 'delete', count: trashed.length });
         await window.DashboardTrash?.record(trashed, 'tag-filter');
         d.showGroupedNotification(
             'tag-filter-delete',
-            count,
+            trashed.length,
             (n) => d.formatDashboardLabel('tagFilterDeleted', { count: n }, `Deleted ${n} bookmark(s)`),
             'success',
             {
@@ -518,7 +473,8 @@ class DashboardTagFilter {
                 headers,
                 // See the forward move: add-then-delete puts the URL on both
                 // pages for as long as it takes to run.
-                body: JSON.stringify({ page: sourcePageId, bookmark: bookmarkPayload, allowDuplicate: true }),
+                // A tag-filter move took each match from its own page.
+                body: JSON.stringify({ page: Number(ref.pageId ?? sourcePageId), bookmark: bookmarkPayload, allowDuplicate: true }),
             });
             if (!addRes.ok) {
                 throw new Error('add failed');
@@ -535,14 +491,15 @@ class DashboardTagFilter {
         }));
 
         const restored = outcomes.filter((o) => o.status === 'fulfilled').length;
-        d.data?.invalidatePageDataCache?.(sourcePageId);
+        const sources = new Set(refs.map((ref) => Number(ref.pageId ?? sourcePageId)));
+        sources.forEach((id) => d.data?.invalidatePageDataCache?.(id));
         d.data?.invalidatePageDataCache?.(targetPageId);
         void d.data?.fetchAndStoreDataRevision?.();
         await d.loadAllBookmarks();
         // Reloaded only when it is the page showing: loading it navigates, and
         // an undo clicked from a third page jumped there.
         const showing = Number(d.currentPageId);
-        if (showing === Number(sourcePageId) || showing === Number(targetPageId)) {
+        if (sources.has(showing) || showing === Number(targetPageId)) {
             await d.data?.loadPageBookmarks?.(showing);
         }
         d.renderDashboard();
@@ -560,14 +517,16 @@ class DashboardTagFilter {
 
     async bulkMoveTagFilterToPage(targetPageId, refsIn = null) {
         const d = this.dash;
-        const refs = refsIn || this.getTagFilterBookmarkRefs();
-        if (!refs.length) {
-            return;
-        }
-
         const targetId = Number(targetPageId);
         const sourcePageId = Number(d.currentPageId);
-        if (!Number.isFinite(targetId) || targetId <= 0 || targetId === sourcePageId) {
+        if (!Number.isFinite(targetId) || targetId <= 0) {
+            return;
+        }
+        // Each match leaves from its own page; one already on the target stays.
+        const fromPage = (ref) => Number(ref.pageId ?? sourcePageId);
+        const refs = (refsIn || this.getTagFilterBookmarkRefs())
+            .filter((ref) => fromPage(ref) !== targetId);
+        if (!refs.length) {
             return;
         }
 
@@ -603,7 +562,7 @@ class DashboardTagFilter {
             const deleteRes = await dashFetch('/api/bookmarks', {
                 method: 'DELETE',
                 headers,
-                body: JSON.stringify({ page: sourcePageId, bookmark: bookmarkPayload }),
+                body: JSON.stringify({ page: fromPage(ref), bookmark: bookmarkPayload }),
             });
             if (!deleteRes.ok) {
                 // The copy on the target page is now the only way to avoid
@@ -627,12 +586,13 @@ class DashboardTagFilter {
         // a background reload meanwhile replaces d.bookmarks, and a page switch
         // makes it another page's list altogether.
         movedRefs.forEach((ref) => d.removeBookmarkFromAllBookmarks(ref));
-        d.data?.invalidatePageDataCache?.(sourcePageId);
+        new Set(movedRefs.map(fromPage)).forEach((id) => d.data?.invalidatePageDataCache?.(id));
         d.data?.invalidatePageDataCache?.(targetId);
-        if (Number(d.currentPageId) === Number(sourcePageId)) {
+        const leftThisPage = movedRefs.filter((ref) => fromPage(ref) === Number(d.currentPageId));
+        if (leftThisPage.length) {
             const key = (b) => `${b?.url}\u0000${b?.category ?? ''}`;
             const gone = new Map();
-            movedRefs.forEach((ref) => gone.set(key(ref.bookmark), (gone.get(key(ref.bookmark)) || 0) + 1));
+            leftThisPage.forEach((ref) => gone.set(key(ref.bookmark), (gone.get(key(ref.bookmark)) || 0) + 1));
             const remaining = (d.bookmarks || []).filter((b) => {
                 const n = gone.get(key(b)) || 0;
                 if (!n) return true;
@@ -644,6 +604,10 @@ class DashboardTagFilter {
         }
         void d.data?.fetchAndStoreDataRevision?.();
         await d.loadAllBookmarks();
+        // Moved onto the page showing: its own list has to hear about it.
+        if (targetId === Number(d.currentPageId)) {
+            await d.data?.loadPageBookmarks?.(targetId, { forceFetch: true, skipRender: true });
+        }
         d.renderDashboard();
 
         const targetPage = (d.pages || []).find((page) => Number(page.id) === targetId);
@@ -709,8 +673,16 @@ class DashboardTagFilter {
             return (val && val !== key) ? val : fallback;
         };
 
-        const realCategories = (d.categories || []).filter((category) => !category.isSmartCollection);
-        const otherPages = (d.pages || []).filter((page) => String(page.id) !== String(d.currentPageId));
+        // The tag filter spans every page. Categories belong to the page on
+        // screen, so they are offered only when every match stands on it; and
+        // when some do not, that page is a destination like any other.
+        const allHere = refs.every((ref) => ref.scope !== 'remote');
+        const realCategories = allHere
+            ? (d.categories || []).filter((category) => !category.isSmartCollection)
+            : [];
+        const otherPages = (d.pages || []).filter((page) => (
+            !allHere || String(page.id) !== String(d.currentPageId)
+        ));
 
         const pop = document.createElement('div');
         pop.id = 'move-popover';
@@ -732,6 +704,20 @@ class DashboardTagFilter {
         pop.appendChild(currentHint);
 
         const items = [];
+
+        if (!allHere) {
+            const catLabel = document.createElement('div');
+            catLabel.className = 'move-popover-section-label';
+            catLabel.textContent = t('dashboard.movePopoverCategorySection', 'Category');
+            pop.appendChild(catLabel);
+            const hint = document.createElement('div');
+            hint.className = 'move-popover-current-hint move-popover-category-hint';
+            hint.textContent = t(
+                'dashboard.tagFilterMoveCategoryOtherPages',
+                'Some of these are on other pages. Categories belong to one page; move them to a page instead.'
+            );
+            pop.appendChild(hint);
+        }
 
         if (realCategories.length > 0) {
             const catLabel = document.createElement('div');
@@ -873,269 +859,6 @@ class DashboardTagFilter {
         }, 0);
     }
 
-
-    _appendTagFilterToolbarButton(actions, { label, className = '', onClick }) {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = `recent-bookmarks-open-btn modal-button tag-filter-bulk-btn ${className}`.trim();
-        const labelEl = document.createElement('span');
-        labelEl.className = 'modal-button-name';
-        labelEl.textContent = label;
-        btn.appendChild(labelEl);
-        btn.addEventListener('click', onClick);
-        actions.appendChild(btn);
-        return btn;
-    }
-
-
-    /**
-     * @param {object} options
-     * @param {boolean} [options.withToolbar=true] Include the bulk-action row.
-     *   The header indicator asks for the chips only: the actions belong with
-     *   the results, and a second copy of them in the header both crowds it and
-     *   gives every one of those buttons a duplicate on the page.
-     */
-    renderTagFilterBanner(wrap, { tags, count = 0, withToolbar = true } = {}) {
-        const d = this.dash;
-        const normalized = this.normalizeTagFilters(tags);
-        wrap.replaceChildren();
-        if (!normalized.length) {
-            return;
-        }
-
-        const countLabel = this.formatTagFilterCountLabel(count);
-        const tagsLabel = this.formatTagFilterTagsLabel(normalized);
-        const groupAria = (d.language?.t('dashboard.tagFilterGroupAria')
-            || 'Active tag filters: {tags}, {count} on this page')
-            .replace('{tags}', tagsLabel)
-            .replace('{count}', countLabel);
-
-        wrap.setAttribute('role', 'group');
-        wrap.setAttribute('aria-label', groupAria);
-
-        const chipsWrap = document.createElement('div');
-        chipsWrap.className = 'tag-filter-indicator-chips';
-
-        const chipTagAria = d.language?.t('dashboard.tagFilterChipTagAria')
-            || 'Tag filter #{tag}, click to edit';
-        const removeAriaTemplate = d.language?.t('dashboard.tagFilterChipRemoveAria')
-            || 'Remove tag {tag} from filter';
-        const clearAria = d.language?.t('dashboard.tagFilterChipClear') || 'Clear tag filter';
-
-        normalized.forEach((tag) => {
-            const item = document.createElement('span');
-            item.className = 'tag-filter-indicator-tag-item';
-
-            const chip = document.createElement('button');
-            chip.type = 'button';
-            chip.className = 'tag-filter-indicator-chip';
-            chip.setAttribute(
-                'aria-label',
-                chipTagAria.replace('{tag}', tag)
-            );
-
-            const prefix = document.createElement('span');
-            prefix.className = 'tag-filter-indicator-prefix';
-            prefix.setAttribute('aria-hidden', 'true');
-            prefix.textContent = '#';
-
-            const tagEl = document.createElement('span');
-            tagEl.className = 'tag-filter-indicator-tag';
-            tagEl.textContent = tag;
-
-            chip.append(prefix, tagEl);
-            chip.addEventListener('click', () => {
-                if (window.DashboardTagCloud?.isEligible?.()) {
-                    window.DashboardTagCloud.openModal();
-                }
-            });
-
-            const removeBtn = document.createElement('button');
-            removeBtn.type = 'button';
-            removeBtn.className = 'tag-filter-indicator-tag-remove';
-            removeBtn.setAttribute('aria-label', removeAriaTemplate.replace('{tag}', tag));
-            removeBtn.textContent = '×';
-            removeBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                void this.removeTagFilter(tag);
-            });
-
-            item.append(chip, removeBtn);
-            chipsWrap.appendChild(item);
-        });
-
-        const summary = document.createElement('span');
-        summary.className = 'tag-filter-indicator-summary';
-        summary.textContent = countLabel;
-
-        const clearBtn = document.createElement('button');
-        clearBtn.type = 'button';
-        clearBtn.className = 'tag-filter-indicator-clear';
-        clearBtn.setAttribute('aria-label', clearAria);
-        clearBtn.textContent = '×';
-        clearBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.clearTagFilter();
-            window.DashboardTagCloud?.restoreBookmarkFocus?.();
-        });
-
-        const head = document.createElement('div');
-        head.className = 'tag-filter-banner-head tag-filter-indicator-head';
-        head.append(chipsWrap, summary, clearBtn);
-        wrap.appendChild(head);
-
-        if (count <= 0 || !withToolbar) {
-            return;
-        }
-
-        const toolbar = document.createElement('div');
-        toolbar.className = 'tag-filter-bulk-toolbar recent-bookmarks-modal-toolbar';
-        toolbar.setAttribute('role', 'toolbar');
-        toolbar.setAttribute(
-            'aria-label',
-            d.language?.t('dashboard.tagFilterToolbarAria') || 'Tag filter actions'
-        );
-
-        const actions = document.createElement('div');
-        actions.className = 'recent-bookmarks-open-actions';
-
-        const openPlans = this.buildTagFilterOpenPlans();
-        openPlans.forEach((plan, index) => {
-            this._appendTagFilterToolbarButton(actions, {
-                label: plan.label,
-                onClick: (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (plan.bookmarks?.length) {
-                        d.openBookmarksInNewTabs(plan.bookmarks);
-                    }
-                },
-            }).setAttribute('data-open-plan', String(index));
-        });
-
-        if (this.getTagFilterMatchedBookmarksWithUrls().length > 0) {
-            this._appendTagFilterToolbarButton(actions, {
-                label: d.language?.t('dashboard.tagFilterCopyLinks') || 'Copy links',
-                className: 'tag-filter-copy-btn',
-                onClick: (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.copyTagFilterLinksToClipboard();
-                },
-            });
-        }
-
-        const moveBtn = this._appendTagFilterToolbarButton(actions, {
-            label: d.language?.t('dashboard.tagFilterMove') || 'Move',
-            className: 'tag-filter-move-btn',
-            onClick: (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.showTagFilterBulkMovePopover(moveBtn);
-            },
-        });
-
-        this._appendTagFilterToolbarButton(actions, {
-            label: d.language?.t('dashboard.tagFilterDelete') || 'Delete',
-            className: 'tag-filter-delete-btn danger',
-            onClick: (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                void this.bulkDeleteTagFilterBookmarks();
-            },
-        });
-
-        toolbar.appendChild(actions);
-        wrap.appendChild(toolbar);
-    }
-
-
-    /**
-     * Keep the header chip in step with the active tag filters.
-     *
-     * The in-grid banner lives inside #dashboard-layout, which every render
-     * clears — so the moment the grid repaints for any other reason, the only
-     * sign that a filter is on is the shortened list itself. This element sits
-     * in the header and survives that, which is what it was added for; it had
-     * been reduced to a teardown that emptied it unconditionally, so it never
-     * showed anything.
-     */
-    updateTagFilterIndicator() {
-        const d = this.dash;
-        const wrap = document.getElementById('tag-filter-indicator');
-        if (!wrap) {
-            return;
-        }
-        d.tagFilterIndicator = wrap;
-
-        const tags = this.normalizeTagFilters(d._tagFilters);
-        // Hidden while the grid is showing its own banner, so the chips are not
-        // on screen twice — this exists for the views that have no banner.
-        const bannerOnScreen = Boolean(document.getElementById('tag-filter-banner'));
-        if (!tags.length || bannerOnScreen) {
-            wrap.replaceChildren();
-            wrap.hidden = true;
-            wrap.removeAttribute('role');
-            wrap.removeAttribute('aria-label');
-            return;
-        }
-
-        const count = this.getBookmarksForTagFilters().length;
-        this.renderTagFilterBanner(wrap, { tags, count, withToolbar: false });
-        wrap.hidden = false;
-    }
-
-
-    _distributeTagFilterColumnBlocks(container, chunkBlocks, { animate = false, gridLayout = null } = {}) {
-        const d = this.dash;
-        if (!container || !chunkBlocks.length) {
-            return;
-        }
-
-        const chunkColCount = chunkBlocks.length;
-        const shouldPackColumns = gridLayout?.packed ?? d.shouldPackDashboardColumns();
-        const gap = 'var(--gap, 1.5rem)';
-        const colMax = 'var(--dashboard-column-max, 300px)';
-
-        container.style.setProperty('--packed-columns', String(chunkColCount));
-        container.style.setProperty(
-            '--dashboard-grid-max-width',
-            `calc(${chunkColCount} * ${colMax} + ${Math.max(0, chunkColCount - 1)} * ${gap})`
-        );
-
-        if (shouldPackColumns) {
-            chunkBlocks.forEach((el, i) => {
-                if (animate) {
-                    el.style.setProperty('--stagger-index', String(i));
-                    const categoryEnterDelay = (i * ANIM.CATEGORY_STAGGER_STEP) + ANIM.CATEGORY_ENTER_BASE;
-                    setTimeout(() => el.classList.remove('animate-enter'), categoryEnterDelay);
-                }
-                const col = document.createElement('div');
-                col.className = 'dashboard-column tag-filter-dashboard-column';
-                col.appendChild(el);
-                container.appendChild(col);
-            });
-            return;
-        }
-
-        const colMin = 'var(--dashboard-column-min, 250px)';
-        if (chunkColCount === 1) {
-            container.style.gridTemplateColumns = 'minmax(0, 1fr)';
-        } else {
-            container.style.gridTemplateColumns = `repeat(${chunkColCount}, minmax(${colMin}, ${colMax}))`;
-        }
-
-        chunkBlocks.forEach((el, i) => {
-            if (animate) {
-                el.style.setProperty('--stagger-index', String(i));
-                const categoryEnterDelay = (i * ANIM.CATEGORY_STAGGER_STEP) + ANIM.CATEGORY_ENTER_BASE;
-                setTimeout(() => el.classList.remove('animate-enter'), categoryEnterDelay);
-            }
-            container.appendChild(el);
-        });
-    }
 
 }
 

@@ -2273,11 +2273,16 @@ class DashboardConfig {
         // The Bookmarks view's band carries the way to Collection health too,
         // the way Health's band carries Work through and Rot report.
         const healthButton = this.standalone ? (this.renderLibraryHeaderActions?.() || '') : '';
-        const markup = context
+        // Widgets has a tour and no view band of its own to hang it on, so
+        // it rides here, after whatever else the band carries.
+        const widgetsTour = this.section === 'widgets'
+            ? `<button type="button" class="lvs-action" data-widgets-tour title="${this.dash.escapeHtml(this.t('config.widgetsTourHint', 'A tour of widgets'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
+            : '';
+        const markup = (context
             ? this.renderChangedFilterBar(context.section, context.tab)
             : (this.section === 'bookmarks'
                 ? `${healthButton}<span class="config-bm-header-badge">${this.dash.escapeHtml(String(this.configBookmarkPool().length))}</span>`
-                : '');
+                : '')) + widgetsTour;
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
         }
@@ -2295,7 +2300,8 @@ class DashboardConfig {
         if (actions && actions.dataset.bmHealthWired !== '1') {
             actions.dataset.bmHealthWired = '1';
             actions.addEventListener('click', (e) => {
-                if (e.target.closest('[data-bm-open-health-modal]')) this.openBmHealthModal?.();
+                if (e.target.closest('[data-widgets-tour]')) void this.openWidgetsTour?.();
+                else if (e.target.closest('[data-bm-open-health-modal]')) this.openBmHealthModal?.();
                 else if (e.target.closest('[data-bm-open-structure]')) this.openStructureModal?.('pages');
                 else this.handleLibraryHeaderClick?.(e);
             });
@@ -2363,7 +2369,7 @@ class DashboardConfig {
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
         this.closeWorkbenchOverlaysOffList();
-        container.classList.remove('inbox-layout', 'tag-filter-layout');
+        container.classList.remove('inbox-layout');
         container.classList.add('config-layout', 'page-transition');
         container.classList.toggle('library-layout', this.standalone);
         // Only the parts that changed. The rail, the search button and the panel
@@ -3484,6 +3490,13 @@ class DashboardConfig {
                 this.openBookmarkByKey(this._bmKeyboardKey);
                 return true;
             }
+            // a: the tag on offer in this row, as a click on its chip.
+            if (e.key === 'a' && this.workbenchRowOffer?.(this.findBookmarkByKey(this._bmKeyboardKey))) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                void this.addWorkbenchRowOffer(this._bmKeyboardKey);
+                return true;
+            }
             /*
              * Health's own keys, brought in with its report (spec: "Keys").
              * Gated on the row actually carrying a report issue rather than
@@ -3677,6 +3690,8 @@ class DashboardConfig {
         { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
         { field: 'colorizeStatus', labelKey: 'colorizeStatus', fallback: 'Colour status on bookmark rows', section: 'appearance', subTab: 'display' },
         { field: 'animationsEnabled', labelKey: 'enableAnimations', fallback: 'Enable animations', section: 'appearance', subTab: 'general' },
+        { field: 'viewAnimationsEnabled', labelKey: 'viewAnimations', fallback: 'Animations in views and modals', section: 'appearance', subTab: 'general' },
+        { field: 'animationSpeed', labelKey: 'animationSpeedLabel', fallback: 'Animation speed', section: 'appearance', subTab: 'general' },
         { field: 'enableCustomTitle', labelKey: 'enableCustomTitle', fallback: 'Use a custom page title', section: 'appearance', subTab: 'header' },
         { field: 'customTitle', labelKey: 'customTitleLabel', fallback: 'Title', section: 'appearance', subTab: 'header' },
         { field: 'enableCustomFavicon', labelKey: 'uploadFaviconLabel', fallback: 'Custom favicon', section: 'appearance', subTab: 'header' },
@@ -5994,7 +6009,7 @@ class DashboardConfig {
     async restoreList(url, rows) {
         const res = await this.writeFetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-NextDash-Undo': '1' },
             body: JSON.stringify(rows),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -10069,6 +10084,21 @@ class DashboardConfig {
                     </label>
                     ${this.appearanceAff('animationsEnabled')}
                 </div>
+                <div class="config-field-row">
+                    <label class="config-toggle">
+                        <input type="checkbox" data-appearance-toggle="viewAnimationsEnabled" ${s.viewAnimationsEnabled !== false ? 'checked' : ''}>
+                        <span>${esc(this.t('config.viewAnimations', 'Animations in views and modals'))}</span>
+                    </label>
+                    ${this.appearanceAff('viewAnimationsEnabled')}
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.animationSpeedLabel', 'Animation speed'))}</span>
+                    <select class="config-select" data-appearance-select="animationSpeed">
+                        ${[['slow', 'animationSpeedSlow', 'Slow'], ['normal', 'animationSpeedNormal', 'Normal'], ['fast', 'animationSpeedFast', 'Fast']]
+                            .map(([value, key, fallback]) => `<option value="${value}"${(window.VisualSettings?.normalizeAnimationSpeed?.(s.animationSpeed) ?? 'normal') === value ? ' selected' : ''}>${esc(this.t(`config.${key}`, fallback))}</option>`).join('')}
+                    </select>
+                    ${this.appearanceAff('animationSpeed')}
+                </div>
             </div>
 
             <div class="config-panel">
@@ -12365,6 +12395,11 @@ class DashboardConfig {
             case 'themeDepth': this.setSurface('themeDepth', value); break;
             case 'glowStrength': this.setSurface('glowStrength', value); break;
             case 'themeEffects': this.setSurface('themeEffects', value); break;
+            case 'animationSpeed':
+                this.dash.settings.animationSpeed = 'normal';
+                window.VisualSettings?.applyAnimationSpeed?.('normal');
+                this.persistAppearance();
+                break;
             case 'inkGap':
                 this.dash.settings.inkGap = DashboardConfig.inkGapStepFor(value);
                 window.ThemeLoader?.applyInkGap?.(this.dash.settings.inkGap);
@@ -12630,6 +12665,10 @@ class DashboardConfig {
                 d.settings.animationsEnabled = value;
                 d.visual?.applyVisualSettings?.();
                 break;
+            case 'viewAnimationsEnabled':
+                d.settings.viewAnimationsEnabled = value;
+                d.visual?.applyVisualSettings?.();
+                break;
             case 'enableCustomTitle':
                 d.settings.enableCustomTitle = value;
                 d.pageNav?.updateDocumentTitle?.();
@@ -12744,6 +12783,13 @@ class DashboardConfig {
             const mode = value === 'off' ? 'off' : 'follow';
             this.dash.settings.themeBackdrop = mode;
             window.ThemeLoader?.applyThemeBackdrop?.(mode);
+            this.persistAppearance();
+            return;
+        }
+        if (name === 'animationSpeed') {
+            const speed = window.VisualSettings?.normalizeAnimationSpeed?.(value) ?? 'normal';
+            this.dash.settings.animationSpeed = speed;
+            window.VisualSettings?.applyAnimationSpeed?.(speed);
             this.persistAppearance();
             return;
         }
@@ -13210,6 +13256,8 @@ class DashboardConfig {
         randomThemeMode: { info: ['randomThemeModeInfoTitle', 'randomThemeModeInfoMessage'], def: 'off' },
         themeIconStyling: { info: ['iconStylingInfoTitle', 'iconStylingInfoMessage'] },
         animationsEnabled: { info: ['enableAnimationsInfoTitle', 'enableAnimationsInfoMessage'], def: true },
+        viewAnimationsEnabled: { info: ['viewAnimationsInfoTitle', 'viewAnimationsInfoMessage'], def: true },
+        animationSpeed: { info: ['animationSpeedInfoTitle', 'animationSpeedInfoMessage'], def: 'normal' },
         fontPreset: { info: ['fontPresetInfoTitle', 'fontPresetInfoMessage'], def: 'source-code-pro' },
         fontWeight: { info: ['fontWeightInfoTitle', 'fontWeightInfoMessage'], def: 'normal' },
         backgroundType: { info: ['backgroundPickerInfoTitle', 'backgroundPickerInfoMessage'], def: 'none' },
@@ -16566,8 +16614,10 @@ class DashboardConfig {
             ? this.dash.settings?.quickStart?.dismissed === true
             : window.DiscoverabilityState?.hasSeenTip?.(id) === true);
 
+        // The view tours play on request, so their buttons never wait.
+        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'widgetsTutorialV1']);
         const buttons = DashboardConfig.GUIDED_TOURS.map((tour) => {
-            const replayable = seen(tour.id);
+            const replayable = onRequest.has(tour.id) || seen(tour.id);
             const label = esc(this.t(tour.labelKey, tour.label));
             return `<button type="button" class="config-btn config-btn--small"
                         data-replay-tour="${esc(tour.id)}" ${replayable ? '' : 'disabled'}
@@ -16735,6 +16785,9 @@ class DashboardConfig {
             await this.dash.promos?.openDashboardTour?.();
             return;
         }
+        // A view tour plays now, in its own view: waiting for "next time"
+        // would mean a visit the reader may not make for weeks.
+        if (await this.playViewTour(tour.id)) return;
         this.notify(
             this.t('config.tourReplayDone', 'The {tour} tour will appear {where}.')
                 .replace('{tour}', this.t(tour.labelKey, tour.label))
@@ -16744,6 +16797,36 @@ class DashboardConfig {
         // The row draws from the seen list, so the button that was just used
         // has to go quiet rather than inviting a second press.
         this.render();
+    }
+
+    /**
+     * Open a view and play its tour there. True when the tour id is one of
+     * these; the caller falls back to "it will appear" for the rest.
+     */
+    async playViewTour(id) {
+        const d = this.dash;
+        switch (id) {
+            case 'inboxTutorialV3':
+                this.closeConfigView();
+                if ((await d.inbox?.openInboxView?.()) === false) return true;
+                await d.inbox?.instance?.openTour?.();
+                return true;
+            case 'bookmarksTutorialV1':
+                await this.openLibraryView();
+                await this.openLibraryTour?.();
+                return true;
+            case 'containersTutorialV3':
+                this.closeConfigView();
+                if ((await d.docker?.openDockerView?.()) === false) return true;
+                await d.docker?.instance?.openTour?.();
+                return true;
+            case 'widgetsTutorialV1':
+                await this.openConfigView('widgets');
+                await this.openWidgetsTour?.();
+                return true;
+            default:
+                return false;
+        }
     }
 
     /** Apply a behaviour setting: mutate, run any special apply, save. */
@@ -17056,6 +17139,12 @@ class DashboardConfig {
             'collection': ['config.statsNoteCollection', 'What the collection holds and how it is built up: categories, domains, tags and age.'],
             'inbox': ['config.statsNoteInbox', 'What arrived, what you filed, and how long things wait before you get to them.'],
             'health': ['config.statsNoteHealth', 'Whether everything still answers, how reliably, and what is wearing out.'],
+        },
+        containers: {
+            'connection': ['config.containersNoteConnection', 'How nextDash reaches Docker, and whether that connection works right now.'],
+            'view': ['config.containersNoteView', 'How the Containers view looks and refreshes, and which containers it leaves out.'],
+            'updates': ['config.containersNoteUpdates', 'When nextDash checks for newer images, and the token it uses for GitHub.'],
+            'alerts': ['config.containersNoteAlerts', 'What you are told when a container stops or fails, and which ones stay quiet.'],
         },
         'data-backups': {
             'backups': ['config.dbNoteBackups', 'Snapshots of everything, made on a schedule or by hand. Restore one, or download it.'],
@@ -17659,7 +17748,7 @@ class DashboardConfig {
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'notes']],
-        ['media', ['jellyfin', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd']],
+        ['media', ['jellyfin', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
     ];
 
     renderPagesTags() {
@@ -17938,6 +18027,7 @@ class DashboardConfig {
             const data = await res.json();
             if (!Array.isArray(data)) throw new Error('finders: unexpected payload');
             this._finders = data;
+            this._findersSeen = new Set(data.map(DashboardConfig.finderKey));
             this._findersLoadFailed = false;
         } catch {
             // Not []: saveFinders posts the whole list, so a failed load that
@@ -18034,6 +18124,38 @@ class DashboardConfig {
         });
     }
 
+    /** What tells two finders apart: they have no id. */
+    static finderKey(f) {
+        return `${String(f?.shortcut || '').trim()}\n${String(f?.searchUrl || '').trim()}`;
+    }
+
+    /**
+     * Add the finders the server has and this tab never saw.
+     *
+     * The list is read once per tab and saved whole, so a finder added on
+     * another device or tab since went with the next edit here. One this tab
+     * saw and no longer lists was deleted or changed here, and stays so.
+     * Appended, so the rows' indexes hold; they show on the next repaint.
+     */
+    async addFindersMadeElsewhere() {
+        if (!this._findersSeen || !Array.isArray(this._finders)) return;
+        let server;
+        try {
+            const res = await fetch('/api/finders', { cache: 'no-store' });
+            if (!res.ok) return;
+            server = await res.json();
+        } catch {
+            return;
+        }
+        if (!Array.isArray(server)) return;
+        const have = new Set(this._finders.map(DashboardConfig.finderKey));
+        server.forEach((f) => {
+            const key = DashboardConfig.finderKey(f);
+            if (!have.has(key) && !this._findersSeen.has(key)) this._finders.push(f);
+        });
+        this._finders.forEach((f) => this._findersSeen.add(DashboardConfig.finderKey(f)));
+    }
+
     async saveFinders() {
         // Refuse to write what we never managed to read — see loadFinders.
         if (this._findersLoadFailed) {
@@ -18041,6 +18163,7 @@ class DashboardConfig {
                 'Finders could not be loaded, so they will not be saved. Reload and try again.'), 'error');
             return false;
         }
+        await this.addFindersMadeElsewhere();
         try {
             const res = await this.writeFetch('/api/finders', {
                 method: 'POST',
@@ -18070,22 +18193,6 @@ class DashboardConfig {
         const power = spread > 8 ? 0.5 : 0.68;
         const floor = spread > 8 ? 0.08 : spread > 3 ? 0.16 : 0.24;
         return floor + (1 - floor) * Math.pow(Math.max(0, Math.min(1, ratio)), power);
-    }
-
-    /**
-     * Tier class for a tag-cloud word.
-     *
-     * Separate from tierClassForScale, which returns the config-stat--tier-*
-     * names used by the stat bars: the cloud's own tiers carry the colour
-     * gradation that makes a cloud readable, and passing it a stat class meant
-     * every word rendered in the same colour.
-     */
-    static cloudTierForScale(scale) {
-        if (scale >= 0.82) return 'tag-cloud-word--tier-xl';
-        if (scale >= 0.62) return 'tag-cloud-word--tier-lg';
-        if (scale >= 0.42) return 'tag-cloud-word--tier-md';
-        if (scale >= 0.22) return 'tag-cloud-word--tier-sm';
-        return 'tag-cloud-word--tier-xs';
     }
 
     static tierClassForScale(scale) {
@@ -18180,14 +18287,6 @@ class DashboardConfig {
 
     /* ── Tags & collections placeholders (native, built next) ──────────────── */
 
-    /** Stable per-tag tilt, so the cloud looks scattered but never reshuffles. */
-    static tagRotate(tag) {
-        let h = 0;
-        const s = String(tag || '');
-        for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) | 0;
-        return ((h % 9) - 4) * 0.55;
-    }
-
     /**
      * Tags matching the filter, in the chosen order.
      *
@@ -18216,25 +18315,29 @@ class DashboardConfig {
     renderTagCloud(tags) {
         const esc = (v) => this.dash.escapeHtml(v);
         if (!tags.length) return '';
-        const counts = tags.map((t) => t.count);
-        const max = Math.max(...counts);
-        const min = Math.min(...counts);
-        const words = [...tags]
+        // Ranked and ordered by the dashboard cloud's own model, so the two
+        // clouds size and place a tag the same way.
+        const model = window.TagCloudModel;
+        const ranked = [...tags]
             .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
-            .map((t, i) => {
-                const scale = DashboardConfig.scaleForCount(t.count, min, max);
+            .map((t) => ({ tag: t.tag, count: t.count }));
+        const classes = model.rankClasses(ranked);
+        const counts = new Map(ranked.map((t) => [t.tag, t.count]));
+        const words = model.orderForDisplay(ranked, classes)
+            .map((tag, i) => {
+                const count = counts.get(tag) || 0;
                 const label = this.t('config.tagBookmarkCount', '{count} bookmarks')
-                    .replace('{count}', String(t.count));
+                    .replace('{count}', String(count));
                 // Same .is-selected / aria-pressed pair the dashboard's own tag
                 // cloud uses, so the two clouds behave alike.
-                const selected = this._tagQuery === t.tag;
+                const selected = this._tagQuery === tag;
                 return `<button type="button"
-                    class="tag-cloud-word ${esc(DashboardConfig.cloudTierForScale(scale))}${selected ? ' is-selected' : ''}"
-                    data-tag-cloud="${esc(t.tag)}" role="listitem" aria-pressed="${selected ? 'true' : 'false'}"
-                    style="--tag-scale:${scale.toFixed(3)};--tag-rotate:${DashboardConfig.tagRotate(t.tag).toFixed(2)}deg;--tag-index:${i}"
-                    title="#${esc(t.tag)} — ${esc(label)}" aria-label="${esc(t.tag)}. ${esc(label)}">
-                    <span class="tag-cloud-word-hash" aria-hidden="true">#</span>
-                    <span class="tag-cloud-word-label">${esc(t.tag)}</span>
+                    class="tag-cloud-word is-${classes.get(tag)}${selected ? ' is-selected' : ''}"
+                    data-tag-cloud="${esc(tag)}" role="listitem" aria-pressed="${selected ? 'true' : 'false'}"
+                    style="--tag-index:${i}"
+                    title="${esc(tag)} — ${esc(label)}" aria-label="${esc(tag)}. ${esc(label)}">
+                    <span class="tag-cloud-word-label">${esc(tag)}</span>
+                    <span class="tag-cloud-word-count" aria-hidden="true">${count}</span>
                 </button>`;
             }).join('');
         return `<div class="tag-cloud-wordcloud config-tag-cloud" role="list">${words}</div>`;
@@ -18383,53 +18486,18 @@ class DashboardConfig {
 
     /**
      * Rename (to != null) or delete (to == null) a tag across every bookmark.
-     *
-     * On the server, on only the rows that carry it: this used to read every
-     * page, change the list here and write every page back -- the ones without
-     * the tag too -- from a copy that could already be out of date. The answer
-     * names the rows and the tags they had, which is the undo.
+     * The write and its undo live in shared/tag-rewrite.js, which the tag view
+     * uses too; what stays here is what the tags tab redraws afterwards.
      */
     async rewriteTag(from, to) {
-        const reload = async () => {
-            this._tagList = null;
-            await this.loadTagsManager();
-            await this.refreshBookmarksAfterWrite({ silent: true });
-            this.dash.renderDashboard?.({ animate: false });
-        };
-        try {
-            const res = await this.writeFetch('/api/tags/rewrite', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ from, to: to || '' }),
-            });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const body = await res.json().catch(() => ({}));
-            const changed = Array.isArray(body.changed) ? body.changed : [];
-            if (!changed.length) return;
-            const undo = new Map();
-            changed.forEach((row) => {
-                const pid = String(row.pageId);
-                if (!undo.has(pid)) undo.set(pid, []);
-                undo.get(pid).push({ url: row.url, fields: { tags: Array.isArray(row.tags) ? row.tags : [] } });
-            });
-            this.notify(to
-                ? this.t('config.tagRenamed', 'Tag renamed.')
-                : this.t('config.tagDeleted', 'Tag deleted.'), 'success', {
-                duration: 8000,
-                undoCallback: async () => {
-                    try {
-                        for (const [pageId, updates] of undo) await this.patchRows(pageId, updates);
-                        await reload();
-                        this.notify(this.t('config.tagRewriteUndone', 'Tags put back.'), 'success');
-                    } catch {
-                        this.notify(this.t('config.bulkUndoFailed', 'Could not undo that.'), 'error');
-                    }
-                },
-            });
-            await reload();
-        } catch {
-            this.notify(this.t('config.tagsSaveError', 'Could not update the tag.'), 'error');
-        }
+        await window.TagRewrite.rewrite(this.dash, from, to, {
+            onDone: async () => {
+                this._tagList = null;
+                await this.loadTagsManager();
+                await this.refreshBookmarksAfterWrite({ silent: true });
+                this.dash.renderDashboard?.({ animate: false });
+            },
+        });
     }
 
     collectionsSchema() {
@@ -19072,7 +19140,7 @@ class DashboardConfig {
                     { previous: page.name, message: this.t('config.pageNameDuplicate', 'A page with this name already exists.') }
                 )) return;
                 page[key] = input.value;
-                void this.savePages();
+                void this.savePages([id]);
             });
         });
         const addBtn = container.querySelector('[data-page-add]');
@@ -19097,7 +19165,12 @@ class DashboardConfig {
      * answer -- and got undefined from every save, so a duplicate never went
      * past the page list: no categories, no bookmarks, no word.
      */
-    async savePages() {
+    async savePages(edited = []) {
+        // The whole list goes to the server, and the server takes every entry
+        // in it as the truth: a name changed on another device was put back
+        // by the next reorder here. Re-read first; only the pages this save
+        // is about keep this tab's version.
+        await this.refreshPagesInPlace(edited);
         try {
             const res = await this.writeFetch('/api/pages', {
                 method: 'POST',
@@ -19113,6 +19186,43 @@ class DashboardConfig {
         }
     }
 
+    /**
+     * Bring dash.pages up to what the server holds, keeping this tab's order.
+     *
+     * The list is the one this tab loaded, and a page made, renamed or
+     * deleted on another device since is not in it. Pages named in `keep`
+     * stay as this tab has them (the edit being saved, a page just added);
+     * the rest take the server's entry, a page gone there is dropped, and one
+     * new there goes at the end. In place, because callers hold the array.
+     * A failed read leaves the list as it was.
+     */
+    async refreshPagesInPlace(keep = []) {
+        const pages = this.dash.pages || (this.dash.pages = []);
+        let fresh;
+        try {
+            const res = await fetch('/api/pages', { cache: 'no-store' });
+            if (!res.ok) return;
+            fresh = await res.json();
+        } catch {
+            return;
+        }
+        if (!Array.isArray(fresh)) return;
+        const kept = new Set(keep.map(Number));
+        const byId = new Map(fresh.map((p) => [Number(p.id), p]));
+        const merged = [];
+        const seen = new Set();
+        pages.forEach((page) => {
+            const id = Number(page.id);
+            seen.add(id);
+            if (kept.has(id)) merged.push(page);
+            else if (byId.has(id)) merged.push(byId.get(id));
+        });
+        fresh.forEach((page) => {
+            if (!seen.has(Number(page.id))) merged.push(page);
+        });
+        pages.splice(0, pages.length, ...merged);
+    }
+
     /*
      * The highest page id in use, the trash included.
      *
@@ -19122,6 +19232,10 @@ class DashboardConfig {
      * for good -- while an undo inside the toast wrote the old page over the new.
      */
     async highestPageId() {
+        // Fresh: a page made on another device since this tab loaded is not
+        // in dash.pages, its id was handed out again, and a duplicate then
+        // wrote its bookmarks over that page's.
+        await this.refreshPagesInPlace();
         const pages = this.dash.pages || [];
         let maxId = pages.length ? Math.max(...pages.map((p) => Number(p.id) || 0)) : 0;
         try {
@@ -19136,8 +19250,9 @@ class DashboardConfig {
     }
 
     async addPage() {
-        const pages = this.dash.pages || [];
         const maxId = await this.highestPageId();
+        // Read after: highestPageId brings the list up to date.
+        const pages = this.dash.pages || (this.dash.pages = []);
         // Deleting page 3 of 3 and adding again would otherwise reuse "Page 3".
         const name = DashboardConfig.uniqueNameFrom(
             `${this.t('config.pagePrefix', 'Page')} ${maxId + 1}`,
@@ -19145,8 +19260,18 @@ class DashboardConfig {
         );
         const newPage = { id: maxId + 1, name };
         pages.push(newPage);
-        await this.savePages();
+        if (!await this.savePages([newPage.id])) {
+            this.forgetUnsavedPage(newPage.id);
+        }
         this.repaintPtBody();
+    }
+
+    /** Take back a page this tab listed and the server never stored. */
+    forgetUnsavedPage(id) {
+        const pages = this.dash.pages || [];
+        const at = pages.findIndex((p) => Number(p.id) === Number(id));
+        if (at >= 0) pages.splice(at, 1);
+        this.dash.pageNav?.renderPageNavigation?.();
     }
 
     /* ── Page templates ────────────────────────────────────────────────────── */
@@ -19562,8 +19687,9 @@ class DashboardConfig {
             { confirmLabel: this.t('config.pageDuplicateWith', 'With bookmarks') }
         ) === true;
 
-        const pages = this.dash.pages || [];
         const maxId = await this.highestPageId();
+        // Read after: highestPageId brings the list up to date.
+        const pages = this.dash.pages || (this.dash.pages = []);
         const newId = maxId + 1;
         const name = DashboardConfig.uniqueNameFrom(
             this.t('config.pageDuplicateName', '{name} copy').replace('{name}', source.name || ''),
@@ -19583,7 +19709,11 @@ class DashboardConfig {
             const sourceCategories = await catRes.json();
 
             pages.push(copy);
-            if (!await this.savePages()) return;
+            if (!await this.savePages([newId])) {
+                this.forgetUnsavedPage(newId);
+                this.repaintPtBody();
+                return;
+            }
 
             const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             if (Array.isArray(sourceCategories) && sourceCategories.length) {
@@ -19683,6 +19813,11 @@ class DashboardConfig {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             this.dash.pages = (this.dash.pages || []).filter((p) => Number(p.id) !== Number(id));
             this.dash.pageNav?.renderPageNavigation?.();
+            // The page on screen: it stayed there, every edit on it a 404,
+            // until a reload. Go to the first page left.
+            if (Number(id) === Number(this.dash.currentPageId)) {
+                void this.dash.pageNav?.requestPageNavigation?.(this.dash.pages[0]?.id ?? 1);
+            }
 
             // The server puts the whole page in the trash -- bookmarks,
             // categories and widgets -- and the undo restores that entry. It
@@ -19797,18 +19932,14 @@ class DashboardConfig {
           whereKey: 'config.tourWhereBookmarks', where: 'the next time you open the Bookmarks view' },
         { id: 'containersTutorialV3', labelKey: 'config.tourContainers', label: 'Containers',
           whereKey: 'config.tourWhereContainers', where: 'the next time you open the Containers view' },
-        { id: 'freshTutorialV1', labelKey: 'config.tourFresh', label: 'Fresh',
-          whereKey: 'config.tourWhereFresh', where: 'the next time you open Fresh' },
         { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets',
           whereKey: 'config.tourWhereWidgets', where: 'the next time you open Config → Widgets' },
-        { id: 'spreadTutorialV1', labelKey: 'config.tourSpread', label: 'Spreading a category',
-          whereKey: 'config.tourWhereSpread', where: 'the next time you spread a category across columns' },
     ];
 
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -19863,6 +19994,29 @@ class DashboardConfig {
               ['tv', ['config.widgetSeerrMediaTypeTv', 'Series']],
           ] },
         ...DashboardConfig.ARR_SETTINGS.filter((field) => !['show', 'days'].includes(field.key)),
+    ];
+
+    /**
+     * Home Assistant's settings, mirroring WidgetTypeHomeAssistant in
+     * widgets_config.go. The entities are chosen after Connect, so the media
+     * panel draws them.
+     */
+    static HA_SETTINGS = [
+        { key: 'groupBy', kind: 'choice', label: ['config.widgetHomeAssistantGroupBy', 'Group by'],
+          options: [
+              ['area', ['config.widgetHomeAssistantGroupByArea', 'Room']],
+              ['domain', ['config.widgetHomeAssistantGroupByDomain', 'Kind of entity']],
+              ['none', ['config.widgetHomeAssistantGroupByNone', 'Nothing, one list']],
+          ] },
+        { key: 'showLastChanged', kind: 'bool',
+          label: ['config.widgetHomeAssistantShowLastChanged', 'Show since when'] },
+        { key: 'layout', kind: 'choice', label: ['config.widgetMediaLayout', 'Layout'],
+          options: [
+              ['strip', ['config.widgetHomeAssistantLayoutStrip', 'A tab per group']],
+              ['list', ['config.widgetHomeAssistantLayoutList', 'One list']],
+          ] },
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => ['click', 'target', 'rows'].includes(field.key)),
+        { key: 'ttl', kind: 'int', min: 15, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
     ];
 
     /**
@@ -20154,6 +20308,7 @@ class DashboardConfig {
         seerr: DashboardConfig.SEERR_SETTINGS,
         qbittorrent: DashboardConfig.DOWNLOAD_SETTINGS,
         sabnzbd: DashboardConfig.DOWNLOAD_SETTINGS,
+        homeassistant: DashboardConfig.HA_SETTINGS,
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
               label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },
@@ -20643,6 +20798,7 @@ class DashboardConfig {
                 const key = String(missing[i].id);
                 if (r.status === 'fulfilled') {
                     map.set(key, r.value);
+                    this.noteCategoriesSeen(key, r.value);
                     failed.delete(key);
                 } else {
                     // See loadFinders: an empty list here is a write
@@ -20720,7 +20876,47 @@ class DashboardConfig {
         this._catByPage = null;
         this._catFailedPages = null;
         this._catLoadedFor = null;
+        this._catSeen = null;
         this._catGeneration = (this._catGeneration || 0) + 1;
+    }
+
+    /** Remember which categories this tab has had for a page. */
+    noteCategoriesSeen(pageId, list) {
+        if (!this._catSeen) this._catSeen = new Map();
+        const key = String(pageId);
+        const seen = this._catSeen.get(key) || new Set();
+        (list || []).forEach((c) => seen.add(String(c.id)));
+        this._catSeen.set(key, seen);
+    }
+
+    /**
+     * Add to `list` the categories the server has and this tab never saw.
+     *
+     * The save sends the whole list and the server takes it as the truth, so
+     * a category made on another device since this tab read the list went
+     * with the next edit here -- and its bookmarks were left pointing at
+     * nothing. One this tab saw and no longer lists was deleted here, and
+     * stays deleted. A failed read leaves the list as it is.
+     */
+    async addCategoriesMadeElsewhere(pageId, list) {
+        // Without a record of what this tab read, a delete made here cannot
+        // be told from a category made elsewhere: leave the list alone.
+        const seen = this._catSeen?.get(String(pageId));
+        if (!seen) return false;
+        let server;
+        try {
+            const res = await fetch(`/api/categories?page=${encodeURIComponent(pageId)}`, { cache: 'no-store' });
+            if (!res.ok) return false;
+            server = await res.json();
+        } catch {
+            return false;
+        }
+        if (!Array.isArray(server)) return false;
+        const have = new Set(list.map((c) => String(c.id)));
+        const extra = server.filter((c) => !have.has(String(c.id)) && !seen.has(String(c.id)));
+        list.push(...extra);
+        this.noteCategoriesSeen(pageId, list);
+        return extra.length > 0;
     }
 
     bindCategoriesEditor(container) {
@@ -20909,6 +21105,8 @@ class DashboardConfig {
                     duration: 8000,
                     undoCallback: async () => {
                         try {
+                            // The undo writes the whole list too.
+                            await this.addCategoriesMadeElsewhere(pageId, before);
                             await this.restoreList(
                                 `/api/categories?page=${encodeURIComponent(pageId)}`,
                                 before
@@ -20965,6 +21163,7 @@ class DashboardConfig {
                 'Categories could not be loaded, so they will not be saved. Reload and try again.'), 'error');
             return false;
         }
+        if (await this.addCategoriesMadeElsewhere(pageId, list) && this.ptTab === 'categories') this.repaintPtBody();
         const payload = JSON.stringify(list);
         try {
             const res = await this.writeFetch(`/api/categories?page=${encodeURIComponent(pageId)}`, {
@@ -21136,6 +21335,7 @@ class DashboardConfig {
         if (live) live.textContent = this.renderBookmarkCountLabelSafe(shown, total);
         this.repaintWorkbenchRail?.();
         this.syncWorkbenchToolbar?.();
+        this.syncWorkbenchOfferCount?.();
     }
 
     clearBookmarkFilterChip(key) {
@@ -21763,7 +21963,9 @@ class DashboardConfig {
     /** The bulk bar, likewise — it is drawn from three places. */
     /** What the engine needs: a key, an address and the tags it already has. */
     tagSuggestionItems() {
-        return (this.dash.allBookmarks || []).map((b) => ({
+        // Unsorted too: a link kept without a page is the one most in need of
+        // a tag, and its row in the list is just as much the reader's.
+        return [...(this.dash.allBookmarks || []), ...(this.dash.unsortedBookmarks || [])].map((b) => ({
             key: this.bookmarkKey(b),
             url: b.url,
             // Carried for the expanded row: a list of addresses is a list
@@ -21784,9 +21986,27 @@ class DashboardConfig {
             keywords: this.tagKeywordsByItemKey(),
             scan: this._tagScanState || null,
             expanded: this._tagSuggestionOpen || new Set(),
+            refusedOpen: !!this._tagSuggestionsRefusedOpen,
             excluded: this._tagSuggestionExcluded || new Set(),
+            counts: this.tagSearchCounts(),
+            catalogueStats: window.TagCatalogue?.stats?.() || null,
+            unknownHosts: window.TagCatalogue?.unknown?.() || [],
+            lookupOnline: this.dash.settings?.tagLookupOnline !== false,
+            applyNow: this.tagSearchApplyNow(),
             t: (key, fallback) => this.t(key, fallback),
         });
+    }
+
+    /** How many bookmarks carry tags and how many do not, for the tab's counts. */
+    tagSearchCounts() {
+        const all = (this.dash.allBookmarks || []).filter((b) => b?.url);
+        const untagged = all.filter((b) => !(Array.isArray(b.tags) && b.tags.length)).length;
+        return {
+            tagged: all.length - untagged,
+            untagged,
+            unsorted: (this.dash.unsortedBookmarks || []).filter((b) => b?.url).length,
+            inbox: (this.dash.inbox?.items || []).filter((item) => item?.url).length,
+        };
     }
 
     /*
@@ -21805,6 +22025,12 @@ class DashboardConfig {
                 this._tagCatalogue = Array.isArray(tags) ? tags : [];
                 return this._tagCatalogue;
             });
+        // Online lookups land after the first answer; the panel redraws when
+        // they do rather than waiting for the next visit.
+        if (!this._tagCatalogueListening && window.TagCatalogue?.onChange) {
+            this._tagCatalogueListening = true;
+            window.TagCatalogue.onChange(() => this.onTagEvidenceChanged());
+        }
         return this._tagCataloguePromise;
     }
 
@@ -21821,6 +22047,16 @@ class DashboardConfig {
             || (container.id === 'config-bm-suggestions' ? container : null);
         if (!host) return;
         this.renderTagSuggestionsSafe();
+        // The toolbar's menus close when the reader clicks anywhere else or
+        // presses Escape, as a menu does. Bound once for the document.
+        if (!this._tagMenuCloserBound) {
+            this._tagMenuCloserBound = true;
+            const closeMenus = (except) => document
+                .querySelectorAll('#config-bm-suggestions details.config-tag-menu[open]')
+                .forEach((menu) => { if (menu !== except) menu.removeAttribute('open'); });
+            document.addEventListener('click', (event) => closeMenus(event.target.closest?.('details.config-tag-menu')));
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeMenus(null); });
+        }
         /*
          * Unticking a member of an expanded group.
          *
@@ -21829,6 +22065,14 @@ class DashboardConfig {
          * it. What is still ticked is read again when Apply runs.
          */
         host.addEventListener('change', (event) => {
+            if (event.target.closest?.('[data-tag-search-apply]')) {
+                this.setTagSearchApplyNow(event.target.checked);
+                return;
+            }
+            if (event.target.closest?.('[data-tag-lookup-online]')) {
+                void this.setBehavior('tagLookupOnline', event.target.checked).then(() => this.renderTagSuggestionsSafe());
+                return;
+            }
             const box = event.target.closest?.('[data-tag-suggestion-member]');
             if (!box) return;
             const id = box.getAttribute('data-tag-suggestion-member');
@@ -21847,6 +22091,11 @@ class DashboardConfig {
                 }
             });
         }
+        // The inbox count in the toolbar and the facts: drawn again once the
+        // inbox has loaded, since nothing else here waits for it.
+        void this.ensureInboxForTags().then(() => {
+            if (document.getElementById('config-bm-suggestions')) this.renderTagSuggestionsSafe();
+        });
         if (!this._tagCatalogue) {
             void this.ensureTagCatalogue().then(() => {
                 if (document.getElementById('config-bm-suggestions')) {
@@ -21855,6 +22104,18 @@ class DashboardConfig {
                 }
             });
         }
+        /*
+         * Whether "Turned down" is open, kept here rather than in the DOM.
+         *
+         * A turn-down or an "Offer again" redraws the panel twice -- once with
+         * the config view, once after the save -- and each drew the list folded.
+         * `toggle` does not bubble, so it is caught on the way down.
+         */
+        host.addEventListener('toggle', (event) => {
+            const wrap = event.target;
+            if (!wrap?.matches?.('[data-tag-suggestions-dismissed]')) return;
+            this._tagSuggestionsRefusedOpen = wrap.open;
+        }, true);
         /*
          * The count chip answers the keyboard too.
          *
@@ -21880,13 +22141,30 @@ class DashboardConfig {
             const button = event.target.closest('[data-tag-suggestion-apply]');
             if (button) {
                 const index = Number(button.getAttribute('data-tag-suggestion-apply'));
-                void this.applyTagSuggestion((this._tagSuggestionGroups || [])[index]);
+                void this.keepTagSuggestionsPlace(button,
+                    () => this.applyTagSuggestion(this.tagSuggestionRowGroups(index)));
                 return;
             }
             const refuse = event.target.closest('[data-tag-suggestion-dismiss]');
             if (refuse) {
                 const index = Number(refuse.getAttribute('data-tag-suggestion-dismiss'));
-                void this.dismissTagSuggestion((this._tagSuggestionGroups || [])[index]);
+                void this.keepTagSuggestionsPlace(refuse,
+                    () => this.dismissTagSuggestion(this.tagSuggestionRowGroups(index)));
+                return;
+            }
+            const applyAll = event.target.closest('[data-tag-suggestions-apply-all]');
+            if (applyAll) {
+                const rows = (this._tagSuggestionGroups || []).slice(0, window.ConfigTagSuggestions?.MAX_ROWS || 25);
+                void this.applyTagSuggestion(rows.flatMap((row) => (row.groups || []).map(({ group }) => group)));
+                return;
+            }
+            // A choice made in one of the toolbar's menus closes it.
+            if (event.target.closest('.config-tag-menu-panel [role="menuitem"]')) {
+                event.target.closest('details')?.removeAttribute('open');
+            }
+            const search = event.target.closest('[data-tag-search]');
+            if (search) {
+                void this.runTagSearch(search.getAttribute('data-tag-search'));
                 return;
             }
             if (event.target.closest('[data-tag-scan-start]')) {
@@ -21907,7 +22185,8 @@ class DashboardConfig {
             }
             const backOne = event.target.closest('[data-tag-suggestion-restore-one]');
             if (backOne) {
-                void this.restoreTagSuggestion(backOne.getAttribute('data-tag-suggestion-restore-one'));
+                void this.keepTagSuggestionsPlace(backOne,
+                    () => this.restoreTagSuggestion(backOne.getAttribute('data-tag-suggestion-restore-one')));
                 return;
             }
             const toggle = event.target.closest('[data-tag-suggestion-toggle]');
@@ -21994,12 +22273,16 @@ class DashboardConfig {
     tagSuggestionGroupCount() {
         if (!window.TagSuggestions) return 0;
         try {
-            return window.TagSuggestions.suggest(this.tagSuggestionItems(), {
+            const groups = window.TagSuggestions.suggest(this.tagSuggestionItems(), {
                 rules: this.dash.settings?.tagRules || [],
                 catalogue: this._tagCatalogue || [],
                 dismissed: this.dash.settings?.dismissedTagSuggestions || [],
                 keywords: this.tagKeywordsByItemKey(),
-            }).length;
+            });
+            // Counted as the panel shows them: one per tag.
+            return window.ConfigTagSuggestions?.mergeByTag
+                ? window.ConfigTagSuggestions.mergeByTag(groups).length
+                : groups.length;
         } catch (err) {
             return 0;
         }
@@ -23768,6 +24051,7 @@ class DashboardConfig {
             ['i', this.t('config.bmKeyPanel', 'panel')],
             ['Enter', this.t('config.bookmarksKeyOpen', 'open')],
             ['d', this.t('config.bookmarksKeyDelete', 'delete')],
+            ['a', this.t('config.bmKeyAddSuggested', 'add suggested')],
             ['g / G', this.t('config.bookmarksKeyFirstLast', 'first / last')],
             ['/', this.t('config.bookmarksKeySearch', 'search')],
             ['Esc', this.t('config.bookmarksKeyClear', 'clear')],
@@ -24076,9 +24360,23 @@ class DashboardConfig {
         });
         this.fitWorkbenchTags?.(listRoot);
         this.fillWorkbenchContainers?.(listRoot);
+        this.syncWorkbenchOfferCount?.();
+        this.ensureWorkbenchOfferSources?.();
         // Delegated once per host: rows are replaced on every repaint.
         if (listRoot.dataset.bmRowsWired === '1') return;
         listRoot.dataset.bmRowsWired = '1';
+        // A tag on offer in a row, taken or turned down. In the capture phase,
+        // so the row's own click (select it, open the panel) does not follow.
+        listRoot.addEventListener('click', (e) => {
+            const add = e.target.closest('[data-bm-offer-add]');
+            const refuse = e.target.closest('[data-bm-offer-refuse]');
+            if (!add && !refuse) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const key = e.target.closest('.config-bm-row')?.getAttribute('data-bm-key');
+            if (add) void this.addWorkbenchRowOffer?.(key);
+            else this.refuseWorkbenchRowOffer?.(key);
+        }, true);
         listRoot.addEventListener('change', (e) => {
             const box = e.target.closest('[data-bm-tick]');
             if (!box) return;
@@ -24632,11 +24930,13 @@ class DashboardConfig {
      * PATCH rows of one page. A refusal (409) throws an Error carrying the
      * server's answer as `.conflict`, so the caller can say what collided.
      */
-    async patchRows(pageId, updates) {
+    async patchRows(pageId, updates, options = {}) {
         if (!updates.length) return { updated: 0 };
         const res = await this.writeFetch('/api/bookmarks', {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            // An undo puts back what was there; a tag it takes off is not one
+            // the reader turned down (internal/app/tag_refusals.go).
+            headers: { 'Content-Type': 'application/json', ...(options.undo ? { 'X-NextDash-Undo': '1' } : {}) },
             body: JSON.stringify({ page: Number(pageId), updates }),
         });
         if (res.status === 409) {
@@ -24884,7 +25184,7 @@ class DashboardConfig {
         return async () => {
             try {
                 for (const [pageId, updates] of undo) {
-                    await this.patchRows(pageId, updates);
+                    await this.patchRows(pageId, updates, { undo: true });
                 }
                 await this.refreshBookmarksAfterWrite();
                 // The suggestions panel is built from the tags an undo just put
@@ -25011,8 +25311,16 @@ class DashboardConfig {
      * not fill in. The undo, the snapshots and the page-by-page write are the
      * same either way.
      */
-    async applyTagSuggestion(group) {
-        if (!group?.tag || !Array.isArray(group.keys) || !group.keys.length) return;
+    /** The engine groups behind one row of the panel (one tag, its sites). */
+    tagSuggestionRowGroups(index) {
+        const row = (this._tagSuggestionGroups || [])[index];
+        return (row?.groups || []).map(({ group }) => group);
+    }
+
+    async applyTagSuggestion(groupOrGroups) {
+        const groups = (Array.isArray(groupOrGroups) ? groupOrGroups : [groupOrGroups])
+            .filter((group) => group?.tag && Array.isArray(group.keys) && group.keys.length);
+        if (!groups.length) return;
         /*
          * Only the ones still ticked.
          *
@@ -25023,7 +25331,13 @@ class DashboardConfig {
          * whole row and tag forty-six by hand.
          */
         const left = new Set(this._tagSuggestionExcluded || []);
-        const keys = group.keys.filter((key) => !left.has(`${group.pattern}|${group.tag}|${key}`));
+        // bookmark key -> the tags this apply adds to it.
+        const adds = new Map();
+        groups.forEach((group) => group.keys.forEach((key) => {
+            if (left.has(`${group.pattern}|${group.tag}|${key}`)) return;
+            adds.set(key, [...(adds.get(key) || []), group.tag]);
+        }));
+        const keys = [...adds.keys()];
         // Unticking every member and then pressing Apply is a reasonable thing
         // to do by accident, and it used to do nothing at all -- no tag, no
         // toast, no reason given.
@@ -25033,7 +25347,8 @@ class DashboardConfig {
             return;
         }
         const wanted = new Set(keys);
-        const picked = (this.dash.allBookmarks || []).filter((b) => wanted.has(this.bookmarkKey(b)));
+        const picked = [...(this.dash.allBookmarks || []), ...(this.dash.unsortedBookmarks || [])]
+            .filter((b) => wanted.has(this.bookmarkKey(b)));
         if (!picked.length) return;
         // mutateSelected clears the selection, which is right for the bulk bar
         // -- that is what it was acting on. This panel acts on a group of its
@@ -25041,7 +25356,7 @@ class DashboardConfig {
         const ticked = new Set(this.bmSelected);
         const snapshots = await this.mutateSelected(picked, (b) => {
             const current = Array.isArray(b.tags) ? b.tags.map((tag) => String(tag).toLowerCase()) : [];
-            return { ...b, tags: [...new Set([...current, group.tag])] };
+            return { ...b, tags: [...new Set([...current, ...(adds.get(this.bookmarkKey(b)) || [])])] };
         });
         ticked.forEach((key) => this.bmSelected.add(key));
         this.notify(this.t('config.tagSuggestionApplied', 'Tags added.'), 'success', {
@@ -25050,6 +25365,223 @@ class DashboardConfig {
             duration: 8000,
         });
         this.renderTagSuggestionsSafe();
+    }
+
+    /*
+     * Whether a search round adds what it finds straight away.
+     *
+     * One answer per browser rather than a setting: it is how this reader
+     * likes to work at this desk, not something the collection holds. On
+     * unless turned off -- the round is something they asked for, and one
+     * undo takes it all back.
+     */
+    tagSearchApplyNow() {
+        try {
+            return localStorage.getItem('nextdash.tagSearch.applyNow') !== 'false';
+        } catch {
+            return true;
+        }
+    }
+
+    setTagSearchApplyNow(on) {
+        try {
+            localStorage.setItem('nextdash.tagSearch.applyNow', on ? 'true' : 'false');
+        } catch { /* a browser refusing storage keeps the default */ }
+    }
+
+    /** The bookmarks a round runs over: 'all', 'untagged', or a list. */
+    tagSearchTargets(scope) {
+        if (Array.isArray(scope)) return scope.filter((b) => b?.url);
+        if (scope === 'unsorted') return (this.dash.unsortedBookmarks || []).filter((b) => b?.url);
+        const all = (this.dash.allBookmarks || []).filter((b) => b?.url);
+        if (scope === 'untagged') return all.filter((b) => !(Array.isArray(b.tags) && b.tags.length));
+        return all;
+    }
+
+    /*
+     * Look for tags for these bookmarks, and add them or offer them.
+     *
+     * The catalogue first, then Wikidata for the sites it does not know
+     * (TagCatalogue.lookupRound, on the progress overlay). What comes out is
+     * whatever the engine proposes for these bookmarks once the round has
+     * landed -- the same proposals the suggestions tab shows, so a tag the
+     * reader turned down, or took off by hand, is never added: the engine
+     * drops those before anything else sees them.
+     *
+     * With "add straight away" on, every bookmark that has a proposal gets it
+     * in one write and one undo; off, the toast says how many are waiting and
+     * opens the tab.
+     */
+    async runTagSearch(scope) {
+        if (scope === 'inbox') {
+            await this.runInboxTagSearch();
+            return;
+        }
+        const targets = this.tagSearchTargets(scope);
+        if (!targets.length) {
+            this.notify(this.t('config.tagSearchNothing', 'No bookmarks to look for tags for.'), 'info');
+            return;
+        }
+        if (!window.TagCatalogue?.lookupRound || !window.TagSuggestions?.suggest) return;
+        await Promise.all([this.ensureTagCatalogue(), this.ensureTagKeywords?.()]);
+        const round = await window.TagCatalogue.lookupRound(targets.map((b) => b.url), {
+            title: this.t('config.tagSearchProgressTitle', 'Looking for tags…'),
+        });
+        if (round.busy) {
+            this.notify(this.t('config.tagSearchBusy', 'A search is already running.'), 'info');
+            return;
+        }
+
+        const wanted = new Set(targets.map((b) => this.bookmarkKey(b)));
+        const groups = window.TagSuggestions.suggest(this.tagSuggestionItems(), {
+            rules: this.dash.settings?.tagRules || [],
+            catalogue: this._tagCatalogue || [],
+            dismissed: this.dash.settings?.dismissedTagSuggestions || [],
+            keywords: this.tagKeywordsByItemKey(),
+        });
+        const tagsFor = new Map();
+        groups.forEach((group) => (group.keys || []).forEach((key) => {
+            if (!wanted.has(key)) return;
+            tagsFor.set(key, [...(tagsFor.get(key) || []), group.tag]);
+        }));
+        this.renderTagSuggestionsSafe();
+        this.syncTagSuggestionCount?.();
+
+        if (!tagsFor.size) {
+            this.notify(round.off
+                ? this.t('config.tagSearchNoneOff', 'No tags found. Looking up online is off, so only the catalogue was asked.')
+                : this.t('config.tagSearchNone', 'No new tags found for these bookmarks.'), 'info', { duration: 6000 });
+            return;
+        }
+        if (!this.tagSearchApplyNow()) {
+            this.notify(this.t('config.tagSearchWaiting', '{n} bookmarks have a tag suggestion waiting.')
+                .replace('{n}', String(tagsFor.size)), 'success', {
+                duration: 10000,
+                actionLabel: this.t('config.tagSearchReview', 'Review'),
+                onAction: () => this.openTagSuggestionsTab(),
+            });
+            return;
+        }
+        const picked = [...(this.dash.allBookmarks || []), ...(this.dash.unsortedBookmarks || [])]
+            .filter((b) => tagsFor.has(this.bookmarkKey(b)));
+        const ticked = new Set(this.bmSelected);
+        const snapshots = await this.mutateSelected(picked, (b) => {
+            const current = Array.isArray(b.tags) ? b.tags.map((tag) => String(tag).toLowerCase()) : [];
+            return { ...b, tags: [...new Set([...current, ...tagsFor.get(this.bookmarkKey(b))])] };
+        });
+        ticked.forEach((key) => this.bmSelected.add(key));
+        this.notify(this.t('config.tagSearchApplied', '{n} bookmarks got a tag.')
+            .replace('{n}', String(picked.length)), 'success', {
+            undoCallback: this.bulkUndo(snapshots, 'config.tagSuggestionUndone', 'Tags put back.',
+                'config.bulkUndoFailed', 'Could not undo that.'),
+            duration: 10000,
+        });
+        this.renderTagSuggestionsSafe();
+        this.syncTagSuggestionCount?.();
+    }
+
+    /*
+     * Stay where the reader was.
+     *
+     * Accepting or refusing a row writes, and a write repaints the whole view
+     * (refreshAfterBookmarkMutation): for a moment the suggestions panel is
+     * empty, the page is short, and the browser scrolls to the top. A reader
+     * working down a long list was thrown back to the start after every
+     * click. So the scroll position is held across the write and put back
+     * once the panel is drawn again, and the focus goes to the same kind of
+     * button on the row that took the clicked one's place -- or the one
+     * above it, at the end of the list -- so the keyboard stays there too.
+     */
+    async keepTagSuggestionsPlace(button, work) {
+        const y = window.scrollY;
+        const attr = ['data-tag-suggestion-apply', 'data-tag-suggestion-dismiss', 'data-tag-suggestion-restore-one']
+            .find((name) => button?.hasAttribute?.(name));
+        const all = attr ? [...document.querySelectorAll(`#config-bm-suggestions [${attr}]`)] : [];
+        const position = all.indexOf(button);
+        // Held tall while the view is drawn again, so there is nothing to
+        // scroll back from: the page never gets short enough to clamp.
+        const root = document.documentElement;
+        const held = root.style.minHeight;
+        root.style.minHeight = `${root.scrollHeight}px`;
+        try {
+            await work();
+        } finally {
+            // Two frames: the repaint and the panel's own draw after it.
+            await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+            window.scrollTo({ top: y, behavior: 'instant' });
+            root.style.minHeight = held;
+            if (attr && position >= 0) {
+                const now = [...document.querySelectorAll(`#config-bm-suggestions [${attr}]`)];
+                const next = now[Math.min(position, now.length - 1)];
+                next?.focus?.({ preventScroll: true });
+            }
+        }
+    }
+
+    /*
+     * The same round for the inbox.
+     *
+     * Inbox links are not bookmarks: their tags live on the inbox item and
+     * are written through the inbox's own route. So the round asks the
+     * catalogue and Wikidata about them the same way, and then hands what
+     * the engine proposes for each link to the inbox's own "apply
+     * suggestions" (dashboard-inbox.js), the one its selection bar uses.
+     */
+    /**
+     * The inbox module with its items in hand. It loads lazily, and the
+     * suggestions panel is often drawn before anyone opened the inbox.
+     */
+    async ensureInboxForTags() {
+        let inbox = this.dash.inbox;
+        try {
+            inbox = (await inbox?.load?.()) || inbox;
+            if (!inbox?._itemsLoaded) await inbox?.loadItems?.();
+        } catch {
+            // No inbox is an empty inbox here: the rest of the panel stands.
+        }
+        return inbox;
+    }
+
+    async runInboxTagSearch() {
+        const d = this.dash;
+        const inbox = await this.ensureInboxForTags();
+        const items = (inbox?.items || []).filter((item) => item?.url && item?.id);
+        if (!items.length) {
+            this.notify(this.t('config.tagSearchInboxEmpty', 'The inbox is empty.'), 'info');
+            return;
+        }
+        const live = window.TagSuggestLive;
+        if (!live || !window.TagCatalogue?.lookupRound) return;
+        await this.ensureTagCatalogue();
+        const round = await window.TagCatalogue.lookupRound(items.map((item) => item.url), {
+            title: this.t('config.tagSearchProgressTitle', 'Looking for tags…'),
+        });
+        if (round.busy) return;
+        live.invalidate();
+        const byTag = new Map();
+        items.forEach((item) => live.forInboxItem(d, item).slice(0, 2).forEach((offer) => {
+            byTag.set(offer.tag, [...(byTag.get(offer.tag) || []), item]);
+        }));
+        if (!byTag.size) {
+            this.notify(this.t('config.tagSearchNone', 'No new tags found for these bookmarks.'), 'info', { duration: 6000 });
+            return;
+        }
+        const linked = new Set([...byTag.values()].flat()).size;
+        if (this.tagSearchApplyNow() && typeof inbox?.applySuggestions === 'function') {
+            await inbox.applySuggestions([...byTag.entries()]);
+            this.renderTagSuggestionsSafe();
+            return;
+        }
+        this.notify(this.t('config.tagSearchInboxWaiting', '{n} inbox links have a tag suggestion waiting in the inbox.')
+            .replace('{n}', String(linked)), 'success', { duration: 8000 });
+    }
+
+    /** Config → Bookmarks → Tag suggestions, from wherever the reader is. */
+    openTagSuggestionsTab() {
+        if (this.bmTab === 'tag-suggestions' && document.getElementById('config-bm-suggestions')) return;
+        this.bmTab = 'tag-suggestions';
+        this.render?.();
+        this.restoreConfigHash?.();
     }
 
     /*
@@ -25129,12 +25661,16 @@ class DashboardConfig {
      * the button sits beside Apply, so a slip is as likely in one direction as
      * the other.
      */
-    async dismissTagSuggestion(group) {
-        if (!group?.tag || !group?.pattern) return;
-        const key = `${group.pattern}|${group.tag}`.toLowerCase();
+    async dismissTagSuggestion(groupOrGroups) {
+        // One row can stand for several sites; each is turned down on its own,
+        // the way a refusal has always been stored.
+        const keys = (Array.isArray(groupOrGroups) ? groupOrGroups : [groupOrGroups])
+            .filter((group) => group?.tag && group?.pattern)
+            .map((group) => `${group.pattern}|${group.tag}`.toLowerCase());
         const before = this.dash.settings?.dismissedTagSuggestions || [];
-        if (before.includes(key)) return;
-        await this.setBehavior('dismissedTagSuggestions', [...before, key]);
+        const fresh = [...new Set(keys)].filter((key) => !before.includes(key));
+        if (!fresh.length) return;
+        await this.setBehavior('dismissedTagSuggestions', [...before, ...fresh]);
         this.renderTagSuggestionsSafe();
         this.syncTagSuggestionCount();
         this.notify(this.t('config.tagSuggestionDismissed', 'Suggestion turned down.'), 'success', {
@@ -25148,14 +25684,15 @@ class DashboardConfig {
     }
 
     /** Show or hide the bookmarks a proposal covers. */
-    toggleTagSuggestionMembers(group) {
-        if (!group?.tag || !group?.pattern) return;
-        const id = `${group.pattern}|${group.tag}`;
+    toggleTagSuggestionMembers(row) {
+        if (!row?.tag) return;
+        const id = `tag:${row.tag}`;
         this._tagSuggestionOpen = this._tagSuggestionOpen || new Set();
         if (this._tagSuggestionOpen.has(id)) this._tagSuggestionOpen.delete(id);
         else this._tagSuggestionOpen.add(id);
         this.renderTagSuggestionsSafe();
     }
+
 
     /*
      * Take one refusal back.
@@ -27891,8 +28428,8 @@ class DashboardConfig {
         ],
         'config.helpInboxTourTitle': [
             {
-                kind: 'steps', value: ['', '', '', '', ''],
-                captionKey: 'config.helpArtTourSteps', caption: 'Five steps, shown once',
+                kind: 'steps', value: ['', '', '', ''],
+                captionKey: 'config.helpArtTourSteps', caption: 'Four steps, shown once',
             },
         ],
         'config.helpCaptureTitle': [
@@ -28103,15 +28640,8 @@ class DashboardConfig {
     }
 
     renderHelpOrganizing() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        // The walkthrough the corner card offers, kept reachable after the card
-        // has been dismissed — which is the state most readers of this page are
-        // in. Same pattern as the cheat sheet button above it.
         return this.helpPanel('config.helpWorkspaceTitle', 'Structure',
-            'config.helpWorkspaceBody', '',
-            `<div class="config-actions">
-                <button type="button" class="config-btn" data-help-action="spread-tour">${esc(this.t('config.helpSpreadTour', 'Walk me through spreading a category'))}</button>
-            </div>`)
+            'config.helpWorkspaceBody', '')
             + this.helpPanel('config.helpMoveTitle', 'Moving categories and widgets',
                 'config.helpMoveBody', '')
             + this.helpPanel('config.helpBookmarksTitle', 'Bookmarks',
@@ -28240,7 +28770,6 @@ class DashboardConfig {
      * in help by a factor of seven, and the one people scrolled past.
      */
     renderHelpMonitoring() {
-        const esc = (v) => this.dash.escapeHtml(v);
         return this.helpPanel('config.helpHealthStatsTitle', 'Uptime, trends & statistics',
             'config.helpHealthStatsBody', '')
             + this.helpPanel('config.helpHealthExpectTitle', 'When "up" is not good enough',
@@ -28255,10 +28784,7 @@ class DashboardConfig {
             // its switch is rather than where its subject is: it is a thing the
             // dashboard does with a bookmark, like everything else on this tab.
             + this.helpPanel('config.helpFreshTitle', 'Fresh',
-                'config.helpFreshBody', '',
-                `<div class="config-actions">
-                    <button type="button" class="config-btn" data-help-action="fresh-tour">${esc(this.t('config.helpFreshTour', 'Walk me through Fresh'))}</button>
-                </div>`)
+                'config.helpFreshBody', '')
             + this.helpPanel('config.helpNotificationsTitle', 'Alerts & notifications',
                 'config.helpNotificationsBody', '')
             + this.helpPanel('config.helpDigestTitle', 'Weekly digest',
@@ -28963,13 +29489,6 @@ class DashboardConfig {
                     // view first or it would open behind it.
                     this.closeConfigView();
                     this.dash.showKeyboardCheatSheet?.();
-                } else if (action === 'fresh-tour') {
-                    window.FreshTutorial?.open?.();
-                } else if (action === 'spread-tour') {
-                    // Config is a view on this same page and the walkthrough is
-                    // a modal over it, so this one can stay where it is — the
-                    // reader lands back on this panel when it closes.
-                    window.SpreadTutorial?.open?.();
                 }
             });
         });

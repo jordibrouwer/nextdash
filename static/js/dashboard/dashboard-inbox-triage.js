@@ -97,7 +97,19 @@ class DashboardInboxTriage {
         this.chooser = { piles, index: 0 };
         this.mount();
         this.renderChooser();
+        this.inbox._trackAction?.('triage-open');
         return this.isOpen();
+    }
+
+    /**
+     * One triage decision, as `inbox:triage-act`.
+     *
+     * The list actions underneath (keep, delete, mark-read) report on their
+     * own as well; this says which of them were made card by card, and adds
+     * the ones only triage has (skip, open, note). The pile is a fixed id.
+     */
+    _trackAct(act) {
+        this.inbox._trackAction?.('triage-act', { act, pile: this.pile || 'list' });
     }
 
     startPile(id, { tally = null } = {}) {
@@ -189,15 +201,41 @@ class DashboardInboxTriage {
         this.mount();
         this.render();
         this.focusCard();
+        // A resume after a promote continues the run that was already counted.
+        if (startedWith == null) {
+            this.inbox._trackAction?.('triage-start', { pile: this.pile, total: this.queue.length });
+        }
+        this._runTracked = true;
         return this.isOpen();
     }
 
     close() {
+        this._trackEnd();
         this.unmount();
         this._keyActionNext = null;
         this.queue = [];
         this.index = 0;
         this.chooser = null;
+    }
+
+    /**
+     * `inbox:triage-end`, once per run: finished or left, and how many of the
+     * cards it began with were decided. Both counts go out as bands. A promote
+     * hands the run to the bookmark form and resumes it after, so it is not an
+     * end. A chooser closed without a pile never started a run.
+     */
+    _trackEnd() {
+        if (!this._runTracked || this._resume) return;
+        this._runTracked = false;
+        const tally = this.tally || {};
+        const decided = ['read', 'kept', 'deleted', 'snoozed', 'promoted']
+            .reduce((sum, key) => sum + (Number(tally[key]) || 0), 0);
+        this.inbox._trackAction?.('triage-end', {
+            pile: this.pile || 'list',
+            outcome: this.finished ? 'done' : 'left',
+            total: this.startedWith || 0,
+            count: decided,
+        });
     }
 
     unmount() {
@@ -572,6 +610,7 @@ class DashboardInboxTriage {
             if (url) {
                 window.open(url, '_blank', 'noopener,noreferrer');
             }
+            this._trackAct('open');
             if (!item.readAt) {
                 // Only record it locally once the write landed. Opening is the
                 // point of this action and the tab is already open, so a failed
@@ -601,6 +640,7 @@ class DashboardInboxTriage {
                     this.tally.read += 1;
                 }
             }
+            this._trackAct('read');
             await this.afterAction(false, { readId: item.id, fromId: item.id });
         } finally {
             this.inbox.releasePending(item.id);
@@ -610,6 +650,7 @@ class DashboardInboxTriage {
     /** Next without deciding: the link stays where it is. */
     async actSkip() {
         if (!this.currentItem()) return;
+        this._trackAct('skip');
         await this.afterAction(false, {});
     }
 
@@ -618,6 +659,7 @@ class DashboardInboxTriage {
         if (!item) {
             return;
         }
+        this._trackAct('promote');
         const d = this.dash;
         d._pendingInboxPromoteId = item.id;
         d._pendingInboxTriageAdvance = true;
@@ -643,6 +685,7 @@ class DashboardInboxTriage {
                 return;
             }
             this.tally.kept += 1;
+            this._trackAct('keep');
             await this.afterAction(true, { removedId: item.id });
         } finally {
             this.inbox.releasePending(item.id);
@@ -670,6 +713,7 @@ class DashboardInboxTriage {
                 return;
             }
             this.tally.deleted += 1;
+            this._trackAct('delete');
             await this.afterAction(true, { removedId: item.id });
         } finally {
             this.inbox.releasePending(item.id);
@@ -690,6 +734,7 @@ class DashboardInboxTriage {
         this.inbox.openSnoozeMenu(item, anchor, null, {
             onApplied: async () => {
                 this.tally.snoozed += 1;
+                this._trackAct('snooze');
                 await this.afterAction(true, { removedId: item.id });
             },
         });
@@ -701,6 +746,7 @@ class DashboardInboxTriage {
             return;
         }
         await this.inbox.editNote(item, { skipRender: true });
+        this._trackAct('note');
         this.syncQueueItem(item.id);
         this.render();
     }

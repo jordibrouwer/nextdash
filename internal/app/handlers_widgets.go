@@ -108,6 +108,8 @@ var withheldWidgetKeys = map[WidgetType]map[string]bool{
 	WidgetTypeSeerr:       {"server": true, "credentialId": true, "requestedBy": true},
 	WidgetTypeQBittorrent: {"server": true, "credentialId": true},
 	WidgetTypeSABnzbd:     {"server": true, "credentialId": true},
+	// Entity ids say which rooms and devices a house has.
+	WidgetTypeHomeAssistant: {"server": true, "credentialId": true, "entities": true},
 }
 
 /*

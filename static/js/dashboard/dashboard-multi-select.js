@@ -933,6 +933,7 @@ class DashboardMultiSelect {
             return;
         }
         this._movingToPage = true;
+        window.nextdashTrack?.('multi-select:move-page', { count: resolved.length });
         try {
             await d.tagFilter.bulkMoveTagFilterToPage(pageId, resolved);
         } finally {

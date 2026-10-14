@@ -194,8 +194,9 @@ var dataFiles = map[string]dataFilePolicy{
 	"web-search-secrets.json": dataSecret,
 	"unraid-secrets.json":     dataSecret,
 
-	"preview-cache.json": dataCache,
-	"health-cache.json":  dataCache,
+	"preview-cache.json":    dataCache,
+	"health-cache.json":     dataCache,
+	"tag-lookup-cache.json": dataCache,
 
 	"docker-bind-sizes.json":     dataNever, // measured from this host's disks
 	"status-page-secrets.json":   dataNever, // the link's token: a restore makes a new link

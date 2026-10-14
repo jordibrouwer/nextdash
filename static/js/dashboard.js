@@ -54,6 +54,12 @@ function prefersReducedMotion() {
 const _sessionTags = new Set();
 
 class Dashboard {
+    /** The views that rise in on arrival; see playViewEntrance. */
+    static ENTRANCE_VIEWS = new Set(['tags', 'library', 'inbox', 'docker']);
+
+    /** Kept in step with --enter-scale in list-view-shell.css. */
+    static ENTRANCE_SCALE = { slow: 1, normal: 0.5, fast: 0.25 };
+
     constructor() {
         this.bookmarks = [];
         this._bookmarksReady = false;
@@ -260,6 +266,9 @@ class Dashboard {
         this.docker = typeof window.createDashboardDockerLoader === 'function'
             ? window.createDashboardDockerLoader(this)
             : null;
+        this.tagView = typeof window.createDashboardTagViewLoader === 'function'
+            ? window.createDashboardTagViewLoader(this)
+            : null;
         // Config is loaded on first open (dashboard-config-loader.js); the stub
         // answers the shell's pre-open calls so this stays a plain assignment.
         this.config = typeof window.createDashboardConfigLoader === 'function'
@@ -267,6 +276,7 @@ class Dashboard {
             : null;
         this.pasteChoice = new DashboardPasteChoice(this);
         this.activeView = 'bookmarks';
+        document.body?.setAttribute('data-active-view', 'bookmarks');
         this.weatherService = typeof window.WeatherService === 'function' ? new window.WeatherService() : null;
         this.weatherRefreshTimer = null;
         this.dateTimeRefreshTimer = null;
@@ -293,7 +303,6 @@ class Dashboard {
         `;
         return svg;
     }
-
 
 
     isCoarsePointer() {
@@ -339,8 +348,6 @@ class Dashboard {
             // reported the category as deleted while it was on screen.
             void this.consumeDashboardDeepLink();
             this.setupPageShortcuts();
-            this.setupTagFilterEscapeShortcut();
-            this.setupTagFilterIndicator();
             this.setupReorderUndoShortcut();
             this.setupPasteToQuickAdd();
             this.inbox.setupEscapeShortcut();
@@ -504,6 +511,10 @@ class Dashboard {
             } else if (bootHash === 'unsorted') {
                 // The Inbox's Kept tab's old address: Bookmarks → Unsorted now.
                 await this.openUnsortedBookmarks({ replace: true });
+            } else if (bootHash.startsWith('tag/') && this.activeView !== 'tags') {
+                // A tag's view, from a shared link or a reload.
+                const tags = window.TagViewModel?.tagsFromHash?.(bootHash) || [];
+                if (tags.length) await this.tagView?.openTagView?.(tags, { fromHash: true });
             }
 
             if (this.config?.isEnabled?.()
@@ -584,7 +595,6 @@ class Dashboard {
 
         container.appendChild(wrap);
     }
-
 
 
     /**
@@ -909,7 +919,6 @@ class Dashboard {
     }
 
 
-
     isVisibleBlockingOverlay(el) {
         return this.uiHelpers.isVisibleBlockingOverlay(...arguments);
     }
@@ -1004,8 +1013,6 @@ class Dashboard {
     }
 
 
-
-
     getInlineContextTipsForCurrentPage() {
         return this.setup.getInlineContextTipsForCurrentPage(...arguments);
     }
@@ -1084,6 +1091,16 @@ class Dashboard {
                     this.searchComponent?.openSearchWithQuery?.(query, { web });
                 }
                 return;
+            }
+            // A tag's view: #tag/a+b. While it is open a new address is a new
+            // set of tags, not a new view.
+            if (hash.startsWith('tag/')) {
+                const tags = window.TagViewModel?.tagsFromHash?.(hash) || [];
+                if (!tags.length) return;
+                if (this.activeView === 'tags') {
+                    return this.tagView?.updateTags?.(tags, { fromHash: true });
+                }
+                return this.tagView?.openTagView?.(tags, { fromHash: true });
             }
             // The Health view's old address: the Bookmarks view, on its filter.
             if (hash === 'health' || hash.startsWith('health/')) {
@@ -1195,6 +1212,8 @@ class Dashboard {
             return previous;
         }
         this.activeView = view;
+        // CSS that belongs to one view only (the grid's key legend) keys off this.
+        document.body?.setAttribute('data-active-view', view);
         window.nextdashTrackNav?.('view', view);
         // Leaving config stamps where you were, whichever route took you out —
         // the header buttons and page tabs switch view without config being
@@ -1226,10 +1245,35 @@ class Dashboard {
         if (previous === 'inbox' && view !== 'inbox') {
             this.inbox?.instance?.onLeaveDrawer?.();
         }
+        // The tag view's tags are the view: leaving it, whichever way, ends them.
+        if (previous === 'tags' && view !== 'tags') {
+            this.tagView?.onLeave?.();
+        }
         if (!options.silent) {
             this.visual?.onActiveViewChanged?.(previous, view);
         }
+        this.playViewEntrance(view);
         return previous;
+    }
+
+    /**
+     * The list views rise in on arrival: header, rail and toolbar, then the
+     * rows one after another (list-view-shell.css). An attribute on <body>
+     * rather than a class on the layout, which each view rewrites as it
+     * mounts; whatever the view paints in the window animates.
+     */
+    playViewEntrance(view) {
+        const body = document.body;
+        clearTimeout(this._viewEntranceTimer);
+        if (!Dashboard.ENTRANCE_VIEWS.has(view) || body.classList.contains('no-animations')
+            || body.classList.contains('no-view-animations')) {
+            delete body.dataset.viewEntering;
+            return;
+        }
+        body.dataset.viewEntering = view;
+        // Long enough for the last row to land at the chosen pace.
+        const scale = Dashboard.ENTRANCE_SCALE[body.dataset.animationSpeed] ?? Dashboard.ENTRANCE_SCALE.normal;
+        this._viewEntranceTimer = setTimeout(() => { delete body.dataset.viewEntering; }, Math.round(900 * scale) + 100);
     }
 
     /**
@@ -1340,6 +1384,37 @@ class Dashboard {
                 || 'Search mode: letters find shortcuts');
         this.showNotification(label, 'success', { duration: 2000 });
     }
+    /**
+     * Shift+Z: switch the key legend under the grid off or on.
+     *
+     * The same stored value as Behavior -> General -> Show grid key legend, so
+     * the key and the checkbox cannot disagree. Switching it off is the point
+     * of the key: the legend teaches while you are learning, and then it is in
+     * the way.
+     */
+    async toggleGridKeyLegend() {
+        this.settings = this.settings || {};
+        const next = this.settings.showGridKeyLegend !== true;
+        this.settings.showGridKeyLegend = next;
+        try {
+            // saveSettings resolves false on a failed save rather than rejecting.
+            if ((await this.saveSettings()) === false) throw new Error('not saved');
+        } catch (err) {
+            this.settings.showGridKeyLegend = !next;
+            this.showNotification(
+                this.t?.('dashboard.gridKeyLegendToggleFailed', 'Could not save the key legend setting')
+                    || 'Could not save the key legend setting',
+                'error',
+            );
+            return;
+        }
+        this.renderDashboard?.({ animate: false });
+        const label = next
+            ? (this.t?.('dashboard.gridKeyLegendOn', 'Key legend on') || 'Key legend on')
+            : (this.t?.('dashboard.gridKeyLegendOff', 'Key legend off') || 'Key legend off');
+        this.showNotification(label, 'success', { duration: 2000 });
+    }
+
     setupConfigStructureReloadListener() {
         return this.configSync.setupConfigStructureReloadListener(...arguments);
     }
@@ -1488,18 +1563,6 @@ class Dashboard {
         return this.tagFilter.getBookmarksForTagFilter(...arguments);
     }
 
-    renderTagFilterDashboard(container, options = {}) {
-        return this.tagFilter.renderTagFilterDashboard(...arguments);
-    }
-
-    setupTagFilterEscapeShortcut() {
-        return this.tagFilter.setupTagFilterEscapeShortcut(...arguments);
-    }
-
-    setupTagFilterIndicator() {
-        return this.tagFilter.setupTagFilterIndicator(...arguments);
-    }
-
     formatTagFilterCountLabel(count) {
         return this.tagFilter.formatTagFilterCountLabel(...arguments);
     }
@@ -1534,22 +1597,6 @@ class Dashboard {
 
     showTagFilterBulkMovePopover(anchorEl) {
         return this.tagFilter.showTagFilterBulkMovePopover(...arguments);
-    }
-
-    _appendTagFilterToolbarButton(actions, { label, className = '', onClick }) {
-        return this.tagFilter._appendTagFilterToolbarButton(...arguments);
-    }
-
-    renderTagFilterBanner(wrap, { tags, count = 0 } = {}) {
-        return this.tagFilter.renderTagFilterBanner(...arguments);
-    }
-
-    updateTagFilterIndicator() {
-        return this.tagFilter.updateTagFilterIndicator(...arguments);
-    }
-
-    _distributeTagFilterColumnBlocks(container, chunkBlocks, { animate = false, gridLayout = null } = {}) {
-        return this.tagFilter._distributeTagFilterColumnBlocks(...arguments);
     }
 
     isInlineEditActive() {
@@ -1629,11 +1676,11 @@ class Dashboard {
     }
 
     _shouldSyncBookmarkMutation(bookmarkRef, candidate, previousUrlTrimmed) {
-        return this.inlineEdit._shouldSyncBookmarkMutation(...arguments);
+        return this.bookmarkRows._shouldSyncBookmarkMutation(...arguments);
     }
 
     _applyBookmarkMutationFields(target, source) {
-        return this.inlineEdit._applyBookmarkMutationFields(...arguments);
+        return this.bookmarkRows._applyBookmarkMutationFields(...arguments);
     }
 
     async confirmDeleteBookmarkInline(bookmark) {
@@ -2025,10 +2072,6 @@ class Dashboard {
 
     _distributeDashboardColumnBlocks(container, columnBlocks, { animate = false, gridLayout = null } = {}) {
         return this.renderCore._distributeDashboardColumnBlocks(...arguments);
-    }
-
-    _copyDashboardGridLayoutToElement(target, sourceGrid) {
-        return this.renderCore._copyDashboardGridLayoutToElement(...arguments);
     }
 
     renderDashboard(options = {}) {

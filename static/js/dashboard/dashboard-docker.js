@@ -259,6 +259,7 @@ class DashboardDocker {
         window.ContainersTutorial?.maybeShow?.();
     }
 
+    /** The Tour button, and Config's replay: seen or not. */
     async openTour() {
         if (!(await this.loadTutorial())) return;
         window.ContainersTutorial?.open?.();
@@ -546,6 +547,7 @@ class DashboardDocker {
     }
 
     async checkForUpdates() {
+        window.nextdashTrack?.('docker:check-updates');
         const btn = this.shell?.toolbar?.querySelector('[data-docker-check]');
         if (btn) {
             btn.disabled = true;
@@ -682,7 +684,7 @@ class DashboardDocker {
     applyFilter(key, via) {
         this.filter = key || 'all';
         this.persistViewState();
-        void via; // tracked nowhere yet; kept for parity with the shell's callback shape
+        window.nextdashTrack?.('docker:filter', { filter: this.filter, via: via || 'address' });
         this.render();
     }
 
@@ -725,6 +727,7 @@ class DashboardDocker {
                 this.drawerOpen = false;
             }
         }
+        if (this.tab !== next) window.nextdashTrack?.('docker:tab', { tab: next });
         this.tab = next;
         this.restoreDockerHash();
         this.render();
@@ -840,6 +843,7 @@ class DashboardDocker {
                 box.addEventListener('change', () => {
                     if (box.checked) this.hiddenColumns.delete(key);
                     else this.hiddenColumns.add(key);
+                    window.nextdashTrack?.('docker:column', { column: key, shown: box.checked });
                     this.persistViewState();
                     this.render();
                 });
@@ -858,6 +862,7 @@ class DashboardDocker {
             reset.setAttribute('data-docker-columns-reset', '');
             reset.textContent = this.t('dashboard.dockerColumnsReset', 'Reset columns');
             reset.addEventListener('click', () => {
+                window.nextdashTrack?.('docker:column-reset');
                 this.hiddenColumns = new Set(DashboardDocker.HIDDEN_BY_DEFAULT);
                 this.persistViewState();
                 this.render();
@@ -1047,6 +1052,7 @@ class DashboardDocker {
             this.sort = key;
             this.sortDir = DashboardDocker.defaultSortDir(key);
         }
+        window.nextdashTrack?.('docker:sort', { sort: this.sort, dir: this.sortDir });
         this.persistViewState();
         this.syncToolbar();
         this.render();
@@ -1524,6 +1530,7 @@ class DashboardDocker {
         if (typeof window.DockerLogsModal !== 'function') return;
         this.logsModal = this.logsModal || new window.DockerLogsModal(this);
         this.logsModal.open(c);
+        window.nextdashTrack?.('docker:logs-open');
     }
 
     /** Which status group a container belongs in; an update outranks its state. */
@@ -2141,6 +2148,8 @@ class DashboardDocker {
         if (this.selected && openDrawer) {
             const c = this.containers.find((x) => x.name === this.selected) || { name: this.selected };
             this.drawer?.open(c);
+            // The section is one of the drawer's fixed tab ids, never a name.
+            window.nextdashTrack?.('docker:drawer-open', section ? { section } : undefined);
             if (section) this.drawer?.openSection?.(section);
             // Logs asked for by name (the row menu, :docker <name> logs) open
             // the logs window over the drawer's Logs tab.

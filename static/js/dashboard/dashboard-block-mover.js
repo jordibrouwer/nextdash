@@ -532,7 +532,7 @@
 
     /** Other, an unknown category, a tag filter's chunk: built per render, not placed. */
     function isFixedBlock(block) {
-        return Boolean(block?.matches?.('[data-virtual-category="true"], [data-tag-filter-chunk="true"]'));
+        return Boolean(block?.matches?.('[data-virtual-category="true"]'));
     }
 
     function pickUp(handle) {

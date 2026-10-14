@@ -35,8 +35,13 @@
             const noPreview = health ? count(() => health.filterCount('missing-preview')) : 0;
             const dupes = health ? count(() => health.duplicateGroups().length) : 0;
             const checked = health ? count(() => health.checkedCount()) : 0;
+            // Looking for tags, for the bookmarks that have none or for all of
+            // them: the round the Tag suggestions tab starts, from here too.
+            const untaggedCount = this.tagSearchCounts?.().untagged || 0;
             const organise = [
                 item('data-bm-open-structure', t('config.bmStructureButton', 'Pages & categories'), '⇧P'),
+                untaggedCount ? item('data-bm-header-action="tags-untagged"', `${t('config.bmFindTagsUntagged', 'Find tags for bookmarks without tags')}…`, String(untaggedCount)) : '',
+                item('data-bm-header-action="tags-all"', `${t('config.bmFindTagsAll', 'Find tags for all bookmarks')}…`),
                 dupes ? item('data-bm-header-action="merge"', `${t('dashboard.mergeDuplicateGroup', 'Merge duplicate group')}…`, String(dupes)) : '',
                 unchecked ? item('data-bm-header-action="checking"', `${t('config.bmCheckingTitle', 'Turn on checking')}…`, String(unchecked)) : '',
             ];
@@ -97,7 +102,7 @@
             global.BookmarksTutorial?.maybeShow?.();
         },
 
-        /** The Tour button: seen or not. */
+        /** The Tour button, and Config's replay: seen or not. */
         async openLibraryTour() {
             if (!(await this.loadLibraryTour())) return;
             global.BookmarksTutorial?.open?.();
@@ -122,6 +127,8 @@
                 if (action === 'refresh') void this.refreshBmHealth?.({ refresh: true });
                 else if (action === 'checking') this.openCheckingModal?.();
                 else if (action === 'settings') void this._bmHealthModule?.openStatusHealthSettings?.();
+                else if (action === 'tags-untagged') void this.runTagSearch('untagged');
+                else if (action === 'tags-all') void this.runTagSearch('all');
                 else void this.runLibraryCollectionAction(action);
             } else {
                 return false;

@@ -13,6 +13,7 @@
 
     const ROW_HIDDEN = 'grid-filter-hidden';
     const BLOCK_HIDDEN = 'grid-filter-empty';
+    const HIGHLIGHT = 'grid-filter-hit';
 
     class DashboardGridFilter {
         constructor(dashboard) {
@@ -60,6 +61,14 @@
             bar.id = 'grid-filter-bar';
             bar.className = 'grid-filter-bar';
 
+            // The mode as a pill, like SEARCH and COMMANDS in the prompt: this
+            // is one of that family, it just narrows the page instead of
+            // floating over it. Untranslated, as those are.
+            const prefix = document.createElement('span');
+            prefix.className = 'grid-filter-prefix';
+            prefix.setAttribute('aria-hidden', 'true');
+            prefix.textContent = 'FILTER';
+
             const input = document.createElement('input');
             input.type = 'search';
             input.className = 'grid-filter-input';
@@ -99,8 +108,19 @@
             });
             clear.addEventListener('click', () => this.close());
 
+            // What Escape does, since it does two different things. Keys stay
+            // untranslated; every one of them also has a real control.
+            const legend = document.createElement('span');
+            legend.className = 'grid-filter-keys';
+            legend.setAttribute('aria-hidden', 'true');
+            const esc = (v) => this.dash?.escapeHtml?.(v) ?? String(v);
+            legend.innerHTML = `<span><kbd>Esc</kbd> ${esc(this.t('gridFilterKeyClear', 'clear'))}</span>`
+                + `<span><kbd>Esc</kbd><kbd>Esc</kbd> ${esc(this.t('gridFilterKeyClose', 'close'))}</span>`;
+
+            bar.appendChild(prefix);
             bar.appendChild(input);
             bar.appendChild(count);
+            bar.appendChild(legend);
             bar.appendChild(clear);
             // Above the layout, not inside it.
             //
@@ -209,6 +229,19 @@
                 block.classList.toggle(BLOCK_HIDDEN, Boolean(query) && !visible);
             });
 
+            /*
+             * Widgets step aside while a query is typed. They used to stay, on
+             * the reasoning that a reader filtering links should not lose the
+             * processor and disk tiles — but a filter is a question about links,
+             * and the tiles left around the answer made it harder to read. They
+             * come back the moment the query is empty, as categories do.
+             */
+            container.querySelectorAll('.category[data-widget-id], .dashboard-widget').forEach((block) => {
+                block.classList.toggle(BLOCK_HIDDEN, Boolean(query));
+            });
+
+            this.highlight(rows, query);
+
             const label = document.querySelector('#grid-filter-bar .grid-filter-count');
             if (label) {
                 label.textContent = query
@@ -219,6 +252,37 @@
             // The cursor must not sit on a row nobody can see.
             this.dash?.keyboardNavigation?.updateNavigableElements?.();
             return shown;
+        }
+
+        /**
+         * Mark the query in the names of the rows that are left.
+         *
+         * A named highlight rather than a <mark>: the row's text is what it is
+         * matched against and what the render fingerprints, so it is painted over
+         * and never edited. Only the visible name is marked — a row can match on
+         * its address or a tag, and then there is nothing on it to point at.
+         * Without the API (older browsers) the rows just go unmarked.
+         */
+        highlight(rows, query) {
+            const registry = typeof CSS !== 'undefined' ? CSS.highlights : null;
+            if (!registry || typeof Highlight !== 'function') return;
+            if (!query) {
+                registry.delete(HIGHLIGHT);
+                return;
+            }
+            const ranges = [];
+            rows.forEach((row) => {
+                if (row.classList.contains(ROW_HIDDEN)) return;
+                const node = row.querySelector('.bookmark-text')?.firstChild;
+                if (!node || node.nodeType !== Node.TEXT_NODE) return;
+                const at = node.data.toLowerCase().indexOf(query);
+                if (at < 0) return;
+                const range = document.createRange();
+                range.setStart(node, at);
+                range.setEnd(node, at + query.length);
+                ranges.push(range);
+            });
+            registry.set(HIGHLIGHT, new Highlight(...ranges));
         }
 
         /** Called after a dashboard render, so a filter survives one. */

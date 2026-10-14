@@ -297,6 +297,19 @@ var widgetFields = map[WidgetType][]widgetField{
 	WidgetTypeRadarr:      arrWidgetFields(),
 	WidgetTypeQBittorrent: downloadWidgetFields(),
 	WidgetTypeSABnzbd:     downloadWidgetFields(),
+	WidgetTypeHomeAssistant: {
+		{Key: "server", Kind: "url"},
+		{Key: "credentialId", Kind: "string"},
+		// Entity ids in the reader's order; see homeAssistantEntityList.
+		{Key: "entities", Kind: "entityList"},
+		{Key: "groupBy", Kind: "string", Allowed: []string{"area", "domain", "none"}},
+		{Key: "showLastChanged", Kind: "bool"},
+		{Key: "layout", Kind: "string", Allowed: []string{"strip", "list"}},
+		{Key: "click", Kind: "string", Allowed: []string{"open", "detail"}},
+		{Key: "target", Kind: "string", Allowed: []string{"inherit", "_blank", "_self"}},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+		{Key: "ttl", Kind: "int", Min: homeAssistantMinTTL, Max: 3600},
+	},
 	WidgetTypeSeerr: {
 		{Key: "server", Kind: "url"},
 		{Key: "credentialId", Kind: "string"},
@@ -435,6 +448,10 @@ func sanitizeWidgetConfig(widgetType WidgetType, config map[string]any) map[stri
 			}
 		case "list":
 			if list := widgetConfigList(raw, field.Allowed); len(list) > 0 {
+				clean[field.Key] = list
+			}
+		case "entityList":
+			if list := homeAssistantEntityList(raw); len(list) > 0 {
 				clean[field.Key] = list
 			}
 		case "urlList":
@@ -607,7 +624,7 @@ func widgetTypeNames() []string {
 		WidgetTypeUnraid, WidgetTypeUnraidArray, WidgetTypeUnraidParity, WidgetTypeUnraidShares,
 		WidgetTypeUnraidVMs, WidgetTypeUnraidUPS, WidgetTypeUnraidNotifications,
 		WidgetTypeJellyfin, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr,
-		WidgetTypeQBittorrent, WidgetTypeSABnzbd,
+		WidgetTypeQBittorrent, WidgetTypeSABnzbd, WidgetTypeHomeAssistant,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone
 		// to build by hand what is two entries above it.

@@ -5,7 +5,7 @@
 (function (global) {
     'use strict';
 
-    /** @typedef {{ keys: string, legendKey: string, cheatKey: string, fallback: string }} LegendRow */
+    /** @typedef {{ keys: string, legendKey: string, cheatKey: string, fallback: string, line?: number, more?: boolean }} LegendRow */
 
     /** @type {LegendRow[]} */
     const INBOX_VIEW = [
@@ -25,6 +25,7 @@
         // Both of these were right-click only, which a phone has not got.
         { keys: 'u', legendKey: 'inboxKeyUnread', cheatKey: 'ivUnread', fallback: 'mark unread' },
         { keys: 'l', legendKey: 'inboxKeyTags', cheatKey: 'ivTags', fallback: 'tags' },
+        { keys: 'a', legendKey: 'inboxKeyAddOffer', cheatKey: 'ivAddOffer', fallback: 'add suggested tag' },
         { keys: 'R', legendKey: 'inboxKeyRefresh', cheatKey: 'ivRefresh', fallback: 'refresh' },
         { keys: 'g / G / Home / End', legendKey: 'inboxKeyFirstLast', cheatKey: 'ivFirstLast', fallback: 'first / last' },
         { keys: 't', legendKey: 'inboxKeyTriage', cheatKey: 'ivTriage', fallback: 'triage' },
@@ -32,13 +33,19 @@
     ];
 
     /**
-     * The bookmark grid. Health and inbox have carried a legend under the feed
-     * since they were built; the dashboard — the view everyone starts in — had
-     * none, so the keys were discoverable only through the cheat sheet.
+     * The bookmark grid, in three lines.
      *
-     * Four rows, not ten. Ten was a paragraph under a grid that can hold seven
-     * bookmarks — as tall as the thing it explained. These are the keys someone
-     * needs to start, and the last one points at the sheet that has the rest.
+     * Health and inbox have carried a legend under the feed since they were
+     * built; the dashboard -- the view everyone starts in -- had none, so the
+     * keys were discoverable only through the cheat sheet. Ten rows in one
+     * paragraph was as tall as a grid of seven bookmarks, so the rows are
+     * grouped instead: `line` 1 is the cursor, 2 is finding things, 3 is adding,
+     * editing and pages.
+     *
+     * `more` rows are the ones that act on a row or presume the keyboard is in
+     * use. They stay out of sight until the first cursor move
+     * (data-grid-keys on <body>), so a reader who has not touched the keyboard
+     * sees the entry points and not the whole manual.
      *
      * Arrows lead, because they are how the cursor gets into the grid: on this
      * view a bare letter is a character the search line is listening for, and
@@ -47,10 +54,25 @@
      * @type {LegendRow[]}
      */
     const DASHBOARD_VIEW = [
-        { keys: '↑ ↓ ← →', legendKey: 'dashboardKeyMove', cheatKey: 'dvMove', fallback: 'move' },
-        { keys: 'Enter', legendKey: 'dashboardKeyOpen', cheatKey: 'dvOpen', fallback: 'open' },
-        { keys: 'x', legendKey: 'dashboardKeySelect', cheatKey: 'dvSelect', fallback: 'select' },
-        { keys: '!', legendKey: 'dashboardKeyCheatSheet', cheatKey: 'dvCheatSheet', fallback: 'all keys' },
+        { line: 1, keys: '\u2191 \u2193 \u2190 \u2192', legendKey: 'dashboardKeyMove', cheatKey: 'dvMove', fallback: 'move' },
+        { line: 1, keys: 'Enter', legendKey: 'dashboardKeyOpen', cheatKey: 'dvOpen', fallback: 'open' },
+        { line: 1, keys: 'x', legendKey: 'dashboardKeySelect', cheatKey: 'dvSelect', fallback: 'select' },
+        { line: 1, keys: '!', legendKey: 'dashboardKeyCheatSheet', cheatKey: 'dvCheatSheet', fallback: 'all keys' },
+        { line: 1, keys: 'Shift+K', legendKey: 'dashboardKeyTour', cheatKey: 'dvTour', fallback: 'tour' },
+        { line: 1, keys: 'Shift+Z', legendKey: 'dashboardKeyHideLegend', cheatKey: 'dvHideLegend', fallback: 'hide legend' },
+        { line: 2, keys: '>', legendKey: 'dashboardKeySearch', cheatKey: 'dvSearch', fallback: 'search' },
+        { line: 2, keys: '/', legendKey: 'dashboardKeyTags', cheatKey: 'dvTags', fallback: 'tags' },
+        { line: 2, keys: '*', legendKey: 'dashboardKeyRecent', cheatKey: 'dvRecent', fallback: 'recent' },
+        { line: 2, keys: '?', legendKey: 'dashboardKeyFinders', cheatKey: 'dvFinders', fallback: 'finders' },
+        { line: 2, keys: ':', legendKey: 'dashboardKeyCommands', cheatKey: 'dvCommands', fallback: 'commands' },
+        { line: 3, keys: '1\u20139', legendKey: 'dashboardKeyPage', cheatKey: 'dvPage', fallback: 'page' },
+        { line: 3, keys: 'Shift+B', legendKey: 'dashboardKeyAddBookmark', cheatKey: 'dvAddBookmark', fallback: 'add bookmark' },
+        { line: 3, keys: 'Shift+N', legendKey: 'dashboardKeyAddCategory', cheatKey: 'dvAddCategory', fallback: 'add category' },
+        { line: 3, more: true, keys: 'Shift+\u2190/\u2192', legendKey: 'dashboardKeyPrevNextPage', cheatKey: 'dvPrevNextPage', fallback: 'prev / next page' },
+        { line: 3, more: true, keys: 'Shift+E', legendKey: 'dashboardKeyEdit', cheatKey: 'dvEdit', fallback: 'edit' },
+        { line: 3, more: true, keys: 'Shift+M', legendKey: 'dashboardKeyMoveBookmark', cheatKey: 'dvMoveBookmark', fallback: 'move to' },
+        { line: 3, more: true, keys: 'Shift+F', legendKey: 'dashboardKeyFilter', cheatKey: 'dvFilter', fallback: 'filter' },
+        { line: 3, more: true, keys: '.', legendKey: 'dashboardKeyFoldAll', cheatKey: 'dvFoldAll', fallback: 'fold all' },
     ];
 
     /** @type {LegendRow[]} */

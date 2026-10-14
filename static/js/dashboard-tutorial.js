@@ -4,10 +4,9 @@
  * Inbox and Containers tours and sharing their guards.
  *
  * Those three each explain one view the first time it opens. This one is the
- * map: pages and categories, typing to search, shortcuts, the cursor and its
- * Shift keys, adding, what the dots and badges mean, then a step each on the
- * Bookmarks view, the inbox and Containers, the widgets, the keys worth
- * learning first, what Config can change, and where help lives. Each scene
+ * map, in seven steps: pages and moving blocks, typing to search, shortcuts
+ * and the Shift keys, adding, tags, the other views, and widgets, themes and
+ * help. Each scene
  * moves, and stands still -- on a picture that still tells the story -- for a
  * reader who asked for less motion.
  */
@@ -75,7 +74,6 @@
         .dtv-panel { fill: var(--background-primary); stroke: var(--border-primary); stroke-width: 1; }
         .dtv-title, .dtv-heading { fill: var(--text-primary); font-size: 11px; font-weight: 700; }
         .dtv-heading { font-size: 12px; }
-        .dtv-big { fill: var(--text-primary); font-size: 18px; font-weight: 700; }
         .dtv-sub, .dtv-label { fill: var(--text-secondary); font-size: 10px; }
         .dtv-mono { fill: var(--text-primary); font-size: 10px; font-family: var(--font-mono, ui-monospace, monospace); }
         .dtv-caption { fill: var(--text-secondary); font-size: 10px; font-style: italic; }
@@ -95,16 +93,7 @@
         .dtv-line { fill: none; stroke: var(--accent-primary); stroke-width: 1.75; stroke-linejoin: round; stroke-linecap: round; }
         .dtv-arrow { fill: none; stroke: var(--accent-primary); stroke-width: 1.5; }
         .dtv-arrowhead { fill: var(--accent-primary); }
-        .dtv-ring-track { fill: none; stroke: var(--border-primary); stroke-width: 6; }
-        .dtv-ring { fill: none; stroke-width: 6; stroke-linecap: round; }
-        .dtv-ring.is-ok { stroke: var(--accent-success, var(--accent-primary)); }
-        .dtv-ring.is-warn { stroke: var(--accent-warning, var(--accent-primary)); }
-        .dtv-beat.is-ok { fill: var(--accent-success, var(--accent-primary)); }
-        .dtv-beat.is-bad { fill: var(--accent-error, var(--accent-primary)); }
         .dtv-bar { fill: var(--accent-primary); }
-        .dtv-bar-track { fill: none; stroke: var(--border-primary); stroke-width: 1; }
-        .dtv-cell { fill: var(--accent-success, var(--accent-primary)); }
-        .dtv-cell.is-bad { fill: var(--accent-error, var(--accent-primary)); }
         .dtv-key-box { fill: var(--background-primary); stroke: var(--text-secondary); stroke-width: 1; }
         .dtv-key-text { fill: var(--text-primary); font-size: 10.5px; font-weight: 700;
             font-family: var(--font-mono, ui-monospace, monospace); }
@@ -113,27 +102,13 @@
         .dtv-caret { fill: var(--text-primary); }
         .dtv-icon-box { fill: var(--background-primary); stroke: var(--border-primary); stroke-width: 1; }
         .dtv-icon { fill: none; stroke: var(--text-primary); stroke-width: 1.3; stroke-linejoin: round; }
-        .dtv-glow.is-ok { fill: var(--accent-success, var(--accent-primary)); }
-        .dtv-glow.is-warn { fill: var(--accent-warning, var(--accent-primary)); }
-        .dtv-glow.is-bad { fill: var(--accent-error, var(--accent-primary)); }
         .dtv-ring-bad { fill: none; stroke: var(--accent-error, var(--accent-primary)); stroke-width: 1.5; }
         .dtv-bar.is-ok { fill: var(--accent-success, var(--accent-primary)); }
         .dtv-bar.is-warn { fill: var(--accent-warning, var(--accent-primary)); }
         .dtv-bar.is-bad { fill: var(--accent-error, var(--accent-primary)); }
         .dtv-bar.is-accent { fill: var(--accent-primary); }
-        .dtv-swatch { fill: var(--accent-primary); }
-        .dtv-tile { fill: var(--text-primary); font-size: 10px; }
         .dtv-value { fill: var(--text-primary); font-size: 14px; font-weight: 700; }
-        .dtv-bd { fill: var(--accent-primary); fill-opacity: 0.22; }
-        .dtv-bd.is-second { fill: var(--accent-error, var(--accent-primary)); fill-opacity: 0.16; }
-        .dtv-bd-line { fill: none; stroke: var(--accent-primary); stroke-opacity: 0.45; stroke-width: 1; }
-        .dtv-glass { fill: var(--background-primary); fill-opacity: 0.55; stroke: var(--text-secondary); stroke-opacity: 0.4; stroke-width: 1; }
-        .dtv-underline { stroke: var(--accent-primary); stroke-width: 1.5; }
         .dtv-pill.is-warn .dtv-pill-box { stroke: var(--accent-warning, var(--accent-primary)); stroke-opacity: 1; stroke-width: 1.5; }
-        .dtv-appicon { fill: var(--accent-primary); }
-        .dtv-appicon-glyph { fill: var(--background-primary); }
-        .dtv-letter-box { fill: var(--background-primary); stroke: var(--text-secondary); stroke-width: 1; }
-        .dtv-edge { stroke: var(--accent-primary); stroke-width: 3; stroke-linecap: round; }
 
         .dtv-anim { transform-box: fill-box; transform-origin: center;
             animation-duration: 4.8s; animation-iteration-count: infinite;
@@ -142,29 +117,15 @@
         .dtv-a-drop { animation-name: dtv-drop; }
         .dtv-a-panel { animation-name: dtv-panel; }
         .dtv-a-bump { animation-name: dtv-bump; }
-        .dtv-a-tick { animation-name: dtv-tick; }
         .dtv-a-grow { animation-name: dtv-grow; transform-origin: left center; }
-        .dtv-a-ring { stroke-dasharray: 1; animation-name: dtv-ring; }
-        .dtv-a-blink { animation-name: dtv-blink; }
-        .dtv-a-swap { animation-name: dtv-swap; }
         .dtv-a-press { animation-name: dtv-press; }
-        .dtv-a-slide { animation-name: dtv-slide; }
 
         @keyframes dtv-draw { 0%, 8% { stroke-dashoffset: 1; } 42%, 100% { stroke-dashoffset: 0; } }
         @keyframes dtv-drop { 0%, 12% { opacity: 0; transform: translateY(-8px); } 28%, 100% { opacity: 1; transform: none; } }
         @keyframes dtv-panel { 0%, 10% { opacity: 0; transform: translateX(46px); } 32%, 100% { opacity: 1; transform: none; } }
         @keyframes dtv-bump { 0%, 56% { transform: none; } 64% { transform: scale(1.25); } 74%, 100% { transform: none; } }
-        @keyframes dtv-tick { 0%, 6% { opacity: 0; } 14%, 100% { opacity: 1; } }
         @keyframes dtv-grow { 0%, 10% { transform: scaleX(0); } 42%, 100% { transform: none; } }
-        /* The ring fills to its value: the value is carried in stroke-dashoffset on the element. */
-        @keyframes dtv-ring { 0%, 8% { stroke-dashoffset: 1; } 48%, 100% { stroke-dashoffset: var(--dtv-ring-to, 0); } }
-        @keyframes dtv-blink { 0%, 30% { opacity: 1; } 40%, 50% { opacity: 0.2; } 60%, 100% { opacity: 1; } }
-        @keyframes dtv-swap { 0%, 44% { opacity: 1; transform: none; } 52% { opacity: 0; transform: translateX(-22px); }
-            56% { opacity: 0; transform: translateX(22px); } 68%, 100% { opacity: 1; transform: none; } }
         @keyframes dtv-press { 0%, 40% { transform: none; } 46% { transform: translateY(2px); } 54%, 100% { transform: none; } }
-        /* The selection mark walks down the rail and settles on the first filter. */
-        @keyframes dtv-slide { 0% { transform: none; } 20% { transform: translateY(42px); } 40% { transform: translateY(84px); }
-            60% { transform: translateY(42px); } 80%, 100% { transform: none; } }
 
         .dtv-a-type { animation-name: dtv-type; }
         .dtv-a-caret { animation-name: dtv-caret; }
@@ -172,13 +133,7 @@
         .dtv-a-cursor { animation-name: dtv-cursor; }
         .dtv-a-flyin { animation-name: dtv-flyin; }
         .dtv-a-zoom { animation-name: dtv-zoom; }
-        .dtv-a-rail { animation-name: dtv-rail; }
         .dtv-a-glow { animation-name: dtv-glow; }
-        .dtv-a-hue { animation-name: dtv-hue; }
-        /* Gone at rest: the letter is what the icon replaces. */
-        .dtv-a-fade { animation-name: dtv-fade; opacity: 0; }
-        .dtv-a-widen { animation-name: dtv-widen; }
-
         /* The letters are typed in; at rest the word is simply there. */
         @keyframes dtv-type { 0%, 10% { clip-path: inset(0 100% 0 0); } 40%, 100% { clip-path: inset(0 0 0 0); } }
         @keyframes dtv-caret { 0%, 10% { transform: none; } 40%, 100% { transform: translateX(30px); } }
@@ -186,12 +141,7 @@
         @keyframes dtv-cursor { 0%, 100% { transform: none; } 25% { transform: translateY(26px); } 50% { transform: translateY(52px); } 75% { transform: translateY(26px); } }
         @keyframes dtv-flyin { 0%, 12% { opacity: 0; transform: translate(-40px, 16px); } 38%, 100% { opacity: 1; transform: none; } }
         @keyframes dtv-zoom { 0%, 14% { opacity: 0; transform: scale(0.7); } 38%, 100% { opacity: 1; transform: none; } }
-        @keyframes dtv-rail { 0%, 100% { transform: none; } 33% { transform: translateY(22px); } 66% { transform: translateY(44px); } }
         @keyframes dtv-glow { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        /* The theme changes under the preview, and comes back. */
-        @keyframes dtv-fade { 0%, 30% { opacity: 1; } 40%, 100% { opacity: 0; } }
-        /* The panel's left edge is dragged out, and the panel follows. */
-        @keyframes dtv-widen { 0%, 18% { transform: translateX(44px); } 46%, 100% { transform: none; } }
         /* A block carried from the left column to the right one, lifted on the
            way; the dashed box is where it will land, there before it is. */
         .dtv-a-carry { animation-name: dtv-carry; }
@@ -200,7 +150,6 @@
             58% { transform: translateY(-3px) scale(1.04); } 66%, 100% { transform: none; } }
         @keyframes dtv-landing { 0%, 18% { opacity: 0; } 26%, 60% { opacity: 1; } 66%, 100% { opacity: 0; } }
         .dtv-landing-box { fill: none; stroke: var(--accent-primary); stroke-width: 1.5; stroke-dasharray: 5 3; }
-        @keyframes dtv-hue { 0%, 100% { filter: none; } 33% { filter: hue-rotate(120deg); } 66% { filter: hue-rotate(240deg); } }
 
         @media (prefers-reduced-motion: reduce) { .dtv-anim { animation: none !important; } }
         body.no-animations .dtv-anim { animation: none !important; }
@@ -285,24 +234,6 @@
             ${drawn ? `pathLength="1"${delay ? ` style="animation-delay:${delay}s"` : ''}` : ''}${arrow ? ' marker-end="url(#dtv-arrow)"' : ''}/>`;
     }
 
-    /** A score or countdown ring, filled to `value` (0..1). */
-    function ring(cx, cy, r, value, text, { kind = 'ok', sub = '' } = {}) {
-        const rest = (1 - value).toFixed(3);
-        return `<g>
-            <circle cx="${cx}" cy="${cy}" r="${r}" class="dtv-ring-track"/>
-            <circle cx="${cx}" cy="${cy}" r="${r}" pathLength="1" transform="rotate(-90 ${cx} ${cy})"
-                class="dtv-ring is-${kind} dtv-anim dtv-a-ring" style="stroke-dashoffset:${rest};--dtv-ring-to:${rest}"/>
-            <text x="${cx}" y="${cy + (sub ? 3 : 6)}" text-anchor="middle" class="dtv-big">${esc(text)}</text>
-            ${sub ? `<text x="${cx}" y="${cy + 16}" text-anchor="middle" class="dtv-sub">${esc(sub)}</text>` : ''}
-        </g>`;
-    }
-
-    /** A heartbeat bar: one block per check, the bad ones red, ticking in from the left. */
-    function heartbeat(x, y, n, bad = []) {
-        return Array.from({ length: n }, (_, i) => `<rect x="${x + i * 6}" y="${y}" width="4" height="14" rx="1"
-            class="dtv-beat is-${bad.includes(i) ? 'bad' : 'ok'} dtv-anim dtv-a-tick" style="animation-delay:${(i * 0.04).toFixed(2)}s"/>`).join('');
-    }
-
     /** A category box with its bookmark rows, each with an optional status dot and shortcut. */
     function category(x, y, w, title, rows, motion = NONE) {
         const h = 26 + rows.length * 26;
@@ -332,59 +263,13 @@
         </g>`;
     }
 
-    /**
-     * A bookmark row whose letter gives way to the app's icon. `glyph` is the
-     * mark drawn on the icon: play, wave, ring or bars.
-     */
-    function appRow(x, y, w, name, glyph, delay) {
-        const cx = x + 13;
-        const cy = y + 11;
-        const marks = {
-            play: `<path d="M${cx - 3},${cy - 4} L${cx + 4},${cy} L${cx - 3},${cy + 4} Z" class="dtv-appicon-glyph"/>`,
-            wave: `<path d="M${cx - 5},${cy + 1} q2.5,-5 5,0 t5,0" class="dtv-icon" style="stroke: var(--background-primary)"/>`,
-            ring: `<circle cx="${cx}" cy="${cy}" r="3.5" class="dtv-icon" style="stroke: var(--background-primary)"/>`,
-            bars: `<path d="M${cx - 4},${cy + 4} v-4 M${cx},${cy + 4} v-8 M${cx + 4},${cy + 4} v-6" class="dtv-icon" style="stroke: var(--background-primary)"/>`,
-        };
-        const d = (n) => ` style="animation-delay:${(delay + n).toFixed(2)}s"`;
-        return `<g>
-            <rect x="${x}" y="${y}" width="${w}" height="22" rx="4" class="dtv-box"/>
-            <g class="dtv-anim dtv-a-fade"${d(0)}>
-                <rect x="${cx - 7}" y="${cy - 7}" width="14" height="14" rx="3" class="dtv-letter-box"/>
-                <text x="${cx}" y="${cy + 4}" text-anchor="middle" class="dtv-title">${esc(name.charAt(0))}</text>
-            </g>
-            <g class="dtv-anim dtv-a-appear"${d(0)}>
-                <rect x="${cx - 7}" y="${cy - 7}" width="14" height="14" rx="3" class="dtv-appicon"/>
-                ${marks[glyph]}
-            </g>
-            <text x="${x + 26}" y="${y + 15}" class="dtv-title">${esc(name)}</text>
-        </g>`;
-    }
-
-    /** A small hexagon grid, for the hexagons backdrop. */
-    function hexagons(x, y, cols, rows, r) {
-        const w = r * Math.sqrt(3);
-        const out = [];
-        for (let row = 0; row < rows; row += 1) {
-            for (let col = 0; col < cols; col += 1) {
-                const cx = x + w / 2 + col * w + (row % 2 ? w / 2 : 0);
-                const cy = y + r + row * r * 1.5;
-                const pts = [0, 1, 2, 3, 4, 5].map((i) => {
-                    const a = (Math.PI / 3) * i + Math.PI / 6;
-                    return `${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`;
-                }).join(' ');
-                out.push(`<polygon points="${pts}" class="dtv-bd-line"/>`);
-            }
-        }
-        return out.join('');
-    }
-
     function steps() {
         const f = (key, fallback) => t(key, fallback);
         const example = exampleBookmark();
         return [
-            // New in v1.18: categories and widgets move on the dashboard itself.
+            // 1 — pages, categories, bookmarks, and moving them
             {
-                title: f('dashTourMoveTitle', 'New: move categories and widgets where you want them'),
+                title: f('dashTour4PagesTitle', 'Pages, categories, bookmarks'),
                 visual: svg(`
                     <rect x="12" y="8" width="130" height="56" rx="7" class="dtv-panel"/>
                     ${label(22, 25, '// ' + f('dashTourCatMedia', 'Media'), 'dtv-title')}
@@ -398,222 +283,19 @@
                         ${label(164, 91, '// ' + f('dashTourCatHome', 'Home lab'), 'dtv-title')}
                         ${row(160, 98, 118, 'Proxmox', { kind: 'accent' })}
                     </g>
-                    ${keycap(300, 10, 'Space', anim('press', 0))}
-                    ${label(352, 24, f('dashTourMovePick', 'on // picks it up'), 'dtv-label')}
-                    ${keycap(300, 42, '← → ↑ ↓')}
-                    ${label(372, 56, f('dashTourMoveArrows', 'move the box'), 'dtv-label')}
-                    ${keycap(300, 74, 'W')}
-                    ${label(332, 88, f('dashTourMoveWidth', 'one column or wide'), 'dtv-label')}
-                    ${keycap(300, 106, 'Enter')}
-                    ${label(352, 120, f('dashTourMoveDrop', 'drop'), 'dtv-label')}
-                `, f('dashTourMoveAlt', 'A category carried from the left column to the right one, with a dashed box where it will land, and the keys that do the same')),
-                body: `<p>${esc(f('dashTourMoveBody1',
-                    'Drag the // before a title: the page holds still and a dashed box shows where the block will land. Drop it on the line between two columns to make it wide.'))}</p>
-                    <p>${esc(f('dashTourMoveBody2',
-                    'Without the mouse: ↑ on the top row of a category goes to its title, Tab to the //, and Space picks it up. Move to page in the right-click menu sends it to another page, and Undo brings it back.'))}</p>`,
-            },
-            // New in v1.17: web search, app icons, the theme editor, Unraid.
-            {
-                title: f('dashTourWebTitle', 'New: search the web from the search panel'),
-                visual: svg(`
-                    <rect x="12" y="8" width="300" height="26" rx="7" class="dtv-search"/>
-                    <text x="24" y="26" class="dtv-mono dtv-anim dtv-a-type">jellyfin hdr</text>
-                    ${row(12, 40, 300, 'Jellyfin', { dot: 'ok', site: f('dashTourWebYours', 'your bookmark') })}
-                    <g class="dtv-anim dtv-a-appear" style="animation-delay:0.2s">
-                        ${label(12, 82, f('dashboard.webSearchSection', 'From the web'), 'dtv-heading')}
-                        ${pillFlow(132, 68, 180, [[f('dashboard.webSearchTabWeb', 'Web'), 'active'], [f('dashboard.webSearchTabNews', 'News'), 'plain'], [f('dashboard.webSearchTabVideo', 'Video'), 'plain']], { gap: 4 })}
-                        ${row(12, 94, 300, 'Jellyfin docs', { site: 'jellyfin.org', kind: 'accent' })}
-                        ${row(12, 120, 300, f('dashTourWebResult', 'HDR tone mapping'), { site: 'forum.example.org' })}
-                    </g>
-                    ${keycap(330, 10, 'Shift+Enter', anim('press', 0))}
-                    ${label(330, 46, f('dashTourWebAsk', 'asks the web'), 'dtv-label')}
-                    ${keycap(330, 60, 'Shift+←/→')}
-                    ${label(330, 96, f('dashTourWebTabs', 'Web, News, Video'), 'dtv-label')}
-                    ${keycap(330, 106, 'Alt+Enter')}
-                    ${label(330, 142, f('dashTourWebOwn', 'opens your own bookmark'), 'dtv-label')}
-                `, f('dashTourWebAlt', 'A search for jellyfin: your own bookmark first, then results from the web with their categories, and the keys for them')),
-                body: `<p>${esc(f('dashTourWebBody1',
-                    'With an engine set under Behavior → Keyboard & search — your own SearXNG or the Brave Search API — Shift+Enter asks the web for what you typed. Your server asks the engine, so it never sees your browser, and nothing is sent while you type.'))}</p>
-                    <p>${esc(f('dashTourWebBody2',
-                    'The results appear below your bookmarks. Shift+←/→ switches between Web, News and Video, and on a site you already keep, Alt+Enter opens your own bookmark.'))}</p>`,
-            },
-            {
-                title: f('dashTourIconsTitle', 'New: every app gets its own icon'),
-                visual: svg(`
-                    <rect x="12" y="8" width="190" height="132" rx="7" class="dtv-panel"/>
-                    ${label(22, 25, f('dashTourCatMedia', 'Media'), 'dtv-title')}
-                    ${appRow(18, 32, 178, 'Plex', 'play', 0)}
-                    ${appRow(18, 58, 178, 'Jellyfin', 'ring', 0.15)}
-                    ${appRow(18, 84, 178, 'Sonarr', 'wave', 0.3)}
-                    ${appRow(18, 110, 178, 'Grafana', 'bars', 0.45)}
-                    ${line('M210,74 L250,74', { delay: 0.5, arrow: true })}
-                    <g class="dtv-anim dtv-a-panel">
-                        <rect x="258" y="20" width="212" height="96" rx="8" class="dtv-panel"/>
-                        ${label(270, 40, '✎ ' + f('dashTourIconsMenu', 'the icon'), 'dtv-heading')}
-                        ${pill(270, 48, f('dashboard.iconSetChoose', 'Choose app icon…'), { kind: 'active', w: 188 })}
-                        ${label(276, 88, f('dashboard.dockerIconLetter', 'Use letter'), 'dtv-label')}
-                        ${label(276, 106, '✓ ' + f('dashboard.dockerIconAutomatic', 'Automatic'), 'dtv-title')}
-                    </g>
-                    ${label(364, 136, f('dashTourIconsCaption', 'light or dark, to suit your theme'), 'dtv-caption', 'middle')}
-                `, f('dashTourIconsAlt', 'Bookmark letters turning into app icons, and the icon menu with Choose app icon, Use letter and Automatic')),
-                body: `<p>${esc(f('dashTourIconsBody1',
-                    'Bookmarks and containers for self-hosted apps now show the app’s own icon, from two open icon sets, in the variant that suits your theme. An icon you chose or uploaded is never replaced.'))}</p>
-                    <p>${esc(f('dashTourIconsBody2',
-                    'The ✎ on an icon offers Choose app icon…, Use letter and Automatic — in the bookmark form, the Bookmarks view and a container’s drawer.'))}</p>`,
-            },
-            {
-                title: f('dashTourEditorTitle', 'New: recolour a theme, or save what is on screen'),
-                visual: svg(`
-                    ${category(12, 20, 150, f('dashTourCatHome', 'Home lab'), [['Grafana', 'ok', ''], ['Proxmox', 'ok', ''], ['Router', 'ok', '']])}
-                    <g class="dtv-anim dtv-a-widen">
-                        <rect x="190" y="6" width="284" height="138" rx="10" class="dtv-panel"/>
-                        <line x1="190" y1="58" x2="190" y2="92" class="dtv-edge"/>
-                        ${label(204, 26, '← ' + f('config.themeRecolour', 'Recolour') + ': Nord', 'dtv-heading')}
-                        ${[0, 1, 2, 3, 4].map((i) => `<circle cx="${214 + i * 30}" cy="48" r="10" class="dtv-swatch${i === 1 ? ' dtv-anim dtv-a-hue' : ''}" style="fill-opacity:${(1 - i * 0.16).toFixed(2)}"/>`).join('')}
-                        ${row(204, 66, 150, f('dashTourEditorAccent', 'Accent'), { dot: 'accent', kind: 'accent' })}
-                        ${pill(204, 98, f('config.studioSaveAsTheme', 'Save as theme…'), { kind: 'active', motion: anim('bump', 0.4) })}
-                        ${pill(204, 120, f('config.studioApply', 'Apply'))}
-                    </g>
-                    ${label(176, 112, '↔', 'dtv-heading', 'middle')}
-                `, f('dashTourEditorAlt', 'The theme browser widened from its left edge, recolouring a theme, with Save as theme and Apply')),
-                body: `<p>${esc(f('dashTourEditorBody1',
-                    '✎ Edit on a theme of your own, or ✎ Recolour on a packaged one, opens its colours right in the theme browser. Save as theme… keeps what is on screen as a theme of your own — its look too, if you like.'))}</p>
-                    <p>${esc(f('dashTourEditorBody2',
-                    'Need more room? Drag the panel’s left edge; a double-click puts it back.'))}</p>`,
-            },
-            {
-                title: f('dashTourUnraidTitle', 'New: your Unraid server on the dashboard'),
-                visual: (() => {
-                    const disks = [['parity', 0.82, 'ok', '31 °C'], ['disk1', 0.71, 'ok', '34 °C'], ['disk2', 0.93, 'warn', '36 °C'], ['cache', 0.38, 'ok', '41 °C']];
-                    return svg(`
-                        <g class="dtv-anim dtv-a-drop">
-                            <rect x="10" y="8" width="200" height="134" rx="9" class="dtv-panel"/>
-                            ${label(22, 28, f('dashboard.widgetType.unraidArray', 'Unraid array'), 'dtv-title')}
-                            ${disks.map(([n, v, k, temp], i) => `
-                                ${label(22, 52 + i * 24, n, 'dtv-label')}
-                                <rect x="70" y="${44 + i * 24}" width="90" height="8" rx="3" class="dtv-bar-track"/>
-                                <rect x="70" y="${44 + i * 24}" width="${Math.round(90 * v)}" height="8" rx="3" class="dtv-bar is-${k} dtv-anim dtv-a-grow" style="animation-delay:${(0.2 + i * 0.12).toFixed(2)}s"/>
-                                ${label(200, 52 + i * 24, temp, 'dtv-sub', 'end')}`).join('')}
-                        </g>
-                        <g class="dtv-anim dtv-a-drop" style="animation-delay:0.15s">
-                            <rect x="218" y="8" width="120" height="134" rx="9" class="dtv-panel"/>
-                            ${label(230, 28, f('dashboard.widgetType.unraidParity', 'Parity'), 'dtv-title')}
-                            ${ring(278, 82, 30, 0.62, '62%', { sub: f('dashTourUnraidRunning', 'running') })}
-                        </g>
-                        <g class="dtv-anim dtv-a-drop" style="animation-delay:0.3s">
-                            <rect x="346" y="8" width="126" height="134" rx="9" class="dtv-panel"/>
-                            ${label(358, 28, f('dashboard.widgetType.unraidShares', 'Shares'), 'dtv-title')}
-                            ${label(358, 56, 'array', 'dtv-label')}
-                            ${label(358, 76, '8.1 TB', 'dtv-value')}
-                            ${label(358, 104, 'cache', 'dtv-label')}
-                            ${label(358, 124, '410 GB', 'dtv-value')}
-                        </g>
-                    `, f('dashTourUnraidAlt', 'Three Unraid widgets: the array with each disk’s fill and temperature, a running parity check, and the free space of the shares'));
-                })(),
-                body: `<p>${esc(f('dashTourUnraidBody1',
-                    'Seven widgets read an Unraid server: an overview, the array and its disks, parity, shares, VMs, the UPS and Unraid’s own notifications. They only read, and share one connection, set under Config → Unraid.'))}</p>
-                    <p>${esc(f('dashTourUnraidBody2',
-                    'With alerts on, a stopped array, a parity check with errors or a disk with new errors reaches you through the same channels as downtime alerts.'))}</p>`,
-            },
-            // From v1.16: the theme browser, the backdrops, the looks.
-            {
-                title: f('dashTourStudioTitle', 'The theme browser opens beside your dashboard'),
-                visual: svg(`
-                    ${keycap(12, 10, 'Shift+A', anim('press', 0))}
-                    ${label(76, 24, f('dashTourStudioKey', 'from anywhere'), 'dtv-label')}
-                    ${category(12, 44, 110, f('dashTourCatMedia', 'Media'), [['Plex', 'ok', ''], ['Sonarr', 'ok', '']])}
-                    ${category(128, 44, 110, f('dashTourCatHome', 'Home lab'), [['Grafana', 'ok', ''], ['Proxmox', 'ok', '']])}
-                    <g class="dtv-anim dtv-a-panel">
-                        <rect x="250" y="6" width="222" height="138" rx="10" class="dtv-panel"/>
-                        ${label(262, 24, f('dashTourStudioPanel', 'Themes'), 'dtv-heading')}
-                        ${label(462, 24, '×', 'dtv-heading', 'end')}
-                        ${pillFlow(262, 32, 200, [[f('dashTourStudioTabThemes', 'Themes'), 'active'], [f('dashTourStudioTabBackdrop', 'Backdrop'), 'plain'], [f('dashTourStudioTabLooks', 'Looks'), 'plain']], { gap: 4 })}
-                        <rect x="262" y="58" width="198" height="16" rx="4" class="dtv-box"/>
-                        ${label(268, 70, f('dashTourStudioInUse', 'In use: your theme'), 'dtv-sub')}
-                        <g class="dtv-row is-accent">
-                            <rect x="262" y="80" width="96" height="32" rx="5" class="dtv-box"/>
-                        </g>
-                        <rect x="270" y="88" width="80" height="6" rx="2" class="dtv-swatch dtv-anim dtv-a-hue"/>
-                        <rect x="270" y="100" width="56" height="5" rx="2" class="dtv-bar-track"/>
-                        <rect x="364" y="80" width="96" height="32" rx="5" class="dtv-box"/>
-                        <rect x="372" y="88" width="80" height="6" rx="2" class="dtv-swatch"/>
-                        <rect x="372" y="100" width="56" height="5" rx="2" class="dtv-bar-track"/>
-                        ${pill(262, 118, f('dashTourStudioCancel', 'Cancel'))}
-                        ${pill(334, 118, f('dashTourStudioApply', 'Apply'), { kind: 'active' })}
-                    </g>
-                `, f('dashTourStudioAlt', 'The dashboard on the left, and the theme browser opened beside it with its tabs, the theme in use, theme cards, Cancel and Apply')),
-                body: `<p>${esc(f('dashTourStudioBody1',
-                    'Shift+A opens the theme browser as a panel beside your dashboard, so every change shows on your own page. Point at a theme to see it, click to pick it; a line above the grid names the theme in use.'))}</p>
-                    <p>${esc(f('dashTourStudioBody2',
-                    'Its tabs change the backdrop, the cards, the category headers and the type as well. Nothing is saved until Apply — Cancel, Esc, the × or a click beside the panel puts everything back, and Compare shows what you had.'))}</p>`,
-            },
-            {
-                title: f('dashTourBackdropTitle', 'Every theme has a backdrop of its own'),
-                visual: (() => {
-                    const tile = (x, inner, name, delay) => `
-                        <g class="dtv-anim dtv-a-drop" style="animation-delay:${delay}s">
-                            <rect x="${x}" y="8" width="146" height="104" rx="8" class="dtv-panel"/>
-                            ${inner}
-                            ${label(x + 73, 128, name, 'dtv-label', 'middle')}
-                        </g>`;
-                    return svg(`
-                        ${tile(10, `<circle cx="52" cy="44" r="32" class="dtv-bd"/>
-                            <circle cx="112" cy="72" r="30" class="dtv-bd is-second"/>`, f('dashTourBackdropAurora', 'aurora'), 0)}
-                        ${tile(167, `<path d="M167,88 Q207,58 247,80 T313,74 L313,112 L167,112 Z" class="dtv-bd"/>
-                            <path d="M167,100 Q217,78 263,96 T313,92 L313,112 L167,112 Z" class="dtv-bd is-second"/>`, f('dashTourBackdropDunes', 'dunes'), 0.15)}
-                        ${tile(324, hexagons(330, 14, 6, 6, 9), f('dashTourBackdropHexagons', 'hexagons'), 0.3)}
-                        ${label(240, 146, f('dashTourBackdropCaption', 'three of 26, drawn in the theme’s own colours'), 'dtv-caption', 'middle')}
-                    `, f('dashTourBackdropAlt', 'Three backdrops side by side: aurora, dunes and hexagons'));
-                })(),
-                body: `<p>${esc(f('dashTourBackdropBody1',
-                    'Behind the bookmarks every theme now draws a backdrop of its own, in its own colours — one of 26, from aurora and dunes to stars, mountains and hexagons — picked to suit that theme.'))}</p>
-                    <p>${esc(f('dashTourBackdropBody2',
-                    'Appearance → Background lets you choose another, roll a new variant with 🎲, or soften it with blur, brightness and a theme tint. Only the backdrop blurs, never your bookmarks.'))}</p>`,
-            },
-            {
-                title: f('dashTourLooksTitle', 'Looks, card glass and category headers'),
-                visual: svg(`
-                    ${[f('config.look.glass', 'Glass'), f('config.look.frosted', 'Frosted'), f('config.look.paper', 'Paper'), f('config.look.terminal', 'Terminal'), f('config.look.plain', 'Plain')]
-                        .map((name, i) => pill(10, 8 + i * 26, name, { w: 96, kind: i === 0 ? 'active' : 'plain', motion: anim('drop', i * 0.1) })).join('')}
-                    <circle cx="160" cy="40" r="30" class="dtv-bd"/>
-                    <circle cx="262" cy="70" r="28" class="dtv-bd is-second"/>
-                    <rect x="138" y="22" width="146" height="62" rx="8" class="dtv-glass dtv-anim dtv-a-zoom"/>
-                    ${row(146, 30, 130, 'Plex', { dot: 'ok' })}
-                    ${row(146, 56, 130, 'Sonarr', { dot: 'ok' })}
-                    ${label(211, 102, f('dashTourLooksGlass', 'card glass'), 'dtv-caption', 'middle')}
-                    ${[0.25, 0.4, 0.55, 0.7, 0.85].map((o, i) => `<rect x="${150 + i * 24}" y="114" width="20" height="14" rx="3" class="dtv-swatch" style="fill: var(--text-secondary); fill-opacity:${o}"/>`).join('')}
-                    ${label(211, 144, f('dashTourLooksNeutrals', 'Neutrals: five grey themes'), 'dtv-label', 'middle')}
-                    ${label(312, 22, f('dashTourCatMedia', 'Media'), 'dtv-heading')}
-                    ${label(470, 22, f('config.categoryHeaderClean', 'Clean'), 'dtv-sub', 'end')}
-                    ${label(312, 62, f('dashTourCatMedia', 'Media'), 'dtv-heading')}
-                    <line x1="312" y1="68" x2="470" y2="68" class="dtv-underline dtv-anim dtv-a-grow"/>
-                    ${label(470, 62, f('config.categoryHeaderUnderlined', 'Underlined'), 'dtv-sub', 'end')}
-                    <rect x="306" y="90" width="166" height="26" rx="6" class="dtv-panel"/>
-                    ${label(316, 107, f('dashTourCatMedia', 'Media'), 'dtv-heading')}
-                    ${label(462, 107, f('config.categoryHeaderBoxed', 'Boxed') + ' · 3', 'dtv-sub', 'end')}
-                `, f('dashTourLooksAlt', 'A list of looks, a glass card over a backdrop, five grey swatches, and three styles of category header')),
-                body: `<p>${esc(f('dashTourLooksBody1',
-                    'The Looks tab sets backdrop, cards, headers and type in one click — twelve of them, from Glass and Frosted to Paper, Terminal and Plain — and leaves your theme’s colours alone.'))}</p>
-                    <p>${esc(f('dashTourLooksBody2',
-                    'Card glass on the Surface tab sets how see-through the cards are; category headers can be clean, underlined, boxed, a label or a card around the category. The Neutrals collection adds five calm grey themes.'))}</p>`,
-            },
-            // 1 — pages, categories, bookmarks
-            {
-                title: f('dashTourS1Title', 'Pages, categories, bookmarks'),
-                visual: svg(`
-                    ${pillFlow(300, 8, 170, [['1', 'active'], ['2', 'plain'], ['3', 'plain'], ['4', 'plain']], { gap: 6 })}
-                    ${category(12, 12, 146, f('dashTourCatDev', 'Development'), [['GitHub', 'ok', 'gh'], ['GitLab', 'ok', ''], ['MDN', 'ok', 'md']], anim('drop', 0))}
-                    ${category(168, 40, 146, f('dashTourCatMedia', 'Media'), [['YouTube', 'ok', 'yt'], ['Jellyfin', 'bad', '']], anim('drop', 0.2))}
-                    ${category(324, 40, 146, f('dashTourCatHome', 'Home lab'), [['Grafana', 'ok', ''], ['Nextcloud', 'ok', 'nc']], anim('drop', 0.4))}
-                `, f('dashTourS1Alt', 'Three categories of bookmarks on a page, and the page numbers')),
-                body: `<p>${esc(f('dashTourS1Body1',
-                    'The dashboard is pages of categories, and categories of bookmarks. The numbers in the header are your pages — 1 to 9 jump straight to one.'))}</p>
-                    <p>${esc(f('dashTourS1Body2',
-                    'Everything here can be reached from the keyboard, and most of it without leaving this screen.'))}</p>`,
+                    ${pillFlow(304, 10, 170, [['1', 'active'], ['2', 'plain'], ['3', 'plain'], ['4', 'plain']], { gap: 6 })}
+                    ${keycap(304, 46, '1–9')}
+                    ${label(340, 60, f('dashTourKeyPages', 'pages'))}
+                    ${label(304, 100, f('dashTour4PagesDrag', 'drag the // to move'), 'dtv-caption')}
+                `, f('dashTour4PagesAlt', 'Categories on a page, one carried to another column, and the page numbers')),
+                body: `<p>${esc(f('dashTour4PagesBody1',
+                    'Your dashboard is pages of categories, and categories of bookmarks. The numbers in the header are your pages; 1 to 9 jump straight to one.'))}</p>
+                    <p>${esc(f('dashTour4PagesBody2',
+                    'Drag the // before a title to move a category or widget. Drop it on the line between two columns to make it wide.'))}</p>`,
             },
             // 2 — start typing
             {
-                title: f('dashTourS2Title', 'Start typing'),
+                title: f('dashTour4SearchTitle', 'Start typing'),
                 visual: svg(`
                     <rect x="12" y="12" width="300" height="28" rx="7" class="dtv-search"/>
                     <text x="24" y="31" class="dtv-mono dtv-anim dtv-a-type">graf</text>
@@ -623,56 +305,41 @@
                     ${label(12, 124, f('dashTourS2Enter', 'Enter opens the top result'), 'dtv-caption')}
                     ${[['>', f('dashTourKeySearch', 'search')], [':', f('dashTourKeyCommands', 'commands')], ['?', f('dashTourKeyFinders', 'finders')]]
                         .map(([k, l], i) => `${keycap(332, 14 + i * 30, k)}${label(358, 28 + i * 30, l)}`).join('')}
+                    ${keycap(332, 104, 'Shift+Enter')}${label(332, 140, f('dashTour4SearchWeb', 'the web'))}
                 `, f('dashTourS2Alt', 'Typed letters go to the search line, and its three modes')),
-                body: `<p>${esc(f('dashTourS2Body1',
-                    'Type anything on the dashboard and it goes to the search line; Enter opens the top result.'))}</p>
-                    <p>${esc(f('dashTourS2Body2',
-                    'The same panel has three modes: > searches your bookmarks, : runs a command, ? sends your text to a search engine or a site you set up as a finder.'))}</p>
+                body: `<p>${esc(f('dashTour4SearchBody1',
+                    'Type anything on the dashboard and it goes to the search line; Enter opens the top result. > searches your bookmarks, : runs a command, ? sends the text to a search engine or finder.'))}</p>
+                    <p>${esc(f('dashTour4SearchBody2',
+                    'With a web search engine set up in Config, Shift+Enter searches the web as well.'))}</p>
                     ${example ? `<p class="dtv-try">${esc(f('dashTourS2Try', 'Try it: type {name} and press Enter.').replace('{name}', example.name.toLowerCase()))}</p>` : ''}`,
             },
-            // 3 — shortcuts
+            // 3 — shortcuts, the cursor and the Shift keys
             {
-                title: f('dashTourS3Title', 'Shortcuts open a bookmark in two keys'),
-                visual: svg(`
-                    ${keycap(40, 50, 'g', anim('press', 0))}
-                    ${keycap(70, 50, 'h', anim('press', 0.35))}
-                    ${line('M104,60 L196,60', { delay: 0.3, arrow: true })}
-                    ${row(206, 49, 190, 'GitHub', { dot: 'ok', kind: 'accent', motion: anim('appear', 0.2) })}
-                    ${keycap(362, 50, 'gh')}
-                    ${label(206, 100, f('dashTourS3Caption', 'opens straight away — no search, no Enter'), 'dtv-caption')}
-                `, f('dashTourS3Alt', 'Typing g h opens the bookmark with that shortcut')),
-                body: `<p>${esc(f('dashTourS3Body1',
-                    'Give a bookmark a shortcut of one or two letters and typing it on the dashboard opens it — no search, no Enter.'))}</p>
-                    <p>${esc(f('dashTourS3Body2',
-                    'It is the change that makes the keyboard worth it: give the ten you open every day one, in the bookmark form or with Shift+E.'))}</p>
-                    ${example ? `<p class="dtv-try">${esc(f('dashTourS3Try', 'On this page: type {key} for {name}.')
-                        .replace('{key}', String(example.shortcut).toLowerCase()).replace('{name}', example.name))}</p>` : ''}`,
-            },
-            // 4 — cursor and Shift
-            {
-                title: f('dashTourS4Title', 'A cursor, and Shift for everything'),
+                title: f('dashTour4KeysTitle', 'Two keys to open, Shift to act'),
                 visual: (() => {
-                    const keys = [['Shift+E', f('dashTourKeyEdit', 'edit')], ['Shift+M', f('dashTourKeyMove', 'move')],
-                        ['Shift+T', f('dashTourKeyTags', 'tags')], ['x', f('dashTourKeyTick', 'tick')]];
+                    const keys = [['gh', f('dashTour4KeyOpen', 'opens GitHub')], ['Shift+E', f('dashTourKeyEdit', 'edit')],
+                        ['Shift+M', f('dashTourKeyMove', 'move')], ['Shift+T', f('dashTourKeyTags', 'tags')]];
                     return svg(`
                         ${category(12, 10, 150, f('dashTourCatDev', 'Development'), [['GitHub', 'ok', 'gh'], ['GitLab', 'ok', ''], ['MDN', 'ok', 'md']])}
                         <rect x="17" y="33" width="140" height="24" rx="5" class="dtv-select dtv-anim dtv-a-cursor"/>
-                        ${keys.map(([k, l], i) => `${keycap(180, 12 + i * 30, k)}${label(180 + keyWidth(k) + 6, 26 + i * 30, l)}`).join('')}
+                        ${keys.map(([k, l], i) => `${keycap(180, 12 + i * 30, k, i === 0 ? anim('press', 0) : NONE)}${label(180 + keyWidth(k) + 6, 26 + i * 30, l)}`).join('')}
                         <g class="dtv-anim dtv-a-panel">
                             <rect x="330" y="12" width="140" height="112" rx="8" class="dtv-panel"/>
                             ${[[f('dashTourMenuEdit', 'Edit'), '⇧E'], [f('dashTourMenuMove', 'Move'), '⇧M'], [f('dashTourMenuTags', 'Tags'), '⇧T'], [f('dashTourMenuDelete', 'Delete'), '⇧D']]
                                 .map(([l, k], i) => `${label(342, 36 + i * 24, l, 'dtv-title')}${label(460, 36 + i * 24, k, 'dtv-label', 'end')}`).join('')}
                         </g>
-                    `, f('dashTourS4Alt', 'A cursor on a bookmark, the Shift keys and the right-click menu'));
+                    `, f('dashTour4KeysAlt', 'A bookmark with a shortcut, a cursor on the grid, the Shift keys and the right-click menu'));
                 })(),
-                body: `<p>${esc(f('dashTourS4Body1',
-                    'The first arrow key starts a cursor on the grid. With a bookmark selected, every action is Shift plus a letter: Shift+E edits in place, Shift+M moves, Shift+T tags, Shift+D deletes.'))}</p>
-                    <p>${esc(f('dashTourS4Body2',
-                    'x ticks several at once, and the right-click menu shows every action with its key.'))}</p>`,
+                body: `<p>${esc(f('dashTour4KeysBody1',
+                    'Give a bookmark a shortcut of one or two letters, and typing it on the dashboard opens it: no search, no Enter.'))}</p>
+                    <p>${esc(f('dashTour4KeysBody2',
+                    'The arrow keys start a cursor on the grid. On a bookmark, every action is Shift plus a letter: Shift+E edits, Shift+M moves, Shift+T tags. The right-click menu shows them all.'))}</p>
+                    ${example ? `<p class="dtv-try">${esc(f('dashTourS3Try', 'On this page: type {key} for {name}.')
+                        .replace('{key}', String(example.shortcut).toLowerCase()).replace('{name}', example.name))}</p>` : ''}`,
             },
-            // 5 — adding
+            // 4 — adding
             {
-                title: f('dashTourS5Title', 'Adding: paste, +, or one line'),
+                title: f('dashTour4AddTitle', 'Adding: paste, + or the extension'),
                 visual: svg(`
                     <g class="dtv-anim dtv-a-flyin">
                         <rect x="14" y="14" width="210" height="24" rx="5" class="dtv-search"/>
@@ -684,14 +351,43 @@
                     <rect x="254" y="80" width="216" height="24" rx="5" class="dtv-box"/>
                     ${label(262, 96, 'Zig docs | ziglang.org | zg', 'dtv-mono')}
                 `, f('dashTourS5Alt', 'A pasted address offered as a bookmark or for the inbox, and the add keys')),
-                body: `<p>${esc(f('dashTourS5Body1',
-                    'Paste a URL anywhere on the dashboard and nextDash offers to add it as a bookmark or to put it in the inbox for later.'))}</p>
-                    <p>${esc(f('dashTourS5Body2',
-                    '+ opens the full form; & adds one in a single line — name | url | shortcut. The browser extension saves the tab you are on.'))}</p>`,
+                body: `<p>${esc(f('dashTour4AddBody1',
+                    'Paste a URL anywhere on the dashboard and nextDash offers to add it as a bookmark, or to put it in the inbox for later.'))}</p>
+                    <p>${esc(f('dashTour4AddBody2',
+                    '+ opens the full form, which suggests tags for the address. & adds a bookmark in one line: name | url | shortcut. The browser extension saves the tab you are on.'))}</p>`,
             },
-            // 6 — status and the header icons
+            // 5 — tags
             {
-                title: f('dashTourS6Title', 'The dashboard knows when a link breaks'),
+                title: f('dashTour4TagsTitle', 'Tags: the cloud and a view per tag'),
+                visual: (() => {
+                    const tags = [['selfhosted', 15], ['homelab', 12], ['linux', 13]];
+                    return svg(`
+                        ${keycap(12, 10, '/', anim('press', 0))}
+                        ${label(40, 24, f('dashTourKeyTagCloud', 'tag cloud'))}
+                        <g class="dtv-anim dtv-a-zoom">
+                            <rect x="12" y="40" width="168" height="104" rx="9" class="dtv-panel"/>
+                            ${tags.map(([name, size], i) => `<text x="${24 + (i % 2) * 70}" y="${66 + i * 22}" class="dtv-title${i === 0 ? ' dtv-anim dtv-a-bump' : ''}" style="font-size:${size}px">${esc(name)}</text>`).join('')}
+                            ${label(110, 132, 'rust · music', 'dtv-label')}
+                        </g>
+                        ${line('M186,66 L222,66', { delay: 0.4, arrow: true })}
+                        <g class="dtv-anim dtv-a-panel">
+                            <rect x="230" y="8" width="244" height="136" rx="10" class="dtv-panel"/>
+                            ${label(242, 28, '# selfhosted · 15', 'dtv-heading')}
+                            ${row(242, 38, 220, 'Nextcloud', { dot: 'ok', site: f('dashTourCatHome', 'Home lab') })}
+                            ${row(242, 64, 220, 'Jellyfin', { dot: 'ok', site: f('dashTourCatMedia', 'Media') })}
+                            ${row(242, 90, 220, 'Gitea', { dot: 'ok', site: f('dashTourCatDev', 'Development') })}
+                            ${label(242, 132, f('dashTour4TagsEvery', 'from every page'), 'dtv-caption')}
+                        </g>
+                    `, f('dashTour4TagsAlt', 'The tag cloud, and the view for one tag with its bookmarks from every page'));
+                })(),
+                body: `<p>${esc(f('dashTour4TagsBody1',
+                    '/ opens the tag cloud: the tags you use most are the largest, and typing finds one.'))}</p>
+                    <p>${esc(f('dashTour4TagsBody2',
+                    'Click a tag and it opens a view of its own: every bookmark with that tag, from every page, with the same keys and menu as the dashboard.'))}</p>`,
+            },
+            // 6 — status and the other views
+            {
+                title: f('dashTour4ViewsTitle', 'Bookmarks, Inbox and Containers'),
                 visual: svg(`
                     ${category(12, 10, 170, f('dashTourCatHome', 'Home lab'), [['Grafana', 'ok', ''], ['Nextcloud', 'bad', 'nc'], ['Router', 'ok', '']])}
                     <circle cx="28" cy="71" r="7" class="dtv-ring-bad dtv-anim dtv-a-glow"/>
@@ -701,185 +397,38 @@
                     ${label(250, 80, f('dashTourS6Bookmarks', 'Bookmarks'), 'dtv-label', 'middle')}
                     ${label(326, 80, f('dashTourS6Inbox', 'Inbox'), 'dtv-label', 'middle')}
                     ${label(402, 80, f('dashTourS6Containers', 'Containers'), 'dtv-label', 'middle')}
+                    ${keycap(236, 98, 'Shift+H')}
+                    ${keycap(312, 98, 'Shift+I')}
                 `, f('dashTourS6Alt', 'A broken bookmark, and the header icons with their counts')),
-                body: `<p>${esc(f('dashTourS6Body1',
-                    'A dot beside a bookmark says whether it still answers, and monitored ones carry a quiet glow. Link checking is set per bookmark, or for many at once.'))}</p>
-                    <p>${esc(f('dashTourS6Body2',
-                    'The icons in the header lead to the other views — Bookmarks, Inbox and Containers — and their badges count what needs you: a broken link, unread links, updates waiting.'))}</p>`,
+                body: `<p>${esc(f('dashTour4ViewsBody1',
+                    'A dot beside a bookmark says whether it still answers. The icons in the header open the other views, and their badges count what needs you.'))}</p>
+                    <p>${esc(f('dashTour4ViewsBody2',
+                    'Bookmarks (Shift+H) lists every bookmark with filters for broken and stale links. The Inbox (Shift+I) holds links you have not placed yet. Containers shows what runs on your server. Each has a Tour button of its own.'))}</p>`,
             },
-            // 7 — the Bookmarks view
+            // 7 — widgets, themes and help
             {
-                title: f('dashTourS7Title', 'All your bookmarks in one list'),
-                visual: (() => {
-                    const rail = [['dashboard.healthFilterBroken', 'Broken', 'bad', '2'], ['dashboard.healthFilterDuplicates', 'Duplicates', 'plain', '3'],
-                        ['dashboard.healthFilterStale', 'Stale', 'warn', '5'], ['dashTourNeverOpened', 'Never opened', 'plain', '43']];
-                    return svg(`
-                        ${headerIcon(10, 12, 'bookmarks', 1, 'bad')}
-                        ${keycap(10, 50, 'Shift+H')}
-                        <g class="dtv-anim dtv-a-zoom">
-                            <rect x="84" y="6" width="390" height="138" rx="10" class="dtv-panel"/>
-                            ${rail.map(([key, fb, dot, n], i) => `
-                                <circle cx="98" cy="${28 + i * 22}" r="3" class="dtv-dot is-${dot}"/>
-                                ${label(106, 32 + i * 22, f(key, fb), i === 0 ? 'dtv-title' : 'dtv-label')}
-                                ${label(200, 32 + i * 22, n, 'dtv-title', 'end')}`).join('')}
-                            <rect x="92" y="19" width="112" height="18" rx="4" class="dtv-select dtv-anim dtv-a-rail"/>
-                            ${row(210, 16, 140, 'Nextcloud', { dot: 'bad', kind: 'bad' })}
-                            ${row(210, 42, 140, 'Old wiki', { dot: 'bad' })}
-                            ${row(210, 68, 140, 'GitHub', { dot: 'ok' })}
-                            ${row(210, 94, 140, 'MDN', { dot: 'ok' })}
-                            <g class="dtv-anim dtv-a-panel">
-                                <rect x="356" y="14" width="110" height="122" rx="8" class="dtv-panel"/>
-                                ${label(366, 34, 'Nextcloud', 'dtv-title')}
-                                ${pill(366, 42, f('config.bmHealth', 'Health'), { kind: 'active', w: 70 })}
-                                ${label(366, 84, 'Monitor · 15m')}
-                                ${label(366, 102, 'HTTP 503', 'dtv-title')}
-                            </g>
-                        </g>
-                    `, f('dashTourS7Alt', 'The Bookmarks view: its filters, every bookmark in one list, and the side panel'));
-                })(),
-                body: `<p>${esc(f('dashTourS7Body1',
-                    'The dashboard shows a page at a time; the Bookmarks view (Shift+H, or the bookmark icon in the header) shows every bookmark on every page in one list.'))}</p>
-                    <p>${esc(f('dashTourS7Body2',
-                    'The rail filters it — broken, duplicates, stale, never opened, a tag, a page — and the side panel edits the one you focus, including how and how often it is checked. It has a tour of its own the first time you open it.'))}</p>`,
-            },
-            // 8 — the inbox
-            {
-                title: f('dashTourInboxTitle', 'The inbox: links you have not placed yet'),
-                visual: (() => {
-                    const outs = [[f('dashboard.inboxPromote', 'Promote'), 'plain', f('dashTourInboxPromote', 'a bookmark on a page')],
-                        [f('dashboard.inboxTriageKeep', 'Keep'), 'active', f('dashTourInboxKeep', 'Bookmarks › Unsorted')],
-                        [f('dashboard.inboxDelete', 'Delete'), 'bad', f('dashTourInboxDelete', 'gone, with Undo')]];
-                    return svg(`
-                        ${headerIcon(12, 14, 'inbox', 3, 'warn', anim('bump', 0.5))}
-                        ${row(56, 12, 170, 'Rust Book', { dot: 'accent', motion: anim('drop', 0) })}
-                        ${row(56, 38, 170, 'Deno Manual', { dot: 'accent', motion: anim('drop', 0.2) })}
-                        ${row(56, 64, 170, 'Zig Language', { motion: anim('drop', 0.4) })}
-                        ${keycap(56, 100, 't')}${label(82, 114, f('dashTourInboxTriage', 'triage, one link at a time'))}
-                        ${outs.map(([name, kind, where], i) => `
-                            ${line(`M230,48 C240,48 238,${16 + i * 46} 244,${16 + i * 46}`, { delay: 0.3 * i, arrow: true })}
-                            ${pill(250, 6 + i * 46, name, { kind })}
-                            ${label(250, 38 + i * 46, where)}`).join('')}
-                    `, f('dashTourInboxAlt', 'Links in the inbox, and the three ways out of it'));
-                })(),
-                body: `<p>${esc(f('dashTourInboxBody1',
-                    'The inbox (Shift+I) holds links you want to keep before you know where they belong — pasted, saved from the extension, or shared. The header icon counts what is unread.'))}</p>
-                    <p>${esc(f('dashTourInboxBody2',
-                    'Every link leaves one of three ways: Promote makes it a bookmark on a page, Keep sends it to Bookmarks › Unsorted, Delete throws it away. t works through them one at a time.'))}</p>`,
-            },
-            // 9 — containers
-            {
-                title: f('dashTourDockerTitle', 'Containers: what runs on your server'),
-                visual: (() => {
-                    const rows = [['grafana', 'ok'], ['jellyfin', 'ok'], ['sonarr', 'warn'], ['bazarr', 'bad']];
-                    const keys = [['s', f('dashboard.dockerLegendRun', 'start / stop')], ['r', f('dashboard.dockerLegendRestart', 'restart')],
-                        ['u', f('dashboard.dockerLegendUpdate', 'update')]];
-                    return svg(`
-                        ${headerIcon(12, 14, 'containers', 2, 'active', anim('bump', 0.3))}
-                        ${rows.map(([n, st], i) => `
-                            <g class="dtv-anim dtv-a-drop" style="animation-delay:${(i * 0.15).toFixed(2)}s">
-                                <rect x="56" y="${10 + i * 28}" width="190" height="22" rx="4" class="dtv-box"/>
-                                <rect x="56" y="${10 + i * 28}" width="4" height="22" rx="2" class="dtv-glow is-${st}${st === 'bad' ? ' dtv-anim dtv-a-glow' : ''}"/>
-                                ${label(68, 25 + i * 28, n, 'dtv-title')}
-                            </g>`).join('')}
-                        ${pill(242 - pillWidth(f('dashboard.dockerUpdateBadge', 'update')), 67, f('dashboard.dockerUpdateBadge', 'update'), { kind: 'warn' })}
-                        ${keys.map(([k, l], i) => `${keycap(270, 12 + i * 30, k)}${label(296, 26 + i * 30, l)}`).join('')}
-                        ${label(270, 118, 'NEXTDASH_DOCKER_CONTROL=1', 'dtv-mono')}
-                    `, f('dashTourDockerAlt', 'Containers glowing by state, and the keys that act on them'));
-                })(),
-                body: `<p>${esc(f('dashTourDockerBody1',
-                    'With the Docker socket mounted, the Containers view (the box icon, or #docker) lists what runs on the host: each row glows with its state, and the side panel shows resources, logs and what an update would change.'))}</p>
-                    <p>${esc(f('dashTourDockerBody2',
-                    's starts or stops, r restarts, u updates — once NEXTDASH_DOCKER_CONTROL=1 is set. Update checks tell you when an image is out of date. It has a tour of its own too.'))}</p>`,
-            },
-            // 10 — widgets
-            {
-                title: f('dashTourS8Title', 'More than links'),
+                title: f('dashTour4YoursTitle', 'Make it yours, and find help'),
                 visual: (() => {
                     const tiles = [[f('dashTourTileHealth', 'Health'), f('dashTourTileHealthValue', '2 broken'), 'bad'],
                         [f('dashTourTileWeather', 'Weather'), '19°C', 'accent'],
-                        [f('dashTourTileContainers', 'Containers'), '9 / 10', 'ok'],
-                        [f('dashTourTileUnsorted', 'Unsorted'), f('dashTourTileUnsortedValue', '4 links'), 'warn']];
-                    return svg(tiles.map(([title, value, kind], i) => `
-                        <g class="dtv-anim dtv-a-drop" style="animation-delay:${(i * 0.15).toFixed(2)}s">
-                            <rect x="${12 + i * 117}" y="20" width="108" height="92" rx="9" class="dtv-panel"/>
-                            ${label(24 + i * 117, 42, title, 'dtv-title')}
-                            ${label(24 + i * 117, 74, value, 'dtv-value')}
-                            <rect x="${24 + i * 117}" y="92" width="80" height="5" rx="2" class="dtv-bar is-${kind} dtv-anim dtv-a-grow"
-                                style="animation-delay:${(0.3 + i * 0.15).toFixed(2)}s"/>
-                        </g>`).join(''), f('dashTourS8Alt', 'Four widgets on a page'));
-                })(),
-                body: `<p>${esc(f('dashTourS8Body1',
-                    'Widgets sit on your pages between the categories: health, uptime, the inbox, unsorted links, containers, weather, a calendar, feeds, and a widget of your own that reads any JSON address.'))}</p>
-                    <p>${esc(f('dashTourS8Body2',
-                    'Add them under Config → Widgets. A category can spread across columns when it outgrows one.'))}</p>`,
-            },
-            // 11 — the keys worth learning
-            {
-                title: f('dashTourKeysTitle', 'The keys worth learning first'),
-                visual: (() => {
-                    const keys = [['1–9', f('dashTourKeyPages', 'pages')], ['>', f('dashTourKeySearch', 'search')], [':', f('dashTourKeyCommands', 'commands')],
-                        ['+', f('dashTourKeyAdd', 'add')], ['Shift+H', f('dashTourKeyBookmarks', 'Bookmarks')], ['Shift+I', f('dashTourKeyInbox', 'Inbox')],
-                        ['Shift+S', f('dashTourKeyConfig', 'config')], ['/', f('dashTourKeyTagCloud', 'tag cloud')], ['*', f('dashTourKeyRecent', 'recent')],
-                        ['.', f('dashTourKeyFold', 'fold all')], ['!', f('dashTourKeyCheat', 'cheat sheet')], ['Escape', f('dashTourKeyBack', 'back')]];
-                    return svg(keys.map(([k, l], i) => {
-                        const col = i % 3;
-                        const rowIndex = Math.floor(i / 3);
-                        const x = 12 + col * 156;
-                        const y = 10 + rowIndex * 34;
-                        return `${keycap(x, y, k, anim('press', (i * 0.3).toFixed(2)))}${label(x + keyWidth(k) + 8, y + 14, l)}`;
-                    }).join(''), f('dashTourKeysAlt', 'Twelve keys: pages, search, commands, add, the views, and the cheat sheet'));
-                })(),
-                body: `<p>${esc(f('dashTourKeysBody1',
-                    '1–9 jump to a page, > searches, : runs a command, + adds a bookmark. Shift+H opens Bookmarks, Shift+I the inbox, Shift+S config.'))}</p>
-                    <p>${esc(f('dashTourKeysBody2',
-                    '/ opens the tag cloud, * your recent bookmarks, . folds every category, and Escape always takes you back. None of them fire while you type in a field.'))}</p>`,
-            },
-            // 12 — what config can change
-            {
-                title: f('dashTourConfigTitle', 'Make it yours in Config'),
-                visual: (() => {
-                    const tiles = [f('config.sectionAppearance', 'Appearance'), f('config.sectionBehavior', 'Behavior'), f('config.sectionStructure', 'Structure'),
-                        f('config.sectionBookmarks', 'Bookmarks'), f('config.sectionWidgets', 'Widgets'), f('config.sectionDataBackups', 'Data & backups')];
+                        [f('dashTourTileContainers', 'Containers'), '9 / 10', 'ok']];
+                    const keys = [['Shift+A', f('dashTour4KeyThemes', 'themes')], ['Shift+S', f('dashTourKeyConfig', 'config')], ['!', f('dashTourKeyCheat', 'cheat sheet')]];
                     return svg(`
-                        ${tiles.map((l, i) => {
-                            const x = 10 + (i % 2) * 144;
-                            const y = 8 + Math.floor(i / 2) * 44;
-                            return `<g class="dtv-anim dtv-a-drop" style="animation-delay:${(i * 0.1).toFixed(2)}s">
-                                <rect x="${x}" y="${y}" width="140" height="36" rx="7" class="dtv-panel"/>
-                                ${label(x + 9, y + 22, l, 'dtv-tile')}
-                            </g>`;
-                        }).join('')}
-                        <rect x="298" y="8" width="174" height="134" rx="10" class="dtv-panel"/>
-                        <rect x="308" y="18" width="154" height="10" rx="3" class="dtv-swatch dtv-anim dtv-a-hue"/>
-                        ${[0, 1, 2].map((c) => `<rect x="${308 + c * 52}" y="38" width="48" height="46" rx="5" class="dtv-box"/>
-                            <rect x="${314 + c * 52}" y="46" width="34" height="5" rx="2" class="dtv-swatch dtv-anim dtv-a-hue"/>
-                            <rect x="${314 + c * 52}" y="58" width="28" height="5" rx="2" class="dtv-bar-track"/>`).join('')}
-                        ${label(308, 106, f('dashTourConfigSaved', 'saved as you change it'), 'dtv-caption')}
-                        ${label(308, 126, '↺ ' + f('dashTourConfigReset', 'back to the default'), 'dtv-label')}
-                    `, f('dashTourConfigAlt', 'The sections of Config, and a preview that follows every change'));
+                        ${tiles.map(([title, value, kind], i) => `
+                            <g class="dtv-anim dtv-a-drop" style="animation-delay:${(i * 0.15).toFixed(2)}s">
+                                <rect x="${12 + i * 100}" y="20" width="92" height="92" rx="9" class="dtv-panel"/>
+                                ${label(22 + i * 100, 42, title, 'dtv-title')}
+                                ${label(22 + i * 100, 74, value, 'dtv-value')}
+                                <rect x="${22 + i * 100}" y="92" width="70" height="5" rx="2" class="dtv-bar is-${kind} dtv-anim dtv-a-grow"
+                                    style="animation-delay:${(0.3 + i * 0.15).toFixed(2)}s"/>
+                            </g>`).join('')}
+                        ${keys.map(([k, l], i) => `${keycap(330, 22 + i * 32, k)}${label(330 + keyWidth(k) + 8, 36 + i * 32, l)}`).join('')}
+                    `, f('dashTour4YoursAlt', 'Three widgets on a page, and the keys for themes, config and the cheat sheet'));
                 })(),
-                body: `<p>${esc(f('dashTourConfigBody1',
-                    'Appearance sets the theme and its backdrop, the card glass and category headers, fonts, grid, header and action bar, with a preview that follows each change. Behavior covers keys and search, link checking and alerts, and privacy and sync. Structure holds pages, categories, finders and collections.'))}</p>
-                    <p>${esc(f('dashTourConfigBody2',
-                    'Bookmarks, Inbox, Widgets and Containers each have their own section, and Data & backups keeps imports, backups and the trash. Every change saves at once, and ↺ puts a setting back.'))}</p>`,
-            },
-            // 13 — the cheat sheet and the tours
-            {
-                title: f('dashTourS9Title', 'The cheat sheet, and the tours'),
-                visual: (() => {
-                    const keys = [['!', f('dashTourKeyCheat', 'cheat sheet')], ['F1', f('dashTourKeyCheat', 'cheat sheet')],
-                        ['Ctrl+Shift+K', f('dashTourKeyFind', 'find a setting')], [':config help', f('dashTourKeyHelp', 'the guide')]];
-                    const tours = [f('config.tourBookmarks', 'Bookmarks view'), f('config.tourInbox', 'Inbox'), f('config.tourContainers', 'Containers')];
-                    return svg(`
-                        ${keys.map(([k, l], i) => `${keycap(12, 12 + i * 30, k)}${label(12 + keyWidth(k) + 8, 26 + i * 30, l)}`).join('')}
-                        ${label(300, 22, f('dashTourS9Tours', 'Tours'), 'dtv-heading')}
-                        ${tours.map((l, i) => pill(300, 32 + i * 28, l, { w: 150, kind: i === 0 ? 'active' : 'plain', motion: anim('drop', 0.2 * i) })).join('')}
-                    `, f('dashTourS9Alt', 'The keys for config and the cheat sheet, and the tours of the other views'));
-                })(),
-                body: `<p>${esc(f('dashTourS9Body1',
-                    '! or F1 opens the cheat sheet: every key, with a filter, on the section for the view you are in. Config → Help is the full guide, and Ctrl/Cmd+Shift+K finds any setting or help topic.'))}</p>
-                    <p class="dashboard-tutorial-closing">${esc(f('dashTourS9Closing',
-                    'The Bookmarks, Inbox and Containers views each have a tour the first time you open them, and Config → Onboarding plays any tour again — this one included.'))}</p>`,
+                body: `<p>${esc(f('dashTour4YoursBody1',
+                    'Widgets sit between your categories: health, weather, your media server, Home Assistant, or any address that answers JSON. Add them in Config → Widgets. Shift+A opens the theme browser beside your page.'))}</p>
+                    <p>${esc(f('dashTour4YoursBody2',
+                    '! opens the cheat sheet with every key. Config → Help is the full guide, and Config → Behavior plays any tour again.'))}</p>`,
             },
         ];
     }

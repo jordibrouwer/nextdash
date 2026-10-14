@@ -34,7 +34,7 @@
     }
 
     function getCategorySortMode(dash, category) {
-        if (!dash || !category || category.isSmartCollection === true || category.tagFilterChunk === true) {
+        if (!dash || !category || category.isSmartCollection === true) {
             return 'order';
         }
         const id = String(category.id ?? '');
@@ -66,6 +66,11 @@
         const id = String(categoryId ?? '');
         const current = getCategorySortMode(dash, { id });
         const next = options.toggle && current === normalized ? 'order' : normalized;
+        // Every way in passes through here, so the count cannot miss one. The
+        // mode is one of VALID_MODES; the category itself never goes out.
+        if (next !== current) {
+            window.nextdashTrack?.('category:sort', { mode: next, via: options.via || 'menu' });
+        }
 
         if (isPersistedCategory(dash, id)) {
             const cat = (dash.categories || []).find((entry) => String(entry.id) === id);
@@ -409,7 +414,7 @@
     }
 
     function ensureCategorySortControls(dash, categoryEl, category, renderCore) {
-        if (!categoryEl || !category || category.isSmartCollection === true || category.tagFilterChunk === true) {
+        if (!categoryEl || !category || category.isSmartCollection === true) {
             return;
         }
         if (!categoryEl.querySelector('.category-sort-controls')) {
@@ -435,7 +440,7 @@
     }
 
     function updateCategorySortUi(dash, categoryEl, category) {
-        if (!categoryEl || !category || category.isSmartCollection === true || category.tagFilterChunk === true) {
+        if (!categoryEl || !category || category.isSmartCollection === true) {
             return;
         }
         const sortMode = getCategorySortMode(dash, category);

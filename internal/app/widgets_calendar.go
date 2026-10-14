@@ -443,7 +443,10 @@ func (h *Handlers) CalendarWidgetHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	events, fetchErr := h.calendarFeed(r.Context(), url, forced)
+	// Not cancelled with the request: a reader leaving mid-fetch made it fail,
+	// and the failure was cached for every other widget for a minute.
+	// calendarFetchTimeout still bounds it.
+	events, fetchErr := h.calendarFeed(context.WithoutCancel(r.Context()), url, forced)
 	result := CalendarWidgetResult{FetchedAt: now.UnixMilli(), Error: fetchErr}
 	if fetchErr == "" {
 		result.Events = filterCalendarEvents(events, found.Config, now, calendarAllDayGrace(r.URL.Query().Get("tzOffset")))

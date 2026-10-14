@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.19.6 — 14 October 2026](#v1196--14-october-2026)
 - [v1.19.5 — 12 October 2026](#v1195--12-october-2026)
 - [v1.19.4 — 12 October 2026](#v1194--12-october-2026)
 - [v1.19.2 — 10 October 2026](#v1192--10-october-2026)
@@ -106,6 +107,100 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.19.6 — 14 October 2026
+
+A tag gets a page of its own. The tag cloud is quieter — three sizes, counts, type to find — and picking a tag opens its tag view: every bookmark with that tag from every page, in one table with related tags, bulk actions and rename, merge or remove for the tag. Tag suggestions now draw on a catalogue of some 51,000 sites and ask Wikidata about the rest, and they show up in the rows of the tag view, the Bookmarks view and the inbox with **Add all**. A Home Assistant widget switches lights and scenes from the dashboard. The tours are short, views and modals rise in at a speed you choose, and a run of fixes keeps saves from one device from undoing work done on another.
+
+### Tags
+
+- **new — a quieter tag cloud.** Three sizes by rank instead of a size per count, each tag with its count beside it and A–Z within a size; the `#` glyph, the tilt and the drift are gone. Typing dims the tags that do not match and selects the first match; `Backspace` and `Escape` undo the typing first. `Shift`+click or `Shift + Enter` stacks tags, and every other tag then shows **+N**, how many bookmarks it would add. The cloud opens centred and animates into the tag view. Sizes, order and counts come from `static/js/shared/tag-cloud-model.js`, which the Config tags tab uses too (`dashboard-tag-cloud.js`, `dashboard-tag-cloud.css`).
+- **new — the tag view.** A table view on `#tag/<tag>` (several joined with `+`) replaces the grid tag filter: every bookmark with the tag, from all pages. The header carries the figures (bookmarks, pages, last and most opened, broken), **Open all**, **Copy links** and **Manage tag** (rename, merge into another tag, remove from all bookmarks, each with undo). The rail lists related tags, pages and a health filter; the toolbar has a search box, a count and a sort menu. Rows show the favicon, the dashboard's row menu and its `Shift` keys, an `i` side panel, `x`/`Alt`/`Shift` selection with **Open**, **Move to…**, **Delete** and **Clear**, and `Escape` lets go of one thing at a time before it leaves the view. `t`, `:filter <tag>` and the cloud open it (`dashboard-tag-view.js`, `dashboard-tag-view-loader.js`, `shared/tag-view-model.js`, `shared/tag-rewrite.js`, `tag-view.css`).
+- **new — the tag filter reaches every page.** Before the tag view replaced it, the filter read only the page on screen, so a tag that lived on another page showed an empty grid. It now reads the same pool as the cloud, loading `allBookmarks` when the cloud opens if startup skipped it; delete and move act on each bookmark's own page, and **Move to…** offers categories only when every match is on one page (`dashboard-tag-filter.js`).
+- **new — tag chips on dashboard rows are labels only.** The cloud, `t` and `:filter` are the ways into a tag; `:filter clear` is gone with the grid filter.
+- **fix — `/` with the header's tag button off** opened the cloud inside a hidden wrap.
+- **fix — a tag change in the tag popover renamed every bookmark in memory** that shared the old tag list; the rewrite now touches only the bookmark edited (`dashboard-bookmark-rows.js`).
+- **fix — Move to… for a bookmark on another page** offered the current page's categories; it now offers pages.
+- **fix — no preview card left over the tag view.** A tag picked in the cloud with the pointer coming to rest on a dashboard row opened the view before that row's hover delay was up; the row went without a mouseleave, its timer still fired, and the card of a bookmark no longer on screen stayed over the table. `showBookmarkPreviewCard` now refuses a row that is gone or hidden (`dashboard-preview.js`, `tag-view.spec.js`).
+
+### Tag suggestions
+
+- **new — a catalogue of some 51,000 sites and 471 subjects,** up from 463 subjects in a hand-written list. The catalogue moves from `static/data/tag-patterns.json` to `internal/app/tag_catalogue.json` and is served by `GET/POST /api/tags/catalogue` with exact host matching; `search` now means search engines. It is built offline from CrUX candidates, Wikidata per class and per country, and hand-written blocks (`scripts/tag-catalogue/`), with derived hosts read beside the hand-written ones (`tag_catalogue.go`).
+- **new — unknown sites are looked up on Wikidata.** `POST /api/tags/lookup` asks Wikidata's query service, one query at a time and at least a second apart, which class a host belongs to. Only the host name leaves the server, and only for hosts that resolve to the public internet. Answers live in `tag-lookup-cache.json` (90 days for a found site, 30 for an unknown one; a cache, not in backups). On by default; **Look up unknown sites on Wikidata** in the tags tab's menu switches it off (`tag_lookup.go`, `tag_qid_subjects.json`).
+- **new — a tag taken off by hand stays turned down.** A bookmark save that removes a tag records the refusal on the server, and the response hands it back in `X-NextDash-Refused-Tags` / `X-NextDash-Wanted-Tags` so the tab's own settings do not write an older list over it. An undo (`X-NextDash-Undo`) is not counted as a refusal. The list is capped; the oldest refusals give way (`tag_refusals.go`, `write-api.js`).
+- **new — suggestions in the rows.** The tag view and the Bookmarks view show a dashed chip after a row's tags (click to add, **×** to turn down), a line *N tag suggestions · Add all* over the list, and **Find tags** to ask the catalogue and Wikidata, or read the pages, for the rows shown. Opening a view never goes online by itself. In the tag view, `a` adds the focused row's suggestions (`dashboard-tag-view.js`, `dashboard-config-bookmarks-workbench.js`).
+- **new — Find tags from the side panel and the Bookmarks view,** with one row per tag in the suggestions panel instead of one per bookmark (`dashboard-config-tag-suggestions.js`).
+- **new — the tag popover looks the site up when it opens,** and offers **Read page** when nothing is found; the bookmark form does the same when there are no suggestions.
+- **new — words read from pages count everywhere once loaded,** not only in the panel that read them (`tag-suggest-live.js`).
+- **new — catalogue: Dutch handwork sites, and hackaday as electronics.**
+- **fix — the suggestions panel stays in place after Apply** instead of jumping back to the top.
+- **fix — Turned down stays open when the suggestions redraw;** *Offer again* on one of several refusals folded the list shut.
+- **fix — the bookmarks panel looks tags up online again when opened.**
+- **new — tag suggestions in the inbox rows.** The inbox gains a Tags column, as the Bookmarks view has: the row's own tags, `+n` for what does not fit, and a dashed chip with the tag on offer (click to add, **×** to turn down, the source as its tooltip). A line *N tag suggestions in this list · Add all* sits over the column heads, and `a` adds the offer of the row under the cursor; every add offers **Undo**. Opening the inbox now also loads the words read from pages, as the Bookmarks view does (`dashboard-inbox.js`, `dashboard-inbox.css`, `keyboard-view-legends.js`, `inbox-row-offers.spec.js`).
+- **fix — the inbox shows links added since it was last read.** Opening it drew the list the header badge had read at start-up, so a link saved from the extension or another tab was missing until something else redrew the view; a read in the background reached the list but not the screen. The view now reads again as it opens, and any read that changes the list redraws an open inbox (`dashboard-inbox.js`, `dashboard-inbox.spec.js`).
+- **new — one row-offer chip for both views.** The chip, the count line, the fitting of the Tags column and the source label move out of the Bookmarks view into `shared/tag-offer-row.js` and `tag-offer.css`, which the inbox uses too (`dashboard-config-bookmarks-workbench.js`, `config-bookmarks-workbench.css`).
+
+### Widgets
+
+- **new — a Home Assistant widget.** Fill in the address and a long-lived access token and press **Connect**; the server lists your entities, searchable and narrowed by kind, and you pick up to 60 in your own order. Lay them out as a list of loose items or a strip with a tab per room, grouped by room, kind or nothing, with when each last changed. Lights, switches, fans, scenes and scripts switch from the tile; locks, covers, doors and sensors only report. Whether the reader may switch is decided per request and never cached. Entity ids are checked before they go into the room template that runs in Home Assistant. It rides on the shared media cache and tile, redraws after a scene and carries the New badge (`widgets_homeassistant.go`, `/api/widgets/homeassistant`, `/setup`, `/action`, `dashboard-widget-homeassistant.js`).
+- **fix — a media tile's tab of lines stacks** instead of taking the poster columns (`dashboard-media-tile.js`).
+- **fix — a calendar fetch is no longer cancelled by the reader leaving.** A reload mid-fetch made it fail, and the failure was cached for every other calendar widget for a minute; `calendarFetchTimeout` still bounds it (`widgets_calendar.go`).
+
+### Dashboard
+
+- **new — the key legend under the grid.** Three lines, shown on the dashboard view only; `Shift + Z` switches it off and on, and it stays off after a reload. It is on for new installs and stays off on existing ones unless switched on. Translated in all six languages (`keyboard-view-legends.js`).
+- **new — `Shift + K` replays the dashboard tour,** and the legend names it.
+- **new — the `Shift + F` filter bar in the prompt style:** a mode pill like SEARCH and COMMANDS, a line saying what `Escape` does, and the match marked in the names that are left. Widgets hide while it filters, and the first-start card stays above the bar (`dashboard-grid-filter.js`, `first-start-templates.js`).
+- **fix — a page switch no longer patches another page's grid.** Every new page has a category called *others*, so the incremental path matched the structure and kept the old page's folded categories, icons and sort controls; the grid now records which page it is (`dashboard-render-core.js`, `dashboard-render-incremental.js`).
+- **fix — a page switch that gets no blocks clears the last page's widgets** instead of leaving them on screen (`dashboard-data.js`).
+- **fix — an older all-bookmarks answer no longer overwrites a newer one.** Two loads in flight could land in the wrong order and drop a bookmark just added.
+
+### Config
+
+- **fix — a new page id comes from the server's page list.** A page made on another device since the tab loaded was missing from `dash.pages`, its id was handed out again, and the duplicate wrote its bookmarks over that page.
+- **fix — a pages save keeps names changed on another device.** The whole list goes to the server; it is re-read first, and only the pages this save is about keep this tab's version.
+- **fix — a page whose save fails is dropped from the list** instead of staying as if it existed.
+- **fix — a category save keeps categories made on another device,** and a **finder** save keeps finders made elsewhere.
+- **fix — deleting the page on screen leaves it** for the first page left; it used to stay, every edit a 404, until a reload.
+- **new — a short description under the Containers tabs.**
+
+### Bookmarks
+
+- **fix — two adds of the same URL at once** no longer both land: the duplicate check is repeated under the store lock and answers as the first check does (`handlers.go`, `ErrBookmarkDuplicateURL`).
+- **fix — preview text in the all-pages read** had its HTML entities left undecoded (`models.go`).
+- **fix — the default page order is by id,** not Go's random map order, which shuffled the tabs and saved them that way.
+- **fix — the Bookmarks view draws when it opens before the inbox has loaded.** `:health refresh` (and an old `#health` link) opened it with the header half drawn and no fresh scan: the tag counts read `inbox.items` through the inbox's lazy loader, which handed back a function, and `.filter` on it threw. The loader now answers `items` with an empty list until the module is there (`dashboard-inbox-loader.js`, `health-view-redirect.spec.js`).
+
+### Health
+
+- **fix — auto-heal refuses a URL already on the page.** Two old links redirecting to one home page both healed onto it, and the page then refused every save as a duplicate (`health_delete_bulk.go`).
+- **fix — a panicking report build releases its flag.** Without the deferred release, every later report request waited for good.
+- **fix — the longest-unchecked monitors go first.** In page order the same tail was dropped past each round's deadline, so a slow host's last services never got a sample or an alert (`health_monitor.go`).
+- **fix — maintenance window times stay on the wall clock across DST;** midnight plus a duration was an hour off on the day the clocks change (`health_maintenance.go`).
+- **fix — a delete in Work through that is not a page's last row is counted.** The report renumbers rows after a delete, so the next row took the key and the delete went uncounted; it is now matched by page and URL (`dashboard-health-focus.js`).
+
+### Tours, tips and motion
+
+- **new — shorter tours that cover the main features.** The dashboard tour drops from twenty steps to seven, the Bookmarks view tour from ten to five, Containers from fifteen to six, the Inbox to four; Widgets is shorter too. View tours are offered once on a first visit and play again from their **Tour** button. About 3,300 lines of tour code and strings are gone.
+- **new — the Fresh and Spread walkthroughs are removed;** Fresh keeps its guide in Help.
+- **fix — the bookmark form, the notes window and the container logs let go of their opening animation** once it ends (`backwards` instead of `both` in `modal.css`); a forwards fill kept a finished animation holding the dialog's transform for as long as it was open.
+- **new — animation speed, and a switch for animations in views and modals.** Appearance → Text and motion gains **Animations in views and modals** (on by default, also on existing installs) and **Animation speed** (slow, normal, fast). The Bookmarks, Inbox, Containers and tag views rise in like the tag view, and the modals and action-bar modals rise in like the add-bookmark form. **Enable animations** off still wins (`viewAnimationsEnabled`, `animationSpeed`, `list-view-shell.css`, `modal.css`).
+- **new — at most one tip per 24 hours,** counted across devices and never over a modal (`discoverability-state.js`).
+- **new — the install count card waits two days after the analytics question,** so the two privacy cards never arrive in one visit (`install-count-notice.js`).
+- **new — usage counts for containers, widgets, inbox triage, category sort and the tag filter and view,** through the existing analytics when it is switched on (`nextdashTrack`). Only the widget type and whether a link or button was hit go out, never an address or a label.
+
+### Docs
+
+- **new — MANUAL, Help, tips and the cheat sheet cover the tag cloud and tag view, tag suggestions in the rows and Wikidata, Home Assistant, the animation settings and the shorter tours,** with new screenshots. The cheat sheet gains a **Tag view** section; the printed PDF is regenerated.
+- Translations for the tag view, the key legend and Help in all six languages.
+- **fix — 110 strings showed in English in every language:** the suggestion chips and *Add all* in the rows, Find tags and the Wikidata lookup, the tag view's find-and-read menu, the Home Assistant entity picker and the inbox's new tag column were drawn from their code fallbacks, with no key in any locale. They are in `en.json` now and translated into the other five, with the inbox legend's `a` row and its cheat-sheet line (`ivAddOffer`), which failed `validate:cheatsheet-registry`.
+- The Unraid template carries the v1.19.5 changes.
+- A duplicated Docs block in the v1.8.0 section is removed.
+- README: the tag view, the 51,000-site catalogue with the Wikidata lookup, and the Home Assistant widget. MANUAL: the three-line key legend with `Shift + Z`, `Shift + K` for the tour, and the `Shift + F` bar.
+- **docs — `static/data/whats-new/v1.19.6.json` and its index entry,** with three highlights (the tag view, suggestions in the rows, Home Assistant) and their pictures from `tests/fixtures/whats-new-media/v1.19.6.js`; `whats-new-stub.js` moves `DASHBOARD_RELEASE` to v1.19.6 and `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v336`.
+- `go generate ./...` regenerated `asset_hashes_gen.go`.
 
 ---
 

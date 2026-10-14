@@ -39,6 +39,7 @@
     <script src="{{asset "js/shared/tag-catalogue.js"}}" defer></script>
     <script src="{{asset "js/shared/tag-suggest-live.js"}}" defer></script>
     <script src="{{asset "js/shared/tag-suggest-chips.js"}}" defer></script>
+    <script src="{{asset "js/shared/tag-offer-row.js"}}" defer></script>
     <script src="{{asset "js/shared/destination-suggest.js"}}" defer></script>
     <script src="{{asset "js/settings-sanitize.js"}}"></script>
     <script src="{{asset "js/discoverability-state.js"}}"></script>
@@ -115,8 +116,6 @@
     <link rel="stylesheet" href="{{asset "css/dashboard-quickstart.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-tag-cloud.css"}}">
     <link rel="stylesheet" href="{{asset "css/feed-row.css"}}">
-    <link rel="stylesheet" href="{{asset "css/spread-tutorial.css"}}">
-    <link rel="stylesheet" href="{{asset "css/fresh-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/changes-tour.css"}}">
     <link rel="stylesheet" href="{{asset "css/digest.css"}}">
     <!-- The dashboard tour opens over the dashboard itself, before any view has
@@ -144,10 +143,12 @@
     <link rel="stylesheet" href="{{asset "css/widgets-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/health-view.css"}}">
     <link rel="stylesheet" href="{{asset "css/docker-view.css"}}">
+    <link rel="stylesheet" href="{{asset "css/tag-view.css"}}">
     <link rel="stylesheet" href="{{asset "vendor/uplot/1.6.32/uPlot.min.css"}}">
     <link rel="stylesheet" href="{{asset "css/nd-chart.css"}}">
     <link rel="stylesheet" href="{{asset "css/config-view.css"}}">
     <link rel="stylesheet" href="{{asset "css/config-bookmarks-workbench.css"}}">
+    <link rel="stylesheet" href="{{asset "css/tag-offer.css"}}">
     <link rel="stylesheet" href="{{asset "css/config-structure.css"}}">
     <link rel="stylesheet" href="{{asset "css/config-tabs.css"}}">
     <link rel="stylesheet" href="{{asset "css/list-view-shell.css"}}">
@@ -220,7 +221,6 @@
                 <div class="header-top-primary skeleton-hide-while-loading">
                     <div id="date-element" class="date"></div>
                     <div id="dashboard-mini-status" class="dashboard-mini-status" aria-live="polite"></div>
-                    <div id="tag-filter-indicator" class="tag-filter-indicator" hidden></div>
                     <div id="status-loading-indicator" class="status-loading-indicator">
                         <span class="status-loading-text" data-i18n="dashboard.checkingStatus">checking status</span>
                         <span class="status-loading-dots"></span>
@@ -500,12 +500,24 @@
             hidden
         >
             <div class="tag-cloud-modal-header">
-                <span id="tag-cloud-modal-title" class="tag-cloud-modal-title" data-i18n="dashboard.tagCloudModalTitle">Tags</span>
+                <span class="tag-cloud-modal-heading">
+                    <span id="tag-cloud-modal-title" class="tag-cloud-modal-title" data-i18n="dashboard.tagCloudModalTitle">Tags</span>
+                    <span id="tag-cloud-modal-count" class="tag-cloud-modal-count"></span>
+                    <span id="tag-cloud-modal-query" class="tag-cloud-modal-query" hidden></span>
+                </span>
                 <button type="button" id="tag-cloud-modal-close" class="tag-cloud-modal-close" data-i18n-aria="dashboard.tagCloudModalClose" aria-label="Close">×</button>
             </div>
             <div id="tag-cloud-modal-body" class="tag-cloud-modal-body tag-cloud-wordcloud"></div>
             <div class="tag-cloud-modal-footer">
-                <button type="button" id="tag-cloud-clear-filter" class="tag-cloud-clear-filter" hidden data-i18n="dashboard.tagCloudClearFilter">Clear tag filter</button>
+                <div class="tag-cloud-footer-row">
+                    <span class="tag-cloud-legend" aria-hidden="true">
+                        <span class="tag-cloud-legend-item"><kbd>↵</kbd><span data-i18n="dashboard.tagCloudLegendPick">pick</span></span>
+                        <span class="tag-cloud-legend-item"><kbd>⇧</kbd><kbd>↵</kbd><span data-i18n="dashboard.tagCloudLegendStack">stack</span></span>
+                        <span class="tag-cloud-legend-item"><kbd>a–z</kbd><span data-i18n="dashboard.tagCloudLegendFind">find</span></span>
+                        <span class="tag-cloud-legend-item"><kbd>esc</kbd><span data-i18n="dashboard.tagCloudLegendClose">close</span></span>
+                    </span>
+                    <button type="button" id="tag-cloud-clear-filter" class="tag-cloud-clear-filter" hidden data-i18n="dashboard.tagCloudClearFilter">Clear tag filter</button>
+                </div>
             </div>
         </div>
     </div>
@@ -562,7 +574,6 @@
     <!-- Shared bottom-left notice card; must precede the cards that define one. -->
     <script src="{{asset "js/notice-card.js"}}" defer></script>
     <script src="{{asset "js/analytics-notice.js"}}" defer></script>
-    <script src="{{asset "js/fresh-tutorial.js"}}" defer></script>
     <script src="{{asset "js/install-count-notice.js"}}" defer></script>
     <script src="{{asset "js/kept-pile-notice.js"}}" defer></script>
     <script src="{{asset "js/clock-weather-notice.js"}}" defer></script>
@@ -571,7 +582,6 @@
     <script src="{{asset "js/health-review-notice.js"}}" defer></script>
     <script src="{{asset "js/digest-notice.js"}}" defer></script>
     <script src="{{asset "js/tag-suggestions-notice.js"}}" defer></script>
-    <script src="{{asset "js/spread-tutorial.js"}}" defer></script>
     <script src="{{asset "js/weather.js"}}" defer></script>
     <script src="{{asset "js/tag-autocomplete.js"}}" defer></script>
     <script src="{{asset "js/quick-add.js"}}" defer></script>
@@ -646,10 +656,14 @@
     <script src="{{asset "js/dashboard/dashboard-widget-arr.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-seerr.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-downloads.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-homeassistant.js"}}" defer></script>
     <script src="{{asset "js/pwa-install-hint.js"}}" defer></script>
     <!-- Registers the push service worker and keeps this device's subscription current. -->
     <script src="{{asset "js/push-notifications.js"}}" defer></script>
     <script src="{{asset "js/mobile-experience.js"}}" defer></script>
+    <script src="{{asset "js/shared/tag-cloud-model.js"}}" defer></script>
+    <script src="{{asset "js/shared/tag-view-model.js"}}" defer></script>
+    <script src="{{asset "js/shared/tag-rewrite.js"}}" defer></script>
     <script src="{{asset "js/dashboard-tag-cloud.js"}}" defer></script>
     <script src="{{asset "js/dashboard-deep-link.js"}}" defer></script>
     <script src="{{asset "js/dashboard-history.js"}}" defer></script>
@@ -667,6 +681,7 @@
     <script src="{{asset "js/dashboard/dashboard-config-loader.js"}}" defer></script>
     <script src="{{asset "js/dashboard/docker-search-index.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-docker-loader.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-tag-view-loader.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-paste-choice.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-page-nav.js"}}" defer></script>
     <script src="{{asset "js/dashboard-trash.js"}}" defer></script>

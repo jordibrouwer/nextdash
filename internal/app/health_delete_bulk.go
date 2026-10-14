@@ -224,6 +224,25 @@ func (h *Handlers) deleteHealthBookmarksOnPage(
 // page: the row was deleted or edited since the report was read.
 var ErrBookmarkChanged = errors.New("bookmark has changed")
 
+// ErrBookmarkDuplicateURL means a write would put a URL on a page that already
+// holds it. SaveBookmarks refuses a page with the same URL twice, so a page in
+// that state could no longer be edited at all.
+var ErrBookmarkDuplicateURL = errors.New("bookmark URL already on this page")
+
+// urlTakenOnPage reports whether any row other than skip holds url.
+func urlTakenOnPage(list []Bookmark, skip int, url string) bool {
+	key := canonicalBookmarkURLKey(strings.TrimSpace(url))
+	if key == "" {
+		return false
+	}
+	for i := range list {
+		if i != skip && canonicalBookmarkURLKey(list[i].URL) == key {
+			return true
+		}
+	}
+	return false
+}
+
 // locateBookmark finds the bookmark a health row means. The index is tried
 // first and kept when it still holds the URL; otherwise the URL decides, since
 // an index read minutes ago may now point at a neighbour. -1 when the URL is
@@ -248,12 +267,20 @@ func locateBookmark(list []Bookmark, index int, url string) int {
 // under the store lock by locateBookmark. ErrBookmarkChanged when the URL is
 // no longer on the page.
 func (h *Handlers) mutateHealthBookmark(pageID, index int, url string, mutate func(*Bookmark) error) error {
+	return h.mutateHealthBookmarkOnPage(pageID, index, url, func(page []Bookmark, at int) error {
+		return mutate(&page[at])
+	})
+}
+
+// mutateHealthBookmarkOnPage is mutateHealthBookmark with the rest of the page
+// in view, for a write that has to check the other rows under the same lock.
+func (h *Handlers) mutateHealthBookmarkOnPage(pageID, index int, url string, mutate func(page []Bookmark, at int) error) error {
 	return h.store.MutateBookmarksOnPage(pageID, func(current []Bookmark) ([]Bookmark, error) {
 		at := locateBookmark(current, index, url)
 		if at < 0 {
 			return nil, ErrBookmarkChanged
 		}
-		if err := mutate(&current[at]); err != nil {
+		if err := mutate(current, at); err != nil {
 			return nil, err
 		}
 		return current, nil

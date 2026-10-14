@@ -585,6 +585,61 @@ html[data-theme] body:not([data-depth="flat"]) .move-popover {
     padding-bottom: var(--space-1-5, 0.35rem);
 }
 
+/* Where a suggestion came from, small at the end of its row. */
+.tag-popover-item-source {
+    margin-left: auto;
+    padding-left: var(--space-2, 0.5rem);
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: calc(var(--font-size-controls) * 0.72);
+}
+
+/* What the Suggested section is doing: a line of words, and while it waits
+   a thin bar under them -- inside the popover, which the overlay would
+   cover. */
+.tag-popover-status {
+    display: grid;
+    gap: 0.3rem;
+    padding: var(--space-1-5, 0.35rem) var(--space-3, 0.85rem);
+    color: var(--text-secondary);
+    font-size: calc(var(--font-size-controls) * 0.82);
+}
+
+.tag-popover-status-bar {
+    position: relative;
+    display: block;
+    height: 3px;
+    overflow: hidden;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-secondary) 20%, transparent);
+}
+
+.tag-popover-status-bar::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 40%;
+    border-radius: 2px;
+    background: var(--accent-color, var(--text-primary));
+    animation: tag-popover-status-sweep 1.1s ease-in-out infinite;
+}
+
+@keyframes tag-popover-status-sweep {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(250%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tag-popover-status-bar::after {
+        animation: none;
+        width: 100%;
+        opacity: 0.5;
+    }
+}
+
+.tag-popover-action .tag-popover-item-label {
+    color: var(--accent-color, var(--text-primary));
+}
+
 .tag-popover-current-tags {
     display: flex;
     flex-wrap: wrap;
@@ -905,423 +960,6 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 
 .bookmark-link.find-hidden {
     display: none;
-}
-
-/* Tag filter view — same dashboard-grid / packed-columns as normal categories */
-#dashboard-layout.dashboard-grid.tag-filter-view {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    grid-template-columns: unset;
-    row-gap: var(--space-3, 0.75rem);
-    width: 100%;
-    max-width: 100%;
-}
-
-.tag-filter-banner {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--space-2, 0.55rem);
-    padding: var(--space-1-5, 0.35rem) var(--space-2, 0.5rem) var(--space-3, 0.65rem);
-    flex-shrink: 0;
-    width: 100%;
-}
-
-.tag-filter-banner-head {
-    width: 100%;
-}
-
-.tag-filter-bulk-toolbar {
-    width: 100%;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-bulk-toolbar {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: none;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-bulk-toolbar .recent-bookmarks-open-btn.modal-button {
-    flex: 0 1 auto;
-    min-width: min(100%, 10rem);
-}
-
-.tag-filter-indicator-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1, 0.28rem);
-    max-width: 100%;
-    min-width: 0;
-    padding: var(--space-1, 0.22rem) var(--space-2, 0.55rem);
-    border: 1px solid color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
-    border-radius: var(--radius-pill, 999px);
-    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
-    color: var(--text-primary);
-    font-family: var(--font-family-main);
-    font-size: calc(var(--font-size-controls) * 0.92);
-    font-weight: var(--font-weight-semibold);
-    line-height: 1.25;
-    box-shadow: 0 1px 4px color-mix(in srgb, var(--accent-primary) 18%, transparent);
-}
-
-.tag-filter-indicator-prefix {
-    color: var(--accent-primary);
-    font-weight: var(--font-weight-bold);
-}
-
-.tag-filter-indicator-tag {
-    color: var(--accent-primary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.tag-filter-indicator-count {
-    color: var(--text-secondary);
-    font-weight: var(--font-weight-normal);
-    font-size: calc(var(--font-size-controls) * 0.85);
-    white-space: nowrap;
-}
-
-.tag-filter-indicator-count::before {
-    content: '·';
-    margin-right: var(--space-1, 0.28rem);
-    opacity: 0.55;
-}
-
-/* Shown only while a tag filter is on — updateTagFilterIndicator sets `hidden`
-   the rest of the time, and [hidden] would otherwise lose to this rule. */
-.tag-filter-indicator {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1-5, 0.35rem);
-    min-width: 0;
-    max-width: 100%;
-}
-
-.tag-filter-indicator[hidden] {
-    display: none;
-}
-
-.tag-filter-indicator-head {
-    display: inline-flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: var(--space-1-5, 0.35rem);
-    max-width: 100%;
-    min-width: 0;
-}
-
-.tag-filter-indicator-chips {
-    display: inline-flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-1, 0.3rem);
-    min-width: 0;
-    max-width: 100%;
-}
-
-.tag-filter-indicator-tag-item {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-hairline, 0.1rem);
-    max-width: 100%;
-    min-width: 0;
-}
-
-.tag-filter-indicator-tag-remove {
-    flex-shrink: 0;
-    border: 1px solid transparent;
-    background: transparent;
-    color: var(--text-tertiary);
-    width: 1.25rem;
-    height: 1.25rem;
-    border-radius: var(--radius-pill, 999px);
-    font-size: var(--text-base, 0.95rem);
-    line-height: 1;
-    cursor: pointer;
-    transition:
-        border-color 0.15s ease,
-        color 0.15s ease,
-        background-color 0.15s ease;
-}
-
-.tag-filter-indicator-tag-remove:hover,
-.tag-filter-indicator-tag-remove:focus-visible {
-    border-color: var(--accent-primary);
-    color: var(--accent-primary);
-    background: color-mix(in srgb, var(--background-primary) 94%, transparent);
-    outline: none;
-}
-
-.tag-filter-indicator-summary {
-    color: var(--text-secondary);
-    font-family: var(--font-family-main);
-    font-size: calc(var(--font-size-controls) * 0.85);
-    font-weight: var(--font-weight-normal);
-    white-space: nowrap;
-}
-
-.tag-filter-indicator-summary::before {
-    content: '·';
-    margin-right: var(--space-1, 0.28rem);
-    opacity: 0.55;
-}
-
-.tag-filter-indicator-chip {
-    cursor: pointer;
-    transition:
-        border-color 0.15s ease,
-        background-color 0.15s ease,
-        transform 0.15s ease;
-}
-
-.tag-filter-indicator-chip:hover,
-.tag-filter-indicator-chip:focus-visible {
-    border-color: var(--accent-primary);
-    background: color-mix(in srgb, var(--accent-primary) 18%, var(--background-secondary));
-    outline: none;
-    transform: translateY(-1px);
-}
-
-.tag-filter-indicator-clear {
-    flex-shrink: 0;
-    border: 1px solid var(--border-primary);
-    background: color-mix(in srgb, var(--background-secondary) 80%, transparent);
-    color: var(--text-secondary);
-    width: 1.55rem;
-    height: 1.55rem;
-    border-radius: var(--radius-pill, 999px);
-    font-size: var(--text-md, 1rem);
-    line-height: 1;
-    cursor: pointer;
-    transition:
-        border-color 0.15s ease,
-        color 0.15s ease,
-        background-color 0.15s ease;
-}
-
-.tag-filter-indicator-clear:hover,
-.tag-filter-indicator-clear:focus-visible {
-    border-color: var(--accent-primary);
-    color: var(--accent-primary);
-    background: color-mix(in srgb, var(--background-primary) 94%, transparent);
-    outline: none;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-view-body.dashboard-grid {
-    width: 100%;
-    max-width: 100%;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-view-body.dashboard-grid:not(.packed-columns) {
-    width: fit-content;
-    max-width: min(100%, var(--dashboard-grid-max-width, 100%));
-    margin-inline: auto;
-}
-
-.category.tag-filter-chunk {
-    gap: 0;
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    box-sizing: border-box;
-}
-
-/* Equal-width columns: the tag filter puts one chunk per column. */
-#dashboard-layout.tag-filter-view .tag-filter-view-body.packed-columns {
-    column-gap: var(--gap, 1.5rem);
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-view-body.packed-columns .dashboard-column {
-    flex: 1 1 0;
-    flex-basis: min(
-        var(--dashboard-column-max, 300px),
-        calc((100% - (var(--packed-columns, 2) - 1) * var(--gap, 1.5rem)) / var(--packed-columns, 2))
-    );
-    max-width: min(
-        var(--dashboard-column-max, 300px),
-        calc((100% - (var(--packed-columns, 2) - 1) * var(--gap, 1.5rem)) / var(--packed-columns, 2))
-    );
-    width: min(
-        var(--dashboard-column-max, 300px),
-        calc((100% - (var(--packed-columns, 2) - 1) * var(--gap, 1.5rem)) / var(--packed-columns, 2))
-    );
-    min-width: 0;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-view-body:not(.packed-columns) .category.tag-filter-chunk {
-    width: 100%;
-    max-width: 100%;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list {
-    width: 100%;
-    max-width: 100%;
-}
-
-/* Tag filter always uses vertical bookmark rows (overrides launcher tiles on parent grid) */
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list {
-    display: grid;
-    grid-template-columns: var(--bookmark-lead-col, minmax(1.25rem, max-content)) minmax(0, 1fr) max-content;
-    row-gap: var(--space-2, 0.5rem);
-    flex-direction: unset;
-    flex-wrap: unset;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list > * {
-    grid-column: 1 / -1;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-link {
-    display: grid;
-    grid-template-columns: subgrid;
-    grid-column: 1 / -1;
-    width: 100%;
-    max-width: 100%;
-    align-items: center;
-    padding: 0.5rem var(--bookmark-row-end-pad, 3px) 0.5rem var(--bookmark-row-start-pad, 6px);
-    min-height: 1.9rem;
-    white-space: nowrap;
-    border-radius: 0;
-    gap: unset;
-    flex-direction: unset;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-link:hover {
-    transform: none;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-open::before {
-    content: none;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-reorder-handle {
-    display: block !important;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-shortcut {
-    display: block !important;
-    grid-column: 3;
-    grid-row: 1;
-    text-align: right;
-    justify-self: end;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] {
-    grid-template-columns:
-        var(--bookmark-lead-col, minmax(1.25rem, max-content))
-        minmax(0, 1fr)
-        var(--bookmark-status-col, 3.35em)
-        max-content;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] .bookmark-link > .status-text {
-    grid-column: 3;
-    grid-row: 1;
-    justify-self: end;
-    align-self: center;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmarks-list[data-show-ping="true"] .bookmark-link > .bookmark-shortcut {
-    grid-column: 4;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-open-count {
-    display: none !important;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-pin-badge:not(.is-empty),
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-note-badge:not(.is-empty) {
-    display: inline-flex !important;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-lead {
-    display: inline-flex;
-    justify-content: flex-start;
-    align-items: center;
-    grid-column: 1;
-    grid-row: 1;
-    min-height: 1.15em;
-    width: auto;
-    min-width: 1.15em;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-icon-slot {
-    width: auto;
-    height: auto;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-icon {
-    width: 1.15em;
-    height: 1.15em;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-chunk a.bookmark-open {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    grid-column: 2;
-    grid-row: 1;
-    width: auto;
-    min-width: 0;
-    flex: unset;
-    overflow: hidden;
-}
-
-#dashboard-layout.tag-filter-view .tag-filter-chunk .bookmark-text {
-    font-size: var(--bookmark-font-size, 1rem);
-    text-align: left;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
-    -webkit-line-clamp: unset;
-    -webkit-box-orient: unset;
-    line-height: inherit;
-}
-
-.empty-state--tag-filter {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-3, 0.75rem);
-    padding: var(--space-5, 1.5rem) var(--space-3, 0.75rem);
-    color: var(--text-tertiary);
-    font-size: var(--font-size-text);
-}
-
-.empty-state--tag-filter-text {
-    margin: 0;
-    line-height: 1.5;
-}
-
-.empty-state--tag-filter-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2, 0.5rem);
-}
-
-.empty-state--tag-filter-btn {
-    appearance: none;
-    border: 1px solid var(--border-primary);
-    border-radius: var(--header-chip-radius, 999px);
-    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
-    color: var(--text-secondary);
-    padding: var(--space-1-5, 0.35rem) var(--space-3, 0.8rem);
-    font: inherit;
-    font-size: var(--font-size-controls);
-    cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-}
-
-.empty-state--tag-filter-btn:hover,
-.empty-state--tag-filter-btn:focus-visible {
-    color: var(--text-primary);
-    border-color: var(--text-primary);
-    background: var(--background-secondary);
-    outline: none;
 }
 
 /* ── Page navigation ─────────────────────────────────────────────────────── */
@@ -5263,7 +4901,7 @@ body[data-show-recent-button="false"][data-show-cheatsheet-button="false"][data-
    bookmarks dashboard. Gone in every full-container view, keyed off the same
    layout class each one already stamps on #dashboard-layout -- no new class or
    attribute needed. :has() reading #dashboard-layout from up at body is the
-   same trick fresh-tutorial.css and inbox-tutorial.css already use. display:none,
+   same trick inbox-tutorial.css already uses. display:none,
    not opacity, so Tab cannot land in it either. What's New (outside
    .button-container) is untouched. */
 body:has(#dashboard-layout.config-layout) .button-container,
@@ -5575,8 +5213,8 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .moda
     max-width: 100%;
     margin: 0;
     max-height: min(70vh, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem));
-    transform: translateY(10px) scale(0.98);
-    transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+    transform: var(--modal-enter-from);
+    transition: var(--modal-enter-transition);
 }
 
 /* What's new is narrower than the two it shares the shell with: it is a single
@@ -5619,7 +5257,7 @@ body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.recent-bookmarks-
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.keyboard-cheat-sheet-modal) .modal,
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.whats-new-modal) .modal {
     transform: translateY(0) scale(1);
-    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
+    transition: var(--modal-enter-transition);
 }
 
 /* The header sheets keep their transform: it is their centring, not motion. */
@@ -5723,13 +5361,13 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) .
     max-width: 100%;
     margin: 0;
     max-height: min(70vh, calc(100vh - 4rem));
-    transform: translateY(10px) scale(0.98);
-    transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+    transform: var(--modal-enter-from);
+    transition: var(--modal-enter-transition);
 }
 
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.page-overview-modal) .modal:not(.page-overview-sheet) {
     transform: translateY(0) scale(1);
-    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
+    transition: var(--modal-enter-transition);
 }
 
 body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.page-overview-modal) .modal:not(.page-overview-sheet) {
@@ -6084,21 +5722,50 @@ body[data-g-chord="armed"]::after {
    rows announce what they do on their own. */
 .dashboard-legend {
     display: none;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--space-1, 0.3rem) var(--space-4, 0.9rem);
-    margin: var(--space-4, 1rem) 0 var(--space-1, 0.25rem);
-    font-size: var(--text-xs, 0.72rem);
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1-5, 0.35rem);
+    /* Room above, on purpose: the legend is a footnote to the page, and it
+       should read as resting below it rather than as its last row. */
+    margin: calc(var(--space-6, 2rem) * 2) 0 var(--space-4, 1rem);
+    padding-top: var(--space-3, 0.75rem);
+    border-top: 1px solid var(--border-secondary);
+    font-size: var(--text-xs, 0.75rem);
     color: var(--text-tertiary);
-    opacity: 0.75;
 }
 
-/* Only once the keyboard is in use: KeyboardNavigation stamps this at the first
-   cursor move and clears it on Enter. Without it the line sat under the grid
-   all day — under seven bookmarks, as tall as the thing it explained. No rule
-   above it either, which is what made it read as a section of its own. */
-body[data-grid-keys="shown"] .dashboard-legend {
+/* Only while the dashboard view itself is open. The grid's container outlives
+   a switch to the Bookmarks view, Inbox, Containers or config, and the legend
+   sat under whatever replaced the grid. setActiveView stamps the view on
+   <body>. */
+body[data-active-view="bookmarks"] .dashboard-legend {
     display: flex;
+}
+
+/* Not on a phone or tablet: there is no keyboard to teach. touch-layout is the
+   one flag that covers both (phone-layout is phones only). */
+body[data-touch-layout="true"] .dashboard-legend {
+    display: none;
+}
+
+/* One row per group, wrapping like the legends of the other views. */
+.dashboard-legend-line {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-1-5, 0.35rem) var(--space-4, 1rem);
+}
+
+/* The rows that presume the keyboard is in use: KeyboardNavigation stamps
+   data-grid-keys at the first cursor move and clears it on Enter. Before that
+   the legend shows the entry points only -- under seven bookmarks the whole
+   manual was as tall as the thing it explained. */
+.dashboard-legend-more {
+    display: none;
+}
+
+body[data-grid-keys="shown"] .dashboard-legend-more {
+    display: inline;
 }
 
 .dashboard-legend kbd {
@@ -6156,14 +5823,20 @@ body[data-grid-keys="shown"] .dashboard-legend {
 }
 
 /* ── Filter this page (Shift+F) ─────────────────────────────────────────────
-   A slim bar above the grid, not a panel: it narrows what is already on screen
-   and disappears again with one Escape. Rows and empty categories are hidden
-   with a class rather than re-rendered, so the layout, the keyboard cursor and
-   any selection survive the filter. */
+   A bar above the grid, not a panel: it narrows what is already on screen and
+   disappears again with Escape. Rows and empty categories are hidden with a
+   class rather than re-rendered, so the layout, the keyboard cursor and any
+   selection survive the filter.
+
+   Drawn as a row of the prompt family (> search, : commands, ? finders): the
+   same mode pill, the same prompt weight, the same <kbd> chips. It does not
+   float like they do, but it is the same kind of thing and should look it.
+   The mode colour is --accent-warning, so every look carries its own. */
 .grid-filter-bar {
+    --grid-filter-accent: var(--accent-warning);
     display: flex;
     align-items: center;
-    gap: var(--space-2, 0.5rem);
+    gap: var(--space-3, 0.75rem);
     /* It sits above the grid rather than in it. The width and the offset are
        measured from the grid and handed here by dashboard-grid-filter.js: the
        grid's own width comes from how many fixed-width columns fit, which no
@@ -6172,12 +5845,33 @@ body[data-grid-keys="shown"] .dashboard-legend {
     width: var(--grid-filter-width, 100%);
     box-sizing: border-box;
     /* The offset comes after the shorthand, which would otherwise reset it. */
-    margin: 0 0 var(--space-2, 0.6rem);
+    margin: 0 0 var(--space-3, 0.75rem);
     margin-left: var(--grid-filter-offset, 0);
-    padding: var(--space-1, 0.3rem) var(--space-2, 0.5rem);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--layout-radius-sm, 8px);
-    background: var(--background-secondary);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.85rem);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 75%, transparent);
+    border-radius: var(--radius-5, 8px);
+    background: color-mix(in srgb, var(--background-modal, var(--background-secondary)) 90%, transparent);
+    transition: border-color 120ms ease;
+}
+
+.grid-filter-bar:focus-within {
+    border-color: color-mix(in srgb, var(--grid-filter-accent) 45%, var(--border-primary));
+}
+
+/* The same pill as .search-prefix in search.css, in this mode's colour. */
+.grid-filter-prefix {
+    flex-shrink: 0;
+    font-family: var(--font-family-main);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    padding: 2px 6px;
+    border-radius: var(--radius-3, 4px);
+    color: var(--grid-filter-accent);
+    background: color-mix(in srgb, var(--grid-filter-accent) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--grid-filter-accent) 35%, transparent);
 }
 
 .grid-filter-input {
@@ -6186,23 +5880,76 @@ body[data-grid-keys="shown"] .dashboard-legend {
     border: 0;
     background: transparent;
     color: var(--text-primary);
-    font-family: inherit;
-    font-size: var(--text-sm, 0.85rem);
+    caret-color: var(--accent-primary);
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-bookmark, var(--text-md, 1rem));
+    font-weight: var(--font-weight-semibold);
     padding: var(--space-hairline, 0.15rem) 0;
+}
+
+.grid-filter-input::placeholder {
+    color: var(--text-tertiary);
+    font-weight: normal;
 }
 
 .grid-filter-input:focus {
     outline: none;
 }
 
+/* Native search fields draw their own clear button; the bar has one already. */
+.grid-filter-input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* "6 of 16", as a chip in the mode's colour. Empty until a query applies. */
 .grid-filter-count {
-    color: var(--text-tertiary);
-    font-size: var(--text-xs, 0.75rem);
+    flex-shrink: 0;
+    font-size: var(--text-xs, 0.72rem);
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    padding: var(--space-hairline, 0.1rem) var(--space-2, 0.5rem);
+    border-radius: var(--radius-pill, 999px);
+    color: var(--grid-filter-accent);
+    border: 1px solid color-mix(in srgb, var(--grid-filter-accent) 35%, transparent);
+}
+
+.grid-filter-count:empty {
+    display: none;
+}
+
+/* The keyboard legend shape used across the app: <kbd> chips beside a label. */
+.grid-filter-keys {
+    display: flex;
+    flex-shrink: 0;
+    gap: var(--space-3, 0.75rem);
+    font-size: var(--text-xs, 0.72rem);
+    color: var(--text-tertiary);
     white-space: nowrap;
 }
 
+.grid-filter-keys kbd {
+    font-family: inherit;
+    font-size: var(--text-xs, 0.7rem);
+    padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.32rem);
+    border-radius: var(--radius-3, 0.25rem);
+    border: 1px solid var(--border-secondary);
+    background: var(--background-secondary);
+    color: var(--text-secondary);
+}
+
+.grid-filter-keys kbd + kbd {
+    margin-left: 2px;
+}
+
+@media (max-width: 575px) {
+    .grid-filter-keys {
+        display: none;
+    }
+}
+
 .grid-filter-clear {
+    flex-shrink: 0;
     border: 0;
     background: transparent;
     color: var(--text-secondary);
@@ -6216,8 +5963,16 @@ body[data-grid-keys="shown"] .dashboard-legend {
     color: var(--text-primary);
 }
 
+/* The query in the names that are left; painted by the CSS Highlight API from
+   dashboard-grid-filter.js, so the rows themselves are never edited. */
+::highlight(grid-filter-hit) {
+    background-color: color-mix(in srgb, var(--accent-warning) 28%, transparent);
+    color: var(--text-primary);
+}
+
 .bookmark-link.grid-filter-hidden,
-.category.grid-filter-empty {
+.category.grid-filter-empty,
+.dashboard-widget.grid-filter-empty {
     display: none !important;
 }
 
@@ -7969,7 +7724,6 @@ body.no-animations .dashboard-widget-stat-key {
 /* Everything else the block carries -- the mini status, the tag chip, the
    "checking status" line -- keeps its own row under the two. */
 .dashboard-section.section-controls .header-identity #dashboard-mini-status,
-.dashboard-section.section-controls .header-identity #tag-filter-indicator,
 .dashboard-section.section-controls .header-identity #status-loading-indicator {
     grid-column: 1 / -1;
 }
@@ -8078,7 +7832,6 @@ body[data-header-clock="classic"] .dashboard-section.section-controls {
 
 /* Everything else the block carries keeps its own line under the name. */
 body[data-header-clock="classic"] .dashboard-section.section-controls #dashboard-mini-status,
-body[data-header-clock="classic"] .dashboard-section.section-controls #tag-filter-indicator,
 body[data-header-clock="classic"] .dashboard-section.section-controls #status-loading-indicator {
     grid-column: 1 / -1;
     grid-row: 3;
@@ -9807,6 +9560,36 @@ body[data-action-bar="bottom"] #dashboard-layout {
 
 .inbox-item .tag-suggest-chips {
     margin-top: var(--space-1, 0.25rem);
+}
+
+/* Read page: shown where the chips would be when there are none -- same
+   dashed pill, so it reads as one more suggestion to take or leave. */
+.tag-suggest-search {
+    border: 1px dashed var(--border-primary);
+    border-radius: var(--radius-pill, 999px);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: var(--font-size-small, 0.75rem);
+    line-height: 1;
+    padding: 0.3em 0.75em;
+    cursor: pointer;
+}
+
+.tag-suggest-search:hover:not(:disabled),
+.tag-suggest-search:focus-visible {
+    color: var(--text-primary);
+    border-color: var(--accent-color, var(--border-primary));
+}
+
+.tag-suggest-search:disabled {
+    cursor: progress;
+    opacity: 0.6;
+}
+
+.tag-suggest-none {
+    color: var(--text-muted, var(--text-secondary));
+    font-size: var(--font-size-small, 0.75rem);
 }
 
 .tag-suggest-chip {

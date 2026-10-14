@@ -889,7 +889,7 @@ class KeyboardNavigation {
         const categoryEl = title?.closest?.('.category');
         if (!title || !categoryEl) return false;
         // Other and an unknown category have no place of their own to move.
-        if (categoryEl.matches('[data-virtual-category="true"], [data-tag-filter-chunk="true"]')) return false;
+        if (categoryEl.matches('[data-virtual-category="true"]')) return false;
 
         if (d?.settings?.lockLayout) return false;
         const id = String(categoryEl.getAttribute('data-widget-id') || categoryEl.getAttribute('data-category-id') || '');
@@ -929,7 +929,7 @@ class KeyboardNavigation {
         const d = this.dashboard;
         const title = document.activeElement?.closest?.('.category-title');
         const blockEl = title?.closest?.('#dashboard-layout .category[data-category-id]');
-        if (!title || !blockEl || blockEl.matches('[data-tag-filter-chunk="true"], [data-virtual-category="true"]')) return false;
+        if (!title || !blockEl || blockEl.matches('[data-virtual-category="true"]')) return false;
         const id = String(blockEl.getAttribute('data-widget-id') || blockEl.getAttribute('data-category-id') || '');
         if (!id) return false;
         const move = window.DashboardBlockPageMove;
@@ -1032,7 +1032,7 @@ class KeyboardNavigation {
         if (!root) {
             return null;
         }
-        return root.querySelector('.tag-filter-view-body[role="grid"]') || root;
+        return root;
     }
 
     syncGridActiveDescendant() {

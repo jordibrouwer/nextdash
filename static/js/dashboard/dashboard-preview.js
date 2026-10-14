@@ -916,6 +916,14 @@ class DashboardPreview {
     }
 
     showBookmarkPreviewCard(preview, event = null, context = null) {
+        /*
+         * No card for a row that is no longer on screen. A view that replaces
+         * the grid takes the hovered row away without a mouseleave, so its
+         * hover timer still fires -- and the card of a bookmark nobody can see
+         * opened over the new view and stayed, with no row left to leave.
+         */
+        const row = context?.openLink;
+        if (row && (!row.isConnected || !row.getClientRects().length)) return;
         const card = this.ensureBookmarkPreviewCard();
         const mode = context?.mode === 'pinned' ? 'pinned' : 'peek';
 

@@ -116,6 +116,7 @@
                     </div>
                     <div class="multi-select-toolbar config-bm-selbar" data-bm-selbar role="toolbar"
                          aria-label="${esc(this.t('dashboard.multiSelectToolbarAria', 'Selection actions'))}" hidden></div>
+                    <div class="config-bm-offers" id="config-bm-offers" hidden></div>
                     ${this.renderWorkbenchColumnHeads()}
                     <div id="config-bm-list">${this.renderBookmarksListSafe()}</div>
                 </section>
@@ -889,6 +890,11 @@
                 void this.runBmHealthBulk?.(action);
                 return;
             }
+            if (action === 'find-tags') {
+                void this.runTagSearch(this.bookmarksFromKeys([...this.bmSelected]))
+                    .then(() => this.afterSelectionChange());
+                return;
+            }
             void this.handleBulkAction(action).then(() => this.afterSelectionChange());
         });
     },
@@ -970,8 +976,10 @@
         const live = global.TagSuggestLive;
         const chips = global.TagSuggestChips;
         if (!host || !b || !live || !chips) return;
-        await live.ensureCatalogue();
         const url = String(b.url || '').trim();
+        // The catalogue, and online for a site it does not know; Find tags
+        // below asks again on request.
+        await live.ensureCatalogue([url]);
         const keywords = (await live.storedKeywords())[url] || [];
         // The panel may have moved on to another bookmark while this waited.
         if (!host.isConnected || panel.dataset.bmPanelKey !== key) return;
@@ -996,6 +1004,34 @@
                 void chips.refuse(this.dash, offer, { onUpdated: () => { void this.fillWorkbenchSuggestions(panel); } });
             },
         });
+        /*
+         * A search for this one bookmark, with or without tags: the catalogue
+         * and Wikidata, as the round in Tag suggestions does. Beside the
+         * chips, so what it finds lands where the reader is looking.
+         */
+        let find = host.parentElement?.querySelector(':scope > [data-bm-find-tags]');
+        if (!find) {
+            find = document.createElement('button');
+            find.type = 'button';
+            find.className = 'config-btn config-btn--small';
+            find.setAttribute('data-bm-find-tags', '');
+            find.textContent = this.t('config.bmFindTags', 'Find tags');
+            find.addEventListener('click', async () => {
+                // The panel's bookmark now, not the one it showed when the
+                // button was made: the panel is reused as the cursor moves.
+                const now = panel.dataset.bmPanelKey;
+                const current = now ? this.findBookmarkByKey(now) : null;
+                if (!current) return;
+                find.disabled = true;
+                try {
+                    await this.runTagSearch([current]);
+                } finally {
+                    find.disabled = false;
+                }
+                void this.fillWorkbenchSuggestions(panel);
+            });
+            host.after(find);
+        }
     },
 
     /**
@@ -1949,7 +1985,8 @@
         // Every tag, and a count for the ones that do not fit; fitWorkbenchTags
         // decides which, once the row has a width.
         const tagChips = tags.map((t) => `<span class="config-bm-tag">${esc(t)}</span>`).join('')
-            + (tags.length ? '<span class="config-bm-tag config-bm-tag--more" hidden></span>' : '');
+            + (tags.length ? '<span class="config-bm-tag config-bm-tag--more" hidden></span>' : '')
+            + this.workbenchOfferChip(b, esc);
         const last = global.formatLastOpened?.(b.lastOpened, { t: this.lastOpenedTranslator() })
             || { label: '—', never: true };
         // Under a Health filter the reason earns the tags cell more than a
@@ -2096,73 +2133,165 @@
         });
     },
 
+    /* ── Tag suggestions in the rows ──────────────────────────────────── */
+
     /**
-     * Show as many whole tag chips per row as fit, then `+n` for the rest.
-     *
-     * Three passes over every row, so the layout is computed once: show all
-     * chips (and a wide `+n` to measure), read every width, then hide.
+     * The best tag on offer for a row, or null: the engine's answer the
+     * Tags popover and the side panel give, minus what the row has. One per
+     * row -- the Tags column is a single line, and the side panel shows the
+     * rest with where each came from.
+     */
+    workbenchRowOffer(b) {
+        const live = global.TagSuggestLive;
+        if (!b || !live) return null;
+        const d = this.dash;
+        const offers = (d.unsortedBookmarks || []).includes(b)
+            ? (live.forBookmark?.(d, b) || [])
+            : (live.forDashBookmark?.(d, b) || []);
+        return global.TagOfferRow?.pick(offers, b.tags) || null;
+    },
+
+    /** A dashed chip after the tags: click adds the tag, × turns it down. */
+    workbenchOfferChip(b, esc) {
+        const offer = this.workbenchRowOffer(b);
+        if (!offer || !global.TagOfferRow) return '';
+        return global.TagOfferRow.chipHtml(offer, {
+            esc,
+            t: (key, fallback) => this.t(key, fallback),
+            data: 'bm',
+            className: 'config-bm-tag config-bm-tag--offer',
+        });
+    },
+
+    /**
+     * The catalogue and the words read from pages, fetched once, then the
+     * list drawn again with what they offer. No online lookup: opening the
+     * view is not a search the reader started.
+     */
+    ensureWorkbenchOfferSources() {
+        const live = global.TagSuggestLive;
+        if (!live?.ensureCatalogue || this._bmOfferSourcesAsked) return;
+        this._bmOfferSourcesAsked = true;
+        void Promise.all([live.ensureCatalogue(), live.storedKeywords?.()]).then(() => {
+            live.invalidate?.();
+            this.refreshWorkbenchOfferChips();
+        }).catch(() => {});
+    },
+
+    /**
+     * The offers in the rows already drawn, put in place without drawing the
+     * rows again: a repaint for this swapped every row out from under the
+     * pointer, the cursor and anyone measuring one.
+     */
+    refreshWorkbenchOfferChips() {
+        const list = document.getElementById('config-bm-list');
+        if (!list) return;
+        const esc = (v) => this.dash.escapeHtml(v);
+        list.querySelectorAll('.config-bm-row[data-bm-key]').forEach((row) => {
+            const cell = row.querySelector('.config-bm-tags');
+            // A Health filter puts the reason in this cell instead of tags.
+            if (!cell || cell.querySelector('.config-bm-reason')) return;
+            cell.querySelector('.tag-offer')?.remove();
+            const html = this.workbenchOfferChip(this.findBookmarkByKey(row.getAttribute('data-bm-key')), esc);
+            if (html) cell.insertAdjacentHTML('beforeend', html);
+        });
+        this.fitWorkbenchTags(list);
+        this.syncWorkbenchOfferCount();
+    },
+
+    /** The offers standing in the rows the list shows. */
+    workbenchOfferPairs() {
+        return this.visibleBookmarks()
+            .map((b) => [b, this.workbenchRowOffer(b)])
+            .filter(([, offer]) => offer);
+    },
+
+    /**
+     * "12 tag suggestions in this list · Add all", a slim line over the
+     * column heads; gone when there are none. Not in the toolbar: that row
+     * is full, and the search box was what gave way.
+     */
+    syncWorkbenchOfferCount() {
+        global.TagOfferRow?.renderCount(document.getElementById('config-bm-offers'), this.workbenchOfferPairs().length, {
+            t: (key, fallback) => this.t(key, fallback),
+            data: 'bm',
+            // Read at the click: the list may have moved on since this was drawn.
+            onAddAll: () => void this.addWorkbenchOffers(this.workbenchOfferPairs()),
+        });
+    },
+
+    /**
+     * Put the offered tags on, through the write every bulk edit here uses,
+     * with its undo. The ticks in the list are left as they were.
+     */
+    async addWorkbenchOffers(pairs) {
+        const adds = new Map();
+        pairs.forEach(([b, offer]) => {
+            if (b && offer?.tag) adds.set(this.bookmarkKey(b), String(offer.tag).toLowerCase());
+        });
+        if (!adds.size) return;
+        const picked = [...(this.dash.allBookmarks || []), ...(this.dash.unsortedBookmarks || [])]
+            .filter((b) => adds.has(this.bookmarkKey(b)));
+        if (!picked.length) return;
+        const ticked = new Set(this.bmSelected);
+        const snapshots = await this.mutateSelected(picked, (b) => {
+            const current = Array.isArray(b.tags) ? b.tags.map((tag) => String(tag).toLowerCase()) : [];
+            return { ...b, tags: [...new Set([...current, adds.get(this.bookmarkKey(b))])] };
+        });
+        ticked.forEach((key) => this.bmSelected.add(key));
+        const refresh = () => {
+            global.TagSuggestLive?.changed?.(this.dash);
+            this.repaintBookmarksList?.();
+        };
+        refresh();
+        const undo = this.bulkUndo(snapshots, 'config.tagSuggestionUndone', 'Tags put back.',
+            'config.bulkUndoFailed', 'Could not undo that.');
+        this.notify((picked.length === 1
+            ? this.t('config.bmOffersAddedOne', '1 bookmark got a tag.')
+            : this.t('config.bmOffersAddedMany', '{n} bookmarks got a tag.').replace('{n}', String(picked.length))), 'success', {
+            // The offers were worked out with the tags on; put back, they
+            // stand again.
+            undoCallback: async () => {
+                await undo?.();
+                refresh();
+            },
+            duration: 8000,
+        });
+    },
+
+    /** The offer on one row, by its key: the click, and `a`. */
+    async addWorkbenchRowOffer(key) {
+        const b = key ? this.findBookmarkByKey(key) : null;
+        const offer = this.workbenchRowOffer(b);
+        if (!offer) return false;
+        await this.addWorkbenchOffers([[b, offer]]);
+        return true;
+    },
+
+    /** Turned down here is turned down everywhere: the one refusal list. */
+    refuseWorkbenchRowOffer(key) {
+        const offer = this.workbenchRowOffer(key ? this.findBookmarkByKey(key) : null);
+        if (!offer) return;
+        void this.dismissTagSuggestion({ tag: offer.tag, pattern: offer.pattern }).then(() => {
+            global.TagSuggestLive?.changed?.(this.dash);
+            this.repaintBookmarksList?.();
+        });
+    },
+
+    /**
+     * Show as many whole tag chips per row as fit, then `+n` for the rest;
+     * a tag on offer is fitted first (TagOfferRow.fit, shared with the inbox).
      */
     fitWorkbenchTags(root) {
         const cells = [...(root || document).querySelectorAll('.config-bm-row .config-bm-tags')];
-        if (!cells.length) return;
-        cells.forEach((cell) => {
-            cell.querySelectorAll('.config-bm-tag').forEach((chip) => { chip.hidden = false; });
-            const more = cell.querySelector('.config-bm-tag--more');
-            if (more) more.textContent = '+99';
-        });
-        const plans = cells.map((cell) => {
-            const chips = [...cell.querySelectorAll('.config-bm-tag:not(.config-bm-tag--more)')];
-            const more = cell.querySelector('.config-bm-tag--more');
-            const gap = parseFloat(getComputedStyle(cell).columnGap) || 0;
-            return {
-                chips,
-                more,
-                gap,
-                avail: cell.clientWidth,
-                widths: chips.map((chip) => chip.getBoundingClientRect().width),
-                moreWidth: more ? more.getBoundingClientRect().width : 0,
-            };
-        });
-        plans.forEach(({ chips, more, gap, avail, widths, moreWidth }) => {
-            if (!more) return;
-            const total = widths.reduce((sum, w) => sum + w, 0) + gap * Math.max(0, widths.length - 1);
-            let keep = widths.length;
-            if (total > avail + 1) {
-                keep = 0;
-                let used = moreWidth;
-                while (keep < widths.length && used + widths[keep] + gap <= avail + 1) {
-                    used += widths[keep] + gap;
-                    keep += 1;
-                }
-            }
-            const hiddenNames = [];
-            chips.forEach((chip, i) => {
-                chip.hidden = i >= keep;
-                if (chip.hidden) hiddenNames.push(chip.textContent);
-            });
-            more.hidden = hiddenNames.length === 0;
-            more.textContent = hiddenNames.length ? `+${hiddenNames.length}` : '';
-            if (hiddenNames.length) more.title = hiddenNames.join(', ');
-            else more.removeAttribute('title');
-        });
+        global.TagOfferRow?.fit(cells, { tag: '.config-bm-tag', more: '.config-bm-tag--more' });
         // Refit whenever the list changes width: a window resize, the panel
         // folding, or the first layout after the rows were put in.
         const host = document.getElementById('config-bm-list');
-        if (host && this._bmTagFitHost !== host && global.ResizeObserver) {
+        if (host && this._bmTagFitHost !== host) {
             this._bmTagFitObserver?.disconnect();
             this._bmTagFitHost = host;
-            let queued = false;
-            let lastWidth = -1;
-            this._bmTagFitObserver = new global.ResizeObserver(() => {
-                if (queued || host.clientWidth === lastWidth) return;
-                queued = true;
-                global.requestAnimationFrame(() => {
-                    queued = false;
-                    lastWidth = host.clientWidth;
-                    if (host.isConnected) this.fitWorkbenchTags(host);
-                });
-            });
-            this._bmTagFitObserver.observe(host);
+            this._bmTagFitObserver = global.TagOfferRow?.observe(host, () => this.fitWorkbenchTags(host)) || null;
         }
     },
 

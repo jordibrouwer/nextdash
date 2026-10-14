@@ -995,7 +995,12 @@ class DashboardInlineEdit {
             });
         }
         let lastFetchedUrl = isCreate ? '' : String(bookmark.url || '').trim();
+        // The address whose page this form has already read (its own preview
+        // fetch), for which Read page has nothing to add.
+        let pageReadUrl = '';
         const onPreview = (preview) => {
+            // This form just read the page: Read page would only repeat it.
+            pageReadUrl = urlInput.value.trim();
             card.setPreview(preview || { url: urlInput.value.trim() });
             void refreshIconSuggestions();
             title.offer(preview?.title, urlInput.value.trim());
@@ -1090,6 +1095,9 @@ class DashboardInlineEdit {
          */
         const currentTags = () => tagsInput.value.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
         let draftKeywords = [];
+        // The address last searched for, so "nothing found" is said for that
+        // one and the Search button comes back when the address changes.
+        let searchedUrl = '';
         const refreshSuggestions = async (keywords) => {
             if (Array.isArray(keywords)) draftKeywords = keywords;
             const live = window.TagSuggestLive;
@@ -1099,7 +1107,9 @@ class DashboardInlineEdit {
                 chips?.render(tagsSuggest, []);
                 return;
             }
-            await live.ensureCatalogue();
+            // The catalogue, and online for a site it does not know -- the
+            // reader is waiting on this one link. Search below asks again.
+            await live.ensureCatalogue([url]);
             if (!draftKeywords.length) {
                 draftKeywords = (await live.storedKeywords())[url] || [];
             }
@@ -1124,6 +1134,60 @@ class DashboardInlineEdit {
                     void chips.refuse(d, offer, { onUpdated: () => { void refreshSuggestions(); } });
                 },
             });
+            if (!offers.length) showTagSearch(url);
+        };
+        /*
+         * Nothing to suggest: offer to read the page.
+         *
+         * The catalogue and Wikidata have already been asked by now -- on its
+         * own, when the address was filled in -- so asking them again would
+         * only repeat their answer. What is left is the page itself: its
+         * keywords, tags and heading, which can name a subject neither of them
+         * knows (a Dutch weather site that Wikidata only calls "website").
+         * Read fresh, on the progress overlay, and fed to the same chips.
+         */
+        const showTagSearch = (url) => {
+            if (searchedUrl !== url && pageReadUrl === url) return;
+            tagsSuggest.hidden = false;
+            if (searchedUrl === url) {
+                const none = document.createElement('span');
+                none.className = 'tag-suggest-none';
+                none.textContent = cfg('tagReadPageNone', 'The page does not say what it is about either.');
+                tagsSuggest.replaceChildren(none);
+                return;
+            }
+            const read = document.createElement('button');
+            read.type = 'button';
+            read.className = 'tag-suggest-search';
+            read.setAttribute('data-tag-draft-read', '');
+            read.textContent = `⌕ ${cfg('tagReadPage', 'Read page')}`;
+            read.title = cfg('tagReadPageHint', 'Read this page for words that say what it is about');
+            read.addEventListener('click', async (e) => {
+                e.preventDefault();
+                read.disabled = true;
+                let keywords = [];
+                const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+                const work = async () => {
+                    const res = await fetcher(`/api/bookmark-preview?refresh=1&url=${encodeURIComponent(url)}`);
+                    const preview = res.ok ? await res.json() : null;
+                    keywords = Array.isArray(preview?.keywords) ? preview.keywords : [];
+                };
+                try {
+                    await (window.ProgressOverlay?.run
+                        ? window.ProgressOverlay.run(cfg('tagReadPageProgress', 'Reading the page…'), url, work, { delay: 0 })
+                        : work());
+                } catch {
+                    keywords = [];
+                } finally {
+                    searchedUrl = url;
+                }
+                if (!document.contains(form)) return;
+                await refreshSuggestions(keywords);
+                if (tagsSuggest.isConnected && !tagsSuggest.hidden) {
+                    tagsSuggest.querySelector('button')?.focus?.({ preventScroll: true });
+                }
+            });
+            tagsSuggest.replaceChildren(read);
         };
         tagsRefresh.addEventListener('click', (e) => {
             e.preventDefault();
@@ -2711,40 +2775,6 @@ class DashboardInlineEdit {
             d.pendingReorderSnapshot = d.bookmarks.map((bm) => ({ ...bm }));
         }
     }
-
-    _shouldSyncBookmarkMutation(bookmarkRef, candidate, previousUrlTrimmed) {
-        const d = this.dash;
-        if (!bookmarkRef || !candidate) {
-            return false;
-        }
-        const updatedPageId = Number(bookmarkRef.pageId || d.currentPageId);
-        const candidatePageId = Number(candidate.pageId || candidate.pageID || 0);
-        if (candidatePageId !== updatedPageId) {
-            return false;
-        }
-        const candidateUrl = String(candidate.url || '').trim();
-        return d.isSameBookmarkReference(bookmarkRef, candidate)
-            || (previousUrlTrimmed && candidateUrl === previousUrlTrimmed);
-    }
-
-
-    _applyBookmarkMutationFields(target, source) {
-        if (!target || !source) {
-            return;
-        }
-        target.name = source.name;
-        target.url = source.url;
-        target.icon = source.icon;
-        target.shortcut = source.shortcut;
-        target.category = source.category;
-        target.pinned = source.pinned;
-        target.checkStatus = source.checkStatus;
-        target.monitor = source.monitor;
-        target.monitorIntervalMinutes = source.monitorIntervalMinutes;
-        target.note = source.note || '';
-        target.tags = Array.isArray(source.tags) ? [...source.tags] : [];
-    }
-
 
     async confirmDeleteBookmarkInline(bookmark) {
         const d = this.dash;

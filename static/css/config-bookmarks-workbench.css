@@ -506,6 +506,8 @@
     display: none;
 }
 
+/* A tag on offer: tag-offer.css, shared with the inbox. */
+
 /* Under a Health filter the tags cell carries the primary reason instead —
    one line, clipped rather than wrapped, so the row keeps --bm-row-h. */
 .config-bm-reason {

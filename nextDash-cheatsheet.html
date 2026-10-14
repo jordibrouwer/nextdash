@@ -189,7 +189,7 @@
     
         <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>I</kbd></td><td class="desc">Open Inbox</td></tr>
     
-        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>H</kbd></td><td class="desc">Bookmarks, broken ones</td></tr>
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>H</kbd></td><td class="desc">Bookmarks</td></tr>
     
         <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>U</kbd></td><td class="desc">Bookmarks, unsorted</td></tr>
     
@@ -212,6 +212,8 @@
         <tr><td class="keys"><kbd>&lt;</kbd></td><td class="desc">Open config (&lt; is Shift+</td></tr>
     
         <tr><td class="keys"><kbd>.</kbd></td><td class="desc">Collapse or expand all categories</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>Z</kbd></td><td class="desc">Show or hide the key legend under the bookmarks</td></tr>
     
         <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>N</kbd></td><td class="desc">Add a category to the current page</td></tr>
     
@@ -300,7 +302,7 @@
     
         <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>R</kbd></td><td class="desc">Show in the Bookmarks view</td></tr>
     
-        <tr><td class="keys"><kbd>t</kbd></td><td class="desc">Filter the grid to the focused bookmark’s tag</td></tr>
+        <tr><td class="keys"><kbd>t</kbd></td><td class="desc">Open the tag view for the focused bookmark’s tag</td></tr>
     
         <tr><td class="keys"><kbd>Ctrl</kbd><span class="kbd-plus">+</span><kbd>C</kbd></td><td class="desc">Copy URL of focused bookmark</td></tr>
     
@@ -406,6 +408,31 @@
         <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>P</kbd><span class="kbd-sep">/</span><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>C</kbd></td><td class="desc">Pages and categories: drag pages, move and merge…</td></tr>
     
         <tr><td class="keys"><kbd>Esc</kbd></td><td class="desc">Clear the selection, close the panel, then leave the…</td></tr>
+    </table></section>
+<section class="cheat-group"><h2>Tag view</h2><table>
+        <tr><td class="keys"><kbd>↑</kbd><span class="kbd-sep">/</span><kbd>↓  ·  g</kbd><span class="kbd-sep">/</span><kbd>G</kbd></td><td class="desc">Move through the rows / first or last row</td></tr>
+    
+        <tr><td class="keys"><kbd>Enter</kbd></td><td class="desc">Open the bookmark under the cursor</td></tr>
+    
+        <tr><td class="keys"><kbd>i</kbd></td><td class="desc">Open or close the side panel</td></tr>
+    
+        <tr><td class="keys"><kbd>x</kbd></td><td class="desc">Select a row, for the bulk actions</td></tr>
+    
+        <tr><td class="keys"><kbd>e</kbd><span class="kbd-sep">/</span><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>E</kbd></td><td class="desc">Edit the bookmark</td></tr>
+    
+        <tr><td class="keys"><kbd>a</kbd></td><td class="desc">Add the suggested tags to the bookmark under the cursor</td></tr>
+    
+        <tr><td class="keys"><kbd>/</kbd></td><td class="desc">Search within these bookmarks</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>P</kbd><span class="kbd-sep">/</span><kbd>T</kbd><span class="kbd-sep">/</span><kbd>M</kbd></td><td class="desc">On a row, as on the dashboard: pin, tags, move</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>D</kbd><span class="kbd-sep">/</span><kbd>C</kbd><span class="kbd-sep">/</span><kbd>R</kbd><span class="kbd-sep">/</span><kbd>L</kbd><span class="kbd-sep">/</span><kbd>J</kbd></td><td class="desc">On a row: delete, check mode, show health, share link,…</td></tr>
+    
+        <tr><td class="keys"><kbd>Delete</kbd></td><td class="desc">Delete the bookmark (undo is offered)</td></tr>
+    
+        <tr><td class="keys"><kbd>Ctrl</kbd><span class="kbd-plus">+</span><kbd>C</kbd></td><td class="desc">Copy the URL of the row under the cursor</td></tr>
+    
+        <tr><td class="keys"><kbd>Esc</kbd></td><td class="desc">Close the panel, clear the selection, then leave the…</td></tr>
     </table></section>
 <section class="cheat-group"><h2>Inbox view</h2><table>
         <tr><td class="keys"><kbd>j</kbd><span class="kbd-sep">/</span><kbd>k</kbd></td><td class="desc">Move between rows (↑ / ↓ work too)</td></tr>
@@ -557,7 +584,7 @@
     
         <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>Q</kbd></td><td class="desc">Switch search mode</td></tr>
     
-        <tr><td class="keys"><kbd>/</kbd></td><td class="desc">Open tag word cloud (desktop)</td></tr>
+        <tr><td class="keys"><kbd>/</kbd></td><td class="desc">Open the tag cloud (desktop)</td></tr>
     
         <tr><td class="keys"><kbd>@</kbd></td><td class="desc">Global search</td></tr>
     
@@ -584,7 +611,7 @@
     
         <tr><td class="keys keys-command"><kbd>:category</kbd><span class="kbd-sep">/</span><kbd>:cat</kbd></td><td class="desc">Jump to a category or smart collection by number or name</td></tr>
     
-        <tr><td class="keys keys-command"><kbd>:filter &lt;tag&gt;</kbd><span class="kbd-sep">/</span><kbd>:filter clear</kbd></td><td class="desc">Apply or clear dashboard tag filter</td></tr>
+        <tr><td class="keys keys-command"><kbd>:filter &lt;tag&gt;</kbd><span class="kbd-sep">/</span><kbd>:filter clear</kbd></td><td class="desc">Open the tag view for a tag, or clear it</td></tr>
     
         <tr><td class="keys keys-command"><kbd>:find &lt;text&gt;</kbd><span class="kbd-sep">/</span><kbd>:find clear</kbd></td><td class="desc">Filter bookmark tiles on the current page</td></tr>
     
@@ -630,6 +657,6 @@
         <tr><td class="keys"><kbd>config → Help → Keyboard</kbd></td><td class="desc">Open the keyboard cheat sheet</td></tr>
     </table></section>
   </main>
-  <p class="footer">nextdash.cc · generated 2026-10-08 · <code>npm run generate:cheatsheet</code></p>
+  <p class="footer">nextdash.cc · generated 2026-10-13 · <code>npm run generate:cheatsheet</code></p>
 </body>
 </html>

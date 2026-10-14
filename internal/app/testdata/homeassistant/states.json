@@ -1,0 +1,277 @@
+[
+ {
+  "state": "on",
+  "last_changed": "2026-10-13T03:48:38.927273+00:00",
+  "last_reported": "2026-10-13T03:48:38.929315+00:00",
+  "last_updated": "2026-10-13T03:48:38.927273+00:00",
+  "entity_id": "light.ceiling",
+  "attributes": {
+   "supported_color_modes": [
+    "color_temp",
+    "xy"
+   ],
+   "color_mode": null,
+   "brightness": 180,
+   "friendly_name": "Ceiling light",
+   "supported_features": 44
+  },
+  "context": {
+   "id": "01JZZZZZZZZZZZZZZZZZZZZZZZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "state": "off",
+  "last_changed": "2026-10-13T03:48:38.927273+00:00",
+  "last_reported": "2026-10-13T03:48:38.929315+00:00",
+  "last_updated": "2026-10-13T03:48:38.927273+00:00",
+  "entity_id": "light.reading",
+  "attributes": {
+   "supported_color_modes": [
+    "color_temp",
+    "xy"
+   ],
+   "color_mode": null,
+   "brightness": null,
+   "friendly_name": "Reading lamp",
+   "supported_features": 44
+  },
+  "context": {
+   "id": "01JZZZZZZZZZZZZZZZZZZZZZZZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "state": "on",
+  "last_changed": "2026-10-13T03:48:28.093622+00:00",
+  "last_reported": "2026-10-13T12:59:13.633452+00:00",
+  "last_updated": "2026-10-13T03:48:28.093622+00:00",
+  "entity_id": "switch.coffee",
+  "attributes": {
+   "friendly_name": "Coffee maker"
+  },
+  "context": {
+   "id": "01JZZZZZZZZZZZZZZZZZZZZZZZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "state": "off",
+  "last_changed": "2026-10-13T03:48:20.730534+00:00",
+  "last_reported": "2026-10-13T03:48:20.730534+00:00",
+  "last_updated": "2026-10-13T03:48:20.730534+00:00",
+  "entity_id": "input_boolean.guests",
+  "attributes": {
+   "friendly_name": "Guests"
+  },
+  "context": {
+   "id": "01JZZZZZZZZZZZZZZZZZZZZZZZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "state": "19.0",
+  "last_changed": "2026-10-13T03:48:38.804880+00:00",
+  "last_reported": "2026-10-13T03:48:38.804880+00:00",
+  "last_updated": "2026-10-13T03:48:38.804880+00:00",
+  "entity_id": "sensor.temperature",
+  "attributes": {
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "friendly_name": "Temperature"
+  },
+  "context": {
+   "id": "01JZZZZZZZZZZZZZZZZZZZZZZZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "state": "0.0",
+  "last_changed": "2026-10-13T03:48:38.798738+00:00",
+  "last_reported": "2026-10-13T03:48:38.798738+00:00",
+  "last_updated": "2026-10-13T03:48:38.798738+00:00",
+  "entity_id": "sensor.humidity",
+  "attributes": {
+   "unit_of_measurement": "%",
+   "device_class": "humidity",
+   "friendly_name": "Humidity"
+  },
+  "context": {
+   "id": "01JZZZZZZZZZZZZZZZZZZZZZZZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "state": "66",
+  "last_changed": "2026-10-13T03:48:27.019070+00:00",
+  "last_reported": "2026-10-13T03:48:27.019070+00:00",
+  "last_updated": "2026-10-13T03:48:27.019070+00:00",
+  "entity_id": "sensor.battery",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "%",
+   "device_class": "battery",
+   "icon": "mdi:battery-60",
+   "friendly_name": "Remote battery"
+  },
+  "context": {
+   "id": "01JZZZZZZZZZZZZZZZZZZZZZZZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "state": "off",
+  "last_changed": "2026-10-13T12:47:47.283958+00:00",
+  "last_reported": "2026-10-13T12:47:47.283958+00:00",
+  "last_updated": "2026-10-13T12:47:47.283958+00:00",
+  "entity_id": "binary_sensor.back_door",
+  "attributes": {
+   "device_class": "opening",
+   "friendly_name": "Back door"
+  },
+  "context": {
+   "id": "01JZZZZZZZZZZZZZZZZZZZZZZZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "state": "off",
+  "last_changed": "2026-10-13T05:58:54.404419+00:00",
+  "last_reported": "2026-10-13T05:58:54.404419+00:00",
+  "last_updated": "2026-10-13T05:58:54.404419+00:00",
+  "entity_id": "binary_sensor.hall_motion",
+  "attributes": {
+   "device_class": "motion",
+   "friendly_name": "Hall motion"
+  },
+  "context": {
+   "id": "01JZZZZZZZZZZZZZZZZZZZZZZZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "state": "2026-09-30T18:27:56.858662+00:00",
+  "last_changed": "2026-10-13T03:48:20.734508+00:00",
+  "last_reported": "2026-10-13T03:48:20.734508+00:00",
+  "last_updated": "2026-10-13T03:48:20.734508+00:00",
+  "entity_id": "scene.movie_night",
+  "attributes": {
+   "icon": "mdi:curtains",
+   "friendly_name": "Movie night"
+  },
+  "context": {
+   "id": "01JZZZZZZZZZZZZZZZZZZZZZZZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "state": "0",
+  "last_changed": "2026-10-13T03:48:27.248760+00:00",
+  "last_reported": "2026-10-13T12:48:26.999979+00:00",
+  "last_updated": "2026-10-13T03:48:27.248760+00:00",
+  "entity_id": "sensor.power",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "W",
+   "device_class": "power",
+   "friendly_name": "Power use"
+  },
+  "context": {
+   "id": "01JZZZZZZZZZZZZZZZZZZZZZZZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "state": "unavailable",
+  "last_changed": "2026-10-13T08:00:16.014004+00:00",
+  "last_reported": "2026-10-13T08:00:16.014004+00:00",
+  "last_updated": "2026-10-13T08:00:16.014004+00:00",
+  "entity_id": "light.garden",
+  "attributes": {
+   "supported_color_modes": [
+    "brightness"
+   ],
+   "friendly_name": "Garden light",
+   "supported_features": 40
+  },
+  "context": {
+   "id": "01JZZZZZZZZZZZZZZZZZZZZZZZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "state": "19.54",
+  "last_changed": "2026-10-13T12:46:42.665346+00:00",
+  "last_reported": "2026-10-13T12:46:42.665346+00:00",
+  "last_updated": "2026-10-13T12:46:42.665346+00:00",
+  "entity_id": "sensor.no_room",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "friendly_name": "Outside temperature"
+  },
+  "context": {
+   "id": "01JZZZZZZZZZZZZZZZZZZZZZZZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "state": "locked",
+  "last_changed": "2026-10-13T03:48:28.093622+00:00",
+  "last_reported": "2026-10-13T12:59:13.633452+00:00",
+  "last_updated": "2026-10-13T03:48:28.093622+00:00",
+  "entity_id": "lock.front_door",
+  "attributes": {
+   "friendly_name": "Front door"
+  },
+  "context": {
+   "id": "01JZZZZZZZZZZZZZZZZZZZZZZZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "state": "closed",
+  "last_changed": "2026-10-13T03:48:28.093622+00:00",
+  "last_reported": "2026-10-13T12:59:13.633452+00:00",
+  "last_updated": "2026-10-13T03:48:28.093622+00:00",
+  "entity_id": "cover.garage",
+  "attributes": {
+   "friendly_name": "Garage door"
+  },
+  "context": {
+   "id": "01JZZZZZZZZZZZZZZZZZZZZZZZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "state": "on",
+  "last_changed": "2026-10-13T03:48:28.093622+00:00",
+  "last_reported": "2026-10-13T12:59:13.633452+00:00",
+  "last_updated": "2026-10-13T03:48:28.093622+00:00",
+  "entity_id": "switch.unchosen",
+  "attributes": {
+   "friendly_name": "Not chosen"
+  },
+  "context": {
+   "id": "01JZZZZZZZZZZZZZZZZZZZZZZZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ }
+]

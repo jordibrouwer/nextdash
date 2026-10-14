@@ -131,6 +131,10 @@ func respondBookmarkMutationError(w http.ResponseWriter, err error) bool {
 		http.Error(w, "Bookmark has changed; reload the health report", http.StatusConflict)
 		return false
 	}
+	if errors.Is(err, ErrBookmarkDuplicateURL) {
+		http.Error(w, "That URL is already on this page", http.StatusConflict)
+		return false
+	}
 	return respondStorePersistError(w, err)
 }
 
@@ -468,6 +472,21 @@ func (h *Handlers) loadBookmarkHealthReport(forceRefresh bool) BookmarkHealthRep
 	}
 	h.healthReportBuilding = true
 	h.healthReportBuildMu.Unlock()
+	// Deferred, so a build that panics still lets the waiters go. Cleared
+	// after the store below as before; net/http recovers the panic, and
+	// without this every later report request waited on the flag for good.
+	released := false
+	release := func() {
+		if released {
+			return
+		}
+		released = true
+		h.healthReportBuildMu.Lock()
+		h.healthReportBuilding = false
+		h.healthReportBuildCond.Broadcast()
+		h.healthReportBuildMu.Unlock()
+	}
+	defer release()
 
 	h.healthReportMu.RLock()
 	invalidationsBefore := h.healthReportInvalidations
@@ -500,10 +519,7 @@ func (h *Handlers) loadBookmarkHealthReport(forceRefresh bool) BookmarkHealthRep
 	h.healthReportGen = generation
 	h.healthReportMu.Unlock()
 
-	h.healthReportBuildMu.Lock()
-	h.healthReportBuilding = false
-	h.healthReportBuildCond.Broadcast()
-	h.healthReportBuildMu.Unlock()
+	release()
 
 	// After the waiters are released, not before: recording touches the disk and
 	// holding the build flag across it would make every concurrent reader wait on
@@ -1542,6 +1558,7 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	logBookmarkSaveDiff(pageID, beforeBookmarks, bookmarks, r)
+	h.refuseRemovedTags(w, r, beforeBookmarks, bookmarks)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
@@ -1672,7 +1689,26 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	request.Bookmark.Icon = sanitizeBookmarkIcon(request.Bookmark.Icon)
 	trimBookmarkTextFields(&request.Bookmark)
 
-	if !respondStorePersistError(w, h.store.AddBookmarkToPage(request.Page, request.Bookmark)) {
+	addErr := h.store.AddBookmarkToPage(request.Page, request.Bookmark)
+	if errors.Is(addErr, ErrBookmarkDuplicateURL) {
+		// The same answer as the check above, for an add of the same URL that
+		// landed between that check and this write.
+		logBookmarkSaveFailed(request.Page, "duplicate_url", r)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(map[string]any{
+			"error":    "duplicate_url",
+			"message":  "Bookmark URL already exists",
+			"samePage": true,
+			"conflict": map[string]any{
+				"url":      request.Bookmark.URL,
+				"pageId":   request.Page,
+				"pageName": pageNameForID(h.store, request.Page),
+			},
+		})
+		return
+	}
+	if !respondStorePersistError(w, addErr) {
 		return
 	}
 	request.Bookmark.PageID = request.Page
@@ -2059,7 +2095,7 @@ func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int
 		} else if shortcut != "" {
 			takenShortcuts[shortcut] = true
 		}
-		if !respondStorePersistError(w, h.store.AddBookmarkToPage(request.PageID, Bookmark{
+		addErr := h.store.AddBookmarkToPage(request.PageID, Bookmark{
 			Name:     bm.Name,
 			URL:      bm.URL,
 			Category: catID,
@@ -2074,7 +2110,14 @@ func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int
 			// in 1970.
 			CreatedAt: bm.CreatedAt,
 			UpdatedAt: bm.UpdatedAt,
-		})) {
+		})
+		if errors.Is(addErr, ErrBookmarkDuplicateURL) {
+			// Added since existingURLs was read: already there, as a skip is.
+			existingURLs[key] = struct{}{}
+			skipped++
+			continue
+		}
+		if !respondStorePersistError(w, addErr) {
 			return
 		}
 		existingURLs[key] = struct{}{}
@@ -5782,8 +5825,14 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 		verified = h.pingURLExpecting(r.Context(), updatedURL, expectationFor(sourceBookmark).withSoftNotFound(softNotFoundEnabled(h.store.GetSettings())))
 	}
 
-	err := h.mutateHealthBookmark(req.PageID, at, req.URL, func(bookmark *Bookmark) error {
+	err := h.mutateHealthBookmarkOnPage(req.PageID, at, req.URL, func(page []Bookmark, at int) error {
+		bookmark := &page[at]
 		if updatedURL != "" && updatedURL != strings.TrimSpace(bookmark.URL) {
+			// Two old links redirecting to one home page both healed onto it,
+			// and the page then refused every save as a duplicate.
+			if urlTakenOnPage(page, at, updatedURL) {
+				return ErrBookmarkDuplicateURL
+			}
 			if req.KeepOriginalInNote {
 				appendBookmarkNote(bookmark, "Was: "+strings.TrimSpace(bookmark.URL))
 			}

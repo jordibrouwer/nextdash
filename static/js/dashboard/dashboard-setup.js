@@ -551,6 +551,17 @@ class DashboardSetup {
                 return;
             }
 
+            // Shift+Z switches the key legend under the grid off and on. Z because
+            // every other Shift letter was taken, and the legend is the one thing
+            // here that is for looking at, not for acting on.
+            if (e.shiftKey && e.code === 'KeyZ' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.nextdashRecordKey?.('Shift + Z');
+                void d.toggleGridKeyLegend?.();
+                return;
+            }
+
             if (e.shiftKey && e.code === 'KeyI') {
                 if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
                     e.preventDefault();
@@ -611,6 +622,19 @@ class DashboardSetup {
                     window.nextdashRecordKey?.('Shift + A');
                     window.nextdashTrack?.('nav:theme-browser-shortcut');
                     void d.config.openThemeBrowser();
+                }
+                return;
+            }
+
+            // Shift+K replays the dashboard tour. T was taken by a selected
+            // row's tags and G by the last row, so K it is. Only over the
+            // grid the tour explains: in the Inbox list Shift+K keeps a row.
+            if (e.shiftKey && e.code === 'KeyK') {
+                if (d.isBookmarksView?.() && d.promos?.openDashboardTour) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + K');
+                    void d.promos.openDashboardTour();
                 }
                 return;
             }

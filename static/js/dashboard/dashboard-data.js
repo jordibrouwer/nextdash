@@ -871,6 +871,13 @@ class DashboardData {
             // no setting behind it.
             isEnabled: () => true,
         },
+        {
+            view: 'tags',
+            layoutClass: 'tag-view-layout',
+            // #tag/a+b: a tag's view, opened from the hash once the grid is up.
+            matchesHash: (hash) => hash.startsWith('#tag/'),
+            isEnabled: () => true,
+        },
     ];
 
     /**
@@ -983,19 +990,26 @@ class DashboardData {
         // undefined means the block list was not answered for -- a dropped
         // request on a slow link. Emptying the page on that turned a lost
         // request into "this page has no widgets", which is why they sometimes
-        // vanished on a page switch. Keep what is on screen and let the next
-        // load correct it. A real answer, including one that genuinely carries
-        // no widgets, still replaces them.
+        // vanished on a reload. On the same page, keep what is on screen and
+        // let the next load correct it; on a switch, what is on screen is the
+        // other page's, and is cleared. A real answer, including one that
+        // genuinely carries no widgets, still replaces them.
         const blocks = options.blocks;
         if (blocks !== undefined) {
             d.widgets = Array.isArray(blocks?.widgets) ? blocks.widgets : [];
             d.blockOrder = Array.isArray(blocks?.order) ? blocks.order : [];
             d._blocksPageId = targetPageId;
+        } else if (d._blocksPageId != null && Number(d._blocksPageId) !== targetPageId) {
+            // Not answered, on a switch: what is on screen is the page being
+            // left, and it was drawn here as this one's. Nothing is better than
+            // that; the next load brings this page's own.
+            d.widgets = [];
+            d.blockOrder = [];
         }
-        // Otherwise the widgets on screen stay, and _blocksPageId still names
-        // the page they belong to. On a switch that is another page: the
-        // writes that send the whole list (saveWidgetPatch, the block order)
-        // check it, or editing one wrote that page's widgets over this one's.
+        // _blocksPageId still names the page the last answer was for. After an
+        // unanswered switch that is another page: the writes that send the
+        // whole list (saveWidgetPatch, the block order) check it, or a save
+        // here would write that page's widgets over this one's.
         // 'default' is the placeholder the instance is constructed with,
         // before the first page has actually loaded — that first load is not
         // a switch away from anything, so it does not count as nav.
@@ -1249,7 +1263,14 @@ class DashboardData {
         }
     }
 
-    async loadAllBookmarks(options = {}) {
+    loadAllBookmarks(options = {}) {
+        const d = this.dash;
+        const loadId = (d._allBookmarksLoadId = (d._allBookmarksLoadId || 0) + 1);
+        d._allBookmarksLoad = this._loadAllBookmarksOnce(loadId, options);
+        return d._allBookmarksLoad;
+    }
+
+    async _loadAllBookmarksOnce(loadId, options = {}) {
         const d = this.dash;
         const { rethrow = false } = options;
         try {
@@ -1270,6 +1291,14 @@ class DashboardData {
              * them: the Unsorted view, and search when the reader allows it.
              */
             const loaded = await allBookmarksRes.json();
+            // A newer load started while this one was on its way: its answer
+            // is the newer one. Several callers do not wait, so two can be in
+            // flight, and the older landing last dropped a bookmark just added.
+            // Its caller waits for that one instead, so it reads the list it
+            // was waiting for.
+            if (loadId !== d._allBookmarksLoadId) {
+                return d._allBookmarksLoad;
+            }
             const rows = Array.isArray(loaded) ? loaded : [];
             const isUnsorted = (bookmark) => window.UnsortedPage?.isUnsorted?.(bookmark) === true;
             d.allBookmarks = rows.filter((bookmark) => !isUnsorted(bookmark));
@@ -1297,6 +1326,10 @@ class DashboardData {
                 d.updateSearchComponent();
             }
         } catch (error) {
+            // Superseded: the newer load answers, failure or not.
+            if (loadId !== d._allBookmarksLoadId) {
+                return d._allBookmarksLoad;
+            }
             if (rethrow) {
                 throw error;
             }
@@ -1348,7 +1381,6 @@ class DashboardData {
         }
 
         d.updateHealthBadge?.();
-        d.updateTagFilterIndicator?.();
     }
 
     _bookmarkMutationPageIds(options = {}) {

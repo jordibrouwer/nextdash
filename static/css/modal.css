@@ -22,7 +22,7 @@
     z-index: 2000;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.2s ease, visibility 0.2s ease;
+    transition: var(--modal-scrim-transition);
     background: var(--modal-scrim);
     backdrop-filter: blur(var(--modal-scrim-blur));
     -webkit-backdrop-filter: blur(var(--modal-scrim-blur));
@@ -31,6 +31,65 @@
 .modal-overlay.show {
     opacity: 1;
     visibility: visible;
+}
+
+/*
+ * How a modal arrives: the tag cloud's rise and grow, from just below where it
+ * lands. Every modal reads these, so they move alike. --enter-scale is
+ * Appearance -> Animation speed (list-view-shell.css); Animations in views
+ * and modals switched off makes them simply appear.
+ */
+body {
+    --modal-enter-from: translateY(14px) scale(0.94);
+    --modal-enter-transition:
+        opacity calc(320ms * var(--enter-scale, 0.5)) cubic-bezier(0.2, 0.9, 0.25, 1.05),
+        transform calc(320ms * var(--enter-scale, 0.5)) cubic-bezier(0.2, 0.9, 0.25, 1.05);
+    --modal-scrim-transition:
+        opacity calc(240ms * var(--enter-scale, 0.5)) ease,
+        visibility calc(240ms * var(--enter-scale, 0.5)) ease;
+}
+
+body.no-view-animations {
+    --modal-enter-from: none;
+    --modal-enter-transition: none;
+    --modal-scrim-transition: none;
+}
+
+/*
+ * The same rise for a modal that is shown by switching display on, or built
+ * when it opens, where a transition has no painted state to start from: the
+ * bookmark form, the notes widget large, and the container logs dialog.
+ */
+@keyframes modalRise {
+    from {
+        opacity: 0;
+        transform: var(--modal-enter-from);
+    }
+}
+
+/*
+ * backwards, not both: the keyframes have only a `from`, so the end is the
+ * dialog's own style anyway, and a forwards fill would keep a finished
+ * animation holding its transform for as long as the form is open.
+ */
+.bookmark-form-modal.show .bookmark-form-modal-dialog,
+.notes-modal,
+.docker-logs-modal[open] {
+    animation: modalRise calc(320ms * var(--enter-scale, 0.5)) cubic-bezier(0.2, 0.9, 0.25, 1.05) backwards;
+    transform-origin: 50% 40%;
+}
+
+body.no-view-animations :is(.bookmark-form-modal.show .bookmark-form-modal-dialog, .notes-modal, .docker-logs-modal[open]),
+body.no-animations :is(.bookmark-form-modal.show .bookmark-form-modal-dialog, .notes-modal, .docker-logs-modal[open]) {
+    animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bookmark-form-modal.show .bookmark-form-modal-dialog,
+    .notes-modal,
+    .docker-logs-modal[open] {
+        animation: none;
+    }
 }
 
 .modal {
@@ -42,9 +101,10 @@
     background: var(--background-modal);
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
     overflow: hidden;
-    transform: scale(0.98) translateY(8px);
+    transform: var(--modal-enter-from);
+    transform-origin: 50% 40%;
     opacity: 0;
-    transition: transform 0.2s ease, opacity 0.2s ease;
+    transition: var(--modal-enter-transition);
 }
 
 .modal-overlay.show .modal {
@@ -53,35 +113,22 @@
 }
 
 /*
- * Out of the control that opened it.
- *
- * ModalOrigin (modal.js) writes the offset from the panel's centre to the
- * button's; the panel plays that distance back in 160ms. A keyframe rather
- * than a transition: the class and `.show` land in the same tick, and a
- * transition started from a state the browser never painted does nothing at
- * all -- which is what "no animation" looked like.
+ * Opened from a control. ModalOrigin (modal.js) marks the panel from-origin;
+ * it plays as a keyframe rather than a transition, because the class and
+ * `.show` land in the same tick and a transition started from a state the
+ * browser never painted does nothing at all.
  */
-@keyframes modal-from-origin {
-    from {
-        transform:
-            translate(var(--modal-origin-x, 0), var(--modal-origin-y, 0))
-            scale(0.4);
-        opacity: 0;
-    }
-    to {
-        transform: translate(0, 0) scale(1);
-        opacity: 1;
-    }
-}
-
+/* Out of a button, the same rise as the add-bookmark form: every modal the
+   action bar opens moves alike (modalRise below). */
 .modal-overlay.show .modal.from-origin {
-    animation: modal-from-origin 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: modalRise calc(320ms * var(--enter-scale, 0.5)) cubic-bezier(0.2, 0.9, 0.25, 1.05) both;
     transform-origin: center;
 }
 
 /* Reduced motion and the no-animations setting: the panel simply appears where
    it belongs. The origin is a nicety, and a nicety is the first thing to go. */
-body.no-animations .modal-overlay.show .modal.from-origin {
+body.no-animations .modal-overlay.show .modal.from-origin,
+body.no-view-animations .modal-overlay.show .modal.from-origin {
     animation: none;
 }
 
@@ -128,8 +175,8 @@ body:has(#config-main) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
     max-width: 100%;
     margin: 0;
     max-height: min(70vh, calc(100vh - 4rem));
-    transform: translateY(10px) scale(0.98);
-    transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+    transform: var(--modal-enter-from);
+    transition: var(--modal-enter-transition);
 }
 
 /* The release notes themselves, not the shells that borrow the class: wide
@@ -144,7 +191,7 @@ body:has(#config-main) #app-modal.modal-overlay:has(.whats-new-modal:not(.analyt
 
 body:has(#config-main) #app-modal.modal-overlay.show:has(.whats-new-modal) .modal {
     transform: translateY(0) scale(1);
-    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
+    transition: var(--modal-enter-transition);
 }
 
 body.no-animations:has(#config-main) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
@@ -2053,13 +2100,14 @@ body:not([data-depth="flat"]) .wn-earlier {
  */
 .modal-overlay.show .modal.header-sheet,
 .modal-overlay.show .modal.header-sheet.from-origin {
-    animation: header-sheet-drop 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: header-sheet-rise calc(320ms * var(--enter-scale, 0.5)) cubic-bezier(0.2, 0.9, 0.25, 1.05) both;
     transform: translateX(-50%) translateY(0);
 }
 
-@keyframes header-sheet-drop {
+/* modalRise with the centring carried through every frame. */
+@keyframes header-sheet-rise {
     from {
-        transform: translateX(-50%) translateY(-8px);
+        transform: translateX(-50%) translateY(14px) scale(0.94);
         opacity: 0;
     }
     to {
@@ -2069,7 +2117,9 @@ body:not([data-depth="flat"]) .wn-earlier {
 }
 
 body.no-animations .modal-overlay.show .modal.header-sheet,
-body.no-animations .modal-overlay.show .modal.header-sheet.from-origin {
+body.no-animations .modal-overlay.show .modal.header-sheet.from-origin,
+body.no-view-animations .modal-overlay.show .modal.header-sheet,
+body.no-view-animations .modal-overlay.show .modal.header-sheet.from-origin {
     animation: none;
 }
 

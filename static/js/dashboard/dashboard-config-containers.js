@@ -54,6 +54,7 @@
             <p class="config-view-intro">${esc(this.t('config.containersIntro',
                 'The Containers view: what it can reach, how often it looks, and what it leaves out. Every change applies immediately and is saved.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
+            ${this.renderSectionTabNote('containers', this.containersTab)}
             <div class="config-tabpage">
                 <div class="config-tabpage-main" id="config-containers-body" role="tabpanel" tabindex="0">
                     ${this.renderContainersBody()}
@@ -98,6 +99,7 @@
         const body = document.getElementById('config-containers-body');
         if (!body) return;
         body.innerHTML = this.renderContainersBody();
+        this.syncSectionTabNote('containers', this.containersTab, body.closest('.config-tabpage')?.parentElement);
         this.bindControlPanels(body, 'behavior');
         this.bindContainersPanels(body);
         this.labelSettingsControls?.();

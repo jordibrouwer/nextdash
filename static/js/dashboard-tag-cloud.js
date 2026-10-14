@@ -17,45 +17,10 @@
         return window.MobileExperience?.isMobileLayout?.() === true;
     }
 
+    const Model = () => window.TagCloudModel;
+
     function countTagsFromBookmarks(bookmarks) {
-        const counts = new Map();
-        const list = Array.isArray(bookmarks) ? bookmarks : [];
-        for (const bookmark of list) {
-            const tags = Array.isArray(bookmark?.tags) ? bookmark.tags : [];
-            for (const raw of tags) {
-                const tag = String(raw || '').trim().toLowerCase();
-                if (!tag) continue;
-                counts.set(tag, (counts.get(tag) || 0) + 1);
-            }
-        }
-        return [...counts.entries()]
-            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-            .map(([tag, count]) => ({ tag, count }));
-    }
-
-    /** Slight tilt for word-cloud feel; kept small for readability. */
-    function hashRotate(tag) {
-        let h = 0;
-        for (let i = 0; i < tag.length; i++) {
-            h = (h * 31 + tag.charCodeAt(i)) | 0;
-        }
-        return ((h % 9) - 4) * 0.55;
-    }
-
-    /** 0–1 scale with boosted contrast between low and high usage. */
-    function scaleForCount(count, minCount, maxCount) {
-        if (maxCount <= 0) return 0.5;
-        if (maxCount === minCount) return 1;
-        const ratio = (count - minCount) / (maxCount - minCount);
-        return 0.28 + 0.72 * Math.pow(Math.max(0, Math.min(1, ratio)), 0.72);
-    }
-
-    function tierClassForScale(scale) {
-        if (scale >= 0.82) return 'tag-cloud-word--tier-xl';
-        if (scale >= 0.62) return 'tag-cloud-word--tier-lg';
-        if (scale >= 0.42) return 'tag-cloud-word--tier-md';
-        if (scale >= 0.22) return 'tag-cloud-word--tier-sm';
-        return 'tag-cloud-word--tier-xs';
+        return Model().countTags(bookmarks);
     }
 
     const DashboardTagCloud = {
@@ -174,11 +139,57 @@
         updateChipSelection() {
             const active = new Set(this.normalizeActiveTags());
             this.getTagChips().forEach((chip) => {
-                const tag = chip.querySelector('.tag-cloud-word-label')?.textContent || '';
+                const tag = chip.dataset.tag || '';
                 const selected = active.has(tag);
                 chip.classList.toggle('is-selected', selected);
                 chip.setAttribute('aria-pressed', selected ? 'true' : 'false');
             });
+            this.refreshChipCounts();
+        },
+
+        /**
+         * The figure beside each word, and the one in the header.
+         *
+         * With nothing filtering, a tag's figure is how many bookmarks carry it.
+         * With a filter on it is what the tag would add -- bookmarks carrying it
+         * that are not in the result yet -- so a tag that adds nothing says +0
+         * and dims. A tag that is filtering keeps its own total.
+         */
+        refreshChipCounts() {
+            const chips = this.getTagChips();
+            const active = this.normalizeActiveTags();
+            const pool = this.getBookmarkPool();
+            const totals = new Map(Model().countTags(pool).map(({ tag, count }) => [tag, count]));
+            const plus = Model().plusCounts(pool, active);
+            chips.forEach((chip) => {
+                const tag = chip.dataset.tag || '';
+                const total = totals.get(tag) || 0;
+                const adding = active.length > 0 && !active.includes(tag);
+                const adds = plus.get(tag) || 0;
+                const countEl = chip.querySelector('.tag-cloud-word-count');
+                if (countEl) countEl.textContent = adding ? `+${adds}` : String(total);
+                chip.classList.toggle('is-zero', adding && adds === 0);
+                const countLabel = this.getTagCountLabel(total);
+                chip.title = adding
+                    ? `${tag} — ${countLabel}, ${t('dashboard.tagCloudAdds', 'adds {count}').replace('{count}', String(adds))}`
+                    : `${tag} — ${countLabel}`;
+            });
+            this.updateHeaderCount(chips.length, active.length);
+        },
+
+        updateHeaderCount(total, active = this.normalizeActiveTags().length) {
+            const el = document.getElementById('tag-cloud-modal-count');
+            if (!el) return;
+            if (!total) {
+                el.textContent = '';
+                return;
+            }
+            const figure = active
+                ? t('dashboard.tagCloudCountOf', '{active} of {total}')
+                    .replace('{active}', String(active))
+                    .replace('{total}', String(total))
+                : String(total);
+            el.textContent = `· ${figure}`;
         },
 
         formatActiveTagsLabel() {
@@ -193,6 +204,40 @@
         getTagChips() {
             if (!this.body) return [];
             return [...this.body.querySelectorAll('.tag-cloud-word')];
+        },
+
+        /** The chips the arrows may land on: every one, or those matching what is typed. */
+        getNavigableChips() {
+            return this.getTagChips().filter((chip) => !chip.classList.contains('is-miss'));
+        },
+
+        /**
+         * Narrow the cloud to what is typed.
+         *
+         * Non-matching tags dim in place rather than leave, so the cloud does
+         * not reflow under the reader's eye, and the first match takes the
+         * focus so Enter picks it.
+         */
+        applyQuery() {
+            const query = this._query || '';
+            const chips = this.getTagChips();
+            chips.forEach((chip) => {
+                const miss = Boolean(query) && Model().matchQuery(chip.dataset.tag || '', query) < 0;
+                chip.classList.toggle('is-miss', miss);
+            });
+            const label = document.getElementById('tag-cloud-modal-query');
+            if (label) {
+                label.hidden = !query;
+                label.textContent = query ? `"${query}"` : '';
+            }
+            if (!query) return;
+            const navigable = this.getNavigableChips();
+            if (navigable.length) this.focusChipAtIndex(0, navigable);
+        },
+
+        setQuery(next) {
+            this._query = String(next || '').toLowerCase();
+            this.applyQuery();
         },
 
         isClearButtonFocusable() {
@@ -274,7 +319,7 @@
 
         moveModalFocus(direction) {
             if (this.isFocusOnClearButton()) {
-                const chips = this.getTagChips();
+                const chips = this.getNavigableChips();
                 if (!chips.length) return;
                 if (direction === 'up' || direction === 'left') {
                     this.focusChipAtIndex(this._kbdFocusIndex, chips);
@@ -284,7 +329,7 @@
                 return;
             }
 
-            const chips = this.getTagChips();
+            const chips = this.getNavigableChips();
             if (!chips.length) {
                 if (this.isClearButtonFocusable()) this.focusClearButton();
                 return;
@@ -330,7 +375,7 @@
             if (this.activeTags.length) {
                 const active = new Set(this.normalizeActiveTags());
                 const match = chips.findIndex(
-                    (el) => active.has(el.querySelector('.tag-cloud-word-label')?.textContent || '')
+                    (el) => active.has(el.dataset.tag || '')
                 );
                 if (match >= 0) idx = match;
             }
@@ -341,13 +386,34 @@
 
         handleModalKeydown(e) {
             if (!this.modalOpen) return;
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
 
-            if (e.key === 'Escape') {
+            const swallow = () => {
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
+            };
+
+            // The typing first, then the cloud.
+            if (e.key === 'Escape') {
+                swallow();
+                if (this._query) {
+                    this.setQuery('');
+                    return;
+                }
                 this.closeModal();
+                return;
+            }
+
+            if (e.key === 'Backspace' && this._query) {
+                swallow();
+                this.setQuery(this._query.slice(0, -1));
+                return;
+            }
+
+            if (!e.ctrlKey && !e.altKey && !e.metaKey && /^[a-z0-9-]$/i.test(e.key)) {
+                swallow();
+                this.setQuery(`${this._query || ''}${e.key}`);
                 return;
             }
 
@@ -365,8 +431,8 @@
                     e.preventDefault();
                     e.stopPropagation();
                     e.stopImmediatePropagation();
-                    const tag = active.querySelector('.tag-cloud-word-label')?.textContent;
-                    if (tag) this.selectTag(tag);
+                    const tag = active.dataset.tag;
+                    if (tag) this.selectTag(tag, { stack: e.shiftKey });
                     return;
                 }
                 if (active === this.closeBtn) {
@@ -407,7 +473,8 @@
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
-                if (chips.length) this.focusChipAtIndex(0, chips);
+                const navigable = this.getNavigableChips();
+                if (navigable.length) this.focusChipAtIndex(0, navigable);
                 else if (this.isClearButtonFocusable()) this.focusClearButton();
                 return;
             }
@@ -416,19 +483,27 @@
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
+                const navigable = this.getNavigableChips();
                 if (this.isClearButtonFocusable()) this.focusClearButton();
-                else if (chips.length) this.focusChipAtIndex(chips.length - 1, chips);
+                else if (navigable.length) this.focusChipAtIndex(navigable.length - 1, navigable);
             }
         },
 
         getBookmarkPool() {
             const dash = window.dashboardInstance;
             if (!dash) return [];
-            const pool = dash.settings?.globalShortcuts
-                ? dash.allBookmarks
-                : dash.allBookmarks?.length
-                  ? dash.allBookmarks
-                  : dash.bookmarks;
+            /*
+             * The page on screen from its own list, every other page from the
+             * cross-page one. The current page's rows are the ones edits land
+             * in first, so they win over their copies in allBookmarks; the
+             * filter view reads this same pool, which is what lets a tag that
+             * lives on another page show its bookmarks instead of an empty grid.
+             */
+            const current = Array.isArray(dash.bookmarks) ? dash.bookmarks : [];
+            const currentId = Number(dash.currentPageId);
+            const others = (Array.isArray(dash.allBookmarks) ? dash.allBookmarks : [])
+                .filter((bookmark) => Number(bookmark?.pageId ?? bookmark?.pageID) !== currentId);
+            const pool = [...current, ...others];
             // Kept bookmarks carry tags of their own and are tagged from their
             // own view, but they are not filed yet -- listing their tags here
             // would put a route to them on the dashboard, which is the one
@@ -468,12 +543,13 @@
         },
 
         isEligible() {
-            // The / FAB filters the bookmarks grid, so it has nothing to do
-            // outside the dashboard -- gated here, at the source, rather than
-            // at each caller (the toggle button's own CSS, handleSlashKey, and
-            // the tag-filter-indicator chip all read this one answer).
+            // The cloud picks tags for the grid and for the tag view, so it has
+            // nothing to do in the other views -- gated here, at the source,
+            // rather than at each caller (the toggle button's own CSS and
+            // handleSlashKey both read this one answer).
             const dash = window.dashboardInstance;
-            return this.isFeatureAvailable() && (!dash || dash.isBookmarksView());
+            // The tag view is a filter's own page: the cloud changes its tags there.
+            return this.isFeatureAvailable() && (!dash || dash.isBookmarksView() || dash.activeView === 'tags');
         },
 
         syncFromSettings() {
@@ -493,14 +569,13 @@
             if (!eligible) {
                 this.closeModal({ animate: false });
                 /*
-                 * Only when the feature is gone, not when a view is merely on
-                 * top of it. This runs on every view transition, so clearing on
-                 * plain ineligibility threw the tag filter away the moment you
-                 * opened config, inbox or health -- and the header chip that
-                 * exists to show the filter in exactly those views had nothing
-                 * left to show.
+                 * The cloud is a desktop thing; the tag view is not. A phone
+                 * (or a library still loading, which reads as "no tags")
+                 * makes the cloud ineligible, and clearing the filter then
+                 * closed a tag view opened from a link or :filter. The view
+                 * owns its tags while it is open.
                  */
-                if (!this.isFeatureAvailable()) {
+                if (!this.isFeatureAvailable() && window.dashboardInstance?.activeView !== 'tags') {
                     this.clearDashboardFilter({ animate: false });
                 }
                 return;
@@ -528,7 +603,7 @@
             // the cloud filters the grid. Pressed from config, health or inbox
             // it takes you back to the page it acts on and opens there.
             const dash = window.dashboardInstance;
-            if (this.isFeatureAvailable() && dash && !dash.isBookmarksView()) {
+            if (this.isFeatureAvailable() && dash && !dash.isBookmarksView() && dash.activeView !== 'tags') {
                 void Promise.resolve(dash.requestPageNavigation(dash.currentPageId))
                     .then(() => {
                         this.syncFromSettings();
@@ -565,6 +640,8 @@
             }
             this.syncActiveTagsFromDashboard();
             this.renderWordCloud();
+            this.playEntrance();
+            this.ensureEveryPageLoaded();
             this.updateClearButton();
             // The × is not a name. The template carries an English label; this
             // keeps it in the current language when the language changed later.
@@ -587,6 +664,21 @@
             window.FocusTrapUtils?.syncDashboardInert?.();
             window.dashboardInstance?.language?.applyTranslations?.();
             this.focusInitialChip();
+        },
+
+        /**
+         * The cloud and its filter are about the whole library, and startup
+         * skips loading other pages when no setting asks for them -- which is
+         * the case for `/` with the header button switched off. Fetched here,
+         * once, and the cloud and an active filter redrawn when it lands.
+         */
+        ensureEveryPageLoaded() {
+            const dash = window.dashboardInstance;
+            if (!dash || dash._unsortedLoaded || !dash.data?.deferredLoadAllBookmarks) return;
+            void dash.data.deferredLoadAllBookmarks().then(() => {
+                if (this.modalOpen) this.renderWordCloud();
+                if (dash.hasActiveTagFilters?.()) dash.renderDashboard?.({ animate: false });
+            }).catch(() => {});
         },
 
         restoreBookmarkFocus() {
@@ -654,27 +746,6 @@
             }, 180);
         },
 
-        getModalMaxHeight(rect, margin, vh, anchor = 'above') {
-            const spaceAlongAnchor = anchor === 'below'
-                ? Math.max(120, vh - rect.bottom - margin * 2)
-                : Math.max(120, rect.top - margin * 2);
-            let maxH = Math.min(vh * 0.88, spaceAlongAnchor);
-
-
-            const layout = document.getElementById('dashboard-layout');
-            if (layout) {
-                const layoutRect = layout.getBoundingClientRect();
-                const spaceInColumn = anchor === 'below'
-                    ? layoutRect.bottom - rect.bottom - margin
-                    : rect.top - layoutRect.top - margin;
-                if (spaceInColumn > 0) {
-                    maxH = Math.min(maxH, spaceInColumn);
-                }
-            }
-
-            return Math.round(maxH);
-        },
-
         measureModalNaturalHeight() {
             const header = this.modal?.querySelector('.tag-cloud-modal-header');
             const footer = this.modal?.querySelector('.tag-cloud-modal-footer');
@@ -713,161 +784,56 @@
         },
 
         /**
-         * Hang the cloud under the header button, fully inside the window.
+         * The part of the window the cloud may use: all of it, less the action
+         * bar and a margin around it.
          *
-         * Right-aligned to the button rather than left, because the actions sit
-         * at the right end of the bar: left-aligned, a wide cloud would run off
-         * the screen before the clamp caught it and land somewhere it was never
-         * anchored to.
+         * The cloud used to hang from its button, and with the button in the
+         * bar that put it over the bar -- and for a bar docked to the bottom or
+         * a side, half off the page. It is a panel of its own now, so it only
+         * has to keep out of the bar's way.
          */
-        positionModalUnderHeaderButton(rect, margin, vw, vh, maxW) {
-            let left = rect.right - maxW;
-            if (left + maxW > vw - margin) left = vw - margin - maxW;
-            if (left < margin) left = margin;
-
-            const top = rect.bottom + margin;
-            // What is left of the window under the button, and never taller.
-            const maxH = Math.max(160, Math.round(vh - top - margin));
-            this.syncModalSize(maxH);
-
-            this.modal.style.left = `${Math.round(left)}px`;
-            this.modal.style.right = 'auto';
-            this.modal.style.top = `${Math.round(top)}px`;
-            this.modal.style.bottom = 'auto';
-        },
-
-        /**
-         * Open away from a docked bar, fully inside the window.
-         *
-         * The button stands in the same group wherever the bar is, so the
-         * header's "hang under it" also ran for a bar at the bottom of the
-         * window -- and put the cloud under the window's edge. A bottom dock
-         * opens it above the button; a side column beside it, towards the page.
-         * A dock that has slid away still has a place to open from: the edge it
-         * slid into, which the clamps below keep the cloud inside of.
-         */
-        positionModalBesideDock(place, rect, margin, vw, vh, maxW) {
-            if (place === 'bottom') {
-                const edge = Math.min(rect.top, vh - margin);
-                const maxH = Math.max(160, Math.round(edge - margin * 2));
-                this.syncModalSize(maxH);
-                const centre = rect.left + rect.width / 2;
-                let left = centre - maxW / 2;
-                left = Math.min(Math.max(left, margin), vw - margin - maxW);
-                this.modal.style.left = `${Math.round(left)}px`;
-                this.modal.style.right = 'auto';
-                this.modal.style.top = 'auto';
-                this.modal.style.bottom = `${Math.round(vh - edge + margin)}px`;
-                return;
-            }
-            const maxH = Math.max(160, Math.round(vh - margin * 2));
-            this.syncModalSize(maxH);
-            const modalH = this.modal.offsetHeight || 200;
-            let left = place === 'left'
-                ? Math.max(rect.right, 0) + margin
-                : Math.min(rect.left, vw) - margin - maxW;
-            left = Math.min(Math.max(left, margin), vw - margin - maxW);
-            let top = rect.top + rect.height / 2 - modalH / 2;
-            top = Math.min(Math.max(top, margin), vh - margin - modalH);
-            this.modal.style.left = `${Math.round(left)}px`;
-            this.modal.style.right = 'auto';
-            this.modal.style.top = `${Math.round(top)}px`;
-            this.modal.style.bottom = 'auto';
-        },
-
-        positionModalForActiveTagFilter(toggleRect, margin, vw, vh, maxW) {
-            const banner = document.getElementById('tag-filter-banner');
-            if (!banner || !window.dashboardInstance?.hasActiveTagFilters?.()) {
-                return false;
-            }
-            const bannerRect = banner.getBoundingClientRect();
-            if (bannerRect.height < 1 || toggleRect.height < 1) {
-                return false;
-            }
-
-            let left = toggleRect.left;
-            if (left + maxW > vw - margin) {
-                left = Math.max(margin, vw - margin - maxW);
-            }
-
-            const top = bannerRect.bottom + margin;
-            const maxModalH = Math.max(
-                140,
-                Math.min(vh - top - margin, toggleRect.top - top - margin)
-            );
-            this.syncModalSize(maxModalH);
-
-            this.modal.style.left = `${Math.round(left)}px`;
-            this.modal.style.right = 'auto';
-            this.modal.style.top = `${Math.round(top)}px`;
-            this.modal.style.bottom = 'auto';
-            this.modal.style.transformOrigin = 'top left';
-            return true;
-        },
-
-        positionModal() {
-            if (!this.modal || !this.toggle) return;
-            const rect = this.toggle.getBoundingClientRect();
-            const margin = 10;
+        availableArea(margin) {
             const vw = window.innerWidth;
             const vh = window.innerHeight;
+            const area = { top: margin, left: margin, right: vw - margin, bottom: vh - margin };
+            const bar = this.toggle?.closest('.header-shortcuts') || document.querySelector('.header-shortcuts');
+            const r = bar?.getBoundingClientRect();
+            if (r && r.width > 0 && r.height > 0) {
+                if (r.width >= r.height) {
+                    if (r.top + r.height / 2 < vh / 2) area.top = Math.max(area.top, r.bottom + margin);
+                    else area.bottom = Math.min(area.bottom, r.top - margin);
+                } else if (r.left + r.width / 2 < vw / 2) {
+                    area.left = Math.max(area.left, r.right + margin);
+                } else {
+                    area.right = Math.min(area.right, r.left - margin);
+                }
+            }
+            return area;
+        },
+
+        /** Centred in what the window leaves it, a little above the middle. */
+        positionModal() {
+            if (!this.modal) return;
+            const margin = 16;
+            const area = this.availableArea(margin);
+            const areaW = Math.max(240, area.right - area.left);
+            const areaH = Math.max(160, area.bottom - area.top);
 
             const tagCount = this.body?.querySelectorAll('.tag-cloud-word').length || 0;
-            const idealW = 320 + Math.sqrt(tagCount) * 42;
-            const maxW = Math.min(Math.max(idealW, 300), Math.min(680, vw - margin * 2));
-            this.modal.style.width = `${Math.round(maxW)}px`;
-            this.modal.style.maxWidth = `${Math.round(maxW)}px`;
+            const idealW = 360 + Math.sqrt(tagCount) * 46;
+            const width = Math.min(Math.max(idealW, 320), 720, areaW);
+            this.modal.style.width = `${Math.round(width)}px`;
+            this.modal.style.maxWidth = `${Math.round(width)}px`;
 
-            // The button moved to the header, and everything below was written
-            // for a corner FAB: it pins the modal by its *bottom* edge, which
-            // from the top of the window threw it against the far corner --
-            // and the two ways in disagreed, because the / key and the button
-            // reached this code in different states. From the header it is a
-            // dropdown: under the button, hanging from its right edge, clamped
-            // into the window on both axes.
-            if (this.toggle.closest('.header-shortcuts')) {
-                let place = document.body.getAttribute('data-action-bar') || 'header';
-                // On a phone the side columns stand at the bottom.
-                if ((place === 'left' || place === 'right')
-                    && window.matchMedia?.('(max-width: 700px)').matches) {
-                    place = 'bottom';
-                }
-                if (place === 'bottom' || place === 'left' || place === 'right') {
-                    this.positionModalBesideDock(place, rect, margin, vw, vh, maxW);
-                } else {
-                    this.positionModalUnderHeaderButton(rect, margin, vw, vh, maxW);
-                }
-                return;
-            }
+            this.syncModalSize(Math.min(areaH, Math.round(window.innerHeight * 0.8)));
+            const height = this.modal.offsetHeight || 240;
+            const left = area.left + (areaW - width) / 2;
+            const top = area.top + Math.max(0, (areaH - height) * 0.42);
 
-            if (this.positionModalForActiveTagFilter(rect, margin, vw, vh, maxW)) {
-                return;
-            }
-
-            let left = rect.left;
-            if (left + maxW > vw - margin) {
-                left = vw - margin - maxW;
-            }
-            if (left < margin) left = margin;
             this.modal.style.left = `${Math.round(left)}px`;
             this.modal.style.right = 'auto';
-
-            let anchor = 'above';
-            let maxModalH = this.getModalMaxHeight(rect, margin, vh, anchor);
-            this.syncModalSize(maxModalH);
-
-            let modalH = this.modal.offsetHeight || 200;
-            let bottom = vh - rect.top + margin;
-            if (rect.top - margin - modalH < margin) {
-                anchor = 'below';
-                bottom = vh - rect.bottom - margin;
-                maxModalH = this.getModalMaxHeight(rect, margin, vh, anchor);
-                this.syncModalSize(maxModalH);
-                modalH = this.modal.offsetHeight || modalH;
-            }
-
-            this.modal.style.bottom = `${bottom}px`;
-            this.modal.style.top = 'auto';
+            this.modal.style.top = `${Math.round(top)}px`;
+            this.modal.style.bottom = 'auto';
         },
 
         getTagCountLabel(count) {
@@ -884,12 +850,18 @@
 
         renderWordCloud() {
             if (!this.body) return;
-            const ranked = countTagsFromBookmarks(this.getBookmarkPool());
-            const maxCount = ranked[0]?.count || 1;
-            const minCount = ranked[ranked.length - 1]?.count || maxCount;
+            this._query = '';
+            const queryLabel = document.getElementById('tag-cloud-modal-query');
+            if (queryLabel) {
+                queryLabel.hidden = true;
+                queryLabel.textContent = '';
+            }
+            const pool = this.getBookmarkPool();
+            const ranked = Model().countTags(pool);
 
             this.body.replaceChildren();
             if (!ranked.length) {
+                this.updateHeaderCount(0);
                 const empty = document.createElement('p');
                 empty.className = 'tag-cloud-modal-empty';
                 empty.textContent = t('dashboard.tagCloudEmpty', 'No tags yet — add tags in config → bookmarks.');
@@ -898,37 +870,33 @@
                 return;
             }
 
-            this.body.classList.add('tag-cloud-wordcloud--live');
-
-            ranked.forEach(({ tag, count }, index) => {
-                const scale = scaleForCount(count, minCount, maxCount);
+            const classes = Model().rankClasses(ranked);
+            const totals = new Map(ranked.map(({ tag, count }) => [tag, count]));
+            Model().orderForDisplay(ranked, classes).forEach((tag, index) => {
+                const selected = this.isTagActive(tag);
                 const chip = document.createElement('button');
                 chip.type = 'button';
-                chip.className = `tag-cloud-word ${tierClassForScale(scale)}`;
-                if (this.isTagActive(tag)) chip.classList.add('is-selected');
-                chip.setAttribute('aria-pressed', this.isTagActive(tag) ? 'true' : 'false');
-                chip.style.setProperty('--tag-scale', scale.toFixed(3));
-                chip.style.setProperty('--tag-rotate', `${hashRotate(tag).toFixed(2)}deg`);
+                chip.className = `tag-cloud-word is-${classes.get(tag)}`;
+                chip.dataset.tag = tag;
+                chip.classList.toggle('is-selected', selected);
+                chip.setAttribute('aria-pressed', selected ? 'true' : 'false');
                 chip.style.setProperty('--tag-index', String(index));
 
-                const hashEl = document.createElement('span');
-                hashEl.className = 'tag-cloud-word-hash';
-                hashEl.textContent = '#';
-                hashEl.setAttribute('aria-hidden', 'true');
                 const labelEl = document.createElement('span');
                 labelEl.className = 'tag-cloud-word-label';
                 labelEl.textContent = tag;
-                chip.append(hashEl, labelEl);
+                const countEl = document.createElement('span');
+                countEl.className = 'tag-cloud-word-count';
+                countEl.setAttribute('aria-hidden', 'true');
+                chip.append(labelEl, countEl);
 
-                const countLabel = this.getTagCountLabel(count);
-                chip.title = `#${tag} — ${countLabel}`;
                 chip.setAttribute(
                     'aria-label',
                     t('dashboard.tagCloudFilterAria', 'Toggle tag {tag} in filter').replace('{tag}', tag)
-                        + ` (${countLabel})`
+                        + ` (${this.getTagCountLabel(totals.get(tag) || 0)})`
                 );
-                chip.addEventListener('click', () => {
-                    this.selectTag(tag);
+                chip.addEventListener('click', (event) => {
+                    this.selectTag(tag, { stack: event.shiftKey });
                 });
                 chip.addEventListener('focus', () => {
                     const chips = this.getTagChips();
@@ -944,36 +912,74 @@
                 });
                 this.body.appendChild(chip);
             });
-
-            /*
-             * What the cloud adds up to: how many tags there are, and how many
-             * of them are filtering the page. The spec closes its cloud with
-             * exactly these two, at opposite ends of a rule -- a cloud says
-             * which tags are big, and says nothing about how many there are or
-             * how much of it you have switched on.
-             */
-            const active = this.normalizeActiveTags().length;
-            const total = document.createElement('div');
-            total.className = 'tag-cloud-total';
-            total.setAttribute('aria-hidden', 'true');
-            const left = document.createElement('span');
-            left.textContent = (t('dashboard.tagCloudTotal', 'Total tags: {count}') || 'Total tags: {count}')
-                .replace('{count}', String(ranked.length));
-            const right = document.createElement('span');
-            right.textContent = active
-                ? (t('dashboard.tagCloudActive', '{count} filtering') || '{count} filtering')
-                    .replace('{count}', String(active))
-                : t('dashboard.tagCloudNoneActive', 'none filtering');
-            total.append(left, right);
-            this.body.appendChild(total);
+            this.refreshChipCounts();
 
             requestAnimationFrame(() => this.positionModal());
         },
 
-        selectTag(tag) {
+        /**
+         * The words fade in once, as the cloud opens, and then hold still.
+         * Not on a redraw after a pick or a keystroke: a cloud that replays its
+         * entrance under the pointer is a cloud you cannot click.
+         */
+        playEntrance() {
+            if (!this.body) return;
+            if (this._entranceTimerId) clearTimeout(this._entranceTimerId);
+            this.body.classList.add('is-entering');
+            this._entranceTimerId = window.setTimeout(() => {
+                this._entranceTimerId = null;
+                this.body?.classList.remove('is-entering');
+            }, 900);
+        },
+
+        /**
+         * A pick is a destination: filter on that one tag, close, and land on
+         * the grid. Shift stacks instead -- the tag joins or leaves the filter
+         * and the cloud stays open. The only tag that is filtering, picked
+         * again, switches the filter off.
+         */
+        selectTag(tag, { stack = false } = {}) {
             const normalized = String(tag || '').trim().toLowerCase();
             if (!normalized) return;
-            void window.dashboardInstance?.toggleTagFilter?.(normalized);
+            const dash = window.dashboardInstance;
+            this.setQuery('');
+            if (stack) {
+                void dash?.toggleTagFilter?.(normalized);
+                return;
+            }
+            const current = this.normalizeActiveTags();
+            const next = current.length === 1 && current[0] === normalized ? [] : [normalized];
+            /*
+             * A pick into a view carries on into it: the picked word travels to
+             * the view's title while the page cross-fades (View Transitions),
+             * where the browser has them and animations are on. Either way the
+             * cloud goes at once -- a cloud still fading out over the view held
+             * the keyboard for its last 180ms.
+             */
+            const chip = this.getTagChips().find((el) => el.dataset.tag === normalized);
+            if (next.length && this.canAnimatePick()) {
+                if (chip) chip.style.viewTransitionName = 'tag-pick';
+                const root = document.documentElement;
+                const transition = document.startViewTransition(async () => {
+                    this.closeModal({ animate: false });
+                    if (chip) chip.style.viewTransitionName = '';
+                    root.dataset.tagPick = '1';
+                    await dash?.setTagFilters?.(next);
+                });
+                const done = () => { delete root.dataset.tagPick; };
+                Promise.resolve(transition?.finished).then(done, done);
+                return;
+            }
+            this.closeModal({ animate: false });
+            void Promise.resolve(dash?.setTagFilters?.(next)).then(() => {
+                if (!next.length) this.restoreBookmarkFocus();
+            });
+        },
+
+        canAnimatePick() {
+            if (typeof document.startViewTransition !== 'function') return false;
+            if (document.body.classList.contains('no-animations')) return false;
+            return !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         },
 
         clearDashboardFilter({ animate = true, closeModal = false, focusBookmarks = false } = {}) {
@@ -1002,9 +1008,9 @@
         updateClearButton() {
             if (!this.clearBtn) return;
             const show = this.normalizeActiveTags().length > 0;
+            // The footer stays: it carries the key legend, and the clear button
+            // joins it only while something is filtering.
             this.clearBtn.hidden = !show;
-            const footer = this.clearBtn.closest('.tag-cloud-modal-footer');
-            if (footer) footer.hidden = !show;
             if (this.modalOpen) {
                 requestAnimationFrame(() => this.positionModal());
             }

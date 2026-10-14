@@ -188,6 +188,8 @@ class DashboardPageNav {
                 displayName = this.t('config.viewBreadcrumbRoot', 'Config').toLowerCase();
             } else if (d.activeView === 'library') {
                 displayName = this.t('dashboard.libraryView', 'Bookmarks').toLowerCase();
+            } else if (d.activeView === 'tags') {
+                displayName = this.t('dashboard.tagViewPageTitle', 'Tags').toLowerCase();
             } else {
                 const defaultTitle = d.language.t('dashboard.defaultPageTitle');
                 displayName = pageName || (defaultTitle !== 'dashboard.defaultPageTitle' ? defaultTitle : '');

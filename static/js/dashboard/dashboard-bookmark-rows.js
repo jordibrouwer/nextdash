@@ -984,6 +984,47 @@ class DashboardBookmarkRows {
     }
 
 
+    /*
+     * These two lived in the inline-edit module, which loads on demand. Until
+     * it had, the lazy loader answered the question with a promise, which is
+     * truthy, so a tag change from the Tags popover synced its fields into
+     * every bookmark in memory: the whole library briefly carried one name.
+     * The tag view opens without that module, so it showed there first.
+     */
+    _shouldSyncBookmarkMutation(bookmarkRef, candidate, previousUrlTrimmed) {
+        const d = this.dash;
+        if (!bookmarkRef || !candidate) {
+            return false;
+        }
+        const updatedPageId = Number(bookmarkRef.pageId || d.currentPageId);
+        const candidatePageId = Number(candidate.pageId || candidate.pageID || 0);
+        if (candidatePageId !== updatedPageId) {
+            return false;
+        }
+        const candidateUrl = String(candidate.url || '').trim();
+        return d.isSameBookmarkReference(bookmarkRef, candidate)
+            || (previousUrlTrimmed && candidateUrl === previousUrlTrimmed);
+    }
+
+
+    _applyBookmarkMutationFields(target, source) {
+        if (!target || !source) {
+            return;
+        }
+        target.name = source.name;
+        target.url = source.url;
+        target.icon = source.icon;
+        target.shortcut = source.shortcut;
+        target.category = source.category;
+        target.pinned = source.pinned;
+        target.checkStatus = source.checkStatus;
+        target.monitor = source.monitor;
+        target.monitorIntervalMinutes = source.monitorIntervalMinutes;
+        target.note = source.note || '';
+        target.tags = Array.isArray(source.tags) ? [...source.tags] : [];
+    }
+
+
     syncEditedBookmarkAcrossCollections(bookmarkRef, previousUrl = '') {
         const d = this.dash;
         if (!bookmarkRef || !bookmarkRef.bookmark) {
@@ -1341,10 +1382,11 @@ class DashboardBookmarkRows {
      * sheet behind `!` — but the dashboard is also the shortest view, and a
      * ten-entry legend under seven bookmarks reads as clutter rather than help.
      *
-     * So it is off by default, four entries long, and even when switched on it
-     * stays hidden until the keyboard is actually used: KeyboardNavigation
-     * stamps data-grid-keys on <body> at the first cursor move and clears it
-     * again on Enter, when the reader has arrived where they were going.
+     * So it is grouped into three lines, on for fresh installs, and the rows
+     * that presume the keyboard is in use (`more`) stay hidden until it is:
+     * KeyboardNavigation stamps data-grid-keys on <body> at the first cursor
+     * move and clears it again on Enter, when the reader has arrived where
+     * they were going. Shift+Z switches the whole legend off and on.
      *
      * Rebuilt only when the text changes: this runs on every render, and the
      * legend is constant unless the language does.
@@ -1355,19 +1397,25 @@ class DashboardBookmarkRows {
         if (!grid || !host || !window.KeyboardViewLegends) {
             return;
         }
-        // Off unless asked for: on a dashboard with seven bookmarks the legend
-        // was as tall as the grid above it, which is a manual, not a hint.
+        // Existing installs keep it off: it is on only where it was switched
+        // on or the install is new.
         if (d.settings?.showGridKeyLegend !== true) {
             host.querySelector(':scope > .dashboard-legend')?.remove();
             return;
         }
-        const pairs = window.KeyboardViewLegends.toLegendPairs(
-            window.KeyboardViewLegends.DASHBOARD_VIEW,
-            (key, fallback) => d.formatDashboardLabel?.(key, {}, fallback) ?? fallback,
-        );
-        const html = pairs
-            .map(([keys, label]) => `<span><kbd>${d.escapeHtml(keys)}</kbd> ${d.escapeHtml(label)}</span>`)
-            .join('');
+        const rows = window.KeyboardViewLegends.DASHBOARD_VIEW;
+        const lines = [...new Set(rows.map((row) => row.line || 1))].sort();
+        const html = lines.map((line) => {
+            const spans = rows
+                .filter((row) => (row.line || 1) === line)
+                .map((row) => {
+                    const label = d.formatDashboardLabel?.(row.legendKey, {}, row.fallback) ?? row.fallback;
+                    const more = row.more ? ' class="dashboard-legend-more"' : '';
+                    return `<span${more}><kbd>${d.escapeHtml(row.keys)}</kbd> ${d.escapeHtml(label)}</span>`;
+                })
+                .join('');
+            return `<span class="dashboard-legend-line">${spans}</span>`;
+        }).join('');
         let legend = host.querySelector(':scope > .dashboard-legend');
         if (!legend) {
             legend = document.createElement('p');
@@ -1417,7 +1465,7 @@ class DashboardBookmarkRows {
         if (!root) {
             return null;
         }
-        return root.querySelector('.tag-filter-view-body[role="grid"]') || root;
+        return root;
     }
 
 
@@ -1426,6 +1474,25 @@ class DashboardBookmarkRows {
         if (d._movePopoverCleanup) {
             d._movePopoverCleanup();
             d._movePopoverCleanup = null;
+            return;
+        }
+        /*
+         * A bookmark from another page -- a tag view or smart collection row.
+         * The list below is this page's categories and moves by this page's
+         * index, so it would have filed the bookmark under a category it
+         * cannot reach. The tag filter's move knows other pages: it offers
+         * pages only, and moves the bookmark from where it is.
+         */
+        const remoteRef = this.resolveBookmarkReference(bookmark);
+        if (remoteRef?.scope === 'remote' && d.tagFilter?.showTagFilterBulkMovePopover) {
+            d.tagFilter.showTagFilterBulkMovePopover(anchorEl, {
+                refs: [remoteRef],
+                onMoveToPage: async (id) => {
+                    await d.tagFilter.bulkMoveTagFilterToPage(id, [remoteRef]);
+                    d.renderDashboard?.({ animate: false });
+                },
+                onMoveToCategory: (id) => d.applyBookmarkCategoryMove?.([remoteRef], id, { count: 1 }),
+            });
             return;
         }
         /*
@@ -1707,32 +1774,87 @@ class DashboardBookmarkRows {
          * place a bookmark is tagged straight from the grid did not. Taking
          * one is the same click as any other row here.
          */
-        const offers = (window.TagSuggestLive?.forDashBookmark?.(d, bookmarkRef.bookmark) || []).slice(0, 3);
-        if (offers.length) {
-            const suggested = document.createElement('div');
-            suggested.className = 'tag-popover-suggested';
-            const label = document.createElement('div');
-            label.className = 'move-popover-section-label';
-            label.textContent = t('dashboard.tagPopoverSuggestedSection', 'Suggested');
-            suggested.appendChild(label);
-            offers.forEach(({ tag }) => {
-                const item = document.createElement('div');
-                item.className = 'move-popover-item tag-popover-suggested-item';
-                item.id = `tag-popover-sugg-${tag.replace(/[^a-z0-9_-]/g, '-')}`;
-                item.setAttribute('role', 'option');
-                item.setAttribute('data-tag', tag);
-                item.setAttribute('aria-selected', 'false');
-                const check = document.createElement('span');
-                check.className = 'move-popover-check';
-                const text = document.createElement('span');
-                text.className = 'tag-popover-item-label';
-                text.textContent = `#${tag}`;
-                item.append(check, text);
-                suggested.appendChild(item);
-                items.push(item);
-            });
-            pop.appendChild(suggested);
-        }
+        /*
+         * The Suggested section is always there, so a search has somewhere to
+         * say what it is doing. It opens with what is already known, looks
+         * the site up (catalogue, then online) if that is nothing, and offers
+         * Read page when the lookup finds nothing either. Progress is shown
+         * here rather than on the overlay, which would cover the popover.
+         */
+        const suggested = document.createElement('div');
+        suggested.className = 'tag-popover-suggested';
+        const suggestedLabel = document.createElement('div');
+        suggestedLabel.className = 'move-popover-section-label';
+        suggestedLabel.textContent = t('dashboard.tagPopoverSuggestedSection', 'Suggested');
+        const suggestedBody = document.createElement('div');
+        suggested.append(suggestedLabel, suggestedBody);
+        pop.appendChild(suggested);
+
+        const sourceOf = (offer) => {
+            const kind = offer?.reason?.kind;
+            if (kind === 'online') return t('dashboard.tagSourceOnline', 'Wikidata');
+            if (kind === 'catalogue') return t('dashboard.tagSourceCatalogue', 'catalogue');
+            if (kind === 'text') return t('dashboard.tagSourcePage', 'the page');
+            if (kind === 'rule') return t('dashboard.tagSourceRule', 'your rule');
+            return t('dashboard.tagSourceYours', 'your tags');
+        };
+        const offerItem = (offer) => {
+            const item = document.createElement('div');
+            item.className = 'move-popover-item tag-popover-suggested-item';
+            item.id = `tag-popover-sugg-${offer.tag.replace(/[^a-z0-9_-]/g, '-')}`;
+            item.setAttribute('role', 'option');
+            item.setAttribute('data-tag', offer.tag);
+            item.setAttribute('aria-selected', 'false');
+            const check = document.createElement('span');
+            check.className = 'move-popover-check';
+            const text = document.createElement('span');
+            text.className = 'tag-popover-item-label';
+            text.textContent = `#${offer.tag}`;
+            const source = document.createElement('span');
+            source.className = 'tag-popover-item-source';
+            source.textContent = sourceOf(offer);
+            item.append(check, text, source);
+            return item;
+        };
+        const statusRow = (text, { bar = false } = {}) => {
+            const row = document.createElement('div');
+            row.className = 'tag-popover-status';
+            row.setAttribute('role', 'status');
+            const words = document.createElement('span');
+            words.textContent = text;
+            row.appendChild(words);
+            if (bar) {
+                const track = document.createElement('span');
+                track.className = 'tag-popover-status-bar';
+                row.appendChild(track);
+            }
+            return row;
+        };
+        const readPageItem = () => {
+            const item = document.createElement('div');
+            item.className = 'move-popover-item tag-popover-action';
+            item.id = 'tag-popover-read-page';
+            item.setAttribute('role', 'option');
+            item.setAttribute('data-action', 'read-page');
+            const check = document.createElement('span');
+            check.className = 'move-popover-check';
+            check.textContent = '⌕';
+            const text = document.createElement('span');
+            text.className = 'tag-popover-item-label';
+            text.textContent = t('dashboard.tagPopoverReadPage', 'Read page');
+            item.append(check, text);
+            return item;
+        };
+
+        const initialOffers = (window.TagSuggestLive?.forDashBookmark?.(d, bookmarkRef.bookmark) || []).slice(0, 3);
+        // How many of `items` (at its start) belong to Suggested.
+        let suggestedCount = 0;
+        initialOffers.forEach((offer) => {
+            const item = offerItem(offer);
+            suggestedBody.appendChild(item);
+            items.push(item);
+            suggestedCount += 1;
+        });
 
         if (tagRows.length > 0) {
             const sectionLabel = document.createElement('div');
@@ -1793,6 +1915,8 @@ class DashboardBookmarkRows {
 
         const syncTagItemStates = () => {
             items.forEach((item) => {
+                // Read page is an action, not a tag: no tick to keep in step.
+                if (item.hasAttribute('data-action')) return;
                 const tag = item.getAttribute('data-tag') || '';
                 const onBookmark = bookmarkHasTag(tag);
                 item.classList.toggle('is-current', onBookmark);
@@ -1843,6 +1967,8 @@ class DashboardBookmarkRows {
         let unbindOutside = null;
         let unbindPosition = null;
         let toggleInFlight = false;
+        // Whether the reader has moved the cursor themselves (keys or mouse).
+        let readerMoved = false;
 
         const close = () => {
             if (pop.parentNode) {
@@ -1863,6 +1989,10 @@ class DashboardBookmarkRows {
         d._tagPopoverCleanup = close;
 
         const toggleTag = async (item, { advance = false } = {}) => {
+            if (item?.getAttribute('data-action') === 'read-page') {
+                void readPage();
+                return false;
+            }
             const tag = String(item?.getAttribute('data-tag') || '').trim().toLowerCase();
             if (!tag || toggleInFlight) {
                 return false;
@@ -1900,12 +2030,14 @@ class DashboardBookmarkRows {
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                readerMoved = true;
                 setFocus(focusedIdx + 1);
                 return;
             }
             if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                readerMoved = true;
                 setFocus(focusedIdx - 1);
                 return;
             }
@@ -1918,13 +2050,85 @@ class DashboardBookmarkRows {
             }
         };
 
-        items.forEach((item, idx) => {
-            item.addEventListener('mouseenter', () => setFocus(idx));
+        // By the item, not its place: Suggested can grow or shrink after the
+        // popover opens, and every index after it moves.
+        const wire = (item) => {
+            item.addEventListener('mouseenter', () => {
+                readerMoved = true;
+                setFocus(items.indexOf(item));
+            });
             item.addEventListener('click', (e) => {
                 e.preventDefault();
                 void toggleTag(item, { advance: false });
             });
-        });
+        };
+        items.forEach(wire);
+
+        /*
+         * Put new rows into Suggested: nodes are what it shows (a status line
+         * is not something to land on), focusable the ones the keyboard
+         * reaches. The focus stays on the row it was on.
+         */
+        const setSuggested = (nodes, focusable = []) => {
+            const current = items[focusedIdx] || null;
+            items.splice(0, suggestedCount, ...focusable);
+            suggestedCount = focusable.length;
+            suggestedBody.replaceChildren(...nodes);
+            focusable.forEach(wire);
+            syncTagItemStates();
+            // Untouched, the popover's first row is the one to land on -- now
+            // a suggestion, or Read page. Once the reader has moved, they stay
+            // where they went.
+            const at = current ? items.indexOf(current) : -1;
+            focusedIdx = readerMoved && at >= 0 ? at : 0;
+            if (items.length) setFocus(focusedIdx);
+        };
+        const showOffers = (offers) => {
+            const rows = offers.map(offerItem);
+            setSuggested(rows, rows);
+        };
+        const offerReadPage = () => {
+            const row = readPageItem();
+            setSuggested([row], [row]);
+        };
+
+        const url = String(bookmarkRef.bookmark.url || '').trim();
+        const live = window.TagSuggestLive;
+        const readPage = async () => {
+            setSuggested([statusRow(t('dashboard.tagPopoverReading', 'Reading the page…'), { bar: true })]);
+            let keywords = [];
+            try {
+                const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+                const res = await fetcher(`/api/bookmark-preview?refresh=1&url=${encodeURIComponent(url)}`);
+                const preview = res.ok ? await res.json() : null;
+                keywords = Array.isArray(preview?.keywords) ? preview.keywords : [];
+            } catch {
+                keywords = [];
+            }
+            if (!pop.isConnected) return;
+            // The words are stored with the preview now; everything that
+            // reads them should read them again.
+            live?.forgetKeywords?.();
+            const offers = (live?.forDraft?.(d, {
+                url,
+                tags: bookmarkRef.bookmark.tags || [],
+                keywords,
+            }) || []).slice(0, 3);
+            if (offers.length) showOffers(offers);
+            else setSuggested([statusRow(t('dashboard.tagPopoverReadNone', 'The page does not say what it is about either.'))]);
+        };
+        // Nothing known yet: look the site up, then offer to read the page.
+        if (!initialOffers.length && url && live?.ensureCatalogue) {
+            setSuggested([statusRow(t('dashboard.tagPopoverLooking', 'Looking this site up…'), { bar: true })]);
+            void live.ensureCatalogue([url], { overlay: false }).then(() => {
+                if (!pop.isConnected) return;
+                const offers = (live.forDashBookmark?.(d, bookmarkRef.bookmark) || []).slice(0, 3);
+                if (offers.length) showOffers(offers);
+                else offerReadPage();
+            }).catch(() => {
+                if (pop.isConnected) offerReadPage();
+            });
+        }
 
         // Document capture only. A second capture listener on the popover never
         // ran: document is the outer node, so it handles the key first and every

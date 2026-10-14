@@ -677,6 +677,7 @@
     async runWidgetBulkAction(action) {
         const ids = this.selectedWidgetIds();
         if (!ids.length) return;
+        if (action !== 'clear') window.nextdashTrack?.('widget:bulk', { action, count: ids.length });
         const picked = new Set(ids);
 
         if (action === 'clear') {
@@ -894,6 +895,7 @@
     openWidgetCatalogue({ focusType } = {}) {
         const esc = (v) => this.dash.escapeHtml(v);
         if (!window.AppModal?.show) return;
+        window.nextdashTrack?.('widget:picker-open');
 
         const types = this.widgetCatalogueTypes();
         const fresh = this.newWidgetTypes?.() || [];
@@ -3002,6 +3004,7 @@
             radarr: 'Films coming out and downloads in progress in Radarr, with posters.',
             seerr: 'Requests in Overseerr or Jellyseerr — who asked, and whether it has arrived — with posters.',
             qbittorrent: 'Torrents in qBittorrent — progress, speed and time left — with the speeds on top.',
+            homeassistant: 'Entities from Home Assistant per room — values, and lights, switches and scenes to switch.',
             sabnzbd: 'Downloads in SABnzbd — the queue and what finished last — with the speed on top.',
             unraid: 'The Unraid server at a glance: array, parity, disks, alerts, VMs and the UPS, a line each.',
             unraidArray: 'Every disk of the Unraid array: how full, how warm, and which one is in trouble.',
@@ -3513,37 +3516,46 @@
     },
 
     /**
-     * The one-time tour, the first time this section is opened.
-     *
-     * The cheap guards are repeated before the fetch so a reader who has seen
-     * it, or has session tips off, never asks for the script at all; everything
-     * else — an open modal, active search, a phone — is left to the module,
-     * which checks the same tip id again.
-     *
-     * Here rather than on the dashboard because this is where a widget is
-     * added, and because the thing worth saying — that the custom tile reaches
-     * any address answering JSON — is invisible from a list of your own
-     * widgets and one button.
+     * The one-time tour, the first time this section is opened. The cheap
+     * guards run before the fetch, so a reader who has seen it, or has session
+     * tips off, never asks for the script at all.
      */
     async maybeShowWidgetsTutorial() {
-        // Once per visit to the section, whatever the section does afterwards:
-        // binding runs again on every repaint of the tab, and a second call
-        // lands while the first tour is still on screen -- replacing it with a
-        // fresh copy whose Skip then acts on a step nobody is looking at.
+        // Once per visit to the section: binding runs again on every repaint
+        // of the tab, and a second call would replace the tour on screen.
         if (this._widgetsTutorialAsked) return;
         if (window.DiscoverabilityState?.hasSeenTip?.(DashboardConfig.WIDGETS_TUTORIAL_TIP_ID)) return;
         if (this.dash.settings?.enableSessionTips === false) return;
         this._widgetsTutorialAsked = true;
-        if (typeof window.WidgetsTutorial === 'undefined') {
-            try {
-                await window.LazyScript.loadScriptOnce('js/widgets-tutorial.js', 'widgetsTutorialModule',
-                    () => typeof window.WidgetsTutorial !== 'undefined');
-            } catch {
-                // A tour that cannot be fetched is not worth an error toast.
-                return;
-            }
-        }
+        if (!(await this.loadWidgetsTour())) return;
         window.WidgetsTutorial?.maybeShow?.();
+    },
+
+    /** Fetch the tour script once. False when it cannot be had. */
+    async loadWidgetsTour() {
+        if (typeof window.WidgetsTutorial !== 'undefined') return true;
+        try {
+            await window.LazyScript.loadScriptOnce('js/widgets-tutorial.js', 'widgetsTutorialModule',
+                () => typeof window.WidgetsTutorial !== 'undefined');
+            return true;
+        } catch {
+            // A tour that cannot be fetched is not worth an error toast.
+            return false;
+        }
+    },
+
+    /**
+     * The Widgets tour, from the Tour button in the section's band or from
+     * Config's replay: seen or not.
+     *
+     * Here rather than on the dashboard because this is where a widget is
+     * added, and because the thing worth saying -- that the custom tile reaches
+     * any address answering JSON -- is invisible from a list of your own
+     * widgets and one button. The script is fetched only when asked for.
+     */
+    async openWidgetsTour() {
+        if (!(await this.loadWidgetsTour())) return false;
+        return window.WidgetsTutorial?.open?.() === true;
     },
 
     /*
@@ -3731,6 +3743,8 @@
         // No id: the server mints one. Inventing one here would be a second
         // place that decides what a widget id looks like.
         if (!await this.saveWidgetBlocks(payload)) return;
+        // The type is one of WIDGET_TYPES; the title and config never go out.
+        window.nextdashTrack?.('widget:add', { type });
         // Added from the Catalogue or the Custom tab: the new widget is filled
         // in on Your widgets, so that is where this lands.
         if (this.widgetsTab !== 'widgets') {
@@ -4054,6 +4068,8 @@
         // configFor writes presetId along with the address and the figures, so
         // what the panel was started from survives being saved and reopened.
         Object.assign(draft.config, catalogue.configFor(preset, draft.config.url || ''));
+        // A preset id is a fixed entry in DashboardWidgetPresets, not user text.
+        window.nextdashTrack?.('widget:preset', { preset: preset.id });
         if (preset.auth === 'header') {
             /*
              * The scheme is filled in, the token is not.
@@ -4402,6 +4418,7 @@
             ? await this.savePageWidgetsAfterRemoval(fromPage, block.id)
             : await this.saveWidgetBlocks(this.widgetPayloadFromBlocks());
         if (!wrote) return;
+        window.nextdashTrack?.('widget:remove', { type: block.widget?.type || block.type || 'unknown' });
         // After the page save, from the block held above: forgotten first, a
         // failed save left the widget pointing at a key that was gone.
         await this.forgetWidgetCredential(block);

@@ -159,6 +159,8 @@ func assetURL(rel string) string {
 var lazyLoadedAssets = []string{
 	"js/whats-new-modal.js",
 	"js/dashboard/dashboard-config.js",
+	// The tag view, behind dashboard-tag-view-loader.js.
+	"js/dashboard/dashboard-tag-view.js",
 	// Appearance's Background and Surface tabs, and the theme browser's tabs
 	// built from them: both are required by the config loader.
 	"js/dashboard/dashboard-config-look.js",

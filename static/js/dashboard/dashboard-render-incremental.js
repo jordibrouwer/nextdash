@@ -33,7 +33,13 @@ class DashboardRenderIncremental {
             return false;
         }
         const container = document.getElementById('dashboard-layout');
-        if (!container || container.querySelector('.tag-filter-view')) {
+        if (!container) {
+            return false;
+        }
+        // Another page's grid. Every new page has a category called "others",
+        // so the structure matched, and a switch kept the page it left: its
+        // folded categories, icons and sort controls on the page it opened.
+        if (container.dataset.renderedPageId !== String(d.currentPageId)) {
             return false;
         }
         if (container.querySelector('.empty-state')) {
@@ -152,7 +158,7 @@ class DashboardRenderIncremental {
 
     updateCategoryTitle(categoryEl, category) {
         const d = this.dash;
-        if (category.isSmartCollection || category.tagFilterChunk) {
+        if (category.isSmartCollection) {
             return;
         }
         const nameSpan = categoryEl.querySelector('.category-title-name');
@@ -303,7 +309,7 @@ class DashboardRenderIncremental {
         // Re-apply the per-category item cap after patching rows — otherwise the
         // "show more" toggle and hidden-overflow state would be lost on every
         // incremental update. Shared with the full-render path (idempotent).
-        if (!isSmartCollection && category.tagFilterChunk !== true) {
+        if (!isSmartCollection) {
             this.core.applyCategoryItemLimit(list, category);
         }
     }

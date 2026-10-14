@@ -214,10 +214,12 @@ func (w MaintenanceWindow) nextOccurrence(now time.Time, horizon time.Duration) 
 		if !w.coversDay(int(day.Weekday())) {
 			continue
 		}
-		s := day.Add(time.Duration(startMin) * time.Minute)
-		e := day.Add(time.Duration(endMin) * time.Minute)
+		// Wall-clock times, as covers() reads them: midnight plus a duration
+		// is an hour off on the day the clocks change.
+		s := time.Date(y, m, d+offset, startMin/60, startMin%60, 0, 0, now.Location())
+		e := time.Date(y, m, d+offset, endMin/60, endMin%60, 0, 0, now.Location())
 		if endMin < startMin {
-			e = e.Add(24 * time.Hour)
+			e = e.AddDate(0, 0, 1)
 		}
 		if !now.Before(s) && now.Before(e) {
 			return s, e, true, true

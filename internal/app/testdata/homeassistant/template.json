@@ -1,0 +1,17 @@
+{
+ "light.ceiling": null,
+ "light.reading": null,
+ "switch.coffee": "Living room",
+ "input_boolean.guests": null,
+ "sensor.temperature": "Kitchen",
+ "sensor.humidity": "Hallway",
+ "sensor.battery": null,
+ "binary_sensor.back_door": "Living room",
+ "binary_sensor.hall_motion": "Bedroom",
+ "scene.movie_night": "Hallway",
+ "sensor.power": "Office",
+ "light.garden": null,
+ "sensor.no_room": null,
+ "lock.front_door": "Living room",
+ "cover.garage": "Living room"
+}

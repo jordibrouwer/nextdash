@@ -165,6 +165,11 @@ function createInboxLoader(dashboard) {
                 const value = mod[prop];
                 return typeof value === 'function' ? value.bind(mod) : value;
             }
+            // The list before the module is here: empty. Through the lazy call
+            // below it was a function, and `(inbox.items || []).filter` threw --
+            // which broke the Bookmarks view's first draw when it opened
+            // before the inbox had ever loaded (:health refresh).
+            if (prop === 'items') return [];
             if (!target.isEnabled()) {
                 return typeof prop === 'string' && prop.startsWith('load') ? () => Promise.resolve([]) : undefined;
             }

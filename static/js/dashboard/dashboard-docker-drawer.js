@@ -213,7 +213,12 @@ class DockerDrawer {
                 window.SidePanelLayout.bind(panel, {
                     group: 'docker',
                     onAction: (action) => this._act(action),
-                    onTab: (name) => this._onTab(name),
+                    onTab: (name) => {
+                        // Only a click lands here; the tab shown on arrival
+                        // is loaded below without counting as a choice.
+                        window.nextdashTrack?.('docker:drawer-tab', { tab: name });
+                        this._onTab(name);
+                    },
                 });
             },
         });
@@ -462,6 +467,8 @@ class DockerDrawer {
 
     _act(action) {
         const summary = this._summary || {};
+        // Mute reports itself through the shared docker-action event.
+        if (action !== 'mute') window.nextdashTrack?.('docker:drawer-action', { action });
         if (action === 'mute') {
             void this._toggleMute();
             return;

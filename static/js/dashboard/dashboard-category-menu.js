@@ -39,7 +39,7 @@ class DashboardCategoryMenu {
         if (!(categoryEl instanceof HTMLElement) || categoryEl.dataset.categoryMenuBound === '1') {
             return;
         }
-        if (category?.isSmartCollection || category?.tagFilterChunk || category?.isVirtualCategory) {
+        if (category?.isSmartCollection || category?.isVirtualCategory) {
             return;
         }
         const titleEl = categoryEl.querySelector('.category-title');

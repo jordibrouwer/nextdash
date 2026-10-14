@@ -84,6 +84,7 @@
                 'tipFindAllPages',
                 'tipFindFinders',
                 'tipFindTagCloud',
+                'tipFindTagView',
                 'tipFindRecent',
                 'tipFindAddressBar',
                 'tipFindWeb',
@@ -152,6 +153,7 @@
                 'tipTuneCategoryHeader',
                 'tipTuneActionBar',
                 'tipTuneActionKeyHint',
+                'tipTuneAnimations',
                 'tipTuneSwitcher',
                 'tipTunePreview',
                 'tipTuneVideoCard',
@@ -162,6 +164,7 @@
                 'tipTuneWidgetFold',
                 'tipTuneCustomWidget',
                 'tipTuneAmbientWidgets',
+                'tipTuneHomeAssistant',
                 'tipTuneRssWidget',
                 'tipTuneCommands',
                 'tipTuneInboxConfig',
@@ -170,7 +173,7 @@
         {
             titleKey: 'tipsGroupConfig',
             titleFallback: 'Config',
-            tips: ['tipConfigKeyboard', 'tipConfigFindValue', 'tipConfigHub'],
+            tips: ['tipConfigKeyboard', 'tipConfigFindValue', 'tipConfigHub', 'tipConfigTours'],
         },
         {
             // Where bookmarks come from, where what happens here goes, and

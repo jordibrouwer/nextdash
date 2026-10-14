@@ -477,6 +477,8 @@ type Settings struct {
 	HyprMode                        bool   `json:"hyprMode"`                                // Launcher mode for PWA usage
 	LockLayout                      bool   `json:"lockLayout"`                              // Disable drag-and-drop reordering of bookmarks and categories
 	AnimationsEnabled               bool   `json:"animationsEnabled"`                       // Enable or disable animations globally
+	AnimationSpeed                  string `json:"animationSpeed"`                          // Pace of the arrivals (views rising in): slow, normal or fast
+	ViewAnimationsEnabled           bool   `json:"viewAnimationsEnabled"`                   // The views rising in on arrival; animationsEnabled still switches off everything
 	EnableCustomTitle               bool   `json:"enableCustomTitle"`                       // Enable custom page title
 	CustomTitle                     string `json:"customTitle"`                             // Custom page title
 	ShowPageInTitle                 bool   `json:"showPageInTitle"`                         // Show current page name in title
@@ -749,15 +751,18 @@ type Settings struct {
 	// The two cards that offer a review on their own. Both default on and are
 	// switched off in Config → Behavior → General, beside the session tips:
 	// that group is where everything which appears unasked is answered.
-	EnableTagSuggestionNotice bool   `json:"enableTagSuggestionNotice"` // The bulk-tag review offer
-	EnableHealthReviewNotice  bool   `json:"enableHealthReviewNotice"`  // The link-review offer
-	ShowShortcutTooltips      bool   `json:"showShortcutTooltips"`      // Keyboard-shortcut popovers on toolbar and header icons (default OFF since the shortcutTooltipsOffMigrated migration; opt-in in Config → Behavior or `:shortcuts on`)
-	ShowGridKeyLegend         bool   `json:"showGridKeyLegend"`
-	ShortcutOpenMode          string `json:"shortcutOpenMode,omitempty"`
-	RememberScrollPosition    bool   `json:"rememberScrollPosition"` // Return to where you were on a page instead of the top, after a page switch or a trip through Health, Inbox or config
-	UptimeBadges              bool   `json:"uptimeBadges"`           // Serve /badge/uptime.svg for monitored addresses to anyone who asks; off by default because it tells the web whether a host answers
-	DetectSoftNotFound        bool   `json:"detectSoftNotFound"`     // Judge whether a monitored page answering 200 is really a "page not found" template. Costs one bounded body read per check, which is why it is a choice
-	CertWarnDays              int    `json:"certWarnDays,omitempty"` // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save. The two tighter marks follow it // What typing a bookmark shortcut does: "instant" (default, opens the moment it matches), "delay" (opens after a short pause with no further key), "enter" (Enter opens). Empty reads as "instant"; installs carrying the v1.2.0 default are moved once, see migrateShortcutOpenModeDefaultInstant
+	EnableTagSuggestionNotice bool `json:"enableTagSuggestionNotice"` // The bulk-tag review offer
+	// Ask Wikidata about sites the tag catalogue does not know (host name
+	// only). On unless turned off; see tag_lookup.go.
+	TagLookupOnline          bool   `json:"tagLookupOnline"`
+	EnableHealthReviewNotice bool   `json:"enableHealthReviewNotice"` // The link-review offer
+	ShowShortcutTooltips     bool   `json:"showShortcutTooltips"`     // Keyboard-shortcut popovers on toolbar and header icons (default OFF since the shortcutTooltipsOffMigrated migration; opt-in in Config → Behavior or `:shortcuts on`)
+	ShowGridKeyLegend        bool   `json:"showGridKeyLegend"`
+	ShortcutOpenMode         string `json:"shortcutOpenMode,omitempty"`
+	RememberScrollPosition   bool   `json:"rememberScrollPosition"` // Return to where you were on a page instead of the top, after a page switch or a trip through Health, Inbox or config
+	UptimeBadges             bool   `json:"uptimeBadges"`           // Serve /badge/uptime.svg for monitored addresses to anyone who asks; off by default because it tells the web whether a host answers
+	DetectSoftNotFound       bool   `json:"detectSoftNotFound"`     // Judge whether a monitored page answering 200 is really a "page not found" template. Costs one bounded body read per check, which is why it is a choice
+	CertWarnDays             int    `json:"certWarnDays,omitempty"` // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save. The two tighter marks follow it // What typing a bookmark shortcut does: "instant" (default, opens the moment it matches), "delay" (opens after a short pause with no further key), "enter" (Enter opens). Empty reads as "instant"; installs carrying the v1.2.0 default are moved once, see migrateShortcutOpenModeDefaultInstant
 	// HealthCheckTimeoutSeconds is how long one availability check may take.
 	// 0 means the built-in default (3s), which is what every install had before
 	// this was a choice. Clamped to 2–30 on save.
@@ -1086,6 +1091,9 @@ type DiscoverabilityState struct {
 	LastWhatsNewRelease string `json:"lastWhatsNewRelease,omitempty"`
 	TipsPromoUntil      int64  `json:"tipsPromoUntil,omitempty"`
 	TipsNotBefore       int64  `json:"tipsNotBefore,omitempty"`
+	// TipsShownAt holds the recent tip times (Unix ms) behind the
+	// one-per-24-hours limit.
+	TipsShownAt []int64 `json:"tipsShownAt,omitempty"`
 	// SeenTips lists tip ids already shown as a session tip; each is shown once, ever.
 	SeenTips []string `json:"seenTips,omitempty"`
 	// SeenSettingPromos lists dismissed config setting highlight popovers.
@@ -1172,6 +1180,10 @@ type QuickStartState struct {
 	// How often the question has been put off, indexing a backoff schedule so
 	// each further hesitation waits longer than the last.
 	AnalyticsSnoozes int `json:"analyticsSnoozes,omitempty"`
+	// Unix seconds when the opt-in card was first put on screen. The install
+	// count card waits a couple of days after this so the two do not arrive
+	// together. Zero means never asked.
+	AnalyticsAskedAt int64 `json:"analyticsAskedAt,omitempty"`
 	// TemplatePicked is the first-start card's answer: a bundled template's
 	// id, or "keep" for the starter links. Empty means the card has not been
 	// answered and comes before the checklist.
@@ -1690,6 +1702,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShortcutOpenMode:          "instant",
 			RememberScrollPosition:    true,
 			DetectSoftNotFound:        true,
+			TagLookupOnline:           true,
 			ColumnsPerRow:             3,
 			FontSize:                  "m",
 			ShowTitle:                 true,
@@ -1731,6 +1744,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			HyprMode:                        false,
 			LockLayout:                      false,
 			AnimationsEnabled:               true,
+			AnimationSpeed:                  "normal",
+			ViewAnimationsEnabled:           true,
 			EnableCustomTitle:               false,
 			CustomTitle:                     "",
 			ShowPageInTitle:                 false,
@@ -2756,6 +2771,12 @@ func (fs *FileStore) AddBookmarkToPage(pageID int, bookmark Bookmark) error {
 		return fmt.Errorf("decode bookmarks page %d: %w", pageID, err)
 	}
 
+	// Checked again here, under the lock: the handlers look before they call,
+	// and two adds of one URL arriving together both saw it missing.
+	if urlTakenOnPage(pageWithBookmarks.Bookmarks, -1, bookmark.URL) {
+		return ErrBookmarkDuplicateURL
+	}
+
 	bookmark.PageID = pageID
 	if bookmark.UpdatedAt == 0 {
 		bookmark.UpdatedAt = time.Now().UnixMilli()
@@ -2876,6 +2897,7 @@ func (fs *FileStore) getAllBookmarksChecked() ([]Bookmark, bool) {
 		pageID := fileID
 		for i := range pageWithBookmarks.Bookmarks {
 			pageWithBookmarks.Bookmarks[i].PageID = pageID
+			decodeBookmarkPreviewText(&pageWithBookmarks.Bookmarks[i])
 		}
 		allBookmarks = append(allBookmarks, pageWithBookmarks.Bookmarks...)
 	}
@@ -3366,6 +3388,9 @@ func (fs *FileStore) getPages() []Page {
 		for id := range pageMap {
 			order = append(order, id)
 		}
+		// By id: map order is random, and the tabs came back shuffled and
+		// were saved that way.
+		sort.Ints(order)
 		// Save the default order (best effort during read path)
 		_ = fs.savePageOrder(order)
 	}
@@ -3994,6 +4019,7 @@ func (fs *FileStore) removeFactoryResetUserAssets() {
 	for _, name := range []string{
 		"preview-cache.json",
 		"health-cache.json",
+		"tag-lookup-cache.json",
 		"colors.json",
 		"favicon.ico",
 		"favicon.png",
@@ -4250,6 +4276,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShortcutOpenMode:                "instant",
 			RememberScrollPosition:          true,
 			DetectSoftNotFound:              true,
+			TagLookupOnline:                 true,
 			ColumnsPerRow:                   3,
 			FontSize:                        "m",
 			ShowTitle:                       true,
@@ -4289,6 +4316,8 @@ func (fs *FileStore) GetSettings() Settings {
 			HyprMode:                        false,
 			LockLayout:                      false,
 			AnimationsEnabled:               true,
+			AnimationSpeed:                  "normal",
+			ViewAnimationsEnabled:           true,
 			EnableCustomTitle:               false,
 			CustomTitle:                     "",
 			ShowPageInTitle:                 false,
@@ -4473,6 +4502,8 @@ func (fs *FileStore) GetSettings() Settings {
 			// And two from 17-08 that shipped without an entry here.
 			"rememberScrollPosition": &settings.RememberScrollPosition,
 			"detectSoftNotFound":     &settings.DetectSoftNotFound,
+			// Looking up unknown sites for tag suggestions, on since it was built.
+			"tagLookupOnline": &settings.TagLookupOnline,
 			// Background re-checks, on since 5 October 2026.
 			"healthAutoRecheckEnabled": &settings.HealthAutoRecheckEnabled,
 			// The weekly digest, on since it was built.
@@ -4492,6 +4523,10 @@ func (fs *FileStore) GetSettings() Settings {
 			settings.ActionBarPosition = defaultActionBarUpgrade
 		}
 		// The bar was always drawn before this switch existed.
+		// Animations in views came after the site-wide switch; on until turned off.
+		if _, ok := rawSettings["viewAnimationsEnabled"]; !ok {
+			settings.ViewAnimationsEnabled = true
+		}
 		if _, ok := rawSettings["actionBarEnabled"]; !ok {
 			settings.ActionBarEnabled = true
 		}
@@ -5067,6 +5102,11 @@ func (fs *FileStore) GetSettings() Settings {
 			settings.BackgroundPattern = "auto"
 		}
 		settings.FavoriteThemes = normalizeFavoriteThemes(settings.FavoriteThemes)
+		switch settings.AnimationSpeed {
+		case "slow", "normal", "fast":
+		default:
+			settings.AnimationSpeed = "normal"
+		}
 		if _, ok := rawSettings["densityMode"]; !ok || (settings.DensityMode != "comfortable" && settings.DensityMode != "compact" && settings.DensityMode != "dense" && settings.DensityMode != "auto") {
 			settings.DensityMode = "compact"
 		}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -245,7 +246,23 @@ func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, kn
 			dueIndex[key] = len(targets) - 1
 		}
 	}
+	// Longest unchecked first. Checks on one host queue behind each other, and
+	// past the round's deadline the rest are dropped unrecorded; in page order
+	// the same tail was dropped every round, so a slow host's last services
+	// never got a sample -- and never an alert. Stable, so a rule copy stays
+	// right behind the check it belongs to.
+	sort.SliceStable(targets, func(i, j int) bool {
+		return lastSampleAt(history[targets[i].key]) < lastSampleAt(history[targets[j].key])
+	})
 	return targets, known, liveHosts
+}
+
+// lastSampleAt is when samples was last added to, 0 when never.
+func lastSampleAt(samples []HealthSample) int64 {
+	if len(samples) == 0 {
+		return 0
+	}
+	return samples[len(samples)-1].T
 }
 
 // runDueMonitors pings every due monitor once and records the results.
