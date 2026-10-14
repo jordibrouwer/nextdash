@@ -211,6 +211,10 @@ Five more media widgets join Jellyfin on one shared base: Sonarr and Radarr show
 - **new — a picker for Add a widget.** Type to search the kinds by name or by what they show, `↑` `↓` to choose and `Enter` to add; the pane beside the list shows the kind you are on. The first `Escape` empties the search, the next closes the picker. The list is a listbox the field drives, so focus stays in the field (`dashboard-config-widgets.js`).
 - **new — a New badge on the kinds added in this release,** in the picker and the Catalogue, with a **New** chip and strip at the top of the Catalogue. The badge stays through v1.20 and goes away by itself from v1.21 on (`NEW_SINCE`, `dashboard-config-widget-catalogue.js`).
 
+### Tag suggestions
+
+- **new — one row-offer chip for both views.** The chip, the count line, the fitting of the Tags column and the source label move out of the Bookmarks view into `shared/tag-offer-row.js` and `tag-offer.css`, which the inbox uses too (`dashboard-config-bookmarks-workbench.js`, `config-bookmarks-workbench.css`).
+
 ### Translations
 
 - **fix — eight strings of the widget picker and the New badge** were missing from every locale and showed in English; they are now in all six languages.

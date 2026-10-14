@@ -2148,29 +2148,19 @@
         const offers = (d.unsortedBookmarks || []).includes(b)
             ? (live.forBookmark?.(d, b) || [])
             : (live.forDashBookmark?.(d, b) || []);
-        const have = new Set((b.tags || []).map((tag) => String(tag || '').trim().toLowerCase()));
-        return offers.find((offer) => offer?.tag && !have.has(String(offer.tag).toLowerCase())) || null;
-    },
-
-    workbenchOfferSource(offer) {
-        const kind = offer?.reason?.kind;
-        if (kind === 'online') return this.t('config.bmOfferFromOnline', 'Suggested by Wikidata');
-        if (kind === 'catalogue') return this.t('config.bmOfferFromCatalogue', 'Suggested by the catalogue');
-        if (kind === 'text') return this.t('config.bmOfferFromPage', 'Suggested by the page itself');
-        if (kind === 'rule') return this.t('config.bmOfferFromRule', 'Suggested by your rule');
-        return this.t('config.bmOfferFromYours', 'Suggested by your other tags');
+        return global.TagOfferRow?.pick(offers, b.tags) || null;
     },
 
     /** A dashed chip after the tags: click adds the tag, × turns it down. */
     workbenchOfferChip(b, esc) {
         const offer = this.workbenchRowOffer(b);
-        if (!offer) return '';
-        const tag = String(offer.tag);
-        return `<span class="config-bm-tag config-bm-tag--offer" data-bm-offer="${esc(tag)}" title="${esc(this.workbenchOfferSource(offer))}">`
-            + `<button type="button" class="config-bm-offer-add" data-bm-offer-add tabindex="-1"`
-            + ` aria-label="${esc(this.t('config.bmOfferAdd', 'Add #{tag}').replace('{tag}', tag))}">+ ${esc(tag)}</button>`
-            + `<button type="button" class="config-bm-offer-refuse" data-bm-offer-refuse tabindex="-1"`
-            + ` aria-label="${esc(this.t('config.bmOfferRefuse', 'Turn down #{tag}').replace('{tag}', tag))}">×</button></span>`;
+        if (!offer || !global.TagOfferRow) return '';
+        return global.TagOfferRow.chipHtml(offer, {
+            esc,
+            t: (key, fallback) => this.t(key, fallback),
+            data: 'bm',
+            className: 'config-bm-tag config-bm-tag--offer',
+        });
     },
 
     /**
@@ -2201,7 +2191,7 @@
             const cell = row.querySelector('.config-bm-tags');
             // A Health filter puts the reason in this cell instead of tags.
             if (!cell || cell.querySelector('.config-bm-reason')) return;
-            cell.querySelector('.config-bm-tag--offer')?.remove();
+            cell.querySelector('.tag-offer')?.remove();
             const html = this.workbenchOfferChip(this.findBookmarkByKey(row.getAttribute('data-bm-key')), esc);
             if (html) cell.insertAdjacentHTML('beforeend', html);
         });
@@ -2222,28 +2212,12 @@
      * is full, and the search box was what gave way.
      */
     syncWorkbenchOfferCount() {
-        const host = document.getElementById('config-bm-offers');
-        if (!host) return;
-        const count = this.workbenchOfferPairs().length;
-        host.hidden = !count;
-        if (!count) {
-            host.replaceChildren();
-            return;
-        }
-        const label = document.createElement('span');
-        label.textContent = count === 1
-            ? this.t('config.bmOffersOne', '1 tag suggestion in this list')
-            : this.t('config.bmOffersMany', '{n} tag suggestions in this list').replace('{n}', String(count));
-        const sep = document.createElement('span');
-        sep.textContent = '·';
-        const all = document.createElement('button');
-        all.type = 'button';
-        all.className = 'config-bm-offers-all';
-        all.setAttribute('data-bm-offers-all', '');
-        all.textContent = this.t('config.bmOffersAddAll', 'Add all');
-        // Read at the click: the list may have moved on since this was drawn.
-        all.addEventListener('click', () => void this.addWorkbenchOffers(this.workbenchOfferPairs()));
-        host.replaceChildren(label, sep, all);
+        global.TagOfferRow?.renderCount(document.getElementById('config-bm-offers'), this.workbenchOfferPairs().length, {
+            t: (key, fallback) => this.t(key, fallback),
+            data: 'bm',
+            // Read at the click: the list may have moved on since this was drawn.
+            onAddAll: () => void this.addWorkbenchOffers(this.workbenchOfferPairs()),
+        });
     },
 
     /**
@@ -2305,99 +2279,19 @@
     },
 
     /**
-     * Show as many whole tag chips per row as fit, then `+n` for the rest.
-     *
-     * Three passes over every row, so the layout is computed once: show all
-     * chips (and a wide `+n` to measure), read every width, then hide.
-     *
-     * A tag on offer goes first: its room is taken before the row's own
-     * tags are fitted, since those can fold into `+n` and it cannot. In a
-     * cell too narrow even for that, it gives way -- the side panel still
-     * offers it.
+     * Show as many whole tag chips per row as fit, then `+n` for the rest;
+     * a tag on offer is fitted first (TagOfferRow.fit, shared with the inbox).
      */
     fitWorkbenchTags(root) {
         const cells = [...(root || document).querySelectorAll('.config-bm-row .config-bm-tags')];
-        if (!cells.length) return;
-        cells.forEach((cell) => {
-            cell.querySelectorAll('.config-bm-tag').forEach((chip) => { chip.hidden = false; });
-            cell.querySelector('.config-bm-tag--offer')?.style.removeProperty('max-width');
-            const more = cell.querySelector('.config-bm-tag--more');
-            if (more) more.textContent = '+99';
-        });
-        const plans = cells.map((cell) => {
-            const chips = [...cell.querySelectorAll('.config-bm-tag:not(.config-bm-tag--more):not(.config-bm-tag--offer)')];
-            const more = cell.querySelector('.config-bm-tag--more');
-            const offer = cell.querySelector('.config-bm-tag--offer');
-            const gap = parseFloat(getComputedStyle(cell).columnGap) || 0;
-            return {
-                chips,
-                more,
-                offer,
-                gap,
-                avail: cell.clientWidth,
-                widths: chips.map((chip) => chip.getBoundingClientRect().width),
-                moreWidth: more ? more.getBoundingClientRect().width : 0,
-                // Its own width, not the squeezed one: it may shrink in the
-                // cell while everything else is shown for measuring.
-                offerWidth: offer ? (offer.querySelector('.config-bm-offer-add')?.scrollWidth || 0) + 2 : 0,
-            };
-        });
-        plans.forEach((plan) => {
-            if (!plan.offer) return;
-            // The row's first tag stays: an offer never pushes all of the
-            // bookmark's own tags into `+n`. Then the `+n` for the rest, and
-            // what is left is the offer's -- a long name cut short to fit,
-            // and below a few letters it goes.
-            const first = plan.widths.length ? plan.widths[0] + plan.gap : 0;
-            const beside = plan.widths.length > 1 ? plan.moreWidth + plan.gap : 0;
-            const room = Math.min(plan.offerWidth, plan.avail - first - beside);
-            if (room < Math.min(56, plan.offerWidth)) {
-                plan.offer.hidden = true;
-                return;
-            }
-            if (room < plan.offerWidth) plan.offer.style.maxWidth = `${Math.floor(room)}px`;
-            plan.avail -= room + plan.gap;
-        });
-        plans.forEach(({ chips, more, gap, avail, widths, moreWidth }) => {
-            if (!more) return;
-            const total = widths.reduce((sum, w) => sum + w, 0) + gap * Math.max(0, widths.length - 1);
-            let keep = widths.length;
-            if (total > avail + 1) {
-                keep = 0;
-                let used = moreWidth;
-                while (keep < widths.length && used + widths[keep] + gap <= avail + 1) {
-                    used += widths[keep] + gap;
-                    keep += 1;
-                }
-            }
-            const hiddenNames = [];
-            chips.forEach((chip, i) => {
-                chip.hidden = i >= keep;
-                if (chip.hidden) hiddenNames.push(chip.textContent);
-            });
-            more.hidden = hiddenNames.length === 0;
-            more.textContent = hiddenNames.length ? `+${hiddenNames.length}` : '';
-            if (hiddenNames.length) more.title = hiddenNames.join(', ');
-            else more.removeAttribute('title');
-        });
+        global.TagOfferRow?.fit(cells, { tag: '.config-bm-tag', more: '.config-bm-tag--more' });
         // Refit whenever the list changes width: a window resize, the panel
         // folding, or the first layout after the rows were put in.
         const host = document.getElementById('config-bm-list');
-        if (host && this._bmTagFitHost !== host && global.ResizeObserver) {
+        if (host && this._bmTagFitHost !== host) {
             this._bmTagFitObserver?.disconnect();
             this._bmTagFitHost = host;
-            let queued = false;
-            let lastWidth = -1;
-            this._bmTagFitObserver = new global.ResizeObserver(() => {
-                if (queued || host.clientWidth === lastWidth) return;
-                queued = true;
-                global.requestAnimationFrame(() => {
-                    queued = false;
-                    lastWidth = host.clientWidth;
-                    if (host.isConnected) this.fitWorkbenchTags(host);
-                });
-            });
-            this._bmTagFitObserver.observe(host);
+            this._bmTagFitObserver = global.TagOfferRow?.observe(host, () => this.fitWorkbenchTags(host)) || null;
         }
     },
 

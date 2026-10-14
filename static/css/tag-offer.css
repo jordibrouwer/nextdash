@@ -1,0 +1,95 @@
+/* A tag on offer in a list row (shared/tag-offer-row.js), in the Bookmarks
+   view and the inbox alike: dashed, in the accent, after the row's own tags.
+   Loaded after the views' own sheets, so it wins over their plain tag chip
+   at equal weight. */
+
+/* The × sits over the chip's end on hover rather than beside it: a Tags
+   column is one short line, and room kept for a hidden button is room a
+   tag does not get. A long name is cut short rather than the chip hidden. */
+.tag-offer {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 0;
+    border-radius: var(--radius-pill, 999px);
+    background: transparent;
+    border: 1px dashed color-mix(in srgb, var(--accent-primary) 70%, transparent);
+    color: var(--accent-primary);
+    font-size: var(--font-size-small);
+    white-space: nowrap;
+}
+
+.tag-offer[hidden] {
+    display: none;
+}
+
+.tag-offer button {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.tag-offer-add {
+    min-width: 0;
+    padding: 0 7px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tag-offer-refuse {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0 5px;
+    border-radius: 0 var(--radius-pill, 999px) var(--radius-pill, 999px) 0;
+    background: var(--background-secondary) !important;
+    color: var(--text-tertiary) !important;
+    opacity: 0;
+}
+
+.tag-offer:hover .tag-offer-refuse,
+.tag-offer-refuse:focus-visible {
+    opacity: 1;
+}
+
+.tag-offer-refuse:hover {
+    color: var(--accent-error, var(--text-primary)) !important;
+}
+
+@media (hover: none) {
+    .tag-offer-refuse {
+        opacity: 1;
+    }
+}
+
+/* "12 tag suggestions in this list · Add all", over the column heads. */
+.tag-offer-count {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.4em;
+    margin: 0 0 var(--space-2, 0.5rem);
+    color: var(--accent-primary);
+    font-size: calc(var(--font-size-text) * 0.914);
+}
+
+.tag-offer-count[hidden] {
+    display: none;
+}
+
+.tag-offer-count-all {
+    border: 0;
+    background: transparent;
+    color: var(--accent-primary);
+    font: inherit;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
