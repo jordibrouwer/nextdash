@@ -62,10 +62,10 @@ test.describe('column headings over the list views', () => {
         }
     });
 
-    test('Inbox: title, site and added over their columns', async ({ page }) => {
+    test('Inbox: title, site, tags and added over their columns', async ({ page }) => {
         await openInboxWith(page);
         const head = page.locator('.inbox-colhead');
-        await expect(head.locator(':scope > *')).toHaveText(['', '', 'Title', 'Site', 'Added']);
+        await expect(head.locator(':scope > *')).toHaveText(['', '', 'Title', 'Site', 'Tags', 'Added']);
         const line = page.locator('.inbox-item .inbox-item-line1').first();
         expect((await box(head.locator('.inbox-colhead-title')))?.left)
             .toBe((await box(line.locator('.inbox-item-title')))?.left);

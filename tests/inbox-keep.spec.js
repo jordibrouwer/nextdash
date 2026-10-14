@@ -127,7 +127,8 @@ test('triage says that Keep moves a link to Unsorted', async ({ page }) => {
         (window.dashboardInstance.inbox.items || []).length), { timeout: 10_000 }).toBeGreaterThan(0);
 
     // The row menu names the destination, not bare "Keep".
-    await page.locator('.inbox-item').first().click({ button: 'right' });
+    // On the title: the middle of the row is the site button.
+    await page.locator('.inbox-item .inbox-item-title').first().click({ button: 'right' });
     await expect(page.locator('#bookmark-context-menu [data-action="inbox-keep"]')).toContainText('Unsorted');
     await page.keyboard.press('Escape');
 

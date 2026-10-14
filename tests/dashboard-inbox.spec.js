@@ -24,6 +24,8 @@ test.describe('dashboard inbox phase 1', () => {
         await page.keyboard.press(':');
         await page.keyboard.type('inbox', { delay: 20 });
         await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 5000 });
+        // On a busy runner Enter could land on the list for a shorter prefix.
+        await expect(page.locator('#shortcut-search .search-match').first()).toContainText(/inbox/i);
         await page.keyboard.press('Enter');
         await expect(page.locator('.inbox-layout')).toBeVisible();
     });
@@ -444,8 +446,11 @@ test.describe('dashboard inbox phase 1', () => {
         await expect(page.locator('.inbox-selection-count')).toContainText('2');
         await expect(page.locator('.inbox-item.is-checked')).toHaveCount(2);
 
-        // Escape clears the selection rather than leaving the view.
-        await page.locator('.inbox-item').first().click();
+        // Escape clears the selection rather than leaving the view. Focused,
+        // not clicked: a click opens the side panel (which Escape closes
+        // first), and the middle of the row is the site button, which filters
+        // the ticked rows out of sight.
+        await page.locator('.inbox-item').first().focus();
         await page.keyboard.press('Escape');
         await expect(page.locator('.inbox-selection-bar')).toHaveCount(0);
         await expect(page.locator('.inbox-layout')).toBeVisible();
