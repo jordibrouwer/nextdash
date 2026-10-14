@@ -135,13 +135,15 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 ### Tags
 
 - **new — subjects in a tree.** A subject can name a broader `parent` (`kubernetes` under `containers` under `dev`, `broker` under `investing` under `finance`); 247 of the 471 now do. A suggestion comes in the reader's own words, now up the tree: whoever tags `#finance` but never `#broker` is offered `#finance` on a broker's site. Turning a broader tag down on a site turns down what sits under it there too. Catalogue schema v3; the parents live in `scripts/tag-catalogue/parents.json` and are written in by `merge.cjs` or, without a rebuild, `apply.cjs` (`tag-suggestions.js`, `tag_catalogue.go`, `tag-catalogue-hierarchy.spec.js`).
+- **new — a quiet lookup for new links.** A bookmark or inbox link that arrives after this browser first looked has its site looked up on Wikidata without a button, an overlay or a notice, and what comes back is offered as a chip. It never writes a tag. Only links newer than the first look count, a host is tried once per thirty days, a round takes at most twenty hosts and waits behind the reader's own **Find tags**; **Look up unknown sites on Wikidata** off turns it off (`TagCatalogue.autoLookup`, `TagSuggestLive.autoSearch`, `tag-auto-lookup.spec.js`).
+- **fix — the answers of a Find tags round land on the rows as they arrive.** What the catalogue already knew is on screen at once, before the first answer from Wikidata, and a burst of answers redraws a view once instead of once per batch (`TagCatalogue.onChange` with `wait`).
 - **fix — 135 misfiled catalogue sites.** Telecom operators under electronics, flight search under search, amazon.co.jp under streaming, yahoo.com under television, drinks brands under containers, three bare IP addresses and more: 126 are refiled and 9 dropped. The fixes sit in `scripts/tag-catalogue/manual/cleanup.json`, which a rebuild reads as handwork, so they hold.
 
 ### Docs
 
 - `MANUAL.md` §16 and §17 describe the nine Appearance tabs in three groups, the folding panels, the chips, the action bar button sizes and the Link previews tab; two new screenshots (`16-appearance-rows.jpg`, `16-appearance-action-bar.jpg`) and eight retaken.
 - `Config → Help → Grid, display & date` and the theme topic follow the new tab names in all six languages; the new Appearance strings (tab and group names, chips, button sizes, Fine-tune) are translated in nl, de, fr, zh and es, and the cross-references in Help, tips and the overview now name Layout, Surfaces and Link previews.
-- `README.md` and its Appearance screenshot show the grouped tabs.
+- `README.md` and its Appearance screenshot show the grouped tabs; it also lists what nextDash asks for by itself (three things, each with a switch and a variable), names Config → Monitoring and its three tabs for alerts, and mentions the key legend and the daily install count.
 - `static/data/whats-new/v1.19.7.json` and its index entry, with three highlights (Appearance in three groups, panels that fold, five action bar sizes) and their picture and recordings from `tests/fixtures/whats-new-media/v1.19.7.js`; `whats-new-stub.js` tokens bumped to `…-v1.19.7` / `whats-new-v337`, and `tests/whats-new-hidden-release.spec.js` follows.
 
 ---

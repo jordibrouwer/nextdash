@@ -71,6 +71,15 @@
           "text": "<strong>Suggestions up the tree.</strong> If you tag <code>#finance</code> but never <code>#broker</code>, a broker's site now gets <code>#finance</code> suggested."
         },
         {
+          "badge": "new",
+          "text": "<strong>New links are looked up quietly.</strong> A link that arrives in the inbox or your bookmarks gets its site looked up in the background, and the tags it finds show up as suggestions. Nothing is added by itself, and only the site name leaves your server. Switch it off with <strong>Look up unknown sites on Wikidata</strong> in the tags tab.",
+          "link": "#config/bookmarks/tags"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Find tags fills the rows as answers come in,</strong> instead of waiting for the whole round."
+        },
+        {
           "badge": "fix",
           "text": "<strong>135 sites in the tag catalogue were filed under the wrong subject,</strong> such as telecom operators under electronics. They are refiled or dropped."
         }
