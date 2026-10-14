@@ -50,6 +50,32 @@ test.describe('the grouped strip', () => {
         }
     });
 
+    test('every tab is on screen: the groups wrap rather than scroll', async ({ page }) => {
+        for (const width of [800, 375]) {
+            await page.setViewportSize({ width, height: 900 });
+            await open(page, '#config/appearance/display');
+            const strip = await page.evaluate(() => {
+                const el = document.querySelector('.config-subtabs--grouped');
+                const box = el.getBoundingClientRect();
+                const tabs = [...el.querySelectorAll('[data-appearance-tab]')];
+                return {
+                    scrolls: el.scrollWidth > el.clientWidth + 1,
+                    outside: tabs.filter((t) => {
+                        const r = t.getBoundingClientRect();
+                        return r.left < box.left - 1 || r.right > box.right + 1;
+                    }).length,
+                    // Each group has its label above its tabs.
+                    labels: [...el.querySelectorAll('.config-subtab-group')].map((g) =>
+                        g.querySelector('.config-subtab-group-label').getBoundingClientRect().top
+                        < g.querySelector('[data-appearance-tab]').getBoundingClientRect().top),
+                };
+            });
+            expect(strip.scrolls, `at ${width}px`).toBe(false);
+            expect(strip.outside, `at ${width}px`).toBe(0);
+            expect(strip.labels).toEqual([true, true, true]);
+        }
+    });
+
     test('Rows no longer holds the link preview panel', async ({ page }) => {
         await open(page, '#config/appearance/display');
         await expect(page.locator('[data-behavior-field="showStatus"]')).toHaveCount(1);
