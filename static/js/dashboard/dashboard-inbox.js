@@ -1927,7 +1927,14 @@ class DashboardInbox {
             return [];
         }
         try {
-            return await this.fetchItems();
+            const before = JSON.stringify(this.items || []);
+            const items = await this.fetchItems();
+            // A read in the background reached the list but not the screen:
+            // the open view kept drawing what it had until something else
+            // re-rendered it. Redrawn only when the list really changed, since
+            // most callers render right after anyway.
+            if (this.isActiveView() && JSON.stringify(this.items || []) !== before) this.render();
+            return items;
         } catch {
             // One failed refresh keeps the list it had. Emptied while
             // _itemsLoaded stayed true, the view showed "No links yet" and
@@ -2489,7 +2496,12 @@ class DashboardInbox {
         // Before the first render, so the view is built in the requested shape
         // rather than rendering the default and then rearranging itself.
         this.restoreViewState();
+        const hadList = this._itemsLoaded === true;
         await this.loadAndRender();
+        // The list from the badge's last read is drawn at once; a link added
+        // since (the extension, another tab) comes in with this read, which
+        // redraws only if the list changed (loadItems).
+        if (hadList) void this.loadItems();
         this.restoreInboxHash();
         this.syncUrlState();
         // A link shared from the phone lands here through /share, which can only
