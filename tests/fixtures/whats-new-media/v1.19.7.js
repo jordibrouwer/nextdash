@@ -47,8 +47,10 @@ module.exports = {
                 // Pacing for the capture, not a condition: a transition gets time to finish before the frame is taken.
                 await page.waitForTimeout(900);
                 await heads.nth(1).click();
+                // Pacing for the capture, not a condition: the opened panel stays on screen long enough to be read.
                 await page.waitForTimeout(1_400);
                 await heads.nth(1).click();
+                // Pacing for the capture, not a condition: the fold finishes before the recording ends.
                 await page.waitForTimeout(900);
             },
         },
@@ -61,6 +63,7 @@ module.exports = {
                 await openAppearance(page, kit);
                 await tab(page, 'Action bar').click();
                 await page.getByRole('combobox', { name: 'Button size' }).waitFor();
+                // Pacing for the capture, not a condition: the tab finishes drawing before the recording starts.
                 await page.waitForTimeout(600);
             },
             async act(page) {

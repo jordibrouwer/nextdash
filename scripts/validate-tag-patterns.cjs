@@ -37,8 +37,8 @@ const seenTags = new Map();
 const seenHosts = new Map();
 const seenKeywords = new Map();
 
-if (doc.version !== 2) {
-    problems.push(`version is ${JSON.stringify(doc.version)}, want 2`);
+if (doc.version !== 3) {
+    problems.push(`version is ${JSON.stringify(doc.version)}, want 3`);
 }
 const entries = Array.isArray(doc.tags) ? doc.tags : null;
 if (!entries) {
