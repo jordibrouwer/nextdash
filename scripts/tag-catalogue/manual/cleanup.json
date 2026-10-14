@@ -59,6 +59,10 @@
   ],
   "anthropic.com": [],
   "appleinsider.com": [],
+  "appsmith.com": [
+    "no-code",
+    "self-hosted"
+  ],
   "archive.is": [
     "archive"
   ],
@@ -74,6 +78,10 @@
     "news"
   ],
   "au.youth.yahoo.com": [],
+  "audiobookshelf.org": [
+    "ebooks-server",
+    "self-hosted"
+  ],
   "authy.com": [
     "passwords"
   ],
@@ -82,6 +90,10 @@
   ],
   "autotrader.co.uk": [
     "cars"
+  ],
+  "baserow.io": [
+    "no-code",
+    "self-hosted"
   ],
   "bees.library.cornell.edu": [
     "library"
@@ -108,10 +120,15 @@
     "ebooks"
   ],
   "bright.nl": [],
+  "budibase.com": [
+    "no-code",
+    "self-hosted"
+  ],
   "businessinsider.de": [
     "business",
     "news"
   ],
+  "buymeacoffee.com": [],
   "cdl.library.cornell.edu": [
     "library"
   ],
@@ -135,6 +152,9 @@
   ],
   "computable.nl": [],
   "computerbase.de": [],
+  "context7.com": [
+    "ai"
+  ],
   "corporate.orange.be": [
     "telecom"
   ],
@@ -167,8 +187,20 @@
     "government"
   ],
   "dnschecker.org": [],
+  "dokploy.com": [
+    "containers",
+    "self-hosted"
+  ],
+  "dolibarr.org": [
+    "erp",
+    "self-hosted"
+  ],
   "downdetector.com": [],
   "downforeveryoneorjustme.com": [],
+  "dub.co": [
+    "url-shortener",
+    "self-hosted"
+  ],
   "earthsky.org": [],
   "economie.gouv.fr": [
     "government"
@@ -183,6 +215,10 @@
   "espn.com.ar": [
     "sports"
   ],
+  "fail2ban.org": [
+    "security",
+    "self-hosted"
+  ],
   "fast.com": [],
   "figshare.com": [
     "research-data"
@@ -195,7 +231,9 @@
   "garmin.com": [
     "electronics"
   ],
+  "getsharex.com": [],
   "ghacks.net": [],
+  "github.com/sharex": [],
   "gizmodo.com": [],
   "golem.de": [],
   "golf.de": [
@@ -242,6 +280,14 @@
   "johnson.cornell.edu": [
     "university"
   ],
+  "join-lemmy.org": [
+    "fediverse",
+    "self-hosted"
+  ],
+  "joinpeertube.org": [
+    "fediverse",
+    "self-hosted"
+  ],
   "just-eat.co.uk": [
     "food-delivery"
   ],
@@ -263,6 +309,10 @@
   "lesnumeriques.com": [],
   "library.cornell.edu": [
     "library"
+  ],
+  "limesurvey.org": [
+    "forms",
+    "self-hosted"
   ],
   "linustechtips.com": [],
   "littlewoods.com": [
@@ -326,10 +376,18 @@
   "nintendo.pt": [
     "games"
   ],
+  "nocodb.com": [
+    "no-code",
+    "self-hosted"
+  ],
   "notebookcheck.net": [],
   "numerama.com": [],
   "nysaes.cals.cornell.edu": [
     "university"
+  ],
+  "odoo.com": [
+    "erp",
+    "open-source"
   ],
   "omgubuntu.co.uk": [],
   "openai.com": [],
@@ -361,6 +419,10 @@
   "phonearena.com": [],
   "phoronix.com": [],
   "phys.org": [],
+  "pixelfed.org": [
+    "fediverse",
+    "self-hosted"
+  ],
   "pop.culture.gouv.fr": [
     "reference"
   ],
@@ -385,6 +447,9 @@
   "restofworld.org": [],
   "ripe.net": [],
   "risky.biz": [],
+  "roocode.com": [
+    "ai"
+  ],
   "rtings.com": [],
   "schneier.com": [],
   "sciencealert.com": [],
@@ -396,6 +461,10 @@
   "securityaffairs.com": [],
   "securityweek.com": [],
   "servethehome.com": [],
+  "shlink.io": [
+    "url-shortener",
+    "self-hosted"
+  ],
   "siliconangle.com": [],
   "siv.archives-nationales.culture.gouv.fr": [
     "archive"
@@ -478,6 +547,10 @@
   ],
   "slashdot.org": [],
   "smithsonianmag.com": [],
+  "snipeitapp.com": [
+    "inventory",
+    "self-hosted"
+  ],
   "speedtest.net": [],
   "spektrum.de": [],
   "stanley1913.com": [],
@@ -530,8 +603,20 @@
   ],
   "tomsguide.com": [],
   "tomshardware.com": [],
+  "tooljet.com": [
+    "no-code",
+    "self-hosted"
+  ],
   "tro.matrix.com.br": [],
+  "tvheadend.org": [
+    "iptv",
+    "self-hosted"
+  ],
   "tweakers.net": [],
+  "twenty.com": [
+    "crm",
+    "self-hosted"
+  ],
   "ultimaker.com": [],
   "universetoday.com": [],
   "venturebeat.com": [],
@@ -553,6 +638,10 @@
   "walmart.ca": [
     "shopping",
     "grocery"
+  ],
+  "webmin.com": [
+    "server-management",
+    "self-hosted"
   ],
   "whatismyipaddress.com": [],
   "who.is": [],
@@ -579,6 +668,10 @@
   ],
   "yelp.co.uk": [
     "restaurants"
+  ],
+  "yourls.org": [
+    "url-shortener",
+    "self-hosted"
   ],
   "zdnet.com": [],
   "zendesk.co.jp": [

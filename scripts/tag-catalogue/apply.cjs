@@ -38,6 +38,10 @@ const splitDefs = fs.existsSync(splitsFile) ? readJSON('splits.json').splits : {
 const splitHosts = fs.existsSync(path.join(__dirname, 'manual', 'splits.json')) ? readJSON('manual', 'splits.json') : {};
 // Well-known sites of whole Wikidata classes (import-classes.cjs).
 const classHosts = fs.existsSync(path.join(__dirname, 'manual', 'classes.json')) ? readJSON('manual', 'classes.json') : {};
+// Sites from Lobsters' tags and from curated lists (harvest-lobsters.cjs, harvest-awesome.cjs).
+const harvested = ['lobsters.json', 'awesome.json', 'directories.json']
+    .filter((name) => fs.existsSync(path.join(__dirname, 'manual', name)))
+    .reduce((all, name) => ({ ...all, ...readJSON('manual', name) }), {});
 
 const { subjects } = readJSON('subjects.json');
 const splitSubjects = Object.values(splitDefs).flat().filter(({ existing }) => !existing)
@@ -56,7 +60,7 @@ doc.tags.sort((a, b) => (a.tag < b.tag ? -1 : a.tag > b.tag ? 1 : 0));
 const bySubject = new Map(doc.tags.map((entry) => [entry.tag, entry]));
 let moved = 0;
 let dropped = 0;
-Object.entries({ ...splitHosts, ...classHosts, ...cleanup }).forEach(([host, tags]) => {
+Object.entries({ ...splitHosts, ...classHosts, ...harvested, ...cleanup }).forEach(([host, tags]) => {
     doc.tags.forEach((entry) => {
         if (entry.derived) entry.derived = entry.derived.filter((written) => written.replace(/^=/, '') !== host);
     });

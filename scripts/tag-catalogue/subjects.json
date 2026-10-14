@@ -2115,6 +2115,346 @@
         "arstechnica.com",
         "techmeme.com"
       ]
+    },
+    {
+      "tag": "dev-blogs",
+      "aliases": [
+        "engineering-blogs",
+        "tech-blogs",
+        "devblogs",
+        "programming-blogs"
+      ],
+      "keywords": [
+        "engineering",
+        "postmortem",
+        "architecture",
+        "scaling"
+      ],
+      "hosts": []
+    },
+    {
+      "tag": "fediverse",
+      "aliases": [
+        "activitypub",
+        "mastodon",
+        "decentralized-social"
+      ],
+      "keywords": [
+        "activitypub",
+        "instance",
+        "federated"
+      ],
+      "hosts": [
+        "joinlemmy.org",
+        "joinpeertube.org",
+        "pixelfed.org",
+        "fediverse.info",
+        "fedi.tips",
+        "fediverse.party",
+        "joinfirefish.org",
+        "join-lemmy.org",
+        "activitypub.rocks"
+      ]
+    },
+    {
+      "tag": "no-code",
+      "aliases": [
+        "low-code",
+        "nocode",
+        "lowcode"
+      ],
+      "keywords": [
+        "no-code",
+        "low-code",
+        "drag-and-drop",
+        "internal-tools"
+      ],
+      "hosts": [
+        "nocodb.com",
+        "budibase.com",
+        "appsmith.com",
+        "baserow.io",
+        "tooljet.com",
+        "bubble.io",
+        "airtable.com",
+        "retool.com",
+        "glideapps.com"
+      ]
+    },
+    {
+      "tag": "crm",
+      "hosts": [
+        "twenty.com",
+        "espocrm.com",
+        "suitecrm.com",
+        "hubspot.com",
+        "pipedrive.com",
+        "monicahq.com",
+        "krayincrm.com"
+      ]
+    },
+    {
+      "tag": "erp",
+      "aliases": [
+        "enterprise-resource-planning"
+      ],
+      "keywords": [
+        "invoicing",
+        "inventory",
+        "accounting",
+        "manufacturing"
+      ],
+      "hosts": [
+        "odoo.com",
+        "erpnext.com",
+        "frappe.io",
+        "dolibarr.org",
+        "akaunting.com",
+        "tryton.org"
+      ]
+    },
+    {
+      "tag": "mcp",
+      "aliases": [
+        "model-context-protocol",
+        "mcp-servers"
+      ],
+      "keywords": [
+        "mcp-server",
+        "tools",
+        "agent"
+      ],
+      "hosts": [
+        "modelcontextprotocol.io",
+        "mcp.so",
+        "smithery.ai",
+        "glama.ai",
+        "mcpservers.org",
+        "github.com/modelcontextprotocol",
+        "pulsemcp.com"
+      ]
+    },
+    {
+      "tag": "pastebin",
+      "aliases": [
+        "paste",
+        "pastes",
+        "code-sharing"
+      ],
+      "keywords": [
+        "paste",
+        "snippet",
+        "expires"
+      ],
+      "hosts": [
+        "pastebin.com",
+        "privatebin.info",
+        "hastebin.com",
+        "paste.rs",
+        "dpaste.org",
+        "paste.debian.net",
+        "termbin.com",
+        "rentry.co"
+      ]
+    },
+    {
+      "tag": "url-shortener",
+      "aliases": [
+        "link-shortener",
+        "short-links",
+        "urlshortener"
+      ],
+      "keywords": [
+        "short-link",
+        "redirect",
+        "click-tracking"
+      ],
+      "hosts": [
+        "bit.ly",
+        "bitly.com",
+        "tinyurl.com",
+        "shlink.io",
+        "yourls.org",
+        "kutt.it",
+        "dub.co",
+        "rebrandly.com",
+        "short.io"
+      ]
+    },
+    {
+      "tag": "iptv",
+      "aliases": [
+        "live-tv",
+        "tv-streaming"
+      ],
+      "keywords": [
+        "epg",
+        "m3u",
+        "channels",
+        "dvr"
+      ],
+      "hosts": [
+        "tvheadend.org",
+        "iptv-org.github.io",
+        "dispatcharr.github.io",
+        "xteve.de",
+        "nextpvr.com"
+      ]
+    },
+    {
+      "tag": "inventory",
+      "aliases": [
+        "home-inventory",
+        "asset-management",
+        "it-asset-management"
+      ],
+      "keywords": [
+        "assets",
+        "stock",
+        "barcode",
+        "locations"
+      ],
+      "hosts": [
+        "homebox.software",
+        "snipeitapp.com",
+        "inventree.org",
+        "shelf.nu",
+        "part-db.github.io",
+        "sortly.com"
+      ]
+    },
+    {
+      "tag": "server-management",
+      "aliases": [
+        "server-admin",
+        "server-panel",
+        "control-panel"
+      ],
+      "keywords": [
+        "web-ui",
+        "systemd",
+        "packages",
+        "users"
+      ],
+      "hosts": [
+        "cockpit-project.org",
+        "webmin.com",
+        "cosmos-cloud.io",
+        "cyberpanel.net",
+        "hestiacp.com",
+        "cloudpanel.io",
+        "aapanel.com"
+      ]
+    },
+    {
+      "tag": "forms",
+      "aliases": [
+        "surveys",
+        "polls",
+        "form-builder"
+      ],
+      "keywords": [
+        "form",
+        "survey",
+        "responses",
+        "questions"
+      ],
+      "hosts": [
+        "formbricks.com",
+        "heyform.net",
+        "typeform.com",
+        "tally.so",
+        "jotform.com",
+        "limesurvey.org",
+        "opnform.com",
+        "surveymonkey.com"
+      ]
+    },
+    {
+      "tag": "ebooks-server",
+      "aliases": [
+        "ebook-server",
+        "comics-server",
+        "library-server",
+        "opds"
+      ],
+      "keywords": [
+        "opds",
+        "epub",
+        "comics",
+        "library"
+      ],
+      "hosts": [
+        "kavitareader.com",
+        "komga.org",
+        "audiobookshelf.org",
+        "booklore.org",
+        "calibre-ebook.com",
+        "getcalibre.org"
+      ]
+    },
+    {
+      "tag": "distributed-systems",
+      "aliases": [
+        "distributed",
+        "distributed-computing"
+      ],
+      "keywords": [
+        "consensus",
+        "raft",
+        "paxos",
+        "replication"
+      ],
+      "hosts": [
+        "jepsen.io",
+        "aphyr.com",
+        "the-paper-trail.org",
+        "raft.github.io"
+      ]
+    },
+    {
+      "tag": "formal-methods",
+      "aliases": [
+        "formal-verification",
+        "theorem-proving",
+        "proof-assistants"
+      ],
+      "keywords": [
+        "tla",
+        "proof",
+        "verification",
+        "model-checking"
+      ],
+      "hosts": [
+        "learntla.com",
+        "isabelle.in.tum.de",
+        "rocq-prover.org",
+        "coq.inria.fr",
+        "lean-lang.org",
+        "leanprover-community.github.io",
+        "dafny.org",
+        "alloytools.org"
+      ]
+    },
+    {
+      "tag": "osdev",
+      "aliases": [
+        "os-development",
+        "operating-system-development",
+        "kernel-dev"
+      ],
+      "keywords": [
+        "kernel",
+        "bootloader",
+        "syscall",
+        "scheduler"
+      ],
+      "hosts": [
+        "wiki.osdev.org",
+        "osdev.org",
+        "os.phil-opp.com",
+        "littleosbook.github.io"
+      ]
     }
   ]
 }

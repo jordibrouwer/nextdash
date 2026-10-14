@@ -354,6 +354,21 @@
     "google": "tech",
     "open-source": "dev",
     "raspberrypi": "electronics-diy",
-    "mobile-apps": "smartphones"
+    "mobile-apps": "smartphones",
+    "dev-blogs": "dev",
+    "fediverse": "social",
+    "no-code": "dev",
+    "erp": "business",
+    "mcp": "ai",
+    "pastebin": "dev",
+    "url-shortener": "internet",
+    "iptv": "television",
+    "inventory": "productivity",
+    "server-management": "self-hosted",
+    "forms": "productivity",
+    "ebooks-server": "media-server",
+    "distributed-systems": "dev",
+    "formal-methods": "dev",
+    "osdev": "dev"
   }
 }
