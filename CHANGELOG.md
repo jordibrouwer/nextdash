@@ -112,7 +112,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.19.6 — 14 October 2026
 
-A tag gets a page of its own. The tag cloud is quieter — three sizes, counts, type to find — and picking a tag opens its tag view: every bookmark with that tag from every page, in one table with related tags, bulk actions and rename, merge or remove for the tag. Tag suggestions now draw on a catalogue of some 51,000 sites and ask Wikidata about the rest, and they show up in the rows of the tag view and the Bookmarks view with **Add all**. A Home Assistant widget switches lights and scenes from the dashboard. The tours are short, views and modals rise in at a speed you choose, and a run of fixes keeps saves from one device from undoing work done on another.
+A tag gets a page of its own. The tag cloud is quieter — three sizes, counts, type to find — and picking a tag opens its tag view: every bookmark with that tag from every page, in one table with related tags, bulk actions and rename, merge or remove for the tag. Tag suggestions now draw on a catalogue of some 51,000 sites and ask Wikidata about the rest, and they show up in the rows of the tag view, the Bookmarks view and the inbox with **Add all**. A Home Assistant widget switches lights and scenes from the dashboard. The tours are short, views and modals rise in at a speed you choose, and a run of fixes keeps saves from one device from undoing work done on another.
 
 ### Tags
 
@@ -138,6 +138,8 @@ A tag gets a page of its own. The tag cloud is quieter — three sizes, counts, 
 - **fix — the suggestions panel stays in place after Apply** instead of jumping back to the top.
 - **fix — Turned down stays open when the suggestions redraw;** *Offer again* on one of several refusals folded the list shut.
 - **fix — the bookmarks panel looks tags up online again when opened.**
+- **new — tag suggestions in the inbox rows.** The inbox gains a Tags column, as the Bookmarks view has: the row's own tags, `+n` for what does not fit, and a dashed chip with the tag on offer (click to add, **×** to turn down, the source as its tooltip). A line *N tag suggestions in this list · Add all* sits over the column heads, and `a` adds the offer of the row under the cursor; every add offers **Undo**. Opening the inbox now also loads the words read from pages, as the Bookmarks view does (`dashboard-inbox.js`, `dashboard-inbox.css`, `keyboard-view-legends.js`, `inbox-row-offers.spec.js`).
+- **new — one row-offer chip for both views.** The chip, the count line, the fitting of the Tags column and the source label move out of the Bookmarks view into `shared/tag-offer-row.js` and `tag-offer.css`, which the inbox uses too (`dashboard-config-bookmarks-workbench.js`, `config-bookmarks-workbench.css`).
 
 ### Widgets
 
@@ -212,11 +214,6 @@ Five more media widgets join Jellyfin on one shared base: Sonarr and Radarr show
 - **new — the media tiles share one base.** Jellyfin and the five new kinds use one cache per widget on its own TTL, one picture proxy and one tile with the list, strip, hero and grid layouts. Set-up is the same for all of them: the address, the key and **Connect**, which says *Connected to* with the version and fills the choices below. Posters now live in `data/media-images/`, shared by all media tiles (up to 200 MB, oldest out first, not in backups); the `data/jellyfin-images/` folder of v1.19.4 is removed the first time a poster is stored (`widgets_media.go`, `widgets_media_images.go`, `dashboard-media-tile.js`, `dashboard-config-widget-media.js`).
 - **new — a picker for Add a widget.** Type to search the kinds by name or by what they show, `↑` `↓` to choose and `Enter` to add; the pane beside the list shows the kind you are on. The first `Escape` empties the search, the next closes the picker. The list is a listbox the field drives, so focus stays in the field (`dashboard-config-widgets.js`).
 - **new — a New badge on the kinds added in this release,** in the picker and the Catalogue, with a **New** chip and strip at the top of the Catalogue. The badge stays through v1.20 and goes away by itself from v1.21 on (`NEW_SINCE`, `dashboard-config-widget-catalogue.js`).
-
-### Tag suggestions
-
-- **new — tag suggestions in the inbox rows.** The inbox gains a Tags column, as the Bookmarks view has: the row's own tags, `+n` for what does not fit, and a dashed chip with the tag on offer (click to add, **×** to turn down, the source as its tooltip). A line *N tag suggestions in this list · Add all* sits over the column heads, and `a` adds the offer of the row under the cursor; every add offers **Undo**. Opening the inbox now also loads the words read from pages, as the Bookmarks view does (`dashboard-inbox.js`, `dashboard-inbox.css`, `keyboard-view-legends.js`, `inbox-row-offers.spec.js`).
-- **new — one row-offer chip for both views.** The chip, the count line, the fitting of the Tags column and the source label move out of the Bookmarks view into `shared/tag-offer-row.js` and `tag-offer.css`, which the inbox uses too (`dashboard-config-bookmarks-workbench.js`, `config-bookmarks-workbench.css`).
 
 ### Translations
 
