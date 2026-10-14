@@ -31,7 +31,11 @@ var tagCatalogueJSON []byte
 type tagCatalogueSubject struct {
 	Tag     string   `json:"tag"`
 	Aliases []string `json:"aliases"`
-	Hosts   []string `json:"hosts"`
+	// Parent is the broader subject this one sits under (premier-league
+	// under soccer). The engine offers the nearest one the reader already
+	// uses; a subject with no parent is a root.
+	Parent string   `json:"parent,omitempty"`
+	Hosts  []string `json:"hosts"`
 	// Derived is what the build (scripts/tag-catalogue) found for the
 	// subject, beside the hand-written Hosts. Both resolve alike; the answer
 	// to the browser folds them into Hosts.
@@ -142,7 +146,7 @@ func (c *tagCatalogue) subset(hosts []string) []tagCatalogueSubject {
 				picked = append(picked, written)
 			}
 		}
-		out[i] = tagCatalogueSubject{Tag: subject.Tag, Aliases: subject.Aliases, Hosts: picked, Keywords: subject.Keywords}
+		out[i] = tagCatalogueSubject{Tag: subject.Tag, Aliases: subject.Aliases, Parent: subject.Parent, Hosts: picked, Keywords: subject.Keywords}
 	}
 	return out
 }

@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "meta": {
     "note": "Hosts prefixed with = match that host only, not its subdomains. A host may sit under at most two subjects.",
     "sources": [
@@ -15,6 +15,7 @@
         "academic-careers",
         "university-jobs"
       ],
+      "parent": "jobs",
       "hosts": [
         "academicpositions.com",
         "higheredjobs.com",
@@ -81,6 +82,7 @@
         "completionist",
         "unlocks"
       ],
+      "parent": "games",
       "hosts": [
         "exophase.com",
         "trueachievements.com",
@@ -146,6 +148,7 @@
         "competitive-programming",
         "coding-challenges"
       ],
+      "parent": "dev",
       "hosts": [
         "codeforces.com",
         "geeksforgeeks.org",
@@ -293,6 +296,7 @@
         "human-origins",
         "cultural-studies"
       ],
+      "parent": "science",
       "hosts": [
         "humanorigins.si.edu",
         "leakeyfoundation.org",
@@ -336,6 +340,7 @@
         "cartels",
         "mergerreview"
       ],
+      "parent": "law",
       "hosts": [
         "competitionpolicyinternational.com",
         "globalcompetitionreview.com",
@@ -361,6 +366,7 @@
         "endpoints",
         "webservices"
       ],
+      "parent": "dev",
       "hosts": [
         "insomnia.rest",
         "postman.com",
@@ -380,6 +386,7 @@
         "ancient-sites",
         "digs"
       ],
+      "parent": "science",
       "hosts": [
         "archaeology.co.uk",
         "archaeology.org",
@@ -463,6 +470,7 @@
         "learntodraw",
         "drawingguide"
       ],
+      "parent": "art",
       "hosts": [
         "ctrlpaint.com",
         "drawabox.com",
@@ -502,6 +510,7 @@
         "estatesale",
         "onlineauction"
       ],
+      "parent": "shopping",
       "hosts": [
         "heritageauctions.com",
         "invaluable.com",
@@ -523,6 +532,7 @@
         "talkingbooks",
         "listenbooks"
       ],
+      "parent": "books",
       "hosts": [
         "audible.com",
         "chirpbooks.com",
@@ -543,6 +553,7 @@
         "sso",
         "identity"
       ],
+      "parent": "security",
       "hosts": [
         "auth0.com",
         "authelia.com",
@@ -568,6 +579,7 @@
         "repair",
         "spares"
       ],
+      "parent": "cars",
       "hosts": [
         "autozone.com",
         "napaonline.com",
@@ -631,6 +643,7 @@
         "autos",
         "transportation"
       ],
+      "parent": "cars",
       "hosts": [
         "autonews.com",
         "just-auto.com",
@@ -734,6 +747,7 @@
         "desserts",
         "breadmaking"
       ],
+      "parent": "recipes",
       "hosts": [
         "food52.com",
         "kingarthurbaking.com",
@@ -758,6 +772,7 @@
         "deposits",
         "financialinstitutions"
       ],
+      "parent": "finance",
       "hosts": [
         "americanbanker.com",
         "bankingdive.com",
@@ -1532,6 +1547,7 @@
         "default",
         "chapter11"
       ],
+      "parent": "law",
       "hosts": [
         "abi.org",
         "reorg.com",
@@ -1552,6 +1568,7 @@
         "homerun",
         "innings"
       ],
+      "parent": "sports",
       "hosts": [
         "baseball-reference.com",
         "fangraphs.com",
@@ -1576,6 +1593,7 @@
         "courts",
         "bball"
       ],
+      "parent": "sports",
       "hosts": [
         "basketball-reference.com",
         "hoopshype.com",
@@ -1803,6 +1821,7 @@
         "impact-factor",
         "research-metrics"
       ],
+      "parent": "research",
       "hosts": [
         "dimensions.ai",
         "scopus.com",
@@ -1825,6 +1844,7 @@
         "distributed-computing",
         "data-pipeline"
       ],
+      "parent": "data-science",
       "hosts": [
         "airflow.apache.org",
         "getdbt.com",
@@ -1845,6 +1865,7 @@
         "biological-sciences",
         "biosciences"
       ],
+      "parent": "science",
       "hosts": [
         "addgene.org",
         "ebi.ac.uk",
@@ -1865,6 +1886,7 @@
         "birds",
         "wildlife"
       ],
+      "parent": "outdoors",
       "hosts": [
         "allaboutbirds.org",
         "audubon.org",
@@ -2000,6 +2022,7 @@
         "watersports",
         "boat"
       ],
+      "parent": "outdoors",
       "hosts": [
         "boats.com",
         "boattrader.com",
@@ -2024,6 +2047,7 @@
         "debtmarkets",
         "yields"
       ],
+      "parent": "investing",
       "hosts": [
         "bondbuyer.com",
         "marketaxess.com",
@@ -2044,6 +2068,7 @@
         "condensedbooks",
         "cliffnotes"
       ],
+      "parent": "books",
       "hosts": [
         "blinkist.com",
         "getabstract.com",
@@ -2132,6 +2157,7 @@
         "novels",
         "bookclub"
       ],
+      "parent": "shopping",
       "hosts": [
         "abebooks.com",
         "barnesandnoble.com",
@@ -2204,6 +2230,7 @@
         "flora",
         "plant-science"
       ],
+      "parent": "biology",
       "hosts": [
         "kew.org",
         "tropicos.org",
@@ -2225,6 +2252,7 @@
         "tv",
         "airwaves"
       ],
+      "parent": "media",
       "hosts": [
         "broadcastingcable.com",
         "rapidtvnews.com",
@@ -2283,6 +2311,7 @@
         "trading",
         "stockbroker"
       ],
+      "parent": "investing",
       "hosts": [
         "etrade.com",
         "fidelity.com",
@@ -2490,6 +2519,7 @@
         "tent",
         "glamping"
       ],
+      "parent": "outdoors",
       "hosts": [
         "campendium.com",
         "koa.com",
@@ -2510,6 +2540,7 @@
         "rental",
         "hire"
       ],
+      "parent": "travel",
       "hosts": [
         "avis.com",
         "budget.com",
@@ -3904,6 +3935,7 @@
         "monetarypolicy",
         "interestrates"
       ],
+      "parent": "finance",
       "hosts": [
         "bankofengland.co.uk",
         "bis.org",
@@ -3926,6 +3958,7 @@
         "exams",
         "accreditation"
       ],
+      "parent": "education",
       "hosts": [
         "certiport.com",
         "credly.com",
@@ -5225,6 +5258,7 @@
         "group-chat",
         "chat-app"
       ],
+      "parent": "messaging",
       "hosts": [
         "discord.com",
         "matrix.org",
@@ -5255,6 +5289,7 @@
         "hacks",
         "gamehacks"
       ],
+      "parent": "games",
       "hosts": [
         "cheatengine.org",
         "pcgamingwiki.com",
@@ -5271,6 +5306,7 @@
         "chem",
         "chemical-science"
       ],
+      "parent": "science",
       "hosts": [
         "chemistryworld.com",
         "chemspider.com",
@@ -5313,6 +5349,7 @@
         "pipelines",
         "build-automation"
       ],
+      "parent": "dev",
       "hosts": [
         "buildkite.com",
         "circleci.com",
@@ -5338,6 +5375,7 @@
         "showtimes",
         "dianyingyuan"
       ],
+      "parent": "film",
       "hosts": [
         "amctheatres.com",
         "cinesa.es",
@@ -6198,6 +6236,7 @@
         "reference-manager",
         "academic-citations"
       ],
+      "parent": "research",
       "hosts": [
         "citationmachine.net",
         "easybib.com",
@@ -6221,6 +6260,7 @@
         "symphony",
         "opera"
       ],
+      "parent": "music",
       "hosts": [
         "allofbach.com",
         "idagio.com",
@@ -6241,6 +6281,7 @@
         "local-ads",
         "buy-and-sell"
       ],
+      "parent": "shopping",
       "hosts": [
         "craigslist.org",
         "gumtree.com",
@@ -6293,6 +6334,7 @@
         "tidying",
         "chores"
       ],
+      "parent": "home",
       "hosts": [
         "handy.com",
         "merrymaids.com",
@@ -6337,6 +6379,7 @@
         "mountaineering",
         "climb"
       ],
+      "parent": "outdoors",
       "hosts": [
         "8a.nu",
         "climbing.com",
@@ -6458,6 +6501,7 @@
         "sync",
         "drive"
       ],
+      "parent": "cloud",
       "hosts": [
         "backblaze.com",
         "box.com",
@@ -6537,6 +6581,7 @@
         "pr-review",
         "diffs"
       ],
+      "parent": "dev",
       "hosts": [
         "gerritcodereview.com",
         "graphite.dev",
@@ -6558,6 +6603,7 @@
         "coding-bootcamp",
         "tech-skills"
       ],
+      "parent": "education",
       "hosts": [
         "codecademy.com",
         "egghead.io",
@@ -6642,6 +6688,7 @@
         "palettes",
         "color-schemes"
       ],
+      "parent": "design-tools",
       "hosts": [
         "color.adobe.com",
         "colorhunt.co",
@@ -6712,6 +6759,7 @@
         "comicsubscription",
         "comicsale"
       ],
+      "parent": "shopping",
       "hosts": [
         "dcbservice.com",
         "midtowncomics.com",
@@ -6732,6 +6780,7 @@
         "mining",
         "agriculture"
       ],
+      "parent": "investing",
       "hosts": [
         "agweb.com",
         "kitco.com",
@@ -6789,6 +6838,7 @@
         "pay-data",
         "salary-info"
       ],
+      "parent": "jobs",
       "hosts": [
         "glassdoor.com",
         "levels.fyi",
@@ -6810,6 +6860,7 @@
         "transpiler",
         "compiler-explorer"
       ],
+      "parent": "dev",
       "hosts": [
         "godbolt.org",
         "llvm.org",
@@ -6830,6 +6881,7 @@
         "regulatory",
         "oversight"
       ],
+      "parent": "law",
       "hosts": [
         "complianceweek.com",
         "corporatecomplianceinsights.com",
@@ -6939,6 +6991,7 @@
         "oci",
         "lxc"
       ],
+      "parent": "dev",
       "hosts": [
         "containerd.io",
         "docker.com",
@@ -6966,6 +7019,7 @@
         "online-courses",
         "elearning"
       ],
+      "parent": "education",
       "hosts": [
         "coursera.org",
         "edx.org",
@@ -7013,6 +7067,7 @@
         "systems-programming",
         "stl"
       ],
+      "parent": "dev",
       "hosts": [
         "cplusplus.com",
         "cppreference.com",
@@ -7060,6 +7115,7 @@
         "cards",
         "financing"
       ],
+      "parent": "finance",
       "hosts": [
         "cardrates.com",
         "creditcards.com",
@@ -7090,6 +7146,7 @@
         "debtrating",
         "scoring"
       ],
+      "parent": "finance",
       "hosts": [
         "dbrsmorningstar.com",
         "fitchratings.com",
@@ -7116,6 +7173,7 @@
         "fico",
         "scorecard"
       ],
+      "parent": "finance",
       "hosts": [
         "equifax.com",
         "experian.com",
@@ -7184,6 +7242,7 @@
         "cruiseline",
         "liner"
       ],
+      "parent": "travel",
       "hosts": [
         "carnival.com",
         "ncl.com",
@@ -7241,6 +7300,7 @@
         "blockchain",
         "digitalcurrency"
       ],
+      "parent": "finance",
       "hosts": [
         "bitcoinmagazine.com",
         "coinbase.com",
@@ -7271,6 +7331,7 @@
         "bicycling",
         "velo"
       ],
+      "parent": "sports",
       "hosts": [
         "bikeradar.com",
         "cyclingweekly.com",
@@ -7325,6 +7386,7 @@
         "dashboards",
         "business-intelligence"
       ],
+      "parent": "data-science",
       "hosts": [
         "metabase.com",
         "redash.io",
@@ -7346,6 +7408,7 @@
         "infographics",
         "charting"
       ],
+      "parent": "data-science",
       "hosts": [
         "d3js.org",
         "datawrapper.de",
@@ -7368,6 +7431,7 @@
         "nosql",
         "rdbms"
       ],
+      "parent": "dev",
       "hosts": [
         "mariadb.org",
         "mongodb.com",
@@ -7437,6 +7501,7 @@
         "coupons",
         "sales"
       ],
+      "parent": "shopping",
       "hosts": [
         "groupon.com",
         "honey.com",
@@ -7464,6 +7529,7 @@
         "profiling",
         "troubleshooting"
       ],
+      "parent": "dev",
       "hosts": [
         "bugsnag.com",
         "raygun.com",
@@ -7536,6 +7602,7 @@
         "hedging",
         "contracts"
       ],
+      "parent": "investing",
       "hosts": [
         "barchart.com",
         "cboe.com",
@@ -8213,6 +8280,7 @@
         "sketching",
         "charts"
       ],
+      "parent": "design-tools",
       "hosts": [
         "creately.com",
         "diagrams.net",
@@ -8364,6 +8432,7 @@
         "yield",
         "distributions"
       ],
+      "parent": "investing",
       "hosts": [
         "dividend.com",
         "simplysafedividends.com",
@@ -8384,6 +8453,7 @@
         "underwater",
         "freediving"
       ],
+      "parent": "sports",
       "hosts": [
         "divessi.com",
         "padi.com",
@@ -8516,6 +8586,7 @@
         "electronicmusic",
         "remixes"
       ],
+      "parent": "music",
       "hosts": [
         "1001tracklists.com",
         "beatport.com",
@@ -8563,6 +8634,7 @@
         "nonfiction",
         "documentaries"
       ],
+      "parent": "film",
       "hosts": [
         "curiositystream.com",
         "magellantv.com",
@@ -8612,6 +8684,7 @@
         "whois",
         "registrar"
       ],
+      "parent": "hosting",
       "hosts": [
         "godaddy.com",
         "hover.com",
@@ -8635,6 +8708,7 @@
         "netcore",
         "dotnetcore"
       ],
+      "parent": "dev",
       "hosts": [
         "dotnet.microsoft.com",
         "mono-project.com",
@@ -8680,6 +8754,7 @@
         "epub",
         "ereading"
       ],
+      "parent": "books",
       "hosts": [
         "books.google.com",
         "gutenberg.org",
@@ -8700,6 +8775,7 @@
         "biodiversity",
         "conservation-biology"
       ],
+      "parent": "science",
       "hosts": [
         "biodiversitylibrary.org",
         "eol.org",
@@ -8721,6 +8797,7 @@
         "digitalcommerce",
         "onlinestore"
       ],
+      "parent": "shopping",
       "hosts": [
         "digitalcommerce360.com",
         "ecommercebytes.com",
@@ -9382,6 +9459,7 @@
         "text-editor",
         "vscode"
       ],
+      "parent": "dev",
       "hosts": [
         "code.visualstudio.com",
         "jetbrains.com",
@@ -10460,6 +10538,7 @@
         "democracy",
         "electoral"
       ],
+      "parent": "politics",
       "hosts": [
         "ballotpedia.org",
         "cookpolitical.com",
@@ -11084,6 +11163,7 @@
         "globalsouth",
         "brics"
       ],
+      "parent": "finance",
       "hosts": [
         "africanbusinessmagazine.com",
         "asia.nikkei.com",
@@ -11107,6 +11187,7 @@
         "retroconsole",
         "romplaying"
       ],
+      "parent": "games",
       "hosts": [
         "dolphin-emu.org",
         "openemu.org",
@@ -11129,6 +11210,7 @@
         "pgp",
         "ciphers"
       ],
+      "parent": "security",
       "hosts": [
         "gnupg.org",
         "keybase.io",
@@ -11342,6 +11424,7 @@
         "industrynews",
         "hollywoodnews"
       ],
+      "parent": "news",
       "hosts": [
         "deadline.com",
         "ew.com",
@@ -11412,6 +11495,7 @@
         "leagues",
         "proplayers"
       ],
+      "parent": "games",
       "hosts": [
         "dotesports.com",
         "esportsearnings.com",
@@ -11486,6 +11570,7 @@
         "reimbursement",
         "expense-reports"
       ],
+      "parent": "finance",
       "hosts": [
         "concur.com",
         "expense.zoho.com",
@@ -11527,6 +11612,7 @@
         "misinformation",
         "truth"
       ],
+      "parent": "news",
       "hosts": [
         "factcheck.org",
         "fullfact.org",
@@ -11598,6 +11684,7 @@
         "fanstories",
         "fandomwriting"
       ],
+      "parent": "books",
       "hosts": [
         "archiveofourown.org",
         "fanfiction.net",
@@ -12573,6 +12660,7 @@
         "toggles",
         "experimentation"
       ],
+      "parent": "dev",
       "hosts": [
         "flagsmith.com",
         "getunleash.io",
@@ -12676,6 +12764,7 @@
         "indiefilm",
         "filmfest"
       ],
+      "parent": "film",
       "hosts": [
         "festival-cannes.com",
         "filmfreeway.com",
@@ -14026,6 +14115,7 @@
         "digitalbanking",
         "neobank"
       ],
+      "parent": "finance",
       "hosts": [
         "fintechfutures.com",
         "fintechweekly.com",
@@ -14129,6 +14219,7 @@
         "fisherman",
         "fish"
       ],
+      "parent": "outdoors",
       "hosts": [
         "fishbrain.com",
         "in-fisherman.com",
@@ -14151,6 +14242,7 @@
         "gym",
         "training"
       ],
+      "parent": "health",
       "hosts": [
         "bodybuilding.com",
         "fitbit.com",
@@ -14179,6 +14271,7 @@
         "planetickets",
         "flying"
       ],
+      "parent": "travel",
       "hosts": [
         "cheapflights.com",
         "expedia.com",
@@ -17299,6 +17392,7 @@
         "comida-a-domicilio",
         "waimai"
       ],
+      "parent": "restaurants",
       "hosts": [
         "deliveroo.com",
         "doordash.com",
@@ -17350,6 +17444,7 @@
         "americanfootball",
         "touchdown"
       ],
+      "parent": "sports",
       "hosts": [
         "nfl.com",
         "pro-football-reference.com",
@@ -17376,6 +17471,7 @@
         "exchangerate",
         "currencies"
       ],
+      "parent": "investing",
       "hosts": [
         "dailyfx.com",
         "forexlive.com",
@@ -17394,6 +17490,7 @@
         "discussion",
         "board"
       ],
+      "parent": "social",
       "hosts": [
         "lemmy.world",
         "metafilter.com",
@@ -17535,6 +17632,7 @@
         "financialcrime",
         "embezzlement"
       ],
+      "parent": "security",
       "hosts": [
         "acfe.com",
         "ftc.gov",
@@ -17556,6 +17654,7 @@
         "contract-work",
         "hire"
       ],
+      "parent": "jobs",
       "hosts": [
         "fiverr.com",
         "freelancer.com",
@@ -17764,6 +17863,7 @@
         "gamedata",
         "gamestats"
       ],
+      "parent": "games",
       "hosts": [
         "esrb.org",
         "giantbomb.com",
@@ -17837,6 +17937,7 @@
         "discounts",
         "gamebargains"
       ],
+      "parent": "games",
       "hosts": [
         "cheapshark.com",
         "gg.deals",
@@ -17884,6 +17985,7 @@
         "videogamemusic",
         "ost"
       ],
+      "parent": "games",
       "hosts": [
         "khinsider.com",
         "materiacollective.com",
@@ -17905,6 +18007,7 @@
         "backlog",
         "gamelog"
       ],
+      "parent": "games",
       "hosts": [
         "backloggd.com",
         "grouvee.com",
@@ -19579,6 +19682,7 @@
         "previews",
         "gamejournalism"
       ],
+      "parent": "games",
       "hosts": [
         "eurogamer.net",
         "gamefaqs.com",
@@ -19702,6 +19806,7 @@
         "landscaping",
         "horticulture"
       ],
+      "parent": "home",
       "hosts": [
         "almanac.com",
         "gardenersworld.com",
@@ -19773,6 +19878,7 @@
         "heredity",
         "genome"
       ],
+      "parent": "biology",
       "hosts": [
         "ensembl.org",
         "genome.gov",
@@ -19814,6 +19920,7 @@
         "geoscience",
         "rocks"
       ],
+      "parent": "science",
       "hosts": [
         "iugs.org",
         "mindat.org",
@@ -19835,6 +19942,7 @@
         "intelligence",
         "risk"
       ],
+      "parent": "politics",
       "hosts": [
         "geopoliticalfutures.com",
         "stratfor.com",
@@ -19864,6 +19972,7 @@
         "giftguide",
         "giftwrap"
       ],
+      "parent": "shopping",
       "hosts": [
         "redbubble.com",
         "uncommongoods.com",
@@ -19908,6 +20017,7 @@
         "source-control",
         "commits"
       ],
+      "parent": "dev",
       "hosts": [
         "bitbucket.org",
         "codeberg.org",
@@ -19937,6 +20047,7 @@
         "google-go",
         "goroutines"
       ],
+      "parent": "dev",
       "hosts": [
         "gin-gonic.com",
         "go.dev",
@@ -19961,6 +20072,7 @@
         "clubs",
         "fairway"
       ],
+      "parent": "sports",
       "hosts": [
         "golf.com",
         "golfdigest.com",
@@ -23178,6 +23290,7 @@
         "schema-api",
         "hasura"
       ],
+      "parent": "dev",
       "hosts": [
         "apollographql.com",
         "graphql.org",
@@ -23196,6 +23309,7 @@
         "foodshopping",
         "produce"
       ],
+      "parent": "shopping",
       "hosts": [
         "freshdirect.com",
         "instacart.com",
@@ -23819,6 +23933,7 @@
         "guitarmusic",
         "fretboard"
       ],
+      "parent": "music",
       "hosts": [
         "e-chords.com",
         "songsterr.com",
@@ -24753,6 +24868,7 @@
         "shortselling",
         "fundmanager"
       ],
+      "parent": "finance",
       "hosts": [
         "hedgeweek.com",
         "institutionalinvestor.com",
@@ -24959,6 +25075,7 @@
         "paas",
         "deployment"
       ],
+      "parent": "cloud",
       "hosts": [
         "fly.io",
         "heroku.com",
@@ -25006,6 +25123,7 @@
         "rooms",
         "stays"
       ],
+      "parent": "travel",
       "hosts": [
         "agoda.com",
         "booking.com",
@@ -26291,6 +26409,7 @@
         "huntinggear",
         "outdoorsman"
       ],
+      "parent": "outdoors",
       "hosts": [
         "cabelas.com",
         "gohunt.com",
@@ -26315,6 +26434,7 @@
         "configuration-management",
         "terraform"
       ],
+      "parent": "dev",
       "hosts": [
         "ansible.com",
         "chef.io",
@@ -26339,6 +26459,7 @@
         "iconography",
         "symbols"
       ],
+      "parent": "design-tools",
       "hosts": [
         "flaticon.com",
         "iconfinder.com",
@@ -26356,6 +26477,7 @@
         "clipart",
         "graphics"
       ],
+      "parent": "art",
       "hosts": [
         "freepik.com",
         "svgrepo.com",
@@ -26397,6 +26519,7 @@
         "vaccines",
         "antibodies"
       ],
+      "parent": "biology",
       "hosts": [
         "immunology.org",
         "jimmunol.org",
@@ -26418,6 +26541,7 @@
         "smallstudio",
         "indiedev"
       ],
+      "parent": "games",
       "hosts": [
         "gamejolt.com",
         "itch.io",
@@ -26437,6 +26561,7 @@
         "sponsorship",
         "brandpartnership"
       ],
+      "parent": "social",
       "hosts": [
         "hypeauditor.com",
         "influencermarketinghub.com",
@@ -26850,6 +26975,7 @@
         "claims",
         "underwriting"
       ],
+      "parent": "insurance",
       "hosts": [
         "coverager.com",
         "insurancethoughtleadership.com",
@@ -26870,6 +26996,7 @@
         "student-jobs",
         "early-career"
       ],
+      "parent": "jobs",
       "hosts": [
         "internships.com",
         "joinhandshake.com",
@@ -26889,6 +27016,7 @@
         "portfolio",
         "equities"
       ],
+      "parent": "finance",
       "hosts": [
         "benzinga.com",
         "fool.com",
@@ -26951,6 +27079,7 @@
         "flotation",
         "publicoffering"
       ],
+      "parent": "investing",
       "hosts": [
         "iposcoop.com",
         "nasdaq.com",
@@ -26977,6 +27106,7 @@
         "maven",
         "gradle"
       ],
+      "parent": "dev",
       "hosts": [
         "gradle.org",
         "java.com",
@@ -27001,6 +27131,7 @@
         "typescript",
         "ecmascript"
       ],
+      "parent": "dev",
       "hosts": [
         "bun.sh",
         "deno.land",
@@ -27034,6 +27165,7 @@
         "accessories",
         "gemstones"
       ],
+      "parent": "shopping",
       "hosts": [
         "bluenile.com",
         "jamesallen.com",
@@ -27223,6 +27355,7 @@
         "publications",
         "academic-journals"
       ],
+      "parent": "research",
       "hosts": [
         "nature.com",
         "springer.com",
@@ -28524,6 +28657,7 @@
         "singingapp",
         "voicetrack"
       ],
+      "parent": "music",
       "hosts": [
         "karafun.com",
         "singsnap.com",
@@ -28563,6 +28697,7 @@
         "youth-coding",
         "stem-education"
       ],
+      "parent": "coding",
       "hosts": [
         "code.org",
         "scratch.mit.edu",
@@ -28602,6 +28737,7 @@
         "helm",
         "orchestration"
       ],
+      "parent": "containers",
       "hosts": [
         "helm.sh",
         "k3s.io",
@@ -28776,6 +28912,7 @@
         "lawyers",
         "jurisprudence"
       ],
+      "parent": "law",
       "hosts": [
         "abovethelaw.com",
         "jdsupra.com",
@@ -29012,6 +29149,7 @@
         "etymology",
         "philology"
       ],
+      "parent": "science",
       "hosts": [
         "ethnologue.com",
         "etymonline.com",
@@ -29032,6 +29170,7 @@
         "formatting",
         "code-style"
       ],
+      "parent": "dev",
       "hosts": [
         "eslint.org",
         "prettier.io",
@@ -29090,6 +29229,7 @@
         "judicial",
         "trial"
       ],
+      "parent": "law",
       "hosts": [
         "courthousenews.com",
         "findlaw.com",
@@ -29116,6 +29256,7 @@
         "gigs",
         "tapes"
       ],
+      "parent": "music",
       "hosts": [
         "nugs.net",
         "relisten.net",
@@ -29163,6 +29304,7 @@
         "benchmarking",
         "throughput"
       ],
+      "parent": "dev",
       "hosts": [
         "gatling.io",
         "jmeter.apache.org",
@@ -29204,6 +29346,7 @@
         "syslog",
         "log-analysis"
       ],
+      "parent": "dev",
       "hosts": [
         "graylog.org",
         "loggly.com",
@@ -29225,6 +29368,7 @@
         "features",
         "longreads"
       ],
+      "parent": "news",
       "hosts": [
         "aeon.co",
         "longform.org",
@@ -29245,6 +29389,7 @@
         "travelgear",
         "packing"
       ],
+      "parent": "travel",
       "hosts": [
         "away.com",
         "monos.com",
@@ -29272,6 +29417,7 @@
         "wordstosongs",
         "lyricsheet"
       ],
+      "parent": "music",
       "hosts": [
         "azlyrics.com",
         "genius.com",
@@ -32033,6 +32179,7 @@
         "otakucomics",
         "animecomics"
       ],
+      "parent": "comics",
       "hosts": [
         "kodansha.us",
         "mangadex.org",
@@ -32141,6 +32288,7 @@
         "wallstreet",
         "exchanges"
       ],
+      "parent": "finance",
       "hosts": [
         "barrons.com",
         "cnbc.com",
@@ -32276,6 +32424,7 @@
         "mathematics",
         "maths"
       ],
+      "parent": "science",
       "hosts": [
         "artofproblemsolving.com",
         "desmos.com",
@@ -32305,6 +32454,7 @@
         "subscriptionfood",
         "mealboxes"
       ],
+      "parent": "recipes",
       "hosts": [
         "blueapron.com",
         "hellofresh.com",
@@ -32819,6 +32969,7 @@
         "medications",
         "drug-information"
       ],
+      "parent": "health",
       "hosts": [
         "bmj.com",
         "clinicaltrials.gov",
@@ -32841,6 +32992,7 @@
         "counseling",
         "mindfulness"
       ],
+      "parent": "health",
       "hosts": [
         "betterhelp.com",
         "calm.com",
@@ -32904,6 +33056,7 @@
         "status-updates",
         "feed"
       ],
+      "parent": "social",
       "hosts": [
         "gab.com",
         "threads.net",
@@ -32954,6 +33107,7 @@
         "customcontent",
         "usermods"
       ],
+      "parent": "games",
       "hosts": [
         "curseforge.com",
         "moddb.com",
@@ -33044,6 +33198,7 @@
         "lending",
         "housingfinance"
       ],
+      "parent": "finance",
       "hosts": [
         "housingwire.com",
         "mortgagenewsdaily.com",
@@ -33062,6 +33217,7 @@
         "scooter",
         "moto"
       ],
+      "parent": "cars",
       "hosts": [
         "cycletrader.com",
         "motorcycle.com",
@@ -33086,6 +33242,7 @@
         "castandcrew",
         "boxoffice"
       ],
+      "parent": "film",
       "hosts": [
         "allmovie.com",
         "boxofficemojo.com",
@@ -33180,6 +33337,7 @@
         "movers",
         "moveout"
       ],
+      "parent": "home",
       "hosts": [
         "pods.com",
         "publicstorage.com",
@@ -33450,6 +33608,7 @@
         "blogs",
         "musicwriting"
       ],
+      "parent": "music",
       "hosts": [
         "brooklynvegan.com",
         "hypem.com",
@@ -33470,6 +33629,7 @@
         "musicratings",
         "charts"
       ],
+      "parent": "music",
       "hosts": [
         "allmusic.com",
         "last.fm",
@@ -33491,6 +33651,7 @@
         "festivalseason",
         "livefestival"
       ],
+      "parent": "music",
       "hosts": [
         "coachella.com",
         "lollapalooza.com",
@@ -33512,6 +33673,7 @@
         "criticism",
         "musicjournalism"
       ],
+      "parent": "music",
       "hosts": [
         "billboard.com",
         "nme.com",
@@ -33532,6 +33694,7 @@
         "videosongs",
         "songvideos"
       ],
+      "parent": "music",
       "hosts": [
         "colorsxstudios.com",
         "mtv.com",
@@ -33604,6 +33767,7 @@
         "neurology",
         "cognitive-science"
       ],
+      "parent": "biology",
       "hosts": [
         "alleninstitute.org",
         "brainfacts.org",
@@ -37338,6 +37502,7 @@
         "newspaper-archive",
         "historical-news"
       ],
+      "parent": "news",
       "hosts": [
         "britishnewspaperarchive.co.uk",
         "chroniclingamerica.loc.gov",
@@ -37408,6 +37573,7 @@
         "food-science",
         "dietetics"
       ],
+      "parent": "health",
       "hosts": [
         "cronometer.com",
         "eatright.org",
@@ -37429,6 +37595,7 @@
         "marine-science",
         "ocean-science"
       ],
+      "parent": "science",
       "hosts": [
         "marinebio.org",
         "mbari.org",
@@ -37450,6 +37617,7 @@
         "forum-software",
         "discussion-group"
       ],
+      "parent": "social",
       "hosts": [
         "circle.so",
         "discourse.org",
@@ -37524,6 +37692,7 @@
         "free-access",
         "open-journals"
       ],
+      "parent": "research",
       "hosts": [
         "biomedcentral.com",
         "core.ac.uk",
@@ -38253,6 +38422,7 @@
         "datasets",
         "government-data"
       ],
+      "parent": "data-science",
       "hosts": [
         "data.europa.eu",
         "data.un.org",
@@ -38297,6 +38467,7 @@
         "punditry",
         "viewpoint"
       ],
+      "parent": "news",
       "hosts": [
         "nationalreview.com",
         "quillette.com",
@@ -38344,6 +38515,7 @@
         "registry",
         "apt"
       ],
+      "parent": "dev",
       "hosts": [
         "chocolatey.org",
         "flatpak.org",
@@ -38363,6 +38535,7 @@
         "dinosaurs",
         "paleo"
       ],
+      "parent": "science",
       "hosts": [
         "amnh.org",
         "nhm.ac.uk",
@@ -38432,6 +38605,7 @@
         "secrets-manager",
         "logins"
       ],
+      "parent": "security",
       "hosts": [
         "1password.com",
         "bitwarden.com",
@@ -38460,6 +38634,7 @@
         "intellectual-property",
         "ip"
       ],
+      "parent": "law",
       "hosts": [
         "epo.org",
         "freepatentsonline.com",
@@ -38484,6 +38659,7 @@
         "checkout",
         "remittance"
       ],
+      "parent": "finance",
       "hosts": [
         "finextra.com",
         "paymentsdive.com",
@@ -38604,6 +38780,7 @@
         "referee",
         "research-integrity"
       ],
+      "parent": "research",
       "hosts": [
         "f1000research.com",
         "publons.com",
@@ -38649,6 +38826,7 @@
         "shelter",
         "foster"
       ],
+      "parent": "pets",
       "hosts": [
         "adoptapet.com",
         "aspca.org",
@@ -38669,6 +38847,7 @@
         "animalinsurance",
         "coverage"
       ],
+      "parent": "pets",
       "hosts": [
         "fetchpet.com",
         "healthypaws.com",
@@ -38739,6 +38918,7 @@
         "drugstore",
         "meds"
       ],
+      "parent": "health",
       "hosts": [
         "cvs.com",
         "goodrx.com",
@@ -38783,6 +38963,7 @@
         "image-editing",
         "photo-editor"
       ],
+      "parent": "design-tools",
       "hosts": [
         "gimp.org",
         "photopea.com",
@@ -38853,6 +39034,7 @@
         "composer",
         "backend"
       ],
+      "parent": "dev",
       "hosts": [
         "getcomposer.org",
         "laravel.com",
@@ -38896,6 +39078,7 @@
         "particle-physics",
         "quantum-physics"
       ],
+      "parent": "science",
       "hosts": [
         "home.cern",
         "phys.org",
@@ -38919,6 +39102,7 @@
         "8bitart",
         "spritework"
       ],
+      "parent": "art",
       "hosts": [
         "lospec.com",
         "opengameart.org",
@@ -38940,6 +39124,7 @@
         "poddirectory",
         "poddiscovery"
       ],
+      "parent": "podcasts",
       "hosts": [
         "listennotes.com",
         "podcastindex.org",
@@ -38959,6 +39144,7 @@
         "podcastplatform",
         "podcastpublishing"
       ],
+      "parent": "podcasts",
       "hosts": [
         "anchor.fm",
         "buzzsprout.com",
@@ -39115,6 +39301,7 @@
         "lawmaking",
         "publicaffairs"
       ],
+      "parent": "politics",
       "hosts": [
         "americanprogress.org",
         "brookings.edu",
@@ -39161,6 +39348,7 @@
         "preprint-server",
         "working-papers"
       ],
+      "parent": "research",
       "hosts": [
         "arxiv.org",
         "biorxiv.org",
@@ -39201,6 +39389,7 @@
         "pricewatch",
         "comparisonshopping"
       ],
+      "parent": "shopping",
       "hosts": [
         "camelcamelcamel.com",
         "keepa.com",
@@ -39287,6 +39476,7 @@
         "dealmaking",
         "portfoliocompanies"
       ],
+      "parent": "finance",
       "hosts": [
         "buyoutsinsider.com",
         "pehub.com",
@@ -39334,6 +39524,7 @@
         "psych",
         "behavioral-science"
       ],
+      "parent": "science",
       "hosts": [
         "psypost.org",
         "simplypsychology.org",
@@ -40728,6 +40919,7 @@
         "flask",
         "pip"
       ],
+      "parent": "dev",
       "hosts": [
         "djangoproject.com",
         "flask.palletsprojects.com",
@@ -40802,6 +40994,7 @@
         "airwaves",
         "tuner"
       ],
+      "parent": "media",
       "hosts": [
         "iheart.com",
         "live365.com",
@@ -41936,6 +42129,7 @@
         "talent-acquisition",
         "staffing"
       ],
+      "parent": "jobs",
       "hosts": [
         "bamboohr.com",
         "greenhouse.io",
@@ -42658,6 +42852,7 @@
         "retrocession",
         "treaty"
       ],
+      "parent": "insurance",
       "hosts": [
         "artemis.bm",
         "intelligentinsurer.com",
@@ -42722,6 +42917,7 @@
         "virtual-office",
         "telecommute"
       ],
+      "parent": "jobs",
       "hosts": [
         "remote.com",
         "remotive.com",
@@ -42764,6 +42960,7 @@
         "datasets",
         "scientific-data"
       ],
+      "parent": "research",
       "hosts": [
         "datadryad.org",
         "figshare.org",
@@ -43951,6 +44148,7 @@
         "cover-letter",
         "job-application"
       ],
+      "parent": "jobs",
       "hosts": [
         "canva.com",
         "novoresume.com",
@@ -43975,6 +44173,7 @@
         "consumergoods",
         "chains"
       ],
+      "parent": "shopping",
       "hosts": [
         "chainstoreage.com",
         "nrf.com",
@@ -44012,6 +44211,7 @@
         "savings",
         "nestegg"
       ],
+      "parent": "finance",
       "hosts": [
         "401kspecialistmag.com",
         "planadviser.com",
@@ -44077,6 +44277,7 @@
         "rubyonrails",
         "ror"
       ],
+      "parent": "dev",
       "hosts": [
         "bundler.io",
         "ruby-lang.org",
@@ -44099,6 +44300,7 @@
         "jog",
         "trackrunning"
       ],
+      "parent": "sports",
       "hosts": [
         "mapmyrun.com",
         "marathonguide.com",
@@ -44125,6 +44327,7 @@
         "systems-language",
         "memory-safety"
       ],
+      "parent": "dev",
       "hosts": [
         "crates.io",
         "docs.rs",
@@ -44221,6 +44424,7 @@
         "study-help",
         "elementary"
       ],
+      "parent": "education",
       "hosts": [
         "brainpop.com",
         "ixl.com",
@@ -44395,6 +44599,7 @@
         "moviescripts",
         "shootingscript"
       ],
+      "parent": "film",
       "hosts": [
         "imsdb.com",
         "scriptslug.com",
@@ -44586,6 +44791,7 @@
         "used",
         "consignment"
       ],
+      "parent": "shopping",
       "hosts": [
         "depop.com",
         "poshmark.com",
@@ -44720,6 +44926,7 @@
         "yarn",
         "stitching"
       ],
+      "parent": "crafts",
       "hosts": [
         "mccallpattern.com",
         "ravelry.com",
@@ -44743,6 +44950,7 @@
         "musicnotation",
         "sheets"
       ],
+      "parent": "music",
       "hosts": [
         "8notes.com",
         "imslp.org",
@@ -44921,6 +45129,7 @@
         "boots",
         "heels"
       ],
+      "parent": "shopping",
       "hosts": [
         "allbirds.com",
         "dsw.com",
@@ -47909,6 +48118,7 @@
         "wintersports",
         "snow"
       ],
+      "parent": "sports",
       "hosts": [
         "epicpass.com",
         "ikonpass.com",
@@ -47956,6 +48166,7 @@
         "domotics",
         "connected-home"
       ],
+      "parent": "home",
       "hosts": [
         "home-assistant.io",
         "homebridge.io",
@@ -47989,6 +48200,7 @@
         "mls",
         "pitch"
       ],
+      "parent": "sports",
       "hosts": [
         "fifa.com",
         "goal.com",
@@ -52166,6 +52378,7 @@
         "spaceflight",
         "universe"
       ],
+      "parent": "science",
       "hosts": [
         "esa.int",
         "nasa.gov",
@@ -52190,6 +52403,7 @@
         "tas",
         "fastcompletion"
       ],
+      "parent": "games",
       "hosts": [
         "speeddemosarchive.com",
         "speedrun.com",
@@ -53321,6 +53535,7 @@
         "https",
         "cert-authority"
       ],
+      "parent": "security",
       "hosts": [
         "digicert.com",
         "letsencrypt.org",
@@ -53399,6 +53614,7 @@
         "ssg",
         "hugo"
       ],
+      "parent": "dev",
       "hosts": [
         "11ty.dev",
         "astro.build",
@@ -53477,6 +53693,7 @@
         "stock-footage",
         "video-clips"
       ],
+      "parent": "design-tools",
       "hosts": [
         "gettyimages.com",
         "istockphoto.com",
@@ -53702,6 +53919,7 @@
         "streamsetup",
         "streamingsoftware"
       ],
+      "parent": "livestream",
       "hosts": [
         "obsproject.com",
         "restream.io",
@@ -53725,6 +53943,7 @@
         "financialaid",
         "loans"
       ],
+      "parent": "finance",
       "hosts": [
         "credible.com",
         "savingforcollege.com",
@@ -53847,6 +54066,7 @@
         "spm",
         "swiftui"
       ],
+      "parent": "dev",
       "hosts": [
         "hackingwithswift.com",
         "swift.org",
@@ -53871,6 +54091,7 @@
         "scandal",
         "sensational"
       ],
+      "parent": "news",
       "hosts": [
         "dailymail.co.uk",
         "mirror.co.uk",
@@ -53947,6 +54168,7 @@
         "levy",
         "duty"
       ],
+      "parent": "finance",
       "hosts": [
         "taxfoundation.org",
         "taxnotes.com",
@@ -54671,6 +54893,7 @@
         "onlinedoctor",
         "videovisit"
       ],
+      "parent": "health",
       "hosts": [
         "amwell.com",
         "mdlive.com",
@@ -54694,6 +54917,7 @@
         "series",
         "tvshows"
       ],
+      "parent": "media",
       "hosts": [
         "epguides.com",
         "metv.com",
@@ -57592,6 +57816,7 @@
         "racquet",
         "grandslam"
       ],
+      "parent": "sports",
       "hosts": [
         "atptour.com",
         "tennis.com",
@@ -57618,6 +57843,7 @@
         "command-line",
         "bash"
       ],
+      "parent": "dev",
       "hosts": [
         "iterm2.com",
         "starship.rs",
@@ -57645,6 +57871,7 @@
         "standardized-tests",
         "exam-practice"
       ],
+      "parent": "education",
       "hosts": [
         "kaplan.com",
         "magoosh.com",
@@ -57668,6 +57895,7 @@
         "unit-testing",
         "e2e-testing"
       ],
+      "parent": "dev",
       "hosts": [
         "cypress.io",
         "jestjs.io",
@@ -57692,6 +57920,7 @@
         "free-textbooks",
         "course-materials"
       ],
+      "parent": "education",
       "hosts": [
         "merlot.org",
         "oercommons.org",
@@ -58907,6 +59136,7 @@
         "theses",
         "dissertations"
       ],
+      "parent": "research",
       "hosts": [
         "ethos.bl.uk",
         "ndltd.org",
@@ -59022,6 +59252,7 @@
         "seeding",
         "downloading"
       ],
+      "parent": "torrent",
       "hosts": [
         "1337x.to",
         "thepiratebay.org",
@@ -60116,6 +60347,7 @@
         "private-lessons",
         "tutors"
       ],
+      "parent": "education",
       "hosts": [
         "chegg.com",
         "tutor.com",
@@ -60160,6 +60392,7 @@
         "type-design",
         "typefaces"
       ],
+      "parent": "design-tools",
       "hosts": [
         "fonts.google.com",
         "fontsquirrel.com",
@@ -60188,6 +60421,7 @@
         "scholarly-network",
         "academic-profile"
       ],
+      "parent": "education",
       "hosts": [
         "academia.edu",
         "cam.ac.uk",
@@ -63967,6 +64201,7 @@
         "shortterm",
         "homeswap"
       ],
+      "parent": "travel",
       "hosts": [
         "airbnb.com",
         "homeexchange.com",
@@ -64007,6 +64242,7 @@
         "veterinarian",
         "petmedicine"
       ],
+      "parent": "pets",
       "hosts": [
         "banfield.com",
         "petmd.com",
@@ -64098,6 +64334,7 @@
         "meetings",
         "webcam"
       ],
+      "parent": "messaging",
       "hosts": [
         "meet.google.com",
         "webex.com",
@@ -64122,6 +64359,7 @@
         "vinylrecords",
         "turntable"
       ],
+      "parent": "music",
       "hosts": [
         "discogs.com",
         "recordstoreday.com",
@@ -64165,6 +64403,7 @@
         "voice-calls",
         "calling"
       ],
+      "parent": "messaging",
       "hosts": [
         "ooma.com",
         "skype.com",
@@ -64204,6 +64443,7 @@
         "privacy-network",
         "secure-connection"
       ],
+      "parent": "security",
       "hosts": [
         "expressvpn.com",
         "mullvad.net",
@@ -64253,6 +64493,7 @@
         "richness",
         "networth"
       ],
+      "parent": "finance",
       "hosts": [
         "citywire.com",
         "financial-planning.com",
@@ -64311,6 +64552,7 @@
         "bytecode",
         "near-native"
       ],
+      "parent": "dev",
       "hosts": [
         "wasmer.io",
         "wasmtime.dev",
@@ -64332,6 +64574,7 @@
         "digitalcomics",
         "strips"
       ],
+      "parent": "comics",
       "hosts": [
         "gocomics.com",
         "tapas.io",
@@ -64351,6 +64594,7 @@
         "css",
         "web-development"
       ],
+      "parent": "dev",
       "hosts": [
         "caniuse.com",
         "css-tricks.com",
@@ -64400,6 +64644,7 @@
         "serialfiction",
         "litnovel"
       ],
+      "parent": "books",
       "hosts": [
         "novelupdates.com",
         "royalroad.com",
@@ -64539,6 +64784,7 @@
         "workshop",
         "sawing"
       ],
+      "parent": "crafts",
       "hosts": [
         "finewoodworking.com",
         "popularwoodworking.com",
@@ -64561,6 +64807,7 @@
         "foreign",
         "overseas"
       ],
+      "parent": "news",
       "hosts": [
         "aljazeera.com",
         "dw.com",

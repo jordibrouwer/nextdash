@@ -581,7 +581,7 @@ test.describe('the suggestions panel', () => {
             });
             return response.ok ? response.json() : null;
         });
-        expect(doc?.version).toBe(2);
+        expect(doc?.version).toBe(3);
         expect(Array.isArray(doc.tags)).toBe(true);
         // Every subject comes back, because page text is matched against all
         // of them; only the asked hosts come with it.

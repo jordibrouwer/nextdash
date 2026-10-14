@@ -25,7 +25,7 @@ func TestTagCatalogueResolvesTheFixture(t *testing.T) {
 		t.Fatal(err)
 	}
 	catalogue := loadTagCatalogue()
-	if catalogue.version != 2 || len(catalogue.subjects) < 400 {
+	if catalogue.version != 3 || len(catalogue.subjects) < 400 {
 		t.Fatalf("catalogue did not load: version %d, %d subjects", catalogue.version, len(catalogue.subjects))
 	}
 	for host, want := range fixture.Expect {
@@ -134,5 +134,48 @@ func TestTagCatalogueDerivedHostsResolveAndFoldIntoHosts(t *testing.T) {
 	subset := catalogue.subset([]string{"nos.nl", "nu.nl"})
 	if !reflect.DeepEqual(subset[0].Hosts, []string{"nu.nl", "nos.nl"}) || subset[0].Derived != nil {
 		t.Errorf("subset: hosts %v, derived %v", subset[0].Hosts, subset[0].Derived)
+	}
+}
+
+// Every parent the shipped file names is a subject, and no chain comes back on
+// itself: the engine would stop at a cycle, but one in the file is a mistake.
+func TestTagCatalogueParentsFormATree(t *testing.T) {
+	catalogue := loadTagCatalogue()
+	byTag := map[string]tagCatalogueSubject{}
+	for _, subject := range catalogue.subjects {
+		byTag[subject.Tag] = subject
+	}
+	withParent := 0
+	for _, subject := range catalogue.subjects {
+		if subject.Parent == "" {
+			continue
+		}
+		withParent++
+		seen := map[string]bool{subject.Tag: true}
+		for up := subject.Parent; up != ""; up = byTag[up].Parent {
+			if _, ok := byTag[up]; !ok {
+				t.Fatalf("%s: parent %q is not a subject", subject.Tag, up)
+			}
+			if seen[up] {
+				t.Fatalf("%s: parent chain comes back to %q", subject.Tag, up)
+			}
+			seen[up] = true
+		}
+	}
+	if withParent < 200 {
+		t.Errorf("only %d subjects have a parent", withParent)
+	}
+}
+
+// The browser gets each subject's parent with the subset, hosts or not: the
+// engine needs the whole tree to find the reader's word for a subject.
+func TestTagCatalogueSubsetCarriesParents(t *testing.T) {
+	catalogue := parseTagCatalogue([]byte(`{"version":3,"tags":[
+		{"tag":"sports","aliases":[],"hosts":[]},
+		{"tag":"soccer","aliases":[],"parent":"sports","hosts":["fifa.com"]}
+	]}`))
+	subset := catalogue.subset([]string{"nu.nl"})
+	if subset[1].Parent != "sports" || len(subset[1].Hosts) != 0 {
+		t.Errorf("subset: parent %q, hosts %v", subset[1].Parent, subset[1].Hosts)
 	}
 }

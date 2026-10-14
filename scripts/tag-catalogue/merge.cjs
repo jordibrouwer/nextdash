@@ -17,6 +17,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { applyParents } = require('./parents.cjs');
 
 const file = path.join(__dirname, '..', '..', 'internal', 'app', 'tag_catalogue.json');
 const doc = JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -53,7 +54,6 @@ Object.entries(derived).forEach(([host, { tags }]) => {
     added += 1;
 });
 
-doc.version = 2;
 doc.meta = {
     ...(doc.meta || {}),
     sources: [
@@ -66,5 +66,6 @@ doc.tags.forEach((entry) => {
     if (list.length) entry.derived = list;
     else delete entry.derived;
 });
+applyParents(doc);
 fs.writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
 console.log(`${added} derived hosts written, ${redundant} left out as already covered by a parent`);
