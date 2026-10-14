@@ -27,13 +27,21 @@ const { applyParents } = require('./parents.cjs');
 
 const file = path.join(__dirname, '..', '..', 'internal', 'app', 'tag_catalogue.json');
 const doc = JSON.parse(fs.readFileSync(file, 'utf8'));
-const cleanup = JSON.parse(fs.readFileSync(path.join(__dirname, 'manual', 'cleanup.json'), 'utf8'));
+const readJSON = (...parts) => JSON.parse(fs.readFileSync(path.join(__dirname, ...parts), 'utf8'));
+const cleanup = readJSON('manual', 'cleanup.json');
+// The finer subjects splits.json carves out of broad ones, and where split.cjs
+// put each host.
+const splitsFile = path.join(__dirname, 'splits.json');
+const splitDefs = fs.existsSync(splitsFile) ? readJSON('splits.json').splits : {};
+const splitHosts = fs.existsSync(path.join(__dirname, 'manual', 'splits.json')) ? readJSON('manual', 'splits.json') : {};
 
-const { subjects } = JSON.parse(fs.readFileSync(path.join(__dirname, 'subjects.json'), 'utf8'));
+const { subjects } = readJSON('subjects.json');
+const splitSubjects = Object.values(splitDefs).flat().filter(({ existing }) => !existing)
+    .map(({ tag, aliases = [], keywords = [] }) => ({ tag, aliases, keywords, hosts: [] }));
 
 // subjects.json, first half: the new subjects, so cleanup.json may name them.
 let created = 0;
-subjects.forEach(({ tag, aliases = [], keywords = [] }) => {
+[...subjects, ...splitSubjects].forEach(({ tag, aliases = [], keywords = [] }) => {
     if (doc.tags.some((known) => known.tag === tag)) return;
     doc.tags.push({ tag, aliases, hosts: [], keywords });
     created += 1;
@@ -44,7 +52,7 @@ doc.tags.sort((a, b) => (a.tag < b.tag ? -1 : a.tag > b.tag ? 1 : 0));
 const bySubject = new Map(doc.tags.map((entry) => [entry.tag, entry]));
 let moved = 0;
 let dropped = 0;
-Object.entries(cleanup).forEach(([host, tags]) => {
+Object.entries({ ...splitHosts, ...cleanup }).forEach(([host, tags]) => {
     doc.tags.forEach((entry) => {
         if (entry.derived) entry.derived = entry.derived.filter((written) => written.replace(/^=/, '') !== host);
     });

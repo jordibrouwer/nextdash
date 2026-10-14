@@ -11,8 +11,19 @@
 const fs = require('fs');
 const path = require('path');
 
+// A subject splits.json carves out sits under the one it was carved from; one
+// it only moves hosts to (existing: true) keeps the parent it has.
+function splitParents() {
+    const file = path.join(__dirname, 'splits.json');
+    if (!fs.existsSync(file)) return {};
+    const out = {};
+    Object.entries(JSON.parse(fs.readFileSync(file, 'utf8')).splits)
+        .forEach(([parent, kids]) => kids.forEach(({ tag, existing }) => { if (!existing) out[tag] = parent; }));
+    return out;
+}
+
 function applyParents(doc) {
-    const { parents } = JSON.parse(fs.readFileSync(path.join(__dirname, 'parents.json'), 'utf8'));
+    const parents = { ...splitParents(), ...JSON.parse(fs.readFileSync(path.join(__dirname, 'parents.json'), 'utf8')).parents };
     const subjects = new Set(doc.tags.map((entry) => entry.tag));
     Object.entries(parents).forEach(([tag, parent]) => {
         if (!subjects.has(tag)) throw new Error(`parents.json: unknown subject ${tag}`);
