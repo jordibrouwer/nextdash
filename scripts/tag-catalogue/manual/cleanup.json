@@ -45,6 +45,7 @@
   "anisearch.de": [
     "anime"
   ],
+  "anthropic.com": [],
   "archive.is": [
     "archive"
   ],
@@ -95,6 +96,8 @@
   "cdl.library.cornell.edu": [
     "library"
   ],
+  "character.ai": [],
+  "chatgpt.com": [],
   "cheapflights.co.uk": [
     "flights",
     "travel"
@@ -105,6 +108,7 @@
   "chess.ca": [
     "chess"
   ],
+  "claude.ai": [],
   "comics.org": [
     "comics"
   ],
@@ -117,10 +121,15 @@
   "culture.gouv.fr": [
     "government"
   ],
+  "cursor.com": [
+    "editor"
+  ],
   "cyclingweekly.co.uk": [
     "cycling",
     "magazine"
   ],
+  "deepmind.google": [],
+  "deepseek.com": [],
   "deliveroo.co.uk": [
     "food-delivery"
   ],
@@ -130,6 +139,7 @@
   "economie.gouv.fr": [
     "government"
   ],
+  "elevenlabs.io": [],
   "espn.co.uk": [
     "sports"
   ],
@@ -198,6 +208,7 @@
   "meta.wikimedia.org": [
     "reference"
   ],
+  "mistral.ai": [],
   "monmaster.gouv.fr": [
     "education"
   ],
@@ -225,6 +236,7 @@
   "nysaes.cals.cornell.edu": [
     "university"
   ],
+  "openai.com": [],
   "opencode.ai": [
     "dev"
   ],
@@ -377,6 +389,7 @@
     "timezone"
   ],
   "tro.matrix.com.br": [],
+  "ultimaker.com": [],
   "verizon.net": [
     "telecom"
   ],
@@ -396,12 +409,16 @@
     "shopping",
     "grocery"
   ],
+  "windsurf.com": [
+    "editor"
+  ],
   "wolfram.com": [
     "math"
   ],
   "www2.johnson.cornell.edu": [
     "university"
   ],
+  "x.ai": [],
   "yahoo.com": [
     "news"
   ],

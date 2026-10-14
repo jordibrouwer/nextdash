@@ -9,6 +9,39 @@
   },
   "tags": [
     {
+      "tag": "3d-printing",
+      "aliases": [
+        "3dprinting",
+        "3d-printer",
+        "additive-manufacturing",
+        "3dprint"
+      ],
+      "hosts": [
+        "bambulab.com",
+        "creality.com",
+        "cults3d.com",
+        "docs.fluidd.xyz",
+        "klipper3d.org",
+        "mainsail.xyz",
+        "makerworld.com",
+        "myminifactory.com",
+        "octoprint.org",
+        "printables.com",
+        "prusa3d.com",
+        "thingiverse.com",
+        "ultimaker.com"
+      ],
+      "keywords": [
+        "filament",
+        "slicer",
+        "stl",
+        "gcode",
+        "nozzle",
+        "resin",
+        "3d-printer"
+      ]
+    },
+    {
       "tag": "academic-jobs",
       "aliases": [
         "faculty-positions",
@@ -138,6 +171,85 @@
       ],
       "derived": [
         "divar.ir"
+      ]
+    },
+    {
+      "tag": "ai",
+      "aliases": [
+        "artificial-intelligence",
+        "llm",
+        "llms",
+        "genai",
+        "machine-learning",
+        "ml",
+        "chatbots"
+      ],
+      "hosts": [
+        "ai.google.dev",
+        "aistudio.google.com",
+        "anthropic.com",
+        "anythingllm.com",
+        "artificialanalysis.ai",
+        "bolt.new",
+        "character.ai",
+        "chat.openai.com",
+        "chatgpt.com",
+        "claude.ai",
+        "cohere.com",
+        "comfy.org",
+        "copilot.microsoft.com",
+        "cursor.com",
+        "deepmind.google",
+        "deepseek.com",
+        "elevenlabs.io",
+        "fireworks.ai",
+        "gemini.google.com",
+        "grok.com",
+        "groq.com",
+        "huggingface.co",
+        "ideogram.ai",
+        "kimi.com",
+        "leonardo.ai",
+        "librechat.ai",
+        "lmarena.ai",
+        "lmstudio.ai",
+        "localai.io",
+        "lovable.dev",
+        "meta.ai",
+        "midjourney.com",
+        "mistral.ai",
+        "notebooklm.google.com",
+        "ollama.com",
+        "openai.com",
+        "openrouter.ai",
+        "openwebui.com",
+        "paperswithcode.com",
+        "perplexity.ai",
+        "phind.com",
+        "pi.ai",
+        "pika.art",
+        "platform.openai.com",
+        "poe.com",
+        "qwen.ai",
+        "replicate.com",
+        "runwayml.com",
+        "stability.ai",
+        "suno.com",
+        "together.ai",
+        "udio.com",
+        "v0.dev",
+        "windsurf.com",
+        "x.ai"
+      ],
+      "keywords": [
+        "llm",
+        "chatbot",
+        "prompt",
+        "inference",
+        "fine-tuning",
+        "embeddings",
+        "transformer",
+        "generative"
       ]
     },
     {
@@ -6478,7 +6590,6 @@
         "the-qrcode-generator.com",
         "tidio.com",
         "umfrageonline.com",
-        "windsurf.com",
         "wps.cn",
         "wps.com",
         "zoho.com",
@@ -7914,7 +8025,6 @@
         "microstrategy.com",
         "mikogo.ru",
         "mimecast.com",
-        "mistral.ai",
         "mitti.com",
         "mobileiron.com",
         "mobipocket.com",
@@ -8085,7 +8195,6 @@
         "uipath.com",
         "ukg.com",
         "ulead.com",
-        "ultimaker.com",
         "unbounce.com",
         "unify.com",
         "unity.com",
@@ -8161,7 +8270,6 @@
         "cs.tufts.edu",
         "cs.utexas.edu",
         "cs.washington.edu",
-        "cursor.com",
         "cwi.nl",
         "d2l.com",
         "danluu.com",
@@ -8710,6 +8818,26 @@
         "clr",
         "blazor",
         "linq"
+      ]
+    },
+    {
+      "tag": "downloads",
+      "aliases": [
+        "downloading",
+        "download-manager",
+        "downloaders"
+      ],
+      "hosts": [
+        "jdownloader.org",
+        "nzbget.com",
+        "pyload.net"
+      ],
+      "keywords": [
+        "downloader",
+        "download-queue",
+        "magnet",
+        "nzb",
+        "segmented"
       ]
     },
     {
@@ -9470,7 +9598,8 @@
         "construct.net",
         "cursor.com",
         "replit.com",
-        "soundtrap.com"
+        "soundtrap.com",
+        "windsurf.com"
       ]
     },
     {
@@ -11039,7 +11168,6 @@
         "udcoled.com",
         "ugreen.com",
         "uk.jackery.com",
-        "ultimaker.com",
         "ultimateears.com",
         "unefon.com.mx",
         "uninor.in",
@@ -12694,6 +12822,7 @@
         "transfer",
         "share-files"
       ],
+      "parent": "files",
       "hosts": [
         "filemail.com",
         "filezilla-project.org",
@@ -12715,6 +12844,33 @@
         "mega.io",
         "pixeldrain.com",
         "tresorit.com"
+      ]
+    },
+    {
+      "tag": "files",
+      "aliases": [
+        "file-sync",
+        "filesync",
+        "file-manager",
+        "file-hosting"
+      ],
+      "parent": "self-hosted",
+      "hosts": [
+        "filebrowser.org",
+        "nextcloud.com",
+        "owncloud.com",
+        "paperless-ngx.com",
+        "seafile.com",
+        "stirlingpdf.com",
+        "syncthing.net"
+      ],
+      "keywords": [
+        "webdav",
+        "file-sharing",
+        "sync",
+        "folders",
+        "upload",
+        "file-manager"
       ]
     },
     {
@@ -17372,6 +17528,7 @@
         "distraction-blocking",
         "deep-work"
       ],
+      "parent": "productivity",
       "hosts": [
         "focusmate.com",
         "freedom.to",
@@ -19958,12 +20115,8 @@
         "superpower"
       ],
       "derived": [
-        "anthropic.com",
-        "chatgpt.com",
-        "deepseek.com",
         "dola.com",
-        "perchance.org",
-        "x.ai"
+        "perchance.org"
       ]
     },
     {
@@ -27073,9 +27226,6 @@
         "swift",
         "simulator",
         "objective-c"
-      ],
-      "derived": [
-        "chatgpt.com"
       ]
     },
     {
@@ -28795,9 +28945,6 @@
         "phrasebook"
       ],
       "derived": [
-        "character.ai",
-        "claude.ai",
-        "deepseek.com",
         "ficbook.net",
         "noredink.com",
         "wenxuecity.com"
@@ -33714,6 +33861,34 @@
       ]
     },
     {
+      "tag": "nas",
+      "aliases": [
+        "network-storage",
+        "homeserver",
+        "home-server"
+      ],
+      "parent": "self-hosted",
+      "hosts": [
+        "asustor.com",
+        "openmediavault.org",
+        "qnap.com",
+        "synology.com",
+        "terra-master.com",
+        "truenas.com",
+        "ugreen.com",
+        "unraid.net"
+      ],
+      "keywords": [
+        "raid",
+        "zfs",
+        "btrfs",
+        "storage-pool",
+        "smb",
+        "nfs",
+        "hdd"
+      ]
+    },
+    {
       "tag": "networking",
       "aliases": [
         "dns",
@@ -37513,6 +37688,7 @@
         "jotting",
         "notebook"
       ],
+      "parent": "productivity",
       "hosts": [
         "bear.app",
         "evernote.com",
@@ -38573,7 +38749,6 @@
         "milestones"
       ],
       "derived": [
-        "claude.ai",
         "janieandjack.com",
         "starfall.com",
         "yeovalley.co.uk",
@@ -39187,7 +39362,6 @@
         "cracked.com",
         "crimejunkiepodcast.com",
         "crooked.com",
-        "deepmind.google",
         "defector.com",
         "democracynow.org",
         "discovermagazine.com",
@@ -39475,6 +39649,32 @@
       ]
     },
     {
+      "tag": "productivity",
+      "aliases": [
+        "gtd",
+        "getting-things-done",
+        "organisation",
+        "organization"
+      ],
+      "hosts": [
+        "bookstackapp.com",
+        "docmost.com",
+        "grocy.info",
+        "planka.app",
+        "silverbullet.md",
+        "triliumnotes.org",
+        "vikunja.io"
+      ],
+      "keywords": [
+        "todo",
+        "kanban",
+        "planner",
+        "habits",
+        "workflow",
+        "inbox-zero"
+      ]
+    },
+    {
       "tag": "project-management",
       "aliases": [
         "tickets",
@@ -39484,6 +39684,7 @@
         "planning",
         "sprints"
       ],
+      "parent": "productivity",
       "hosts": [
         "asana.com",
         "atlassian.com",
@@ -41864,6 +42065,7 @@
         "clippings",
         "later-reading"
       ],
+      "parent": "reading",
       "hosts": [
         "instapaper.com",
         "pocket.com",
@@ -41874,6 +42076,28 @@
         "bookmarklet",
         "offline-reading",
         "save-article"
+      ]
+    },
+    {
+      "tag": "reading",
+      "aliases": [
+        "articles",
+        "reading-list",
+        "longreads"
+      ],
+      "hosts": [
+        "freshrss.org",
+        "miniflux.app",
+        "readeck.org",
+        "tt-rss.org",
+        "wallabag.org"
+      ],
+      "keywords": [
+        "read-later",
+        "highlights",
+        "articles",
+        "feeds",
+        "reader-mode"
       ]
     },
     {
@@ -44237,6 +44461,7 @@
         "feeds",
         "syndication"
       ],
+      "parent": "reading",
       "hosts": [
         "feedly.com",
         "inoreader.com",
@@ -44683,7 +44908,6 @@
         "octopart.com",
         "oldmapsonline.org",
         "onthemarket.com",
-        "openai.com",
         "openevidence.com",
         "perplexity.ai",
         "property.whitepages.com",
@@ -52276,7 +52500,6 @@
         "wechat.com",
         "weibo.com",
         "wykop.pl",
-        "x.ai",
         "xiaohongshu.com",
         "xing.com",
         "yaklass.ru",
@@ -53940,9 +54163,6 @@
         "dubbing",
         "timecode",
         "hardsub"
-      ],
-      "derived": [
-        "elevenlabs.io"
       ]
     },
     {
@@ -54103,6 +54323,7 @@
         "checklist",
         "reminders"
       ],
+      "parent": "productivity",
       "hosts": [
         "any.do",
         "rememberthemilk.com",
@@ -59107,6 +59328,7 @@
         "focus-time",
         "auto-scheduling"
       ],
+      "parent": "productivity",
       "hosts": [
         "clockwise.com",
         "reclaim.ai",
@@ -59127,6 +59349,7 @@
         "hours-tracking",
         "productivity-tracking"
       ],
+      "parent": "productivity",
       "hosts": [
         "clockify.me",
         "rescuetime.com",
@@ -59178,6 +59401,7 @@
         "p2pclient",
         "torrentapp"
       ],
+      "parent": "downloads",
       "hosts": [
         "deluge-torrent.org",
         "qbittorrent.org",
@@ -64121,6 +64345,7 @@
         "newsservers",
         "binaries"
       ],
+      "parent": "downloads",
       "hosts": [
         "easynews.com",
         "newshosting.com",

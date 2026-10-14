@@ -7,9 +7,11 @@
  *   node scripts/tag-catalogue/apply.cjs
  *
  * A full build (classify → merge) needs the Wikidata and CrUX cache, which is
- * not kept. This writes the two hand-kept files straight into
+ * not kept. This writes the hand-kept files straight into
  * internal/app/tag_catalogue.json instead:
  *
+ * - subjects.json: new hand-written subjects and their sites, added when
+ *   missing; never removed.
  * - parents.json: each subject's broader subject, written as `parent`.
  * - manual/cleanup.json: derived hosts that were filed wrongly. Each is taken
  *   out of every subject's `derived` and put under the subjects listed, or
@@ -27,6 +29,18 @@ const file = path.join(__dirname, '..', '..', 'internal', 'app', 'tag_catalogue.
 const doc = JSON.parse(fs.readFileSync(file, 'utf8'));
 const cleanup = JSON.parse(fs.readFileSync(path.join(__dirname, 'manual', 'cleanup.json'), 'utf8'));
 
+const { subjects } = JSON.parse(fs.readFileSync(path.join(__dirname, 'subjects.json'), 'utf8'));
+
+// subjects.json, first half: the new subjects, so cleanup.json may name them.
+let created = 0;
+subjects.forEach(({ tag, aliases = [], keywords = [] }) => {
+    if (doc.tags.some((known) => known.tag === tag)) return;
+    doc.tags.push({ tag, aliases, hosts: [], keywords });
+    created += 1;
+});
+doc.tags.sort((a, b) => (a.tag < b.tag ? -1 : a.tag > b.tag ? 1 : 0));
+
+// cleanup.json: before the new sites, so a misfiled host makes room for them.
 const bySubject = new Map(doc.tags.map((entry) => [entry.tag, entry]));
 let moved = 0;
 let dropped = 0;
@@ -47,6 +61,31 @@ doc.tags.forEach((entry) => {
     if (entry.derived && !entry.derived.length) delete entry.derived;
 });
 
+// subjects.json, second half: the sites each subject lacks, while a host
+// stays under at most two subjects.
+const hostCount = new Map();
+doc.tags.forEach((entry) => [...entry.hosts, ...(entry.derived || [])].forEach((written) => {
+    const host = written.replace(/^=/, '');
+    hostCount.set(host, (hostCount.get(host) || 0) + 1);
+}));
+let hostsAdded = 0;
+const full = [];
+subjects.forEach(({ tag, hosts = [] }) => {
+    const entry = bySubject.get(tag);
+    hosts.forEach((written) => {
+        const host = written.replace(/^=/, '');
+        if ([...entry.hosts, ...(entry.derived || [])].some((h) => h.replace(/^=/, '') === host)) return;
+        if ((hostCount.get(host) || 0) >= 2) {
+            full.push(`${host} (${tag})`);
+            return;
+        }
+        entry.hosts = [...entry.hosts, written].sort();
+        hostCount.set(host, (hostCount.get(host) || 0) + 1);
+        hostsAdded += 1;
+    });
+});
+if (full.length) console.log(`already under two subjects, left out: ${full.join(', ')}`);
+
 const parented = applyParents(doc);
 fs.writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
-console.log(`${moved} hosts refiled, ${dropped} dropped, ${parented} subjects with a parent`);
+console.log(`${created} subjects added, ${hostsAdded} hosts added; ${moved} hosts refiled, ${dropped} dropped; ${parented} subjects with a parent; ${doc.tags.length} subjects`);

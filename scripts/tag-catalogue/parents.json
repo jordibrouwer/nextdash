@@ -279,6 +279,23 @@
     "data-visualization": "data-science",
     "open-data": "data-science",
 
+    "nas": "self-hosted",
+    "files": "self-hosted",
+    "file-transfer": "files",
+
+    "torrent": "downloads",
+    "usenet": "downloads",
+
+    "read-later": "reading",
+    "rss": "reading",
+
+    "notes": "productivity",
+    "tasks": "productivity",
+    "project-management": "productivity",
+    "time-tracking": "productivity",
+    "time-blocking": "productivity",
+    "focus": "productivity",
+
     "insurtech": "insurance",
     "reinsurance": "insurance"
   }
