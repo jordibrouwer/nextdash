@@ -13040,7 +13040,7 @@ class DashboardConfig {
         actionBarPosition: { info: ['actionBarPositionInfoTitle', 'actionBarPositionInfoMessage'], def: 'right' },
         actionBarEnabled: { info: ['actionBarEnabledInfoTitle', 'actionBarEnabledInfoMessage'], def: true },
         actionBarAutoHideSeconds: { info: ['actionBarAutoHideInfoTitle', 'actionBarAutoHideInfoMessage'], def: 2 },
-        showActionKeys: { info: ['showActionKeysInfoTitle', 'showActionKeysInfoMessage'], def: true },
+        showActionKeys: { info: ['showActionKeysInfoTitle', 'showActionKeysInfoMessage'], def: false },
         actionBarIntroStyle: { info: ['actionBarIntroInfoTitle', 'actionBarIntroInfoMessage'], def: 'off' },
         showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'], def: true },
         showPagesButton: { info: ['showPagesButtonInfoTitle', 'showPagesButtonInfoMessage'], def: true },

@@ -94,7 +94,7 @@ class DashboardSetup {
         document.body.setAttribute('data-action-bar-enabled',
             d.settings.actionBarEnabled === false ? 'off' : 'on');
         document.body.setAttribute('data-action-keys',
-            d.settings.showActionKeys === false ? 'off' : 'on');
+            d.settings.showActionKeys === true ? 'on' : 'off');
         window.ActionBarAutoHide?.sync();
         document.body.setAttribute(
             'data-header-buttons',

@@ -1759,7 +1759,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ActionBarAutoHideSeconds:        defaultActionBarAutoHide,
 			ActionBarIntroStyle:             "off",
 			ActionBarEnabled:                true,
-			ShowActionKeys:                  true,
+			ShowActionKeys:                  false,
 			EnableCustomFavicon:             false,
 			CustomFaviconPath:               "",
 			EnableCustomFont:                false,
@@ -4331,7 +4331,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ActionBarAutoHideSeconds:        defaultActionBarAutoHide,
 			ActionBarIntroStyle:             "off",
 			ActionBarEnabled:                true,
-			ShowActionKeys:                  true,
+			ShowActionKeys:                  false,
 			EnableCustomFavicon:             false,
 			CustomFaviconPath:               "",
 			EnableCustomFont:                false,
@@ -5022,8 +5022,8 @@ func (fs *FileStore) GetSettings() Settings {
 		 * Every action button came back on at the same time, and a bar of
 		 * nine buttons each with its chip is a lot to meet on upgrade. The
 		 * keys still work, and resting on a button shows its key. A fresh
-		 * install starts with the chips on (see the constructors above); a
-		 * reader who turns them on after this keeps them.
+		 * install starts with the chips off as well (see the constructors
+		 * above); a reader who turns them on after this keeps them.
 		 */
 		if !settings.ActionKeysOffMigrated {
 			settings.ShowActionKeys = false

@@ -2868,7 +2868,7 @@ class SearchCommandsComponent {
 
         // The key chip on each button.
         if (first === 'keys') {
-            const current = dashboard.settings.showActionKeys !== false;
+            const current = dashboard.settings.showActionKeys === true;
             const states = second === 'on' ? [true] : second === 'off' ? [false] : [true, false];
             return states.map((on) => stateRow(
                 on ? t('commands.actionKeysOn', 'Show the key on each button') : t('commands.actionKeysOff', 'Hide the key on each button'),

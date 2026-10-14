@@ -95,11 +95,11 @@ func TestAChosenDelayAfterTheMoveIsKept(t *testing.T) {
 // existed -- whether or not it had stored the setting -- and a choice made
 // after that is kept.
 
-func TestFreshInstallShowsTheActionKeys(t *testing.T) {
+func TestFreshInstallHidesTheActionKeys(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	t.Chdir(t.TempDir())
-	if !NewStore().GetSettings().ShowActionKeys {
-		t.Fatalf("fresh install: showActionKeys = false, want true")
+	if NewStore().GetSettings().ShowActionKeys {
+		t.Fatalf("fresh install: showActionKeys = true, want false")
 	}
 }
 
