@@ -13,7 +13,9 @@ const usage = (page) => drawer(page).locator('[data-bm-pane="usage"]');
 const acc = (pane, name) => pane.locator(`[data-bm-acc="${name}"]`);
 
 async function pick(page, name, tab = 'details') {
-  await page.locator('#config-bm-list .config-bm-row', { has: page.locator('.config-bm-title', { hasText: name }) }).first().click();
+  // On the title: the middle of the row can be a suggested-tag chip, and a
+  // click there adds the tag instead of opening the panel.
+  await page.locator('#config-bm-list .config-bm-row .config-bm-title', { hasText: name }).first().click();
   await drawer(page).locator(`[data-bm-tab-panel="${tab}"]`).click();
 }
 

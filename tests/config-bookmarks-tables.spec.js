@@ -26,7 +26,7 @@ async function openStructureCategoriesRow(page) {
  * pointed at a row from one of the three Bookmarks tabs plus the reference
  * row from Structure -> Categories, so a regression on either side fails it.
  */
-async function assertMatchesReference(page, referenceRow, row, nameSel) {
+async function assertMatchesReference(page, referenceRow, row, nameSel, { actionsAlwaysShown = false } = {}) {
     await expect(row).toBeVisible({ timeout: 15_000 });
     // Same list class, same row class -- the actual unification, not just a
     // coincidentally similar height.
@@ -46,6 +46,12 @@ async function assertMatchesReference(page, referenceRow, row, nameSel) {
     expect(nameStyle.bg).toBe('rgba(0, 0, 0, 0)');
     expect(nameStyle.fw).toBe('600');
 
+    if (actionsAlwaysShown) {
+        // Apply and No thanks are the row's point, so they stay in view
+        // rather than waiting for the pointer.
+        await expect(row.locator('.config-suggestion-actions').first()).toBeVisible();
+        return;
+    }
     const actions = row.locator('.config-crud-row-actions').first();
     await expect.poll(() => actions.evaluate((el) => getComputedStyle(el).opacity)).toBe('0');
     await row.hover();
@@ -92,7 +98,7 @@ test.describe('bookmarks tables read like Structure\'s rows', () => {
         await expect(page.locator('#config-bm-suggestions [data-tag-suggestion]').first())
             .toBeVisible({ timeout: 15_000 });
         const row = page.locator('#config-bm-suggestions .config-crud-list--table .config-crud-row').first();
-        await assertMatchesReference(page, referenceRow, row, '.config-suggestion-tag');
+        await assertMatchesReference(page, referenceRow, row, '.config-suggestion-tag', { actionsAlwaysShown: true });
     });
 
     test('Your rules rows match Categories rows', async ({ page }) => {

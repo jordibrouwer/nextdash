@@ -7,7 +7,7 @@ const path = require('path');
 
 /**
  * The Containers view tour's drawings, legible in every theme — the same
- * measurement as inbox-tutorial-contrast.spec.js, over this tour's eight scenes.
+ * measurement as inbox-tutorial-contrast.spec.js, over this tour's six scenes.
  *
  * The tour's drawings, legible in every theme.
  *
@@ -33,7 +33,7 @@ test('every scene reads in every built-in theme, light and dark', async ({ page 
     await page.locator('[data-docker-tour]').click();
     await expect(page.locator('.containers-tutorial-scene')).toBeVisible();
     const worst = [];
-    const STEPS = 15;
+    const STEPS = 6;
     for (let step = 1; step <= STEPS; step += 1) {
         await expect(page.locator('.containers-tutorial-progress')).toHaveText(`Step ${step} of ${STEPS}`);
         const res = await page.evaluate((themes) => {

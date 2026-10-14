@@ -29,8 +29,8 @@ test('every scene reads in every built-in theme, light and dark', async ({ page 
     await page.locator('.inbox-actions-own [data-inbox-tour]').click();
     await expect(page.locator('.inbox-tutorial-scene')).toBeVisible();
     const worst = [];
-    for (let step = 1; step <= 6; step += 1) {
-        await expect(page.locator('.inbox-tutorial-progress')).toHaveText(`Step ${step} of 6`);
+    for (let step = 1; step <= 4; step += 1) {
+        await expect(page.locator('.inbox-tutorial-progress')).toHaveText(`Step ${step} of 4`);
         const res = await page.evaluate((themes) => {
             // Any CSS colour -- oklch included -- through a canvas pixel.
             const cv = document.createElement('canvas'); cv.width = cv.height = 1;
@@ -71,7 +71,7 @@ test('every scene reads in every built-in theme, light and dark', async ({ page 
             return out;
         }, THEMES);
         res.forEach((r) => worst.push({ step, ...r }));
-        if (step < 6) await page.locator('.modal-actions .modal-button', { hasText: 'Next' }).click();
+        if (step < 4) await page.locator('.modal-actions .modal-button', { hasText: 'Next' }).click();
     }
     const bad = worst.filter((w) => w.min < 4.5).sort((a, b) => a.min - b.min);
     expect(THEMES.length).toBeGreaterThan(100);

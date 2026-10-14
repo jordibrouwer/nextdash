@@ -48,11 +48,15 @@ test.describe('FULL_CONTAINER_VIEWS table covers every known view', () => {
                 bookmarksHashRejected: table.some((entry) => entry.matchesHash('#3')),
                 inboxLayoutClass: byView.inbox.layoutClass,
                 configLayoutClass: byView.config.layoutClass,
+                tagHash: byView.tags.matchesHash('#tag/homelab'),
+                tagLayoutClass: byView.tags.layoutClass,
                 isEnabledIsCallable: table.every((entry) => typeof entry.isEnabled(d) === 'boolean'),
             };
         });
 
-        expect(results.names.sort()).toEqual(['config', 'docker', 'inbox', 'library']);
+        expect(results.names.sort()).toEqual(['config', 'docker', 'inbox', 'library', 'tags']);
+        expect(results.tagHash).toBe(true);
+        expect(results.tagLayoutClass).toBe('tag-view-layout');
         expect(results.libraryHash).toBe(true);
         expect(results.libraryFilteredHash).toBe(true);
         expect(results.libraryLayoutClass).toBe('library-layout');

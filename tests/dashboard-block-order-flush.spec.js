@@ -55,9 +55,9 @@ test('a block move is kept when the page is left within the debounce', async ({ 
     expect(order.indexOf(ids[1])).toBeLessThan(order.indexOf(ids[0]));
 });
 
-// When the new page's blocks do not arrive, the old page's widgets stay on
-// screen (see dashboard-page-switch-widgets) -- but they are not this page's,
-// and an edit must not write them over this page's own.
+// When the new page's blocks do not arrive, the old page's widgets are cleared
+// (see dashboard-page-switch-widgets) -- and an edit aimed at one of them must
+// not write it over this page's own.
 test('a failed blocks fetch on a page switch does not let an edit overwrite the new page', async ({ page }) => {
     await openDashboard(page);
     await page.evaluate(async () => {
@@ -78,17 +78,17 @@ test('a failed blocks fetch on a page switch does not let an edit overwrite the 
         const d = window.dashboardInstance;
         return d.pages.map((p) => Number(p.id)).find((id) => id !== Number(d.currentPageId) && id !== 999999);
     });
-    expect(await page.evaluate(() => window.dashboardInstance.widgets.length)).toBeGreaterThan(0);
+    const oldWidgetId = await page.evaluate(() => window.dashboardInstance.widgets[0]?.id);
+    expect(oldWidgetId).toBeTruthy();
 
     await page.route(`**/api/pages/${other}/blocks`, (route) => (route.request().method() === 'GET'
         ? route.fulfill({ status: 500, body: 'nope' })
         : route.continue()));
     await page.evaluate((id) => window.dashboardInstance.loadPageBookmarks(id, { forceFetch: true }), other);
     await expect.poll(() => page.evaluate(() => Number(window.dashboardInstance.currentPageId))).toBe(other);
-    const saved = await page.evaluate(async () => {
-        const d = window.dashboardInstance;
-        return d.renderCore.saveWidgetPatch(d.widgets[0].id, { title: 'Renamed on the wrong page' });
-    });
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.widgets.length)).toBe(0);
+    const saved = await page.evaluate(async (id) => window.dashboardInstance.renderCore
+        .saveWidgetPatch(id, { title: 'Renamed on the wrong page' }), oldWidgetId);
     expect(saved).toBe(false);
     await page.unroute(`**/api/pages/${other}/blocks`);
     const stored = await page.evaluate(async (id) => (await (await fetch(`/api/pages/${id}/blocks`)).json()).widgets || [], other);

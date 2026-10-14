@@ -20,6 +20,10 @@ async function loadWithCardPending(page) {
         window.DiscoverabilityState?.resetSettingPromoSeen?.(id, { persist: false });
         window.dashboardInstance.settings.installPingEnabled = true;
         window.dashboardInstance.telemetryLockedOff = false;
+        // The analytics question was asked three days ago: past the two
+        // days this card waits behind it.
+        const qs = window.dashboardInstance.settings.quickStart || {};
+        window.dashboardInstance.settings.quickStart = { ...qs, analyticsAskedAt: Math.floor(Date.now() / 1000) - 3 * 86400 };
         document.querySelectorAll('.quickstart-card:not(.install-count-notice-card)').forEach((el) => el.remove());
     }, PROMO_ID);
 }
@@ -69,5 +73,16 @@ test.describe('the install count notice', () => {
             return window.DashboardInstallCountNotice.shouldShow();
         });
         expect(locked).toBe(false);
+    });
+
+    test('waits two days after the analytics question', async ({ page }) => {
+        await loadWithCardPending(page);
+        const at = (daysAgo) => page.evaluate((d) => {
+            const s = window.dashboardInstance.settings;
+            s.quickStart = { ...(s.quickStart || {}), analyticsAskedAt: Math.floor(Date.now() / 1000) - d * 86400 };
+            return window.DashboardInstallCountNotice.shouldShow();
+        }, daysAgo);
+        expect(await at(1)).toBe(false);
+        expect(await at(3)).toBe(true);
     });
 });

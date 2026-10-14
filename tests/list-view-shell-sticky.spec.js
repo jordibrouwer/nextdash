@@ -81,6 +81,15 @@ async function mountTall(page) {
 }
 
 /**
+ * 1200px past the top of the scratch view, wherever the dashboard above it
+ * ends. A fixed 1200 broke when the grid grew (the key legend under it), and
+ * the header had not reached the top yet to stick.
+ */
+function intoTheList(page) {
+    return page.evaluate(() => Math.round(window.__lvsHost.getBoundingClientRect().top + window.scrollY + 1200));
+}
+
+/**
  * Scroll to `y` and wait until `window.scrollY` has actually settled, then
  * measure. A fixed `setTimeout` after `scrollTo` is a race: the scroll may
  * not have landed yet when the timer fires.
@@ -103,7 +112,7 @@ test('the header is sticky and stays on screen while the list scrolls', async ({
 
     const position = await page.evaluate(() => getComputedStyle(document.querySelector('.lvs-header')).position);
 
-    await scrollAndSettle(page, 1200);
+    await scrollAndSettle(page, await intoTheList(page));
 
     const result = await page.evaluate(() => {
         const header = document.querySelector('.lvs-header');
@@ -128,7 +137,7 @@ test('the header collapses on scroll and expands again at the top', async ({ pag
 
     await scrollAndSettle(page, 0);
     const top = await isCollapsed();
-    await scrollAndSettle(page, 1200);
+    await scrollAndSettle(page, await intoTheList(page));
     const down = await isCollapsed();
     await scrollAndSettle(page, 0);
     const back = await isCollapsed();
@@ -139,7 +148,7 @@ test('the header collapses on scroll and expands again at the top', async ({ pag
 test('the primary action stays reachable in the collapsed header', async ({ page }) => {
     await mountTall(page);
 
-    await scrollAndSettle(page, 1200);
+    await scrollAndSettle(page, await intoTheList(page));
 
     const visible = await page.evaluate(() => {
         const btn = document.querySelector('[data-scratch-go]');
@@ -162,7 +171,7 @@ test('the breadcrumb shows the active filter only when collapsed', async ({ page
 
     await scrollAndSettle(page, 0);
     const top = await crumbVisible();
-    await scrollAndSettle(page, 1200);
+    await scrollAndSettle(page, await intoTheList(page));
     const down = await crumbVisible();
 
     expect(text).toBe('Broken · 1');
