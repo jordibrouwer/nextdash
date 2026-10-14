@@ -60,11 +60,11 @@ module.exports = {
             async setup(page, kit) {
                 await openAppearance(page, kit);
                 await tab(page, 'Action bar').click();
-                await page.locator('[data-appearance-select="actionBarSize"]').first().waitFor();
+                await page.getByRole('combobox', { name: 'Button size' }).waitFor();
                 await page.waitForTimeout(600);
             },
             async act(page) {
-                const size = page.locator('[data-appearance-select="actionBarSize"]').first();
+                const size = page.getByRole('combobox', { name: 'Button size' });
                 for (const value of ['xs', 's', 'm', 'l', 'xl', 'm']) {
                     await size.selectOption(value);
                     // Pacing for the capture, not a condition: each size gets a moment on screen.

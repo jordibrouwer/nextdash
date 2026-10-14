@@ -1,0 +1,89 @@
+{
+  "tag": "v1.19.7",
+  "date": "14 October 2026",
+  "releasedAt": "2026-10-14",
+  "modalLead": "<strong>Appearance</strong> is tidier: nine tabs in three groups, panels that fold and say what they are set to, and <strong>five sizes</strong> for the action bar buttons. Tag suggestions also understand broader subjects now.",
+  "sections": [
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Appearance in three groups.</strong> Nine tabs under <strong>Look</strong>, <strong>Bookmarks</strong> and <strong>Header &amp; bars</strong>, and link previews have a tab of their own. Old links and names still open the right tab.",
+          "highlight": true,
+          "title": "Appearance in three groups",
+          "link": "#config/appearance/general",
+          "linkLabel": "Open Appearance",
+          "media": {
+            "image": "media/v1.19.7-tab-groups.jpg",
+            "alt": "Config → Appearance with its nine tabs in three groups: Look, Bookmarks and Header & bars"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Panels that fold.</strong> On every tab the first panel is open and the rest fold to one line that says what they are set to, changed values first. Long tabs list their panels above the preview.",
+          "highlight": true,
+          "title": "Panels that fold",
+          "link": "#config/appearance/background",
+          "media": {
+            "image": "media/v1.19.7-folding-panels.jpg",
+            "video": "media/v1.19.7-folding-panels.webm",
+            "alt": "An Appearance panel folding and opening; the folded header says what the panel is set to"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The show-this switches sit in chip rows,</strong> and the Backdrop and card glass sliders are folded under <strong>Fine-tune</strong>. Labels and controls stand side by side."
+        }
+      ]
+    },
+    {
+      "title": "Action bar",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Five button sizes,</strong> from extra small to extra large. Medium is the default, one step up from the old size, which is now small.",
+          "highlight": true,
+          "title": "Five action bar sizes",
+          "link": "#config/appearance/buttonbar",
+          "linkLabel": "Set the size",
+          "media": {
+            "image": "media/v1.19.7-action-bar-sizes.jpg",
+            "video": "media/v1.19.7-action-bar-sizes.webm",
+            "alt": "The action bar growing as Button size steps from extra small to extra large"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The animation is a dropdown,</strong> and it plays on the real bar as soon as you pick one. <strong>Show the action buttons</strong> now leads the settings."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The key hints on the buttons start off,</strong> for new installs too. Turn them on in Appearance."
+        }
+      ]
+    },
+    {
+      "title": "Tags",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Suggestions up the tree.</strong> If you tag <code>#finance</code> but never <code>#broker</code>, a broker's site now gets <code>#finance</code> suggested."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>135 sites in the tag catalogue were filed under the wrong subject,</strong> such as telecom operators under electronics. They are refiled or dropped."
+        }
+      ]
+    },
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The media detail card</strong> uses the app's colours, sits in the middle of the screen and has proper buttons."
+        }
+      ]
+    }
+  ]
+}

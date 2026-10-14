@@ -142,6 +142,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - `MANUAL.md` §16 and §17 describe the nine Appearance tabs in three groups, the folding panels, the chips, the action bar button sizes and the Link previews tab; two new screenshots (`16-appearance-rows.jpg`, `16-appearance-action-bar.jpg`) and eight retaken.
 - `Config → Help → Grid, display & date` and the theme topic follow the new tab names in all six languages; the new Appearance strings (tab and group names, chips, button sizes, Fine-tune) are translated in nl, de, fr, zh and es, and the cross-references in Help, tips and the overview now name Layout, Surfaces and Link previews.
 - `README.md` and its Appearance screenshot show the grouped tabs.
+- `static/data/whats-new/v1.19.7.json` and its index entry, with three highlights (Appearance in three groups, panels that fold, five action bar sizes) and their picture and recordings from `tests/fixtures/whats-new-media/v1.19.7.js`; `whats-new-stub.js` tokens bumped to `…-v1.19.7` / `whats-new-v337`, and `tests/whats-new-hidden-release.spec.js` follows.
 
 ---
 
