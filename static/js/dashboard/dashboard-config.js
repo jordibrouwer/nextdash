@@ -14467,6 +14467,9 @@ class DashboardConfig {
                 note: t('config.actionBarGroupNote', 'The buttons in the header, in the order they stand there. Hiding one leaves its key working, and with all of them off the surround goes too. Tags, recents, the cheat sheet and the pages panel are modes of the search panel — switch a button on here to put it back in the bar as well.'),
                 bulk: 'chrome',
                 controls: [
+                    // First: whether there is a bar at all decides whether
+                    // anything below it matters.
+                    { ...chrome('actionBarEnabled', 'config.actionBarEnabledLabel', 'Show the action buttons'), noBulk: true },
                     { field: 'actionBarPosition', type: 'select', special: 'chrome',
                         label: t('config.actionBarPositionLabel', 'Where the fixed buttons stand'),
                         options: [
@@ -14487,19 +14490,20 @@ class DashboardConfig {
                         ] },
                     { field: 'maxHeaderActions', type: 'number', min: 0, max: 9, step: 1, special: 'chrome',
                         label: t('config.maxHeaderActionsLabel', 'Action buttons shown before “+N”') },
-                    { ...chrome('actionBarEnabled', 'config.actionBarEnabledLabel', 'Show the action buttons'), noBulk: true },
                     { ...chrome('showActionKeys', 'config.showActionKeysLabel', 'Show the key on each button'), noBulk: true },
-                    // Cards rather than a select: an animation is seen, not read,
-                    // and each card plays its own while it has the pointer or the focus.
-                    { field: 'actionBarIntroStyle', type: 'cards', special: 'chrome', art: 'actionBarIntro', noBulk: true,
+                    // A select rather than six cards that each played the
+                    // animation: picking one plays it on the real bar at once,
+                    // so the cards showed the same thing twice and took half
+                    // the panel.
+                    { field: 'actionBarIntroStyle', type: 'select', special: 'chrome', noBulk: true,
                         label: t('config.actionBarIntroLabel', 'Animate the buttons as the bar appears'),
                         options: [
-                            { value: 'off', label: t('config.actionBarIntroOff', 'Off'), body: t('config.actionBarIntroOffBody', 'The bar just appears.') },
-                            { value: 'swell', label: t('config.actionBarIntroSwell', 'Swell'), body: t('config.actionBarIntroSwellBody', 'Each button grows past its size and settles back, left to right.') },
-                            { value: 'swell-middle', label: t('config.actionBarIntroSwellMiddle', 'Swell from the middle'), body: t('config.actionBarIntroSwellMiddleBody', 'The same, outwards from the middle.') },
-                            { value: 'swell-together', label: t('config.actionBarIntroSwellTogether', 'Swell together'), body: t('config.actionBarIntroSwellTogetherBody', 'All buttons at once.') },
-                            { value: 'unfold', label: t('config.actionBarIntroUnfold', 'Unfold'), body: t('config.actionBarIntroUnfoldBody', 'The bar opens and the buttons pop in, left to right.') },
-                            { value: 'accordion', label: t('config.actionBarIntroAccordion', 'Accordion'), body: t('config.actionBarIntroAccordionBody', 'The bar opens from the middle and the buttons pop out to both ends.') },
+                            opt('off', t('config.actionBarIntroOff', 'Off')),
+                            opt('swell', t('config.actionBarIntroSwell', 'Swell')),
+                            opt('swell-middle', t('config.actionBarIntroSwellMiddle', 'Swell from the middle')),
+                            opt('swell-together', t('config.actionBarIntroSwellTogether', 'Swell together')),
+                            opt('unfold', t('config.actionBarIntroUnfold', 'Unfold')),
+                            opt('accordion', t('config.actionBarIntroAccordion', 'Accordion')),
                         ] },
                     { field: 'actionBarAutoHideSeconds', type: 'select', special: 'chrome',
                         label: t('config.actionBarAutoHideLabel', 'Slide a docked bar away after'),

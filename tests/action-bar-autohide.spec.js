@@ -412,23 +412,20 @@ for (const style of ['swell-middle', 'swell-together', 'unfold', 'accordion']) {
     });
 }
 
-test('the style is picked on a card in config, and the card shows it', async ({ page }) => {
+test('the style is picked from a select in config', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'bottom' });
     await page.keyboard.press('Shift+S');
     await page.click('[data-config-section="appearance"]');
     await page.locator('[data-appearance-tab="buttonbar"]').click();
-    const card = page.locator('[data-behavior-field="actionBarIntroStyle"][data-behavior-value="accordion"]');
+    const select = page.locator('select[data-behavior-field="actionBarIntroStyle"]');
     // The ℹ beside the setting.
     await expect(page.locator('.config-info-btn[data-info-field="actionBarIntroStyle"]')).toBeVisible();
-    // At rest until the card has the pointer, then its own drawing plays.
-    const playing = () => card.locator('.setting-art-intro').evaluate((el) => el.getAnimations().length > 0);
-    expect(await playing()).toBe(false);
-    await card.hover();
-    await expect.poll(playing).toBe(true);
+    // The bar plays the animation itself; config does not draw it a second time.
+    await expect(page.locator('[data-behavior-field="actionBarIntroStyle"] .setting-art-intro')).toHaveCount(0);
 
-    await card.click();
+    await select.selectOption('accordion');
     await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.actionBarIntroStyle)).toBe('accordion');
-    await expect(card).toHaveAttribute('aria-checked', 'true');
+    await expect(select).toHaveValue('accordion');
     await page.evaluate(async () => {
         window.dashboardInstance.settings.actionBarIntroStyle = 'off';
         await window.dashboardInstance.saveSettings?.();
@@ -440,16 +437,16 @@ test('a style picked in config plays on the bar at once, and the next one too', 
     await page.keyboard.press('Shift+S');
     await page.click('[data-config-section="appearance"]');
     await page.locator('[data-appearance-tab="buttonbar"]').click();
-    const card = (style) => page.locator(`[data-behavior-field="actionBarIntroStyle"][data-behavior-value="${style}"]`);
+    const select = page.locator('select[data-behavior-field="actionBarIntroStyle"]');
 
-    await card('unfold').click();
+    await select.selectOption('unfold');
     await expect(bar(page)).toHaveAttribute('data-intro-style', 'unfold');
     await expect(bar(page)).not.toHaveAttribute('data-intro-style', 'unfold', { timeout: 4000 });
 
-    await card('swell-together').click();
+    await select.selectOption('swell-together');
     await expect(bar(page)).toHaveAttribute('data-intro-style', 'swell-together');
     expect(await swelling(page).count()).toBeGreaterThan(0);
 
-    await card('off').click();
+    await select.selectOption('off');
     await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.actionBarIntroStyle)).toBe('off');
 });

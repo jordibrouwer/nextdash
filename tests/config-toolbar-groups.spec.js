@@ -84,6 +84,15 @@ test.describe('the chrome toggles are grouped', () => {
         ]));
     });
 
+    test('the on/off switch is the first setting of the action bar', async ({ page }) => {
+        await openToolbarTab(page);
+        await page.locator('[data-appearance-tab="buttonbar"]').click();
+        const first = page.locator('#config-appearance-body [data-behavior-field]').first();
+        await expect(first).toHaveAttribute('data-behavior-field', 'actionBarEnabled');
+        // The animation is a select now: the bar plays it, config does not draw it again.
+        await expect(page.locator('select[data-behavior-field="actionBarIntroStyle"]')).toHaveCount(1);
+    });
+
     test('each panel renders its own bulk pair and count', async ({ page }) => {
         await openToolbarTab(page);
         await expect(page.locator('.config-panel-bulk')).toHaveCount(1);

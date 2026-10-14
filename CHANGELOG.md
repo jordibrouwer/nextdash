@@ -126,6 +126,8 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **new — a list of panels on long tabs.** A tab with more than three panels lists them above the preview; choosing one opens it and scrolls to it, and the panel in view is marked. The filter narrows the list with the panels; under 900px it is left out (`renderAppearancePanelIndex`).
 - **fix — *Date & time* starts with a capital** like the other panel titles.
 - **fix — the Appearance tabs wrap instead of scrolling.** On one scrolling line half of the nine tabs sat past the edge; now a group that does not fit moves to the next line whole, its label over its tabs, so every tab is on screen down to phone width (`config-view.css`).
+- **new — the action bar animation is a dropdown.** Picking a style plays it on the real bar at once, so the six cards that each played it again are gone and the panel is about half as tall.
+- **new — *Show the action buttons* leads the action bar settings,** above where the bar stands and how large its buttons are: it decides whether any of the rest matters.
 
 ---
 
