@@ -40,6 +40,11 @@
         },
         {
           "badge": "new",
+          "text": "<strong>The inbox gets a Tags column,</strong> with the same suggested tags and <strong>Add all</strong> as the Bookmarks view. <code>a</code> adds the suggestion of the link under the cursor.",
+          "link": "#inbox"
+        },
+        {
+          "badge": "new",
           "text": "<strong>A catalogue of some 51,000 sites,</strong> and Wikidata for the sites it does not know. Only the site's name leaves your server, and you can switch the lookup off in the tags tab.",
           "link": "#config/bookmarks/tags"
         },
@@ -106,6 +111,10 @@
         {
           "badge": "fix",
           "text": "<strong>A calendar widget</strong> no longer fails for a minute after a reload."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The inbox shows a link saved from the extension or another tab</strong> as soon as you open it, without a reload."
         }
       ]
     }
