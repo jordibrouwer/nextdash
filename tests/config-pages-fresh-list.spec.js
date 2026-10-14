@@ -78,6 +78,8 @@ test.describe('the pages list in config', () => {
         // The copy exists; then nothing more is coming.
         await expect.poll(async () => (await serverPages(page)).some((p) => /copy/i.test(p.name)), { timeout: 10_000 })
             .toBe(true);
+        // A check that nothing more happens: a later write that lands on the
+        // phone's page has no state to wait for, only time to show up in.
         await page.waitForTimeout(1000);
         const after = await serverPages(page);
         expect(after.find((p) => p.id === phoneId)?.name).toBe('Made on the phone');
@@ -118,6 +120,8 @@ test.describe('the pages list in config', () => {
         await page.locator('[data-page-add]').click();
         // The refused write, then a beat for what follows it.
         await refused;
+        // A check that the page does NOT stay: the count equals the one from
+        // before the click either way, so only time lets a wrong one show.
         await page.waitForTimeout(500);
         expect(await page.evaluate(() => window.dashboardInstance.pages.length)).toBe(before);
     });
