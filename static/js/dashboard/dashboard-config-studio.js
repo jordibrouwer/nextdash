@@ -471,7 +471,10 @@
         studioPanels(appearanceTab, fields) {
             return this.panelsFor('appearance', appearanceTab)
                 .map((panel) => {
-                    const controls = (panel.controls || []).filter((c) => fields.includes(c.field));
+                    const controls = (panel.controls || [])
+                        .filter((c) => c.type === 'chips'
+                            ? this.controlFields(c).some((f) => fields.includes(f))
+                            : fields.includes(c.field));
                     const whole = controls.length === (panel.controls || []).length;
                     return { ...panel, bulk: undefined, note: whole ? panel.note : undefined, controls };
                 })

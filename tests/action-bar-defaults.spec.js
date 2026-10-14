@@ -53,16 +53,23 @@ async function openTab(page, tab) {
     // The tab's own controls are drawn, with their ℹ and ↺, before anything reads them.
     const probe = { buttonbar: ACTION_BAR[0][0], header: HEADER_PANEL[0][0] }[tab];
     if (probe) {
-        await expect(page.locator(`[data-info-field="${probe}"]`)).toBeAttached();
-        await expect(page.locator(`[data-reset-field="${probe}"]`)).toBeAttached();
+        await expect(page.locator(`[data-behavior-field="${probe}"]`)).toBeAttached();
     }
 }
 
-const affordances = (page, fields) => page.evaluate((names) => names.map((field) => ({
-    field,
-    info: Boolean(document.querySelector(`[data-info-field="${field}"]`)),
-    reset: Boolean(document.querySelector(`[data-reset-field="${field}"]`)),
-})), fields);
+// The show-this-button switches are chips: they explain themselves in a
+// tooltip, and the group they stand in carries the one ↺ once any differs.
+const affordances = (page, fields) => page.evaluate((names) => names.map((field) => {
+    const chipEl = document.querySelector(`button[data-behavior-field="${field}"][data-behavior-type="chip"]`);
+    if (chipEl) {
+        return { field, info: chipEl.title.length > chipEl.textContent.length, reset: Boolean(chipEl.closest('.config-chips')) };
+    }
+    return {
+        field,
+        info: Boolean(document.querySelector(`[data-info-field="${field}"]`)),
+        reset: Boolean(document.querySelector(`[data-reset-field="${field}"]`)),
+    };
+}), fields);
 
 test('every action-bar setting explains itself and can be put back', async ({ page }) => {
     await openTab(page, 'buttonbar');
@@ -83,8 +90,8 @@ test('every header setting explains itself and can be put back', async ({ page }
 test('the ℹ opens something with words in it', async ({ page }) => {
     await openTab(page, 'buttonbar');
 
-    await page.locator('[data-info-field="showRecentButton"]').click();
-    await expect(page.locator('#app-modal .modal-text')).toContainText(/\*/);
+    await page.locator('[data-info-field="actionBarEnabled"]').click();
+    await expect(page.locator('#app-modal .modal-text')).toContainText(/keys still work/);
     await page.keyboard.press('Escape');
 });
 

@@ -558,7 +558,7 @@ test.describe('the look studio', () => {
         const expected = {
             backdrop: ['backdropStrength', 'backdropSeed', 'backdropTint'],
             surface: ['cardGlassMode', 'cardGlassAlpha', 'cardGlassBlur', 'cardGlassBorder', 'cardGlassContrast'],
-            heads: ['categoryHeaderStyle', 'categoryHeaderSize', 'showCategoryCount', 'headerButtonStyle'],
+            heads: ['categoryHeaderStyle', 'categoryHeaderSize', 'headerButtonStyle'],
             layout: ['fontSize', 'fontPreset', 'columnsPerRow', 'rowHighlight'],
         };
         for (const [tab, fields] of Object.entries(expected)) {

@@ -619,7 +619,18 @@ async function answerNoCategory(page) {
     return true;
 }
 
+/**
+ * Put a config chip (a `button[aria-pressed]`) on or off. A chip toggles, so
+ * it is clicked only when it is not already as asked.
+ */
+async function setChip(locator, on) {
+    const pressed = (await locator.getAttribute('aria-pressed')) === 'true';
+    if (pressed !== on) await locator.click();
+    await expect(locator).toHaveAttribute('aria-pressed', on ? 'true' : 'false');
+}
+
 module.exports = {
+    setChip,
     answerNoCategory,
     GITHUB_STUB_PORT,
     RAINDROP_STUB_PORT,

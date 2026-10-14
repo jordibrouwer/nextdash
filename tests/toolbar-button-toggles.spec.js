@@ -128,7 +128,7 @@ test.describe('toolbar button visibility', () => {
         await reveal();
         // The button ships off, and the specs above this one set it either way,
         // so what it starts as is not this test's business — the flip is.
-        const startedOn = await toggle.isChecked();
+        const startedOn = (await toggle.getAttribute('aria-pressed')) === 'true';
 
         await flip();
         // A body attribute, so it needs the chrome branch of setBehavior —

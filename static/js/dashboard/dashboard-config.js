@@ -3849,6 +3849,12 @@ class DashboardConfig {
         this.behaviorSchema({ forIndex: true }).forEach((panel) => {
             const section = panel.section || 'behavior';
             DashboardConfig.flatControls(panel.controls).forEach((c) => {
+                // A chip is a setting of its own: indexed under the long form
+                // of its label, which is what the checkbox it replaced said.
+                if (c.type === 'chips') {
+                    (c.items || []).forEach((i) => push(i.field, i.title || i.label, section, panel.tab || 'general'));
+                    return;
+                }
                 if (!c.field || c.type === 'note' || c.type === 'pushDevice'
                     || c.type === 'maintenanceWindows') return;
                 push(c.field, c.label, section, panel.tab || 'general');
@@ -13497,17 +13503,43 @@ class DashboardConfig {
             .filter((f) => this.fieldMeta(f)?.def !== undefined);
     }
 
+    /** The settings fields a schema control writes: one, or one per chip. */
+    controlFields(c) {
+        if (!c) return [];
+        if (c.type === 'chips') return (c.items || []).map((i) => i.field);
+        if (!c.field || c.type === 'note' || c.type === 'pushDevice'
+            || c.type === 'maintenanceWindows') return [];
+        return [c.field];
+    }
+
+    /**
+     * The chips of a `chips` control that the filter and "Only changed" keep.
+     *
+     * One answer for the render and for the counts, so the number on a tab
+     * strip is the number of chips actually drawn. A query that matches the
+     * group's own label keeps the whole group.
+     */
+    visibleChips(control, changedFields) {
+        let items = control.items || [];
+        if (changedFields) items = items.filter((i) => changedFields.includes(i.field));
+        const query = String(this.settingsFilter || '').trim().toLowerCase();
+        if (!query || String(control.label || '').toLowerCase().includes(query)) return items;
+        return items.filter((i) => {
+            const meta = this.fieldMeta(i.field);
+            const parts = [i.label, i.title, i.field, meta?.hint ? this.t(`config.${meta.hint}`, '') : ''];
+            return parts.filter(Boolean).some((part) => String(part).toLowerCase().includes(query));
+        });
+    }
+
     /** Fields in one schema panel that differ from their default. */
     panelChangedFields(panel) {
         const s = this.dash.settings || {};
         return DashboardConfig.flatControls(panel.controls)
-            .filter((c) => c.field && c.type !== 'note' && c.type !== 'pushDevice'
-                && c.type !== 'maintenanceWindows')
-            .filter((c) => {
-                const meta = this.fieldMeta(c.field);
-                return meta && meta.def !== undefined && !this.isFieldDefault(c.field, s[c.field]);
-            })
-            .map((c) => c.field);
+            .flatMap((c) => this.controlFields(c))
+            .filter((field) => {
+                const meta = this.fieldMeta(field);
+                return meta && meta.def !== undefined && !this.isFieldDefault(field, s[field]);
+            });
     }
 
     /** Open the shared info modal for a setting field. */
@@ -13518,6 +13550,37 @@ class DashboardConfig {
         window.AppModal.alert({
             title: this.t(`config.${titleKey}`, titleFallback),
             htmlMessage: this.dash.escapeHtml(this.t(`config.${msgKey}`, msgFallback)).replace(/\n/g, '<br>'),
+            confirmText: this.t('config.gotIt', 'Got it'),
+        });
+    }
+
+    /**
+     * The ℹ of a chip group: every chip's explanation in one dialog, each
+     * under the name its old checkbox had, in the order the chips stand.
+     */
+    openGroupInfo(title, fields) {
+        if (!window.AppModal?.alert) return;
+        const esc = (v) => this.dash.escapeHtml(v);
+        const chipName = (field) => {
+            for (const panel of this.behaviorSchema()) {
+                for (const c of DashboardConfig.flatControls(panel.controls)) {
+                    const item = c?.type === 'chips' && (c.items || []).find((i) => i.field === field);
+                    if (item) return item.title || item.label;
+                }
+            }
+            return field;
+        };
+        const parts = fields.map((field) => {
+            const info = this.fieldMeta(field)?.info;
+            if (!this.hasInfoText(info)) return '';
+            const [, msgKey, , msgFallback = ''] = info;
+            const message = this.t(`config.${msgKey}`, msgFallback);
+            return `<p><strong>${esc(chipName(field))}</strong><br>${esc(message).replace(/\n/g, '<br>')}</p>`;
+        }).filter(Boolean);
+        if (!parts.length) return;
+        window.AppModal.alert({
+            title,
+            htmlMessage: parts.join(''),
             confirmText: this.t('config.gotIt', 'Got it'),
         });
     }
@@ -13623,6 +13686,13 @@ class DashboardConfig {
         // A toggle whose effect lives in the page chrome rather than the bookmark
         // grid, so it needs the header reapplied instead of a re-render.
         const chrome = (field, label, fallback) => ({ ...bool(field, label, fallback), special: 'chrome' });
+        // One chip of a `chips` control: it writes its own boolean, like the
+        // checkbox it replaces. `label` is the short word on the chip; `title`
+        // is the long form the checkbox carried, kept for the filter and the
+        // settings jump so searching "show the search button" still finds it.
+        const chip = (field, special, labelKey, labelFallback, titleKey, titleFallback) => ({
+            field, special, label: t(labelKey, labelFallback), title: t(titleKey, titleFallback),
+        });
         const opt = (value, label) => ({ value, label });
         // From the shared util so config and dashboard cannot drift apart.
         const layoutPresets = window.LayoutUtils?.getLayoutPresets?.()
@@ -14013,8 +14083,10 @@ class DashboardConfig {
                     { field: 'timeFormat', type: 'select', label: t('config.timeFormatLabel', 'Time format'), special: 'datetime', options: [
                         opt('24h', '23:59'), opt('12h', '11:59 PM'),
                     ] },
-                    chrome('showDate', 'config.showDateLabel', 'Show the date'),
-                    chrome('showTime', 'config.showTimeLabel', 'Show the time'),
+                    { type: 'chips', label: t('config.dateLineShownLabel', 'Shown in the line'), items: [
+                        chip('showDate', 'chrome', 'config.chipDate', 'Date', 'config.showDateLabel', 'Show the date'),
+                        chip('showTime', 'chrome', 'config.chipTime', 'Time', 'config.showTimeLabel', 'Show the time'),
+                    ] },
                 ],
             },
             {
@@ -14217,9 +14289,11 @@ class DashboardConfig {
                             },
                         ],
                     },
-                    bool('showStatus', 'config.showStatusLabel', 'Show online/offline status'),
-                    bool('showStatusLoading', 'config.showStatusLoadingLabel', 'Show a loading state while checking'),
-                    bool('showPing', 'config.showPingLabel', 'Show ping times'),
+                    { type: 'chips', label: t('config.rowStatusShownLabel', 'Row status'), items: [
+                        chip('showStatus', '', 'config.chipStatus', 'Online/offline', 'config.showStatusLabel', 'Show online/offline status'),
+                        chip('showStatusLoading', '', 'config.chipStatusLoading', 'Loading state', 'config.showStatusLoadingLabel', 'Show a loading state while checking'),
+                        chip('showPing', '', 'config.chipPing', 'Ping times', 'config.showPingLabel', 'Show ping times'),
+                    ] },
                     { ...bool('showRowTags', 'config.showRowTagsLabel', 'Show tags on bookmark rows'), special: 'render' },
                     { field: 'rowTagsMax', type: 'number', min: 1, max: 5, step: 1, special: 'render',
                         label: t('config.rowTagsMaxLabel', 'Tags shown before “+N”') },
@@ -14252,9 +14326,11 @@ class DashboardConfig {
                             opt('m', t('config.categoryHeaderMedium', 'Medium')),
                             opt('l', t('config.categoryHeaderLarge', 'Large')),
                         ] },
-                    chrome('showCategoryIcon', 'config.showCategoryIconLabel', 'Show the category icon'),
-                    chrome('showCategoryCount', 'config.showCategoryCountLabel', 'Show how many bookmarks it holds'),
-                    chrome('categoryHeaderAccentLine', 'config.categoryHeaderAccentLabel', 'Underline in the accent colour'),
+                    { type: 'chips', label: t('config.categoryHeaderExtrasLabel', 'Shown in the header'), items: [
+                        chip('showCategoryIcon', 'chrome', 'config.chipCategoryIcon', 'Icon', 'config.showCategoryIconLabel', 'Show the category icon'),
+                        chip('showCategoryCount', 'chrome', 'config.chipCategoryCount', 'Count', 'config.showCategoryCountLabel', 'Show how many bookmarks it holds'),
+                        chip('categoryHeaderAccentLine', 'chrome', 'config.chipCategoryUnderline', 'Underline', 'config.categoryHeaderAccentLabel', 'Underline in the accent colour'),
+                    ] },
                 ],
             },
             {
@@ -14347,10 +14423,12 @@ class DashboardConfig {
                         ] },
                     { field: 'maxPageTabs', type: 'number', min: 3, max: 9, step: 1, special: 'chrome',
                         label: t('config.maxPageTabsLabel', 'Page tabs shown before “+N”') },
-                    chrome('showTitle', 'config.showTitleLabel', 'Show the dashboard title'),
-                    chrome('showDashboardButton', 'config.showDashboardButtonLabel', 'Show the dashboard button'),
-                    chrome('showInboxButton', 'config.showInboxButtonLabel', 'Show the inbox button'),
-                    chrome('showConfigButton', 'config.showConfigButtonLabel', 'Show the config button'),
+                    { type: 'chips', label: t('config.headerButtonsShownLabel', 'Shown in the header'), items: [
+                        chip('showTitle', 'chrome', 'config.chipTitle', 'Title', 'config.showTitleLabel', 'Show the dashboard title'),
+                        chip('showDashboardButton', 'chrome', 'config.chipDashboard', 'Dashboard', 'config.showDashboardButtonLabel', 'Show the dashboard button'),
+                        chip('showInboxButton', 'chrome', 'config.chipInbox', 'Inbox', 'config.showInboxButtonLabel', 'Show the inbox button'),
+                        chip('showConfigButton', 'chrome', 'config.chipConfig', 'Config', 'config.showConfigButtonLabel', 'Show the config button'),
+                    ] },
                 ],
             },
             {
@@ -14407,15 +14485,17 @@ class DashboardConfig {
                             opt(10, t('config.actionBarAutoHide10', '10 seconds')),
                             opt(30, t('config.actionBarAutoHide30', '30 seconds')),
                         ] },
-                    chrome('showAddBookmarkButton', 'config.showAddBookmarkButtonLabel', 'Show the add-bookmark button'),
-                    chrome('showSearchButton', 'config.showSearchButtonLabel', 'Show the search button'),
-                    chrome('showCommandsButton', 'config.showCommandsButtonLabel', 'Show the commands button'),
-                    chrome('showFindersButton', 'config.showFindersButtonLabel', 'Show the finders button'),
-                    chrome('showTagCloudButton', 'config.showTagCloudButtonLabel', 'Show the tag-cloud button'),
-                    chrome('showRecentButton', 'config.showRecentButtonLabel', 'Show the recent button'),
-                    chrome('showPagesButton', 'config.showPagesButtonLabel', 'Show the pages button'),
-                    chrome('showCollapseAllButton', 'config.showCollapseAllButtonLabel', 'Show the fold-all button'),
-                    chrome('showCheatSheetButton', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
+                    { type: 'chips', label: t('config.actionBarShownLabel', 'Buttons shown'), items: [
+                        chip('showAddBookmarkButton', 'chrome', 'config.chipAddBookmark', 'Add bookmark', 'config.showAddBookmarkButtonLabel', 'Show the add-bookmark button'),
+                        chip('showSearchButton', 'chrome', 'config.chipSearch', 'Search', 'config.showSearchButtonLabel', 'Show the search button'),
+                        chip('showCommandsButton', 'chrome', 'config.chipCommands', 'Commands', 'config.showCommandsButtonLabel', 'Show the commands button'),
+                        chip('showFindersButton', 'chrome', 'config.chipFinders', 'Finders', 'config.showFindersButtonLabel', 'Show the finders button'),
+                        chip('showTagCloudButton', 'chrome', 'config.chipTagCloud', 'Tag cloud', 'config.showTagCloudButtonLabel', 'Show the tag-cloud button'),
+                        chip('showRecentButton', 'chrome', 'config.chipRecent', 'Recent', 'config.showRecentButtonLabel', 'Show the recent button'),
+                        chip('showPagesButton', 'chrome', 'config.chipPages', 'Pages', 'config.showPagesButtonLabel', 'Show the pages button'),
+                        chip('showCollapseAllButton', 'chrome', 'config.chipCollapseAll', 'Fold all', 'config.showCollapseAllButtonLabel', 'Show the fold-all button'),
+                        chip('showCheatSheetButton', 'chrome', 'config.chipCheatSheet', 'Cheat sheet', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
+                    ] },
                 ],
             },
             {
@@ -14996,7 +15076,7 @@ class DashboardConfig {
     renderControlPanels(schema, prefix) {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
-        const renderControl = (c) => {
+        const renderControl = (c, changedFields = []) => {
             // Standalone explanatory text between controls. It has no field, so
             // it must be handled before anything reads c.field — the fallthrough
             // below turns an unknown type into a text input bound to undefined.
@@ -15014,6 +15094,45 @@ class DashboardConfig {
             }
             // A set of names rather than one value: eight checkboxes writing one
             // array, so the card's rows are chosen the way a list is chosen.
+            if (c.type === 'chips') {
+                const shown = this.visibleChips(c, this.changedOnly ? changedFields : null);
+                if (!shown.length) return '';
+                // The chip has no room for the ℹ and the sentence under a
+                // checkbox, so both ride in its tooltip.
+                const chips = shown.map((i) => {
+                    const tip = [i.title, this.fieldSummary(i.field)].filter(Boolean).join(' — ');
+                    return `
+                    <button type="button" class="config-chip" aria-pressed="${s[i.field] ? 'true' : 'false'}"
+                            data-${prefix}-field="${esc(i.field)}" data-${prefix}-special="${esc(i.special || '')}"
+                            data-${prefix}-type="chip"${tip ? ` title="${esc(tip)}"` : ''}>${esc(i.label)}</button>`;
+                }).join('');
+                // One ↺ for the group, and only for the chips that differ: the
+                // per-field one would be nine buttons in a row of words.
+                const off = c.items
+                    .filter((i) => this.fieldMeta(i.field)?.def !== undefined && !this.isFieldDefault(i.field, s[i.field]))
+                    .map((i) => i.field);
+                const reset = off.length
+                    ? `<button type="button" class="config-reset-btn is-visible" data-reset-group="${esc(off.join(','))}"
+                               aria-label="${esc(this.t('config.settingResetAria', 'Reset to default'))}"
+                               title="${esc(this.t('config.settingResetTitle', 'Reset to default'))}">↺</button>`
+                    : '';
+                // One ℹ for the group as well. The tooltip alone is out of
+                // reach on a touch screen and from the keyboard, so the
+                // explanations a chip carries are listed in one dialog.
+                const explained = c.items.filter((i) => this.hasInfoText(this.fieldMeta(i.field)?.info));
+                const info = explained.length
+                    ? `<button type="button" class="config-info-btn" data-info-group="${esc(explained.map((i) => i.field).join(','))}"
+                               data-info-group-title="${esc(c.label)}"
+                               aria-label="${esc(this.t('config.settingInfoAria', 'More info'))}"
+                               title="${esc(this.t('config.settingInfoAria', 'More info'))}">ℹ</button>`
+                    : '';
+                return `
+                    <div class="config-field config-field--chips">
+                        <span class="config-field-label">${esc(c.label)}</span>
+                        <span class="config-field-affordances">${info}${reset}</span>
+                    </div>
+                    <div class="config-chips" role="group" aria-label="${esc(c.label)}">${chips}</div>`;
+            }
             if (c.type === 'checkset') {
                 const current = Array.isArray(s[c.field])
                     ? s[c.field].map((v) => String(v))
@@ -15021,20 +15140,18 @@ class DashboardConfig {
                     // always drawn — an empty list is a deliberate choice and
                     // reads as one.
                     : c.options.map((o) => String(o.value));
+                // Chips like the rest, but still one array under one field.
                 const boxes = c.options.map((o) => `
-                    <label class="config-toggle config-checkset-item">
-                        <input type="checkbox" data-${prefix}-field="${esc(c.field)}"
-                               data-${prefix}-type="checkset" data-${prefix}-special="${esc(c.special || '')}"
-                               data-${prefix}-value="${esc(o.value)}"
-                               ${current.includes(String(o.value)) ? 'checked' : ''}>
-                        <span>${esc(o.label)}</span>
-                    </label>`).join('');
+                    <button type="button" class="config-chip" aria-pressed="${current.includes(String(o.value)) ? 'true' : 'false'}"
+                            data-${prefix}-field="${esc(c.field)}"
+                            data-${prefix}-type="checkset" data-${prefix}-special="${esc(c.special || '')}"
+                            data-${prefix}-value="${esc(o.value)}">${esc(o.label)}</button>`).join('');
                 return `
                     <div class="config-field">
                         <span class="config-field-label">${esc(c.label)}</span>
                         <span class="config-field-affordances">${this.renderFieldAffordances(c.field, s[c.field])}</span>
                     </div>
-                    <div class="config-checkset" role="group" aria-label="${esc(c.label)}">${boxes}</div>`;
+                    <div class="config-checkset config-chips" role="group" aria-label="${esc(c.label)}">${boxes}</div>`;
             }
             // Per-device push controls. Permission is granted per browser, so this
             // cannot be a synced setting like the toggles around it — the state is
@@ -15197,7 +15314,7 @@ class DashboardConfig {
                 : panel.controls;
             if (!filtered.length) return '';
             const controls = this.changedOnly
-                ? DashboardConfig.pruneControls(filtered, (c) => changedFields.includes(c.field))
+                ? DashboardConfig.pruneControls(filtered, (c) => this.controlFields(c).some((f) => changedFields.includes(f)))
                 : filtered;
 
             const badge = panel.appliesTo
@@ -15216,7 +15333,7 @@ class DashboardConfig {
             const bulk = (panel.bulk && !this.changedOnly && !locked) ? this.renderPanelBulkActions(panel, prefix) : '';
             const reset = locked ? '' : this.renderPanelResetAction(panel, changedFields);
             const lockChip = locked ? window.DemoLock.chip(panel.kind) : '';
-            const body = controls.map(renderControl).join('');
+            const body = controls.map((c) => renderControl(c, changedFields)).join('');
             return `
             <div class="config-panel${panel.highlight ? ' config-panel--animated' : ''}${locked ? ' config-panel--demo-locked' : ''}">
                 ${stars}
@@ -15277,8 +15394,8 @@ class DashboardConfig {
         const s = this.dash.settings || {};
         const fields = (panel.controls || [])
             // A switch for the whole panel is not one of the things it shows.
-            .filter((c) => c.type === 'checkbox' && c.field && !c.noBulk)
-            .map((c) => c.field);
+            .filter((c) => (c.type === 'checkbox' && c.field && !c.noBulk) || c.type === 'chips')
+            .flatMap((c) => this.controlFields(c));
         if (fields.length < 2) return '';
 
         const shown = fields.filter((f) => s[f] !== false).length;
@@ -15428,14 +15545,22 @@ class DashboardConfig {
                     });
                     void this.setBehavior(field, value, special);
                 });
+            } else if (type === 'chip') {
+                // A button, so Space and Enter arrive as a click.
+                el.addEventListener('click', () => {
+                    const on = el.getAttribute('aria-pressed') !== 'true';
+                    el.setAttribute('aria-pressed', on ? 'true' : 'false');
+                    return this.setBehavior(field, on, special);
+                });
             } else if (type === 'checkset') {
-                el.addEventListener('change', () => {
-                    const boxes = [...container.querySelectorAll(
+                el.addEventListener('click', () => {
+                    el.setAttribute('aria-pressed', el.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+                    const chips = [...container.querySelectorAll(
                         `[data-${prefix}-field="${CSS.escape(field)}"][data-${prefix}-type="checkset"]`
                     )];
-                    const value = boxes
-                        .filter((box) => box.checked)
-                        .map((box) => box.getAttribute(`data-${prefix}-value`));
+                    const value = chips
+                        .filter((chip) => chip.getAttribute('aria-pressed') === 'true')
+                        .map((chip) => chip.getAttribute(`data-${prefix}-value`));
                     return this.setBehavior(field, value, special);
                 });
             } else if (type === 'checkbox') {
@@ -15464,6 +15589,7 @@ class DashboardConfig {
         this.bindPanelBulkActions(container, prefix);
         this.bindChangedFilter(container);
         this.bindPanelResetActions(container);
+        this.bindGroupResetActions(container);
         this.bindPushDeviceControls(container);
         this.bindMaintenanceWindows(container);
         this.bindMonitorNotifyTest(container);
@@ -15633,40 +15759,58 @@ class DashboardConfig {
                 });
                 if (ok === false) return;
 
-                const d = this.dash;
-                let special = '';
-                let visual = false;
-                fields.forEach((field) => {
-                    const meta = this.fieldMeta(field);
-                    if (!meta || meta.def === undefined) return;
-                    d.settings[field] = meta.def;
-                    // Any field needing chrome reapplied makes the whole batch
-                    // need it; the pass is idempotent, so once is enough. The
-                    // visual pass is tracked separately because chrome does not
-                    // cover it — a `visual` field reset through this button
-                    // would otherwise save but not show until a reload.
-                    const el = container.querySelector(`[data-behavior-field="${CSS.escape(field)}"]`);
-                    const fieldSpecial = el?.getAttribute('data-behavior-special');
-                    if (fieldSpecial === 'visual') visual = true;
-                    else if (fieldSpecial) special = 'chromeRender';
-                });
-                this._trackAction('panel-reset', { fields: fields.length });
+                await this.resetFieldsToDefault(container, fields, 'panel-reset');
+            });
+        });
+    }
 
-                if (visual) d.visual?.applyVisualSettings?.();
-                if (special) this.applyChromeSettings();
-                // Each field's own apply step too: the passes above cover the
-                // chrome and visual ones, not a language, the weather, the
-                // badges or the shortcut hints.
-                for (const field of fields) {
-                    const el = container.querySelector(`[data-behavior-field="${CSS.escape(field)}"]`);
-                    const fieldSpecial = el?.getAttribute('data-behavior-special');
-                    if (fieldSpecial && !['chrome', 'chromeRender', 'visual', 'render'].includes(fieldSpecial)) {
-                        await this.applySettingSpecial(field, d.settings[field], fieldSpecial);
-                    }
-                }
-                d.renderDashboard?.({ animate: false });
-                await this.saveSettingsWithFeedback();
-                this.repaintActiveControlPanels();
+    /**
+     * Put the given fields back to their defaults: written together, applied
+     * once, saved once. Shared by Reset panel and a chip group's ↺.
+     */
+    async resetFieldsToDefault(container, fields, trackName) {
+        const d = this.dash;
+        let special = '';
+        let visual = false;
+        fields.forEach((field) => {
+            const meta = this.fieldMeta(field);
+            if (!meta || meta.def === undefined) return;
+            d.settings[field] = meta.def;
+            // Any field needing chrome reapplied makes the whole batch
+            // need it; the pass is idempotent, so once is enough. The
+            // visual pass is tracked separately because chrome does not
+            // cover it — a `visual` field reset through this button
+            // would otherwise save but not show until a reload.
+            const el = container.querySelector(`[data-behavior-field="${CSS.escape(field)}"]`);
+            const fieldSpecial = el?.getAttribute('data-behavior-special');
+            if (fieldSpecial === 'visual') visual = true;
+            else if (fieldSpecial) special = 'chromeRender';
+        });
+        this._trackAction(trackName, { fields: fields.length });
+
+        if (visual) d.visual?.applyVisualSettings?.();
+        if (special) this.applyChromeSettings();
+        // Each field's own apply step too: the passes above cover the
+        // chrome and visual ones, not a language, the weather, the
+        // badges or the shortcut hints.
+        for (const field of fields) {
+            const el = container.querySelector(`[data-behavior-field="${CSS.escape(field)}"]`);
+            const fieldSpecial = el?.getAttribute('data-behavior-special');
+            if (fieldSpecial && !['chrome', 'chromeRender', 'visual', 'render'].includes(fieldSpecial)) {
+                await this.applySettingSpecial(field, d.settings[field], fieldSpecial);
+            }
+        }
+        d.renderDashboard?.({ animate: false });
+        await this.saveSettingsWithFeedback();
+        this.repaintActiveControlPanels();
+    }
+
+    /** The ↺ of a chip group: resets the chips that differ, nothing else. */
+    bindGroupResetActions(container) {
+        container.querySelectorAll('[data-reset-group]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const fields = (btn.getAttribute('data-reset-group') || '').split(',').filter(Boolean);
+                if (fields.length) void this.resetFieldsToDefault(container, fields, 'group-reset');
             });
         });
     }
@@ -15696,6 +15840,9 @@ class DashboardConfig {
                         `[data-${prefix}-field="${CSS.escape(field)}"][data-${prefix}-type="checkbox"]`
                     );
                     if (box instanceof HTMLInputElement) box.checked = value;
+                    container.querySelector(
+                        `[data-${prefix}-field="${CSS.escape(field)}"][data-${prefix}-type="chip"]`
+                    )?.setAttribute('aria-pressed', value ? 'true' : 'false');
                 });
 
                 this.applyChromeSettings();
@@ -16315,6 +16462,13 @@ class DashboardConfig {
                 this.openFieldInfo(btn.getAttribute('data-info-field'));
             });
         });
+        container.querySelectorAll('[data-info-group]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.openGroupInfo(btn.getAttribute('data-info-group-title') || '',
+                    String(btn.getAttribute('data-info-group') || '').split(',').filter(Boolean));
+            });
+        });
         container.querySelectorAll('[data-reset-field]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const field = btn.getAttribute('data-reset-field');
@@ -16473,7 +16627,8 @@ class DashboardConfig {
         const changed = panels.reduce((n, p) => n + this.panelChangedFields(p).length, 0)
             + manual.filter((f) => !this.isFieldDefault(f, this.dash.settings?.[f])).length;
         const total = panels.reduce((n, p) => n + DashboardConfig.flatControls(p.controls)
-            .filter((c) => c.field && this.fieldMeta(c.field)?.def !== undefined).length, 0)
+            .flatMap((c) => this.controlFields(c))
+            .filter((f) => this.fieldMeta(f)?.def !== undefined).length, 0)
             + manual.length;
         if (!total) return '';
 
@@ -16533,13 +16688,24 @@ class DashboardConfig {
         const panels = host.querySelectorAll('.config-panel');
         if (!query) {
             rows.forEach((row) => row.removeAttribute('hidden'));
+            host.querySelectorAll('.config-chips[hidden]').forEach((el) => el.removeAttribute('hidden'));
             panels.forEach((panel) => panel.removeAttribute('hidden'));
             this.syncFineFolds(host);
             return;
         }
         rows.forEach((row) => {
-            const text = (row.textContent || '').toLowerCase();
+            // A chip group's label row reads its chips too, names and long
+            // titles: they stand in the row after it, and a query for one chip
+            // would otherwise hide the label and with it the whole panel.
+            const chips = row.classList.contains('config-field--chips')
+                && row.nextElementSibling?.classList.contains('config-chips')
+                ? row.nextElementSibling : null;
+            const chipText = chips
+                ? [...chips.querySelectorAll('.config-chip')].map((c) => `${c.textContent} ${c.title || ''}`).join(' ')
+                : '';
+            const text = `${row.textContent || ''} ${chipText}`.toLowerCase();
             row.toggleAttribute('hidden', !text.includes(query));
+            chips?.toggleAttribute('hidden', !text.includes(query));
         });
         let anyVisible = false;
         panels.forEach((panel) => {
@@ -16576,6 +16742,7 @@ class DashboardConfig {
         const query = String(this.settingsFilter || '').trim().toLowerCase();
         if (!query) return true;
         if (!control || control.type === 'note') return false;
+        if (control.type === 'chips') return this.visibleChips(control, null).length > 0;
         const parts = [control.label, control.hint, control.field];
         const meta = control.field ? this.fieldMeta(control.field) : null;
         if (meta?.hint) parts.push(this.t(`config.${meta.hint}`, ''));
@@ -17446,6 +17613,10 @@ class DashboardConfig {
         this.panelsFor(section, tab).forEach((panel) => {
             const changed = this.changedOnly ? this.panelChangedFields(panel) : null;
             DashboardConfig.flatControls(panel.controls).forEach((c) => {
+                if (c && c.type === 'chips') {
+                    n += this.visibleChips(c, changed).length;
+                    return;
+                }
                 if (!c || !c.field) return;
                 if (changed && !changed.includes(c.field)) return;
                 if (query && !this.controlMatchesFilter(c)) return;

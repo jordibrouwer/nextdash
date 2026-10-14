@@ -98,13 +98,13 @@ test.describe('the link preview setting', () => {
         expect(partCount).toBeGreaterThan(0);
         await expect(boxes).toHaveCount(partCount);
         // Absent means all, so every box starts ticked.
-        expect(await boxes.evaluateAll((els) => els.every((e) => e.checked))).toBe(true);
+        expect(await boxes.evaluateAll((els) => els.every((e) => e.getAttribute('aria-pressed') === 'true'))).toBe(true);
 
         const sample = page.locator('[data-preview-sample]');
         await expect(sample).toBeVisible();
         await expect(sample.locator('.bookmark-preview-card-title')).not.toBeEmpty();
 
-        await page.locator('[data-behavior-field="linkPreviewParts"][data-behavior-value="tags"]').uncheck();
+        await page.locator('[data-behavior-field="linkPreviewParts"][data-behavior-value="tags"]').click();
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.linkPreviewParts), { timeout: 10_000 })
             .not.toContain('tags');
         // The sample is the card itself, so what it shows is what the checklist

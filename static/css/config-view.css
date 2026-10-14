@@ -6011,6 +6011,65 @@ body.no-animations .config-new-features-panel-star {
     margin: 0;
 }
 
+/*
+ * Chips: a row of on/off buttons, each writing its own setting. Plain borders
+ * and a flat fill, no blur or backdrop-filter, so nothing here can catch a
+ * click meant for the chip next to it.
+ */
+.config-field--chips {
+    grid-template-columns: auto auto;
+    justify-content: start;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.config-chips,
+.config-checkset.config-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0 0 var(--space-2, 0.6rem);
+}
+
+.config-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    font: inherit;
+    cursor: pointer;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: 999px;
+    background: none;
+    color: var(--text-muted, #888);
+    transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.config-chip::before {
+    content: "○";
+    font-size: 10px;
+}
+
+.config-chip:hover {
+    border-color: var(--accent-color, #4a90d9);
+}
+
+.config-chip[aria-pressed="true"] {
+    border-color: var(--accent-color, #4a90d9);
+    background: var(--accent-soft, rgba(74, 144, 217, 0.14));
+    color: var(--text-color, inherit);
+}
+
+.config-chip[aria-pressed="true"]::before {
+    content: "●";
+    color: var(--accent-color, #4a90d9);
+}
+
+.config-chip:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 2px;
+}
+
 .config-preview-sample {
     display: flex;
     justify-content: flex-start;

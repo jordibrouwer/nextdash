@@ -120,6 +120,8 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **new — label and control side by side.** Appearance rows put the label and a one-line explanation on the left and the control on the right, in one shared column; a longer explanation is cut with an ellipsis and stays whole in its tooltip and the ℹ. Under 600px the control goes under its label (`config-tabs.css`, `renderControlPanels`).
 - **new — Fine-tune folds.** The seven Backdrop sliders and the Card glass opacity and blur sit under **Fine-tune**, folded until opened; the fold says how many of its settings differ from the default and keeps its state across a repaint. The filter, Only changed and Find settings open the fold they land in. The separate *Backdrop settings* panel is gone; its sliders are in the Backdrop panel (`renderFineFold`, schema control `fine`).
 - **fix — the settings filter survives a repaint of Background and Surface.** `applyDomSettingsFilter` looked for the body inside the container it was handed, and a repaint hands it the body itself.
+- **new — chip groups.** Runs of *Show the … button* switches are one row of chips: the action bar (9), the header buttons (4), the category header extras (3), the row status (3) and the date line (2). Each chip is still its own setting; the group has one ↺ for the chips that differ and one ℹ that lists what each chip does. The link preview fields and the Bookmarks view's columns and rail blocks use the same chips over their one list (schema control `chips`, `setChip` helper).
+- **fix — the filter finds a single chip.** Typing one chip's name hid its group's label row, and with it the whole panel; the label row now reads its chips too (`applyDomSettingsFilter`).
 
 ---
 

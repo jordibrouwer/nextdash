@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, setChip } = require('./e2e-helpers');
 
 /**
  * Appearance → Toolbar & tabs was one panel of thirteen identical "Show the X
@@ -55,7 +55,7 @@ test.describe('the chrome toggles are grouped', () => {
         const panels = await page.evaluate(() => [
             ...window.dashboardInstance.config.panelsFor('appearance', 'header'),
             ...window.dashboardInstance.config.panelsFor('appearance', 'buttonbar'),
-        ].map((p) => ({ title: p.title, fields: p.controls.map((c) => c.field) }))
+        ].map((p) => ({ title: p.title, fields: p.controls.flatMap((c) => window.dashboardInstance.config.controlFields(c)) }))
             .filter((p) => !p.fields.includes('headerClockPlacement') && !p.fields.includes('showPageInTitle')));
 
         expect(panels).toHaveLength(2);
@@ -138,20 +138,20 @@ test('the header toggles reach the header', async ({ page }) => {
     await expect.poll(() => shown('.header-track .page-navigation'),
         { timeout: 5_000 }).toBe(false);
 
-    await page.locator('[data-behavior-field="showInboxButton"]').uncheck();
+    await setChip(page.locator('[data-behavior-field="showInboxButton"]'), false);
     await expect.poll(() => page.evaluate(
         () => document.body.getAttribute('data-show-inbox-button')), { timeout: 5_000 }).toBe('false');
 
     expect(await shown('.dashboard-link')).toBe(true);
-    await page.locator('[data-behavior-field="showDashboardButton"]').uncheck();
+    await setChip(page.locator('[data-behavior-field="showDashboardButton"]'), false);
     await expect.poll(() => shown('.dashboard-link'), { timeout: 5_000 }).toBe(false);
 
     // And back: the switches go both ways without a reload.
     await page.locator('[data-behavior-field="showPageTabs"]').check();
     await expect.poll(() => shown('.header-track .page-navigation'),
         { timeout: 5_000 }).toBe(true);
-    await page.locator('[data-behavior-field="showInboxButton"]').check();
-    await page.locator('[data-behavior-field="showDashboardButton"]').check();
+    await setChip(page.locator('[data-behavior-field="showInboxButton"]'), true);
+    await setChip(page.locator('[data-behavior-field="showDashboardButton"]'), true);
     await expect.poll(() => shown('.dashboard-link'), { timeout: 5_000 }).toBe(true);
 });
 
@@ -187,8 +187,8 @@ test.describe('Show all / Hide all', () => {
         const headerPanel = page.locator('.config-panel').filter({ has: page.locator('[data-behavior-field="showPageTabs"]') });
         await headerPanel.locator('[data-behavior-bulk="hide"]').click();
 
-        await expect(page.locator('[data-behavior-field="showTitle"]')).not.toBeChecked();
-        await expect(page.locator('[data-behavior-field="showConfigButton"]')).not.toBeChecked();
+        await expect(page.locator('[data-behavior-field="showTitle"]')).toHaveAttribute('aria-pressed', 'false');
+        await expect(page.locator('[data-behavior-field="showConfigButton"]')).toHaveAttribute('aria-pressed', 'false');
 
         // A different panel is untouched — the fields are scoped per panel.
         const otherPanelAfter = await page.evaluate(() => [
@@ -205,7 +205,7 @@ test.describe('Show all / Hide all', () => {
         // one field on regardless -- the Health icon, forced on at every load --
         // and so never noticed that Hide all had been left behind.
         await headerPanel.locator('[data-behavior-bulk="show"]').click();
-        await expect(page.locator('[data-behavior-field="showTitle"]')).toBeChecked();
+        await expect(page.locator('[data-behavior-field="showTitle"]')).toHaveAttribute('aria-pressed', 'true');
         await settingsSaved(page);
     });
 
@@ -241,14 +241,14 @@ test.describe('Show all / Hide all', () => {
 
         const headerPanel = page.locator('.config-panel').filter({ has: page.locator('[data-behavior-field="showPageTabs"]') });
         await headerPanel.locator('[data-behavior-bulk="hide"]').click();
-        await expect(page.locator('[data-behavior-field="showTitle"]')).not.toBeChecked();
+        await expect(page.locator('[data-behavior-field="showTitle"]')).toHaveAttribute('aria-pressed', 'false');
         // Fixed wait: a second save would come after the first, so give it time to show.
         await page.waitForTimeout(600);
 
         expect(saves, `five fields must not mean five writes (saw ${saves})`).toBe(1);
         // And back, for the tests after this one.
         await headerPanel.locator('[data-behavior-bulk="show"]').click();
-        await expect(page.locator('[data-behavior-field="showTitle"]')).toBeChecked();
+        await expect(page.locator('[data-behavior-field="showTitle"]')).toHaveAttribute('aria-pressed', 'true');
         await settingsSaved(page);
     });
 
@@ -261,12 +261,12 @@ test.describe('Show all / Hide all', () => {
         });
         const headerPanel = page.locator('.config-panel').filter({ has: page.locator('[data-behavior-field="showPageTabs"]') });
         await headerPanel.locator('[data-behavior-bulk="hide"]').click();
-        await expect(page.locator('[data-behavior-field="showTitle"]')).not.toBeChecked();
+        await expect(page.locator('[data-behavior-field="showTitle"]')).toHaveAttribute('aria-pressed', 'false');
         await settingsSaved(page);
 
         await openToolbarTab(page);
-        await expect(page.locator('[data-behavior-field="showTitle"]')).not.toBeChecked();
-        await expect(page.locator('[data-behavior-field="showConfigButton"]')).not.toBeChecked();
+        await expect(page.locator('[data-behavior-field="showTitle"]')).toHaveAttribute('aria-pressed', 'false');
+        await expect(page.locator('[data-behavior-field="showConfigButton"]')).toHaveAttribute('aria-pressed', 'false');
         // Settings live on the server for the whole run: put the header back
         // as it was, or the next test to open this panel finds Hide all done.
         await page.evaluate(async (was) => {
@@ -287,13 +287,14 @@ test.describe('the schema-driven Appearance tabs repaint', () => {
         await openToolbarTab(page);
         const box = page.locator('[data-behavior-field="showConfigButton"]');
 
-        await box.uncheck();
-        await expect(box).not.toBeChecked();
-        await expect(page.locator('[data-reset-field="showConfigButton"]')).toBeVisible();
+        await setChip(box, false);
+        // The chips share one ↺, which names the fields that differ.
+        const group = page.locator('[data-reset-group*="showConfigButton"]');
+        await expect(group).toBeVisible();
 
-        await page.locator('[data-reset-field="showConfigButton"]').click();
-        // The checkbox itself has to come back on — this is what was broken.
-        await expect(page.locator('[data-behavior-field="showConfigButton"]')).toBeChecked();
+        await group.click();
+        // The chip itself has to come back on — this is what was broken.
+        await expect(page.locator('[data-behavior-field="showConfigButton"]')).toHaveAttribute('aria-pressed', 'true');
     });
 
     /**
@@ -306,10 +307,10 @@ test.describe('the schema-driven Appearance tabs repaint', () => {
 
         // Force several repaints — every settings write triggers one.
         for (let i = 0; i < 3; i += 1) {
-            await page.locator('[data-behavior-field="showConfigButton"]').uncheck();
-            await expect(page.locator('[data-behavior-field="showConfigButton"]')).not.toBeChecked();
-            await page.locator('[data-behavior-field="showConfigButton"]').check();
-            await expect(page.locator('[data-behavior-field="showConfigButton"]')).toBeChecked();
+            await setChip(page.locator('[data-behavior-field="showConfigButton"]'), false);
+            await expect(page.locator('[data-behavior-field="showConfigButton"]')).toHaveAttribute('aria-pressed', 'false');
+            await setChip(page.locator('[data-behavior-field="showConfigButton"]'), true);
+            await expect(page.locator('[data-behavior-field="showConfigButton"]')).toHaveAttribute('aria-pressed', 'true');
         }
 
         // The strip reports every activation, so counting those counts the

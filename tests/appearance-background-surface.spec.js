@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady, setChip } = require('./e2e-helpers');
 
 /**
  * Appearance → Background and Surface, and the category header on Rows.
@@ -167,7 +167,7 @@ test.describe('the Background and Surface tabs', () => {
         await openTab(page, 'display');
 
         await page.locator('[data-behavior-field="categoryHeaderStyle"]').selectOption('underlined');
-        await page.locator('[data-behavior-field="showCategoryCount"]').check();
+        await setChip(page.locator('[data-behavior-field="showCategoryCount"]'), true);
         await expect.poll(() => page.getAttribute('body', 'data-cat-head')).toBe('underlined');
         await expect.poll(() => page.getAttribute('body', 'data-cat-count')).toBe('on');
 
@@ -182,14 +182,14 @@ test.describe('the Background and Surface tabs', () => {
 
         await openTab(page, 'display');
         await page.locator('[data-behavior-field="categoryHeaderStyle"]').selectOption('theme');
-        await page.locator('[data-behavior-field="showCategoryCount"]').uncheck();
+        await setChip(page.locator('[data-behavior-field="showCategoryCount"]'), false);
         await expect.poll(() => page.getAttribute('body', 'data-cat-head')).toBe('theme');
         await expect.poll(() => page.getAttribute('body', 'data-cat-count')).toBe('off');
     });
 
     test('hiding the icon takes it off every header', async ({ page }) => {
         await openTab(page, 'display');
-        await page.locator('[data-behavior-field="showCategoryIcon"]').uncheck();
+        await setChip(page.locator('[data-behavior-field="showCategoryIcon"]'), false);
         await expect.poll(() => page.getAttribute('body', 'data-cat-icon')).toBe('off');
         await expect.poll(async () => (await stored(page)).showCategoryIcon, { timeout: 5_000 }).toBe(false);
         await reloadDashboard(page);
@@ -200,7 +200,7 @@ test.describe('the Background and Surface tabs', () => {
         expect(shown.every((display) => display === 'none')).toBe(true);
 
         await openTab(page, 'display');
-        await page.locator('[data-behavior-field="showCategoryIcon"]').check();
+        await setChip(page.locator('[data-behavior-field="showCategoryIcon"]'), true);
         await expect.poll(() => page.getAttribute('body', 'data-cat-icon')).toBe('on');
     });
 });
