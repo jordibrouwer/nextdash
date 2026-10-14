@@ -194,6 +194,7 @@ A tag gets a page of its own. The tag cloud is quieter — three sizes, counts, 
 
 - **new — MANUAL, Help, tips and the cheat sheet cover the tag cloud and tag view, tag suggestions in the rows and Wikidata, Home Assistant, the animation settings and the shorter tours,** with new screenshots. The cheat sheet gains a **Tag view** section; the printed PDF is regenerated.
 - Translations for the tag view, the key legend and Help in all six languages.
+- **fix — 110 strings showed in English in every language:** the suggestion chips and *Add all* in the rows, Find tags and the Wikidata lookup, the tag view's find-and-read menu, the Home Assistant entity picker and the inbox's new tag column were drawn from their code fallbacks, with no key in any locale. They are in `en.json` now and translated into the other five, with the inbox legend's `a` row and its cheat-sheet line (`ivAddOffer`), which failed `validate:cheatsheet-registry`.
 - The Unraid template carries the v1.19.5 changes.
 - A duplicated Docs block in the v1.8.0 section is removed.
 - README: the tag view, the 51,000-site catalogue with the Wikidata lookup, and the Home Assistant widget. MANUAL: the three-line key legend with `Shift + Z`, `Shift + K` for the tour, and the `Shift + F` bar.
