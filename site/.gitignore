@@ -1,0 +1,5 @@
+node_modules/
+# Generated from MANUAL.md by scripts/split-manual.mjs
+src/
+.vitepress/cache/
+.vitepress/dist/

@@ -1,0 +1,15 @@
+{
+  "name": "nextdash-docs",
+  "private": true,
+  "type": "module",
+  "description": "nextdash.cc/docs/, built from MANUAL.md of a release tag",
+  "scripts": {
+    "split": "node scripts/split-manual.mjs",
+    "dev": "node scripts/split-manual.mjs --only 2,7,14 && vitepress dev --port ${DOCS_PORT:-8099} --strictPort",
+    "build": "node scripts/split-manual.mjs --only 2,7,14 && vitepress build",
+    "preview": "vitepress preview --port 8099 --strictPort"
+  },
+  "devDependencies": {
+    "vitepress": "1.6.4"
+  }
+}
