@@ -29,7 +29,11 @@ const WORD = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 // letters, with an optional leading = for a host that matches itself only and
 // lends nothing to its subdomains. Deliberately narrow — an address with a scheme, a slash, a port or
 // a capital is the mistake this is here to catch, not a shape to accept.
-const HOST = /^=?[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
+//
+// One exception: a host may be followed by its first path segment
+// (youtube.com/@veritasium, github.com/vuejs), the catalogue's way of giving a
+// section of a site a subject of its own (tagCatalogue.sections in Go).
+const HOST = /^=?[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+(\/[a-z0-9@._~-]+)?$/;
 
 let failed = false;
 const problems = [];
@@ -111,7 +115,7 @@ if (!entries) {
     hosts.forEach((host) => {
         if (!HOST.test(String(host))) {
             problems.push(`${where}: host ${JSON.stringify(host)} must be a bare lowercase domain `
-                + '(no scheme, no www., no path, no port)');
+                + '(no scheme, no www., no port, and no path beyond one section)');
             return;
         }
         if (host.startsWith('www.') || host.startsWith('=www.')) {

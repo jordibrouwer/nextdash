@@ -37,8 +37,7 @@
         "stl",
         "gcode",
         "nozzle",
-        "resin",
-        "3d-printer"
+        "resin"
       ],
       "derived": [
         "aaedmusa.com",
@@ -120,8 +119,6 @@
         "university-press"
       ],
       "parent": "publishing",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "aaas.org",
         "aaha.org",
@@ -595,13 +592,8 @@
         "18plus",
         "adult-content"
       ],
-      "hosts": [],
       "keywords": [
-        "porn",
-        "nsfw",
-        "xxx",
-        "webcam models",
-        "adult content"
+        "webcam-models"
       ],
       "derived": [
         "037clipxxx.net",
@@ -8171,7 +8163,6 @@
         "www-xnxx.cc",
         "www-xvideos.org",
         "www-xxx.cc",
-        "www.xxx",
         "wwwporn.biz",
         "wwwporn.club",
         "wwwporn.xyz",
@@ -9629,7 +9620,6 @@
         "x.ai"
       ],
       "keywords": [
-        "llm",
         "chatbot",
         "prompt",
         "inference",
@@ -10567,8 +10557,6 @@
         "carriers"
       ],
       "parent": "flights",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "21air.us",
         "2go.com.ph",
@@ -11558,8 +11546,6 @@
         "flughafen"
       ],
       "parent": "flights",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "100milehouseairport.com",
         "102iw.ang.af.mil",
@@ -14715,7 +14701,6 @@
         "termux.dev",
         "tern.munzzyy.dev",
         "terrakok.github.io",
-        "terratactician_expandoria.codeberg.page",
         "tessell.art",
         "testomat.io",
         "thedroidsonroids.com",
@@ -14888,7 +14873,6 @@
         "angular.io",
         "github.com/angular"
       ],
-      "keywords": [],
       "derived": [
         "abp.io",
         "aelm.dev",
@@ -15212,8 +15196,7 @@
       "hosts": [
         "devdocs.io",
         "readme.com"
-      ],
-      "keywords": []
+      ]
     },
     {
       "tag": "apple",
@@ -15229,11 +15212,6 @@
         "appleinsider.com",
         "iculture.nl",
         "macrumors.com"
-      ],
-      "keywords": [
-        "iphone",
-        "ipad",
-        "macbook"
       ],
       "derived": [
         "apple.co",
@@ -15309,7 +15287,6 @@
         "github.com/arduino"
       ],
       "keywords": [
-        "sketch",
         "microcontroller"
       ],
       "derived": [
@@ -15458,16 +15435,6 @@
       ]
     },
     {
-      "tag": "art-school",
-      "aliases": [
-        "art-academy",
-        "kunstacademie"
-      ],
-      "parent": "university",
-      "hosts": [],
-      "keywords": []
-    },
-    {
       "tag": "art-tutorial",
       "aliases": [
         "drawinglessons",
@@ -15515,8 +15482,6 @@
         "leichtathletik"
       ],
       "parent": "sports",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "athletics.ca",
         "athletics.com.au",
@@ -15595,7 +15560,6 @@
         "whathifi.com"
       ],
       "keywords": [
-        "headphones",
         "dac",
         "amplifier",
         "speakers"
@@ -15937,8 +15901,7 @@
         "zapier.com"
       ],
       "keywords": [
-        "zap",
-        "scheduler"
+        "zap"
       ],
       "derived": [
         "composio.dev",
@@ -16022,7 +15985,6 @@
         "console.aws.amazon.com",
         "docs.aws.amazon.com"
       ],
-      "keywords": [],
       "derived": [
         "alessandra.bilardi.net",
         "aws-user-group.com",
@@ -16083,7 +16045,6 @@
         "azure.microsoft.com",
         "portal.azure.com"
       ],
-      "keywords": [],
       "derived": [
         "aaron-powell.com",
         "adaptiv.au",
@@ -17257,8 +17218,6 @@
         "kroeg"
       ],
       "parent": "restaurants",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "angelabergavenny.com",
         "beefeater.co.uk",
@@ -18512,8 +18471,7 @@
       "hosts": [
         "bun.com",
         "bun.sh"
-      ],
-      "keywords": []
+      ]
     },
     {
       "tag": "bundesliga",
@@ -18521,10 +18479,6 @@
         "1-bundesliga"
       ],
       "parent": "soccer",
-      "hosts": [],
-      "keywords": [
-        "bundesliga"
-      ],
       "derived": [
         "achtzehn99.de",
         "bayer04.de",
@@ -18605,8 +18559,6 @@
         "economy-news"
       ],
       "parent": "news",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "aboutamazon.com",
         "bizjournals.com",
@@ -18647,8 +18599,6 @@
         "mba-programs"
       ],
       "parent": "university",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "brest-bs.com",
         "ebs-paris.fr",
@@ -18670,7 +18620,6 @@
       "hosts": [
         "open-std.org"
       ],
-      "keywords": [],
       "derived": [
         "alex.dzyoba.com",
         "blog.danskingdom.com",
@@ -18723,8 +18672,6 @@
         "koffiehuis"
       ],
       "parent": "restaurants",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "ace-cafe-london.com",
         "angelina-paris.fr",
@@ -18861,8 +18808,6 @@
         "car-manufacturer"
       ],
       "parent": "cars",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "9ff.de",
         "aaglander.de",
@@ -19364,8 +19309,6 @@
         "autodealer"
       ],
       "parent": "cars",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "arabam.com",
         "arnoldclark.com",
@@ -21148,8 +21091,7 @@
         "devhints.io",
         "quickref.me",
         "tldr.sh"
-      ],
-      "keywords": []
+      ]
     },
     {
       "tag": "chemistry",
@@ -22458,7 +22400,6 @@
       "hosts": [
         "clojure.org"
       ],
-      "keywords": [],
       "derived": [
         "andersmurphy.com",
         "andreyor.st",
@@ -22477,8 +22418,6 @@
         "kleding"
       ],
       "parent": "shopping",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "abercrombie.com",
         "aeropostale.com",
@@ -22809,8 +22748,7 @@
         "cloudflare.com",
         "dash.cloudflare.com",
         "developers.cloudflare.com"
-      ],
-      "keywords": []
+      ]
     },
     {
       "tag": "cms",
@@ -23182,8 +23120,6 @@
         "community-college"
       ],
       "parent": "university",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "accollegeguntur.com",
         "aiishmysore.in",
@@ -23291,10 +23227,6 @@
         "college-athletics"
       ],
       "parent": "sports",
-      "hosts": [],
-      "keywords": [
-        "ncaa"
-      ],
       "derived": [
         "247sports.com",
         "ncaa.com",
@@ -23385,8 +23317,6 @@
         "comic-publisher"
       ],
       "parent": "publishing",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "amarchitrakatha.com",
         "antarctic-press.com",
@@ -23740,8 +23670,6 @@
         "music-venue"
       ],
       "parent": "theatre",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "alaskapac.org",
         "amare.nl",
@@ -23859,7 +23787,6 @@
         "retail",
         "purchasing",
         "demographics",
-        "survey",
         "disposable"
       ],
       "derived": [
@@ -24007,8 +23934,6 @@
         "convenience-store"
       ],
       "parent": "shopping",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "7-11.com.tw",
         "7-eleven.com",
@@ -24247,8 +24172,6 @@
         "test-cricket"
       ],
       "parent": "sports",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "bcci.tv",
         "bigbash.com.au",
@@ -24633,7 +24556,6 @@
         "picoctf.org",
         "tryhackme.com"
       ],
-      "keywords": [],
       "derived": [
         "2022.ctf.sekai.team",
         "aabyss.cn",
@@ -25111,8 +25033,7 @@
       "hosts": [
         "dart.dev",
         "github.com/dart-lang"
-      ],
-      "keywords": []
+      ]
     },
     {
       "tag": "data-science",
@@ -25778,8 +25699,7 @@
         "deno.com",
         "deno.land",
         "github.com/denoland"
-      ],
-      "keywords": []
+      ]
     },
     {
       "tag": "department-stores",
@@ -25788,8 +25708,6 @@
         "warenhuis"
       ],
       "parent": "shopping",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "afflecks.com",
         "ahlens.se",
@@ -28977,7 +28895,6 @@
         "programming-blogs"
       ],
       "parent": "dev",
-      "hosts": [],
       "keywords": [
         "engineering",
         "postmortem",
@@ -32219,8 +32136,7 @@
       "keywords": [
         "consensus",
         "raft",
-        "paxos",
-        "replication"
+        "paxos"
       ],
       "derived": [
         "allthingsdistributed.com",
@@ -32402,8 +32318,6 @@
         "baumarkt"
       ],
       "parent": "shopping",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "bauhaus.info",
         "beijerbygg.se",
@@ -32467,7 +32381,6 @@
         "djangoproject.com",
         "github.com/django"
       ],
-      "keywords": [],
       "derived": [
         "aisaastemplate.com",
         "args.tech",
@@ -32761,8 +32674,7 @@
         "oscarliang.com"
       ],
       "keywords": [
-        "quadcopter",
-        "fpv"
+        "quadcopter"
       ]
     },
     {
@@ -32844,7 +32756,6 @@
         "komga.org"
       ],
       "keywords": [
-        "opds",
         "epub",
         "comics",
         "library"
@@ -33767,10 +33678,8 @@
         "learning-apps"
       ],
       "parent": "education",
-      "hosts": [],
       "keywords": [
-        "lms",
-        "edtech"
+        "lms"
       ],
       "derived": [
         "abcya.com",
@@ -34622,8 +34531,6 @@
         "english-football-league"
       ],
       "parent": "soccer",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "bcfc.co.uk",
         "bcfc.com",
@@ -34661,7 +34568,6 @@
       "hosts": [
         "opensearch.org"
       ],
-      "keywords": [],
       "derived": [
         "codecurated.com",
         "elastic.dev",
@@ -35298,7 +35204,6 @@
       "keywords": [
         "soldering",
         "breadboard",
-        "microcontroller",
         "pcb"
       ],
       "derived": [
@@ -35318,7 +35223,6 @@
         "hexdocs.pm",
         "phoenixframework.org"
       ],
-      "keywords": [],
       "derived": [
         "96codes.dev",
         "abjork.land",
@@ -36200,8 +36104,6 @@
         "institute-of-technology"
       ],
       "parent": "university",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "agh.edu.pl",
         "aliah.ac.in",
@@ -36345,10 +36247,6 @@
         "dutch-football"
       ],
       "parent": "soccer",
-      "hosts": [],
-      "keywords": [
-        "eredivisie"
-      ],
       "derived": [
         "adodenhaag.nl",
         "ajax.nl",
@@ -36378,7 +36276,6 @@
       "hosts": [
         "erlang.org"
       ],
-      "keywords": [],
       "derived": [
         "blog.syncpup.com",
         "erikarow.land",
@@ -36470,7 +36367,6 @@
         "github.com/espressif",
         "randomnerdtutorials.com"
       ],
-      "keywords": [],
       "derived": [
         "appelsiini.net",
         "atomvm.org",
@@ -37760,8 +37656,6 @@
         "fastfood"
       ],
       "parent": "restaurants",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "0800076666.com.tw",
         "33friedchicken.com.tw",
@@ -37958,7 +37852,6 @@
       "hosts": [
         "fastapi.tiangolo.com"
       ],
-      "keywords": [],
       "derived": [
         "adrianthegreat.com",
         "alexvanzyl.com",
@@ -38028,7 +37921,6 @@
         "joinlemmy.org"
       ],
       "keywords": [
-        "activitypub",
         "instance",
         "federated"
       ],
@@ -38170,8 +38062,7 @@
         "file-sharing",
         "sync",
         "folders",
-        "upload",
-        "file-manager"
+        "upload"
       ]
     },
     {
@@ -39159,7 +39050,6 @@
       "hosts": [
         "flask.palletsprojects.com"
       ],
-      "keywords": [],
       "derived": [
         "app-generator.dev",
         "codecapsules.io"
@@ -39258,7 +39148,6 @@
         "flutter.dev",
         "github.com/flutter"
       ],
-      "keywords": [],
       "derived": [
         "apparencekit.dev",
         "buildzn.com",
@@ -39931,7 +39820,6 @@
         "frontendmasters.com",
         "smashingmagazine.com"
       ],
-      "keywords": [],
       "derived": [
         "billyokeyo.dev",
         "blog.straccia17.com",
@@ -39954,8 +39842,6 @@
         "tankstation"
       ],
       "parent": "shopping",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "76.com",
         "agip.eni.it",
@@ -40836,8 +40722,6 @@
         "gamedev-studio"
       ],
       "parent": "games",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "07th-expansion.net",
         "0verflow.com",
@@ -43100,7 +42984,6 @@
         "rockpapershotgun.com"
       ],
       "keywords": [
-        "hands-on",
         "screenshots"
       ],
       "derived": [
@@ -43247,7 +43130,6 @@
         "cloud.google.com",
         "console.cloud.google.com"
       ],
-      "keywords": [],
       "derived": [
         "bbourgeois.dev",
         "blog.truaro.dev",
@@ -43617,7 +43499,6 @@
         "github.com/godotengine",
         "godotengine.org"
       ],
-      "keywords": [],
       "derived": [
         "alexpech.com",
         "assetfurnace.com",
@@ -43687,7 +43568,6 @@
         "golang.org"
       ],
       "keywords": [
-        "channels",
         "compiler",
         "package"
       ],
@@ -43771,7 +43651,6 @@
         "blog.google",
         "store.google.com"
       ],
-      "keywords": [],
       "derived": [
         "about.google",
         "app.google",
@@ -45937,7 +45816,7 @@
         "wsib.ca",
         "wsp.wa.gov",
         "wvstateparks.com",
-        "www.gob.pe",
+        "gob.pe",
         "www1.nyc.gov",
         "www2.fab.mil.br",
         "www3.gobiernodecanarias.org",
@@ -46769,8 +46648,7 @@
         "cpu",
         "benchmark",
         "motherboard",
-        "ssd",
-        "overclocking"
+        "ssd"
       ],
       "derived": [
         "a4tech.com",
@@ -46933,7 +46811,6 @@
         "hackage.haskell.org",
         "haskell.org"
       ],
-      "keywords": [],
       "derived": [
         "abhinavsarkar.net",
         "abuseofnotation.github.io",
@@ -47957,7 +47834,6 @@
         "zendesk.com"
       ],
       "keywords": [
-        "agent",
         "sla",
         "resolution",
         "queue",
@@ -48131,8 +48007,7 @@
       ],
       "keywords": [
         "rack",
-        "proxmox",
-        "homelab"
+        "proxmox"
       ],
       "derived": [
         "alist.iots.vip",
@@ -48357,8 +48232,6 @@
         "accommodation-booking"
       ],
       "parent": "hotels",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "cleartrip.com",
         "de.stayforlong.com",
@@ -48386,8 +48259,6 @@
         "hotel-group"
       ],
       "parent": "hotels",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "accor.com",
         "adagio-city.com",
@@ -49543,7 +49414,6 @@
         "terraform.io"
       ],
       "keywords": [
-        "playbook",
         "state-file",
         "declarative",
         "idempotent"
@@ -49615,8 +49485,6 @@
         "nhl"
       ],
       "parent": "sports",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "aahl.pointstreaksites.com",
         "achahockey.org",
@@ -49847,11 +49715,7 @@
       ],
       "keywords": [
         "ransomware",
-        "vulnerability",
-        "breach",
-        "malware",
-        "cve",
-        "phishing"
+        "vulnerability"
       ],
       "derived": [
         "cybernews.com"
@@ -50310,9 +50174,7 @@
         "whois.com"
       ],
       "keywords": [
-        "outage",
         "dns",
-        "ip-address",
         "whois",
         "bandwidth",
         "latency"
@@ -50667,7 +50529,6 @@
         "typescriptlang.org"
       ],
       "keywords": [
-        "npm",
         "promise",
         "bundler"
       ],
@@ -50768,8 +50629,7 @@
       "hosts": [
         "github.com/jetbrains",
         "jetbrains.com"
-      ],
-      "keywords": []
+      ]
     },
     {
       "tag": "jewelry",
@@ -52012,8 +51872,7 @@
       "hosts": [
         "github.com/julialang",
         "julialang.org"
-      ],
-      "keywords": []
+      ]
     },
     {
       "tag": "kafka",
@@ -52025,7 +51884,6 @@
         "confluent.io",
         "kafka.apache.org"
       ],
-      "keywords": [],
       "derived": [
         "blog.florimond.dev",
         "codingharbour.com",
@@ -52163,7 +52021,6 @@
         "github.com/kotlin",
         "kotlinlang.org"
       ],
-      "keywords": [],
       "derived": [
         "10x-programming.com",
         "asvid.github.io",
@@ -52505,10 +52362,6 @@
         "primera-division"
       ],
       "parent": "soccer",
-      "hosts": [],
-      "keywords": [
-        "laliga"
-      ],
       "derived": [
         "athletic-club.eus",
         "atleticodemadrid.com",
@@ -52619,7 +52472,6 @@
         "laracasts.com",
         "laravel.com"
       ],
-      "keywords": [],
       "derived": [
         "adityadev.in",
         "albertoarena.it",
@@ -53016,10 +52868,6 @@
         "ligue1"
       ],
       "parent": "soccer",
-      "hosts": [],
-      "keywords": [
-        "ligue-1"
-      ],
       "derived": [
         "aja.fr",
         "angers-sco.fr",
@@ -53205,7 +53053,6 @@
         "ubuntu.com"
       ],
       "keywords": [
-        "kernel",
         "bash",
         "systemd",
         "filesystem",
@@ -54021,7 +53868,6 @@
         "ubuntu.com",
         "wiki.archlinux.org"
       ],
-      "keywords": [],
       "derived": [
         "freebsd.org"
       ]
@@ -54402,7 +54248,6 @@
       "hosts": [
         "lua.org"
       ],
-      "keywords": [],
       "derived": [
         "andregarzia.com",
         "boston.conman.org",
@@ -57113,7 +56958,6 @@
         "online-marketplace"
       ],
       "parent": "shopping",
-      "hosts": [],
       "keywords": [
         "buy-and-sell"
       ],
@@ -57415,8 +57259,6 @@
         "vechtsport"
       ],
       "parent": "sports",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "britishjudo.org.uk",
         "cbj.com.br",
@@ -57457,8 +57299,7 @@
         "algebra",
         "calculus",
         "geometry",
-        "equations",
-        "proof"
+        "equations"
       ],
       "derived": [
         "coolmathgames.com",
@@ -58303,8 +58144,6 @@
         "medical-journals"
       ],
       "parent": "journals",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "aafp.org",
         "aaps.org",
@@ -58500,8 +58339,6 @@
         "medical-schools"
       ],
       "parent": "university",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "aamc.org",
         "usd.edu"
@@ -58753,8 +58590,6 @@
         "ministerie"
       ],
       "parent": "government",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "agriculture.gov.au",
         "bmi.bund.de",
@@ -58789,10 +58624,6 @@
         "major-league-soccer"
       ],
       "parent": "soccer",
-      "hosts": [],
-      "keywords": [
-        "mls"
-      ],
       "derived": [
         "atlutd.com",
         "austinfc.com",
@@ -58837,7 +58668,6 @@
         "ios-apps"
       ],
       "parent": "smartphones",
-      "hosts": [],
       "keywords": [
         "app-store",
         "google-play",
@@ -58880,7 +58710,6 @@
         "reactnative.dev"
       ],
       "keywords": [
-        "app-store",
         "xcode",
         "android-studio"
       ],
@@ -58983,7 +58812,6 @@
       "hosts": [
         "mongodb.com"
       ],
-      "keywords": [],
       "derived": [
         "alexbevi.com",
         "blog.allegro.tech",
@@ -59514,8 +59342,6 @@
         "motogp"
       ],
       "parent": "sports",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "autosport.com",
         "dmsb.de",
@@ -59657,8 +59483,6 @@
         "gemeinde"
       ],
       "parent": "government",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "1030.be",
         "aaenhunze.nl",
@@ -61195,10 +61019,6 @@
         "conservatorium"
       ],
       "parent": "university",
-      "hosts": [],
-      "keywords": [
-        "conservatory"
-      ],
       "derived": [
         "amuz.wroc.pl",
         "artsaucarre.be",
@@ -61316,7 +61136,6 @@
         "mariadb.org",
         "mysql.com"
       ],
-      "keywords": [],
       "derived": [
         "ahmershah.dev",
         "aiven.io",
@@ -62437,8 +62256,6 @@
         "persbureau"
       ],
       "parent": "news",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "aa.com.tr",
         "abc27.com",
@@ -62597,8 +62414,6 @@
         "zeitung"
       ],
       "parent": "news",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "0-nouveau.europresse.com.pugwash.lib.warwick.ac.uk",
         "0-www.bpe.europresse.com.pugwash.lib.warwick.ac.uk",
@@ -64940,7 +64755,6 @@
       "hosts": [
         "nextjs.org"
       ],
-      "keywords": [],
       "derived": [
         "devstacked.tech",
         "joancomadran.dev",
@@ -65095,9 +64909,6 @@
         "retool.com"
       ],
       "keywords": [
-        "no-code",
-        "low-code",
-        "drag-and-drop",
         "internal-tools"
       ],
       "derived": [
@@ -65449,8 +65260,6 @@
         "news-website"
       ],
       "parent": "news",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "15min.lt",
         "1819news.com",
@@ -67855,8 +67664,6 @@
         "operas"
       ],
       "parent": "theatre",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "amargosa-opera-house.com",
         "arena.it",
@@ -67974,8 +67781,6 @@
         "opticien"
       ],
       "parent": "shopping",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "aceandtate.com",
         "apollo.de",
@@ -68062,7 +67867,6 @@
         "bellingcat.com",
         "osintframework.com"
       ],
-      "keywords": [],
       "derived": [
         "attacksurfacemapper.com",
         "awesome-hacker-search-engines.com",
@@ -68360,7 +68164,6 @@
         "termbin.com"
       ],
       "keywords": [
-        "paste",
         "snippet",
         "expires"
       ],
@@ -68729,7 +68532,6 @@
         "metacpan.org",
         "perl.org"
       ],
-      "keywords": [],
       "derived": [
         "domm.plix.at",
         "marc.info",
@@ -69162,8 +68964,6 @@
         "pizzas"
       ],
       "parent": "restaurants",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "105.pl",
         "241pizza.com",
@@ -69402,8 +69202,6 @@
         "law-enforcement"
       ],
       "parent": "government",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "avonandsomerset.police.uk",
         "beds.police.uk",
@@ -69547,7 +69345,6 @@
         "postgresql.org",
         "supabase.com"
       ],
-      "keywords": [],
       "derived": [
         "agaveis.com",
         "appdor.com",
@@ -69577,10 +69374,6 @@
         "english-premier-league"
       ],
       "parent": "soccer",
-      "hosts": [],
-      "keywords": [
-        "premier-league"
-      ],
       "derived": [
         "afcb.co.uk",
         "arsenal.com",
@@ -69900,7 +69693,6 @@
         "privacyguides.org",
         "privacytools.io"
       ],
-      "keywords": [],
       "derived": [
         "adblockplus.org",
         "adguard.com",
@@ -69952,7 +69744,6 @@
       ],
       "keywords": [
         "todo",
-        "kanban",
         "planner",
         "habits",
         "workflow",
@@ -70248,8 +70039,7 @@
         "milestone",
         "gantt",
         "standup",
-        "roadmap",
-        "workflow"
+        "roadmap"
       ],
       "derived": [
         "actionview.cn",
@@ -70334,8 +70124,6 @@
         "publieke-omroep"
       ],
       "parent": "television",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "3cat.cat",
         "abc.net.au",
@@ -72708,7 +72496,6 @@
         "guides.rubyonrails.org",
         "rubyonrails.org"
       ],
-      "keywords": [],
       "derived": [
         "ahmednadar.com",
         "akshaykhot.com",
@@ -72781,8 +72568,7 @@
         "raspberrypi.com"
       ],
       "keywords": [
-        "gpio",
-        "soldering"
+        "gpio"
       ],
       "derived": [
         "aiyprojects.withgoogle.com",
@@ -72942,8 +72728,6 @@
       ],
       "keywords": [
         "read-later",
-        "highlights",
-        "articles",
         "feeds",
         "reader-mode"
       ],
@@ -73346,7 +73130,6 @@
         "redis.io",
         "valkey.io"
       ],
-      "keywords": [],
       "derived": [
         "blog.upstash.com",
         "dheerajgopi.hashnode.dev",
@@ -74016,7 +73799,6 @@
         "regexr.com",
         "regular-expressions.info"
       ],
-      "keywords": [],
       "derived": [
         "automorphic.ai",
         "blog.ib-soft.net",
@@ -74064,8 +73846,6 @@
         "regionaal-nieuws"
       ],
       "parent": "news",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "badische-zeitung.de",
         "echo-online.de",
@@ -74285,8 +74065,6 @@
         "research-center"
       ],
       "parent": "university",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "ascsa.edu.gr",
         "ati.ac.at",
@@ -74363,8 +74141,6 @@
         "holiday-resort"
       ],
       "parent": "hotels",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "aldiana.com",
         "beeksebergen.nl",
@@ -75737,8 +75513,6 @@
         "rugby-league"
       ],
       "parent": "sports",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "champrugby.com",
         "competitions.ffr.fr",
@@ -75913,7 +75687,6 @@
       "hosts": [
         "scala-lang.org"
       ],
-      "keywords": [],
       "derived": [
         "alexn.org",
         "apiumhub.com",
@@ -76342,8 +76115,7 @@
         "researchers",
         "study",
         "discovery",
-        "scientists",
-        "peer-reviewed"
+        "scientists"
       ],
       "derived": [
         "news-medical.net",
@@ -76901,8 +76673,7 @@
       "keywords": [
         "docker-compose",
         "reverse-proxy",
-        "containerized",
-        "raid"
+        "containerized"
       ],
       "derived": [
         "0xerr0r.github.io",
@@ -78992,10 +78763,6 @@
         "calcio"
       ],
       "parent": "soccer",
-      "hosts": [],
-      "keywords": [
-        "serie-a"
-      ],
       "derived": [
         "acffiorentina.com",
         "acmilan.com",
@@ -79038,7 +78805,6 @@
       ],
       "keywords": [
         "web-ui",
-        "systemd",
         "packages",
         "users"
       ],
@@ -86349,8 +86115,6 @@
         "sports-federations"
       ],
       "parent": "sports",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "abae.co.uk",
         "acbl.org",
@@ -86566,8 +86330,6 @@
         "sports-leagues"
       ],
       "parent": "sports",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "anz-championship.com",
         "asobal.es",
@@ -86641,8 +86403,6 @@
         "sport-news"
       ],
       "parent": "news",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "247sports.com",
         "aiscore.com",
@@ -86735,7 +86495,6 @@
         "github.com/spring-projects",
         "spring.io"
       ],
-      "keywords": [],
       "derived": [
         "betterjavacode.com",
         "drugowick.dev",
@@ -86778,7 +86537,6 @@
       "hosts": [
         "sqlite.org"
       ],
-      "keywords": [],
       "derived": [
         "teske-systemtechnik.de"
       ]
@@ -87057,8 +86815,6 @@
         "bourse"
       ],
       "parent": "finance",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "abanca.com",
         "abancacorporacionbancaria.com",
@@ -87416,7 +87172,6 @@
         "scene",
         "donation-alert",
         "greenscreen",
-        "chatbot",
         "hotkeys",
         "webcam"
       ],
@@ -87470,7 +87225,6 @@
         "subscene.com"
       ],
       "keywords": [
-        "sync",
         "vtt",
         "dubbing",
         "timecode",
@@ -87572,7 +87326,6 @@
         "kit.svelte.dev",
         "svelte.dev"
       ],
-      "keywords": [],
       "derived": [
         "chrsjxn.io",
         "cloudcannon.com",
@@ -87955,7 +87708,6 @@
       ],
       "keywords": [
         "gadgets",
-        "smartphone",
         "laptop",
         "chip",
         "processor",
@@ -89194,8 +88946,6 @@
         "review",
         "hands-on",
         "announced",
-        "launch",
-        "smartphone",
         "chipmaker"
       ],
       "derived": [
@@ -92524,7 +92274,6 @@
         "registry.terraform.io",
         "terraform.io"
       ],
-      "keywords": [],
       "derived": [
         "airiam.io",
         "andreaslang.dev",
@@ -94786,8 +94535,6 @@
         "tvshows"
       ],
       "parent": "television",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "14-tagebuecher.de",
         "19-2.radio-canada.ca",
@@ -95613,7 +95360,6 @@
         "unity.com",
         "unity3d.com"
       ],
-      "keywords": [],
       "derived": [
         "aras-p.info",
         "assetripper.com",
@@ -99351,8 +99097,6 @@
         "polytechnic"
       ],
       "parent": "university",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "archivschule.de",
         "ash-berlin.eu",
@@ -99464,8 +99208,6 @@
         "ue5"
       ],
       "parent": "game-dev",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "3d.devanshutak.xyz",
         "alsxt.voidwarex.com",
@@ -99780,8 +99522,6 @@
         "game-site"
       ],
       "parent": "games",
-      "hosts": [],
-      "keywords": [],
       "derived": [
         "1001f.com",
         "1378km.de",
@@ -100844,7 +100584,6 @@
         "code.visualstudio.com",
         "marketplace.visualstudio.com"
       ],
-      "keywords": [],
       "derived": [
         "agentskills.io",
         "agusrdz.dev",
@@ -101858,9 +101597,7 @@
         "vrouwenvoetbal"
       ],
       "parent": "soccer",
-      "hosts": [],
       "keywords": [
-        "women's-football",
         "wsl",
         "nwsl"
       ],
@@ -102034,7 +101771,6 @@
         "github.com/ziglang",
         "ziglang.org"
       ],
-      "keywords": [],
       "derived": [
         "bkataru.bearblog.dev",
         "dayvster.com",
