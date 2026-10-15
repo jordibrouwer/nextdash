@@ -2455,6 +2455,24 @@
         "os.phil-opp.com",
         "littleosbook.github.io"
       ]
+    },
+    {
+      "tag": "adult",
+      "aliases": [
+        "nsfw",
+        "porn",
+        "xxx",
+        "18plus",
+        "adult-content"
+      ],
+      "keywords": [
+        "porn",
+        "nsfw",
+        "xxx",
+        "webcam models",
+        "adult content"
+      ],
+      "hosts": []
     }
   ]
 }

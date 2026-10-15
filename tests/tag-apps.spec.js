@@ -119,6 +119,13 @@ test('whatever else sits at a home address is offered #self-hosted, a public sit
     expect(got.public || []).not.toContain('self-hosted');
 });
 
+test('adult sites get #adult from the catalogue, not a neighbouring subject', async ({ page }) => {
+    await open(page);
+    const got = await offers(page, [['tube', 'https://www.xnxx.com/'], ['fans', 'https://fansly.com/']]);
+    expect(got.tube).toEqual(['adult']);
+    expect(got.fans).toEqual(['adult']);
+});
+
 test('AI sites get #ai from the catalogue', async ({ page }) => {
     await open(page);
     const got = await offers(page, [['claude', 'https://claude.ai/new'], ['chatgpt', 'https://chatgpt.com/']]);
