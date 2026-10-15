@@ -1,26 +1,78 @@
 {
+  "10jqka.com.cn": [
+    "finance"
+  ],
+  "123moviesfree.net": [
+    "streaming",
+    "film"
+  ],
+  "123rf.com": [
+    "stockphotos"
+  ],
   "12go.asia": [
     "travel"
   ],
   "15min.lt": [
     "online-news"
   ],
+  "1688.com": [
+    "shopping"
+  ],
+  "17u.cn": [
+    "travel"
+  ],
+  "1984.is": [
+    "hosting"
+  ],
+  "1cfresh.com": [
+    "grocery"
+  ],
+  "1drv.com": [
+    "cloud-storage"
+  ],
+  "1mg.com": [
+    "pharmacy"
+  ],
+  "1password.eu": [
+    "passwords"
+  ],
   "1tv.ru": [
     "television"
+  ],
+  "21vek.by": [
+    "ecommerce"
   ],
   "247sports.com": [
     "sports-news",
     "college-sports"
   ],
+  "24h.com.vn": [
+    "news"
+  ],
   "24ur.com": [
     "television"
+  ],
+  "2dehands.be": [
+    "classifieds"
+  ],
+  "2gis.com": [
+    "maps"
   ],
   "2gis.ru": [
     "maps"
   ],
+  "2miners.com": [
+    "crypto"
+  ],
+  "33apk.com": [
+    "android"
+  ],
   "360.cn": [
     "cybersecurity",
     "desktop-apps"
+  ],
+  "3bmeteo.com": [
+    "weather"
   ],
   "3cat.cat": [
     "public-broadcaster"
@@ -28,11 +80,50 @@
   "3dnews.ru": [
     "tech-news"
   ],
+  "3m.com": [
+    "manufacturing"
+  ],
   "3sat.de": [
     "television"
   ],
+  "4dmoon.com": [
+    "gambling"
+  ],
+  "4pda.to": [
+    "tech"
+  ],
   "4shared.com": [
     "cloud-storage"
+  ],
+  "51job.com": [
+    "jobs"
+  ],
+  "52shuku.net": [
+    "books"
+  ],
+  "58.com": [
+    "classifieds"
+  ],
+  "5ch.io": [
+    "forum"
+  ],
+  "5movierulz.kitchen": [
+    "film"
+  ],
+  "5movierulz.pictures": [
+    "film"
+  ],
+  "5movierulz.plumbing": [
+    "film"
+  ],
+  "5movierulz.watch": [
+    "film"
+  ],
+  "69shuba.com": [
+    "books"
+  ],
+  "69shuba.tw": [
+    "webnovel"
   ],
   "6abc.com": [
     "television"
@@ -40,11 +131,29 @@
   "7-eleven.com": [
     "convenience-stores"
   ],
+  "7-zip.org": [
+    "downloads"
+  ],
+  "789bingo.com": [
+    "gambling"
+  ],
   "7shifts.com": [
     "scheduling"
   ],
+  "888scoreonline.net": [
+    "sports"
+  ],
+  "91mobiles.com": [
+    "smartphones"
+  ],
+  "99acres.com": [
+    "real-estate"
+  ],
   "99designs.com": [
     "design-tools"
+  ],
+  "9mod.com": [
+    "android"
   ],
   "a1.by": [
     "telecom"
@@ -55,8 +164,17 @@
   "a24films.com": [
     "film"
   ],
+  "a2hosting.com": [
+    "hosting"
+  ],
   "aaa.com": [
     "travel"
+  ],
+  "aad.org": [
+    "health"
+  ],
+  "aade.gr": [
+    "government"
   ],
   "aamc.org": [
     "medical-school"
@@ -70,6 +188,9 @@
   "aasm.org": [
     "health"
   ],
+  "aastocks.com": [
+    "markets"
+  ],
   "aau.at": [
     "university",
     "open-access"
@@ -77,11 +198,17 @@
   "abb.com": [
     "manufacturing"
   ],
+  "abbott.com": [
+    "health"
+  ],
   "abc.com": [
     "tv-series"
   ],
   "abc7chicago.com": [
     "television"
+  ],
+  "abczdrowie.pl": [
+    "health"
   ],
   "abdn.ac.uk": [
     "university"
@@ -92,6 +219,9 @@
   ],
   "aber.ac.uk": [
     "university"
+  ],
+  "abhibus.com": [
+    "travel"
   ],
   "ableton.com": [
     "desktop-apps",
@@ -106,18 +236,36 @@
   "about.me": [
     "social"
   ],
+  "aboutamazon.com": [
+    "business-news"
+  ],
+  "abril.com.br": [
+    "news"
+  ],
   "abs-cbn.com": [
     "television"
   ],
   "absher.sa": [
     "government"
   ],
+  "abv.bg": [
+    "email"
+  ],
   "accaglobal.com": [
     "accounting"
+  ],
+  "accor.com": [
+    "hotel-chains"
+  ],
+  "aclu.org": [
+    "law"
   ],
   "acquia.com": [
     "webdev",
     "tech"
+  ],
+  "acrobat.com": [
+    "pdf"
   ],
   "acsm.org": [
     "health"
@@ -140,17 +288,35 @@
   "adblockplus.org": [
     "privacy-tools"
   ],
+  "adda247.com": [
+    "test-prep"
+  ],
   "adelaide.edu.au": [
     "university"
   ],
   "adguard.com": [
     "privacy-tools"
   ],
+  "admin.ch": [
+    "government"
+  ],
+  "administracionelectronica.gob.es": [
+    "government"
+  ],
   "adp.com": [
     "payroll"
   ],
+  "adyen.com": [
+    "payments"
+  ],
   "aeaweb.org": [
     "journals"
+  ],
+  "aemet.es": [
+    "weather"
+  ],
+  "aepd.es": [
+    "government"
   ],
   "aetv.com": [
     "television"
@@ -162,11 +328,20 @@
   "afi.com": [
     "film"
   ],
+  "afip.gob.ar": [
+    "government"
+  ],
   "afp.com": [
     "news-agency"
   ],
+  "afrointroductions.com": [
+    "dating"
+  ],
   "aft.org": [
     "education"
+  ],
+  "agenteimmobiliare.info": [
+    "real-estate"
   ],
   "agenziaentrate.gov.it": [
     "tax"
@@ -174,11 +349,41 @@
   "aha.io": [
     "project-management"
   ],
+  "ahagamecenter.com": [
+    "games"
+  ],
   "ahrefs.com": [
     "analytics"
   ],
+  "ahwaktv.net": [
+    "streaming"
+  ],
+  "aicte-india.org": [
+    "education"
+  ],
   "aiga.org": [
     "design-tools"
+  ],
+  "aiou.edu.pk": [
+    "university"
+  ],
+  "airbnb.co.uk": [
+    "travel"
+  ],
+  "aiscore.com": [
+    "sports-news"
+  ],
+  "ajax.systems": [
+    "smart-home"
+  ],
+  "ajio.com": [
+    "fashion"
+  ],
+  "akakce.com": [
+    "price-comparison"
+  ],
+  "akbars.ru": [
+    "banking"
   ],
   "akismet.com": [
     "security"
@@ -192,8 +397,23 @@
   "alarm.com": [
     "smart-home"
   ],
+  "alaska.gov": [
+    "government"
+  ],
   "albertahealthservices.ca": [
     "health"
+  ],
+  "alchemer.com": [
+    "surveys"
+  ],
+  "alerts.in.ua": [
+    "news"
+  ],
+  "alfabank.ru": [
+    "banking"
+  ],
+  "alibaba.ir": [
+    "shopping"
   ],
   "alibris.com": [
     "bookstore"
@@ -201,20 +421,114 @@
   "alienvault.com": [
     "cybersecurity"
   ],
+  "aliexpress.us": [
+    "shopping"
+  ],
+  "allahabadhighcourt.in": [
+    "law",
+    "government"
+  ],
+  "alldatasheet.com": [
+    "electronics"
+  ],
+  "allegro.com": [
+    "marketplace"
+  ],
   "allenpress.com": [
     "academic-publisher"
+  ],
+  "allianz.de": [
+    "insurance"
+  ],
+  "allpanelexch9.game": [
+    "gambling"
+  ],
+  "allwyn.cz": [
+    "gambling"
+  ],
+  "alo.bg": [
+    "classifieds"
+  ],
+  "alodokter.com": [
+    "health"
   ],
   "alphatv.gr": [
     "television"
   ],
+  "alrosa.ru": [
+    "jewelry"
+  ],
+  "altavista.com": [
+    "search"
+  ],
+  "altervista.org": [
+    "hosting"
+  ],
   "alteryx.com": [
     "data-science"
+  ],
+  "alura.com.br": [
+    "courses"
+  ],
+  "alz.org": [
+    "health"
   ],
   "ama-assn.org": [
     "medicine"
   ],
+  "amap.com": [
+    "maps"
+  ],
+  "amateri.com": [
+    "blog"
+  ],
+  "amazon.ae": [
+    "shopping"
+  ],
+  "amazon.co.za": [
+    "shopping"
+  ],
+  "amazon.com.au": [
+    "shopping"
+  ],
+  "amazon.com.br": [
+    "shopping"
+  ],
+  "amazon.com.mx": [
+    "shopping"
+  ],
+  "amazon.com.tr": [
+    "shopping"
+  ],
+  "amazon.eg": [
+    "shopping"
+  ],
+  "amazon.ie": [
+    "shopping"
+  ],
+  "amazon.jobs": [
+    "jobs"
+  ],
+  "amazon.pl": [
+    "shopping"
+  ],
+  "amazon.sa": [
+    "shopping"
+  ],
+  "amazon.se": [
+    "shopping"
+  ],
+  "amazonalexa.com": [
+    "smart-home"
+  ],
+  "amazonvideo.com": [
+    "streaming"
+  ],
   "amboss.com": [
     "medicine"
+  ],
+  "amebaownd.com": [
+    "website-builder"
   ],
   "american.edu": [
     "university"
@@ -231,8 +545,17 @@
   "amherst.edu": [
     "university"
   ],
+  "amocrm.ru": [
+    "crm"
+  ],
   "ams.org": [
     "academic-publisher"
+  ],
+  "an1.com": [
+    "android"
+  ],
+  "ancestry.com.au": [
+    "genealogy"
   ],
   "andrews.edu": [
     "university"
@@ -241,23 +564,71 @@
     "film",
     "streaming"
   ],
+  "angelfire.com": [
+    "hosting"
+  ],
   "angi.com": [
     "home"
   ],
   "angularjs.org": [
     "angular"
   ],
+  "aniagotuje.pl": [
+    "recipes"
+  ],
+  "anikoto.cz": [
+    "anime"
+  ],
+  "anikototv.to": [
+    "anime"
+  ],
+  "animanch.com": [
+    "anime"
+  ],
   "anime-planet.com": [
+    "anime"
+  ],
+  "anime-sama.to": [
+    "anime"
+  ],
+  "animedekho.app": [
+    "anime"
+  ],
+  "animeheaven.me": [
+    "anime"
+  ],
+  "animepahe.pw": [
+    "anime"
+  ],
+  "animeruka.com": [
+    "anime"
+  ],
+  "animesonlinecc.to": [
+    "anime"
+  ],
+  "animevost.org": [
+    "anime"
+  ],
+  "aniwaves.ru": [
+    "anime"
+  ],
+  "aniworld.to": [
     "anime"
   ],
   "ankiweb.net": [
     "edtech"
+  ],
+  "anl.gov": [
+    "research"
   ],
   "annualreviews.org": [
     "academic-publisher"
   ],
   "ansa.it": [
     "news-agency"
+  ],
+  "anses.gob.ar": [
+    "government"
   ],
   "answersingenesis.org": [
     "religion"
@@ -278,9 +649,24 @@
     "news",
     "email"
   ],
+  "aoneroom.com": [
+    "streaming"
+  ],
+  "ap.gov.in": [
+    "government"
+  ],
   "apa.org": [
     "psychology",
     "academic-publisher"
+  ],
+  "apachelounge.com": [
+    "webserver"
+  ],
+  "apachetoday.com": [
+    "webserver"
+  ],
+  "apachetutor.org": [
+    "webserver"
   ],
   "apartmentguide.com": [
     "vacation-rentals"
@@ -291,11 +677,26 @@
   "apha.org": [
     "health"
   ],
+  "apkpure.net": [
+    "android"
+  ],
   "apmex.com": [
     "commodities"
   ],
+  "apollopharmacy.in": [
+    "pharmacy"
+  ],
   "apotheken-umschau.de": [
     "health"
+  ],
+  "app.google": [
+    "google"
+  ],
+  "appdynamics.com": [
+    "monitoring"
+  ],
+  "appfolio.com": [
+    "real-estate"
   ],
   "apple.co": [
     "apple"
@@ -303,9 +704,15 @@
   "apple.com.cn": [
     "apple"
   ],
+  "apple.news": [
+    "news"
+  ],
   "applovin.com": [
     "advertising",
     "tech"
+  ],
+  "applvn.com": [
+    "android"
   ],
   "appsheet.com": [
     "no-code"
@@ -313,15 +720,42 @@
   "apta.org": [
     "health"
   ],
+  "aptoide.com": [
+    "mobile-apps"
+  ],
+  "apuestasroyal.com": [
+    "gambling"
+  ],
+  "apuestatotal.com": [
+    "gambling"
+  ],
   "aramco.com": [
     "energy"
   ],
   "arbetsformedlingen.se": [
     "government"
   ],
+  "archive.ph": [
+    "archive"
+  ],
   "arcteryx.com": [
     "outdoors",
     "fashion"
+  ],
+  "ardentnews.co.kr": [
+    "news"
+  ],
+  "arenaplus.ph": [
+    "gambling"
+  ],
+  "argenprop.com": [
+    "real-estate"
+  ],
+  "argentina.gob.ar": [
+    "government"
+  ],
+  "arlo.com": [
+    "smart-home"
   ],
   "army.mil": [
     "government"
@@ -332,17 +766,29 @@
   "arrl.org": [
     "radio"
   ],
+  "arte.tv": [
+    "television"
+  ],
   "arthritis.org": [
     "health"
   ],
   "artic.edu": [
     "museums"
   ],
+  "articulate.com": [
+    "edtech"
+  ],
   "artnet.com": [
     "art"
   ],
   "artuk.org": [
     "museums"
+  ],
+  "aruodas.lt": [
+    "real-estate"
+  ],
+  "asaas.com": [
+    "payments"
   ],
   "asahi-net.or.jp": [
     "telecom"
@@ -359,12 +805,18 @@
   "asics.com": [
     "shoes"
   ],
+  "askona.ru": [
+    "shopping"
+  ],
   "asp.net": [
     "dotnet"
   ],
   "asterisk.org": [
     "voip",
     "open-source"
+  ],
+  "asurascans.com": [
+    "manga"
   ],
   "asurion.com": [
     "insurance",
@@ -373,11 +825,23 @@
   "atgtickets.com": [
     "theatre"
   ],
+  "athemes.com": [
+    "webdev"
+  ],
+  "athome.co.jp": [
+    "real-estate"
+  ],
   "athome.com": [
     "real-estate"
   ],
+  "atomex.net": [
+    "crypto"
+  ],
   "atresplayer.com": [
     "streaming"
+  ],
+  "atsenergo.ru": [
+    "energy"
   ],
   "att.com.mx": [
     "telecom"
@@ -389,29 +853,78 @@
   "attheraces.com": [
     "sports"
   ],
+  "attn.tv": [
+    "news"
+  ],
   "atv.com.tr": [
     "television"
+  ],
+  "au.dk": [
+    "university"
   ],
   "auckland.ac.nz": [
     "university"
   ],
+  "auction.co.kr": [
+    "auctions"
+  ],
+  "auctollo.com": [
+    "auctions"
+  ],
+  "audioeye.com": [
+    "accessibility"
+  ],
   "augsburger-allgemeine.de": [
     "newspaper"
+  ],
+  "auone.jp": [
+    "telecom"
   ],
   "austlii.edu.au": [
     "law"
   ],
+  "author.today": [
+    "books"
+  ],
+  "authorize.net": [
+    "payments"
+  ],
   "autism.org.uk": [
     "charities"
+  ],
+  "auto.ru": [
+    "cars"
   ],
   "autodoc.de": [
     "auto-parts"
   ],
+  "autogidas.lt": [
+    "cars"
+  ],
+  "autohome.com.cn": [
+    "cars"
+  ],
+  "autoplius.lt": [
+    "cars",
+    "classifieds"
+  ],
+  "autoriteitpersoonsgegevens.nl": [
+    "privacy"
+  ],
   "autoscout24.com": [
+    "cars"
+  ],
+  "autoscout24.de": [
+    "cars"
+  ],
+  "autoscout24.it": [
     "cars"
   ],
   "autosport.com": [
     "motorsport"
+  ],
+  "autotrader.co.za": [
+    "cars"
   ],
   "avast.com": [
     "cybersecurity",
@@ -420,40 +933,124 @@
   "avery.com": [
     "shopping"
   ],
+  "aviasales.com": [
+    "flights"
+  ],
+  "aviasales.ru": [
+    "flights"
+  ],
   "aviation-safety.net": [
     "aviation"
   ],
   "avid.com": [
     "video"
   ],
+  "avidreaders.ru": [
+    "ebooks"
+  ],
+  "avira.net": [
+    "security"
+  ],
   "avito.ru": [
     "classifieds",
     "marketplace"
   ],
+  "avon.com": [
+    "beauty"
+  ],
+  "avple.tv": [
+    "streaming"
+  ],
   "avrotros.nl": [
     "public-broadcaster"
+  ],
+  "avto.net": [
+    "cars"
   ],
   "awm.gov.au": [
     "museums"
   ],
+  "aws.com": [
+    "aws"
+  ],
+  "axiom.trade": [
+    "crypto"
+  ],
   "axis.com": [
     "electronics"
+  ],
+  "axismaxlife.com": [
+    "insurance"
+  ],
+  "az24.vn": [
+    "news"
+  ],
+  "azbyka.ru": [
+    "religion"
   ],
   "azdot.gov": [
     "government",
     "transit"
   ],
+  "azet.sk": [
+    "news"
+  ],
+  "azure.com": [
+    "azure"
+  ],
+  "bac.com": [
+    "banking"
+  ],
+  "backlinko.com": [
+    "marketing"
+  ],
+  "badoo.com": [
+    "dating"
+  ],
   "bafta.org": [
     "film"
   ],
+  "bahn.de": [
+    "trains"
+  ],
+  "bakusai.com": [
+    "forum"
+  ],
+  "bama.ir": [
+    "cars"
+  ],
+  "banahosting.com": [
+    "hosting"
+  ],
   "bancaditalia.it": [
     "central-bank"
+  ],
+  "bancoestado.cl": [
+    "banking"
+  ],
+  "bancointer.com.br": [
+    "banking"
   ],
   "band.com.br": [
     "television"
   ],
   "bandlab.com": [
     "music"
+  ],
+  "banesconline.com": [
+    "banking"
+  ],
+  "bangumi.org": [
+    "anime"
+  ],
+  "bankbazaar.com": [
+    "finance"
+  ],
+  "banki.ru": [
+    "banking"
+  ],
+  "bankier.pl": [
+    "finance"
   ],
   "baomoi.com": [
     "online-news"
@@ -467,12 +1064,27 @@
   "barstoolsports.com": [
     "sports-news"
   ],
+  "bartleby.com": [
+    "books"
+  ],
+  "basalam.com": [
+    "marketplace"
+  ],
+  "basf.com": [
+    "chemistry"
+  ],
+  "bbb.org": [
+    "consumer"
+  ],
   "bbc.co.uk": [
     "broadcasting",
     "news"
   ],
   "bbcgoodfood.com": [
     "recipes"
+  ],
+  "bbci.co.uk": [
+    "news"
   ],
   "bc.edu": [
     "university"
@@ -483,11 +1095,23 @@
   "bcb.gov.br": [
     "central-bank"
   ],
+  "bcg.com": [
+    "business"
+  ],
   "bcit.ca": [
     "university-of-applied-sciences"
   ],
+  "bcv.org.ve": [
+    "central-bank"
+  ],
   "bde.es": [
     "central-bank"
+  ],
+  "bebee.com": [
+    "baby"
+  ],
+  "bebesong.com": [
+    "music"
   ],
   "beckershospitalreview.com": [
     "health"
@@ -495,14 +1119,38 @@
   "beebom.com": [
     "tech-news"
   ],
+  "beehiiv.com": [
+    "newsletter"
+  ],
+  "beeline.ru": [
+    "telecom"
+  ],
   "beenverified.com": [
     "search"
   ],
   "beeper.com": [
     "chat"
   ],
+  "beforward.jp": [
+    "cars"
+  ],
+  "beget.com": [
+    "hosting"
+  ],
+  "beget.pro": [
+    "hosting"
+  ],
+  "beget.tech": [
+    "hosting"
+  ],
   "beinsports.com": [
     "sports"
+  ],
+  "belgium.be": [
+    "government"
+  ],
+  "bellemaison.jp": [
+    "shopping"
   ],
   "bentley.com": [
     "tech"
@@ -513,6 +1161,9 @@
   "bereal.com": [
     "social"
   ],
+  "bergfex.at": [
+    "skiing"
+  ],
   "berkshirehathaway.com": [
     "investing"
   ],
@@ -522,21 +1173,147 @@
   "bet.com": [
     "television"
   ],
+  "bet365.bet.ar": [
+    "gambling"
+  ],
+  "bet365.it": [
+    "gambling"
+  ],
+  "bet88.ph": [
+    "gambling"
+  ],
+  "bet9ja.com": [
+    "gambling"
+  ],
+  "betano.bet.ar": [
+    "gambling"
+  ],
+  "betano.com": [
+    "gambling"
+  ],
+  "betano.pe": [
+    "gambling"
+  ],
+  "betcity.by": [
+    "gambling"
+  ],
+  "betcity.ru": [
+    "gambling"
+  ],
+  "betclic.ci": [
+    "gambling"
+  ],
+  "betflag.it": [
+    "gambling"
+  ],
+  "betjili365.vip": [
+    "gambling"
+  ],
+  "betking.com": [
+    "gambling"
+  ],
+  "betmexico.mx": [
+    "gambling"
+  ],
+  "betpawa.cd": [
+    "gambling"
+  ],
+  "betpawa.cm": [
+    "gambling"
+  ],
+  "betpawa.co.tz": [
+    "gambling"
+  ],
+  "betpawa.co.zm": [
+    "gambling"
+  ],
+  "betpawa.com": [
+    "gambling"
+  ],
+  "betpawa.mw": [
+    "gambling"
+  ],
+  "betpawa.ug": [
+    "gambling"
+  ],
+  "betsson.bet.ar": [
+    "gambling"
+  ],
+  "betting.co.zw": [
+    "gambling"
+  ],
+  "betway.co.bw": [
+    "gambling"
+  ],
+  "betway.co.mz": [
+    "gambling"
+  ],
+  "betway.co.za": [
+    "gambling"
+  ],
   "bfh.ch": [
     "university-of-applied-sciences"
+  ],
+  "bfv.de": [
+    "government"
+  ],
+  "bgn.go.id": [
+    "government"
   ],
   "bible.com": [
     "religion",
     "mobile-apps"
   ],
+  "biblegateway.com": [
+    "religion"
+  ],
+  "biblehub.com": [
+    "religion"
+  ],
+  "bibliaonline.com.br": [
+    "religion"
+  ],
   "bicycling.com": [
     "cycling"
+  ],
+  "bigbadtoystore.com": [
+    "shopping"
+  ],
+  "bigbasket.com": [
+    "grocery"
+  ],
+  "bigcartel.com": [
+    "website-builder"
+  ],
+  "bigcommerce.com": [
+    "website-builder"
   ],
   "bignox.com": [
     "emulation"
   ],
+  "bigo.sg": [
+    "livestream"
+  ],
   "bigo.tv": [
     "streaming"
+  ],
+  "bigolive.tv": [
+    "livestream"
+  ],
+  "bihar.gov.in": [
+    "government"
+  ],
+  "bikedekho.com": [
+    "motorcycles"
+  ],
+  "bikewale.com": [
+    "motorcycles"
+  ],
+  "bilibili.tv": [
+    "video"
+  ],
+  "binance.info": [
+    "crypto"
   ],
   "biography.com": [
     "reference"
@@ -553,6 +1330,12 @@
   "bisnow.com": [
     "real-estate"
   ],
+  "bisp.gov.pk": [
+    "government"
+  ],
+  "bitcoin.org": [
+    "crypto"
+  ],
   "bitpanda.com": [
     "crypto",
     "fintech"
@@ -560,11 +1343,29 @@
   "bitrix24.com": [
     "crm"
   ],
+  "bitrix24.ru": [
+    "crm"
+  ],
+  "bitrix24.tech": [
+    "crm"
+  ],
+  "bittorrent.com": [
+    "torrents"
+  ],
   "bitvavo.com": [
     "crypto"
   ],
+  "bizimhesap.com": [
+    "accounting"
+  ],
   "bizkaia.eus": [
     "government"
+  ],
+  "bkn.go.id": [
+    "government"
+  ],
+  "bkpay888.com": [
+    "gambling"
   ],
   "bl.uk": [
     "library"
@@ -583,10 +1384,41 @@
     "electronics",
     "video"
   ],
+  "blacknight.com": [
+    "hosting"
+  ],
+  "blackrock.com": [
+    "investing"
+  ],
+  "blackrussia.online": [
+    "games"
+  ],
+  "blink.com": [
+    "smart-home"
+  ],
+  "blinkit.com": [
+    "food-delivery"
+  ],
+  "blockchain.info": [
+    "crypto"
+  ],
+  "blooket.com": [
+    "edtech",
+    "video-games"
+  ],
+  "bloomberglaw.com": [
+    "legal"
+  ],
   "bmc.com": [
     "tech"
   ],
+  "bmw-motorrad.com.cn": [
+    "motorcycles"
+  ],
   "bmw.com": [
+    "car-brands"
+  ],
+  "bmwgroup.com": [
     "car-brands"
   ],
   "bnf.fr": [
@@ -596,11 +1428,29 @@
   "bnl.gov": [
     "research-institute"
   ],
+  "boatrace.jp": [
+    "gambling"
+  ],
+  "bobaedream.co.kr": [
+    "cars"
+  ],
   "boe.es": [
     "government"
   ],
+  "boeing.com": [
+    "aviation"
+  ],
+  "boingboing.net": [
+    "blog"
+  ],
   "boku.ac.at": [
     "university"
+  ],
+  "bollyflix.free": [
+    "film"
+  ],
+  "bollywoodmenswear.com": [
+    "fashion"
   ],
   "bolt.eu": [
     "rideshare"
@@ -608,9 +1458,27 @@
   "bom.gov.au": [
     "weather"
   ],
+  "bombuj.si": [
+    "torrents"
+  ],
+  "bongdalu812.com": [
+    "sports"
+  ],
+  "bongdaplus.vn": [
+    "sports-news"
+  ],
+  "bonprix.de": [
+    "clothing-stores"
+  ],
   "bookcrossing.com": [
     "books",
     "social"
+  ],
+  "booklive.jp": [
+    "ebooks"
+  ],
+  "bookmyshow.com": [
+    "events"
   ],
   "bookriot.com": [
     "books"
@@ -621,6 +1489,9 @@
   "booktopia.com.au": [
     "bookstore"
   ],
+  "boomplaymusic.com": [
+    "music"
+  ],
   "boost.org": [
     "cpp",
     "dev"
@@ -628,11 +1499,38 @@
   "boots.com": [
     "pharmacy"
   ],
+  "bootstrapmade.com": [
+    "webdev"
+  ],
+  "boredpanda.com": [
+    "entertainment-news"
+  ],
+  "boticario.com.br": [
+    "beauty"
+  ],
+  "boursorama.com": [
+    "banking"
+  ],
+  "box.net": [
+    "cloud-storage"
+  ],
   "bp.com": [
     "energy"
   ],
+  "bpcl.in": [
+    "energy"
+  ],
+  "bpexch.live": [
+    "gambling"
+  ],
+  "bplay.bet.ar": [
+    "gambling"
+  ],
   "br.de": [
     "public-broadcaster"
+  ],
+  "bradesco.com.br": [
+    "banking"
   ],
   "bradescoseguros.com.br": [
     "insurance"
@@ -661,9 +1559,15 @@
   "bridgebase.com": [
     "boardgames"
   ],
+  "brightspace.com": [
+    "education"
+  ],
   "brill.com": [
     "academic-publisher",
     "publishing"
+  ],
+  "brilliantchap.com": [
+    "books"
   ],
   "bris.ac.uk": [
     "university"
@@ -677,17 +1581,47 @@
   "broadwayworld.com": [
     "theatre"
   ],
+  "brother.com": [
+    "hardware"
+  ],
   "broward.org": [
     "government"
   ],
   "brown.edu": [
     "university"
   ],
+  "browserleaks.org": [
+    "privacy-tools"
+  ],
   "browserstack.com": [
     "testing"
   ],
+  "bspb.ru": [
+    "banking"
+  ],
+  "bt.com.ve": [
+    "banking"
+  ],
+  "btinternet.com": [
+    "telecom"
+  ],
+  "buchstaben.com": [
+    "dictionary"
+  ],
+  "buddy4study.com": [
+    "education"
+  ],
+  "buffer.com": [
+    "social"
+  ],
   "bugfender.com": [
     "monitoring"
+  ],
+  "bulbagarden.net": [
+    "games"
+  ],
+  "bund.de": [
+    "government"
   ],
   "bundesregierung.de": [
     "government"
@@ -701,11 +1635,26 @@
   "business.com": [
     "business"
   ],
+  "businessweek.com": [
+    "business-news"
+  ],
   "businessweekly.com.tw": [
+    "business-news"
+  ],
+  "businesswire.com": [
     "business-news"
   ],
   "bustimes.org": [
     "transit"
+  ],
+  "but.fr": [
+    "shopping"
+  ],
+  "buyee.jp": [
+    "shopping"
+  ],
+  "bybit.com": [
+    "crypto"
   ],
   "bytedance.com": [
     "tech"
@@ -723,8 +1672,23 @@
   "caf.fr": [
     "government"
   ],
+  "cafe24.com": [
+    "website-builder"
+  ],
   "cafebazaar.ir": [
     "android"
+  ],
+  "cafef.vn": [
+    "business-news"
+  ],
+  "cairn.info": [
+    "academic-publisher"
+  ],
+  "calciomercato.com": [
+    "football"
+  ],
+  "caliente.mx": [
+    "gambling"
   ],
   "calvin.edu": [
     "university"
@@ -742,6 +1706,9 @@
   "campingworld.com": [
     "camping"
   ],
+  "camscanner.com": [
+    "documents"
+  ],
   "canada.ca": [
     "government"
   ],
@@ -755,14 +1722,47 @@
     "news",
     "television"
   ],
+  "canalturf.com": [
+    "gambling"
+  ],
   "canberra.edu.au": [
     "university"
+  ],
+  "canlidoviz.com": [
+    "markets"
   ],
   "canon-europe.com": [
     "camera-gear"
   ],
+  "canon.com": [
+    "camera-gear"
+  ],
+  "canva.site": [
+    "website-builder"
+  ],
+  "canvaslms.com": [
+    "school"
+  ],
+  "capgemini.com": [
+    "business"
+  ],
   "capterra.com": [
     "reference"
+  ],
+  "car.gr": [
+    "cars"
+  ],
+  "cardekho.com": [
+    "cars"
+  ],
+  "cardgames.io": [
+    "games"
+  ],
+  "cardmarket.com": [
+    "marketplace"
+  ],
+  "cardtrader.com": [
+    "games"
   ],
   "careem.com": [
     "rideshare"
@@ -782,7 +1782,16 @@
   "carrefour.es": [
     "grocery"
   ],
+  "carsensor.net": [
+    "cars"
+  ],
   "carsized.com": [
+    "cars"
+  ],
+  "carview.co.jp": [
+    "cars"
+  ],
+  "carwale.com": [
     "cars"
   ],
   "cas.cn": [
@@ -790,6 +1799,9 @@
   ],
   "cas.org": [
     "chemistry"
+  ],
+  "case-battle.ac": [
+    "gambling"
   ],
   "case.edu": [
     "university"
@@ -804,12 +1816,27 @@
     "payments",
     "fintech"
   ],
+  "cashify.in": [
+    "secondhand"
+  ],
+  "casinoplus.com.ph": [
+    "gambling"
+  ],
   "casio.com": [
     "electronics",
     "music"
   ],
+  "cat.com": [
+    "manufacturing"
+  ],
+  "catawiki.com": [
+    "auctions"
+  ],
   "catb.org": [
     "open-source"
+  ],
+  "catho.com.br": [
+    "jobs"
   ],
   "catholicnewsagency.com": [
     "religion",
@@ -817,6 +1844,12 @@
   ],
   "cato.org": [
     "policy"
+  ],
+  "catonetworks.com": [
+    "networking"
+  ],
+  "cbl.gov.ly": [
+    "central-bank"
   ],
   "cbn.com": [
     "television"
@@ -831,6 +1864,12 @@
   "cbs.com": [
     "television"
   ],
+  "cbslocal.com": [
+    "news"
+  ],
+  "ccc.de": [
+    "community"
+  ],
   "ccohs.ca": [
     "government"
   ],
@@ -840,6 +1879,42 @@
   "cegid.com": [
     "tech"
   ],
+  "celebforum.cc": [
+    "forum"
+  ],
+  "cellphones.com.vn": [
+    "electronics"
+  ],
+  "celuapuestas.fans": [
+    "gambling"
+  ],
+  "ceneo.pl": [
+    "price-comparison"
+  ],
+  "cengage.com": [
+    "textbooks"
+  ],
+  "censor.net": [
+    "news"
+  ],
+  "census.gov.in": [
+    "government"
+  ],
+  "centraldasapostas.net": [
+    "gambling"
+  ],
+  "centris.ca": [
+    "real-estate"
+  ],
+  "centurygame.com": [
+    "games"
+  ],
+  "cern.ch": [
+    "science"
+  ],
+  "certum.pl": [
+    "ssl"
+  ],
   "chabad.org": [
     "religion"
   ],
@@ -848,6 +1923,9 @@
   ],
   "chambers.com": [
     "dictionary"
+  ],
+  "change.org": [
+    "politics"
   ],
   "channel4.com": [
     "television"
@@ -869,6 +1947,9 @@
   "chapman.edu": [
     "university"
   ],
+  "chartink.com": [
+    "markets"
+  ],
   "chateauversailles.fr": [
     "museums"
   ],
@@ -876,20 +1957,50 @@
     "helpdesk",
     "self-hosted"
   ],
+  "chavesnamao.com.br": [
+    "classifieds"
+  ],
   "checkatrade.com": [
     "home"
+  ],
+  "checkpoint.com": [
+    "cybersecurity"
+  ],
+  "chefkoch.de": [
+    "recipes"
+  ],
+  "chess-results.com": [
+    "chess"
   ],
   "chevron.com": [
     "energy"
   ],
+  "chiikawamarket.jp": [
+    "shopping"
+  ],
   "childrenshospital.org": [
     "health"
+  ],
+  "china.com": [
+    "news"
+  ],
+  "chinanews.com": [
+    "news"
   ],
   "chinaunicom.com": [
     "telecom"
   ],
+  "chittorgarh.com": [
+    "ipo"
+  ],
+  "chordtela.com": [
+    "guitar-tabs"
+  ],
   "christies.com": [
     "auctions"
+  ],
+  "chrome.com": [
+    "browser"
   ],
   "chromeexperiments.com": [
     "webdev"
@@ -900,6 +2011,12 @@
   "chronicle.com": [
     "education"
   ],
+  "chronopost.fr": [
+    "shipping"
+  ],
+  "chsi.com.cn": [
+    "education"
+  ],
   "chumbacasino.com": [
     "gambling"
   ],
@@ -907,17 +2024,44 @@
     "newspaper",
     "sports"
   ],
+  "chunkbase.com": [
+    "video-games"
+  ],
   "churchofjesuschrist.org": [
     "religion"
   ],
   "cian.ru": [
     "real-estate"
   ],
+  "cienradios.com": [
+    "radio"
+  ],
+  "cifraclub.com.br": [
+    "guitar-tabs"
+  ],
+  "cimanow.cc": [
+    "film"
+  ],
+  "cimri.com": [
+    "price-comparison"
+  ],
+  "cinecalidad.am": [
+    "film"
+  ],
+  "cio.com": [
+    "tech-news"
+  ],
   "cirad.fr": [
     "research-institute"
   ],
   "cirquedusoleil.com": [
     "theatre"
+  ],
+  "ciscospark.com": [
+    "video-call"
+  ],
+  "cisf.gov.in": [
+    "government"
   ],
   "cision.com": [
     "public-relations"
@@ -944,20 +2088,74 @@
   "clarks.com": [
     "shoes"
   ],
+  "claro.com.ar": [
+    "telecom"
+  ],
+  "clashofclans-layouts.com": [
+    "video-games"
+  ],
+  "clasohlson.com": [
+    "diy-stores"
+  ],
+  "classificadosx.net": [
+    "classifieds"
+  ],
+  "classlink.io": [
+    "education"
+  ],
   "claude.com": [
     "ai"
+  ],
+  "clave.gob.es": [
+    "government"
+  ],
+  "claveunica.gob.cl": [
+    "government"
+  ],
+  "clearscore.com": [
+    "credit-score"
+  ],
+  "clevelandclinic.org": [
+    "health"
+  ],
+  "clever.com": [
+    "edtech"
+  ],
+  "cleverreach.com": [
+    "email-marketing"
   ],
   "click2houston.com": [
     "television"
   ],
+  "clickpetroleoegas.com.br": [
+    "fuel-stations"
+  ],
   "clicrbs.com.br": [
     "television"
+  ],
+  "clideo.com": [
+    "video"
+  ],
+  "climatempo.com.br": [
+    "weather"
   ],
   "clipchamp.com": [
     "video"
   ],
+  "cloud86.nl": [
+    "hosting"
+  ],
   "clover.com": [
     "payments"
+  ],
+  "cmjornal.pt": [
+    "news"
+  ],
+  "cmoa.jp": [
+    "manga"
+  ],
+  "cmpassport.com": [
+    "government"
   ],
   "cnbcindonesia.com": [
     "business-news"
@@ -990,11 +2188,20 @@
   "cnr.it": [
     "research-institute"
   ],
+  "cntv.cn": [
+    "television"
+  ],
+  "coach.com": [
+    "fashion"
+  ],
   "cochranelibrary.com": [
     "health"
   ],
   "code42.com": [
     "cybersecurity"
+  ],
+  "codecanyon.net": [
+    "marketplace"
   ],
   "codechef.com": [
     "algorithms"
@@ -1022,6 +2229,18 @@
   "coinex.com": [
     "crypto"
   ],
+  "coinmaster.com": [
+    "video-games"
+  ],
+  "coinmastergame.com": [
+    "video-games"
+  ],
+  "colaboraread.com.br": [
+    "books"
+  ],
+  "collegeboard.org": [
+    "education"
+  ],
   "colorado.edu": [
     "university"
   ],
@@ -1030,6 +2249,12 @@
   ],
   "columbia.edu": [
     "university"
+  ],
+  "comfy.ua": [
+    "electronics"
+  ],
+  "comix.to": [
+    "comics"
   ],
   "commerzbank.de": [
     "banking"
@@ -1044,11 +2269,20 @@
   "computer.org": [
     "journals"
   ],
+  "computrabajo.com": [
+    "jobs"
+  ],
   "comunidad.madrid": [
     "government"
   ],
   "configcat.com": [
     "feature-flags"
+  ],
+  "confirmtkt.com": [
+    "trains"
+  ],
+  "conforama.fr": [
+    "shopping"
   ],
   "confused.com": [
     "insurance",
@@ -1060,33 +2294,78 @@
   "conjur.com.br": [
     "legal"
   ],
+  "consultant.ru": [
+    "legal"
+  ],
   "consumeraffairs.com": [
     "consumer"
   ],
   "contentful.com": [
     "cms"
   ],
+  "contextotucuman.com": [
+    "news"
+  ],
+  "control4.com": [
+    "smart-home"
+  ],
   "cookpad.com": [
     "recipes"
+  ],
+  "coolrom.com": [
+    "emulation"
   ],
   "copart.com": [
     "auctions"
   ],
+  "copernicus.eu": [
+    "space"
+  ],
+  "corel.com": [
+    "design-tools"
+  ],
+  "cornell.edu": [
+    "university"
+  ],
   "coros.com": [
     "fitness"
+  ],
+  "correios.com.br": [
+    "shipping"
+  ],
+  "correoargentino.com.ar": [
+    "shipping"
   ],
   "coscoshipping.com": [
     "shipping"
   ],
+  "cosme.net": [
+    "beauty"
+  ],
+  "costco.ca": [
+    "shopping"
+  ],
+  "coub.com": [
+    "video"
+  ],
   "count.ly": [
     "analytics",
     "self-hosted"
+  ],
+  "coupert.com": [
+    "deals"
   ],
   "couponfollow.com": [
     "deals"
   ],
   "courier.com": [
     "api"
+  ],
+  "cox.net": [
+    "telecom"
+  ],
+  "coxautoinc.com": [
+    "automotive"
   ],
   "cp24.com": [
     "news",
@@ -1106,8 +2385,17 @@
     "analytics",
     "tech"
   ],
+  "crazymaplestudios.com": [
+    "game-studios"
+  ],
+  "createjs.com": [
+    "javascript"
+  ],
   "createspace.com": [
     "self-publishing"
+  ],
+  "credit-agricole.fr": [
+    "banking"
   ],
   "creditkarma.com": [
     "credit-score",
@@ -1116,20 +2404,56 @@
   "creditonebank.com": [
     "credit-card"
   ],
+  "crex.com": [
+    "cricket"
+  ],
+  "cricinfo.com": [
+    "cricket"
+  ],
+  "cricketworld.com": [
+    "cricket"
+  ],
+  "crickexnow.com": [
+    "gambling"
+  ],
   "cricut.com": [
     "crafts"
+  ],
+  "crm.dev": [
+    "crm"
   ],
   "crowdfunder.co.uk": [
     "crowdfunding"
   ],
+  "crowncoinscasino.com": [
+    "gambling"
+  ],
+  "crushon.ai": [
+    "ai"
+  ],
   "crypto.com": [
     "crypto"
+  ],
+  "crystalbet.com": [
+    "gambling"
   ],
   "cs.com.cn": [
     "newspaper"
   ],
+  "csc.gov.in": [
+    "government"
+  ],
+  "csdn.net": [
+    "dev"
+  ],
+  "csic.es": [
+    "science"
+  ],
   "csiro.au": [
     "science"
+  ],
+  "csis.org": [
+    "geopolitics"
   ],
   "csulb.edu": [
     "university"
@@ -1137,14 +2461,41 @@
   "csuohio.edu": [
     "university"
   ],
+  "ctrip.com": [
+    "travel"
+  ],
   "ctv.ca": [
     "television"
+  ],
+  "cuerpomente.com": [
+    "health"
+  ],
+  "cuisineaz.com": [
+    "recipes"
+  ],
+  "cun.edu.co": [
+    "university"
+  ],
+  "cuni.cz": [
+    "university"
+  ],
+  "cursor.sh": [
+    "dev"
+  ],
+  "cvent.com": [
+    "events"
   ],
   "cvshealth.com": [
     "pharmacy"
   ],
+  "cvut.cz": [
+    "university"
+  ],
   "cyberark.com": [
     "cybersecurity"
+  ],
+  "cybercrime.gov.in": [
+    "government"
   ],
   "cyberfolks.pl": [
     "hosting"
@@ -1152,11 +2503,50 @@
   "cybernews.com": [
     "infosec-news"
   ],
+  "cygwin.com": [
+    "open-source"
+  ],
+  "cyon.ch": [
+    "hosting"
+  ],
+  "czbooks.net": [
+    "webnovel"
+  ],
+  "d2jsp.org": [
+    "video-games"
+  ],
+  "dafiti.com.br": [
+    "ecommerce"
+  ],
   "daft.ie": [
     "real-estate"
   ],
+  "dailymail.com": [
+    "news"
+  ],
+  "daisonet.com": [
+    "shopping"
+  ],
+  "dan.com": [
+    "domains"
+  ],
+  "dandomain.dk": [
+    "hosting"
+  ],
+  "danviet.vn": [
+    "news"
+  ],
+  "danword.com": [
+    "dictionary"
+  ],
+  "dark-manga.com": [
+    "manga"
+  ],
   "darkreader.org": [
     "browser"
+  ],
+  "dartmouth.edu": [
+    "university"
   ],
   "darty.com": [
     "shopping"
@@ -1167,6 +2557,15 @@
   "datastax.com": [
     "database"
   ],
+  "datatables.net": [
+    "javascript"
+  ],
+  "datezone.com": [
+    "dating"
+  ],
+  "daum.net": [
+    "news"
+  ],
   "davidsbridal.com": [
     "weddings",
     "shopping"
@@ -1174,9 +2573,39 @@
   "daz3d.com": [
     "modeling"
   ],
+  "dba.dk": [
+    "classifieds"
+  ],
+  "ddizi.im": [
+    "streaming"
+  ],
   "deakin.edu.au": [
     "open-access",
     "university"
+  ],
+  "decathlon.de": [
+    "shopping"
+  ],
+  "decathlon.es": [
+    "sports"
+  ],
+  "decathlon.in": [
+    "shopping"
+  ],
+  "decathlon.it": [
+    "sports"
+  ],
+  "decathlon.pl": [
+    "shopping"
+  ],
+  "decolar.com": [
+    "travel"
+  ],
+  "degruyter.com": [
+    "academic-publisher"
+  ],
+  "delaware.gov": [
+    "government"
   ],
   "delfi.ee": [
     "online-news"
@@ -1190,14 +2619,41 @@
   "delhi.gov.in": [
     "government"
   ],
+  "delicious.com": [
+    "bookmarks"
+  ],
+  "delish.com": [
+    "recipes"
+  ],
+  "delishkitchen.tv": [
+    "recipes"
+  ],
+  "dellin.ru": [
+    "delivery"
+  ],
+  "demonicscans.org": [
+    "manga"
+  ],
+  "deped.gov.ph": [
+    "education"
+  ],
+  "depositphotos.com": [
+    "stockphotos"
+  ],
   "deputy.com": [
     "scheduling"
+  ],
+  "deribit.com": [
+    "crypto"
   ],
   "derpibooru.org": [
     "art"
   ],
   "destatis.de": [
     "government"
+  ],
+  "detik.com": [
+    "news"
   ],
   "deusto.es": [
     "university"
@@ -1209,17 +2665,44 @@
   "devpost.com": [
     "dev"
   ],
+  "dexcom.com": [
+    "health"
+  ],
+  "dexscreener.com": [
+    "crypto"
+  ],
+  "dfn.de": [
+    "networking"
+  ],
+  "dg-datenschutz.de": [
+    "privacy"
+  ],
+  "dhl.de": [
+    "shipping"
+  ],
+  "dhlottery.co.kr": [
+    "gambling"
+  ],
   "dhs.gov": [
     "government"
   ],
   "diabetes.org": [
     "health"
   ],
+  "diamond.jp": [
+    "finance"
+  ],
+  "dian.gov.co": [
+    "tax"
+  ],
   "dianping.com": [
     "restaurants"
   ],
   "diariodarepublica.pt": [
     "government"
+  ],
+  "diariodolitoral.com.br": [
+    "news"
   ],
   "diariolibre.com": [
     "newspaper"
@@ -1230,6 +2713,9 @@
   "didiglobal.com": [
     "rideshare"
   ],
+  "digital.gov.eg": [
+    "government"
+  ],
   "digital.nhs.uk": [
     "health"
   ],
@@ -1239,14 +2725,26 @@
   "digitale-sammlungen.de": [
     "archive"
   ],
+  "digitallocker.gov.in": [
+    "government"
+  ],
   "digitalspy.com": [
     "entertainment-news"
   ],
   "diia.gov.ua": [
     "government"
   ],
+  "dinahosting.com": [
+    "hosting"
+  ],
   "dion.vc": [
     "startup"
+  ],
+  "directadmin.com": [
+    "hosting"
+  ],
+  "diretta.it": [
+    "sports"
   ],
   "discordapp.com": [
     "messaging"
@@ -1254,7 +2752,13 @@
   "discounttire.com": [
     "auto-parts"
   ],
+  "discoverpilgrim.com": [
+    "travel"
+  ],
   "discovery.com": [
+    "television"
+  ],
+  "dish.com": [
     "television"
   ],
   "disneylandparis.com": [
@@ -1269,6 +2773,15 @@
   "divar.ir": [
     "classifieds"
   ],
+  "dizibox.live": [
+    "tv-series"
+  ],
+  "djatoya.com": [
+    "music"
+  ],
+  "djpunjab.is": [
+    "music"
+  ],
   "dmarket.com": [
     "marketplace"
   ],
@@ -1278,6 +2791,21 @@
   "dndbeyond.com": [
     "boardgames"
   ],
+  "dnevno.hr": [
+    "news"
+  ],
+  "dnews.gr": [
+    "news"
+  ],
+  "dnp.gov.co": [
+    "government"
+  ],
+  "dnv.com": [
+    "standards"
+  ],
+  "docker.io": [
+    "containers"
+  ],
   "doctolib.de": [
     "health"
   ],
@@ -1285,8 +2813,23 @@
     "health",
     "telehealth"
   ],
+  "doctoreto.com": [
+    "health"
+  ],
+  "documentcloud.org": [
+    "documents"
+  ],
   "doda.jp": [
     "jobs"
+  ],
+  "dodois.io": [
+    "pizza"
+  ],
+  "doe.gov": [
+    "government"
+  ],
+  "dogdrip.net": [
+    "forum"
   ],
   "doi.gov": [
     "government"
@@ -1294,8 +2837,32 @@
   "doi.org": [
     "reference"
   ],
+  "domain.com": [
+    "domains"
+  ],
+  "domain.com.au": [
+    "domains"
+  ],
+  "domclick.ru": [
+    "real-estate"
+  ],
   "donaukurier.de": [
     "newspaper"
+  ],
+  "dopa.go.th": [
+    "government"
+  ],
+  "dorama.land": [
+    "streaming"
+  ],
+  "doramy.club": [
+    "kdrama"
+  ],
+  "dord.gov.in": [
+    "government"
+  ],
+  "dot.gov": [
+    "government"
   ],
   "doterra.com": [
     "health"
@@ -1304,21 +2871,75 @@
     "ai",
     "mobile-apps"
   ],
+  "doublelist.com": [
+    "classifieds"
+  ],
+  "doviz.com": [
+    "forex"
+  ],
   "doxygen.org": [
     "docs",
     "open-source"
   ],
+  "dpboss.tax": [
+    "gambling"
+  ],
+  "dpbossss.boston": [
+    "gambling"
+  ],
+  "dpbosssss.boston": [
+    "gambling"
+  ],
+  "draugas.lt": [
+    "news"
+  ],
   "draw.io": [
     "diagramming"
+  ],
+  "dreammail.jp": [
+    "email"
+  ],
+  "dreamstime.com": [
+    "stockphotos"
+  ],
+  "drecom.jp": [
+    "video-games"
   ],
   "dresden.de": [
     "municipality"
   ],
+  "drikpanchang.com": [
+    "religion"
+  ],
+  "drive2.ru": [
+    "cars"
+  ],
   "drivethrurpg.com": [
     "boardgames"
   ],
+  "drogaraia.com.br": [
+    "pharmacy"
+  ],
+  "drogariasaopaulo.com.br": [
+    "pharmacy"
+  ],
+  "drogasil.com.br": [
+    "pharmacy"
+  ],
+  "drom.ru": [
+    "cars"
+  ],
+  "dropgame.jp": [
+    "video-games"
+  ],
+  "drweb.ru": [
+    "security"
+  ],
   "dstv.com": [
     "television"
+  ],
+  "dtdc.com": [
+    "shipping"
   ],
   "duden.de": [
     "dictionary"
@@ -1348,6 +2969,9 @@
     "monitoring",
     "tech"
   ],
+  "e-recht24.de": [
+    "legal"
+  ],
   "e-stat.go.jp": [
     "statistics",
     "government"
@@ -1355,15 +2979,57 @@
   "easports.com": [
     "video-games"
   ],
+  "eastmoney.com": [
+    "investing"
+  ],
+  "easybell.de": [
+    "telecom"
+  ],
+  "easybrain.com": [
+    "games"
+  ],
   "easychair.org": [
     "peer-review"
+  ],
+  "easytrader.ir": [
+    "investing"
   ],
   "eater.com": [
     "restaurants"
   ],
+  "eatingwell.com": [
+    "nutrition"
+  ],
+  "eb.mil.br": [
+    "defense"
+  ],
+  "ebay.ca": [
+    "shopping"
+  ],
+  "ebay.co.uk": [
+    "shopping"
+  ],
+  "ebay.com.au": [
+    "shopping"
+  ],
+  "ebay.de": [
+    "shopping"
+  ],
+  "ebay.es": [
+    "marketplace"
+  ],
+  "ebay.fr": [
+    "shopping"
+  ],
+  "ebay.it": [
+    "shopping"
+  ],
   "ebooks.com": [
     "ebooks",
     "ecommerce"
+  ],
+  "ebscohost.com": [
+    "library"
   ],
   "ec-lyon.fr": [
     "engineering-school"
@@ -1372,11 +3038,44 @@
     "law",
     "government"
   ],
+  "ecitizen.go.ke": [
+    "government"
+  ],
   "ecma-international.org": [
     "standards"
   ],
+  "ecnavi.jp": [
+    "price-comparison"
+  ],
+  "ecobee.com": [
+    "smart-home"
+  ],
+  "economictimes.com": [
+    "business-news"
+  ],
+  "ecoportal.net": [
+    "environment"
+  ],
   "ecu.edu": [
     "university"
+  ],
+  "ecuabet.com": [
+    "gambling"
+  ],
+  "ecwid.com": [
+    "ecommerce"
+  ],
+  "edmentum.com": [
+    "education"
+  ],
+  "edreams.es": [
+    "travel"
+  ],
+  "education.ne.jp": [
+    "education"
+  ],
+  "educationportal3.in": [
+    "education"
   ],
   "edweek.org": [
     "education"
@@ -1387,17 +3086,71 @@
   "efteling.com": [
     "travel"
   ],
+  "eghrmis.gov.my": [
+    "government"
+  ],
+  "egnyte.com": [
+    "cloud-storage"
+  ],
+  "egov.uz": [
+    "government"
+  ],
+  "egramswaraj.gov.in": [
+    "government"
+  ],
+  "egydead.live": [
+    "film"
+  ],
+  "ehow.com": [
+    "diy"
+  ],
   "einstein.br": [
     "health"
   ],
+  "eki-net.com": [
+    "trains"
+  ],
+  "ekitan.com": [
+    "transit"
+  ],
   "eksisozluk.com": [
     "dictionary"
+  ],
+  "elastic.dev": [
+    "elasticsearch"
+  ],
+  "elbalad.news": [
+    "news"
   ],
   "elcinema.com": [
     "moviedatabase"
   ],
   "elcorteingles.es": [
     "department-stores"
+  ],
+  "eldorado.gg": [
+    "marketplace"
+  ],
+  "eleadcrm.com": [
+    "crm"
+  ],
+  "electrodepot.fr": [
+    "electronics"
+  ],
+  "elegantthemes.com": [
+    "website-builder"
+  ],
+  "eleman.net": [
+    "jobs"
+  ],
+  "elementor.com": [
+    "website-builder"
+  ],
+  "elephantbet.co.ao": [
+    "gambling"
+  ],
+  "elephantbet.co.mz": [
+    "gambling"
   ],
   "elle.fr": [
     "fashion",
@@ -1406,24 +3159,67 @@
   "ellenmacarthurfoundation.org": [
     "sustainability"
   ],
+  "elsevierpure.com": [
+    "research"
+  ],
   "elster.de": [
     "tax"
+  ],
+  "eltiempo.es": [
+    "news"
+  ],
+  "emarketer.com": [
+    "marketing"
   ],
   "embrapa.br": [
     "research-institute"
   ],
+  "emgsound.ru": [
+    "music"
+  ],
   "emich.edu": [
     "university"
   ],
+  "emory.edu": [
+    "university"
+  ],
+  "empik.com": [
+    "bookstore"
+  ],
   "empireonline.com": [
     "film"
+  ],
+  "en-thunderscans.com": [
+    "manga"
+  ],
+  "enabiz.gov.tr": [
+    "health",
+    "government"
+  ],
+  "energystar.gov": [
+    "energy"
   ],
   "enlightenment.org": [
     "linux",
     "desktop-apps"
   ],
+  "enloteria.com": [
+    "gambling"
+  ],
   "enterprisedb.com": [
     "postgres"
+  ],
+  "entrepreneur.com": [
+    "business-news"
+  ],
+  "envato.com": [
+    "design-tools"
+  ],
+  "envato.market": [
+    "marketplace"
+  ],
+  "envoyer.io": [
+    "devops"
   ],
   "eonline.com": [
     "entertainment-news"
@@ -1431,8 +3227,23 @@
   "epam.com": [
     "tech"
   ],
+  "epey.com": [
+    "electronics"
+  ],
+  "epfindia.gov.in": [
+    "government"
+  ],
   "epfl.ch": [
     "university"
+  ],
+  "eprocure.gov.bd": [
+    "government"
+  ],
+  "epson.com": [
+    "electronics"
+  ],
+  "eredmenyek.com": [
+    "football"
   ],
   "erowid.org": [
     "health"
@@ -1444,6 +3255,9 @@
     "cybersecurity",
     "desktop-apps"
   ],
+  "esic.gov.in": [
+    "government"
+  ],
   "esmadrid.com": [
     "travel"
   ],
@@ -1454,6 +3268,12 @@
     "space"
   ],
   "espn.com.br": [
+    "sports"
+  ],
+  "espn.com.mx": [
+    "sports"
+  ],
+  "espn.com.ve": [
     "sports"
   ],
   "espncricinfo.com": [
@@ -1472,7 +3292,13 @@
   "estadao.com.br": [
     "newspaper"
   ],
+  "esxdos.org": [
+    "retro-computing"
+  ],
   "ethereum.org": [
+    "crypto"
+  ],
+  "etherscan.io": [
     "crypto"
   ],
   "ethz.ch": [
@@ -1484,11 +3310,26 @@
   "etoro.com": [
     "broker"
   ],
+  "etrain.info": [
+    "trains"
+  ],
   "ets.org": [
     "test-prep"
   ],
+  "etstur.com": [
+    "travel"
+  ],
   "etsu.edu": [
     "university"
+  ],
+  "eufy.com": [
+    "smart-home"
+  ],
+  "eufylife.com": [
+    "smart-home"
+  ],
+  "euractiv.com": [
+    "news"
   ],
   "eurasiareview.com": [
     "online-news"
@@ -1506,14 +3347,29 @@
   "everydayhealth.com": [
     "health"
   ],
+  "evo-games.com": [
+    "gambling"
+  ],
+  "ewaybillgst.gov.in": [
+    "government"
+  ],
+  "ewg.org": [
+    "environment"
+  ],
   "exa.ai": [
     "ai"
   ],
   "exlibrisgroup.com": [
     "library"
   ],
+  "exodus.io": [
+    "crypto"
+  ],
   "expansion.mx": [
     "business-news"
+  ],
+  "expatriates.com": [
+    "classifieds"
   ],
   "expo.dev": [
     "mobile-dev"
@@ -1521,8 +3377,20 @@
   "express-scripts.com": [
     "pharmacy"
   ],
+  "ey.com": [
+    "business"
+  ],
+  "eyefinity.com": [
+    "opticians"
+  ],
+  "eyemedvisioncare.com": [
+    "opticians"
+  ],
   "ezcater.com": [
     "delivery"
+  ],
+  "f2pool.com": [
+    "crypto"
   ],
   "f5.com": [
     "networking",
@@ -1530,6 +3398,9 @@
   ],
   "f6s.com": [
     "startup"
+  ],
+  "fabulous.com": [
+    "productivity"
   ],
   "faceit.com": [
     "esports"
@@ -1546,8 +3417,20 @@
   "fairmont.com": [
     "hotels"
   ],
+  "fairyanime.net": [
+    "anime"
+  ],
+  "fajar.co.id": [
+    "news"
+  ],
   "fakty.ua": [
     "online-news"
+  ],
+  "falabella.com.co": [
+    "shopping"
+  ],
+  "falabella.com.pe": [
+    "shopping"
   ],
   "falstaff.com": [
     "wine"
@@ -1558,14 +3441,53 @@
   "fanatik.com.tr": [
     "newspaper"
   ],
+  "fanfox.net": [
+    "manga"
+  ],
+  "fang.com": [
+    "real-estate"
+  ],
+  "fanmtl.com": [
+    "books"
+  ],
   "fanqienovel.com": [
     "webnovel"
+  ],
+  "fantacalcio.it": [
+    "football"
   ],
   "fantasticfiction.com": [
     "books"
   ],
+  "faqs.org": [
+    "reference"
+  ],
+  "fardayetaze.ir": [
+    "news"
+  ],
+  "fareharbor.com": [
+    "travel"
+  ],
+  "farlightgames.com": [
+    "games"
+  ],
+  "farpost.ru": [
+    "classifieds"
+  ],
+  "fastebridge.com": [
+    "education"
+  ],
   "fasthosts.co.uk": [
     "hosting"
+  ],
+  "fawanews.sc": [
+    "news"
+  ],
+  "fb.com": [
+    "social"
+  ],
+  "fca.org.uk": [
+    "finance"
   ],
   "fcbarcelona.com": [
     "soccer"
@@ -1573,6 +3495,9 @@
   "fd.nl": [
     "business-news",
     "newspaper"
+  ],
+  "fdating.com": [
+    "dating"
   ],
   "federalnewsnetwork.com": [
     "government",
@@ -1584,8 +3509,14 @@
   "fee.org": [
     "policy"
   ],
+  "feednews.com": [
+    "news"
+  ],
   "feishu.cn": [
     "productivity"
+  ],
+  "felissimo.co.jp": [
+    "shopping"
   ],
   "femmeactuelle.fr": [
     "magazine"
@@ -1603,6 +3534,9 @@
   "fewo-direkt.de": [
     "vacation-rentals"
   ],
+  "fgov.be": [
+    "government"
+  ],
   "fhnw.ch": [
     "university-of-applied-sciences"
   ],
@@ -1612,12 +3546,51 @@
   "filgoal.com": [
     "sports-news"
   ],
+  "filipinocupid.com": [
+    "dating"
+  ],
+  "filmix.gg": [
+    "streaming",
+    "film"
+  ],
+  "filmmakinesi.to": [
+    "streaming",
+    "film"
+  ],
   "filmstarts.de": [
     "moviedatabase"
+  ],
+  "filmyfly.fail": [
+    "film"
+  ],
+  "filmyfly.green": [
+    "film"
+  ],
+  "filmyfly.soy": [
+    "film"
+  ],
+  "filmywap.technology": [
+    "film"
+  ],
+  "filmyzilla56.com": [
+    "film"
+  ],
+  "filmyzilla62.com": [
+    "film"
+  ],
+  "filmyzilla63.com": [
+    "film"
+  ],
+  "finalfantasyxiv.com": [
+    "games"
   ],
   "finam.ru": [
     "broker",
     "finance"
+  ],
+  "financialexpress.com": [
+    "finance",
+    "business-news"
   ],
   "financialpost.com": [
     "business-news"
@@ -1628,11 +3601,26 @@
   "finanztip.de": [
     "finance"
   ],
+  "findmykids.org": [
+    "parenting"
+  ],
+  "finra.org": [
+    "finance"
+  ],
+  "finviz.com": [
+    "markets"
+  ],
   "firstdata.com": [
     "payments"
   ],
+  "firstvds.ru": [
+    "hosting"
+  ],
   "fis-ski.com": [
     "skiing"
+  ],
+  "fischipedia.org": [
+    "fishing"
   ],
   "fisglobal.com": [
     "fintech"
@@ -1640,9 +3628,54 @@
   "fitgirl-repacks.site": [
     "video-games"
   ],
+  "flashbots.net": [
+    "crypto"
+  ],
+  "flashscore.co": [
+    "sports"
+  ],
+  "flashscore.co.id": [
+    "sports"
+  ],
+  "flashscore.co.za": [
+    "sports"
+  ],
   "flashscore.com": [
     "sports",
     "soccer"
+  ],
+  "flashscore.com.br": [
+    "sports"
+  ],
+  "flashscore.com.ng": [
+    "sports"
+  ],
+  "flashscore.com.tr": [
+    "sports"
+  ],
+  "flashscore.com.ve": [
+    "sports"
+  ],
+  "flashscore.es": [
+    "sports"
+  ],
+  "flashscore.fr": [
+    "sports"
+  ],
+  "flashscore.mobi": [
+    "sports"
+  ],
+  "flashscore.pe": [
+    "sports"
+  ],
+  "flashscore.pl": [
+    "sports"
+  ],
+  "flashscore.ro": [
+    "sports"
+  ],
+  "flashscore.ua": [
+    "sports"
   ],
   "fleaflicker.com": [
     "sports"
@@ -1650,12 +3683,33 @@
   "fleetdm.com": [
     "devops"
   ],
+  "flexport.com": [
+    "shipping"
+  ],
+  "flexwebhosting.nl": [
+    "hosting"
+  ],
+  "flic.kr": [
+    "photography"
+  ],
   "flightradar24.com": [
     "aviation",
     "flights"
   ],
+  "flightrising.com": [
+    "games"
+  ],
+  "flipboard.com": [
+    "news"
+  ],
+  "flippingbook.com": [
+    "documents"
+  ],
   "flipsnack.com": [
     "publishing"
+  ],
+  "flirtify.com": [
+    "dating"
   ],
   "flixbus.com": [
     "transit",
@@ -1667,8 +3721,17 @@
   "floridarevenue.com": [
     "government"
   ],
+  "flowgpt.com": [
+    "ai"
+  ],
+  "fmkorea.com": [
+    "forum"
+  ],
   "fnn.jp": [
     "television"
+  ],
+  "fnp.com": [
+    "flowers"
   ],
   "fnp.de": [
     "newspaper"
@@ -1689,8 +3752,26 @@
   "foodnetwork.co.uk": [
     "recipes"
   ],
+  "football.com": [
+    "football"
+  ],
+  "footmercato.net": [
+    "football"
+  ],
+  "force.com": [
+    "crm"
+  ],
   "fordham.edu": [
     "university"
+  ],
+  "forebet.com": [
+    "football"
+  ],
+  "foreca.fi": [
+    "weather"
+  ],
+  "forexfactory.com": [
+    "forex"
   ],
   "formlabs.com": [
     "3d-printing"
@@ -1698,8 +3779,35 @@
   "forms.gle": [
     "forms"
   ],
+  "formstack.com": [
+    "forms"
+  ],
+  "formula1.com": [
+    "motorsport"
+  ],
+  "forpsi.cz": [
+    "hosting"
+  ],
+  "forrester.com": [
+    "research"
+  ],
+  "fortnite.gg": [
+    "video-games"
+  ],
+  "fortunebusinessinsights.com": [
+    "business"
+  ],
+  "fotocasa.es": [
+    "real-estate"
+  ],
   "fotolia.com": [
     "stockphotos"
+  ],
+  "fotoscapes.com": [
+    "photo-editing"
+  ],
+  "fotostrana.ru": [
+    "social"
   ],
   "fourfourtwo.com": [
     "soccer"
@@ -1738,15 +3846,24 @@
   "framasoft.org": [
     "open-source"
   ],
+  "framer.com": [
+    "design-tools"
+  ],
   "france.tv": [
     "television"
   ],
   "franceinter.fr": [
     "radio"
   ],
+  "francetravail.fr": [
+    "jobs"
+  ],
   "francetvinfo.fr": [
     "news",
     "television"
+  ],
+  "fraunhofer.de": [
+    "research-institute"
   ],
   "freddiemac.com": [
     "mortgage"
@@ -1754,9 +3871,21 @@
   "fredmeyer.com": [
     "grocery"
   ],
+  "free-dating4you.com": [
+    "dating"
+  ],
+  "freebsd.org": [
+    "linux-distros"
+  ],
   "freedesktop.org": [
     "linux",
     "open-source"
+  ],
+  "freefiremobile.com": [
+    "games"
+  ],
+  "freejobalert.com": [
+    "jobs"
   ],
   "freemake.com": [
     "desktop-apps"
@@ -1765,14 +3894,48 @@
     "music",
     "archive"
   ],
+  "freenet.de": [
+    "telecom"
+  ],
+  "freeprivacypolicy.com": [
+    "privacy-tools"
+  ],
+  "freewebnovel.com": [
+    "webnovel"
+  ],
+  "fresha.com": [
+    "beauty"
+  ],
+  "freshservice.com": [
+    "helpdesk"
+  ],
+  "freshworks.com": [
+    "crm"
+  ],
   "frieze.com": [
     "art"
   ],
   "friv.com": [
     "video-games"
   ],
+  "fujitsu.com": [
+    "hardware"
+  ],
   "fujitv.co.jp": [
     "television"
+  ],
+  "fullhdfilmizlesene.now": [
+    "streaming",
+    "film"
+  ],
+  "funinexch.com": [
+    "gambling"
+  ],
+  "funpay.com": [
+    "marketplace"
+  ],
+  "funplus.com": [
+    "game-studios"
   ],
   "furaffinity.net": [
     "art",
@@ -1781,6 +3944,21 @@
   "fusionauth.io": [
     "auth",
     "self-hosted"
+  ],
+  "fut.gg": [
+    "video-games"
+  ],
+  "futbin.com": [
+    "video-games"
+  ],
+  "futbol11.com": [
+    "soccer"
+  ],
+  "futbol24.com": [
+    "football"
+  ],
+  "futbolfantasy.com": [
+    "football"
   ],
   "fz-juelich.de": [
     "research-institute"
@@ -1791,11 +3969,29 @@
   "g2a.com": [
     "game-deals"
   ],
+  "g2nft.com": [
+    "crypto"
+  ],
+  "gaana.com": [
+    "music"
+  ],
+  "gaijin.net": [
+    "games"
+  ],
   "galabingo.com": [
     "gambling"
   ],
+  "gallup.com": [
+    "research"
+  ],
   "gamberorosso.it": [
     "restaurants"
+  ],
+  "game8.co": [
+    "cheats"
+  ],
+  "game8.jp": [
+    "video-games"
   ],
   "gamecity.ne.jp": [
     "video-games"
@@ -1804,11 +4000,71 @@
     "game-studios",
     "video-games"
   ],
+  "gamemania.co.ke": [
+    "gambling"
+  ],
+  "gamepass.com": [
+    "games"
+  ],
+  "gamewith.jp": [
+    "games"
+  ],
+  "gamma.app": [
+    "presentations"
+  ],
+  "ganamosonline.com": [
+    "gambling"
+  ],
+  "garant.ru": [
+    "legal"
+  ],
+  "garanteprivacy.it": [
+    "privacy"
+  ],
+  "garena.com": [
+    "games"
+  ],
+  "garenanow.com": [
+    "games"
+  ],
+  "gartner.com": [
+    "business"
+  ],
+  "gazeta.pl": [
+    "news"
+  ],
   "gazprom.ru": [
     "energy"
   ],
+  "gazprombank.ru": [
+    "banking"
+  ],
+  "gazzetta.gr": [
+    "sports-news"
+  ],
+  "gcash.com": [
+    "payments"
+  ],
+  "gdatasecurity.de": [
+    "security"
+  ],
+  "gdebenz.ru": [
+    "fuel-stations"
+  ],
+  "gdemoideti.ru": [
+    "parenting"
+  ],
+  "gdpr-info.eu": [
+    "privacy"
+  ],
+  "gdt.gov.vn": [
+    "tax"
+  ],
   "ge.ch": [
     "government"
+  ],
+  "ge.com": [
+    "business"
   ],
   "gea.com": [
     "tech"
@@ -1819,18 +4075,39 @@
   "geely.com": [
     "car-brands"
   ],
+  "geforce.com": [
+    "gpu"
+  ],
+  "gegen-hartz.de": [
+    "government"
+  ],
   "gelbooru.com": [
     "anime",
     "art"
   ],
+  "gem.gov.in": [
+    "government"
+  ],
   "gematsu.com": [
     "gaming-news"
+  ],
+  "gemini.google": [
+    "ai"
   ],
   "gencat.cat": [
     "government"
   ],
+  "gendai.media": [
+    "news"
+  ],
+  "generatepress.com": [
+    "website-builder"
+  ],
   "genesys.com": [
     "tech"
+  ],
+  "genially.com": [
+    "presentations"
   ],
   "genspark.ai": [
     "ai"
@@ -1848,11 +4125,26 @@
   "geogebra.org": [
     "math"
   ],
+  "georgetown.edu": [
+    "university"
+  ],
+  "gesetze-im-internet.de": [
+    "legal"
+  ],
+  "gestiondecuenta.com": [
+    "accounting"
+  ],
+  "getdropbox.com": [
+    "cloud-storage"
+  ],
   "getmonero.org": [
     "crypto"
   ],
   "getpocket.com": [
     "read-later"
+  ],
+  "getresponse.com": [
+    "email-marketing"
   ],
   "gettr.com": [
     "social"
@@ -1863,12 +4155,42 @@
   "ghostery.com": [
     "privacy"
   ],
+  "ghostery.net": [
+    "privacy-tools"
+  ],
   "gia.edu": [
     "jewelry",
     "education"
   ],
+  "giallozafferano.it": [
+    "recipes"
+  ],
+  "gifshow.com": [
+    "video"
+  ],
+  "giga.de": [
+    "tech-news"
+  ],
+  "gimkit.com": [
+    "edtech"
+  ],
+  "gimyai.tw": [
+    "anime"
+  ],
+  "gismeteo.by": [
+    "weather"
+  ],
+  "gismeteo.kz": [
+    "weather"
+  ],
   "gismeteo.ru": [
     "weather"
+  ],
+  "gisomusic.com": [
+    "music"
+  ],
+  "gitbook.io": [
+    "docs"
   ],
   "github.blog": [
     "dev-blogs",
@@ -1892,6 +4214,9 @@
   "globalsources.com": [
     "marketplace"
   ],
+  "globenewswire.com": [
+    "news-agency"
+  ],
   "globes.co.il": [
     "newspaper"
   ],
@@ -1909,25 +4234,232 @@
   "gmx.net": [
     "email"
   ],
+  "gnavi.co.jp": [
+    "restaurants"
+  ],
   "gnuradio.org": [
     "open-source"
+  ],
+  "go-manga.com": [
+    "manga"
+  ],
+  "goal7.co": [
+    "football"
   ],
   "goethe.de": [
     "education"
   ],
+  "goldapple.ru": [
+    "beauty"
+  ],
   "goldbet.it": [
     "gambling"
+  ],
+  "goldprice.org": [
+    "commodities"
   ],
   "golfchannel.com": [
     "golf",
     "television"
   ],
+  "goneo.de": [
+    "hosting"
+  ],
+  "goo-net.com": [
+    "cars"
+  ],
   "goodmorningamerica.com": [
     "news",
     "television"
   ],
+  "goodnotes.com": [
+    "notes"
+  ],
+  "goodreturns.in": [
+    "finance"
+  ],
+  "google.al": [
+    "google"
+  ],
+  "google.am": [
+    "google"
+  ],
+  "google.ba": [
+    "google"
+  ],
+  "google.bg": [
+    "google"
+  ],
+  "google.bs": [
+    "google"
+  ],
+  "google.cat": [
+    "google"
+  ],
+  "google.ci": [
+    "google"
+  ],
+  "google.co.bw": [
+    "google"
+  ],
+  "google.co.cr": [
+    "google"
+  ],
+  "google.co.id": [
+    "google"
+  ],
+  "google.co.ke": [
+    "google"
+  ],
+  "google.co.ls": [
+    "google"
+  ],
+  "google.co.ma": [
+    "google"
+  ],
+  "google.co.uz": [
+    "google"
+  ],
+  "google.co.ve": [
+    "google"
+  ],
+  "google.co.zm": [
+    "google"
+  ],
+  "google.com.ai": [
+    "google"
+  ],
+  "google.com.au": [
+    "google"
+  ],
+  "google.com.bo": [
+    "google"
+  ],
+  "google.com.do": [
+    "google"
+  ],
+  "google.com.gh": [
+    "google"
+  ],
+  "google.com.gt": [
+    "google"
+  ],
+  "google.com.jm": [
+    "google"
+  ],
+  "google.com.kh": [
+    "google"
+  ],
+  "google.com.lb": [
+    "google"
+  ],
+  "google.com.na": [
+    "google"
+  ],
+  "google.com.ng": [
+    "google"
+  ],
+  "google.com.ni": [
+    "google"
+  ],
+  "google.com.np": [
+    "google"
+  ],
+  "google.com.pg": [
+    "google"
+  ],
+  "google.com.py": [
+    "google"
+  ],
+  "google.com.qa": [
+    "google"
+  ],
+  "google.com.uy": [
+    "google"
+  ],
+  "google.dz": [
+    "google"
+  ],
+  "google.ge": [
+    "google"
+  ],
+  "google.gg": [
+    "google"
+  ],
+  "google.gm": [
+    "google"
+  ],
+  "google.im": [
+    "google"
+  ],
+  "google.is": [
+    "google"
+  ],
+  "google.jo": [
+    "google"
+  ],
+  "google.lk": [
+    "google"
+  ],
+  "google.mn": [
+    "google"
+  ],
+  "google.mv": [
+    "google"
+  ],
+  "google.mw": [
+    "google"
+  ],
+  "google.ro": [
+    "google"
+  ],
+  "google.rs": [
+    "google"
+  ],
+  "google.ru": [
+    "google"
+  ],
+  "google.si": [
+    "google"
+  ],
+  "google.tm": [
+    "google"
+  ],
+  "google.tt": [
+    "google"
+  ],
+  "google.us": [
+    "google"
+  ],
+  "goojara.to": [
+    "film"
+  ],
+  "goseries4k.com": [
+    "tv-series"
+  ],
+  "gosuslugi.ru": [
+    "government"
+  ],
+  "gotinder.com": [
+    "dating"
+  ],
   "goto.com": [
     "remote-access"
+  ],
+  "gotoassist.com": [
+    "remote-access"
+  ],
+  "gotomeeting.com": [
+    "video-call"
+  ],
+  "gotsport.com": [
+    "sports"
+  ],
+  "gov.uz": [
+    "government"
+  ],
+  "govee.com": [
+    "smart-home"
   ],
   "govexec.com": [
     "government"
@@ -1938,6 +4470,27 @@
   "gptzero.me": [
     "ai"
   ],
+  "gpubgm.com": [
+    "games"
+  ],
+  "grabpay.com": [
+    "payments"
+  ],
+  "grafana.net": [
+    "monitoring"
+  ],
+  "grammarly.io": [
+    "grammar"
+  ],
+  "grammarly.net": [
+    "grammar"
+  ],
+  "granbluefantasy.jp": [
+    "games"
+  ],
+  "granola.ai": [
+    "ai"
+  ],
   "graphviz.org": [
     "diagramming",
     "open-source"
@@ -1945,20 +4498,48 @@
   "greasyfork.org": [
     "modding"
   ],
+  "grigorik.com": [
+    "blog"
+  ],
+  "grindr.com": [
+    "dating"
+  ],
+  "grofer.io": [
+    "grocery"
+  ],
   "grofers.com": [
     "delivery"
   ],
   "ground.news": [
     "news"
   ],
+  "groupme.com": [
+    "messaging"
+  ],
   "gry-online.pl": [
     "video-games"
+  ],
+  "gs.com": [
+    "banking"
+  ],
+  "gst.gov.in": [
+    "government"
   ],
   "gsu.edu": [
     "university"
   ],
+  "gta5-mods.com": [
+    "modding",
+    "video-games"
+  ],
+  "gtranslate.net": [
+    "translation"
+  ],
   "gu.se": [
     "university"
+  ],
+  "guardian.co.uk": [
+    "news"
   ],
   "guardsquare.com": [
     "security"
@@ -1966,11 +4547,35 @@
   "guess.com": [
     "fashion"
   ],
+  "gujarat.gov.in": [
+    "government"
+  ],
+  "gunbroker.com": [
+    "auctions"
+  ],
+  "guzelhosting.com": [
+    "hosting"
+  ],
+  "gva.es": [
+    "government"
+  ],
   "gvsu.edu": [
     "university"
   ],
+  "gwars.io": [
+    "video-games"
+  ],
   "gyazo.com": [
     "desktop-apps"
+  ],
+  "gzone.ph": [
+    "gaming-news"
+  ],
+  "haber7.com": [
+    "news"
+  ],
+  "haberler.com": [
+    "news"
   ],
   "habitaclia.com": [
     "real-estate"
@@ -1984,8 +4589,14 @@
   "hackster.io": [
     "electronics-diy"
   ],
+  "hakunaymatata.com": [
+    "streaming"
+  ],
   "hal.science": [
     "open-access"
+  ],
+  "halodoc.com": [
+    "health"
   ],
   "halowaypoint.com": [
     "video-games"
@@ -2006,8 +4617,29 @@
   "haproxy.com": [
     "webserver"
   ],
+  "haremaltin.com": [
+    "finance"
+  ],
+  "harica.gr": [
+    "security"
+  ],
+  "harman.com": [
+    "electronics"
+  ],
   "hartford.edu": [
     "university"
+  ],
+  "hasil.gov.my": [
+    "tax"
+  ],
+  "hasznaltauto.hu": [
+    "cars"
+  ],
+  "hatena.ne.jp": [
+    "blog"
+  ],
+  "havadurumu15gunluk.xyz": [
+    "weather"
   ],
   "haveibeenpwned.com": [
     "cybersecurity"
@@ -2015,14 +4647,45 @@
   "hawaii.gov": [
     "government"
   ],
+  "haxx.se": [
+    "open-source"
+  ],
+  "hbs.edu": [
+    "business-school"
+  ],
   "hcltech.com": [
     "tech"
+  ],
+  "hdfilmcehennemi.nl": [
+    "streaming",
+    "film"
+  ],
+  "hdhub4u.af": [
+    "film"
+  ],
+  "hdhub4u.bi": [
+    "film"
+  ],
+  "hdhub4u.cl": [
+    "film"
   ],
   "headspace.com": [
     "mental-health"
   ],
+  "headtopics.com": [
+    "news"
+  ],
   "healthpartners.com": [
     "health"
+  ],
+  "heavy.com": [
+    "news"
+  ],
+  "helloasso.com": [
+    "charities"
+  ],
+  "hellotalk8.com": [
+    "language-exchange"
   ],
   "hemnet.se": [
     "real-estate"
@@ -2033,21 +4696,42 @@
   "heritage.org": [
     "policy"
   ],
+  "heroeswm.ru": [
+    "video-games"
+  ],
   "herts.ac.uk": [
     "university"
   ],
+  "hessen.de": [
+    "government"
+  ],
   "heute.at": [
     "newspaper"
+  ],
+  "hexun.com": [
+    "finance"
+  ],
+  "hga038.com": [
+    "gambling"
   ],
   "hgtv.com": [
     "television",
     "home"
   ],
+  "hiddenvpn.ru": [
+    "vpn"
+  ],
   "hide.me": [
     "vpn"
   ],
+  "higgsfield.ai": [
+    "ai"
+  ],
   "hightail.com": [
     "file-transfer"
+  ],
+  "hihonor.com": [
+    "smartphones"
   ],
   "hillspet.com": [
     "pets"
@@ -2055,20 +4739,53 @@
   "hily.com": [
     "dating"
   ],
+  "hinet.net": [
+    "telecom"
+  ],
+  "hitomi.la": [
+    "manga"
+  ],
   "hkex.com.hk": [
     "stock-exchange"
   ],
   "hmdb.org": [
     "reference"
   ],
+  "hmv.co.jp": [
+    "physical-media"
+  ],
   "hnonline.sk": [
     "newspaper"
+  ],
+  "hola.org": [
+    "vpn"
   ],
   "holidayextras.com": [
     "travel"
   ],
+  "home.blog": [
+    "blog"
+  ],
   "homeadvisor.com": [
     "marketplace"
+  ],
+  "homecenter.com.co": [
+    "diy-stores"
+  ],
+  "homedepot.ca": [
+    "diy-stores"
+  ],
+  "homedepot.com.mx": [
+    "diy-stores"
+  ],
+  "homegate.ch": [
+    "real-estate"
+  ],
+  "homes.co.jp": [
+    "real-estate"
+  ],
+  "homestead.com": [
+    "website-builder"
   ],
   "honeycomb.io": [
     "monitoring"
@@ -2082,17 +4799,68 @@
   "hoover.org": [
     "policy"
   ],
+  "horsereality.com": [
+    "video-games"
+  ],
   "hoseasons.co.uk": [
     "vacation-rentals"
   ],
+  "hostedrmm.com": [
+    "remote-access"
+  ],
+  "hoster.kz": [
+    "hosting"
+  ],
+  "hoster.ru": [
+    "hosting"
+  ],
+  "hosteurope.de": [
+    "hosting"
+  ],
+  "hostgator.mx": [
+    "hosting"
+  ],
+  "hostiran.name": [
+    "hosting"
+  ],
+  "hostmonster.com": [
+    "hosting"
+  ],
+  "hostnet.nl": [
+    "hosting"
+  ],
+  "hostpapa.com": [
+    "hosting"
+  ],
+  "hosttech.ch": [
+    "hosting"
+  ],
+  "hotmart.com": [
+    "courses"
+  ],
   "hotnewhiphop.com": [
     "music-news"
+  ],
+  "hotornot.com": [
+    "dating"
   ],
   "hotpepper.jp": [
     "restaurants"
   ],
   "hotspotshield.com": [
     "vpn"
+  ],
+  "house.gov": [
+    "government"
+  ],
+  "howstuffworks.com": [
+    "science"
+  ],
+  "hoyoverse.com": [
+    "games"
+  ],
+  "hpcl.co.in": [
+    "fuel-stations"
   ],
   "hpe.com": [
     "hardware",
@@ -2105,14 +4873,47 @@
   "hs-augsburg.de": [
     "university-of-applied-sciences"
   ],
+  "hse.ru": [
+    "university"
+  ],
+  "html5up.net": [
+    "webdev"
+  ],
+  "htsc.com": [
+    "broker"
+  ],
+  "httpwg.org": [
+    "standards"
+  ],
+  "htzq.com.cn": [
+    "broker"
+  ],
+  "hubpages.com": [
+    "blog"
+  ],
   "huduser.gov": [
     "government"
+  ],
+  "huffingtonpost.co.uk": [
+    "news"
+  ],
+  "huffingtonpost.com": [
+    "news"
   ],
   "hull.ac.uk": [
     "university"
   ],
+  "humoruniv.com": [
+    "comedy"
+  ],
   "hunter.io": [
     "marketing"
+  ],
+  "huntress.io": [
+    "cybersecurity"
+  ],
+  "huya.com": [
+    "livestream"
   ],
   "hw.ac.uk": [
     "university"
@@ -2123,8 +4924,17 @@
   "hyatt.com": [
     "hotels"
   ],
+  "hybrid-analysis.com": [
+    "cybersecurity"
+  ],
   "hyland.com": [
     "tech"
+  ],
+  "hyperliquid.xyz": [
+    "crypto"
+  ],
+  "i-ready.com": [
+    "education"
   ],
   "i24news.tv": [
     "news",
@@ -2133,24 +4943,118 @@
   "iaai.com": [
     "auctions"
   ],
+  "iam.gov.sa": [
+    "government"
+  ],
+  "iamcook.ru": [
+    "recipes"
+  ],
+  "iata.org": [
+    "aviation"
+  ],
+  "iau.ir": [
+    "education"
+  ],
+  "ib-game.jp": [
+    "video-games"
+  ],
+  "ibiblio.org": [
+    "archive"
+  ],
+  "ibps.in": [
+    "jobs"
+  ],
+  "ibtimes.com": [
+    "news"
+  ],
+  "ic.ac.uk": [
+    "university"
+  ],
   "icaew.com": [
     "accounting"
   ],
   "icai.org": [
     "accounting"
   ],
+  "icalculator.com": [
+    "calculator"
+  ],
   "icao.int": [
     "aviation"
   ],
+  "ice.com": [
+    "jewelry"
+  ],
+  "ichancy200.com": [
+    "gambling"
+  ],
+  "icims.com": [
+    "recruiting"
+  ],
+  "icio.us": [
+    "bookmarks"
+  ],
+  "icm.edu.pl": [
+    "university"
+  ],
   "icomoon.io": [
     "icons"
+  ],
+  "iconify.design": [
+    "icons"
+  ],
+  "icq.com": [
+    "chat"
+  ],
+  "idc.com": [
+    "research"
+  ],
+  "idealista.com": [
+    "real-estate"
+  ],
+  "idealista.pt": [
+    "real-estate"
+  ],
+  "idealo.de": [
+    "price-comparison"
+  ],
+  "idlixku.com": [
+    "streaming",
+    "film"
+  ],
+  "idokep.hu": [
+    "weather"
+  ],
+  "idos.cz": [
+    "trains"
   ],
   "ieee.org": [
     "academic-publisher",
     "journals"
   ],
+  "iess.gob.ec": [
+    "government"
+  ],
+  "ifconfig.co": [
+    "networking"
+  ],
+  "ifconfig.me": [
+    "networking"
+  ],
   "ifema.es": [
     "events"
+  ],
+  "ifit.com": [
+    "fitness"
+  ],
+  "ifood.com.br": [
+    "food-delivery"
+  ],
+  "ig.com.br": [
+    "news"
+  ],
+  "igamecj.com": [
+    "games"
   ],
   "igi-global.com": [
     "academic-publisher"
@@ -2161,11 +5065,32 @@
   "ignou.ac.in": [
     "university"
   ],
+  "iherb.com": [
+    "shopping"
+  ],
+  "ihk.de": [
+    "business"
+  ],
   "iiss.org": [
     "geopolitics"
   ],
   "iit.edu": [
     "university"
+  ],
+  "ikman.lk": [
+    "classifieds"
+  ],
+  "ilbe.com": [
+    "forum"
+  ],
+  "ildolomiti.it": [
+    "news"
+  ],
+  "ilgazzettino.it": [
+    "news"
+  ],
+  "ilmeteo.it": [
+    "weather"
   ],
   "ilo.org": [
     "government"
@@ -2177,29 +5102,90 @@
   "image-line.com": [
     "music"
   ],
+  "imd.gov.in": [
+    "weather"
+  ],
   "imfdb.org": [
     "moviedatabase"
+  ],
+  "immersivelabs.com": [
+    "cybersecurity"
+  ],
+  "immersivelabs.online": [
+    "cybersecurity"
   ],
   "immi.gov.au": [
     "immigration"
   ],
+  "immobiliare.it": [
+    "real-estate"
+  ],
+  "immobilienscout24.de": [
+    "real-estate"
+  ],
+  "immoweb.be": [
+    "real-estate"
+  ],
+  "immutable.com": [
+    "crypto"
+  ],
+  "imovelweb.com.br": [
+    "real-estate"
+  ],
+  "impots.gouv.fr": [
+    "government"
+  ],
+  "impress.co.jp": [
+    "tech-news"
+  ],
   "in.gov.br": [
     "government"
+  ],
+  "in.gr": [
+    "news"
   ],
   "ina.fr": [
     "archive"
   ],
+  "inaproc.id": [
+    "government"
+  ],
+  "incometax.gov.in": [
+    "government"
+  ],
+  "indazn.com": [
+    "streaming",
+    "sports"
+  ],
   "inderscience.com": [
     "academic-publisher"
   ],
+  "index.hr": [
+    "news"
+  ],
+  "india.com": [
+    "news"
+  ],
+  "indiamart.com": [
+    "marketplace"
+  ],
   "indiankanoon.org": [
     "law"
+  ],
+  "indianrail.gov.in": [
+    "trains"
+  ],
+  "indiatimes.com": [
+    "news"
   ],
   "indiatoday.in": [
     "news",
     "magazine"
   ],
   "indrive.com": [
+    "rideshare"
+  ],
+  "indriverapp.com": [
     "rideshare"
   ],
   "ine.es": [
@@ -2218,6 +5204,12 @@
   "infogram.com": [
     "data-visualization"
   ],
+  "infojobs.net": [
+    "jobs"
+  ],
+  "infomaniak.ch": [
+    "hosting"
+  ],
   "infor.com": [
     "erp",
     "tech"
@@ -2231,6 +5223,9 @@
   "infosys.com": [
     "tech"
   ],
+  "infoworld.com": [
+    "tech-news"
+  ],
   "infranken.de": [
     "newspaper"
   ],
@@ -2243,8 +5238,17 @@
   "inkbunny.net": [
     "art"
   ],
+  "inmotionhosting.com": [
+    "hosting"
+  ],
+  "inps.it": [
+    "government"
+  ],
   "inria.fr": [
     "research-institute"
+  ],
+  "insales.ru": [
+    "ecommerce"
   ],
   "insee.fr": [
     "government"
@@ -2252,15 +5256,36 @@
   "insidehighered.com": [
     "education"
   ],
+  "insider.com": [
+    "news"
+  ],
   "inspirehep.net": [
     "physics"
+  ],
+  "instana.io": [
+    "monitoring"
+  ],
+  "instant-gaming.com": [
+    "game-deals"
+  ],
+  "instiz.net": [
+    "online-community"
   ],
   "instructure.com": [
     "edtech",
     "education"
   ],
+  "intelbras.com.br": [
+    "hardware"
+  ],
   "intelius.com": [
     "privacy"
+  ],
+  "interbet.co.za": [
+    "gambling"
+  ],
+  "intercars.eu": [
+    "auto-parts"
   ],
   "interestingengineering.com": [
     "tech-news"
@@ -2268,18 +5293,72 @@
   "interia.pl": [
     "news"
   ],
+  "internationalcupid.com": [
+    "dating"
+  ],
+  "interno.gov.it": [
+    "government"
+  ],
   "interpals.net": [
     "language-exchange"
+  ],
+  "intersport.fr": [
+    "sports"
+  ],
+  "intsig.net": [
+    "pdf"
   ],
   "intuit.com": [
     "accounting",
     "tax"
   ],
+  "investorgain.com": [
+    "investing"
+  ],
+  "invisalign.com": [
+    "health"
+  ],
+  "ioh.co.id": [
+    "telecom"
+  ],
+  "ionos.de": [
+    "hosting"
+  ],
+  "iop.org": [
+    "science"
+  ],
+  "iowa.gov": [
+    "government"
+  ],
+  "ipma.pt": [
+    "weather"
+  ],
+  "ipsos.com": [
+    "research"
+  ],
+  "iqm.com": [
+    "quantum-computing"
+  ],
   "irancell.ir": [
     "telecom"
   ],
+  "irctc.co.in": [
+    "trains"
+  ],
+  "is.fi": [
+    "news"
+  ],
   "isaca.org": [
     "certifications"
+  ],
+  "iskur.gov.tr": [
+    "government"
+  ],
+  "islonline.net": [
+    "remote-access"
+  ],
+  "iso.ch": [
+    "standards"
   ],
   "israelnationalnews.com": [
     "online-news"
@@ -2292,14 +5371,51 @@
     "statistics",
     "government"
   ],
+  "itemsatis.com": [
+    "marketplace"
+  ],
+  "itorrents-igruha.org": [
+    "torrents"
+  ],
+  "itunes.com": [
+    "apple"
+  ],
+  "iu.edu": [
+    "university"
+  ],
   "iwm.org.uk": [
     "museums"
+  ],
+  "ixbt.com": [
+    "tech"
+  ],
+  "ixdzs.tw": [
+    "webnovel"
+  ],
+  "ixdzs8.com": [
+    "webnovel"
+  ],
+  "ixigo.com": [
+    "flights",
+    "travel"
   ],
   "ixigua.com": [
     "video"
   ],
+  "iz.ru": [
+    "news"
+  ],
+  "jadwalnonton.com": [
+    "film"
+  ],
+  "jalan.net": [
+    "hotel-booking"
+  ],
   "jalopnik.com": [
     "cars"
+  ],
+  "jamb.gov.ng": [
+    "government"
   ],
   "jambase.com": [
     "live-concerts"
@@ -2310,6 +5426,15 @@
   "jamieoliver.com": [
     "recipes"
   ],
+  "japanet.co.jp": [
+    "shopping"
+  ],
+  "japanpost.jp": [
+    "shipping"
+  ],
+  "jappy.com": [
+    "social"
+  ],
   "jasso.go.jp": [
     "education"
   ],
@@ -2319,22 +5444,49 @@
   "jboss.org": [
     "open-source"
   ],
+  "jcb.co.jp": [
+    "credit-card"
+  ],
   "jcyl.es": [
     "government"
   ],
   "jet2holidays.com": [
     "travel"
   ],
+  "jetbrains.ai": [
+    "ai"
+  ],
   "jetphotos.com": [
     "aviation"
+  ],
+  "jetpunk.com": [
+    "games"
+  ],
+  "jeuxvideo.com": [
+    "video-games"
   ],
   "jfrog.com": [
     "devops"
   ],
+  "jharkhand.gov.in": [
+    "government"
+  ],
   "jhu.edu": [
     "university"
   ],
+  "jianshu.com": [
+    "blog"
+  ],
+  "jigsawplanet.com": [
+    "games"
+  ],
   "jimdo.com": [
+    "website-builder"
+  ],
+  "jimdofree.com": [
+    "website-builder"
+  ],
+  "jimdosite.com": [
     "website-builder"
   ],
   "jimmyjohns.com": [
@@ -2350,8 +5502,17 @@
     "video-call",
     "self-hosted"
   ],
+  "jivo.ru": [
+    "chat"
+  ],
   "jjwxc.net": [
     "webnovel"
+  ],
+  "jkanime.net": [
+    "anime"
+  ],
+  "jma.go.jp": [
+    "weather"
   ],
   "jmbullion.com": [
     "markets"
@@ -2359,8 +5520,17 @@
   "jmu.edu": [
     "university"
   ],
+  "jobcan.jp": [
+    "jobs"
+  ],
+  "jobstreet.com": [
+    "jobs"
+  ],
   "joinhomebase.com": [
     "scheduling"
+  ],
+  "joinhoney.com": [
+    "deals"
   ],
   "joj.sk": [
     "television"
@@ -2368,22 +5538,70 @@
   "jorudan.co.jp": [
     "transit"
   ],
+  "joyclub.de": [
+    "dating"
+  ],
+  "jr-odekake.net": [
+    "trains"
+  ],
+  "jra.go.jp": [
+    "sports"
+  ],
+  "jra.jp": [
+    "sports"
+  ],
+  "jst.go.jp": [
+    "government"
+  ],
   "jtv.com": [
     "shopping",
     "television"
   ],
+  "juan365.com": [
+    "gambling"
+  ],
+  "juegosonce.es": [
+    "gambling"
+  ],
   "juris.de": [
+    "legal"
+  ],
+  "jusbrasil.com.br": [
     "legal"
   ],
   "justgetflux.com": [
     "macos",
     "desktop-apps"
   ],
+  "justpaste.it": [
+    "pastebin"
+  ],
   "jw.org": [
     "religion"
   ],
+  "k-manga.jp": [
+    "manga"
+  ],
+  "kabutan.jp": [
+    "stock-exchange"
+  ],
+  "kadencewp.com": [
+    "webdev"
+  ],
+  "kahoot.it": [
+    "education"
+  ],
   "kaiostech.com": [
     "smartphones"
+  ],
+  "kaiserpermanente.org": [
+    "health"
+  ],
+  "kakaku.com": [
+    "price-comparison"
+  ],
+  "kakao.com": [
+    "messaging"
   ],
   "kakuyomu.jp": [
     "webnovel"
@@ -2392,14 +5610,41 @@
     "video",
     "tech"
   ],
+  "kamigame.jp": [
+    "video-games"
+  ],
   "kan.org.il": [
     "public-broadcaster"
   ],
   "kanald.com.tr": [
     "television"
   ],
+  "kanoon.ir": [
+    "law"
+  ],
+  "kantimehealth.net": [
+    "health"
+  ],
+  "kariyer.net": [
+    "jobs"
+  ],
+  "karnataka.gov.in": [
+    "government"
+  ],
+  "kas-labs.com": [
+    "crypto"
+  ],
   "kaseya.com": [
     "helpdesk"
+  ],
+  "kaspersky-labs.com": [
+    "cybersecurity"
+  ],
+  "kasserver.com": [
+    "hosting"
+  ],
+  "kaufland.de": [
+    "shopping"
   ],
   "kawasaki.com": [
     "motorcycles"
@@ -2408,11 +5653,51 @@
     "linux",
     "open-source"
   ],
+  "kdocs.cn": [
+    "documents"
+  ],
+  "keenetic.pro": [
+    "networking"
+  ],
+  "keenetic.ru": [
+    "networking"
+  ],
+  "keiba.go.jp": [
+    "gambling"
+  ],
   "keio.ac.jp": [
     "university"
   ],
+  "keirin.jp": [
+    "sports"
+  ],
+  "kemdiktisaintek.go.id": [
+    "government",
+    "education"
+  ],
+  "kemenag.go.id": [
+    "government"
+  ],
+  "kemendikdasmen.go.id": [
+    "education"
+  ],
+  "kemensos.go.id": [
+    "government"
+  ],
+  "kemkes.go.id": [
+    "health"
+  ],
+  "kenh14.vn": [
+    "news"
+  ],
   "kent.edu": [
     "university"
+  ],
+  "keplr.app": [
+    "crypto"
+  ],
+  "kerala.gov.in": [
+    "government"
   ],
   "keysight.com": [
     "electronics"
@@ -2420,23 +5705,131 @@
   "kff.org": [
     "health"
   ],
+  "kfintech.com": [
+    "investing"
+  ],
+  "khabarpu.com": [
+    "news"
+  ],
+  "kiabi.com": [
+    "fashion"
+  ],
+  "kidshealth.org": [
+    "health"
+  ],
+  "kinghost.com.br": [
+    "hosting"
+  ],
+  "kingmods.net": [
+    "modding"
+  ],
+  "kingofshojo.com": [
+    "manga"
+  ],
+  "kingsgroupgames.com": [
+    "games"
+  ],
   "kinguin.net": [
     "game-deals"
+  ],
+  "kino-teatr.ru": [
+    "cinema"
+  ],
+  "kino.de": [
+    "cinema"
+  ],
+  "kinogo.ec": [
+    "film"
+  ],
+  "kinogo.online": [
+    "film"
+  ],
+  "kinotik13.xyz": [
+    "film"
+  ],
+  "kion.ru": [
+    "streaming"
+  ],
+  "kiryuu.to": [
+    "manga"
+  ],
+  "kisskh.co": [
+    "kdrama"
+  ],
+  "kisskh.do": [
+    "kdrama"
+  ],
+  "kisskh.is": [
+    "streaming"
+  ],
+  "kit.com": [
+    "email-marketing"
   ],
   "klaviyo.com": [
     "email-marketing"
   ],
+  "kleinisd.net": [
+    "education"
+  ],
+  "klikbca.com": [
+    "banking"
+  ],
   "klingai.com": [
     "ai"
   ],
+  "klix.ba": [
+    "news"
+  ],
+  "kniga-online.com": [
+    "books"
+  ],
+  "knigavuhe.org": [
+    "audiobooks"
+  ],
+  "knowbe4.com": [
+    "cybersecurity"
+  ],
   "ko-fi.com": [
     "social"
+  ],
+  "kolesa.kz": [
+    "cars"
+  ],
+  "komikindo.ch": [
+    "comics"
+  ],
+  "komiku.org": [
+    "comics"
   ],
   "komoot.com": [
     "outdoors"
   ],
   "komoot.de": [
     "outdoors"
+  ],
+  "kontur.ru": [
+    "accounting"
+  ],
+  "kpmg.com": [
+    "accounting"
+  ],
+  "kqbd.mobi": [
+    "sports"
+  ],
+  "krakow.pl": [
+    "municipality"
+  ],
+  "kremlin.ru": [
+    "government"
+  ],
+  "kryptex.network": [
+    "crypto"
+  ],
+  "kslawin.com": [
+    "law"
+  ],
+  "ktalk.ru": [
+    "video-call"
   ],
   "kth.se": [
     "university"
@@ -2447,20 +5840,68 @@
   "ktv.jp": [
     "television"
   ],
+  "ku.dk": [
+    "university"
+  ],
   "ku.edu": [
     "university"
+  ],
+  "kucoin.com": [
+    "crypto"
+  ],
+  "kuf.by": [
+    "marketplace"
+  ],
+  "kufar.by": [
+    "marketplace"
   ],
   "kugou.com": [
     "music"
   ],
+  "kugou.net": [
+    "music"
+  ],
+  "kumanga.com": [
+    "manga"
+  ],
   "kununu.com": [
     "jobs"
+  ],
+  "kupi.cz": [
+    "deals"
+  ],
+  "kurashiru.com": [
+    "recipes"
+  ],
+  "kurnik.pl": [
+    "boardgames"
+  ],
+  "kuronekoyamato.co.jp": [
+    "delivery"
+  ],
+  "kvs.gov.in": [
+    "government"
+  ],
+  "ky.gov": [
+    "government"
+  ],
+  "l-tike.com": [
+    "events"
   ],
   "la7.it": [
     "television"
   ],
+  "labanquepostale.fr": [
+    "banking"
+  ],
   "labiennale.org": [
     "art"
+  ],
+  "labour.gov.za": [
+    "government"
+  ],
+  "labs.google": [
+    "google"
   ],
   "lacasadelosfamososmexico.tv": [
     "television"
@@ -2471,13 +5912,37 @@
   "lacma.org": [
     "museums"
   ],
+  "lacuerda.net": [
+    "guitar-tabs"
+  ],
+  "ladbrokes.com": [
+    "gambling"
+  ],
+  "ladesk.com": [
+    "helpdesk"
+  ],
   "lambdatest.com": [
     "testing"
   ],
   "lanazione.it": [
     "newspaper"
   ],
+  "lance.com.br": [
+    "sports-news"
+  ],
+  "land.gov.bd": [
+    "government"
+  ],
+  "landingsite.ai": [
+    "ai"
+  ],
+  "langame.ru": [
+    "language"
+  ],
   "languagetool.org": [
+    "grammar"
+  ],
+  "languagetoolplus.com": [
     "grammar"
   ],
   "laravel-news.com": [
@@ -2496,6 +5961,9 @@
     "retirement",
     "government"
   ],
+  "latamairlines.com": [
+    "airlines"
+  ],
   "latrobe.edu.au": [
     "university"
   ],
@@ -2503,8 +5971,41 @@
     "linux",
     "git"
   ],
+  "lausd.net": [
+    "school"
+  ],
+  "lazada.co.id": [
+    "shopping"
+  ],
+  "lazada.co.th": [
+    "shopping"
+  ],
+  "lazada.com.my": [
+    "ecommerce"
+  ],
+  "lazada.sg": [
+    "shopping"
+  ],
+  "lbl.gov": [
+    "science"
+  ],
+  "lcw.com": [
+    "clothing-stores"
+  ],
+  "learncbse.in": [
+    "education"
+  ],
   "learner.org": [
     "education"
+  ],
+  "lectio.dk": [
+    "education"
+  ],
+  "lefrecce.it": [
+    "trains"
+  ],
+  "legacy.com": [
+    "genealogy"
   ],
   "legislation.gov.uk": [
     "government",
@@ -2516,8 +6017,20 @@
   "leica-camera.com": [
     "camera-gear"
   ],
+  "lenovo.com.cn": [
+    "hardware"
+  ],
   "lenscrafters.com": [
     "opticians"
+  ],
+  "lenta.com": [
+    "news"
+  ],
+  "lenteradana.co.id": [
+    "news"
+  ],
+  "leolist.cc": [
+    "classifieds"
   ],
   "lequipe.fr": [
     "sports-news"
@@ -2525,10 +6038,16 @@
   "lerobert.com": [
     "dictionary"
   ],
+  "leroymerlin.pl": [
+    "diy-stores"
+  ],
   "lesinrocks.com": [
     "magazine"
   ],
   "letras.com": [
+    "lyrics"
+  ],
+  "letras.mus.br": [
     "lyrics"
   ],
   "lexisnexis.com": [
@@ -2541,6 +6060,15 @@
   "lezhin.com": [
     "webcomics"
   ],
+  "lgdacom.net": [
+    "payments"
+  ],
+  "libbyshelf.com": [
+    "library"
+  ],
+  "libguides.com": [
+    "library"
+  ],
   "libreriauniversitaria.it": [
     "bookstore"
   ],
@@ -2548,8 +6076,14 @@
     "audiobooks",
     "ecommerce"
   ],
+  "librus.pl": [
+    "school"
+  ],
   "libtorrent.org": [
     "torrent"
+  ],
+  "lidl.com": [
+    "grocery"
   ],
   "life360.com": [
     "mobile-apps"
@@ -2557,8 +6091,26 @@
   "lifeway.com": [
     "religion"
   ],
+  "lifewire.com": [
+    "tech"
+  ],
+  "ligapokemon.com.br": [
+    "video-games"
+  ],
   "lightinthebox.com": [
     "ecommerce"
+  ],
+  "likee.video": [
+    "social"
+  ],
+  "likeevideo.ru": [
+    "video"
+  ],
+  "lilithgame.com": [
+    "games"
+  ],
+  "lilly.com": [
+    "health"
   ],
   "linguee.de": [
     "dictionary"
@@ -2568,6 +6120,9 @@
   ],
   "linkin.bio": [
     "website-builder"
+  ],
+  "linksys.com": [
+    "networking"
   ],
   "linktr.ee": [
     "social",
@@ -2582,14 +6137,38 @@
   "liputan6.com": [
     "online-news"
   ],
+  "liquidweb.com": [
+    "hosting"
+  ],
+  "list.am": [
+    "classifieds"
+  ],
+  "litboom.ru": [
+    "books"
+  ],
+  "litlife.club": [
+    "books"
+  ],
+  "litmarket.ru": [
+    "books"
+  ],
   "litnet.com": [
     "webnovel"
   ],
   "litres.ru": [
     "ebooks"
   ],
+  "liveball.sx": [
+    "sports"
+  ],
   "livechat.com": [
     "chat"
+  ],
+  "livedoor.com": [
+    "blog"
+  ],
+  "livedoor.jp": [
+    "news"
   ],
   "livelib.ru": [
     "books"
@@ -2599,6 +6178,27 @@
   ],
   "liverpool.ac.uk": [
     "university"
+  ],
+  "livescore.cz": [
+    "sports"
+  ],
+  "livescore.in": [
+    "sports-news"
+  ],
+  "livescore.mobi": [
+    "sports"
+  ],
+  "livesport.cz": [
+    "sports"
+  ],
+  "livestream.com": [
+    "livestream"
+  ],
+  "lk21official.cc": [
+    "film"
+  ],
+  "lloydsbank.co.uk": [
+    "banking"
   ],
   "lmu.de": [
     "university"
@@ -2611,8 +6211,29 @@
     "library",
     "government"
   ],
+  "locanto.com.mx": [
+    "classifieds"
+  ],
+  "locanto.org": [
+    "classifieds"
+  ],
   "lockheedmartin.com": [
     "defense"
+  ],
+  "lootlabs.gg": [
+    "url-shortener"
+  ],
+  "loteriadehoy.com": [
+    "gambling"
+  ],
+  "loteriasdominicanas.com": [
+    "gambling"
+  ],
+  "lotterypost.com": [
+    "gambling"
+  ],
+  "lotteryusa.com": [
+    "gambling"
   ],
   "lottomatica.it": [
     "gambling"
@@ -2623,14 +6244,35 @@
   "louisville.edu": [
     "university"
   ],
+  "louisvuitton.com": [
+    "fashion"
+  ],
+  "loveread.ec": [
+    "books"
+  ],
+  "loxonecloud.com": [
+    "smart-home"
+  ],
+  "lpga.or.jp": [
+    "golf"
+  ],
+  "lpu.in": [
+    "university"
+  ],
   "lrclib.net": [
     "lyrics"
   ],
   "lrt.lt": [
     "public-broadcaster"
   ],
+  "lsgkerala.gov.in": [
+    "government"
+  ],
   "lto.de": [
     "legal"
+  ],
+  "lto.gov.ph": [
+    "government"
   ],
   "ltu.se": [
     "university",
@@ -2639,8 +6281,17 @@
   "luc.edu": [
     "university"
   ],
+  "lululemon.com": [
+    "clothing-stores"
+  ],
+  "luma.com": [
+    "events"
+  ],
   "lvmh.com": [
     "fashion"
+  ],
+  "lww.com": [
+    "medical-journal"
   ],
   "m5stack.com": [
     "electronics"
@@ -2648,12 +6299,27 @@
   "m6.fr": [
     "television"
   ],
+  "mackolik.com": [
+    "football"
+  ],
   "macupdate.com": [
     "macos",
     "desktop-apps"
   ],
+  "madeiramadeira.com.br": [
+    "shopping"
+  ],
+  "madrasati.sa": [
+    "education"
+  ],
+  "maersk.com": [
+    "shipping"
+  ],
   "magazines.com": [
     "magazine"
+  ],
+  "magicbricks.com": [
+    "real-estate"
   ],
   "magisto.com": [
     "video"
@@ -2664,10 +6330,28 @@
   "magnific.com": [
     "stockphotos"
   ],
+  "magnit.ru": [
+    "grocery"
+  ],
   "magzter.com": [
     "magazine"
   ],
+  "mahaonline.gov.in": [
+    "government"
+  ],
+  "maharashtra.gov.in": [
+    "government"
+  ],
+  "mail-archive.com": [
+    "archive"
+  ],
+  "mail.ru": [
+    "email"
+  ],
   "mailchi.mp": [
+    "email-marketing"
+  ],
+  "mailerlite.com": [
     "email-marketing"
   ],
   "main-echo.de": [
@@ -2679,9 +6363,18 @@
   "mainpost.de": [
     "newspaper"
   ],
+  "makemytrip.com": [
+    "travel"
+  ],
   "malwarebytes.com": [
     "cybersecurity",
     "desktop-apps"
+  ],
+  "mamastar.jp": [
+    "parenting"
+  ],
+  "man7.org": [
+    "linux"
   ],
   "manageengine.com": [
     "tech"
@@ -2689,14 +6382,80 @@
   "mandarinoriental.com": [
     "hotel-chains"
   ],
+  "mangabuddy1.co.uk": [
+    "manga"
+  ],
+  "mangabuff.ru": [
+    "manga"
+  ],
+  "mangafire.to": [
+    "manga"
+  ],
+  "mangago.me": [
+    "manga"
+  ],
+  "mangago.zone": [
+    "manga"
+  ],
+  "mangakakalot.gg": [
+    "manga"
+  ],
+  "mangakatana.com": [
+    "manga"
+  ],
+  "mangalib.me": [
+    "manga"
+  ],
+  "mangalik.net": [
+    "manga"
+  ],
+  "mangaraw.ac": [
+    "manga"
+  ],
+  "mangaread.org": [
+    "manga"
+  ],
+  "mangatown.com": [
+    "manga"
+  ],
+  "mangavyvy.com": [
+    "manga"
+  ],
+  "manhuagui.com": [
+    "manga"
+  ],
+  "manhwa-online.com": [
+    "webcomics"
+  ],
+  "manhwaread.com": [
+    "webcomics"
+  ],
+  "manhwaweb.com": [
+    "manga"
+  ],
   "manning.com": [
     "publishing"
+  ],
+  "manomano.fr": [
+    "shopping"
   ],
   "manoramaonline.com": [
     "newspaper"
   ],
+  "manual.canon": [
+    "camera-gear"
+  ],
+  "manulife-sinochem.com": [
+    "insurance"
+  ],
   "manus.im": [
     "ai"
+  ],
+  "manwa.me": [
+    "manga"
+  ],
+  "mapnwea.org": [
+    "education"
   ],
   "maptiler.com": [
     "maps",
@@ -2708,8 +6467,17 @@
   "maritime-executive.com": [
     "shipping"
   ],
+  "marketiq.com": [
+    "markets"
+  ],
   "marketo.com": [
     "marketing"
+  ],
+  "marketscreener.com": [
+    "markets"
+  ],
+  "markt.de": [
+    "classifieds"
   ],
   "marmiton.org": [
     "recipes"
@@ -2720,8 +6488,14 @@
   "masrawy.com": [
     "online-news"
   ],
+  "masstamilan.dev": [
+    "music"
+  ],
   "masterclass.com": [
     "courses"
+  ],
+  "masteredu.ai": [
+    "education"
   ],
   "material.io": [
     "design-tools"
@@ -2739,25 +6513,67 @@
   "max.ru": [
     "messaging"
   ],
+  "maxifoot.fr": [
+    "soccer"
+  ],
   "maxpreps.com": [
     "sports",
     "school"
   ],
+  "maybank2u.com.my": [
+    "banking"
+  ],
+  "mbga.jp": [
+    "games"
+  ],
+  "mca.gov.in": [
+    "government"
+  ],
+  "mcafee.net": [
+    "security"
+  ],
   "mcarthurglen.com": [
     "shopping"
+  ],
+  "mcdonalds.co.jp": [
+    "fast-food"
   ],
   "mckinsey.com": [
     "business"
   ],
+  "mcmaster.ca": [
+    "university"
+  ],
+  "mcwcasino.fun": [
+    "gambling"
+  ],
+  "mcx.ru": [
+    "stock-exchange"
+  ],
   "mdanderson.org": [
     "health"
+  ],
+  "mdpr.jp": [
+    "entertainment-news"
   ],
   "me.com": [
     "email",
     "cloud"
   ],
+  "meb.gov.tr": [
+    "government"
+  ],
   "mec.ca": [
     "outdoors"
+  ],
+  "mechacomic.jp": [
+    "manga"
+  ],
+  "medal.tv": [
+    "video"
+  ],
+  "medex.com.bd": [
+    "pharmacy"
   ],
   "mediacorp.sg": [
     "news",
@@ -2779,8 +6595,14 @@
   "medicalxpress.com": [
     "medicine"
   ],
+  "medicinenet.com": [
+    "medicine"
+  ],
   "medscape.com": [
     "medicine"
+  ],
+  "medu.ir": [
+    "education"
   ],
   "meduza.io": [
     "online-news"
@@ -2789,12 +6611,33 @@
     "ecommerce",
     "shopping"
   ],
+  "meethue.com": [
+    "smart-home"
+  ],
+  "mega.co.nz": [
+    "cloud-storage"
+  ],
+  "megaleo.com": [
+    "deals"
+  ],
+  "megaphone.fm": [
+    "podcast-hosting"
+  ],
   "megatv.com": [
     "television"
   ],
   "meitu.com": [
     "photo-editing",
     "mobile-apps"
+  ],
+  "melbetegypt.com": [
+    "gambling"
+  ],
+  "melody98.ir": [
+    "music"
+  ],
+  "melty.fr": [
+    "entertainment-news"
   ],
   "mempool.space": [
     "crypto"
@@ -2805,11 +6648,65 @@
   "meneame.net": [
     "online-news"
   ],
+  "menlosecurity.com": [
+    "security"
+  ],
   "mentalhealth.org.uk": [
     "mental-health"
   ],
+  "mercadolibre.cl": [
+    "shopping"
+  ],
+  "mercadolibre.com.ar": [
+    "shopping"
+  ],
+  "mercadolibre.com.co": [
+    "marketplace"
+  ],
+  "mercadolibre.com.mx": [
+    "shopping"
+  ],
+  "mercadolivre.com.br": [
+    "shopping"
+  ],
+  "mercadopago.com": [
+    "payments"
+  ],
+  "mercadopago.com.ar": [
+    "payments"
+  ],
+  "mercadopago.com.br": [
+    "payments"
+  ],
+  "mercantilbanco.com": [
+    "banking"
+  ],
+  "mercari.com": [
+    "secondhand"
+  ],
+  "mercedes-benz.com.cn": [
+    "cars"
+  ],
+  "meripehchaan.gov.in": [
+    "government"
+  ],
+  "meshok.net": [
+    "marketplace"
+  ],
+  "mesrs.dz": [
+    "government"
+  ],
   "messe-stuttgart.de": [
     "events"
+  ],
+  "messefrankfurt.com": [
+    "events"
+  ],
+  "met.no": [
+    "weather"
+  ],
+  "metamask.io": [
+    "crypto"
   ],
   "meteo.hr": [
     "weather"
@@ -2817,11 +6714,41 @@
   "meteo.it": [
     "weather"
   ],
+  "meteoblue.com": [
+    "weather"
+  ],
+  "meteociel.fr": [
+    "weather"
+  ],
+  "meteofor.com.ua": [
+    "weather"
+  ],
+  "meteofrance.com": [
+    "weather"
+  ],
   "meteomedia.com": [
+    "weather"
+  ],
+  "meteored.cl": [
+    "weather"
+  ],
+  "meteored.com.ar": [
     "weather"
   ],
   "meteored.mx": [
     "weather"
+  ],
+  "meti.go.jp": [
+    "government"
+  ],
+  "metunic.com.tr": [
+    "university"
+  ],
+  "mevblocker.io": [
+    "crypto"
+  ],
+  "mexc.com": [
+    "crypto"
   ],
   "meyerweb.com": [
     "blog",
@@ -2829,6 +6756,15 @@
   ],
   "mfah.org": [
     "museums"
+  ],
+  "mgeko.cc": [
+    "manga"
+  ],
+  "mgm.gov.tr": [
+    "weather"
+  ],
+  "mgread.io": [
+    "webcomics"
   ],
   "mheducation.com": [
     "textbooks",
@@ -2838,11 +6774,21 @@
     "government",
     "health"
   ],
+  "mhrs.gov.tr": [
+    "health",
+    "government"
+  ],
+  "miami.edu": [
+    "university"
+  ],
   "miamidade.gov": [
     "government"
   ],
   "miamioh.edu": [
     "university"
+  ],
+  "micasino.com": [
+    "gambling"
   ],
   "microchip.com": [
     "semiconductors"
@@ -2851,14 +6797,29 @@
     "analytics",
     "tech"
   ],
+  "microworkers.com": [
+    "freelance"
+  ],
+  "midasbuy.com": [
+    "games"
+  ],
+  "midilibre.fr": [
+    "news"
+  ],
   "migrationsverket.se": [
     "government"
+  ],
+  "mijnwoordenboek.nl": [
+    "dictionary"
   ],
   "milesplit.com": [
     "running"
   ],
   "military.com": [
     "defense"
+  ],
+  "millipiyangoonline.com": [
+    "gambling"
   ],
   "milwaukeetool.com": [
     "diy"
@@ -2867,11 +6828,45 @@
     "cloud-storage",
     "devops"
   ],
+  "minecraft-inside.ru": [
+    "video-games"
+  ],
+  "minecraftskins.com": [
+    "video-games"
+  ],
+  "minhngoc.net.vn": [
+    "gambling"
+  ],
+  "miniclippt.com": [
+    "games"
+  ],
+  "minkabu.jp": [
+    "investing"
+  ],
+  "minsa.gob.pe": [
+    "health",
+    "government"
+  ],
+  "mintmanga.com": [
+    "manga"
+  ],
+  "misa.vn": [
+    "accounting"
+  ],
+  "misli.az": [
+    "news"
+  ],
   "mixi.jp": [
     "social"
   ],
+  "mixnews.lv": [
+    "news"
+  ],
   "miyoushe.com": [
     "video-games"
+  ],
+  "mk.co.kr": [
+    "news"
   ],
   "mla.org": [
     "academic-publisher"
@@ -2888,6 +6883,21 @@
   "mnhs.org": [
     "museums"
   ],
+  "mo.gov": [
+    "government"
+  ],
+  "mobalytics.gg": [
+    "games"
+  ],
+  "mobiledokan.co": [
+    "smartphones"
+  ],
+  "mobiledokan.com": [
+    "smartphones"
+  ],
+  "mobilevikings.be": [
+    "telecom"
+  ],
   "mobirise.com": [
     "website-builder"
   ],
@@ -2895,14 +6905,66 @@
     "defense",
     "government"
   ],
+  "mod.uk": [
+    "defense"
+  ],
+  "modaselvim.com": [
+    "fashion"
+  ],
+  "modland.net": [
+    "music"
+  ],
+  "modsfire.com": [
+    "modding"
+  ],
+  "moe.gov.my": [
+    "government",
+    "education"
+  ],
+  "moe.gov.sa": [
+    "education"
+  ],
+  "mofa.go.jp": [
+    "government"
+  ],
+  "mofa.gov.sa": [
+    "government"
+  ],
+  "mogujie.com": [
+    "shopping"
+  ],
+  "mohfw.gov.in": [
+    "government"
+  ],
+  "mojohost.com": [
+    "hosting"
+  ],
   "mollie.com": [
     "payments"
   ],
   "moma.org": [
     "museums"
   ],
+  "momon-ga.com": [
+    "webnovel"
+  ],
+  "momoshop.com.tw": [
+    "ecommerce"
+  ],
   "monde-diplomatique.fr": [
     "magazine"
+  ],
+  "mondosanita.it": [
+    "health"
+  ],
+  "moneta.ru": [
+    "fintech"
+  ],
+  "money.pl": [
+    "finance"
+  ],
+  "moneyforward.com": [
+    "finance"
   ],
   "moneysupermarket.com": [
     "price-comparison"
@@ -2910,15 +6972,24 @@
   "moneyweb.co.za": [
     "business-news"
   ],
+  "mongabay.com": [
+    "environment"
+  ],
   "monobank.ua": [
     "banking"
   ],
   "montana.edu": [
     "university"
   ],
+  "moodle.com": [
+    "education"
+  ],
   "moodle.org": [
     "education",
     "self-hosted"
+  ],
+  "mordorintelligence.com": [
+    "research"
   ],
   "motorolasolutions.com": [
     "telecom"
@@ -2928,6 +6999,49 @@
   ],
   "mountvernon.org": [
     "history"
+  ],
+  "movetv.com": [
+    "television"
+  ],
+  "movie-box.co": [
+    "film"
+  ],
+  "movieboxpro.app": [
+    "streaming",
+    "film"
+  ],
+  "movies4u.clinic": [
+    "film"
+  ],
+  "moviesdatamil.co": [
+    "film"
+  ],
+  "moviesdatamil.me": [
+    "film"
+  ],
+  "moviesdatamil.net": [
+    "film"
+  ],
+  "moviespage.xyz": [
+    "film"
+  ],
+  "moviezwap.taxi": [
+    "film"
+  ],
+  "moz.com": [
+    "marketing"
+  ],
+  "mozilla.com": [
+    "browser"
+  ],
+  "mp.gov.in": [
+    "government"
+  ],
+  "mp4moviez.rip": [
+    "film"
+  ],
+  "mponline.gov.in": [
+    "government"
   ],
   "ms.now": [
     "news",
@@ -2939,17 +7053,47 @@
   "mscdirect.com": [
     "shopping"
   ],
+  "msdmanuals.com": [
+    "medicine"
+  ],
+  "msdn.com": [
+    "dev"
+  ],
   "msn.com": [
     "news"
+  ],
+  "msnbc.com": [
+    "news"
+  ],
+  "msport.com": [
+    "sports"
+  ],
+  "msu.ru": [
+    "university"
+  ],
+  "mtb.com": [
+    "cycling"
   ],
   "mtn.com": [
     "telecom"
   ],
+  "mtu.ru": [
+    "university"
+  ],
   "muckrack.com": [
     "public-relations"
   ],
+  "mudah.my": [
+    "classifieds"
+  ],
   "muenchen.de": [
     "municipality"
+  ],
+  "mufg.com": [
+    "banking"
+  ],
+  "mufg.jp": [
+    "banking"
   ],
   "mulesoft.com": [
     "cloud"
@@ -2964,6 +7108,9 @@
   "mundodeportivo.com": [
     "sports-news"
   ],
+  "muni.cz": [
+    "university"
+  ],
   "museodelprado.es": [
     "museums"
   ],
@@ -2976,17 +7123,98 @@
   "musicnotes.com": [
     "sheetmusic"
   ],
+  "musics-fa.com": [
+    "music"
+  ],
+  "musicsweb.ir": [
+    "music"
+  ],
+  "musicviral.ir": [
+    "music"
+  ],
+  "muslima.com": [
+    "dating"
+  ],
+  "muzofond.fm": [
+    "music"
+  ],
   "mxplayer.in": [
     "streaming"
+  ],
+  "my-personaltrainer.it": [
+    "fitness"
+  ],
+  "my.gov.ir": [
+    "government"
+  ],
+  "myangular.life": [
+    "angular"
+  ],
+  "myasiantv.es": [
+    "streaming"
+  ],
+  "mybharat.gov.in": [
+    "government"
   ],
   "mybrightwheel.com": [
     "education"
   ],
+  "mycima.cc": [
+    "film"
+  ],
+  "mydlink.com": [
+    "smart-home"
+  ],
+  "mydramawave.com": [
+    "tv-series"
+  ],
+  "myherbalife.com": [
+    "nutrition"
+  ],
+  "myinstants.com": [
+    "soundeffects"
+  ],
   "myjoyonline.com": [
     "online-news"
   ],
+  "myna.go.jp": [
+    "government"
+  ],
+  "mynavi.jp": [
+    "jobs"
+  ],
+  "myportfolio.com": [
+    "design-tools"
+  ],
+  "myreadingmanga.info": [
+    "manga"
+  ],
+  "myshopline.com": [
+    "ecommerce"
+  ],
+  "mystrikingly.com": [
+    "website-builder"
+  ],
+  "myvzw.com": [
+    "telecom"
+  ],
+  "mywellness.com": [
+    "fitness"
+  ],
   "mywot.com": [
     "cybersecurity"
+  ],
+  "n11.com": [
+    "ecommerce"
+  ],
+  "n1info.rs": [
+    "news"
+  ],
+  "n2ch.net": [
+    "forum"
+  ],
+  "nabu.casa": [
+    "smart-home"
   ],
   "nachrichten.at": [
     "news"
@@ -2994,11 +7222,44 @@
   "nagoya-u.ac.jp": [
     "university"
   ],
+  "namebright.com": [
+    "domains"
+  ],
+  "namemc.com": [
+    "games"
+  ],
+  "namepros.com": [
+    "domains"
+  ],
+  "nami.org": [
+    "mental-health"
+  ],
+  "nanit.com": [
+    "baby"
+  ],
+  "nankankeiba.com": [
+    "gambling"
+  ],
   "napster.com": [
     "music"
   ],
+  "narod.ru": [
+    "hosting"
+  ],
+  "narto-drama.com": [
+    "tv-series"
+  ],
   "nask.pl": [
     "research-institute"
+  ],
+  "natalie.mu": [
+    "anime"
+  ],
+  "nate.com": [
+    "news"
+  ],
+  "nationalacademies.org": [
+    "research"
   ],
   "nationalarchives.gov.uk": [
     "government",
@@ -3010,6 +7271,27 @@
   "nato.int": [
     "defense"
   ],
+  "natomanga.com": [
+    "manga"
+  ],
+  "naturabuy.fr": [
+    "shopping"
+  ],
+  "naukri.com": [
+    "jobs"
+  ],
+  "navitime.biz": [
+    "travel"
+  ],
+  "navitime.co.jp": [
+    "maps"
+  ],
+  "navy.mil": [
+    "government"
+  ],
+  "nazwa.pl": [
+    "hosting"
+  ],
   "nbc.com": [
     "tv-series"
   ],
@@ -3018,6 +7300,9 @@
   ],
   "nbcsports.com": [
     "sports"
+  ],
+  "nbcuni.com": [
+    "television"
   ],
   "ncaa.com": [
     "college-sports"
@@ -3028,6 +7313,9 @@
   "ncdot.gov": [
     "government",
     "transit"
+  ],
+  "ncore.pro": [
+    "torrents"
   ],
   "ncronline.org": [
     "religion",
@@ -3042,14 +7330,50 @@
   "nec.com": [
     "tech"
   ],
+  "nefisyemektarifleri.com": [
+    "recipes"
+  ],
+  "neilpatel.com": [
+    "marketing"
+  ],
+  "nekopoi.care": [
+    "anime"
+  ],
   "neopets.com": [
     "video-games"
+  ],
+  "nepremicnine.net": [
+    "real-estate"
+  ],
+  "nesine.com": [
+    "gambling"
+  ],
+  "nessus.org": [
+    "security"
+  ],
+  "net-empregos.com": [
+    "jobs"
+  ],
+  "net.hr": [
+    "news"
+  ],
+  "netafraz.com": [
+    "news"
+  ],
+  "netgate.com": [
+    "networking"
   ],
   "netkeiba.com": [
     "sports"
   ],
+  "netmarble.com": [
+    "video-games"
+  ],
   "netsuite.com": [
     "erp"
+  ],
+  "nettiauto.com": [
+    "cars"
   ],
   "networkworld.com": [
     "tech-news"
@@ -3060,14 +7384,29 @@
   "newcastle.edu.au": [
     "university"
   ],
+  "news-medical.net": [
+    "science-news"
+  ],
   "news24.com": [
     "online-news"
+  ],
+  "newsbomb.gr": [
+    "news"
+  ],
+  "newsbreak.com": [
+    "news"
   ],
   "newschool.edu": [
     "university"
   ],
+  "newsit.gr": [
+    "news"
+  ],
   "newsnationnow.com": [
     "television"
+  ],
+  "newtoki1.org": [
+    "manga"
   ],
   "newyorkfed.org": [
     "central-bank"
@@ -3078,11 +7417,20 @@
   "nfpa.org": [
     "standards"
   ],
+  "ng88b.com": [
+    "gambling"
+  ],
   "nga.gov": [
     "museums"
   ],
   "nginx.com": [
     "webserver"
+  ],
+  "nguoiquansat.vn": [
+    "news"
+  ],
+  "nha.gov.in": [
+    "government"
   ],
   "nhandan.vn": [
     "newspaper"
@@ -3090,14 +7438,50 @@
   "nhk.jp": [
     "television"
   ],
+  "nicmusic.net": [
+    "music"
+  ],
+  "nidw.gov.bd": [
+    "government"
+  ],
+  "niedersachsen.de": [
+    "government"
+  ],
   "nihaojewelry.com": [
     "jewelry"
+  ],
+  "nii.ac.jp": [
+    "research-institute"
+  ],
+  "nikkei225jp.com": [
+    "stock-exchange"
+  ],
+  "nikkeibp.co.jp": [
+    "business-news"
+  ],
+  "nimo.tv": [
+    "streaming"
+  ],
+  "ninisite.com": [
+    "forum"
   ],
   "ninite.com": [
     "desktop-apps"
   ],
+  "ninogaming.com": [
+    "video-games"
+  ],
+  "nishatlinen.com": [
+    "fashion"
+  ],
+  "nishinippon.co.jp": [
+    "regional-news"
+  ],
   "nist.gov": [
     "government"
+  ],
+  "nitori-net.jp": [
+    "shopping"
   ],
   "nitter.net": [
     "microblogging"
@@ -3108,8 +7492,20 @@
   "nj.gov": [
     "government"
   ],
+  "njuskalo.hr": [
+    "classifieds"
+  ],
   "nla.gov.au": [
     "library"
+  ],
+  "nngroup.com": [
+    "design-tools"
+  ],
+  "nobelprize.org": [
+    "science"
+  ],
+  "nobroker.in": [
+    "real-estate"
   ],
   "nodesource.com": [
     "nodejs"
@@ -3123,8 +7519,17 @@
   "nomura.com": [
     "banking"
   ],
+  "nonamesec.com": [
+    "security"
+  ],
   "nongnu.org": [
     "open-source"
+  ],
+  "nontonanimeid.boats": [
+    "anime"
+  ],
+  "nontondrama.my": [
+    "tv-series"
   ],
   "northerntool.com": [
     "diy-stores"
@@ -3132,11 +7537,17 @@
   "northropgrumman.com": [
     "defense"
   ],
+  "northwestern.edu": [
+    "university"
+  ],
   "note.com": [
     "blog"
   ],
   "notebooklm.google": [
     "ai"
+  ],
+  "noticiasaominuto.com": [
+    "news"
   ],
   "notion.com": [
     "notes",
@@ -3145,14 +7556,44 @@
   "nottingham.ac.uk": [
     "university"
   ],
+  "notvpn.io": [
+    "vpn"
+  ],
   "nova.bg": [
     "television"
+  ],
+  "nova.cz": [
+    "news"
+  ],
+  "novel543.com": [
+    "books"
   ],
   "novelai.net": [
     "ai"
   ],
+  "novelfull.com": [
+    "books"
+  ],
+  "novelix.vip": [
+    "webnovel"
+  ],
+  "novelphoenix.com": [
+    "books"
+  ],
+  "novelpia.com": [
+    "books"
+  ],
+  "novotelecom.ru": [
+    "telecom"
+  ],
+  "nowgoal26.com": [
+    "soccer"
+  ],
   "npb.jp": [
     "baseball"
+  ],
+  "npci.org.in": [
+    "fintech"
   ],
   "npg.org.uk": [
     "museums"
@@ -3165,8 +7606,20 @@
     "government",
     "travel"
   ],
+  "nrdc.org": [
+    "environment"
+  ],
+  "nrw.de": [
+    "government"
+  ],
+  "ns.se": [
+    "trains"
+  ],
   "nsctotal.com.br": [
     "newspaper"
+  ],
+  "nspk.ru": [
+    "payments"
   ],
   "nt.gov.au": [
     "government"
@@ -3175,6 +7628,9 @@
     "university"
   ],
   "ntnu.edu.tw": [
+    "university"
+  ],
+  "ntnu.no": [
     "university"
   ],
   "ntpc.edu.tw": [
@@ -3186,8 +7642,20 @@
   "ntv.co.jp": [
     "television"
   ],
+  "ntv.ru": [
+    "news"
+  ],
   "nuance.com": [
     "tech"
+  ],
+  "nukistream.com": [
+    "streaming"
+  ],
+  "nustargame.com": [
+    "games"
+  ],
+  "nv.gov": [
+    "government"
   ],
   "nybg.org": [
     "botany"
@@ -3195,11 +7663,32 @@
   "nykaa.com": [
     "beauty"
   ],
+  "nykaafashion.com": [
+    "fashion"
+  ],
+  "nypl.org": [
+    "library"
+  ],
+  "nyt.com": [
+    "news"
+  ],
+  "oaed.gr": [
+    "government"
+  ],
   "oakland.edu": [
     "university"
   ],
   "oasis-open.org": [
     "standards"
+  ],
+  "obi.de": [
+    "diy-stores"
+  ],
+  "obihai.com": [
+    "voip"
+  ],
+  "obilet.com": [
+    "travel"
   ],
   "obramat.es": [
     "diy-stores"
@@ -3213,14 +7702,63 @@
   "octopart.com": [
     "electronics"
   ],
+  "oddspark.com": [
+    "gambling"
+  ],
   "oddspedia.com": [
     "gambling"
+  ],
+  "odibets.com": [
+    "gambling"
+  ],
+  "odnoklassniki.ru": [
+    "social"
+  ],
+  "oecd-ilibrary.org": [
+    "research"
+  ],
+  "ohchr.org": [
+    "government"
+  ],
+  "ohio-state.edu": [
+    "university"
   ],
   "ohio.edu": [
     "university"
   ],
+  "oikotie.fi": [
+    "real-estate"
+  ],
+  "oilprice.com": [
+    "energy",
+    "news"
+  ],
+  "ojogodobicho.com": [
+    "gambling"
+  ],
+  "okbet.com": [
+    "gambling"
+  ],
+  "okdiario.com": [
+    "news"
+  ],
   "olhardigital.com.br": [
     "tech"
+  ],
+  "olist.com": [
+    "ecommerce"
+  ],
+  "olx.com.pk": [
+    "classifieds"
+  ],
+  "olx.in": [
+    "marketplace"
+  ],
+  "olx.ro": [
+    "classifieds"
+  ],
+  "olympic.org": [
+    "sports"
   ],
   "olympics.com": [
     "sports"
@@ -3245,11 +7783,44 @@
   "one.nz": [
     "telecom"
   ],
+  "onedio.com": [
+    "news"
+  ],
+  "onedrive.com": [
+    "cloud-storage"
+  ],
+  "onefootball.com": [
+    "football"
+  ],
+  "onepeloton.com": [
+    "fitness"
+  ],
+  "onet.pl": [
+    "news"
+  ],
   "onetz.de": [
     "newspaper"
   ],
   "onfinality.io": [
     "hosting"
+  ],
+  "onlamp.com": [
+    "dev"
+  ],
+  "onlinejobs.ph": [
+    "jobs"
+  ],
+  "onlinepbx.ru": [
+    "voip"
+  ],
+  "onlinesbi.sbi": [
+    "banking"
+  ],
+  "onlyfy.jobs": [
+    "jobs"
+  ],
+  "ono.com": [
+    "telecom"
   ],
   "onsemi.com": [
     "semiconductors"
@@ -3276,6 +7847,9 @@
     "ai",
     "medicine"
   ],
+  "openoffice.org": [
+    "documents"
+  ],
   "opensea.io": [
     "crypto",
     "marketplace"
@@ -3292,12 +7866,24 @@
   "openvpn.net": [
     "vpn"
   ],
+  "openweathermap.org": [
+    "weather"
+  ],
+  "opera.software": [
+    "browser"
+  ],
   "oprah.com": [
     "media"
+  ],
+  "optum.com": [
+    "health"
   ],
   "opus.pro": [
     "video",
     "ai"
+  ],
+  "orange.mg": [
+    "telecom"
   ],
   "oregon.gov": [
     "government"
@@ -3320,17 +7906,62 @@
   "osticket.com": [
     "helpdesk"
   ],
+  "osym.gov.tr": [
+    "education"
+  ],
   "otago.ac.nz": [
     "university"
+  ],
+  "otakudesu.blog": [
+    "anime"
+  ],
+  "otomoto.pl": [
+    "cars"
   ],
   "otter.ai": [
     "subtitles"
   ],
+  "otto.de": [
+    "shopping"
+  ],
   "ou.edu": [
     "university"
   ],
+  "ouedkniss.com": [
+    "classifieds"
+  ],
+  "ouo.press": [
+    "url-shortener"
+  ],
+  "oup.com": [
+    "academic-publisher"
+  ],
+  "outdooractive.com": [
+    "outdoors"
+  ],
   "outschool.com": [
     "education"
+  ],
+  "overheid.nl": [
+    "government"
+  ],
+  "overseashost.ru": [
+    "hosting"
+  ],
+  "overwolf.com": [
+    "games"
+  ],
+  "ovh.us": [
+    "hosting"
+  ],
+  "ovo.id": [
+    "fintech"
+  ],
+  "oxfordjournals.org": [
+    "journals"
+  ],
+  "ozon.by": [
+    "marketplace"
   ],
   "pace.edu": [
     "university"
@@ -3338,11 +7969,29 @@
   "paessler.com": [
     "monitoring"
   ],
+  "pagalnew.com": [
+    "music"
+  ],
+  "pagesjaunes.fr": [
+    "business"
+  ],
+  "pagibigfundservices.com": [
+    "government"
+  ],
   "paginegialle.it": [
     "reference"
   ],
   "paho.org": [
     "health"
+  ],
+  "pair.com": [
+    "hosting"
+  ],
+  "pajak.go.id": [
+    "tax"
+  ],
+  "palcloset.jp": [
+    "clothing-stores"
   ],
   "palm.com": [
     "electronics"
@@ -3350,14 +7999,32 @@
   "pamperedchef.com": [
     "shopping"
   ],
+  "pananames.com": [
+    "domains"
+  ],
+  "panda.org": [
+    "environment"
+  ],
+  "pangkalantoto.site": [
+    "gambling"
+  ],
+  "pantip.com": [
+    "forum"
+  ],
   "papercut.com": [
     "tech"
   ],
   "pappers.fr": [
     "business"
   ],
+  "parade.com": [
+    "magazine"
+  ],
   "paralympic.org": [
     "sports"
+  ],
+  "parentsquare.com": [
+    "school"
   ],
   "paris-normandie.fr": [
     "newspaper"
@@ -3365,11 +8032,23 @@
   "parismatch.com": [
     "magazine"
   ],
+  "parivahan.gov.in": [
+    "government"
+  ],
   "parlamento.pt": [
+    "government"
+  ],
+  "parliament.uk": [
     "government"
   ],
   "partiful.com": [
     "events"
+  ],
+  "partslink24.com": [
+    "auto-parts"
+  ],
+  "partsouq.com": [
+    "auto-parts"
   ],
   "paychex.com": [
     "payroll"
@@ -3380,8 +8059,20 @@
   "paylocity.com": [
     "payroll"
   ],
+  "paymaya.com": [
+    "fintech"
+  ],
+  "paypal.me": [
+    "payments"
+  ],
   "paysafecard.com": [
     "payments"
+  ],
+  "paytmfirstgames.com": [
+    "games"
+  ],
+  "paziresh24.com": [
+    "health"
   ],
   "pb.com": [
     "shipping"
@@ -3392,11 +8083,32 @@
   "pbssocal.org": [
     "television"
   ],
+  "pchome.com.tw": [
+    "shopping"
+  ],
+  "pciconcursos.com.br": [
+    "jobs"
+  ],
+  "pcmax.jp": [
+    "dating"
+  ],
+  "pcre.org": [
+    "regex"
+  ],
+  "pdfcoffee.com": [
+    "pdf"
+  ],
   "pdffiller.com": [
+    "pdf"
+  ],
+  "pdflib.com": [
     "pdf"
   ],
   "pdga.com": [
     "sports"
+  ],
+  "pdscrb.com": [
+    "pdf"
   ],
   "pdx.edu": [
     "university"
@@ -3405,8 +8117,17 @@
     "education",
     "publishing"
   ],
+  "peatix.com": [
+    "events"
+  ],
   "penguin.co.uk": [
     "publishing"
+  ],
+  "pensador.com": [
+    "quotes"
+  ],
+  "people.cn": [
+    "news"
   ],
   "people.inc": [
     "magazine"
@@ -3426,6 +8147,9 @@
   "perma.cc": [
     "archive"
   ],
+  "personal.com.ar": [
+    "banking"
+  ],
   "personality-database.com": [
     "reference"
   ],
@@ -3438,23 +8162,53 @@
   "pewresearch.org": [
     "research"
   ],
+  "pfizer.com": [
+    "medicine"
+  ],
+  "pgportal.gov.in": [
+    "government"
+  ],
+  "pgsgames.games": [
+    "video-games"
+  ],
+  "phantom.app": [
+    "crypto"
+  ],
   "pharmazeutische-zeitung.de": [
     "pharmacy"
   ],
   "phoenix.gov": [
     "municipality"
   ],
+  "phonepe.com": [
+    "fintech"
+  ],
+  "photofolio.com": [
+    "photography"
+  ],
   "photoroom.com": [
     "photo-editing"
   ],
+  "photoshelter.com": [
+    "photography"
+  ],
   "photoshop.com": [
     "photo-editing"
+  ],
+  "pia.jp": [
+    "events"
+  ],
+  "piccoma.com": [
+    "manga"
   ],
   "picoxr.com": [
     "electronics"
   ],
   "picsart.com": [
     "photo-editing"
+  ],
+  "pik.ru": [
+    "real-estate"
   ],
   "pilotonline.com": [
     "newspaper"
@@ -3466,6 +8220,18 @@
     "ecommerce",
     "shopping"
   ],
+  "pingdom.com": [
+    "monitoring"
+  ],
+  "pinterest.co.uk": [
+    "social"
+  ],
+  "pinterest.de": [
+    "social"
+  ],
+  "pisos.com": [
+    "real-estate"
+  ],
   "pitchup.com": [
     "camping"
   ],
@@ -3473,8 +8239,27 @@
     "ai",
     "art"
   ],
+  "pixieset.com": [
+    "photography"
+  ],
+  "pje.jus.br": [
+    "law",
+    "government"
+  ],
+  "pjn.gov.ar": [
+    "government"
+  ],
+  "placardefutebol.com.br": [
+    "soccer"
+  ],
   "planespotters.net": [
     "aviation"
+  ],
+  "planethoster.net": [
+    "hosting"
+  ],
+  "planetwin365.it": [
+    "gambling"
   ],
   "plarium.com": [
     "game-studios"
@@ -3482,17 +8267,68 @@
   "plasticsurgery.org": [
     "health"
   ],
+  "platinmods.com": [
+    "modding"
+  ],
+  "playbattlegrounds.com": [
+    "games"
+  ],
+  "playerok.com": [
+    "games"
+  ],
+  "playfamily.ru": [
+    "games"
+  ],
+  "playfootball.games": [
+    "football"
+  ],
   "playgama.com": [
     "video-games"
+  ],
+  "playmods.net": [
+    "modding"
+  ],
+  "plaync.com": [
+    "games"
+  ],
+  "playsport.cc": [
+    "sports"
+  ],
+  "plotek.pl": [
+    "news"
   ],
   "pmi.org": [
     "certifications",
     "project-management"
   ],
+  "pmkisan.gov.in": [
+    "government"
+  ],
+  "pochta.ru": [
+    "shipping"
+  ],
+  "pocketoption.com": [
+    "forex"
+  ],
   "poderjudicial.es": [
     "law"
   ],
+  "podscribe.com": [
+    "podcasts"
+  ],
+  "poe.ninja": [
+    "video-games"
+  ],
   "pogo.com": [
+    "video-games"
+  ],
+  "pointclickcare.com": [
+    "health"
+  ],
+  "pokefarm.com": [
+    "video-games"
+  ],
+  "pokemondb.net": [
     "video-games"
   ],
   "polisen.se": [
@@ -3504,6 +8340,9 @@
   "poliziadistato.it": [
     "police"
   ],
+  "polki.pl": [
+    "magazine"
+  ],
   "polsatnews.pl": [
     "news",
     "television"
@@ -3514,8 +8353,35 @@
   "polsl.pl": [
     "university"
   ],
+  "polybuzz.ai": [
+    "ai"
+  ],
+  "polymarket.com": [
+    "crypto"
+  ],
+  "pomponik.pl": [
+    "news"
+  ],
+  "poolbinance.com": [
+    "crypto"
+  ],
+  "popcornnews.ru": [
+    "entertainment-news"
+  ],
+  "poringa.net": [
+    "online-community"
+  ],
   "portableapps.com": [
     "desktop-apps"
+  ],
+  "portalsamorzadowy.pl": [
+    "government"
+  ],
+  "portaltemponovo.com.br": [
+    "news"
+  ],
+  "porter.in": [
+    "delivery"
   ],
   "portswigger.net": [
     "security"
@@ -3524,11 +8390,20 @@
     "email",
     "self-hosted"
   ],
+  "postman.co": [
+    "api"
+  ],
   "postmates.com": [
     "food-delivery"
   ],
   "postoffice.co.uk": [
     "retail"
+  ],
+  "powerbi.com": [
+    "analytics"
+  ],
+  "powerschool.com": [
+    "school"
   ],
   "powershellgallery.com": [
     "package-manager"
@@ -3536,11 +8411,26 @@
   "poznan.pl": [
     "municipality"
   ],
+  "ppomppu.co.kr": [
+    "deals"
+  ],
   "ppsspp.org": [
     "emulation"
   ],
+  "practo.com": [
+    "health"
+  ],
+  "pracuj.pl": [
+    "jobs"
+  ],
   "prefeitura.sp.gov.br": [
     "municipality"
+  ],
+  "premierbet.co.ao": [
+    "gambling"
+  ],
+  "premierbet.com": [
+    "gambling"
   ],
   "preply.com": [
     "tutoring",
@@ -3548,6 +8438,9 @@
   ],
   "preprints.org": [
     "preprints"
+  ],
+  "presseportal.de": [
+    "news"
   ],
   "pressreader.com": [
     "newspaper-archives"
@@ -3559,8 +8452,17 @@
   "price.com.hk": [
     "price-comparison"
   ],
+  "pricecharting.com": [
+    "price-comparison"
+  ],
+  "priceoye.pk": [
+    "shopping"
+  ],
   "princeton.edu": [
     "university"
+  ],
+  "principal.com": [
+    "insurance"
   ],
   "privacyinternational.org": [
     "privacy"
@@ -3568,14 +8470,38 @@
   "privateinternetaccess.com": [
     "vpn"
   ],
+  "privateproperty.co.za": [
+    "real-estate"
+  ],
   "prnewswire.com": [
     "public-relations"
+  ],
+  "procore.com": [
+    "construction"
   ],
   "procyclingstats.com": [
     "cycling"
   ],
+  "prodoctorov.ru": [
+    "health"
+  ],
+  "profesia.sk": [
+    "jobs"
+  ],
+  "progorod43.ru": [
+    "news"
+  ],
   "programme-television.org": [
     "television"
+  ],
+  "programme-tv.net": [
+    "television"
+  ],
+  "prom.ua": [
+    "shopping"
+  ],
+  "promiedos.com.ar": [
+    "sports"
   ],
   "proofpoint.com": [
     "cybersecurity"
@@ -3586,8 +8512,26 @@
   "prosieben.de": [
     "television"
   ],
+  "prosv.ru": [
+    "textbooks"
+  ],
+  "protonmail.ch": [
+    "email"
+  ],
   "protv.ro": [
     "television"
+  ],
+  "prtimes.jp": [
+    "public-relations"
+  ],
+  "prweb.com": [
+    "public-relations"
+  ],
+  "psbank.ru": [
+    "banking"
+  ],
+  "pscp.tv": [
+    "livestream"
   ],
   "psiphon.ca": [
     "vpn",
@@ -3596,11 +8540,23 @@
   "psu.edu": [
     "university"
   ],
+  "psychcentral.com": [
+    "mental-health"
+  ],
+  "ptgaming.ph": [
+    "gaming-news"
+  ],
   "pts.org.tw": [
     "public-broadcaster"
   ],
+  "ptsecurity.com": [
+    "security"
+  ],
   "ptsecurity.ru": [
     "cybersecurity"
+  ],
+  "publi24.ro": [
+    "classifieds"
   ],
   "publicationethics.org": [
     "peer-review"
@@ -3608,17 +8564,44 @@
   "publico.pt": [
     "newspaper"
   ],
+  "pudelek.pl": [
+    "entertainment-news"
+  ],
+  "puma.com": [
+    "shoes"
+  ],
+  "pump.fun": [
+    "crypto"
+  ],
+  "punjabpolice.gov.pk": [
+    "government"
+  ],
+  "puntoticket.com": [
+    "events"
+  ],
+  "purepeople.com": [
+    "entertainment-news"
+  ],
   "purina.com": [
     "pets"
   ],
   "purl.org": [
     "reference"
   ],
+  "pwc.com": [
+    "business"
+  ],
+  "python.ca": [
+    "python"
+  ],
   "pythonanywhere.com": [
     "hosting"
   ],
   "pytorch.org": [
     "ai"
+  ],
+  "qfilm.tv": [
+    "film"
   ],
   "qidian.com": [
     "webnovel"
@@ -3629,17 +8612,44 @@
   "qlik.com": [
     "data-visualization"
   ],
+  "qodeinteractive.com": [
+    "webdev"
+  ],
+  "qq.com": [
+    "messaging"
+  ],
+  "qq.com.cn": [
+    "chat"
+  ],
   "qub.ac.uk": [
     "university"
   ],
   "quest.com": [
     "tech"
   ],
+  "questionablequesting.com": [
+    "forum"
+  ],
   "quidco.com": [
     "shopping"
   ],
+  "quillbot.com": [
+    "grammar"
+  ],
   "quip.com": [
     "documents"
+  ],
+  "qunar.com": [
+    "travel"
+  ],
+  "quran.com": [
+    "religion"
+  ],
+  "qustodio.com": [
+    "parenting"
+  ],
+  "qxbroker.com": [
+    "forex"
   ],
   "r7.com": [
     "online-news"
@@ -3653,8 +8663,26 @@
   "radiopaedia.org": [
     "medicine"
   ],
+  "radiopotok.ru": [
+    "radio"
+  ],
+  "radios.com.br": [
+    "radio"
+  ],
+  "rae.es": [
+    "dictionary"
+  ],
   "rai.it": [
     "public-broadcaster"
+  ],
+  "raiffeisen.ru": [
+    "banking"
+  ],
+  "railyatri.in": [
+    "trains"
+  ],
+  "rainbird.com": [
+    "gardening"
   ],
   "rainews.it": [
     "news",
@@ -3662,6 +8690,12 @@
   ],
   "raiplay.it": [
     "television"
+  ],
+  "rajasthan.gov.in": [
+    "government"
+  ],
+  "rakuten-card.co.jp": [
+    "credit-card"
   ],
   "ramseysolutions.com": [
     "finance"
@@ -3675,6 +8709,9 @@
   "razorpay.com": [
     "payments"
   ],
+  "rb.gy": [
+    "url-shortener"
+  ],
   "rbb-online.de": [
     "public-broadcaster"
   ],
@@ -3684,17 +8721,38 @@
   "rcpsych.ac.uk": [
     "health"
   ],
+  "readli.net": [
+    "books"
+  ],
   "real.com": [
     "media-player"
+  ],
+  "realestate.com.au": [
+    "real-estate"
+  ],
+  "realtor.ca": [
+    "real-estate"
   ],
   "realvnc.com": [
     "remote-access"
   ],
+  "reclameaqui.com.br": [
+    "consumer"
+  ],
+  "recruit.co.jp": [
+    "jobs"
+  ],
   "redalyc.org": [
     "journals"
   ],
+  "redbus.in": [
+    "travel"
+  ],
   "redcross.org": [
     "charities"
+  ],
+  "redd.it": [
+    "social"
   ],
   "rediff.com": [
     "online-news"
@@ -3705,14 +8763,26 @@
   "redstate.com": [
     "politics"
   ],
+  "reference.com": [
+    "reference"
+  ],
+  "refinery29.com": [
+    "fashion"
+  ],
   "regeringen.se": [
     "government"
+  ],
+  "reklama5.mk": [
+    "classifieds"
   ],
   "reliefweb.int": [
     "humanitarian"
   ],
   "remitly.com": [
     "payments"
+  ],
+  "remotepc.com": [
+    "remote-access"
   ],
   "remove.bg": [
     "photo-editing"
@@ -3723,11 +8793,26 @@
   "renttherunway.com": [
     "fashion"
   ],
+  "reolink.com": [
+    "smart-home"
+  ],
+  "repec.org": [
+    "research-data"
+  ],
   "republicservices.com": [
     "environment"
   ],
+  "research-panel.jp": [
+    "surveys"
+  ],
+  "researchnow.com": [
+    "research"
+  ],
   "restaurantguru.com": [
     "restaurants"
+  ],
+  "resultadofacil.com.br": [
+    "gambling"
   ],
   "retroachievements.org": [
     "achievements",
@@ -3736,14 +8821,48 @@
   "retty.me": [
     "restaurants"
   ],
+  "reverbnation.com": [
+    "music"
+  ],
+  "revistaoeste.com": [
+    "news"
+  ],
+  "revolve.com": [
+    "fashion",
+    "shopping"
+  ],
+  "rezka.ag": [
+    "film"
+  ],
+  "rezultati.com": [
+    "sports"
+  ],
+  "rg.ru": [
+    "news"
+  ],
   "ri.gov": [
     "government"
+  ],
+  "ria.com": [
+    "classifieds"
+  ],
+  "rian.ru": [
+    "news"
+  ],
+  "rice.edu": [
+    "university"
   ],
   "ridewithvia.com": [
     "transit"
   ],
   "rijksmuseum.nl": [
     "museums"
+  ],
+  "riovagas.com.br": [
+    "jobs"
+  ],
+  "ripley.cl": [
+    "shopping"
   ],
   "ripple.com": [
     "crypto"
@@ -3762,6 +8881,9 @@
   "rki.de": [
     "government",
     "health"
+  ],
+  "rmf24.pl": [
+    "news"
   ],
   "rmg.co.uk": [
     "museums"
@@ -3782,6 +8904,12 @@
   "roborock.com": [
     "smart-home"
   ],
+  "roche.com": [
+    "health"
+  ],
+  "rocketmoney.dev": [
+    "finance"
+  ],
   "rocketmortgage.com": [
     "mortgage"
   ],
@@ -3792,6 +8920,9 @@
   "roland.com": [
     "audio-gear"
   ],
+  "rolimons.com": [
+    "video-games"
+  ],
   "roll20.net": [
     "boardgames"
   ],
@@ -3801,11 +8932,29 @@
   "romeo.com": [
     "dating"
   ],
+  "romsfun.com": [
+    "emulation"
+  ],
+  "romsgames.net": [
+    "emulation"
+  ],
   "rosewoodhotels.com": [
     "hotels"
   ],
+  "roskazna.ru": [
+    "government"
+  ],
+  "rosminzdrav.ru": [
+    "government"
+  ],
+  "rostelecom.ru": [
+    "telecom"
+  ],
   "routledge.com": [
     "academic-publisher"
+  ],
+  "royalbank.com": [
+    "banking"
   ],
   "royalcanin.com": [
     "pets"
@@ -3813,12 +8962,36 @@
   "royalcanin.ru": [
     "pets"
   ],
+  "royalmail.com": [
+    "shipping"
+  ],
+  "royalsocietypublishing.org": [
+    "journals"
+  ],
+  "rozmusic.com": [
+    "music"
+  ],
+  "rpi.edu": [
+    "university"
+  ],
   "rptu.de": [
     "university"
+  ],
+  "rrpicturearchives.net": [
+    "photography"
+  ],
+  "rs-online.com": [
+    "electronics"
+  ],
+  "rsasecurity.com": [
+    "security"
   ],
   "rsc.org": [
     "academic-publisher",
     "chemistry"
+  ],
+  "rshb.ru": [
+    "banking"
   ],
   "rsi.ch": [
     "public-broadcaster"
@@ -3828,6 +9001,9 @@
   ],
   "rstudio.com": [
     "r-lang"
+  ],
+  "rt.ru": [
+    "news"
   ],
   "rthk.hk": [
     "public-broadcaster"
@@ -3866,8 +9042,17 @@
   "rug.nl": [
     "university"
   ],
+  "ruliweb.com": [
+    "forum"
+  ],
   "runescape.wiki": [
     "game-database"
+  ],
+  "runnr.in": [
+    "running"
+  ],
+  "runsignup.com": [
+    "running"
   ],
   "rush.edu": [
     "health"
@@ -3875,11 +9060,32 @@
   "rusneb.ru": [
     "library"
   ],
+  "rusprofile.ru": [
+    "business"
+  ],
+  "russianfood.com": [
+    "recipes"
+  ],
+  "russianpost.ru": [
+    "shipping"
+  ],
   "rutracker.org": [
     "torrent"
   ],
   "ruv.de": [
     "public-broadcaster"
+  ],
+  "rynekzdrowia.pl": [
+    "health"
+  ],
+  "rzd.ru": [
+    "trains"
+  ],
+  "sabah.com.tr": [
+    "news"
+  ],
+  "saby.ru": [
+    "erp"
   ],
   "sae.org": [
     "standards"
@@ -3887,15 +9093,51 @@
   "sage.com": [
     "accounting"
   ],
+  "sageone.co.za": [
+    "accounting"
+  ],
   "sahibinden.com": [
     "classifieds",
     "marketplace"
   ],
+  "sakura.ne.jp": [
+    "hosting"
+  ],
   "salliemae.com": [
     "student-loan"
   ],
+  "salonboard.com": [
+    "beauty"
+  ],
   "sam.gov": [
     "government"
+  ],
+  "samagra.gov.in": [
+    "government"
+  ],
+  "samarth.edu.in": [
+    "education"
+  ],
+  "sambad.com": [
+    "news"
+  ],
+  "samehadaku.how": [
+    "anime"
+  ],
+  "samokat.ru": [
+    "grocery"
+  ],
+  "samsungelectronics.com": [
+    "electronics"
+  ],
+  "samsunghealth.com": [
+    "health"
+  ],
+  "samsungmobile.com": [
+    "smartphones"
+  ],
+  "samsungweather.com": [
+    "weather"
   ],
   "sandiego.edu": [
     "university"
@@ -3910,18 +9152,75 @@
   "sangfor.com.cn": [
     "cybersecurity"
   ],
+  "sanofi-synthelabo.com": [
+    "medicine"
+  ],
   "sanrio.co.jp": [
     "cartoons"
   ],
   "sap.com": [
     "erp"
   ],
+  "sapo.pt": [
+    "news"
+  ],
+  "sapphireonline.pk": [
+    "fashion"
+  ],
+  "sarkariexam.com": [
+    "test-prep"
+  ],
+  "sarkariresult.com": [
+    "government"
+  ],
+  "sarkariresult.com.cm": [
+    "jobs"
+  ],
   "sas.com": [
     "analytics",
     "ai"
   ],
+  "satta-king-fast.com": [
+    "gambling"
+  ],
+  "sattakalyanmatka.net": [
+    "gambling"
+  ],
+  "sattamatka.email": [
+    "gambling"
+  ],
+  "sattamatkadpboss.mobi": [
+    "gambling"
+  ],
+  "sattamatkano1.me": [
+    "gambling"
+  ],
+  "sbb.rs": [
+    "trains"
+  ],
+  "sbcglobal.net": [
+    "telecom"
+  ],
   "sbcounty.gov": [
     "government"
+  ],
+  "sber.ru": [
+    "banking"
+  ],
+  "sberbank.ru": [
+    "banking"
+  ],
+  "sbis.ru": [
+    "accounting"
+  ],
+  "sbisec.co.jp": [
+    "investing"
+  ],
+  "sbnation.com": [
+    "sports-news"
+  ],
+  "sbrf.ru": [
+    "banking"
   ],
   "sbs.com.au": [
     "news",
@@ -3936,18 +9235,40 @@
   "scamadviser.com": [
     "cybersecurity"
   ],
+  "scan-manga.com": [
+    "manga"
+  ],
   "scb.se": [
     "statistics",
     "government"
   ],
+  "scba.gov.ar": [
+    "government"
+  ],
   "scene7.com": [
     "tech"
+  ],
+  "sch.gr": [
+    "school"
+  ],
+  "schema.org": [
+    "standards"
   ],
   "schemastore.org": [
     "webdev"
   ],
   "schleswig-holstein.de": [
     "government"
+  ],
+  "schneevonmorgen.com": [
+    "weather"
+  ],
+  "scholarships.gov.in": [
+    "grants",
+    "government"
+  ],
+  "schoolsoft.se": [
+    "education"
   ],
   "scielo.br": [
     "open-access",
@@ -3959,6 +9280,9 @@
   "sciencefocus.com": [
     "science-news"
   ],
+  "sciencemag.org": [
+    "science"
+  ],
   "sciencemuseum.org.uk": [
     "museums"
   ],
@@ -3969,20 +9293,35 @@
     "open-access",
     "research"
   ],
+  "sciencepost.fr": [
+    "science-news"
+  ],
   "sciencesetavenir.fr": [
     "science-news"
   ],
   "sciprofiles.com": [
     "university"
   ],
+  "scite.ai": [
+    "research"
+  ],
+  "scopely.io": [
+    "games"
+  ],
   "scot.nhs.uk": [
     "health"
+  ],
+  "scrabblewordfinder.org": [
+    "dictionary"
   ],
   "screenconnect.com": [
     "remote-access"
   ],
   "screendaily.com": [
     "film"
+  ],
+  "screener.in": [
+    "investing"
   ],
   "scribus.net": [
     "desktop-apps",
@@ -3994,11 +9333,35 @@
   "sdsu.edu": [
     "university"
   ],
+  "seaart.ai": [
+    "ai"
+  ],
+  "searchenginejournal.com": [
+    "marketing"
+  ],
+  "searchengineland.com": [
+    "marketing"
+  ],
   "seattletimes.com": [
     "newspaper"
   ],
+  "securityfocus.com": [
+    "security"
+  ],
+  "seek.com": [
+    "jobs"
+  ],
+  "seesaa.net": [
+    "blog"
+  ],
   "seetickets.com": [
     "events"
+  ],
+  "sefon.pro": [
+    "music"
+  ],
+  "seg-social.gob.es": [
+    "government"
   ],
   "segmentfault.com": [
     "dev"
@@ -4013,11 +9376,35 @@
     "hosting",
     "cloud"
   ],
+  "semana.com": [
+    "news"
+  ],
+  "sena.edu.co": [
+    "education"
+  ],
+  "senat.fr": [
+    "government"
+  ],
   "senate.gov": [
     "government"
   ],
   "senato.it": [
     "government"
+  ],
+  "sendinblue.com": [
+    "email-marketing"
+  ],
+  "sendsay.ru": [
+    "email-marketing"
+  ],
+  "sengokuixa.jp": [
+    "video-games"
+  ],
+  "sepe.gob.es": [
+    "jobs"
+  ],
+  "serasa.com.br": [
+    "finance"
   ],
   "serpapi.com": [
     "api"
@@ -4026,8 +9413,23 @@
     "government",
     "tech"
   ],
+  "serverwatch.com": [
+    "tech"
+  ],
+  "service-now.com": [
+    "helpdesk"
+  ],
+  "service-public.fr": [
+    "government"
+  ],
   "service-public.gouv.fr": [
     "government"
+  ],
+  "set.gov.py": [
+    "government"
+  ],
+  "sevilmusics.com": [
+    "music"
   ],
   "seznam.cz": [
     "search"
@@ -4038,23 +9440,56 @@
   "sf.net": [
     "open-source"
   ],
+  "sfdividendconnect.com": [
+    "dividend"
+  ],
   "sfmoma.org": [
     "museums"
+  ],
+  "sfr.fr": [
+    "telecom"
   ],
   "shaalaa.com": [
     "edtech"
   ],
+  "shahrekhabar.com": [
+    "news"
+  ],
   "shamela.ws": [
     "library"
+  ],
+  "shaparak.ir": [
+    "fintech"
+  ],
+  "sharechat.com": [
+    "social"
   ],
   "sheetjs.com": [
     "webdev"
   ],
+  "shell.com": [
+    "energy"
+  ],
+  "shinigami.asia": [
+    "manga"
+  ],
   "ship.edu": [
     "university"
   ],
+  "shodan.io": [
+    "osint"
+  ],
   "shonenjumpplus.com": [
     "manga"
+  ],
+  "shop-apotheke.com": [
+    "pharmacy"
+  ],
+  "shop-pro.jp": [
+    "ecommerce"
+  ],
+  "shop-shimamura.com": [
+    "clothing-stores"
   ],
   "shop.app": [
     "shopping"
@@ -4062,8 +9497,47 @@
   "shopback.com": [
     "shopping"
   ],
+  "shopch.jp": [
+    "shopping"
+  ],
+  "shopcider.com": [
+    "shopping"
+  ],
+  "shopee.co.id": [
+    "shopping"
+  ],
+  "shopee.co.th": [
+    "shopping"
+  ],
+  "shopee.com.br": [
+    "shopping"
+  ],
+  "shopee.com.my": [
+    "shopping"
+  ],
+  "shopee.ph": [
+    "shopping"
+  ],
+  "shopee.sg": [
+    "shopping"
+  ],
+  "shopee.tw": [
+    "shopping"
+  ],
+  "shopee.vn": [
+    "shopping"
+  ],
+  "shopier.com": [
+    "ecommerce"
+  ],
   "shoppersdrugmart.ca": [
     "pharmacy"
+  ],
+  "shopsy.in": [
+    "ecommerce"
+  ],
+  "shorttv.live": [
+    "tv-series"
   ],
   "shoutcast.com": [
     "radio"
@@ -4074,6 +9548,9 @@
   "shutterfly.com": [
     "photography",
     "shopping"
+  ],
+  "sibforms.com": [
+    "forms"
   ],
   "sicnoticias.pt": [
     "television"
@@ -4087,31 +9564,91 @@
   "sigmaaldrich.com": [
     "chemistry"
   ],
+  "sii.cl": [
+    "tax"
+  ],
+  "simplecast.com": [
+    "podcast-hosting"
+  ],
+  "simplisafe.com": [
+    "smart-home"
+  ],
+  "simply.com": [
+    "hosting"
+  ],
   "simplyrecipes.com": [
     "recipes"
   ],
+  "sina.cn": [
+    "news"
+  ],
+  "sina.com": [
+    "news"
+  ],
   "sinica.edu.tw": [
     "research-institute"
+  ],
+  "sinoptik.ua": [
+    "weather"
   ],
   "siol.net": [
     "telecom",
     "television"
   ],
+  "site123.me": [
+    "website-builder"
+  ],
+  "siteground.biz": [
+    "hosting"
+  ],
+  "siteground.us": [
+    "hosting"
+  ],
+  "sitemaps.org": [
+    "reference"
+  ],
   "siue.edu": [
     "university"
   ],
+  "skai.gr": [
+    "news"
+  ],
   "skatteetaten.no": [
     "government"
+  ],
+  "skelbiu.lt": [
+    "classifieds"
+  ],
+  "sketchup.com": [
+    "modeling"
+  ],
+  "skylinewebcams.com": [
+    "travel"
   ],
   "skylum.com": [
     "photo-editing",
     "desktop-apps"
   ],
+  "skypicker.com": [
+    "flights"
+  ],
+  "skyrock.net": [
+    "social"
+  ],
+  "skyvegas.com": [
+    "gambling"
+  ],
   "slbenfica.pt": [
     "soccer"
   ],
+  "sleepfoundation.org": [
+    "health"
+  ],
   "sleepnumber.com": [
     "home"
+  ],
+  "sleepycat.com": [
+    "database"
   ],
   "slideshare.net": [
     "presentations"
@@ -4122,14 +9659,35 @@
   "smart.com.ph": [
     "telecom"
   ],
+  "smartnews.com": [
+    "news"
+  ],
+  "smartnews.net": [
+    "news"
+  ],
+  "smartrecruiters.com": [
+    "recruiting"
+  ],
+  "smartthings.com": [
+    "smart-home"
+  ],
+  "smbcnikko.co.jp": [
+    "investing"
+  ],
   "smotrim.ru": [
     "television"
   ],
   "smu.edu": [
     "university"
   ],
+  "snai.it": [
+    "gambling"
+  ],
   "snap.com": [
     "social"
+  ],
+  "snapfish.com": [
+    "photography"
   ],
   "snapp.ir": [
     "rideshare"
@@ -4141,14 +9699,50 @@
     "cloud",
     "database"
   ],
+  "soccervital.com": [
+    "soccer"
+  ],
+  "soccerway.com": [
+    "football"
+  ],
   "societe.com": [
     "business"
+  ],
+  "sodimac.cl": [
+    "diy-stores"
+  ],
+  "sofifa.com": [
+    "football"
+  ],
+  "softbank.jp": [
+    "telecom"
+  ],
+  "softonic.com": [
+    "downloads"
+  ],
+  "softpedia.com": [
+    "downloads"
   ],
   "sogou.com": [
     "search"
   ],
+  "soha.vn": [
+    "news"
+  ],
+  "sohu.com": [
+    "news"
+  ],
+  "sokmil.com": [
+    "shopping"
+  ],
   "solarwinds.com": [
     "monitoring"
+  ],
+  "solitaired.com": [
+    "games"
+  ],
+  "solodeportes.com.ar": [
+    "sports"
   ],
   "sonarr.tv": [
     "downloads",
@@ -4156,6 +9750,12 @@
   ],
   "sonatype.com": [
     "devops"
+  ],
+  "sondakika.com": [
+    "news"
+  ],
+  "sony.tv": [
+    "television"
   ],
   "sonyentertainmentnetwork.com": [
     "video-games"
@@ -4166,11 +9766,23 @@
   "sonymusic.co.jp": [
     "music"
   ],
+  "sooplive.com": [
+    "livestream"
+  ],
   "sophos.com": [
     "cybersecurity"
   ],
+  "sosalkino.app": [
+    "film"
+  ],
   "sothebys.com": [
     "auctions"
+  ],
+  "soton.ac.uk": [
+    "university"
+  ],
+  "soufun.com": [
+    "real-estate"
   ],
   "soundhound.com": [
     "music"
@@ -4178,8 +9790,29 @@
   "soundtrap.com": [
     "music"
   ],
+  "sourceforge.io": [
+    "downloads"
+  ],
   "southparkstudios.com": [
     "tv-series"
+  ],
+  "sovcombank.ru": [
+    "banking"
+  ],
+  "spacebattles.com": [
+    "online-community"
+  ],
+  "spacedaily.com": [
+    "space"
+  ],
+  "spaceweb.ru": [
+    "hosting"
+  ],
+  "spaggiari.eu": [
+    "school"
+  ],
+  "spareroom.co.uk": [
+    "real-estate"
   ],
   "spartoo.com": [
     "shoes"
@@ -4187,8 +9820,17 @@
   "speakerdeck.com": [
     "presentations"
   ],
+  "spec.org": [
+    "performance"
+  ],
+  "specbench.org": [
+    "performance"
+  ],
   "speedwaymotors.com": [
     "auto-parts"
+  ],
+  "spiceworks.com": [
+    "tech"
   ],
   "spiedigitallibrary.org": [
     "journals"
@@ -4199,14 +9841,44 @@
   "splcenter.org": [
     "politics"
   ],
+  "sporcle.com": [
+    "games"
+  ],
+  "sport.cz": [
+    "sports"
+  ],
+  "sport.de": [
+    "sports"
+  ],
+  "sport.pl": [
+    "sports"
+  ],
+  "sport24.gr": [
+    "sports-news"
+  ],
+  "sportal.bg": [
+    "sports-news"
+  ],
+  "sportfilm800.com": [
+    "sports"
+  ],
   "sportinglife.ca": [
     "sports-news"
   ],
   "sportinglife.com": [
     "sports"
   ],
+  "sportpesa.com": [
+    "gambling"
+  ],
+  "sportradar.com": [
+    "sports"
+  ],
   "sports-tracker.com": [
     "fitness"
+  ],
+  "sports.kz": [
+    "sports-news"
   ],
   "sportsbusinessjournal.com": [
     "sports-news"
@@ -4221,21 +9893,81 @@
   "sportsnet.ca": [
     "sports"
   ],
+  "sportybet.co.za": [
+    "gambling"
+  ],
+  "sportybet.com": [
+    "gambling"
+  ],
+  "sporx.com": [
+    "sports"
+  ],
   "spothero.com": [],
+  "spotify.dev": [
+    "dev"
+  ],
+  "spotv24.com": [
+    "sports"
+  ],
+  "spreaker.com": [
+    "podcast-hosting"
+  ],
+  "springeropen.com": [
+    "academic-publisher"
+  ],
+  "sprinthost.ru": [
+    "hosting"
+  ],
+  "sproutgigs.com": [
+    "freelance"
+  ],
+  "sproutsocial.com": [
+    "social"
+  ],
   "sputnik.ru": [
     "online-news"
+  ],
+  "sputniknews.com": [
+    "news"
+  ],
+  "square.site": [
+    "website-builder"
   ],
   "sr.de": [
     "public-broadcaster"
   ],
+  "sri.gob.ec": [
+    "government"
+  ],
+  "ss.com": [
+    "classifieds"
+  ],
+  "ss.lv": [
+    "classifieds"
+  ],
   "ssa.gov": [
+    "government"
+  ],
+  "sss.gov.ph": [
     "government"
   ],
   "st-andrews.ac.uk": [
     "university"
   ],
+  "stardewvalleywiki.com": [
+    "video-games"
+  ],
   "starfall.com": [
     "education"
+  ],
+  "starlink.com": [
+    "telecom"
+  ],
+  "starpets.gg": [
+    "video-games"
+  ],
+  "startech.com.bd": [
+    "electronics"
   ],
   "starwalk.space": [
     "space"
@@ -4243,11 +9975,23 @@
   "starwars.com": [
     "scifi"
   ],
+  "staseraintv.com": [
+    "television"
+  ],
   "status.im": [
     "chat"
   ],
+  "stay22.com": [
+    "travel"
+  ],
   "steamdb.info": [
     "game-database"
+  ],
+  "steaminventoryhelper.com": [
+    "video-games"
+  ],
+  "steamunlocked.org": [
+    "video-games"
   ],
   "steinberg.net": [
     "music",
@@ -4260,8 +10004,17 @@
   "stihi.ru": [
     "poetry"
   ],
+  "stitcher.com": [
+    "podcasts"
+  ],
+  "stlouisfed.org": [
+    "economics"
+  ],
   "stockanalysis.com": [
     "markets"
+  ],
+  "stoiximan.gr": [
+    "gambling"
   ],
   "storyblok.com": [
     "cms"
@@ -4272,8 +10025,17 @@
   "strasbourg.eu": [
     "municipality"
   ],
+  "stratoserver.net": [
+    "hosting"
+  ],
+  "streamable.com": [
+    "video"
+  ],
   "streamelements.com": [
     "streaming-tools"
+  ],
+  "streamrizz.com": [
+    "streaming"
   ],
   "streamyard.com": [
     "streaming-tools"
@@ -4281,17 +10043,44 @@
   "strikingly.com": [
     "website-builder"
   ],
+  "strmd.st": [
+    "streaming"
+  ],
+  "stubhub.com": [
+    "events"
+  ],
+  "study.com": [
+    "education"
+  ],
+  "studying.jp": [
+    "education"
+  ],
   "studyinsaudi.sa": [
     "education"
   ],
+  "stumbleupon.com": [
+    "social"
+  ],
   "stv.tv": [
     "television"
+  ],
+  "stylevana.com": [
+    "beauty"
   ],
   "su.se": [
     "university"
   ],
   "suara.com": [
     "news"
+  ],
+  "sucursalelectronica.com": [
+    "banking"
+  ],
+  "sudoku.com": [
+    "games"
+  ],
+  "sudrf.ru": [
+    "law"
   ],
   "sugarcrm.com": [
     "crm"
@@ -4305,14 +10094,44 @@
   "sun.com": [
     "dev"
   ],
+  "sunat.gob.pe": [
+    "tax"
+  ],
+  "supabase.co": [
+    "database"
+  ],
+  "super.cz": [
+    "news"
+  ],
+  "superbet.ro": [
+    "gambling"
+  ],
   "superoffice.com": [
     "crm"
   ],
   "supremecourt.gov": [
     "law"
   ],
+  "surabaya.go.id": [
+    "government"
+  ],
+  "surahquran.com": [
+    "religion"
+  ],
+  "suramericana.com": [
+    "insurance"
+  ],
+  "suruga-ya.jp": [
+    "secondhand"
+  ],
+  "survicate.com": [
+    "surveys"
+  ],
   "suspilne.media": [
     "public-broadcaster"
+  ],
+  "suumo.jp": [
+    "real-estate"
   ],
   "svenskakyrkan.se": [
     "religion"
@@ -4329,14 +10148,29 @@
   "swagbucks.com": [
     "deals"
   ],
+  "sway.com": [
+    "presentations"
+  ],
+  "swayam.gov.in": [
+    "education"
+  ],
+  "sweb.ru": [
+    "hosting"
+  ],
   "swedbank.se": [
     "banking"
   ],
   "sweet.tv": [
     "streaming"
   ],
+  "swiftkey.com": [
+    "mobile-apps"
+  ],
   "sydney.edu.au": [
     "university"
+  ],
+  "sympla.com.br": [
+    "events"
   ],
   "synopsys.com": [
     "tech"
@@ -4344,8 +10178,23 @@
   "syosetu.com": [
     "webnovel"
   ],
+  "syosetu.org": [
+    "webnovel"
+  ],
+  "syr.edu": [
+    "university"
+  ],
+  "szerencsejatek.hu": [
+    "gambling"
+  ],
   "szse.cn": [
     "stock-exchange"
+  ],
+  "t-bank-app.ru": [
+    "banking"
+  ],
+  "t-mobile.at": [
+    "telecom"
   ],
   "t.cn": [
     "url-shortener"
@@ -4362,6 +10211,9 @@
   "tabii.com": [
     "streaming"
   ],
+  "tabletki.ua": [
+    "pharmacy"
+  ],
   "taboola.com": [
     "advertising"
   ],
@@ -4374,11 +10226,35 @@
   "taiwanmobile.com": [
     "telecom"
   ],
+  "takarakuji-official.jp": [
+    "gambling"
+  ],
+  "takbet.com": [
+    "gambling"
+  ],
+  "takeaway.com": [
+    "food-delivery"
+  ],
   "talabat.com": [
     "food-delivery"
   ],
+  "talkie-ai.com": [
+    "ai"
+  ],
   "tameteo.com": [
     "weather"
+  ],
+  "tamildhool.tech": [
+    "film"
+  ],
+  "tamilgun.now": [
+    "film"
+  ],
+  "tamilkamaveri2.com": [
+    "film"
+  ],
+  "tamin.ir": [
+    "government"
   ],
   "tasteofhome.com": [
     "recipes"
@@ -4389,7 +10265,13 @@
   "tavily.com": [
     "ai"
   ],
+  "tax.gov.ir": [
+    "government"
+  ],
   "taylorandfrancis.com": [
+    "academic-publisher"
+  ],
+  "taylorfrancis.com": [
     "academic-publisher"
   ],
   "taylorswift.com": [
@@ -4404,11 +10286,26 @@
   "tcd.ie": [
     "university"
   ],
+  "tcgplayer.com": [
+    "marketplace"
+  ],
+  "tchibo.de": [
+    "shopping"
+  ],
   "tcl.com": [
     "electronics"
   ],
   "tcm.com": [
     "film"
+  ],
+  "te.eg": [
+    "telecom"
+  ],
+  "teachable.com": [
+    "courses"
+  ],
+  "teachoo.com": [
+    "education"
   ],
   "teamspeak.com": [
     "voip"
@@ -4425,8 +10322,20 @@
   "tec.mx": [
     "university"
   ],
+  "tecconcursos.com.br": [
+    "test-prep"
+  ],
   "techadvisor.com": [
     "tech-news"
+  ],
+  "techrepublic.com": [
+    "tech-news"
+  ],
+  "techtarget.com": [
+    "tech-news"
+  ],
+  "tecnomat.it": [
+    "diy-stores"
   ],
   "ted.com": [
     "video",
@@ -4435,11 +10344,26 @@
   "teepublic.com": [
     "marketplace"
   ],
+  "telangana.gov.in": [
+    "government"
+  ],
   "telcel.com": [
+    "telecom"
+  ],
+  "tele2.ru": [
     "telecom"
   ],
   "telecinco.es": [
     "television"
+  ],
+  "telecomitalia.it": [
+    "telecom"
+  ],
+  "telegraf.rs": [
+    "news"
+  ],
+  "telegram.im": [
+    "messaging"
   ],
   "telemadrid.es": [
     "television"
@@ -4447,7 +10371,16 @@
   "telemundo.com": [
     "television"
   ],
+  "telia.com": [
+    "telecom"
+  ],
   "telia.se": [
+    "telecom"
+  ],
+  "telkomsel.com": [
+    "telecom"
+  ],
+  "telstra.com": [
     "telecom"
   ],
   "telstra.com.au": [
@@ -4459,14 +10392,38 @@
   "tencentmusic.com": [
     "music"
   ],
+  "tenda.com.cn": [
+    "hardware"
+  ],
+  "tenki.jp": [
+    "weather"
+  ],
   "tensorflow.org": [
     "ai"
+  ],
+  "terabox.app": [
+    "cloud-storage"
+  ],
+  "terabox.com": [
+    "cloud-storage"
+  ],
+  "termsfeed.com": [
+    "legal"
   ],
   "tes.com": [
     "education"
   ],
+  "testbook.com": [
+    "test-prep"
+  ],
+  "texas.gov": [
+    "government"
+  ],
   "tf1.fr": [
     "television"
+  ],
+  "tgju.org": [
+    "markets"
   ],
   "thalesgroup.com": [
     "defense"
@@ -4496,14 +10453,53 @@
   "thejournal.ie": [
     "online-news"
   ],
+  "themeforest.net": [
+    "marketplace"
+  ],
+  "themegrill.com": [
+    "website-builder"
+  ],
+  "themeisle.com": [
+    "website-builder"
+  ],
+  "themoviebox.xyz": [
+    "film"
+  ],
+  "thenkiri.com": [
+    "film"
+  ],
   "thepaper.cn": [
     "newspaper"
+  ],
+  "thepoizon.ru": [
+    "shopping"
+  ],
+  "theqoo.net": [
+    "forum"
   ],
   "thequint.com": [
     "online-news"
   ],
+  "theregister.co.uk": [
+    "tech-news"
+  ],
+  "thermofisher.com": [
+    "science"
+  ],
+  "thescore.com": [
+    "sports-news"
+  ],
+  "thespruce.com": [
+    "diy"
+  ],
   "thestreet.com": [
     "business-news"
+  ],
+  "thethao247.vn": [
+    "sports-news"
+  ],
+  "thetimes.co.uk": [
+    "news"
   ],
   "thetrainline.com": [
     "trains"
@@ -4514,6 +10510,12 @@
   "theweathernetwork.com": [
     "weather"
   ],
+  "thinkific.com": [
+    "courses"
+  ],
+  "thinkwithgoogle.com": [
+    "marketing"
+  ],
   "thirteen.org": [
     "television"
   ],
@@ -4521,14 +10523,38 @@
     "news",
     "legal"
   ],
+  "thoughtco.com": [
+    "education"
+  ],
   "thoughtworks.com": [
     "tech"
+  ],
+  "threatdown.com": [
+    "security"
+  ],
+  "thscore5.com": [
+    "sports"
+  ],
+  "thscore99.com": [
+    "sports"
+  ],
+  "thuvienphapluat.vn": [
+    "law"
+  ],
+  "ti.com": [
+    "electronics"
   ],
   "tiaa.org": [
     "retirement"
   ],
   "tibco.com": [
     "tech"
+  ],
+  "ticketnew.com": [
+    "events"
+  ],
+  "tickettailor.com": [
+    "events"
   ],
   "tickpick.com": [
     "events"
@@ -4542,14 +10568,32 @@
   "tiendanube.com": [
     "ecommerce"
   ],
+  "tiket.com": [
+    "travel"
+  ],
+  "tilda.ws": [
+    "website-builder"
+  ],
   "timeout.com": [
     "travel"
+  ],
+  "timesonline.co.uk": [
+    "news"
   ],
   "tinkercad.com": [
     "modeling"
   ],
+  "tinkoff.ru": [
+    "banking"
+  ],
   "tiny.cc": [
     "url-shortener"
+  ],
+  "tippmix.hu": [
+    "gambling"
+  ],
+  "tiqets.com": [
+    "travel"
   ],
   "tirto.id": [
     "online-news"
@@ -4557,11 +10601,29 @@
   "tistory.com": [
     "blog"
   ],
+  "titan.co.in": [
+    "fashion"
+  ],
+  "titan.email": [
+    "email"
+  ],
   "tjk.org": [
     "gambling"
   ],
+  "tjrs.jus.br": [
+    "law"
+  ],
+  "tjsp.jus.br": [
+    "law"
+  ],
   "tju.edu.cn": [
     "university"
+  ],
+  "tmall.com": [
+    "shopping"
+  ],
+  "tmdb.org": [
+    "moviedatabase"
   ],
   "tmu.edu.tw": [
     "university"
@@ -4569,6 +10631,9 @@
   "tn.com.ar": [
     "news",
     "television"
+  ],
+  "tnebnet.org": [
+    "government"
   ],
   "toastmasters.org": [
     "education"
@@ -4582,6 +10647,12 @@
   "tohoku.ac.jp": [
     "university"
   ],
+  "tokubai.co.jp": [
+    "deals"
+  ],
+  "tokyo.lg.jp": [
+    "government"
+  ],
   "tokyodisneyresort.jp": [
     "travel"
   ],
@@ -4591,16 +10662,40 @@
   "tonies.com": [
     "audiobooks"
   ],
+  "toongod.org": [
+    "manga"
+  ],
   "topazlabs.com": [
     "photo-editing"
   ],
   "topgear.com": [
     "cars"
   ],
+  "topky.sk": [
+    "news"
+  ],
+  "toptoon.com": [
+    "webcomics"
+  ],
+  "torob.com": [
+    "price-comparison"
+  ],
+  "totogaming.am": [
+    "gambling"
+  ],
+  "toutiao.com": [
+    "news"
+  ],
   "towardsdatascience.com": [
     "dev-blogs"
   ],
   "toysrus.com": [
+    "shopping"
+  ],
+  "tportal.hr": [
+    "news"
+  ],
+  "tradeinn.com": [
     "shopping"
   ],
   "tradingview.com": [
@@ -4612,11 +10707,23 @@
   "trains.com": [
     "trains"
   ],
+  "tranche.finance": [
+    "crypto"
+  ],
   "transcend.io": [
     "privacy"
   ],
+  "transfermarkt.it": [
+    "soccer"
+  ],
   "transformativeworks.org": [
     "fanfiction"
+  ],
+  "transip.eu": [
+    "hosting"
+  ],
+  "transip.nl": [
+    "hosting"
   ],
   "transportgzm.pl": [
     "transit"
@@ -4627,11 +10734,20 @@
   "treccani.it": [
     "reference"
   ],
+  "treehugger.com": [
+    "sustainability"
+  ],
   "trellis.law": [
     "legal"
   ],
+  "trellix.com": [
+    "security"
+  ],
   "trezor.io": [
     "crypto"
+  ],
+  "tribunnews.com": [
+    "news"
   ],
   "tricentis.com": [
     "testing"
@@ -4640,20 +10756,72 @@
     "travel",
     "flights"
   ],
+  "tripadvisor.co.uk": [
+    "travel"
+  ],
+  "tripadvisor.es": [
+    "travel"
+  ],
+  "tripadvisor.fr": [
+    "travel"
+  ],
+  "tripadvisor.in": [
+    "travel"
+  ],
+  "tripadvisor.it": [
+    "travel"
+  ],
+  "tripo3d.ai": [
+    "ai"
+  ],
+  "triunfobet.com": [
+    "gambling"
+  ],
   "trivago.com": [
     "travel"
+  ],
+  "trovaprezzi.it": [
+    "price-comparison"
   ],
   "truecaller.com": [
     "mobile-apps"
   ],
+  "truecar.com": [
+    "cars"
+  ],
+  "trueconf.net": [
+    "video-call"
+  ],
   "truereligion.com": [
     "fashion"
+  ],
+  "trustedconsumervoice.com": [
+    "consumer"
+  ],
+  "trustedshops.com": [
+    "ecommerce"
+  ],
+  "truyenfull.live": [
+    "books"
+  ],
+  "truyenqq.com.vn": [
+    "manga"
+  ],
+  "truyenqqko.com": [
+    "manga"
+  ],
+  "tse.jus.br": [
+    "elections",
+    "government"
   ],
   "tsn.ca": [
     "sports"
   ],
   "tsn.ua": [
     "television"
+  ],
+  "tu-berlin.de": [
+    "university"
   ],
   "tu-chemnitz.de": [
     "university"
@@ -4664,6 +10832,21 @@
   "tu-freiberg.de": [
     "university"
   ],
+  "tuasaude.com": [
+    "health"
+  ],
+  "tubi.io": [
+    "streaming"
+  ],
+  "tubi.video": [
+    "streaming"
+  ],
+  "tudocelular.com": [
+    "smartphones"
+  ],
+  "tudogostoso.com.br": [
+    "recipes"
+  ],
   "tug.org": [
     "latex"
   ],
@@ -4673,11 +10856,43 @@
   "tui.nl": [
     "travel"
   ],
+  "tupi.fm": [
+    "radio"
+  ],
+  "turbo.az": [
+    "cars",
+    "classifieds"
+  ],
+  "turboscribe.ai": [
+    "ai"
+  ],
+  "turf-fr.com": [
+    "gambling"
+  ],
+  "turfomania.fr": [
+    "gambling"
+  ],
+  "turkiye.gov.tr": [
+    "government"
+  ],
   "turner.com": [
     "television"
   ],
+  "turnitin.com": [
+    "education"
+  ],
+  "tutsplus.com": [
+    "courses"
+  ],
   "tutti.ch": [
     "classifieds"
+  ],
+  "tuttomercatoweb.com": [
+    "soccer",
+    "sports-news"
+  ],
+  "tutu.ru": [
+    "travel"
   ],
   "tv-asahi.co.jp": [
     "television"
@@ -4694,6 +10909,9 @@
   "tv5monde.com": [
     "television"
   ],
+  "tv9telugu.com": [
+    "news"
+  ],
   "tvanouvelles.ca": [
     "news",
     "television"
@@ -4706,6 +10924,9 @@
   ],
   "tver.jp": [
     "streaming"
+  ],
+  "tvguia.es": [
+    "television"
   ],
   "tvmaze.com": [
     "tv-tracking"
@@ -4730,6 +10951,9 @@
   "tvspielfilm.de": [
     "television"
   ],
+  "tvspix.com": [
+    "television"
+  ],
   "twilio.com": [
     "api",
     "voip"
@@ -4737,8 +10961,20 @@
   "twinkl.co.uk": [
     "edtech"
   ],
+  "twitcasting.tv": [
+    "livestream"
+  ],
+  "twkan.com": [
+    "webnovel"
+  ],
+  "twword.com": [
+    "dictionary"
+  ],
   "tylertech.com": [
     "tech"
+  ],
+  "typing.com": [
+    "education"
   ],
   "u-bordeaux.fr": [
     "university"
@@ -4755,15 +10991,37 @@
   "uab.edu": [
     "university"
   ],
+  "uakino.best": [
+    "streaming",
+    "film"
+  ],
+  "uakinogo.io": [
+    "film"
+  ],
+  "ual.com": [
+    "airlines"
+  ],
   "uam.es": [
     "university"
   ],
   "ub.edu": [
     "university"
   ],
+  "uba.ar": [
+    "university"
+  ],
+  "ubnt.com": [
+    "networking"
+  ],
+  "uc.cn": [
+    "browser"
+  ],
   "uc.pt": [
     "open-access",
     "university"
+  ],
+  "ucar.edu": [
+    "science"
   ],
   "ucas.com": [
     "university",
@@ -4778,6 +11036,15 @@
   "ucf.edu": [
     "university"
   ],
+  "uchi.ru": [
+    "edtech"
+  ],
+  "uchicago.edu": [
+    "university"
+  ],
+  "uchile.cl": [
+    "university"
+  ],
   "uci.org": [
     "cycling"
   ],
@@ -4786,6 +11053,12 @@
   ],
   "ucm.es": [
     "university"
+  ],
+  "ucoz.net": [
+    "website-builder"
+  ],
+  "ucoz.ru": [
+    "website-builder"
   ],
   "ucsfhealth.org": [
     "health"
@@ -4801,6 +11074,9 @@
   "udiseplus.gov.in": [
     "government"
   ],
+  "udyamregistration.gov.in": [
+    "government"
+  ],
   "ufc.com": [
     "martial-arts"
   ],
@@ -4814,11 +11090,23 @@
     "insurance",
     "health"
   ],
+  "uib.no": [
+    "university"
+  ],
   "uibk.ac.at": [
     "university"
   ],
+  "uidai.gov.in": [
+    "government"
+  ],
   "uipath.com": [
     "automation"
+  ],
+  "uisp.com": [
+    "networking"
+  ],
+  "uiuc.edu": [
+    "university"
   ],
   "ukg.com": [
     "payroll"
@@ -4836,7 +11124,16 @@
   "umanitoba.ca": [
     "university"
   ],
+  "umingle.com": [
+    "dating"
+  ],
   "uml.edu": [
+    "university"
+  ],
+  "umn.edu": [
+    "university"
+  ],
+  "umss.edu.bo": [
     "university"
   ],
   "umu.se": [
@@ -4845,6 +11142,12 @@
   ],
   "unbounce.com": [
     "website-builder"
+  ],
+  "undp.org": [
+    "humanitarian"
+  ],
+  "unece.org": [
+    "governance"
   ],
   "unf.edu": [
     "university"
@@ -4859,6 +11162,12 @@
     "university"
   ],
   "uni-due.de": [
+    "university"
+  ],
+  "uni-erlangen.de": [
+    "university"
+  ],
+  "uni-frankfurt.de": [
     "university"
   ],
   "uni-freiburg.de": [
@@ -4882,6 +11191,9 @@
   "uni-leipzig.de": [
     "university"
   ],
+  "uni-lj.si": [
+    "university"
+  ],
   "uni-mainz.de": [
     "university"
   ],
@@ -4889,6 +11201,9 @@
     "university"
   ],
   "uni-marburg.de": [
+    "university"
+  ],
+  "uni-muenchen.de": [
     "university"
   ],
   "uni-muenster.de": [
@@ -4923,6 +11238,9 @@
   ],
   "unice.fr": [
     "university"
+  ],
+  "unicode.org": [
+    "reference"
   ],
   "unifesp.br": [
     "university"
@@ -4960,11 +11278,17 @@
   "univision.com": [
     "television"
   ],
+  "unlockffbeta.com": [
+    "video-games"
+  ],
   "unlv.edu": [
     "university"
   ],
   "unm.edu": [
     "university"
+  ],
+  "unstop.com": [
+    "jobs"
   ],
   "unsw.edu.au": [
     "university"
@@ -4972,11 +11296,26 @@
   "unu.edu": [
     "university"
   ],
+  "unwomen.org": [
+    "humanitarian"
+  ],
   "uol.com.br": [
     "online-news"
   ],
+  "up-manga.com": [
+    "manga"
+  ],
+  "up.gov.in": [
+    "government"
+  ],
+  "up.nic.in": [
+    "government"
+  ],
   "up.pt": [
     "university"
+  ],
+  "upbhulekh.gov.in": [
+    "government"
   ],
   "upenn.edu": [
     "university"
@@ -4984,8 +11323,32 @@
   "upf.edu": [
     "university"
   ],
+  "uppcl.org": [
+    "government"
+  ],
+  "upsdc.gov.in": [
+    "government"
+  ],
+  "upsssc.gov.in": [
+    "jobs"
+  ],
   "uptodown.com": [
     "downloads"
+  ],
+  "uptune.ir": [
+    "music"
+  ],
+  "ura.news": [
+    "news"
+  ],
+  "urban-vpn.com": [
+    "vpn"
+  ],
+  "urbanladder.com": [
+    "home"
+  ],
+  "urdupoint.com": [
+    "news"
   ],
   "uregina.ca": [
     "university"
@@ -5002,6 +11365,9 @@
   "usda.gov": [
     "government"
   ],
+  "usembassy.gov": [
+    "government"
+  ],
   "userway.org": [
     "accessibility"
   ],
@@ -5014,8 +11380,23 @@
   "usj.co.jp": [
     "travel"
   ],
+  "ustream.tv": [
+    "livestream"
+  ],
+  "usvisa-info.com": [
+    "immigration"
+  ],
+  "usvisascheduling.com": [
+    "government"
+  ],
   "uswitch.com": [
     "price-comparison"
+  ],
+  "ut.ac.id": [
+    "university"
+  ],
+  "utah.gov": [
+    "government"
   ],
   "utas.edu.au": [
     "university"
@@ -5029,6 +11410,9 @@
   "uu.nl": [
     "university"
   ],
+  "uukanshu.cc": [
+    "webnovel"
+  ],
   "uv.es": [
     "university"
   ],
@@ -5038,11 +11422,17 @@
   "uvic.ca": [
     "university"
   ],
+  "uw.edu": [
+    "university"
+  ],
   "uwinnipeg.ca": [
     "university"
   ],
   "uwm.edu": [
     "university"
+  ],
+  "v6velugu.com": [
+    "news"
   ],
   "va.gov": [
     "government",
@@ -5054,12 +11444,21 @@
   "vaisala.com": [
     "weather"
   ],
+  "value-domain.com": [
+    "domains"
+  ],
   "vanderbilt.edu": [
     "university"
+  ],
+  "vanguard.com": [
+    "investing"
   ],
   "varonis.com": [
     "cybersecurity",
     "tech"
+  ],
+  "vatanbilgisayar.com": [
+    "electronics"
   ],
   "vcu.edu": [
     "university"
@@ -5074,6 +11473,9 @@
     "payments",
     "fintech"
   ],
+  "ventraip.net.au": [
+    "hosting"
+  ],
   "ventusky.com": [
     "weather"
   ],
@@ -5083,14 +11485,77 @@
   "verizonmedia.com": [
     "media"
   ],
+  "verizonwireless.com": [
+    "telecom"
+  ],
+  "vesselfinder.com": [
+    "shipping"
+  ],
   "veteransunited.com": [
     "mortgage"
+  ],
+  "vfsglobal.com": [
+    "government"
+  ],
+  "vhlcentral.com": [
+    "textbooks"
+  ],
+  "victronenergy.com": [
+    "energy"
+  ],
+  "videa.hu": [
+    "video"
+  ],
+  "videojs.com": [
+    "javascript"
+  ],
+  "videy.co": [
+    "video"
   ],
   "vidiq.com": [
     "video"
   ],
   "vie-publique.fr": [
     "government"
+  ],
+  "vietnam.vn": [
+    "travel"
+  ],
+  "vietnamnet.vn": [
+    "news"
+  ],
+  "vimm.net": [
+    "emulation"
+  ],
+  "vinted.co.uk": [
+    "secondhand"
+  ],
+  "vinted.de": [
+    "secondhand"
+  ],
+  "vinted.es": [
+    "secondhand"
+  ],
+  "vinted.fr": [
+    "secondhand"
+  ],
+  "vinted.it": [
+    "secondhand"
+  ],
+  "vinted.lt": [
+    "marketplace"
+  ],
+  "vinted.pl": [
+    "secondhand"
+  ],
+  "virginia.gov": [
+    "government"
+  ],
+  "visa.cn": [
+    "payments"
+  ],
+  "visa.com": [
+    "payments"
   ],
   "visitberlin.de": [
     "travel"
@@ -5104,6 +11569,9 @@
   "visual-paradigm.com": [
     "diagramming"
   ],
+  "visualstudio.com": [
+    "vscode"
+  ],
   "vivaldi.com": [
     "browser"
   ],
@@ -5111,17 +11579,41 @@
     "browser",
     "desktop-apps"
   ],
+  "vivareal.com.br": [
+    "real-estate"
+  ],
+  "vivawebhost.com": [
+    "hosting"
+  ],
+  "vivint.ai": [
+    "smart-home"
+  ],
+  "vizio.com": [
+    "television"
+  ],
   "vk.me": [
     "messaging"
   ],
   "vk.ru": [
     "social"
   ],
+  "vkontakte.ru": [
+    "social"
+  ],
+  "vkplay.ru": [
+    "games"
+  ],
+  "vkusvill.ru": [
+    "grocery"
+  ],
   "vlaanderen.be": [
     "government"
   ],
   "vllm.ai": [
     "ai"
+  ],
+  "vlr.gg": [
+    "esports"
   ],
   "vogue.fr": [
     "fashion",
@@ -5145,6 +11637,9 @@
   "voya.com": [
     "retirement"
   ],
+  "vtb.ru": [
+    "banking"
+  ],
   "vtm.be": [
     "television"
   ],
@@ -5157,9 +11652,15 @@
   "vuze.com": [
     "torrent"
   ],
+  "vwgroup.com": [
+    "car-brands"
+  ],
   "w3schools.com": [
     "webdev",
     "courses"
+  ],
+  "wa.gov": [
+    "government"
   ],
   "waikato.ac.nz": [
     "open-access",
@@ -5168,14 +11669,41 @@
   "wakacje.pl": [
     "travel"
   ],
+  "wakelet.com": [
+    "bookmarks"
+  ],
+  "wal-mart.com": [
+    "shopping"
+  ],
   "walla.co.il": [
     "online-news"
+  ],
+  "wallapop.com": [
+    "classifieds"
   ],
   "wallonie.be": [
     "government"
   ],
+  "walmart.com.mx": [
+    "shopping"
+  ],
+  "wampserver.com": [
+    "webserver"
+  ],
+  "wanadoo.fr": [
+    "telecom"
+  ],
   "wantedly.com": [
     "jobs"
+  ],
+  "wantgoo.com": [
+    "investing"
+  ],
+  "wargaming.net": [
+    "games"
+  ],
+  "wartank.ru": [
+    "video-games"
   ],
   "waseda.jp": [
     "university"
@@ -5186,11 +11714,32 @@
   "washingtonpost.com": [
     "newspaper"
   ],
+  "wassenaar.org": [
+    "diplomacy"
+  ],
+  "wayground.com": [
+    "edtech"
+  ],
   "waymo.com": [
     "automotive"
   ],
+  "wb.gov.in": [
+    "government"
+  ],
+  "wb.ru": [
+    "shopping"
+  ],
+  "wbs-law.de": [
+    "legal"
+  ],
   "wbur.org": [
     "radio"
+  ],
+  "wcd.gov.in": [
+    "government"
+  ],
+  "wco.tv": [
+    "streaming"
   ],
   "wcvb.com": [
     "television"
@@ -5198,14 +11747,56 @@
   "wdc.com": [
     "hardware"
   ],
+  "weatherbug.net": [
+    "weather"
+  ],
+  "web.de": [
+    "news"
+  ],
   "web.nhk": [
     "television"
+  ],
+  "webassign.net": [
+    "education"
+  ],
+  "webdramaturkey2.com": [
+    "tv-series"
+  ],
+  "webflow.io": [
+    "website-builder"
+  ],
+  "webgo.de": [
+    "hosting"
+  ],
+  "webmotors.com.br": [
+    "cars"
   ],
   "webnode.com": [
     "website-builder"
   ],
+  "webpt.com": [
+    "health"
+  ],
+  "webs.com": [
+    "website-builder"
+  ],
+  "websupport.sk": [
+    "hosting"
+  ],
+  "wedos.cz": [
+    "hosting"
+  ],
+  "weebcentral.com": [
+    "manga"
+  ],
+  "weforum.org": [
+    "politics"
+  ],
   "wegame.com.cn": [
     "video-games"
+  ],
+  "weibo.cn": [
+    "social"
   ],
   "wellcomecollection.org": [
     "museums"
@@ -5216,6 +11807,9 @@
   "westernunion.com": [
     "payments"
   ],
+  "westeros.org": [
+    "tv-series"
+  ],
   "westfalen-blatt.de": [
     "newspaper"
   ],
@@ -5225,7 +11819,13 @@
   "westmarine.com": [
     "boating"
   ],
+  "wetransfer.net": [
+    "file-transfer"
+  ],
   "wetter.com": [
+    "weather"
+  ],
+  "wetteronline.de": [
     "weather"
   ],
   "wetv.vip": [
@@ -5238,27 +11838,75 @@
   "wgtn.ac.nz": [
     "university"
   ],
+  "whatwg.org": [
+    "standards"
+  ],
   "which.co.uk": [
     "consumer"
+  ],
+  "whiterabbitpress.com": [
+    "publishing"
+  ],
+  "whoop.com": [
+    "fitness"
   ],
   "whosampled.com": [
     "music"
   ],
+  "wi.gov": [
+    "government"
+  ],
   "wien.gv.at": [
     "municipality"
+  ],
+  "wiki.gg": [
+    "reference"
+  ],
+  "wikia.com": [
+    "reference"
   ],
   "wikiart.org": [
     "art",
     "reference"
   ],
+  "wikibooks.org": [
+    "reference"
+  ],
+  "wikicv.org": [
+    "resume"
+  ],
   "wikidata.org": [
     "open-data"
+  ],
+  "wikidot.com": [
+    "website-builder"
+  ],
+  "wikiloc.com": [
+    "outdoors"
+  ],
+  "wikipedia.com": [
+    "reference"
+  ],
+  "wikiquote.org": [
+    "quotes"
+  ],
+  "wikisource.org": [
+    "reference"
   ],
   "wikiwand.com": [
     "reference"
   ],
+  "wiktionary.org": [
+    "dictionary"
+  ],
+  "willhaben.at": [
+    "classifieds"
+  ],
   "winamp.com": [
     "media-player"
+  ],
+  "windguru.cz": [
+    "weather"
   ],
   "wine-searcher.com": [
     "wine"
@@ -5266,12 +11914,27 @@
   "winehq.org": [
     "open-source"
   ],
+  "winner.bet": [
+    "gambling"
+  ],
+  "wired.co.uk": [
+    "tech-news"
+  ],
   "wired.it": [
     "tech-news"
   ],
   "wireshark.org": [
     "networking",
     "open-source"
+  ],
+  "wishlink.com": [
+    "shopping"
+  ],
+  "wistia.com": [
+    "video"
+  ],
+  "withbuddies.com": [
+    "games"
   ],
   "withpersona.com": [
     "auth"
@@ -5282,8 +11945,17 @@
   "wiz.cn": [
     "notes"
   ],
+  "wizards.com": [
+    "video-games"
+  ],
+  "wknd.ai": [
+    "ai"
+  ],
   "wko.at": [
     "business"
+  ],
+  "wlvpn.com": [
+    "privacy-tools"
   ],
   "wm.com": [
     "business"
@@ -5294,14 +11966,41 @@
   "wmur.com": [
     "television"
   ],
+  "wnacg.com": [
+    "manga"
+  ],
   "wongnai.com": [
     "restaurants"
+  ],
+  "wordfence.com": [
+    "security"
+  ],
+  "wordstream.com": [
+    "marketing"
+  ],
+  "wordunscrambler.me": [
+    "dictionary"
+  ],
+  "wordwall.net": [
+    "edtech"
+  ],
+  "work.ua": [
+    "jobs"
+  ],
+  "workdaysuvcareers.com": [
+    "jobs"
   ],
   "workplace.com": [
     "chat"
   ],
+  "worldpopulationreview.com": [
+    "statistics"
+  ],
   "worldscientific.com": [
     "academic-publisher"
+  ],
+  "worldtimeserver.com": [
+    "timezone"
   ],
   "wowhead.com": [
     "game-database"
@@ -5309,8 +12008,23 @@
   "wowow.co.jp": [
     "television"
   ],
+  "wp.pl": [
+    "news"
+  ],
+  "wpengine.com": [
+    "hosting"
+  ],
+  "wpenginepowered.com": [
+    "hosting"
+  ],
+  "wplay.co": [
+    "gambling"
+  ],
   "wrc.com": [
     "sports"
+  ],
+  "wri.org": [
+    "environment"
   ],
   "wrike.com": [
     "project-management"
@@ -5318,7 +12032,16 @@
   "wttr.in": [
     "weather"
   ],
+  "wufoo.com": [
+    "forms"
+  ],
   "wur.nl": [
+    "university"
+  ],
+  "wurmz.net": [
+    "video-games"
+  ],
+  "wustl.edu": [
     "university"
   ],
   "wvu.edu": [
@@ -5327,14 +12050,32 @@
   "wwe.com": [
     "sports"
   ],
+  "www.gob.pe": [
+    "government"
+  ],
   "wyndhamhotels.com": [
     "hotel-chains"
   ],
   "wyze.com": [
     "smart-home"
   ],
+  "x5.ru": [
+    "shopping"
+  ],
+  "xbanxia.cc": [
+    "webnovel"
+  ],
+  "xdate.ch": [
+    "dating"
+  ],
   "xero.com": [
     "accounting"
+  ],
+  "xfinityhome.com": [
+    "smart-home"
+  ],
+  "xi-rutor.top": [
+    "torrents"
   ],
   "xinhuanet.com": [
     "news-agency"
@@ -5348,11 +12089,29 @@
   "xkcd.com": [
     "comics"
   ],
+  "xmlsoft.org": [
+    "dev"
+  ],
   "xoom.com": [
     "payments"
   ],
+  "xoso.com.vn": [
+    "gambling"
+  ],
+  "xosodaiphat.com": [
+    "gambling"
+  ],
+  "xskt.com.vn": [
+    "gambling"
+  ],
+  "xsmn.mobi": [
+    "gambling"
+  ],
   "xsolla.com": [
     "payments"
+  ],
+  "xsrv.jp": [
+    "hosting"
   ],
   "xuexi.cn": [
     "education"
@@ -5360,20 +12119,71 @@
   "xunlei.com": [
     "downloads"
   ],
+  "yad2.co.il": [
+    "classifieds"
+  ],
+  "yadi.sk": [
+    "cloud-storage"
+  ],
+  "yahoo.co.jp": [
+    "news"
+  ],
   "yaklass.ru": [
     "edtech"
   ],
   "yale.edu": [
     "university"
   ],
+  "yallakora.com": [
+    "sports"
+  ],
+  "yandex.uz": [
+    "search"
+  ],
+  "yangkeduo.com": [
+    "shopping"
+  ],
+  "yango.com": [
+    "rideshare"
+  ],
   "yanmaga.jp": [
     "manga"
+  ],
+  "yaoimangaonline.com": [
+    "manga"
+  ],
+  "yaoiscan.com": [
+    "manga"
+  ],
+  "yaplakal.com": [
+    "forum"
   ],
   "yarnpkg.com": [
     "package-manager"
   ],
+  "yealink.com": [
+    "voip"
+  ],
+  "yeastar.com": [
+    "voip"
+  ],
   "yell.com": [
     "classifieds"
+  ],
+  "yellowpages.ca": [
+    "classifieds"
+  ],
+  "yenicaggazetesi.com": [
+    "newspaper"
+  ],
+  "yesplay.bet": [
+    "gambling"
+  ],
+  "yesstyle.com": [
+    "fashion"
+  ],
+  "ygosu.com": [
+    "gaming-news"
   ],
   "ymobile.jp": [
     "telecom"
@@ -5381,11 +12191,32 @@
   "ynet.co.il": [
     "online-news"
   ],
+  "yoast.com": [
+    "webdev"
+  ],
   "yoctoproject.org": [
     "open-source"
   ],
+  "yolasite.com": [
+    "website-builder"
+  ],
+  "yoomoney.ru": [
+    "payments"
+  ],
   "york.ac.uk": [
     "university"
+  ],
+  "youdao.com": [
+    "dictionary"
+  ],
+  "yougov.com": [
+    "surveys"
+  ],
+  "youm7.com": [
+    "news"
+  ],
+  "youngjoygame.com": [
+    "game-studios"
   ],
   "youngliving.com": [
     "health"
@@ -5394,21 +12225,64 @@
     "video",
     "parenting"
   ],
+  "yr.no": [
+    "weather"
+  ],
+  "yts.gg": [
+    "torrents"
+  ],
   "yu.edu": [
     "university"
   ],
   "yubico.com": [
     "cybersecurity"
   ],
+  "yuga.com": [
+    "crypto"
+  ],
   "yum.com": [
     "restaurants"
+  ],
+  "yummyani.me": [
+    "anime"
+  ],
+  "yupmanga.com": [
+    "manga"
   ],
   "yuque.com": [
     "notes"
   ],
+  "z.ai": [
+    "ai"
+  ],
   "zabbix.com": [
     "monitoring",
     "open-source"
+  ],
+  "zalan.do": [
+    "fashion",
+    "shopping"
+  ],
+  "zalando.com": [
+    "fashion"
+  ],
+  "zalando.es": [
+    "fashion"
+  ],
+  "zalando.fr": [
+    "fashion"
+  ],
+  "zalando.it": [
+    "fashion"
+  ],
+  "zalando.nl": [
+    "fashion"
+  ],
+  "zalando.pl": [
+    "fashion"
+  ],
+  "zaloapp.com": [
+    "messaging"
   ],
   "zbmath.org": [
     "math"
@@ -5416,11 +12290,32 @@
   "zdfheute.de": [
     "public-broadcaster"
   ],
+  "zdn.vn": [
+    "tech-news"
+  ],
   "zedge.net": [
     "mobile-apps"
   ],
+  "zeffy.com": [
+    "charities"
+  ],
   "zend.com": [
     "php"
+  ],
+  "zepp.com": [
+    "fitness"
+  ],
+  "zepto.co.in": [
+    "grocery"
+  ],
+  "zerogpt.com": [
+    "ai"
+  ],
+  "zeturf.fr": [
+    "gambling"
+  ],
+  "zing.vn": [
+    "news"
   ],
   "zinzino.com": [
     "health"
@@ -5428,11 +12323,35 @@
   "zippia.com": [
     "jobs"
   ],
+  "zol.com.cn": [
+    "electronics"
+  ],
+  "zonaprop.com.ar": [
+    "real-estate"
+  ],
+  "zonatmo.org": [
+    "manga"
+  ],
+  "zone-turf.fr": [
+    "gambling"
+  ],
   "zoominfo.com": [
     "crm"
   ],
+  "zoomit.ir": [
+    "tech-news"
+  ],
   "zooplus.de": [
     "pets"
+  ],
+  "zooplus.net": [
+    "pets"
+  ],
+  "zozo.jp": [
+    "shopping"
+  ],
+  "zuimeitianqi.com": [
+    "weather"
   ],
   "zulipchat.com": [
     "messaging"
@@ -5442,5 +12361,8 @@
   ],
   "zurich.com": [
     "insurance"
+  ],
+  "zvuk.com": [
+    "music"
   ]
 }
