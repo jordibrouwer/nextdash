@@ -118,6 +118,13 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 - **new — the page filter stays at the top on a phone.** Shift+F narrows the page you are on, and a phone has no Shift+F, so the phone layout keeps the filter bar above the bookmarks from the first paint. It does not take focus, so the keyboard stays down until you tap it; the × and Escape empty it rather than close it, and the × only shows while there is something to clear. Full width, 44px tall and 16px text, so iOS does not zoom in on focus. Leaving the phone layout drops an empty bar and keeps one that is still filtering (`DashboardGridFilter.syncPinned`, `grid-filter-bar--pinned`, `dashboard-grid-filter-mobile.spec.js`).
 
+### Widgets
+
+- **new — Jellyfin: now playing.** A second Jellyfin tile shows who is watching what right now and how far along they are; it refreshes every 10 seconds by default.
+- **new — Emby widgets.** *Emby* (what was added lately, with the real posters) and *Emby — now playing*, read through the same client as Jellyfin: Emby is where Jellyfin came from, so only its paths differ.
+- **new — Plex widgets.** *Plex* (what was added lately) and *Plex — now playing*, read through Tautulli: its API key only reads, where Plex's own token opens the whole account. Pictures come through the server, so the key never sits in a page.
+- **fix — media tiles refresh on every beat, without the loading line.** A media tile showed *Loading…* between readings and, kept a TTL from its answer, refreshed only every other beat; it now redraws in place each time.
+
 ### Tags
 
 - **new — self-hosted apps are recognised by name.** A Sonarr at `192.168.1.20:8989` or `sonarr.home.lan` sits at an address no catalogue can list, so 217 self-hosted and local apps are now known by what they are called: the host's first label, a whole word in the bookmark's name or the page title, and on a private address the app's default port. Each gets `#self-hosted` and one tag for what it does (`#media-server`, `#usenet`, `#smart-home`, `#networking`, `#monitoring`, `#nas` and so on). An everyday word (Flood, Element) or a generic label (`cloud`, `chat`) only counts on the home network, and a port two apps share with different tags counts for nothing. One row and one refusal per app; the chip says *Recognised as Sonarr*. The list is `internal/app/tag_apps.json`, served with the catalogue (`tag-suggestions.js`, `tag_catalogue.go`, `tag-apps.spec.js`).
@@ -145,7 +152,6 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **new — the tag view of every bookmark (`#tags`).** **Shift+T** with no row in hand opens the tag view with no tag picked: every bookmark from every page, *N without tags* in the header, a **Without tags** filter at the top of the rail and the tags in use under it, one click from their own view (Back returns here). With a row in hand Shift+T still opens its Tags popover.
 - **fix — every tag suggestion in a row can be seen.** The line over the list counted 23 suggestions while a narrow Tags column hid most of their chips. The suggestion now comes first and the row's own tags fold into `+n` around it. A row with more than one suggestion shows `+N` beside its chip, which opens all of them, each to add or turn down; `+n` for the row's own tags opens the list of them. The same in the Bookmarks view, the inbox and the tag view (`TagOfferRow`), where the tag view's rows used to show up to three chips without fitting them.
 - **fix — Find tags in the tag view offers the same choices as in the Bookmarks view:** *Bookmarks without tags (N)* of the rows shown, the rows shown, and reading their pages, with *Add what it finds straight away* in the same words.
-- **fix — *Add what it finds straight away* is a setting.** Find tags kept the answer in the browser, so another browser or device added tags straight away again. It is now kept with the other settings on the server, or in the browser for whoever keeps settings per device; an answer of off given before carries over (`tagSearchApplyNow`).
 - **new — the cheat sheet lists Shift+T.** The keyboard cheat sheet, the printed sheet (`nextDash-cheatsheet.pdf`) and its generator now name Shift+T with no bookmark focused (tag view of every bookmark), alongside Shift+K for the dashboard tour and **a** for the suggested tags in the tag view.
 - **new — 1,688 more self-hosted apps known by name, and a home address is #self-hosted.** On a bookmark at home (a private IP, `.lan`, a Tailscale name) the app list now also knows the long tail: every project in awesome-selfhosted and every self-hosted site the catalogue holds (phpMyAdmin, Tracearr, LazyLibrarian, Houndarr), by host label or by a word in the bookmark's name, so `adguard-1` on an IP is AdGuard Home. A public domain where two or more of your apps live (jellyfin.example.cc, radarr.example.cc) counts as home too. Whatever else sits at a home address gets one row offering `#self-hosted` (*on your home network*). On the public web none of these new names count.
 - **new — 2,298 well-known sites the catalogue lacked.** Of the 10,000 best-known sites (by the Tranco ranking), some 5,700 were in no subject, among them mail.ru, qq.com, sharepoint.com and azure.com. Each was filed under one or two subjects, or left out when it is not a site anyone bookmarks: CDNs, trackers, DNS and API hosts, link shorteners.
@@ -154,6 +160,11 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 ### Settings
 
 - **fix — "Keep settings on this device only" keeps them on this device.** Every save still sent the whole copy to the server, so a theme or toggle set on the phone turned up in every other browser. In that mode only the settings that stay server-wide (alerts, backups, containers, saved searches and the like) go to the server now; the rest stays in this browser (`saveSettings` sends `GLOBAL_SERVER_SETTING_KEYS` only).
+
+
+### Docs
+
+- **docs — the Unraid template** (`templates/nextdash.xml`) lists the v1.19.6 and v1.19.7 changes, the same as the copy Community Applications reads.
 
 ---
 
