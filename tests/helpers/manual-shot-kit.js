@@ -33,8 +33,13 @@ const NOW = new Date('2026-10-06T09:12:00');
 const DESKTOP = { width: 1440, height: 900 };
 const PHONE = { width: 390, height: 844 };
 const TABLET = { width: 820, height: 1180 };
-/** The demo data's own theme, given to a new install as well. */
+/** The demo data's own theme. */
 const DEMO_THEME = 'matrix-bluepill-dark';
+/**
+ * Every manual screenshot is taken in this theme, whatever the demo data
+ * says, so the pictures sit quietly on nextdash.cc and its docs.
+ */
+const SHOT_THEME = 'gloss-liquid-chrome-dark';
 
 /** A port nothing else is on (never 8080: the OS hands out a free one). */
 function freePort() {
@@ -403,6 +408,8 @@ const test = base.test.extend({
         if (dataPatch !== 'empty') {
             fs.cpSync(source, dir, { recursive: true });
             tidyDemoData(dir, dataPatch);
+            const settingsFile = path.join(dir, 'settings.json');
+            writeJSON(settingsFile, { ...readJSON(settingsFile), theme: SHOT_THEME });
         }
         const port = await freePort();
         const baseURL = `http://localhost:${port}`;
@@ -450,14 +457,14 @@ const test = base.test.extend({
         try {
             child = await boot();
             if (dataPatch === 'empty') {
-                // The first start writes a new install's settings; the demo's
+                // The first start writes a new install's settings; the shot
                 // theme is then put in them, and the server started again on
                 // them, so this shot has the same look as the rest.
                 await fetch(`${baseURL}/api/settings`).catch(() => {});
                 await stop(child);
                 child = null;
                 const settingsFile = path.join(dir, 'settings.json');
-                writeJSON(settingsFile, { ...readJSON(settingsFile), theme: DEMO_THEME });
+                writeJSON(settingsFile, { ...readJSON(settingsFile), theme: SHOT_THEME });
                 child = await boot();
             }
             await use({ baseURL, dir });
@@ -648,6 +655,7 @@ module.exports = {
     PHONE,
     TABLET,
     DEMO_THEME,
+    SHOT_THEME,
     freePort,
     waitForServer,
     readJSON,

@@ -42,7 +42,7 @@ const {
     DESKTOP,
     PHONE,
     TABLET,
-    DEMO_THEME,
+    SHOT_THEME,
     freePort,
     waitForServer,
     readJSON,
@@ -531,7 +531,7 @@ test('16 theme editor', async ({ page }) => {
     await subtab(page, 'Theme & type').click();
     await page.getByRole('button', { name: /Open the theme editor/ }).first().click();
     // Recolour the theme on screen: its colours open below.
-    await page.locator('[data-theme-base-select]').selectOption('matrix-bluepill-dark');
+    await page.locator('[data-theme-base-select]').selectOption(SHOT_THEME);
     await page.waitForTimeout(1_500);
     await scrollToTop(page, page.locator('[data-theme-base-select]'), 200);
     await shot(page, '16-theme-editor.jpg');
