@@ -1153,6 +1153,8 @@ class DashboardInbox {
             data: 'inbox',
             // Read at the click: the list may have moved on since this was drawn.
             onAddAll: () => void this.addRowOffers(this.offerPairs(this.getFilteredItems())),
+            refused: window.TagSuggestLive?.refusedCount?.(this.dash) || 0,
+            onRefused: () => void window.TagSuggestLive?.openRefused?.(this.dash),
         });
     }
 

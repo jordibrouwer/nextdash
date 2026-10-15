@@ -8470,7 +8470,10 @@
     "cleanupFilterOffered": "With a tag suggestion",
     "tagSearchWaitingOne": "1 bookmark has a tag suggestion.",
     "tagSearchInboxWaitingOne": "1 inbox link has a tag suggestion.",
-    "tagSearchShow": "Show"
+    "tagSearchShow": "Show",
+    "bmOffersRefused": "{n} turned down",
+    "bmOffersRefusedHint": "See what you turned down, and offer any of it again",
+    "tagSuggestionsRefusedSearch": "Find a site or tag…"
   },
   "colors": {
     "title": "thema-aanpassing",

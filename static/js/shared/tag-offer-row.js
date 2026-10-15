@@ -46,27 +46,54 @@
     }
 
     /** "N tag suggestions in this list · Add all"; hidden at none. */
-    function renderCount(host, count, { t = identity, data, onAddAll }) {
+    function renderCount(host, count, { t = identity, data, onAddAll, refused = 0, onRefused }) {
         if (!host) return;
         host.classList.add('tag-offer-count');
-        host.hidden = !count;
-        if (!count) {
+        host.hidden = !count && !refused;
+        if (host.hidden) {
             host.replaceChildren();
             return;
         }
-        const label = document.createElement('span');
-        label.textContent = count === 1
-            ? t('config.bmOffersOne', '1 tag suggestion in this list')
-            : t('config.bmOffersMany', '{n} tag suggestions in this list').replace('{n}', String(count));
-        const sep = document.createElement('span');
-        sep.textContent = '·';
-        const all = document.createElement('button');
-        all.type = 'button';
-        all.className = 'tag-offer-count-all';
-        all.setAttribute(`data-${data}-offers-all`, '');
-        all.textContent = t('config.bmOffersAddAll', 'Add all');
-        all.addEventListener('click', () => onAddAll?.());
-        host.replaceChildren(label, sep, all);
+        const sep = () => {
+            const dot = document.createElement('span');
+            dot.textContent = '·';
+            return dot;
+        };
+        const parts = [];
+        if (count) {
+            const label = document.createElement('span');
+            label.textContent = count === 1
+                ? t('config.bmOffersOne', '1 tag suggestion in this list')
+                : t('config.bmOffersMany', '{n} tag suggestions in this list').replace('{n}', String(count));
+            const all = document.createElement('button');
+            all.type = 'button';
+            all.className = 'tag-offer-count-all';
+            all.setAttribute(`data-${data}-offers-all`, '');
+            all.textContent = t('config.bmOffersAddAll', 'Add all');
+            all.addEventListener('click', () => onAddAll?.());
+            parts.push(label, sep(), all);
+        }
+        if (refused) {
+            if (parts.length) parts.push(sep());
+            parts.push(refusedLink(refused, { t, data, onRefused }));
+        }
+        host.replaceChildren(...parts);
+    }
+
+    /**
+     * "5 turned down": the way back to what was refused, beside the offers
+     * where the refusing happens. Every refusal holds for the whole site, so
+     * the number is the collection's, not this list's.
+     */
+    function refusedLink(n, { t = identity, data, onRefused }) {
+        const link = document.createElement('button');
+        link.type = 'button';
+        link.className = 'tag-offer-count-all tag-offer-count-refused';
+        link.setAttribute(`data-${data}-offers-refused`, '');
+        link.textContent = t('config.bmOffersRefused', '{n} turned down').replace('{n}', String(n));
+        link.title = t('config.bmOffersRefusedHint', 'See what you turned down, and offer any of it again');
+        link.addEventListener('click', () => onRefused?.());
+        return link;
     }
 
     /**
@@ -168,5 +195,5 @@
         return observer;
     }
 
-    global.TagOfferRow = { pick, sourceLabel, chipHtml, renderCount, fit, observe };
+    global.TagOfferRow = { pick, sourceLabel, chipHtml, renderCount, refusedLink, fit, observe };
 }(window));

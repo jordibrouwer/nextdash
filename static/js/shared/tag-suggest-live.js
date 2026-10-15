@@ -366,7 +366,36 @@
         return stampFor(dash);
     }
 
+    /** How many site → tag refusals the collection holds. */
+    function refusedCount(dash) {
+        return (dash?.settings?.dismissedTagSuggestions || []).length;
+    }
+
+    /**
+     * Config → Bookmarks → Tag suggestions, with Turned down open and in view:
+     * where a refusal is seen and offered again, from any view that refuses.
+     * The view first, the tab after -- d.config is a lazy stub until config
+     * has loaded, the way TagSuggestionsNotice opens it.
+     */
+    async function openRefused(dash) {
+        if (!dash?.config?.openConfigView) return;
+        await dash.config.openConfigView('bookmarks');
+        const config = dash.config.instance || dash.config;
+        if (!config) return;
+        config._tagSuggestionsRefusedOpen = true;
+        config.bmTab = 'tag-suggestions';
+        config.render?.();
+        config.restoreConfigHash?.();
+        const block = document.querySelector('[data-tag-suggestions-dismissed]');
+        if (!block) return;
+        block.open = true;
+        block.scrollIntoView({ block: 'start' });
+        block.querySelector('summary')?.focus?.({ preventScroll: true });
+    }
+
     global.TagSuggestLive = {
+        refusedCount,
+        openRefused,
         applyNow,
         setApplyNow,
         stamp,

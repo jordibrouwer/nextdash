@@ -101,5 +101,6 @@ test('Add all takes every offer in the list', async ({ page }) => {
     await page.locator('#config-bm-offers [data-bm-offers-all]').click();
     await expect.poll(() => tagsOf(page, `https://${host}/target-0`), { timeout: 10_000 }).toContain(tag);
     await expect.poll(() => tagsOf(page, `https://${host}/target-1`), { timeout: 10_000 }).toContain(tag);
-    await expect(page.locator('#config-bm-offers')).toBeHidden();
+    // The offers are gone; the line may stay for "N turned down".
+    await expect(page.locator('#config-bm-offers [data-bm-offers-all]')).toHaveCount(0);
 });

@@ -2218,6 +2218,8 @@
             data: 'bm',
             // Read at the click: the list may have moved on since this was drawn.
             onAddAll: () => void this.addWorkbenchOffers(this.workbenchOfferPairs()),
+            refused: global.TagSuggestLive?.refusedCount?.(this.dash) || 0,
+            onRefused: () => void global.TagSuggestLive?.openRefused?.(this.dash),
         });
     },
 

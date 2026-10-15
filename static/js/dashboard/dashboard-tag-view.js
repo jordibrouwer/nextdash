@@ -663,18 +663,33 @@
             const pairs = shown.map((b) => [b, this.suggestionsFor(b)]).filter(([, offers]) => offers.length);
             const line = this.el('span', 'tag-view-offer-count');
             const total = pairs.reduce((sum, [, offers]) => sum + offers.length, 0);
-            if (!total) {
+            const live = window.TagSuggestLive;
+            const refused = live?.refusedCount?.(this.dash) || 0;
+            if (!total && !refused) {
                 line.hidden = true;
                 return line;
             }
-            line.appendChild(this.el('strong', '', total === 1
-                ? this.t('dashboard.tagViewOffersOne', '1 tag suggestion')
-                : this.t('dashboard.tagViewOffersMany', '{n} tag suggestions').replace('{n}', String(total))));
-            const all = this.el('button', 'tag-view-offer-all', this.t('dashboard.tagViewOffersAddAll', 'Add all'));
-            all.type = 'button';
-            all.setAttribute('data-tag-view-add-all', '');
-            all.addEventListener('click', () => void this.addSuggestions(pairs));
-            line.append(this.el('span', '', '·'), all);
+            if (total) {
+                line.appendChild(this.el('strong', '', total === 1
+                    ? this.t('dashboard.tagViewOffersOne', '1 tag suggestion')
+                    : this.t('dashboard.tagViewOffersMany', '{n} tag suggestions').replace('{n}', String(total))));
+                const all = this.el('button', 'tag-view-offer-all', this.t('dashboard.tagViewOffersAddAll', 'Add all'));
+                all.type = 'button';
+                all.setAttribute('data-tag-view-add-all', '');
+                all.addEventListener('click', () => void this.addSuggestions(pairs));
+                line.append(this.el('span', '', '·'), all);
+            }
+            // The way back to what was refused, where the refusing happens.
+            if (refused && window.TagOfferRow?.refusedLink) {
+                if (total) line.append(this.el('span', '', '·'));
+                const link = window.TagOfferRow.refusedLink(refused, {
+                    t: (key, fallback) => this.t(key, fallback),
+                    data: 'tag-view',
+                    onRefused: () => void live.openRefused(this.dash),
+                });
+                link.classList.add('tag-view-offer-all');
+                line.append(link);
+            }
             return line;
         }
 

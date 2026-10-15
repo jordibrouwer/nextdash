@@ -752,7 +752,8 @@ test.describe('tag suggestions in the rows', () => {
         await expect(page.locator('.tag-view .tag-view-offer-count')).toContainText('1 tag suggestion');
         await page.locator('.tag-view [data-tag-view-add-all]').click();
         await expect.poll(() => readTags(page, ids.other, urlB()), { timeout: 10_000 }).toContain(OFFER);
-        await expect(page.locator('.tag-view .tag-view-offer-count')).toBeHidden();
+        // The offers are gone; the line may stay for "N turned down".
+        await expect(page.locator('.tag-view [data-tag-view-add-all]')).toHaveCount(0);
     });
 
     test('Find tags ▾ runs the round for the rows, and adds what it finds when told to', async ({ page }) => {

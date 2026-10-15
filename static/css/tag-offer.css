@@ -93,3 +93,8 @@
     text-underline-offset: 2px;
     cursor: pointer;
 }
+
+/* "5 turned down": the way back to the refusals, quieter than the offers. */
+.tag-offer-count-refused {
+    color: var(--text-secondary);
+}
