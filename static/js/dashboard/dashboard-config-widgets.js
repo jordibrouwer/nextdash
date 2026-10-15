@@ -3003,6 +3003,8 @@
             'jellyfin-playing': 'What is playing on Jellyfin right now — who, where and how far.',
             emby: 'What was added to Emby lately — films, series and anime, with posters.',
             'emby-playing': 'What is playing on Emby right now — who, where and how far.',
+            plex: 'What was added to Plex lately — films and series, with posters, through Tautulli.',
+            'plex-playing': 'What is playing on Plex right now — who, where and how far, through Tautulli.',
             sonarr: 'Episodes coming up and downloads in progress in Sonarr, with posters.',
             radarr: 'Films coming out and downloads in progress in Radarr, with posters.',
             seerr: 'Requests in Overseerr or Jellyseerr — who asked, and whether it has arrived — with posters.',

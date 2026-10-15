@@ -122,6 +122,44 @@
     };
 
     /*
+     * Plex, read through Tautulli: the address is Tautulli's, the key is
+     * Tautulli's API key (Settings → Web Interface), sent as X-Api-Key. Only
+     * libraries are offered; Tautulli has no user to read as.
+     */
+    Config.MEDIA_SERVICES.plex = {
+        id: 'plex',
+        name: 'Plex',
+        header: 'X-Api-Key',
+        placeholder: 'http://tautulli.local:8181',
+        hint: ['config.widgetPlexHint', 'The address of Tautulli, which reads Plex for nextDash.'],
+        words: {
+            keyWhere: ['config.widgetPlexKeyWhere', 'Settings → Web Interface → API key in Tautulli'],
+        },
+        choices(panel, widget, index, setup, config, esc) {
+            const chosen = Array.isArray(config.libraries) ? config.libraries : null;
+            const libraries = (setup.libraries || []).map((lib) => `
+                <label class="config-toggle config-toggle--inline">
+                    <input type="checkbox" data-widget-setting="libraries" data-widget-index="${index}"
+                        data-widget-kind="checkset" value="${esc(lib.id)}"
+                        ${!chosen || chosen.includes(lib.id) ? 'checked' : ''}>
+                    <span>${esc(lib.name)}</span>
+                </label>`).join('');
+            return `
+                <div class="config-widget-field">
+                    <span class="config-widget-field-label">${esc(panel.t('config.widgetJellyfinLibraries', 'Libraries'))}</span>
+                    <div class="config-widget-checkset">${libraries}</div>
+                </div>`;
+        },
+    };
+    Config.MEDIA_SERVICES['plex-playing'] = {
+        ...Config.MEDIA_SERVICES.plex,
+        id: 'plex-playing',
+        setup: 'plex',
+        choices: undefined,
+        connected: undefined,
+    };
+
+    /*
      * Seerr: whose requests to show is chosen from the users Connect lists.
      *
      * Its key is base64 and ends in "==" -- the part a double-click to copy
@@ -547,6 +585,7 @@
         return `<div class="config-widget-settings-body is-custom is-media is-${esc(service.id)}">
             <div class="config-custom-group">
                 <h4 class="config-custom-group-title">${esc(service.name)}</h4>
+                ${service.hint ? `<span class="config-widget-note">${esc(this.t(service.hint[0], service.hint[1]))}</span>` : ''}
                 <div class="config-custom-grid">
                     <div class="config-widget-field">
                         <label for="${id('server')}">${esc(this.mediaWord(service, 'server'))}</label>

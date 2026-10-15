@@ -215,7 +215,7 @@ test.describe('new widget kinds', () => {
         }, tag);
     }
 
-    const MEDIA = ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant'];
+    const MEDIA = ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant'];
 
     test('the media kinds lead the picker with a New badge', async ({ page }) => {
         await openWidgets(page);

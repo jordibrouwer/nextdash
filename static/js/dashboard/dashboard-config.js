@@ -18524,7 +18524,7 @@ class DashboardConfig {
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'notes']],
-        ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
+        ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
     ];
 
     renderPagesTags() {
@@ -20715,7 +20715,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -21097,6 +21097,7 @@ class DashboardConfig {
         homeassistant: DashboardConfig.HA_SETTINGS,
         'jellyfin-playing': DashboardConfig.JELLYFIN_PLAYING_SETTINGS,
         'emby-playing': DashboardConfig.JELLYFIN_PLAYING_SETTINGS,
+        'plex-playing': DashboardConfig.JELLYFIN_PLAYING_SETTINGS,
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
               label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },
@@ -21241,6 +21242,27 @@ class DashboardConfig {
             ...(field.hint ? { hint: walk(field.hint) } : {}),
             ...(field.options ? { options: field.options.map(([value, label]) => [value, walk(label)]) } : {}),
         }));
+    }
+
+    /*
+     * Plex, read through Tautulli: Jellyfin's questions without the user and
+     * without "Hide what was watched" -- Tautulli knows neither.
+     */
+    static {
+        const plex = (text) => text.replace('Jellyfin', 'Plex');
+        const walk = (item) => (Array.isArray(item)
+            ? (typeof item[0] === 'string' && item[0].startsWith('config.') && typeof item[1] === 'string'
+                ? (item[1].includes('Jellyfin') ? [plex(item[0]), plex(item[1]), ...item.slice(2)] : item)
+                : item.map(walk))
+            : typeof item === 'string' ? plex(item) : item);
+        DashboardConfig.WIDGET_SETTINGS.plex = DashboardConfig.WIDGET_SETTINGS.jellyfin
+            .filter((field) => field.key !== 'userId' && field.key !== 'hideWatched')
+            .map((field) => ({
+                ...field,
+                label: walk(field.label),
+                ...(field.hint ? { hint: walk(field.hint) } : {}),
+                ...(field.options ? { options: field.options.map(([value, label]) => [value, walk(label)]) } : {}),
+            }));
     }
 
     /** The formats a value may be shown in — the server accepts these and no others. */
