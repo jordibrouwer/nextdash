@@ -1471,12 +1471,25 @@ class DashboardData {
              * matching comment in loadData.
              */
             d._settingsWriteSeq = (d._settingsWriteSeq || 0) + 1;
+            /*
+             * On "Keep settings on this device only", only the server-wide keys
+             * go out. The whole merged copy did, so a theme or toggle set here
+             * turned up in every other browser. The server keeps what a save
+             * leaves out, and this device's own keys go to the local copy below.
+             */
+            let serverPayload = payload;
+            if (window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true) {
+                serverPayload = {};
+                for (const key of window.DeviceSettingsMerge.GLOBAL_SERVER_SETTING_KEYS) {
+                    if (Object.prototype.hasOwnProperty.call(payload, key)) serverPayload[key] = payload[key];
+                }
+            }
             const write = dashFetch('/api/settings', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(serverPayload)
             });
             const landed = write.then(() => {}, () => {});
             d._settingsWriteInFlight = landed;
@@ -1515,13 +1528,14 @@ class DashboardData {
                  *
                  * Only the keys that came back and only where they differ, so
                  * this cannot clobber a change made while the save was in
-                 * flight with a value from before it.
+                 * flight with a value from before it. Compared with what this
+                 * save sent, so a device-only key keeps this device's value.
                  */
                 if (body?.settings && typeof body.settings === 'object') {
                     for (const [key, value] of Object.entries(body.settings)) {
                         if (key in d.settings && d.settings[key] !== value
                             && JSON.stringify(d.settings[key]) !== JSON.stringify(value)
-                            && JSON.stringify(payload?.[key]) === JSON.stringify(d.settings[key])) {
+                            && JSON.stringify(serverPayload?.[key]) === JSON.stringify(d.settings[key])) {
                             d.settings[key] = value;
                         }
                     }
