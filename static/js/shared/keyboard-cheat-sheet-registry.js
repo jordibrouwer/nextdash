@@ -90,6 +90,13 @@
                     print: true,
                     printFallback: 'Dashboard tour',
                 },
+                {
+                    keys: 'Shift + T',
+                    cheatKey: 'navAllTags',
+                    fallback: 'Open the tag view of every bookmark \u2014 with no bookmark focused; on a bookmark Shift+T opens its tags',
+                    print: true,
+                    printFallback: 'Tag view of every bookmark',
+                },
                 { keys: 'Shift + ← / →', cheatKey: 'navPrevNextPage', fallback: 'Previous / next page', print: true },
                 { keys: ',', cheatKey: 'navPageOverview', fallback: 'Page overview with bookmark counts', print: true, printFallback: 'Page overview' },
                 { keys: 'n', cheatKey: 'navPageOverviewNewPage', fallback: 'Create a new page from the page overview' },

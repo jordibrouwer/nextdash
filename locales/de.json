@@ -468,6 +468,7 @@
       "navSettingsView": "Konfiguration öffnen — Einstellungen, Seiten und Lesezeichen",
       "navThemeBrowser": "Den Theme-Browser öffnen — ein Theme wählen oder ansehen, ohne die Konfiguration zu öffnen",
       "navDashboardTour": "Die Dashboard-Tour noch einmal starten",
+      "navAllTags": "Die Tag-Ansicht aller Lesezeichen öffnen — ohne fokussiertes Lesezeichen; auf einem Lesezeichen öffnet Shift+T dessen Tags",
       "cbHealthPage": "Die Lesezeichen-Ansicht für eine Seite öffnen",
       "sectionHealthMultiSelect": "Mehrere Health-Zeilen auswählen",
       "hmsToggleRow": "Fokussierte Zeile markieren und zur nächsten springen — eine Reihe ist also x-x-x",

@@ -151,6 +151,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **fix — every tag suggestion in a row can be seen.** The line over the list counted 23 suggestions while a narrow Tags column hid most of their chips. The suggestion now comes first and the row's own tags fold into `+n` around it. A row with more than one suggestion shows `+N` beside its chip, which opens all of them, each to add or turn down; `+n` for the row's own tags opens the list of them. The same in the Bookmarks view, the inbox and the tag view (`TagOfferRow`), where the tag view's rows used to show up to three chips without fitting them.
 - **fix — Find tags in the tag view offers the same choices as in the Bookmarks view:** *Bookmarks without tags (N)* of the rows shown, the rows shown, and reading their pages, with *Add what it finds straight away* in the same words.
 - **fix — *Add what it finds straight away* is a setting.** Find tags kept the answer in the browser, so another browser or device added tags straight away again. It is now kept with the other settings on the server, or in the browser for whoever keeps settings per device; an answer of off given before carries over (`tagSearchApplyNow`).
+- **new — the cheat sheet lists Shift+T.** The keyboard cheat sheet, the printed sheet (`nextDash-cheatsheet.pdf`) and its generator now name Shift+T with no bookmark focused (tag view of every bookmark), alongside Shift+K for the dashboard tour and **a** for the suggested tags in the tag view.
 
 ### Settings
 

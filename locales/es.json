@@ -468,6 +468,7 @@
       "navSettingsView": "Abrir la configuración: ajustes, páginas y marcadores",
       "navThemeBrowser": "Abrir el explorador de temas: elige o previsualiza un tema sin abrir la configuración",
       "navDashboardTour": "Repetir el recorrido del panel",
+      "navAllTags": "Abrir la vista de etiquetas de todos los marcadores — sin marcador enfocado; sobre un marcador, Shift+T abre sus etiquetas",
       "cbHealthPage": "Abrir la vista Marcadores en una página",
       "sectionHealthMultiSelect": "Seleccionar varias filas de salud",
       "hmsToggleRow": "Marcar la fila enfocada y pasar a la siguiente, así una serie de filas es x-x-x",

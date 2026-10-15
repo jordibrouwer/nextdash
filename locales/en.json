@@ -548,6 +548,7 @@
       "navSettingsView": "Open config — settings, pages, and bookmarks",
       "navThemeBrowser": "Open the theme browser — pick or preview a theme without opening config",
       "navDashboardTour": "Take the dashboard tour again",
+      "navAllTags": "Open the tag view of every bookmark — with no bookmark focused; on a bookmark Shift+T opens its tags",
       "cbHealthPage": "Open the Bookmarks view on one page",
       "sectionHealthMultiSelect": "Selecting several health rows",
       "hmsToggleRow": "Tick the focused row and move to the next — so a run of rows is x-x-x",

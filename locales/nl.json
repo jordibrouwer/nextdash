@@ -468,6 +468,7 @@
       "navSettingsView": "Open config — instellingen, pagina's en bladwijzers",
       "navThemeBrowser": "Open de themabrowser — kies of bekijk een thema zonder config te openen",
       "navDashboardTour": "De rondleiding door het dashboard opnieuw doen",
+      "navAllTags": "De tagweergave van alle bladwijzers openen — zonder gefocuste bladwijzer; op een bladwijzer opent Shift+T de tags",
       "cbHealthPage": "De weergave Bladwijzers openen op één pagina",
       "sectionHealthMultiSelect": "Meerdere health-rijen selecteren",
       "hmsToggleRow": "Vink de gerichte rij aan en ga naar de volgende — een reeks is dus x-x-x",
