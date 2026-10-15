@@ -704,10 +704,12 @@
     }
 
     /*
-     * quiet: drawn again in place (after a scene), without the loading line
-     * in between, on the same tab and with focus where it was.
+     * quiet: drawn again in place (after a scene, or on the next beat of a
+     * tile that already shows something), without the loading line in
+     * between, on the same tab and with focus where it was.
      */
     async function render(body, widget, dash, service, { quiet = false } = {}) {
+        quiet = quiet || !!body.querySelector('.media-panel');
         const pageId = Number(dash?.currentPageId) || Number(dash?.pages?.[0]?.id) || 1;
         const activeTab = body.querySelector('[data-media-tab][aria-selected="true"]')?.dataset.mediaTab;
         const focused = body.contains(document.activeElement) ? focusKey(document.activeElement) : '';

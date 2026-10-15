@@ -39,6 +39,7 @@ class DashboardRenderCore {
         qbittorrent: { configKey: 'ttl', floor: 15, fallback: 30 },
         sabnzbd: { configKey: 'ttl', floor: 15, fallback: 30 },
         homeassistant: { configKey: 'ttl', floor: 15, fallback: 30 },
+        'jellyfin-playing': { configKey: 'ttl', floor: 5, fallback: 10 },
         unraid: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
         unraidArray: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
         unraidParity: { configKey: 'refreshSeconds', floor: 30, fallback: 60 },
@@ -731,13 +732,14 @@ class DashboardRenderCore {
         const d = this.dash;
         const pageId = Number(d?.currentPageId) || Number(d?.pages?.[0]?.id) || 1;
         if (d._widgetCustom) delete d._widgetCustom[`${pageId}:${widget.id}`];
-        // The system tiles cache their reading per widget, and a beat that did
-        // not drop it would redraw the same figure for ever.
-        if (d._widgetSystem) {
-            Object.keys(d._widgetSystem)
+        // The system and media tiles cache their reading per widget, and a
+        // beat that did not drop it would redraw the same figure for ever --
+        // or, for a media tile kept a TTL from its answer, every other beat.
+        [d._widgetSystem, d._widgetMedia].filter(Boolean).forEach((held) => {
+            Object.keys(held)
                 .filter((key) => key.endsWith(`:${widget.id}`))
-                .forEach((key) => delete d._widgetSystem[key]);
-        }
+                .forEach((key) => delete held[key]);
+        });
 
         const block = document.querySelector(
             `.dashboard-widget[data-widget-id="${CSS.escape(String(widget.id))}"]`);
@@ -952,6 +954,7 @@ class DashboardRenderCore {
         qbittorrent: 'qBittorrent',
         sabnzbd: 'SABnzbd',
         homeassistant: 'Home Assistant',
+        'jellyfin-playing': 'Jellyfin — now playing',
         unraid: 'Unraid',
         unraidArray: 'Unraid array',
         unraidParity: 'Parity',
