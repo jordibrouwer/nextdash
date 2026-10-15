@@ -135,6 +135,10 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **new — Find tags in the inbox.** The inbox's ⋯ menu runs the round for its links, and a **With a tag suggestion** filter keeps the list to the ones it found a tag for; run from the Tag suggestions tab, the toast's **Show** opens it there (`showSuggested`, filter `suggested`).
 - **new — what you turned down, from where you turned it down.** The refusals were only at the foot of Config → Bookmarks → Tag suggestions, folded shut. The Bookmarks view, the tag view and the inbox now say **N turned down** beside their offers, and it opens that list with Turned down open, each refusal with **Offer again**; in the tab itself, the line *N turned down, never offered again* at the top now takes you down to it. Past ten refusals the list has a field to find one by site or tag, which holds through the redraw after each one (`TagSuggestLive.openRefused`, `TagOfferRow.refusedLink`).
 
+### Settings
+
+- **fix — "Keep settings on this device only" keeps them on this device.** Every save still sent the whole copy to the server, so a theme or toggle set on the phone turned up in every other browser. In that mode only the settings that stay server-wide (alerts, backups, containers, saved searches and the like) go to the server now; the rest stays in this browser (`saveSettings` sends `GLOBAL_SERVER_SETTING_KEYS` only).
+
 ---
 
 ## v1.19.7 — 14 October 2026
