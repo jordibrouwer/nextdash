@@ -79,7 +79,10 @@ test.describe('every screen speaks in sentences', () => {
 
         const offenders = [];
         for (const { section, tabs } of sections) {
-            await page.evaluate((s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; return c.openConfigView(s); }, section);
+            // openConfigView draws a lazy section once its file is here, and
+            // the render() below does not wait: on the runners Background was
+            // drawn before the look file had run.
+            await page.evaluate(async (s) => { const c = window.dashboardInstance.config; if (s === 'appearance' || s === 'behavior') c[`${s}Tab`] = c[`${s}Tab`] || 'general'; await c.openConfigView(s); await c.ensureSection?.(s); }, section);
             for (const tab of (tabs.length ? tabs : [null])) {
                 if (tab) {
                     await page.evaluate(({ s, t }) => {

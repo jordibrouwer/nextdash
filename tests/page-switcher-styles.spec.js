@@ -90,6 +90,9 @@ const read = (page) => page.evaluate(() => {
     const track = document.querySelector('#page-navigation');
     const active = track.querySelector('.page-nav-btn.active');
     return {
+        // A destination is as tall as the action group: the button size plus
+        // 2x5 of padding and 2x1 of border.
+        outer: parseFloat(window.getComputedStyle(document.body).getPropertyValue('--action-button-size')) + 12,
         attribute: document.body.getAttribute('data-page-switcher'),
         shell: box(track),
         tab: box(track.querySelector('.page-nav-btn:not(.active)')),
@@ -152,7 +155,7 @@ test('segmented puts the pages in one shell', async ({ page }) => {
     expect(seen.attribute).toBe('segmented');
     // The box moved from the tabs to the shell around them.
     expect(seen.shell.border, 'the shell has no edge of its own').toBe(1);
-    expect(seen.shell.height, `the shell is ${seen.shell.height}px tall`).toBe(40);
+    expect(seen.shell.height, `the shell is ${seen.shell.height}px tall`).toBe(seen.outer);
     expect(seen.tab.border, 'a segment still draws its own box').toBe(0);
     expect(seen.tab.height, `a segment is ${seen.tab.height}px tall`).toBe(28);
     expect(seen.tab.shadow, 'a segment still carries a plate').toBe('none');

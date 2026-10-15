@@ -22,6 +22,10 @@ async function loadDashboard(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // The setting promos are drawn half a second after a section opens, over
+    // the controls these tests reach for. On the runners the Random theme one
+    // landed on the type size buttons just as a click went in, and took it.
+    await markConfigSettingPromosSeen(page);
 }
 
 /**
