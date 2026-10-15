@@ -668,17 +668,22 @@
         /**
          * Set every answer a look gives, built in or a theme's own, through
          * the controls' own setters. One path for both, so the two cannot
-         * drift apart. A part the look does not have is left as it is.
+         * drift apart. A part the look does not have is left as it is, and so
+         * is one already in place: Save as theme picks a theme whose look is
+         * the one on screen, and redrawing the bar and the dashboard for it
+         * kept a slow machine busy for seconds.
          */
         applyLookAnswers(look) {
             const settings = this.dash.settings;
             if (!look || !settings) return;
-            if (look.tuning) {
-                const tuning = { ...DEFAULT_TUNING, ...(settings.backdropTuning || {}), ...look.tuning };
+            const inPlace = (answers, current) => Object.keys(answers).every((k) => answers[k] === current[k]);
+            const shownTuning = { ...DEFAULT_TUNING, ...(settings.backdropTuning || {}) };
+            if (look.tuning && !inPlace(look.tuning, shownTuning)) {
+                const tuning = { ...shownTuning, ...look.tuning };
                 settings.backdropTuning = tuning;
                 this.applyBackdropTuning(tuning);
             }
-            if (look.heads) {
+            if (look.heads && !inPlace(look.heads, settings)) {
                 Object.assign(settings, look.heads);
                 this.applyChromeSettings();
             }
@@ -688,9 +693,10 @@
                 if (look.backdrop !== 'off') this._lastBackdropPick = look.backdrop;
                 this.setBackdropChoice(look.backdrop);
             }
-            if (look.text?.fontPreset) this.setAppearanceSelect('fontPreset', look.text.fontPreset);
-            if (look.text?.densityMode) void this.setBehavior('densityMode', look.text.densityMode, 'chromeRender');
-            if (look.text?.categorySpacing) void this.setBehavior('categorySpacing', look.text.categorySpacing, 'chromeRender');
+            const text = look.text || {};
+            if (text.fontPreset && text.fontPreset !== settings.fontPreset) this.setAppearanceSelect('fontPreset', text.fontPreset);
+            if (text.densityMode && text.densityMode !== settings.densityMode) void this.setBehavior('densityMode', text.densityMode, 'chromeRender');
+            if (text.categorySpacing && text.categorySpacing !== settings.categorySpacing) void this.setBehavior('categorySpacing', text.categorySpacing, 'chromeRender');
         },
 
         /** The look a theme of the reader's own brings along, or null. */

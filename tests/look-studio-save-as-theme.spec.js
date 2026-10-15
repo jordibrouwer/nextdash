@@ -75,13 +75,34 @@ test('Cancel after Save as theme keeps the theme but puts the previous one back'
     await openStudio(page);
     await page.locator('[data-studio-save-theme]').click();
     await page.locator('[data-save-theme-dialog] [data-save-theme-submit]').click();
-    // The save answers in a tenth of a second, but on the runners the page then
-    // stays busy for about five before the editor is drawn.
-    await expect(page.locator('[data-look-studio] #config-theme-editor')).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('[data-look-studio] #config-theme-editor')).toBeVisible();
     await page.locator('[data-studio-cancel]').click();
     await expect(page.locator('[data-look-studio]')).toHaveCount(0);
     expect(Object.keys((await colors(page)).custom).length).toBeGreaterThan(0);
     expect((await stored(page)).theme).toBe('deep-lagoon-dark');
+});
+
+test('Save as theme does not redraw the page for the look already on it', async ({ page }) => {
+    await setup(page);
+    await openStudio(page);
+    await page.locator('[data-studio-save-theme]').click();
+    await expect(page.locator('[data-save-theme-look]')).toBeChecked();
+    // The new theme brings the look on screen; putting it back redrew the bar
+    // and the dashboard, seconds of work on a slow machine.
+    await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        window.__redraws = [];
+        const spy = (obj, name) => {
+            const orig = obj[name];
+            obj[name] = function (...args) { window.__redraws.push(name); return orig.apply(this, args); };
+        };
+        spy(d.config, 'applyChromeSettings');
+        spy(d, 'renderDashboard');
+    });
+    await page.locator('[data-save-theme-dialog] [data-save-theme-submit]').click();
+    await expect(page.locator('[data-look-studio] #config-theme-editor')).toBeVisible();
+    // The one bar redraw is the pick's own, as for any theme picked here.
+    expect(await page.evaluate(() => window.__redraws)).toEqual(['applyChromeSettings']);
 });
 
 test('Escape closes the dialog and leaves the studio open', async ({ page }) => {

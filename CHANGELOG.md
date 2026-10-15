@@ -134,6 +134,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **fix — the theme field shows a whole theme name.** Its control was capped at 300px, which cut most names of up to 25 characters; it now has room for them on one line (`config-tabs.css`).
 - **fix — a tab reached through Find settings stays put.** Arriving on Appearance from another section through Find settings, a tile or a link, the Random theme promo pulled the reader back to Theme & type half a second later; only a click on the tab strip counted as a choice. Every way into a tab does now (`switchAppearanceTab`).
 - **fix — a docked action bar no longer slides into place on a load.** Its slide ran on the first placement too, sweeping a side column some 200px up the screen as the page appeared; it now only slides when it goes into its edge and comes back (`action-bar-autohide.js`, `data-action-bar-sliding`).
+- **fix — Save as theme opens the editor without a wait.** The saved theme brings the look on screen, and picking it put that same look back, redrawing the header bar and the dashboard twice; on a slow machine the page froze for seconds. A look's parts that are already in place are now left alone (`applyLookAnswers`).
 - **fix — the Media detail card uses the app's colours.** It sits on `<body>`, outside every widget, so it named variables that were not there: it was transparent, in the corner and with unstyled buttons. It now takes the app's background, text and border, sits in the middle, and has its own buttons (`dashboard-media-tile.css`).
 
 ### Tags
