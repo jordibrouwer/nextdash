@@ -3025,12 +3025,12 @@
     "tagViewFindOne": "Buscar etiquetas",
     "tagViewReadOne": "Leer la página",
     "tagViewFindTags": "Buscar etiquetas ▾",
-    "tagViewOffered": "With a tag suggestion",
-    "tagViewOfferedGroup": "Tag suggestions",
-    "inboxFilterSuggested": "With a tag suggestion",
-    "inboxNoteSuggested": "Links with a tag on offer. Click the dashed chip to add the tag, or × to turn it down.",
-    "inboxFindTags": "Find tags",
-    "inboxFindTagsHint": "The catalogue, then Wikidata for sites it does not know"
+    "tagViewOffered": "Con sugerencia de etiqueta",
+    "tagViewOfferedGroup": "Sugerencias de etiquetas",
+    "inboxFilterSuggested": "Con sugerencia de etiqueta",
+    "inboxNoteSuggested": "Enlaces con una etiqueta propuesta. Pulsa el chip de trazo discontinuo para añadir la etiqueta, o × para rechazarla.",
+    "inboxFindTags": "Buscar etiquetas",
+    "inboxFindTagsHint": "Primero el catálogo, luego Wikidata para los sitios que no conoce"
   },
   "health": {
     "reloadPage": "Recargar la página",
@@ -8468,13 +8468,13 @@
     "fineChanged": "{n} cambiados",
     "panelIndexLabel": "En esta pestaña",
     "fineDefault": "Valores por defecto",
-    "cleanupFilterOffered": "With a tag suggestion",
-    "tagSearchWaitingOne": "1 bookmark has a tag suggestion.",
-    "tagSearchInboxWaitingOne": "1 inbox link has a tag suggestion.",
-    "tagSearchShow": "Show",
-    "bmOffersRefused": "{n} turned down",
-    "bmOffersRefusedHint": "See what you turned down, and offer any of it again",
-    "tagSuggestionsRefusedSearch": "Find a site or tag…"
+    "cleanupFilterOffered": "Con sugerencia de etiqueta",
+    "tagSearchWaitingOne": "1 marcador tiene una sugerencia de etiqueta.",
+    "tagSearchInboxWaitingOne": "1 enlace de la bandeja tiene una sugerencia de etiqueta.",
+    "tagSearchShow": "Mostrar",
+    "bmOffersRefused": "{n} rechazadas",
+    "bmOffersRefusedHint": "Mira lo que rechazaste y vuelve a ofrecerlo si quieres",
+    "tagSuggestionsRefusedSearch": "Buscar un sitio o etiqueta…"
   },
   "colors": {
     "title": "personalización del tema",

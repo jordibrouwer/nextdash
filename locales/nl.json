@@ -3025,12 +3025,12 @@
     "tagViewFindOne": "Tags zoeken",
     "tagViewReadOne": "Pagina lezen",
     "tagViewFindTags": "Tags zoeken ▾",
-    "tagViewOffered": "With a tag suggestion",
-    "tagViewOfferedGroup": "Tag suggestions",
-    "inboxFilterSuggested": "With a tag suggestion",
-    "inboxNoteSuggested": "Links with a tag on offer. Click the dashed chip to add the tag, or × to turn it down.",
-    "inboxFindTags": "Find tags",
-    "inboxFindTagsHint": "The catalogue, then Wikidata for sites it does not know"
+    "tagViewOffered": "Met een tagsuggestie",
+    "tagViewOfferedGroup": "Tagsuggesties",
+    "inboxFilterSuggested": "Met een tagsuggestie",
+    "inboxNoteSuggested": "Links met een tag in de aanbieding. Klik op de gestreepte chip om de tag toe te voegen, of op × om hem af te wijzen.",
+    "inboxFindTags": "Tags zoeken",
+    "inboxFindTagsHint": "Eerst de catalogus, dan Wikidata voor sites die hij niet kent"
   },
   "health": {
     "reloadPage": "Pagina herladen",
@@ -8468,13 +8468,13 @@
     "fineChanged": "{n} gewijzigd",
     "panelIndexLabel": "Op dit tabblad",
     "fineDefault": "Standaard",
-    "cleanupFilterOffered": "With a tag suggestion",
-    "tagSearchWaitingOne": "1 bookmark has a tag suggestion.",
-    "tagSearchInboxWaitingOne": "1 inbox link has a tag suggestion.",
-    "tagSearchShow": "Show",
-    "bmOffersRefused": "{n} turned down",
-    "bmOffersRefusedHint": "See what you turned down, and offer any of it again",
-    "tagSuggestionsRefusedSearch": "Find a site or tag…"
+    "cleanupFilterOffered": "Met een tagsuggestie",
+    "tagSearchWaitingOne": "1 bladwijzer heeft een tagsuggestie.",
+    "tagSearchInboxWaitingOne": "1 inbox-link heeft een tagsuggestie.",
+    "tagSearchShow": "Tonen",
+    "bmOffersRefused": "{n} afgewezen",
+    "bmOffersRefusedHint": "Bekijk wat je hebt afgewezen en bied het desgewenst opnieuw aan",
+    "tagSuggestionsRefusedSearch": "Zoek een site of tag…"
   },
   "colors": {
     "title": "thema-aanpassing",

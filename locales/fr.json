@@ -3025,12 +3025,12 @@
     "tagViewFindOne": "Trouver des tags",
     "tagViewReadOne": "Lire la page",
     "tagViewFindTags": "Trouver des tags ▾",
-    "tagViewOffered": "With a tag suggestion",
-    "tagViewOfferedGroup": "Tag suggestions",
-    "inboxFilterSuggested": "With a tag suggestion",
-    "inboxNoteSuggested": "Links with a tag on offer. Click the dashed chip to add the tag, or × to turn it down.",
-    "inboxFindTags": "Find tags",
-    "inboxFindTagsHint": "The catalogue, then Wikidata for sites it does not know"
+    "tagViewOffered": "Avec une suggestion de tag",
+    "tagViewOfferedGroup": "Suggestions de tags",
+    "inboxFilterSuggested": "Avec une suggestion de tag",
+    "inboxNoteSuggested": "Liens avec un tag proposé. Cliquez sur la puce en pointillés pour ajouter le tag, ou sur × pour le refuser.",
+    "inboxFindTags": "Trouver des tags",
+    "inboxFindTagsHint": "D'abord le catalogue, puis Wikidata pour les sites qu'il ne connaît pas"
   },
   "health": {
     "reloadPage": "Recharger la page",
@@ -8468,13 +8468,13 @@
     "fineChanged": "{n} modifiés",
     "panelIndexLabel": "Sur cet onglet",
     "fineDefault": "Valeurs par défaut",
-    "cleanupFilterOffered": "With a tag suggestion",
-    "tagSearchWaitingOne": "1 bookmark has a tag suggestion.",
-    "tagSearchInboxWaitingOne": "1 inbox link has a tag suggestion.",
-    "tagSearchShow": "Show",
-    "bmOffersRefused": "{n} turned down",
-    "bmOffersRefusedHint": "See what you turned down, and offer any of it again",
-    "tagSuggestionsRefusedSearch": "Find a site or tag…"
+    "cleanupFilterOffered": "Avec une suggestion de tag",
+    "tagSearchWaitingOne": "1 favori a une suggestion de tag.",
+    "tagSearchInboxWaitingOne": "1 lien de l'inbox a une suggestion de tag.",
+    "tagSearchShow": "Afficher",
+    "bmOffersRefused": "{n} refusées",
+    "bmOffersRefusedHint": "Voyez ce que vous avez refusé et proposez-le de nouveau si besoin",
+    "tagSuggestionsRefusedSearch": "Chercher un site ou un tag…"
   },
   "colors": {
     "title": "personnalisation du thème",

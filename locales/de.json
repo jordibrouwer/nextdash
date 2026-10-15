@@ -3025,12 +3025,12 @@
     "tagViewFindOne": "Tags finden",
     "tagViewReadOne": "Seite lesen",
     "tagViewFindTags": "Tags finden ▾",
-    "tagViewOffered": "With a tag suggestion",
-    "tagViewOfferedGroup": "Tag suggestions",
-    "inboxFilterSuggested": "With a tag suggestion",
-    "inboxNoteSuggested": "Links with a tag on offer. Click the dashed chip to add the tag, or × to turn it down.",
-    "inboxFindTags": "Find tags",
-    "inboxFindTagsHint": "The catalogue, then Wikidata for sites it does not know"
+    "tagViewOffered": "Mit Tag-Vorschlag",
+    "tagViewOfferedGroup": "Tag-Vorschläge",
+    "inboxFilterSuggested": "Mit Tag-Vorschlag",
+    "inboxNoteSuggested": "Links mit einem Tag im Angebot. Klicke auf den gestrichelten Chip, um den Tag hinzuzufügen, oder auf ×, um ihn abzulehnen.",
+    "inboxFindTags": "Tags finden",
+    "inboxFindTagsHint": "Zuerst der Katalog, dann Wikidata für unbekannte Seiten"
   },
   "health": {
     "reloadPage": "Seite neu laden",
@@ -8468,13 +8468,13 @@
     "fineChanged": "{n} geändert",
     "panelIndexLabel": "Auf diesem Tab",
     "fineDefault": "Standardwerte",
-    "cleanupFilterOffered": "With a tag suggestion",
-    "tagSearchWaitingOne": "1 bookmark has a tag suggestion.",
-    "tagSearchInboxWaitingOne": "1 inbox link has a tag suggestion.",
-    "tagSearchShow": "Show",
-    "bmOffersRefused": "{n} turned down",
-    "bmOffersRefusedHint": "See what you turned down, and offer any of it again",
-    "tagSuggestionsRefusedSearch": "Find a site or tag…"
+    "cleanupFilterOffered": "Mit Tag-Vorschlag",
+    "tagSearchWaitingOne": "1 Lesezeichen hat einen Tag-Vorschlag.",
+    "tagSearchInboxWaitingOne": "1 Inbox-Link hat einen Tag-Vorschlag.",
+    "tagSearchShow": "Anzeigen",
+    "bmOffersRefused": "{n} abgelehnt",
+    "bmOffersRefusedHint": "Sieh, was du abgelehnt hast, und biete es bei Bedarf erneut an",
+    "tagSuggestionsRefusedSearch": "Seite oder Tag suchen…"
   },
   "colors": {
     "title": "themenanpassung",

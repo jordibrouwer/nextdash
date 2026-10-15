@@ -3025,12 +3025,12 @@
     "tagViewFindOne": "查找标签",
     "tagViewReadOne": "读取页面",
     "tagViewFindTags": "查找标签 ▾",
-    "tagViewOffered": "With a tag suggestion",
-    "tagViewOfferedGroup": "Tag suggestions",
-    "inboxFilterSuggested": "With a tag suggestion",
-    "inboxNoteSuggested": "Links with a tag on offer. Click the dashed chip to add the tag, or × to turn it down.",
-    "inboxFindTags": "Find tags",
-    "inboxFindTagsHint": "The catalogue, then Wikidata for sites it does not know"
+    "tagViewOffered": "有标签建议",
+    "tagViewOfferedGroup": "标签建议",
+    "inboxFilterSuggested": "有标签建议",
+    "inboxNoteSuggested": "带有标签建议的链接。点击虚线标签以添加该标签，或点击 × 拒绝。",
+    "inboxFindTags": "查找标签",
+    "inboxFindTagsHint": "先查目录，目录不认识的站点再查 Wikidata"
   },
   "health": {
     "reloadPage": "重新加载页面",
@@ -8468,13 +8468,13 @@
     "fineChanged": "{n} 项已更改",
     "panelIndexLabel": "本标签页",
     "fineDefault": "默认值",
-    "cleanupFilterOffered": "With a tag suggestion",
-    "tagSearchWaitingOne": "1 bookmark has a tag suggestion.",
-    "tagSearchInboxWaitingOne": "1 inbox link has a tag suggestion.",
-    "tagSearchShow": "Show",
-    "bmOffersRefused": "{n} turned down",
-    "bmOffersRefusedHint": "See what you turned down, and offer any of it again",
-    "tagSuggestionsRefusedSearch": "Find a site or tag…"
+    "cleanupFilterOffered": "有标签建议",
+    "tagSearchWaitingOne": "有 1 个书签带有标签建议。",
+    "tagSearchInboxWaitingOne": "有 1 个收件箱链接带有标签建议。",
+    "tagSearchShow": "显示",
+    "bmOffersRefused": "已拒绝 {n} 个",
+    "bmOffersRefusedHint": "查看你拒绝过的建议，并可重新提供",
+    "tagSuggestionsRefusedSearch": "查找站点或标签…"
   },
   "colors": {
     "title": "主题自定义",
