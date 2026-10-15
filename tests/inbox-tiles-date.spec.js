@@ -73,6 +73,9 @@ test.describe('inbox summary tiles and added date', () => {
         // Inject an item with an icon set, bypassing async enrichment.
         await page.locator('#page-nav-inbox-btn').click();
         await expect(page.locator('.inbox-layout')).toBeVisible();
+        // The view's own load answers after it opens, and would replace what is
+        // injected below: let it land first.
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.inbox.loading)).toBe(false);
         await page.evaluate(() => {
             window.dashboardInstance.inbox.items = [
                 { id: 'icon-a', url: 'https://github.com/x', title: 'Icon seed', domain: 'github.com', addedAt: Date.now(), icon: 'seed.png' },
