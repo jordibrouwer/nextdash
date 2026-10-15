@@ -265,6 +265,57 @@ function tidyDemoData(dir, patch) {
         });
     }
 
+    // One shot only: a page with the Emby tile and the now playing tiles of
+    // Jellyfin and Plex (their answers are mocked).
+    if (patches.includes('media')) {
+        const pages = readJSON(path.join(dir, 'pages.json'));
+        pages.order = [...(pages.order || []), 4];
+        writeJSON(path.join(dir, 'pages.json'), pages);
+        const widgets = [
+            { id: 'w_m00000000001', type: 'emby', config: { server: 'http://emby.local:8096', layout: 'list' } },
+            { id: 'w_m00000000002', type: 'jellyfin-playing', config: { server: 'http://jellyfin.local:8096' } },
+            { id: 'w_m00000000003', type: 'plex-playing', config: { server: 'http://tautulli.local:8181' } },
+        ];
+        writeJSON(path.join(dir, 'bookmarks-4.json'), {
+            page: { id: 4, name: 'Media' },
+            categories: [],
+            widgets,
+            blockOrder: widgets.map((w) => w.id),
+            bookmarks: [],
+        });
+    }
+
+    // One shot only: a few bookmarks with no tags, so the tag view of every
+    // bookmark has something to show under Without tags.
+    if (patches.includes('untagged')) {
+        for (const id of [1, 2, 3]) {
+            const file = path.join(dir, `bookmarks-${id}.json`);
+            const data = readJSON(file);
+            (data.bookmarks || []).forEach((b, i) => {
+                if (i % 4 === 3) b.tags = [];
+            });
+            writeJSON(file, data);
+        }
+    }
+
+    // One shot only: an inbox of sites the tag catalogue knows, so Find tags
+    // has something to offer without a network.
+    if (patches.includes('inbox-tags')) {
+        const inbox = readJSON(path.join(dir, 'inbox.json'));
+        const known = [
+            ['https://github.com/jellyfin/jellyfin', 'Jellyfin, the free software media system'],
+            ['https://www.proxmox.com/en/proxmox-virtual-environment/overview', 'Proxmox VE overview'],
+            ['https://news.ycombinator.com/', 'Hacker News'],
+            ['https://www.reddit.com/r/selfhosted/', 'r/selfhosted'],
+            ['https://www.docker.com/', 'Docker: accelerated containers'],
+            ['https://www.wikipedia.org/', 'Wikipedia'],
+        ];
+        inbox.items = inbox.items.slice(0, known.length).map((item, i) => ({
+            ...item, url: known[i][0], title: known[i][1], domain: new URL(known[i][0]).hostname, tags: [],
+        }));
+        writeJSON(path.join(dir, 'inbox.json'), inbox);
+    }
+
     // One shot only: a page of the seven Unraid widgets.
     if (patch === 'unraid') {
         const pages = readJSON(path.join(dir, 'pages.json'));

@@ -1,0 +1,105 @@
+{
+  "tag": "v1.19.8",
+  "date": "15 October 2026",
+  "releasedAt": "2026-10-15",
+  "modalLead": "<strong>Emby and Plex</strong> join Jellyfin on the dashboard, each with a <strong>now playing</strong> tile. <strong>Shift+T</strong> opens the tag view of every bookmark, and Find tags works in the inbox too.",
+  "sections": [
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Now playing, for Jellyfin, Emby and Plex.</strong> A tile shows who is watching what right now and how far along. Emby and Plex also get a tile of what was added lately; Plex is read through Tautulli, whose API key only reads.",
+          "highlight": true,
+          "title": "Now playing for Jellyfin, Emby and Plex",
+          "link": "#config/widgets",
+          "linkLabel": "Open Widgets",
+          "media": {
+            "image": "media/v1.19.8-now-playing.jpg",
+            "alt": "A page with an Emby tile of what was added lately, and now playing tiles for Jellyfin and Plex showing who is watching what"
+          }
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Media tiles refresh on every beat,</strong> and no longer show <em>Loading…</em> between readings."
+        }
+      ]
+    },
+    {
+      "title": "Tags",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Every bookmark in one tag view.</strong> <strong>Shift+T</strong> with no bookmark selected opens it: all bookmarks from every page, a <strong>Without tags</strong> filter at the top and the tags in use under it.",
+          "highlight": true,
+          "title": "Every bookmark in one tag view",
+          "link": "#tags",
+          "linkLabel": "Open it",
+          "media": {
+            "image": "media/v1.19.8-tag-view-all.jpg",
+            "video": "media/v1.19.8-tag-view-all.webm",
+            "alt": "Shift+T with nothing selected opens the tag view of every bookmark; the Without tags filter then narrows the list"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Find tags in the inbox.</strong> The <strong>⋯</strong> menu offers a tag for each link, and a <strong>With a tag suggestion</strong> filter keeps the list to the links that have one.",
+          "highlight": true,
+          "title": "Find tags for your inbox",
+          "link": "#inbox",
+          "linkLabel": "Open Inbox",
+          "media": {
+            "image": "media/v1.19.8-inbox-find-tags.jpg",
+            "alt": "The inbox after Find tags: dashed chips with the tag on offer on each link, and a count over the list"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Self-hosted apps are recognised by name.</strong> A Sonarr at <code>192.168.1.20</code> or <code>sonarr.home.lan</code> now gets its tags, and a home address offers <strong>#self-hosted</strong>.",
+          "highlight": true,
+          "title": "Self-hosted apps known by name",
+          "link": "#config/bookmarks/tags",
+          "linkLabel": "Set it up",
+          "media": {
+            "image": "media/v1.19.8-self-hosted-by-name.jpg",
+            "alt": "The tags field of the bookmark form for sonarr.home.lan, with homelab and media-server suggested from the name alone"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A much bigger catalogue.</strong> Thousands more sites and dozens of new subjects, among them tech, dev, science, sports and self-hosted apps, and sites that were filed under the wrong subject now sit where they belong."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>What you turned down is easy to find.</strong> The Bookmarks view, the tag view and the inbox say how many suggestions you turned down, and let you offer any of them again."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Find tags shows which bookmarks it means.</strong> It leaves an offer on each row instead of adding tags straight away, and <em>Add what it finds straight away</em> is a setting that follows you to your other browsers."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The arrow keys walk the tag cloud in reading order,</strong> and every suggestion in a row can be seen."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The page filter stays at the top on a phone.</strong> It does not take focus, so the keyboard stays down until you tap it."
+        }
+      ]
+    },
+    {
+      "title": "Settings",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Keep settings on this device only</strong> now keeps them on this device: a theme set on the phone no longer turns up in your other browsers."
+        }
+      ]
+    }
+  ]
+}
