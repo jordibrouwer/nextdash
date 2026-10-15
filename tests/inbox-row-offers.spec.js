@@ -65,3 +65,41 @@ test('Add all takes every offer in the list', async ({ page }) => {
   expect(writes.map((w) => w.addTags[0]).sort()).toEqual(['for-ib-read', 'for-ib-unread']);
   await expect(page.locator('.inbox-offers')).toBeHidden();
 });
+
+// More offers than the one chip: `+N` opens all of them, each to add or
+// turn down, in the popover the Bookmarks view and the tag view use.
+test('+N opens every offer on the row, and one picked there is added', async ({ page }) => {
+  const writes = await openWithOffers(page);
+  await page.evaluate(() => {
+    window.TagSuggestLive.forInboxItem = (_dash, entry) => ['one', 'two', 'three']
+      .map((n) => ({ tag: `${n}-${entry.id}`, pattern: `p-${n}-${entry.id}`, reason: { kind: 'catalogue' } }));
+    window.dashboardInstance.inbox.render();
+  });
+  const more = item(page, 'Read one').locator('[data-inbox-offers-more]');
+  await expect(more).toHaveText('+2');
+  await more.click();
+  const pop = page.locator('.tag-offer-pop');
+  await expect(pop.locator('.tag-offer-pop-row')).toHaveCount(3);
+  await pop.getByRole('button', { name: 'Add #two-ib-read' }).click();
+  await expect.poll(() => writes.length).toBe(1);
+  expect(writes[0]).toMatchObject({ op: 'tag', ids: ['ib-read'], addTags: ['two-ib-read'] });
+  await expect(pop).toHaveCount(0);
+});
+
+test('own tags that do not fit fold into +n, which lists them; the offer stays', async ({ page }) => {
+  await openWithOffers(page);
+  await page.evaluate(() => {
+    const inbox = window.dashboardInstance.inbox;
+    const entry = (inbox.items || inbox._items || []).find((x) => x.id === 'ib-read');
+    entry.tags = ['alpha-long-tag', 'beta-long-tag', 'gamma-long-tag', 'delta-long-tag', 'epsilon-long-tag', 'zeta-long-tag'];
+    inbox.render();
+  });
+  await expect(offer(page, 'Read one')).toBeVisible();
+  const own = item(page, 'Read one').locator('.inbox-row-tag--more');
+  await expect(own).toBeVisible();
+  await own.click();
+  const tags = page.locator('.tag-offer-pop .tag-offer-pop-tag');
+  await expect(tags.first()).toBeVisible();
+  expect(await tags.count()).toBe(Number((await own.textContent()).replace('+', '')));
+  await expect(page.locator('[data-lvs-drawer="inbox"]')).toBeHidden();
+});

@@ -1113,23 +1113,25 @@ class DashboardInbox {
      * drawer's chips use. One per row; the drawer shows the rest.
      */
     rowOffer(item) {
+        return this.rowOffers(item)[0] || null;
+    }
+
+    /** Every tag on offer for a row, best first: the chip, then `+N`'s popover. */
+    rowOffers(item) {
         const live = window.TagSuggestLive;
-        if (!item || !live || !window.TagOfferRow) return null;
-        return window.TagOfferRow.pick(live.forInboxItem(this.dash, item), item.tags);
+        if (!item || !live || !window.TagOfferRow) return [];
+        return window.TagOfferRow.pickAll(live.forInboxItem(this.dash, item), item.tags);
     }
 
     /** The Tags cell: the row's own tags, `+n` for the rest, then the offer. */
     rowTagsHtml(item) {
         const esc = (v) => this.escape(v);
         const tags = (Array.isArray(item?.tags) ? item.tags : []).map((tag) => String(tag).trim()).filter(Boolean);
-        const offer = this.rowOffer(item);
+        const offers = this.rowOffers(item);
+        const opts = { esc, t: (key, fallback) => this.t(key, fallback), data: 'inbox' };
         const chips = tags.map((tag) => `<span class="inbox-row-tag">${esc(tag)}</span>`).join('')
             + (tags.length ? '<span class="inbox-row-tag inbox-row-tag--more" hidden></span>' : '')
-            + (offer ? window.TagOfferRow.chipHtml(offer, {
-                esc,
-                t: (key, fallback) => this.t(key, fallback),
-                data: 'inbox',
-            }) : '');
+            + (offers.length ? window.TagOfferRow.chipHtml(offers[0], opts) + window.TagOfferRow.moreHtml(offers.length, opts) : '');
         return `<span class="inbox-item-tagcell">${chips}</span>`;
     }
 
@@ -5602,9 +5604,17 @@ class DashboardInbox {
             e.stopPropagation();
             this.refuseRowOffer(item);
         });
+        card.querySelector('[data-inbox-offers-more]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            window.TagOfferRow?.openPopover(e.currentTarget, this.rowOffers(item), {
+                t: (key, fallback) => this.t(key, fallback),
+                onAdd: (offer) => void this.addRowOffers([[item, offer]]),
+                onRefuse: (offer) => void this.dismissSuggestedTag(offer),
+            });
+        });
 
         card.addEventListener('click', (e) => {
-            if (e.target.closest('.inbox-action-btn, .inbox-item-domain-btn, .inbox-item-check, .tag-offer, a')) {
+            if (e.target.closest('.inbox-action-btn, .inbox-item-domain-btn, .inbox-item-check, .tag-offer, .tag-offer-more, a')) {
                 return;
             }
             this.selectItemById(item.id);

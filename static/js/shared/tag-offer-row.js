@@ -12,11 +12,21 @@
 
     const identity = (_key, fallback) => fallback;
 
+    /** Every offer a row does not already carry, best first. */
+    function pickAll(offers, tags) {
+        const have = new Set((Array.isArray(tags) ? tags : []).map((tag) => String(tag || '').trim().toLowerCase()));
+        const seen = new Set();
+        return (Array.isArray(offers) ? offers : []).filter((offer) => {
+            const tag = String(offer?.tag || '').toLowerCase();
+            if (!tag || have.has(tag) || seen.has(tag)) return false;
+            seen.add(tag);
+            return true;
+        });
+    }
+
     /** The best offer a row does not already carry, or null. */
     function pick(offers, tags) {
-        const have = new Set((Array.isArray(tags) ? tags : []).map((tag) => String(tag || '').trim().toLowerCase()));
-        return (Array.isArray(offers) ? offers : [])
-            .find((offer) => offer?.tag && !have.has(String(offer.tag).toLowerCase())) || null;
+        return pickAll(offers, tags)[0] || null;
     }
 
     function sourceLabel(offer, t = identity) {
@@ -44,6 +54,153 @@
             + `<button type="button" class="tag-offer-refuse" data-${data}-offer-refuse tabindex="-1"`
             + ` aria-label="${esc(t('config.bmOfferRefuse', 'Turn down #{tag}').replace('{tag}', tag))}">×</button></span>`;
     }
+
+    /**
+     * `+N` after the chip: the row's other offers, behind a popover. Drawn
+     * for a row with more than one; fit() shows it, and counts the chip in
+     * too when the chip itself had to go.
+     */
+    function moreHtml(total, { esc, t = identity, data }) {
+        if (!(total > 1)) return '';
+        return `<button type="button" class="tag-offer-more" data-${data}-offers-more data-total="${total}" tabindex="-1"`
+            + ` aria-haspopup="dialog" title="${esc(t('config.bmOffersMoreTitle', 'All tag suggestions for this row'))}">+${total - 1}</button>`;
+    }
+
+    let pop = null;
+    let popClose = null;
+
+    function closePopover() {
+        popClose?.();
+    }
+
+    /**
+     * The row's offers in a small popover, each with + and ×. `onAdd` and
+     * `onRefuse` get the offer; the popover closes after either, since the
+     * row is drawn again with what is left.
+     */
+    function openPopover(anchor, offers, { t = identity, onAdd, onRefuse }) {
+        if (!anchor || !offers?.length) return null;
+        return openShell(anchor, t('config.bmOffersMoreTitle', 'All tag suggestions for this row'), (box) => offers.forEach((offer) => {
+            const tag = String(offer.tag);
+            const row = document.createElement('div');
+            row.className = 'tag-offer-pop-row';
+            row.dataset.offer = tag;
+            const add = document.createElement('button');
+            add.type = 'button';
+            add.className = 'tag-offer-pop-add';
+            add.textContent = `+ ${tag}`;
+            add.setAttribute('aria-label', t('config.bmOfferAdd', 'Add #{tag}').replace('{tag}', tag));
+            const source = document.createElement('span');
+            source.className = 'tag-offer-pop-source';
+            source.textContent = sourceLabel(offer, t);
+            const refuse = document.createElement('button');
+            refuse.type = 'button';
+            refuse.className = 'tag-offer-pop-refuse';
+            refuse.textContent = '×';
+            refuse.setAttribute('aria-label', t('config.bmOfferRefuse', 'Turn down #{tag}').replace('{tag}', tag));
+            add.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closePopover();
+                onAdd?.(offer);
+            });
+            refuse.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closePopover();
+                onRefuse?.(offer);
+            });
+            row.append(add, source, refuse);
+            box.appendChild(row);
+        }));
+    }
+
+    /**
+     * The row's own tags that `+n` stands for, in the same popover: to read,
+     * not to click -- they are on the bookmark already.
+     */
+    function openTagList(anchor, names, { t = identity } = {}) {
+        if (!anchor || !names?.length) return null;
+        return openShell(anchor, t('config.bmTagsMoreTitle', 'The other tags on this row'), (box) => {
+            const list = document.createElement('div');
+            list.className = 'tag-offer-pop-tags';
+            names.forEach((name) => {
+                const chip = document.createElement('span');
+                chip.className = 'tag-offer-pop-tag';
+                chip.textContent = name;
+                list.appendChild(chip);
+            });
+            box.appendChild(list);
+        });
+    }
+
+    /** The popover itself: built by `fill`, under the anchor, closed by a click outside, Escape or a scroll. */
+    function openShell(anchor, label, fill) {
+        closePopover();
+        pop = document.createElement('div');
+        pop.className = 'tag-offer-pop';
+        pop.setAttribute('role', 'dialog');
+        pop.setAttribute('aria-label', label);
+        pop.tabIndex = -1;
+        fill(pop);
+        document.body.appendChild(pop);
+        // Under the anchor, held inside the window; above it when there is no room.
+        const a = anchor.getBoundingClientRect();
+        const b = pop.getBoundingClientRect();
+        let top = a.bottom + 6;
+        if (top + b.height > window.innerHeight - 4) top = Math.max(4, a.top - b.height - 6);
+        const left = Math.min(Math.max(4, a.left), window.innerWidth - b.width - 4);
+        pop.style.top = `${Math.round(top)}px`;
+        pop.style.left = `${Math.round(left)}px`;
+        const onDown = (e) => {
+            if (!pop?.contains(e.target) && e.target !== anchor) closePopover();
+        };
+        const onKey = (e) => {
+            if (e.key !== 'Escape') return;
+            e.preventDefault();
+            e.stopPropagation();
+            closePopover();
+            anchor.focus?.({ preventScroll: true });
+        };
+        // A scroll that moves the row away closes it; one that settles
+        // after the click (a scroll into view finishing) does not.
+        const at = a.top;
+        const onScroll = (e) => {
+            if (pop?.contains(e.target)) return;
+            if (!anchor.isConnected || Math.abs(anchor.getBoundingClientRect().top - at) > 2) closePopover();
+        };
+        document.addEventListener('pointerdown', onDown, true);
+        document.addEventListener('keydown', onKey, true);
+        window.addEventListener('scroll', onScroll, true);
+        window.addEventListener('resize', closePopover);
+        anchor.setAttribute('aria-expanded', 'true');
+        popClose = () => {
+            document.removeEventListener('pointerdown', onDown, true);
+            document.removeEventListener('keydown', onKey, true);
+            window.removeEventListener('scroll', onScroll, true);
+            window.removeEventListener('resize', closePopover);
+            anchor.setAttribute('aria-expanded', 'false');
+            pop?.remove();
+            pop = null;
+            popClose = null;
+        };
+        (pop.querySelector('button') || pop).focus({ preventScroll: true });
+        return pop;
+    }
+
+    // `+n` for a row's own tags, in every list that fits them here: one
+    // listener, in the capture phase, so the row's own click does not follow.
+    document.addEventListener('click', (e) => {
+        const more = e.target.closest?.('.tag-offer-own-more');
+        if (!more || more.hidden) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (pop && more.getAttribute('aria-expanded') === 'true') {
+            closePopover();
+            return;
+        }
+        openTagList(more, String(more.dataset.tags || '').split('\n').filter(Boolean), {
+            t: (key, fallback) => global.dashboardInstance?.language?.t?.(key) || fallback,
+        });
+    }, true);
 
     /** "N tag suggestions in this list · Add all"; hidden at none. */
     function renderCount(host, count, { t = identity, data, onAddAll, refused = 0, onRefused }) {
@@ -103,15 +260,20 @@
      * chips (and a wide `+n` to measure), read every width, then hide.
      *
      * The offer goes first: its room is taken before the row's own tags are
-     * fitted, since those can fold into `+n` and it cannot. In a cell too
-     * narrow even for that, it gives way -- the side panel still offers it.
+     * fitted, and those fold into `+n` -- all of them if need be -- since
+     * they are on the bookmark already and the offer is what asks for a
+     * click. A row with more offers keeps their `+N` beside it. In a cell
+     * too narrow even for the offer, it gives way to that `+N`, which then
+     * counts it too and opens all of them.
      * `tag` and `more` are the caller's chip selectors.
      */
     function fit(cells, { tag, more: moreSel }) {
         if (!cells.length) return;
         cells.forEach((cell) => {
-            cell.querySelectorAll(`${tag}, .tag-offer`).forEach((chip) => { chip.hidden = false; });
+            cell.querySelectorAll(`${tag}, .tag-offer, .tag-offer-more`).forEach((chip) => { chip.hidden = false; });
             cell.querySelector('.tag-offer')?.style.removeProperty('max-width');
+            const offers = cell.querySelector('.tag-offer-more');
+            if (offers) offers.textContent = `+${Number(offers.dataset.total) - 1}`;
             const more = cell.querySelector(moreSel);
             if (more) more.textContent = '+99';
         });
@@ -119,11 +281,14 @@
             const chips = [...cell.querySelectorAll(tag)].filter((chip) => !chip.matches(`${moreSel}, .tag-offer`));
             const more = cell.querySelector(moreSel);
             const offer = cell.querySelector('.tag-offer');
+            const offers = cell.querySelector('.tag-offer-more');
             const gap = parseFloat(getComputedStyle(cell).columnGap) || 0;
             return {
                 chips,
                 more,
                 offer,
+                offers,
+                offersWidth: offers ? offers.getBoundingClientRect().width : 0,
                 gap,
                 avail: cell.clientWidth,
                 widths: chips.map((chip) => chip.getBoundingClientRect().width),
@@ -135,19 +300,20 @@
         });
         plans.forEach((plan) => {
             if (!plan.offer) return;
-            // The row's first tag stays: an offer never pushes all of its own
-            // tags into `+n`. Then the `+n` for the rest, and what is left is
-            // the offer's -- a long name cut short to fit, and below a few
-            // letters it goes.
-            const first = plan.widths.length ? plan.widths[0] + plan.gap : 0;
-            const beside = plan.widths.length > 1 ? plan.moreWidth + plan.gap : 0;
-            const room = Math.min(plan.offerWidth, plan.avail - first - beside);
+            // The offer's `+N` and, for a row with tags of its own, their
+            // `+n` keep their room; the rest is the offer's -- a long name
+            // cut short to fit, and below a few letters it goes, into `+N`.
+            const others = plan.offers ? plan.offersWidth + plan.gap : 0;
+            const beside = plan.widths.length ? plan.moreWidth + plan.gap : 0;
+            const room = Math.min(plan.offerWidth, plan.avail - others - beside);
             if (room < Math.min(56, plan.offerWidth)) {
                 plan.offer.hidden = true;
+                if (plan.offers) plan.offers.textContent = `+${plan.offers.dataset.total}`;
+                plan.avail -= others;
                 return;
             }
             if (room < plan.offerWidth) plan.offer.style.maxWidth = `${Math.floor(room)}px`;
-            plan.avail -= room + plan.gap;
+            plan.avail -= room + plan.gap + others;
         });
         plans.forEach(({ chips, more, gap, avail, widths, moreWidth }) => {
             if (!more) return;
@@ -170,6 +336,11 @@
             more.textContent = hiddenNames.length ? `+${hiddenNames.length}` : '';
             if (hiddenNames.length) more.title = hiddenNames.join(', ');
             else more.removeAttribute('title');
+            // A click shows them (openTagList, wired once above).
+            more.classList.add('tag-offer-own-more');
+            more.dataset.tags = hiddenNames.join('\n');
+            more.setAttribute('role', 'button');
+            more.setAttribute('aria-haspopup', 'dialog');
         });
     }
 
@@ -195,5 +366,5 @@
         return observer;
     }
 
-    global.TagOfferRow = { pick, sourceLabel, chipHtml, renderCount, refusedLink, fit, observe };
+    global.TagOfferRow = { pick, pickAll, sourceLabel, chipHtml, moreHtml, openPopover, openTagList, closePopover, renderCount, refusedLink, fit, observe };
 }(window));

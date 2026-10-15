@@ -729,14 +729,14 @@ test.describe('tag suggestions in the rows', () => {
     });
 
     test('each row shows its offer, with where it came from; the header counts them', async ({ page }) => {
-        const offer = row(page, 'Sug B').locator(`.tag-view-offer[data-offer="${OFFER}"]`);
+        const offer = row(page, 'Sug B').locator(`.tag-view-offer[data-tv-offer="${OFFER}"]`);
         await expect(offer).toBeVisible();
-        await expect(offer).toContainText('your rule');
+        await expect(offer).toHaveAttribute('title', /your rule/);
         await expect(page.locator('.tag-view .tag-view-offer-count')).toContainText('2 tag suggestions');
     });
 
     test('a click on an offer puts the tag on that bookmark, on its own page', async ({ page }) => {
-        await row(page, 'Sug B').locator('.tag-view-chip--offer').click();
+        await row(page, 'Sug B').locator('[data-tv-offer-add]').click();
         await expect.poll(() => readTags(page, ids.other, urlB()), { timeout: 10_000 }).toContain(OFFER);
         expect(await readTags(page, ids.here, urlA())).not.toContain(OFFER);
         await expect(row(page, 'Sug B').locator('.tag-view-offer')).toHaveCount(0);
@@ -745,7 +745,7 @@ test.describe('tag suggestions in the rows', () => {
 
     test('× turns the offer down for good, in the shared refusal list', async ({ page }) => {
         await row(page, 'Sug A').locator('.tag-view-offer').hover();
-        await row(page, 'Sug A').locator('.tag-view-offer-refuse').click();
+        await row(page, 'Sug A').locator('[data-tv-offer-refuse]').click();
         await expect(row(page, 'Sug A').locator('.tag-view-offer')).toHaveCount(0);
         await expect.poll(() => page.evaluate(async () => (await (await fetch('/api/settings')).json()).dismissedTagSuggestions || []))
             .toContain(`sug-a-${N}.example.com|${OFFER}`);

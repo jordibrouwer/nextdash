@@ -98,3 +98,102 @@
 .tag-offer-count-refused {
     color: var(--text-secondary);
 }
+
+/* `+N`: the row's other offers, behind a popover (TagOfferRow.openPopover). */
+.tag-offer-more {
+    flex: none;
+    border: 1px dashed color-mix(in srgb, var(--accent-primary) 70%, transparent);
+    border-radius: var(--radius-pill, 999px);
+    padding: 0 6px;
+    background: transparent;
+    color: var(--accent-primary);
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+
+.tag-offer-more[hidden] {
+    display: none;
+}
+
+.tag-offer-more:hover,
+.tag-offer-more[aria-expanded="true"] {
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+.tag-offer-pop {
+    position: fixed;
+    z-index: 10050;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 200px;
+    max-width: min(360px, calc(100vw - 8px));
+    padding: 6px;
+    border: 1px solid var(--border-primary, var(--border-color));
+    border-radius: var(--radius-md, 8px);
+    background: var(--background-secondary);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.3);
+    font-size: var(--font-size-small);
+}
+
+.tag-offer-pop-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tag-offer-pop-add {
+    flex: none;
+    border: 1px dashed color-mix(in srgb, var(--accent-primary) 70%, transparent);
+    border-radius: var(--radius-pill, 999px);
+    padding: 1px 8px;
+    background: transparent;
+    color: var(--accent-primary);
+    cursor: pointer;
+}
+
+.tag-offer-pop-add:hover,
+.tag-offer-pop-add:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+.tag-offer-pop-source {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-tertiary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tag-offer-pop-refuse {
+    flex: none;
+    border: 0;
+    padding: 0 6px;
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+}
+
+.tag-offer-pop-refuse:hover,
+.tag-offer-pop-refuse:focus-visible {
+    color: var(--accent-error, var(--text-primary));
+}
+
+/* `+n` for a row's own tags opens the list of them (TagOfferRow.openTagList). */
+.tag-offer-own-more {
+    cursor: pointer;
+}
+
+.tag-offer-pop-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.tag-offer-pop-tag {
+    border: 1px solid color-mix(in srgb, var(--border-primary, var(--border-color)) 80%, transparent);
+    border-radius: var(--radius-pill, 999px);
+    padding: 1px 8px;
+    color: var(--text-secondary);
+}

@@ -104,3 +104,45 @@ test('Add all takes every offer in the list', async ({ page }) => {
     // The offers are gone; the line may stay for "N turned down".
     await expect(page.locator('#config-bm-offers [data-bm-offers-all]')).toHaveCount(0);
 });
+
+// Several offers for one row: the best as the chip, `+N` for all of them.
+test('+N opens every offer for the row; one picked there is added, × turns one down', async ({ page }) => {
+    const { host } = await seedAndOpen(page);
+    await page.evaluate((h) => {
+        const live = window.TagSuggestLive;
+        const original = live.forDashBookmark.bind(live);
+        live.forDashBookmark = (d, b) => (String(b.url).includes(`${h}/target`)
+            ? ['red', 'green', 'blue'].map((tag) => ({ tag, pattern: `${h}|${tag}`, reason: { kind: 'catalogue' } }))
+            : original(d, b));
+        window.dashboardInstance.config.repaintBookmarksList();
+    }, host);
+    const more = row(page, 'Offer target').locator('[data-bm-offers-more]');
+    await expect(more).toHaveText('+2');
+    await more.click();
+    const pop = page.locator('.tag-offer-pop');
+    await expect(pop.locator('.tag-offer-pop-row')).toHaveCount(3);
+    await pop.getByRole('button', { name: 'Add #green' }).click();
+    await expect.poll(() => tagsOf(page, `https://${host}/target-0`), { timeout: 10_000 }).toContain('green');
+    await expect(pop).toHaveCount(0);
+    await expect(row(page, 'Offer target')).not.toHaveClass(/keyboard-selected/);
+});
+
+test('own tags that do not fit fold into +n, which lists them; the offer stays', async ({ page }) => {
+    const { host, tag } = await seedAndOpen(page);
+    const many = ['alpha-long-tag', 'beta-long-tag', 'gamma-long-tag', 'delta-long-tag', 'epsilon-long-tag', 'zeta-long-tag'];
+    await page.evaluate(({ h, tags }) => {
+        const d = window.dashboardInstance;
+        const b = d.allBookmarks.find((x) => x.url === `https://${h}/target-0`);
+        b.tags = tags;
+        window.TagSuggestLive.changed(d);
+        d.config.repaintBookmarksList();
+    }, { h: host, tags: many });
+    await expect(row(page, 'Offer target').locator(`.config-bm-tag--offer[data-bm-offer="${tag}"]`)).toBeVisible();
+    const own = row(page, 'Offer target').locator('.config-bm-tag--more');
+    await expect(own).toBeVisible();
+    await own.click();
+    const listed = page.locator('.tag-offer-pop .tag-offer-pop-tag');
+    await expect(listed.first()).toBeVisible();
+    expect(await listed.count()).toBe(Number((await own.textContent()).replace('+', '')));
+    await expect(row(page, 'Offer target')).not.toHaveClass(/keyboard-selected/);
+});

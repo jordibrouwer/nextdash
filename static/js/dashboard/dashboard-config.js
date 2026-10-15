@@ -25172,11 +25172,13 @@ class DashboardConfig {
         listRoot.addEventListener('click', (e) => {
             const add = e.target.closest('[data-bm-offer-add]');
             const refuse = e.target.closest('[data-bm-offer-refuse]');
-            if (!add && !refuse) return;
+            const more = e.target.closest('[data-bm-offers-more]');
+            if (!add && !refuse && !more) return;
             e.preventDefault();
             e.stopPropagation();
             const key = e.target.closest('.config-bm-row')?.getAttribute('data-bm-key');
-            if (add) void this.addWorkbenchRowOffer?.(key);
+            if (more) this.openWorkbenchOffers?.(more, key);
+            else if (add) void this.addWorkbenchRowOffer?.(key);
             else this.refuseWorkbenchRowOffer?.(key);
         }, true);
         listRoot.addEventListener('change', (e) => {

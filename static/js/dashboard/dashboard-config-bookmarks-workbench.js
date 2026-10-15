@@ -2143,24 +2143,40 @@
      * rest with where each came from.
      */
     workbenchRowOffer(b) {
+        return this.workbenchRowOffers(b)[0] || null;
+    },
+
+    /** Every tag on offer for a row, best first: the chip, then `+N`'s popover. */
+    workbenchRowOffers(b) {
         const live = global.TagSuggestLive;
-        if (!b || !live) return null;
+        if (!b || !live) return [];
         const d = this.dash;
         const offers = (d.unsortedBookmarks || []).includes(b)
             ? (live.forBookmark?.(d, b) || [])
             : (live.forDashBookmark?.(d, b) || []);
-        return global.TagOfferRow?.pick(offers, b.tags) || null;
+        return global.TagOfferRow?.pickAll(offers, b.tags) || [];
     },
 
-    /** A dashed chip after the tags: click adds the tag, × turns it down. */
+    /** A dashed chip after the tags: click adds the tag, × turns it down; `+N` for the others. */
     workbenchOfferChip(b, esc) {
-        const offer = this.workbenchRowOffer(b);
-        if (!offer || !global.TagOfferRow) return '';
-        return global.TagOfferRow.chipHtml(offer, {
-            esc,
-            t: (key, fallback) => this.t(key, fallback),
-            data: 'bm',
-            className: 'config-bm-tag config-bm-tag--offer',
+        const offers = this.workbenchRowOffers(b);
+        if (!offers.length || !global.TagOfferRow) return '';
+        const opts = { esc, t: (key, fallback) => this.t(key, fallback), data: 'bm' };
+        return global.TagOfferRow.chipHtml(offers[0], { ...opts, className: 'config-bm-tag config-bm-tag--offer' })
+            + global.TagOfferRow.moreHtml(offers.length, opts);
+    },
+
+    /** `+N` in a row: every offer for it, each to add or turn down. */
+    openWorkbenchOffers(button, key) {
+        const b = key ? this.findBookmarkByKey(key) : null;
+        const offers = this.workbenchRowOffers(b);
+        global.TagOfferRow?.openPopover(button, offers, {
+            t: (k, fallback) => this.t(k, fallback),
+            onAdd: (offer) => void this.addWorkbenchOffers([[b, offer]]),
+            onRefuse: (offer) => void this.dismissTagSuggestion({ tag: offer.tag, pattern: offer.pattern }).then(() => {
+                global.TagSuggestLive?.changed?.(this.dash);
+                this.repaintBookmarksList?.();
+            }),
         });
     },
 
@@ -2192,7 +2208,7 @@
             const cell = row.querySelector('.config-bm-tags');
             // A Health filter puts the reason in this cell instead of tags.
             if (!cell || cell.querySelector('.config-bm-reason')) return;
-            cell.querySelector('.tag-offer')?.remove();
+            cell.querySelectorAll('.tag-offer, .tag-offer-more').forEach((el) => el.remove());
             const html = this.workbenchOfferChip(this.findBookmarkByKey(row.getAttribute('data-bm-key')), esc);
             if (html) cell.insertAdjacentHTML('beforeend', html);
         });

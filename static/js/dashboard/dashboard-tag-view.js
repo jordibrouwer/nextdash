@@ -253,6 +253,7 @@
             const visible = new Set(this.rows.map((b) => this.keyOf(b)));
             [...this.selected].forEach((key) => { if (!visible.has(key)) this.selected.delete(key); });
             shell.body.replaceChildren(this.buildSelectionBar(), table, this.buildLegend());
+            this.fitRowTags(table);
         }
 
         /* ── Toolbar ─────────────────────────────────────────────────────── */
@@ -423,7 +424,18 @@
                     });
                     tagsCell.appendChild(chip);
                 });
-            this.suggestionsFor(b).forEach((offer) => tagsCell.appendChild(this.buildOfferChip(b, offer)));
+            // As the Bookmarks view and the inbox draw it (TagOfferRow): the
+            // row's tags, `+n` for those that do not fit, the best offer, and
+            // `+N` for the others; fitRowTags decides once the row has a width.
+            if (tagsCell.childElementCount) tagsCell.appendChild(this.el('span', 'tag-view-chip tag-view-chip--more'));
+            const offers = this.suggestionsFor(b, Infinity);
+            const kit = window.TagOfferRow;
+            if (offers.length && kit) {
+                const esc = (v) => this.dash.escapeHtml?.(v) ?? String(v);
+                const opts = { esc, t: (key, fallback) => this.t(key, fallback), data: 'tv' };
+                tagsCell.insertAdjacentHTML('beforeend', kit.chipHtml(offers[0], { ...opts, className: 'tag-view-offer' })
+                    + kit.moreHtml(offers.length, opts));
+            }
 
             const pageId = Number(b.pageId ?? b.pageID) || Number(d.currentPageId);
             const page = this.el('span', 'tag-view-cell tag-view-page', this.pageName(pageId));
@@ -609,7 +621,7 @@
          * Local only -- the catalogue in memory, your rules, your other tags
          * and pages already read. Find tags is what asks further.
          */
-        suggestionsFor(b) {
+        suggestionsFor(b, limit = 3) {
             const live = window.TagSuggestLive;
             if (!b || typeof live?.forDashBookmark !== 'function') return [];
             const have = new Set((b.tags || []).map((tag) => String(tag || '').trim().toLowerCase()));
@@ -619,7 +631,40 @@
                 if (!tag || have.has(tag) || seen.has(tag)) return false;
                 seen.add(tag);
                 return true;
-            }).slice(0, 3);
+            }).slice(0, limit);
+        }
+
+        /** The row's Tags cells fitted, and the offers in them wired (TagOfferRow). */
+        fitRowTags(table) {
+            const kit = window.TagOfferRow;
+            if (!kit || !table) return;
+            const refit = () => kit.fit([...table.querySelectorAll('.tag-view-row .tag-view-tags')],
+                { tag: '.tag-view-chip', more: '.tag-view-chip--more' });
+            refit();
+            this._tagFitObserver?.disconnect();
+            this._tagFitObserver = kit.observe(table, refit);
+            table.addEventListener('click', (e) => {
+                const add = e.target.closest('[data-tv-offer-add]');
+                const refuse = e.target.closest('[data-tv-offer-refuse]');
+                const more = e.target.closest('[data-tv-offers-more]');
+                if (!add && !refuse && !more) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const b = this.rows[Number(e.target.closest('.tag-view-row')?.dataset.index)];
+                const offers = b ? this.suggestionsFor(b, Infinity) : [];
+                if (!offers.length) return;
+                if (more) {
+                    kit.openPopover(more, offers, {
+                        t: (key, fallback) => this.t(key, fallback),
+                        onAdd: (offer) => void this.addSuggestions([[b, [offer]]]),
+                        onRefuse: (offer) => void this.refuseSuggestion(offer),
+                    });
+                } else if (add) {
+                    void this.addSuggestions([[b, [offers[0]]]]);
+                } else {
+                    void this.refuseSuggestion(offers[0]);
+                }
+            }, true);
         }
 
         /**
