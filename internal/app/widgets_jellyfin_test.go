@@ -73,6 +73,8 @@ type fakeJellyfin struct {
 	failParent string
 	// sessions is what /Sessions answers; empty is nobody watching.
 	sessions string
+	// emby answers as Emby does: under /emby, with the user in the path.
+	emby bool
 }
 
 func newFakeJellyfin(t *testing.T) *fakeJellyfin {
@@ -83,6 +85,32 @@ func newFakeJellyfin(t *testing.T) *fakeJellyfin {
 		forced := fake.status
 		fake.queries = append(fake.queries, r.URL.Path+"?"+r.URL.RawQuery)
 		fake.mu.Unlock()
+		path := r.URL.Path
+		if fake.emby {
+			// Emby serves everything under /emby, and has no /UserViews or
+			// /Items/Latest: the user is in the path instead.
+			if !strings.HasPrefix(path, "/emby/") {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			path = strings.TrimPrefix(path, "/emby")
+			// Emby documents the full "Emby Client=..., Token=..." form; a
+			// token-only MediaBrowser header is not a promise it keeps, so the
+			// fake refuses it and the client must not send one.
+			if r.Header.Get("Authorization") != "" {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			if path == "/UserViews" || path == "/Items/Latest" {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			if strings.HasPrefix(path, "/Users/u1/") && strings.HasSuffix(path, "/Views") {
+				path = "/UserViews"
+			} else if strings.HasPrefix(path, "/Users/u1/Items/Latest") {
+				path = "/Items/Latest"
+			}
+		}
 		if forced != 0 {
 			w.WriteHeader(forced)
 			return
@@ -100,16 +128,16 @@ func newFakeJellyfin(t *testing.T) *fakeJellyfin {
 			return
 		}
 		switch {
-		case r.URL.Path == "/System/Info":
+		case path == "/System/Info":
 			_, _ = w.Write([]byte(`{"ServerName":"Home","Id":"srv1","Version":"10.10.3"}`))
-		case r.URL.Path == "/Users":
+		case path == "/Users":
 			_, _ = w.Write([]byte(`[{"Name":"jordi","Id":"u1"},{"Name":"kids","Id":"u2"}]`))
-		case r.URL.Path == "/Library/VirtualFolders":
+		case path == "/Library/VirtualFolders":
 			_, _ = w.Write([]byte(`[{"Name":"Films","ItemId":"lib-movies","CollectionType":"movies"},
 				{"Name":"Series","ItemId":"lib-tv","CollectionType":"tvshows"},
 				{"Name":"Anime","ItemId":"lib-anime","CollectionType":"tvshows"},
 				{"Name":"Music","ItemId":"lib-music","CollectionType":"music"}]`))
-		case r.URL.Path == "/Sessions":
+		case path == "/Sessions":
 			fake.mu.Lock()
 			body := fake.sessions
 			fake.mu.Unlock()
@@ -117,22 +145,22 @@ func newFakeJellyfin(t *testing.T) *fakeJellyfin {
 				body = "[]"
 			}
 			_, _ = w.Write([]byte(body))
-		case r.URL.Path == "/UserViews":
+		case path == "/UserViews":
 			_, _ = w.Write([]byte(`{"Items":[{"Id":"lib-movies","Name":"Films","CollectionType":"movies"},
 				{"Id":"lib-tv","Name":"Series","CollectionType":"tvshows"},
 				{"Id":"lib-anime","Name":"Anime","CollectionType":"tvshows"},
 				{"Id":"lib-music","Name":"Music","CollectionType":"music"}]}`))
-		case (r.URL.Path == "/Items" || r.URL.Path == "/Items/Latest") &&
+		case (path == "/Items" || path == "/Items/Latest") &&
 			fake.failParent != "" && r.URL.Query().Get("parentId") == fake.failParent:
 			w.WriteHeader(http.StatusInternalServerError)
-		case r.URL.Path == "/Items":
+		case path == "/Items":
 			// No user: the newest items of a library, episodes ungrouped.
 			body := jellyfinTestRecent[r.URL.Query().Get("parentId")]
 			if body == "" {
 				body = "[]"
 			}
 			_, _ = w.Write([]byte(`{"Items":` + body + `}`))
-		case r.URL.Path == "/Items/Latest":
+		case path == "/Items/Latest":
 			body := jellyfinTestLatest[r.URL.Query().Get("parentId")]
 			if r.URL.Query().Get("isPlayed") == "false" {
 				var items []map[string]any
@@ -150,7 +178,7 @@ func newFakeJellyfin(t *testing.T) *fakeJellyfin {
 				body = "[]"
 			}
 			_, _ = w.Write([]byte(body))
-		case strings.HasPrefix(r.URL.Path, "/Items/") && strings.Contains(r.URL.Path, "/Images/"):
+		case strings.HasPrefix(path, "/Items/") && strings.Contains(path, "/Images/"):
 			fake.mu.Lock()
 			fake.imageHits++
 			wait := fake.imageWait

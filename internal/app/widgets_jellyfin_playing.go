@@ -12,6 +12,7 @@ import (
 const jellyfinPlayingDefaultTTL = 10 * time.Second
 
 type jellyfinPlayingSpec struct {
+	Flavor       jellyfinFlavor
 	Server       string
 	CredentialID string
 	HideNames    bool
@@ -20,7 +21,12 @@ type jellyfinPlayingSpec struct {
 }
 
 func jellyfinPlayingSpecFrom(config map[string]any) jellyfinPlayingSpec {
+	return jellyfinPlayingSpecFromFlavor(config, jellyfinFlavorJellyfin)
+}
+
+func jellyfinPlayingSpecFromFlavor(config map[string]any, flavor jellyfinFlavor) jellyfinPlayingSpec {
 	spec := jellyfinPlayingSpec{
+		Flavor:       flavor,
 		Server:       strings.TrimRight(stringOr(config["server"]), "/"),
 		CredentialID: stringOr(config["credentialId"]),
 		HideNames:    config["hideNames"] == true,
@@ -39,7 +45,7 @@ func jellyfinPlayingSpecFrom(config map[string]any) jellyfinPlayingSpec {
 // fingerprint changes with every setting that changes the answer, so names
 // are gone the moment hideNames is switched on, not when the cache runs out.
 func (spec jellyfinPlayingSpec) fingerprint() string {
-	return strings.Join([]string{spec.Server, spec.CredentialID,
+	return strings.Join([]string{spec.Flavor.service(), spec.Server, spec.CredentialID,
 		strconv.FormatBool(spec.HideNames), strconv.Itoa(spec.Rows)}, "|")
 }
 
@@ -69,7 +75,7 @@ func (h *Handlers) fetchJellyfinPlaying(ctx context.Context, spec jellyfinPlayin
 		return result, images, errMediaNotSetUp
 	}
 	var sessions []jellyfinRawSession
-	if err := h.jellyfinGet(ctx, spec.Server, credential, "/Sessions",
+	if err := h.jellyfinGet(ctx, spec.Flavor, spec.Server, credential, "/Sessions",
 		url.Values{"activeWithinSeconds": {"120"}}, &sessions); err != nil {
 		return result, images, err
 	}
@@ -90,7 +96,7 @@ func (h *Handlers) fetchJellyfinPlaying(ctx context.Context, spec jellyfinPlayin
 			continue
 		}
 		raw := *session.NowPlayingItem
-		item, refs := mapJellyfinItem(raw, JellyfinLibrary{}, spec.Server, imageURL)
+		item, refs := mapJellyfinItem(raw, JellyfinLibrary{}, spec.Server, spec.Flavor, imageURL)
 		item.ID = session.ID
 		if raw.Type == "TvChannel" {
 			item.Kind = "tv"

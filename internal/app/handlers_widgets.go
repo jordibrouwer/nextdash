@@ -103,6 +103,7 @@ var withheldWidgetKeys = map[WidgetType]map[string]bool{
 	WidgetTypeCustom:      {"url": true, "credentialId": true},
 	WidgetTypeRSS:         {"feedUrls": true},
 	WidgetTypeJellyfin:    {"server": true, "credentialId": true, "userId": true},
+	WidgetTypeEmby:        {"server": true, "credentialId": true, "userId": true},
 	WidgetTypeSonarr:      {"server": true, "credentialId": true},
 	WidgetTypeRadarr:      {"server": true, "credentialId": true},
 	WidgetTypeSeerr:       {"server": true, "credentialId": true, "requestedBy": true},
@@ -111,6 +112,7 @@ var withheldWidgetKeys = map[WidgetType]map[string]bool{
 	// Entity ids say which rooms and devices a house has.
 	WidgetTypeHomeAssistant:   {"server": true, "credentialId": true, "entities": true},
 	WidgetTypeJellyfinPlaying: {"server": true, "credentialId": true},
+	WidgetTypeEmbyPlaying:     {"server": true, "credentialId": true},
 }
 
 /*

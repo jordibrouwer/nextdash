@@ -134,6 +134,10 @@ const (
 	WidgetTypeJellyfin WidgetType = "jellyfin"
 	// WidgetTypeJellyfinPlaying shows who watches what on Jellyfin right now.
 	WidgetTypeJellyfinPlaying WidgetType = "jellyfin-playing"
+	// WidgetTypeEmby shows what was added to an Emby server lately, through the Jellyfin client.
+	WidgetTypeEmby WidgetType = "emby"
+	// WidgetTypeEmbyPlaying shows who watches what on Emby right now.
+	WidgetTypeEmbyPlaying WidgetType = "emby-playing"
 	// WidgetTypeSonarr and WidgetTypeRadarr show what is coming and what is
 	// downloading, with posters, through the same media tile as Jellyfin.
 	WidgetTypeSonarr WidgetType = "sonarr"
@@ -194,6 +198,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeCustom:          {},
 	WidgetTypeNotes:           {},
 	WidgetTypeJellyfin:        {},
+	WidgetTypeEmby:            {},
 	WidgetTypeSonarr:          {},
 	WidgetTypeRadarr:          {},
 	WidgetTypeSeerr:           {},
@@ -201,6 +206,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeSABnzbd:         {},
 	WidgetTypeHomeAssistant:   {},
 	WidgetTypeJellyfinPlaying: {},
+	WidgetTypeEmbyPlaying:     {},
 
 	WidgetTypeUnraid:              {},
 	WidgetTypeUnraidArray:         {},

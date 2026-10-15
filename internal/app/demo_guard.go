@@ -87,7 +87,7 @@ var demoDeniedWrites = []string{
 	// Sending or fetching on the visitor's behalf.
 	"/api/push/subscribe", "/api/push/unsubscribe", "/api/push/test",
 	"/api/webhooks", "/api/webhooks/test", "/api/health/test-notification", "/api/digest/test",
-	"/api/widgets/custom/test", "/api/widgets/jellyfin/setup", "/api/widgets/sonarr/setup", "/api/widgets/radarr/setup", "/api/widgets/seerr/setup", "/api/widgets/qbittorrent/setup", "/api/widgets/sabnzbd/setup", "/api/widgets/homeassistant/setup", "/api/widgets/homeassistant/action", "/api/unraid/test", "/api/unraid/settings",
+	"/api/widgets/custom/test", "/api/widgets/jellyfin/setup", "/api/widgets/emby/setup", "/api/widgets/sonarr/setup", "/api/widgets/radarr/setup", "/api/widgets/seerr/setup", "/api/widgets/qbittorrent/setup", "/api/widgets/sabnzbd/setup", "/api/widgets/homeassistant/setup", "/api/widgets/homeassistant/action", "/api/unraid/test", "/api/unraid/settings",
 	"/api/sources/{id}", "/api/sources/{id}/run", "/api/sources/{id}/forget",
 	"/api/feeds/poll", "/api/feeds/retry", "/api/previews/refresh", "/api/bookmarks/prefetch-icons",
 	"/api/health/retest-all", "/api/health/auto-heal-apply", "/api/health/check-url",
