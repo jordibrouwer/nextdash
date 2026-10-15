@@ -13,7 +13,6 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 ## Table of contents
 
 - [v1.19.8 — 15 October 2026](#v1198--15-october-2026)
-- [v1.19.7.1 — 15 October 2026](#v11971--15-october-2026)
 - [v1.19.7 — 14 October 2026](#v1197--14-october-2026)
 - [v1.19.6 — 14 October 2026](#v1196--14-october-2026)
 - [v1.19.5 — 12 October 2026](#v1195--12-october-2026)
@@ -118,10 +117,6 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 ### Dashboard
 
 - **new — the page filter stays at the top on a phone.** Shift+F narrows the page you are on, and a phone has no Shift+F, so the phone layout keeps the filter bar above the bookmarks from the first paint. It does not take focus, so the keyboard stays down until you tap it; the × and Escape empty it rather than close it, and the × only shows while there is something to clear. Full width, 44px tall and 16px text, so iOS does not zoom in on focus. Leaving the phone layout drops an empty bar and keeps one that is still filtering (`DashboardGridFilter.syncPinned`, `grid-filter-bar--pinned`, `dashboard-grid-filter-mobile.spec.js`).
-
----
-
-## v1.19.7.1 — 15 October 2026
 
 ### Tags
 
