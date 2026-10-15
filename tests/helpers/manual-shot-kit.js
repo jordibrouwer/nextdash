@@ -246,6 +246,18 @@ function tidyDemoData(dir, patch) {
         ]);
     }
 
+    // One shot only: the demo collection as a first launch sees it, with the
+    // quick-start card open. The starter question counts as answered (kept),
+    // and the baselines are taken afresh, so all three tasks are still open.
+    if (patch === 'quickstart') {
+        const settingsFile = path.join(dir, 'settings.json');
+        const settings = readJSON(settingsFile);
+        const { baselineBookmarks, baselineTagged, ...rest } = settings.quickStart || {};
+        settings.onboardingCompleted = false;
+        settings.quickStart = { ...rest, dismissed: false, visitedConfig: false, seenCheatsheet: false, templatePicked: 'keep' };
+        writeJSON(settingsFile, settings);
+    }
+
     // One shot only: a page with the Home Assistant tile (its answer is mocked).
     if (patch === 'homeassistant') {
         const pages = readJSON(path.join(dir, 'pages.json'));

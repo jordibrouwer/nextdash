@@ -936,6 +936,9 @@ test('16 theme browser parts', async ({ page }) => {
     await openDashboard(page);
     await page.keyboard.press('Shift+A');
     await page.locator('[data-look-studio] [data-theme-id]').first().waitFor();
+    // The character chips sit behind "More" since the appearance redesign.
+    await page.locator('[data-look-studio] [data-theme-more]').click();
+    await page.locator('[data-look-studio] .theme-browser-characters').first().waitFor();
     await page.waitForTimeout(1_200);
     await snap(page, page.locator('[data-look-studio] .theme-browser-characters').first(), '16-character-chips.jpg', { pad: 8 });
     const pane = page.locator('#look-studio-pane');
@@ -1079,8 +1082,10 @@ test.describe('phone bookmarks', () => {
  * haze is most of the frame; their crops above already show them at 1:1.
  */
 
-test.describe('new install', () => {
-    test.use({ dataPatch: 'empty' });
+test.describe('first launch', () => {
+    // The demo collection, not a bare install's few starter links, with the
+    // quick-start card as a first launch shows it.
+    test.use({ dataPatch: 'quickstart' });
     test('full 02 first launch', async ({ page }) => {
         await prepare(page);
         await page.goto('/');
