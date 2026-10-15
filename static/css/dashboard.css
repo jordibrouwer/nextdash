@@ -7997,7 +7997,7 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
        at the draft's size the middle zone read as a row of loose digits rather
        than as the pages of the thing you are looking at. Raised twice since,
        because the pages are the one thing in this bar you aim at by name. */
-    height: 40px;
+    height: calc(var(--action-button-size) + 12px);
     min-width: 2.6rem;
     padding: 0 1rem;
     border: 1px solid var(--border-primary);
@@ -8049,7 +8049,7 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
     align-items: center;
     gap: 0.4rem;
     flex: 0 0 auto;
-    height: 40px;
+    height: calc(var(--action-button-size) + 12px);
     padding: 0 0.75rem;
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-6, 10px);
@@ -8098,7 +8098,7 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
    the same corner, the same 40px outer height as a destination -- and a
    segment inside it is 28px, which is what an action measures. */
 body[data-page-switcher="segmented"] .header-track .page-navigation {
-    height: 40px;
+    height: calc(var(--action-button-size) + 12px);
     align-items: center;
     gap: 2px;
     padding: 5px;
@@ -8215,7 +8215,7 @@ body[data-page-switcher="classic"] .dashboard-section.section-controls .header-t
    you are on is the rule under the view you are in -- one line, not two. */
 body[data-page-switcher="classic"] .header-track .page-nav-btn,
 body[data-page-switcher="classic"] .header-track .page-nav-overflow {
-    height: 40px;
+    height: calc(var(--action-button-size) + 12px);
 }
 
 body[data-page-switcher="classic"] .header-track .page-nav-btn.active::after {
@@ -8444,7 +8444,8 @@ body[data-action-bar-size="xl"] { --action-button-size: 44px; --action-glyph-siz
  * They were 28px squares standing next to a box that measures 40 -- the same
  * button, drawn smaller, because one of them had a surround and the other did
  * not. The outer size is what the eye compares, so that is what matches:
- * 28 + 2x5 of padding + 2x1 of border.
+ * the button size + 2x5 of padding + 2x1 of border, whichever of the five
+ * action bar sizes is chosen.
  */
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
 .dashboard-section.section-controls .header-actions .docker-link-anchor,
@@ -8455,8 +8456,8 @@ body[data-action-bar-size="xl"] { --action-button-size: 44px; --action-glyph-siz
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: calc(var(--action-button-size) + 12px);
+    height: calc(var(--action-button-size) + 12px);
     padding: 0;
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-6, 10px);
