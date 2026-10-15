@@ -23,7 +23,9 @@ export default defineConfig({
   head: [
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
     ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
-    ['link', { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600&family=Source+Code+Pro:wght@400;500&display=swap' }]
+    ['link', { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600&family=Source+Code+Pro:wght@400;500&display=swap' }],
+    // The same Umami site as WordPress; data-domains keeps local builds out of the stats.
+    ['script', { defer: '', src: 'https://stats.nextdash.cc/script.js', 'data-website-id': 'd33ce6d0-a7b7-4b4c-8b4a-a905f75c08a6', 'data-domains': 'nextdash.cc' }]
   ],
 
   themeConfig: {
