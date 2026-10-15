@@ -3001,6 +3001,8 @@
             notes: 'A few lines of your own, with checkboxes for the ones that are tasks.',
             jellyfin: 'What was added to Jellyfin lately — films, series and anime, with posters.',
             'jellyfin-playing': 'What is playing on Jellyfin right now — who, where and how far.',
+            emby: 'What was added to Emby lately — films, series and anime, with posters.',
+            'emby-playing': 'What is playing on Emby right now — who, where and how far.',
             sonarr: 'Episodes coming up and downloads in progress in Sonarr, with posters.',
             radarr: 'Films coming out and downloads in progress in Radarr, with posters.',
             seerr: 'Requests in Overseerr or Jellyseerr — who asked, and whether it has arrived — with posters.',

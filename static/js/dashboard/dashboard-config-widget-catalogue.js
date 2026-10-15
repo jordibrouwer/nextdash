@@ -55,6 +55,7 @@
         rss: { rows: [['Release 2.4 is out', ''], ['A note on caching', '']] },
         notes: { rows: [['☑ renew domain', ''], ['☐ swap disk', '']] },
         jellyfin: { rows: [['Severance', 'S2E4'], ['Dune: Part Two', 'film']] },
+        emby: { rows: [['Severance', 'S2E4'], ['Dune: Part Two', 'film']] },
         sonarr: { rows: [['The Bear', 'tonight'], ['Andor', '62%', 'good']] },
         radarr: { rows: [['Mickey 17', 'Friday'], ['Flow', 'queued']] },
         seerr: { rows: [['Shōgun', 'asked'], ['Wicked', 'arrived', 'good']] },
@@ -74,6 +75,8 @@
     const NEW_SINCE = {
         jellyfin: '1.20',
         'jellyfin-playing': '1.20',
+        emby: '1.20',
+        'emby-playing': '1.20',
         sonarr: '1.20',
         radarr: '1.20',
         seerr: '1.20',

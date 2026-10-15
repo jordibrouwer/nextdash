@@ -18524,7 +18524,7 @@ class DashboardConfig {
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'notes']],
-        ['media', ['jellyfin', 'jellyfin-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
+        ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
     ];
 
     renderPagesTags() {
@@ -20715,7 +20715,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -21096,6 +21096,7 @@ class DashboardConfig {
         sabnzbd: DashboardConfig.DOWNLOAD_SETTINGS,
         homeassistant: DashboardConfig.HA_SETTINGS,
         'jellyfin-playing': DashboardConfig.JELLYFIN_PLAYING_SETTINGS,
+        'emby-playing': DashboardConfig.JELLYFIN_PLAYING_SETTINGS,
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
               label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },
@@ -21221,6 +21222,26 @@ class DashboardConfig {
               ] },
         ],
     };
+
+    /*
+     * Emby asks the same questions as Jellyfin, under its own name. Only a
+     * text that names Jellyfin gets an Emby key; the rest keep Jellyfin's key,
+     * and with it the translation it already has.
+     */
+    static {
+        const emby = (text) => text.replace('Jellyfin', 'Emby');
+        const walk = (item) => (Array.isArray(item)
+            ? (typeof item[0] === 'string' && item[0].startsWith('config.') && typeof item[1] === 'string'
+                ? (item[1].includes('Jellyfin') ? [emby(item[0]), emby(item[1]), ...item.slice(2)] : item)
+                : item.map(walk))
+            : typeof item === 'string' ? emby(item) : item);
+        DashboardConfig.WIDGET_SETTINGS.emby = DashboardConfig.WIDGET_SETTINGS.jellyfin.map((field) => ({
+            ...field,
+            label: walk(field.label),
+            ...(field.hint ? { hint: walk(field.hint) } : {}),
+            ...(field.options ? { options: field.options.map(([value, label]) => [value, walk(label)]) } : {}),
+        }));
+    }
 
     /** The formats a value may be shown in — the server accepts these and no others. */
     static CUSTOM_FORMATS = ['count', 'bytes', 'data', 'rate', 'power', 'temperature', 'percent', 'share', 'duration', 'ms', 'relativeDate', 'text'];

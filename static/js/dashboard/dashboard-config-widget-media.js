@@ -100,6 +100,28 @@
     };
 
     /*
+     * Emby: the same API as Jellyfin's, under Emby's name and its own address.
+     */
+    Config.MEDIA_SERVICES.emby = {
+        ...Config.MEDIA_SERVICES.jellyfin,
+        id: 'emby',
+        name: 'Emby',
+        placeholder: 'http://emby.local:8096',
+        words: {
+            ...Object.fromEntries(Object.entries(Config.MEDIA_SERVICES.jellyfin.words).map(([name, [key, text]]) => [
+                name, text.includes('Jellyfin') ? [key.replace('Jellyfin', 'Emby'), text.replace('Jellyfin', 'Emby')] : [key, text]])),
+            keyWhere: ['config.widgetEmbyKeyWhere', 'Settings → Advanced → API Keys in Emby'],
+        },
+    };
+    Config.MEDIA_SERVICES['emby-playing'] = {
+        ...Config.MEDIA_SERVICES.emby,
+        id: 'emby-playing',
+        setup: 'emby',
+        choices: undefined,
+        connected: undefined,
+    };
+
+    /*
      * Seerr: whose requests to show is chosen from the users Connect lists.
      *
      * Its key is base64 and ends in "==" -- the part a double-click to copy
