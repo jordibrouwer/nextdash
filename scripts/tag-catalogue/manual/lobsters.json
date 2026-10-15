@@ -1,0 +1,1495 @@
+{
+  "00f.net": [
+    "dev"
+  ],
+  "0pointer.net": [
+    "linux"
+  ],
+  "200ok.ch": [
+    "emacs"
+  ],
+  "2ality.com": [
+    "dev-blogs",
+    "javascript"
+  ],
+  "abhinavsarkar.net": [
+    "haskell"
+  ],
+  "abuseofnotation.github.io": [
+    "haskell"
+  ],
+  "acadia.engineering": [
+    "database"
+  ],
+  "adamj.eu": [
+    "python"
+  ],
+  "agwa.name": [
+    "cybersecurity"
+  ],
+  "ahelwer.ca": [
+    "formal-methods"
+  ],
+  "aikido.dev": [
+    "cybersecurity"
+  ],
+  "akselmo.dev": [
+    "linux"
+  ],
+  "alexedwards.net": [
+    "golang"
+  ],
+  "alexn.org": [
+    "scala"
+  ],
+  "alexwlchan.net": [
+    "webdev"
+  ],
+  "allthingsdistributed.com": [
+    "distributed-systems"
+  ],
+  "alperenkeles.com": [
+    "testing"
+  ],
+  "alt-romes.github.io": [
+    "haskell"
+  ],
+  "ambionics.io": [
+    "php"
+  ],
+  "andersmurphy.com": [
+    "clojure"
+  ],
+  "andre.arko.net": [
+    "ruby"
+  ],
+  "andrealeopardi.com": [
+    "elixir"
+  ],
+  "andregarzia.com": [
+    "lua"
+  ],
+  "andreyor.st": [
+    "clojure"
+  ],
+  "android-developers.googleblog.com": [
+    "android"
+  ],
+  "andyatkinson.com": [
+    "database"
+  ],
+  "anil.recoil.org": [
+    "ai"
+  ],
+  "antirez.com": [
+    "ai"
+  ],
+  "antithesis.com": [
+    "testing"
+  ],
+  "antonz.org": [
+    "golang"
+  ],
+  "aras-p.info": [
+    "dev"
+  ],
+  "arcan-fe.com": [
+    "osdev"
+  ],
+  "ariadne.space": [
+    "linux"
+  ],
+  "arthi-chaud.github.io": [
+    "haskell"
+  ],
+  "atproto.com": [
+    "distributed-systems"
+  ],
+  "attackanddefense.dev": [
+    "browser"
+  ],
+  "autodidacts.io": [
+    "linux"
+  ],
+  "avohq.io": [
+    "ruby"
+  ],
+  "b-list.org": [
+    "python"
+  ],
+  "batsov.com": [
+    "ai"
+  ],
+  "bcantrill.dtrace.org": [
+    "ai"
+  ],
+  "belkadan.com": [
+    "swift"
+  ],
+  "bernat.tech": [
+    "python"
+  ],
+  "bernsteinbear.com": [
+    "dev"
+  ],
+  "bevy.org": [
+    "game-dev"
+  ],
+  "beza1e1.tuxen.de": [
+    "dev"
+  ],
+  "blinry.org": [
+    "linux"
+  ],
+  "blog.7mind.io": [
+    "scala"
+  ],
+  "blog.alexbeals.com": [
+    "cybersecurity"
+  ],
+  "blog.andr2i.com": [
+    "golang"
+  ],
+  "blog.apnic.net": [
+    "networking"
+  ],
+  "blog.appliedcomputing.io": [
+    "distributed-systems"
+  ],
+  "blog.benjojo.co.uk": [
+    "networking"
+  ],
+  "blog.buenzli.dev": [
+    "git"
+  ],
+  "blog.calif.io": [
+    "cybersecurity"
+  ],
+  "blog.cr.yp.to": [
+    "encryption"
+  ],
+  "blog.cryptographyengineering.com": [
+    "dev-blogs",
+    "cybersecurity"
+  ],
+  "blog.darklang.com": [
+    "ai"
+  ],
+  "blog.engineyard.com": [
+    "dev-blogs",
+    "php"
+  ],
+  "blog.exe.dev": [
+    "dev"
+  ],
+  "blog.fabiomanganiello.com": [
+    "webdev"
+  ],
+  "blog.gitbutler.com": [
+    "git"
+  ],
+  "blog.glyph.im": [
+    "ai"
+  ],
+  "blog.izissise.net": [
+    "linux"
+  ],
+  "blog.janestreet.com": [
+    "ai"
+  ],
+  "blog.jez.io": [
+    "ruby"
+  ],
+  "blog.jim-nielsen.com": [
+    "macos"
+  ],
+  "blog.jle.im": [
+    "haskell"
+  ],
+  "blog.julik.nl": [
+    "ruby"
+  ],
+  "blog.lenot.re": [
+    "osdev"
+  ],
+  "blog.lvmbdv.dev": [
+    "dev"
+  ],
+  "blog.michielborkent.nl": [
+    "clojure"
+  ],
+  "blog.miguelgrinberg.com": [
+    "dev"
+  ],
+  "blog.ploeh.dk": [
+    "dev"
+  ],
+  "blog.plover.com": [
+    "debugging"
+  ],
+  "blog.quarkslab.com": [
+    "cybersecurity"
+  ],
+  "blog.redplanetlabs.com": [
+    "clojure"
+  ],
+  "blog.sequin.io": [
+    "elixir"
+  ],
+  "blog.softwaremill.com": [
+    "scala"
+  ],
+  "blog.syncpup.com": [
+    "erlang"
+  ],
+  "blog.tangled.org": [
+    "git"
+  ],
+  "blog.thunderbird.net": [
+    "email"
+  ],
+  "blog.trailofbits.com": [
+    "dev"
+  ],
+  "blog.veritates.love": [
+    "haskell"
+  ],
+  "blog.yossarian.net": [
+    "cybersecurity"
+  ],
+  "blogs.gnome.org": [
+    "linux"
+  ],
+  "blogs.igalia.com": [
+    "browser"
+  ],
+  "blogs.kde.org": [
+    "linux"
+  ],
+  "blogs.windows.com": [
+    "blog",
+    "windows"
+  ],
+  "bmcgee.ie": [
+    "nix"
+  ],
+  "bonfirenetworks.org": [
+    "elixir"
+  ],
+  "boringsql.com": [
+    "database"
+  ],
+  "boston.conman.org": [
+    "lua"
+  ],
+  "boyter.org": [
+    "dev"
+  ],
+  "brandur.org": [
+    "database"
+  ],
+  "breatheoutbreathe.in": [
+    "emacs"
+  ],
+  "brooker.co.za": [
+    "dev"
+  ],
+  "buttondown.com": [
+    "dev"
+  ],
+  "bvisness.me": [
+    "lua"
+  ],
+  "byroot.github.io": [
+    "ruby"
+  ],
+  "bytecodealliance.org": [
+    "webassembly"
+  ],
+  "c3-lang.org": [
+    "dev"
+  ],
+  "cacm.acm.org": [
+    "dev"
+  ],
+  "caio.ca": [
+    "dev"
+  ],
+  "calnewport.com": [
+    "ai"
+  ],
+  "carette.xyz": [
+    "swift"
+  ],
+  "cdn2.qualys.com": [
+    "linux"
+  ],
+  "cedardb.com": [
+    "database"
+  ],
+  "cfallin.org": [
+    "compilers"
+  ],
+  "chaos.social": [
+    "nix"
+  ],
+  "chiply.dev": [
+    "emacs"
+  ],
+  "chrispenner.ca": [
+    "haskell"
+  ],
+  "christine.website": [
+    "linux"
+  ],
+  "chriswarbo.net": [
+    "nix"
+  ],
+  "chshersh.com": [
+    "ai"
+  ],
+  "cisa.gov": [
+    "government",
+    "cybersecurity"
+  ],
+  "citizenlab.ca": [
+    "ios"
+  ],
+  "cnx-software.com": [
+    "hardware"
+  ],
+  "computer.rip": [
+    "email"
+  ],
+  "contra.com": [
+    "nodejs"
+  ],
+  "corrode.dev": [
+    "rust"
+  ],
+  "cppstories.com": [
+    "cpp"
+  ],
+  "crowdsupply.com": [
+    "hardware"
+  ],
+  "crunchydata.com": [
+    "database"
+  ],
+  "csswizardry.com": [
+    "dev"
+  ],
+  "ctrl.blog": [
+    "linux"
+  ],
+  "da.vidbuchanan.co.uk": [
+    "encryption"
+  ],
+  "daniel.haxx.se": [
+    "dev"
+  ],
+  "danielbmarkham.com": [
+    "dev"
+  ],
+  "danielchasehooper.com": [
+    "swift"
+  ],
+  "danq.me": [
+    "webdev"
+  ],
+  "danschnau.com": [
+    "dotnet"
+  ],
+  "dashbit.co": [
+    "elixir"
+  ],
+  "datagubbe.se": [
+    "retro-computing"
+  ],
+  "davi.sh": [
+    "nix"
+  ],
+  "david-smith.org": [
+    "ios"
+  ],
+  "dbushell.com": [
+    "webdev"
+  ],
+  "degoes.net": [
+    "scala"
+  ],
+  "desfontain.es": [
+    "privacy"
+  ],
+  "determinate.systems": [
+    "nix"
+  ],
+  "developer.chrome.com": [
+    "open-source",
+    "webdev"
+  ],
+  "devenv.sh": [
+    "nix"
+  ],
+  "discuss.ocaml.org": [
+    "ai"
+  ],
+  "diziet.dreamwidth.org": [
+    "linux"
+  ],
+  "doisinkidney.com": [
+    "haskell"
+  ],
+  "domm.plix.at": [
+    "perl"
+  ],
+  "doscienceto.it": [
+    "haskell"
+  ],
+  "downtowndougbrown.com": [
+    "cybersecurity"
+  ],
+  "drakerossman.com": [
+    "nix"
+  ],
+  "dustri.org": [
+    "cybersecurity"
+  ],
+  "dxuuu.xyz": [
+    "linux"
+  ],
+  "dzone.com": [
+    "dev"
+  ],
+  "ebellani.github.io": [
+    "dev"
+  ],
+  "eclecticlight.co": [
+    "macos"
+  ],
+  "edmundmiller.dev": [
+    "emacs"
+  ],
+  "eev.ee": [
+    "game-dev"
+  ],
+  "eieio.games": [
+    "game-dev"
+  ],
+  "eighty-twenty.org": [
+    "dev"
+  ],
+  "elbeno.com": [
+    "cpp"
+  ],
+  "eli.thegreenplace.net": [
+    "dev-blogs",
+    "webassembly"
+  ],
+  "emacsair.me": [
+    "emacs"
+  ],
+  "emacsconf.org": [
+    "emacs"
+  ],
+  "emacsredux.com": [
+    "emacs"
+  ],
+  "emoses.org": [
+    "emacs"
+  ],
+  "entropicthoughts.com": [
+    "dev"
+  ],
+  "eprint.iacr.org": [
+    "encryption"
+  ],
+  "ergaster.org": [
+    "editor"
+  ],
+  "erikarow.land": [
+    "erlang"
+  ],
+  "ersei.net": [
+    "nix"
+  ],
+  "eshelyaron.com": [
+    "emacs"
+  ],
+  "etbe.coker.com.au": [
+    "dev"
+  ],
+  "ethanheilman.com": [
+    "encryption"
+  ],
+  "evalapply.org": [
+    "clojure"
+  ],
+  "evanhahn.com": [
+    "dev-blogs",
+    "dev"
+  ],
+  "evertpot.com": [
+    "dev"
+  ],
+  "exploring-better-ways.bellroy.com": [
+    "haskell"
+  ],
+  "f-droid.org": [
+    "android"
+  ],
+  "fabiensanglard.net": [
+    "dev"
+  ],
+  "fasterthanli.me": [
+    "rust"
+  ],
+  "faultlore.com": [
+    "rust"
+  ],
+  "feistyduck.com": [
+    "encryption"
+  ],
+  "ferd.ca": [
+    "erlang"
+  ],
+  "fil-c.org": [
+    "c"
+  ],
+  "fosdem.org": [
+    "dev"
+  ],
+  "fractalfir.github.io": [
+    "dotnet"
+  ],
+  "fulltimenix.com": [
+    "nix"
+  ],
+  "func25.dev": [
+    "golang"
+  ],
+  "fzakaria.com": [
+    "nix"
+  ],
+  "galois.com": [
+    "formal-methods"
+  ],
+  "garnix.io": [
+    "nix"
+  ],
+  "garrit.xyz": [
+    "devops"
+  ],
+  "gazagnaire.org": [
+    "ai"
+  ],
+  "gem.coop": [
+    "ruby"
+  ],
+  "giacomocavalieri.me": [
+    "dev"
+  ],
+  "gingerbill.org": [
+    "dev"
+  ],
+  "giodicanio.com": [
+    "cpp"
+  ],
+  "github.blog": [
+    "containers",
+    "dev"
+  ],
+  "gleam.run": [
+    "erlang"
+  ],
+  "gram.liten.app": [
+    "editor"
+  ],
+  "gvolpe.com": [
+    "nix"
+  ],
+  "hachyderm.io": [
+    "cybersecurity"
+  ],
+  "hackers.pub": [
+    "javascript"
+  ],
+  "haiku-os.org": [
+    "linux",
+    "osdev"
+  ],
+  "haskellforall.com": [
+    "dev"
+  ],
+  "hauleth.dev": [
+    "elixir"
+  ],
+  "healeycodes.com": [
+    "dev"
+  ],
+  "helix-editor.com": [
+    "editor",
+    "vim"
+  ],
+  "herbsutter.com": [
+    "cpp"
+  ],
+  "heyitsas.im": [
+    "linux"
+  ],
+  "hhvm.com": [
+    "desktop-apps",
+    "php"
+  ],
+  "hillelwayne.com": [
+    "dev"
+  ],
+  "honeycomb.io": [
+    "dev"
+  ],
+  "hownot2code.com": [
+    "dotnet"
+  ],
+  "hpc.guix.info": [
+    "nix"
+  ],
+  "iankduncan.com": [
+    "distributed-systems"
+  ],
+  "inessential.com": [
+    "macos"
+  ],
+  "infoq.com": [
+    "dev"
+  ],
+  "infoscience.epfl.ch": [
+    "scala"
+  ],
+  "infosec.exchange": [
+    "cybersecurity"
+  ],
+  "infrequently.org": [
+    "dev-blogs",
+    "browser"
+  ],
+  "inkandswitch.com": [
+    "dev"
+  ],
+  "inside.java": [
+    "java"
+  ],
+  "interestingengineering.com": [
+    "hardware"
+  ],
+  "internals-for-interns.com": [
+    "golang"
+  ],
+  "intertwingly.net": [
+    "ruby"
+  ],
+  "iovec.net": [
+    "linux"
+  ],
+  "iroh.computer": [
+    "distributed-systems"
+  ],
+  "irreal.org": [
+    "emacs"
+  ],
+  "ishadeed.com": [
+    "css"
+  ],
+  "island94.org": [
+    "ruby"
+  ],
+  "it-notes.dragas.net": [
+    "linux"
+  ],
+  "jack-vanlightly.com": [
+    "distributed-systems"
+  ],
+  "jackkelly.name": [
+    "haskell"
+  ],
+  "jade.fyi": [
+    "nix"
+  ],
+  "jakearchibald.com": [
+    "css"
+  ],
+  "jank-lang.org": [
+    "clojure"
+  ],
+  "jeffgeerling.com": [
+    "hardware"
+  ],
+  "jnsgr.uk": [
+    "nix"
+  ],
+  "joeyh.name": [
+    "desktop-apps",
+    "ai"
+  ],
+  "johns.codes": [
+    "nix"
+  ],
+  "joshwcomeau.com": [
+    "webdev",
+    "css"
+  ],
+  "jpcamara.com": [
+    "ruby"
+  ],
+  "junctionlabs.io": [
+    "devops"
+  ],
+  "juxt.pro": [
+    "clojure"
+  ],
+  "jvt.me": [
+    "dev"
+  ],
+  "jwz.org": [
+    "open-source",
+    "dev"
+  ],
+  "jyn.dev": [
+    "dev"
+  ],
+  "karthinks.com": [
+    "emacs"
+  ],
+  "kcsrk.info": [
+    "ai"
+  ],
+  "kdab.com": [
+    "cpp"
+  ],
+  "keith-mifsud.me": [
+    "php"
+  ],
+  "kerkour.com": [
+    "encryption"
+  ],
+  "kevinboone.me": [
+    "linux"
+  ],
+  "keymaterial.net": [
+    "encryption"
+  ],
+  "kirancodes.me": [
+    "ai"
+  ],
+  "kmcd.dev": [
+    "api"
+  ],
+  "kobzol.github.io": [
+    "rust"
+  ],
+  "kokada.capivaras.dev": [
+    "nix"
+  ],
+  "kristoff.it": [
+    "zig"
+  ],
+  "kyo.iroiro.party": [
+    "emacs"
+  ],
+  "labs.leaningtech.com": [
+    "webassembly"
+  ],
+  "labs.quansight.org": [
+    "python"
+  ],
+  "lalinsky.com": [
+    "zig"
+  ],
+  "lalitm.com": [
+    "dev"
+  ],
+  "lampwww.epfl.ch": [
+    "scala"
+  ],
+  "lapcatsoftware.com": [
+    "macos"
+  ],
+  "lars.ingebrigtsen.no": [
+    "emacs"
+  ],
+  "larstofus.com": [
+    "dev"
+  ],
+  "lastlog.de": [
+    "nix"
+  ],
+  "lawrencecpaulson.github.io": [
+    "formal-methods"
+  ],
+  "lemire.me": [
+    "dev"
+  ],
+  "leodemoura.github.io": [
+    "formal-methods"
+  ],
+  "lewiscampbell.tech": [
+    "dev"
+  ],
+  "lewisjkl.com": [
+    "scala"
+  ],
+  "lgug2z.com": [
+    "rust"
+  ],
+  "lihaoyi.com": [
+    "scala"
+  ],
+  "linderud.dev": [
+    "linux"
+  ],
+  "lineageos.org": [
+    "open-source",
+    "android"
+  ],
+  "linus.schreibt.jetzt": [
+    "nix"
+  ],
+  "linuxiac.com": [
+    "linux"
+  ],
+  "lix.systems": [
+    "nix"
+  ],
+  "lmno.lol": [
+    "emacs"
+  ],
+  "longren.io": [
+    "php"
+  ],
+  "lucumr.pocoo.org": [
+    "dev-blogs",
+    "ai"
+  ],
+  "luj.fr": [
+    "nix"
+  ],
+  "lukefleed.xyz": [
+    "c"
+  ],
+  "lyra.horse": [
+    "css"
+  ],
+  "ma.ttias.be": [
+    "php"
+  ],
+  "marc.info": [
+    "perl"
+  ],
+  "marcoroth.dev": [
+    "ruby"
+  ],
+  "marginalia.nu": [
+    "dev"
+  ],
+  "markjames.dev": [
+    "dotnet"
+  ],
+  "martinalderson.com": [
+    "ai"
+  ],
+  "martinfowler.com": [
+    "dev-blogs",
+    "ai"
+  ],
+  "maskray.me": [
+    "compilers"
+  ],
+  "matduggan.com": [
+    "dev"
+  ],
+  "matklad.github.io": [
+    "zig"
+  ],
+  "maurycyz.com": [
+    "webdev"
+  ],
+  "media.ccc.de": [
+    "dev"
+  ],
+  "memex.marginalia.nu": [
+    "dev"
+  ],
+  "mensfeld.pl": [
+    "ruby"
+  ],
+  "meyerweb.com": [
+    "browser"
+  ],
+  "michael.stapelberg.ch": [
+    "nix"
+  ],
+  "midspiral.com": [
+    "formal-methods"
+  ],
+  "minimaxir.com": [
+    "rust"
+  ],
+  "mitchellh.com": [
+    "zig"
+  ],
+  "mjtsai.com": [
+    "swift"
+  ],
+  "mnot.net": [
+    "webdev"
+  ],
+  "modal.com": [
+    "devops"
+  ],
+  "modular.com": [
+    "dev"
+  ],
+  "morling.dev": [
+    "java"
+  ],
+  "morrick.me": [
+    "macos"
+  ],
+  "mostlynerdless.de": [
+    "java"
+  ],
+  "movq.de": [
+    "dev"
+  ],
+  "mropert.github.io": [
+    "cpp"
+  ],
+  "mtlynch.io": [
+    "nix"
+  ],
+  "mydistributed.systems": [
+    "distributed-systems"
+  ],
+  "nedbatchelder.com": [
+    "python"
+  ],
+  "nemin.hu": [
+    "nix"
+  ],
+  "nesbitt.io": [
+    "dev"
+  ],
+  "netflixtechblog.com": [
+    "devops"
+  ],
+  "netmeister.org": [
+    "email"
+  ],
+  "neugierig.org": [
+    "windows"
+  ],
+  "newpipe.net": [
+    "mobile-apps",
+    "android"
+  ],
+  "nicole.express": [
+    "retro-computing"
+  ],
+  "nixcademy.com": [
+    "nix"
+  ],
+  "nnethercote.github.io": [
+    "compilers"
+  ],
+  "nolanlawson.com": [
+    "webdev"
+  ],
+  "noteflakes.com": [
+    "ruby"
+  ],
+  "nrinaudo.github.io": [
+    "scala"
+  ],
+  "nshipster.com": [
+    "dev-blogs",
+    "swift"
+  ],
+  "ntietz.com": [
+    "dev"
+  ],
+  "nullprogram.com": [
+    "dev-blogs",
+    "dev"
+  ],
+  "obeli.sk": [
+    "rust"
+  ],
+  "ocaml.org": [
+    "open-source",
+    "ai"
+  ],
+  "ocamlpro.com": [
+    "compilers"
+  ],
+  "ochagavia.nl": [
+    "dev"
+  ],
+  "ohadravid.github.io": [
+    "dev"
+  ],
+  "olano.dev": [
+    "dev"
+  ],
+  "openloco.io": [
+    "game-dev"
+  ],
+  "openmymind.net": [
+    "zig"
+  ],
+  "openwall.com": [
+    "linux",
+    "cybersecurity"
+  ],
+  "osnews.com": [
+    "dev"
+  ],
+  "overreacted.io": [
+    "distributed-systems"
+  ],
+  "ovid.github.io": [
+    "perl"
+  ],
+  "pagedout.institute": [
+    "dev"
+  ],
+  "paperless.blog": [
+    "nix"
+  ],
+  "paragonie.com": [
+    "php"
+  ],
+  "patrick-breyer.de": [
+    "privacy"
+  ],
+  "paulox.net": [
+    "python"
+  ],
+  "peateasea.de": [
+    "dev-blogs",
+    "perl"
+  ],
+  "perl.com": [
+    "perl"
+  ],
+  "perlhacks.com": [
+    "perl"
+  ],
+  "peter.eisentraut.org": [
+    "database"
+  ],
+  "philipzucker.com": [
+    "formal-methods"
+  ],
+  "phoboslab.org": [
+    "c"
+  ],
+  "phoenixtrap.com": [
+    "perl"
+  ],
+  "piccalil.li": [
+    "css"
+  ],
+  "pierrezemb.fr": [
+    "testing"
+  ],
+  "pigweed.dev": [
+    "cpp"
+  ],
+  "pikuma.com": [
+    "dev"
+  ],
+  "ploum.net": [
+    "dev"
+  ],
+  "pointersgonewild.com": [
+    "ai"
+  ],
+  "pointieststick.com": [
+    "linux"
+  ],
+  "posixcafe.org": [
+    "osdev"
+  ],
+  "postmarketos.org": [
+    "linux"
+  ],
+  "potaroo.net": [
+    "networking"
+  ],
+  "projectzero.google": [
+    "cybersecurity"
+  ],
+  "protesilaos.com": [
+    "emacs"
+  ],
+  "purplesyringa.moe": [
+    "dev"
+  ],
+  "pyrefly.org": [
+    "python"
+  ],
+  "pythonspeed.com": [
+    "containers",
+    "dev"
+  ],
+  "queue.acm.org": [
+    "dev"
+  ],
+  "quuxplusone.github.io": [
+    "cpp"
+  ],
+  "rachelbythebay.com": [
+    "dev"
+  ],
+  "radicle.dev": [
+    "git"
+  ],
+  "rahuljuliato.com": [
+    "emacs"
+  ],
+  "railsatscale.com": [
+    "ruby"
+  ],
+  "raku-advent.blog": [
+    "perl"
+  ],
+  "ralfj.de": [
+    "dev"
+  ],
+  "rambo.codes": [
+    "ios"
+  ],
+  "ratfactor.com": [
+    "dev"
+  ],
+  "raymii.org": [
+    "dev"
+  ],
+  "reactivesystems.eu": [
+    "distributed-systems"
+  ],
+  "reactos.org": [
+    "linux",
+    "osdev"
+  ],
+  "redox-os.org": [
+    "linux",
+    "osdev"
+  ],
+  "refactoringenglish.com": [
+    "dev"
+  ],
+  "research.swtch.com": [
+    "golang"
+  ],
+  "rfc-editor.org": [
+    "networking"
+  ],
+  "righto.com": [
+    "hardware"
+  ],
+  "robinsloan.com": [
+    "ai"
+  ],
+  "rubycentral.org": [
+    "ruby"
+  ],
+  "rustunit.com": [
+    "rust"
+  ],
+  "rxdb.info": [
+    "database"
+  ],
+  "ryan.freumh.org": [
+    "ai"
+  ],
+  "samrat.me": [
+    "elixir"
+  ],
+  "samwho.dev": [
+    "devops"
+  ],
+  "scottaaronson.blog": [
+    "ai"
+  ],
+  "scribe.rip": [
+    "mobile-dev"
+  ],
+  "seangoedecke.com": [
+    "dev"
+  ],
+  "seb.jambor.dev": [
+    "linux"
+  ],
+  "sebsite.pw": [
+    "c"
+  ],
+  "seclists.org": [
+    "cybersecurity"
+  ],
+  "secretspec.dev": [
+    "nix"
+  ],
+  "security.googleblog.com": [
+    "cybersecurity"
+  ],
+  "seg6.space": [
+    "dev"
+  ],
+  "seiya.me": [
+    "osdev"
+  ],
+  "servo.org": [
+    "browser"
+  ],
+  "sethmlarson.dev": [
+    "python"
+  ],
+  "shadowfacts.net": [
+    "swift"
+  ],
+  "shkspr.mobi": [
+    "dev"
+  ],
+  "shnatsel.github.io": [
+    "rust"
+  ],
+  "shopify.engineering": [
+    "dev-blogs",
+    "ruby"
+  ],
+  "sigma-star.at": [
+    "linux"
+  ],
+  "simonhartcher.com": [
+    "zig"
+  ],
+  "simonwillison.net": [
+    "python"
+  ],
+  "slack.engineering": [
+    "dev-blogs",
+    "php"
+  ],
+  "slint.dev": [
+    "rust"
+  ],
+  "sluongng.hashnode.dev": [
+    "devops"
+  ],
+  "smallcultfollowing.com": [
+    "rust"
+  ],
+  "snarky.ca": [
+    "python"
+  ],
+  "soatok.blog": [
+    "encryption"
+  ],
+  "socket.dev": [
+    "cybersecurity"
+  ],
+  "softwaremaniacs.org": [
+    "ai"
+  ],
+  "spectrum.ieee.org": [
+    "ai"
+  ],
+  "sporks.space": [
+    "dev"
+  ],
+  "spritely.institute": [
+    "webassembly"
+  ],
+  "ssp.sh": [
+    "webdev"
+  ],
+  "stefan-marr.de": [
+    "java"
+  ],
+  "stitcher.io": [
+    "php"
+  ],
+  "stratus3d.com": [
+    "erlang"
+  ],
+  "surfingcomplexity.blog": [
+    "dev"
+  ],
+  "susam.net": [
+    "vim"
+  ],
+  "taoofmac.com": [
+    "linux"
+  ],
+  "tarides.com": [
+    "ai"
+  ],
+  "techblog.wikimedia.org": [
+    "dev"
+  ],
+  "tedium.co": [
+    "webdev"
+  ],
+  "tenderlovemaking.com": [
+    "dev-blogs",
+    "ruby"
+  ],
+  "testing.googleblog.com": [
+    "dev"
+  ],
+  "thebuild.com": [
+    "database"
+  ],
+  "thecloudlet.github.io": [
+    "dev"
+  ],
+  "theconsensus.dev": [
+    "database"
+  ],
+  "thenewstack.io": [
+    "dev"
+  ],
+  "thoughtbot.com": [
+    "dev"
+  ],
+  "tigerbeetle.com": [
+    "zig"
+  ],
+  "tildeweb.nl": [
+    "python"
+  ],
+  "toast.al": [
+    "nix"
+  ],
+  "tokio.rs": [
+    "rust"
+  ],
+  "tonsky.me": [
+    "clojure"
+  ],
+  "toromtomtom.com": [
+    "scala"
+  ],
+  "tramline.app": [
+    "ios"
+  ],
+  "tratt.net": [
+    "dev"
+  ],
+  "turso.tech": [
+    "database"
+  ],
+  "tuxphones.com": [
+    "linux"
+  ],
+  "tweag.io": [
+    "nix"
+  ],
+  "tweedegolf.nl": [
+    "rust"
+  ],
+  "two-wrongs.com": [
+    "dev"
+  ],
+  "typesanitizer.com": [
+    "dev"
+  ],
+  "ufried.com": [
+    "dev"
+  ],
+  "underjord.io": [
+    "elixir"
+  ],
+  "unsung.aresluna.org": [
+    "macos"
+  ],
+  "usenix.org": [
+    "journals",
+    "dev"
+  ],
+  "utcc.utoronto.ca": [
+    "dev"
+  ],
+  "v8.dev": [
+    "desktop-apps",
+    "webassembly"
+  ],
+  "vale.rocks": [
+    "webdev"
+  ],
+  "verdagon.dev": [
+    "dev"
+  ],
+  "vincent.bernat.ch": [
+    "golang"
+  ],
+  "virtuallyfun.com": [
+    "dev"
+  ],
+  "vldb.org": [
+    "database"
+  ],
+  "waterfox.com": [
+    "mobile-apps",
+    "browser"
+  ],
+  "webkit.org": [
+    "open-source",
+    "webdev"
+  ],
+  "well-typed.com": [
+    "haskell"
+  ],
+  "wickstrom.tech": [
+    "testing"
+  ],
+  "wiki.alopex.li": [
+    "elixir"
+  ],
+  "wingolog.org": [
+    "dev"
+  ],
+  "words.filippo.io": [
+    "encryption"
+  ],
+  "world.hey.com": [
+    "devops"
+  ],
+  "xania.org": [
+    "compilers"
+  ],
+  "xeiaso.net": [
+    "dev"
+  ],
+  "xenodium.com": [
+    "emacs"
+  ],
+  "xvw.lol": [
+    "ai"
+  ],
+  "yogthos.net": [
+    "clojure"
+  ],
+  "yorickpeterse.com": [
+    "devops"
+  ],
+  "yummymelon.com": [
+    "emacs"
+  ],
+  "zachdaniel.dev": [
+    "elixir"
+  ],
+  "zserge.com": [
+    "c"
+  ]
+}

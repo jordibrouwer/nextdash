@@ -50,6 +50,22 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.19.7 (2026-10-14)
+- Appearance: nine tabs in three groups (Look, Bookmarks, Header &amp; bars), with link previews on a tab of their own
+- Appearance: panels fold to one line that says what they are set to, and long tabs list their panels
+- Appearance: runs of show/hide switches are one row of chips, and rarely used sliders sit under Fine-tune
+- Action bar: five button sizes, from extra small to extra large; the header destinations grow with them
+- Tags: subjects in a tree, and new links are looked up on Wikidata quietly, offered as a chip and never written
+- Fixes: a docked action bar no longer slides into place on a load, and a tab reached through Find settings stays put
+
+### v1.19.6 (2026-10-14)
+- Tags: a quieter tag cloud with counts and type-to-find; picking a tag opens a table of every bookmark with it, from all pages
+- Tag suggestions: a catalogue of some 51,000 sites, a Wikidata lookup for unknown ones, and suggestions right in the Bookmarks, tag and Inbox rows
+- Widgets: a Home Assistant widget for up to 60 entities of your choice
+- Dashboard: a three-line key legend under the grid (Shift + Z), and Shift + K replays the tour
+- Tours: shorter tours, at most one tip a day, and settings for animation speed
+- Fixes: saves from two devices no longer overwrite each other's pages, categories or finders
+
 ### v1.19.5 (2026-10-12)
 - Widgets: Sonarr and Radarr widgets show what is coming and what is in the queue, with posters
 - Widgets: a Seerr widget shows requests in Overseerr or Jellyseerr, who asked and whether they arrived
@@ -71,18 +87,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Config: a link to Status page or Unraid always names the tab it shows
 - Bookmarks: click anywhere on a Tag suggestions row to see the bookmarks it means, not only on the count
 
-### v1.19.1 (2026-10-10)
-- Containers: an update or rollback shows its steps and a short log of the download while it runs; a failed one stays open with the step that broke and why
-- Containers: updating a selection takes only the containers with an update on offer, and the closing notice names each one that failed and why
-- Bookmarks view: a row height setting under Config → Bookmarks → View; Compact is as tall as a row in Containers and Inbox, Comfortable gives a little more room
-- Unraid: Config → Unraid explains what the widgets can do, including alerts for the array, disks and parity
-
-### v1.19.0 (2026-10-10)
-- Status page: a read-only page behind a secret link for the people who use your services, with groups, each service's state, planned maintenance and 30 days of history
-- Status page: set up under Config → Status page with Copy and a QR code, groups of services (a bookmark and its container count as one) and maintenance windows per group
-- Config: Unraid has tabs like the other sections, and a small "new" marks new or reworked sections
-- Speed: Bookmarks and the dashboard draw faster with many bookmarks and containers
-- Fixes: switching themes quickly no longer leaves old colours in front, and your own themes are no longer downloaded again after every change
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -90,7 +94,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-10-12</Date>
+  <Date>2026-10-15</Date>
 
   <Config Name="WebUI Port"
           Target="8080"

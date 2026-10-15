@@ -27,9 +27,19 @@ const AppNotification = {
         host.setAttribute('aria-live', 'polite');
         host.setAttribute('aria-hidden', 'true');
         host.innerHTML = `
+            <span class="app-notification-icon" aria-hidden="true">
+                <svg class="app-notification-ring" viewBox="0 0 36 36"><circle class="ring-track" cx="18" cy="18" r="16"/><circle class="ring-fill" cx="18" cy="18" r="16" pathLength="100"/></svg>
+                <svg class="app-notification-glyph" viewBox="0 0 24 24"></svg>
+            </span>
             <span class="app-notification-text"></span>
             <button type="button" class="app-notification-action" hidden></button>
+            <button type="button" class="app-notification-close" aria-label="Dismiss"></button>
         `;
+        host.querySelector('.app-notification-close').addEventListener('click', () => this._advance());
+        // Hovering holds the card (and its ring) so a long tip can be read.
+        // Mouse only: a tap fires no reliable leave on touch screens.
+        host.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') this._pause(host); });
+        host.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') this._resume(host); });
 
         const mount = () => {
             if (!document.body.contains(host)) {
@@ -42,6 +52,47 @@ const AppNotification = {
             document.addEventListener('DOMContentLoaded', mount, { once: true });
         }
         return host;
+    },
+
+    _GLYPHS: {
+        success: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+        error: '<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/>',
+        warning: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
+        info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+        update: '<path d="M12 19V6M6 11l6-6 6 6"/>',
+        promo: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/>',
+        tip: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
+    },
+
+    _setGlyph(host, name) {
+        const glyph = host.querySelector('.app-notification-glyph');
+        if (glyph) glyph.innerHTML = this._GLYPHS[name] || this._GLYPHS.info;
+    },
+
+    // Restart the timeout ring: the host keeps its classes between two toasts of
+    // the same type, so the CSS animation would otherwise carry on from the last one.
+    _restartRing(host) {
+        const fill = host.querySelector('.ring-fill');
+        if (!fill) return;
+        fill.style.animation = 'none';
+        void fill.getBoundingClientRect();
+        fill.style.animation = '';
+    },
+
+    _pause(host) {
+        if (!this._timeout || !host.classList.contains('show')) return;
+        clearTimeout(this._timeout);
+        this._timeout = null;
+        this._remainingMs = Math.max(400, this._remainingMs - (Date.now() - this._timerStart));
+        host.classList.add('paused');
+    },
+
+    _resume(host) {
+        host.classList.remove('paused');
+        if (this._timeout || this._remainingMs == null || !host.classList.contains('show')
+            || host.classList.contains('persist')) return;
+        this._timerStart = Date.now();
+        this._timeout = setTimeout(() => this._advance(), this._remainingMs);
     },
 
     _messageEl(host) {
@@ -171,6 +222,9 @@ const AppNotification = {
         } else {
             messageEl.textContent = message;
         }
+        // A session tip rides on 'promo' and carries a label; it gets the bulb.
+        const isTip = normalized === 'promo' && !!messageEl.querySelector('.app-notification-tip-label');
+        this._setGlyph(host, isTip ? 'tip' : normalized);
         host.className = `app-notification ${normalized}`;
         if (persist) host.classList.add('persist');
         if (options.onAction) host.classList.add('has-action');
@@ -203,7 +257,12 @@ const AppNotification = {
                     ? Number(options.duration)
                     : 5000;
             host.style.setProperty('--notification-duration', `${duration}ms`);
+            this._restartRing(host);
+            this._remainingMs = duration;
+            this._timerStart = Date.now();
             this._timeout = setTimeout(() => this._advance(), duration);
+            // A card that appears under a resting pointer never gets pointerenter.
+            if (host.matches(':hover')) this._pause(host);
         }
     },
 
@@ -216,7 +275,7 @@ const AppNotification = {
         }
         const host = document.getElementById('app-notification');
         if (host) {
-            host.classList.remove('show', 'success', 'error', 'warning', 'info', 'update', 'promo', 'has-action', 'persist');
+            host.classList.remove('show', 'success', 'error', 'warning', 'info', 'update', 'promo', 'has-action', 'persist', 'paused');
             host.setAttribute('aria-hidden', 'true');
             const actionEl = this._actionEl(host);
             if (actionEl) {

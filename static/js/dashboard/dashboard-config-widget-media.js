@@ -87,6 +87,79 @@
         });
 
     /*
+     * Jellyfin now playing: Jellyfin's address, key and words, checked by
+     * Jellyfin's own Connect. Who and which libraries do not apply: it shows
+     * every session the key can see.
+     */
+    Config.MEDIA_SERVICES['jellyfin-playing'] = {
+        ...Config.MEDIA_SERVICES.jellyfin,
+        id: 'jellyfin-playing',
+        setup: 'jellyfin',
+        choices: undefined,
+        connected: undefined,
+    };
+
+    /*
+     * Emby: the same API as Jellyfin's, under Emby's name and its own address.
+     */
+    Config.MEDIA_SERVICES.emby = {
+        ...Config.MEDIA_SERVICES.jellyfin,
+        id: 'emby',
+        name: 'Emby',
+        placeholder: 'http://emby.local:8096',
+        words: {
+            ...Object.fromEntries(Object.entries(Config.MEDIA_SERVICES.jellyfin.words).map(([name, [key, text]]) => [
+                name, text.includes('Jellyfin') ? [key.replace('Jellyfin', 'Emby'), text.replace('Jellyfin', 'Emby')] : [key, text]])),
+            keyWhere: ['config.widgetEmbyKeyWhere', 'Settings → Advanced → API Keys in Emby'],
+        },
+    };
+    Config.MEDIA_SERVICES['emby-playing'] = {
+        ...Config.MEDIA_SERVICES.emby,
+        id: 'emby-playing',
+        setup: 'emby',
+        choices: undefined,
+        connected: undefined,
+    };
+
+    /*
+     * Plex, read through Tautulli: the address is Tautulli's, the key is
+     * Tautulli's API key (Settings → Web Interface), sent as X-Api-Key. Only
+     * libraries are offered; Tautulli has no user to read as.
+     */
+    Config.MEDIA_SERVICES.plex = {
+        id: 'plex',
+        name: 'Plex',
+        header: 'X-Api-Key',
+        placeholder: 'http://tautulli.local:8181',
+        hint: ['config.widgetPlexHint', 'The address of Tautulli, which reads Plex for nextDash.'],
+        words: {
+            keyWhere: ['config.widgetPlexKeyWhere', 'Settings → Web Interface → API key in Tautulli'],
+        },
+        choices(panel, widget, index, setup, config, esc) {
+            const chosen = Array.isArray(config.libraries) ? config.libraries : null;
+            const libraries = (setup.libraries || []).map((lib) => `
+                <label class="config-toggle config-toggle--inline">
+                    <input type="checkbox" data-widget-setting="libraries" data-widget-index="${index}"
+                        data-widget-kind="checkset" value="${esc(lib.id)}"
+                        ${!chosen || chosen.includes(lib.id) ? 'checked' : ''}>
+                    <span>${esc(lib.name)}</span>
+                </label>`).join('');
+            return `
+                <div class="config-widget-field">
+                    <span class="config-widget-field-label">${esc(panel.t('config.widgetJellyfinLibraries', 'Libraries'))}</span>
+                    <div class="config-widget-checkset">${libraries}</div>
+                </div>`;
+        },
+    };
+    Config.MEDIA_SERVICES['plex-playing'] = {
+        ...Config.MEDIA_SERVICES.plex,
+        id: 'plex-playing',
+        setup: 'plex',
+        choices: undefined,
+        connected: undefined,
+    };
+
+    /*
      * Seerr: whose requests to show is chosen from the users Connect lists.
      *
      * Its key is base64 and ends in "==" -- the part a double-click to copy
@@ -512,6 +585,7 @@
         return `<div class="config-widget-settings-body is-custom is-media is-${esc(service.id)}">
             <div class="config-custom-group">
                 <h4 class="config-custom-group-title">${esc(service.name)}</h4>
+                ${service.hint ? `<span class="config-widget-note">${esc(this.t(service.hint[0], service.hint[1]))}</span>` : ''}
                 <div class="config-custom-grid">
                     <div class="config-widget-field">
                         <label for="${id('server')}">${esc(this.mediaWord(service, 'server'))}</label>
@@ -560,7 +634,7 @@
         if (status) status.textContent = this.mediaWord(service, 'connecting');
         let answer;
         try {
-            const res = await this.writeFetch(`/api/widgets/${service.id}/setup`, {
+            const res = await this.writeFetch(`/api/widgets/${service.setup || service.id}/setup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),

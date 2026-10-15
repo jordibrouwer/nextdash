@@ -5963,6 +5963,32 @@ body[data-grid-keys="shown"] .dashboard-legend-more {
     color: var(--text-primary);
 }
 
+/* Pinned on a phone (dashboard-grid-filter.js): always there at the top of the
+   bookmarks view, so it is quieter than a bar you summoned. Full width, a
+   thumb-sized target, and 16px text -- anything smaller and iOS zooms the page
+   in on focus. The x only shows while there is something to clear. */
+.grid-filter-bar--pinned {
+    width: 100%;
+    margin-left: 0;
+    min-height: 44px;
+    gap: var(--space-2, 0.5rem);
+}
+
+.grid-filter-bar--pinned .grid-filter-input {
+    font-size: 16px;
+    font-weight: normal;
+}
+
+.grid-filter-bar--pinned .grid-filter-clear {
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 1.25rem;
+}
+
+.grid-filter-bar--pinned:has(.grid-filter-input:placeholder-shown) .grid-filter-clear {
+    display: none;
+}
+
 /* The query in the names that are left; painted by the CSS Highlight API from
    dashboard-grid-filter.js, so the rows themselves are never edited. */
 ::highlight(grid-filter-hit) {

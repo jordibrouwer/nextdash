@@ -61,6 +61,7 @@
                 key: keyFor('dash', index),
                 url: bookmark.url,
                 name: bookmark.name || '',
+                title: bookmark.previewTitle || '',
                 tags: tagsOf(bookmark),
             });
         });
@@ -70,6 +71,7 @@
                 key: bookmarkKey(bookmark),
                 url: bookmark.url,
                 name: bookmark.name || '',
+                title: bookmark.previewTitle || '',
                 tags: tagsOf(bookmark),
             });
         });
@@ -330,7 +332,70 @@
         if (urls.length) global.TagCatalogue.autoLookup(urls);
     }
 
+    /*
+     * Whether Find tags puts what it finds on straight away, or leaves it in
+     * the rows as offers to take or turn down.
+     *
+     * Offers unless asked: a round that tagged on its own said only how many
+     * bookmarks it had changed, never which, and a wrong tag added unseen is
+     * worse than one waiting to be looked at. One choice for the Bookmarks
+     * view, the tag view, the inbox and the Tag suggestions tab.
+     */
+    // A setting (tagSearchApplyNow), so every browser gets the same answer;
+    // with settings kept per device it stays in this one (DeviceSettingsMerge).
+    function applyNow() {
+        return global.dashboardInstance?.settings?.tagSearchApplyNow === true;
+    }
+
+    function setApplyNow(on) {
+        const d = global.dashboardInstance;
+        if (!d?.settings) return Promise.resolve();
+        d.settings.tagSearchApplyNow = !!on;
+        return Promise.resolve(d.saveSettings?.());
+    }
+
+    /**
+     * What the offers are worked out from, as one string. A list that keeps
+     * only the rows with an offer puts it in its memo: a round that lands
+     * changes the catalogue's version, a refusal the dismissed list.
+     */
+    function stamp(dash) {
+        return stampFor(dash);
+    }
+
+    /** How many site → tag refusals the collection holds. */
+    function refusedCount(dash) {
+        return (dash?.settings?.dismissedTagSuggestions || []).length;
+    }
+
+    /**
+     * Config → Bookmarks → Tag suggestions, with Turned down open and in view:
+     * where a refusal is seen and offered again, from any view that refuses.
+     * The view first, the tab after -- d.config is a lazy stub until config
+     * has loaded, the way TagSuggestionsNotice opens it.
+     */
+    async function openRefused(dash) {
+        if (!dash?.config?.openConfigView) return;
+        await dash.config.openConfigView('bookmarks');
+        const config = dash.config.instance || dash.config;
+        if (!config) return;
+        config._tagSuggestionsRefusedOpen = true;
+        config.bmTab = 'tag-suggestions';
+        config.render?.();
+        config.restoreConfigHash?.();
+        const block = document.querySelector('[data-tag-suggestions-dismissed]');
+        if (!block) return;
+        block.open = true;
+        block.scrollIntoView({ block: 'start' });
+        block.querySelector('summary')?.focus?.({ preventScroll: true });
+    }
+
     global.TagSuggestLive = {
+        refusedCount,
+        openRefused,
+        applyNow,
+        setApplyNow,
+        stamp,
         autoSearch,
         ensureCatalogue,
         invalidate,

@@ -1792,6 +1792,8 @@ class DashboardBookmarkRows {
 
         const sourceOf = (offer) => {
             const kind = offer?.reason?.kind;
+            if (kind === 'app') return String(offer.reason.app || '');
+            if (kind === 'home') return t('dashboard.tagSourceHome', 'your home network');
             if (kind === 'online') return t('dashboard.tagSourceOnline', 'Wikidata');
             if (kind === 'catalogue') return t('dashboard.tagSourceCatalogue', 'catalogue');
             if (kind === 'text') return t('dashboard.tagSourcePage', 'the page');

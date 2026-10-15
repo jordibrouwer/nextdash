@@ -214,6 +214,178 @@
     }
 
     /*
+     * Where a self-hosted app lives: an address of its own network.
+     *
+     * Private IPv4 ranges (and 100.64/10, which Tailscale hands out), the
+     * loopback, IPv6 local addresses, a bare name with no dot (`sonarr`, as a
+     * container network resolves it) and the suffixes home networks use. A
+     * port or an everyday word is only evidence on one of these.
+     */
+    const PRIVATE_SUFFIXES = ['.local', '.lan', '.home', '.home.arpa', '.internal', '.localdomain',
+        '.intranet', '.ts.net', '.box', '.test'];
+
+    function isPrivateHost(host) {
+        if (!host) return false;
+        if (host === 'localhost' || !host.includes('.')) return true;
+        if (host.startsWith('[')) {
+            const v6 = host.slice(1, -1);
+            return v6 === '::1' || /^f[cd]/.test(v6) || v6.startsWith('fe80');
+        }
+        const ip = host.match(/^(\d+)\.(\d+)\.\d+\.\d+$/);
+        if (ip) {
+            const [a, b] = [Number(ip[1]), Number(ip[2])];
+            return a === 10 || a === 127 || (a === 192 && b === 168) || (a === 172 && b >= 16 && b <= 31)
+                || (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254);
+        }
+        return PRIVATE_SUFFIXES.some((suffix) => host.endsWith(suffix));
+    }
+
+    /** The last two labels: jellyfin.example.cc -> example.cc. Rough, and only used to group a reader's own hosts. */
+    function siteOf(host) {
+        return String(host || '').split('.').slice(-2).join('.');
+    }
+
+    /*
+     * Domains the reader's own apps live under: two or more different apps
+     * recognised on subdomains of one public domain (jellyfin.example.cc,
+     * seerr.example.cc) make it a home address, so the rest of what sits
+     * there is matched as if it were on the home network.
+     */
+    function homeDomainsOf(rows, index) {
+        const appsBySite = new Map();
+        rows.forEach((item) => {
+            const found = matchApp(item, index);
+            if (!found || found.via !== 'label') return;
+            let host = '';
+            try {
+                host = new URL(String(item.url)).hostname.toLowerCase();
+            } catch (error) {
+                return;
+            }
+            if (isPrivateHost(host) || host.split('.').length < 3) return;
+            const site = siteOf(host);
+            const apps = appsBySite.get(site) || new Set();
+            apps.add(found.app.id);
+            appsBySite.set(site, apps);
+        });
+        return new Set([...appsBySite].filter(([, apps]) => apps.size >= 2).map(([site]) => site));
+    }
+
+    /** On the home network, or under a domain the reader's own apps live on. */
+    function isHomeAddress(url, homeDomains) {
+        let parsed;
+        try {
+            parsed = new URL(String(url || ''));
+        } catch (error) {
+            return false;
+        }
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+        const host = parsed.hostname.toLowerCase();
+        return isPrivateHost(host) || !!homeDomains?.has(siteOf(host));
+    }
+
+    /** Lower case, every run of non-letters a space, padded: whole words compare. */
+    function asWords(text) {
+        return ` ${String(text || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()} `;
+    }
+
+    /*
+     * The app list (internal/app/tag_apps.json) made ready to match.
+     *
+     * A port is only worth something when it says one thing: 5055 is
+     * Overseerr and Jellyseerr alike, which tag the same, so it stays; 9091 is
+     * Transmission and Authelia, which do not, so it says nothing.
+     */
+    const appIndexes = new WeakMap();
+
+    function appIndex(apps) {
+        const source = Array.isArray(apps) ? apps : [];
+        const cached = appIndexes.get(source);
+        if (cached) return cached;
+        const list = source.map((app) => {
+            const names = (app.names || []).map(asWords).filter((name) => name.trim());
+            const nameWords = new Set(names.map((name) => name.trim().replace(/ /g, '')));
+            return {
+                id: String(app.id || ''),
+                app: String(app.app || app.id || ''),
+                tags: (app.tags || []).map((tag) => String(tag).trim().toLowerCase()).filter(Boolean).slice(0, 2),
+                names,
+                labels: new Set((app.labels || []).map((label) => String(label).toLowerCase())),
+                nameWords,
+                ports: new Set((app.ports || []).map(Number)),
+                common: !!app.common,
+            };
+        }).filter((app) => app.id && app.tags.length);
+        const byPort = new Map();
+        list.forEach((app) => app.ports.forEach((port) => {
+            const owners = byPort.get(port) || [];
+            owners.push(app);
+            byPort.set(port, owners);
+        }));
+        const portOwner = new Map();
+        byPort.forEach((owners, port) => {
+            const tags = owners[0].tags.join('|');
+            if (owners.every((owner) => owner.tags.join('|') === tags)) portOwner.set(port, owners[0]);
+        });
+        /*
+         * Labels by owner, the first in the list winning: the hand list comes
+         * first, the generated long tail after. A label with no dash is also
+         * a word the app goes by -- `adguard-1` on an IP is AdGuard -- but
+         * only at home, where it is the bookmark's own name that says so.
+         */
+        const labelOwner = new Map();
+        list.forEach((app) => app.labels.forEach((label) => {
+            if (!labelOwner.has(label)) labelOwner.set(label, app);
+        }));
+        const index = { list, portOwner, labelOwner };
+        appIndexes.set(source, index);
+        return index;
+    }
+
+    /*
+     * Which app a bookmark is, and by what: { app, via } or null.
+     *
+     * The host's first label first (sonarr.home.lan), then a whole word in
+     * the name or the page title, then the port. On a public host a label
+     * only counts when it is the app's own name -- `cloud.google.com` is not
+     * Nextcloud for having `cloud` up front -- and an app whose name is an
+     * everyday word (Flood, Element) is only taken at home.
+     */
+    function matchApp(item, index, homeDomains) {
+        let parsed;
+        try {
+            parsed = new URL(String(item.url || ''));
+        } catch (error) {
+            return null;
+        }
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+        const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+        const home = isPrivateHost(host) || !!homeDomains?.has(siteOf(host));
+        const isIp = /^\d+\.\d+\.\d+\.\d+$/.test(host) || host.startsWith('[');
+        const label = isIp ? '' : host.split('.')[0];
+        const text = asWords(`${item.name || ''} ${item.title || ''}`);
+
+        if (label) {
+            const byLabel = index.labelOwner.get(label);
+            if (byLabel && (home || (!byLabel.common && byLabel.nameWords.has(label)))) return { app: byLabel, via: 'label' };
+        }
+        if (text.trim()) {
+            const byName = index.list.find((app) => (home || !app.common)
+                && app.names.some((name) => text.includes(name)));
+            if (byName) return { app: byName, via: 'name' };
+            if (home) {
+                const word = text.trim().split(' ').find((w) => w.length >= 4 && index.labelOwner.has(w));
+                if (word) return { app: index.labelOwner.get(word), via: 'name' };
+            }
+        }
+        if (home && parsed.port) {
+            const byPort = index.portOwner.get(Number(parsed.port));
+            if (byPort) return { app: byPort, via: 'port' };
+        }
+        return null;
+    }
+
+    /*
      * Your word for the catalogue's subject, if you have one.
      *
      * The catalogue supplies the subject; the reader's own tags supply the
@@ -305,6 +477,66 @@
          * aliases exist to prevent.
          */
         const chains = ancestryOf(settings.catalogue);
+
+        /*
+         * Apps, by name.
+         *
+         * A self-hosted app sits at an address of its own -- an IP, a name on
+         * the home network -- that no catalogue can list, so it is known by
+         * what it is called instead (matchApp). Grouped per app, so all three
+         * Sonarrs are one row and one refusal. After what the reader wrote
+         * and did, before the catalogue: a recognised app is better evidence
+         * than its host.
+         */
+        const apps = appIndex(settings.apps || settings.catalogue?.apps);
+        if (apps.list.length) {
+            const subjectOf = new Map((Array.isArray(settings.catalogue) ? settings.catalogue : [])
+                .map((entry) => [String(entry?.tag || '').trim().toLowerCase(), entry]));
+            const vocabulary = new Set();
+            rows.forEach((item) => tagsOf(item).forEach((tag) => vocabulary.add(tag)));
+            const byApp = new Map();
+            const homeDomains = homeDomainsOf(rows, apps);
+            const atHome = [];
+            rows.forEach((item) => {
+                const found = matchApp(item, apps, homeDomains);
+                if (!found) {
+                    if (isHomeAddress(item.url, homeDomains)) atHome.push(item);
+                    return;
+                }
+                const group = byApp.get(found.app.id) || { app: found.app, via: found.via, members: [] };
+                group.members.push(item);
+                byApp.set(found.app.id, group);
+            });
+            byApp.forEach(({ app, via, members }) => {
+                app.tags.forEach((subject) => {
+                    const entry = { tag: subject, aliases: aliasesOf(subjectOf.get(subject)), ancestors: chains.get(subject) || [] };
+                    const tag = inTheirWords(entry, vocabulary);
+                    const keys = members.filter((item) => !tagsOf(item).includes(tag)).map((item) => item.key);
+                    if (!keys.length) return;
+                    proposals.push({
+                        tag,
+                        pattern: `app:${app.id}`,
+                        reason: { kind: 'app', app: app.app, subject, via },
+                        keys,
+                        rank: 2.5,
+                    });
+                });
+            });
+            /*
+             * Anything else at a home address is still the reader's own
+             * server, whatever runs there: one row offers #self-hosted for
+             * all of it. Only when the catalogue has the subject.
+             */
+            if (atHome.length && subjectOf.has('self-hosted')) {
+                const entry = { tag: 'self-hosted', aliases: aliasesOf(subjectOf.get('self-hosted')), ancestors: chains.get('self-hosted') || [] };
+                const tag = inTheirWords(entry, vocabulary);
+                const keys = atHome.filter((item) => !tagsOf(item).includes(tag)).map((item) => item.key);
+                if (keys.length) {
+                    proposals.push({ tag, pattern: 'home:', reason: { kind: 'home', subject: 'self-hosted' }, keys, rank: 2.6 });
+                }
+            }
+        }
+
         const byHost = catalogueByHost(settings.catalogue, chains);
         if (byHost.size) {
             const settled = new Set(proposals
@@ -315,13 +547,30 @@
             // Grouped by the catalogue's site, not the bookmark's host: a
             // docs.docker.com link and a docker.com link are one row.
             const bySite = new Map();
-            groupByPattern(rows, patternsOf).forEach((members, pattern) => {
+            const groups = groupByPattern(rows, patternsOf);
+            /*
+             * A section of a site first: youtube.com/@veritasium is science
+             * while youtube.com is video. The catalogue names such a section
+             * as host plus first segment, the second pattern patternsFor
+             * gives; a bookmark it answers for is not asked about its host.
+             */
+            const bySection = new Set();
+            groups.forEach((members, pattern) => {
+                if (!pattern.includes('/') || settled.has(pattern)) return;
+                const entries = byHost.get(pattern);
+                if (!entries?.length) return;
+                bySite.set(pattern, { entries, members: [...members] });
+                members.forEach((item) => bySection.add(item.key));
+            });
+            groups.forEach((members, pattern) => {
                 if (pattern.includes('/')) return;
                 if (settled.has(pattern)) return;
+                const rest = members.filter((item) => !bySection.has(item.key));
+                if (!rest.length) return;
                 const found = lookupHost(byHost, pattern);
                 if (!found || settled.has(found.key)) return;
                 const site = bySite.get(found.key) || { entries: found.entries, members: [] };
-                site.members.push(...members);
+                site.members.push(...rest);
                 bySite.set(found.key, site);
             });
             bySite.forEach(({ entries, members }, pattern) => {
@@ -528,5 +777,5 @@
         return groups;
     }
 
-    global.TagSuggestions = { patternsFor, suggest };
+    global.TagSuggestions = { patternsFor, suggest, isPrivateHost };
 })(window);

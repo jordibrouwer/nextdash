@@ -2,6 +2,104 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureMediaPlayingTitle",
+      "titleFallback": "Who is watching, on your dashboard",
+      "whatKey": "config.overviewNewFeatureMediaPlayingWhat",
+      "whatFallback": "Jellyfin showed what was added lately, but not who was watching what right now, and Emby and Plex had no tile at all.",
+      "howKey": "config.overviewNewFeatureMediaPlayingHow",
+      "howFallback": "Jellyfin, Emby and Plex each have a now playing tile with who is watching what and how far along. Emby and Plex also show what was added lately. Plex is read through Tautulli, whose API key only reads. The tiles refresh every 10 seconds by default.",
+      "enableKey": "config.overviewNewFeatureMediaPlayingEnable",
+      "enableFallback": "Add a widget from the catalogue, press Connect and choose your libraries.",
+      "ctaKey": "config.overviewNewFeatureMediaPlayingCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.19.8"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureTagViewAllTitle",
+      "titleFallback": "Every bookmark in one tag view",
+      "whatKey": "config.overviewNewFeatureTagViewAllWhat",
+      "whatFallback": "The tag view needed a tag to start from, so there was no place to see all bookmarks together, or which ones have no tags.",
+      "howKey": "config.overviewNewFeatureTagViewAllHow",
+      "howFallback": "Shift+T with no bookmark selected opens the tag view of every bookmark from every page. A Without tags filter leads the rail, with the tags in use under it; click one to open its own view.",
+      "enableKey": "config.overviewNewFeatureTagViewAllEnable",
+      "enableFallback": "Nothing to switch on. Select nothing and press Shift+T.",
+      "ctaKey": "config.overviewNewFeatureTagViewAllCta",
+      "ctaFallback": "Read how it works →",
+      "go": {
+        "section": "help",
+        "helpTab": "organizing"
+      },
+      "since": "v1.19.8"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureAppearanceGroupsTitle",
+      "titleFallback": "Appearance in three groups",
+      "whatKey": "config.overviewNewFeatureAppearanceGroupsWhat",
+      "whatFallback": "Appearance was one long strip of tabs, with some settings in the wrong place.",
+      "howKey": "config.overviewNewFeatureAppearanceGroupsHow",
+      "howFallback": "Nine tabs sit under three labels: Look, Bookmarks and Header & bars. Panels fold to one line with their current values, long tabs list their panels, and Fine-tune holds the sliders.",
+      "enableKey": "config.overviewNewFeatureAppearanceGroupsEnable",
+      "enableFallback": "Nothing to switch on: your settings moved with it.",
+      "ctaKey": "config.overviewNewFeatureAppearanceGroupsCta",
+      "ctaFallback": "Open Appearance →",
+      "go": {
+        "section": "appearance"
+      },
+      "since": "v1.19.7"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureTagViewTitle",
+      "titleFallback": "A tag view instead of a filter",
+      "whatKey": "config.overviewNewFeatureTagViewWhat",
+      "whatFallback": "Clicking a tag filtered the grid of one page, so a tag that lived on another page showed nothing.",
+      "howKey": "config.overviewNewFeatureTagViewHow",
+      "howFallback": "A tag now opens a table of every bookmark that carries it, from all pages, with figures, related tags and rows you can act on. The tag cloud is quieter: three sizes and a count beside each tag. Suggested tags show as dashed chips in the rows.",
+      "enableKey": "config.overviewNewFeatureTagViewEnable",
+      "enableFallback": "Press / on the dashboard, or t on a selected bookmark.",
+      "ctaKey": "config.overviewNewFeatureTagViewCta",
+      "ctaFallback": "Read how it works →",
+      "go": {
+        "section": "help",
+        "helpTab": "organizing"
+      },
+      "since": "v1.19.6"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureHomeAssistantTitle",
+      "titleFallback": "Home Assistant on the dashboard",
+      "whatKey": "config.overviewNewFeatureHomeAssistantWhat",
+      "whatFallback": "Switching a light meant leaving the dashboard for Home Assistant.",
+      "howKey": "config.overviewNewFeatureHomeAssistantHow",
+      "howFallback": "The Home Assistant widget lists your entities, searchable and narrowed by kind. Pick up to 60 in your own order and switch lights, switches and scenes from the page.",
+      "enableKey": "config.overviewNewFeatureHomeAssistantEnable",
+      "enableFallback": "Add the widget, enter the address and a long-lived access token, and press Connect.",
+      "ctaKey": "config.overviewNewFeatureHomeAssistantCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.19.6"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureMediaWidgetsTitle",
+      "titleFallback": "Sonarr, Radarr, Seerr and download clients",
+      "whatKey": "config.overviewNewFeatureMediaWidgetsWhat",
+      "whatFallback": "Jellyfin was the only media tile, so what was coming, requested or downloading lived in other tabs.",
+      "howKey": "config.overviewNewFeatureMediaWidgetsHow",
+      "howFallback": "Sonarr and Radarr show what is coming and in the queue, Seerr the requests, and qBittorrent and SABnzbd what is downloading, with posters where there are any. The picker for Add a widget searches by name, and new kinds carry a New badge.",
+      "enableKey": "config.overviewNewFeatureMediaWidgetsEnable",
+      "enableFallback": "Add one from the widget catalogue, enter the address and key, and press Connect.",
+      "ctaKey": "config.overviewNewFeatureMediaWidgetsCta",
+      "ctaFallback": "Open Widgets →",
+      "go": {
+        "section": "widgets"
+      },
+      "since": "v1.19.5"
+    },
+    {
       "titleKey": "config.overviewNewFeatureDigestTitle",
       "titleFallback": "One message a week about what needs you",
       "whatKey": "config.overviewNewFeatureDigestWhat",

@@ -372,7 +372,20 @@
 
 .tag-view .tag-view-tags {
     display: flex;
+    align-items: center;
     gap: 4px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* `+n`: the row's own tags that did not fit (TagOfferRow.fit). */
+.tag-view .tag-view-chip--more {
+    cursor: default;
+    color: var(--text-tertiary);
+}
+
+.tag-view .tag-view-chip--more[hidden] {
+    display: none;
 }
 
 .tag-view .tag-view-chip {

@@ -337,6 +337,62 @@ var widgetFields = map[WidgetType][]widgetField{
 		// more often only redraws the same list.
 		{Key: "ttl", Kind: "int", Min: 60, Max: 3600},
 	},
+	WidgetTypeEmby: {
+		{Key: "server", Kind: "url"},
+		{Key: "credentialId", Kind: "string"},
+		{Key: "userId", Kind: "string"},
+		{Key: "libraries", Kind: "list"},
+		{Key: "layout", Kind: "string", Allowed: []string{"list", "strip", "hero", "grid"}},
+		{Key: "click", Kind: "string", Allowed: []string{"open", "detail"}},
+		{Key: "target", Kind: "string", Allowed: []string{"inherit", "_blank", "_self"}},
+		{Key: "hideWatched", Kind: "bool"},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+		// A minute is the floor: the answer is a list of posters, and asking
+		// more often only redraws the same list.
+		{Key: "ttl", Kind: "int", Min: 60, Max: 3600},
+	},
+	WidgetTypeJellyfinPlaying: {
+		{Key: "server", Kind: "url"},
+		{Key: "credentialId", Kind: "string"},
+		{Key: "hideNames", Kind: "bool"},
+		{Key: "click", Kind: "string", Allowed: []string{"open", "detail"}},
+		{Key: "target", Kind: "string", Allowed: []string{"inherit", "_blank", "_self"}},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+		// Seconds count here: a bar that moves once a minute says little.
+		{Key: "ttl", Kind: "int", Min: 5, Max: 300},
+	},
+	WidgetTypeEmbyPlaying: {
+		{Key: "server", Kind: "url"},
+		{Key: "credentialId", Kind: "string"},
+		{Key: "hideNames", Kind: "bool"},
+		{Key: "click", Kind: "string", Allowed: []string{"open", "detail"}},
+		{Key: "target", Kind: "string", Allowed: []string{"inherit", "_blank", "_self"}},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+		// Seconds count here: a bar that moves once a minute says little.
+		{Key: "ttl", Kind: "int", Min: 5, Max: 300},
+	},
+	WidgetTypePlex: {
+		{Key: "server", Kind: "url"},
+		{Key: "credentialId", Kind: "string"},
+		{Key: "libraries", Kind: "list"},
+		{Key: "layout", Kind: "string", Allowed: []string{"list", "strip", "hero", "grid"}},
+		{Key: "click", Kind: "string", Allowed: []string{"open", "detail"}},
+		{Key: "target", Kind: "string", Allowed: []string{"inherit", "_blank", "_self"}},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+		// A minute is the floor: the answer is a list of posters, and asking
+		// more often only redraws the same list.
+		{Key: "ttl", Kind: "int", Min: 60, Max: 3600},
+	},
+	WidgetTypePlexPlaying: {
+		{Key: "server", Kind: "url"},
+		{Key: "credentialId", Kind: "string"},
+		{Key: "hideNames", Kind: "bool"},
+		{Key: "click", Kind: "string", Allowed: []string{"open", "detail"}},
+		{Key: "target", Kind: "string", Allowed: []string{"inherit", "_blank", "_self"}},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+		// Seconds count here: a bar that moves once a minute says little.
+		{Key: "ttl", Kind: "int", Min: 5, Max: 300},
+	},
 	WidgetTypeUnraid:              unraidWidgetFields(false),
 	WidgetTypeUnraidArray:         unraidWidgetFields(false),
 	WidgetTypeUnraidParity:        unraidWidgetFields(false),
@@ -623,7 +679,7 @@ func widgetTypeNames() []string {
 		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS, WidgetTypeNotes,
 		WidgetTypeUnraid, WidgetTypeUnraidArray, WidgetTypeUnraidParity, WidgetTypeUnraidShares,
 		WidgetTypeUnraidVMs, WidgetTypeUnraidUPS, WidgetTypeUnraidNotifications,
-		WidgetTypeJellyfin, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr,
+		WidgetTypeJellyfin, WidgetTypeJellyfinPlaying, WidgetTypeEmby, WidgetTypeEmbyPlaying, WidgetTypePlex, WidgetTypePlexPlaying, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr,
 		WidgetTypeQBittorrent, WidgetTypeSABnzbd, WidgetTypeHomeAssistant,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone

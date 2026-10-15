@@ -1,0 +1,414 @@
+{
+  "note": "Subject -> Wikidata classes whose items with an official website and at least minLinks Wikipedia articles import-classes.cjs files under it. Classes found and counted on 14 October 2026; broad classes ask for 5 sitelinks, specific ones for 3. PROP:QID takes another property than P31: P452 is industry, which is how Wikidata files most big companies.",
+  "subjects": {
+    "ai": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q21169670"
+        ]
+      },
+      {
+        "minLinks": 3,
+        "classes": [
+          "P452:Q11660"
+        ]
+      }
+    ],
+    "browser": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q6368",
+          "Q874411",
+          "Q845620"
+        ]
+      }
+    ],
+    "cloud": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q1346018"
+        ]
+      },
+      {
+        "minLinks": 3,
+        "classes": [
+          "P452:Q483639"
+        ]
+      }
+    ],
+    "cloud-storage": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q1343205"
+        ]
+      }
+    ],
+    "containers": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q7935198"
+        ]
+      }
+    ],
+    "cybersecurity": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q93249"
+        ]
+      },
+      {
+        "minLinks": 3,
+        "classes": [
+          "P452:Q3510521"
+        ]
+      }
+    ],
+    "database": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q176165",
+          "Q3932296",
+          "Q82231",
+          "Q1235236"
+        ]
+      }
+    ],
+    "desktop-apps": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q2351962",
+          "Q1373429",
+          "Q210337",
+          "Q207170",
+          "Q1155404",
+          "Q229371",
+          "Q758895",
+          "Q868410",
+          "Q167035",
+          "Q474157",
+          "Q7247856",
+          "Q5155929"
+        ]
+      },
+      {
+        "minLinks": 5,
+        "classes": [
+          "Q166142"
+        ]
+      }
+    ],
+    "dev": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q9143",
+          "Q271680",
+          "Q13741",
+          "Q47506",
+          "Q1193246",
+          "Q1077784",
+          "Q15618492"
+        ]
+      },
+      {
+        "minLinks": 5,
+        "classes": [
+          "Q188860"
+        ]
+      }
+    ],
+    "devops": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q11288",
+          "Q16947796"
+        ]
+      }
+    ],
+    "editor": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q131212",
+          "Q522972"
+        ]
+      }
+    ],
+    "electronics": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "P452:Q5358497"
+        ]
+      }
+    ],
+    "email": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q570871",
+          "Q327618",
+          "Q5368818"
+        ]
+      }
+    ],
+    "game-dev": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q193564"
+        ]
+      }
+    ],
+    "game-studios": [
+      {
+        "minLinks": 5,
+        "classes": [
+          "Q210167",
+          "Q1137109"
+        ]
+      },
+      {
+        "minLinks": 3,
+        "classes": [
+          "P452:Q941594"
+        ]
+      }
+    ],
+    "git": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q3077240",
+          "Q1186723"
+        ]
+      }
+    ],
+    "hardware": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q1055701"
+        ]
+      },
+      {
+        "minLinks": 3,
+        "classes": [
+          "P452:Q132898730"
+        ]
+      }
+    ],
+    "hosting": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q5892272"
+        ]
+      }
+    ],
+    "javascript": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q783866",
+          "Q24789150"
+        ]
+      }
+    ],
+    "linux": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q131669",
+          "Q20983788",
+          "Q205020",
+          "Q14656",
+          "Q588784"
+        ]
+      }
+    ],
+    "messaging": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q2462003",
+          "Q15614021"
+        ]
+      }
+    ],
+    "open-source": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q1130645",
+          "Q20825628",
+          "Q39999225"
+        ]
+      },
+      {
+        "minLinks": 5,
+        "classes": [
+          "Q341",
+          "Q506883"
+        ]
+      }
+    ],
+    "package-manager": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q891055",
+          "Q1334294"
+        ]
+      }
+    ],
+    "passwords": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q1281199"
+        ]
+      }
+    ],
+    "privacy": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q5375622"
+        ]
+      }
+    ],
+    "python": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q29642950"
+        ]
+      }
+    ],
+    "search": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q4182287"
+        ]
+      }
+    ],
+    "semiconductors": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q1389311",
+          "Q1191383"
+        ]
+      },
+      {
+        "minLinks": 3,
+        "classes": [
+          "P452:Q2986369"
+        ]
+      }
+    ],
+    "smartphones": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q920890"
+        ]
+      }
+    ],
+    "social": [
+      {
+        "minLinks": 5,
+        "classes": [
+          "Q3220391"
+        ]
+      }
+    ],
+    "tech": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q1058914",
+          "Q18388277",
+          "Q189210",
+          "Q1254596"
+        ]
+      },
+      {
+        "minLinks": 5,
+        "classes": [
+          "Q7397"
+        ]
+      },
+      {
+        "minLinks": 3,
+        "classes": [
+          "P452:Q880371",
+          "P452:Q11661",
+          "P452:Q11016",
+          "P452:Q56611700",
+          "P452:Q5268834",
+          "P452:Q638608"
+        ]
+      }
+    ],
+    "telecom": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q1941618"
+        ]
+      },
+      {
+        "minLinks": 5,
+        "classes": [
+          "Q2401749"
+        ]
+      },
+      {
+        "minLinks": 3,
+        "classes": [
+          "P452:Q418"
+        ]
+      }
+    ],
+    "video-games": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q81989119"
+        ]
+      }
+    ],
+    "vpn": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q56240391",
+          "Q141089604"
+        ]
+      }
+    ],
+    "webdev": [
+      {
+        "minLinks": 3,
+        "classes": [
+          "Q1330336",
+          "Q131093",
+          "Q1810858",
+          "Q2916479"
+        ]
+      }
+    ]
+  }
+}

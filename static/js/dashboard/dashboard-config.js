@@ -18524,7 +18524,7 @@ class DashboardConfig {
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'notes']],
-        ['media', ['jellyfin', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
+        ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
     ];
 
     renderPagesTags() {
@@ -20715,7 +20715,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -20777,6 +20777,16 @@ class DashboardConfig {
      * widgets_config.go. The entities are chosen after Connect, so the media
      * panel draws them.
      */
+    /**
+     * Jellyfin now playing, mirroring WidgetTypeJellyfinPlaying in
+     * widgets_config.go. The address and the key are the media panel's.
+     */
+    static JELLYFIN_PLAYING_SETTINGS = [
+        { key: 'hideNames', kind: 'bool', label: ['config.widgetJellyfinPlayingHideNames', 'Hide who is watching'] },
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => ['click', 'target', 'rows'].includes(field.key)),
+        { key: 'ttl', kind: 'int', min: 5, max: 300, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
+    ];
+
     static HA_SETTINGS = [
         { key: 'groupBy', kind: 'choice', label: ['config.widgetHomeAssistantGroupBy', 'Group by'],
           options: [
@@ -21085,6 +21095,9 @@ class DashboardConfig {
         qbittorrent: DashboardConfig.DOWNLOAD_SETTINGS,
         sabnzbd: DashboardConfig.DOWNLOAD_SETTINGS,
         homeassistant: DashboardConfig.HA_SETTINGS,
+        'jellyfin-playing': DashboardConfig.JELLYFIN_PLAYING_SETTINGS,
+        'emby-playing': DashboardConfig.JELLYFIN_PLAYING_SETTINGS,
+        'plex-playing': DashboardConfig.JELLYFIN_PLAYING_SETTINGS,
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
               label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },
@@ -21210,6 +21223,47 @@ class DashboardConfig {
               ] },
         ],
     };
+
+    /*
+     * Emby asks the same questions as Jellyfin, under its own name. Only a
+     * text that names Jellyfin gets an Emby key; the rest keep Jellyfin's key,
+     * and with it the translation it already has.
+     */
+    static {
+        const emby = (text) => text.replace('Jellyfin', 'Emby');
+        const walk = (item) => (Array.isArray(item)
+            ? (typeof item[0] === 'string' && item[0].startsWith('config.') && typeof item[1] === 'string'
+                ? (item[1].includes('Jellyfin') ? [emby(item[0]), emby(item[1]), ...item.slice(2)] : item)
+                : item.map(walk))
+            : typeof item === 'string' ? emby(item) : item);
+        DashboardConfig.WIDGET_SETTINGS.emby = DashboardConfig.WIDGET_SETTINGS.jellyfin.map((field) => ({
+            ...field,
+            label: walk(field.label),
+            ...(field.hint ? { hint: walk(field.hint) } : {}),
+            ...(field.options ? { options: field.options.map(([value, label]) => [value, walk(label)]) } : {}),
+        }));
+    }
+
+    /*
+     * Plex, read through Tautulli: Jellyfin's questions without the user and
+     * without "Hide what was watched" -- Tautulli knows neither.
+     */
+    static {
+        const plex = (text) => text.replace('Jellyfin', 'Plex');
+        const walk = (item) => (Array.isArray(item)
+            ? (typeof item[0] === 'string' && item[0].startsWith('config.') && typeof item[1] === 'string'
+                ? (item[1].includes('Jellyfin') ? [plex(item[0]), plex(item[1]), ...item.slice(2)] : item)
+                : item.map(walk))
+            : typeof item === 'string' ? plex(item) : item);
+        DashboardConfig.WIDGET_SETTINGS.plex = DashboardConfig.WIDGET_SETTINGS.jellyfin
+            .filter((field) => field.key !== 'userId' && field.key !== 'hideWatched')
+            .map((field) => ({
+                ...field,
+                label: walk(field.label),
+                ...(field.hint ? { hint: walk(field.hint) } : {}),
+                ...(field.options ? { options: field.options.map(([value, label]) => [value, walk(label)]) } : {}),
+            }));
+    }
 
     /** The formats a value may be shown in — the server accepts these and no others. */
     static CUSTOM_FORMATS = ['count', 'bytes', 'data', 'rate', 'power', 'temperature', 'percent', 'share', 'duration', 'ms', 'relativeDate', 'text'];
@@ -22747,6 +22801,8 @@ class DashboardConfig {
             // Carried for the expanded row: a list of addresses is a list
             // nobody reads, and the name is what the reader gave it.
             name: b.name || '',
+            // What the page calls itself: a self-hosted app is known by it.
+            title: b.previewTitle || '',
             tags: Array.isArray(b.tags) ? b.tags : [],
         }));
     }
@@ -23442,6 +23498,7 @@ class DashboardConfig {
             nocheck: ['config.cleanupFilterNoCheck', 'Not checked'],
             once: ['config.cleanupFilterOnce', 'Opened once and never again'],
             untagged: ['config.cleanupFilterUntagged', 'Without tags'],
+            offered: ['config.cleanupFilterOffered', 'With a tag suggestion'],
             insecure: ['config.cleanupFilterInsecure', 'Not using HTTPS'],
             noicon: ['config.cleanupFilterNoIcon', 'Without an icon'],
             duplicate: ['config.cleanupFilterDuplicate', 'Duplicate URLs'],
@@ -23904,6 +23961,10 @@ class DashboardConfig {
         nocheck: (b) => (window.CheckMode?.of?.(b) || 'off') === 'off',
         once: (b) => window.BookmarkPredicates.match('once', b),
         untagged: (b) => window.BookmarkPredicates.match('untagged', b),
+        // The rows with a tag on offer: where a Find tags round leaves what it
+        // found, so the reader can see which bookmarks it means. Asked of the
+        // view, which holds the offers (workbenchRowOffer).
+        offered: (b, _dupes, _canonical, config) => Boolean(config?.workbenchRowOffer?.(b)),
         insecure: (b) => window.BookmarkPredicates.match('insecure', b),
         noicon: (b) => window.BookmarkPredicates.match('noicon', b),
         duplicate: (b, dupes, canonical) => {
@@ -24037,7 +24098,7 @@ class DashboardConfig {
                 if (!cleanup) return true;
                 return cleanupKey === 'duplicate'
                     ? cleanup(b, dupes, (url) => this.canonicalStatsUrlKey(url))
-                    : cleanup(b);
+                    : cleanup(b, null, null, this);
             },
             health: (b) => !health || Boolean(this.bmHealthMatches?.(b, health)),
         };
@@ -24080,6 +24141,8 @@ class DashboardConfig {
             this.bmQuery, this.bmPageFilter, this.bmCategoryFilter,
             this.bookmarkTagFilters(), this.bmCleanupFilter, this.bmHealthFilter,
             this.bmSort ?? this.defaultBookmarksSort(), this.bmSortReverse, this.bmActiveGroup(),
+            // The offers come and go without the pool changing.
+            this.bmCleanupFilter === 'offered' ? window.TagSuggestLive?.stamp?.(this.dash) : '',
         ]);
         if (this._bmVisibleSource === all && this._bmVisibleToken === token && this._bmVisible) {
             return this._bmVisible;
@@ -25152,11 +25215,13 @@ class DashboardConfig {
         listRoot.addEventListener('click', (e) => {
             const add = e.target.closest('[data-bm-offer-add]');
             const refuse = e.target.closest('[data-bm-offer-refuse]');
-            if (!add && !refuse) return;
+            const more = e.target.closest('[data-bm-offers-more]');
+            if (!add && !refuse && !more) return;
             e.preventDefault();
             e.stopPropagation();
             const key = e.target.closest('.config-bm-row')?.getAttribute('data-bm-key');
-            if (add) void this.addWorkbenchRowOffer?.(key);
+            if (more) this.openWorkbenchOffers?.(more, key);
+            else if (add) void this.addWorkbenchRowOffer?.(key);
             else this.refuseWorkbenchRowOffer?.(key);
         }, true);
         listRoot.addEventListener('change', (e) => {
@@ -26152,23 +26217,39 @@ class DashboardConfig {
     /*
      * Whether a search round adds what it finds straight away.
      *
-     * One answer per browser rather than a setting: it is how this reader
-     * likes to work at this desk, not something the collection holds. On
-     * unless turned off -- the round is something they asked for, and one
-     * undo takes it all back.
+     * A setting like any other: kept on the server, or in this browser when
+     * the reader keeps settings per device. Off unless turned on
+     * (TagSuggestLive.applyNow says why).
      */
     tagSearchApplyNow() {
-        try {
-            return localStorage.getItem('nextdash.tagSearch.applyNow') !== 'false';
-        } catch {
-            return true;
-        }
+        return window.TagSuggestLive?.applyNow?.() === true;
     }
 
     setTagSearchApplyNow(on) {
-        try {
-            localStorage.setItem('nextdash.tagSearch.applyNow', on ? 'true' : 'false');
-        } catch { /* a browser refusing storage keeps the default */ }
+        window.TagSuggestLive?.setApplyNow?.(on);
+    }
+
+    /**
+     * After a round that leaves offers, show where they are.
+     *
+     * In the Bookmarks list a round over several bookmarks keeps the list to
+     * the rows with an offer ("With a tag suggestion", removable like any
+     * filter), so the toast's number has names. A round for one bookmark, from
+     * its menu, leaves the list as it is: its row gains the chip in place.
+     */
+    showOfferedBookmarks(targetCount) {
+        window.TagSuggestLive?.invalidate?.();
+        if (!document.getElementById('config-bm-list')) return;
+        if (targetCount > 1 && this.bmCleanupFilter !== 'offered') {
+            this.bmCleanupFilter = 'offered';
+            this.resetBookmarkVisibleLimit?.();
+            this.invalidateVisibleBookmarks();
+            this.render?.();
+            this.restoreConfigHash?.();
+            return;
+        }
+        this.invalidateVisibleBookmarks();
+        this.repaintBookmarksList?.();
     }
 
     /** The bookmarks a round runs over: 'all', 'untagged', or a list. */
@@ -26236,8 +26317,13 @@ class DashboardConfig {
             return;
         }
         if (!this.tagSearchApplyNow()) {
-            this.notify(this.t('config.tagSearchWaiting', '{n} bookmarks have a tag suggestion waiting.')
-                .replace('{n}', String(tagsFor.size)), 'success', {
+            // Which bookmarks: the list kept to the rows with an offer, each
+            // offer a chip to take or turn down.
+            this.showOfferedBookmarks(targets.length);
+            this.notify((tagsFor.size === 1
+                ? this.t('config.tagSearchWaitingOne', '1 bookmark has a tag suggestion.')
+                : this.t('config.tagSearchWaiting', '{n} bookmarks have a tag suggestion waiting.')
+                    .replace('{n}', String(tagsFor.size))), 'success', {
                 duration: 10000,
                 actionLabel: this.t('config.tagSearchReview', 'Review'),
                 onAction: () => this.openTagSuggestionsTab(),
@@ -26354,8 +26440,20 @@ class DashboardConfig {
             this.renderTagSuggestionsSafe();
             return;
         }
-        this.notify(this.t('config.tagSearchInboxWaiting', '{n} inbox links have a tag suggestion waiting in the inbox.')
-            .replace('{n}', String(linked)), 'success', { duration: 8000 });
+        // Which links: in the inbox view the list keeps to the ones with an
+        // offer; elsewhere the toast takes the reader there.
+        const show = () => void inbox?.showSuggested?.();
+        if (this.dash.activeView === 'inbox') show();
+        this.notify((linked === 1
+            ? this.t('config.tagSearchInboxWaitingOne', '1 inbox link has a tag suggestion.')
+            : this.t('config.tagSearchInboxWaiting', '{n} inbox links have a tag suggestion waiting in the inbox.')
+                .replace('{n}', String(linked))), 'success', {
+            duration: 8000,
+            ...(this.dash.activeView === 'inbox' ? {} : {
+                actionLabel: this.t('config.tagSearchShow', 'Show'),
+                onAction: show,
+            }),
+        });
     }
 
     /** Config → Bookmarks → Tag suggestions, from wherever the reader is. */

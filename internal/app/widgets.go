@@ -132,6 +132,16 @@ const (
 	 * and its pictures come through /api/widgets/jellyfin/image.
 	 */
 	WidgetTypeJellyfin WidgetType = "jellyfin"
+	// WidgetTypeJellyfinPlaying shows who watches what on Jellyfin right now.
+	WidgetTypeJellyfinPlaying WidgetType = "jellyfin-playing"
+	// WidgetTypeEmby shows what was added to an Emby server lately, through the Jellyfin client.
+	WidgetTypeEmby WidgetType = "emby"
+	// WidgetTypeEmbyPlaying shows who watches what on Emby right now.
+	WidgetTypeEmbyPlaying WidgetType = "emby-playing"
+	// WidgetTypePlex shows what was added to Plex lately, read through Tautulli.
+	WidgetTypePlex WidgetType = "plex"
+	// WidgetTypePlexPlaying shows who watches what on Plex right now, through Tautulli.
+	WidgetTypePlexPlaying WidgetType = "plex-playing"
 	// WidgetTypeSonarr and WidgetTypeRadarr show what is coming and what is
 	// downloading, with posters, through the same media tile as Jellyfin.
 	WidgetTypeSonarr WidgetType = "sonarr"
@@ -167,37 +177,42 @@ const (
 // stored: a widget whose type nothing renders is an invisible block that still
 // takes a place in the order.
 var knownWidgetTypes = map[WidgetType]struct{}{
-	WidgetTypeHealth:        {},
-	WidgetTypeUptime:        {},
-	WidgetTypeCerts:         {},
-	WidgetTypeTrend:         {},
-	WidgetTypeInbox:         {},
-	WidgetTypeUnsorted:      {},
-	WidgetTypeFeeds:         {},
-	WidgetTypeSources:       {},
-	WidgetTypeNeglected:     {},
-	WidgetTypeArchive:       {},
-	WidgetTypeTrash:         {},
-	WidgetTypeUnchecked:     {},
-	WidgetTypeDuplicates:    {},
-	WidgetTypeBackups:       {},
-	WidgetTypeCPU:           {},
-	WidgetTypeDisks:         {},
-	WidgetTypeMemory:        {},
-	WidgetTypeDocker:        {},
-	WidgetTypeContainers:    {},
-	WidgetTypeWeather:       {},
-	WidgetTypeCalendar:      {},
-	WidgetTypeRSS:           {},
-	WidgetTypeCustom:        {},
-	WidgetTypeNotes:         {},
-	WidgetTypeJellyfin:      {},
-	WidgetTypeSonarr:        {},
-	WidgetTypeRadarr:        {},
-	WidgetTypeSeerr:         {},
-	WidgetTypeQBittorrent:   {},
-	WidgetTypeSABnzbd:       {},
-	WidgetTypeHomeAssistant: {},
+	WidgetTypeHealth:          {},
+	WidgetTypeUptime:          {},
+	WidgetTypeCerts:           {},
+	WidgetTypeTrend:           {},
+	WidgetTypeInbox:           {},
+	WidgetTypeUnsorted:        {},
+	WidgetTypeFeeds:           {},
+	WidgetTypeSources:         {},
+	WidgetTypeNeglected:       {},
+	WidgetTypeArchive:         {},
+	WidgetTypeTrash:           {},
+	WidgetTypeUnchecked:       {},
+	WidgetTypeDuplicates:      {},
+	WidgetTypeBackups:         {},
+	WidgetTypeCPU:             {},
+	WidgetTypeDisks:           {},
+	WidgetTypeMemory:          {},
+	WidgetTypeDocker:          {},
+	WidgetTypeContainers:      {},
+	WidgetTypeWeather:         {},
+	WidgetTypeCalendar:        {},
+	WidgetTypeRSS:             {},
+	WidgetTypeCustom:          {},
+	WidgetTypeNotes:           {},
+	WidgetTypeJellyfin:        {},
+	WidgetTypeEmby:            {},
+	WidgetTypeSonarr:          {},
+	WidgetTypeRadarr:          {},
+	WidgetTypeSeerr:           {},
+	WidgetTypeQBittorrent:     {},
+	WidgetTypeSABnzbd:         {},
+	WidgetTypeHomeAssistant:   {},
+	WidgetTypeJellyfinPlaying: {},
+	WidgetTypeEmbyPlaying:     {},
+	WidgetTypePlex:            {},
+	WidgetTypePlexPlaying:     {},
 
 	WidgetTypeUnraid:              {},
 	WidgetTypeUnraidArray:         {},

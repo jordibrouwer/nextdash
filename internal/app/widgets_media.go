@@ -102,6 +102,13 @@ type MediaItem struct {
 	Icon        string `json:"icon,omitempty"`
 	Unavailable bool   `json:"unavailable,omitempty"`
 	Missing     bool   `json:"missing,omitempty"`
+	// Who is watching, on which Device, played direct or by transcode
+	// (Method), Paused, and Remaining seconds. Set only for a now-playing line.
+	Who       string `json:"who,omitempty"`
+	Device    string `json:"device,omitempty"`
+	Method    string `json:"method,omitempty"`
+	Paused    bool   `json:"paused,omitempty"`
+	Remaining int64  `json:"remaining,omitempty"`
 }
 
 // MediaTotals is the line on top of a download tile: the speeds of the

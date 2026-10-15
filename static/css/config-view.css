@@ -9724,3 +9724,13 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
 .config-overview-version-link:focus-visible {
     color: var(--accent-primary);
 }
+
+/* Turned down, past a screenful: a field to find one by site or tag. */
+.config-suggestions-refused-search {
+    width: min(100%, 22rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.config-suggestion-row[hidden] {
+    display: none;
+}

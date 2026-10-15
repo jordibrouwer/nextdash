@@ -511,6 +511,8 @@ class Dashboard {
             } else if (bootHash === 'unsorted') {
                 // The Inbox's Kept tab's old address: Bookmarks → Unsorted now.
                 await this.openUnsortedBookmarks({ replace: true });
+            } else if (bootHash === 'tags' && this.activeView !== 'tags') {
+                await this.tagView?.openAllTags?.({ fromHash: true });
             } else if (bootHash.startsWith('tag/') && this.activeView !== 'tags') {
                 // A tag's view, from a shared link or a reload.
                 const tags = window.TagViewModel?.tagsFromHash?.(bootHash) || [];
@@ -1091,6 +1093,10 @@ class Dashboard {
                     this.searchComponent?.openSearchWithQuery?.(query, { web });
                 }
                 return;
+            }
+            // Every bookmark, no tag picked: #tags.
+            if (hash === 'tags') {
+                return this.tagView?.openAllTags?.({ fromHash: true });
             }
             // A tag's view: #tag/a+b. While it is open a new address is a new
             // set of tags, not a new view.

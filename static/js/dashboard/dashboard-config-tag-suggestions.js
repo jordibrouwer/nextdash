@@ -25,9 +25,18 @@
      * says how many are waiting, and they surface as these are accepted.
      */
     const MAX_ROWS = 25;
+    /** Turned down gets a search field past this many refusals. */
+    const REFUSED_SEARCH_FROM = 10;
+    /** What was typed there, kept across the panel's redraws. */
+    let refusedQuery = '';
 
     function reasonText(t, group) {
         if (group.reason.kind === 'rule') return t('config.tagSuggestionReasonRule', 'your rule');
+        if (group.reason.kind === 'app') {
+            return t('config.tagSuggestionReasonApp', 'recognised as {app}')
+                .replace('{app}', String(group.reason.app || ''));
+        }
+        if (group.reason.kind === 'home') return t('config.tagSuggestionReasonHome', 'on your home network');
         if (group.reason.kind === 'catalogue') {
             // The subject is named as well as the source, because the tag on
             // the row may be the reader's own word for it rather than the
@@ -225,9 +234,11 @@
             where.className = 'config-suggestion-where';
             const sites = document.createElement('span');
             sites.className = 'config-suggestion-pattern';
-            const names = row.groups.map(({ group }) => (group.pattern === 'page-text'
-                ? t('config.tagSuggestionAcrossSites', 'across sites')
-                : group.pattern));
+            const names = row.groups.map(({ group }) => {
+                if (group.pattern === 'page-text') return t('config.tagSuggestionAcrossSites', 'across sites');
+                if (group.pattern.startsWith('app:')) return group.reason.app || group.pattern.slice(4);
+                return group.pattern;
+            });
             sites.textContent = names.length > 3
                 ? `${names.slice(0, 3).join(', ')} ${t('config.tagSuggestionMoreSites', '+{n} more').replace('{n}', String(names.length - 3))}`
                 : names.join(', ');
@@ -515,10 +526,30 @@
             extra.push(t('config.tagFactsUnread', '{n} pages not read for keywords yet').replace('{n}', fmt(ctx.scan.pending)));
         }
         const refused = (ctx.dismissed || []).length;
+        if (!extra.length && !refused) return facts;
+        const p = document.createElement('p');
+        p.textContent = extra.join(' · ');
+        // The way down to Turned down, which sits folded at the foot of a long
+        // tab: a link that opens it and brings it into view.
         if (refused) {
-            extra.push(t('config.tagFactsRefused', '{n} turned down, never offered again').replace('{n}', fmt(refused)));
+            if (extra.length) p.append(' · ');
+            const link = document.createElement('button');
+            link.type = 'button';
+            link.className = 'config-link-button';
+            link.setAttribute('data-tag-suggestions-refused-jump', '');
+            link.textContent = t('config.tagFactsRefused', '{n} turned down, never offered again').replace('{n}', fmt(refused));
+            link.addEventListener('click', () => {
+                const block = link.closest('#config-bm-suggestions')?.querySelector('[data-tag-suggestions-dismissed]')
+                    || document.querySelector('[data-tag-suggestions-dismissed]');
+                if (!block) return;
+                block.open = true;
+                block.scrollIntoView({ block: 'start' });
+                block.querySelector('summary')?.focus?.({ preventScroll: true });
+            });
+            p.append(link);
         }
-        if (extra.length) line(`${extra.join(' · ')}.`);
+        p.append('.');
+        facts.appendChild(p);
         return facts;
     }
 
@@ -608,9 +639,10 @@
                 row.setAttribute('data-tag-suggestion-refused', String(entry));
                 const text = document.createElement('span');
                 text.className = 'config-suggestion-rule-text';
-                text.textContent = `${pattern === 'page-text'
-                    ? t('config.tagSuggestionAcrossSites', 'across sites')
-                    : pattern} → #${tag}`;
+                let where = pattern;
+                if (pattern === 'page-text') where = t('config.tagSuggestionAcrossSites', 'across sites');
+                else if (pattern.startsWith('app:')) where = pattern.slice(4);
+                text.textContent = `${where} → #${tag}`;
                 const back = document.createElement('button');
                 back.type = 'button';
                 back.className = 'config-btn config-btn--small';
@@ -622,6 +654,28 @@
                 row.append(text, actions);
                 list.appendChild(row);
             });
+            // Past a screenful, a field to find one by site or tag. The panel is
+            // drawn again after every write, so what was typed is kept here and
+            // put back, and the list narrowed again with it.
+            if (refused.length > REFUSED_SEARCH_FROM) {
+                const field = document.createElement('input');
+                field.type = 'search';
+                field.className = 'config-text config-suggestions-refused-search';
+                field.setAttribute('data-tag-suggestions-refused-search', '');
+                field.placeholder = t('config.tagSuggestionsRefusedSearch', 'Find a site or tag…');
+                field.setAttribute('aria-label', field.placeholder);
+                field.value = refusedQuery;
+                const narrow = () => {
+                    refusedQuery = field.value;
+                    const q = refusedQuery.trim().toLowerCase().replace(/^#/, '');
+                    list.querySelectorAll('[data-tag-suggestion-refused]').forEach((row) => {
+                        row.hidden = Boolean(q) && !row.textContent.toLowerCase().includes(q);
+                    });
+                };
+                field.addEventListener('input', narrow);
+                wrap.appendChild(field);
+                narrow();
+            }
             wrap.appendChild(list);
 
             const all = document.createElement('p');

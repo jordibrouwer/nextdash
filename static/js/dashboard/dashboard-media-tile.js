@@ -67,6 +67,9 @@
         valueLocked: ['dashboard.widgetMediaValueLocked', 'locked'],
         valueUnlocked: ['dashboard.widgetMediaValueUnlocked', 'unlocked'],
         valueUnavailable: ['dashboard.widgetMediaValueUnavailable', 'unavailable'],
+        playingDirect: ['dashboard.widgetMediaPlayingDirect', 'Direct play'],
+        playingTranscode: ['dashboard.widgetMediaPlayingTranscode', 'Transcoding'],
+        playingLeft: ['dashboard.widgetMediaPlayingLeft', '−{n} min'],
     };
 
     /* A glyph per kind of entity; Home Assistant's own mdi: icons would need a font. */
@@ -212,6 +215,13 @@
     }
 
     function metaText(dash, widget, item, { wide = false } = {}) {
+        // A now-playing line: who, where, how, and how long still.
+        if (item.method) {
+            const left = Number(item.remaining) > 0
+                ? say(dash, widget, 'playingLeft', { n: Math.ceil(item.remaining / 60) }) : '';
+            const how = say(dash, widget, item.method === 'transcode' ? 'playingTranscode' : 'playingDirect');
+            return [item.who, item.device, how, left].filter(Boolean).join(' · ');
+        }
         const parts = [item.library];
         if (wide && item.year) parts.push(String(item.year));
         if (wide && item.genres?.length) parts.push(item.genres.slice(0, 2).join(', '));
@@ -265,6 +275,7 @@
             missing();
         }
         if (item.played) box.appendChild(textBlock('span', 'media-badge media-badge--played', '✓'));
+        if (item.paused) box.appendChild(textBlock('span', 'media-badge', '⏸'));
         if (Number(item.newCount) > 1) box.appendChild(textBlock('span', 'media-badge', `+${item.newCount}`));
         return box;
     }
@@ -704,10 +715,12 @@
     }
 
     /*
-     * quiet: drawn again in place (after a scene), without the loading line
-     * in between, on the same tab and with focus where it was.
+     * quiet: drawn again in place (after a scene, or on the next beat of a
+     * tile that already shows something), without the loading line in
+     * between, on the same tab and with focus where it was.
      */
     async function render(body, widget, dash, service, { quiet = false } = {}) {
+        quiet = quiet || !!body.querySelector('.media-panel');
         const pageId = Number(dash?.currentPageId) || Number(dash?.pages?.[0]?.id) || 1;
         const activeTab = body.querySelector('[data-media-tab][aria-selected="true"]')?.dataset.mediaTab;
         const focused = body.contains(document.activeElement) ? focusKey(document.activeElement) : '';

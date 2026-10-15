@@ -7,6 +7,10 @@
  * a rail of related tags, pages and health, and a table. #tag/<tag> is its
  * address; Escape, the home icon and Back return to the page it came from.
  *
+ * With no tag picked (#tags, Shift+T with no row in hand) it holds every
+ * bookmark: the rail lists the tags in use and those without any, so tagging
+ * starts here and a tag is one click away.
+ *
  * d._tagFilters stays the list of active tags, so what reads it -- the
  * cloud's +N, hasActiveTagFilters -- keeps working; setTagFilters is the one
  * way in and opens or updates this view.
@@ -21,12 +25,14 @@
         constructor(dashboard) {
             this.dash = dashboard;
             this.tags = [];
+            // Every bookmark rather than a tag's: #tags.
+            this.all = false;
             this.returnPageId = null;
             this.shell = null;
             this._keyHandler = null;
             // What the rail and the search narrow the list to. A new set of
             // tags starts them over.
-            this.filter = { page: null, health: null };
+            this.filter = { page: null, health: null, untagged: false };
             this.query = '';
             this._relatedOpen = false;
             this.sort = { key: 'lastOpened', dir: null };
@@ -59,13 +65,13 @@
 
         /** The tags' bookmarks, before the rail and the search narrow them. */
         matches() {
-            return Model().matches(this.pool(), this.tags);
+            return this.all ? Model().everything(this.pool()) : Model().matches(this.pool(), this.tags);
         }
 
         setTags(tags) {
             const next = this.normalize(tags);
             if (next.join('\u0000') !== this.tags.join('\u0000')) {
-                this.filter = { page: null, health: null };
+                this.filter = { page: null, health: null, untagged: false };
                 this.query = '';
                 this._relatedOpen = false;
                 this.selected = new Set();
@@ -80,18 +86,19 @@
 
         /** The address for the current tags; pushed when the view opens, replaced on a change. */
         writeHash({ push }) {
-            const hash = Model().hashFor(this.tags);
+            const hash = Model().hashFor(this.all ? [] : this.tags);
             if (window.location.hash === hash) return;
             const url = `${window.location.pathname}${window.location.search}${hash}`;
             if (push && window.DashboardHistory?.pushLocation?.(url)) return;
             history.replaceState(history.state, '', url);
         }
 
-        async openTagView(tags, { returnPageId = null, fromHash = false } = {}) {
+        async openTagView(tags, { returnPageId = null, fromHash = false, all = false } = {}) {
             const d = this.dash;
-            const next = this.normalize(tags);
-            if (!next.length) return false;
+            const next = all ? [] : this.normalize(tags);
+            if (!next.length && !all) return false;
             if (this.isActiveView()) {
+                if (all) return this.showAll({ fromHash });
                 return this.updateTags(next, { fromHash });
             }
             if (d.isInlineEditActive?.() && !(await d.confirmInlineEditBeforeNavigation?.())) {
@@ -107,6 +114,7 @@
             d.pageNav?.setActivePageNavButton?.(d.currentPageId);
             d.pageNav?.updatePageTitle?.();
             d.updateDocumentTitle?.();
+            this.all = all;
             this.setTags(next);
             if (!fromHash) this.writeHash({ push: true });
             this.render();
@@ -128,7 +136,24 @@
                 this.closeTagView();
                 return false;
             }
+            // A tag picked from every bookmark is a step in: Back returns to #tags.
+            const fromAll = this.all;
+            this.all = false;
             this.setTags(next);
+            if (!fromHash) this.writeHash({ push: fromAll });
+            this.render();
+            return true;
+        }
+
+        /** From a tag back to every bookmark, while the view is open. */
+        showAll({ fromHash = false } = {}) {
+            if (this.all) return true;
+            this.all = true;
+            this.setTags([]);
+            this.filter = { page: null, health: null, untagged: false };
+            this.query = '';
+            this.selected = new Set();
+            this.focusIndex = -1;
             if (!fromHash) this.writeHash({ push: false });
             this.render();
             return true;
@@ -162,6 +187,7 @@
             const container = document.getElementById('dashboard-layout');
             container?.classList.remove('tag-view-layout');
             this.tags = [];
+            this.all = false;
             this.dash._tagFilters = [];
             this.dash.tagFilter?._syncTagFilterDomAttributes?.();
             window.DashboardTagCloud?.setActiveTags?.([]);
@@ -227,6 +253,7 @@
             const visible = new Set(this.rows.map((b) => this.keyOf(b)));
             [...this.selected].forEach((key) => { if (!visible.has(key)) this.selected.delete(key); });
             shell.body.replaceChildren(this.buildSelectionBar(), table, this.buildLegend());
+            this.fitRowTags(table);
         }
 
         /* ── Toolbar ─────────────────────────────────────────────────────── */
@@ -315,6 +342,8 @@
                 cell.setAttribute('role', 'columnheader');
                 if (key === 'check') {
                     cell.appendChild(this.buildCheckAll());
+                } else if (key === 'tags' && this.all) {
+                    cell.appendChild(this.el('span', '', this.t('dashboard.tagViewColAllTags', 'Tags')));
                 } else {
                     cell.appendChild(this.el('span', '', this.t(labelKey, fallback)));
                 }
@@ -395,7 +424,18 @@
                     });
                     tagsCell.appendChild(chip);
                 });
-            this.suggestionsFor(b).forEach((offer) => tagsCell.appendChild(this.buildOfferChip(b, offer)));
+            // As the Bookmarks view and the inbox draw it (TagOfferRow): the
+            // row's tags, `+n` for those that do not fit, the best offer, and
+            // `+N` for the others; fitRowTags decides once the row has a width.
+            if (tagsCell.childElementCount) tagsCell.appendChild(this.el('span', 'tag-view-chip tag-view-chip--more'));
+            const offers = this.suggestionsFor(b, Infinity);
+            const kit = window.TagOfferRow;
+            if (offers.length && kit) {
+                const esc = (v) => this.dash.escapeHtml?.(v) ?? String(v);
+                const opts = { esc, t: (key, fallback) => this.t(key, fallback), data: 'tv' };
+                tagsCell.insertAdjacentHTML('beforeend', kit.chipHtml(offers[0], { ...opts, className: 'tag-view-offer' })
+                    + kit.moreHtml(offers.length, opts));
+            }
 
             const pageId = Number(b.pageId ?? b.pageID) || Number(d.currentPageId);
             const page = this.el('span', 'tag-view-cell tag-view-page', this.pageName(pageId));
@@ -581,7 +621,7 @@
          * Local only -- the catalogue in memory, your rules, your other tags
          * and pages already read. Find tags is what asks further.
          */
-        suggestionsFor(b) {
+        suggestionsFor(b, limit = 3) {
             const live = window.TagSuggestLive;
             if (!b || typeof live?.forDashBookmark !== 'function') return [];
             const have = new Set((b.tags || []).map((tag) => String(tag || '').trim().toLowerCase()));
@@ -591,7 +631,40 @@
                 if (!tag || have.has(tag) || seen.has(tag)) return false;
                 seen.add(tag);
                 return true;
-            }).slice(0, 3);
+            }).slice(0, limit);
+        }
+
+        /** The row's Tags cells fitted, and the offers in them wired (TagOfferRow). */
+        fitRowTags(table) {
+            const kit = window.TagOfferRow;
+            if (!kit || !table) return;
+            const refit = () => kit.fit([...table.querySelectorAll('.tag-view-row .tag-view-tags')],
+                { tag: '.tag-view-chip', more: '.tag-view-chip--more' });
+            refit();
+            this._tagFitObserver?.disconnect();
+            this._tagFitObserver = kit.observe(table, refit);
+            table.addEventListener('click', (e) => {
+                const add = e.target.closest('[data-tv-offer-add]');
+                const refuse = e.target.closest('[data-tv-offer-refuse]');
+                const more = e.target.closest('[data-tv-offers-more]');
+                if (!add && !refuse && !more) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const b = this.rows[Number(e.target.closest('.tag-view-row')?.dataset.index)];
+                const offers = b ? this.suggestionsFor(b, Infinity) : [];
+                if (!offers.length) return;
+                if (more) {
+                    kit.openPopover(more, offers, {
+                        t: (key, fallback) => this.t(key, fallback),
+                        onAdd: (offer) => void this.addSuggestions([[b, [offer]]]),
+                        onRefuse: (offer) => void this.refuseSuggestion(offer),
+                    });
+                } else if (add) {
+                    void this.addSuggestions([[b, [offers[0]]]]);
+                } else {
+                    void this.refuseSuggestion(offers[0]);
+                }
+            }, true);
         }
 
         /**
@@ -627,6 +700,8 @@
 
         sourceOf(offer) {
             const kind = offer?.reason?.kind;
+            if (kind === 'app') return String(offer.reason.app || '');
+            if (kind === 'home') return this.t('dashboard.tagSourceHome', 'your home network');
             if (kind === 'online') return this.t('dashboard.tagSourceOnline', 'Wikidata');
             if (kind === 'catalogue') return this.t('dashboard.tagSourceCatalogue', 'catalogue');
             if (kind === 'text') return this.t('dashboard.tagSourcePage', 'the page');
@@ -662,34 +737,43 @@
             const pairs = shown.map((b) => [b, this.suggestionsFor(b)]).filter(([, offers]) => offers.length);
             const line = this.el('span', 'tag-view-offer-count');
             const total = pairs.reduce((sum, [, offers]) => sum + offers.length, 0);
-            if (!total) {
+            const live = window.TagSuggestLive;
+            const refused = live?.refusedCount?.(this.dash) || 0;
+            if (!total && !refused) {
                 line.hidden = true;
                 return line;
             }
-            line.appendChild(this.el('strong', '', total === 1
-                ? this.t('dashboard.tagViewOffersOne', '1 tag suggestion')
-                : this.t('dashboard.tagViewOffersMany', '{n} tag suggestions').replace('{n}', String(total))));
-            const all = this.el('button', 'tag-view-offer-all', this.t('dashboard.tagViewOffersAddAll', 'Add all'));
-            all.type = 'button';
-            all.setAttribute('data-tag-view-add-all', '');
-            all.addEventListener('click', () => void this.addSuggestions(pairs));
-            line.append(this.el('span', '', '·'), all);
+            if (total) {
+                line.appendChild(this.el('strong', '', total === 1
+                    ? this.t('dashboard.tagViewOffersOne', '1 tag suggestion')
+                    : this.t('dashboard.tagViewOffersMany', '{n} tag suggestions').replace('{n}', String(total))));
+                const all = this.el('button', 'tag-view-offer-all', this.t('dashboard.tagViewOffersAddAll', 'Add all'));
+                all.type = 'button';
+                all.setAttribute('data-tag-view-add-all', '');
+                all.addEventListener('click', () => void this.addSuggestions(pairs));
+                line.append(this.el('span', '', '·'), all);
+            }
+            // The way back to what was refused, where the refusing happens.
+            if (refused && window.TagOfferRow?.refusedLink) {
+                if (total) line.append(this.el('span', '', '·'));
+                const link = window.TagOfferRow.refusedLink(refused, {
+                    t: (key, fallback) => this.t(key, fallback),
+                    data: 'tag-view',
+                    onRefused: () => void live.openRefused(this.dash),
+                });
+                link.classList.add('tag-view-offer-all');
+                line.append(link);
+            }
             return line;
         }
 
         /** Shared with the Tag suggestions tab: one choice, remembered once. */
         applyNow() {
-            try {
-                return localStorage.getItem('nextdash.tagSearch.applyNow') !== 'false';
-            } catch {
-                return true;
-            }
+            return window.TagSuggestLive?.applyNow?.() === true;
         }
 
         setApplyNow(on) {
-            try {
-                localStorage.setItem('nextdash.tagSearch.applyNow', on ? 'true' : 'false');
-            } catch { /* a browser refusing storage keeps the default */ }
+            window.TagSuggestLive?.setApplyNow?.(on);
         }
 
         openFindMenu(anchor) {
@@ -713,19 +797,24 @@
                 pop.appendChild(item);
                 return item;
             };
+            // The same choices, in the same words, as Find tags in the
+            // Bookmarks view: the ones without tags, or all of them shown.
+            const bare = list.filter((b) => !(Array.isArray(b.tags) && b.tags.some((t) => String(t || '').trim())));
             const items = [
-                entry('lookup', this.t('dashboard.tagViewFindThese', 'Find tags for these {n}').replace('{n}', n),
+                bare.length ? entry('untagged', this.t('config.tagSearchUntagged', 'Bookmarks without tags ({n})').replace('{n}', String(bare.length)),
+                    this.t('dashboard.tagViewFindTheseHint', 'catalogue, then online'), () => void this.findTags(bare)) : null,
+                entry('lookup', this.t('dashboard.tagViewFindShown', 'Bookmarks shown ({n})').replace('{n}', n),
                     this.t('dashboard.tagViewFindTheseHint', 'catalogue, then online'), () => void this.findTags(list)),
                 entry('read', this.t('dashboard.tagViewReadThese', 'Read pages of these {n}').replace('{n}', n),
                     this.t('dashboard.tagViewReadTheseHint', 'slower: asks each site'), () => void this.readPages(list)),
-            ];
+            ].filter(Boolean);
             const toggle = this.el('label', 'move-popover-item tag-view-find-toggle');
             const box = this.el('input');
             box.type = 'checkbox';
             box.checked = this.applyNow();
             box.setAttribute('data-find', 'apply-now');
             box.addEventListener('change', () => this.setApplyNow(box.checked));
-            toggle.append(box, this.el('span', '', this.t('dashboard.tagViewApplyNow', 'Add found tags right away')));
+            toggle.append(box, this.el('span', '', this.t('config.tagSearchApplyNowShort', 'Add what it finds straight away')));
             pop.append(this.el('div', 'move-popover-divider'), toggle);
             const close = () => {
                 pop.remove();
@@ -834,6 +923,12 @@
             if (this.applyNow()) {
                 await this.addSuggestions(pairs);
                 return;
+            }
+            // Which ones: a round over several rows keeps the list to those
+            // with an offer, as the Bookmarks view does.
+            if (targets.length > 1 && !this.filter.offered) {
+                this.filter.offered = true;
+                this.render();
             }
             const count = pairs.length;
             this.dash.showNotification?.((count === 1
@@ -1151,12 +1246,14 @@
 
         /** What the list shows: the matches, narrowed by the rail and the search. */
         shown(matches) {
-            return Model().applyFilters(matches, {
+            const shown = Model().applyFilters(matches, {
                 page: this.filter.page,
                 health: this.filter.health,
+                untagged: this.all && this.filter.untagged,
                 query: this.query,
                 isBroken: (b) => this.isBroken(b),
             });
+            return this.filter.offered ? shown.filter((b) => this.suggestionsFor(b).length) : shown;
         }
 
         /* ── Rail ────────────────────────────────────────────────────────── */
@@ -1170,6 +1267,19 @@
                 shell.rail.appendChild(host);
             }
             const groups = [];
+
+            if (this.all) {
+                const none = matches.filter((b) => !(Array.isArray(b.tags) && b.tags.some((t) => String(t || '').trim()))).length;
+                const btn = this.railItem(this.t('dashboard.tagViewUntagged', 'Without tags'), none, { 'data-rail-untagged': '' });
+                btn.classList.toggle('is-active', this.filter.untagged);
+                btn.setAttribute('aria-pressed', String(this.filter.untagged));
+                btn.addEventListener('click', () => {
+                    this.filter.untagged = !this.filter.untagged;
+                    this.focusIndex = -1;
+                    this.render();
+                });
+                groups.push(this.railGroup(this.t('dashboard.tagViewAllGroup', 'Bookmarks'), [btn], 'untagged'));
+            }
 
             const related = Model().related(matches, this.tags);
             if (related.length) {
@@ -1200,7 +1310,9 @@
                     });
                     items.push(more);
                 }
-                groups.push(this.railGroup(this.t('dashboard.tagViewRelated', 'Related tags'), items, 'related'));
+                groups.push(this.railGroup(this.all
+                    ? this.t('dashboard.tagViewAllTags', 'Tags')
+                    : this.t('dashboard.tagViewRelated', 'Related tags'), items, 'related'));
             }
 
             const pages = new Map();
@@ -1240,6 +1352,21 @@
                 return btn;
             });
             groups.push(this.railGroup(this.t('dashboard.tagViewHealth', 'Health'), health, 'health'));
+
+            // Where a Find tags round leaves what it found: the rows with a
+            // chip to take or turn down. Drawn while there is one, or while on.
+            const offered = matches.filter((b) => this.suggestionsFor(b).length).length;
+            if (offered || this.filter.offered) {
+                const btn = this.railItem(this.t('dashboard.tagViewOffered', 'With a tag suggestion'), offered,
+                    { 'data-rail-offered': '' });
+                btn.classList.toggle('is-active', Boolean(this.filter.offered));
+                btn.setAttribute('aria-pressed', String(Boolean(this.filter.offered)));
+                btn.addEventListener('click', () => {
+                    this.filter.offered = !this.filter.offered;
+                    this.render();
+                });
+                groups.push(this.railGroup(this.t('dashboard.tagViewOfferedGroup', 'Tag suggestions'), [btn], 'offered'));
+            }
 
             host.replaceChildren(...groups);
         }
@@ -1346,6 +1473,11 @@
                 crumb.textContent = from
                     ? this.t('dashboard.tagViewCrumbFrom', 'Tag · from {page}').replace('{page}', from)
                     : this.t('dashboard.tagViewCrumb', 'Tag');
+                if (this.all) {
+                    crumb.textContent = from
+                        ? this.t('dashboard.tagViewAllCrumbFrom', 'Tags · from {page}').replace('{page}', from)
+                        : this.t('dashboard.tagViewAllCrumb', 'Tags');
+                }
             }
             const title = shell.root.querySelector('.lvs-title');
             // Not while the reader is typing a tag to add: a redraw (the health
@@ -1359,7 +1491,9 @@
 
         buildTitle() {
             const wrap = this.el('span', 'tag-view-title-wrap');
-            if (this.tags.length === 1) {
+            if (this.all) {
+                wrap.appendChild(this.el('span', 'tag-view-title', this.t('dashboard.tagViewAllTitle', 'All bookmarks')));
+            } else if (this.tags.length === 1) {
                 wrap.appendChild(this.el('span', 'tag-view-title', `#${this.tags[0]}`));
             } else {
                 this.tags.forEach((tag, i) => {
@@ -1468,6 +1602,10 @@
                 line.appendChild(span);
             };
             part(s.count === 1 ? this.t('dashboard.tagViewStatOne', '{v} bookmark') : this.t('dashboard.tagViewStatMany', '{v} bookmarks'), String(s.count));
+            if (this.all) {
+                const none = matches.filter((b) => !(Array.isArray(b.tags) && b.tags.some((t) => String(t || '').trim()))).length;
+                if (none) part(this.t('dashboard.tagViewStatUntagged', '{v} without tags'), String(none));
+            }
             if (s.pages > 1) part(this.t('dashboard.tagViewStatPages', 'on {v} pages'), String(s.pages));
             if (s.lastOpened) {
                 const last = this.lastOpenedLabel(s.lastOpened);

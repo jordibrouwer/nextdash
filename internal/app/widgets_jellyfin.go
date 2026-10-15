@@ -39,6 +39,7 @@ const (
 type JellyfinLibrary = MediaGroup
 
 type jellyfinSpec struct {
+	Flavor       jellyfinFlavor
 	Server       string
 	CredentialID string
 	UserID       string
@@ -49,7 +50,12 @@ type jellyfinSpec struct {
 }
 
 func jellyfinSpecFrom(config map[string]any) jellyfinSpec {
+	return jellyfinSpecFromFlavor(config, jellyfinFlavorJellyfin)
+}
+
+func jellyfinSpecFromFlavor(config map[string]any, flavor jellyfinFlavor) jellyfinSpec {
 	spec := jellyfinSpec{
+		Flavor:       flavor,
 		Server:       strings.TrimRight(stringOr(config["server"]), "/"),
 		CredentialID: stringOr(config["credentialId"]),
 		UserID:       stringOr(config["userId"]),
@@ -71,7 +77,7 @@ func jellyfinSpecFrom(config map[string]any) jellyfinSpec {
 // cached answer is never served for a library choice that has since changed.
 func (spec jellyfinSpec) fingerprint() string {
 	return strings.Join([]string{
-		spec.Server, spec.CredentialID, spec.UserID, strings.Join(spec.Libraries, ","),
+		spec.Flavor.service(), spec.Server, spec.CredentialID, spec.UserID, strings.Join(spec.Libraries, ","),
 		strconv.FormatBool(spec.HideWatched), strconv.Itoa(spec.Rows),
 	}, "|")
 }
@@ -86,8 +92,8 @@ func jellyfinMediaCollection(collectionType string) bool {
 	return false
 }
 
-func (h *Handlers) jellyfinRequest(ctx context.Context, server string, credential HealthCredential, path string, query url.Values, accept string) (*http.Response, error) {
-	return h.mediaRequest(ctx, server, credential, path, query, accept, func(req *http.Request) {
+func (h *Handlers) jellyfinRequest(ctx context.Context, flavor jellyfinFlavor, server string, credential HealthCredential, path string, query url.Values, accept string) (*http.Response, error) {
+	return h.mediaRequest(ctx, server, credential, flavor.Prefix+path, query, accept, func(req *http.Request) {
 		/*
 		 * The key is also sent the way current Jellyfin reads it.
 		 *
@@ -96,18 +102,22 @@ func (h *Handlers) jellyfinRequest(ctx context.Context, server string, credentia
 		 * header the panel files the key under. Both go out, so one stored key
 		 * works against either. Go drops Authorization itself when a redirect
 		 * leaves the host, which is the rule credentialRedirectCheck keeps for the
-		 * stored header.
+		 * stored header. Emby reads X-Emby-Token and documents only the full
+		 * "Emby Client=..." form of Authorization, so it gets the header alone.
 		 */
+		if flavor.isEmby() {
+			return
+		}
 		if token := strings.TrimSpace(req.Header.Get("X-Emby-Token")); token != "" && req.Header.Get("Authorization") == "" {
 			req.Header.Set("Authorization", `MediaBrowser Token="`+token+`"`)
 		}
 	})
 }
 
-func (h *Handlers) jellyfinGet(ctx context.Context, server string, credential HealthCredential, path string, query url.Values, out any) error {
+func (h *Handlers) jellyfinGet(ctx context.Context, flavor jellyfinFlavor, server string, credential HealthCredential, path string, query url.Values, out any) error {
 	ctx, cancel := context.WithTimeout(ctx, mediaRequestTimeout)
 	defer cancel()
-	resp, err := h.jellyfinRequest(ctx, server, credential, path, query, "application/json")
+	resp, err := h.jellyfinRequest(ctx, flavor, server, credential, path, query, "application/json")
 	if err != nil {
 		return err
 	}
@@ -146,7 +156,7 @@ type jellyfinRawItem struct {
 	groupedEpisodes int
 }
 
-func mapJellyfinItem(raw jellyfinRawItem, library JellyfinLibrary, server string, imageURL func(mediaImageRef) string) (MediaItem, []mediaImageRef) {
+func mapJellyfinItem(raw jellyfinRawItem, library JellyfinLibrary, server string, flavor jellyfinFlavor, imageURL func(mediaImageRef) string) (MediaItem, []mediaImageRef) {
 	item := MediaItem{
 		ID: raw.ID, Title: raw.Name, Kind: strings.ToLower(raw.Type), Year: raw.ProductionYear,
 		Genres: raw.Genres, Library: library.Name, LibraryID: library.ID,
@@ -193,10 +203,7 @@ func mapJellyfinItem(raw jellyfinRawItem, library JellyfinLibrary, server string
 		refs = append(refs, backdrop)
 	}
 
-	item.OpenURL = server + "/web/#/details?id=" + url.QueryEscape(raw.ID)
-	if raw.ServerID != "" {
-		item.OpenURL += "&serverId=" + url.QueryEscape(raw.ServerID)
-	}
+	item.OpenURL = flavor.openURL(server, raw.ID, raw.ServerID)
 	return item, refs
 }
 
@@ -236,6 +243,7 @@ func (h *Handlers) fetchJellyfinLatest(ctx context.Context, spec jellyfinSpec, i
 
 	var all []JellyfinLibrary
 	if spec.UserID != "" {
+		viewsPath, viewsQuery := spec.Flavor.userViews(spec.UserID)
 		var views struct {
 			Items []struct {
 				ID             string `json:"Id"`
@@ -243,7 +251,7 @@ func (h *Handlers) fetchJellyfinLatest(ctx context.Context, spec jellyfinSpec, i
 				CollectionType string `json:"CollectionType"`
 			} `json:"Items"`
 		}
-		if err := h.jellyfinGet(ctx, spec.Server, credential, "/UserViews", url.Values{"userId": {spec.UserID}}, &views); err != nil {
+		if err := h.jellyfinGet(ctx, spec.Flavor, spec.Server, credential, viewsPath, viewsQuery, &views); err != nil {
 			return result, images, err
 		}
 		for _, view := range views.Items {
@@ -255,7 +263,7 @@ func (h *Handlers) fetchJellyfinLatest(ctx context.Context, spec jellyfinSpec, i
 			ItemID         string `json:"ItemId"`
 			CollectionType string `json:"CollectionType"`
 		}
-		if err := h.jellyfinGet(ctx, spec.Server, credential, "/Library/VirtualFolders", nil, &folders); err != nil {
+		if err := h.jellyfinGet(ctx, spec.Flavor, spec.Server, credential, "/Library/VirtualFolders", nil, &folders); err != nil {
 			return result, images, err
 		}
 		for _, folder := range folders {
@@ -302,11 +310,11 @@ func (h *Handlers) fetchJellyfinLatest(ctx context.Context, spec jellyfinSpec, i
 				firstErr = answers[i].err
 			}
 			result.Partial = true
-			logWarn(logComponentWidgets, "Jellyfin library %s: %v", library.Name, answers[i].err)
+			logWarn(logComponentWidgets, "%s library %s: %v", spec.Flavor.service(), library.Name, answers[i].err)
 			continue
 		}
 		for _, entry := range raw {
-			item, refs := mapJellyfinItem(entry, library, spec.Server, imageURL)
+			item, refs := mapJellyfinItem(entry, library, spec.Server, spec.Flavor, imageURL)
 			// Asked of Jellyfin already; checked again because a grouped
 			// series counts as watched only once every episode is.
 			if spec.HideWatched && item.Played {
@@ -336,20 +344,18 @@ func (h *Handlers) fetchJellyfinLatest(ctx context.Context, spec jellyfinSpec, i
 // jellyfinLatestForUser is Jellyfin's own "latest" for one user: grouped by
 // series, and aware of what that user has watched.
 func (h *Handlers) jellyfinLatestForUser(ctx context.Context, spec jellyfinSpec, credential HealthCredential, library JellyfinLibrary) ([]jellyfinRawItem, error) {
-	query := url.Values{
-		"userId":           {spec.UserID},
-		"parentId":         {library.ID},
-		"limit":            {strconv.Itoa(spec.Rows)},
-		"groupItems":       {"true"},
-		"fields":           {"Overview,Genres,ProductionYear,DateCreated"},
-		"enableImageTypes": {"Primary,Backdrop"},
-		"imageTypeLimit":   {"1"},
-	}
+	path, query := spec.Flavor.latest(spec.UserID)
+	query.Set("parentId", library.ID)
+	query.Set("limit", strconv.Itoa(spec.Rows))
+	query.Set("groupItems", "true")
+	query.Set("fields", "Overview,Genres,ProductionYear,DateCreated")
+	query.Set("enableImageTypes", "Primary,Backdrop")
+	query.Set("imageTypeLimit", "1")
 	if spec.HideWatched {
 		query.Set("isPlayed", "false")
 	}
 	var raw []jellyfinRawItem
-	err := h.jellyfinGet(ctx, spec.Server, credential, "/Items/Latest", query, &raw)
+	err := h.jellyfinGet(ctx, spec.Flavor, spec.Server, credential, path, query, &raw)
 	return raw, err
 }
 
@@ -378,7 +384,7 @@ func (h *Handlers) jellyfinRecentWithoutUser(ctx context.Context, spec jellyfinS
 	var answer struct {
 		Items []jellyfinRawItem `json:"Items"`
 	}
-	if err := h.jellyfinGet(ctx, spec.Server, credential, "/Items", query, &answer); err != nil {
+	if err := h.jellyfinGet(ctx, spec.Flavor, spec.Server, credential, "/Items", query, &answer); err != nil {
 		return nil, err
 	}
 	var out []jellyfinRawItem
@@ -426,6 +432,11 @@ written nowhere. Libraries come from the server's own list rather than one
 user's view, so the panel can offer them before a user is chosen.
 */
 func (h *Handlers) JellyfinSetupHandler(w http.ResponseWriter, r *http.Request) {
+	h.jellyfinSetup(w, r, jellyfinFlavorJellyfin)
+}
+
+// jellyfinSetup is the setup answer for either flavor.
+func (h *Handlers) jellyfinSetup(w http.ResponseWriter, r *http.Request, flavor jellyfinFlavor) {
 	h.setCORSHeaders(w, r)
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusNoContent)
@@ -444,7 +455,7 @@ func (h *Handlers) JellyfinSetupHandler(w http.ResponseWriter, r *http.Request) 
 	reply := func(err error) {
 		if err != nil {
 			// The panel is told a short code; the cause stays in the log.
-			logWarn(logComponentWidgets, "Jellyfin setup for %s: %v", hostOf(stringOr(body["server"])), err)
+			logWarn(logComponentWidgets, "%s setup for %s: %v", flavor.service(), hostOf(stringOr(body["server"])), err)
 			answer.Error = mediaErrorCode(err)
 		}
 		_ = json.NewEncoder(w).Encode(answer)
@@ -469,7 +480,7 @@ func (h *Handlers) JellyfinSetupHandler(w http.ResponseWriter, r *http.Request) 
 		ServerName string `json:"ServerName"`
 		Version    string `json:"Version"`
 	}
-	if err := h.jellyfinGet(r.Context(), server, credential, "/System/Info", nil, &info); err != nil {
+	if err := h.jellyfinGet(r.Context(), flavor, server, credential, "/System/Info", nil, &info); err != nil {
 		reply(err)
 		return
 	}
@@ -479,7 +490,7 @@ func (h *Handlers) JellyfinSetupHandler(w http.ResponseWriter, r *http.Request) 
 		ID   string `json:"Id"`
 		Name string `json:"Name"`
 	}
-	if err := h.jellyfinGet(r.Context(), server, credential, "/Users", nil, &users); err != nil {
+	if err := h.jellyfinGet(r.Context(), flavor, server, credential, "/Users", nil, &users); err != nil {
 		reply(err)
 		return
 	}
@@ -492,7 +503,7 @@ func (h *Handlers) JellyfinSetupHandler(w http.ResponseWriter, r *http.Request) 
 		ItemID         string `json:"ItemId"`
 		CollectionType string `json:"CollectionType"`
 	}
-	if err := h.jellyfinGet(r.Context(), server, credential, "/Library/VirtualFolders", nil, &folders); err != nil {
+	if err := h.jellyfinGet(r.Context(), flavor, server, credential, "/Library/VirtualFolders", nil, &folders); err != nil {
 		reply(err)
 		return
 	}

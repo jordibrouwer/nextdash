@@ -1,26 +1,36 @@
-/* Unified toast / notification host (#app-notification) */
+/* Unified toast / notification host (#app-notification)
+ *
+ * One card at a time: a round type icon (wrapped by the timeout ring), the
+ * message, an optional action pill and a close button. Colour lives on --nc
+ * (icon, ring, action, glow); the text stays neutral so every theme reads. */
 
 .app-notification {
+    --nc: var(--text-secondary);
     position: fixed;
     right: max(1rem, env(safe-area-inset-right));
     bottom: max(1rem, env(safe-area-inset-bottom));
     max-width: min(380px, calc(100vw - 1.5rem));
-    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem) var(--space-3, 0.75rem) var(--space-3, 0.75rem);
     display: inline-flex;
     align-items: center;
     gap: var(--space-3, 0.75rem);
     font-size: var(--font-size-text);
     font-weight: var(--font-weight-semibold);
     font-family: var(--font-family-main);
-    border: 1px solid var(--border-primary);
-    background: var(--background-secondary);
+    border: 1px solid color-mix(in srgb, var(--nc) 30%, var(--border-primary));
+    background: color-mix(in srgb, var(--background-secondary) 92%, transparent);
+    -webkit-backdrop-filter: blur(12px) saturate(1.25);
+    backdrop-filter: blur(12px) saturate(1.25);
     color: var(--text-primary);
-    border-radius: var(--radius-4, 0.35rem);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
+    border-radius: var(--radius-4, 0.6rem);
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.22),
+        0 6px 22px -10px color-mix(in srgb, var(--nc) 45%, transparent);
     opacity: 0;
     visibility: hidden;
-    transform: translateY(12px);
-    transition: opacity 0.24s ease, visibility 0.24s ease, transform 0.24s ease;
+    transform: translateY(14px) scale(0.96);
+    /* Leaving: quick and straight. Arriving (.show): springy. */
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease-in;
     z-index: 2001;
     pointer-events: none;
 }
@@ -28,53 +38,186 @@
 .app-notification.show {
     opacity: 1;
     visibility: visible;
-    transform: translateY(0);
+    transform: none;
     pointer-events: auto;
+    transition: opacity 0.24s ease, visibility 0.24s ease, transform 0.46s cubic-bezier(0.2, 1.1, 0.3, 1);
 }
 
 .app-notification.has-action {
-    max-width: min(420px, calc(100vw - 1.5rem));
+    max-width: min(440px, calc(100vw - 1.5rem));
 }
 
-.app-notification.success {
-    color: var(--accent-success);
-    border-color: var(--accent-success);
-}
-
-.app-notification.error {
-    color: var(--accent-error);
-    border-color: var(--accent-error);
-}
-
-.app-notification.warning {
-    color: var(--accent-warning);
-    border-color: var(--accent-warning);
-}
-
-.app-notification.info {
-    color: var(--text-secondary);
-    border-color: var(--border-primary);
-}
+.app-notification.success { --nc: var(--accent-success); }
+.app-notification.error { --nc: var(--accent-error); }
+.app-notification.warning { --nc: var(--accent-warning); }
+.app-notification.info { --nc: var(--accent-primary); }
+.app-notification.update,
+.app-notification.promo { --nc: var(--accent-primary); }
 
 /* Software update available — accent brand colour, distinct from success/error. */
 .app-notification.update {
-    color: var(--accent-primary);
-    border-color: var(--accent-primary);
-    background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-secondary));
+    background: color-mix(in srgb, var(--accent-primary) 9%, color-mix(in srgb, var(--background-secondary) 92%, transparent));
 }
 
-/* One-time discoverability promos — themed like config setting highlights. */
+/* One-time discoverability promos and tips — themed like config setting highlights. */
 .app-notification.promo {
-    color: var(--text-primary);
     border-color: color-mix(in srgb, var(--accent-primary) 42%, var(--border-primary));
-    background: color-mix(in srgb, var(--accent-primary) 11%, var(--background-secondary));
+    background: color-mix(in srgb, var(--accent-primary) 8%, color-mix(in srgb, var(--background-secondary) 92%, transparent));
     box-shadow:
-        0 4px 18px color-mix(in srgb, var(--accent-primary) 16%, transparent),
-        0 0 0 1px color-mix(in srgb, var(--accent-primary) 14%, transparent);
+        0 8px 24px rgba(0, 0, 0, 0.2),
+        0 6px 24px -8px color-mix(in srgb, var(--accent-primary) 50%, transparent);
 }
 
 .app-notification.promo .app-notification-text {
     font-weight: var(--font-weight-medium);
+}
+
+/* ── Icon + timeout ring ── */
+.app-notification-icon {
+    position: relative;
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    display: grid;
+    place-items: center;
+    color: var(--nc);
+}
+
+.app-notification-icon::before {
+    content: '';
+    position: absolute;
+    inset: 0.25rem;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--nc) 16%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nc) 26%, transparent);
+}
+
+.app-notification-glyph {
+    position: relative;
+    width: 1.05rem;
+    height: 1.05rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.app-notification-ring {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+    pointer-events: none;
+}
+
+.app-notification-ring circle {
+    fill: none;
+    stroke-width: 2.2;
+}
+
+.app-notification-ring .ring-track {
+    stroke: color-mix(in srgb, var(--nc) 16%, transparent);
+}
+
+.app-notification-ring .ring-fill {
+    stroke: var(--nc);
+    stroke-linecap: round;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 0;
+}
+
+.app-notification.persist .app-notification-ring {
+    display: none;
+}
+
+.app-notification.show:not(.persist) .ring-fill {
+    animation: app-notification-timeout var(--notification-duration, 5s) linear forwards;
+}
+
+.app-notification.paused .ring-fill {
+    animation-play-state: paused;
+}
+
+@keyframes app-notification-timeout {
+    to { stroke-dashoffset: 100; }
+}
+
+/* Per-type motion, once, as the card arrives. */
+.app-notification.show.success .app-notification-glyph path {
+    stroke-dasharray: 30;
+    stroke-dashoffset: 30;
+    animation: app-notification-draw 0.45s 0.15s ease-out forwards;
+}
+
+.app-notification.show.error .app-notification-icon {
+    animation: app-notification-shake 0.45s 0.12s;
+}
+
+.app-notification.show.update .app-notification-glyph {
+    animation: app-notification-bob 1.6s ease-in-out infinite;
+}
+
+.app-notification.show.promo .app-notification-icon::before {
+    animation: app-notification-twinkle 2.4s ease-in-out infinite;
+}
+
+@keyframes app-notification-draw {
+    to { stroke-dashoffset: 0; }
+}
+
+@keyframes app-notification-shake {
+    20%, 60% { transform: translateX(-3px); }
+    40%, 80% { transform: translateX(3px); }
+}
+
+@keyframes app-notification-bob {
+    50% { transform: translateY(-2px); }
+}
+
+@keyframes app-notification-twinkle {
+    50% {
+        box-shadow:
+            inset 0 0 0 1px color-mix(in srgb, var(--nc) 26%, transparent),
+            0 0 12px color-mix(in srgb, var(--nc) 55%, transparent);
+    }
+}
+
+/* Promo: one shimmer sweep across the card as it arrives. */
+.app-notification.promo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(105deg, transparent 35%, color-mix(in srgb, var(--nc) 20%, transparent) 50%, transparent 65%);
+    transform: translateX(-120%);
+}
+
+.app-notification.show.promo::after {
+    animation: app-notification-sweep 1.2s 0.45s ease-out forwards;
+}
+
+@keyframes app-notification-sweep {
+    to { transform: translateX(120%); }
+}
+
+/* ── Text ── */
+.app-notification-text {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.35;
+}
+
+/* Session tip: a longer, quieter card that carries inline <code> keys. */
+.app-notification-tip-label {
+    color: var(--nc);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    font-size: 0.78em;
+    letter-spacing: 0.06em;
+    margin-right: var(--space-hairline, 0.15rem);
 }
 
 .app-notification-promo-label {
@@ -87,22 +230,8 @@
     letter-spacing: 0.05em;
     text-transform: uppercase;
     vertical-align: baseline;
-    color: var(--accent-primary);
-    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
-}
-
-/* Session tip: a longer, quieter toast that carries inline <code> keys. */
-.app-notification.info .app-notification-text {
-    font-weight: var(--font-weight-medium);
-}
-
-.app-notification-tip-label {
-    color: var(--accent-warning);
-    font-weight: var(--font-weight-semibold);
-    text-transform: uppercase;
-    font-size: 0.78em;
-    letter-spacing: 0.06em;
-    margin-right: var(--space-hairline, 0.15rem);
+    color: var(--nc);
+    background: color-mix(in srgb, var(--nc) 18%, transparent);
 }
 
 .app-notification-text code {
@@ -110,61 +239,76 @@
     font-size: 0.88em;
     background: color-mix(in srgb, var(--text-primary) 8%, transparent);
     border: 1px solid var(--border-primary);
-    border-radius: var(--radius-2, 3px);
+    border-bottom-width: 2px;
+    border-radius: var(--radius-2, 4px);
     padding: var(--space-hairline, 0.03rem) var(--space-1, 0.26rem);
     color: var(--text-primary);
     white-space: nowrap;
 }
 
-.app-notification-text {
-    flex: 1;
-    min-width: 0;
-    line-height: 1.35;
-}
-
+/* ── Action pill + close ── */
 .app-notification-action {
     flex-shrink: 0;
-    border: 1px solid currentColor;
-    background: transparent;
-    color: inherit;
-    border-radius: var(--radius-3, 0.25rem);
-    padding: var(--space-1, 0.25rem) var(--space-2, 0.55rem);
+    border: 1px solid color-mix(in srgb, var(--nc) 38%, transparent);
+    background: color-mix(in srgb, var(--nc) 14%, transparent);
+    color: var(--nc);
+    border-radius: var(--radius-3, 0.4rem);
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.6rem);
     font-size: var(--font-size-controls);
     font-family: inherit;
     font-weight: var(--font-weight-semibold);
     cursor: pointer;
     white-space: nowrap;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition: background 0.15s ease, transform 0.15s ease;
 }
 
 .app-notification-action:hover {
-    background: color-mix(in srgb, currentColor 12%, transparent);
+    background: color-mix(in srgb, var(--nc) 26%, transparent);
+    transform: translateY(-1px);
 }
 
-.app-notification:not(.persist) {
-    position: fixed;
-}
-
-.app-notification:not(.persist)::after {
-    content: '';
+.app-notification-close {
     position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    height: 2px;
-    background: currentColor;
-    opacity: 0.35;
-    transform-origin: left center;
-    transform: scaleX(0);
+    top: 0.2rem;
+    right: 0.25rem;
+    width: 1.35rem;
+    height: 1.35rem;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s ease, background 0.15s ease;
 }
 
-.app-notification.show:not(.persist)::after {
-    animation: app-notification-timeout var(--notification-duration, 5s) linear forwards;
+/* The glyph is generated so the host's textContent stays the message and action only. */
+.app-notification-close::before {
+    content: '\00d7';
 }
 
-@keyframes app-notification-timeout {
-    from { transform: scaleX(1); }
-    to { transform: scaleX(0); }
+.app-notification:hover .app-notification-close,
+.app-notification:focus-within .app-notification-close,
+.app-notification.persist .app-notification-close {
+    opacity: 1;
+}
+
+.app-notification-close:hover {
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-primary);
+}
+
+.app-notification:has(.app-notification-action:not([hidden])) .app-notification-close {
+    right: 0.2rem;
+}
+
+@media (hover: none) {
+    .app-notification:not(.persist) .app-notification-close { display: none; }
 }
 
 @media (max-width: 575px) {
@@ -172,18 +316,45 @@
         right: max(0.75rem, env(safe-area-inset-right));
         bottom: max(0.75rem, env(safe-area-inset-bottom));
     }
+
+    /* The action drops under the message instead of squeezing it. */
+    .app-notification.has-action {
+        flex-wrap: wrap;
+    }
+
+    .app-notification.has-action .app-notification-text {
+        flex: 1 1 calc(100% - 3.5rem);
+    }
+
+    .app-notification.has-action .app-notification-action {
+        margin-left: auto;
+    }
 }
 
-body.no-animations .app-notification {
+body.no-animations .app-notification,
+body.no-animations .app-notification.show {
     transition: none !important;
     transform: none !important;
 }
 
-body.no-animations .app-notification.show:not(.persist)::after {
+body.no-animations .app-notification *,
+body.no-animations .app-notification::after {
     animation: none !important;
 }
 
+body.no-animations .app-notification.show.success .app-notification-glyph path {
+    stroke-dashoffset: 0 !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .app-notification { transform: none !important; transition: opacity 0.15s ease, visibility 0.15s ease !important; }
-    .app-notification.show:not(.persist)::after { animation: none !important; }
+    .app-notification,
+    .app-notification.show {
+        transform: none !important;
+        transition: opacity 0.15s ease, visibility 0.15s ease !important;
+    }
+    .app-notification.show.success .app-notification-glyph path,
+    .app-notification.show.error .app-notification-icon,
+    .app-notification.show.update .app-notification-glyph,
+    .app-notification.show.promo .app-notification-icon::before,
+    .app-notification.show.promo::after { animation: none !important; stroke-dashoffset: 0; }
 }
