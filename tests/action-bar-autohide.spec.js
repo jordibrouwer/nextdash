@@ -118,6 +118,31 @@ test("' and Shift+O move a docked bar out and back", async ({ page }) => {
     await expect.poll(() => hidden(page)).toBe(false);
 });
 
+// Placed on a load the bar is simply there. Its first transform used to run the
+// slide's transition, which swept a right column some 200px up the screen just
+// as the reader -- or a test's mouse -- aimed at a button on it.
+test('a docked bar does not slide into place on a load, only out and back', async ({ page }) => {
+    await openDashboard(page, { actionBarPosition: 'right', actionBarAutoHideSeconds: 0 });
+    await page.addInitScript(() => {
+        window.__barSlides = 0;
+        document.addEventListener('transitionrun', (e) => {
+            if (e.propertyName === 'transform' && e.target.matches?.('.header-shortcuts')) window.__barSlides++;
+        }, true);
+    });
+    await page.reload();
+    await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+    await expect(page.locator('body')).toHaveAttribute('data-action-bar', 'right');
+    // A fixed wait: longer than the slide, which must not have started at all.
+    await page.waitForTimeout(500);
+    expect(await page.evaluate(() => window.__barSlides), 'the bar slid into place on the load').toBe(0);
+
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.locator('body').press("'");
+    await expect.poll(() => hidden(page)).toBe(true);
+    await expect.poll(() => page.evaluate(() => window.__barSlides), { message: 'hiding no longer slides' }).toBeGreaterThan(0);
+});
+
 test('in the header the keys leave the bar alone', async ({ page }) => {
     await openDashboard(page, { actionBarPosition: 'header', actionBarAutoHideSeconds: 2 });
     await page.locator('body').press("'");

@@ -39,6 +39,8 @@
     const NEAR = 340;
     /** How long after the load the intro waits for pending release notes. */
     const WHATS_NEW_GRACE_MS = 4000;
+    /** The slide in dashboard.css (0.2s), with room to finish. */
+    const SLIDE_MS = 300;
 
     let timer = null;
     let hidden = false;
@@ -52,6 +54,7 @@
     let lastIntroStyle = null;
     let introWaiter = null;
     let introTimer = null;
+    let slideTimer = null;
 
     const settings = () => global.dashboardInstance?.settings || {};
     const place = () => document.body.getAttribute('data-action-bar') || 'header';
@@ -82,6 +85,14 @@
     }
 
     function setHidden(value) {
+        // Only going and coming back slide. Placed on a load or moved to
+        // another edge, the bar is simply there: a transition on its first
+        // transform swept it up across the screen while the reader aimed at it.
+        if (value !== document.body.hasAttribute('data-action-bar-hidden')) {
+            document.body.setAttribute('data-action-bar-sliding', '');
+            clearTimeout(slideTimer);
+            slideTimer = setTimeout(() => document.body.removeAttribute('data-action-bar-sliding'), SLIDE_MS);
+        }
         hidden = value;
         edgeHandle().style.setProperty('--edge-proximity', '0');
         document.body.toggleAttribute('data-action-bar-hidden', value);

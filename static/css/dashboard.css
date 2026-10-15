@@ -9334,10 +9334,12 @@ body[data-action-bar-enabled="off"] .dashboard-section.section-controls .header-
 }
 
 /* A dock slides into the edge it stands on, and back out. The resting
-   transforms above stay as they are; hidden adds the way out. */
-body[data-action-bar="bottom"] .dashboard-section.section-controls .header-shortcuts,
-body[data-action-bar="left"] .dashboard-section.section-controls .header-shortcuts,
-body[data-action-bar="right"] .dashboard-section.section-controls .header-shortcuts {
+   transforms above stay as they are; hidden adds the way out. Only while
+   action-bar-autohide.js says it is sliding: placed on a load, the bar's first
+   transform is not a move, and animating it swept the bar up the screen. */
+body[data-action-bar-sliding][data-action-bar="bottom"] .dashboard-section.section-controls .header-shortcuts,
+body[data-action-bar-sliding][data-action-bar="left"] .dashboard-section.section-controls .header-shortcuts,
+body[data-action-bar-sliding][data-action-bar="right"] .dashboard-section.section-controls .header-shortcuts {
     transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
