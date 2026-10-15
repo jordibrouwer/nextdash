@@ -186,6 +186,7 @@ test.describe('the Jellyfin now playing widget', () => {
                 if (target.querySelector('.dashboard-widget-waiting')) window.__jpFlashed = true;
             }).observe(target, { childList: true, subtree: true });
         });
+        // The test is about time itself: two refresh beats of ten seconds have to pass, and the observer above says whether the loading line came back in between.
         await page.waitForTimeout(11_500);
         expect(asked - start).toBeGreaterThanOrEqual(2);
         expect(await page.evaluate(() => window.__jpFlashed)).toBe(false);
