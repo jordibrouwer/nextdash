@@ -37,7 +37,7 @@ const SLUGS = { 1: 'what-is-nextdash', 2: 'installation', 'self-hosted-guide': '
 // as <name> in ":docker <name>", is text and must not reach Vue's compiler.
 const HTML_TAGS = new Set(['a', 'p', 'img', 'kbd', 'sub', 'sup', 'details', 'summary', 'b', 'i', 'em', 'strong',
   'br', 'hr', 'code', 'pre', 'div', 'span', 'table', 'thead', 'tbody', 'tr', 'td', 'th', 'ul', 'ol', 'li', 'small',
-  'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+  'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'figure', 'figcaption'])
 
 function parseArgs (argv) {
   const args = { ref: null, only: null }
@@ -110,30 +110,123 @@ function describe (chunk) {
   return { ...chunk, key, title, short: title.split(':')[0], num: m ? Number(m[1]) : null, slug }
 }
 
-// Every anchor in the manual and the chapter it lives in. Heading slugs are
-// counted over the whole file, the way GitHub numbers duplicates.
+// Section numbers ("14.1 ") lead the manual's headings. The site leaves them
+// out: the sidebar carries the chapter number, the page carries the rest.
+const SECTION_NUMBER = /^(\d+(?:\.\d+)+|\d+\.)\s+/
+const cleanHeading = text => stripEmoji(text).replace(SECTION_NUMBER, '')
+
+// Every anchor in the manual: the chapter it lives in and the title of the
+// heading it names. Heading slugs are counted over the whole file, the way
+// GitHub numbers duplicates. Section numbers map to the heading's slug, so a
+// bare "§14.6" in the text can be named too.
 function mapAnchors (chapters) {
   const where = new Map()
+  const titles = new Map()
+  const numbers = new Map()
   const seen = new Map()
   for (const ch of chapters) {
     ch.headingIds = new Map()
     const all = ch.heading ? [ch.heading, ...ch.lines] : ch.lines
     let fenced = false
+    let pending = []
     all.forEach((line, i) => {
       if (FENCE.test(line)) fenced = !fenced
       if (fenced) return
-      for (const m of line.matchAll(/<a\s+(?:id|name)="([^"]+)"/g)) where.set(m[1], ch)
+      const ids = [...line.matchAll(/<a\s+(?:id|name)="([^"]+)"/g)].map(m => m[1])
+      ids.forEach(id => where.set(id, ch))
+      if (ANCHOR_LINE.test(line.trim())) { pending.push(...ids); return }
       const h = line.match(/^#{1,6}\s+(.*)$/)
-      if (!h) return
+      if (!h) { if (line.trim()) pending = []; return }
       let slug = githubSlug(h[1])
       const n = seen.get(slug) ?? 0
       seen.set(slug, n + 1)
       if (n) slug = `${slug}-${n}`
       where.set(slug, ch)
+      const title = cleanHeading(h[1].replace(/[`*_]/g, ''))
+      for (const id of [...pending, slug]) titles.set(id, title)
+      pending = []
+      const num = stripEmoji(h[1]).match(SECTION_NUMBER)
+      if (num && ch.heading) numbers.set(num[1].replace(/\.$/, ''), slug)
       ch.headingIds.set(i - (ch.heading ? 1 : 0), slug)
     })
   }
-  return where
+  return { where, titles, numbers }
+}
+
+// Markdown inside an HTML block is not rendered, so captions are converted here.
+function inlineMarkdown (text) {
+  return text
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, label, href) => `<a href="${href.replace(/\.md(#|$)/, '.html$1')}">${label}</a>`)
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[\s(])[*_]([^*_]+)[*_](?=[\s).,;:]|$)/g, '$1<em>$2</em>')
+}
+
+// True when running text follows position `from`: a picture only sits beside
+// text when there is text to sit beside. Anchor lines are skipped; a heading,
+// table, code block, another picture or the end of the page means no.
+function followedByText (str, from) {
+  for (const line of str.slice(from).split('\n')) {
+    const t = line.trim()
+    if (!t || ANCHOR_LINE.test(t)) continue
+    return !/^(#|<figure|<p class="nd-center"|<p align|<img|\||```|~~~|<details|<div|<\/details|---)/.test(t)
+  }
+  return false
+}
+
+// GitHub layout in the manual, turned into the site's own markup.
+function reshape (segment) {
+  return segment
+    // Centred screenshots (one, or a pair side by side) with their <sub>
+    // caption become a figure.
+    .replace(/<p align="center">\s*(<img\b[^>]*>(?:\s*<img\b[^>]*>)*)\s*<\/p>(?:\s*<p align="center"><sub>([\s\S]*?)<\/sub><\/p>)?/g,
+      (_, imgs, cap) => `<figure class="nd-fig"><div class="nd-fig-row">${imgs.replace(/>\s+</g, '><')}</div>${cap ? `<figcaption>${inlineMarkdown(cap.trim())}</figcaption>` : ''}</figure>`)
+    .replace(/<p align="center">/g, '<p class="nd-center">')
+    // A narrow figure on its own sits beside the text that follows it;
+    // with no text after it, it stays centred.
+    .replace(/<figure class="nd-fig"><div class="nd-fig-row">(<img\b[^>]*\swidth="(\d+)"[^>]*>)<\/div>/g,
+      (m, img, w, offset, str) => Number(w) <= 360 && followedByText(str, str.indexOf('</figure>', offset) + 9)
+        ? `<figure class="nd-fig nd-fig-side"><div class="nd-fig-row">${img}</div>` : m)
+    // Fixed widths become an upper limit; align becomes a float class.
+    // tabindex lets the keyboard reach a wide screenshot, the kind the
+    // column shrinks and the lightbox enlarges.
+    .replace(/<img\b([^>]*)>/g, (m, attrs, offset, str) => {
+      const width = attrs.match(/\swidth="(\d+)"/)
+      const align = followedByText(str, offset + m.length) && attrs.match(/\salign="(left|right)"/)
+      const rest = attrs.replace(/\s(width|height|align)="[^"]*"/g, '')
+      const wide = !width || Number(width[1]) > 600
+      return `<img${rest}${align ? ` class="nd-float-${align[1]}"` : ''}${width ? ` style="width:${width[1]}px"` : ''}${wide ? ' tabindex="0"' : ''}>`
+    })
+    // The "In short" note that opens a chapter becomes its lead paragraph.
+    .replace(/^> \[!NOTE\]\n> \*\*In short:\*\*\s*(.*(?:\n>.*)*)/gm,
+      (_, body) => {
+        const text = body.split('\n').map(l => l.replace(/^>\s?/, '')).join(' ').trim()
+        return `${text.charAt(0).toUpperCase()}${text.slice(1)} {.nd-lead}`
+      })
+}
+
+// A drawing in box characters is scaled to fit the column instead of
+// scrolling; --cols tells the CSS how many characters wide it is.
+function fitDrawing (block) {
+  const lines = block.split('\n')
+  if (!/^\s*```\s*(text)?\s*$/.test(lines[0]) || !/[─-╿]/.test(block)) return block
+  const cols = Math.max(...lines.slice(1, -1).map(l => [...l].length))
+  return `<div class="nd-drawing" style="--cols:${cols}">\n\n${block}\n\n</div>`
+}
+
+// Apply fn to the parts of a page outside fenced code, and fenced to the code blocks.
+function outsideFences (lines, fn, fenced = b => b) {
+  const parts = []
+  let buf = []
+  let inside = false
+  for (const line of lines) {
+    const toggles = FENCE.test(line)
+    if (!inside && toggles) { parts.push(fn(buf.join('\n'))); buf = [line]; inside = true; continue }
+    if (inside) { buf.push(line); if (toggles) { parts.push(fenced(buf.join('\n'))); buf = []; inside = false } continue }
+    buf.push(line)
+  }
+  parts.push(inside ? buf.join('\n') : fn(buf.join('\n')))
+  return parts.join('\n')
 }
 
 function main () {
@@ -144,7 +237,7 @@ function main () {
 
   const chunks = splitChapters(text)
   const chapters = chunks.map(c => c.heading ? describe(c) : { ...c, key: null, preface: true })
-  const where = mapAnchors(chapters)
+  const { where, titles, numbers } = mapAnchors(chapters)
 
   const grouped = new Set(GROUPS.flatMap(g => g[1]))
   const built = chapters.filter(c => grouped.has(c.key) && (!args.only || args.only.has(c.key)))
@@ -172,14 +265,29 @@ function main () {
       if (path.startsWith('screenshots/')) { images.add(path); return `./${path}` }
       return `${GITHUB}/blob/${blobRef}/${target}`
     }
+    // "§14.6" becomes the name of what it points at: the section on this
+    // page, the chapter, or "Chapter › Section" on another page.
+    const label = anchor => {
+      const home = where.get(anchor)
+      const title = titles.get(anchor)
+      if (!home) return null
+      if (!title || title === home.title || title === home.short) return home.short
+      return home === ch ? title : `${home.short} › ${title}`
+    }
+    const SECTION_REF = /^§\s?\d+(?:\.\d+)*\s*/
+
     // Link targets are rewritten on the whole line, since link text may hold
     // inline code. Escaping only touches the text outside inline code.
     const fixLinks = line => line
-      .replace(/\]\(([^)\s]+)((?:\s+"[^"]*")?)\)/g, (_, target, t) => `](${rewrite(target, 'md')}${t})`)
+      .replace(/(!?)\[((?:[^[\]]|\[[^\]]*\])*)\]\(([^)\s]+)((?:\s+"[^"]*")?)\)/g, (_, bang, text, target, t) => {
+        const named = !bang && target.startsWith('#') && SECTION_REF.test(text) ? (label(target.slice(1)) ?? text) : text
+        return `${bang}[${named}](${rewrite(target, 'md')}${t})`
+      })
       .replace(/\b(href|src)="([^"]+)"/g, (_, a, target) => `${a}="${rewrite(target, 'html')}"`)
     const escape = segment => segment
       .replace(/<(\/?)([a-zA-Z][\w-]*)(?=[\s>/])/g, (m, slash, tag) => HTML_TAGS.has(tag.toLowerCase()) ? m : `&lt;${slash}${tag}`)
       .replace(/\{\{/g, '&#123;&#123;')
+      .replace(/§\s?(\d+(?:\.\d+)*)/g, (m, num) => numbers.has(num) ? label(numbers.get(num)) : m)
     const fixLine = line => fixLinks(line).split(/(`+[^`]*`+)/).map((s, i) => i % 2 ? s : escape(s)).join('')
 
     const out = []
@@ -187,15 +295,17 @@ function main () {
     ch.lines.forEach((line, i) => {
       if (FENCE.test(line)) { fenced = !fenced; out.push(line); return }
       if (fenced) { out.push(line); return }
+      // "↑ Contents" points at the manual's table of contents; the sidebar does that here.
+      if (/^\s*<sub>\[↑ Contents\]\(#table-of-contents\)<\/sub>\s*$/.test(line)) return
       const h = line.match(/^(#{3,6})\s+(.*)$/)
-      if (h) { out.push(`${h[1].slice(1)} ${fixLine(stripEmoji(h[2]))} {#${ch.headingIds.get(i)}}`); return }
+      if (h) { out.push(`${h[1].slice(1)} ${fixLine(cleanHeading(h[2]))} {#${ch.headingIds.get(i)}}`); return }
       out.push(fixLine(line))
     })
     while (out.length && isFiller(out.at(-1)) && !ANCHOR_LINE.test(out.at(-1).trim())) out.pop()
 
     const front = ['---', `title: ${JSON.stringify(ch.title)}`, 'outline: [2, 3]', '---', '']
     const h1 = `# ${ch.title} {#${ch.headingIds.get(-1)}}`
-    writeFileSync(join(OUT, `${ch.slug}.md`), [...front, h1, ...out, ''].join('\n'))
+    writeFileSync(join(OUT, `${ch.slug}.md`), [...front, h1, outsideFences(out, reshape, fitDrawing), ''].join('\n'))
   }
 
   for (const path of images) {
@@ -205,9 +315,10 @@ function main () {
     writeFileSync(join(OUT, path), data)
   }
 
+  // Groups start folded; VitePress opens the one that holds the current page.
   const sidebar = GROUPS.map(([text, keys]) => ({
     text,
-    collapsed: false,
+    collapsed: true,
     items: keys.map(k => built.find(c => c.key === k)).filter(Boolean).map(c => ({
       text: c.num ? `<span class="nd-n">${c.num}</span>${c.short}` : `<span class="nd-n"></span>${c.short}`,
       link: `/${c.slug}`

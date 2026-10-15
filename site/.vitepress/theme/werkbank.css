@@ -78,13 +78,22 @@
 /* Sidebar: same ground as the page, a line to the right, the active
    chapter as a soft fill. */
 .VPSidebar { border-right: 1px solid var(--nd-line); }
+/* Its scrollbar stays out of sight until the pointer is over the sidebar. */
+.VPSidebar { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+.VPSidebar:hover { scrollbar-color: var(--nd-line) transparent; }
+.VPSidebar::-webkit-scrollbar { width: 6px; }
+.VPSidebar::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; }
+.VPSidebar:hover::-webkit-scrollbar-thumb { background: var(--nd-line); }
 .VPSidebarItem.level-0 > .item > .text,
 .VPSidebarItem.level-0 > .item .text { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--nd-muted); font-weight: 600; }
 .VPSidebarItem.level-1 > .item { padding: 0 8px; border-radius: var(--nd-radius); margin: 1px 0; }
 .VPSidebarItem.level-1 > .item > .indicator { display: none; }
 .VPSidebarItem.level-1.is-active > .item { background: var(--nd-accent-soft); }
 .VPSidebarItem.level-1.is-active > .item .text { color: var(--nd-accent); font-weight: 600; }
-.nd-n { display: inline-block; min-width: 24px; font-family: var(--nd-font-mono); font-size: 12px; color: var(--nd-muted); font-weight: 400; }
+/* The chapter number gets its own column, so a long title wraps under the
+   title and not under the number. */
+.VPSidebarItem.level-1 .text:has(.nd-n) { display: flex; align-items: baseline; }
+.nd-n { flex: 0 0 24px; font-family: var(--nd-font-mono); font-size: 12px; color: var(--nd-muted); font-weight: 400; }
 .VPSidebarItem.is-active .nd-n { color: var(--nd-accent); }
 
 /* Text */
@@ -97,10 +106,77 @@
   border: 1px solid var(--nd-line); border-bottom-width: 2px; border-radius: 3px;
   background: var(--nd-surface); color: var(--nd-fg); white-space: nowrap;
 }
-.vp-doc img { border: 1px solid var(--nd-line); border-radius: var(--nd-radius); }
 .vp-doc table { font-size: 14.5px; }
-.vp-doc details { border: 1px solid var(--nd-line); border-radius: var(--nd-radius); padding: 8px 14px; margin: 12px 0; }
-.vp-doc details > summary { cursor: pointer; font-weight: 600; }
+
+/* Screenshots. The manual's fixed widths arrive as an inline width; here it
+   is an upper limit, so a picture never runs wider than the column. */
+.vp-doc img { display: block; max-width: 100%; height: auto; border: 1px solid var(--nd-line); border-radius: var(--nd-radius); }
+.vp-doc p > img { margin: 16px 0; }
+.vp-doc p > img:only-child { margin: 16px auto; }
+.nd-fig { margin: 24px 0 28px; }
+.nd-fig-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: flex-start; }
+.nd-fig-row img { flex: 0 1 auto; min-width: 0; }
+.nd-fig figcaption { margin: 10px auto 0; max-width: 60ch; text-align: center; font-size: 14px; line-height: 1.5; color: var(--nd-muted); }
+/* Narrow pictures sit beside the text instead of leaving a gap next to them. */
+.vp-doc img.nd-float-right, .vp-doc .nd-fig-side { float: right; clear: right; max-width: 42%; margin: 4px 0 16px 28px; }
+.vp-doc img.nd-float-left { float: left; clear: left; max-width: 42%; margin: 4px 28px 16px 0; }
+.vp-doc .nd-fig-side .nd-fig-row { justify-content: flex-end; }
+.vp-doc .nd-fig-side figcaption { text-align: right; max-width: none; }
+.vp-doc h2, .vp-doc h3, .vp-doc .nd-fig:not(.nd-fig-side), .vp-doc table,
+.vp-doc div[class*='language-'], .vp-doc details, .vp-doc .custom-block, .vp-doc .nd-drawing { clear: both; }
+@media (max-width: 640px) {
+  .vp-doc img.nd-float-right, .vp-doc img.nd-float-left, .vp-doc .nd-fig-side { float: none; max-width: 100%; margin: 16px 0; }
+  .vp-doc .nd-fig-side .nd-fig-row { justify-content: center; }
+  .vp-doc .nd-fig-side figcaption { text-align: center; }
+}
+
+/* Screenshots that open larger. */
+.vp-doc img.nd-zoomable { cursor: zoom-in; }
+.vp-doc img:focus-visible { outline: 2px solid var(--nd-accent); outline-offset: 3px; }
+.nd-lightbox { border: none; padding: 0; background: transparent; max-width: 94vw; max-height: 94vh; overflow: visible; color: #e7e9e8; }
+.nd-lightbox:modal { overscroll-behavior: contain; }
+.nd-lightbox::backdrop { background: rgb(12 14 13 / .86); overflow: hidden; overscroll-behavior: contain; }
+.nd-lightbox-img { display: block; max-width: 94vw; max-height: 86vh; width: auto; height: auto; border-radius: var(--nd-radius); cursor: zoom-out; }
+.nd-lightbox-cap { margin: 12px auto 0; max-width: 70ch; text-align: center; font-size: 14px; line-height: 1.5; color: #c9cecb; }
+.nd-lightbox-close {
+  position: fixed; top: 14px; right: 18px; width: 36px; height: 36px; border-radius: 50%;
+  font-size: 24px; line-height: 1; color: #e7e9e8; background: rgb(255 255 255 / .08); cursor: pointer;
+}
+.nd-lightbox-close:hover { background: rgb(255 255 255 / .16); }
+.nd-lightbox-close:focus-visible { outline: 2px solid #72ca9d; outline-offset: 2px; }
+
+.nd-center { text-align: center; }
+.nd-center img { display: inline-block; margin: 6px; vertical-align: top; }
+.vp-doc sub { font-size: 14px; vertical-align: baseline; color: var(--nd-muted); }
+
+/* The "In short" line that opens a chapter. */
+.vp-doc .nd-lead { font-size: 18px; line-height: 1.6; color: var(--nd-muted); margin: 8px 0 24px; }
+
+/* Fold-outs: a quiet rule on the left instead of a box. */
+.vp-doc details { border-left: 2px solid var(--nd-line); padding: 2px 0 2px 16px; margin: 16px 0; }
+.vp-doc details[open] { border-left-color: var(--nd-accent); }
+.vp-doc details > summary { cursor: pointer; font-weight: 600; color: var(--nd-fg); padding: 4px 0; }
+.vp-doc details > summary:hover { color: var(--nd-accent); }
+
+/* Long code lines wrap instead of scrolling sideways. */
+.vp-doc div[class*='language-'] pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.vp-doc div[class*='language-'] code { font-variant-ligatures: none; white-space: pre-wrap; overflow-wrap: anywhere; }
+/* Long addresses in table cells break instead of widening the table. */
+.vp-doc td code, .vp-doc td a { overflow-wrap: anywhere; }
+
+/* Box drawings keep their lines and shrink to fit the column instead.
+   Source Code Pro is 0.6em per character; below 9px it scrolls after all. */
+.vp-doc .nd-drawing { container-type: inline-size; }
+.vp-doc .nd-drawing div[class*='language-'] pre { white-space: pre; overflow-x: auto; scrollbar-width: none; }
+.vp-doc .nd-drawing div[class*='language-'] code {
+  white-space: pre;
+  font-size: max(9px, min(14px, calc((100cqw - 56px) / (var(--cols) * 0.62))));
+  line-height: 1.35;
+}
+
+/* Mermaid flowcharts */
+.vp-doc .mermaid { margin: 20px 0; text-align: center; }
+.vp-doc .mermaid svg { max-width: 100%; height: auto; }
 .vp-doc div[class*='language-'] { border-radius: var(--nd-radius); border: 1px solid var(--nd-line); }
 .vp-doc .custom-block { border-radius: 0 var(--nd-radius) var(--nd-radius) 0; border: none; border-left: 3px solid var(--nd-accent); }
 .vp-doc .custom-block.note { border-left-color: var(--nd-muted); }
