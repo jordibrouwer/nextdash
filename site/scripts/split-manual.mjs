@@ -325,6 +325,18 @@ function main () {
     }))
   })).filter(g => g.items.length)
   writeFileSync(join(OUT, '_sidebar.json'), JSON.stringify(sidebar, null, 2))
+
+  // The docs folder sits inside the WordPress container, whose Apache answers
+  // /docs/ with index.php first; point it at the built pages instead.
+  // RewriteEngine On without rules keeps WordPress's rewrite from sending a
+  // missing docs page to WordPress's own 404.
+  mkdirSync(join(OUT, 'public'), { recursive: true })
+  writeFileSync(join(OUT, 'public', '.htaccess'), [
+    'DirectoryIndex index.html',
+    'RewriteEngine On',
+    'ErrorDocument 404 /docs/404.html',
+    ''
+  ].join('\n'))
   writeFileSync(join(OUT, '_meta.json'), JSON.stringify({ ref, blobRef, chapters: built.map(c => c.slug) }, null, 2))
 
   const index = ['---', 'title: Documentation', '---', '', '# nextDash documentation', '',

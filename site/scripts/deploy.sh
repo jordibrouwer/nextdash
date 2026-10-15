@@ -27,4 +27,6 @@ fi
 
 ref=$(node -e "console.log(require('./src/_meta.json').ref)")
 echo "Deploying the manual of $ref to $target"
-rsync -az --delete --human-readable --stats "$DIST/" "$target"
+# -rlpt rather than -a: owner and group are not copied, so the files belong to
+# the remote user instead of the Mac's uid. Works with macOS's openrsync too.
+rsync -rlptz --delete --stats "$DIST/" "$target"
