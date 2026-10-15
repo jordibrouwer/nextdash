@@ -29,6 +29,7 @@ main
 *.md
 screenshots/
 extension/
+site/
 nextDash.code-workspace*
 
 # Build artifacts

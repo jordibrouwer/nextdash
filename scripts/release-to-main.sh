@@ -323,6 +323,7 @@ PRUNE_DIRS=(
   scripts
   .github/workflows
   docs
+  site
   test-results
   playwright-report
   node_modules
