@@ -138,6 +138,10 @@ const (
 	WidgetTypeEmby WidgetType = "emby"
 	// WidgetTypeEmbyPlaying shows who watches what on Emby right now.
 	WidgetTypeEmbyPlaying WidgetType = "emby-playing"
+	// WidgetTypePlex shows what was added to Plex lately, read through Tautulli.
+	WidgetTypePlex WidgetType = "plex"
+	// WidgetTypePlexPlaying shows who watches what on Plex right now, through Tautulli.
+	WidgetTypePlexPlaying WidgetType = "plex-playing"
 	// WidgetTypeSonarr and WidgetTypeRadarr show what is coming and what is
 	// downloading, with posters, through the same media tile as Jellyfin.
 	WidgetTypeSonarr WidgetType = "sonarr"
@@ -207,6 +211,8 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeHomeAssistant:   {},
 	WidgetTypeJellyfinPlaying: {},
 	WidgetTypeEmbyPlaying:     {},
+	WidgetTypePlex:            {},
+	WidgetTypePlexPlaying:     {},
 
 	WidgetTypeUnraid:              {},
 	WidgetTypeUnraidArray:         {},

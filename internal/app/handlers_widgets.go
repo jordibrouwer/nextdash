@@ -113,6 +113,8 @@ var withheldWidgetKeys = map[WidgetType]map[string]bool{
 	WidgetTypeHomeAssistant:   {"server": true, "credentialId": true, "entities": true},
 	WidgetTypeJellyfinPlaying: {"server": true, "credentialId": true},
 	WidgetTypeEmbyPlaying:     {"server": true, "credentialId": true},
+	WidgetTypePlex:            {"server": true, "credentialId": true},
+	WidgetTypePlexPlaying:     {"server": true, "credentialId": true},
 }
 
 /*

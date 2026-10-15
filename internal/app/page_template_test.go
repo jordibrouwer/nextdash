@@ -285,6 +285,30 @@ func TestTemplateCarriesAJellyfinWidgetWithoutItsServerOrAccount(t *testing.T) {
 	}
 }
 
+// A Plex widget's libraries are section ids on one Tautulli, so they stay home.
+func TestTemplateLeavesPlexLibrariesBehind(t *testing.T) {
+	h := newTestHandlers(t)
+	if err := h.store.SavePage(Page{ID: 6, Name: "Media"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.store.SavePageOrder(append(h.store.GetPageOrder(), 6)); err != nil {
+		t.Fatal(err)
+	}
+	widget := Widget{ID: "w_pppppppppppp", Type: WidgetTypePlex, Title: "Plex", Config: map[string]any{
+		"server": "http://192.168.1.31:8181", "credentialId": "widget:w_pppppppppppp",
+		"libraries": []any{"section-17"}, "layout": "grid",
+	}}
+	if err := h.store.SavePageBlocks(6, []Widget{widget}, nil); err != nil {
+		t.Fatal(err)
+	}
+	_, raw := exportTemplate(t, h, 6, TemplateExportOptions{})
+	for _, leak := range []string{"192.168.1.31", "section-17", "widget:w_pppppppppppp"} {
+		if strings.Contains(string(raw), leak) {
+			t.Errorf("the template carries %q:\n%s", leak, raw)
+		}
+	}
+}
+
 func TestImportRefusesWhatIsNotATemplate(t *testing.T) {
 	h := newTestHandlers(t)
 	for name, file := range map[string]string{
