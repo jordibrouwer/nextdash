@@ -245,14 +245,6 @@
         ]
       }
     ],
-    "mobile-apps": [
-      {
-        "minLinks": 5,
-        "classes": [
-          "Q620615"
-        ]
-      }
-    ],
     "open-source": [
       {
         "minLinks": 3,

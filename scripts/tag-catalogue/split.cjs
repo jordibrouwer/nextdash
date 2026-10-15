@@ -13,6 +13,9 @@
  * (P856), the way byclass.cjs builds the catalogue: a few dozen queries
  * instead of one per host. A derived host of the broad subject that turns up
  * under a child's class moves to the first such child; the rest stay.
+ * A child's `unless` classes keep a host where it is: a university's
+ * institutes and schools, or a channel's shows, share its website, so
+ * colorado.edu is not a business school and channel5.com not a TV series.
  *
  * The answers are cached in cache/split-classes.json. The result is
  * manual/splits.json, host -> tags: classify.cjs reads it as handwork and
@@ -105,10 +108,12 @@ async function main() {
             ];
             const hosts = new Set();
             for (const key of keys) (await hostsFor(key)).forEach((host) => hosts.add(host));
-            sets.push([kid.tag, hosts]);
+            const unless = new Set();
+            for (const q of kid.unless || []) (await hostsFor(`P31:${q}`)).forEach((host) => unless.add(host));
+            sets.push([kid.tag, hosts, unless]);
         }
         pool.forEach((host) => {
-            const hit = sets.find(([, hosts]) => hosts.has(host));
+            const hit = sets.find(([, hosts, unless]) => hosts.has(host) && !unless.has(host));
             if (!hit) return;
             const [child] = hit;
             const now = (subjectsOf.get(host) || []).filter((tag) => !children.has(tag));

@@ -119,7 +119,7 @@ async function main() {
 
     const out = {};
     const counts = {};
-    const skipped = { hand: 0, full: 0, crowded: 0, has: 0 };
+    const skipped = { hand: 0, full: 0, crowded: 0, has: 0, vendor: 0 };
     claims.forEach((bySubject, host) => {
         // The handwork decides a host and the subdomains under it:
         // open.spotify.com is music because spotify.com is.
@@ -132,6 +132,9 @@ async function main() {
         const subject = [...bySubject.entries()].sort((a, b) => b[1].size - a[1].size)[0][0];
         const current = now.get(host) || [];
         if (current.includes(subject)) { skipped.has += 1; return; }
+        // A software company's site names its products, but is the vendor's:
+        // adp.com and xero.com are no desktop apps.
+        if (subject === 'desktop-apps' && (current.includes('tech') || bySubject.has('tech'))) { skipped.vendor += 1; return; }
         if (current.length >= 2) { skipped.full += 1; return; }
         out[host] = [...current, subject];
         counts[subject] = (counts[subject] || 0) + 1;

@@ -33,7 +33,7 @@
     "pizza"
   ],
   "10play.com.au": [
-    "tv-series"
+    "television"
   ],
   "11bitstudios.com": [
     "game-studios"
@@ -79,7 +79,7 @@
     "game-studios"
   ],
   "1tv.ru": [
-    "tv-series"
+    "television"
   ],
   "20min.ch": [
     "newspaper",
@@ -134,7 +134,6 @@
     "tv-series"
   ],
   "24orebs.com": [
-    "business-school",
     "university"
   ],
   "24s.com": [
@@ -149,7 +148,7 @@
     "television"
   ],
   "24ur.com": [
-    "tv-series"
+    "television"
   ],
   "29palms.usmc.mil": [
     "airports"
@@ -197,7 +196,7 @@
     "fast-food"
   ],
   "3cat.cat": [
-    "tv-series"
+    "television"
   ],
   "3daimtrainer.com": [
     "video-games"
@@ -218,7 +217,7 @@
     "airports"
   ],
   "3sat.de": [
-    "tv-series"
+    "television"
   ],
   "4-blocks.de": [
     "tv-series"
@@ -269,13 +268,13 @@
     "online-news"
   ],
   "6abc.com": [
-    "tv-series"
+    "television"
   ],
   "6play.fr": [
-    "tv-series"
+    "television"
   ],
   "6ter.fr": [
-    "tv-series"
+    "television"
   ],
   "7-11.com.tw": [
     "convenience-stores"
@@ -300,7 +299,7 @@
     "game-studios"
   ],
   "7plus.com.au": [
-    "tv-series"
+    "television"
   ],
   "7thbe.at": [
     "game-studios"
@@ -321,7 +320,7 @@
     "car-brands"
   ],
   "9now.com.au": [
-    "tv-series",
+    "television",
     "media"
   ],
   "9now.nine.com.au": [
@@ -339,7 +338,7 @@
     "game-studios"
   ],
   "a1.ro": [
-    "tv-series"
+    "television"
   ],
   "a24.com": [
     "online-news",
@@ -447,7 +446,7 @@
     "academic-publisher"
   ],
   "aau.at": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "aawsat.com": [
@@ -480,7 +479,7 @@
     "newspaper"
   ],
   "abc.com": [
-    "tv-series",
+    "television",
     "radio"
   ],
   "abc.com.py": [
@@ -498,7 +497,7 @@
     "television"
   ],
   "abc7chicago.com": [
-    "tv-series"
+    "television"
   ],
   "abchina.com": [
     "banking"
@@ -535,7 +534,7 @@
     "newspaper"
   ],
   "aber.ac.uk": [
-    "research-institute",
+    "university",
     "charities"
   ],
   "abercrombie.com": [
@@ -558,7 +557,7 @@
     "school"
   ],
   "abk-stuttgart.de": [
-    "art-school"
+    "university"
   ],
   "abls.org": [
     "academic-publisher"
@@ -615,7 +614,7 @@
     "open-access"
   ],
   "academyart.edu": [
-    "art-school"
+    "university"
   ],
   "academymusicgroup.com": [
     "cinema"
@@ -636,10 +635,10 @@
     "sports-federation"
   ],
   "accademiabelleartiverona.it": [
-    "art-school"
+    "university"
   ],
   "accademiavenezia.it": [
-    "art-school"
+    "university"
   ],
   "accars.eu": [
     "car-brands"
@@ -785,7 +784,7 @@
     "municipality"
   ],
   "acu.edu.au": [
-    "research-institute"
+    "university"
   ],
   "acu.org.uk": [
     "sports-federation"
@@ -818,7 +817,7 @@
     "airlines"
   ],
   "adbk-nuernberg.de": [
-    "art-school"
+    "university"
   ],
   "addisonairport.net": [
     "airports"
@@ -827,7 +826,7 @@
     "grocery"
   ],
   "adelaide.edu.au": [
-    "music-conservatory"
+    "university"
   ],
   "adelaideairport.com.au": [
     "airports"
@@ -1358,7 +1357,7 @@
     "news"
   ],
   "agalega.gal": [
-    "tv-series"
+    "television"
   ],
   "agar.io": [
     "video-games"
@@ -1462,7 +1461,7 @@
     "online-news"
   ],
   "ahtv.cn": [
-    "tv-series"
+    "television"
   ],
   "ahwheeler.com": [
     "bookstore"
@@ -1495,13 +1494,13 @@
     "airlines"
   ],
   "aiims.edu": [
-    "medical-school"
+    "university"
   ],
   "aiimsbhopal.edu.in": [
-    "medical-school"
+    "university"
   ],
   "aiimsbilaspur.edu.in": [
-    "medical-school"
+    "university"
   ],
   "aiishmysore.in": [
     "college"
@@ -2087,7 +2086,7 @@
     "newspaper"
   ],
   "alarabiya.net": [
-    "tv-series",
+    "television",
     "news"
   ],
   "alarabonline.org": [
@@ -2184,7 +2183,7 @@
     "gambling"
   ],
   "alibi.uktv.co.uk": [
-    "tv-series"
+    "television"
   ],
   "alicantesharks.es": [
     "football"
@@ -2228,7 +2227,7 @@
     "airlines"
   ],
   "aljazeera.net": [
-    "tv-series",
+    "television",
     "news"
   ],
   "alkanair.com": [
@@ -2341,7 +2340,7 @@
     "sports-federation"
   ],
   "alphatv.gr": [
-    "tv-series",
+    "television",
     "news"
   ],
   "alphen-chaam.nl": [
@@ -2418,7 +2417,7 @@
     "newspaper"
   ],
   "am.lublin.pl": [
-    "research-institute"
+    "university"
   ],
   "aman.com": [
     "hotel-chains"
@@ -2660,7 +2659,7 @@
     "airports"
   ],
   "angelo.edu": [
-    "business-school"
+    "university"
   ],
   "angelsfriends.it": [
     "tv-series"
@@ -2788,10 +2787,10 @@
     "comics-publisher"
   ],
   "antena3.com": [
-    "tv-series"
+    "television"
   ],
   "antenna.gr": [
-    "tv-series"
+    "television"
   ],
   "anthisnes.be": [
     "municipality"
@@ -2840,7 +2839,7 @@
     "online-news"
   ],
   "ap.be": [
-    "music-conservatory"
+    "university"
   ],
   "ap.org": [
     "news-agency",
@@ -2945,7 +2944,7 @@
     "university"
   ],
   "apuntmedia.es": [
-    "tv-series"
+    "television"
   ],
   "apwb.pl": [
     "university"
@@ -3125,7 +3124,7 @@
     "newspaper"
   ],
   "areena.yle.fi": [
-    "tv-series"
+    "television"
   ],
   "arelair.be": [
     "airports"
@@ -3143,7 +3142,7 @@
     "video-games"
   ],
   "arenan.yle.fi": [
-    "tv-series"
+    "television"
   ],
   "arendonk.be": [
     "municipality"
@@ -3289,7 +3288,7 @@
     "tech-news"
   ],
   "artacademy.edu": [
-    "art-school"
+    "university"
   ],
   "artcenter.edu": [
     "college"
@@ -3571,7 +3570,7 @@
     "game-studios"
   ],
   "astro.com.my": [
-    "tv-series"
+    "television"
   ],
   "astronenergy.co.za": [
     "fuel-stations"
@@ -3752,10 +3751,10 @@
     "game-studios"
   ],
   "atv.at": [
-    "tv-series"
+    "television"
   ],
   "atv.com.tr": [
-    "tv-series"
+    "television"
   ],
   "atvb.ahajournals.org": [
     "medical-journal"
@@ -3791,7 +3790,7 @@
     "grocery"
   ],
   "auckland.ac.nz": [
-    "medical-school"
+    "university"
   ],
   "aucklandairport.co.nz": [
     "airports"
@@ -3837,7 +3836,7 @@
     "concert-halls"
   ],
   "augusta.edu": [
-    "medical-school"
+    "university"
   ],
   "augustachronicle.com": [
     "newspaper"
@@ -4079,7 +4078,7 @@
     "broadcasting"
   ],
   "avrotros.nl": [
-    "tv-series"
+    "television"
   ],
   "avs.org": [
     "academic-publisher"
@@ -4135,7 +4134,7 @@
     "tv-series"
   ],
   "axs.tv": [
-    "tv-series"
+    "television"
   ],
   "aytobr.mtv.com.br": [
     "tv-series"
@@ -4177,7 +4176,7 @@
     "airports"
   ],
   "azteca.com.gt": [
-    "tv-series"
+    "television"
   ],
   "azurair.de": [
     "airlines"
@@ -4384,7 +4383,7 @@
     "media"
   ],
   "band.uol.com.br": [
-    "tv-series"
+    "television"
   ],
   "bandaancha.eu": [
     "online-news"
@@ -4855,7 +4854,7 @@
     "university-of-applied-sciences"
   ],
   "bc.edu": [
-    "business-school",
+    "university",
     "open-access"
   ],
   "bca.co.id": [
@@ -5074,7 +5073,7 @@
     "newspaper"
   ],
   "beinsports.com": [
-    "tv-series",
+    "television",
     "media"
   ],
   "bekb.ch": [
@@ -5360,7 +5359,7 @@
     "hotel-chains"
   ],
   "bet.com": [
-    "tv-series"
+    "television"
   ],
   "betamotor.com": [
     "motorcycles"
@@ -5426,7 +5425,7 @@
     "research-institute"
   ],
   "bfmtv.com": [
-    "tv-series",
+    "television",
     "news"
   ],
   "bfv.at": [
@@ -6234,7 +6233,7 @@
     "online-news"
   ],
   "boku.ac.at": [
-    "research-institute"
+    "university"
   ],
   "bol.com": [
     "marketplace"
@@ -6270,7 +6269,6 @@
     "markets"
   ],
   "bolton.ac.uk": [
-    "research-institute",
     "university"
   ],
   "bolton.gov.uk": [
@@ -6584,13 +6582,13 @@
     "banking"
   ],
   "brandeis.edu": [
-    "business-school"
+    "university"
   ],
   "brandenburgaktuell.de": [
     "tv-series"
   ],
   "brandonu.ca": [
-    "research-institute"
+    "university"
   ],
   "brandywineairport.com": [
     "airports"
@@ -6632,7 +6630,7 @@
     "tv-series"
   ],
   "bravotv.com": [
-    "tv-series"
+    "television"
   ],
   "breakawayltd.com": [
     "game-studios"
@@ -7096,7 +7094,7 @@
     "airports"
   ],
   "btv.bg": [
-    "tv-series"
+    "television"
   ],
   "btvnovinite.bg": [
     "tv-series"
@@ -7433,7 +7431,7 @@
     "football"
   ],
   "byutv.org": [
-    "tv-series"
+    "television"
   ],
   "bz-berlin.de": [
     "newspaper"
@@ -7485,7 +7483,7 @@
     "radio"
   ],
   "cadenatres.com.mx": [
-    "tv-series"
+    "television"
   ],
   "cadillac-wexfordcountyairport.com": [
     "airports"
@@ -7609,7 +7607,7 @@
     "airports"
   ],
   "calvin.edu": [
-    "research-institute"
+    "university"
   ],
   "camantsoc.org": [
     "academic-publisher"
@@ -7655,7 +7653,7 @@
     "football"
   ],
   "campbell.edu": [
-    "business-school"
+    "university"
   ],
   "campbellsville.edu": [
     "university"
@@ -7680,19 +7678,19 @@
     "public-broadcaster"
   ],
   "canalj.fr": [
-    "tv-series"
+    "television"
   ],
   "canalplus.com": [
-    "tv-series"
+    "television"
   ],
   "canalplus.fr": [
-    "tv-series"
+    "television"
   ],
   "canalrivertrust.org.uk": [
     "museums"
   ],
   "canalsur.es": [
-    "tv-series",
+    "television",
     "news"
   ],
   "canalsurmas.es": [
@@ -7711,7 +7709,7 @@
     "airlines"
   ],
   "canberra.edu.au": [
-    "research-institute"
+    "university"
   ],
   "canberraairport.com.au": [
     "airports"
@@ -7749,7 +7747,6 @@
     "football"
   ],
   "canterbury.ac.uk": [
-    "research-institute",
     "university"
   ],
   "cantonrep.com": [
@@ -7759,7 +7756,7 @@
     "golf"
   ],
   "canvas.be": [
-    "tv-series"
+    "television"
   ],
   "canwestair.com": [
     "airlines"
@@ -7969,7 +7966,7 @@
     "boardgames"
   ],
   "cartoonnetwork.com.br": [
-    "tv-series"
+    "television"
   ],
   "carvana.com": [
     "car-dealers",
@@ -7982,7 +7979,7 @@
     "bars"
   ],
   "casadevelazquez.org": [
-    "art-school",
+    "university",
     "open-access"
   ],
   "casagrandeaz.gov": [
@@ -8096,7 +8093,7 @@
     "baseball"
   ],
   "cbc.ca": [
-    "tv-series"
+    "television"
   ],
   "cbdg.org.br": [
     "ice-hockey"
@@ -8123,7 +8120,7 @@
     "journals"
   ],
   "cbn.com": [
-    "tv-series"
+    "television"
   ],
   "cbna.com": [
     "banking"
@@ -8133,7 +8130,7 @@
     "magazine"
   ],
   "cbs.com": [
-    "tv-series",
+    "television",
     "radio"
   ],
   "cbssportsnetwork.com": [
@@ -8155,7 +8152,7 @@
     "online-news"
   ],
   "cca.edu": [
-    "art-school"
+    "university"
   ],
   "cca.ky.gov": [
     "airports"
@@ -8191,10 +8188,10 @@
     "motorcycles"
   ],
   "ccmu.edu.cn": [
-    "medical-school"
+    "university"
   ],
   "ccny.cuny.edu": [
-    "medical-school"
+    "university"
   ],
   "ccolgacadaval.pt": [
     "concert-halls"
@@ -8466,17 +8463,17 @@
     "airlines"
   ],
   "channel4.com": [
-    "tv-series"
+    "television"
   ],
   "channel5.com": [
-    "tv-series"
+    "television"
   ],
   "channelnewsasia.com": [
     "tv-series",
     "news"
   ],
   "channelnine.ninemsn.com.au": [
-    "tv-series"
+    "television"
   ],
   "channelstv.com": [
     "tv-series",
@@ -8492,7 +8489,7 @@
     "municipality"
   ],
   "chapman.edu": [
-    "research-institute"
+    "university"
   ],
   "chapter.org": [
     "cinema"
@@ -8759,7 +8756,7 @@
     "online-news"
   ],
   "chinacdc.cn": [
-    "research-institute",
+    "university",
     "government"
   ],
   "chinadaily.com.cn": [
@@ -8959,7 +8956,7 @@
     "fast-food"
   ],
   "cide.edu": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "cies.ch": [
@@ -9456,7 +9453,7 @@
     "football"
   ],
   "click2houston.com": [
-    "tv-series"
+    "television"
   ],
   "clickair.com": [
     "airlines"
@@ -9570,7 +9567,7 @@
     "research-institute"
   ],
   "cmkp.edu.pl": [
-    "medical-school"
+    "university"
   ],
   "cmmedia.es": [
     "public-broadcaster"
@@ -9616,7 +9613,7 @@
     "online-news"
   ],
   "cnews.fr": [
-    "tv-series",
+    "television",
     "news"
   ],
   "cnewsmatin.fr": [
@@ -9640,10 +9637,10 @@
     "online-news"
   ],
   "cnnindonesia.com": [
-    "tv-series"
+    "television"
   ],
   "cnnturk.com": [
-    "tv-series",
+    "television",
     "news"
   ],
   "cnpc.com.cn": [
@@ -9779,7 +9776,7 @@
     "car-brands"
   ],
   "codarts.nl": [
-    "art-school"
+    "university"
   ],
   "codenames.game": [
     "video-games"
@@ -9791,7 +9788,7 @@
     "municipality"
   ],
   "cofc.edu": [
-    "business-school"
+    "university"
   ],
   "coffeebeanery.com": [
     "cafes"
@@ -9881,7 +9878,7 @@
     "video-games"
   ],
   "colorado.edu": [
-    "business-school"
+    "university"
   ],
   "coloradoan.com": [
     "newspaper"
@@ -9896,10 +9893,10 @@
     "newspaper"
   ],
   "colorsbangla.com": [
-    "tv-series"
+    "television"
   ],
   "colorskannada.com": [
-    "tv-series"
+    "television"
   ],
   "colts.com": [
     "football"
@@ -9933,7 +9930,7 @@
     "mls"
   ],
   "columbusstate.edu": [
-    "research-institute"
+    "university"
   ],
   "colyinc.com": [
     "game-studios"
@@ -9954,19 +9951,19 @@
     "banking"
   ],
   "comedieplus.fr": [
-    "tv-series"
+    "television"
   ],
   "comedycentral.co.uk": [
-    "tv-series"
+    "television"
   ],
   "comedycentral.es": [
-    "tv-series"
+    "television"
   ],
   "comedycentral.nl": [
-    "tv-series"
+    "television"
   ],
   "comedycentral.pl": [
-    "tv-series"
+    "television"
   ],
   "comerica.com": [
     "banking"
@@ -10156,7 +10153,7 @@
     "music-conservatory"
   ],
   "conservatoriumvanamsterdam.nl": [
-    "music-conservatory"
+    "university"
   ],
   "conspiracygames.com": [
     "game-studios"
@@ -10519,7 +10516,7 @@
     "hotels"
   ],
   "cpp.edu": [
-    "business-school"
+    "university"
   ],
   "cpsa.co.uk": [
     "sports-federation"
@@ -10531,7 +10528,7 @@
     "airports"
   ],
   "cqmu.edu.cn": [
-    "medical-school"
+    "university"
   ],
   "crackle.com": [
     "tv-series"
@@ -10564,7 +10561,7 @@
     "game-studios"
   ],
   "crave.ca": [
-    "tv-series"
+    "television"
   ],
   "cravenherald.co.uk": [
     "newspaper"
@@ -10657,7 +10654,7 @@
     "magazine"
   ],
   "crimeandinvestigation.co.uk": [
-    "tv-series"
+    "television"
   ],
   "crimeworld.com": [
     "newspaper"
@@ -10787,7 +10784,7 @@
     "airports"
   ],
   "csulb.edu": [
-    "music-conservatory"
+    "university"
   ],
   "csuniv.edu": [
     "university"
@@ -10830,7 +10827,7 @@
     "newspaper"
   ],
   "ctitv.com.tw": [
-    "tv-series"
+    "television"
   ],
   "ctownsupermarkets.com": [
     "grocery"
@@ -10839,7 +10836,7 @@
     "newspaper"
   ],
   "cts.com.tw": [
-    "tv-series"
+    "television"
   ],
   "ctsa.utk.com.tw": [
     "sports-federation"
@@ -10848,10 +10845,10 @@
     "soccer"
   ],
   "ctv.ca": [
-    "tv-series"
+    "television"
   ],
   "ctv.com.tw": [
-    "tv-series"
+    "television"
   ],
   "ctv.tw": [
     "tv-series"
@@ -10863,7 +10860,7 @@
     "news-agency"
   ],
   "cuatro.com": [
-    "tv-series"
+    "television"
   ],
   "cub.com": [
     "grocery"
@@ -10900,7 +10897,7 @@
     "cinema"
   ],
   "cultura.uol.com.br": [
-    "tv-series"
+    "television"
   ],
   "culturamazatlan.com": [
     "opera"
@@ -10943,7 +10940,7 @@
     "medical-journal"
   ],
   "current.com": [
-    "tv-series"
+    "television"
   ],
   "curvegames.com": [
     "game-studios"
@@ -10970,7 +10967,7 @@
     "ice-hockey"
   ],
   "cwtv.com": [
-    "tv-series"
+    "television"
   ],
   "cya.gov.tw": [
     "airports"
@@ -11058,7 +11055,7 @@
     "car-brands"
   ],
   "czmc.com": [
-    "medical-school"
+    "university"
   ],
   "czn.qq.com": [
     "video-games"
@@ -11537,7 +11534,7 @@
     "mls"
   ],
   "dcuniverse.com": [
-    "tv-series"
+    "television"
   ],
   "dday.it": [
     "online-news"
@@ -11571,10 +11568,10 @@
     "fuel-stations"
   ],
   "deakids.it": [
-    "tv-series"
+    "television"
   ],
   "deakin.edu.au": [
-    "medical-school",
+    "university",
     "open-access"
   ],
   "deauville.aeroport.fr": [
@@ -11952,7 +11949,7 @@
     "la-liga"
   ],
   "depts.ttu.edu": [
-    "music-conservatory"
+    "university"
   ],
   "der-farang.com": [
     "newspaper",
@@ -12533,7 +12530,7 @@
     "municipality"
   ],
   "direct8.fr": [
-    "tv-series"
+    "television"
   ],
   "direitofranca.br": [
     "university"
@@ -12572,10 +12569,10 @@
     "airlines"
   ],
   "discoverychannel.co.uk": [
-    "tv-series"
+    "television"
   ],
   "discoveryplus.com": [
-    "tv-series"
+    "television"
   ],
   "discreteanalysisjournal.com": [
     "journals"
@@ -12588,24 +12585,24 @@
     "television"
   ],
   "disney.com.au": [
-    "tv-series",
+    "television",
     "media"
   ],
   "disney.es": [
-    "tv-series"
+    "television"
   ],
   "disney.fr": [
-    "tv-series"
+    "television"
   ],
   "disney.go.com": [
     "game-studios",
     "television"
   ],
   "disney.in": [
-    "tv-series"
+    "television"
   ],
   "disney.it": [
-    "tv-series"
+    "television"
   ],
   "disney.nl": [
     "tv-series"
@@ -12626,7 +12623,7 @@
     "restaurants"
   ],
   "disneynow.com": [
-    "tv-series",
+    "television",
     "media"
   ],
   "disneyvacationclub.disney.go.com": [
@@ -12681,10 +12678,10 @@
     "video-games"
   ],
   "dmax.de": [
-    "tv-series"
+    "television"
   ],
   "dmax.it": [
-    "tv-series"
+    "television"
   ],
   "dmm.com": [
     "game-studios"
@@ -12696,7 +12693,6 @@
     "motorsport"
   ],
   "dmu.ac.uk": [
-    "research-institute",
     "university"
   ],
   "dn.pt": [
@@ -12957,7 +12953,7 @@
     "school"
   ],
   "dplay.no": [
-    "tv-series"
+    "television"
   ],
   "dr.dk": [
     "online-news",
@@ -12979,7 +12975,7 @@
     "video-games"
   ],
   "dragontv.cn": [
-    "tv-series"
+    "television"
   ],
   "drakes.com.au": [
     "grocery"
@@ -13079,7 +13075,7 @@
     "airports"
   ],
   "dstv.com": [
-    "tv-series"
+    "television"
   ],
   "dsv.de": [
     "sports-federation"
@@ -13141,7 +13137,7 @@
     "municipality"
   ],
   "duke.edu": [
-    "music-conservatory",
+    "university",
     "open-access"
   ],
   "duluthairport.com": [
@@ -13166,7 +13162,7 @@
     "newspaper"
   ],
   "dundee.ac.uk": [
-    "art-school"
+    "university"
   ],
   "dunfermline.com": [
     "banking"
@@ -13524,7 +13520,7 @@
     "school"
   ],
   "ecoledulouvre.fr": [
-    "art-school",
+    "university",
     "open-access"
   ],
   "ecolesourphagop.com": [
@@ -13568,13 +13564,13 @@
     "banking"
   ],
   "ecuad.ca": [
-    "art-school"
+    "university"
   ],
   "ecust.edu.cn": [
     "university"
   ],
   "ed.ac.uk": [
-    "medical-school",
+    "university",
     "open-access"
   ],
   "ed.nl": [
@@ -13605,7 +13601,6 @@
     "game-studios"
   ],
   "edgehill.ac.uk": [
-    "research-institute",
     "university"
   ],
   "edgeofreality.com": [
@@ -13684,7 +13679,7 @@
     "edtech"
   ],
   "edu.ge.ch": [
-    "business-school"
+    "university"
   ],
   "educaplay.com": [
     "edtech"
@@ -13797,7 +13792,7 @@
     "airports"
   ],
   "ehess.fr": [
-    "research-institute"
+    "university"
   ],
   "ehhv.nl": [
     "airports"
@@ -13806,7 +13801,7 @@
     "airports"
   ],
   "ehu.eus": [
-    "business-school",
+    "university",
     "open-access"
   ],
   "eiairport.org": [
@@ -13861,7 +13856,7 @@
     "newspaper"
   ],
   "einstein.br": [
-    "research-institute"
+    "university"
   ],
   "eintracht.de": [
     "bundesliga"
@@ -13883,7 +13878,7 @@
     "sports-federation"
   ],
   "eitb.com": [
-    "tv-series"
+    "television"
   ],
   "eitb.eus": [
     "newspaper",
@@ -14322,7 +14317,7 @@
     "airlines"
   ],
   "emich.edu": [
-    "business-school"
+    "university"
   ],
   "emirates.com": [
     "airlines"
@@ -14352,7 +14347,7 @@
     "newspaper"
   ],
   "emporia.edu": [
-    "business-school"
+    "university"
   ],
   "empresscentre.org": [
     "cinema"
@@ -14398,7 +14393,7 @@
     "car-brands"
   ],
   "en.khm.de": [
-    "art-school"
+    "university"
   ],
   "en.kunlunjue.com": [
     "martial-arts"
@@ -14629,7 +14624,7 @@
     "soccer"
   ],
   "eonline.com": [
-    "tv-series"
+    "television"
   ],
   "eosairlines.com": [
     "airlines"
@@ -14894,10 +14889,10 @@
     "rugby"
   ],
   "espn.com.br": [
-    "tv-series"
+    "television"
   ],
   "espn.go.com": [
-    "tv-series"
+    "television"
   ],
   "espncricinfo.com": [
     "soccer"
@@ -14909,7 +14904,7 @@
     "tv-series"
   ],
   "espreso.tv": [
-    "tv-series",
+    "television",
     "news"
   ],
   "esselunga.it": [
@@ -14997,7 +14992,7 @@
     "university"
   ],
   "etsu.edu": [
-    "medical-school"
+    "university"
   ],
   "etten-leur.nl": [
     "municipality"
@@ -15009,10 +15004,10 @@
     "online-news"
   ],
   "etv.co.in": [
-    "tv-series"
+    "television"
   ],
   "etv.co.za": [
-    "tv-series"
+    "television"
   ],
   "eu-digest.com": [
     "newspaper"
@@ -15074,7 +15069,7 @@
     "newspaper"
   ],
   "euronews.com": [
-    "tv-series",
+    "television",
     "news"
   ],
   "europabank.be": [
@@ -15109,7 +15104,7 @@
     "airlines"
   ],
   "euruni.edu": [
-    "business-school"
+    "university"
   ],
   "euskolabelliga.com": [
     "sports-league"
@@ -15386,7 +15381,7 @@
     "municipality"
   ],
   "fairchildtv.com": [
-    "tv-series"
+    "television"
   ],
   "fairfaxmedia.newspaperdirect.com": [
     "newspaper"
@@ -15450,7 +15445,7 @@
     "tv-series"
   ],
   "family7.nl": [
-    "tv-series"
+    "television"
   ],
   "fandomwire.com": [
     "online-news"
@@ -15783,7 +15778,7 @@
     "tv-series"
   ],
   "fernuni-hagen.de": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "ferrari.com": [
@@ -15949,7 +15944,7 @@
     "banking"
   ],
   "fhnw.ch": [
-    "art-school"
+    "university"
   ],
   "fi.mimuw.edu.pl": [
     "journals"
@@ -16093,7 +16088,7 @@
     "airlines"
   ],
   "fiocruz.br": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "fip.it": [
@@ -16209,7 +16204,7 @@
     "fast-food"
   ],
   "fjmu.edu.cn": [
-    "medical-school"
+    "university"
   ],
   "fk-austria.at": [
     "womens-soccer"
@@ -17235,7 +17230,7 @@
     "newspaper"
   ],
   "fnn.jp": [
-    "tv-series"
+    "television"
   ],
   "fo.qq.com": [
     "video-games"
@@ -17280,7 +17275,7 @@
     "newspaper"
   ],
   "folkwang-uni.de": [
-    "art-school"
+    "university"
   ],
   "follejournee.fr": [
     "tv-series"
@@ -17311,7 +17306,7 @@
     "online-news"
   ],
   "fontys.nl": [
-    "art-school"
+    "university"
   ],
   "foodbasics.ca": [
     "grocery"
@@ -17426,7 +17421,7 @@
     "airports"
   ],
   "fordham.edu": [
-    "business-school"
+    "university"
   ],
   "forest.brussels": [
     "municipality"
@@ -17517,7 +17512,7 @@
     "online-news"
   ],
   "four.co.nz": [
-    "tv-series"
+    "television"
   ],
   "fourleaffcu.com": [
     "banking"
@@ -17535,20 +17530,20 @@
     "fast-food"
   ],
   "fox.com": [
-    "tv-series"
+    "television"
   ],
   "fox19.com": [
     "online-news",
     "television"
   ],
   "fox5ny.com": [
-    "tv-series"
+    "television"
   ],
   "foxbusiness.com": [
     "tv-series"
   ],
   "foxdeportes.com": [
-    "tv-series"
+    "television"
   ],
   "foxfullerton.org": [
     "cinema"
@@ -17561,16 +17556,16 @@
     "news"
   ],
   "foxsports.com": [
-    "tv-series"
+    "television"
   ],
   "foxsports.com.au": [
-    "tv-series"
+    "television"
   ],
   "foxsports.nl": [
-    "tv-series"
+    "television"
   ],
   "foxtel.com.au": [
-    "tv-series"
+    "television"
   ],
   "foxtronev.com": [
     "car-brands"
@@ -17579,10 +17574,10 @@
     "cinema"
   ],
   "foxtv.co.uk": [
-    "tv-series"
+    "television"
   ],
   "foxtv.es": [
-    "tv-series"
+    "television"
   ],
   "foxvisalia.org": [
     "cinema"
@@ -17646,20 +17641,20 @@
     "municipality"
   ],
   "francais.rt.com": [
-    "tv-series",
+    "television",
     "news"
   ],
   "france-merrickpac.com": [
     "cinema"
   ],
   "france.tv": [
-    "tv-series"
+    "television"
   ],
   "france2.fr": [
     "tv-series"
   ],
   "france3-regions.francetvinfo.fr": [
-    "tv-series"
+    "television"
   ],
   "france3.fr": [
     "tv-series"
@@ -17943,7 +17938,7 @@
     "game-studios"
   ],
   "fujitv.co.jp": [
-    "tv-series"
+    "television"
   ],
   "fukuoka-airport.jp": [
     "airports"
@@ -18093,7 +18088,7 @@
     "video-games"
   ],
   "g1.com.br": [
-    "tv-series"
+    "television"
   ],
   "g1.globo.com": [
     "online-news"
@@ -18235,7 +18230,7 @@
     "boardgames"
   ],
   "gameone.net": [
-    "tv-series"
+    "television"
   ],
   "games.dmm.co.jp": [
     "video-games"
@@ -18414,14 +18409,14 @@
     "banking"
   ],
   "gbs-ge.ch": [
-    "business-school"
+    "university"
   ],
   "gcores.com": [
     "game-studios",
     "news"
   ],
   "gcu.ac.uk": [
-    "research-institute"
+    "university"
   ],
   "gd.se": [
     "newspaper"
@@ -18450,7 +18445,7 @@
     "engineering-school"
   ],
   "ge.globo.com": [
-    "tv-series"
+    "television"
   ],
   "gearboxsoftware.com": [
     "game-studios"
@@ -18653,7 +18648,7 @@
     "video-games"
   ],
   "geo.tv": [
-    "tv-series"
+    "television"
   ],
   "geo3bcn.csic.es": [
     "academic-publisher"
@@ -18966,7 +18961,7 @@
     "banking"
   ],
   "glmu.edu.cn": [
-    "medical-school"
+    "university"
   ],
   "global.ceair.com": [
     "airlines"
@@ -18999,14 +18994,14 @@
     "medical-journal"
   ],
   "globalnews.ca": [
-    "tv-series",
+    "television",
     "news"
   ],
   "globaltimes.cn": [
     "newspaper"
   ],
   "globaltv.com": [
-    "tv-series"
+    "television"
   ],
   "globemagazine.com": [
     "newspaper"
@@ -19024,7 +19019,7 @@
     "tv-series"
   ],
   "globoplay.globo.com": [
-    "tv-series"
+    "television"
   ],
   "globus.ch": [
     "department-stores"
@@ -19097,7 +19092,7 @@
     "tv-series"
   ],
   "gnt.globo.com": [
-    "tv-series"
+    "television"
   ],
   "go.org.nz": [
     "sports-federation"
@@ -19170,7 +19165,7 @@
     "municipality"
   ],
   "goethe-university-frankfurt.de": [
-    "research-institute"
+    "university"
   ],
   "goh.co.uk": [
     "cinema"
@@ -19209,7 +19204,7 @@
     "university"
   ],
   "gold.uktv.co.uk": [
-    "tv-series"
+    "television"
   ],
   "goldcoast.qld.gov.au": [
     "municipality"
@@ -19586,7 +19581,7 @@
     "municipality"
   ],
   "griffith.edu.au": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "griffith.ie": [
@@ -19701,7 +19696,7 @@
     "banking"
   ],
   "gsa.ac.uk": [
-    "art-school"
+    "university"
   ],
   "gsairport.se": [
     "airports"
@@ -19740,10 +19735,10 @@
     "airports"
   ],
   "gtv.com.tw": [
-    "tv-series"
+    "television"
   ],
   "gu.se": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "guadeloupe.aeroport.fr": [
@@ -19852,7 +19847,7 @@
     "college"
   ],
   "gvsu.edu": [
-    "business-school"
+    "university"
   ],
   "gwairlines.com": [
     "airlines"
@@ -19900,7 +19895,7 @@
     "airlines"
   ],
   "gxmu.edu.cn": [
-    "medical-school"
+    "university"
   ],
   "gxy.net": [
     "airports"
@@ -20054,7 +20049,7 @@
     "ecommerce"
   ],
   "hakkatv.org.tw": [
-    "tv-series"
+    "television"
   ],
   "halderberge.nl": [
     "municipality"
@@ -20084,7 +20079,7 @@
     "school"
   ],
   "hallmarkchannel.com": [
-    "tv-series"
+    "television"
   ],
   "hallmarkplus.com": [
     "tv-series"
@@ -20356,7 +20351,7 @@
     "tv-series"
   ],
   "hartford.edu": [
-    "art-school"
+    "university"
   ],
   "hartlepoolmail.co.uk": [
     "newspaper"
@@ -20487,10 +20482,10 @@
     "airlines"
   ],
   "hbk-bs.de": [
-    "art-school"
+    "university"
   ],
   "hbksaar.de": [
-    "art-school"
+    "university"
   ],
   "hbl.com.tw": [
     "basketball"
@@ -20502,7 +20497,7 @@
     "tv-series"
   ],
   "hbo.pl": [
-    "tv-series"
+    "television"
   ],
   "hbosplc.com": [
     "banking"
@@ -20560,7 +20555,7 @@
     "department-stores"
   ],
   "health.usf.edu": [
-    "medical-school"
+    "university"
   ],
   "healthcaredive.com": [
     "online-news"
@@ -20596,7 +20591,7 @@
     "airlines"
   ],
   "hec.edu": [
-    "business-school"
+    "university"
   ],
   "hechtel-eksel.be": [
     "municipality"
@@ -20698,7 +20693,7 @@
     "municipality"
   ],
   "helsinki.fi": [
-    "medical-school"
+    "university"
   ],
   "helvetic.com": [
     "airlines"
@@ -20920,7 +20915,7 @@
     "municipality"
   ],
   "hevs.ch": [
-    "research-institute"
+    "university"
   ],
   "hewland.com": [
     "auto-parts"
@@ -20935,41 +20930,41 @@
     "airports"
   ],
   "hfbk-hamburg.de": [
-    "art-school"
+    "university"
   ],
   "hfg-gmuend.de": [
     "university-of-applied-sciences",
     "university"
   ],
   "hfg-karlsruhe.de": [
-    "art-school"
+    "university"
   ],
   "hfg-offenbach.de": [
     "university"
   ],
   "hfm-berlin.de": [
-    "music-conservatory"
+    "university"
   ],
   "hfm-detmold.de": [
-    "research-institute"
+    "university"
   ],
   "hfm-karlsruhe.de": [
-    "music-conservatory"
+    "university"
   ],
   "hfm-weimar.de": [
-    "music-conservatory"
+    "university"
   ],
   "hfmdd.de": [
-    "music-conservatory"
+    "university"
   ],
   "hfmt-hamburg.de": [
-    "music-conservatory"
+    "university"
   ],
   "hfmt-koeln.de": [
-    "music-conservatory"
+    "university"
   ],
   "hfs-berlin.de": [
-    "art-school"
+    "university"
   ],
   "hft-stuttgart.de": [
     "university-of-applied-sciences"
@@ -21219,7 +21214,7 @@
     "newspaper"
   ],
   "hlntv.com": [
-    "tv-series",
+    "television",
     "news"
   ],
   "hlx.com": [
@@ -21232,13 +21227,13 @@
     "newspaper"
   ],
   "hmt-leipzig.de": [
-    "music-conservatory"
+    "university"
   ],
   "hmtm-hannover.de": [
-    "music-conservatory"
+    "university"
   ],
   "hmtm.de": [
-    "music-conservatory"
+    "university"
   ],
   "hn.se": [
     "newspaper"
@@ -21709,14 +21704,14 @@
     "car-brands"
   ],
   "hr-fernsehen.de": [
-    "tv-series"
+    "television"
   ],
   "hr.de": [
     "online-news",
     "media"
   ],
   "hrbmu.edu.cn": [
-    "medical-school"
+    "university"
   ],
   "hrce.ca": [
     "school"
@@ -21939,7 +21934,6 @@
     "municipality"
   ],
   "hull.ac.uk": [
-    "research-institute",
     "university"
   ],
   "hulldailymail.co.uk": [
@@ -21958,7 +21952,7 @@
     "airports"
   ],
   "human.nl": [
-    "tv-series"
+    "television"
   ],
   "humanevents.com": [
     "online-news"
@@ -22034,7 +22028,7 @@
     "newspaper"
   ],
   "hw.ac.uk": [
-    "business-school"
+    "university"
   ],
   "hwcdsb.ca": [
     "school"
@@ -22113,7 +22107,7 @@
     "airports"
   ],
   "i24news.tv": [
-    "tv-series",
+    "television",
     "news"
   ],
   "ia.ac.cn": [
@@ -22129,7 +22123,7 @@
     "research-institute"
   ],
   "ib3.org": [
-    "tv-series"
+    "television"
   ],
   "iba.nu": [
     "airlines"
@@ -22213,7 +22207,7 @@
     "radio"
   ],
   "ici.radio-canada.ca": [
-    "tv-series"
+    "television"
   ],
   "ici.tou.tv": [
     "tv-series"
@@ -22234,7 +22228,6 @@
     "journals"
   ],
   "icr.ac.uk": [
-    "research-institute",
     "university"
   ],
   "icswb.com": [
@@ -22437,28 +22430,28 @@
     "medical-journal"
   ],
   "iihr.res.in": [
-    "research-institute"
+    "university"
   ],
   "iiitm.ac.in": [
     "engineering-school"
   ],
   "iima.ac.in": [
-    "business-school"
+    "university"
   ],
   "iimmumbai.ac.in": [
-    "business-school"
+    "university"
   ],
   "iipa.chadwyck.com": [
     "journals"
   ],
   "iisc.ac.in": [
-    "research-institute"
+    "university"
   ],
   "iisertirupati.ac.in": [
-    "research-institute"
+    "university"
   ],
   "iit.edu": [
-    "business-school"
+    "university"
   ],
   "ijbnpa.org": [
     "medical-journal"
@@ -22613,7 +22606,7 @@
     "game-studios"
   ],
   "imagentv.com": [
-    "tv-series"
+    "television"
   ],
   "imagespaceinc.com": [
     "game-studios"
@@ -22625,7 +22618,7 @@
     "engineering-school"
   ],
   "ime.usp.br": [
-    "research-institute"
+    "university"
   ],
   "imga.ch": [
     "sports-federation"
@@ -22637,13 +22630,13 @@
     "car-brands"
   ],
   "immu.edu.cn": [
-    "medical-school"
+    "university"
   ],
   "imospizza.com": [
     "pizza"
   ],
   "impa.br": [
-    "research-institute"
+    "university"
   ],
   "imparcial.pr": [
     "newspaper"
@@ -22937,7 +22930,7 @@
     "fuel-stations"
   ],
   "inholland.nl": [
-    "music-conservatory"
+    "university"
   ],
   "inkbunny.net": [
     "video-games"
@@ -23161,7 +23154,7 @@
     "engineering-school"
   ],
   "ipgp.fr": [
-    "research-institute"
+    "university"
   ],
   "ipiaget.org": [
     "research-institute"
@@ -23287,7 +23280,7 @@
     "video-games"
   ],
   "isciii.es": [
-    "research-institute",
+    "university",
     "government"
   ],
   "iscte-iul.pt": [
@@ -23298,16 +23291,16 @@
     "car-brands"
   ],
   "iseg.fr": [
-    "business-school"
+    "university"
   ],
   "isharachannel.com": [
-    "tv-series"
+    "television"
   ],
   "ishd.de": [
     "soccer"
   ],
   "isical.ac.in": [
-    "research-institute"
+    "university"
   ],
   "islamic-bank.com": [
     "banking"
@@ -23360,7 +23353,7 @@
     "journals"
   ],
   "ispionline.it": [
-    "research-institute"
+    "university"
   ],
   "israelhayom.co.il": [
     "newspaper"
@@ -23370,7 +23363,7 @@
     "radio"
   ],
   "iss.nl": [
-    "research-institute"
+    "university"
   ],
   "issr-journals.org": [
     "journals"
@@ -23457,16 +23450,16 @@
     "municipality"
   ],
   "itv.com": [
-    "tv-series"
+    "television"
   ],
   "itvstudios.com": [
-    "tv-series"
+    "television"
   ],
   "iuauditorium.com": [
     "concert-halls"
   ],
   "iucaa.in": [
-    "research-institute"
+    "university"
   ],
   "iucr.org": [
     "academic-publisher",
@@ -23479,7 +23472,7 @@
     "tv-series"
   ],
   "iview.abc.net.au": [
-    "tv-series"
+    "television"
   ],
   "ivory-tower.fr": [
     "game-studios"
@@ -23637,7 +23630,7 @@
     "news-agency"
   ],
   "japan.videoland.com.tw": [
-    "tv-series"
+    "television"
   ],
   "japanasia.co.jp": [
     "airlines"
@@ -23664,7 +23657,7 @@
     "online-news"
   ],
   "jayatvnetwork.com": [
-    "tv-series"
+    "television"
   ],
   "jb.com.br": [
     "newspaper",
@@ -23686,7 +23679,7 @@
     "university"
   ],
   "jci.edu.cn": [
-    "art-school"
+    "university"
   ],
   "jci.org": [
     "medical-journal"
@@ -23877,7 +23870,7 @@
     "marketplace"
   ],
   "jim.be": [
-    "tv-series"
+    "television"
   ],
   "jim.se": [
     "medical-journal"
@@ -23904,7 +23897,7 @@
     "car-brands"
   ],
   "jjay.cuny.edu": [
-    "business-school"
+    "university"
   ],
   "jkplaces.com": [
     "hotel-chains"
@@ -23934,7 +23927,7 @@
     "tv-series"
   ],
   "jmu.edu": [
-    "business-school"
+    "university"
   ],
   "jmusports.com": [
     "football"
@@ -23981,7 +23974,7 @@
     "university"
   ],
   "joj.sk": [
-    "tv-series"
+    "television"
   ],
   "jolietpark.org": [
     "airports"
@@ -24151,7 +24144,7 @@
     "tv-series"
   ],
   "joyn.de": [
-    "tv-series"
+    "television"
   ],
   "jp.ch.com": [
     "airlines"
@@ -24183,7 +24176,7 @@
     "soccer"
   ],
   "jsg.utexas.edu": [
-    "research-institute"
+    "university"
   ],
   "jsi-airport.gr": [
     "airports"
@@ -24201,7 +24194,7 @@
     "news-agency"
   ],
   "jtv.com": [
-    "tv-series",
+    "television",
     "shopping"
   ],
   "judoaustria.at": [
@@ -24277,7 +24270,7 @@
     "game-studios"
   ],
   "june.fr": [
-    "tv-series"
+    "television"
   ],
   "juneau.org": [
     "airports"
@@ -24347,7 +24340,7 @@
     "municipality"
   ],
   "kabeleins.de": [
-    "tv-series"
+    "television"
   ],
   "kadewe.de": [
     "department-stores"
@@ -24391,7 +24384,7 @@
     "car-brands"
   ],
   "kalamandalam.ac.in": [
-    "art-school"
+    "university"
   ],
   "kalex-engineering.de": [
     "motorcycles"
@@ -24437,10 +24430,10 @@
     "television"
   ],
   "kanald.com.tr": [
-    "tv-series"
+    "television"
   ],
   "kanald.ro": [
-    "tv-series"
+    "television"
   ],
   "kangarooisland.sa.gov.au": [
     "airports"
@@ -24570,7 +24563,7 @@
     "engineering-school"
   ],
   "kau.se": [
-    "music-conservatory"
+    "university"
   ],
   "kaufhaus-goerlitz.eu": [
     "department-stores"
@@ -24619,7 +24612,7 @@
     "university"
   ],
   "kcumb.edu": [
-    "medical-school"
+    "university"
   ],
   "kdair.com": [
     "airlines"
@@ -24654,7 +24647,7 @@
     "municipality"
   ],
   "keloland.com": [
-    "tv-series"
+    "television"
   ],
   "kempenairport.nl": [
     "airports"
@@ -24729,7 +24722,7 @@
     "game-studios"
   ],
   "ketnet.be": [
-    "tv-series"
+    "television"
   ],
   "key.com": [
     "banking"
@@ -24789,7 +24782,7 @@
     "ice-hockey"
   ],
   "khm.de": [
-    "art-school"
+    "university"
   ],
   "khv2015.ca": [
     "tv-series"
@@ -25031,7 +25024,7 @@
     "newspaper"
   ],
   "kmh.se": [
-    "music-conservatory"
+    "university"
   ],
   "kmiairport.co.za": [
     "airports"
@@ -25159,7 +25152,7 @@
     "video-games"
   ],
   "konstfack.se": [
-    "art-school"
+    "university"
   ],
   "kontich.be": [
     "municipality"
@@ -25274,7 +25267,7 @@
     "airports"
   ],
   "kro-ncrv.nl": [
-    "tv-series"
+    "television"
   ],
   "kromestudios.com": [
     "game-studios"
@@ -25323,13 +25316,13 @@
     "newspaper"
   ],
   "kth.se": [
-    "research-institute"
+    "university"
   ],
   "ktkx.us": [
     "airports"
   ],
   "ktla.com": [
-    "tv-series"
+    "television"
   ],
   "ktm.com": [
     "motorcycles"
@@ -25338,10 +25331,10 @@
     "tv-series"
   ],
   "ktv.jp": [
-    "tv-series"
+    "television"
   ],
   "ku.edu": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "kuathletics.com": [
@@ -25352,7 +25345,7 @@
     "fashion"
   ],
   "kug.ac.at": [
-    "music-conservatory"
+    "university"
   ],
   "kuju.com": [
     "game-studios"
@@ -25379,13 +25372,13 @@
     "airlines"
   ],
   "kunstakademie-duesseldorf.de": [
-    "art-school"
+    "university"
   ],
   "kunstakademie-karlsruhe.de": [
-    "art-school"
+    "university"
   ],
   "kunsthochschule-mainz.de": [
-    "art-school"
+    "university"
   ],
   "kunstlinie.nl": [
     "concert-halls"
@@ -25488,7 +25481,7 @@
     "video-games"
   ],
   "la7.it": [
-    "tv-series"
+    "television"
   ],
   "laakdal.be": [
     "municipality"
@@ -25925,10 +25918,10 @@
     "fashion"
   ],
   "lasestrellas.tv": [
-    "tv-series"
+    "television"
   ],
   "lasierra.edu": [
-    "research-institute"
+    "university"
   ],
   "lasne.be": [
     "municipality"
@@ -25982,7 +25975,7 @@
     "newspaper"
   ],
   "latrobe.edu.au": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "laturairport.co.in": [
@@ -26106,7 +26099,7 @@
     "newspaper"
   ],
   "lawrence.edu": [
-    "music-conservatory"
+    "university"
   ],
   "lawrencemunicipalairport.com": [
     "airports"
@@ -26571,7 +26564,7 @@
     "newspaper"
   ],
   "lequipe.fr": [
-    "tv-series"
+    "television"
   ],
   "leroeulx.be": [
     "municipality"
@@ -27012,7 +27005,7 @@
     "tv-series"
   ],
   "lindenwood.edu": [
-    "business-school",
+    "university",
     "open-access"
   ],
   "lindependant.fr": [
@@ -27189,7 +27182,6 @@
     "news-agency"
   ],
   "liverpool.ac.uk": [
-    "research-institute",
     "university"
   ],
   "liverpool.gov.uk": [
@@ -27278,7 +27270,7 @@
     "newspaper"
   ],
   "lmu.de": [
-    "research-institute"
+    "university"
   ],
   "ln-online.de": [
     "newspaper"
@@ -27308,7 +27300,7 @@
     "sports-league"
   ],
   "lnk.lt": [
-    "tv-series"
+    "television"
   ],
   "lo-reninge.be": [
     "municipality"
@@ -27423,7 +27415,6 @@
     "university"
   ],
   "london.edu": [
-    "business-school",
     "university"
   ],
   "londonblitz.com": [
@@ -27442,7 +27433,7 @@
     "sports-federation"
   ],
   "londonlive.co.uk": [
-    "tv-series"
+    "television"
   ],
   "londonmet.ac.uk": [
     "university"
@@ -27621,7 +27612,7 @@
     "football"
   ],
   "loyno.edu": [
-    "research-institute"
+    "university"
   ],
   "lpi.usra.edu": [
     "research-institute"
@@ -27664,7 +27655,7 @@
     "university"
   ],
   "lsus.edu": [
-    "research-institute"
+    "university"
   ],
   "lsusports.net": [
     "football"
@@ -27704,7 +27695,7 @@
     "airlines"
   ],
   "ltu.se": [
-    "music-conservatory"
+    "university"
   ],
   "ltwarreneatonairport.us": [
     "airports"
@@ -27716,7 +27707,7 @@
     "municipality"
   ],
   "luc.edu": [
-    "medical-school"
+    "university"
   ],
   "lucasfangames.de": [
     "game-studios"
@@ -27907,7 +27898,7 @@
     "magazine"
   ],
   "m6.fr": [
-    "tv-series"
+    "television"
   ],
   "maa.nl": [
     "airports"
@@ -27998,7 +27989,7 @@
     "airlines"
   ],
   "mafsu.in": [
-    "research-institute"
+    "university"
   ],
   "mag.sky.it": [
     "tv-series"
@@ -28010,7 +28001,7 @@
     "tv-series"
   ],
   "magentasport.de": [
-    "tv-series"
+    "television"
   ],
   "magic.wizards.com": [
     "video-games"
@@ -28122,7 +28113,7 @@
     "municipality"
   ],
   "mako.co.il": [
-    "tv-series"
+    "television"
   ],
   "malagacf.com": [
     "la-liga"
@@ -28335,7 +28326,7 @@
     "tv-series"
   ],
   "marian.edu": [
-    "medical-school"
+    "university"
   ],
   "marianne.net": [
     "newspaper"
@@ -28369,7 +28360,7 @@
     "ecommerce"
   ],
   "markiza.sk": [
-    "tv-series"
+    "television"
   ],
   "marks.com": [
     "clothing-stores",
@@ -28492,10 +28483,10 @@
     "police"
   ],
   "massart.edu": [
-    "art-school"
+    "university"
   ],
   "massey.ac.nz": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "masseyranchairpark.com": [
@@ -28687,7 +28678,7 @@
     "airports"
   ],
   "mcgill.ca": [
-    "medical-school",
+    "university",
     "open-access"
   ],
   "mckinlay.qld.gov.au": [
@@ -28724,7 +28715,7 @@
     "publishing"
   ],
   "mdw.ac.at": [
-    "art-school"
+    "university"
   ],
   "mdwhome.mdw.army.mil": [
     "airports"
@@ -28775,14 +28766,14 @@
     "car-brands"
   ],
   "mediacorp.sg": [
-    "tv-series",
+    "television",
     "news"
   ],
   "mediafax.ro": [
     "news-agency"
   ],
   "mediaklikk.hu": [
-    "tv-series"
+    "television"
   ],
   "mediamolecule.com": [
     "game-studios"
@@ -28794,19 +28785,19 @@
     "online-news"
   ],
   "mediaset.it": [
-    "tv-series"
+    "television"
   ],
   "mediasetinfinity.es": [
     "tv-series"
   ],
   "mediasetinfinity.mediaset.it": [
-    "tv-series"
+    "television"
   ],
   "mediasetplay.it": [
     "tv-series"
   ],
   "mediasetplay.mediaset.it": [
-    "tv-series"
+    "television"
   ],
   "mediatonicgames.com": [
     "game-studios"
@@ -28848,10 +28839,10 @@
     "edtech"
   ],
   "medunigraz.at": [
-    "medical-school"
+    "university"
   ],
   "meduniwien.ac.at": [
-    "medical-school"
+    "university"
   ],
   "meduza.io": [
     "online-news"
@@ -28872,7 +28863,7 @@
     "municipality"
   ],
   "mega.tv": [
-    "tv-series"
+    "television"
   ],
   "megabank.com.tw": [
     "banking"
@@ -28884,7 +28875,7 @@
     "tv-series"
   ],
   "megatv.com": [
-    "tv-series",
+    "television",
     "media"
   ],
   "megelli.com": [
@@ -29055,7 +29046,7 @@
     "game-studios"
   ],
   "mercy.edu": [
-    "business-school"
+    "university"
   ],
   "merelbeke-melle.be": [
     "municipality"
@@ -29200,7 +29191,7 @@
     "newspaper"
   ],
   "metrostate.edu": [
-    "research-institute"
+    "university"
   ],
   "metrotime.be": [
     "newspaper"
@@ -29258,7 +29249,7 @@
     "gambling"
   ],
   "mgmplus.com": [
-    "tv-series"
+    "television"
   ],
   "mgoblue.com": [
     "football"
@@ -29270,10 +29261,10 @@
     "school"
   ],
   "mh-freiburg.de": [
-    "music-conservatory"
+    "university"
   ],
   "mh-stuttgart.de": [
-    "music-conservatory"
+    "university"
   ],
   "mh.fy.cn": [
     "airports"
@@ -29319,7 +29310,7 @@
     "newspaper"
   ],
   "miamioh.edu": [
-    "business-school"
+    "university"
   ],
   "michiganadvance.com": [
     "online-news"
@@ -29406,7 +29397,7 @@
     "airlines"
   ],
   "midwestern.edu": [
-    "medical-school"
+    "university"
   ],
   "midwestern.nsw.gov.au": [
     "airports"
@@ -29635,7 +29626,7 @@
     "airports"
   ],
   "mitele.es": [
-    "tv-series"
+    "television"
   ],
   "mitselwier.nl": [
     "municipality"
@@ -29723,7 +29714,7 @@
     "tv-series"
   ],
   "mnews.tw": [
-    "tv-series"
+    "television"
   ],
   "mnrltd.co.uk": [
     "car-brands"
@@ -29926,7 +29917,7 @@
     "airports"
   ],
   "montana.edu": [
-    "business-school"
+    "university"
   ],
   "montanafreepress.org": [
     "online-news"
@@ -30152,7 +30143,7 @@
     "online-news"
   ],
   "movistarplus.es": [
-    "tv-series"
+    "television"
   ],
   "mowiawieki.pl": [
     "newspaper"
@@ -30277,28 +30268,28 @@
     "online-news"
   ],
   "mtv.co.uk": [
-    "tv-series"
+    "television"
   ],
   "mtv.com.au": [
-    "tv-series"
+    "television"
   ],
   "mtv.com.br": [
-    "tv-series"
+    "television"
   ],
   "mtv.es": [
-    "tv-series"
+    "television"
   ],
   "mtv.it": [
-    "tv-series"
+    "television"
   ],
   "mtv.pl": [
-    "tv-series"
+    "television"
   ],
   "mtv.uol.com.br": [
-    "tv-series"
+    "television"
   ],
   "mtvu.com": [
-    "tv-series"
+    "television"
   ],
   "mueblesamerica.mx": [
     "department-stores"
@@ -30316,7 +30307,7 @@
     "restaurants"
   ],
   "muk.ac.at": [
-    "music-conservatory"
+    "university"
   ],
   "multimediostv.com": [
     "tv-series"
@@ -30334,7 +30325,7 @@
     "game-studios"
   ],
   "mundonick.uol.com.br": [
-    "tv-series"
+    "television"
   ],
   "munhwa.com": [
     "newspaper"
@@ -30386,7 +30377,7 @@
     "museums"
   ],
   "museunacional.ufrj.br": [
-    "research-institute"
+    "university"
   ],
   "musicalmuseum.co.uk": [
     "museums"
@@ -30421,7 +30412,7 @@
     "game-studios"
   ],
   "muthesius-kunsthochschule.de": [
-    "art-school"
+    "university"
   ],
   "mutigers.com": [
     "football"
@@ -30529,7 +30520,7 @@
     "game-studios"
   ],
   "n-tv.de": [
-    "tv-series",
+    "television",
     "news"
   ],
   "n.163.com": [
@@ -30759,7 +30750,7 @@
     "tv-series"
   ],
   "nationalgeographic.es": [
-    "tv-series"
+    "television"
   ],
   "nationalgeographic.fr": [
     "tv-series"
@@ -30893,14 +30884,14 @@
     "banking"
   ],
   "nbc.com": [
-    "tv-series",
+    "television",
     "telecom"
   ],
   "nbcnewyork.com": [
-    "tv-series"
+    "television"
   ],
   "nbcsports.com": [
-    "tv-series"
+    "television"
   ],
   "nbd.com.cn": [
     "newspaper"
@@ -30969,7 +30960,7 @@
     "online-news"
   ],
   "ndtv.com": [
-    "tv-series",
+    "television",
     "news"
   ],
   "neal.fun": [
@@ -31061,7 +31052,7 @@
     "newspaper"
   ],
   "neox.atresmedia.com": [
-    "tv-series"
+    "television"
   ],
   "nervesoftware.com": [
     "game-studios"
@@ -31076,7 +31067,7 @@
     "fuel-stations"
   ],
   "net5.nl": [
-    "tv-series"
+    "television"
   ],
   "netacad.com": [
     "edtech"
@@ -31149,7 +31140,7 @@
     "newspaper"
   ],
   "newcastle.edu.au": [
-    "music-conservatory",
+    "university",
     "open-access"
   ],
   "newcastle.gov.uk": [
@@ -31264,7 +31255,7 @@
     "online-news"
   ],
   "news.ntv.co.jp": [
-    "tv-series"
+    "television"
   ],
   "news.pchome.com.tw": [
     "online-news"
@@ -31280,7 +31271,7 @@
     "media"
   ],
   "news.tv-asahi.co.jp": [
-    "tv-series"
+    "television"
   ],
   "news.usni.org": [
     "online-news"
@@ -31321,14 +31312,14 @@
     "online-news"
   ],
   "newschool.edu": [
-    "music-conservatory",
+    "university",
     "open-access"
   ],
   "newsday.com": [
     "newspaper"
   ],
   "newsdig.tbs.co.jp": [
-    "tv-series"
+    "television"
   ],
   "newslaundry.com": [
     "online-news"
@@ -31340,7 +31331,7 @@
     "online-news"
   ],
   "newsmaxtv.com": [
-    "tv-series"
+    "television"
   ],
   "newsnationnow.com": [
     "tv-series"
@@ -31523,16 +31514,16 @@
     "bars"
   ],
   "nickelodeon.fr": [
-    "tv-series"
+    "television"
   ],
   "nickelodeon.nl": [
-    "tv-series"
+    "television"
   ],
   "nickjr.co.uk": [
-    "tv-series"
+    "television"
   ],
   "nickjr.com.au": [
-    "tv-series"
+    "television"
   ],
   "niedorp.nl": [
     "municipality"
@@ -31630,10 +31621,10 @@
     "game-studios"
   ],
   "nimhans.ac.in": [
-    "research-institute"
+    "university"
   ],
   "nims.edu.in": [
-    "research-institute"
+    "university"
   ],
   "nine.com.au": [
     "online-news"
@@ -31719,7 +31710,7 @@
     "engineering-school"
   ],
   "niu.edu": [
-    "research-institute"
+    "university"
   ],
   "nius.de": [
     "online-news"
@@ -31887,7 +31878,7 @@
     "municipality"
   ],
   "noovo.ca": [
-    "tv-series"
+    "television"
   ],
   "noozhawk.com": [
     "newspaper"
@@ -32036,7 +32027,6 @@
     "newspaper"
   ],
   "northumbria.ac.uk": [
-    "business-school",
     "university"
   ],
   "northumbria.police.uk": [
@@ -32091,7 +32081,7 @@
     "tv-series"
   ],
   "noticias.r7.com": [
-    "tv-series"
+    "television"
   ],
   "noticiasdealava.eus": [
     "newspaper"
@@ -32106,7 +32096,6 @@
     "news-agency"
   ],
   "nottingham.ac.uk": [
-    "business-school",
     "university"
   ],
   "nottinghamairport.co.uk": [
@@ -32140,7 +32129,7 @@
     "newspaper"
   ],
   "nova.bg": [
-    "tv-series"
+    "television"
   ],
   "novair.net": [
     "airlines"
@@ -32153,7 +32142,7 @@
     "education"
   ],
   "nove.tv": [
-    "tv-series"
+    "television"
   ],
   "novelgames.com": [
     "game-studios"
@@ -32210,7 +32199,7 @@
     "broadcasting"
   ],
   "npodoc.nl": [
-    "tv-series"
+    "television"
   ],
   "npostart.nl": [
     "tv-series",
@@ -32314,7 +32303,7 @@
     "newspaper"
   ],
   "ntr.nl": [
-    "tv-series",
+    "television",
     "podcasts"
   ],
   "ntrzacatecas.com": [
@@ -32334,7 +32323,7 @@
     "television"
   ],
   "ntv.co.jp": [
-    "tv-series"
+    "television"
   ],
   "ntvg.nl": [
     "medical-journal"
@@ -32488,11 +32477,11 @@
     "airports"
   ],
   "nyheder.tv2.dk": [
-    "tv-series",
+    "television",
     "news"
   ],
   "nyit.edu": [
-    "medical-school"
+    "university"
   ],
   "nyjm.albany.edu": [
     "journals"
@@ -32556,7 +32545,7 @@
     "airports"
   ],
   "oakland.edu": [
-    "medical-school"
+    "university"
   ],
   "oaklandtribune--ang.com": [
     "newspaper"
@@ -32662,7 +32651,7 @@
     "newspaper"
   ],
   "ocs.fr": [
-    "tv-series",
+    "television",
     "streaming"
   ],
   "oculus.com": [
@@ -32783,7 +32772,7 @@
     "ice-hockey"
   ],
   "ohio.edu": [
-    "medical-school"
+    "university"
   ],
   "ohiochristian.edu": [
     "university"
@@ -32798,7 +32787,7 @@
     "sports-federation"
   ],
   "ohsu.edu": [
-    "medical-school"
+    "university"
   ],
   "oirschot.nl": [
     "municipality"
@@ -33019,10 +33008,10 @@
     "broadcasting"
   ],
   "omroepbrabant.nl": [
-    "tv-series"
+    "television"
   ],
   "omroepmax.nl": [
-    "tv-series"
+    "television"
   ],
   "omunicipio.com.br": [
     "newspaper"
@@ -33434,7 +33423,7 @@
     "school"
   ],
   "otago.ac.nz": [
-    "medical-school",
+    "university",
     "open-access"
   ],
   "otaku-plan.com": [
@@ -33479,7 +33468,7 @@
     "newspaper"
   ],
   "ou.edu": [
-    "art-school"
+    "university"
   ],
   "oua.ca": [
     "soccer"
@@ -33652,7 +33641,7 @@
     "cinema"
   ],
   "pace.edu": [
-    "business-school"
+    "university"
   ],
   "pacificairexpress.com.au": [
     "airlines"
@@ -33753,7 +33742,7 @@
     "gambling"
   ],
   "palucca.eu": [
-    "art-school"
+    "university"
   ],
   "pamdev.com": [
     "game-studios"
@@ -34075,10 +34064,10 @@
     "broadcasting"
   ],
   "pbskids.org": [
-    "tv-series"
+    "television"
   ],
   "pbssocal.org": [
-    "tv-series"
+    "television"
   ],
   "pbz.s-game.cn": [
     "video-games"
@@ -34103,7 +34092,7 @@
     "sports-league"
   ],
   "pdx.edu": [
-    "business-school",
+    "university",
     "open-access"
   ],
   "pe-i.com": [
@@ -34485,7 +34474,7 @@
     "airlines"
   ],
   "phoenix.de": [
-    "tv-series"
+    "television"
   ],
   "phoenix.gov": [
     "airports"
@@ -34605,7 +34594,7 @@
     "grocery"
   ],
   "pink.rs": [
-    "tv-series",
+    "television",
     "media"
   ],
   "pinkbike.com": [
@@ -34776,7 +34765,7 @@
     "tv-series"
   ],
   "play.tv": [
-    "tv-series"
+    "television"
   ],
   "play.typeracer.com": [
     "video-games"
@@ -34916,7 +34905,7 @@
     "journals"
   ],
   "plus.ac.at": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "plus.nl": [
@@ -35108,17 +35097,17 @@
     "fast-food"
   ],
   "polotv.pl": [
-    "tv-series"
+    "television"
   ],
   "polsat.pl": [
-    "tv-series"
+    "television"
   ],
   "polsatnews.pl": [
-    "tv-series",
+    "television",
     "news"
   ],
   "polsatplay.pl": [
-    "tv-series"
+    "television"
   ],
   "polskie.rugby": [
     "rugby"
@@ -35205,7 +35194,7 @@
     "game-studios"
   ],
   "poptv.com": [
-    "tv-series"
+    "television"
   ],
   "popular.com": [
     "banking"
@@ -35246,14 +35235,14 @@
     "newspaper"
   ],
   "portal.fiocruz.br": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "portal.fpa.pt": [
     "sports-federation"
   ],
   "portal.inpa.gov.br": [
-    "research-institute",
+    "university",
     "government"
   ],
   "portal.kutxabank.es": [
@@ -35425,7 +35414,7 @@
     "bookstore"
   ],
   "powned.tv": [
-    "tv-series"
+    "television"
   ],
   "poznanairport.pl": [
     "airports"
@@ -35434,7 +35423,7 @@
     "cinema"
   ],
   "pptvhd36.com": [
-    "tv-series"
+    "television"
   ],
   "ppu.edu": [
     "engineering-school"
@@ -35735,7 +35724,7 @@
     "newspaper"
   ],
   "programme.tvb.com": [
-    "tv-series"
+    "television"
   ],
   "programmes.france2.fr": [
     "tv-series"
@@ -35782,7 +35771,7 @@
     "car-dealers"
   ],
   "prosieben.de": [
-    "tv-series"
+    "television"
   ],
   "prosport.ro": [
     "newspaper"
@@ -35794,7 +35783,7 @@
     "sports-federation"
   ],
   "protv.ro": [
-    "tv-series",
+    "television",
     "media"
   ],
   "providencejournal.com": [
@@ -35814,7 +35803,7 @@
     "tv-series"
   ],
   "ps.columbia.edu": [
-    "medical-school"
+    "university"
   ],
   "psaairlines.com": [
     "airlines"
@@ -35847,7 +35836,7 @@
     "factcheck"
   ],
   "pts.org.tw": [
-    "tv-series"
+    "television"
   ],
   "ptsplus.tv": [
     "tv-series"
@@ -35923,7 +35912,7 @@
     "medical-journal"
   ],
   "pucsp.br": [
-    "medical-school",
+    "university",
     "open-access"
   ],
   "pudhari.com": [
@@ -35939,7 +35928,7 @@
     "hotel-chains"
   ],
   "puls4.com": [
-    "tv-series"
+    "television"
   ],
   "pulsehknews.com": [
     "online-news"
@@ -36185,10 +36174,10 @@
     "municipality"
   ],
   "qub.ac.uk": [
-    "research-institute"
+    "university"
   ],
   "qub.ca": [
-    "tv-series"
+    "television"
   ],
   "que.es": [
     "newspaper"
@@ -36212,7 +36201,7 @@
     "airports"
   ],
   "questod.co.uk": [
-    "tv-series"
+    "television"
   ],
   "questu.ca": [
     "university"
@@ -36287,7 +36276,7 @@
     "news"
   ],
   "qut.edu.au": [
-    "business-school"
+    "university"
   ],
   "r4.com": [
     "banking"
@@ -36339,7 +36328,7 @@
     "journals"
   ],
   "radio-canada.ca": [
-    "tv-series"
+    "television"
   ],
   "radio-free-roscoe.ca": [
     "tv-series"
@@ -36385,7 +36374,7 @@
     "online-news"
   ],
   "raibz.rai.it": [
-    "tv-series"
+    "television"
   ],
   "raiders.at": [
     "football"
@@ -36409,17 +36398,17 @@
     "game-studios"
   ],
   "rainews.it": [
-    "tv-series",
+    "television",
     "news"
   ],
   "raiplay.it": [
-    "tv-series"
+    "television"
   ],
   "raisingcanes.com": [
     "fast-food"
   ],
   "raisport.rai.it": [
-    "tv-series"
+    "television"
   ],
   "rajalakshmi.org": [
     "engineering-school"
@@ -36631,7 +36620,6 @@
     "ligue-1"
   ],
   "rcm.ac.uk": [
-    "music-conservatory",
     "university"
   ],
   "rcstrasbourgalsace.fr": [
@@ -36763,7 +36751,7 @@
     "newspaper"
   ],
   "record.r7.com": [
-    "tv-series"
+    "television"
   ],
   "recordnet.com": [
     "newspaper"
@@ -36794,13 +36782,13 @@
     "fuel-stations"
   ],
   "redeglobo.globo.com": [
-    "tv-series"
+    "television"
   ],
   "redetv.com.br": [
-    "tv-series"
+    "television"
   ],
   "redetv.uol.com.br": [
-    "tv-series"
+    "television"
   ],
   "redfordtheatre.com": [
     "cinema"
@@ -37038,7 +37026,7 @@
     "newspaper"
   ],
   "research.ibm.com": [
-    "research-institute"
+    "university"
   ],
   "reseauinternational.net": [
     "online-news"
@@ -37126,7 +37114,7 @@
     "medical-journal"
   ],
   "revolt.tv": [
-    "tv-series"
+    "television"
   ],
   "revolut.com": [
     "banking"
@@ -37192,7 +37180,7 @@
     "sports-league"
   ],
   "rgcb.res.in": [
-    "research-institute"
+    "university"
   ],
   "rgj.com": [
     "newspaper"
@@ -37204,7 +37192,7 @@
     "school"
   ],
   "rgu.ac.uk": [
-    "research-institute"
+    "university"
   ],
   "rheden.nl": [
     "municipality"
@@ -37228,7 +37216,7 @@
     "municipality"
   ],
   "ri.ufabc.edu.br": [
-    "research-institute"
+    "university"
   ],
   "ria.ie": [
     "journals"
@@ -37243,7 +37231,7 @@
     "cinema"
   ],
   "riam.ie": [
-    "music-conservatory"
+    "university"
   ],
   "riazor.org": [
     "online-news"
@@ -37317,7 +37305,7 @@
     "airports"
   ],
   "rimsranchi.org": [
-    "medical-school"
+    "university"
   ],
   "rinascente.it": [
     "department-stores"
@@ -37429,23 +37417,22 @@
     "airlines"
   ],
   "rmcbfmplay.com": [
-    "tv-series"
+    "television"
   ],
   "rmcsport.bfmtv.com": [
-    "tv-series"
+    "television"
   ],
   "rmg.on.ca": [
     "museums"
   ],
   "rmit.edu.au": [
-    "medical-school",
+    "university",
     "media"
   ],
   "rmoutlook.com": [
     "newspaper"
   ],
   "rncm.ac.uk": [
-    "music-conservatory",
     "university"
   ],
   "rnd.de": [
@@ -37621,7 +37608,7 @@
     "municipality"
   ],
   "rosalindfranklin.edu": [
-    "medical-school"
+    "university"
   ],
   "rosaroth.zdf.de": [
     "tv-series"
@@ -37719,7 +37706,7 @@
     "airlines"
   ],
   "rowan.edu": [
-    "medical-school"
+    "university"
   ],
   "rowancountync.gov": [
     "airports"
@@ -37822,7 +37809,7 @@
     "journals"
   ],
   "rt.com": [
-    "tv-series",
+    "television",
     "news"
   ],
   "rtassoc.com": [
@@ -37837,10 +37824,10 @@
     "news"
   ],
   "rthk.hk": [
-    "tv-series"
+    "television"
   ],
   "rtklive.com": [
-    "tv-series"
+    "television"
   ],
   "rtl-aktuell.de": [
     "tv-series"
@@ -37849,7 +37836,7 @@
     "tv-series"
   ],
   "rtl.de": [
-    "tv-series",
+    "television",
     "media"
   ],
   "rtl.fr": [
@@ -37857,16 +37844,16 @@
     "radio"
   ],
   "rtl.hr": [
-    "tv-series"
+    "television"
   ],
   "rtl.hu": [
-    "tv-series"
+    "television"
   ],
   "rtl.nl": [
-    "tv-series"
+    "television"
   ],
   "rtl2.de": [
-    "tv-series"
+    "television"
   ],
   "rtlboulevard.nl": [
     "tv-series"
@@ -37879,7 +37866,7 @@
     "news"
   ],
   "rtltvi.be": [
-    "tv-series"
+    "television"
   ],
   "rtlxl.nl": [
     "tv-series"
@@ -37888,13 +37875,13 @@
     "tv-series"
   ],
   "rtpa.es": [
-    "tv-series"
+    "television"
   ],
   "rtrs.tv": [
-    "tv-series"
+    "television"
   ],
   "rts.ch": [
-    "tv-series"
+    "television"
   ],
   "rts.rs": [
     "public-broadcaster",
@@ -37912,19 +37899,19 @@
     "news"
   ],
   "rtvoost.nl": [
-    "tv-series"
+    "television"
   ],
   "rtvslo.si": [
-    "tv-series"
+    "television"
   ],
   "rtvutrecht.nl": [
-    "tv-series"
+    "television"
   ],
   "ru.ac.za": [
-    "research-institute"
+    "university"
   ],
   "ru.nl": [
-    "research-institute"
+    "university"
   ],
   "rucphen.nl": [
     "municipality"
@@ -38004,7 +37991,7 @@
     "airports"
   ],
   "rushu.rush.edu": [
-    "medical-school"
+    "university"
   ],
   "ruska.nl": [
     "car-brands"
@@ -38102,7 +38089,7 @@
     "municipality"
   ],
   "s.mxtv.jp": [
-    "tv-series"
+    "television"
   ],
   "s2games.com": [
     "game-studios"
@@ -38114,7 +38101,7 @@
     "tv-series"
   ],
   "s4c.cymru": [
-    "tv-series"
+    "television"
   ],
   "s50wa.com": [
     "airports"
@@ -38302,7 +38289,6 @@
     "airports"
   ],
   "salford.ac.uk": [
-    "business-school",
     "university"
   ],
   "salford.gov.uk": [
@@ -38471,7 +38457,7 @@
     "banking"
   ],
   "sanpietroamajella.it": [
-    "music-conservatory"
+    "university"
   ],
   "sanspo.com": [
     "sports-news"
@@ -38561,10 +38547,10 @@
     "serie-a"
   ],
   "sat1.de": [
-    "tv-series"
+    "television"
   ],
   "sat1gold.de": [
-    "tv-series"
+    "television"
   ],
   "sata.pt": [
     "airports"
@@ -38591,7 +38577,7 @@
     "grocery"
   ],
   "saveetha.com": [
-    "medical-school"
+    "university"
   ],
   "saveflygplats.com": [
     "airports"
@@ -38624,14 +38610,14 @@
     "banking"
   ],
   "sbs.com.au": [
-    "tv-series",
+    "television",
     "news"
   ],
   "sbs6.nl": [
     "tv-series"
   ],
   "sbt.com.br": [
-    "tv-series"
+    "television"
   ],
   "sbt.ti.ch": [
     "newspaper"
@@ -38646,7 +38632,7 @@
     "banking"
   ],
   "sc.edu": [
-    "research-institute"
+    "university"
   ],
   "sc.jalisco.gob.mx": [
     "opera"
@@ -38821,7 +38807,7 @@
     "academic-publisher"
   ],
   "scientology.tv": [
-    "tv-series"
+    "television"
   ],
   "scilly.gov.uk": [
     "airports"
@@ -38946,7 +38932,7 @@
     "newspaper"
   ],
   "scu.edu": [
-    "business-school"
+    "university"
   ],
   "scuoladiatene.it": [
     "research-institute"
@@ -38970,7 +38956,7 @@
     "womens-soccer"
   ],
   "sdfmu.edu.cn": [
-    "medical-school",
+    "university",
     "health"
   ],
   "sdhl.se": [
@@ -39000,10 +38986,10 @@
     "cloud"
   ],
   "sdufe.edu.cn": [
-    "business-school"
+    "university"
   ],
   "sdutcm.edu.cn": [
-    "medical-school"
+    "university"
   ],
   "se.pl": [
     "newspaper"
@@ -39201,7 +39187,7 @@
     "hotel-chains"
   ],
   "servustv.com": [
-    "tv-series"
+    "television"
   ],
   "sesamestreet.org": [
     "tv-series"
@@ -39223,7 +39209,7 @@
     "online-news"
   ],
   "settv.com.tw": [
-    "tv-series"
+    "television"
   ],
   "seu.edu": [
     "university"
@@ -39465,7 +39451,7 @@
     "airports"
   ],
   "ship.edu": [
-    "business-school"
+    "university"
   ],
   "shiravune.com": [
     "game-studios"
@@ -39480,7 +39466,7 @@
     "ice-hockey"
   ],
   "shmc.fudan.edu.cn": [
-    "medical-school"
+    "university"
   ],
   "shn.ch": [
     "newspaper",
@@ -39584,10 +39570,10 @@
     "news"
   ],
   "sic.pt": [
-    "tv-series"
+    "television"
   ],
   "sic.sapo.pt": [
-    "tv-series",
+    "television",
     "news"
   ],
   "sichuanair.com": [
@@ -39806,7 +39792,7 @@
     "municipality"
   ],
   "siol.net": [
-    "tv-series",
+    "television",
     "telecom"
   ],
   "sionaeroport.ch": [
@@ -39819,7 +39805,7 @@
     "newspaper"
   ],
   "sissa.it": [
-    "research-institute"
+    "university"
   ],
   "sistersairport.com": [
     "airports"
@@ -39840,7 +39826,7 @@
     "marketplace"
   ],
   "siue.edu": [
-    "business-school",
+    "university",
     "open-access"
   ],
   "sivry-rance.be": [
@@ -39854,7 +39840,7 @@
     "hotel-chains"
   ],
   "sixx.de": [
-    "tv-series"
+    "television"
   ],
   "sizzlingpubs.co.uk": [
     "bars"
@@ -39908,7 +39894,7 @@
     "airports"
   ],
   "skims.ac.in": [
-    "medical-school"
+    "university"
   ],
   "skippers.com": [
     "fast-food"
@@ -39929,13 +39915,13 @@
     "airports"
   ],
   "sky.at": [
-    "tv-series"
+    "television"
   ],
   "sky.com": [
-    "tv-series"
+    "television"
   ],
   "sky.it": [
-    "tv-series",
+    "television",
     "media"
   ],
   "skyairworld.com": [
@@ -40111,7 +40097,7 @@
     "newspaper"
   ],
   "slu.edu": [
-    "research-institute"
+    "university"
   ],
   "smalandairport.se": [
     "airports"
@@ -40178,7 +40164,7 @@
     "grocery"
   ],
   "smotrim.ru": [
-    "tv-series"
+    "television"
   ],
   "smp.se": [
     "newspaper"
@@ -40190,7 +40176,7 @@
     "university"
   ],
   "smu.edu": [
-    "art-school",
+    "university",
     "theatre"
   ],
   "smw.ch": [
@@ -40423,7 +40409,7 @@
     "tv-series"
   ],
   "sonypal.in": [
-    "tv-series"
+    "television"
   ],
   "sonysandiegostudio.games": [
     "game-studios"
@@ -40439,7 +40425,7 @@
     "university"
   ],
   "sorbonne-universite.fr": [
-    "research-institute"
+    "university"
   ],
   "sorrisi.com": [
     "tv-series",
@@ -40761,7 +40747,7 @@
     "basketball"
   ],
   "sports.espn.go.com": [
-    "tv-series"
+    "television"
   ],
   "sportsbusinessjournal.com": [
     "online-news",
@@ -40881,10 +40867,10 @@
     "airlines"
   ],
   "srmist.edu.in": [
-    "medical-school"
+    "university"
   ],
   "srmuniv.ac.in": [
-    "medical-school"
+    "university"
   ],
   "srq-airport.com": [
     "airports"
@@ -40911,13 +40897,13 @@
     "banking"
   ],
   "ssl-www.sgh.waw.pl": [
-    "business-school"
+    "university"
   ],
   "sslazio.it": [
     "serie-a"
   ],
   "st-andrews.ac.uk": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "st-brieuc.aeroport.fr": [
@@ -40993,7 +40979,7 @@
     "opera"
   ],
   "staedelschule.de": [
-    "art-school"
+    "university"
   ],
   "staffordshire.police.uk": [
     "police"
@@ -41070,10 +41056,10 @@
     "newspaper"
   ],
   "star.gr": [
-    "tv-series"
+    "television"
   ],
   "star.jstv.com": [
-    "tv-series"
+    "television"
   ],
   "staradvertiser.com": [
     "newspaper"
@@ -41394,7 +41380,7 @@
     "video-games"
   ],
   "stonybrookmedicalcenter.org": [
-    "medical-school"
+    "university"
   ],
   "stonyhurst.ac.uk": [
     "school"
@@ -41526,7 +41512,7 @@
     "media"
   ],
   "studio100.com": [
-    "tv-series"
+    "television"
   ],
   "studio100.de": [
     "tv-series"
@@ -41563,7 +41549,7 @@
     "sports-federation"
   ],
   "stv.tv": [
-    "tv-series"
+    "television"
   ],
   "stvv.com": [
     "womens-soccer"
@@ -41575,7 +41561,7 @@
     "edtech"
   ],
   "su.se": [
-    "research-institute"
+    "university"
   ],
   "su1dezembro.com": [
     "womens-soccer"
@@ -41774,7 +41760,7 @@
     "airlines"
   ],
   "suny.edu": [
-    "art-school"
+    "university"
   ],
   "sunypress.edu": [
     "academic-publisher"
@@ -41937,7 +41923,7 @@
     "bundesliga"
   ],
   "sva.edu": [
-    "art-school"
+    "university"
   ],
   "svb.com": [
     "banking"
@@ -41971,7 +41957,7 @@
     "airlines"
   ],
   "sverigesradio.se": [
-    "tv-series"
+    "television"
   ],
   "svet24.si": [
     "newspaper"
@@ -41991,7 +41977,7 @@
     "news"
   ],
   "svtbarn.se": [
-    "tv-series"
+    "television"
   ],
   "svtplay.se": [
     "tv-series"
@@ -42122,7 +42108,7 @@
     "magazine"
   ],
   "swrfernsehen.de": [
-    "tv-series"
+    "television"
   ],
   "swrh.whu.edu.cn": [
     "college"
@@ -42571,11 +42557,11 @@
     "airports"
   ],
   "tbn.org": [
-    "tv-series",
+    "television",
     "media"
   ],
   "tbs.co.jp": [
-    "tv-series"
+    "television"
   ],
   "tca.gov.tw": [
     "airports"
@@ -42792,10 +42778,10 @@
     "online-news"
   ],
   "tele5.de": [
-    "tv-series"
+    "television"
   ],
   "telecinco.es": [
-    "tv-series"
+    "television"
   ],
   "telegraaf.nl": [
     "newspaper"
@@ -42820,13 +42806,13 @@
     "newspaper"
   ],
   "telemadrid.es": [
-    "tv-series"
+    "television"
   ],
   "telemundo.com": [
     "tv-series"
   ],
   "telemundopr.com": [
-    "tv-series"
+    "television"
   ],
   "telepizza.es": [
     "pizza"
@@ -42869,7 +42855,7 @@
     "university"
   ],
   "temple.edu": [
-    "medical-school"
+    "university"
   ],
   "templetexas.us": [
     "airports"
@@ -42939,7 +42925,7 @@
     "tennis"
   ],
   "tenplay.com.au": [
-    "tv-series"
+    "television"
   ],
   "tensquaregames.com": [
     "game-studios"
@@ -43064,7 +43050,7 @@
     "fashion"
   ],
   "tf1.fr": [
-    "tv-series"
+    "television"
   ],
   "tf1info.fr": [
     "online-news",
@@ -43089,11 +43075,11 @@
     "tv-series"
   ],
   "tg24.sky.it": [
-    "tv-series",
+    "television",
     "news"
   ],
   "tg4.ie": [
-    "tv-series"
+    "television"
   ],
   "tg5.mediaset.it": [
     "tv-series"
@@ -43974,7 +43960,7 @@
     "cinema"
   ],
   "thewb.com": [
-    "tv-series",
+    "television",
     "streaming"
   ],
   "theweek.co.uk": [
@@ -44039,7 +44025,7 @@
     "online-news"
   ],
   "thirteen.org": [
-    "tv-series"
+    "television"
   ],
   "thisdaylive.com": [
     "newspaper"
@@ -44066,7 +44052,7 @@
     "airlines"
   ],
   "thomasmore.edu": [
-    "business-school"
+    "university"
   ],
   "thompsonairport.ca": [
     "airports"
@@ -44079,7 +44065,7 @@
     "news"
   ],
   "threenow.co.nz": [
-    "tv-series"
+    "television"
   ],
   "threerings.net": [
     "game-studios"
@@ -44314,7 +44300,7 @@
     "airlines"
   ],
   "tju.edu.cn": [
-    "research-institute"
+    "university"
   ],
   "tkb.ch": [
     "banking"
@@ -44354,7 +44340,7 @@
     "academic-publisher"
   ],
   "tn.com.ar": [
-    "tv-series",
+    "television",
     "news"
   ],
   "tn.nova.cz": [
@@ -44508,7 +44494,7 @@
     "diy"
   ],
   "top-channel.tv": [
-    "tv-series"
+    "television"
   ],
   "top.ie": [
     "fuel-stations"
@@ -44986,7 +44972,6 @@
     "airports"
   ],
   "trinitylaban.ac.uk": [
-    "music-conservatory",
     "university"
   ],
   "trionworlds.com": [
@@ -45028,7 +45013,7 @@
     "municipality"
   ],
   "tros.nl": [
-    "tv-series"
+    "television"
   ],
   "trouw.nl": [
     "newspaper"
@@ -45122,16 +45107,16 @@
     "game-studios"
   ],
   "ttmc.edu.cn": [
-    "medical-school"
+    "university"
   ],
   "ttuhsc.edu": [
-    "medical-school"
+    "university"
   ],
   "ttv.com.tw": [
-    "tv-series"
+    "television"
   ],
   "ttv.pl": [
-    "tv-series"
+    "television"
   ],
   "tu-braunschweig.de": [
     "engineering-school"
@@ -45146,7 +45131,7 @@
     "medical-school"
   ],
   "tu-freiberg.de": [
-    "research-institute"
+    "university"
   ],
   "tu.berlin": [
     "engineering-school"
@@ -45180,7 +45165,7 @@
     "school"
   ],
   "tufts.edu": [
-    "medical-school"
+    "university"
   ],
   "tugatech.com.pt": [
     "online-news"
@@ -45299,11 +45284,11 @@
     "engineering-school"
   ],
   "tv-asahi.co.jp": [
-    "tv-series",
+    "television",
     "media"
   ],
   "tv-tokyo.co.jp": [
-    "tv-series"
+    "television"
   ],
   "tv.7plus.com.au": [
     "tv-series"
@@ -45316,22 +45301,22 @@
     "tv-series"
   ],
   "tv.cctv.com": [
-    "tv-series"
+    "television"
   ],
   "tv.line.me": [
-    "tv-series"
+    "television"
   ],
   "tv.mediaset.it": [
-    "tv-series"
+    "television"
   ],
   "tv.nineaccess.com.au": [
     "tv-series"
   ],
   "tv.nrk.no": [
-    "tv-series"
+    "television"
   ],
   "tv.orf.at": [
-    "tv-series"
+    "television"
   ],
   "tv.sbt.com.br": [
     "tv-series"
@@ -45340,46 +45325,46 @@
     "tv-series"
   ],
   "tv2.no": [
-    "tv-series"
+    "television"
   ],
   "tv2000.it": [
-    "tv-series"
+    "television"
   ],
   "tv3.co.nz": [
-    "tv-series"
+    "television"
   ],
   "tv3.ie": [
-    "tv-series"
+    "television"
   ],
   "tv3.se": [
-    "tv-series"
+    "television"
   ],
   "tv4.pl": [
-    "tv-series"
+    "television"
   ],
   "tv4.se": [
-    "tv-series"
+    "television"
   ],
   "tv4play.se": [
     "tv-series"
   ],
   "tv5monde.com": [
-    "tv-series"
+    "television"
   ],
   "tv5plus.ca": [
     "tv-series"
   ],
   "tv6.se": [
-    "tv-series"
+    "television"
   ],
   "tv8.it": [
-    "tv-series"
+    "television"
   ],
   "tv8.se": [
-    "tv-series"
+    "television"
   ],
   "tvanouvelles.ca": [
-    "tv-series",
+    "television",
     "news"
   ],
   "tvaplus.ca": [
@@ -45387,13 +45372,13 @@
     "news"
   ],
   "tvb.com": [
-    "tv-series"
+    "television"
   ],
   "tvbrasil.ebc.com.br": [
-    "tv-series"
+    "television"
   ],
   "tvbs.com.tw": [
-    "tv-series"
+    "television"
   ],
   "tvcairport.com": [
     "airports"
@@ -45408,10 +45393,10 @@
     "school"
   ],
   "tvgazeta.com.br": [
-    "tv-series"
+    "television"
   ],
   "tvi.iol.pt": [
-    "tv-series"
+    "television"
   ],
   "tvking.com.tw": [
     "tv-series"
@@ -45420,37 +45405,37 @@
     "newspaper"
   ],
   "tvn.pl": [
-    "tv-series"
+    "television"
   ],
   "tvn24.pl": [
-    "tv-series",
+    "television",
     "news"
   ],
   "tvnstyle.pl": [
-    "tv-series"
+    "television"
   ],
   "tvnwarszawa.pl": [
     "online-news",
     "television"
   ],
   "tvnz.co.nz": [
-    "tv-series"
+    "television"
   ],
   "tvone.tv": [
-    "tv-series"
+    "television"
   ],
   "tvp.info": [
-    "tv-series",
+    "television",
     "news"
   ],
   "tvp.pl": [
-    "tv-series"
+    "television"
   ],
   "tvr.co.uk": [
     "car-brands"
   ],
   "tvrain.tv": [
-    "tv-series"
+    "television"
   ],
   "tvtotal.prosieben.de": [
     "tv-series"
@@ -45540,10 +45525,10 @@
     "university"
   ],
   "u-paris.fr": [
-    "medical-school"
+    "university"
   ],
   "u-tv.ru": [
-    "tv-series"
+    "television"
   ],
   "ua.korrespondent.net": [
     "online-news",
@@ -45557,7 +45542,7 @@
     "university"
   ],
   "uab.cat": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "uab.edu": [
@@ -45577,7 +45562,7 @@
     "university"
   ],
   "uam.es": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "uantwerpen.be": [
@@ -45635,7 +45620,7 @@
     "airports"
   ],
   "uc.pt": [
-    "medical-school",
+    "university",
     "open-access"
   ],
   "uca.ac.uk": [
@@ -45651,7 +45636,7 @@
     "university"
   ],
   "ucc.ie": [
-    "business-school",
+    "university",
     "open-access"
   ],
   "ucc.on.ca": [
@@ -45661,7 +45646,7 @@
     "municipality"
   ],
   "ucd.ie": [
-    "business-school"
+    "university"
   ],
   "ucf.edu": [
     "academic-publisher",
@@ -45684,7 +45669,7 @@
     "university"
   ],
   "ucm.es": [
-    "research-institute"
+    "university"
   ],
   "uco.bank.in": [
     "banking"
@@ -45715,7 +45700,7 @@
     "fuel-stations"
   ],
   "udg.edu": [
-    "medical-school",
+    "university",
     "open-access"
   ],
   "udinese.it": [
@@ -45725,7 +45710,7 @@
     "online-news"
   ],
   "udk-berlin.de": [
-    "music-conservatory"
+    "university"
   ],
   "udl.cat": [
     "university"
@@ -45734,7 +45719,7 @@
     "newspaper"
   ],
   "ue.poznan.pl": [
-    "business-school"
+    "university"
   ],
   "uea.ac.uk": [
     "university"
@@ -45743,14 +45728,13 @@
     "soccer"
   ],
   "uel.ac.uk": [
-    "research-institute",
     "university"
   ],
   "ufabc.br": [
-    "research-institute"
+    "university"
   ],
   "ufabc.edu.br": [
-    "research-institute"
+    "university"
   ],
   "ufc.com": [
     "tv-series"
@@ -45765,11 +45749,11 @@
     "game-studios"
   ],
   "ufpb.br": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "ufrgs.br": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "ugapress.org": [
@@ -45779,16 +45763,16 @@
     "university"
   ],
   "uh.edu": [
-    "medical-school"
+    "university"
   ],
   "uhcougars.com": [
     "football"
   ],
   "uhd.edu": [
-    "business-school"
+    "university"
   ],
   "uibk.ac.at": [
-    "research-institute"
+    "university"
   ],
   "uieg.de": [
     "video-games"
@@ -45812,7 +45796,7 @@
     "municipality"
   ],
   "ujat.mx": [
-    "medical-school",
+    "university",
     "open-access"
   ],
   "uk.monsoon.co.uk": [
@@ -45840,7 +45824,7 @@
     "open-access"
   ],
   "uktv.co.uk": [
-    "tv-series"
+    "television"
   ],
   "uky.edu": [
     "college",
@@ -45856,7 +45840,7 @@
     "university"
   ],
   "ulster.ac.uk": [
-    "research-institute"
+    "university"
   ],
   "ulsterbank.ie": [
     "banking"
@@ -45888,16 +45872,16 @@
     "reference"
   ],
   "umass.edu": [
-    "research-institute"
+    "university"
   ],
   "umcs.pl": [
-    "art-school"
+    "university"
   ],
   "umifre.fr": [
     "research-institute"
   ],
   "uml.edu": [
-    "business-school"
+    "university"
   ],
   "umm.pt": [
     "car-brands"
@@ -45909,7 +45893,7 @@
     "university"
   ],
   "ump.edu.pl": [
-    "medical-school",
+    "university",
     "open-access"
   ],
   "umterps.com": [
@@ -45919,7 +45903,7 @@
     "university"
   ],
   "umu.se": [
-    "medical-school",
+    "university",
     "open-access"
   ],
   "unav.es": [
@@ -45941,14 +45925,14 @@
     "tv-series"
   ],
   "une.edu": [
-    "medical-school"
+    "university"
   ],
   "unex.es": [
     "university",
     "open-access"
   ],
   "unf.edu": [
-    "business-school"
+    "university"
   ],
   "unfcu.org": [
     "banking"
@@ -45957,84 +45941,84 @@
     "online-news"
   ],
   "uni-bamberg.de": [
-    "research-institute"
+    "university"
   ],
   "uni-bielefeld.de": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "uni-bremen.de": [
-    "research-institute"
+    "university"
   ],
   "uni-due.de": [
-    "research-institute"
+    "university"
   ],
   "uni-goettingen.de": [
-    "research-institute"
+    "university"
   ],
   "uni-greifswald.de": [
-    "research-institute"
+    "university"
   ],
   "uni-hankyu.com.tw": [
     "department-stores"
   ],
   "uni-hildesheim.de": [
-    "research-institute"
+    "university"
   ],
   "uni-kassel.de": [
-    "business-school"
+    "university"
   ],
   "uni-kiel.de": [
-    "research-institute"
+    "university"
   ],
   "uni-kl.de": [
     "engineering-school"
   ],
   "uni-leipzig.de": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "uni-mainz.de": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "uni-mannheim.de": [
-    "research-institute"
+    "university"
   ],
   "uni-marburg.de": [
-    "research-institute"
+    "university"
   ],
   "uni-mozarteum.at": [
-    "music-conservatory"
+    "university"
   ],
   "uni-muenster.de": [
-    "research-institute"
+    "university"
   ],
   "uni-potsdam.de": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "uni-prosperity.com.tw": [
     "grocery"
   ],
   "uni-regensburg.de": [
-    "business-school"
+    "university"
   ],
   "uni-saarland.de": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "uni-trier.de": [
-    "research-institute"
+    "university"
   ],
   "uni-tuebingen.de": [
-    "research-institute"
+    "university"
   ],
   "uni-ulm.de": [
-    "research-institute"
+    "university"
   ],
   "uni-wuerzburg.de": [
-    "research-institute"
+    "university"
   ],
   "uni.ca": [
     "banking"
@@ -46052,13 +46036,13 @@
     "banking"
   ],
   "unicaen.fr": [
-    "research-institute"
+    "university"
   ],
   "unicap.br": [
     "university"
   ],
   "unice.fr": [
-    "research-institute"
+    "university"
   ],
   "unicornriot.ninja": [
     "news-agency"
@@ -46074,21 +46058,21 @@
     "open-access"
   ],
   "unifor.br": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "unifr.ch": [
-    "research-institute"
+    "university"
   ],
   "unige.ch": [
     "medical-school",
     "open-access"
   ],
   "unil.ch": [
-    "research-institute"
+    "university"
   ],
   "unine.ch": [
-    "research-institute"
+    "university"
   ],
   "unionbankofindia.bank.in": [
     "banking"
@@ -46159,7 +46143,7 @@
     "university"
   ],
   "unive.it": [
-    "research-institute"
+    "university"
   ],
   "universal-publishers.com": [
     "edtech"
@@ -46172,13 +46156,13 @@
     "university"
   ],
   "universiteitleiden.nl": [
-    "research-institute"
+    "university"
   ],
   "universityparkairport.com": [
     "airports"
   ],
   "univision.com": [
-    "tv-series"
+    "television"
   ],
   "unjenesaisquoi.fr": [
     "game-studios"
@@ -46303,7 +46287,7 @@
     "cinema"
   ],
   "upums.ac.in": [
-    "medical-school"
+    "university"
   ],
   "uqac.ca": [
     "university"
@@ -46324,7 +46308,7 @@
     "university"
   ],
   "ur.edu.pl": [
-    "medical-school"
+    "university"
   ],
   "urban-planet.com": [
     "clothing-stores",
@@ -46432,7 +46416,7 @@
     "banking"
   ],
   "usc.gal": [
-    "medical-school",
+    "university",
     "open-access"
   ],
   "usccb.org": [
@@ -46462,7 +46446,7 @@
     "open-access"
   ],
   "usfca.edu": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "usfigureskating.org": [
@@ -46526,7 +46510,7 @@
     "university"
   ],
   "usuhs.edu": [
-    "medical-school"
+    "university"
   ],
   "usw.edu": [
     "university"
@@ -46538,13 +46522,13 @@
     "college"
   ],
   "utas.edu.au": [
-    "music-conservatory"
+    "university"
   ],
   "utc.fr": [
     "engineering-school"
   ],
   "utexas.edu": [
-    "medical-school"
+    "university"
   ],
   "utn.de": [
     "engineering-school"
@@ -46569,14 +46553,14 @@
     "municipality"
   ],
   "utrgv.edu": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "utrockets.com": [
     "football"
   ],
   "uts.edu.au": [
-    "research-institute"
+    "university"
   ],
   "utsports.com": [
     "football"
@@ -46594,15 +46578,15 @@
     "research-institute"
   ],
   "uv.es": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "uv.mx": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "uva.nl": [
-    "research-institute"
+    "university"
   ],
   "uvesco.es": [
     "grocery"
@@ -46624,7 +46608,7 @@
     "university"
   ],
   "uwb.edu": [
-    "business-school"
+    "university"
   ],
   "uwbadgers.com": [
     "football"
@@ -46644,10 +46628,10 @@
     "university"
   ],
   "uwm.edu": [
-    "research-institute"
+    "university"
   ],
   "uwm.edu.pl": [
-    "medical-school"
+    "university"
   ],
   "uwo.ca": [
     "university"
@@ -46677,7 +46661,7 @@
     "newspaper"
   ],
   "vagelos.columbia.edu": [
-    "medical-school"
+    "university"
   ],
   "valenceaeroport.fr": [
     "airports"
@@ -46923,7 +46907,7 @@
     "airports"
   ],
   "veronicatv.nl": [
-    "tv-series"
+    "television"
   ],
   "versita.com.pf": [
     "journals"
@@ -46953,7 +46937,7 @@
     "airports"
   ],
   "vetmeduni.ac.at": [
-    "research-institute"
+    "university"
   ],
   "veurne.be": [
     "municipality"
@@ -47190,7 +47174,7 @@
     "football"
   ],
   "virginmediatelevision.ie": [
-    "tv-series"
+    "television"
   ],
   "virgule.lu": [
     "online-news"
@@ -47241,7 +47225,7 @@
     "airlines"
   ],
   "visva-bharati.ac.in": [
-    "art-school"
+    "university"
   ],
   "vitkac.com": [
     "department-stores"
@@ -47253,7 +47237,7 @@
     "university"
   ],
   "viu.tv": [
-    "tv-series"
+    "television"
   ],
   "vivaaerobus.com": [
     "airlines"
@@ -47549,7 +47533,7 @@
     "online-news"
   ],
   "vox.de": [
-    "tv-series"
+    "television"
   ],
   "voxtheatre.com": [
     "cinema"
@@ -47611,7 +47595,7 @@
     "fuel-stations"
   ],
   "vtm.be": [
-    "tv-series"
+    "television"
   ],
   "vtrans.vermont.gov": [
     "airports"
@@ -47626,7 +47610,7 @@
     "tv-series"
   ],
   "vu.nl": [
-    "research-institute"
+    "university"
   ],
   "vub.be": [
     "university"
@@ -47659,7 +47643,7 @@
     "motorcycles"
   ],
   "w.uktv.co.uk": [
-    "tv-series"
+    "television"
   ],
   "w2fly.es": [
     "airlines"
@@ -47736,7 +47720,7 @@
     "game-studios"
   ],
   "waikato.ac.nz": [
-    "research-institute",
+    "university",
     "open-access"
   ],
   "waimes.be": [
@@ -47809,7 +47793,7 @@
     "newspaper"
   ],
   "wapa.tv": [
-    "tv-series"
+    "television"
   ],
   "war.app": [
     "video-games"
@@ -47909,7 +47893,7 @@
     "airports"
   ],
   "washington.edu": [
-    "art-school"
+    "university"
   ],
   "washingtonblade.com": [
     "newspaper",
@@ -48077,19 +48061,19 @@
     "school"
   ],
   "wcsu.edu": [
-    "business-school"
+    "university"
   ],
   "wctrib.com": [
     "newspaper"
   ],
   "wcvb.com": [
-    "tv-series"
+    "television"
   ],
   "wdka.nl": [
-    "art-school"
+    "university"
   ],
   "wdr.de": [
-    "tv-series",
+    "television",
     "media"
   ],
   "wdrairport.com": [
@@ -48316,7 +48300,7 @@
     "newspaper"
   ],
   "westernu.edu": [
-    "medical-school"
+    "university"
   ],
   "westernwomenshockeyleague.com": [
     "ice-hockey"
@@ -48425,7 +48409,7 @@
     "video-games"
   ],
   "wgtn.ac.nz": [
-    "research-institute"
+    "university"
   ],
   "wh.mo": [
     "cinema"
@@ -48684,7 +48668,7 @@
     "grocery"
   ],
   "windenergy.org": [
-    "research-institute"
+    "university"
   ],
   "windhoff.de": [
     "car-brands"
@@ -48781,7 +48765,7 @@
     "airports"
   ],
   "wits.ac.za": [
-    "research-institute"
+    "university"
   ],
   "witte-paard.be": [
     "concert-halls"
@@ -48824,7 +48808,7 @@
     "airports"
   ],
   "wliw.org": [
-    "tv-series"
+    "television"
   ],
   "wlu.ca": [
     "university"
@@ -48836,17 +48820,17 @@
     "university"
   ],
   "wmich.edu": [
-    "business-school",
+    "university",
     "open-access"
   ],
   "wms.com": [
     "game-studios"
   ],
   "wmu.edu.cn": [
-    "medical-school"
+    "university"
   ],
   "wmur.com": [
-    "tv-series"
+    "television"
   ],
   "wn.de": [
     "newspaper"
@@ -48994,7 +48978,7 @@
     "cinema"
   ],
   "worldchannel.org": [
-    "tv-series"
+    "television"
   ],
   "worldjournal.com": [
     "newspaper"
@@ -49050,7 +49034,7 @@
     "municipality"
   ],
   "wowow.co.jp": [
-    "tv-series",
+    "television",
     "telecom"
   ],
   "woz.ch": [
@@ -49073,7 +49057,7 @@
     "soccer"
   ],
   "wpunj.edu": [
-    "business-school"
+    "university"
   ],
   "wrcbtv.com": [
     "online-news",
@@ -49096,7 +49080,7 @@
     "university"
   ],
   "wsb.edu.pl": [
-    "business-school"
+    "university"
   ],
   "wse.edu.pl": [
     "university"
@@ -49138,7 +49122,7 @@
     "car-brands"
   ],
   "wum.edu.pl": [
-    "medical-school"
+    "university"
   ],
   "wundo.ch": [
     "newspaper"
@@ -49147,7 +49131,7 @@
     "tv-series"
   ],
   "wur.nl": [
-    "research-institute"
+    "university"
   ],
   "wurtsboroairport.com": [
     "airports"
@@ -49181,7 +49165,7 @@
     "fashion"
   ],
   "wwe.com": [
-    "tv-series"
+    "television"
   ],
   "wweek.com": [
     "newspaper",
@@ -49244,7 +49228,7 @@
     "banking"
   ],
   "www3.nhk.or.jp": [
-    "tv-series"
+    "television"
   ],
   "www3.oup.co.uk": [
     "medical-journal"
@@ -49343,7 +49327,7 @@
     "diy"
   ],
   "xlri.ac.in": [
-    "business-school"
+    "university"
   ],
   "xojet.com": [
     "airlines"
@@ -49376,7 +49360,7 @@
     "airports"
   ],
   "xxmu.edu.cn": [
-    "medical-school"
+    "university"
   ],
   "xyq.163.com": [
     "video-games"
@@ -49385,7 +49369,7 @@
     "airports"
   ],
   "xzhmu.edu.cn": [
-    "medical-school"
+    "university"
   ],
   "yachtclubgames.com": [
     "game-studios"
@@ -49508,7 +49492,7 @@
     "newspaper"
   ],
   "york.ac.uk": [
-    "research-institute"
+    "university"
   ],
   "yorkairport.info": [
     "airports"
@@ -49548,7 +49532,7 @@
     "bars"
   ],
   "yourdiscovery.com": [
-    "tv-series"
+    "television"
   ],
   "yourindependentgrocer.ca": [
     "grocery"
@@ -49584,7 +49568,7 @@
     "airports"
   ],
   "yu.edu": [
-    "business-school"
+    "university"
   ],
   "yu7rz9hn8y.search.serialssolutions.com": [
     "journals"
@@ -49723,7 +49707,7 @@
     "tv-series"
   ],
   "zdf.de": [
-    "tv-series"
+    "television"
   ],
   "zdfheute.de": [
     "tv-series"
@@ -49812,7 +49796,7 @@
     "airports"
   ],
   "zhdk.ch": [
-    "art-school"
+    "university"
   ],
   "zhinuo.com.cn": [
     "car-brands"
@@ -49824,7 +49808,7 @@
     "online-news"
   ],
   "ziggosport.nl": [
-    "tv-series"
+    "television"
   ],
   "zijpe.nl": [
     "municipality"
