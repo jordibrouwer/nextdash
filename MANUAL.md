@@ -1140,6 +1140,7 @@ Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to 
 | `>` `:` `?` | Search, commands, finders — from every view |
 | `+` · `Shift + B` · `&` | Full bookmark form · from anywhere · quick add |
 | `/` | Tag cloud (type to find a tag, `Enter` opens its tag view, `Shift + Enter` stacks) |
+| `Shift + T` | With no bookmark selected, the tag view of every bookmark ([§10.2](#102-filtering-by-tag)); with one selected, that bookmark's tags |
 | `*` | Recent bookmarks — from every view |
 | `,` | Pages panel (`n` there makes a new page) |
 | `!` or `F1` | Cheat sheet |
@@ -1605,8 +1606,10 @@ A file is at most 2 MB.
 - On a row, `Shift` plus `E`, `P`, `T`, `M`, `D`, `C`, `R`, `L` or `J` does what it does on the dashboard: edit, pin, tags, move, delete, check mode, health, share link and QR code. `Delete` deletes, `Ctrl/Cmd + C` copies the address, and the row menu is the dashboard's. The cheat sheet has a **Tag view** section with all of it ([§7.6](#76-the-cheat-sheet)).
 - `x` ticks a row. `Alt`+click ticks one, `Shift`+click ticks a range, and the tick in the header ticks everything shown. A bar then offers **Open**, **Move to…**, **Delete** and **Clear**. **Move to…** takes a page; categories belong to one page, so they are offered only when every bookmark is on the same one.
 - `Escape` lets go of one thing at a time: the side panel, then the selection. After that it leaves the view and takes you back to the page you opened it from. In the search box, `Escape` first clears what you typed. The home icon and your browser's Back button do the same.
-- Ways in: the tag cloud, `t` on a selected bookmark (it opens the view for that bookmark's tag), or `:filter <tag>`.
+- Ways in: the tag cloud, `t` on a selected bookmark (it opens the view for that bookmark's tag), `:filter <tag>`, or `Shift + T` with no bookmark selected (below).
 - The view's address is `#tag/<tag>` (several tags are joined with `+`). Bookmark it or share it, and it opens on the same tag.
+
+**The tag view of every bookmark.** `Shift + T` with no bookmark selected opens the tag view with no tag picked: every bookmark from every page in one table. The header says how many have no tags, and the rail starts with a **Without tags** filter that keeps the list to those, followed by the tags in use. Click a tag there to open its own tag view; Back returns here. The address is `#tags`. With a bookmark selected, `Shift + T` still opens that bookmark's Tags popover.
 - Tag chips on dashboard rows are labels only; they are not clickable.
 - `tag:work` in search narrows results without opening the view.
 
@@ -2643,6 +2646,8 @@ These read one server, set once under Config → Unraid ([§15.6](#156-unraid-wi
 | Kind | Shows |
 |---|---|
 | **Jellyfin** | What was added to your Jellyfin server lately, with the posters from your own library: a film or series with its poster, an episode under its series' poster. Four layouts — **list**, **strip** (a tab per library), **hero** (the newest large on its backdrop) and **grid**. See below |
+| **Emby**, **Plex** | What was added to your Emby server lately, or to Plex (read through Tautulli), with the same four layouts as Jellyfin. See below |
+| **Jellyfin — now playing**, **Emby — now playing**, **Plex — now playing** | Who is watching what right now, and how far along they are. It refreshes every 10 seconds by default |
 | **Sonarr**, **Radarr** | The episodes and films coming up in the next days (a week unless you choose up to 30), and what is downloading, with posters. The same four layouts; in the strip, *Upcoming* and *Queue* are the tabs |
 | **Seerr** | Requests in Overseerr or Jellyseerr, under *Pending*, *Approved* and *Available*, with who asked and the poster. Show every request or one state, films, series or both, from everyone or one person |
 | **qBittorrent**, **SABnzbd** | What is downloading, paused and finished, with progress, speed and time left, and the client's speeds and counts on top. As one list or a tab per part (*Downloading*, *Paused*, *Done*). Without posters, and in the order you choose |
@@ -2696,6 +2701,8 @@ Widgets share one order with the categories and are moved on the dashboard: drag
 **RSS** — your server fetches each feed and caches it for 15 minutes. A headline shows the feed's summary on hover or focus. Rows past the row count fold into a **more** row. A feed that fails does not empty the tile.
 
 **Jellyfin** — fill in the server's address and an API key (Jellyfin: Dashboard → API Keys) and press **Connect**. The server tries both and says *Connected to* the server's name and version, then fills the choices below: **Read as** (a user, or no one for the newest of everything) and the **Libraries** that exist, so nothing is typed by id. Then the **Layout**, what **A click** does (open the item in Jellyfin, or show its details here first), where it opens, **Hide what was watched**, **Items to show** (in the strip, per library) and how often to ask Jellyfin (a minute at least). The key stays on the server: the tile and its posters come through nextDash, which keeps the posters in `data/media-images/`, shared by all the media tiles (up to 200 MB, oldest out first, not in backups; the `data/jellyfin-images/` folder of v1.19.4 is removed the first time a poster is stored). When Jellyfin cannot be reached, the tile keeps the last list and says how old it is. Jellyfin also has a Custom widget preset for its library counts ([§15.5](#155-the-custom-widget)).
+
+**Emby** — set up exactly like Jellyfin, with the Emby server's address and an API key (Emby: Dashboard → API Keys). **Plex** — the address is **Tautulli's**, not Plex's, and the key is Tautulli's API key (Settings → Web Interface → API key): it only reads, where Plex's own token opens the whole account. After Connect it offers the libraries; Tautulli has no user to read as. Pictures come through the nextDash server, so a key never sits in a page. Each *now playing* tile is set up the same way as the widget it belongs to.
 
 **Sonarr**, **Radarr**, **Seerr**, **qBittorrent**, **SABnzbd** — set up the way Jellyfin is: the address, the key and **Connect**, which says *Connected to* with the version. Where to find the key:
 
@@ -3987,6 +3994,7 @@ nextDash adapts to touch screens (a touch device without a hover pointer) rather
 | **Action buttons** | Search | As configured |
 | **Commands and finders** | The `:` and `?` tabs in the search panel | Buttons or keys |
 | **Tag filter** | `tag:` in search, or `:tag` | The tag cloud (`/`) |
+| **Page filter** | A bar stays above the bookmarks, full width; it does not take focus until you tap it, and the **×** and `Escape` empty it | `Shift + F` |
 | **Preview cards** | Off | As configured |
 | **Categories** | One column each | Can spread |
 | **Config** | All sections; the section list scrolls sideways | Rail and content side by side |
