@@ -341,20 +341,17 @@
      * worse than one waiting to be looked at. One choice for the Bookmarks
      * view, the tag view, the inbox and the Tag suggestions tab.
      */
-    const APPLY_NOW_KEY = 'nextdash.tagSearch.applyNow';
-
+    // A setting (tagSearchApplyNow), so every browser gets the same answer;
+    // with settings kept per device it stays in this one (DeviceSettingsMerge).
     function applyNow() {
-        try {
-            return localStorage.getItem(APPLY_NOW_KEY) === 'true';
-        } catch {
-            return false;
-        }
+        return global.dashboardInstance?.settings?.tagSearchApplyNow === true;
     }
 
     function setApplyNow(on) {
-        try {
-            localStorage.setItem(APPLY_NOW_KEY, on ? 'true' : 'false');
-        } catch { /* a browser refusing storage keeps the default */ }
+        const d = global.dashboardInstance;
+        if (!d?.settings) return Promise.resolve();
+        d.settings.tagSearchApplyNow = !!on;
+        return Promise.resolve(d.saveSettings?.());
     }
 
     /**

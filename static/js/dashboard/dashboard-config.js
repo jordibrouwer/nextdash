@@ -26172,9 +26172,9 @@ class DashboardConfig {
     /*
      * Whether a search round adds what it finds straight away.
      *
-     * One answer per browser rather than a setting: it is how this reader
-     * likes to work at this desk, not something the collection holds. Off
-     * unless turned on (TagSuggestLive.applyNow says why).
+     * A setting like any other: kept on the server, or in this browser when
+     * the reader keeps settings per device. Off unless turned on
+     * (TagSuggestLive.applyNow says why).
      */
     tagSearchApplyNow() {
         return window.TagSuggestLive?.applyNow?.() === true;

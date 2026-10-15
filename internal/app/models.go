@@ -755,7 +755,10 @@ type Settings struct {
 	EnableTagSuggestionNotice bool `json:"enableTagSuggestionNotice"` // The bulk-tag review offer
 	// Ask Wikidata about sites the tag catalogue does not know (host name
 	// only). On unless turned off; see tag_lookup.go.
-	TagLookupOnline          bool   `json:"tagLookupOnline"`
+	TagLookupOnline bool `json:"tagLookupOnline"`
+	// Whether a Find tags round adds what it finds or leaves it as offers
+	// to review. Off unless turned on (TagSuggestLive.applyNow).
+	TagSearchApplyNow        bool   `json:"tagSearchApplyNow"`
 	EnableHealthReviewNotice bool   `json:"enableHealthReviewNotice"` // The link-review offer
 	ShowShortcutTooltips     bool   `json:"showShortcutTooltips"`     // Keyboard-shortcut popovers on toolbar and header icons (default OFF since the shortcutTooltipsOffMigrated migration; opt-in in Config → Behavior or `:shortcuts on`)
 	ShowGridKeyLegend        bool   `json:"showGridKeyLegend"`

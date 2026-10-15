@@ -689,6 +689,14 @@ test.describe('selection, panel and edit', () => {
     });
 });
 
+/** "Add what it finds straight away", as the server keeps it. */
+const serverApplyNow = (page) => page.evaluate(async () => (await (await fetch('/api/settings')).json()).tagSearchApplyNow);
+const setApplyNow = (page, on) => page.evaluate(async (value) => {
+    const d = window.dashboardInstance;
+    d.settings.tagSearchApplyNow = value;
+    await d.saveSettings();
+}, on);
+
 test.describe('tag suggestions in the rows', () => {
     let S; let N; let ids; let OFFER;
     const urlA = () => `https://sug-a-${N}.example.com/`;
@@ -757,7 +765,7 @@ test.describe('tag suggestions in the rows', () => {
     });
 
     test('Find tags ▾ runs the round for the rows, and adds what it finds when told to', async ({ page }) => {
-        await page.evaluate(() => localStorage.setItem('nextdash.tagSearch.applyNow', 'true'));
+        await setApplyNow(page, true);
         await page.locator('.tag-view [data-tag-view-find]').click();
         const menu = page.locator('.tag-view-find-menu');
         await expect(menu).toBeVisible();
@@ -765,17 +773,50 @@ test.describe('tag suggestions in the rows', () => {
         await menu.locator('[data-find="lookup"]').click();
         await expect.poll(() => readTags(page, ids.here, urlA()), { timeout: 10_000 }).toContain(OFFER);
         await expect.poll(() => readTags(page, ids.other, urlB()), { timeout: 10_000 }).toContain(OFFER);
+        await setApplyNow(page, false);
     });
 
     test('with "add right away" off, a round leaves the offers in the rows', async ({ page }) => {
+        await setApplyNow(page, true);
         await row(page, 'Sug A').locator('.tag-view-check').click();
         await page.locator('.tag-view [data-tag-view-find]').click();
         await page.locator('.tag-view-find-menu [data-find="apply-now"]').uncheck();
         await page.keyboard.press('Escape');
+        // A setting, so the server keeps it for every browser.
+        await expect.poll(() => serverApplyNow(page)).toBe(false);
         await page.locator('.tag-view .tag-view-selbar').getByRole('button', { name: 'Find tags' }).click();
         await expect(page.locator('#app-notification.show')).toContainText('has a tag suggestion');
         expect(await readTags(page, ids.here, urlA())).not.toContain(OFFER);
         await expect(row(page, 'Sug A').locator('.tag-view-offer')).toBeVisible();
+        await setApplyNow(page, false);
+    });
+
+    test('an answer this browser kept before it was a setting carries over', async ({ page }) => {
+        await setApplyNow(page, false);
+        await page.evaluate(() => localStorage.setItem('nextdash.tagSearch.applyNow', 'true'));
+        await openDashboard(page);
+        await expect.poll(() => serverApplyNow(page)).toBe(true);
+        expect(await page.evaluate(() => localStorage.getItem('nextdash.tagSearch.applyNow'))).toBeNull();
+        await setApplyNow(page, false);
+    });
+
+    test('with settings per device, the answer stays in this browser', async ({ page }) => {
+        await setApplyNow(page, true);
+        await page.evaluate(() => localStorage.setItem('deviceSpecificSettings', 'true'));
+        try {
+            await openDashboard(page);
+            await openTagView(page, [S]);
+            await page.locator('.tag-view [data-tag-view-find]').click();
+            await page.locator('.tag-view-find-menu [data-find="apply-now"]').uncheck();
+            await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('dashboardSettings') || '{}').tagSearchApplyNow))
+                .toBe(false);
+        } finally {
+            await page.evaluate(() => {
+                localStorage.removeItem('deviceSpecificSettings');
+                localStorage.removeItem('dashboardSettings');
+            });
+            await setApplyNow(page, false);
+        }
     });
 
     test('the panel offers the same, with Find tags and Read page', async ({ page }) => {

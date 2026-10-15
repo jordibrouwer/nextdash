@@ -219,6 +219,18 @@ class DashboardData {
             }
             window.DiscoverabilityState?.init?.(d.settings.discoverabilityState);
             delete d.settings._sortMigratedPageIds;
+            // "Add what it finds straight away" lived in this browser until
+            // 15-10-2026; an answer of on given there becomes the setting.
+            try {
+                const applyNow = localStorage.getItem('nextdash.tagSearch.applyNow');
+                if (applyNow !== null) {
+                    localStorage.removeItem('nextdash.tagSearch.applyNow');
+                    if (applyNow === 'true' && d.settings.tagSearchApplyNow !== true) {
+                        d.settings.tagSearchApplyNow = true;
+                        void d.saveSettings?.();
+                    }
+                }
+            } catch { /* a browser refusing storage had nothing kept */ }
 
             if (!Array.isArray(d.settings.smartRecentPageIds)) {
                 d.settings.smartRecentPageIds = [];
