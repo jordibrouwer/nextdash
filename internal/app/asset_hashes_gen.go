@@ -3,7 +3,7 @@ package app
 
 var precomputedAssetHashes = map[string]string{
 	"css/action-btn-tokens.css":                              "8b860626d507",
-	"css/app-notification.css":                               "339c0a8b3069",
+	"css/app-notification.css":                               "049a5755f9ae",
 	"css/bookmark-form-modal.css":                            "9f0714c0656e",
 	"css/bookmark-form-preview.css":                          "55d219f09044",
 	"css/bookmarks-tutorial.css":                             "acd8d28a738d",
@@ -68,7 +68,7 @@ var precomputedAssetHashes = map[string]string{
 	"css/widgets-tutorial.css":                               "4ead306f8174",
 	"js/analytics-notice.js":                                 "3af187a607ea",
 	"js/analytics.js":                                        "edd124afdb1c",
-	"js/app-notification.js":                                 "ff35ca1f4f12",
+	"js/app-notification.js":                                 "c690c13b62ca",
 	"js/app-version-guard.js":                                "b1f7b6da6a8a",
 	"js/asset-map.js":                                        "1057407474ef",
 	"js/bookmark-form/bookmark-form-card.js":                 "897efddd821c",
