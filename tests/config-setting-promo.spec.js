@@ -144,6 +144,30 @@ test.describe('Config setting promo', () => {
         await expect(page.locator('[data-appearance-toggle="showIcons"]')).toBeVisible();
     });
 
+    /**
+     * Find settings is a tab chosen as surely as the strip. It reached
+     * Appearance from another section -- a fresh arrival, so the promo was
+     * scheduled -- and switched tabs without saying so, and half a second later
+     * the promo pulled the reader back to Theme & type.
+     */
+    test('a tab reached through Find settings is not hijacked by ensureSubTab', async ({ page }) => {
+        await openAppearanceFresh(page);
+        await page.evaluate(() => window.dashboardInstance.config.selectSection('behavior'));
+        await page.evaluate((key) => {
+            localStorage.removeItem(key);
+            window.DiscoverabilityState?.resetSettingPromoSeen?.('random-theme-v2', { persist: false });
+        }, STORAGE_KEY);
+        await page.locator('#config-section-panel').focus();
+        await page.keyboard.press('Control+Shift+K');
+        await page.locator('#config-settings-jump-filter').fill('How a row lights up');
+        await page.locator('.config-settings-jump-result', { hasText: 'How a row lights up' }).first().click();
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.appearanceTab)).toBe('display');
+
+        // Outlast the reveal retries.
+        await page.waitForTimeout(2500);
+        expect(await page.evaluate(() => window.dashboardInstance.config.appearanceTab)).toBe('display');
+    });
+
     /** Arriving fresh still lands on the tab that holds the anchor. */
     test('ensureSubTab still reveals the anchor on arrival', async ({ page }) => {
         await openAppearanceFresh(page);

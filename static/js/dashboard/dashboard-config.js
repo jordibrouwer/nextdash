@@ -10885,6 +10885,11 @@ class DashboardConfig {
 
     /** Wait for any in-flight settings write before swapping appearance tabs. */
     async switchAppearanceTab(tab) {
+        // Every way here is a tab the reader chose -- the strip, Find settings,
+        // a tile, a link to a panel -- so a promo's ensureSubTab must not pull
+        // them back to Theme & type half a second later. Only the strip's click
+        // said so before.
+        window.ConfigSettingPromo?.markSubTabChosen?.();
         if (tab === this.appearanceTab) return;
         if (this._settingsSavePromise) {
             await this._settingsSavePromise;
