@@ -10,6 +10,9 @@
 //   node scripts/split-manual.mjs --ref v1.19.8      a fixed tag
 //   node scripts/split-manual.mjs --ref WORKTREE     the MANUAL.md on disk (drafting)
 //   node scripts/split-manual.mjs --only 2,7,14      a subset of chapters
+//   node scripts/split-manual.mjs --ref WORKTREE --label v1.19.8
+//                                                    the files on disk, named as a release
+//                                                    (only when their text is that release's)
 
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -40,9 +43,10 @@ const HTML_TAGS = new Set(['a', 'p', 'img', 'kbd', 'sub', 'sup', 'details', 'sum
   'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'figure', 'figcaption'])
 
 function parseArgs (argv) {
-  const args = { ref: null, only: null }
+  const args = { ref: null, only: null, label: null }
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--ref') args.ref = argv[++i]
+    else if (argv[i] === '--label') args.label = argv[++i]
     else if (argv[i] === '--only') args.only = new Set(argv[++i].split(',').map(s => /^\d+$/.test(s) ? Number(s) : s))
     else throw new Error(`unknown argument: ${argv[i]}`)
   }
@@ -233,6 +237,8 @@ function main () {
   const args = parseArgs(process.argv.slice(2))
   const ref = args.ref ?? latestTag()
   const blobRef = ref === 'WORKTREE' ? 'dev' : ref
+  // The version the pages name: the tag, or --label for a build from disk.
+  const shown = args.label ?? ref
   const text = readAt(ref, 'MANUAL.md').toString()
 
   const chunks = splitChapters(text)
@@ -337,10 +343,10 @@ function main () {
     'ErrorDocument 404 /docs/404.html',
     ''
   ].join('\n'))
-  writeFileSync(join(OUT, '_meta.json'), JSON.stringify({ ref, blobRef, chapters: built.map(c => c.slug) }, null, 2))
+  writeFileSync(join(OUT, '_meta.json'), JSON.stringify({ ref: shown, source: ref, blobRef, chapters: built.map(c => c.slug) }, null, 2))
 
   const index = ['---', 'title: Documentation', '---', '', '# nextDash documentation', '',
-    `How nextDash works, from the first launch to running it next to your own services. This is the manual of ${ref === 'WORKTREE' ? 'the development version' : `nextDash ${ref}`}.`, '']
+    `How nextDash works, from the first launch to running it next to your own services. This is the manual of ${shown === 'WORKTREE' ? 'the development version' : `nextDash ${shown}`}.`, '']
   for (const g of sidebar) {
     index.push(`## ${g.text}`, '')
     for (const item of g.items) index.push(`- [${item.text.replace(/<[^>]+>/g, '')}](.${item.link}.md)`)
