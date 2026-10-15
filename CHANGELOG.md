@@ -131,6 +131,8 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **new — 425 more self-hosted apps.** Some 1,500 apps in the selfhostedworld.com directory list no homepage; their detail pages do, so those are read too. Each is filed as `self-hosted` plus the subject of its first category only, since the later ones are loose (an IRC client also lists video calls).
 - **new — sports by sport, kept short:** `ice-hockey`, `rugby`, `cricket`, `motorsport`, `martial-arts` and `athletics`; federations and leagues of the sports the catalogue knew go to those.
 - **fix — 15 more misfiled sites,** among them the best-known assistant sites filed under geopolitics, language and parenting; they now sit under `ai` alone.
+- **fix — Find tags offers what it finds, and shows which bookmarks it means.** A round put its tags on straight away and said only "N bookmarks got a tag"; which ones was nowhere to be seen. It now leaves an offer on each row — the dashed chip, click to add, × to turn down — and the list it ran from keeps to the rows with one: **With a tag suggestion** in the Bookmarks view's views and the tag view's rail, removable like any filter. **Add what it finds straight away** still does the old thing, now off unless switched on; the choice is one per browser for every view (`TagSuggestLive.applyNow`, cleanup filter `offered`).
+- **new — Find tags in the inbox.** The inbox's ⋯ menu runs the round for its links, and a **With a tag suggestion** filter keeps the list to the ones it found a tag for; run from the Tag suggestions tab, the toast's **Show** opens it there (`showSuggested`, filter `suggested`).
 
 ---
 
