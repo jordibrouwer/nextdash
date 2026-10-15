@@ -34,6 +34,14 @@ const pool = [
     assert.deepStrictEqual(m.matches(pool, []), []);
 }
 
+// everything: every bookmark once, for #tags; untagged narrows to the ones without.
+{
+    const all = m.everything([...pool, b('Bare', 'https://bare.example/', [])]);
+    assert.deepStrictEqual(all.map((x) => x.name), ['Proxmox', 'Portainer', 'Grafana', 'Elsewhere', 'Bare']);
+    assert.deepStrictEqual(m.applyFilters(all, { untagged: true }).map((x) => x.name), ['Bare']);
+    assert.strictEqual(m.hashFor([]), '#tags');
+}
+
 // related: other tags on the matches, by count then name, active ones left out.
 {
     const list = m.matches(pool, ['homelab']);

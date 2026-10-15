@@ -28,6 +28,17 @@
         return out;
     }
 
+    /** Every bookmark, once: the view with no tag picked (#tags). */
+    function everything(pool) {
+        const seen = new Set();
+        return (pool || []).filter((b) => {
+            const key = `${String(b?.url || '').trim()}|${String(b?.name || '').trim()}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }
+
     /** The other tags on these bookmarks, most shared first. */
     function related(list, tags) {
         const skip = new Set((tags || []).map(norm));
@@ -64,9 +75,10 @@
     }
 
     /** The rail's page and health filters and the search box, together. */
-    function applyFilters(list, { page = null, health = null, query = '', isBroken = () => false } = {}) {
+    function applyFilters(list, { page = null, health = null, untagged = false, query = '', isBroken = () => false } = {}) {
         const q = norm(query);
         return (list || []).filter((b) => {
+            if (untagged && tagsOf(b).length) return false;
             if (page !== null && page !== undefined && pageOf(b) !== Number(page)) return false;
             if (health === 'broken' && !isBroken(b)) return false;
             if (health === 'never' && Number(b.openCount) > 0) return false;
@@ -98,7 +110,9 @@
     }
 
     /** `#tag/a+b`: each tag encoded, so a `+` inside one cannot split it. */
-    const hashFor = (tags) => `#tag/${(tags || []).map((t) => encodeURIComponent(norm(t))).join('+')}`;
+    const hashFor = (tags) => ((tags || []).length
+        ? `#tag/${tags.map((t) => encodeURIComponent(norm(t))).join('+')}`
+        : '#tags');
 
     function tagsFromHash(hash) {
         const raw = String(hash || '').replace(/^#?tag\//, '');
@@ -109,5 +123,5 @@
             .filter(Boolean);
     }
 
-    window.TagViewModel = { matches, related, stats, applyFilters, sort, hashFor, tagsFromHash };
+    window.TagViewModel = { matches, everything, related, stats, applyFilters, sort, hashFor, tagsFromHash };
 })();

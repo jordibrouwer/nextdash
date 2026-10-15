@@ -849,6 +849,51 @@ async function readUrls(page, id) {
     }, id);
 }
 
+test.describe('every bookmark, no tag picked (#tags)', () => {
+    let N; let TAGGED;
+    test.beforeEach(async ({ page }) => {
+        N = `${STAMP}${Math.random().toString(36).slice(2, 7)}`;
+        TAGGED = `tvall${N}`;
+        await openDashboard(page);
+        await seed(page, [
+            { url: `https://all-bare-${N}.example.com/`, name: `Bare ${N}`, tags: [], page: 'here' },
+            { url: `https://all-tagged-${N}.example.com/`, name: `Tagged ${N}`, tags: [TAGGED], page: 'other' },
+        ]);
+        await openDashboard(page);
+    });
+
+    test('Shift+T with no row in hand opens it, with every page in the list', async ({ page }) => {
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press('Shift+T');
+        await expect(view(page)).toBeVisible();
+        expect(await hash(page)).toBe('#tags');
+        await expect(view(page).locator('.lvs-title')).toContainText('All bookmarks');
+        await page.locator('.tag-view [data-tag-view-search]').fill(N);
+        await expect.poll(async () => (await rowNames(page)).sort()).toEqual([`Bare ${N}`, `Tagged ${N}`]);
+    });
+
+    test('Without tags narrows to the bookmarks that have none', async ({ page }) => {
+        await openDashboard(page, '/#tags');
+        await expect(view(page)).toBeVisible();
+        await page.locator('.tag-view [data-tag-view-search]').fill(N);
+        await page.locator('.tag-view [data-rail-untagged]').click();
+        await expect.poll(() => rowNames(page)).toEqual([`Bare ${N}`]);
+    });
+
+    test('a tag in the rail opens its view, and Back returns to every bookmark', async ({ page }) => {
+        await openDashboard(page, '/#tags');
+        await expect(view(page)).toBeVisible();
+        const more = page.locator('.tag-view [data-rail-more]');
+        if (await more.count()) await more.click();
+        await page.locator(`.tag-view [data-rail-tag="${TAGGED}"]`).click();
+        await expect.poll(() => hash(page)).toBe(`#tag/${TAGGED}`);
+        await expect.poll(() => rowNames(page)).toEqual([`Tagged ${N}`]);
+        await page.goBack();
+        await expect.poll(() => hash(page)).toBe('#tags');
+        await expect(view(page).locator('.lvs-title')).toContainText('All bookmarks');
+    });
+});
+
 test('a bookmark on two pages is one row', async ({ page }) => {
     const N = `${STAMP}${Math.random().toString(36).slice(2, 7)}`;
     const tag = `tvtwice${N}`;

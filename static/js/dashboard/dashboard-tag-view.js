@@ -7,6 +7,10 @@
  * a rail of related tags, pages and health, and a table. #tag/<tag> is its
  * address; Escape, the home icon and Back return to the page it came from.
  *
+ * With no tag picked (#tags, Shift+T with no row in hand) it holds every
+ * bookmark: the rail lists the tags in use and those without any, so tagging
+ * starts here and a tag is one click away.
+ *
  * d._tagFilters stays the list of active tags, so what reads it -- the
  * cloud's +N, hasActiveTagFilters -- keeps working; setTagFilters is the one
  * way in and opens or updates this view.
@@ -21,12 +25,14 @@
         constructor(dashboard) {
             this.dash = dashboard;
             this.tags = [];
+            // Every bookmark rather than a tag's: #tags.
+            this.all = false;
             this.returnPageId = null;
             this.shell = null;
             this._keyHandler = null;
             // What the rail and the search narrow the list to. A new set of
             // tags starts them over.
-            this.filter = { page: null, health: null };
+            this.filter = { page: null, health: null, untagged: false };
             this.query = '';
             this._relatedOpen = false;
             this.sort = { key: 'lastOpened', dir: null };
@@ -59,13 +65,13 @@
 
         /** The tags' bookmarks, before the rail and the search narrow them. */
         matches() {
-            return Model().matches(this.pool(), this.tags);
+            return this.all ? Model().everything(this.pool()) : Model().matches(this.pool(), this.tags);
         }
 
         setTags(tags) {
             const next = this.normalize(tags);
             if (next.join('\u0000') !== this.tags.join('\u0000')) {
-                this.filter = { page: null, health: null };
+                this.filter = { page: null, health: null, untagged: false };
                 this.query = '';
                 this._relatedOpen = false;
                 this.selected = new Set();
@@ -80,18 +86,19 @@
 
         /** The address for the current tags; pushed when the view opens, replaced on a change. */
         writeHash({ push }) {
-            const hash = Model().hashFor(this.tags);
+            const hash = Model().hashFor(this.all ? [] : this.tags);
             if (window.location.hash === hash) return;
             const url = `${window.location.pathname}${window.location.search}${hash}`;
             if (push && window.DashboardHistory?.pushLocation?.(url)) return;
             history.replaceState(history.state, '', url);
         }
 
-        async openTagView(tags, { returnPageId = null, fromHash = false } = {}) {
+        async openTagView(tags, { returnPageId = null, fromHash = false, all = false } = {}) {
             const d = this.dash;
-            const next = this.normalize(tags);
-            if (!next.length) return false;
+            const next = all ? [] : this.normalize(tags);
+            if (!next.length && !all) return false;
             if (this.isActiveView()) {
+                if (all) return this.showAll({ fromHash });
                 return this.updateTags(next, { fromHash });
             }
             if (d.isInlineEditActive?.() && !(await d.confirmInlineEditBeforeNavigation?.())) {
@@ -107,6 +114,7 @@
             d.pageNav?.setActivePageNavButton?.(d.currentPageId);
             d.pageNav?.updatePageTitle?.();
             d.updateDocumentTitle?.();
+            this.all = all;
             this.setTags(next);
             if (!fromHash) this.writeHash({ push: true });
             this.render();
@@ -128,7 +136,24 @@
                 this.closeTagView();
                 return false;
             }
+            // A tag picked from every bookmark is a step in: Back returns to #tags.
+            const fromAll = this.all;
+            this.all = false;
             this.setTags(next);
+            if (!fromHash) this.writeHash({ push: fromAll });
+            this.render();
+            return true;
+        }
+
+        /** From a tag back to every bookmark, while the view is open. */
+        showAll({ fromHash = false } = {}) {
+            if (this.all) return true;
+            this.all = true;
+            this.setTags([]);
+            this.filter = { page: null, health: null, untagged: false };
+            this.query = '';
+            this.selected = new Set();
+            this.focusIndex = -1;
             if (!fromHash) this.writeHash({ push: false });
             this.render();
             return true;
@@ -162,6 +187,7 @@
             const container = document.getElementById('dashboard-layout');
             container?.classList.remove('tag-view-layout');
             this.tags = [];
+            this.all = false;
             this.dash._tagFilters = [];
             this.dash.tagFilter?._syncTagFilterDomAttributes?.();
             window.DashboardTagCloud?.setActiveTags?.([]);
@@ -315,6 +341,8 @@
                 cell.setAttribute('role', 'columnheader');
                 if (key === 'check') {
                     cell.appendChild(this.buildCheckAll());
+                } else if (key === 'tags' && this.all) {
+                    cell.appendChild(this.el('span', '', this.t('dashboard.tagViewColAllTags', 'Tags')));
                 } else {
                     cell.appendChild(this.el('span', '', this.t(labelKey, fallback)));
                 }
@@ -1170,6 +1198,7 @@
             const shown = Model().applyFilters(matches, {
                 page: this.filter.page,
                 health: this.filter.health,
+                untagged: this.all && this.filter.untagged,
                 query: this.query,
                 isBroken: (b) => this.isBroken(b),
             });
@@ -1187,6 +1216,19 @@
                 shell.rail.appendChild(host);
             }
             const groups = [];
+
+            if (this.all) {
+                const none = matches.filter((b) => !(Array.isArray(b.tags) && b.tags.some((t) => String(t || '').trim()))).length;
+                const btn = this.railItem(this.t('dashboard.tagViewUntagged', 'Without tags'), none, { 'data-rail-untagged': '' });
+                btn.classList.toggle('is-active', this.filter.untagged);
+                btn.setAttribute('aria-pressed', String(this.filter.untagged));
+                btn.addEventListener('click', () => {
+                    this.filter.untagged = !this.filter.untagged;
+                    this.focusIndex = -1;
+                    this.render();
+                });
+                groups.push(this.railGroup(this.t('dashboard.tagViewAllGroup', 'Bookmarks'), [btn], 'untagged'));
+            }
 
             const related = Model().related(matches, this.tags);
             if (related.length) {
@@ -1217,7 +1259,9 @@
                     });
                     items.push(more);
                 }
-                groups.push(this.railGroup(this.t('dashboard.tagViewRelated', 'Related tags'), items, 'related'));
+                groups.push(this.railGroup(this.all
+                    ? this.t('dashboard.tagViewAllTags', 'Tags')
+                    : this.t('dashboard.tagViewRelated', 'Related tags'), items, 'related'));
             }
 
             const pages = new Map();
@@ -1378,6 +1422,11 @@
                 crumb.textContent = from
                     ? this.t('dashboard.tagViewCrumbFrom', 'Tag · from {page}').replace('{page}', from)
                     : this.t('dashboard.tagViewCrumb', 'Tag');
+                if (this.all) {
+                    crumb.textContent = from
+                        ? this.t('dashboard.tagViewAllCrumbFrom', 'Tags · from {page}').replace('{page}', from)
+                        : this.t('dashboard.tagViewAllCrumb', 'Tags');
+                }
             }
             const title = shell.root.querySelector('.lvs-title');
             // Not while the reader is typing a tag to add: a redraw (the health
@@ -1391,7 +1440,9 @@
 
         buildTitle() {
             const wrap = this.el('span', 'tag-view-title-wrap');
-            if (this.tags.length === 1) {
+            if (this.all) {
+                wrap.appendChild(this.el('span', 'tag-view-title', this.t('dashboard.tagViewAllTitle', 'All bookmarks')));
+            } else if (this.tags.length === 1) {
                 wrap.appendChild(this.el('span', 'tag-view-title', `#${this.tags[0]}`));
             } else {
                 this.tags.forEach((tag, i) => {
@@ -1500,6 +1551,10 @@
                 line.appendChild(span);
             };
             part(s.count === 1 ? this.t('dashboard.tagViewStatOne', '{v} bookmark') : this.t('dashboard.tagViewStatMany', '{v} bookmarks'), String(s.count));
+            if (this.all) {
+                const none = matches.filter((b) => !(Array.isArray(b.tags) && b.tags.some((t) => String(t || '').trim()))).length;
+                if (none) part(this.t('dashboard.tagViewStatUntagged', '{v} without tags'), String(none));
+            }
             if (s.pages > 1) part(this.t('dashboard.tagViewStatPages', 'on {v} pages'), String(s.pages));
             if (s.lastOpened) {
                 const last = this.lastOpenedLabel(s.lastOpened);

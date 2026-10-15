@@ -51,6 +51,11 @@ class DashboardTagViewLoader {
         return mod.openTagView(tags, options);
     }
 
+    /** Every bookmark, no tag picked: #tags, and Shift+T with no row in hand. */
+    async openAllTags(options = {}) {
+        return this.openTagView([], { ...options, all: true });
+    }
+
     async updateTags(tags, options = {}) {
         const mod = await this.load();
         return mod.updateTags(tags, options);

@@ -886,8 +886,9 @@ class DashboardData {
         {
             view: 'tags',
             layoutClass: 'tag-view-layout',
-            // #tag/a+b: a tag's view, opened from the hash once the grid is up.
-            matchesHash: (hash) => hash.startsWith('#tag/'),
+            // #tag/a+b: a tag's view, opened from the hash once the grid is up;
+            // #tags, every bookmark with no tag picked.
+            matchesHash: (hash) => hash === '#tags' || hash.startsWith('#tag/'),
             isEnabled: () => true,
         },
     ];

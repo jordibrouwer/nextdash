@@ -340,6 +340,19 @@ class KeyboardNavigation {
                 }
             }
 
+            // Shift+T with no row in hand: the tag view of every bookmark,
+            // where the ones without tags are one click away. A row in hand
+            // took the key above, for its Tags popover.
+            if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyT'
+                && this.dashboard.isBookmarksView?.() && this.dashboard.tagView?.openAllTags) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                e.stopPropagation();
+                window.nextdashRecordKey?.('Shift + T');
+                void this.dashboard.tagView.openAllTags({ returnPageId: this.dashboard.currentPageId });
+                return;
+            }
+
             // Shift+W — set the width of the block the cursor is in, category or
             // widget. Outside the Shift block above because that one acts on a
             // bookmark row, and a block needs no row selected.
