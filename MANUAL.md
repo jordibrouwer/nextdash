@@ -1626,27 +1626,49 @@ A file is at most 2 MB.
 
 ### 10.4 Tag suggestions
 
-**Config → Bookmarks → Tag suggestions** proposes one tag for a whole group of bookmarks. Its sources:
+nextDash proposes tags for bookmarks that lack them. It never tags anything behind your back: every suggestion waits for a click, unless you switch on **Add what it finds straight away**. This section explains where suggestions come from, where you see them, and how to steer them.
 
-- **Your rules** (the **Your rules** tab) — `github.com → #code`, a site or a site plus one section. They win over everything.
-- **Your own tags** — when most tagged bookmarks on a site share a tag, the rest are offered it.
-- **A shipped catalogue** of 471 subjects and some 51,000 sites that belong to them. Your own words win: a subject called `dev` is offered as `#code` if that is what you use.
-- **Wikidata** (on by default) — for a site the catalogue does not know, the server asks Wikidata once what it is. Only the host name leaves the server, and only for hosts on the public internet; an address on your network never goes out. Answers are kept for 90 days, and for 30 when Wikidata does not know the site. The same lookup runs on its own, quietly, for a link that arrives in the inbox or your bookmarks after this browser first looked: it shows nothing, never writes a tag, and what it finds is offered as a chip. Switch both off with **Look up unknown sites on Wikidata** in this tab's menu.
-- **Read their pages** (optional) — fetches the pages nothing else can place and files them by what they are about. It says what it will cost, shows progress and can be stopped. Only a dozen keywords per page are kept.
+**Where suggestions come from.** For each bookmark the app weighs these sources, strongest first. A bookmark is offered at most two tags, and a stronger source wins over a weaker one.
 
-Each row names its source and its count. A click on the row or its count opens the group, so single bookmarks can be left out. **Apply** tags the rest (undo in the toast); **No thanks** stops the proposal from coming back, and refusals are listed with a way back. At most 25 rows show at a time. **Forget the scanned keywords** (here or under Data & backups → Icons & previews) clears what *Read their pages* kept.
+1. **Your rules** — written on the **Your rules** tab of Config → Bookmarks → Tag suggestions: `github.com → #code`, a site or a site plus one section (`youtube.com/@veritasium`). A rule needs no evidence and beats everything else.
+2. **Your own tags** — when at least three bookmarks on a site are tagged and most of them (60%) share a tag, the rest of that site is offered it.
+3. **Self-hosted apps, by name** — an app on your own network sits at an address no list can know (`192.168.1.20:8989`, `sonarr.home.lan`, a Tailscale name), so it is recognised by what it is called: the first part of the host name, a word in the bookmark's name or page title, or its default port. Some 1,900 apps are known, from Sonarr to phpMyAdmin; each gives `#self-hosted` plus what it does (`#media-server`, `#networking` …). The long tail is only trusted on a private address, so a public page called *Ghost* is not taken for the blog engine. A domain where two or more of your apps live (`jellyfin.example.cc`, `radarr.example.cc`) counts as home too.
+4. **Anything else at home** — a bookmark on a private address that matches no app still gets one row offering `#self-hosted`, labelled *On your home network*.
+5. **The catalogue** — a list shipped with the app of 645 subjects and some 81,000 sites that belong to them, from `#news` and `#banking` to `#3d-printing` and `#adult`. Subjects have broader parents (`#kotlin` under `#dev`), and a subdomain is known by its parent domain. A section of a site can have its own subject: a science channel on YouTube is `#science`, YouTube itself `#video`.
+6. **Wikidata** (on by default) — for a public site the catalogue does not know, the server asks Wikidata once what it is. Only the host name leaves the server; an address on your network never goes out. Answers are kept for 90 days, and for 30 when Wikidata does not know the site.
+7. **The page itself** (only after **Read their pages**) — the page's own keywords. At least two of them have to point at the same subject before it is offered.
 
-**In the rows.** The tag view and the Bookmarks view show offers in the rows themselves: a dashed chip after a row's tags — click it to add the tag, **×** to turn it down — and a line over the list, *7 tag suggestions · Add all*. A tag you take off by hand is not offered again. These offers come from the catalogue, your rules, your own tags and pages already read; opening a view never goes online by itself. **Find tags** asks further: in the tag view its menu offers *Find tags for these N* (the catalogue, then Wikidata) and *Read pages of these N* (slower, it asks each site), with **Add found tags right away**; the row menu and the selection bar do the same for one row or the ones you ticked, and so does the Bookmarks view in its side panel and selection bar. In the bookmark form and the tag popover, **Read page** reads that one page when nothing else turns up.
+**In your words.** The catalogue's subject is renamed to the tag you already use for it. If every GitHub link here is tagged `#code`, a new one is offered `#code`, not `#dev`, so a tidy collection is not split in two.
+
+**Where you see them.**
+
+- **In the rows** of the Bookmarks view, the inbox and the tag view: a dashed chip after a row's tags. Click it to add the tag, **×** to turn it down. A suggestion comes first in the row; when there is no room, the row's own tags fold into **+n**, and further suggestions into **+N**. **+N** opens a list of every suggestion for that row, each to add or turn down; **+n** lists the tags the row already carries. A line over the list counts them, *7 tag suggestions in this list · Add all*.
+- **One bookmark at a time** — in the bookmark form, the Bookmarks view's side panel, `Shift + T` and the selection's tag picker, under **Suggested** ([§10.1](#101-tags-on-a-bookmark)). In the form and the tag popover, **Read page** reads that one page when nothing else turns up.
+- **Grouped** — Config → Bookmarks → Tag suggestions proposes one tag for a whole group: every bookmark on a site, or every bookmark an app or rule covers. Each row names its source and its count; click the row or its count to open the group and leave single bookmarks out. **Apply** tags the rest (undo in the toast). At most 25 rows show at a time.
+- **A corner card** offers a look when ten suggestions are waiting; switch it off under Behavior → Privacy & sync → Onboarding.
+
+Opening a view never goes online by itself: the rows show what the catalogue, your rules, your own tags and pages already read can say.
+
+**Finding more.** **Find tags** asks further, the catalogue first and then Wikidata:
+
+- In Config → Bookmarks → Tag suggestions its menu offers *Bookmarks without tags*, *All bookmarks*, *Unsorted* and *Inbox*, each with its count, and *Read their pages* for the bookmarks nothing else can place. Reading pages fetches each one, so it says how many first, shows progress and can be stopped; only a dozen keywords per page are kept.
+- In the tag view (`#tags` or `#tag/<tag>`) its menu offers *Bookmarks without tags* and *Bookmarks shown* for the rows on screen, and *Read pages* for them.
+- The inbox's **⋯** menu runs it for the inbox's links, and its **With a tag suggestion** filter keeps the list to the ones it found something for.
+- The row menu and the selection bar do it for one bookmark or the ones you ticked.
+
+What it finds lands in the rows as suggestions, and a toast offers **Show**. With **Add what it finds straight away** ticked, the tags go on at once instead. That choice is a setting: it is kept on the server with your other settings, or in the browser if you keep settings per device, and it is off until you switch it on.
+
+**Quietly, for new links.** A link that arrives in the inbox or your bookmarks after this browser first looked is looked up on its own, quietly: nothing is shown, no tag is written, and what turns up waits as a chip like any other suggestion.
+
+**Turning suggestions down.** **×** on a chip, or **No thanks** on a group, stops that tag from being offered for that site again, wherever you turned it down. A tag you take off a bookmark by hand is not offered back to it either. **N turned down** above the rows, and the list at the foot of the Tag suggestions tab, show what you refused, with a search box and a way to offer any of it again.
+
+**Privacy and switches.** **Look up unknown sites on Wikidata** in the Tag suggestions tab's **⋯** menu switches off every online lookup, the quiet one included. **Forget the scanned keywords** (in the same menu, or under Data & backups → Icons & previews) clears what *Read their pages* kept.
 
 <p align="center"><img src="screenshots/manual.md/10-tag-view-offers.jpg" alt="The tag view for dev: a line reading 3 tag suggestions and Add all under the figures, and dashed suggestion chips after the tags of three rows" width="720"></p>
 <p align="center"><sub>Suggestions in the rows of the tag view, with <b>Add all</b> and <b>Find tags</b>.</sub></p>
 
-The same proposals appear, one bookmark at a time, in the bookmark form, the Bookmarks view's side panel, `Shift + T` and the selection's tag picker ([§10.1](#101-tags-on-a-bookmark)). Turning one down there counts as **No thanks** here, and the list on this tab follows.
-
 <p align="center"><img src="screenshots/manual.md/10-tag-suggestions.jpg" alt="The tags field of the bookmark form with one suggested tag, #dev, under it, and a cross to turn it down" width="586"></p>
 <p align="center"><sub>In the bookmark form a suggestion waits under the tags field: click it to add it, × to turn it down.</sub></p>
-
-A corner card offers a round when ten proposals are waiting; it can be switched off under Behavior → Privacy & sync → Onboarding.
 
 <a id="105-notes"></a>
 
