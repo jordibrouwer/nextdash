@@ -20,6 +20,9 @@
             this.dash = dashboard;
             this.query = '';
             this.open = false;
+            // On a phone the bar is not something you summon: there is no
+            // Shift+F to press, so it stays at the top of the bookmarks view.
+            this.pinned = false;
         }
 
         t(key, fallback, params) {
@@ -45,7 +48,47 @@
             return true;
         }
 
+        /** Phone layout, on the bookmarks view: the bar stays put. */
+        shouldPin() {
+            return document.body?.dataset.mobileLayout === 'true'
+                && this.dash?.activeView === 'bookmarks';
+        }
+
+        /**
+         * Pin the bar on a phone, unpin it when the window leaves that layout.
+         *
+         * A pinned bar is built without focus, so the keyboard does not pop up
+         * on every page load. Unpinning keeps a bar that still holds a query --
+         * it is filtering something -- and drops an empty one.
+         */
+        syncPinned() {
+            const container = document.getElementById('dashboard-layout');
+            if (this.shouldPin() && container) {
+                this.open = true;
+                this.pinned = true;
+                this.ensureBar(container).classList.add('grid-filter-bar--pinned');
+                return;
+            }
+            if (!this.pinned) return;
+            this.pinned = false;
+            document.getElementById('grid-filter-bar')?.classList.remove('grid-filter-bar--pinned');
+            if (!this.query) this.close();
+        }
+
         close() {
+            // A pinned bar cannot be closed, only emptied: the x and Escape
+            // clear the query and hand the keyboard back.
+            if (this.pinned && this.shouldPin()) {
+                this.query = '';
+                const input = document.querySelector('#grid-filter-bar .grid-filter-input');
+                if (input) {
+                    input.value = '';
+                    input.blur();
+                }
+                this.apply();
+                return;
+            }
+            this.pinned = false;
             this.open = false;
             this.query = '';
             this.apply();
@@ -287,6 +330,7 @@
 
         /** Called after a dashboard render, so a filter survives one. */
         reapply() {
+            this.syncPinned();
             if (!this.open) return;
             if (this.dash?.activeView !== 'bookmarks') {
                 this.close();
