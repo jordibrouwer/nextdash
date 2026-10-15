@@ -240,6 +240,50 @@
         return PRIVATE_SUFFIXES.some((suffix) => host.endsWith(suffix));
     }
 
+    /** The last two labels: jellyfin.example.cc -> example.cc. Rough, and only used to group a reader's own hosts. */
+    function siteOf(host) {
+        return String(host || '').split('.').slice(-2).join('.');
+    }
+
+    /*
+     * Domains the reader's own apps live under: two or more different apps
+     * recognised on subdomains of one public domain (jellyfin.example.cc,
+     * seerr.example.cc) make it a home address, so the rest of what sits
+     * there is matched as if it were on the home network.
+     */
+    function homeDomainsOf(rows, index) {
+        const appsBySite = new Map();
+        rows.forEach((item) => {
+            const found = matchApp(item, index);
+            if (!found || found.via !== 'label') return;
+            let host = '';
+            try {
+                host = new URL(String(item.url)).hostname.toLowerCase();
+            } catch (error) {
+                return;
+            }
+            if (isPrivateHost(host) || host.split('.').length < 3) return;
+            const site = siteOf(host);
+            const apps = appsBySite.get(site) || new Set();
+            apps.add(found.app.id);
+            appsBySite.set(site, apps);
+        });
+        return new Set([...appsBySite].filter(([, apps]) => apps.size >= 2).map(([site]) => site));
+    }
+
+    /** On the home network, or under a domain the reader's own apps live on. */
+    function isHomeAddress(url, homeDomains) {
+        let parsed;
+        try {
+            parsed = new URL(String(url || ''));
+        } catch (error) {
+            return false;
+        }
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+        const host = parsed.hostname.toLowerCase();
+        return isPrivateHost(host) || !!homeDomains?.has(siteOf(host));
+    }
+
     /** Lower case, every run of non-letters a space, padded: whole words compare. */
     function asWords(text) {
         return ` ${String(text || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()} `;
@@ -252,8 +296,13 @@
      * Overseerr and Jellyseerr alike, which tag the same, so it stays; 9091 is
      * Transmission and Authelia, which do not, so it says nothing.
      */
+    const appIndexes = new WeakMap();
+
     function appIndex(apps) {
-        const list = (Array.isArray(apps) ? apps : []).map((app) => {
+        const source = Array.isArray(apps) ? apps : [];
+        const cached = appIndexes.get(source);
+        if (cached) return cached;
+        const list = source.map((app) => {
             const names = (app.names || []).map(asWords).filter((name) => name.trim());
             const nameWords = new Set(names.map((name) => name.trim().replace(/ /g, '')));
             return {
@@ -278,7 +327,19 @@
             const tags = owners[0].tags.join('|');
             if (owners.every((owner) => owner.tags.join('|') === tags)) portOwner.set(port, owners[0]);
         });
-        return { list, portOwner };
+        /*
+         * Labels by owner, the first in the list winning: the hand list comes
+         * first, the generated long tail after. A label with no dash is also
+         * a word the app goes by -- `adguard-1` on an IP is AdGuard -- but
+         * only at home, where it is the bookmark's own name that says so.
+         */
+        const labelOwner = new Map();
+        list.forEach((app) => app.labels.forEach((label) => {
+            if (!labelOwner.has(label)) labelOwner.set(label, app);
+        }));
+        const index = { list, portOwner, labelOwner };
+        appIndexes.set(source, index);
+        return index;
     }
 
     /*
@@ -290,7 +351,7 @@
      * Nextcloud for having `cloud` up front -- and an app whose name is an
      * everyday word (Flood, Element) is only taken at home.
      */
-    function matchApp(item, index) {
+    function matchApp(item, index, homeDomains) {
         let parsed;
         try {
             parsed = new URL(String(item.url || ''));
@@ -299,20 +360,23 @@
         }
         if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
         const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
-        const home = isPrivateHost(host);
+        const home = isPrivateHost(host) || !!homeDomains?.has(siteOf(host));
         const isIp = /^\d+\.\d+\.\d+\.\d+$/.test(host) || host.startsWith('[');
         const label = isIp ? '' : host.split('.')[0];
         const text = asWords(`${item.name || ''} ${item.title || ''}`);
 
         if (label) {
-            const byLabel = index.list.find((app) => app.labels.has(label)
-                && (home || (!app.common && app.nameWords.has(label))));
-            if (byLabel) return { app: byLabel, via: 'label' };
+            const byLabel = index.labelOwner.get(label);
+            if (byLabel && (home || (!byLabel.common && byLabel.nameWords.has(label)))) return { app: byLabel, via: 'label' };
         }
         if (text.trim()) {
             const byName = index.list.find((app) => (home || !app.common)
                 && app.names.some((name) => text.includes(name)));
             if (byName) return { app: byName, via: 'name' };
+            if (home) {
+                const word = text.trim().split(' ').find((w) => w.length >= 4 && index.labelOwner.has(w));
+                if (word) return { app: index.labelOwner.get(word), via: 'name' };
+            }
         }
         if (home && parsed.port) {
             const byPort = index.portOwner.get(Number(parsed.port));
@@ -431,9 +495,14 @@
             const vocabulary = new Set();
             rows.forEach((item) => tagsOf(item).forEach((tag) => vocabulary.add(tag)));
             const byApp = new Map();
+            const homeDomains = homeDomainsOf(rows, apps);
+            const atHome = [];
             rows.forEach((item) => {
-                const found = matchApp(item, apps);
-                if (!found) return;
+                const found = matchApp(item, apps, homeDomains);
+                if (!found) {
+                    if (isHomeAddress(item.url, homeDomains)) atHome.push(item);
+                    return;
+                }
                 const group = byApp.get(found.app.id) || { app: found.app, via: found.via, members: [] };
                 group.members.push(item);
                 byApp.set(found.app.id, group);
@@ -453,6 +522,19 @@
                     });
                 });
             });
+            /*
+             * Anything else at a home address is still the reader's own
+             * server, whatever runs there: one row offers #self-hosted for
+             * all of it. Only when the catalogue has the subject.
+             */
+            if (atHome.length && subjectOf.has('self-hosted')) {
+                const entry = { tag: 'self-hosted', aliases: aliasesOf(subjectOf.get('self-hosted')), ancestors: chains.get('self-hosted') || [] };
+                const tag = inTheirWords(entry, vocabulary);
+                const keys = atHome.filter((item) => !tagsOf(item).includes(tag)).map((item) => item.key);
+                if (keys.length) {
+                    proposals.push({ tag, pattern: 'home:', reason: { kind: 'home', subject: 'self-hosted' }, keys, rank: 2.6 });
+                }
+            }
         }
 
         const byHost = catalogueByHost(settings.catalogue, chains);

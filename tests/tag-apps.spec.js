@@ -70,8 +70,53 @@ test('a port two apps share with different tags says nothing; one with the same 
         // 5055: Overseerr and Jellyseerr, both media.
         ['shared', 'http://10.0.0.5:5055/'],
     ]);
-    expect(got.split || []).not.toContain('self-hosted');
+    // Still a home address, so #self-hosted -- but neither app's subject.
+    expect(got.split || []).not.toContain('torrent');
+    expect(got.split || []).not.toContain('security');
     expect(got.shared).toEqual(expect.arrayContaining(['self-hosted', 'media-server']));
+});
+
+test('the long tail of apps is known at home, and only there', async ({ page }) => {
+    await open(page);
+    const got = await offers(page, [
+        // Not in the hand list: from awesome-selfhosted and the catalogue's own sites.
+        ['label', 'https://phpmyadmin.tail1234.ts.net/'],
+        ['name', 'http://192.168.0.164:3590/', 'tracearr'],
+        ['public', 'https://phpmyadmin.example.com/'],
+    ]);
+    expect(got.label).toEqual(expect.arrayContaining(['self-hosted', 'database']));
+    expect(got.name).toEqual(expect.arrayContaining(['self-hosted', 'media-server']));
+    expect(got.public || []).not.toContain('database');
+});
+
+test('at home a label is also a word in the name: adguard-1 on an IP is AdGuard', async ({ page }) => {
+    await open(page);
+    const got = await offers(page, [['ip', 'http://192.168.0.3/', 'adguard-1']]);
+    expect(got.ip).toEqual(expect.arrayContaining(['self-hosted', 'networking']));
+});
+
+test('a domain two of your apps live under is a home address', async ({ page }) => {
+    await open(page);
+    const got = await offers(page, [
+        ['jellyfin', 'https://jellyfin.example.cc/'],
+        ['radarr', 'https://radarr.example.cc/'],
+        ['other', 'https://tracearr.example.cc/'],
+        ['alone', 'https://tracearr.example.org/'],
+    ]);
+    expect(got.other).toEqual(expect.arrayContaining(['self-hosted', 'media-server']));
+    expect(got.alone || []).not.toContain('media-server');
+});
+
+test('whatever else sits at a home address is offered #self-hosted, a public site is not', async ({ page }) => {
+    await open(page);
+    const got = await offers(page, [
+        ['ip', 'http://192.168.0.9/', 'delen'],
+        ['tailnet', 'https://box.tail1234.ts.net/'],
+        ['public', 'https://unknown-site-xyz.example/'],
+    ]);
+    expect(got.ip).toContain('self-hosted');
+    expect(got.tailnet).toContain('self-hosted');
+    expect(got.public || []).not.toContain('self-hosted');
 });
 
 test('AI sites get #ai from the catalogue', async ({ page }) => {

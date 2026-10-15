@@ -32,6 +32,7 @@
     function sourceLabel(offer, t = identity) {
         const kind = offer?.reason?.kind;
         if (kind === 'app') return t('config.bmOfferFromApp', 'Recognised as {app}').replace('{app}', offer.reason.app || '');
+        if (kind === 'home') return t('config.bmOfferFromHome', 'On your home network');
         if (kind === 'online') return t('config.bmOfferFromOnline', 'Suggested by Wikidata');
         if (kind === 'catalogue') return t('config.bmOfferFromCatalogue', 'Suggested by the catalogue');
         if (kind === 'text') return t('config.bmOfferFromPage', 'Suggested by the page itself');

@@ -36,6 +36,7 @@
             return t('config.tagSuggestionReasonApp', 'recognised as {app}')
                 .replace('{app}', String(group.reason.app || ''));
         }
+        if (group.reason.kind === 'home') return t('config.tagSuggestionReasonHome', 'on your home network');
         if (group.reason.kind === 'catalogue') {
             // The subject is named as well as the source, because the tag on
             // the row may be the reader's own word for it rather than the
