@@ -32,20 +32,35 @@ async function openTab(page, section, tab) {
     await page.waitForSelector('.config-panel-title', { timeout: 20_000 });
 }
 
-/** Every panel on screen: its heading, its height, and how many fields it holds. */
-const panels = (page) => page.evaluate(() =>
-    [...document.querySelectorAll('.config-view-body .config-panel')].map((panel) => ({
-        title: (panel.querySelector('.config-panel-title')?.textContent || '').trim(),
-        height: Math.round(panel.getBoundingClientRect().height),
-        fields: panel.querySelectorAll(':scope > .config-field, :scope > .config-field-row').length,
-    })).filter((p) => p.fields > 0));
+/**
+ * Every panel on screen: its heading, its height, and how many fields it holds.
+ *
+ * Appearance folds its panels and keeps their fields in a body of their own,
+ * so the panels are opened first, the way a reader opens them, and counted
+ * wherever their fields sit.
+ */
+const panels = async (page) => {
+    await page.evaluate(() => document.querySelectorAll(
+        '.config-view-body .config-panel--fold.is-folded > .config-panel-head .config-panel-fold',
+    ).forEach((button) => button.click()));
+    await page.waitForFunction(() => !document.querySelector('.config-view-body .config-panel.is-unfolding'));
+    return page.evaluate(() =>
+        [...document.querySelectorAll('.config-view-body .config-panel')].map((panel) => {
+            const holder = panel.querySelector(':scope > .config-panel-body') || panel;
+            return {
+                title: (panel.querySelector('.config-panel-title')?.textContent || '').trim(),
+                height: Math.round(panel.getBoundingClientRect().height),
+                fields: holder.querySelectorAll(':scope > .config-field, :scope > .config-field-row').length,
+            };
+        }).filter((p) => p.fields > 0));
+};
 
 test.describe('appearance panels', () => {
     test('the theme panel is the theme, and nothing else', async ({ page }) => {
         // The three subjects that used to sit inside Theme now say so, each on
         // the tab it belongs to: favicons on Look, the backdrop on Background,
         // the surfaces on Surface.
-        for (const [tab, name] of [['general', 'Favicons'], ['background', 'Backdrop'], ['surface', 'Surfaces']]) {
+        for (const [tab, name] of [['display', 'Favicons'], ['background', 'Backdrop'], ['surface', 'Surfaces']]) {
             await openTab(page, 'appearance', tab);
             const titles = (await panels(page)).map((p) => p.title);
             expect(titles, `no panel named ${name} on ${tab}`).toContain(name);

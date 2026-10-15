@@ -45,6 +45,20 @@ const UNTESTABLE = new Set([
  */
 const KNOWN_BROKEN = new Set([]);
 
+/**
+ * What a panel's controls come to once Fine-tune folds are opened out and each
+ * chip of a chip group is the checkbox it stands for. Written as source so it
+ * can run inside the page.
+ */
+const FLAT_CONTROLS = `(function flat(list) {
+    return (list || []).flatMap((c) => {
+        if (!c) return [];
+        if (c.type === 'fine') return flat(c.controls);
+        if (c.type === 'chips') return (c.items || []).map((item) => ({ type: 'checkbox', ...item }));
+        return [c];
+    });
+})`;
+
 async function load(page) {
     await markWhatsNewSeen(page);
     await page.goto('/');
@@ -82,7 +96,8 @@ const BODY_MIRRORED = {
 test('every body-mirrored Behavior setting is applied live by setBehavior', async ({ page }) => {
     await load(page);
 
-    const result = await page.evaluate(async ({ mirrored, untestable }) => {
+    const result = await page.evaluate(async ({ mirrored, untestable, flatSource }) => {
+        const flat = (0, eval)(flatSource);
         const d = window.dashboardInstance;
         const cfg = d.config;
         const failures = [];
@@ -91,7 +106,7 @@ test('every body-mirrored Behavior setting is applied live by setBehavior', asyn
         // Flatten the schema: every control, with the group's tab for reporting.
         const controls = [];
         for (const panel of cfg.behaviorSchema()) {
-            for (const c of panel.controls || []) controls.push({ ...c, tab: panel.tab || 'general' });
+            for (const c of flat(panel.controls)) controls.push({ ...c, tab: panel.tab || 'general' });
         }
 
         for (const c of controls) {
@@ -130,7 +145,7 @@ test('every body-mirrored Behavior setting is applied live by setBehavior', asyn
             await cfg.setBehavior(c.field, original, c.special);
         }
         return { failures, checked, total: controls.length };
-    }, { mirrored: BODY_MIRRORED, untestable: [...UNTESTABLE] });
+    }, { mirrored: BODY_MIRRORED, untestable: [...UNTESTABLE], flatSource: FLAT_CONTROLS });
 
     // Sanity: the walk has to have actually exercised the schema.
     expect(result.total).toBeGreaterThan(40);
@@ -184,12 +199,13 @@ test('every special in the schema is one setBehavior actually handles', async ({
 // come back when one was turned on -- until a reload.
 test('Hypr mode and the date toggles apply without a reload', async ({ page }) => {
     await load(page);
-    const result = await page.evaluate(async () => {
+    const result = await page.evaluate(async (flatSource) => {
+        const flat = (0, eval)(flatSource);
         const d = window.dashboardInstance;
         const cfg = d.config;
         const special = (field) => {
             for (const panel of cfg.behaviorSchema()) {
-                const c = (panel.controls || []).find((x) => x.field === field);
+                const c = flat(panel.controls).find((x) => x.field === field);
                 if (c) return c.special;
             }
             return undefined;
@@ -201,7 +217,7 @@ test('Hypr mode and the date toggles apply without a reload', async ({ page }) =
         const goneWhenOff = !document.getElementById('date-element');
         await cfg.setBehavior('showDate', true, special('showDate'));
         return { hypr, goneWhenOff, back: Boolean(document.getElementById('date-element')) };
-    });
+    }, FLAT_CONTROLS);
     expect(result.hypr, 'Hypr mode did not switch on').toBe(true);
     expect(result.goneWhenOff).toBe(true);
     expect(result.back, 'the date line did not come back').toBe(true);
