@@ -643,10 +643,10 @@
 
         const actions = document.createElement('div');
         actions.className = 'media-detail-actions';
-        const openButton = textBlock('button', 'config-btn', say(dash, widget, 'open'));
+        const openButton = textBlock('button', 'media-detail-btn media-detail-btn--primary', say(dash, widget, 'open'));
         openButton.type = 'button';
         openButton.dataset.mediaOpen = '';
-        const closeButton = textBlock('button', 'config-btn config-btn--ghost', say(dash, widget, 'close'));
+        const closeButton = textBlock('button', 'media-detail-btn', say(dash, widget, 'close'));
         closeButton.type = 'button';
         closeButton.dataset.mediaClose = '';
         actions.append(openButton, closeButton);

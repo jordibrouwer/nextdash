@@ -94,7 +94,10 @@ class DashboardSetup {
         document.body.setAttribute('data-action-bar-enabled',
             d.settings.actionBarEnabled === false ? 'off' : 'on');
         document.body.setAttribute('data-action-keys',
-            d.settings.showActionKeys === false ? 'off' : 'on');
+            d.settings.showActionKeys === true ? 'on' : 'off');
+        // Five sizes for the buttons; CSS reads the step off <body>.
+        document.body.setAttribute('data-action-bar-size',
+            ['xs', 's', 'm', 'l', 'xl'].includes(d.settings.actionBarSize) ? d.settings.actionBarSize : 'm');
         window.ActionBarAutoHide?.sync();
         document.body.setAttribute(
             'data-header-buttons',

@@ -712,6 +712,118 @@
 }
 
 /*
+ * Appearance's folding panels (applyAppearanceFolds). The heading holds a real
+ * button; the summary line and "Reset panel" stand beside it in one row, so
+ * the reset is not inside the control that folds. Folded, the panel is its
+ * header and the line saying what it is set to.
+ */
+.config-panel--fold {
+    padding-block: 12px;
+}
+
+.config-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.config-panel-head > .config-panel-title {
+    flex: 0 1 auto;
+    min-width: 0;
+    margin: 0;
+}
+
+.config-panel-fold {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+    padding: 4px 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.config-panel-fold-chevron {
+    flex: none;
+    width: 0.7em;
+    color: var(--text-muted, #888);
+    font-size: 1.1em;
+    line-height: 1;
+    text-align: center;
+    transition: transform 0.15s ease;
+}
+
+.config-panel-fold-chevron::before {
+    content: "›";
+}
+
+.config-panel-fold[aria-expanded="true"] > .config-panel-fold-chevron {
+    transform: rotate(90deg);
+}
+
+.config-panel-fold:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 2px;
+    border-radius: var(--radius-4, 6px);
+}
+
+.config-panel-summary {
+    flex: 1 1 0;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.86);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.config-panel-summary:empty {
+    visibility: hidden;
+}
+
+.config-panel-head > .config-panel-reset {
+    float: none;
+    flex: none;
+    margin-left: auto;
+}
+
+.config-panel-body {
+    margin-top: 12px;
+}
+
+/* Only when the reader opens it: a repaint after each change must not replay
+   it. A fade and a short drop, never a height animation. */
+.config-panel--fold.is-unfolding > .config-panel-body {
+    animation: config-panel-unfold 0.16s ease;
+}
+
+@keyframes config-panel-unfold {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: none; }
+}
+
+body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
+    animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-panel--fold.is-unfolding > .config-panel-body {
+        animation: none;
+    }
+
+    .config-panel-fold-chevron {
+        transition: none;
+    }
+}
+
+/*
  * The "Only changed" toggle and its count, above a tab of settings. A row of
  * its own rather than part of the first panel: it acts on every panel below it.
  */
@@ -2085,6 +2197,44 @@
 .config-subtabs.has-more-before.has-more-after {
     -webkit-mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent);
     mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent);
+}
+
+/*
+ * Appearance's strip: three labelled groups, each its label over its tabs.
+ *
+ * Nine tabs on one scrolling line hid half of them past the edge, which is the
+ * opposite of finding your way. So this strip wraps -- but by whole groups: a
+ * group that does not fit moves to the next line with its label, so a second
+ * line still reads as a group of its own rather than a stray tab. Only a group
+ * wider than the screen wraps inside itself. The label is small and muted so
+ * the tab names stay what the eye reads. Presentation wrappers only -- the
+ * buttons stay the tablist's own children as far as the keyboard is concerned.
+ */
+.config-subtabs.config-subtabs--grouped {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    align-items: flex-end;
+    gap: 10px 26px;
+}
+
+.config-subtab-group {
+    display: flex;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+}
+
+.config-subtab-group-label {
+    flex-basis: 100%;
+    padding: 0 2px;
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.8);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    opacity: 0.8;
 }
 
 .config-subtab {
@@ -5979,6 +6129,65 @@ body.no-animations .config-new-features-panel-star {
     margin: 0;
 }
 
+/*
+ * Chips: a row of on/off buttons, each writing its own setting. Plain borders
+ * and a flat fill, no blur or backdrop-filter, so nothing here can catch a
+ * click meant for the chip next to it.
+ */
+.config-field--chips {
+    grid-template-columns: auto auto;
+    justify-content: start;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.config-chips,
+.config-checkset.config-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0 0 var(--space-2, 0.6rem);
+}
+
+.config-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    font: inherit;
+    cursor: pointer;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: 999px;
+    background: none;
+    color: var(--text-muted, #888);
+    transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.config-chip::before {
+    content: "○";
+    font-size: 10px;
+}
+
+.config-chip:hover {
+    border-color: var(--accent-color, #4a90d9);
+}
+
+.config-chip[aria-pressed="true"] {
+    border-color: var(--accent-color, #4a90d9);
+    background: var(--accent-soft, rgba(74, 144, 217, 0.14));
+    color: var(--text-color, inherit);
+}
+
+.config-chip[aria-pressed="true"]::before {
+    content: "●";
+    color: var(--accent-color, #4a90d9);
+}
+
+.config-chip:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 2px;
+}
+
 .config-preview-sample {
     display: flex;
     justify-content: flex-start;
@@ -8805,6 +9014,66 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
 .config-field--slider .config-range-value {
     flex: 0 0 3.2em;
     text-align: right;
+}
+
+/*
+ * Fine-tune: slider detail folded under one line inside a panel. The header is
+ * a plain button with no blur or backdrop-filter of its own, so Safari's
+ * hit-test bug for such elements cannot swallow its clicks. The body only
+ * shows or hides; there is no height animation to turn off for reduced motion.
+ */
+.config-fine {
+    margin: 8px 0 2px;
+    border: 1px dashed var(--border-color, var(--border-primary));
+    border-radius: 8px;
+}
+
+.config-fine[hidden],
+.config-fine-body[hidden],
+.config-fine-body [hidden] {
+    display: none;
+}
+
+.config-fine-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 10px;
+    border: 0;
+    background: transparent;
+    color: var(--text-muted, var(--text-secondary));
+    font: inherit;
+    font-size: calc(var(--font-size-text) * 0.93);
+    text-align: left;
+    cursor: pointer;
+}
+
+.config-fine-head:hover {
+    color: var(--text-primary);
+}
+
+.config-fine-summary {
+    flex: 1 1 auto;
+    opacity: 0.75;
+}
+
+.config-fine-chevron {
+    flex: 0 0 auto;
+    width: 6px;
+    height: 6px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg);
+}
+
+.config-fine-head[aria-expanded="true"] .config-fine-chevron {
+    transform: rotate(-135deg);
+}
+
+.config-fine-body {
+    padding: 4px 10px 8px;
+    border-top: 1px dashed var(--border-color, var(--border-primary));
 }
 
 .config-glass-badge {

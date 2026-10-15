@@ -253,7 +253,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 - [Surfaces](#163-surfaces)
 - [Type and background](#164-type-and-background)
 - [Custom themes](#165-custom-themes)
-- [Grid and rows](#166-grid-and-rows)
+- [Layout and rows](#166-grid-and-rows)
 - [Header and action buttons](#167-header-and-action-buttons)
 - [Date and weather](#168-date-and-weather)
 - [Finding and resetting](#169-finding-and-resetting)
@@ -914,7 +914,7 @@ Hovering a bookmark — or pressing **`Shift + V`** on the selected row — open
 
 <img src="screenshots/manual.md/04-preview-card.jpg" alt="The link preview card of a bookmark: picture, description, a tag, when it was last opened, its shortcut and where it lives" width="408" align="left">
 
-A row with nothing to say is left out. **Config → Appearance → Rows → Link preview cards** offers **Off**, **On hover** (default) and **Keyboard only**, a hover delay, and a checklist of rows — the player is the **Video player** row in that list. `Shift + V` works in every mode and keeps the card open with **Copy**, **Refresh** and **Edit**.
+A row with nothing to say is left out. **Config → Appearance → Link previews** offers **Off**, **On hover** (default) and **Keyboard only**, a hover delay, and a checklist of rows — the player is the **Video player** row in that list. `Shift + V` works in every mode and keeps the card open with **Copy**, **Refresh** and **Edit**.
 
 **Playing a video.** Nothing reaches YouTube or Vimeo while you hover: the poster is the picture your own server already fetched, and the player is built when you press it. From the keyboard, `Shift + V` puts the cursor on the play button and `Enter` starts it. `Esc` closes the card and ends the video, and so do the **✕** over the player and a click anywhere else — a click inside the player hands the keyboard to the provider, so `Esc` only works again once your pointer leaves the card.
 
@@ -1480,7 +1480,7 @@ A category you just created stays visible even with *hide empty categories* on, 
 
 Each category header has a **⋯** menu with **Manual**, **A–Z**, **Last opened**, **Newest** and **Most opened**. The chosen sort shows as a short chip in front of the ⋯ (*A–Z*, *Rec*, *New*, *Top*); click it to go back to manual order. **Last opened** and **Most opened** put bookmarks never opened last. Pinned bookmarks always stay on top. A sorted category cannot be dragged — the cursor and a short note say so. Sorting is only a view; the stored order changes when you drag.
 
-Click a header, or press `Enter` on it, to fold the category. **`.`** folds or unfolds everything on the page, widgets included; the state is kept per page. **Start with categories collapsed** (Appearance → Grid) starts every category folded.
+Click a header, or press `Enter` on it, to fold the category. **`.`** folds or unfolds everything on the page, widgets included; the state is kept per page. **Start with categories collapsed** (Appearance → Layout) starts every category folded.
 
 <a id="94-moving-and-reordering-bookmarks"></a>
 
@@ -1513,7 +1513,7 @@ The number of columns is not a setting: it follows from **items per category** a
 | 16–30 | 2 |
 | 31–45 | 3 |
 
-The column count of the grid is the ceiling. Spreading needs a limit on items per category and at least two columns. With **Pack columns tightly** on, the categories after a spread one fill in beside and below it. On a phone held upright every category is one column wide. **Appearance → Grid → Categories across columns** holds the limit, whether new categories start spread (they do by default), and whether *turn spreading off everywhere* covers this page or all pages. A walkthrough is under Config → Help → Structure & bookmarks.
+The column count of the grid is the ceiling. Spreading needs a limit on items per category and at least two columns. With **Pack columns tightly** on, the categories after a spread one fill in beside and below it. On a phone held upright every category is one column wide. **Appearance → Layout → Categories across columns** holds the limit, whether new categories start spread (they do by default), and whether *turn spreading off everywhere* covers this page or all pages. A walkthrough is under Config → Help → Structure & bookmarks.
 
 <a id="96-smart-collections"></a>
 
@@ -1583,7 +1583,7 @@ A file is at most 2 MB.
 
 - Set them in the bookmark form, the side panel in the Bookmarks view, with `Shift + T`, or with `:tag +name`. The form, the side panel, `Shift + T` and the selection's tag picker each show the tags this bookmark is likely to want, under **Suggested**; `Shift + T` opens at the top of its list, with those first.
 - Stored in lower case, trimmed, without duplicates. Autocomplete offers the tags you already use.
-- **Tags on rows** (Appearance → Rows) shows them as chips on the dashboard — the first few, then a count. The chips are labels only; to see everything with a tag, use the tag cloud (`/`) or select the bookmark and press `t`.
+- **Tags on rows** (Appearance → Rows → Bookmark display) shows them as chips on the dashboard — the first few, then a count. The chips are labels only; to see everything with a tag, use the tag cloud (`/`) or select the bookmark and press `t`.
 
 <a id="102-filtering-by-tag"></a>
 
@@ -1631,7 +1631,7 @@ A file is at most 2 MB.
 - **Your rules** (the **Your rules** tab) — `github.com → #code`, a site or a site plus one section. They win over everything.
 - **Your own tags** — when most tagged bookmarks on a site share a tag, the rest are offered it.
 - **A shipped catalogue** of 471 subjects and some 51,000 sites that belong to them. Your own words win: a subject called `dev` is offered as `#code` if that is what you use.
-- **Wikidata** (on by default) — for a site the catalogue does not know, the server asks Wikidata once what it is. Only the host name leaves the server, and only for hosts on the public internet; an address on your network never goes out. Answers are kept for 90 days, and for 30 when Wikidata does not know the site. Switch it off with **Look up unknown sites on Wikidata** in this tab's menu.
+- **Wikidata** (on by default) — for a site the catalogue does not know, the server asks Wikidata once what it is. Only the host name leaves the server, and only for hosts on the public internet; an address on your network never goes out. Answers are kept for 90 days, and for 30 when Wikidata does not know the site. The same lookup runs on its own, quietly, for a link that arrives in the inbox or your bookmarks after this browser first looked: it shows nothing, never writes a tag, and what it finds is offered as a chip. Switch both off with **Look up unknown sites on Wikidata** in this tab's menu.
 - **Read their pages** (optional) — fetches the pages nothing else can place and files them by what they are about. It says what it will cost, shows progress and can be stopped. Only a dozen keywords per page are kept.
 
 Each row names its source and its count. A click on the row or its count opens the group, so single bookmarks can be left out. **Apply** tags the rest (undo in the toast); **No thanks** stops the proposal from coming back, and refusals are listed with a way back. At most 25 rows show at a time. **Forget the scanned keywords** (here or under Data & backups → Icons & previews) clears what *Read their pages* kept.
@@ -3050,9 +3050,23 @@ Seven widgets read an Unraid server through its API: **Unraid**, **Unraid array*
 ## 16. 🎨 Appearance
 
 > [!NOTE]
-> **In short:** Appearance changes how the dashboard looks: themes, background, surfaces, type, grid, rows, header and action bar. Pick, preview and apply, or build a theme of your own.
+> **In short:** Appearance changes how the dashboard looks: themes, background, surfaces, type, layout, rows, link previews, header and action bar. Pick, preview and apply, or build a theme of your own.
 
-**Config → Appearance** opens straight on its settings, on the tab you had open if that was in the last five minutes, and on **Look** otherwise. Eight tabs: **Look**, **Background**, **Surface**, **Grid**, **Rows**, **Header**, **Action bar** and **Date & weather**. Every setting of a tab is on it, with a short line under each saying what it does.
+**Config → Appearance** opens straight on its settings, on the tab you had open if that was in the last five minutes, and on **Theme & type** otherwise. Nine tabs in three labelled groups:
+
+| Group | Tabs |
+|---|---|
+| **Look** | **Theme & type**, **Background**, **Surfaces** |
+| **Bookmarks** | **Layout**, **Rows**, **Link previews** |
+| **Header & bars** | **Header**, **Action bar**, **Date & weather** |
+
+The strip wraps instead of scrolling: a group that does not fit moves to the next line whole, so every tab is on screen down to phone width. Every setting is on one of them, with a short line under each saying what it does. The old names still open the right tab: a link to `/#config/appearance/grid` lands on Layout, `…/look` on Theme & type, and `…/surface` on Surfaces.
+
+**Panels fold.** On every tab the first panel is open and the others fold to a header with one line of their current values, changed values first. Open or fold a panel by hand and it stays that way, per tab, in this browser. The filter, **Only changed**, **Find settings** and a link such as `/#config/appearance/rows/category-header` open the panel they land in; **Reset panel** in a folded header resets it without opening it. A tab with more than three panels lists them above the preview — choosing one opens it and scrolls to it, and the panel in view is marked; under 900 px the list is left out.
+
+**Label left, control right.** A setting's label and one-line explanation stand on the left and its control on the right, in one shared column. A longer explanation is cut with an ellipsis and stays whole in its tooltip and the ℹ. Under 600 px the control goes under its label.
+
+**Chips.** A run of *Show the … button* switches is one row of chips: the action bar (nine buttons), the header buttons, the category header extras, the row status and the date line. Each chip is still its own setting; the group has one **↺** for the chips that differ from the default and one **ℹ** that says what each chip does. The link preview fields and the Bookmarks view's columns and rail blocks use chips too.
 
 **The preview.** Beside the settings stands a small drawing of your dashboard — header, grid, a few rows and the action dock. It follows every change as you make it, in your own theme and font, and marks the part the open tab is about: the grid on Grid, the rows on Rows, the header on Header, the clock on Date & weather, the buttons on Action bar. On a narrow window it moves above the settings.
 
@@ -3062,7 +3076,7 @@ Seven widgets read an Unraid server through its API: **Unraid**, **Unraid array*
 
 nextDash ships **164 theme families**, each with a light and a dark half — 328 themes in all. A fresh install starts on **Matrix Bluepill**, cyan code on deep blue, with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made.
 
-**Theme** on the Look tab lists every theme by name. Beside it:
+**Theme** on the Theme & type tab lists every theme by name. Beside it:
 
 - **The theme browser** — **Browse…**, or **`Shift + A`** on the dashboard. It opens as a panel beside the dashboard, with tabs of its own ([see below](#the-theme-browser)); the first, **Themes**, has one card per family, with a light/dark switch and the line that says what the theme is like to sit in front of. At the top: a search box, the segments *All*, *Favourites*, *Light* and *Dark*, and **More filters**, which unfolds the **character chips** ([§16.2](#162-character)) and the **collection** chips. While it is folded, the filters that are on show as chips you can remove, and the button counts them. *Light* and *Dark* turn every card to that half; a card can still be switched by hand. Search matches a family's name, its character and the words of its line. The 38 newest families wear a **new** badge, and searching `new` finds them. Themes of your own come first, under **Your themes**, with a **yours** badge (and **look** when they bring one along); a segment **Yours** shows only them, and searching `yours` finds them. A packaged theme you recoloured wears **recoloured**. A star keeps up to 24 families under *Favourites*. Pointing at a card previews that theme on the real dashboard; clicking one puts it on the page. A line above the grid names the theme in use — or, once you have picked another, which one is chosen and which stays until **Apply** — and **Show** brings its card into view.
 - **Collections** — the **Neutrals** collection holds five calm grey palettes — Slate, Zinc, Gray, Stone and Neutral — drawn under glass, each with a backdrop of its own.
@@ -3174,8 +3188,8 @@ roundness, and the surfaces the theme asks to be drawn at.
 ### 16.3 Surfaces
 
 These change how any theme is drawn. Depth, Glow, Effects and Card glass are on
-the **Surface** tab; Text contrast, animations and favicon harmonization on
-**Look**. The first three start on **Follow the theme**: each theme states what
+the **Surfaces** tab; Text contrast and animations on **Theme & type**, favicon
+harmonization in the **Favicons** panel on **Rows**. The first three start on **Follow the theme**: each theme states what
 it was drawn for, and picking a theme brings its answer with it.
 
 | Setting | Choices |
@@ -3208,7 +3222,7 @@ other theme keeps its own. The backdrop and the card glass work the same way.
 - **Typeface** — Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans or System UI — or **upload a font file**.
 - **Weight** — Normal, Semi-bold or Bold. **Size** — seven steps from XS to XL; pointing at a size previews it.
 
-Type is on the **Look** tab; everything behind the bookmarks is on the **Background** tab, drawn in three layers from the bottom up: the theme's backdrop, a pattern over it, and a background of your own on top.
+Type is in the **Type** panel on the **Theme & type** tab; everything behind the bookmarks is on the **Background** tab, drawn in three layers from the bottom up: the theme's backdrop, a pattern over it, and a background of your own on top.
 
 - **Source** — **Auto** (follows the theme), **None**, **Gradient** or **Image**. **Opacity** (65–100%) fades it so the bookmarks stay readable. A background of your own is drawn over the theme backdrop.
 - **Theme backdrop** — **Follow the theme** (default), **Choose one** or **Off**. Every theme draws a backdrop of its own, in its own colours; each light and dark half share one. *Follow the theme* names the one it draws, and *Choose one* opens a grid of all 26, previewed in your theme's colours:
@@ -3231,7 +3245,7 @@ Type is on the **Look** tab; everything behind the bookmarks is on the **Backgro
 
 ### 16.5 Custom themes
 
-**Open the theme editor…** on the Look tab opens the editor as a page of its own; **← Look** above it goes back. A link to `/#config/appearance/custom-themes` opens it directly.
+**Open the theme editor…** on the Theme & type tab opens the editor as a page of its own; the back link above it returns to Theme & type. A link to `/#config/appearance/custom-themes` opens it directly.
 
 - **Your themes** — **Add custom theme**, edit, reorder (↑ ↓), delete, **⤓** export to a JSON file, and **Import theme…**. A theme you make appears in the theme list beside the packaged ones.
 - A custom theme can set everything a packaged theme can: its colours, and under **Shape & character** its character, corner roundness, surface opacity, blur, glow, the **Gloss** slider (how much light a surface catches), the grain's direction and strength, the category titles, the backdrop — **Automatic** or any of the 26 patterns, shown as tiles in the theme's own colours — and the depth and effects it asks to be drawn at. It has a light and a dark half, like the built-in themes.
@@ -3250,9 +3264,9 @@ Type is on the **Look** tab; everything behind the bookmarks is on the **Backgro
 
 <a id="166-grid-and-rows"></a>
 
-### 16.6 Grid and rows
+### 16.6 Layout and rows
 
-**Grid**
+**Layout** tab — panels **Bookmarks layout** and **Categories across columns**.
 
 | Setting | What it does |
 |---|---|
@@ -3271,7 +3285,7 @@ Type is on the **Look** tab; everything behind the bookmarks is on the **Backgro
 
 Small drawings beside the shape settings show what a value looks like.
 
-**Rows**
+**Rows** tab — panels **Favicons**, **Category header** and **Bookmark display**. The first two lines are the Favicons panel; **Favicon harmonization** (Muted, Tinted or Overlay, with an intensity, stored per theme) is in it too.
 
 | Setting | What it does |
 |---|---|
@@ -3279,10 +3293,14 @@ Small drawings beside the shape settings show what a value looks like.
 | **Change bookmark color when offline** | A broken row takes the status colour |
 | **Shortcut letters on rows** | **Always** (default; a column down the right of each category) · **Only on the row you are on** · **Never** — the shortcuts keep working in every mode |
 | **How a row lights up** | **Subtle** (default) or **Strong** — how far the accent carries across the row you are on |
-| **Show online/offline status** | Status colours on the rows; with it, **Show a loading state while checking** and **Show ping times** |
+| **Row status** | Chips for the online/offline status colours, **a loading state while checking** and **ping times** |
 | **Show tags on bookmark rows** | And **Tags shown before "+N"** |
-| **Category header** | How a category's name reads above its bookmarks. **Style**: Follow the theme (default), Clean, Underlined (optionally in the accent colour), Boxed, Label or Group card, which wraps the category and its bookmarks in one pane. **Size**: Small, Medium or Large. **Show the category icon** — the icon is chosen per category, from its menu. **Show how many bookmarks it holds** puts the count on the right |
-| **Link preview cards** | Off · On hover (default) · Keyboard only, a hover delay (Fast, Balanced, Calm) and **What the card shows**: image, site, author & date, video player, description, your note, tags, status & uptime, opens, Fresh count, shortcut & location ([§4](#4-the-dashboard)) |
+| **Category header** | How a category's name reads above its bookmarks. **Style**: Follow the theme (default), Clean, Underlined (optionally in the accent colour), Boxed, Label or Group card, which wraps the category and its bookmarks in one pane. **Size**: Small, Medium or Large. **Shown in the header** — chips for the category icon (chosen per category, from its menu), the count of bookmarks on the right, and the underline |
+
+**Link previews** tab — one panel, **Link preview cards**: Off · On hover (default) · Keyboard only, a hover delay (Fast, Balanced, Calm) and **What the card shows**, as chips: image, site, author & date, video player, description, your note, tags, status & uptime, opens, Fresh count, shortcut & location ([§4](#4-the-dashboard)).
+
+<p align="center"><img src="screenshots/manual.md/16-appearance-rows.jpg" alt="Config, Appearance on its Rows tab: the open Favicons panel, the open Category header panel with its Style and Size choices and the Icon, Count and Underline chips, and the folded Bookmark display panel with a line of its values" width="860"></p>
+<p align="center"><sub>The Rows tab: two panels open, the third folded to its values; the header extras are chips.</sub></p>
 
 <details>
 <summary>📷 Screenshot — the Compact layout preset at Dense density, full page</summary>
@@ -3297,16 +3315,20 @@ Small drawings beside the shape settings show what a value looks like.
 
 See [§4](#4-the-dashboard) for what each part does. The settings:
 
-- **Header** tab — button style (plain or boxed), page tabs on/off, page names in tabs, page switcher style, page tabs before *+N*, the dashboard title, and toggles for the dashboard, inbox and config buttons (the Bookmarks and Containers icons are switched under Config → Bookmarks → View and Config → Containers). Also **Clock & weather** — where they stand: beside the view name, in a column of their own, or on their own line — and **Browser tab**: the page name in the browser title, and **Branding**, the page title and favicon, also used when nextDash is installed as an app.
-- **Action bar** tab — where the fixed buttons stand (a column on the right by default), action buttons before *+N*, show the action buttons, show the key on each button, slide a docked bar away (2 seconds by default), how the buttons come into view each time the bar appears (off by default; five styles on cards), and one switch per button. See [§4](#4-the-dashboard) for what sliding away looks like and how the bar comes back.
+- **Header** tab, panels **Header** and **Browser tab & branding** — button style (plain or boxed), page tabs on/off, page names in tabs, page switcher style, page tabs before *+N*, the dashboard title, and chips for the dashboard, inbox, config and Bookmarks-view buttons. The browser tab sits in the second panel: the page name in the browser title, a custom title and the favicon upload, also used when nextDash is installed as an app. Where the clock and weather stand is set on Date & weather ([§16.8](#168-date-and-weather)).
+- **Action bar** tab — **Show the action buttons** leads, since it decides whether the rest matters; then where the fixed buttons stand (a column on the right by default), **Button size** (extra small to extra large; medium by default, one step up from the 28 px squares the bar had, which are now *small*), action buttons before *+N*, show the key on each button (off for new installs), slide a docked bar away (2 seconds by default), how the buttons come into view each time the bar appears (off by default; a dropdown — picking a style plays it on the real bar at once), and one chip per button. See [§4](#4-the-dashboard) for what sliding away looks like and how the bar comes back.
 
-Each group has **Show all / Hide all**.
+Each chip group has **Show all / Hide all**.
+
+<p align="center"><img src="screenshots/manual.md/16-appearance-action-bar.jpg" alt="Config, Appearance on its Action bar tab: Show the action buttons, where the bar stands, Button size set to Medium, the key switch, the animation dropdown and the nine button chips" width="860"></p>
+<p align="center"><sub>The Action bar tab: size and animation are dropdowns, the nine buttons are chips.</sub></p>
 
 <a id="168-date-and-weather"></a>
 
 ### 16.8 Date and weather
 
-- **Date & time** — show date, show time, date format, 12- or 24-hour clock. Where the clock and weather stand in the header is set on the Header tab ([§16.7](#167-header-and-action-buttons)).
+- **Clock & weather** — leads the tab: where they stand — beside the view name, in a column of their own, or on their own line.
+- **Date & time** — show date, show time (chips), date format, 12- or 24-hour clock.
 - **Weather** — on or off, **Location source** (a city you type, or *Automatic (by IP)*), Celsius or Fahrenheit, refresh interval. The Weather widget reads the same settings.
 - **Calendar** — **Calendar URL** (the link in the date popover) and **Calendar feed URL (.ics)** (what the Calendar widget reads).
 
@@ -3314,7 +3336,7 @@ Each group has **Show all / Hide all**.
 
 ### 16.9 Finding and resetting
 
-Each tab has a filter beside **Only changed**. When the filter — or **Only changed** — finds something on another tab too, the line under the list names that tab with a count (*Also found on: Header 2*); a click opens it and keeps the filter. **↺** resets one setting, **Reset panel** a whole group. `Ctrl/Cmd + Shift + K` finds any setting ([§17](#17-config)).
+Each tab has a filter beside **Only changed**. When the filter — or **Only changed** — finds something on another tab too, the line under the list names that tab with a count (*Also found on: Header 2*); a click opens it and keeps the filter. A match inside a folded panel — or on one chip — opens that panel. **↺** resets one setting, **Reset panel** a whole group. `Ctrl/Cmd + Shift + K` finds any setting ([§17](#17-config)).
 
 <sub>[↑ Contents](#table-of-contents)</sub>
 
@@ -3347,7 +3369,7 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | Section | What lives there |
 |---------|------------------|
 | **Overview** | One line of what needs you, then **Your install** — panels for bookmarks, the inbox, containers, health and statistics — beside **From nextDash**: the newest posts, the version you run, the newest features and a tip of the day ([§17.8](#178-overview-help-and-about)). |
-| **Appearance** | Look · Background · Surface · Grid · Rows · Header · Action bar · Date & weather ([§16](#16-appearance)) |
+| **Appearance** | Look: Theme & type · Background · Surfaces — Bookmarks: Layout · Rows · Link previews — Header & bars: Header · Action bar · Date & weather ([§16](#16-appearance)) |
 | **Bookmarks** | View · Tags · Tag suggestions · Your rules · Settings · Local copies ([§17.4](#174-config-bookmarks)) |
 | **Structure** | Categories · Pages · Finders · Collections ([§9](#9-pages-categories-and-collections)) |
 | **Behavior** | General · Keyboard & search · Fresh · Privacy & sync ([§17.5](#175-behavior)) |
@@ -3368,7 +3390,8 @@ Old addresses still land in the right place — for example `/#config/pages-tags
 <details>
 <summary>📷 Screenshot — Config → Appearance, full page</summary>
 
-<p align="center"><img src="screenshots/manual.md/17-appearance.jpg" alt="Config, Appearance on its Look tab: the theme select with Browse, Quick mode, Follow system dark mode, Random theme and the theme editor, with a small preview on the right" width="860"></p>
+<p align="center"><img src="screenshots/manual.md/17-appearance.jpg" alt="Config, Appearance on its Theme & type tab: the tabs in three groups (Look, Bookmarks, Header & bars), the open Theme panel with Browse, Quick mode, Follow system dark mode, Random theme and the theme editor, the folded Text and motion panel below it and a small preview on the right" width="860"></p>
+<p align="center"><sub>Appearance: three groups of tabs, the first panel open and the rest folded to one line of values.</sub></p>
 
 </details>
 
@@ -3376,7 +3399,7 @@ Old addresses still land in the right place — for example `/#config/pages-tags
 
 ### 17.2 Tabs and saving
 
-**Appearance**, **Behavior** and **Monitoring** open straight on their settings, in tabs, on the tab you had open in the last five minutes, or on the first one. A row of tabs stays on one line; on a narrow screen it scrolls sideways. Every setting of a tab is on it — the ones that change most first — with a short line under each saying what it does. Appearance keeps a live preview of the dashboard beside its tabs ([§16](#16-appearance)).
+**Appearance**, **Behavior** and **Monitoring** open straight on their settings, in tabs, on the tab you had open in the last five minutes, or on the first one. Appearance's tabs stand in three labelled groups that wrap onto the next line when they do not fit; Behavior's and Monitoring's stay on one line and scroll sideways on a narrow screen. Every setting of a tab is on it — the ones that change most first — with a short line under each saying what it does. Appearance keeps a live preview of the dashboard beside its tabs ([§16](#16-appearance)).
 
 **Every change saves the moment you make it**, confirmed by a short message. The exceptions are forms with their own **Save** button — the bookmark form and a widget's settings. Config only writes what changed.
 
@@ -4612,9 +4635,9 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 | Tag cloud and tag view | Every tag from every page in three sizes with counts; pick one to open its tag view — all its bookmarks from every page in a table, with related tags, bulk actions and rename, merge or remove for the tag. Shift to stack, type to find. | [§10.2](#102-filtering-by-tag) |
 | Tag collection | A group nextDash makes of every tag that enough bookmarks use. | [§9.7](#97-custom-and-tag-collections) |
 | Tag suggestions | Proposals for one tag for a whole group of bookmarks, from your own rules and other sources. | [§10.4](#104-tag-suggestions) |
-| Theme | A colour scheme; 164 families each come in a light and a dark half, picked on the Look tab or in the theme browser. | [§16.1](#161-themes) |
+| Theme | A colour scheme; 164 families each come in a light and a dark half, picked on the Theme & type tab or in the theme browser. | [§16.1](#161-themes) |
 | Theme browser | The panel beside the dashboard, opened with `Shift + A`, for themes, backdrops, surfaces, headers, type and looks. | [§16.1](#the-theme-browser) |
-| Theme editor | The page for recolouring a packaged theme or building a theme of your own, opened from the Look tab; not the theme browser. | [§16.5](#165-custom-themes) |
+| Theme editor | The page for recolouring a packaged theme or building a theme of your own, opened from the Theme & type tab; not the theme browser. | [§16.5](#165-custom-themes) |
 | Timeline | A container's history in its side panel: crashes with exit code, out-of-memory kills, health changes, updates and rollbacks. | [§14.3](#143-the-side-panel) |
 | Trash | Deleted bookmarks, pages and categories stay here for 30 days. | [§19.5](#195-trash) |
 | Triage | Takes you through unread inbox links one at a time, in the same shape as Work through. | [§13.4](#134-triage) |

@@ -58,6 +58,12 @@
     "open.spotify.com": ["music"],
     "reddit.com": ["forum"],
     "docs.docker.com": ["containers"],
+    "amazon.co.jp": ["shopping"],
+    "skyscanner.nl": ["flights", "travel"],
+    "vodafone.es": ["telecom"],
+    "igloocoolers.com": [],
+    "222.247.56.59": [],
+    "yahoo.com": ["news"],
     "nas.lan": [],
     "localhost": [],
     "example.invalid": []

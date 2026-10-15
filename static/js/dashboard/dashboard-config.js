@@ -737,6 +737,18 @@ class DashboardConfig {
         unraid: 'data-unraid-tab',
     };
 
+    /**
+     * The Appearance panel a link points into: a fold key as the third
+     * segment (#config/appearance/<tab>/<panel>), or the panel holding a
+     * setting for an old link that named it as a tab of its own.
+     */
+    static appearancePanelFromHash(hash) {
+        const raw = String(hash || '').replace(/^#/, '');
+        if (raw === 'config/appearance/branding') return { field: 'enableCustomTitle' };
+        const match = raw.match(/^config\/appearance\/[a-z-]+\/([a-z0-9-]+)$/);
+        return match ? { panel: match[1] } : null;
+    }
+
     /** Apply a sub-tab from the hash, if the section has one. */
     applySubTabFromHash(hash) {
         const section = DashboardConfig.sectionFromHash(hash);
@@ -750,6 +762,11 @@ class DashboardConfig {
         // A sub-tab named in the URL is as deliberate as clicking one, so a
         // promo's ensureSubTab must not steer away from it.
         window.ConfigSettingPromo?.markSubTabChosen?.();
+        // A link to one Appearance panel opens it once the tab is drawn.
+        if (section === 'appearance') {
+            const target = DashboardConfig.appearancePanelFromHash(hash);
+            this._pendingAppearancePanel = target ? { ...target, tab } : null;
+        }
         if (this[prop] === tab) return false;
         this[prop] = tab;
         return true;
@@ -2327,7 +2344,7 @@ class DashboardConfig {
      */
     _changedFilterContext() {
         if (this.section === 'appearance') {
-            const tab = ['general', 'background', 'surface', 'layout', 'buttonbar', 'datetime', 'display', 'header'].includes(this.appearanceTab)
+            const tab = ['general', 'background', 'surface', 'layout', 'buttonbar', 'datetime', 'display', 'previews', 'header'].includes(this.appearanceTab)
                 ? this.appearanceTab
                 : null;
             return tab ? { section: 'appearance', tab } : null;
@@ -3692,6 +3709,7 @@ class DashboardConfig {
         { field: 'animationsEnabled', labelKey: 'enableAnimations', fallback: 'Enable animations', section: 'appearance', subTab: 'general' },
         { field: 'viewAnimationsEnabled', labelKey: 'viewAnimations', fallback: 'Animations in views and modals', section: 'appearance', subTab: 'general' },
         { field: 'animationSpeed', labelKey: 'animationSpeedLabel', fallback: 'Animation speed', section: 'appearance', subTab: 'general' },
+        { field: 'showPageInTitle', labelKey: 'showPageInTitleLabel', fallback: 'Show the page name in the browser title', section: 'appearance', subTab: 'header' },
         { field: 'enableCustomTitle', labelKey: 'enableCustomTitle', fallback: 'Use a custom page title', section: 'appearance', subTab: 'header' },
         { field: 'customTitle', labelKey: 'customTitleLabel', fallback: 'Title', section: 'appearance', subTab: 'header' },
         { field: 'enableCustomFavicon', labelKey: 'uploadFaviconLabel', fallback: 'Custom favicon', section: 'appearance', subTab: 'header' },
@@ -3791,6 +3809,7 @@ class DashboardConfig {
         cardGlass: ['glass', 'card', 'pane', 'opacity', 'alpha', 'blur', 'border', 'frosted', 'transparent', 'contrast'],
         categoryHeaderStyle: ['category', 'header', 'heading', 'title', 'underline', 'boxed', 'label', 'group', 'clean'],
         categoryHeaderSize: ['category', 'header', 'heading', 'title', 'size', 'small', 'large'],
+        actionBarSize: ['action', 'bar', 'button', 'size', 'small', 'large', 'bigger'],
         showCategoryIcon: ['category', 'header', 'icon', 'emoji'],
         showCategoryCount: ['category', 'header', 'count', 'number', 'bookmarks'],
         categoryHeaderAccentLine: ['category', 'header', 'underline', 'accent', 'line', 'colour', 'color'],
@@ -3846,7 +3865,13 @@ class DashboardConfig {
 
         this.behaviorSchema({ forIndex: true }).forEach((panel) => {
             const section = panel.section || 'behavior';
-            (panel.controls || []).forEach((c) => {
+            DashboardConfig.flatControls(panel.controls).forEach((c) => {
+                // A chip is a setting of its own: indexed under the long form
+                // of its label, which is what the checkbox it replaced said.
+                if (c.type === 'chips') {
+                    (c.items || []).forEach((i) => push(i.field, i.title || i.label, section, panel.tab || 'general'));
+                    return;
+                }
                 if (!c.field || c.type === 'note' || c.type === 'pushDevice'
                     || c.type === 'maintenanceWindows') return;
                 push(c.field, c.label, section, panel.tab || 'general');
@@ -4221,6 +4246,8 @@ class DashboardConfig {
             randomThemeMode: '[data-appearance-randommode]',
             fontSize: '[data-appearance-font]',
             theme: '[data-appearance-select="theme"]',
+            backdropTuning: '[data-backdrop-tuning="strength"]',
+            cardGlass: '[data-glass-range="alpha"]',
         };
         if (groups[field]) candidates.push(groups[field]);
 
@@ -4315,6 +4342,11 @@ class DashboardConfig {
         }
         const focusEl = focusSelector ? document.querySelector(focusSelector) : null;
         if (focusEl) {
+            // A folded Appearance panel is opened first, then a Fine-tune
+            // fold inside it: until both are, the control is not on screen
+            // to scroll to or focus.
+            this.revealFoldedPanel(focusEl);
+            this.revealFine(focusEl);
             focusEl.scrollIntoView({ block: 'nearest', behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth' });
             if (typeof focusEl.focus === 'function') {
                 focusEl.focus({ preventScroll: true });
@@ -9983,6 +10015,8 @@ class DashboardConfig {
             : '';
         const preview = !subpageOf && window.ConfigPreview
             ? `<aside class="config-tabpage-side" aria-label="${esc(this.t('config.previewLabel', 'Preview'))}">
+                   <nav class="config-panel-index" data-panel-index hidden
+                        aria-label="${esc(this.t('config.panelIndexLabel', 'On this tab'))}"></nav>
                    <p class="config-tabpage-side-label">${esc(this.t('config.previewLabel', 'Preview'))}</p>
                    <div data-config-preview>${window.ConfigPreview.render(this, this.appearanceTab)}</div>
                </aside>`
@@ -10019,6 +10053,9 @@ class DashboardConfig {
         }
         if (this.appearanceTab === 'display') {
             return shell(this.renderAppearanceDisplayBody());
+        }
+        if (this.appearanceTab === 'previews') {
+            return shell(this.renderControlPanels(this.panelsFor('appearance', 'previews'), 'behavior'));
         }
         if (this.appearanceTab === 'header') {
             return shell(this.renderAppearanceToolbarBody());
@@ -10102,12 +10139,6 @@ class DashboardConfig {
             </div>
 
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.appearanceFaviconsTitle', 'Favicons'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.appearanceFaviconsNote', 'How far the icons on your bookmark rows are pulled toward the theme.'))}</p>
-                ${this.renderIconStyling()}
-            </div>
-
-            <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceTypeTitle', 'Type'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.appearanceTypeNote', 'The typeface, weight, and size used across the dashboard. Upload a font file to use one that is not listed.'))}</p>
                 ${this.renderTypeFields()}
@@ -10127,20 +10158,28 @@ class DashboardConfig {
      */
     renderAppearanceToolbarBody() {
         // The browser tab's title and favicon came over from Display: they are
-        // the other half of what the page says about itself.
+        // the other half of what the page says about itself. One panel holds
+        // all of it, whichever of the settings the schema or this file draws.
         return this.renderControlPanels(this.panelsFor('appearance', 'header'), 'behavior')
             + this.renderAppearanceBrandingBody();
     }
 
-    /** The branding panel, appended to Display since it lost its own tab. */
+    /** Browser tab & branding: what the tab says and the icon it wears. */
     renderAppearanceBrandingBody() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
         return `
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.generalGroupBranding', 'Branding'))}</h3>
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceBrowserTabBrandingTitle', 'Browser tab & branding'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.appearanceBrandingNote', 'The page title and favicon this dashboard uses in the browser tab.'))}</p>
                 <div class="config-field-row">
+                    <label class="config-toggle">
+                        <input type="checkbox" data-appearance-toggle="showPageInTitle" ${s.showPageInTitle ? 'checked' : ''}>
+                        <span>${esc(this.t('config.showPageInTitleLabel', 'Show the page name in the browser title'))}</span>
+                    </label>
+                    ${this.appearanceAff('showPageInTitle')}
+                </div>
+                <div class="config-field-row" style="margin-top:10px">
                     <label class="config-toggle">
                         <input type="checkbox" data-appearance-toggle="enableCustomTitle" ${s.enableCustomTitle ? 'checked' : ''}>
                         <span>${esc(this.t('config.enableCustomTitle', 'Use a custom page title'))}</span>
@@ -10193,14 +10232,15 @@ class DashboardConfig {
         const s = this.dash.settings || {};
         return `
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.appearanceDisplayQuickTitle', 'Quick display options'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.appearanceDisplayQuickNote', 'Everyday bookmark row options. Toolbar and tab visibility live on their own tab.'))}</p>
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceFaviconsTitle', 'Favicons'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.appearanceFaviconsRowsNote', 'Whether bookmark rows show their icons, and how far those icons are pulled toward the theme.'))}</p>
                 ${this.renderRowToggles()}
+                ${this.renderIconStyling()}
             </div>
             ${this.renderControlPanels(this.panelsFor('appearance', 'display'), 'behavior')}`;
     }
 
-    /** Icons and status colour on bookmark rows: on Display, and in the studio. */
+    /** Icons and status colour on bookmark rows: on Rows, and in the studio. */
     renderRowToggles() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
@@ -10720,7 +10760,7 @@ class DashboardConfig {
         // live setter (via applyAppearanceField), which repaints the section so
         // the ↺ visibility refreshes.
         this.bindAffordances(container, null, (field, def) => this.applyAppearanceField(field, def));
-        if (['layout', 'buttonbar', 'datetime', 'display', 'header'].includes(this.appearanceTab)) {
+        if (['layout', 'buttonbar', 'datetime', 'display', 'previews', 'header'].includes(this.appearanceTab)) {
             this.bindControlPanels(container, 'behavior');
         } else {
             // bindControlPanels brings the toggle with it; the tabs without
@@ -10737,8 +10777,12 @@ class DashboardConfig {
             ? container
             : container.querySelector('#config-appearance-body');
         this.applyAppearanceChangedFilter(body);
+        // Last of the passes over the body: the filters above decide which
+        // panels have a hit, and a panel with one is opened.
+        this.applyAppearanceFolds(body);
         this.bindFormKeyboard(container);
         // The Background and Surface tabs bind what is new on them.
+        this.bindFineFolds(container);
         this.bindLookControls?.(container);
     }
 
@@ -10841,6 +10885,11 @@ class DashboardConfig {
 
     /** Wait for any in-flight settings write before swapping appearance tabs. */
     async switchAppearanceTab(tab) {
+        // Every way here is a tab the reader chose -- the strip, Find settings,
+        // a tile, a link to a panel -- so a promo's ensureSubTab must not pull
+        // them back to Theme & type half a second later. Only the strip's click
+        // said so before.
+        window.ConfigSettingPromo?.markSubTabChosen?.();
         if (tab === this.appearanceTab) return;
         if (this._settingsSavePromise) {
             await this._settingsSavePromise;
@@ -10965,11 +11014,12 @@ class DashboardConfig {
 
     appearanceTabLabel(tab) {
         const map = {
-            general: ['config.appearanceTabLook', 'Look'],
+            general: ['config.appearanceTabLook', 'Theme & type'],
             background: ['config.appearanceTabBackground', 'Background'],
-            surface: ['config.appearanceTabSurface', 'Surface'],
-            layout: ['config.appearanceTabGrid', 'Grid'],
+            surface: ['config.appearanceTabSurface', 'Surfaces'],
+            layout: ['config.appearanceTabGrid', 'Layout'],
             display: ['config.appearanceTabRows', 'Rows'],
+            previews: ['config.appearanceTabPreviews', 'Link previews'],
             header: ['config.appearanceTabHeader', 'Header'],
             buttonbar: ['config.appearanceTabActionBar', 'Action bar'],
             datetime: ['config.appearanceTabDateTime', 'Date & weather'],
@@ -12243,7 +12293,7 @@ class DashboardConfig {
         // The same short line the schema rows carry, for the hand-written ones
         // that have no note of their own under them.
         const summary = DashboardConfig.APPEARANCE_OWN_NOTES.has(field) ? '' : this.fieldSummary(field);
-        const hint = summary ? `<p class="config-field-hint config-field-hint--inline">${esc(summary)}</p>` : '';
+        const hint = summary ? `<p class="config-field-hint config-field-hint--inline" title="${esc(summary)}">${esc(summary)}</p>` : '';
         return `<span class="config-field-affordances" data-appearance-aff="${esc(field)}">${aff}</span>${hint}`;
     }
 
@@ -12673,6 +12723,10 @@ class DashboardConfig {
                 d.settings.enableCustomTitle = value;
                 d.pageNav?.updateDocumentTitle?.();
                 break;
+            case 'showPageInTitle':
+                d.settings.showPageInTitle = value;
+                d.pageNav?.updateDocumentTitle?.();
+                break;
             default:
                 return;
         }
@@ -13040,8 +13094,10 @@ class DashboardConfig {
         actionBarPosition: { info: ['actionBarPositionInfoTitle', 'actionBarPositionInfoMessage'], def: 'right' },
         actionBarEnabled: { info: ['actionBarEnabledInfoTitle', 'actionBarEnabledInfoMessage'], def: true },
         actionBarAutoHideSeconds: { info: ['actionBarAutoHideInfoTitle', 'actionBarAutoHideInfoMessage'], def: 2 },
-        showActionKeys: { info: ['showActionKeysInfoTitle', 'showActionKeysInfoMessage'], def: true },
+        showActionKeys: { info: ['showActionKeysInfoTitle', 'showActionKeysInfoMessage'], def: false },
         actionBarIntroStyle: { info: ['actionBarIntroInfoTitle', 'actionBarIntroInfoMessage'], def: 'off' },
+        actionBarSize: { info: ['actionBarSizeInfoTitle', 'actionBarSizeInfoMessage',
+            'Button size', 'How large the action buttons are drawn, from extra small to extra large. The keys and the order stay as they are.'], def: 'm' },
         showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'], def: true },
         showPagesButton: { info: ['showPagesButtonInfoTitle', 'showPagesButtonInfoMessage'], def: true },
         showInboxButton: { info: ['showInboxButtonInfoTitle', 'showInboxButtonInfoMessage'], def: true },
@@ -13295,6 +13351,121 @@ class DashboardConfig {
         return DashboardConfig.FIELD_META[field] || null;
     }
 
+    /** A panel's controls with every `fine` fold opened out into its members. */
+    static flatControls(controls) {
+        return (controls || []).flatMap((c) => (c && c.type === 'fine' ? DashboardConfig.flatControls(c.controls) : [c]));
+    }
+
+    /**
+     * Keep the controls `keep` accepts, folds included: a `fine` keeps only its
+     * accepted members (and remembers all of them as `_all`, for the summary)
+     * and goes when none is left.
+     */
+    static pruneControls(controls, keep) {
+        return (controls || []).flatMap((c) => {
+            if (!c || c.type !== 'fine') return keep(c) ? [c] : [];
+            const kept = DashboardConfig.pruneControls(c.controls, keep);
+            return kept.length ? [{ ...c, controls: kept, _all: c._all || c.controls }] : [];
+        });
+    }
+
+    /* ── Fine-tune folds ───────────────────────────────────────────────────── */
+
+    /**
+     * Whether a Fine-tune fold is open. Per fold, per viewer: the choice lives
+     * in localStorage (a convenience, so every access is guarded) and in memory,
+     * which keeps it across a repaint when storage is unavailable.
+     */
+    isFineOpen(id) {
+        this._fineOpen = this._fineOpen || {};
+        if (id in this._fineOpen) return this._fineOpen[id];
+        try { return localStorage.getItem(`nextdash.config.appearance.fine.${id}`) === '1'; } catch (_) { return false; }
+    }
+
+    setFineOpen(id, open) {
+        this._fineOpen = this._fineOpen || {};
+        this._fineOpen[id] = Boolean(open);
+        try { localStorage.setItem(`nextdash.config.appearance.fine.${id}`, open ? '1' : '0'); } catch (_) { /* works without it */ }
+    }
+
+    /**
+     * The fold around slider detail. A button rather than <details>: a
+     * repaint rewrites the body, and the state has to come from here, not from
+     * a DOM node that is about to be replaced. `forceOpen` is a filter hit or
+     * Only changed; it opens the fold without touching what the reader chose.
+     */
+    renderFineFold({ id, changed, body, forceOpen }) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const open = Boolean(forceOpen) || this.isFineOpen(id);
+        const summary = changed
+            ? this.t('config.fineChanged', '{n} changed').replace('{n}', String(changed))
+            : this.t('config.fineDefault', 'At defaults');
+        return `
+            <div class="config-fine" data-fine="${esc(id)}">
+                <button type="button" class="config-fine-head" data-fine-toggle
+                        aria-expanded="${open}" aria-controls="config-fine-${esc(id)}">
+                    <span class="config-fine-title">${esc(this.t('config.fineTitle', 'Fine-tune'))}</span>
+                    <small class="config-fine-summary">${esc(summary)}</small>
+                    <span class="config-fine-chevron" aria-hidden="true"></span>
+                </button>
+                <div class="config-fine-body" id="config-fine-${esc(id)}"${open ? '' : ' hidden'}>${body}</div>
+            </div>`;
+    }
+
+    /** Wire the folds under `container`; bound once per element. */
+    bindFineFolds(container) {
+        container.querySelectorAll('[data-fine-toggle]').forEach((btn) => {
+            if (btn.dataset.fineBound === '1') return;
+            btn.dataset.fineBound = '1';
+            btn.addEventListener('click', () => {
+                const fold = btn.closest('[data-fine]');
+                const open = btn.getAttribute('aria-expanded') !== 'true';
+                this.setFineOpen(fold.dataset.fine, open);
+                this.paintFineFold(fold, open);
+            });
+        });
+    }
+
+    /** Recount the changed rows in the fold holding `el` while a slider moves. */
+    refreshFineSummary(el) {
+        const fold = el.closest('[data-fine]');
+        const summary = fold?.querySelector('.config-fine-summary');
+        if (!summary) return;
+        const n = fold.querySelectorAll('.config-fine-body [data-fine-changed]').length;
+        summary.textContent = n
+            ? this.t('config.fineChanged', '{n} changed').replace('{n}', String(n))
+            : this.t('config.fineDefault', 'At defaults');
+    }
+
+    paintFineFold(fold, open) {
+        fold.querySelector('[data-fine-toggle]')?.setAttribute('aria-expanded', String(open));
+        const body = fold.querySelector('.config-fine-body');
+        if (body) body.hidden = !open;
+    }
+
+    /** Open the fold holding `el`, if any (a jump to a setting inside it). */
+    revealFine(el) {
+        const fold = el?.closest?.('[data-fine]');
+        if (!fold) return;
+        this.setFineOpen(fold.dataset.fine, true);
+        this.paintFineFold(fold, true);
+    }
+
+    /**
+     * Fold state after a DOM filter pass over the hand-written bodies: a fold
+     * with a visible row opens while the filter or Only changed is on, one
+     * with none goes, and with both off each goes back to the reader's choice.
+     */
+    syncFineFolds(host) {
+        const narrowed = this.changedOnly || Boolean(String(this.settingsFilter || '').trim());
+        host.querySelectorAll('[data-fine]').forEach((fold) => {
+            const rows = [...fold.querySelectorAll('.config-fine-body .config-field, .config-fine-body .config-field-row')];
+            const hit = rows.some((row) => !row.hasAttribute('hidden') && !row.hasAttribute('data-appearance-filtered'));
+            fold.toggleAttribute('hidden', narrowed && !hit);
+            this.paintFineFold(fold, narrowed ? hit : this.isFineOpen(fold.dataset.fine));
+        });
+    }
+
     /** Whether a field's current value differs from its installation default. */
     isFieldDefault(field, value) {
         const meta = this.fieldMeta(field);
@@ -13362,17 +13533,43 @@ class DashboardConfig {
             .filter((f) => this.fieldMeta(f)?.def !== undefined);
     }
 
+    /** The settings fields a schema control writes: one, or one per chip. */
+    controlFields(c) {
+        if (!c) return [];
+        if (c.type === 'chips') return (c.items || []).map((i) => i.field);
+        if (!c.field || c.type === 'note' || c.type === 'pushDevice'
+            || c.type === 'maintenanceWindows') return [];
+        return [c.field];
+    }
+
+    /**
+     * The chips of a `chips` control that the filter and "Only changed" keep.
+     *
+     * One answer for the render and for the counts, so the number on a tab
+     * strip is the number of chips actually drawn. A query that matches the
+     * group's own label keeps the whole group.
+     */
+    visibleChips(control, changedFields) {
+        let items = control.items || [];
+        if (changedFields) items = items.filter((i) => changedFields.includes(i.field));
+        const query = String(this.settingsFilter || '').trim().toLowerCase();
+        if (!query || String(control.label || '').toLowerCase().includes(query)) return items;
+        return items.filter((i) => {
+            const meta = this.fieldMeta(i.field);
+            const parts = [i.label, i.title, i.field, meta?.hint ? this.t(`config.${meta.hint}`, '') : ''];
+            return parts.filter(Boolean).some((part) => String(part).toLowerCase().includes(query));
+        });
+    }
+
     /** Fields in one schema panel that differ from their default. */
     panelChangedFields(panel) {
         const s = this.dash.settings || {};
-        return (panel.controls || [])
-            .filter((c) => c.field && c.type !== 'note' && c.type !== 'pushDevice'
-                && c.type !== 'maintenanceWindows')
-            .filter((c) => {
-                const meta = this.fieldMeta(c.field);
-                return meta && meta.def !== undefined && !this.isFieldDefault(c.field, s[c.field]);
-            })
-            .map((c) => c.field);
+        return DashboardConfig.flatControls(panel.controls)
+            .flatMap((c) => this.controlFields(c))
+            .filter((field) => {
+                const meta = this.fieldMeta(field);
+                return meta && meta.def !== undefined && !this.isFieldDefault(field, s[field]);
+            });
     }
 
     /** Open the shared info modal for a setting field. */
@@ -13383,6 +13580,37 @@ class DashboardConfig {
         window.AppModal.alert({
             title: this.t(`config.${titleKey}`, titleFallback),
             htmlMessage: this.dash.escapeHtml(this.t(`config.${msgKey}`, msgFallback)).replace(/\n/g, '<br>'),
+            confirmText: this.t('config.gotIt', 'Got it'),
+        });
+    }
+
+    /**
+     * The ℹ of a chip group: every chip's explanation in one dialog, each
+     * under the name its old checkbox had, in the order the chips stand.
+     */
+    openGroupInfo(title, fields) {
+        if (!window.AppModal?.alert) return;
+        const esc = (v) => this.dash.escapeHtml(v);
+        const chipName = (field) => {
+            for (const panel of this.behaviorSchema()) {
+                for (const c of DashboardConfig.flatControls(panel.controls)) {
+                    const item = c?.type === 'chips' && (c.items || []).find((i) => i.field === field);
+                    if (item) return item.title || item.label;
+                }
+            }
+            return field;
+        };
+        const parts = fields.map((field) => {
+            const info = this.fieldMeta(field)?.info;
+            if (!this.hasInfoText(info)) return '';
+            const [, msgKey, , msgFallback = ''] = info;
+            const message = this.t(`config.${msgKey}`, msgFallback);
+            return `<p><strong>${esc(chipName(field))}</strong><br>${esc(message).replace(/\n/g, '<br>')}</p>`;
+        }).filter(Boolean);
+        if (!parts.length) return;
+        window.AppModal.alert({
+            title,
+            htmlMessage: parts.join(''),
             confirmText: this.t('config.gotIt', 'Got it'),
         });
     }
@@ -13488,6 +13716,13 @@ class DashboardConfig {
         // A toggle whose effect lives in the page chrome rather than the bookmark
         // grid, so it needs the header reapplied instead of a re-render.
         const chrome = (field, label, fallback) => ({ ...bool(field, label, fallback), special: 'chrome' });
+        // One chip of a `chips` control: it writes its own boolean, like the
+        // checkbox it replaces. `label` is the short word on the chip; `title`
+        // is the long form the checkbox carried, kept for the filter and the
+        // settings jump so searching "show the search button" still finds it.
+        const chip = (field, special, labelKey, labelFallback, titleKey, titleFallback) => ({
+            field, special, label: t(labelKey, labelFallback), title: t(titleKey, titleFallback),
+        });
         const opt = (value, label) => ({ value, label });
         // From the shared util so config and dashboard cannot drift apart.
         const layoutPresets = window.LayoutUtils?.getLayoutPresets?.()
@@ -13878,8 +14113,10 @@ class DashboardConfig {
                     { field: 'timeFormat', type: 'select', label: t('config.timeFormatLabel', 'Time format'), special: 'datetime', options: [
                         opt('24h', '23:59'), opt('12h', '11:59 PM'),
                     ] },
-                    chrome('showDate', 'config.showDateLabel', 'Show the date'),
-                    chrome('showTime', 'config.showTimeLabel', 'Show the time'),
+                    { type: 'chips', label: t('config.dateLineShownLabel', 'Shown in the line'), items: [
+                        chip('showDate', 'chrome', 'config.chipDate', 'Date', 'config.showDateLabel', 'Show the date'),
+                        chip('showTime', 'chrome', 'config.chipTime', 'Time', 'config.showTimeLabel', 'Show the time'),
+                    ] },
                 ],
             },
             {
@@ -13889,9 +14126,12 @@ class DashboardConfig {
                 //
                 // On the Header tab now, which is where the header is set; Date
                 // & weather keeps what the line says.
+                //
+                // Back on Date & weather, first: it is the clock, and the
+                // panels under it set what the clock says.
                 section: 'appearance',
-                tab: 'header',
-                order: 10,
+                tab: 'datetime',
+                order: -10,
                 title: t('config.appearanceClockPlacementTitle', 'Clock & weather'),
                 note: t('config.generalGroupHeaderClockNote', 'Where the clock and the weather stand in the header above the bookmarks.'),
                 controls: [
@@ -14079,23 +14319,14 @@ class DashboardConfig {
                             },
                         ],
                     },
-                    bool('showStatus', 'config.showStatusLabel', 'Show online/offline status'),
-                    bool('showStatusLoading', 'config.showStatusLoadingLabel', 'Show a loading state while checking'),
-                    bool('showPing', 'config.showPingLabel', 'Show ping times'),
+                    { type: 'chips', label: t('config.rowStatusShownLabel', 'Row status'), items: [
+                        chip('showStatus', '', 'config.chipStatus', 'Online/offline', 'config.showStatusLabel', 'Show online/offline status'),
+                        chip('showStatusLoading', '', 'config.chipStatusLoading', 'Loading state', 'config.showStatusLoadingLabel', 'Show a loading state while checking'),
+                        chip('showPing', '', 'config.chipPing', 'Ping times', 'config.showPingLabel', 'Show ping times'),
+                    ] },
                     { ...bool('showRowTags', 'config.showRowTagsLabel', 'Show tags on bookmark rows'), special: 'render' },
                     { field: 'rowTagsMax', type: 'number', min: 1, max: 5, step: 1, special: 'render',
                         label: t('config.rowTagsMaxLabel', 'Tags shown before “+N”') },
-                ],
-            },
-            {
-                // What the browser's own tab says, beside the custom title and
-                // favicon that Header draws under it.
-                section: 'appearance',
-                tab: 'header',
-                order: 20,
-                title: t('config.appearanceBrowserTabTitle', 'Browser tab'),
-                controls: [
-                    bool('showPageInTitle', 'config.showPageInTitleLabel', 'Show the page name in the browser title'),
                 ],
             },
             {
@@ -14125,14 +14356,16 @@ class DashboardConfig {
                             opt('m', t('config.categoryHeaderMedium', 'Medium')),
                             opt('l', t('config.categoryHeaderLarge', 'Large')),
                         ] },
-                    chrome('showCategoryIcon', 'config.showCategoryIconLabel', 'Show the category icon'),
-                    chrome('showCategoryCount', 'config.showCategoryCountLabel', 'Show how many bookmarks it holds'),
-                    chrome('categoryHeaderAccentLine', 'config.categoryHeaderAccentLabel', 'Underline in the accent colour'),
+                    { type: 'chips', label: t('config.categoryHeaderExtrasLabel', 'Shown in the header'), items: [
+                        chip('showCategoryIcon', 'chrome', 'config.chipCategoryIcon', 'Icon', 'config.showCategoryIconLabel', 'Show the category icon'),
+                        chip('showCategoryCount', 'chrome', 'config.chipCategoryCount', 'Count', 'config.showCategoryCountLabel', 'Show how many bookmarks it holds'),
+                        chip('categoryHeaderAccentLine', 'chrome', 'config.chipCategoryUnderline', 'Underline', 'config.categoryHeaderAccentLabel', 'Underline in the accent colour'),
+                    ] },
                 ],
             },
             {
                 section: 'appearance',
-                tab: 'display',
+                tab: 'previews',
                 title: t('config.linkPreviewGroup', 'Link preview cards'),
                 note: t('config.linkPreviewGroupNote',
                     'A card beside a bookmark with what the page says and what nextDash knows about it.'),
@@ -14220,10 +14453,12 @@ class DashboardConfig {
                         ] },
                     { field: 'maxPageTabs', type: 'number', min: 3, max: 9, step: 1, special: 'chrome',
                         label: t('config.maxPageTabsLabel', 'Page tabs shown before “+N”') },
-                    chrome('showTitle', 'config.showTitleLabel', 'Show the dashboard title'),
-                    chrome('showDashboardButton', 'config.showDashboardButtonLabel', 'Show the dashboard button'),
-                    chrome('showInboxButton', 'config.showInboxButtonLabel', 'Show the inbox button'),
-                    chrome('showConfigButton', 'config.showConfigButtonLabel', 'Show the config button'),
+                    { type: 'chips', label: t('config.headerButtonsShownLabel', 'Shown in the header'), items: [
+                        chip('showTitle', 'chrome', 'config.chipTitle', 'Title', 'config.showTitleLabel', 'Show the dashboard title'),
+                        chip('showDashboardButton', 'chrome', 'config.chipDashboard', 'Dashboard', 'config.showDashboardButtonLabel', 'Show the dashboard button'),
+                        chip('showInboxButton', 'chrome', 'config.chipInbox', 'Inbox', 'config.showInboxButtonLabel', 'Show the inbox button'),
+                        chip('showConfigButton', 'chrome', 'config.chipConfig', 'Config', 'config.showConfigButtonLabel', 'Show the config button'),
+                    ] },
                 ],
             },
             {
@@ -14237,6 +14472,9 @@ class DashboardConfig {
                 note: t('config.actionBarGroupNote', 'The buttons in the header, in the order they stand there. Hiding one leaves its key working, and with all of them off the surround goes too. Tags, recents, the cheat sheet and the pages panel are modes of the search panel — switch a button on here to put it back in the bar as well.'),
                 bulk: 'chrome',
                 controls: [
+                    // First: whether there is a bar at all decides whether
+                    // anything below it matters.
+                    { ...chrome('actionBarEnabled', 'config.actionBarEnabledLabel', 'Show the action buttons'), noBulk: true },
                     { field: 'actionBarPosition', type: 'select', special: 'chrome',
                         label: t('config.actionBarPositionLabel', 'Where the fixed buttons stand'),
                         options: [
@@ -14246,21 +14484,31 @@ class DashboardConfig {
                             opt('header', t('config.actionBarHeader', 'In the header')),
                             opt('menu', t('config.actionBarMenu', 'Behind one menu in the header')),
                         ] },
+                    { field: 'actionBarSize', type: 'select', special: 'chrome',
+                        label: t('config.actionBarSizeLabel', 'Button size'),
+                        options: [
+                            opt('xs', t('config.actionBarSizeXs', 'Extra small')),
+                            opt('s', t('config.actionBarSizeS', 'Small')),
+                            opt('m', t('config.actionBarSizeM', 'Medium')),
+                            opt('l', t('config.actionBarSizeL', 'Large')),
+                            opt('xl', t('config.actionBarSizeXl', 'Extra large')),
+                        ] },
                     { field: 'maxHeaderActions', type: 'number', min: 0, max: 9, step: 1, special: 'chrome',
                         label: t('config.maxHeaderActionsLabel', 'Action buttons shown before “+N”') },
-                    { ...chrome('actionBarEnabled', 'config.actionBarEnabledLabel', 'Show the action buttons'), noBulk: true },
                     { ...chrome('showActionKeys', 'config.showActionKeysLabel', 'Show the key on each button'), noBulk: true },
-                    // Cards rather than a select: an animation is seen, not read,
-                    // and each card plays its own while it has the pointer or the focus.
-                    { field: 'actionBarIntroStyle', type: 'cards', special: 'chrome', art: 'actionBarIntro', noBulk: true,
+                    // A select rather than six cards that each played the
+                    // animation: picking one plays it on the real bar at once,
+                    // so the cards showed the same thing twice and took half
+                    // the panel.
+                    { field: 'actionBarIntroStyle', type: 'select', special: 'chrome', noBulk: true,
                         label: t('config.actionBarIntroLabel', 'Animate the buttons as the bar appears'),
                         options: [
-                            { value: 'off', label: t('config.actionBarIntroOff', 'Off'), body: t('config.actionBarIntroOffBody', 'The bar just appears.') },
-                            { value: 'swell', label: t('config.actionBarIntroSwell', 'Swell'), body: t('config.actionBarIntroSwellBody', 'Each button grows past its size and settles back, left to right.') },
-                            { value: 'swell-middle', label: t('config.actionBarIntroSwellMiddle', 'Swell from the middle'), body: t('config.actionBarIntroSwellMiddleBody', 'The same, outwards from the middle.') },
-                            { value: 'swell-together', label: t('config.actionBarIntroSwellTogether', 'Swell together'), body: t('config.actionBarIntroSwellTogetherBody', 'All buttons at once.') },
-                            { value: 'unfold', label: t('config.actionBarIntroUnfold', 'Unfold'), body: t('config.actionBarIntroUnfoldBody', 'The bar opens and the buttons pop in, left to right.') },
-                            { value: 'accordion', label: t('config.actionBarIntroAccordion', 'Accordion'), body: t('config.actionBarIntroAccordionBody', 'The bar opens from the middle and the buttons pop out to both ends.') },
+                            opt('off', t('config.actionBarIntroOff', 'Off')),
+                            opt('swell', t('config.actionBarIntroSwell', 'Swell')),
+                            opt('swell-middle', t('config.actionBarIntroSwellMiddle', 'Swell from the middle')),
+                            opt('swell-together', t('config.actionBarIntroSwellTogether', 'Swell together')),
+                            opt('unfold', t('config.actionBarIntroUnfold', 'Unfold')),
+                            opt('accordion', t('config.actionBarIntroAccordion', 'Accordion')),
                         ] },
                     { field: 'actionBarAutoHideSeconds', type: 'select', special: 'chrome',
                         label: t('config.actionBarAutoHideLabel', 'Slide a docked bar away after'),
@@ -14271,15 +14519,17 @@ class DashboardConfig {
                             opt(10, t('config.actionBarAutoHide10', '10 seconds')),
                             opt(30, t('config.actionBarAutoHide30', '30 seconds')),
                         ] },
-                    chrome('showAddBookmarkButton', 'config.showAddBookmarkButtonLabel', 'Show the add-bookmark button'),
-                    chrome('showSearchButton', 'config.showSearchButtonLabel', 'Show the search button'),
-                    chrome('showCommandsButton', 'config.showCommandsButtonLabel', 'Show the commands button'),
-                    chrome('showFindersButton', 'config.showFindersButtonLabel', 'Show the finders button'),
-                    chrome('showTagCloudButton', 'config.showTagCloudButtonLabel', 'Show the tag-cloud button'),
-                    chrome('showRecentButton', 'config.showRecentButtonLabel', 'Show the recent button'),
-                    chrome('showPagesButton', 'config.showPagesButtonLabel', 'Show the pages button'),
-                    chrome('showCollapseAllButton', 'config.showCollapseAllButtonLabel', 'Show the fold-all button'),
-                    chrome('showCheatSheetButton', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
+                    { type: 'chips', label: t('config.actionBarShownLabel', 'Buttons shown'), items: [
+                        chip('showAddBookmarkButton', 'chrome', 'config.chipAddBookmark', 'Add bookmark', 'config.showAddBookmarkButtonLabel', 'Show the add-bookmark button'),
+                        chip('showSearchButton', 'chrome', 'config.chipSearch', 'Search', 'config.showSearchButtonLabel', 'Show the search button'),
+                        chip('showCommandsButton', 'chrome', 'config.chipCommands', 'Commands', 'config.showCommandsButtonLabel', 'Show the commands button'),
+                        chip('showFindersButton', 'chrome', 'config.chipFinders', 'Finders', 'config.showFindersButtonLabel', 'Show the finders button'),
+                        chip('showTagCloudButton', 'chrome', 'config.chipTagCloud', 'Tag cloud', 'config.showTagCloudButtonLabel', 'Show the tag-cloud button'),
+                        chip('showRecentButton', 'chrome', 'config.chipRecent', 'Recent', 'config.showRecentButtonLabel', 'Show the recent button'),
+                        chip('showPagesButton', 'chrome', 'config.chipPages', 'Pages', 'config.showPagesButtonLabel', 'Show the pages button'),
+                        chip('showCollapseAllButton', 'chrome', 'config.chipCollapseAll', 'Fold all', 'config.showCollapseAllButtonLabel', 'Show the fold-all button'),
+                        chip('showCheatSheetButton', 'chrome', 'config.chipCheatSheet', 'Cheat sheet', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
+                    ] },
                 ],
             },
             {
@@ -14860,7 +15110,7 @@ class DashboardConfig {
     renderControlPanels(schema, prefix) {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
-        const renderControl = (c) => {
+        const renderControl = (c, changedFields = []) => {
             // Standalone explanatory text between controls. It has no field, so
             // it must be handled before anything reads c.field — the fallthrough
             // below turns an unknown type into a text input bound to undefined.
@@ -14878,6 +15128,45 @@ class DashboardConfig {
             }
             // A set of names rather than one value: eight checkboxes writing one
             // array, so the card's rows are chosen the way a list is chosen.
+            if (c.type === 'chips') {
+                const shown = this.visibleChips(c, this.changedOnly ? changedFields : null);
+                if (!shown.length) return '';
+                // The chip has no room for the ℹ and the sentence under a
+                // checkbox, so both ride in its tooltip.
+                const chips = shown.map((i) => {
+                    const tip = [i.title, this.fieldSummary(i.field)].filter(Boolean).join(' — ');
+                    return `
+                    <button type="button" class="config-chip" aria-pressed="${s[i.field] ? 'true' : 'false'}"
+                            data-${prefix}-field="${esc(i.field)}" data-${prefix}-special="${esc(i.special || '')}"
+                            data-${prefix}-type="chip"${tip ? ` title="${esc(tip)}"` : ''}>${esc(i.label)}</button>`;
+                }).join('');
+                // One ↺ for the group, and only for the chips that differ: the
+                // per-field one would be nine buttons in a row of words.
+                const off = c.items
+                    .filter((i) => this.fieldMeta(i.field)?.def !== undefined && !this.isFieldDefault(i.field, s[i.field]))
+                    .map((i) => i.field);
+                const reset = off.length
+                    ? `<button type="button" class="config-reset-btn is-visible" data-reset-group="${esc(off.join(','))}"
+                               aria-label="${esc(this.t('config.settingResetAria', 'Reset to default'))}"
+                               title="${esc(this.t('config.settingResetTitle', 'Reset to default'))}">↺</button>`
+                    : '';
+                // One ℹ for the group as well. The tooltip alone is out of
+                // reach on a touch screen and from the keyboard, so the
+                // explanations a chip carries are listed in one dialog.
+                const explained = c.items.filter((i) => this.hasInfoText(this.fieldMeta(i.field)?.info));
+                const info = explained.length
+                    ? `<button type="button" class="config-info-btn" data-info-group="${esc(explained.map((i) => i.field).join(','))}"
+                               data-info-group-title="${esc(c.label)}"
+                               aria-label="${esc(this.t('config.settingInfoAria', 'More info'))}"
+                               title="${esc(this.t('config.settingInfoAria', 'More info'))}">ℹ</button>`
+                    : '';
+                return `
+                    <div class="config-field config-field--chips">
+                        <span class="config-field-label">${esc(c.label)}</span>
+                        <span class="config-field-affordances">${info}${reset}</span>
+                    </div>
+                    <div class="config-chips" role="group" aria-label="${esc(c.label)}">${chips}</div>`;
+            }
             if (c.type === 'checkset') {
                 const current = Array.isArray(s[c.field])
                     ? s[c.field].map((v) => String(v))
@@ -14885,20 +15174,18 @@ class DashboardConfig {
                     // always drawn — an empty list is a deliberate choice and
                     // reads as one.
                     : c.options.map((o) => String(o.value));
+                // Chips like the rest, but still one array under one field.
                 const boxes = c.options.map((o) => `
-                    <label class="config-toggle config-checkset-item">
-                        <input type="checkbox" data-${prefix}-field="${esc(c.field)}"
-                               data-${prefix}-type="checkset" data-${prefix}-special="${esc(c.special || '')}"
-                               data-${prefix}-value="${esc(o.value)}"
-                               ${current.includes(String(o.value)) ? 'checked' : ''}>
-                        <span>${esc(o.label)}</span>
-                    </label>`).join('');
+                    <button type="button" class="config-chip" aria-pressed="${current.includes(String(o.value)) ? 'true' : 'false'}"
+                            data-${prefix}-field="${esc(c.field)}"
+                            data-${prefix}-type="checkset" data-${prefix}-special="${esc(c.special || '')}"
+                            data-${prefix}-value="${esc(o.value)}">${esc(o.label)}</button>`).join('');
                 return `
                     <div class="config-field">
                         <span class="config-field-label">${esc(c.label)}</span>
                         <span class="config-field-affordances">${this.renderFieldAffordances(c.field, s[c.field])}</span>
                     </div>
-                    <div class="config-checkset" role="group" aria-label="${esc(c.label)}">${boxes}</div>`;
+                    <div class="config-checkset config-chips" role="group" aria-label="${esc(c.label)}">${boxes}</div>`;
             }
             // Per-device push controls. Permission is granted per browser, so this
             // cannot be a synced setting like the toggles around it — the state is
@@ -14942,6 +15229,17 @@ class DashboardConfig {
                         <span class="config-field-hint" data-config-action-status="${esc(c.action)}"></span>
                     </div>`;
             }
+            // Slider detail folded under one line: the same fold the
+            // hand-written Background and Surface bodies use.
+            if (c.type === 'fine') {
+                const all = c._all || c.controls || [];
+                return this.renderFineFold({
+                    id: c.id,
+                    changed: this.panelChangedFields({ controls: all }).length,
+                    forceOpen: this.changedOnly || Boolean(String(this.settingsFilter || '').trim()),
+                    body: (c.controls || []).map(renderControl).join(''),
+                });
+            }
             // deviceSpecificSettings is kept in this browser rather than in the
             // settings object it is rendered from, so reading it the ordinary
             // way would draw the box unchecked however it is set.
@@ -14951,7 +15249,15 @@ class DashboardConfig {
             const dataAttrs = `data-${prefix}-field="${esc(c.field)}" data-${prefix}-special="${esc(c.special || '')}"`;
             const aff = this.renderFieldAffordances(c.field, val);
             const summary = this.fieldSummary(c.field);
-            const hint = summary ? `<p class="config-field-hint">${esc(summary)}</p>` : '';
+            // In Appearance the hint sits inside its row, under the label and
+            // beside the control; one line, cut with an ellipsis, the whole
+            // sentence in the title. Elsewhere it stays a paragraph below.
+            const hintInRow = Boolean(summary) && this.section === 'appearance';
+            const hintHtml = summary
+                ? `<p class="config-field-hint${hintInRow ? ' config-field-hint--inline' : ''}"${hintInRow ? ` title="${esc(summary)}"` : ''}>${esc(summary)}</p>`
+                : '';
+            const hint = hintInRow ? '' : hintHtml;
+            const rowHint = hintInRow ? hintHtml : '';
             // A drawing of what the current value does, for the settings whose
             // difference is a shape rather than a word. It repaints on change
             // (see bindControlPanels), so it is the answer to "what will this
@@ -14968,6 +15274,7 @@ class DashboardConfig {
                             <span>${esc(c.label)}${badge}</span>
                         </label>
                         <span class="config-field-affordances">${aff}</span>
+                        ${rowHint}
                     </div>${art}${hint}`;
             }
             // Big labelled choice buttons, for a small set of options where the
@@ -15024,6 +15331,7 @@ class DashboardConfig {
                     <span class="config-field-label">${esc(c.label)}</span>
                     ${control}
                     <span class="config-field-affordances">${aff}</span>
+                    ${rowHint}
                 </div>${art}${hint}`;
         };
         // `note` explains the panel; `appliesTo` names the availability modes the
@@ -15036,11 +15344,11 @@ class DashboardConfig {
             // applies-to badge stay: they explain the controls that remain.
             if (this.changedOnly && !changedFields.length) return '';
             const filtered = String(this.settingsFilter || '').trim()
-                ? panel.controls.filter((c) => this.controlMatchesFilter(c))
+                ? DashboardConfig.pruneControls(panel.controls, (c) => this.controlMatchesFilter(c))
                 : panel.controls;
             if (!filtered.length) return '';
             const controls = this.changedOnly
-                ? filtered.filter((c) => changedFields.includes(c.field))
+                ? DashboardConfig.pruneControls(filtered, (c) => this.controlFields(c).some((f) => changedFields.includes(f)))
                 : filtered;
 
             const badge = panel.appliesTo
@@ -15059,9 +15367,15 @@ class DashboardConfig {
             const bulk = (panel.bulk && !this.changedOnly && !locked) ? this.renderPanelBulkActions(panel, prefix) : '';
             const reset = locked ? '' : this.renderPanelResetAction(panel, changedFields);
             const lockChip = locked ? window.DemoLock.chip(panel.kind) : '';
-            const body = controls.map(renderControl).join('');
+            const body = controls.map((c) => renderControl(c, changedFields)).join('');
+            // Appearance folds its panels, and a folded one says what it is set
+            // to. Read from the declaration rather than the drawn controls, so
+            // it covers the controls the filter has just left out as well.
+            const fold = this.section === 'appearance'
+                ? ` data-fold-summary="${esc(this.panelValueSummary(panel))}"`
+                : '';
             return `
-            <div class="config-panel${panel.highlight ? ' config-panel--animated' : ''}${locked ? ' config-panel--demo-locked' : ''}">
+            <div class="config-panel${panel.highlight ? ' config-panel--animated' : ''}${locked ? ' config-panel--demo-locked' : ''}"${fold}>
                 ${stars}
                 <h3 class="config-panel-title">${esc(panel.title)}${badge}${reset}${lockChip}</h3>
                 ${note}
@@ -15120,8 +15434,8 @@ class DashboardConfig {
         const s = this.dash.settings || {};
         const fields = (panel.controls || [])
             // A switch for the whole panel is not one of the things it shows.
-            .filter((c) => c.type === 'checkbox' && c.field && !c.noBulk)
-            .map((c) => c.field);
+            .filter((c) => (c.type === 'checkbox' && c.field && !c.noBulk) || c.type === 'chips')
+            .flatMap((c) => this.controlFields(c));
         if (fields.length < 2) return '';
 
         const shown = fields.filter((f) => s[f] !== false).length;
@@ -15250,6 +15564,7 @@ class DashboardConfig {
     }
 
     bindControlPanels(container, prefix) {
+        this.bindFineFolds(container);
         container.querySelectorAll(`[data-${prefix}-field]`).forEach((el) => {
             const field = el.getAttribute(`data-${prefix}-field`);
             const type = el.getAttribute(`data-${prefix}-type`);
@@ -15270,14 +15585,22 @@ class DashboardConfig {
                     });
                     void this.setBehavior(field, value, special);
                 });
+            } else if (type === 'chip') {
+                // A button, so Space and Enter arrive as a click.
+                el.addEventListener('click', () => {
+                    const on = el.getAttribute('aria-pressed') !== 'true';
+                    el.setAttribute('aria-pressed', on ? 'true' : 'false');
+                    return this.setBehavior(field, on, special);
+                });
             } else if (type === 'checkset') {
-                el.addEventListener('change', () => {
-                    const boxes = [...container.querySelectorAll(
+                el.addEventListener('click', () => {
+                    el.setAttribute('aria-pressed', el.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+                    const chips = [...container.querySelectorAll(
                         `[data-${prefix}-field="${CSS.escape(field)}"][data-${prefix}-type="checkset"]`
                     )];
-                    const value = boxes
-                        .filter((box) => box.checked)
-                        .map((box) => box.getAttribute(`data-${prefix}-value`));
+                    const value = chips
+                        .filter((chip) => chip.getAttribute('aria-pressed') === 'true')
+                        .map((chip) => chip.getAttribute(`data-${prefix}-value`));
                     return this.setBehavior(field, value, special);
                 });
             } else if (type === 'checkbox') {
@@ -15306,6 +15629,7 @@ class DashboardConfig {
         this.bindPanelBulkActions(container, prefix);
         this.bindChangedFilter(container);
         this.bindPanelResetActions(container);
+        this.bindGroupResetActions(container);
         this.bindPushDeviceControls(container);
         this.bindMaintenanceWindows(container);
         this.bindMonitorNotifyTest(container);
@@ -15363,6 +15687,8 @@ class DashboardConfig {
             if (panel.querySelector('[data-behavior-field]')) return;
             let kept = 0;
             panel.querySelectorAll('.config-field, .config-field-row').forEach((row) => {
+                // Slider detail with no field of its own: the row says so.
+                if (row.hasAttribute('data-fine-changed')) { kept += 1; return; }
                 const aff = row.querySelector('[data-appearance-aff]');
                 const field = aff?.getAttribute('data-appearance-aff');
                 if (field && !this.isFieldDefault(field, s[field])) { kept += 1; return; }
@@ -15372,6 +15698,7 @@ class DashboardConfig {
         });
         // The tiles are navigation, not settings.
         host.querySelectorAll('.config-tiles').forEach(hide);
+        this.syncFineFolds(host);
 
         // The toggle is disabled when a tab has nothing changed, so this is
         // reachable only by arriving with the filter already on — from the
@@ -15386,6 +15713,364 @@ class DashboardConfig {
             note.textContent = this.t('config.changedNoneOnTab', 'Nothing on this tab differs from its default.');
             host.appendChild(note);
         }
+    }
+
+    /**
+     * What one schema control contributes to its folded panel's summary line,
+     * by control type.
+     *
+     * A type with no entry contributes nothing, so a control type added later
+     * renders and folds without having to be taught to summarise itself first;
+     * it adds its own entry here when it has something worth saying. Called
+     * with the config as `this`, the control, and its current value.
+     */
+    static PANEL_SUMMARY_BY_TYPE = {
+        checkbox(c, value) { return value ? c.label : ''; },
+        select(c, value) { return this.summaryOptionLabel(c, value); },
+        cards(c, value) { return this.summaryOptionLabel(c, value); },
+        checkset(c, value) {
+            const options = c.options || [];
+            // Absent is all of them, as the checklist draws it.
+            const on = Array.isArray(value)
+                ? options.filter((o) => value.map(String).includes(String(o.value))).length
+                : options.length;
+            return `${c.label} ${on}/${options.length}`;
+        },
+        number(c, value) {
+            if (value === undefined || value === null || value === '') return '';
+            return `${c.label} ${value}${c.unit || ''}`;
+        },
+        // Each chip is its own setting, so the group says how many are on.
+        chips(c) {
+            const items = c.items || [];
+            const s = this.dash.settings || {};
+            return `${c.label} ${items.filter((i) => s[i.field]).length}/${items.length}`;
+        },
+        // A Fine-tune fold says how far it is from the defaults, not each slider.
+        fine(c) {
+            const s = this.dash.settings || {};
+            const off = DashboardConfig.flatControls(c.controls)
+                .filter((x) => x?.field && this.fieldMeta(x.field)?.def !== undefined
+                    && !this.isFieldDefault(x.field, s[x.field])).length;
+            return off ? this.t('config.fineChanged', '{n} changed').replace('{n}', off) : '';
+        },
+    };
+
+    /** The label of the option a select or a set of cards stands on. */
+    summaryOptionLabel(control, value) {
+        const options = control.options || [];
+        const hit = options.find((o) => String(o.value) === String(value)) || options[0];
+        return hit ? String(hit.label || '') : '';
+    }
+
+    /**
+     * One line saying what a schema panel is set to: the first four things it
+     * shows, joined with " · ". Read from the declaration, so it holds for the
+     * controls the filter has left out of the markup.
+     */
+    panelValueSummary(panel) {
+        const s = this.dash.settings || {};
+        const parts = [];
+        for (const c of panel?.controls || []) {
+            const summarise = c && DashboardConfig.PANEL_SUMMARY_BY_TYPE[c.type];
+            // Chips and Fine-tune have no field of their own; they read theirs.
+            if (!summarise || (!c.field && c.type !== 'chips' && c.type !== 'fine')) continue;
+            const value = !c.field ? undefined
+                : (s[c.field] !== undefined ? s[c.field] : this.fieldMeta(c.field)?.def);
+            const text = String(summarise.call(this, c, value) || '').trim();
+            if (!text) continue;
+            // A Fine-tune line is only written when something in it differs.
+            const changed = c.type === 'fine' || this.controlFields(c)
+                .some((f) => this.fieldMeta(f)?.def !== undefined && !this.isFieldDefault(f, s[f]));
+            parts.push({ text, changed });
+        }
+        // What differs from the default comes first, so a change in a long
+        // panel is not the fifth thing and cut off the line.
+        return [...parts.filter((p) => p.changed), ...parts.filter((p) => !p.changed)]
+            .slice(0, 4).map((p) => p.text).join(' · ');
+    }
+
+    /**
+     * The same line for a hand-written panel, read off its drawn controls:
+     * the option a select or a row of choices stands on, the label of a ticked
+     * switch, a slider's label and the value beside it. A panel that wants
+     * something else says so with its own data-fold-summary.
+     */
+    domPanelSummary(root) {
+        if (!root) return '';
+        const rowSelector = '.config-field, .config-field-row';
+        // The sliders under Fine-tune are not read one by one: the fold says
+        // how many differ, as it does on its own header.
+        const rows = [...root.querySelectorAll(rowSelector)]
+            .filter((row) => !row.parentElement?.closest(rowSelector) && !row.closest('.config-fine-body'));
+        const parts = [];
+        const text = (el) => String(el?.textContent || '').replace(/\s+/g, ' ').trim();
+        const fine = text(root.querySelector('.config-fine-summary'));
+        if (fine && !/^at defaults$/i.test(fine) && fine !== this.t('config.fineDefault', 'At defaults')) {
+            parts.push(`${this.t('config.fineTitle', 'Fine-tune')} ${fine}`);
+        }
+        for (const row of rows) {
+            if (parts.length >= 4) break;
+            const label = text(row.querySelector('.config-field-label'));
+            const select = row.querySelector('select, [data-theme-picker-button]');
+            const choice = row.querySelector('.config-choice.is-active, .config-choice[aria-pressed="true"]');
+            const range = row.querySelector('input[type="range"]');
+            const box = row.querySelector('.config-toggle input[type="checkbox"]');
+            let part = '';
+            if (select) part = text(select.selectedOptions ? select.selectedOptions[0] : select);
+            else if (choice) part = text(choice);
+            else if (range) part = [label, text(row.querySelector('.config-range-value')) || range.value].filter(Boolean).join(' ');
+            else if (box) part = box.checked ? text(box.closest('.config-toggle')?.querySelector('span')) : '';
+            if (part) parts.push(part);
+        }
+        return parts.join(' · ');
+    }
+
+    static APPEARANCE_OPEN_KEY = 'nextdash.config.appearance.open.';
+
+    /**
+     * Which panels the reader left open on one Appearance tab, or null when
+     * they have not chosen yet. A convenience of this browser, not a setting:
+     * kept in localStorage, and in memory as well, so a browser that refuses
+     * storage still keeps the choice for as long as the page is open.
+     */
+    appearanceOpenPanels(tab) {
+        this._appearanceOpen = this._appearanceOpen || {};
+        if (this._appearanceOpen[tab]) return this._appearanceOpen[tab];
+        try {
+            const list = JSON.parse(localStorage.getItem(DashboardConfig.APPEARANCE_OPEN_KEY + tab) || 'null');
+            if (Array.isArray(list)) this._appearanceOpen[tab] = new Set(list.map(String));
+        } catch { /* blocked or unreadable: the default stands */ }
+        return this._appearanceOpen[tab] || null;
+    }
+
+    rememberAppearanceOpenPanels(tab, keys) {
+        this._appearanceOpen = this._appearanceOpen || {};
+        this._appearanceOpen[tab] = new Set(keys);
+        try {
+            localStorage.setItem(DashboardConfig.APPEARANCE_OPEN_KEY + tab, JSON.stringify([...keys]));
+        } catch { /* kept in memory only */ }
+    }
+
+    /** True while the filter or "Only changed" decides which panels are open. */
+    appearanceFoldsForced() {
+        return Boolean(this.changedOnly || String(this.settingsFilter || '').trim());
+    }
+
+    /**
+     * Fold the panels of the Appearance tab on screen.
+     *
+     * A pass over the rendered body rather than a second shape in every
+     * renderer: the schema panels and the hand-written ones on Look,
+     * Background and Surface all come out as a .config-panel with its title
+     * first, and every repaint of the body lands in bindAppearanceControls,
+     * which calls this. The header is a real button rather than a <details>
+     * summary, because it also carries "Reset panel", which must not toggle.
+     *
+     * Custom themes is an editor with its own layout, and stays unfolded.
+     */
+    applyAppearanceFolds(body) {
+        if (!body || this.appearanceTab === 'custom-themes') return;
+        const panels = [...body.querySelectorAll('.config-panel')]
+            .filter((panel) => !panel.parentElement?.closest('.config-panel'));
+        const used = new Set();
+        panels.forEach((panel, i) => this.makeAppearancePanelFoldable(panel, i, used));
+        this.syncAppearanceFolds(body);
+        this.openAppearancePanelFromLink(body);
+        this.renderAppearancePanelIndex(body);
+    }
+
+    /** A tab needs more panels than this before it gets an index. */
+    static APPEARANCE_INDEX_MIN_PANELS = 4;
+
+    /**
+     * The list of a long tab's panels above the preview, marking the one in
+     * view.
+     *
+     * Only past three panels: with their summaries, three folded panels fit on
+     * one screen and a list of them would only repeat it. Built from the
+     * panels on screen, so the filter and "Only changed" narrow it too.
+     * Choosing an entry opens that panel and brings it into view.
+     */
+    renderAppearancePanelIndex(body) {
+        this._panelIndexObserver?.disconnect();
+        this._panelIndexObserver = null;
+        const nav = document.querySelector('[data-panel-index]');
+        if (!nav || !body) return;
+        const panels = [...body.querySelectorAll('.config-panel--fold')].filter((p) => !p.hidden);
+        if (panels.length < DashboardConfig.APPEARANCE_INDEX_MIN_PANELS) {
+            nav.hidden = true;
+            nav.replaceChildren();
+            return;
+        }
+        const esc = (v) => this.dash.escapeHtml(v);
+        const titleOf = (panel) => String(panel.querySelector('.config-panel-fold')?.textContent || '').trim();
+        nav.innerHTML = panels.map((panel) => `
+            <button type="button" class="config-panel-index-item" data-panel-index-key="${esc(panel.getAttribute('data-fold-key'))}">${esc(titleOf(panel))}</button>`).join('');
+        nav.hidden = false;
+        const markKey = (key) => nav.querySelectorAll('[data-panel-index-key]').forEach((btn) => {
+            if (key && btn.getAttribute('data-panel-index-key') === key) btn.setAttribute('aria-current', 'true');
+            else btn.removeAttribute('aria-current');
+        });
+        let holdUntil = 0;
+        nav.querySelectorAll('[data-panel-index-key]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const key = btn.getAttribute('data-panel-index-key');
+                const panel = body.querySelector(`.config-panel--fold[data-fold-key="${CSS.escape(key)}"]`);
+                if (!panel) return;
+                if (panel.classList.contains('is-folded')) this.toggleAppearancePanel(panel, true);
+                panel.scrollIntoView({ block: 'start', behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth' });
+                panel.querySelector('.config-panel-fold')?.focus({ preventScroll: true });
+                // The chosen entry stays marked while the scroll runs: a last
+                // panel too short to reach the top would otherwise hand the
+                // mark to the one above it.
+                markKey(key);
+                holdUntil = Date.now() + 1000;
+            });
+        });
+        // The entry for the topmost panel still on screen is the current one.
+        if (typeof IntersectionObserver !== 'function') return;
+        const seen = new Map();
+        this._panelIndexObserver = new IntersectionObserver((entries) => {
+            entries.forEach((e) => seen.set(e.target, e.isIntersecting));
+            if (Date.now() < holdUntil) return;
+            markKey(panels.find((p) => seen.get(p))?.getAttribute('data-fold-key'));
+        });
+        panels.forEach((p) => this._panelIndexObserver.observe(p));
+    }
+
+    /** Open, once, the panel a link pointed into, and bring it on screen. */
+    openAppearancePanelFromLink(body) {
+        const pending = this._pendingAppearancePanel;
+        if (!pending || pending.tab !== this.appearanceTab) return;
+        this._pendingAppearancePanel = null;
+        const selector = pending.field ? this.settingsJumpControlSelector(pending.field) : null;
+        const el = selector
+            ? document.querySelector(selector)
+            : body.querySelector(`.config-panel--fold[data-fold-key="${CSS.escape(pending.panel || '')}"]`);
+        const panel = el?.closest('.config-panel--fold');
+        if (!panel) return;
+        this.revealFoldedPanel(panel);
+        requestAnimationFrame(() => panel.scrollIntoView({ block: 'nearest' }));
+    }
+
+    makeAppearancePanelFoldable(panel, index, used) {
+        if (panel.hasAttribute('data-fold-key')) {
+            used.add(panel.getAttribute('data-fold-key'));
+            return;
+        }
+        const title = panel.querySelector(':scope > .config-panel-title');
+        if (!title) return;
+        const reset = title.querySelector('.config-panel-reset');
+        reset?.remove();
+        // Keyed by its title, which is what stays put when panels move between
+        // tabs or change order; the index only breaks a tie.
+        let key = String(title.textContent || '').trim().toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `panel-${index}`;
+        if (used.has(key)) key = `${key}-${index}`;
+        used.add(key);
+        const bodyId = `config-fold-${this.appearanceTab}-${key}`;
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'config-panel-fold';
+        button.setAttribute('aria-controls', bodyId);
+        // The chevron is drawn by CSS on an empty, hidden span, so it is in
+        // neither the button's name nor the title's text.
+        const chevron = document.createElement('span');
+        chevron.className = 'config-panel-fold-chevron';
+        chevron.setAttribute('aria-hidden', 'true');
+        button.appendChild(chevron);
+        while (title.firstChild) button.appendChild(title.firstChild);
+        title.appendChild(button);
+
+        const head = document.createElement('div');
+        head.className = 'config-panel-head';
+        panel.insertBefore(head, title);
+        head.appendChild(title);
+        const summary = document.createElement('p');
+        summary.className = 'config-panel-summary';
+        summary.id = `${bodyId}-summary`;
+        head.appendChild(summary);
+        if (reset) head.appendChild(reset);
+
+        const inner = document.createElement('div');
+        inner.className = 'config-panel-body';
+        inner.id = bodyId;
+        [...panel.childNodes].forEach((node) => {
+            if (node === head) return;
+            // The twinkle is drawn over the whole panel, folded or not.
+            if (node.nodeType === 1 && node.classList.contains('config-new-features-panel-stars')) return;
+            inner.appendChild(node);
+        });
+        panel.appendChild(inner);
+        panel.classList.add('config-panel--fold');
+        panel.setAttribute('data-fold-key', key);
+
+        button.addEventListener('click', () => this.toggleAppearancePanel(panel));
+        // The rest of the header row opens it too, for a pointer; the button
+        // is what the keyboard and a screen reader meet.
+        head.addEventListener('click', (e) => {
+            if (e.target.closest('button, a, input, select, label')) return;
+            this.toggleAppearancePanel(panel);
+        });
+    }
+
+    /** Open or fold every panel on the body to match the state it should be in. */
+    syncAppearanceFolds(body) {
+        if (!body) return;
+        const panels = [...body.querySelectorAll('.config-panel--fold')];
+        if (!panels.length) return;
+        const forced = this.appearanceFoldsForced();
+        const chosen = this.appearanceOpenPanels(this.appearanceTab);
+        panels.forEach((panel, i) => {
+            const open = forced || (chosen ? chosen.has(panel.getAttribute('data-fold-key')) : i === 0);
+            this.setAppearancePanelOpen(panel, open);
+        });
+    }
+
+    setAppearancePanelOpen(panel, open) {
+        const button = panel.querySelector(':scope > .config-panel-head .config-panel-fold');
+        const inner = panel.querySelector(':scope > .config-panel-body');
+        const summary = panel.querySelector(':scope > .config-panel-head .config-panel-summary');
+        if (!button || !inner) return;
+        button.setAttribute('aria-expanded', open ? 'true' : 'false');
+        inner.hidden = !open;
+        panel.classList.toggle('is-folded', !open);
+        if (!summary) return;
+        // Written when it folds, so it says what the panel was just left at.
+        const text = open ? '' : (panel.hasAttribute('data-fold-summary')
+            ? panel.getAttribute('data-fold-summary')
+            : this.domPanelSummary(inner));
+        summary.textContent = text;
+        if (text) button.setAttribute('aria-describedby', summary.id);
+        else button.removeAttribute('aria-describedby');
+    }
+
+    /**
+     * Open or fold one panel, and remember how the tab's panels are left —
+     * unless the filter is deciding, when the choice lasts until it is cleared.
+     */
+    toggleAppearancePanel(panel, open) {
+        const next = open === undefined ? panel.classList.contains('is-folded') : Boolean(open);
+        this.setAppearancePanelOpen(panel, next);
+        panel.classList.toggle('is-unfolding', next);
+        if (next) {
+            panel.querySelector(':scope > .config-panel-body')?.addEventListener('animationend',
+                () => panel.classList.remove('is-unfolding'), { once: true });
+        }
+        if (this.appearanceFoldsForced()) return;
+        const body = panel.closest('#config-appearance-body');
+        if (!body) return;
+        const keys = [...body.querySelectorAll('.config-panel--fold:not(.is-folded)')]
+            .map((p) => p.getAttribute('data-fold-key'));
+        this.rememberAppearanceOpenPanels(this.appearanceTab, keys);
+    }
+
+    /** Open the folded panel an element sits in, so a jump to it lands on something visible. */
+    revealFoldedPanel(el) {
+        const panel = el?.closest?.('.config-panel--fold.is-folded');
+        if (panel) this.toggleAppearancePanel(panel, true);
     }
 
     /** The "Only changed" toggle above a tab of settings. */
@@ -15472,40 +16157,58 @@ class DashboardConfig {
                 });
                 if (ok === false) return;
 
-                const d = this.dash;
-                let special = '';
-                let visual = false;
-                fields.forEach((field) => {
-                    const meta = this.fieldMeta(field);
-                    if (!meta || meta.def === undefined) return;
-                    d.settings[field] = meta.def;
-                    // Any field needing chrome reapplied makes the whole batch
-                    // need it; the pass is idempotent, so once is enough. The
-                    // visual pass is tracked separately because chrome does not
-                    // cover it — a `visual` field reset through this button
-                    // would otherwise save but not show until a reload.
-                    const el = container.querySelector(`[data-behavior-field="${CSS.escape(field)}"]`);
-                    const fieldSpecial = el?.getAttribute('data-behavior-special');
-                    if (fieldSpecial === 'visual') visual = true;
-                    else if (fieldSpecial) special = 'chromeRender';
-                });
-                this._trackAction('panel-reset', { fields: fields.length });
+                await this.resetFieldsToDefault(container, fields, 'panel-reset');
+            });
+        });
+    }
 
-                if (visual) d.visual?.applyVisualSettings?.();
-                if (special) this.applyChromeSettings();
-                // Each field's own apply step too: the passes above cover the
-                // chrome and visual ones, not a language, the weather, the
-                // badges or the shortcut hints.
-                for (const field of fields) {
-                    const el = container.querySelector(`[data-behavior-field="${CSS.escape(field)}"]`);
-                    const fieldSpecial = el?.getAttribute('data-behavior-special');
-                    if (fieldSpecial && !['chrome', 'chromeRender', 'visual', 'render'].includes(fieldSpecial)) {
-                        await this.applySettingSpecial(field, d.settings[field], fieldSpecial);
-                    }
-                }
-                d.renderDashboard?.({ animate: false });
-                await this.saveSettingsWithFeedback();
-                this.repaintActiveControlPanels();
+    /**
+     * Put the given fields back to their defaults: written together, applied
+     * once, saved once. Shared by Reset panel and a chip group's ↺.
+     */
+    async resetFieldsToDefault(container, fields, trackName) {
+        const d = this.dash;
+        let special = '';
+        let visual = false;
+        fields.forEach((field) => {
+            const meta = this.fieldMeta(field);
+            if (!meta || meta.def === undefined) return;
+            d.settings[field] = meta.def;
+            // Any field needing chrome reapplied makes the whole batch
+            // need it; the pass is idempotent, so once is enough. The
+            // visual pass is tracked separately because chrome does not
+            // cover it — a `visual` field reset through this button
+            // would otherwise save but not show until a reload.
+            const el = container.querySelector(`[data-behavior-field="${CSS.escape(field)}"]`);
+            const fieldSpecial = el?.getAttribute('data-behavior-special');
+            if (fieldSpecial === 'visual') visual = true;
+            else if (fieldSpecial) special = 'chromeRender';
+        });
+        this._trackAction(trackName, { fields: fields.length });
+
+        if (visual) d.visual?.applyVisualSettings?.();
+        if (special) this.applyChromeSettings();
+        // Each field's own apply step too: the passes above cover the
+        // chrome and visual ones, not a language, the weather, the
+        // badges or the shortcut hints.
+        for (const field of fields) {
+            const el = container.querySelector(`[data-behavior-field="${CSS.escape(field)}"]`);
+            const fieldSpecial = el?.getAttribute('data-behavior-special');
+            if (fieldSpecial && !['chrome', 'chromeRender', 'visual', 'render'].includes(fieldSpecial)) {
+                await this.applySettingSpecial(field, d.settings[field], fieldSpecial);
+            }
+        }
+        d.renderDashboard?.({ animate: false });
+        await this.saveSettingsWithFeedback();
+        this.repaintActiveControlPanels();
+    }
+
+    /** The ↺ of a chip group: resets the chips that differ, nothing else. */
+    bindGroupResetActions(container) {
+        container.querySelectorAll('[data-reset-group]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const fields = (btn.getAttribute('data-reset-group') || '').split(',').filter(Boolean);
+                if (fields.length) void this.resetFieldsToDefault(container, fields, 'group-reset');
             });
         });
     }
@@ -15535,6 +16238,9 @@ class DashboardConfig {
                         `[data-${prefix}-field="${CSS.escape(field)}"][data-${prefix}-type="checkbox"]`
                     );
                     if (box instanceof HTMLInputElement) box.checked = value;
+                    container.querySelector(
+                        `[data-${prefix}-field="${CSS.escape(field)}"][data-${prefix}-type="chip"]`
+                    )?.setAttribute('aria-pressed', value ? 'true' : 'false');
                 });
 
                 this.applyChromeSettings();
@@ -16154,6 +16860,13 @@ class DashboardConfig {
                 this.openFieldInfo(btn.getAttribute('data-info-field'));
             });
         });
+        container.querySelectorAll('[data-info-group]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.openGroupInfo(btn.getAttribute('data-info-group-title') || '',
+                    String(btn.getAttribute('data-info-group') || '').split(',').filter(Boolean));
+            });
+        });
         container.querySelectorAll('[data-reset-field]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const field = btn.getAttribute('data-reset-field');
@@ -16311,8 +17024,9 @@ class DashboardConfig {
         const manual = this.manualFieldsFor(section, tab);
         const changed = panels.reduce((n, p) => n + this.panelChangedFields(p).length, 0)
             + manual.filter((f) => !this.isFieldDefault(f, this.dash.settings?.[f])).length;
-        const total = panels.reduce((n, p) => n + (p.controls || [])
-            .filter((c) => c.field && this.fieldMeta(c.field)?.def !== undefined).length, 0)
+        const total = panels.reduce((n, p) => n + DashboardConfig.flatControls(p.controls)
+            .flatMap((c) => this.controlFields(c))
+            .filter((f) => this.fieldMeta(f)?.def !== undefined).length, 0)
             + manual.length;
         if (!total) return '';
 
@@ -16353,7 +17067,11 @@ class DashboardConfig {
      * "webhook" is reading the page.
      */
     applyDomSettingsFilter(container) {
-        const host = container.querySelector('#config-appearance-body');
+        // A body repaint hands in the body itself, which has no descendant by
+        // that id; without this the filter was lost on every such repaint.
+        const host = container.id === 'config-appearance-body'
+            ? container
+            : container.querySelector('#config-appearance-body');
         if (!host) return;
         const query = String(this.settingsFilter || '').trim().toLowerCase();
         this.repaintFilterElsewhere('appearance');
@@ -16366,14 +17084,30 @@ class DashboardConfig {
         const rows = [...host.querySelectorAll(rowSelector)]
             .filter((row) => !row.parentElement?.closest(rowSelector));
         const panels = host.querySelectorAll('.config-panel');
+        // The filter is typed without a repaint, so the folds follow it here:
+        // open while it narrows, back to how the reader left them when cleared.
+        this.syncAppearanceFolds(host);
         if (!query) {
             rows.forEach((row) => row.removeAttribute('hidden'));
+            host.querySelectorAll('.config-chips[hidden]').forEach((el) => el.removeAttribute('hidden'));
             panels.forEach((panel) => panel.removeAttribute('hidden'));
+            this.syncFineFolds(host);
+            this.renderAppearancePanelIndex(host);
             return;
         }
         rows.forEach((row) => {
-            const text = (row.textContent || '').toLowerCase();
+            // A chip group's label row reads its chips too, names and long
+            // titles: they stand in the row after it, and a query for one chip
+            // would otherwise hide the label and with it the whole panel.
+            const chips = row.classList.contains('config-field--chips')
+                && row.nextElementSibling?.classList.contains('config-chips')
+                ? row.nextElementSibling : null;
+            const chipText = chips
+                ? [...chips.querySelectorAll('.config-chip')].map((c) => `${c.textContent} ${c.title || ''}`).join(' ')
+                : '';
+            const text = `${row.textContent || ''} ${chipText}`.toLowerCase();
             row.toggleAttribute('hidden', !text.includes(query));
+            chips?.toggleAttribute('hidden', !text.includes(query));
         });
         let anyVisible = false;
         panels.forEach((panel) => {
@@ -16387,6 +17121,8 @@ class DashboardConfig {
             panel.toggleAttribute('hidden', !visible && !titleMatch);
             if (visible || titleMatch) anyVisible = true;
         });
+        this.syncFineFolds(host);
+        this.renderAppearancePanelIndex(host);
         if (!anyVisible) {
             const note = document.createElement('p');
             note.className = 'config-panel-empty';
@@ -16409,6 +17145,7 @@ class DashboardConfig {
         const query = String(this.settingsFilter || '').trim().toLowerCase();
         if (!query) return true;
         if (!control || control.type === 'note') return false;
+        if (control.type === 'chips') return this.visibleChips(control, null).length > 0;
         const parts = [control.label, control.hint, control.field];
         const meta = control.field ? this.fieldMeta(control.field) : null;
         if (meta?.hint) parts.push(this.t(`config.${meta.hint}`, ''));
@@ -17212,15 +17949,31 @@ class DashboardConfig {
         const tabs = DashboardConfig.SUB_TABS[section]
             .filter((tab) => !(isAppearance && DashboardConfig.APPEARANCE_SUBPAGES[tab]));
         const attr = DashboardConfig.SUB_TAB_ATTR[section];
-        const buttons = tabs.map((tab) => {
+        const button = (tab) => {
             const active = tab === owner;
             const isNew = DashboardConfig.NEW_THIS_RELEASE.section === section
                 && tab === DashboardConfig.NEW_THIS_RELEASE.tab;
             const stars = isNew ? this.renderNewFeaturesPanelStars() : '';
             const label = this.subTabLabel(section, tab);
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}${isNew ? ' config-subtab--animated' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-${section}-body" ${attr}="${esc(tab)}">${esc(label)}${stars}</button>`;
-        }).join('');
-        return `<div class="config-subtabs" role="tablist">${buttons}</div>`;
+        };
+        if (isAppearance) {
+            // One tablist, grouped by presentation wrappers: the labels are
+            // aria-hidden because the tab names carry the meaning, and the
+            // arrow keys walk the buttons as one list across the groups.
+            const labels = {
+                look: this.t('config.appearanceGroupLook', 'Look'),
+                bookmarks: this.t('config.appearanceGroupBookmarks', 'Bookmarks'),
+                chrome: this.t('config.appearanceGroupChrome', 'Header & bars'),
+            };
+            const groups = DashboardConfig.APPEARANCE_TAB_GROUPS.map((group) => {
+                const inGroup = group.tabs.filter((tab) => tabs.includes(tab));
+                if (!inGroup.length) return '';
+                return `<div class="config-subtab-group" role="presentation" data-appearance-group="${esc(group.key)}"><span class="config-subtab-group-label" aria-hidden="true">${esc(labels[group.key])}</span>${inGroup.map(button).join('')}</div>`;
+            }).join('');
+            return `<div class="config-subtabs config-subtabs--grouped" role="tablist">${groups}</div>`;
+        }
+        return `<div class="config-subtabs" role="tablist">${tabs.map(button).join('')}</div>`;
     }
 
     /**
@@ -17262,7 +18015,11 @@ class DashboardConfig {
         let n = 0;
         this.panelsFor(section, tab).forEach((panel) => {
             const changed = this.changedOnly ? this.panelChangedFields(panel) : null;
-            (panel.controls || []).forEach((c) => {
+            DashboardConfig.flatControls(panel.controls).forEach((c) => {
+                if (c && c.type === 'chips') {
+                    n += this.visibleChips(c, changed).length;
+                    return;
+                }
                 if (!c || !c.field) return;
                 if (changed && !changed.includes(c.field)) return;
                 if (query && !this.controlMatchesFilter(c)) return;
@@ -17559,6 +18316,7 @@ class DashboardConfig {
                 layout: () => this.renderAppearanceLayoutBody(),
                 buttonbar: () => this.renderAppearanceActionBarBody(),
                 display: () => this.renderAppearanceDisplayBody(),
+                previews: () => this.renderControlPanels(this.panelsFor('appearance', 'previews'), 'behavior'),
                 datetime: () => this.renderControlPanels(this.panelsFor('appearance', 'datetime'), 'behavior'),
             }[this.appearanceTab];
             // General is rebuilt through render(): its body is one block from
@@ -17685,7 +18443,18 @@ class DashboardConfig {
     // on the strip are Look, Grid, Rows, Header, Action bar and Date & weather.
     // Custom themes is last and is not on the strip: it is a page inside Look,
     // reached from Look's own button, with a way back to it.
-    static APPEARANCE_TABS = ['general', 'background', 'surface', 'layout', 'display', 'header', 'buttonbar', 'datetime', 'custom-themes'];
+    static APPEARANCE_TABS = ['general', 'background', 'surface', 'layout', 'display', 'previews', 'header', 'buttonbar', 'datetime', 'custom-themes'];
+
+    /*
+     * The strip reads in three labelled groups, in the order of the tabs
+     * above. Custom themes is a page of Theme & type and is not listed; a tab
+     * missing here would simply not be drawn.
+     */
+    static APPEARANCE_TAB_GROUPS = [
+        { key: 'look', tabs: ['general', 'background', 'surface'] },
+        { key: 'bookmarks', tabs: ['layout', 'display', 'previews'] },
+        { key: 'chrome', tabs: ['header', 'buttonbar', 'datetime'] },
+    ];
 
     /** Tabs a section keeps addressable but does not draw on its strip. */
     static APPEARANCE_SUBPAGES = { 'custom-themes': 'general' };
@@ -17709,6 +18478,13 @@ class DashboardConfig {
         rows: 'display',
         'action-bar': 'buttonbar',
         custom: 'custom-themes',
+        // Link preview cards left Rows for a tab of their own.
+        'link-previews': 'previews',
+        'link-preview': 'previews',
+        // The strip's newer words for the same tabs.
+        'theme-type': 'general',
+        surfaces: 'surface',
+        'bookmarks-layout': 'layout',
     };
 
     static STATS_TABS = ['overview', 'usage', 'collection', 'inbox', 'health'];
@@ -22029,7 +22805,7 @@ class DashboardConfig {
         // they do rather than waiting for the next visit.
         if (!this._tagCatalogueListening && window.TagCatalogue?.onChange) {
             this._tagCatalogueListening = true;
-            window.TagCatalogue.onChange(() => this.onTagEvidenceChanged());
+            window.TagCatalogue.onChange(() => this.onTagEvidenceChanged(), { wait: 250 });
         }
         return this._tagCataloguePromise;
     }
@@ -22381,6 +23157,12 @@ class DashboardConfig {
      */
     onTagEvidenceChanged() {
         this._tagKeywordsPromise = null;
+        // The Bookmarks list shows an offer per row; a quiet lookup that lands
+        // while it is open adds to them.
+        if (document.getElementById('config-bm-offers')) {
+            window.TagSuggestLive?.invalidate?.();
+            this.repaintBookmarksList?.();
+        }
         if (document.getElementById('config-bm-suggestions')) {
             void this.ensureTagKeywords().then(() => {
                 this.renderTagSuggestionsSafe();

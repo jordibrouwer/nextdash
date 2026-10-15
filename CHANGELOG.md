@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.19.7 — 14 October 2026](#v1197--14-october-2026)
 - [v1.19.6 — 14 October 2026](#v1196--14-october-2026)
 - [v1.19.5 — 12 October 2026](#v1195--12-october-2026)
 - [v1.19.4 — 12 October 2026](#v1194--12-october-2026)
@@ -107,6 +108,48 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.19.7 — 14 October 2026
+
+### Appearance
+
+- **new — Appearance groups its tabs.** Nine tabs under three labels — **Look** (Theme & type, Background, Surfaces), **Bookmarks** (Layout, Rows, Link previews) and **Header & bars** (Header, Action bar, Date & weather) — and link preview cards have a tab of their own. Look, Surface and Grid are renamed Theme & type, Surfaces and Layout; the old ids and words still open them (`APPEARANCE_TAB_GROUPS`, `previews`, `renderSectionTabStrip`).
+- **new — settings moved to where they belong.** Clock placement leads Date & weather instead of sitting on Header; **Show favicons**, the offline colour and favicon harmonisation are one **Favicons** panel on Rows; the browser tab title, custom title and favicon upload are one **Browser tab & branding** panel on Header.
+- **new — label and control side by side.** Appearance rows put the label and a one-line explanation on the left and the control on the right, in one shared column; a longer explanation is cut with an ellipsis and stays whole in its tooltip and the ℹ. Under 600px the control goes under its label (`config-tabs.css`, `renderControlPanels`).
+- **new — Fine-tune folds.** The seven Backdrop sliders and the Card glass opacity and blur sit under **Fine-tune**, folded until opened; the fold says how many of its settings differ from the default and keeps its state across a repaint. The filter, Only changed and Find settings open the fold they land in. The separate *Backdrop settings* panel is gone; its sliders are in the Backdrop panel (`renderFineFold`, schema control `fine`).
+- **fix — the settings filter survives a repaint of Background and Surface.** `applyDomSettingsFilter` looked for the body inside the container it was handed, and a repaint hands it the body itself.
+- **new — chip groups.** Runs of *Show the … button* switches are one row of chips: the action bar (9), the header buttons (4), the category header extras (3), the row status (3) and the date line (2). Each chip is still its own setting; the group has one ↺ for the chips that differ and one ℹ that lists what each chip does. The link preview fields and the Bookmarks view's columns and rail blocks use the same chips over their one list (schema control `chips`, `setChip` helper).
+- **fix — the filter finds a single chip.** Typing one chip's name hid its group's label row, and with it the whole panel; the label row now reads its chips too (`applyDomSettingsFilter`).
+- **new — panels fold, and say what they are set to.** On every Appearance tab the first panel is open and the rest fold to a header with one line of their current values, changed values first; a panel opened or folded by hand stays that way, per tab, in this browser. The filter, Only changed, Find settings and a link to `#config/appearance/<tab>/<panel>` open the panel they land in, and **Reset panel** in a folded header does not open it (`applyAppearanceFolds`, `PANEL_SUMMARY_BY_TYPE`, `openConfigPanel` e2e helper).
+- **new — a list of panels on long tabs.** A tab with more than three panels lists them above the preview; choosing one opens it and scrolls to it, and the panel in view is marked. The filter narrows the list with the panels; under 900px it is left out (`renderAppearancePanelIndex`).
+- **fix — *Date & time* starts with a capital** like the other panel titles.
+- **fix — the Appearance tabs wrap instead of scrolling.** On one scrolling line half of the nine tabs sat past the edge; now a group that does not fit moves to the next line whole, its label over its tabs, so every tab is on screen down to phone width (`config-view.css`).
+- **new — the action bar animation is a dropdown.** Picking a style plays it on the real bar at once, so the six cards that each played it again are gone and the panel is about half as tall.
+- **new — *Show the action buttons* leads the action bar settings,** above where the bar stands and how large its buttons are: it decides whether any of the rest matters.
+- **new — five action bar button sizes.** **Button size** in Appearance → Action bar runs from extra small to extra large; medium is the default, one step up from the 28px squares the bar had, which are now small. An install from before the setting gets medium (`actionBarSize`).
+- **new — the key chips on the action buttons start off,** for new installs too; turn them on in Appearance and they stay (`showActionKeys`).
+- **fix — the header destinations follow the button size.** Bookmarks, Inbox, the page tabs and the header links stayed 40px tall at every action bar size, so beside medium and larger buttons they stood shorter than the group next to them; they now measure the button size plus its surround (`dashboard.css`).
+- **fix — the theme field shows a whole theme name.** Its control was capped at 300px, which cut most names of up to 25 characters; it now has room for them on one line (`config-tabs.css`).
+- **fix — a tab reached through Find settings stays put.** Arriving on Appearance from another section through Find settings, a tile or a link, the Random theme promo pulled the reader back to Theme & type half a second later; only a click on the tab strip counted as a choice. Every way into a tab does now (`switchAppearanceTab`).
+- **fix — a docked action bar no longer slides into place on a load.** Its slide ran on the first placement too, sweeping a side column some 200px up the screen as the page appeared; it now only slides when it goes into its edge and comes back (`action-bar-autohide.js`, `data-action-bar-sliding`).
+- **fix — Save as theme opens the editor without a wait.** The saved theme brings the look on screen, and picking it put that same look back, redrawing the header bar and the dashboard twice; on a slow machine the page froze for seconds. A look's parts that are already in place are now left alone (`applyLookAnswers`).
+- **fix — the Media detail card uses the app's colours.** It sits on `<body>`, outside every widget, so it named variables that were not there: it was transparent, in the corner and with unstyled buttons. It now takes the app's background, text and border, sits in the middle, and has its own buttons (`dashboard-media-tile.css`).
+
+### Tags
+
+- **new — subjects in a tree.** A subject can name a broader `parent` (`kubernetes` under `containers` under `dev`, `broker` under `investing` under `finance`); 247 of the 471 now do. A suggestion comes in the reader's own words, now up the tree: whoever tags `#finance` but never `#broker` is offered `#finance` on a broker's site. Turning a broader tag down on a site turns down what sits under it there too. Catalogue schema v3; the parents live in `scripts/tag-catalogue/parents.json` and are written in by `merge.cjs` or, without a rebuild, `apply.cjs` (`tag-suggestions.js`, `tag_catalogue.go`, `tag-catalogue-hierarchy.spec.js`).
+- **new — a quiet lookup for new links.** A bookmark or inbox link that arrives after this browser first looked has its site looked up on Wikidata without a button, an overlay or a notice, and what comes back is offered as a chip. It never writes a tag. Only links newer than the first look count, a host is tried once per thirty days, a round takes at most twenty hosts and waits behind the reader's own **Find tags**; **Look up unknown sites on Wikidata** off turns it off (`TagCatalogue.autoLookup`, `TagSuggestLive.autoSearch`, `tag-auto-lookup.spec.js`).
+- **fix — the answers of a Find tags round land on the rows as they arrive.** What the catalogue already knew is on screen at once, before the first answer from Wikidata, and a burst of answers redraws a view once instead of once per batch (`TagCatalogue.onChange` with `wait`).
+- **fix — 135 misfiled catalogue sites.** Telecom operators under electronics, flight search under search, amazon.co.jp under streaming, yahoo.com under television, drinks brands under containers, three bare IP addresses and more: 126 are refiled and 9 dropped. The fixes sit in `scripts/tag-catalogue/manual/cleanup.json`, which a rebuild reads as handwork, so they hold.
+
+### Docs
+
+- `MANUAL.md` §16 and §17 describe the nine Appearance tabs in three groups, the folding panels, the chips, the action bar button sizes and the Link previews tab; two new screenshots (`16-appearance-rows.jpg`, `16-appearance-action-bar.jpg`) and eight retaken.
+- `Config → Help → Grid, display & date` and the theme topic follow the new tab names in all six languages; the new Appearance strings (tab and group names, chips, button sizes, Fine-tune) are translated in nl, de, fr, zh and es, and the cross-references in Help, tips and the overview now name Layout, Surfaces and Link previews.
+- `README.md` and its Appearance screenshot show the grouped tabs; it also lists what nextDash asks for by itself (three things, each with a switch and a variable), names Config → Monitoring and its three tabs for alerts, and mentions the key legend and the daily install count.
+- `static/data/whats-new/v1.19.7.json` and its index entry, with three highlights (Appearance in three groups, panels that fold, five action bar sizes) and their picture and recordings from `tests/fixtures/whats-new-media/v1.19.7.js`; `whats-new-stub.js` tokens bumped to `…-v1.19.7` / `whats-new-v337`, and `tests/whats-new-hidden-release.spec.js` follows.
 
 ---
 

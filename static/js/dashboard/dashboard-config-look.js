@@ -179,7 +179,6 @@
                     </div>
                 </div>
                 ${this.renderBackdropPanel()}
-                ${this.renderBackdropTuningPanel()}
                 ${this.renderPatternPanel()}`;
         },
 
@@ -236,21 +235,48 @@
                         <p class="config-field-hint">${e(scopeNote)}</p>
                     </div>
                     ${mode === 'pick' ? `<div class="config-backdrop-grid" data-backdrop-grid role="group" aria-label="${e(t('config.backdropGridLabel', 'Backdrops'))}"></div>` : ''}
+                    ${this._lookStudio ? '' : this.renderBackdropFine()}
                 </div>`;
         },
 
-        renderBackdropTuningPanel() {
+        /**
+         * The seven backdrop sliders and their reset, under Fine-tune in the
+         * Backdrop panel. The look studio keeps them flat, in a panel of their
+         * own (renderBackdropTuningPanel), and has no use for a fold.
+         */
+        renderBackdropFine() {
             const t = (k, f) => this.t(k, f);
             const e = (v) => esc(this, v);
             const tuning = tuningOf(this);
-            const rows = TUNING_SLIDERS.map(([key, labelKey, fallback, min, max, step]) => `
-                <div class="config-field config-field--slider" data-tuning-row="${key}">
+            return this.renderFineFold({
+                id: 'backdrop',
+                changed: TUNING_SLIDERS.filter(([key]) => tuning[key] !== DEFAULT_TUNING[key]).length,
+                body: `
+                    <p class="config-field-hint">${e(t('config.backdropTuningNote', 'Intensity, scale and variant change the theme’s backdrop. Blur, brightness, saturation and tint change it and your own background image alike.'))}</p>
+                    ${this.backdropTuningRows(tuning)}
+                    <div class="config-field">
+                        <button type="button" class="config-btn config-btn--field" data-backdrop-reset>${e(t('config.backdropTuningReset', 'Back to the defaults'))}</button>
+                    </div>`,
+            });
+        },
+
+        backdropTuningRows(tuning) {
+            const t = (k, f) => this.t(k, f);
+            const e = (v) => esc(this, v);
+            return TUNING_SLIDERS.map(([key, labelKey, fallback, min, max, step]) => `
+                <div class="config-field config-field--slider" data-tuning-row="${key}"${tuning[key] !== DEFAULT_TUNING[key] ? ' data-fine-changed' : ''}>
                     <span class="config-field-label">${e(t(labelKey, fallback))}</span>
                     <input type="range" class="config-range" data-backdrop-tuning="${key}" min="${min}" max="${max}" step="${step}" value="${tuning[key]}">
                     <span class="config-range-value" data-tuning-out="${key}">${e(formatTuning(key, tuning[key]))}</span>
                     ${key === 'seed' ? `<button type="button" class="config-btn config-btn--small" data-backdrop-roll aria-label="${e(t('config.backdropRoll', 'Roll a new variant'))}" title="${e(t('config.backdropRoll', 'Roll a new variant'))}">🎲</button>` : ''}
                     ${this.infoAff(`backdrop${key[0].toUpperCase()}${key.slice(1)}`)}
                 </div>`).join('');
+        },
+
+        renderBackdropTuningPanel() {
+            const t = (k, f) => this.t(k, f);
+            const e = (v) => esc(this, v);
+            const rows = this.backdropTuningRows(tuningOf(this));
             return `
                 <div class="config-panel" data-backdrop-tuning-panel>
                     <h3 class="config-panel-title">${e(t('config.backdropTuningTitle', 'Backdrop settings'))}</h3>
@@ -393,6 +419,21 @@
             const depth = document.body?.getAttribute('data-depth');
             const seg = [['follow', t('config.glassFollow', 'Follow the theme')], ['own', t('config.glassOwn', 'Own')]].map(([val, label]) =>
                 `<button type="button" class="config-choice${(isOwn ? 'own' : 'follow') === val ? ' is-active' : ''}" data-glass-mode="${val}" aria-pressed="${(isOwn ? 'own' : 'follow') === val}">${e(label)}</button>`).join('');
+            // Opacity and blur are the detail; the studio shows them flat.
+            const ownAttr = (k) => (typeof entry[k] === 'number' ? ' data-fine-changed' : '');
+            const sliders = `
+                    <div class="config-field config-field--slider"${ownAttr('alpha')}>
+                        <span class="config-field-label">${e(t('config.cardGlassAlpha', 'Opacity'))}</span>
+                        <input type="range" class="config-range" data-glass-range="alpha" min="0.2" max="1" step="0.05" value="${alpha}">
+                        <span class="config-range-value" data-glass-out="alpha">${Math.round(alpha * 100)}%</span>
+                        ${this.infoAff('cardGlassAlpha')}
+                    </div>
+                    <div class="config-field config-field--slider"${ownAttr('blur')}>
+                        <span class="config-field-label">${e(t('config.cardGlassBlur', 'Blur'))}</span>
+                        <input type="range" class="config-range" data-glass-range="blur" min="0" max="30" step="1" value="${blur}">
+                        <span class="config-range-value" data-glass-out="blur">${Math.round(blur)}px</span>
+                        ${this.infoAff('cardGlassBlur')}
+                    </div>`;
             return `
                 <div class="config-panel" data-glass-panel>
                     <h3 class="config-panel-title">${e(t('config.cardGlassTitle', 'Card glass'))}</h3>
@@ -407,18 +448,11 @@
                         <div class="config-choices" role="group">${seg}</div>
                         ${this.infoAff('cardGlassMode')}
                     </div>
-                    <div class="config-field config-field--slider">
-                        <span class="config-field-label">${e(t('config.cardGlassAlpha', 'Opacity'))}</span>
-                        <input type="range" class="config-range" data-glass-range="alpha" min="0.2" max="1" step="0.05" value="${alpha}">
-                        <span class="config-range-value" data-glass-out="alpha">${Math.round(alpha * 100)}%</span>
-                        ${this.infoAff('cardGlassAlpha')}
-                    </div>
-                    <div class="config-field config-field--slider">
-                        <span class="config-field-label">${e(t('config.cardGlassBlur', 'Blur'))}</span>
-                        <input type="range" class="config-range" data-glass-range="blur" min="0" max="30" step="1" value="${blur}">
-                        <span class="config-range-value" data-glass-out="blur">${Math.round(blur)}px</span>
-                        ${this.infoAff('cardGlassBlur')}
-                    </div>
+                    ${this._lookStudio ? sliders : this.renderFineFold({
+                        id: 'glass',
+                        changed: ['alpha', 'blur'].filter((k) => typeof entry[k] === 'number').length,
+                        body: sliders,
+                    })}
                     <div class="config-field-row">
                         <label class="config-toggle">
                             <input type="checkbox" data-glass-border${entry.border === 'on' ? ' checked' : ''}>
@@ -602,6 +636,8 @@
                     if (out) out.textContent = formatTuning(key, value);
                     const tuning = { ...tuningOf(this), [key]: value };
                     this.dash.settings.backdropTuning = tuning;
+                    input.closest('.config-field')?.toggleAttribute('data-fine-changed', value !== DEFAULT_TUNING[key]);
+                    this.refreshFineSummary(input);
                     if (key === 'seed') {
                         void this.paintBackdropGrid(container, value);
                     } else {
@@ -681,6 +717,9 @@
                     const otherValue = typeof entry[other] === 'number' ? entry[other]
                         : Number(other === 'alpha' ? own.surfaceAlpha : own.surfaceBlur);
                     this.setCardGlass({ [key]: value, [other]: Number.isFinite(otherValue) ? otherValue : null });
+                    container.querySelectorAll('[data-glass-range]').forEach((r) => r.closest('.config-field')
+                        ?.toggleAttribute('data-fine-changed', typeof this.cardGlassEntry()[r.getAttribute('data-glass-range')] === 'number'));
+                    this.refreshFineSummary(input);
                     this.paintGlassContrast(container);
                 });
                 input.addEventListener('change', () => { void this.saveSettingsWithFeedback(); });

@@ -88,6 +88,41 @@
     top: 12px;
 }
 
+/* The panels of a long tab, above the preview; the one in view is marked. */
+.config-panel-index {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: 0 0 14px;
+    padding-left: 10px;
+    border-left: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+}
+
+.config-panel-index[hidden] {
+    display: none;
+}
+
+.config-panel-index-item {
+    padding: 3px 0;
+    border: 0;
+    background: none;
+    color: var(--text-muted, inherit);
+    font: inherit;
+    font-size: 0.85em;
+    text-align: left;
+    cursor: pointer;
+}
+
+.config-panel-index-item:hover,
+.config-panel-index-item[aria-current="true"] {
+    color: var(--accent-color, var(--text-primary, inherit));
+}
+
+.config-panel-index-item:focus-visible {
+    outline: 2px solid var(--accent-color, currentColor);
+    outline-offset: 2px;
+}
+
 .config-tabpage-side-label {
     margin: 0 0 6px;
     font-size: 0.8em;
@@ -415,6 +450,11 @@
         position: static;
         order: -1;
     }
+
+    /* No column to stand in beside the settings; the panels say enough. */
+    .config-panel-index {
+        display: none;
+    }
 }
 
 /* The short line under a hand-written Appearance row, across the whole row. */
@@ -431,4 +471,140 @@
 .config-field-row:has(> .config-field-hint--inline) {
     flex-wrap: wrap;
     row-gap: 2px;
+}
+
+/*
+ * Appearance rows: the label and its one-line hint on the left, the control on
+ * the right, so a tab reads down one edge and across to the value.
+ *
+ * Three columns: label, a control column at most 300px, the ℹ/↺ pair. The hint
+ * sits under the label in the first column, cut to one line with an ellipsis;
+ * the whole sentence is its title, and the ℹ dialog is unchanged. A control
+ * spans both rows so it stays level with the pair, not with the label alone.
+ *
+ * Scoped to this body: the same .config-field is used by every other config tab,
+ * and nothing about their layout changes. The one-column fallback below 600px is
+ * the stacked layout the rest of config already uses there.
+ *
+ * Nothing overlays a control. The checkbox row stays one <label> whose box is
+ * moved to the far side with flex order, so the whole row toggles and no
+ * positioned element sits above an input.
+ */
+@media (min-width: 601px) {
+    #config-appearance-body .config-field {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 300px) auto;
+        gap: 0 16px;
+        align-items: center;
+    }
+
+    #config-appearance-body .config-field:has(> .config-range-value) {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 300px) auto auto;
+    }
+
+    #config-appearance-body .config-field:has(> .config-range-value):has(> .config-icon-preview) {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 300px) auto auto auto;
+    }
+
+    /* The theme field is the one control that has to show a whole name of up to
+       25 characters on one line: 300px clipped most of them. */
+    #config-appearance-body .config-field:has(.config-theme-picker) {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 24rem) auto;
+    }
+
+    #config-appearance-body .config-field > .config-field-label {
+        grid-column: 1;
+    }
+
+    /* The ℹ/↺ column is as wide as both buttons whether or not a setting has
+       them, or a field without an ℹ pushes its control right of its
+       neighbours' and the control column stops being one edge. */
+    #config-appearance-body :is(.config-field, .config-field-row) > .config-field-affordances {
+        min-width: 44px;
+    }
+
+    #config-appearance-body .config-field > :is(.config-select, .config-text, .config-range) {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+    }
+
+    #config-appearance-body .config-field > :is(.config-choices, .config-btn--field) {
+        justify-self: end;
+    }
+
+    #config-appearance-body .config-field > .config-field-hint--inline,
+    #config-appearance-body .config-field-row > .config-field-hint--inline {
+        grid-column: 1;
+        grid-row: 2;
+        align-self: start;
+        margin: 0;
+        padding: 0;
+        max-width: none;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    #config-appearance-body .config-field:has(> .config-field-hint--inline) > .config-field-label {
+        grid-row: 1;
+        align-self: end;
+    }
+
+    #config-appearance-body .config-field:has(> .config-field-hint--inline) > :not(.config-field-label, .config-field-hint--inline) {
+        grid-row: 1 / span 2;
+    }
+
+    /* A checkbox row: label spans the label and control columns, its box at the
+       far end of the control column, the pair beside it. */
+    #config-appearance-body .config-field-row:has(> .config-toggle) {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 300px) auto;
+        gap: 0 16px;
+        align-items: center;
+    }
+
+    #config-appearance-body .config-field-row > .config-toggle {
+        grid-column: 1 / 3;
+        grid-row: 1;
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: space-between;
+        margin: 0;
+    }
+
+    #config-appearance-body .config-field-row:has(> .config-toggle) > .config-field-affordances {
+        grid-column: 3;
+        grid-row: 1;
+    }
+
+    #config-appearance-body .config-field-row:has(> .config-toggle) > .config-field-hint--inline {
+        grid-column: 1;
+        grid-row: 2;
+    }
+}
+
+@media (max-width: 600px) {
+    #config-appearance-body .config-field,
+    #config-appearance-body .config-field:has(> .config-range-value) {
+        grid-template-columns: minmax(0, max-content) auto;
+        gap: 4px 10px;
+    }
+
+    #config-appearance-body .config-field > .config-field-label,
+    #config-appearance-body .config-field > .config-field-hint--inline {
+        grid-column: 1 / -1;
+    }
+
+    #config-appearance-body .config-field > .config-field-hint--inline {
+        margin: 0;
+    }
+
+    #config-appearance-body .config-field > .config-range {
+        grid-column: 1 / -1;
+        max-width: none;
+    }
+
+    #config-appearance-body .config-field > .config-field-affordances {
+        justify-self: start;
+    }
 }

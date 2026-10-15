@@ -150,7 +150,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-config-appearance.jpg" alt="Config: Appearance" width="100%" />
       <br />
-      <sub><b>Config → Appearance</b> <i>(Sea Glass, light)</i> — Eight tabs — Look, Background, Surface, Grid, Rows, Header, Action bar, Date &amp; weather — with a small live preview of your dashboard beside them. Every change applies and saves at once.</sub>
+      <sub><b>Config → Appearance</b> <i>(Sea Glass, light)</i> — Nine tabs in three groups — Look, Bookmarks, Header &amp; bars — whose panels fold to a line of their values, with a small live preview of your dashboard beside them. Every change applies and saves at once.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-config-statistics.jpg" alt="Config: Statistics" width="100%" />
@@ -394,7 +394,7 @@ Every variable is listed in the reference table below.
 | `NEXTDASH_BUNDLE` | on | `off` serves scripts and stylesheets one by one, for debugging |
 | `NEXTDASH_STATIC_MUTABLE` | off | `1` re-hashes assets on every request, for a bind-mounted `./static` |
 | `DISABLE_ICON_SETS` | off | `1` stops fetching the app icon sets (dashboard-icons, selfh.st/icons) from jsDelivr |
-| `DISABLE_TELEMETRY` | off | `true` turns analytics off for everyone |
+| `DISABLE_TELEMETRY` | off | `true` turns analytics and the daily install count off for everyone |
 | `DISABLE_UPDATE_CHECK` | off | `true` turns the daily GitHub release check off for everyone |
 | `DISABLE_NEWS_FEED` | off | `true` stops fetching posts from nextdash.cc |
 
@@ -410,7 +410,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - Add a link with one key, the full form, a paste, the extension, the share sheet or a bookmarklet. *[Manual §5](MANUAL.md#5-adding-bookmarks)*
 - Tags, notes, shortcuts and pins, a preview card that says what a page is without opening it, and a QR code (`Shift + J`) to open a bookmark on your phone. *[Manual §6](MANUAL.md#6-opening-and-editing-bookmarks), [§10](MANUAL.md#10-tags)*
 - A **tag cloud** (`/`) and a **tag view** per tag: every bookmark with that tag from every page in one table, with related tags, bulk actions, and rename, merge or remove for the tag. *[Manual §10](MANUAL.md#10-tags)*
-- **Tag suggestions** tag whole groups at once — from your own tags, a catalogue of some 51,000 sites in 471 subjects, a Wikidata lookup for sites it does not know (only the host name leaves the server, and you can switch it off), and rules you write. They show in the rows of the tag view and the Bookmarks view, with **Add all**. Nothing is tagged until you accept. *[Manual §10.4](MANUAL.md#104-tag-suggestions)*
+- **Tag suggestions** tag whole groups at once — from your own tags, a catalogue of some 51,000 sites in 471 subjects, a Wikidata lookup for sites it does not know (only the host name leaves the server, and you can switch it off), and rules you write. The lookup also runs quietly for a link that arrives in the inbox or your bookmarks, and shows what it finds as a chip. They show in the rows of the tag view, the Bookmarks view and the inbox, with **Add all**. Nothing is tagged until you accept. *[Manual §10.4](MANUAL.md#104-tag-suggestions)*
 - A **Bookmarks view** for the whole collection: a rail of pages, categories and health filters, one-line rows with a score and open counts, and a side panel with Details, Health and Usage. Group, sort, work through what needs attention, export to CSV. *[Bookmarks view](MANUAL.md#11-the-bookmarks-view)*
 - An **inbox** for links you have not filed yet — snooze, promote, or triage it pile by pile: waiting longest, new this week, with a note. Keep puts a link in **Bookmarks → Unsorted** without filing it; promote it from there once it has a place. *[Manual §13](MANUAL.md#13-inbox)*
 - **Config → Inbox** sets how it collects, lists, and opens: Collecting, List, Panel & clicks and Header icon, each with a live preview. *[Config → Inbox](MANUAL.md#176-config-inbox)*
@@ -419,6 +419,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 **Search and keyboard**
 
 - Everything is reachable from the keyboard: one rule for the shortcuts and a searchable cheat sheet on `!`. *[Manual §7](MANUAL.md#7-keyboard)*
+- A key legend under the grid keeps the main keys in sight (`Shift + Z` switches it off), a dashboard tour of seven steps plays again with `Shift + K`, and after an update the **What's new** window gives the main change of a release a spotlight. *[Manual §7](MANUAL.md#7-keyboard)*
 - One panel for search, commands and finders, plus search from the browser's address bar. *[Manual §8](MANUAL.md#8-search-commands-and-finders)*
 - Filters for tag, category, page, status, added and opened — each also in the negative. *[Manual §8.2](MANUAL.md#82-filters)*
 
@@ -427,7 +428,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - Health lives in the **Bookmarks view**: filters for broken, stale, duplicated, unchecked and changed, a Health tab in the side panel, and Work through to clear a pile — broken, changed, stale, never opened — one bookmark at a time, each with the reason it is there. **Collection health** (Overview, Monitors, Trend) covers the whole collection; open one bookmark's own **Health in Large** for its uptime, response time, status codes and every check, with CSV export. *[Health and monitoring](MANUAL.md#11-the-bookmarks-view)*
 - **Uptime monitoring** with 30 days of history, response times, outages, certificate expiry, expected-response checks and drift detection. *[Manual §11.8](MANUAL.md#118-collection-health)*
 - **A status page** for the people who use your services: a read-only page behind a secret link with your groups of services, whether each one works, since when one is down, planned maintenance and 30 days of history. It shows no error details or internal addresses, refreshes itself every minute and follows the visitor’s language and light or dark. *[Manual §12.8](MANUAL.md#128-the-status-page)*
-- Alerts to Slack, Discord, Telegram, Gotify, ntfy, Pushover, Apprise (and from there mail, Matrix, Signal and a hundred more), a JSON receiver or your browser, with maintenance windows, quiet hours with one summary at the end, reminders for an outage that goes on, per-bookmark muting, and a weekly digest of what broke, what can be updated and what nobody opens. *[Manual §12.4](MANUAL.md#124-alerts)*
+- Alerts, set under **Config → Monitoring** (tabs Checks, Notifications and Schedules), to Slack, Discord, Telegram, Gotify, ntfy, Pushover, Apprise (and from there mail, Matrix, Signal and a hundred more), a JSON receiver or your browser, with maintenance windows, quiet hours with one summary at the end, reminders for an outage that goes on, per-bookmark muting, and a weekly digest of what broke, what can be updated and what nobody opens. *[Manual §12.4](MANUAL.md#124-alerts)*
 - **Fresh** shows which bookmarked sites published something new. *[Manual §12.6](MANUAL.md#126-fresh)*
 - Keep a copy of a page on your own disk or in the Web Archive. *[Manual §12.7](MANUAL.md#127-keeping-a-copy-of-a-page)*
 
@@ -455,7 +456,8 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - **A theme browser that is a look studio.** It opens beside the dashboard and changes the page live: the theme, its backdrop, depth and card glass, the category headers and the type. Twelve ready-made looks set them in one go; Compare shows what you had, and nothing is saved until Apply. *[Theme browser](MANUAL.md#the-theme-browser)*
 - 26 backdrops drawn in each theme's own colours, from aurora and dunes to stars and hexagons, each theme with one picked for it — or choose your own and tune it with intensity, scale, blur and tint. *[Manual §16.4](MANUAL.md#164-type-and-background)*
 - Character, depth, glow, effects, card glass and contrast for any theme; category header styles, layout presets, columns, density and fonts. *[Manual §16.3](MANUAL.md#163-surfaces)*
-- A header you arrange yourself: four page-switcher styles, and action buttons in a dock, a side column, the header or one menu. *[Manual §4](MANUAL.md#4-the-dashboard)*
+- A header you arrange yourself: four page-switcher styles, and action buttons in a dock, a side column, the header or one menu, in five sizes. *[Manual §4](MANUAL.md#4-the-dashboard)*
+- **Appearance in nine tabs, three groups.** Panels fold to a line of their values, runs of switches are chips, and a list of panels sits above the preview on long tabs. *[Manual §16](MANUAL.md#16-appearance)*
 - Six languages: English, Dutch, German, French, Spanish and Chinese. *[Manual §17](MANUAL.md#17-config)*
 
 **Data**
@@ -467,7 +469,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 
 **Self-hosting**
 
-- One Go binary and a directory of plain JSON. No database, no accounts, and analytics only if you switch them on. *[Manual §23](MANUAL.md#23-security-and-self-hosting)*
+- One Go binary and a directory of plain JSON. No database, no accounts, analytics only if you switch them on, and a daily install count (a random id and the version, nothing else) that you can turn off. *[Manual §23](MANUAL.md#23-security-and-self-hosting)*
 - A write token, a CORS allowlist, rate limits, SSRF protection and an activity trail for when it faces a network. *[Security](#security)*
 
 ---
@@ -480,6 +482,7 @@ Each line links to the part of the [manual](MANUAL.md) that explains it.
 - **A bookmarklet and the phone share sheet** — **Config → Help → Inbox** builds a bookmarklet for your install; installed as an app, nextDash joins the share sheet. *[Manual §22](MANUAL.md#22-phones-tablets-and-the-installed-app)*
 - **Outgoing webhooks** — six events, signed with the [Standard Webhooks](https://www.standardwebhooks.com/) scheme. *[Manual §19.3](MANUAL.md#193-webhooks)*
 - **An MCP endpoint** — four tools for MCP clients to search and add bookmarks, off until you switch it on. *[Manual §23.6](MANUAL.md#236-the-mcp-endpoint)*
+- **What nextDash asks for by itself** — three things, each with a switch under **Config → Behavior → Privacy & sync** and a variable that turns it off for the whole server: a daily **install count** (a random install id and the release you run; on Unraid also the word Unraid; `DISABLE_TELEMETRY`), a daily check on GitHub for a **newer release** (`DISABLE_UPDATE_CHECK`), and the **nextdash.cc news feed**, every 90 minutes (`DISABLE_NEWS_FEED`). None of them carries bookmarks, settings or addresses. *[Manual §23.7](MANUAL.md#237-what-nextdash-contacts)*
 - **The machine it runs on** — the system widgets read `/proc`, the disks you name and optionally the Docker socket, read-only unless you set `NEXTDASH_DOCKER_CONTROL=1`, which also uses the socket to write. Update checks reach the image registries, and optionally GitHub. *[Manual §15.4](MANUAL.md#154-system-widgets-and-what-they-need)*
 
 ---

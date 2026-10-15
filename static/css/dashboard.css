@@ -7997,7 +7997,7 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
        at the draft's size the middle zone read as a row of loose digits rather
        than as the pages of the thing you are looking at. Raised twice since,
        because the pages are the one thing in this bar you aim at by name. */
-    height: 40px;
+    height: calc(var(--action-button-size) + 12px);
     min-width: 2.6rem;
     padding: 0 1rem;
     border: 1px solid var(--border-primary);
@@ -8049,7 +8049,7 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
     align-items: center;
     gap: 0.4rem;
     flex: 0 0 auto;
-    height: 40px;
+    height: calc(var(--action-button-size) + 12px);
     padding: 0 0.75rem;
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-6, 10px);
@@ -8098,7 +8098,7 @@ body[data-header-clock="own-zone"] .dashboard-section.section-controls .header-i
    the same corner, the same 40px outer height as a destination -- and a
    segment inside it is 28px, which is what an action measures. */
 body[data-page-switcher="segmented"] .header-track .page-navigation {
-    height: 40px;
+    height: calc(var(--action-button-size) + 12px);
     align-items: center;
     gap: 2px;
     padding: 5px;
@@ -8215,7 +8215,7 @@ body[data-page-switcher="classic"] .dashboard-section.section-controls .header-t
    you are on is the rule under the view you are in -- one line, not two. */
 body[data-page-switcher="classic"] .header-track .page-nav-btn,
 body[data-page-switcher="classic"] .header-track .page-nav-overflow {
-    height: 40px;
+    height: calc(var(--action-button-size) + 12px);
 }
 
 body[data-page-switcher="classic"] .header-track .page-nav-btn.active::after {
@@ -8297,7 +8297,22 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
     display: none;
 }
 
-/* The actions are one box of 28px squares, the way the draft draws them. */
+/*
+ * The actions are one box of squares, the way the draft draws them.
+ *
+ * Five sizes (setting actionBarSize, on <body> as data-action-bar-size). s is
+ * the 28px the bar was drawn at before the setting; m, one step up, is the
+ * default.
+ */
+body {
+    --action-button-size: 32px;
+    --action-glyph-size: 20px;
+}
+body[data-action-bar-size="xs"] { --action-button-size: 24px; --action-glyph-size: 16px; }
+body[data-action-bar-size="s"]  { --action-button-size: 28px; --action-glyph-size: 18px; }
+body[data-action-bar-size="l"]  { --action-button-size: 38px; --action-glyph-size: 22px; }
+body[data-action-bar-size="xl"] { --action-button-size: 44px; --action-glyph-size: 26px; }
+
 .dashboard-section.section-controls .header-shortcuts {
     display: flex;
     align-items: center;
@@ -8317,8 +8332,8 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: var(--action-button-size);
+    height: var(--action-button-size);
     padding: 0;
     border: none;
     border-radius: var(--radius-6, 10px);
@@ -8356,6 +8371,12 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
     width: 18px;
     height: 18px;
     stroke-width: 2.2;
+}
+
+/* On the action bar the glyph grows with the button (actionBarSize). */
+.header-actions .header-shortcuts .header-action-glyph {
+    width: var(--action-glyph-size);
+    height: var(--action-glyph-size);
 }
 
 /*
@@ -8423,7 +8444,8 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
  * They were 28px squares standing next to a box that measures 40 -- the same
  * button, drawn smaller, because one of them had a surround and the other did
  * not. The outer size is what the eye compares, so that is what matches:
- * 28 + 2x5 of padding + 2x1 of border.
+ * the button size + 2x5 of padding + 2x1 of border, whichever of the five
+ * action bar sizes is chosen.
  */
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
 .dashboard-section.section-controls .header-actions .docker-link-anchor,
@@ -8434,8 +8456,8 @@ body:not([data-page-switcher="classic"]) .header-zone-divider--pages {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: calc(var(--action-button-size) + 12px);
+    height: calc(var(--action-button-size) + 12px);
     padding: 0;
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-6, 10px);
@@ -9312,10 +9334,12 @@ body[data-action-bar-enabled="off"] .dashboard-section.section-controls .header-
 }
 
 /* A dock slides into the edge it stands on, and back out. The resting
-   transforms above stay as they are; hidden adds the way out. */
-body[data-action-bar="bottom"] .dashboard-section.section-controls .header-shortcuts,
-body[data-action-bar="left"] .dashboard-section.section-controls .header-shortcuts,
-body[data-action-bar="right"] .dashboard-section.section-controls .header-shortcuts {
+   transforms above stay as they are; hidden adds the way out. Only while
+   action-bar-autohide.js says it is sliding: placed on a load, the bar's first
+   transform is not a move, and animating it swept the bar up the screen. */
+body[data-action-bar-sliding][data-action-bar="bottom"] .dashboard-section.section-controls .header-shortcuts,
+body[data-action-bar-sliding][data-action-bar="left"] .dashboard-section.section-controls .header-shortcuts,
+body[data-action-bar-sliding][data-action-bar="right"] .dashboard-section.section-controls .header-shortcuts {
     transition: transform 0.2s ease, opacity 0.2s ease;
 }
 

@@ -494,6 +494,7 @@ type Settings struct {
 	ActionBarAutoHideSeconds        int    `json:"actionBarAutoHideSeconds"`                // Seconds before a docked bar slides into its edge; 0 keeps it in view
 	ShowActionKeys                  bool   `json:"showActionKeys"`                          // The key chip on each action button
 	ActionBarIntroStyle             string `json:"actionBarIntroStyle"`                     // How the buttons animate as the bar comes into view; "off" for none
+	ActionBarSize                   string `json:"actionBarSize"`                           // How large the action buttons are drawn: xs, s, m, l or xl
 	HeaderButtonStyle               string `json:"headerButtonStyle"`                       // How every control in the header is drawn: plain glyphs underlined when current, or plated boxes
 	EnableCustomFavicon             bool   `json:"enableCustomFavicon"`                     // Enable custom favicon
 	CustomFaviconPath               string `json:"customFaviconPath"`                       // Path to custom favicon file
@@ -1758,8 +1759,9 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ActionBarPosition:               defaultActionBarFresh,
 			ActionBarAutoHideSeconds:        defaultActionBarAutoHide,
 			ActionBarIntroStyle:             "off",
+			ActionBarSize:                   defaultActionBarSize,
 			ActionBarEnabled:                true,
-			ShowActionKeys:                  true,
+			ShowActionKeys:                  false,
 			EnableCustomFavicon:             false,
 			CustomFaviconPath:               "",
 			EnableCustomFont:                false,
@@ -3559,6 +3561,12 @@ var actionBarIntroStyles = map[string]bool{
 	"unfold": true, "accordion": true,
 }
 
+// How large the action buttons are drawn. m is one step up from the 28px
+// squares the bar had before the setting, which are s now.
+var actionBarSizes = map[string]bool{"xs": true, "s": true, "m": true, "l": true, "xl": true}
+
+const defaultActionBarSize = "m"
+
 const (
 	headerButtonsPlain       = "plain"
 	headerButtonsPlated      = "plated"
@@ -3801,6 +3809,9 @@ func clampBookmarkSettings(s *Settings) {
 	}
 	if !actionBarIntroStyles[s.ActionBarIntroStyle] {
 		s.ActionBarIntroStyle = "off"
+	}
+	if !actionBarSizes[s.ActionBarSize] {
+		s.ActionBarSize = defaultActionBarSize
 	}
 	switch s.HeaderButtonStyle {
 	case headerButtonsPlain, headerButtonsPlated:
@@ -4330,8 +4341,9 @@ func (fs *FileStore) GetSettings() Settings {
 			ActionBarPosition:               defaultActionBarFresh,
 			ActionBarAutoHideSeconds:        defaultActionBarAutoHide,
 			ActionBarIntroStyle:             "off",
+			ActionBarSize:                   defaultActionBarSize,
 			ActionBarEnabled:                true,
-			ShowActionKeys:                  true,
+			ShowActionKeys:                  false,
 			EnableCustomFavicon:             false,
 			CustomFaviconPath:               "",
 			EnableCustomFont:                false,
@@ -4482,6 +4494,11 @@ func (fs *FileStore) GetSettings() Settings {
 		if json.Unmarshal(data, &legacy) == nil && legacy.ActionBarIntro {
 			settings.ActionBarIntroStyle = "swell"
 		}
+	}
+	// An install from before the size setting gets medium, one step up from
+	// the buttons it had.
+	if !actionBarSizes[settings.ActionBarSize] {
+		settings.ActionBarSize = defaultActionBarSize
 	}
 
 	var rawSettings map[string]json.RawMessage
@@ -5022,8 +5039,8 @@ func (fs *FileStore) GetSettings() Settings {
 		 * Every action button came back on at the same time, and a bar of
 		 * nine buttons each with its chip is a lot to meet on upgrade. The
 		 * keys still work, and resting on a button shows its key. A fresh
-		 * install starts with the chips on (see the constructors above); a
-		 * reader who turns them on after this keeps them.
+		 * install starts with the chips off as well (see the constructors
+		 * above); a reader who turns them on after this keeps them.
 		 */
 		if !settings.ActionKeysOffMigrated {
 			settings.ShowActionKeys = false

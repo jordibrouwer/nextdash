@@ -128,14 +128,50 @@
      * exact too -- it was asked about by name -- and its proposals say where
      * they came from, with Wikidata's description of the site beside them.
      */
-    function catalogueByHost(catalogue) {
+    function aliasesOf(entry) {
+        return (Array.isArray(entry?.aliases) ? entry.aliases : [])
+            .map((alias) => String(alias).trim().toLowerCase())
+            .filter(Boolean);
+    }
+
+    /*
+     * Each subject's ancestors, nearest first, as { tag, aliases }.
+     *
+     * The catalogue is a tree: premier-league sits under soccer, soccer
+     * under sports. A fine subject is only worth offering to a reader who
+     * files that finely; whoever tags everything #soccer should be offered
+     * #soccer. The walk stops at a subject it has seen, so a cycle written
+     * into the file by mistake ends the chain rather than the page.
+     */
+    function ancestryOf(catalogue) {
+        const bySubject = new Map();
+        (Array.isArray(catalogue) ? catalogue : []).forEach((entry) => {
+            const tag = String(entry?.tag || '').trim().toLowerCase();
+            if (tag) bySubject.set(tag, entry);
+        });
+        const chains = new Map();
+        bySubject.forEach((entry, tag) => {
+            const chain = [];
+            const seen = new Set([tag]);
+            let parent = String(entry?.parent || '').trim().toLowerCase();
+            while (parent && !seen.has(parent) && bySubject.has(parent)) {
+                seen.add(parent);
+                const above = bySubject.get(parent);
+                chain.push({ tag: parent, aliases: aliasesOf(above) });
+                parent = String(above?.parent || '').trim().toLowerCase();
+            }
+            chains.set(tag, chain);
+        });
+        return chains;
+    }
+
+    function catalogueByHost(catalogue, chains = ancestryOf(catalogue)) {
         const byHost = new Map();
         (Array.isArray(catalogue) ? catalogue : []).forEach((entry) => {
             const tag = String(entry?.tag || '').trim().toLowerCase();
             if (!tag) return;
-            const aliases = (Array.isArray(entry?.aliases) ? entry.aliases : [])
-                .map((alias) => String(alias).trim().toLowerCase())
-                .filter(Boolean);
+            const aliases = aliasesOf(entry);
+            const ancestors = chains.get(tag) || [];
             (Array.isArray(entry?.hosts) ? entry.hosts : []).forEach((host) => {
                 const written = String(host).trim().toLowerCase();
                 const online = written.startsWith('~');
@@ -144,7 +180,7 @@
                 if (!key) return;
                 const about = online ? String(entry?.about?.[key] || '') : '';
                 const list = byHost.get(key) || [];
-                if (!list.some((known) => known.tag === tag)) list.push({ tag, aliases, exact, online, about });
+                if (!list.some((known) => known.tag === tag)) list.push({ tag, aliases, ancestors, exact, online, about });
                 byHost.set(key, list);
             });
         });
@@ -185,11 +221,19 @@
      * #code, the suggestion is #code -- otherwise a shipped vocabulary splits
      * a tidy collection into two tags for one thing. The tag itself wins over
      * an alias when the reader uses both.
+     *
+     * Then up the tree: a reader who has no word for premier-league but tags
+     * #soccer (or #futbol, soccer's alias) is offered that, the nearest
+     * ancestor first. Only with no word anywhere on the chain does the
+     * subject's own tag stand.
      */
     function inTheirWords(entry, vocabulary) {
-        if (vocabulary.has(entry.tag)) return entry.tag;
-        const known = entry.aliases.find((alias) => vocabulary.has(alias));
-        return known || entry.tag;
+        for (const subject of [entry, ...(entry.ancestors || [])]) {
+            if (vocabulary.has(subject.tag)) return subject.tag;
+            const known = subject.aliases.find((alias) => vocabulary.has(alias));
+            if (known) return known;
+        }
+        return entry.tag;
     }
 
     /*
@@ -260,7 +304,8 @@
          * vocabulary splitting a tidy collection in two -- the exact thing the
          * aliases exist to prevent.
          */
-        const byHost = catalogueByHost(settings.catalogue);
+        const chains = ancestryOf(settings.catalogue);
+        const byHost = catalogueByHost(settings.catalogue, chains);
         if (byHost.size) {
             const settled = new Set(proposals
                 .filter((proposal) => proposal.reason.kind === 'derived')
@@ -347,7 +392,11 @@
                 const names = new Set([tag, ...(Array.isArray(entry?.aliases) ? entry.aliases : [])
                     .map((alias) => String(alias).trim().toLowerCase())].filter(Boolean));
                 if (tag && (words.length || names.size)) {
-                    bySubject.set(tag, { entry, words: new Set(words), names });
+                    bySubject.set(tag, {
+                        entry: { tag, aliases: aliasesOf(entry), ancestors: chains.get(tag) || [] },
+                        words: new Set(words),
+                        names,
+                    });
                 }
             });
 
@@ -426,10 +475,21 @@
             }
             return false;
         };
+        /*
+         * And up the tree. Turning #soccer down on a site turns down what sits
+         * under it there too: premier-league is soccer said more narrowly, and
+         * a split of the catalogue must not bring back what was refused before
+         * it under a finer name.
+         */
+        const refusable = (proposal) => [proposal.tag,
+            ...(chains.get(String(proposal.reason?.subject || '')) || []).map((above) => above.tag)];
         const kept = refused.size
             ? proposals
-                .filter((proposal) => !refused.has(`${proposal.pattern}|${proposal.tag}`))
-                .map((proposal) => ({ ...proposal, keys: proposal.keys.filter((key) => !refusedHere(key, proposal.tag)) }))
+                .filter((proposal) => !refusable(proposal).some((tag) => refused.has(`${proposal.pattern}|${tag}`)))
+                .map((proposal) => {
+                    const tags = refusable(proposal);
+                    return { ...proposal, keys: proposal.keys.filter((key) => !tags.some((tag) => refusedHere(key, tag))) };
+                })
                 .filter((proposal) => proposal.keys.length)
             : proposals;
         kept.sort((a, b) => a.rank - b.rank || b.keys.length - a.keys.length);
