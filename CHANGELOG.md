@@ -165,6 +165,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 ### Docs
 
 - **docs — Help, tips and the manual follow the tag work**, in six languages: Help → Tags explains where suggestions come from and the `+n`/`+N` lists, Help → Keyboard and the tag view tip name `Shift + T` with nothing selected, Help → Widget kinds counts forty-two kinds with Emby, Plex and the now-playing tiles, and MANUAL §10.4 describes how tag suggestions work. The tag view of every bookmark, the row popovers and *On your home network* get their own strings in every language.
+- **docs — translations of the tag suggestion strings,** which still showed their English text in nl, de, fr, zh and es: the *With a tag suggestion* filters, the *Tag suggestions* group, the inbox note and *Find tags* hint, the *1 bookmark has a tag suggestion* lines, *Show*, *N turned down* with its hint, and the search field for what you turned down — 13 keys.
 - **docs — the Unraid template** (`templates/nextdash.xml`) lists the v1.19.6 and v1.19.7 changes, the same as the copy Community Applications reads.
 
 ---
