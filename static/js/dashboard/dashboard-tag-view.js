@@ -796,19 +796,24 @@
                 pop.appendChild(item);
                 return item;
             };
+            // The same choices, in the same words, as Find tags in the
+            // Bookmarks view: the ones without tags, or all of them shown.
+            const bare = list.filter((b) => !(Array.isArray(b.tags) && b.tags.some((t) => String(t || '').trim())));
             const items = [
-                entry('lookup', this.t('dashboard.tagViewFindThese', 'Find tags for these {n}').replace('{n}', n),
+                bare.length ? entry('untagged', this.t('config.tagSearchUntagged', 'Bookmarks without tags ({n})').replace('{n}', String(bare.length)),
+                    this.t('dashboard.tagViewFindTheseHint', 'catalogue, then online'), () => void this.findTags(bare)) : null,
+                entry('lookup', this.t('dashboard.tagViewFindShown', 'Bookmarks shown ({n})').replace('{n}', n),
                     this.t('dashboard.tagViewFindTheseHint', 'catalogue, then online'), () => void this.findTags(list)),
                 entry('read', this.t('dashboard.tagViewReadThese', 'Read pages of these {n}').replace('{n}', n),
                     this.t('dashboard.tagViewReadTheseHint', 'slower: asks each site'), () => void this.readPages(list)),
-            ];
+            ].filter(Boolean);
             const toggle = this.el('label', 'move-popover-item tag-view-find-toggle');
             const box = this.el('input');
             box.type = 'checkbox';
             box.checked = this.applyNow();
             box.setAttribute('data-find', 'apply-now');
             box.addEventListener('change', () => this.setApplyNow(box.checked));
-            toggle.append(box, this.el('span', '', this.t('dashboard.tagViewApplyNow', 'Add found tags right away')));
+            toggle.append(box, this.el('span', '', this.t('config.tagSearchApplyNowShort', 'Add what it finds straight away')));
             pop.append(this.el('div', 'move-popover-divider'), toggle);
             const close = () => {
                 pop.remove();
