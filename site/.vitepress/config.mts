@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitepress'
+import { withMermaid } from 'vitepress-plugin-mermaid'
 
 // Both files are written by scripts/split-manual.mjs.
 const src = (name: string) => fileURLToPath(new URL(`../src/${name}`, import.meta.url))
@@ -9,7 +10,8 @@ const meta = JSON.parse(readFileSync(src('_meta.json'), 'utf8'))
 
 const SITE = 'https://nextdash.cc'
 
-export default defineConfig({
+// The manual draws its flowcharts in Mermaid, which GitHub renders; so does the site.
+export default withMermaid(defineConfig({
   title: 'nextDash',
   titleTemplate: ':title · nextDash docs',
   description: 'How nextDash works, from the first launch to running it next to your own services.',
@@ -51,7 +53,11 @@ export default defineConfig({
     externalLinkIcon: true
   },
 
+  mermaid: {
+    fontFamily: '"Source Sans 3", system-ui, sans-serif'
+  },
+
   vite: {
     define: { __DOCS_REF__: JSON.stringify(meta.ref) }
   }
-})
+}))
