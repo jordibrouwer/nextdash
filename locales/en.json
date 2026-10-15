@@ -3023,7 +3023,13 @@
     "tagViewFindSelected": "Find tags",
     "tagViewFindOne": "Find tags",
     "tagViewReadOne": "Read page",
-    "tagViewFindTags": "Find tags ▾"
+    "tagViewFindTags": "Find tags ▾",
+    "tagViewOffered": "With a tag suggestion",
+    "tagViewOfferedGroup": "Tag suggestions",
+    "inboxFilterSuggested": "With a tag suggestion",
+    "inboxNoteSuggested": "Links with a tag on offer. Click the dashed chip to add the tag, or × to turn it down.",
+    "inboxFindTags": "Find tags",
+    "inboxFindTagsHint": "The catalogue, then Wikidata for sites it does not know"
   },
   "health": {
     "reloadPage": "Reload page",
@@ -8460,7 +8466,11 @@
     "bmOfferRefuse": "Turn down #{tag}",
     "bmOffersOne": "1 tag suggestion in this list",
     "bmOffersMany": "{n} tag suggestions in this list",
-    "bmOffersAddAll": "Add all"
+    "bmOffersAddAll": "Add all",
+    "cleanupFilterOffered": "With a tag suggestion",
+    "tagSearchWaitingOne": "1 bookmark has a tag suggestion.",
+    "tagSearchInboxWaitingOne": "1 inbox link has a tag suggestion.",
+    "tagSearchShow": "Show"
   },
   "colors": {
     "title": "theme customization",

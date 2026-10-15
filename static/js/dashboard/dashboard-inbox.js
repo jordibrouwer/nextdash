@@ -1390,7 +1390,7 @@ class DashboardInbox {
 
     /* ── View state: URL and persistence ───────────────────────────────── */
 
-    static FILTERS = new Set(['all', 'unread', 'snoozed', 'noted']);
+    static FILTERS = new Set(['all', 'unread', 'snoozed', 'noted', 'suggested']);
     static SORTS = new Set(['newest', 'oldest', 'title', 'domain']);
     static STATE_KEY = 'nextdash:inbox-view-state';
 
@@ -1401,6 +1401,7 @@ class DashboardInbox {
             unread: this.t('dashboard.inboxFilterUnread', 'Unread'),
             snoozed: this.t('dashboard.inboxFilterSnoozed', 'Snoozed'),
             noted: this.t('dashboard.inboxFilterNoted', 'With note'),
+            suggested: this.t('dashboard.inboxFilterSuggested', 'With a tag suggestion'),
         };
         return labels[filter] || String(filter || '');
     }
@@ -1420,6 +1421,7 @@ class DashboardInbox {
             unread: this.t('dashboard.inboxNoteUnread', 'Links you have not opened or kept yet. Opening one marks it read; keeping it with r marks it read without opening.'),
             snoozed: this.t('dashboard.inboxNoteSnoozed', 'Set aside until a time you picked, soonest first. These are hidden from the other filters until they wake, and Wake now brings one back early.'),
             noted: this.t('dashboard.inboxNoteNoted', 'Links you left a note on — the reason you saved it, for when the title alone no longer says.'),
+            suggested: this.t('dashboard.inboxNoteSuggested', 'Links with a tag on offer. Click the dashed chip to add the tag, or × to turn it down.'),
             /*
              * No note for All, as in Health: it cost a line above every row
              * to describe the list the reader is already looking at, and put
@@ -1775,6 +1777,9 @@ class DashboardInbox {
         }
         if (filter === 'noted') {
             return narrow(active.filter((item) => String(item.note || '').trim()));
+        }
+        if (filter === 'suggested') {
+            return narrow(active.filter((item) => this.rowOffer(item)));
         }
         return narrow(active);
     }
@@ -3084,6 +3089,7 @@ class DashboardInbox {
             unread: this.filterCount('unread'),
             snoozed: this.filterCount('snoozed'),
             noted: this.filterCount('noted'),
+            suggested: this.filterCount('suggested'),
         });
         shell.setSummary(this.shellSummary());
         this.syncRailFilters();
@@ -3912,6 +3918,9 @@ class DashboardInbox {
         if (this.filter === 'noted') {
             return awake.filter((item) => String(item.note || '').trim());
         }
+        if (this.filter === 'suggested') {
+            return awake.filter((item) => this.rowOffer(item));
+        }
         return awake;
     }
 
@@ -4079,6 +4088,9 @@ class DashboardInbox {
                 this.filter = 'all';
             }
             if (this.filter === 'noted' && !String(item.note || '').trim()) {
+                this.filter = 'all';
+            }
+            if (this.filter === 'suggested' && !this.rowOffer(item)) {
                 this.filter = 'all';
             }
         }
@@ -4530,6 +4542,7 @@ class DashboardInbox {
             { key: 'unread', label: this.t('dashboard.inboxFilterUnread', 'Unread'), tile: true },
             { key: 'snoozed', label: this.t('dashboard.inboxFilterSnoozed', 'Snoozed'), tile: true },
             { key: 'noted', label: this.t('dashboard.inboxFilterNoted', 'With note') },
+            { key: 'suggested', label: this.t('dashboard.inboxFilterSuggested', 'With a tag suggestion') },
         ];
     }
 
@@ -4959,6 +4972,7 @@ class DashboardInbox {
             ${this.renderSelectAllButton(rows)}
             ${unread > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="read" title="${this.escape(markReadHint)}">${this.escape(markReadLabel)}</button>` : ''}
             ${readCount > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="clear-read">${this.escape(narrowed ? this.t('dashboard.inboxClearReadShown', 'Clear read here') : this.t('dashboard.inboxClearRead', 'Clear read'))}</button>` : ''}
+            <button type="button" class="inbox-bulk-btn" data-inbox-find-tags title="${this.escape(this.t('dashboard.inboxFindTagsHint', 'The catalogue, then Wikidata for sites it does not know'))}">${this.escape(this.t('dashboard.inboxFindTags', 'Find tags'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-export="csv" title="${this.escape(this.t('dashboard.inboxExportCsvHint', 'Download filtered list as CSV'))}">${this.escape(this.t('dashboard.inboxExportCsv', 'CSV'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-export="json" title="${this.escape(this.t('dashboard.inboxExportJsonHint', 'Download filtered list as JSON'))}">${this.escape(this.t('dashboard.inboxExportJson', 'JSON'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-import title="${this.escape(this.t('dashboard.inboxImportHint', 'Read a JSON file exported from an inbox back in'))}">${this.escape(this.t('dashboard.inboxImport', 'Import'))}</button>
@@ -4977,6 +4991,12 @@ class DashboardInbox {
         });
         menu.querySelector('[data-inbox-bulk="clear-read"]')?.addEventListener('click', () => {
             void this.clearReadItems();
+        });
+        // The round the Tag suggestions tab runs for the inbox, from here: what
+        // it finds stands in the rows as chips, under "With a tag suggestion".
+        menu.querySelector('[data-inbox-find-tags]')?.addEventListener('click', () => {
+            // Forwarded by the config loader, which fetches the module first.
+            void this.dash.config?.runTagSearch?.('inbox');
         });
         menu.querySelector('[data-inbox-export="csv"]')?.addEventListener('click', () => {
             this.exportFilteredCsv();
@@ -5012,6 +5032,7 @@ class DashboardInbox {
             unread: true,
             snoozed: this.snoozedCount() > 0 || this.filter === 'snoozed',
             noted: this.filterCount('noted') > 0 || this.filter === 'noted',
+            suggested: this.filterCount('suggested') > 0 || this.filter === 'suggested',
         };
         Object.entries(show).forEach(([key, on]) => {
             const btn = rail.querySelector(`[data-inbox-filter="${key}"]`);
@@ -5069,6 +5090,20 @@ class DashboardInbox {
         this.applyViewChange({ filter: key || 'all' }, { via: via === 'click' ? 'pill' : (via || 'pill') });
     }
 
+    /**
+     * After a Find tags round: the links it found a tag for, each with its
+     * chip. Opens the view first when the round ran from elsewhere.
+     */
+    async showSuggested() {
+        window.TagSuggestLive?.invalidate?.();
+        if (this.dash.activeView !== DashboardInbox.VIEW && !(await this.openInboxView())) return;
+        if (this.filter === 'suggested') {
+            this.render();
+            return;
+        }
+        this.applyViewChange({ filter: 'suggested' }, { via: 'find-tags' });
+    }
+
     render() {
         const d = this.dash;
         const shell = this.mountShell();
@@ -5107,6 +5142,7 @@ class DashboardInbox {
             unread: this.filterCount('unread'),
             snoozed: this.filterCount('snoozed'),
             noted: this.filterCount('noted'),
+            suggested: this.filterCount('suggested'),
         });
         shell.setSummary(this.shellSummary());
         shell.setBreadcrumb(this.shellBreadcrumb());

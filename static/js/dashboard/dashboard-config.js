@@ -23444,6 +23444,7 @@ class DashboardConfig {
             nocheck: ['config.cleanupFilterNoCheck', 'Not checked'],
             once: ['config.cleanupFilterOnce', 'Opened once and never again'],
             untagged: ['config.cleanupFilterUntagged', 'Without tags'],
+            offered: ['config.cleanupFilterOffered', 'With a tag suggestion'],
             insecure: ['config.cleanupFilterInsecure', 'Not using HTTPS'],
             noicon: ['config.cleanupFilterNoIcon', 'Without an icon'],
             duplicate: ['config.cleanupFilterDuplicate', 'Duplicate URLs'],
@@ -23906,6 +23907,10 @@ class DashboardConfig {
         nocheck: (b) => (window.CheckMode?.of?.(b) || 'off') === 'off',
         once: (b) => window.BookmarkPredicates.match('once', b),
         untagged: (b) => window.BookmarkPredicates.match('untagged', b),
+        // The rows with a tag on offer: where a Find tags round leaves what it
+        // found, so the reader can see which bookmarks it means. Asked of the
+        // view, which holds the offers (workbenchRowOffer).
+        offered: (b, _dupes, _canonical, config) => Boolean(config?.workbenchRowOffer?.(b)),
         insecure: (b) => window.BookmarkPredicates.match('insecure', b),
         noicon: (b) => window.BookmarkPredicates.match('noicon', b),
         duplicate: (b, dupes, canonical) => {
@@ -24039,7 +24044,7 @@ class DashboardConfig {
                 if (!cleanup) return true;
                 return cleanupKey === 'duplicate'
                     ? cleanup(b, dupes, (url) => this.canonicalStatsUrlKey(url))
-                    : cleanup(b);
+                    : cleanup(b, null, null, this);
             },
             health: (b) => !health || Boolean(this.bmHealthMatches?.(b, health)),
         };
@@ -24082,6 +24087,8 @@ class DashboardConfig {
             this.bmQuery, this.bmPageFilter, this.bmCategoryFilter,
             this.bookmarkTagFilters(), this.bmCleanupFilter, this.bmHealthFilter,
             this.bmSort ?? this.defaultBookmarksSort(), this.bmSortReverse, this.bmActiveGroup(),
+            // The offers come and go without the pool changing.
+            this.bmCleanupFilter === 'offered' ? window.TagSuggestLive?.stamp?.(this.dash) : '',
         ]);
         if (this._bmVisibleSource === all && this._bmVisibleToken === token && this._bmVisible) {
             return this._bmVisible;
@@ -26155,22 +26162,38 @@ class DashboardConfig {
      * Whether a search round adds what it finds straight away.
      *
      * One answer per browser rather than a setting: it is how this reader
-     * likes to work at this desk, not something the collection holds. On
-     * unless turned off -- the round is something they asked for, and one
-     * undo takes it all back.
+     * likes to work at this desk, not something the collection holds. Off
+     * unless turned on (TagSuggestLive.applyNow says why).
      */
     tagSearchApplyNow() {
-        try {
-            return localStorage.getItem('nextdash.tagSearch.applyNow') !== 'false';
-        } catch {
-            return true;
-        }
+        return window.TagSuggestLive?.applyNow?.() === true;
     }
 
     setTagSearchApplyNow(on) {
-        try {
-            localStorage.setItem('nextdash.tagSearch.applyNow', on ? 'true' : 'false');
-        } catch { /* a browser refusing storage keeps the default */ }
+        window.TagSuggestLive?.setApplyNow?.(on);
+    }
+
+    /**
+     * After a round that leaves offers, show where they are.
+     *
+     * In the Bookmarks list a round over several bookmarks keeps the list to
+     * the rows with an offer ("With a tag suggestion", removable like any
+     * filter), so the toast's number has names. A round for one bookmark, from
+     * its menu, leaves the list as it is: its row gains the chip in place.
+     */
+    showOfferedBookmarks(targetCount) {
+        window.TagSuggestLive?.invalidate?.();
+        if (!document.getElementById('config-bm-list')) return;
+        if (targetCount > 1 && this.bmCleanupFilter !== 'offered') {
+            this.bmCleanupFilter = 'offered';
+            this.resetBookmarkVisibleLimit?.();
+            this.invalidateVisibleBookmarks();
+            this.render?.();
+            this.restoreConfigHash?.();
+            return;
+        }
+        this.invalidateVisibleBookmarks();
+        this.repaintBookmarksList?.();
     }
 
     /** The bookmarks a round runs over: 'all', 'untagged', or a list. */
@@ -26238,8 +26261,13 @@ class DashboardConfig {
             return;
         }
         if (!this.tagSearchApplyNow()) {
-            this.notify(this.t('config.tagSearchWaiting', '{n} bookmarks have a tag suggestion waiting.')
-                .replace('{n}', String(tagsFor.size)), 'success', {
+            // Which bookmarks: the list kept to the rows with an offer, each
+            // offer a chip to take or turn down.
+            this.showOfferedBookmarks(targets.length);
+            this.notify((tagsFor.size === 1
+                ? this.t('config.tagSearchWaitingOne', '1 bookmark has a tag suggestion.')
+                : this.t('config.tagSearchWaiting', '{n} bookmarks have a tag suggestion waiting.')
+                    .replace('{n}', String(tagsFor.size))), 'success', {
                 duration: 10000,
                 actionLabel: this.t('config.tagSearchReview', 'Review'),
                 onAction: () => this.openTagSuggestionsTab(),
@@ -26356,8 +26384,20 @@ class DashboardConfig {
             this.renderTagSuggestionsSafe();
             return;
         }
-        this.notify(this.t('config.tagSearchInboxWaiting', '{n} inbox links have a tag suggestion waiting in the inbox.')
-            .replace('{n}', String(linked)), 'success', { duration: 8000 });
+        // Which links: in the inbox view the list keeps to the ones with an
+        // offer; elsewhere the toast takes the reader there.
+        const show = () => void inbox?.showSuggested?.();
+        if (this.dash.activeView === 'inbox') show();
+        this.notify((linked === 1
+            ? this.t('config.tagSearchInboxWaitingOne', '1 inbox link has a tag suggestion.')
+            : this.t('config.tagSearchInboxWaiting', '{n} inbox links have a tag suggestion waiting in the inbox.')
+                .replace('{n}', String(linked))), 'success', {
+            duration: 8000,
+            ...(this.dash.activeView === 'inbox' ? {} : {
+                actionLabel: this.t('config.tagSearchShow', 'Show'),
+                onAction: show,
+            }),
+        });
     }
 
     /** Config → Bookmarks → Tag suggestions, from wherever the reader is. */

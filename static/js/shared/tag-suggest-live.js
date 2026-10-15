@@ -332,7 +332,44 @@
         if (urls.length) global.TagCatalogue.autoLookup(urls);
     }
 
+    /*
+     * Whether Find tags puts what it finds on straight away, or leaves it in
+     * the rows as offers to take or turn down.
+     *
+     * Offers unless asked: a round that tagged on its own said only how many
+     * bookmarks it had changed, never which, and a wrong tag added unseen is
+     * worse than one waiting to be looked at. One choice for the Bookmarks
+     * view, the tag view, the inbox and the Tag suggestions tab.
+     */
+    const APPLY_NOW_KEY = 'nextdash.tagSearch.applyNow';
+
+    function applyNow() {
+        try {
+            return localStorage.getItem(APPLY_NOW_KEY) === 'true';
+        } catch {
+            return false;
+        }
+    }
+
+    function setApplyNow(on) {
+        try {
+            localStorage.setItem(APPLY_NOW_KEY, on ? 'true' : 'false');
+        } catch { /* a browser refusing storage keeps the default */ }
+    }
+
+    /**
+     * What the offers are worked out from, as one string. A list that keeps
+     * only the rows with an offer puts it in its memo: a round that lands
+     * changes the catalogue's version, a refusal the dismissed list.
+     */
+    function stamp(dash) {
+        return stampFor(dash);
+    }
+
     global.TagSuggestLive = {
+        applyNow,
+        setApplyNow,
+        stamp,
         autoSearch,
         ensureCatalogue,
         invalidate,

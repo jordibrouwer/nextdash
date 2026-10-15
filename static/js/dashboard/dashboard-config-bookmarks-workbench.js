@@ -136,14 +136,15 @@
     bookmarkFacetCounts() {
         const all = this.configBookmarkPool();
         const token = JSON.stringify([this._bmVisibleToken, all.length,
-            this.isUnsortedBookmarkView(), global.HealthFacts?.updatedAt || 0, this._bmHealthGen || 0]);
+            this.isUnsortedBookmarkView(), global.HealthFacts?.updatedAt || 0, this._bmHealthGen || 0,
+            global.TagSuggestLive?.stamp?.(this.dash) || '']);
         if (this._bmFacetSource === all && this._bmFacetToken === token && this._bmFacets) return this._bmFacets;
         const tests = this.bookmarkFilterTests();
         const cleanupKeys = Object.keys(global.DashboardConfig.CLEANUP_FILTERS);
         const dupes = this.ensureDuplicateUrlSet();
         const matchesView = (b, key) => {
             const fn = global.DashboardConfig.CLEANUP_FILTERS[key];
-            return key === 'duplicate' ? fn(b, dupes, (url) => this.canonicalStatsUrlKey(url)) : fn(b);
+            return key === 'duplicate' ? fn(b, dupes, (url) => this.canonicalStatsUrlKey(url)) : fn(b, null, null, this);
         };
         const counts = global.BookmarkWorkbenchModel.facetCounts(all, {
             query: { keys: () => [], test: tests.query },
@@ -186,7 +187,7 @@
         const dupes = key === 'duplicate' ? this.ensureDuplicateUrlSet() : null;
         return filed.filter((b) => (key === 'duplicate'
             ? fn(b, dupes, (url) => this.canonicalStatsUrlKey(url))
-            : fn(b))).length;
+            : fn(b, null, null, this))).length;
     },
 
     railCategoryLabel(pageId, categoryId) {

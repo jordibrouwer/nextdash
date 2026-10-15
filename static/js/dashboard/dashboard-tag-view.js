@@ -680,17 +680,11 @@
 
         /** Shared with the Tag suggestions tab: one choice, remembered once. */
         applyNow() {
-            try {
-                return localStorage.getItem('nextdash.tagSearch.applyNow') !== 'false';
-            } catch {
-                return true;
-            }
+            return window.TagSuggestLive?.applyNow?.() === true;
         }
 
         setApplyNow(on) {
-            try {
-                localStorage.setItem('nextdash.tagSearch.applyNow', on ? 'true' : 'false');
-            } catch { /* a browser refusing storage keeps the default */ }
+            window.TagSuggestLive?.setApplyNow?.(on);
         }
 
         openFindMenu(anchor) {
@@ -835,6 +829,12 @@
             if (this.applyNow()) {
                 await this.addSuggestions(pairs);
                 return;
+            }
+            // Which ones: a round over several rows keeps the list to those
+            // with an offer, as the Bookmarks view does.
+            if (targets.length > 1 && !this.filter.offered) {
+                this.filter.offered = true;
+                this.render();
             }
             const count = pairs.length;
             this.dash.showNotification?.((count === 1
@@ -1152,12 +1152,13 @@
 
         /** What the list shows: the matches, narrowed by the rail and the search. */
         shown(matches) {
-            return Model().applyFilters(matches, {
+            const shown = Model().applyFilters(matches, {
                 page: this.filter.page,
                 health: this.filter.health,
                 query: this.query,
                 isBroken: (b) => this.isBroken(b),
             });
+            return this.filter.offered ? shown.filter((b) => this.suggestionsFor(b).length) : shown;
         }
 
         /* ── Rail ────────────────────────────────────────────────────────── */
@@ -1241,6 +1242,21 @@
                 return btn;
             });
             groups.push(this.railGroup(this.t('dashboard.tagViewHealth', 'Health'), health, 'health'));
+
+            // Where a Find tags round leaves what it found: the rows with a
+            // chip to take or turn down. Drawn while there is one, or while on.
+            const offered = matches.filter((b) => this.suggestionsFor(b).length).length;
+            if (offered || this.filter.offered) {
+                const btn = this.railItem(this.t('dashboard.tagViewOffered', 'With a tag suggestion'), offered,
+                    { 'data-rail-offered': '' });
+                btn.classList.toggle('is-active', Boolean(this.filter.offered));
+                btn.setAttribute('aria-pressed', String(Boolean(this.filter.offered)));
+                btn.addEventListener('click', () => {
+                    this.filter.offered = !this.filter.offered;
+                    this.render();
+                });
+                groups.push(this.railGroup(this.t('dashboard.tagViewOfferedGroup', 'Tag suggestions'), [btn], 'offered'));
+            }
 
             host.replaceChildren(...groups);
         }

@@ -3023,7 +3023,13 @@
     "tagViewFindSelected": "查找标签",
     "tagViewFindOne": "查找标签",
     "tagViewReadOne": "读取页面",
-    "tagViewFindTags": "查找标签 ▾"
+    "tagViewFindTags": "查找标签 ▾",
+    "tagViewOffered": "With a tag suggestion",
+    "tagViewOfferedGroup": "Tag suggestions",
+    "inboxFilterSuggested": "With a tag suggestion",
+    "inboxNoteSuggested": "Links with a tag on offer. Click the dashed chip to add the tag, or × to turn it down.",
+    "inboxFindTags": "Find tags",
+    "inboxFindTagsHint": "The catalogue, then Wikidata for sites it does not know"
   },
   "health": {
     "reloadPage": "重新加载页面",
@@ -8460,7 +8466,11 @@
     "fineTitle": "微调",
     "fineChanged": "{n} 项已更改",
     "panelIndexLabel": "本标签页",
-    "fineDefault": "默认值"
+    "fineDefault": "默认值",
+    "cleanupFilterOffered": "With a tag suggestion",
+    "tagSearchWaitingOne": "1 bookmark has a tag suggestion.",
+    "tagSearchInboxWaitingOne": "1 inbox link has a tag suggestion.",
+    "tagSearchShow": "Show"
   },
   "colors": {
     "title": "主题自定义",

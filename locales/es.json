@@ -3023,7 +3023,13 @@
     "tagViewFindSelected": "Buscar etiquetas",
     "tagViewFindOne": "Buscar etiquetas",
     "tagViewReadOne": "Leer la página",
-    "tagViewFindTags": "Buscar etiquetas ▾"
+    "tagViewFindTags": "Buscar etiquetas ▾",
+    "tagViewOffered": "With a tag suggestion",
+    "tagViewOfferedGroup": "Tag suggestions",
+    "inboxFilterSuggested": "With a tag suggestion",
+    "inboxNoteSuggested": "Links with a tag on offer. Click the dashed chip to add the tag, or × to turn it down.",
+    "inboxFindTags": "Find tags",
+    "inboxFindTagsHint": "The catalogue, then Wikidata for sites it does not know"
   },
   "health": {
     "reloadPage": "Recargar la página",
@@ -8460,7 +8466,11 @@
     "fineTitle": "Ajuste fino",
     "fineChanged": "{n} cambiados",
     "panelIndexLabel": "En esta pestaña",
-    "fineDefault": "Valores por defecto"
+    "fineDefault": "Valores por defecto",
+    "cleanupFilterOffered": "With a tag suggestion",
+    "tagSearchWaitingOne": "1 bookmark has a tag suggestion.",
+    "tagSearchInboxWaitingOne": "1 inbox link has a tag suggestion.",
+    "tagSearchShow": "Show"
   },
   "colors": {
     "title": "personalización del tema",
