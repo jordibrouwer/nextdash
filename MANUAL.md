@@ -1667,7 +1667,7 @@ What it finds lands in the rows as suggestions, and a toast offers **Show**. Wit
 
 **Privacy and switches.** **Look up unknown sites on Wikidata** in the Tag suggestions tab's **⋯** menu switches off every online lookup, the quiet one included. **Forget the scanned keywords** (in the same menu, or under Data & backups → Icons & previews) clears what *Read their pages* kept.
 
-<p align="center"><img src="screenshots/manual.md/10-tag-view-offers.jpg" alt="The tag view for dev: a line reading 3 tag suggestions and Add all under the figures, and dashed suggestion chips after the tags of three rows" width="720"></p>
+<p align="center"><img src="screenshots/manual.md/10-tag-view-offers.jpg" alt="The tag view for tools: a line reading 4 tag suggestions and Add all under the figures, and dashed suggestion chips after the tags of three rows" width="720"></p>
 <p align="center"><sub>Suggestions in the rows of the tag view, with <b>Add all</b> and <b>Find tags</b>.</sub></p>
 
 <p align="center"><img src="screenshots/manual.md/10-tag-suggestions.jpg" alt="The tags field of the bookmark form with one suggested tag, #dev, under it, and a cross to turn it down" width="586"></p>

@@ -263,6 +263,27 @@ function tidyDemoData(dir, patch) {
         writeJSON(settingsFile, settings);
     }
 
+    // One shot only: a few tools on sites the tag catalogue knows, tagged
+    // "tools" and nothing else. Since the catalogue, the demo's own links
+    // carry the tags it would offer, so its tag views have nothing to offer.
+    if (patch === 'tagoffers') {
+        const file = path.join(dir, 'bookmarks-1.json');
+        const data = readJSON(file);
+        // Days before the shots' fixed clock, not before today.
+        const at = NOW.getTime();
+        const added = [
+            ['Notes app', 'https://joplinapp.org', 'NA'],
+            ['Password vault', 'https://bitwarden.com', 'PV'],
+            ['Whiteboard', 'https://excalidraw.com', 'WB'],
+        ].map(([name, url, shortcut], i) => ({
+            name, url, shortcut, pageId: 1, category: 'utilities', checkStatus: false,
+            createdAt: at - (i + 9) * 86_400_000, updatedAt: at - (i + 9) * 86_400_000,
+            openCount: 3 - i, lastOpened: at - (i + 1) * 86_400_000, tags: ['tools'],
+        }));
+        data.bookmarks = [...(data.bookmarks || []), ...added];
+        writeJSON(file, data);
+    }
+
     // One shot only: a page with the Home Assistant tile (its answer is mocked).
     if (patch === 'homeassistant') {
         const pages = readJSON(path.join(dir, 'pages.json'));

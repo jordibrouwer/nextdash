@@ -1307,26 +1307,32 @@ test.describe('tablet', () => {
  * animation speed.
  */
 
-test('10 tag view offers', async ({ page }) => {
-    await prepare(page);
-    await openDashboard(page);
-    await page.keyboard.press('/');
-    await page.locator('#tag-cloud-modal.is-open').waitFor();
-    await page.waitForTimeout(600);
-    const tags = await page.locator('#tag-cloud-modal [data-tag]').evaluateAll((els) => els.map((el) => el.getAttribute('data-tag')));
-    await page.keyboard.press('Escape');
-    // The first tag whose view has something to offer; the demo has few.
-    let found = null;
-    for (const tag of tags) {
-        await page.goto(`/#tag/${encodeURIComponent(tag)}`);
-        await page.locator('#dashboard-layout .tag-view .tag-view-row').first().waitFor();
-        await page.waitForTimeout(1_500);
-        if (await page.locator('.tag-view-offer-count:not([hidden])').count()) { found = tag; break; }
-    }
-    console.log(`tag view with offers: ${found}`);
-    if (!found) throw new Error('no tag view has offers in the demo data');
-    await page.mouse.move(5, 5);
-    await snap(page, page.locator('#dashboard-layout .tag-view'), '10-tag-view-offers.jpg', { pad: 0 });
+test.describe('tools on known sites', () => {
+    // A few tools tagged "tools" only, on sites the tag catalogue knows (see
+    // tidyDemoData), so that tag's view has something to offer.
+    test.use({ dataPatch: 'tagoffers' });
+    test('10 tag view offers', async ({ page }) => {
+        await prepare(page);
+        await openDashboard(page);
+        await page.keyboard.press('/');
+        await page.locator('#tag-cloud-modal.is-open').waitFor();
+        await page.waitForTimeout(600);
+        const tags = await page.locator('#tag-cloud-modal [data-tag]').evaluateAll((els) => els.map((el) => el.getAttribute('data-tag')));
+        await page.keyboard.press('Escape');
+        // "tools" first: the patch is there; then any other tag that offers.
+        const order = ['tools', ...tags.filter((tag) => tag !== 'tools')];
+        let found = null;
+        for (const tag of order) {
+            await page.goto(`/#tag/${encodeURIComponent(tag)}`);
+            await page.locator('#dashboard-layout .tag-view .tag-view-row').first().waitFor();
+            await page.waitForTimeout(1_500);
+            if (await page.locator('.tag-view-offer-count:not([hidden])').count()) { found = tag; break; }
+        }
+        console.log(`tag view with offers: ${found}`);
+        if (!found) throw new Error('no tag view has offers in the demo data');
+        await page.mouse.move(5, 5);
+        await snap(page, page.locator('#dashboard-layout .tag-view'), '10-tag-view-offers.jpg', { pad: 0 });
+    });
 });
 
 test.describe('home assistant tile', () => {
