@@ -283,40 +283,6 @@
             chip.scrollIntoView({ block: 'nearest', inline: 'nearest' });
         },
 
-        /** Pick nearest tag in arrow direction (wrapped flex word cloud). */
-        findSpatialNeighbor(fromEl, direction, chips = this.getTagChips()) {
-            if (!fromEl || !chips.length) return null;
-            const cur = fromEl.getBoundingClientRect();
-            const cx = cur.left + cur.width / 2;
-            const cy = cur.top + cur.height / 2;
-            const eps = 4;
-            let best = null;
-            let bestScore = Infinity;
-
-            for (const el of chips) {
-                if (el === fromEl) continue;
-                const r = el.getBoundingClientRect();
-                const ox = r.left + r.width / 2;
-                const oy = r.top + r.height / 2;
-                const dx = ox - cx;
-                const dy = oy - cy;
-                if (direction === 'left' && dx >= -eps) continue;
-                if (direction === 'right' && dx <= eps) continue;
-                if (direction === 'up' && dy >= -eps) continue;
-                if (direction === 'down' && dy <= eps) continue;
-                const primary =
-                    direction === 'left' || direction === 'right' ? Math.abs(dx) : Math.abs(dy);
-                const secondary =
-                    direction === 'left' || direction === 'right' ? Math.abs(dy) : Math.abs(dx);
-                const score = primary * 1000 + secondary;
-                if (score < bestScore) {
-                    bestScore = score;
-                    best = el;
-                }
-            }
-            return best;
-        },
-
         moveModalFocus(direction) {
             if (this.isFocusOnClearButton()) {
                 const chips = this.getNavigableChips();
@@ -335,34 +301,20 @@
                 return;
             }
 
+            /*
+             * Linear, like a dashboard list: every arrow walks the cloud in
+             * reading order. Jumping to whichever chip sits nearest in the
+             * arrow's direction looked clever but landed somewhere new each
+             * time the word sizes shifted the rows.
+             */
             const currentIdx = this.getFocusedChipIndex(chips);
-            const current = chips[currentIdx] || chips[0];
-            const candidates = [...chips];
-            if (direction === 'down' && this.isClearButtonFocusable()) {
-                candidates.push(this.clearBtn);
-            }
-            const neighbor = this.findSpatialNeighbor(current, direction, candidates);
-            if (neighbor === this.clearBtn) {
+            const delta = direction === 'right' || direction === 'down' ? 1 : -1;
+            const next = currentIdx + delta;
+            if (next >= chips.length && this.isClearButtonFocusable()) {
                 this.focusClearButton();
                 return;
             }
-            if (neighbor) {
-                this.focusChipAtIndex(chips.indexOf(neighbor), chips);
-                return;
-            }
-
-            if (direction === 'down' && this.isClearButtonFocusable()) {
-                this.focusClearButton();
-                return;
-            }
-
-            const delta =
-                direction === 'right' || direction === 'down'
-                    ? 1
-                    : direction === 'left' || direction === 'up'
-                      ? -1
-                      : 0;
-            this.focusChipAtIndex(currentIdx + delta, chips);
+            this.focusChipAtIndex(next, chips);
         },
 
         focusInitialChip() {

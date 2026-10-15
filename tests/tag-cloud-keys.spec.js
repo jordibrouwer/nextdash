@@ -147,6 +147,30 @@ test('arrows step over tags that do not match', async ({ page }) => {
     expect([...seen].sort()).toEqual(TAGS);
 });
 
+test('arrows walk the cloud in reading order, like a dashboard list', async ({ page }) => {
+    await openWithKey(page);
+    const order = await page.evaluate(() =>
+        [...document.querySelectorAll('#tag-cloud-modal .tag-cloud-word')].map((el) => el.dataset.tag));
+    expect(order.length).toBeGreaterThan(3);
+    expect(await focusedTag(page)).toBe(order[0]);
+
+    // Down and Right both take the next tag, even where it starts a new row.
+    await page.keyboard.press('ArrowDown');
+    expect(await focusedTag(page)).toBe(order[1]);
+    await page.keyboard.press('ArrowRight');
+    expect(await focusedTag(page)).toBe(order[2]);
+    await page.keyboard.press('ArrowUp');
+    expect(await focusedTag(page)).toBe(order[1]);
+    await page.keyboard.press('ArrowLeft');
+    expect(await focusedTag(page)).toBe(order[0]);
+
+    // Off either end it wraps round.
+    await page.keyboard.press('ArrowUp');
+    expect(await focusedTag(page)).toBe(order[order.length - 1]);
+    await page.keyboard.press('ArrowDown');
+    expect(await focusedTag(page)).toBe(order[0]);
+});
+
 test('letters typed into a field do not reach the cloud', async ({ page }) => {
     await openWithKey(page);
     await page.evaluate(() => {
