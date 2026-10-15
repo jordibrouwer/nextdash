@@ -130,6 +130,9 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **new — *Show the action buttons* leads the action bar settings,** above where the bar stands and how large its buttons are: it decides whether any of the rest matters.
 - **new — five action bar button sizes.** **Button size** in Appearance → Action bar runs from extra small to extra large; medium is the default, one step up from the 28px squares the bar had, which are now small. An install from before the setting gets medium (`actionBarSize`).
 - **new — the key chips on the action buttons start off,** for new installs too; turn them on in Appearance and they stay (`showActionKeys`).
+- **fix — the header destinations follow the button size.** Bookmarks, Inbox, the page tabs and the header links stayed 40px tall at every action bar size, so beside medium and larger buttons they stood shorter than the group next to them; they now measure the button size plus its surround (`dashboard.css`).
+- **fix — the theme field shows a whole theme name.** Its control was capped at 300px, which cut most names of up to 25 characters; it now has room for them on one line (`config-tabs.css`).
+- **fix — a docked action bar no longer slides into place on a load.** Its slide ran on the first placement too, sweeping a side column some 200px up the screen as the page appeared; it now only slides when it goes into its edge and comes back (`action-bar-autohide.js`, `data-action-bar-sliding`).
 - **fix — the Media detail card uses the app's colours.** It sits on `<body>`, outside every widget, so it named variables that were not there: it was transparent, in the corner and with unstyled buttons. It now takes the app's background, text and border, sits in the middle, and has its own buttons (`dashboard-media-tile.css`).
 
 ### Tags
