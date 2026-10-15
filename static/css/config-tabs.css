@@ -505,6 +505,12 @@
         grid-template-columns: minmax(0, 1fr) minmax(0, 300px) auto auto auto;
     }
 
+    /* The theme field is the one control that has to show a whole name of up to
+       25 characters on one line: 300px clipped most of them. */
+    #config-appearance-body .config-field:has(.config-theme-picker) {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 24rem) auto;
+    }
+
     #config-appearance-body .config-field > .config-field-label {
         grid-column: 1;
     }
