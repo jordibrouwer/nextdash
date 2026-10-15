@@ -15,6 +15,8 @@
  * - parents.json: each subject's broader subject, written as `parent`.
  * - manual/splits.json and manual/classes.json: where split.cjs and
  *   import-classes.cjs put each host, written in the same way as cleanup.
+ * - manual/tranco.json: the best-known sites, each checked by hand against
+ *   its subjects; written in the same way as cleanup, before it.
  * - manual/cleanup.json: derived hosts that were filed wrongly. Each is taken
  *   out of every subject's `derived` and put under the subjects listed, or
  *   under none for []. classify.cjs reads the same file as handwork, so a
@@ -50,6 +52,10 @@ const harvested = Object.fromEntries(Object.entries(
         .reduce((all, name) => ({ ...all, ...readJSON('manual', name) }), {}),
 ).map(([entry, tags]) => [entry, PLACEHOLDER.test(entry.split('/')[0]) ? [] : tags]));
 
+// The best-known sites of the Tranco list, checked one by one: fixes for
+// every source above, so it comes after them and before cleanup.json.
+const reviewed = fs.existsSync(path.join(__dirname, 'manual', 'tranco.json')) ? readJSON('manual', 'tranco.json') : {};
+
 const { subjects } = readJSON('subjects.json');
 const splitSubjects = Object.values(splitDefs).flat().filter(({ existing }) => !existing)
     .map(({ tag, aliases = [], keywords = [] }) => ({ tag, aliases, keywords, hosts: [] }));
@@ -67,7 +73,7 @@ doc.tags.sort((a, b) => (a.tag < b.tag ? -1 : a.tag > b.tag ? 1 : 0));
 const bySubject = new Map(doc.tags.map((entry) => [entry.tag, entry]));
 let moved = 0;
 let dropped = 0;
-Object.entries({ ...splitHosts, ...classHosts, ...harvested, ...cleanup }).forEach(([host, tags]) => {
+Object.entries({ ...splitHosts, ...classHosts, ...harvested, ...reviewed, ...cleanup }).forEach(([host, tags]) => {
     doc.tags.forEach((entry) => {
         if (entry.derived) entry.derived = entry.derived.filter((written) => written.replace(/^=/, '') !== host);
     });

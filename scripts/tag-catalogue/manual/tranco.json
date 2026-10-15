@@ -1,0 +1,5446 @@
+{
+  "12go.asia": [
+    "travel"
+  ],
+  "15min.lt": [
+    "online-news"
+  ],
+  "1tv.ru": [
+    "television"
+  ],
+  "247sports.com": [
+    "sports-news",
+    "college-sports"
+  ],
+  "24ur.com": [
+    "television"
+  ],
+  "2gis.ru": [
+    "maps"
+  ],
+  "360.cn": [
+    "cybersecurity",
+    "desktop-apps"
+  ],
+  "3cat.cat": [
+    "public-broadcaster"
+  ],
+  "3dnews.ru": [
+    "tech-news"
+  ],
+  "3sat.de": [
+    "television"
+  ],
+  "4shared.com": [
+    "cloud-storage"
+  ],
+  "6abc.com": [
+    "television"
+  ],
+  "7-eleven.com": [
+    "convenience-stores"
+  ],
+  "7shifts.com": [
+    "scheduling"
+  ],
+  "99designs.com": [
+    "design-tools"
+  ],
+  "a1.by": [
+    "telecom"
+  ],
+  "a16z.com": [
+    "startup"
+  ],
+  "a24films.com": [
+    "film"
+  ],
+  "aaa.com": [
+    "travel"
+  ],
+  "aamc.org": [
+    "medical-school"
+  ],
+  "aargauerzeitung.ch": [
+    "newspaper"
+  ],
+  "aarp.org": [
+    "charities"
+  ],
+  "aasm.org": [
+    "health"
+  ],
+  "aau.at": [
+    "university",
+    "open-access"
+  ],
+  "abb.com": [
+    "manufacturing"
+  ],
+  "abc.com": [
+    "tv-series"
+  ],
+  "abc7chicago.com": [
+    "television"
+  ],
+  "abdn.ac.uk": [
+    "university"
+  ],
+  "abema.tv": [
+    "streaming",
+    "television"
+  ],
+  "aber.ac.uk": [
+    "university"
+  ],
+  "ableton.com": [
+    "desktop-apps",
+    "music"
+  ],
+  "abola.pt": [
+    "sports"
+  ],
+  "about.google": [
+    "google"
+  ],
+  "about.me": [
+    "social"
+  ],
+  "abs-cbn.com": [
+    "television"
+  ],
+  "absher.sa": [
+    "government"
+  ],
+  "accaglobal.com": [
+    "accounting"
+  ],
+  "acquia.com": [
+    "webdev",
+    "tech"
+  ],
+  "acsm.org": [
+    "health"
+  ],
+  "act.org": [
+    "test-prep"
+  ],
+  "actionnetwork.com": [
+    "gambling"
+  ],
+  "adac.de": [
+    "cars"
+  ],
+  "adaware.com": [
+    "security"
+  ],
+  "adb.org": [
+    "government"
+  ],
+  "adblockplus.org": [
+    "privacy-tools"
+  ],
+  "adelaide.edu.au": [
+    "university"
+  ],
+  "adguard.com": [
+    "privacy-tools"
+  ],
+  "adp.com": [
+    "payroll"
+  ],
+  "aeaweb.org": [
+    "journals"
+  ],
+  "aetv.com": [
+    "television"
+  ],
+  "affinity.studio": [
+    "design-tools",
+    "desktop-apps"
+  ],
+  "afi.com": [
+    "film"
+  ],
+  "afp.com": [
+    "news-agency"
+  ],
+  "aft.org": [
+    "education"
+  ],
+  "agenziaentrate.gov.it": [
+    "tax"
+  ],
+  "aha.io": [
+    "project-management"
+  ],
+  "ahrefs.com": [
+    "analytics"
+  ],
+  "aiga.org": [
+    "design-tools"
+  ],
+  "akismet.com": [
+    "security"
+  ],
+  "ala.org": [
+    "library"
+  ],
+  "ala.org.au": [
+    "library"
+  ],
+  "alarm.com": [
+    "smart-home"
+  ],
+  "albertahealthservices.ca": [
+    "health"
+  ],
+  "alibris.com": [
+    "bookstore"
+  ],
+  "alienvault.com": [
+    "cybersecurity"
+  ],
+  "allenpress.com": [
+    "academic-publisher"
+  ],
+  "alphatv.gr": [
+    "television"
+  ],
+  "alteryx.com": [
+    "data-science"
+  ],
+  "ama-assn.org": [
+    "medicine"
+  ],
+  "amboss.com": [
+    "medicine"
+  ],
+  "american.edu": [
+    "university"
+  ],
+  "americanbar.org": [
+    "legal"
+  ],
+  "americanmusical.com": [
+    "music"
+  ],
+  "americansongwriter.com": [
+    "music-news"
+  ],
+  "amherst.edu": [
+    "university"
+  ],
+  "ams.org": [
+    "academic-publisher"
+  ],
+  "andrews.edu": [
+    "university"
+  ],
+  "angel.com": [
+    "film",
+    "streaming"
+  ],
+  "angi.com": [
+    "home"
+  ],
+  "angularjs.org": [
+    "angular"
+  ],
+  "anime-planet.com": [
+    "anime"
+  ],
+  "ankiweb.net": [
+    "edtech"
+  ],
+  "annualreviews.org": [
+    "academic-publisher"
+  ],
+  "ansa.it": [
+    "news-agency"
+  ],
+  "answersingenesis.org": [
+    "religion"
+  ],
+  "antena3.com": [
+    "television"
+  ],
+  "antenna.gr": [
+    "television"
+  ],
+  "anu.edu.au": [
+    "university"
+  ],
+  "anyflip.com": [
+    "publishing"
+  ],
+  "aol.com": [
+    "news",
+    "email"
+  ],
+  "apa.org": [
+    "psychology",
+    "academic-publisher"
+  ],
+  "apartmentguide.com": [
+    "vacation-rentals"
+  ],
+  "apartmentlist.com": [
+    "real-estate"
+  ],
+  "apha.org": [
+    "health"
+  ],
+  "apmex.com": [
+    "commodities"
+  ],
+  "apotheken-umschau.de": [
+    "health"
+  ],
+  "apple.co": [
+    "apple"
+  ],
+  "apple.com.cn": [
+    "apple"
+  ],
+  "applovin.com": [
+    "advertising",
+    "tech"
+  ],
+  "appsheet.com": [
+    "no-code"
+  ],
+  "apta.org": [
+    "health"
+  ],
+  "aramco.com": [
+    "energy"
+  ],
+  "arbetsformedlingen.se": [
+    "government"
+  ],
+  "arcteryx.com": [
+    "outdoors",
+    "fashion"
+  ],
+  "army.mil": [
+    "government"
+  ],
+  "arquivo.pt": [
+    "archive"
+  ],
+  "arrl.org": [
+    "radio"
+  ],
+  "arthritis.org": [
+    "health"
+  ],
+  "artic.edu": [
+    "museums"
+  ],
+  "artnet.com": [
+    "art"
+  ],
+  "artuk.org": [
+    "museums"
+  ],
+  "asahi-net.or.jp": [
+    "telecom"
+  ],
+  "asco.org": [
+    "health"
+  ],
+  "asha.org": [
+    "health"
+  ],
+  "ashleymadison.com": [
+    "dating"
+  ],
+  "asics.com": [
+    "shoes"
+  ],
+  "asp.net": [
+    "dotnet"
+  ],
+  "asterisk.org": [
+    "voip",
+    "open-source"
+  ],
+  "asurion.com": [
+    "insurance",
+    "electronics"
+  ],
+  "atgtickets.com": [
+    "theatre"
+  ],
+  "athome.com": [
+    "real-estate"
+  ],
+  "atresplayer.com": [
+    "streaming"
+  ],
+  "att.com.mx": [
+    "telecom"
+  ],
+  "att.net": [
+    "email",
+    "telecom"
+  ],
+  "attheraces.com": [
+    "sports"
+  ],
+  "atv.com.tr": [
+    "television"
+  ],
+  "auckland.ac.nz": [
+    "university"
+  ],
+  "augsburger-allgemeine.de": [
+    "newspaper"
+  ],
+  "austlii.edu.au": [
+    "law"
+  ],
+  "autism.org.uk": [
+    "charities"
+  ],
+  "autodoc.de": [
+    "auto-parts"
+  ],
+  "autoscout24.com": [
+    "cars"
+  ],
+  "autosport.com": [
+    "motorsport"
+  ],
+  "avast.com": [
+    "cybersecurity",
+    "desktop-apps"
+  ],
+  "avery.com": [
+    "shopping"
+  ],
+  "aviation-safety.net": [
+    "aviation"
+  ],
+  "avid.com": [
+    "video"
+  ],
+  "avito.ru": [
+    "classifieds",
+    "marketplace"
+  ],
+  "avrotros.nl": [
+    "public-broadcaster"
+  ],
+  "awm.gov.au": [
+    "museums"
+  ],
+  "axis.com": [
+    "electronics"
+  ],
+  "azdot.gov": [
+    "government",
+    "transit"
+  ],
+  "bafta.org": [
+    "film"
+  ],
+  "bancaditalia.it": [
+    "central-bank"
+  ],
+  "band.com.br": [
+    "television"
+  ],
+  "bandlab.com": [
+    "music"
+  ],
+  "baomoi.com": [
+    "online-news"
+  ],
+  "barbican.org.uk": [
+    "theatre"
+  ],
+  "barcelona.cat": [
+    "municipality"
+  ],
+  "barstoolsports.com": [
+    "sports-news"
+  ],
+  "bbc.co.uk": [
+    "broadcasting",
+    "news"
+  ],
+  "bbcgoodfood.com": [
+    "recipes"
+  ],
+  "bc.edu": [
+    "university"
+  ],
+  "bc.game": [
+    "gambling"
+  ],
+  "bcb.gov.br": [
+    "central-bank"
+  ],
+  "bcit.ca": [
+    "university-of-applied-sciences"
+  ],
+  "bde.es": [
+    "central-bank"
+  ],
+  "beckershospitalreview.com": [
+    "health"
+  ],
+  "beebom.com": [
+    "tech-news"
+  ],
+  "beenverified.com": [
+    "search"
+  ],
+  "beeper.com": [
+    "chat"
+  ],
+  "beinsports.com": [
+    "sports"
+  ],
+  "bentley.com": [
+    "tech"
+  ],
+  "bento.me": [
+    "social"
+  ],
+  "bereal.com": [
+    "social"
+  ],
+  "berkshirehathaway.com": [
+    "investing"
+  ],
+  "berlin.de": [
+    "municipality"
+  ],
+  "bet.com": [
+    "television"
+  ],
+  "bfh.ch": [
+    "university-of-applied-sciences"
+  ],
+  "bible.com": [
+    "religion",
+    "mobile-apps"
+  ],
+  "bicycling.com": [
+    "cycling"
+  ],
+  "bignox.com": [
+    "emulation"
+  ],
+  "bigo.tv": [
+    "streaming"
+  ],
+  "biography.com": [
+    "reference"
+  ],
+  "biologicaldiversity.org": [
+    "environment"
+  ],
+  "biologists.com": [
+    "journals"
+  ],
+  "bird.com": [
+    "transit"
+  ],
+  "bisnow.com": [
+    "real-estate"
+  ],
+  "bitpanda.com": [
+    "crypto",
+    "fintech"
+  ],
+  "bitrix24.com": [
+    "crm"
+  ],
+  "bitvavo.com": [
+    "crypto"
+  ],
+  "bizkaia.eus": [
+    "government"
+  ],
+  "bl.uk": [
+    "library"
+  ],
+  "blabbermouth.net": [
+    "music-news"
+  ],
+  "blackbaud.com": [
+    "tech"
+  ],
+  "blackberry.com": [
+    "cybersecurity",
+    "smartphones"
+  ],
+  "blackmagicdesign.com": [
+    "electronics",
+    "video"
+  ],
+  "bmc.com": [
+    "tech"
+  ],
+  "bmw.com": [
+    "car-brands"
+  ],
+  "bnf.fr": [
+    "library",
+    "archive"
+  ],
+  "bnl.gov": [
+    "research-institute"
+  ],
+  "boe.es": [
+    "government"
+  ],
+  "boku.ac.at": [
+    "university"
+  ],
+  "bolt.eu": [
+    "rideshare"
+  ],
+  "bom.gov.au": [
+    "weather"
+  ],
+  "bookcrossing.com": [
+    "books",
+    "social"
+  ],
+  "bookriot.com": [
+    "books"
+  ],
+  "booksamillion.com": [
+    "bookstore"
+  ],
+  "booktopia.com.au": [
+    "bookstore"
+  ],
+  "boost.org": [
+    "cpp",
+    "dev"
+  ],
+  "boots.com": [
+    "pharmacy"
+  ],
+  "bp.com": [
+    "energy"
+  ],
+  "br.de": [
+    "public-broadcaster"
+  ],
+  "bradescoseguros.com.br": [
+    "insurance"
+  ],
+  "bradfordexchange.com": [
+    "antiques"
+  ],
+  "brainly.co.id": [
+    "education"
+  ],
+  "brainly.com": [
+    "questions"
+  ],
+  "brainly.in": [
+    "tutoring"
+  ],
+  "brandeis.edu": [
+    "university"
+  ],
+  "bravotv.com": [
+    "television"
+  ],
+  "braze.com": [
+    "marketing"
+  ],
+  "bridgebase.com": [
+    "boardgames"
+  ],
+  "brill.com": [
+    "academic-publisher",
+    "publishing"
+  ],
+  "bris.ac.uk": [
+    "university"
+  ],
+  "bristol.ac.uk": [
+    "university"
+  ],
+  "broadinstitute.org": [
+    "research-institute"
+  ],
+  "broadwayworld.com": [
+    "theatre"
+  ],
+  "broward.org": [
+    "government"
+  ],
+  "brown.edu": [
+    "university"
+  ],
+  "browserstack.com": [
+    "testing"
+  ],
+  "bugfender.com": [
+    "monitoring"
+  ],
+  "bundesregierung.de": [
+    "government"
+  ],
+  "bundeswehr.de": [
+    "defense"
+  ],
+  "busbud.com": [
+    "travel"
+  ],
+  "business.com": [
+    "business"
+  ],
+  "businessweekly.com.tw": [
+    "business-news"
+  ],
+  "bustimes.org": [
+    "transit"
+  ],
+  "bytedance.com": [
+    "tech"
+  ],
+  "byu.edu": [
+    "university"
+  ],
+  "ca.com": [
+    "tech"
+  ],
+  "cadence.com": [
+    "semiconductors",
+    "tech"
+  ],
+  "caf.fr": [
+    "government"
+  ],
+  "cafebazaar.ir": [
+    "android"
+  ],
+  "calvin.edu": [
+    "university"
+  ],
+  "camara.leg.br": [
+    "government"
+  ],
+  "cambridge.org": [
+    "academic-publisher",
+    "library"
+  ],
+  "camh.ca": [
+    "health"
+  ],
+  "campingworld.com": [
+    "camping"
+  ],
+  "canada.ca": [
+    "government"
+  ],
+  "canadiantire.ca": [
+    "shopping"
+  ],
+  "canalplus.com": [
+    "television"
+  ],
+  "canalsur.es": [
+    "news",
+    "television"
+  ],
+  "canberra.edu.au": [
+    "university"
+  ],
+  "canon-europe.com": [
+    "camera-gear"
+  ],
+  "capterra.com": [
+    "reference"
+  ],
+  "careem.com": [
+    "rideshare"
+  ],
+  "caremark.com": [
+    "pharmacy"
+  ],
+  "carm.es": [
+    "government"
+  ],
+  "carnegiehall.org": [
+    "music"
+  ],
+  "carparts.com": [
+    "auto-parts"
+  ],
+  "carrefour.es": [
+    "grocery"
+  ],
+  "carsized.com": [
+    "cars"
+  ],
+  "cas.cn": [
+    "research-institute"
+  ],
+  "cas.org": [
+    "chemistry"
+  ],
+  "case.edu": [
+    "university"
+  ],
+  "casetify.com": [
+    "smartphones"
+  ],
+  "caseys.com": [
+    "convenience-stores"
+  ],
+  "cash.app": [
+    "payments",
+    "fintech"
+  ],
+  "casio.com": [
+    "electronics",
+    "music"
+  ],
+  "catb.org": [
+    "open-source"
+  ],
+  "catholicnewsagency.com": [
+    "religion",
+    "news-agency"
+  ],
+  "cato.org": [
+    "policy"
+  ],
+  "cbn.com": [
+    "television"
+  ],
+  "cbp.gov": [
+    "government",
+    "tariff"
+  ],
+  "cbr.ru": [
+    "central-bank"
+  ],
+  "cbs.com": [
+    "television"
+  ],
+  "ccohs.ca": [
+    "government"
+  ],
+  "cedars-sinai.org": [
+    "health"
+  ],
+  "cegid.com": [
+    "tech"
+  ],
+  "chabad.org": [
+    "religion"
+  ],
+  "chamberofcommerce.com": [
+    "business"
+  ],
+  "chambers.com": [
+    "dictionary"
+  ],
+  "channel4.com": [
+    "television"
+  ],
+  "channel5.com": [
+    "television"
+  ],
+  "channelnewsasia.com": [
+    "news",
+    "television"
+  ],
+  "channelstv.com": [
+    "news",
+    "television"
+  ],
+  "chaos.social": [
+    "fediverse"
+  ],
+  "chapman.edu": [
+    "university"
+  ],
+  "chateauversailles.fr": [
+    "museums"
+  ],
+  "chatwoot.com": [
+    "helpdesk",
+    "self-hosted"
+  ],
+  "checkatrade.com": [
+    "home"
+  ],
+  "chevron.com": [
+    "energy"
+  ],
+  "childrenshospital.org": [
+    "health"
+  ],
+  "chinaunicom.com": [
+    "telecom"
+  ],
+  "christies.com": [
+    "auctions"
+  ],
+  "chromeexperiments.com": [
+    "webdev"
+  ],
+  "chron.com": [
+    "newspaper"
+  ],
+  "chronicle.com": [
+    "education"
+  ],
+  "chumbacasino.com": [
+    "gambling"
+  ],
+  "chunichi.co.jp": [
+    "newspaper",
+    "sports"
+  ],
+  "churchofjesuschrist.org": [
+    "religion"
+  ],
+  "cian.ru": [
+    "real-estate"
+  ],
+  "cirad.fr": [
+    "research-institute"
+  ],
+  "cirquedusoleil.com": [
+    "theatre"
+  ],
+  "cision.com": [
+    "public-relations"
+  ],
+  "citizenlab.ca": [
+    "privacy"
+  ],
+  "citrix.com": [
+    "remote-access"
+  ],
+  "city-data.com": [
+    "reference"
+  ],
+  "citynews.ca": [
+    "news",
+    "television"
+  ],
+  "cityoflondon.gov.uk": [
+    "municipality"
+  ],
+  "clarivate.com": [
+    "bibliometrics"
+  ],
+  "clarks.com": [
+    "shoes"
+  ],
+  "claude.com": [
+    "ai"
+  ],
+  "click2houston.com": [
+    "television"
+  ],
+  "clicrbs.com.br": [
+    "television"
+  ],
+  "clipchamp.com": [
+    "video"
+  ],
+  "clover.com": [
+    "payments"
+  ],
+  "cnbcindonesia.com": [
+    "business-news"
+  ],
+  "cnblogs.com": [
+    "dev-blogs"
+  ],
+  "cncf.io": [
+    "cloud",
+    "devops"
+  ],
+  "cnews.fr": [
+    "news",
+    "television"
+  ],
+  "cnil.fr": [
+    "privacy",
+    "government"
+  ],
+  "cnnindonesia.com": [
+    "online-news"
+  ],
+  "cnnturk.com": [
+    "news",
+    "television"
+  ],
+  "cnpc.com.cn": [
+    "energy"
+  ],
+  "cnr.it": [
+    "research-institute"
+  ],
+  "cochranelibrary.com": [
+    "health"
+  ],
+  "code42.com": [
+    "cybersecurity"
+  ],
+  "codechef.com": [
+    "algorithms"
+  ],
+  "codehs.com": [
+    "coding",
+    "kids-coding"
+  ],
+  "codeium.com": [
+    "ai"
+  ],
+  "codepen.io": [
+    "webdev",
+    "online-community"
+  ],
+  "codesandbox.io": [
+    "dev"
+  ],
+  "coe.int": [
+    "government"
+  ],
+  "cofc.edu": [
+    "university"
+  ],
+  "coinex.com": [
+    "crypto"
+  ],
+  "colorado.edu": [
+    "university"
+  ],
+  "colorlib.com": [
+    "webdev"
+  ],
+  "columbia.edu": [
+    "university"
+  ],
+  "commerzbank.de": [
+    "banking"
+  ],
+  "commvault.com": [
+    "backup"
+  ],
+  "composio.dev": [
+    "ai",
+    "automation"
+  ],
+  "computer.org": [
+    "journals"
+  ],
+  "comunidad.madrid": [
+    "government"
+  ],
+  "configcat.com": [
+    "feature-flags"
+  ],
+  "confused.com": [
+    "insurance",
+    "price-comparison"
+  ],
+  "congreso.es": [
+    "government"
+  ],
+  "conjur.com.br": [
+    "legal"
+  ],
+  "consumeraffairs.com": [
+    "consumer"
+  ],
+  "contentful.com": [
+    "cms"
+  ],
+  "cookpad.com": [
+    "recipes"
+  ],
+  "copart.com": [
+    "auctions"
+  ],
+  "coros.com": [
+    "fitness"
+  ],
+  "coscoshipping.com": [
+    "shipping"
+  ],
+  "count.ly": [
+    "analytics",
+    "self-hosted"
+  ],
+  "couponfollow.com": [
+    "deals"
+  ],
+  "courier.com": [
+    "api"
+  ],
+  "cp24.com": [
+    "news",
+    "television"
+  ],
+  "cpanel.net": [
+    "hosting",
+    "server-management"
+  ],
+  "cpp.edu": [
+    "university"
+  ],
+  "crackle.com": [
+    "streaming"
+  ],
+  "crashlytics.com": [
+    "analytics",
+    "tech"
+  ],
+  "createspace.com": [
+    "self-publishing"
+  ],
+  "creditkarma.com": [
+    "credit-score",
+    "finance"
+  ],
+  "creditonebank.com": [
+    "credit-card"
+  ],
+  "cricut.com": [
+    "crafts"
+  ],
+  "crowdfunder.co.uk": [
+    "crowdfunding"
+  ],
+  "crypto.com": [
+    "crypto"
+  ],
+  "cs.com.cn": [
+    "newspaper"
+  ],
+  "csiro.au": [
+    "science"
+  ],
+  "csulb.edu": [
+    "university"
+  ],
+  "csuohio.edu": [
+    "university"
+  ],
+  "ctv.ca": [
+    "television"
+  ],
+  "cvshealth.com": [
+    "pharmacy"
+  ],
+  "cyberark.com": [
+    "cybersecurity"
+  ],
+  "cyberfolks.pl": [
+    "hosting"
+  ],
+  "cybernews.com": [
+    "infosec-news"
+  ],
+  "daft.ie": [
+    "real-estate"
+  ],
+  "darkreader.org": [
+    "browser"
+  ],
+  "darty.com": [
+    "shopping"
+  ],
+  "daserste.de": [
+    "television"
+  ],
+  "datastax.com": [
+    "database"
+  ],
+  "davidsbridal.com": [
+    "weddings",
+    "shopping"
+  ],
+  "daz3d.com": [
+    "modeling"
+  ],
+  "deakin.edu.au": [
+    "open-access",
+    "university"
+  ],
+  "delfi.ee": [
+    "online-news"
+  ],
+  "delfi.lt": [
+    "online-news"
+  ],
+  "delfi.lv": [
+    "online-news"
+  ],
+  "delhi.gov.in": [
+    "government"
+  ],
+  "deputy.com": [
+    "scheduling"
+  ],
+  "derpibooru.org": [
+    "art"
+  ],
+  "destatis.de": [
+    "government"
+  ],
+  "deusto.es": [
+    "university"
+  ],
+  "deutsche-rentenversicherung.de": [
+    "retirement",
+    "government"
+  ],
+  "devpost.com": [
+    "dev"
+  ],
+  "dhs.gov": [
+    "government"
+  ],
+  "diabetes.org": [
+    "health"
+  ],
+  "dianping.com": [
+    "restaurants"
+  ],
+  "diariodarepublica.pt": [
+    "government"
+  ],
+  "diariolibre.com": [
+    "newspaper"
+  ],
+  "dice.fm": [
+    "events"
+  ],
+  "didiglobal.com": [
+    "rideshare"
+  ],
+  "digital.nhs.uk": [
+    "health"
+  ],
+  "digitalarkivet.no": [
+    "archive"
+  ],
+  "digitale-sammlungen.de": [
+    "archive"
+  ],
+  "digitalspy.com": [
+    "entertainment-news"
+  ],
+  "diia.gov.ua": [
+    "government"
+  ],
+  "dion.vc": [
+    "startup"
+  ],
+  "discordapp.com": [
+    "messaging"
+  ],
+  "discounttire.com": [
+    "auto-parts"
+  ],
+  "discovery.com": [
+    "television"
+  ],
+  "disneylandparis.com": [
+    "travel"
+  ],
+  "disroot.org": [
+    "privacy"
+  ],
+  "diva-portal.org": [
+    "archive"
+  ],
+  "divar.ir": [
+    "classifieds"
+  ],
+  "dmarket.com": [
+    "marketplace"
+  ],
+  "dmu.ac.uk": [
+    "university"
+  ],
+  "dndbeyond.com": [
+    "boardgames"
+  ],
+  "doctolib.de": [
+    "health"
+  ],
+  "doctolib.fr": [
+    "health",
+    "telehealth"
+  ],
+  "doda.jp": [
+    "jobs"
+  ],
+  "doi.gov": [
+    "government"
+  ],
+  "doi.org": [
+    "reference"
+  ],
+  "donaukurier.de": [
+    "newspaper"
+  ],
+  "doterra.com": [
+    "health"
+  ],
+  "doubao.com": [
+    "ai",
+    "mobile-apps"
+  ],
+  "doxygen.org": [
+    "docs",
+    "open-source"
+  ],
+  "draw.io": [
+    "diagramming"
+  ],
+  "dresden.de": [
+    "municipality"
+  ],
+  "drivethrurpg.com": [
+    "boardgames"
+  ],
+  "dstv.com": [
+    "television"
+  ],
+  "duden.de": [
+    "dictionary"
+  ],
+  "duesseldorf.de": [
+    "municipality"
+  ],
+  "duke.edu": [
+    "university"
+  ],
+  "duluthtrading.com": [
+    "fashion"
+  ],
+  "dundee.ac.uk": [
+    "university"
+  ],
+  "dur.ac.uk": [
+    "university"
+  ],
+  "dvidshub.net": [
+    "archive"
+  ],
+  "dwd.de": [
+    "weather"
+  ],
+  "dynatrace.com": [
+    "monitoring",
+    "tech"
+  ],
+  "e-stat.go.jp": [
+    "statistics",
+    "government"
+  ],
+  "easports.com": [
+    "video-games"
+  ],
+  "easychair.org": [
+    "peer-review"
+  ],
+  "eater.com": [
+    "restaurants"
+  ],
+  "ebooks.com": [
+    "ebooks",
+    "ecommerce"
+  ],
+  "ec-lyon.fr": [
+    "engineering-school"
+  ],
+  "ecfr.gov": [
+    "law",
+    "government"
+  ],
+  "ecma-international.org": [
+    "standards"
+  ],
+  "ecu.edu": [
+    "university"
+  ],
+  "edweek.org": [
+    "education"
+  ],
+  "efe.com": [
+    "news-agency"
+  ],
+  "efteling.com": [
+    "travel"
+  ],
+  "einstein.br": [
+    "health"
+  ],
+  "eksisozluk.com": [
+    "dictionary"
+  ],
+  "elcinema.com": [
+    "moviedatabase"
+  ],
+  "elcorteingles.es": [
+    "department-stores"
+  ],
+  "elle.fr": [
+    "fashion",
+    "magazine"
+  ],
+  "ellenmacarthurfoundation.org": [
+    "sustainability"
+  ],
+  "elster.de": [
+    "tax"
+  ],
+  "embrapa.br": [
+    "research-institute"
+  ],
+  "emich.edu": [
+    "university"
+  ],
+  "empireonline.com": [
+    "film"
+  ],
+  "enlightenment.org": [
+    "linux",
+    "desktop-apps"
+  ],
+  "enterprisedb.com": [
+    "postgres"
+  ],
+  "eonline.com": [
+    "entertainment-news"
+  ],
+  "epam.com": [
+    "tech"
+  ],
+  "epfl.ch": [
+    "university"
+  ],
+  "erowid.org": [
+    "health"
+  ],
+  "erudit.org": [
+    "journals"
+  ],
+  "eset.com": [
+    "cybersecurity",
+    "desktop-apps"
+  ],
+  "esmadrid.com": [
+    "travel"
+  ],
+  "esmo.org": [
+    "medical-journal"
+  ],
+  "eso.org": [
+    "space"
+  ],
+  "espn.com.br": [
+    "sports"
+  ],
+  "espncricinfo.com": [
+    "cricket"
+  ],
+  "espreso.tv": [
+    "news",
+    "television"
+  ],
+  "esri.com": [
+    "gis"
+  ],
+  "essilor.com": [
+    "opticians"
+  ],
+  "estadao.com.br": [
+    "newspaper"
+  ],
+  "ethereum.org": [
+    "crypto"
+  ],
+  "ethz.ch": [
+    "university"
+  ],
+  "etonline.com": [
+    "television"
+  ],
+  "etoro.com": [
+    "broker"
+  ],
+  "ets.org": [
+    "test-prep"
+  ],
+  "etsu.edu": [
+    "university"
+  ],
+  "eurasiareview.com": [
+    "online-news"
+  ],
+  "europapark.de": [
+    "travel"
+  ],
+  "eurosport.fr": [
+    "sports",
+    "television"
+  ],
+  "eurostar.com": [
+    "trains"
+  ],
+  "everydayhealth.com": [
+    "health"
+  ],
+  "exa.ai": [
+    "ai"
+  ],
+  "exlibrisgroup.com": [
+    "library"
+  ],
+  "expansion.mx": [
+    "business-news"
+  ],
+  "expo.dev": [
+    "mobile-dev"
+  ],
+  "express-scripts.com": [
+    "pharmacy"
+  ],
+  "ezcater.com": [
+    "delivery"
+  ],
+  "f5.com": [
+    "networking",
+    "tech"
+  ],
+  "f6s.com": [
+    "startup"
+  ],
+  "faceit.com": [
+    "esports"
+  ],
+  "factset.com": [
+    "finance"
+  ],
+  "faire.com": [
+    "marketplace"
+  ],
+  "fairfaxcounty.gov": [
+    "government"
+  ],
+  "fairmont.com": [
+    "hotels"
+  ],
+  "fakty.ua": [
+    "online-news"
+  ],
+  "falstaff.com": [
+    "wine"
+  ],
+  "familie.de": [
+    "parenting"
+  ],
+  "fanatik.com.tr": [
+    "newspaper"
+  ],
+  "fanqienovel.com": [
+    "webnovel"
+  ],
+  "fantasticfiction.com": [
+    "books"
+  ],
+  "fasthosts.co.uk": [
+    "hosting"
+  ],
+  "fcbarcelona.com": [
+    "soccer"
+  ],
+  "fd.nl": [
+    "business-news",
+    "newspaper"
+  ],
+  "federalnewsnetwork.com": [
+    "government",
+    "online-news"
+  ],
+  "federalregister.gov": [
+    "government"
+  ],
+  "fee.org": [
+    "policy"
+  ],
+  "feishu.cn": [
+    "productivity"
+  ],
+  "femmeactuelle.fr": [
+    "magazine"
+  ],
+  "fernuni-hagen.de": [
+    "university",
+    "open-access"
+  ],
+  "fes.de": [
+    "politics"
+  ],
+  "fetnet.net": [
+    "telecom"
+  ],
+  "fewo-direkt.de": [
+    "vacation-rentals"
+  ],
+  "fhnw.ch": [
+    "university-of-applied-sciences"
+  ],
+  "fieldmuseum.org": [
+    "museums"
+  ],
+  "filgoal.com": [
+    "sports-news"
+  ],
+  "filmstarts.de": [
+    "moviedatabase"
+  ],
+  "finam.ru": [
+    "broker",
+    "finance"
+  ],
+  "financialpost.com": [
+    "business-news"
+  ],
+  "finanzen.net": [
+    "finance"
+  ],
+  "finanztip.de": [
+    "finance"
+  ],
+  "firstdata.com": [
+    "payments"
+  ],
+  "fis-ski.com": [
+    "skiing"
+  ],
+  "fisglobal.com": [
+    "fintech"
+  ],
+  "fitgirl-repacks.site": [
+    "video-games"
+  ],
+  "flashscore.com": [
+    "sports",
+    "soccer"
+  ],
+  "fleaflicker.com": [
+    "sports"
+  ],
+  "fleetdm.com": [
+    "devops"
+  ],
+  "flightradar24.com": [
+    "aviation",
+    "flights"
+  ],
+  "flipsnack.com": [
+    "publishing"
+  ],
+  "flixbus.com": [
+    "transit",
+    "travel"
+  ],
+  "flixster.com": [
+    "moviedatabase"
+  ],
+  "floridarevenue.com": [
+    "government"
+  ],
+  "fnn.jp": [
+    "television"
+  ],
+  "fnp.de": [
+    "newspaper"
+  ],
+  "focus.de": [
+    "news",
+    "magazine"
+  ],
+  "focusonthefamily.com": [
+    "religion"
+  ],
+  "fodors.com": [
+    "travel"
+  ],
+  "fontawesome.com": [
+    "icons"
+  ],
+  "foodnetwork.co.uk": [
+    "recipes"
+  ],
+  "fordham.edu": [
+    "university"
+  ],
+  "formlabs.com": [
+    "3d-printing"
+  ],
+  "forms.gle": [
+    "forms"
+  ],
+  "fotolia.com": [
+    "stockphotos"
+  ],
+  "fourfourtwo.com": [
+    "soccer"
+  ],
+  "fourseasons.com": [
+    "hotels"
+  ],
+  "fox5ny.com": [
+    "television"
+  ],
+  "foxbusiness.com": [
+    "business-news"
+  ],
+  "foxit.com": [
+    "pdf"
+  ],
+  "foxsports.com": [
+    "sports"
+  ],
+  "foxsports.com.au": [
+    "sports"
+  ],
+  "foxtel.com.au": [
+    "telecom",
+    "television"
+  ],
+  "foxweather.com": [
+    "weather"
+  ],
+  "fragrantica.com": [
+    "beauty"
+  ],
+  "framagit.org": [
+    "git"
+  ],
+  "framasoft.org": [
+    "open-source"
+  ],
+  "france.tv": [
+    "television"
+  ],
+  "franceinter.fr": [
+    "radio"
+  ],
+  "francetvinfo.fr": [
+    "news",
+    "television"
+  ],
+  "freddiemac.com": [
+    "mortgage"
+  ],
+  "fredmeyer.com": [
+    "grocery"
+  ],
+  "freedesktop.org": [
+    "linux",
+    "open-source"
+  ],
+  "freemake.com": [
+    "desktop-apps"
+  ],
+  "freemusicarchive.org": [
+    "music",
+    "archive"
+  ],
+  "frieze.com": [
+    "art"
+  ],
+  "friv.com": [
+    "video-games"
+  ],
+  "fujitv.co.jp": [
+    "television"
+  ],
+  "furaffinity.net": [
+    "art",
+    "online-community"
+  ],
+  "fusionauth.io": [
+    "auth",
+    "self-hosted"
+  ],
+  "fz-juelich.de": [
+    "research-institute"
+  ],
+  "g.co": [
+    "google"
+  ],
+  "g2a.com": [
+    "game-deals"
+  ],
+  "galabingo.com": [
+    "gambling"
+  ],
+  "gamberorosso.it": [
+    "restaurants"
+  ],
+  "gamecity.ne.jp": [
+    "video-games"
+  ],
+  "gameloft.com": [
+    "game-studios",
+    "video-games"
+  ],
+  "gazprom.ru": [
+    "energy"
+  ],
+  "ge.ch": [
+    "government"
+  ],
+  "gea.com": [
+    "tech"
+  ],
+  "geekbench.com": [
+    "tech"
+  ],
+  "geely.com": [
+    "car-brands"
+  ],
+  "gelbooru.com": [
+    "anime",
+    "art"
+  ],
+  "gematsu.com": [
+    "gaming-news"
+  ],
+  "gencat.cat": [
+    "government"
+  ],
+  "genesys.com": [
+    "tech"
+  ],
+  "genspark.ai": [
+    "ai"
+  ],
+  "geo.tv": [
+    "television"
+  ],
+  "geocaching.com": [
+    "outdoors",
+    "maps"
+  ],
+  "geocities.ws": [
+    "archive"
+  ],
+  "geogebra.org": [
+    "math"
+  ],
+  "getmonero.org": [
+    "crypto"
+  ],
+  "getpocket.com": [
+    "read-later"
+  ],
+  "gettr.com": [
+    "social"
+  ],
+  "getty.edu": [
+    "museums"
+  ],
+  "ghostery.com": [
+    "privacy"
+  ],
+  "gia.edu": [
+    "jewelry",
+    "education"
+  ],
+  "gismeteo.ru": [
+    "weather"
+  ],
+  "github.blog": [
+    "dev-blogs",
+    "git"
+  ],
+  "givebutter.com": [
+    "crowdfunding"
+  ],
+  "gla.ac.uk": [
+    "university"
+  ],
+  "glavred.net": [
+    "online-news"
+  ],
+  "global.honda": [
+    "car-brands"
+  ],
+  "globalping.io": [
+    "networking"
+  ],
+  "globalsources.com": [
+    "marketplace"
+  ],
+  "globes.co.il": [
+    "newspaper"
+  ],
+  "globo.com": [
+    "television",
+    "news"
+  ],
+  "glpi-project.org": [
+    "self-hosted",
+    "open-source"
+  ],
+  "gmx.com": [
+    "email"
+  ],
+  "gmx.net": [
+    "email"
+  ],
+  "gnuradio.org": [
+    "open-source"
+  ],
+  "goethe.de": [
+    "education"
+  ],
+  "goldbet.it": [
+    "gambling"
+  ],
+  "golfchannel.com": [
+    "golf",
+    "television"
+  ],
+  "goodmorningamerica.com": [
+    "news",
+    "television"
+  ],
+  "goto.com": [
+    "remote-access"
+  ],
+  "govexec.com": [
+    "government"
+  ],
+  "gpo.gov": [
+    "government"
+  ],
+  "gptzero.me": [
+    "ai"
+  ],
+  "graphviz.org": [
+    "diagramming",
+    "open-source"
+  ],
+  "greasyfork.org": [
+    "modding"
+  ],
+  "grofers.com": [
+    "delivery"
+  ],
+  "ground.news": [
+    "news"
+  ],
+  "gry-online.pl": [
+    "video-games"
+  ],
+  "gsu.edu": [
+    "university"
+  ],
+  "gu.se": [
+    "university"
+  ],
+  "guardsquare.com": [
+    "security"
+  ],
+  "guess.com": [
+    "fashion"
+  ],
+  "gvsu.edu": [
+    "university"
+  ],
+  "gyazo.com": [
+    "desktop-apps"
+  ],
+  "habitaclia.com": [
+    "real-estate"
+  ],
+  "hachyderm.io": [
+    "fediverse"
+  ],
+  "hackernoon.com": [
+    "dev-blogs"
+  ],
+  "hackster.io": [
+    "electronics-diy"
+  ],
+  "hal.science": [
+    "open-access"
+  ],
+  "halowaypoint.com": [
+    "video-games"
+  ],
+  "hangame.com": [
+    "video-games"
+  ],
+  "hannover.de": [
+    "government"
+  ],
+  "hanselman.com": [
+    "dev-blogs"
+  ],
+  "happycow.net": [
+    "vegan",
+    "restaurants"
+  ],
+  "haproxy.com": [
+    "webserver"
+  ],
+  "hartford.edu": [
+    "university"
+  ],
+  "haveibeenpwned.com": [
+    "cybersecurity"
+  ],
+  "hawaii.gov": [
+    "government"
+  ],
+  "hcltech.com": [
+    "tech"
+  ],
+  "headspace.com": [
+    "mental-health"
+  ],
+  "healthpartners.com": [
+    "health"
+  ],
+  "hemnet.se": [
+    "real-estate"
+  ],
+  "herbalife.com": [
+    "health"
+  ],
+  "heritage.org": [
+    "policy"
+  ],
+  "herts.ac.uk": [
+    "university"
+  ],
+  "heute.at": [
+    "newspaper"
+  ],
+  "hgtv.com": [
+    "television",
+    "home"
+  ],
+  "hide.me": [
+    "vpn"
+  ],
+  "hightail.com": [
+    "file-transfer"
+  ],
+  "hillspet.com": [
+    "pets"
+  ],
+  "hily.com": [
+    "dating"
+  ],
+  "hkex.com.hk": [
+    "stock-exchange"
+  ],
+  "hmdb.org": [
+    "reference"
+  ],
+  "hnonline.sk": [
+    "newspaper"
+  ],
+  "holidayextras.com": [
+    "travel"
+  ],
+  "homeadvisor.com": [
+    "marketplace"
+  ],
+  "honeycomb.io": [
+    "monitoring"
+  ],
+  "honeywell.com": [
+    "manufacturing"
+  ],
+  "hoopladigital.com": [
+    "library"
+  ],
+  "hoover.org": [
+    "policy"
+  ],
+  "hoseasons.co.uk": [
+    "vacation-rentals"
+  ],
+  "hotnewhiphop.com": [
+    "music-news"
+  ],
+  "hotpepper.jp": [
+    "restaurants"
+  ],
+  "hotspotshield.com": [
+    "vpn"
+  ],
+  "hpe.com": [
+    "hardware",
+    "tech"
+  ],
+  "hrp.org.uk": [
+    "history",
+    "museums"
+  ],
+  "hs-augsburg.de": [
+    "university-of-applied-sciences"
+  ],
+  "huduser.gov": [
+    "government"
+  ],
+  "hull.ac.uk": [
+    "university"
+  ],
+  "hunter.io": [
+    "marketing"
+  ],
+  "hw.ac.uk": [
+    "university"
+  ],
+  "hwupgrade.it": [
+    "hardware"
+  ],
+  "hyatt.com": [
+    "hotels"
+  ],
+  "hyland.com": [
+    "tech"
+  ],
+  "i24news.tv": [
+    "news",
+    "television"
+  ],
+  "iaai.com": [
+    "auctions"
+  ],
+  "icaew.com": [
+    "accounting"
+  ],
+  "icai.org": [
+    "accounting"
+  ],
+  "icao.int": [
+    "aviation"
+  ],
+  "icomoon.io": [
+    "icons"
+  ],
+  "ieee.org": [
+    "academic-publisher",
+    "journals"
+  ],
+  "ifema.es": [
+    "events"
+  ],
+  "igi-global.com": [
+    "academic-publisher"
+  ],
+  "ign.fr": [
+    "gaming-news"
+  ],
+  "ignou.ac.in": [
+    "university"
+  ],
+  "iiss.org": [
+    "geopolitics"
+  ],
+  "iit.edu": [
+    "university"
+  ],
+  "ilo.org": [
+    "government"
+  ],
+  "ilsole24ore.com": [
+    "newspaper",
+    "business-news"
+  ],
+  "image-line.com": [
+    "music"
+  ],
+  "imfdb.org": [
+    "moviedatabase"
+  ],
+  "immi.gov.au": [
+    "immigration"
+  ],
+  "in.gov.br": [
+    "government"
+  ],
+  "ina.fr": [
+    "archive"
+  ],
+  "inderscience.com": [
+    "academic-publisher"
+  ],
+  "indiankanoon.org": [
+    "law"
+  ],
+  "indiatoday.in": [
+    "news",
+    "magazine"
+  ],
+  "indrive.com": [
+    "rideshare"
+  ],
+  "ine.es": [
+    "statistics"
+  ],
+  "inegi.org.mx": [
+    "statistics",
+    "government"
+  ],
+  "infobel.com": [
+    "reference"
+  ],
+  "infogr.am": [
+    "data-visualization"
+  ],
+  "infogram.com": [
+    "data-visualization"
+  ],
+  "infor.com": [
+    "erp",
+    "tech"
+  ],
+  "informaconnect.com": [
+    "events"
+  ],
+  "informatica.com": [
+    "tech"
+  ],
+  "infosys.com": [
+    "tech"
+  ],
+  "infranken.de": [
+    "newspaper"
+  ],
+  "ingentaconnect.com": [
+    "journals"
+  ],
+  "ingv.it": [
+    "geology"
+  ],
+  "inkbunny.net": [
+    "art"
+  ],
+  "inria.fr": [
+    "research-institute"
+  ],
+  "insee.fr": [
+    "government"
+  ],
+  "insidehighered.com": [
+    "education"
+  ],
+  "inspirehep.net": [
+    "physics"
+  ],
+  "instructure.com": [
+    "edtech",
+    "education"
+  ],
+  "intelius.com": [
+    "privacy"
+  ],
+  "interestingengineering.com": [
+    "tech-news"
+  ],
+  "interia.pl": [
+    "news"
+  ],
+  "interpals.net": [
+    "language-exchange"
+  ],
+  "intuit.com": [
+    "accounting",
+    "tax"
+  ],
+  "irancell.ir": [
+    "telecom"
+  ],
+  "isaca.org": [
+    "certifications"
+  ],
+  "israelnationalnews.com": [
+    "online-news"
+  ],
+  "issuu.com": [
+    "publishing",
+    "magazine"
+  ],
+  "istat.it": [
+    "statistics",
+    "government"
+  ],
+  "iwm.org.uk": [
+    "museums"
+  ],
+  "ixigua.com": [
+    "video"
+  ],
+  "jalopnik.com": [
+    "cars"
+  ],
+  "jambase.com": [
+    "live-concerts"
+  ],
+  "jami.net": [
+    "chat"
+  ],
+  "jamieoliver.com": [
+    "recipes"
+  ],
+  "jasso.go.jp": [
+    "education"
+  ],
+  "java.net": [
+    "java"
+  ],
+  "jboss.org": [
+    "open-source"
+  ],
+  "jcyl.es": [
+    "government"
+  ],
+  "jet2holidays.com": [
+    "travel"
+  ],
+  "jetphotos.com": [
+    "aviation"
+  ],
+  "jfrog.com": [
+    "devops"
+  ],
+  "jhu.edu": [
+    "university"
+  ],
+  "jimdo.com": [
+    "website-builder"
+  ],
+  "jimmyjohns.com": [
+    "restaurants"
+  ],
+  "jina.ai": [
+    "ai"
+  ],
+  "jisc.ac.uk": [
+    "edtech"
+  ],
+  "jitsi.org": [
+    "video-call",
+    "self-hosted"
+  ],
+  "jjwxc.net": [
+    "webnovel"
+  ],
+  "jmbullion.com": [
+    "markets"
+  ],
+  "jmu.edu": [
+    "university"
+  ],
+  "joinhomebase.com": [
+    "scheduling"
+  ],
+  "joj.sk": [
+    "television"
+  ],
+  "jorudan.co.jp": [
+    "transit"
+  ],
+  "jtv.com": [
+    "shopping",
+    "television"
+  ],
+  "juris.de": [
+    "legal"
+  ],
+  "justgetflux.com": [
+    "macos",
+    "desktop-apps"
+  ],
+  "jw.org": [
+    "religion"
+  ],
+  "kaiostech.com": [
+    "smartphones"
+  ],
+  "kakuyomu.jp": [
+    "webnovel"
+  ],
+  "kaltura.com": [
+    "video",
+    "tech"
+  ],
+  "kan.org.il": [
+    "public-broadcaster"
+  ],
+  "kanald.com.tr": [
+    "television"
+  ],
+  "kaseya.com": [
+    "helpdesk"
+  ],
+  "kawasaki.com": [
+    "motorcycles"
+  ],
+  "kde.org": [
+    "linux",
+    "open-source"
+  ],
+  "keio.ac.jp": [
+    "university"
+  ],
+  "kent.edu": [
+    "university"
+  ],
+  "keysight.com": [
+    "electronics"
+  ],
+  "kff.org": [
+    "health"
+  ],
+  "kinguin.net": [
+    "game-deals"
+  ],
+  "klaviyo.com": [
+    "email-marketing"
+  ],
+  "klingai.com": [
+    "ai"
+  ],
+  "ko-fi.com": [
+    "social"
+  ],
+  "komoot.com": [
+    "outdoors"
+  ],
+  "komoot.de": [
+    "outdoors"
+  ],
+  "kth.se": [
+    "university"
+  ],
+  "ktla.com": [
+    "television"
+  ],
+  "ktv.jp": [
+    "television"
+  ],
+  "ku.edu": [
+    "university"
+  ],
+  "kugou.com": [
+    "music"
+  ],
+  "kununu.com": [
+    "jobs"
+  ],
+  "la7.it": [
+    "television"
+  ],
+  "labiennale.org": [
+    "art"
+  ],
+  "lacasadelosfamososmexico.tv": [
+    "television"
+  ],
+  "lachainemeteo.com": [
+    "weather"
+  ],
+  "lacma.org": [
+    "museums"
+  ],
+  "lambdatest.com": [
+    "testing"
+  ],
+  "lanazione.it": [
+    "newspaper"
+  ],
+  "languagetool.org": [
+    "grammar"
+  ],
+  "laravel-news.com": [
+    "php",
+    "dev-blogs"
+  ],
+  "largus.fr": [
+    "cars",
+    "classifieds"
+  ],
+  "larksuite.com": [
+    "productivity",
+    "chat"
+  ],
+  "lassuranceretraite.fr": [
+    "retirement",
+    "government"
+  ],
+  "latrobe.edu.au": [
+    "university"
+  ],
+  "launchpad.net": [
+    "linux",
+    "git"
+  ],
+  "learner.org": [
+    "education"
+  ],
+  "legislation.gov.uk": [
+    "government",
+    "reference"
+  ],
+  "lehmanns.de": [
+    "bookstore"
+  ],
+  "leica-camera.com": [
+    "camera-gear"
+  ],
+  "lenscrafters.com": [
+    "opticians"
+  ],
+  "lequipe.fr": [
+    "sports-news"
+  ],
+  "lerobert.com": [
+    "dictionary"
+  ],
+  "lesinrocks.com": [
+    "magazine"
+  ],
+  "letras.com": [
+    "lyrics"
+  ],
+  "lexisnexis.com": [
+    "legal"
+  ],
+  "lexware.de": [
+    "accounting",
+    "desktop-apps"
+  ],
+  "lezhin.com": [
+    "webcomics"
+  ],
+  "libreriauniversitaria.it": [
+    "bookstore"
+  ],
+  "libro.fm": [
+    "audiobooks",
+    "ecommerce"
+  ],
+  "libtorrent.org": [
+    "torrent"
+  ],
+  "life360.com": [
+    "mobile-apps"
+  ],
+  "lifeway.com": [
+    "religion"
+  ],
+  "lightinthebox.com": [
+    "ecommerce"
+  ],
+  "linguee.de": [
+    "dictionary"
+  ],
+  "linguee.fr": [
+    "dictionary"
+  ],
+  "linkin.bio": [
+    "website-builder"
+  ],
+  "linktr.ee": [
+    "social",
+    "tech"
+  ],
+  "linux.do": [
+    "online-community"
+  ],
+  "lipscosme.com": [
+    "beauty"
+  ],
+  "liputan6.com": [
+    "online-news"
+  ],
+  "litnet.com": [
+    "webnovel"
+  ],
+  "litres.ru": [
+    "ebooks"
+  ],
+  "livechat.com": [
+    "chat"
+  ],
+  "livelib.ru": [
+    "books"
+  ],
+  "livenation.com": [
+    "live-concerts"
+  ],
+  "liverpool.ac.uk": [
+    "university"
+  ],
+  "lmu.de": [
+    "university"
+  ],
+  "lmu.edu": [
+    "university",
+    "open-access"
+  ],
+  "loc.gov": [
+    "library",
+    "government"
+  ],
+  "lockheedmartin.com": [
+    "defense"
+  ],
+  "lottomatica.it": [
+    "gambling"
+  ],
+  "loudwire.com": [
+    "music-news"
+  ],
+  "louisville.edu": [
+    "university"
+  ],
+  "lrclib.net": [
+    "lyrics"
+  ],
+  "lrt.lt": [
+    "public-broadcaster"
+  ],
+  "lto.de": [
+    "legal"
+  ],
+  "ltu.se": [
+    "university",
+    "engineering-school"
+  ],
+  "luc.edu": [
+    "university"
+  ],
+  "lvmh.com": [
+    "fashion"
+  ],
+  "m5stack.com": [
+    "electronics"
+  ],
+  "m6.fr": [
+    "television"
+  ],
+  "macupdate.com": [
+    "macos",
+    "desktop-apps"
+  ],
+  "magazines.com": [
+    "magazine"
+  ],
+  "magisto.com": [
+    "video"
+  ],
+  "magna.com": [
+    "automotive"
+  ],
+  "magnific.com": [
+    "stockphotos"
+  ],
+  "magzter.com": [
+    "magazine"
+  ],
+  "mailchi.mp": [
+    "email-marketing"
+  ],
+  "main-echo.de": [
+    "newspaper"
+  ],
+  "mainichi.jp": [
+    "newspaper"
+  ],
+  "mainpost.de": [
+    "newspaper"
+  ],
+  "malwarebytes.com": [
+    "cybersecurity",
+    "desktop-apps"
+  ],
+  "manageengine.com": [
+    "tech"
+  ],
+  "mandarinoriental.com": [
+    "hotel-chains"
+  ],
+  "manning.com": [
+    "publishing"
+  ],
+  "manoramaonline.com": [
+    "newspaper"
+  ],
+  "manus.im": [
+    "ai"
+  ],
+  "maptiler.com": [
+    "maps",
+    "gis"
+  ],
+  "mapy.com": [
+    "maps"
+  ],
+  "maritime-executive.com": [
+    "shipping"
+  ],
+  "marketo.com": [
+    "marketing"
+  ],
+  "marmiton.org": [
+    "recipes"
+  ],
+  "marthastewart.com": [
+    "home"
+  ],
+  "masrawy.com": [
+    "online-news"
+  ],
+  "masterclass.com": [
+    "courses"
+  ],
+  "material.io": [
+    "design-tools"
+  ],
+  "mathjax.org": [
+    "math",
+    "webdev"
+  ],
+  "mathworks.com": [
+    "math"
+  ],
+  "matrix.to": [
+    "chat"
+  ],
+  "max.ru": [
+    "messaging"
+  ],
+  "maxpreps.com": [
+    "sports",
+    "school"
+  ],
+  "mcarthurglen.com": [
+    "shopping"
+  ],
+  "mckinsey.com": [
+    "business"
+  ],
+  "mdanderson.org": [
+    "health"
+  ],
+  "me.com": [
+    "email",
+    "cloud"
+  ],
+  "mec.ca": [
+    "outdoors"
+  ],
+  "mediacorp.sg": [
+    "news",
+    "television"
+  ],
+  "mediaklikk.hu": [
+    "television"
+  ],
+  "mediapost.com": [
+    "advertising"
+  ],
+  "mediaset.it": [
+    "television"
+  ],
+  "mediawiki.org": [
+    "media-wiki",
+    "open-source"
+  ],
+  "medicalxpress.com": [
+    "medicine"
+  ],
+  "medscape.com": [
+    "medicine"
+  ],
+  "meduza.io": [
+    "online-news"
+  ],
+  "meesho.com": [
+    "ecommerce",
+    "shopping"
+  ],
+  "megatv.com": [
+    "television"
+  ],
+  "meitu.com": [
+    "photo-editing",
+    "mobile-apps"
+  ],
+  "mempool.space": [
+    "crypto"
+  ],
+  "mendix.com": [
+    "no-code"
+  ],
+  "meneame.net": [
+    "online-news"
+  ],
+  "mentalhealth.org.uk": [
+    "mental-health"
+  ],
+  "messe-stuttgart.de": [
+    "events"
+  ],
+  "meteo.hr": [
+    "weather"
+  ],
+  "meteo.it": [
+    "weather"
+  ],
+  "meteomedia.com": [
+    "weather"
+  ],
+  "meteored.mx": [
+    "weather"
+  ],
+  "meyerweb.com": [
+    "blog",
+    "webdev"
+  ],
+  "mfah.org": [
+    "museums"
+  ],
+  "mheducation.com": [
+    "textbooks",
+    "education"
+  ],
+  "mhlw.go.jp": [
+    "government",
+    "health"
+  ],
+  "miamidade.gov": [
+    "government"
+  ],
+  "miamioh.edu": [
+    "university"
+  ],
+  "microchip.com": [
+    "semiconductors"
+  ],
+  "microstrategy.com": [
+    "analytics",
+    "tech"
+  ],
+  "migrationsverket.se": [
+    "government"
+  ],
+  "milesplit.com": [
+    "running"
+  ],
+  "military.com": [
+    "defense"
+  ],
+  "milwaukeetool.com": [
+    "diy"
+  ],
+  "min.io": [
+    "cloud-storage",
+    "devops"
+  ],
+  "mixi.jp": [
+    "social"
+  ],
+  "miyoushe.com": [
+    "video-games"
+  ],
+  "mla.org": [
+    "academic-publisher"
+  ],
+  "mlbtraderumors.com": [
+    "baseball"
+  ],
+  "mlit.go.jp": [
+    "government"
+  ],
+  "mmafighting.com": [
+    "sports-news"
+  ],
+  "mnhs.org": [
+    "museums"
+  ],
+  "mobirise.com": [
+    "website-builder"
+  ],
+  "mod.go.jp": [
+    "defense",
+    "government"
+  ],
+  "mollie.com": [
+    "payments"
+  ],
+  "moma.org": [
+    "museums"
+  ],
+  "monde-diplomatique.fr": [
+    "magazine"
+  ],
+  "moneysupermarket.com": [
+    "price-comparison"
+  ],
+  "moneyweb.co.za": [
+    "business-news"
+  ],
+  "monobank.ua": [
+    "banking"
+  ],
+  "montana.edu": [
+    "university"
+  ],
+  "moodle.org": [
+    "education",
+    "self-hosted"
+  ],
+  "motorolasolutions.com": [
+    "telecom"
+  ],
+  "motorsport.com": [
+    "motorsport"
+  ],
+  "mountvernon.org": [
+    "history"
+  ],
+  "ms.now": [
+    "news",
+    "television"
+  ],
+  "msc.org": [
+    "sustainability"
+  ],
+  "mscdirect.com": [
+    "shopping"
+  ],
+  "msn.com": [
+    "news"
+  ],
+  "mtn.com": [
+    "telecom"
+  ],
+  "muckrack.com": [
+    "public-relations"
+  ],
+  "muenchen.de": [
+    "municipality"
+  ],
+  "mulesoft.com": [
+    "cloud"
+  ],
+  "mumsnet.com": [
+    "parenting",
+    "forum"
+  ],
+  "mun.ca": [
+    "university"
+  ],
+  "mundodeportivo.com": [
+    "sports-news"
+  ],
+  "museodelprado.es": [
+    "museums"
+  ],
+  "museum-digital.org": [
+    "museums"
+  ],
+  "musicbusinessworldwide.com": [
+    "music-news"
+  ],
+  "musicnotes.com": [
+    "sheetmusic"
+  ],
+  "mxplayer.in": [
+    "streaming"
+  ],
+  "mybrightwheel.com": [
+    "education"
+  ],
+  "myjoyonline.com": [
+    "online-news"
+  ],
+  "mywot.com": [
+    "cybersecurity"
+  ],
+  "nachrichten.at": [
+    "news"
+  ],
+  "nagoya-u.ac.jp": [
+    "university"
+  ],
+  "napster.com": [
+    "music"
+  ],
+  "nask.pl": [
+    "research-institute"
+  ],
+  "nationalarchives.gov.uk": [
+    "government",
+    "archive"
+  ],
+  "nationaldaycalendar.com": [
+    "calendar"
+  ],
+  "nato.int": [
+    "defense"
+  ],
+  "nbc.com": [
+    "tv-series"
+  ],
+  "nbcnewyork.com": [
+    "television"
+  ],
+  "nbcsports.com": [
+    "sports"
+  ],
+  "ncaa.com": [
+    "college-sports"
+  ],
+  "ncaa.org": [
+    "college-sports"
+  ],
+  "ncdot.gov": [
+    "government",
+    "transit"
+  ],
+  "ncronline.org": [
+    "religion",
+    "newspaper"
+  ],
+  "ncsl.org": [
+    "government"
+  ],
+  "nd.edu": [
+    "university"
+  ],
+  "nec.com": [
+    "tech"
+  ],
+  "neopets.com": [
+    "video-games"
+  ],
+  "netkeiba.com": [
+    "sports"
+  ],
+  "netsuite.com": [
+    "erp"
+  ],
+  "networkworld.com": [
+    "tech-news"
+  ],
+  "neurology.org": [
+    "medical-journal"
+  ],
+  "newcastle.edu.au": [
+    "university"
+  ],
+  "news24.com": [
+    "online-news"
+  ],
+  "newschool.edu": [
+    "university"
+  ],
+  "newsnationnow.com": [
+    "television"
+  ],
+  "newyorkfed.org": [
+    "central-bank"
+  ],
+  "nfb.ca": [
+    "film"
+  ],
+  "nfpa.org": [
+    "standards"
+  ],
+  "nga.gov": [
+    "museums"
+  ],
+  "nginx.com": [
+    "webserver"
+  ],
+  "nhandan.vn": [
+    "newspaper"
+  ],
+  "nhk.jp": [
+    "television"
+  ],
+  "nihaojewelry.com": [
+    "jewelry"
+  ],
+  "ninite.com": [
+    "desktop-apps"
+  ],
+  "nist.gov": [
+    "government"
+  ],
+  "nitter.net": [
+    "microblogging"
+  ],
+  "niu.edu": [
+    "university"
+  ],
+  "nj.gov": [
+    "government"
+  ],
+  "nla.gov.au": [
+    "library"
+  ],
+  "nodesource.com": [
+    "nodejs"
+  ],
+  "noen.at": [
+    "newspaper"
+  ],
+  "nolo.com": [
+    "legal"
+  ],
+  "nomura.com": [
+    "banking"
+  ],
+  "nongnu.org": [
+    "open-source"
+  ],
+  "northerntool.com": [
+    "diy-stores"
+  ],
+  "northropgrumman.com": [
+    "defense"
+  ],
+  "note.com": [
+    "blog"
+  ],
+  "notebooklm.google": [
+    "ai"
+  ],
+  "notion.com": [
+    "notes",
+    "productivity"
+  ],
+  "nottingham.ac.uk": [
+    "university"
+  ],
+  "nova.bg": [
+    "television"
+  ],
+  "novelai.net": [
+    "ai"
+  ],
+  "npb.jp": [
+    "baseball"
+  ],
+  "npg.org.uk": [
+    "museums"
+  ],
+  "npmjs.org": [
+    "package-manager",
+    "javascript"
+  ],
+  "nps.gov": [
+    "government",
+    "travel"
+  ],
+  "nsctotal.com.br": [
+    "newspaper"
+  ],
+  "nt.gov.au": [
+    "government"
+  ],
+  "ntnu.edu": [
+    "university"
+  ],
+  "ntnu.edu.tw": [
+    "university"
+  ],
+  "ntpc.edu.tw": [
+    "education"
+  ],
+  "ntu.edu.tw": [
+    "university"
+  ],
+  "ntv.co.jp": [
+    "television"
+  ],
+  "nuance.com": [
+    "tech"
+  ],
+  "nybg.org": [
+    "botany"
+  ],
+  "nykaa.com": [
+    "beauty"
+  ],
+  "oakland.edu": [
+    "university"
+  ],
+  "oasis-open.org": [
+    "standards"
+  ],
+  "obramat.es": [
+    "diy-stores"
+  ],
+  "observador.pt": [
+    "online-news"
+  ],
+  "oceanofpdf.com": [
+    "ebooks"
+  ],
+  "octopart.com": [
+    "electronics"
+  ],
+  "oddspedia.com": [
+    "gambling"
+  ],
+  "ohio.edu": [
+    "university"
+  ],
+  "olhardigital.com.br": [
+    "tech"
+  ],
+  "olympics.com": [
+    "sports"
+  ],
+  "omnicalculator.com": [
+    "calculator",
+    "math"
+  ],
+  "omnigroup.com": [
+    "desktop-apps"
+  ],
+  "omroepbrabant.nl": [
+    "public-broadcaster",
+    "regional-news"
+  ],
+  "on24.com": [
+    "webinar"
+  ],
+  "onb.ac.at": [
+    "library"
+  ],
+  "one.nz": [
+    "telecom"
+  ],
+  "onetz.de": [
+    "newspaper"
+  ],
+  "onfinality.io": [
+    "hosting"
+  ],
+  "onsemi.com": [
+    "semiconductors"
+  ],
+  "ontario.ca": [
+    "government"
+  ],
+  "oocities.org": [
+    "archive"
+  ],
+  "op-online.de": [
+    "newspaper"
+  ],
+  "op.gg": [
+    "video-games"
+  ],
+  "open-meteo.com": [
+    "weather"
+  ],
+  "open.online": [
+    "online-news"
+  ],
+  "openevidence.com": [
+    "ai",
+    "medicine"
+  ],
+  "opensea.io": [
+    "crypto",
+    "marketplace"
+  ],
+  "opensecrets.org": [
+    "politics"
+  ],
+  "opensource.com": [
+    "open-source"
+  ],
+  "opentext.com": [
+    "tech"
+  ],
+  "openvpn.net": [
+    "vpn"
+  ],
+  "oprah.com": [
+    "media"
+  ],
+  "opus.pro": [
+    "video",
+    "ai"
+  ],
+  "oregon.gov": [
+    "government"
+  ],
+  "oricon.co.jp": [
+    "music-news"
+  ],
+  "oscaro.com": [
+    "auto-parts"
+  ],
+  "oscars.org": [
+    "film"
+  ],
+  "oschina.net": [
+    "dev"
+  ],
+  "osti.gov": [
+    "research-data"
+  ],
+  "osticket.com": [
+    "helpdesk"
+  ],
+  "otago.ac.nz": [
+    "university"
+  ],
+  "otter.ai": [
+    "subtitles"
+  ],
+  "ou.edu": [
+    "university"
+  ],
+  "outschool.com": [
+    "education"
+  ],
+  "pace.edu": [
+    "university"
+  ],
+  "paessler.com": [
+    "monitoring"
+  ],
+  "paginegialle.it": [
+    "reference"
+  ],
+  "paho.org": [
+    "health"
+  ],
+  "palm.com": [
+    "electronics"
+  ],
+  "pamperedchef.com": [
+    "shopping"
+  ],
+  "papercut.com": [
+    "tech"
+  ],
+  "pappers.fr": [
+    "business"
+  ],
+  "paralympic.org": [
+    "sports"
+  ],
+  "paris-normandie.fr": [
+    "newspaper"
+  ],
+  "parismatch.com": [
+    "magazine"
+  ],
+  "parlamento.pt": [
+    "government"
+  ],
+  "partiful.com": [
+    "events"
+  ],
+  "paychex.com": [
+    "payroll"
+  ],
+  "payhip.com": [
+    "ecommerce"
+  ],
+  "paylocity.com": [
+    "payroll"
+  ],
+  "paysafecard.com": [
+    "payments"
+  ],
+  "pb.com": [
+    "shipping"
+  ],
+  "pbase.com": [
+    "photography"
+  ],
+  "pbssocal.org": [
+    "television"
+  ],
+  "pdffiller.com": [
+    "pdf"
+  ],
+  "pdga.com": [
+    "sports"
+  ],
+  "pdx.edu": [
+    "university"
+  ],
+  "pearson.com": [
+    "education",
+    "publishing"
+  ],
+  "penguin.co.uk": [
+    "publishing"
+  ],
+  "people.inc": [
+    "magazine"
+  ],
+  "peoplefinders.com": [
+    "privacy"
+  ],
+  "perchance.org": [
+    "ai"
+  ],
+  "perforce.com": [
+    "git"
+  ],
+  "periscope.tv": [
+    "livestream"
+  ],
+  "perma.cc": [
+    "archive"
+  ],
+  "personality-database.com": [
+    "reference"
+  ],
+  "petitfute.com": [
+    "travel"
+  ],
+  "petrobras.com.br": [
+    "energy"
+  ],
+  "pewresearch.org": [
+    "research"
+  ],
+  "pharmazeutische-zeitung.de": [
+    "pharmacy"
+  ],
+  "phoenix.gov": [
+    "municipality"
+  ],
+  "photoroom.com": [
+    "photo-editing"
+  ],
+  "photoshop.com": [
+    "photo-editing"
+  ],
+  "picoxr.com": [
+    "electronics"
+  ],
+  "picsart.com": [
+    "photo-editing"
+  ],
+  "pilotonline.com": [
+    "newspaper"
+  ],
+  "pima.gov": [
+    "government"
+  ],
+  "pinduoduo.com": [
+    "ecommerce",
+    "shopping"
+  ],
+  "pitchup.com": [
+    "camping"
+  ],
+  "pixai.art": [
+    "ai",
+    "art"
+  ],
+  "planespotters.net": [
+    "aviation"
+  ],
+  "plarium.com": [
+    "game-studios"
+  ],
+  "plasticsurgery.org": [
+    "health"
+  ],
+  "playgama.com": [
+    "video-games"
+  ],
+  "pmi.org": [
+    "certifications",
+    "project-management"
+  ],
+  "poderjudicial.es": [
+    "law"
+  ],
+  "pogo.com": [
+    "video-games"
+  ],
+  "polisen.se": [
+    "police"
+  ],
+  "polito.it": [
+    "university"
+  ],
+  "poliziadistato.it": [
+    "police"
+  ],
+  "polsatnews.pl": [
+    "news",
+    "television"
+  ],
+  "polskieradio.pl": [
+    "public-broadcaster"
+  ],
+  "polsl.pl": [
+    "university"
+  ],
+  "portableapps.com": [
+    "desktop-apps"
+  ],
+  "portswigger.net": [
+    "security"
+  ],
+  "postfix.org": [
+    "email",
+    "self-hosted"
+  ],
+  "postmates.com": [
+    "food-delivery"
+  ],
+  "postoffice.co.uk": [
+    "retail"
+  ],
+  "powershellgallery.com": [
+    "package-manager"
+  ],
+  "poznan.pl": [
+    "municipality"
+  ],
+  "ppsspp.org": [
+    "emulation"
+  ],
+  "prefeitura.sp.gov.br": [
+    "municipality"
+  ],
+  "preply.com": [
+    "tutoring",
+    "edtech"
+  ],
+  "preprints.org": [
+    "preprints"
+  ],
+  "pressreader.com": [
+    "newspaper-archives"
+  ],
+  "prestashop-project.org": [
+    "ecommerce",
+    "self-hosted"
+  ],
+  "price.com.hk": [
+    "price-comparison"
+  ],
+  "princeton.edu": [
+    "university"
+  ],
+  "privacyinternational.org": [
+    "privacy"
+  ],
+  "privateinternetaccess.com": [
+    "vpn"
+  ],
+  "prnewswire.com": [
+    "public-relations"
+  ],
+  "procyclingstats.com": [
+    "cycling"
+  ],
+  "programme-television.org": [
+    "television"
+  ],
+  "proofpoint.com": [
+    "cybersecurity"
+  ],
+  "property24.com": [
+    "real-estate"
+  ],
+  "prosieben.de": [
+    "television"
+  ],
+  "protv.ro": [
+    "television"
+  ],
+  "psiphon.ca": [
+    "vpn",
+    "open-source"
+  ],
+  "psu.edu": [
+    "university"
+  ],
+  "pts.org.tw": [
+    "public-broadcaster"
+  ],
+  "ptsecurity.ru": [
+    "cybersecurity"
+  ],
+  "publicationethics.org": [
+    "peer-review"
+  ],
+  "publico.pt": [
+    "newspaper"
+  ],
+  "purina.com": [
+    "pets"
+  ],
+  "purl.org": [
+    "reference"
+  ],
+  "pythonanywhere.com": [
+    "hosting"
+  ],
+  "pytorch.org": [
+    "ai"
+  ],
+  "qidian.com": [
+    "webnovel"
+  ],
+  "qiita.com": [
+    "dev-blogs"
+  ],
+  "qlik.com": [
+    "data-visualization"
+  ],
+  "qub.ac.uk": [
+    "university"
+  ],
+  "quest.com": [
+    "tech"
+  ],
+  "quidco.com": [
+    "shopping"
+  ],
+  "quip.com": [
+    "documents"
+  ],
+  "r7.com": [
+    "online-news"
+  ],
+  "radio-browser.info": [
+    "radio"
+  ],
+  "radio-canada.ca": [
+    "television"
+  ],
+  "radiopaedia.org": [
+    "medicine"
+  ],
+  "rai.it": [
+    "public-broadcaster"
+  ],
+  "rainews.it": [
+    "news",
+    "television"
+  ],
+  "raiplay.it": [
+    "television"
+  ],
+  "ramseysolutions.com": [
+    "finance"
+  ],
+  "rappler.com": [
+    "online-news"
+  ],
+  "ratemyprofessors.com": [
+    "education"
+  ],
+  "razorpay.com": [
+    "payments"
+  ],
+  "rbb-online.de": [
+    "public-broadcaster"
+  ],
+  "rbb24.de": [
+    "television"
+  ],
+  "rcpsych.ac.uk": [
+    "health"
+  ],
+  "real.com": [
+    "media-player"
+  ],
+  "realvnc.com": [
+    "remote-access"
+  ],
+  "redalyc.org": [
+    "journals"
+  ],
+  "redcross.org": [
+    "charities"
+  ],
+  "rediff.com": [
+    "online-news"
+  ],
+  "redislabs.com": [
+    "database"
+  ],
+  "redstate.com": [
+    "politics"
+  ],
+  "regeringen.se": [
+    "government"
+  ],
+  "reliefweb.int": [
+    "humanitarian"
+  ],
+  "remitly.com": [
+    "payments"
+  ],
+  "remove.bg": [
+    "photo-editing"
+  ],
+  "rent.com": [
+    "real-estate"
+  ],
+  "renttherunway.com": [
+    "fashion"
+  ],
+  "republicservices.com": [
+    "environment"
+  ],
+  "restaurantguru.com": [
+    "restaurants"
+  ],
+  "retroachievements.org": [
+    "achievements",
+    "video-games"
+  ],
+  "retty.me": [
+    "restaurants"
+  ],
+  "ri.gov": [
+    "government"
+  ],
+  "ridewithvia.com": [
+    "transit"
+  ],
+  "rijksmuseum.nl": [
+    "museums"
+  ],
+  "ripple.com": [
+    "crypto"
+  ],
+  "riseup.net": [
+    "email",
+    "privacy-tools"
+  ],
+  "ritzcarlton.com": [
+    "hotels"
+  ],
+  "riyasewana.com": [
+    "classifieds",
+    "cars"
+  ],
+  "rki.de": [
+    "government",
+    "health"
+  ],
+  "rmg.co.uk": [
+    "museums"
+  ],
+  "rmit.edu.au": [
+    "university"
+  ],
+  "rnz.de": [
+    "newspaper"
+  ],
+  "roblox.com": [
+    "video-games",
+    "games"
+  ],
+  "roboflow.com": [
+    "ai"
+  ],
+  "roborock.com": [
+    "smart-home"
+  ],
+  "rocketmortgage.com": [
+    "mortgage"
+  ],
+  "roku.com": [
+    "streaming",
+    "electronics"
+  ],
+  "roland.com": [
+    "audio-gear"
+  ],
+  "roll20.net": [
+    "boardgames"
+  ],
+  "rome2rio.com": [
+    "travel"
+  ],
+  "romeo.com": [
+    "dating"
+  ],
+  "rosewoodhotels.com": [
+    "hotels"
+  ],
+  "routledge.com": [
+    "academic-publisher"
+  ],
+  "royalcanin.com": [
+    "pets"
+  ],
+  "royalcanin.ru": [
+    "pets"
+  ],
+  "rptu.de": [
+    "university"
+  ],
+  "rsc.org": [
+    "academic-publisher",
+    "chemistry"
+  ],
+  "rsi.ch": [
+    "public-broadcaster"
+  ],
+  "rsms.me": [
+    "typography"
+  ],
+  "rstudio.com": [
+    "r-lang"
+  ],
+  "rthk.hk": [
+    "public-broadcaster"
+  ],
+  "rtl.be": [
+    "television"
+  ],
+  "rtl.nl": [
+    "television"
+  ],
+  "rtlnieuws.nl": [
+    "news",
+    "television"
+  ],
+  "rts.ch": [
+    "public-broadcaster"
+  ],
+  "rtvslo.si": [
+    "television"
+  ],
+  "rtvutrecht.nl": [
+    "television"
+  ],
+  "ru.ac.za": [
+    "university"
+  ],
+  "ru.nl": [
+    "university"
+  ],
+  "rubydoc.info": [
+    "dev"
+  ],
+  "rudderstack.com": [
+    "analytics"
+  ],
+  "rug.nl": [
+    "university"
+  ],
+  "runescape.wiki": [
+    "game-database"
+  ],
+  "rush.edu": [
+    "health"
+  ],
+  "rusneb.ru": [
+    "library"
+  ],
+  "rutracker.org": [
+    "torrent"
+  ],
+  "ruv.de": [
+    "public-broadcaster"
+  ],
+  "sae.org": [
+    "standards"
+  ],
+  "sage.com": [
+    "accounting"
+  ],
+  "sahibinden.com": [
+    "classifieds",
+    "marketplace"
+  ],
+  "salliemae.com": [
+    "student-loan"
+  ],
+  "sam.gov": [
+    "government"
+  ],
+  "sandiego.edu": [
+    "university"
+  ],
+  "sandiego.gov": [
+    "municipality"
+  ],
+  "sanger.ac.uk": [
+    "research-institute",
+    "genetics"
+  ],
+  "sangfor.com.cn": [
+    "cybersecurity"
+  ],
+  "sanrio.co.jp": [
+    "cartoons"
+  ],
+  "sap.com": [
+    "erp"
+  ],
+  "sas.com": [
+    "analytics",
+    "ai"
+  ],
+  "sbcounty.gov": [
+    "government"
+  ],
+  "sbs.com.au": [
+    "news",
+    "television"
+  ],
+  "sc.edu": [
+    "university"
+  ],
+  "scale.com": [
+    "ai"
+  ],
+  "scamadviser.com": [
+    "cybersecurity"
+  ],
+  "scb.se": [
+    "statistics",
+    "government"
+  ],
+  "scene7.com": [
+    "tech"
+  ],
+  "schemastore.org": [
+    "webdev"
+  ],
+  "schleswig-holstein.de": [
+    "government"
+  ],
+  "scielo.br": [
+    "open-access",
+    "journals"
+  ],
+  "scielo.cl": [
+    "journals"
+  ],
+  "sciencefocus.com": [
+    "science-news"
+  ],
+  "sciencemuseum.org.uk": [
+    "museums"
+  ],
+  "sciencenet.cn": [
+    "science-news"
+  ],
+  "scienceopen.com": [
+    "open-access",
+    "research"
+  ],
+  "sciencesetavenir.fr": [
+    "science-news"
+  ],
+  "sciprofiles.com": [
+    "university"
+  ],
+  "scot.nhs.uk": [
+    "health"
+  ],
+  "screenconnect.com": [
+    "remote-access"
+  ],
+  "screendaily.com": [
+    "film"
+  ],
+  "scribus.net": [
+    "desktop-apps",
+    "open-source"
+  ],
+  "scu.edu": [
+    "university"
+  ],
+  "sdsu.edu": [
+    "university"
+  ],
+  "seattletimes.com": [
+    "newspaper"
+  ],
+  "seetickets.com": [
+    "events"
+  ],
+  "segmentfault.com": [
+    "dev"
+  ],
+  "sejda.com": [
+    "pdf"
+  ],
+  "sejm.gov.pl": [
+    "government"
+  ],
+  "selectel.ru": [
+    "hosting",
+    "cloud"
+  ],
+  "senate.gov": [
+    "government"
+  ],
+  "senato.it": [
+    "government"
+  ],
+  "serpapi.com": [
+    "api"
+  ],
+  "serpro.gov.br": [
+    "government",
+    "tech"
+  ],
+  "service-public.gouv.fr": [
+    "government"
+  ],
+  "seznam.cz": [
+    "search"
+  ],
+  "sf.gov": [
+    "municipality"
+  ],
+  "sf.net": [
+    "open-source"
+  ],
+  "sfmoma.org": [
+    "museums"
+  ],
+  "shaalaa.com": [
+    "edtech"
+  ],
+  "shamela.ws": [
+    "library"
+  ],
+  "sheetjs.com": [
+    "webdev"
+  ],
+  "ship.edu": [
+    "university"
+  ],
+  "shonenjumpplus.com": [
+    "manga"
+  ],
+  "shop.app": [
+    "shopping"
+  ],
+  "shopback.com": [
+    "shopping"
+  ],
+  "shoppersdrugmart.ca": [
+    "pharmacy"
+  ],
+  "shoutcast.com": [
+    "radio"
+  ],
+  "showroom-live.com": [
+    "livestream"
+  ],
+  "shutterfly.com": [
+    "photography",
+    "shopping"
+  ],
+  "sicnoticias.pt": [
+    "television"
+  ],
+  "siemens.de": [
+    "manufacturing"
+  ],
+  "sierraclub.org": [
+    "environment"
+  ],
+  "sigmaaldrich.com": [
+    "chemistry"
+  ],
+  "simplyrecipes.com": [
+    "recipes"
+  ],
+  "sinica.edu.tw": [
+    "research-institute"
+  ],
+  "siol.net": [
+    "telecom",
+    "television"
+  ],
+  "siue.edu": [
+    "university"
+  ],
+  "skatteetaten.no": [
+    "government"
+  ],
+  "skylum.com": [
+    "photo-editing",
+    "desktop-apps"
+  ],
+  "slbenfica.pt": [
+    "soccer"
+  ],
+  "sleepnumber.com": [
+    "home"
+  ],
+  "slideshare.net": [
+    "presentations"
+  ],
+  "slu.edu": [
+    "university"
+  ],
+  "smart.com.ph": [
+    "telecom"
+  ],
+  "smotrim.ru": [
+    "television"
+  ],
+  "smu.edu": [
+    "university"
+  ],
+  "snap.com": [
+    "social"
+  ],
+  "snapp.ir": [
+    "rideshare"
+  ],
+  "sncf.com": [
+    "trains"
+  ],
+  "snowflake.com": [
+    "cloud",
+    "database"
+  ],
+  "societe.com": [
+    "business"
+  ],
+  "sogou.com": [
+    "search"
+  ],
+  "solarwinds.com": [
+    "monitoring"
+  ],
+  "sonarr.tv": [
+    "downloads",
+    "self-hosted"
+  ],
+  "sonatype.com": [
+    "devops"
+  ],
+  "sonyentertainmentnetwork.com": [
+    "video-games"
+  ],
+  "sonyliv.com": [
+    "streaming"
+  ],
+  "sonymusic.co.jp": [
+    "music"
+  ],
+  "sophos.com": [
+    "cybersecurity"
+  ],
+  "sothebys.com": [
+    "auctions"
+  ],
+  "soundhound.com": [
+    "music"
+  ],
+  "soundtrap.com": [
+    "music"
+  ],
+  "southparkstudios.com": [
+    "tv-series"
+  ],
+  "spartoo.com": [
+    "shoes"
+  ],
+  "speakerdeck.com": [
+    "presentations"
+  ],
+  "speedwaymotors.com": [
+    "auto-parts"
+  ],
+  "spiedigitallibrary.org": [
+    "journals"
+  ],
+  "spigotmc.org": [
+    "modding"
+  ],
+  "splcenter.org": [
+    "politics"
+  ],
+  "sportinglife.ca": [
+    "sports-news"
+  ],
+  "sportinglife.com": [
+    "sports"
+  ],
+  "sports-tracker.com": [
+    "fitness"
+  ],
+  "sportsbusinessjournal.com": [
+    "sports-news"
+  ],
+  "sportschau.de": [
+    "sports",
+    "television"
+  ],
+  "sportsline.com": [
+    "sports-news"
+  ],
+  "sportsnet.ca": [
+    "sports"
+  ],
+  "spothero.com": [],
+  "sputnik.ru": [
+    "online-news"
+  ],
+  "sr.de": [
+    "public-broadcaster"
+  ],
+  "ssa.gov": [
+    "government"
+  ],
+  "st-andrews.ac.uk": [
+    "university"
+  ],
+  "starfall.com": [
+    "education"
+  ],
+  "starwalk.space": [
+    "space"
+  ],
+  "starwars.com": [
+    "scifi"
+  ],
+  "status.im": [
+    "chat"
+  ],
+  "steamdb.info": [
+    "game-database"
+  ],
+  "steinberg.net": [
+    "music",
+    "desktop-apps"
+  ],
+  "stellarium.org": [
+    "space",
+    "desktop-apps"
+  ],
+  "stihi.ru": [
+    "poetry"
+  ],
+  "stockanalysis.com": [
+    "markets"
+  ],
+  "storyblok.com": [
+    "cms"
+  ],
+  "storytel.com": [
+    "audiobooks"
+  ],
+  "strasbourg.eu": [
+    "municipality"
+  ],
+  "streamelements.com": [
+    "streaming-tools"
+  ],
+  "streamyard.com": [
+    "streaming-tools"
+  ],
+  "strikingly.com": [
+    "website-builder"
+  ],
+  "studyinsaudi.sa": [
+    "education"
+  ],
+  "stv.tv": [
+    "television"
+  ],
+  "su.se": [
+    "university"
+  ],
+  "suara.com": [
+    "news"
+  ],
+  "sugarcrm.com": [
+    "crm"
+  ],
+  "sugarsync.com": [
+    "cloud-storage"
+  ],
+  "sumologic.com": [
+    "logging"
+  ],
+  "sun.com": [
+    "dev"
+  ],
+  "superoffice.com": [
+    "crm"
+  ],
+  "supremecourt.gov": [
+    "law"
+  ],
+  "suspilne.media": [
+    "public-broadcaster"
+  ],
+  "svenskakyrkan.se": [
+    "religion"
+  ],
+  "svenskaspel.se": [
+    "gambling"
+  ],
+  "sverigesradio.se": [
+    "radio"
+  ],
+  "svtplay.se": [
+    "television"
+  ],
+  "swagbucks.com": [
+    "deals"
+  ],
+  "swedbank.se": [
+    "banking"
+  ],
+  "sweet.tv": [
+    "streaming"
+  ],
+  "sydney.edu.au": [
+    "university"
+  ],
+  "synopsys.com": [
+    "tech"
+  ],
+  "syosetu.com": [
+    "webnovel"
+  ],
+  "szse.cn": [
+    "stock-exchange"
+  ],
+  "t.cn": [
+    "url-shortener"
+  ],
+  "t.me": [
+    "messaging"
+  ],
+  "t3.com": [
+    "tech-news"
+  ],
+  "tabelog.com": [
+    "restaurants"
+  ],
+  "tabii.com": [
+    "streaming"
+  ],
+  "taboola.com": [
+    "advertising"
+  ],
+  "taimi.com": [
+    "dating"
+  ],
+  "taiwan.net.tw": [
+    "travel"
+  ],
+  "taiwanmobile.com": [
+    "telecom"
+  ],
+  "talabat.com": [
+    "food-delivery"
+  ],
+  "tameteo.com": [
+    "weather"
+  ],
+  "tasteofhome.com": [
+    "recipes"
+  ],
+  "tate.org.uk": [
+    "museums"
+  ],
+  "tavily.com": [
+    "ai"
+  ],
+  "taylorandfrancis.com": [
+    "academic-publisher"
+  ],
+  "taylorswift.com": [
+    "music"
+  ],
+  "taz.de": [
+    "newspaper"
+  ],
+  "tc.edu.tw": [
+    "education"
+  ],
+  "tcd.ie": [
+    "university"
+  ],
+  "tcl.com": [
+    "electronics"
+  ],
+  "tcm.com": [
+    "film"
+  ],
+  "teamspeak.com": [
+    "voip"
+  ],
+  "teamsystem.com": [
+    "tech"
+  ],
+  "teamtalk.com": [
+    "sports-news"
+  ],
+  "teamwork.com": [
+    "project-management"
+  ],
+  "tec.mx": [
+    "university"
+  ],
+  "techadvisor.com": [
+    "tech-news"
+  ],
+  "ted.com": [
+    "video",
+    "education"
+  ],
+  "teepublic.com": [
+    "marketplace"
+  ],
+  "telcel.com": [
+    "telecom"
+  ],
+  "telecinco.es": [
+    "television"
+  ],
+  "telemadrid.es": [
+    "television"
+  ],
+  "telemundo.com": [
+    "television"
+  ],
+  "telia.se": [
+    "telecom"
+  ],
+  "telstra.com.au": [
+    "telecom"
+  ],
+  "temple.edu": [
+    "university"
+  ],
+  "tencentmusic.com": [
+    "music"
+  ],
+  "tensorflow.org": [
+    "ai"
+  ],
+  "tes.com": [
+    "education"
+  ],
+  "tf1.fr": [
+    "television"
+  ],
+  "thalesgroup.com": [
+    "defense"
+  ],
+  "thanhnien.vn": [
+    "newspaper"
+  ],
+  "theartnewspaper.com": [
+    "art",
+    "magazine"
+  ],
+  "theathletic.com": [
+    "sports-news"
+  ],
+  "thefader.com": [
+    "music-news"
+  ],
+  "thegospelcoalition.org": [
+    "religion"
+  ],
+  "thegrio.com": [
+    "online-news"
+  ],
+  "theiet.org": [
+    "academic-publisher"
+  ],
+  "thejournal.ie": [
+    "online-news"
+  ],
+  "thepaper.cn": [
+    "newspaper"
+  ],
+  "thequint.com": [
+    "online-news"
+  ],
+  "thestreet.com": [
+    "business-news"
+  ],
+  "thetrainline.com": [
+    "trains"
+  ],
+  "thetravel.com": [
+    "travel"
+  ],
+  "theweathernetwork.com": [
+    "weather"
+  ],
+  "thirteen.org": [
+    "television"
+  ],
+  "thomsonreuters.com": [
+    "news",
+    "legal"
+  ],
+  "thoughtworks.com": [
+    "tech"
+  ],
+  "tiaa.org": [
+    "retirement"
+  ],
+  "tibco.com": [
+    "tech"
+  ],
+  "tickpick.com": [
+    "events"
+  ],
+  "tidio.com": [
+    "helpdesk"
+  ],
+  "tiempo.com": [
+    "weather"
+  ],
+  "tiendanube.com": [
+    "ecommerce"
+  ],
+  "timeout.com": [
+    "travel"
+  ],
+  "tinkercad.com": [
+    "modeling"
+  ],
+  "tiny.cc": [
+    "url-shortener"
+  ],
+  "tirto.id": [
+    "online-news"
+  ],
+  "tistory.com": [
+    "blog"
+  ],
+  "tjk.org": [
+    "gambling"
+  ],
+  "tju.edu.cn": [
+    "university"
+  ],
+  "tmu.edu.tw": [
+    "university"
+  ],
+  "tn.com.ar": [
+    "news",
+    "television"
+  ],
+  "toastmasters.org": [
+    "education"
+  ],
+  "tobii.com": [
+    "electronics"
+  ],
+  "toei-anim.co.jp": [
+    "anime"
+  ],
+  "tohoku.ac.jp": [
+    "university"
+  ],
+  "tokyodisneyresort.jp": [
+    "travel"
+  ],
+  "ton.org": [
+    "crypto"
+  ],
+  "tonies.com": [
+    "audiobooks"
+  ],
+  "topazlabs.com": [
+    "photo-editing"
+  ],
+  "topgear.com": [
+    "cars"
+  ],
+  "towardsdatascience.com": [
+    "dev-blogs"
+  ],
+  "toysrus.com": [
+    "shopping"
+  ],
+  "tradingview.com": [
+    "finance"
+  ],
+  "trafikverket.se": [
+    "government"
+  ],
+  "trains.com": [
+    "trains"
+  ],
+  "transcend.io": [
+    "privacy"
+  ],
+  "transformativeworks.org": [
+    "fanfiction"
+  ],
+  "transportgzm.pl": [
+    "transit"
+  ],
+  "transportstyrelsen.se": [
+    "government"
+  ],
+  "treccani.it": [
+    "reference"
+  ],
+  "trellis.law": [
+    "legal"
+  ],
+  "trezor.io": [
+    "crypto"
+  ],
+  "tricentis.com": [
+    "testing"
+  ],
+  "trip.com": [
+    "travel",
+    "flights"
+  ],
+  "trivago.com": [
+    "travel"
+  ],
+  "truecaller.com": [
+    "mobile-apps"
+  ],
+  "truereligion.com": [
+    "fashion"
+  ],
+  "tsn.ca": [
+    "sports"
+  ],
+  "tsn.ua": [
+    "television"
+  ],
+  "tu-chemnitz.de": [
+    "university"
+  ],
+  "tu-dresden.de": [
+    "university"
+  ],
+  "tu-freiberg.de": [
+    "university"
+  ],
+  "tug.org": [
+    "latex"
+  ],
+  "tui.co.uk": [
+    "travel"
+  ],
+  "tui.nl": [
+    "travel"
+  ],
+  "turner.com": [
+    "television"
+  ],
+  "tutti.ch": [
+    "classifieds"
+  ],
+  "tv-asahi.co.jp": [
+    "television"
+  ],
+  "tv-tokyo.co.jp": [
+    "television"
+  ],
+  "tv2.no": [
+    "television"
+  ],
+  "tv4.se": [
+    "television"
+  ],
+  "tv5monde.com": [
+    "television"
+  ],
+  "tvanouvelles.ca": [
+    "news",
+    "television"
+  ],
+  "tvb.com": [
+    "television"
+  ],
+  "tvbs.com.tw": [
+    "television"
+  ],
+  "tver.jp": [
+    "streaming"
+  ],
+  "tvmaze.com": [
+    "tv-tracking"
+  ],
+  "tvn.pl": [
+    "television"
+  ],
+  "tvn24.pl": [
+    "news",
+    "television"
+  ],
+  "tvnz.co.nz": [
+    "television"
+  ],
+  "tvp.info": [
+    "news",
+    "television"
+  ],
+  "tvp.pl": [
+    "public-broadcaster"
+  ],
+  "tvspielfilm.de": [
+    "television"
+  ],
+  "twilio.com": [
+    "api",
+    "voip"
+  ],
+  "twinkl.co.uk": [
+    "edtech"
+  ],
+  "tylertech.com": [
+    "tech"
+  ],
+  "u-bordeaux.fr": [
+    "university"
+  ],
+  "u-paris.fr": [
+    "university"
+  ],
+  "u-tokyo.ac.jp": [
+    "university"
+  ],
+  "uab.cat": [
+    "university"
+  ],
+  "uab.edu": [
+    "university"
+  ],
+  "uam.es": [
+    "university"
+  ],
+  "ub.edu": [
+    "university"
+  ],
+  "uc.pt": [
+    "open-access",
+    "university"
+  ],
+  "ucas.com": [
+    "university",
+    "education"
+  ],
+  "ucc.ie": [
+    "university"
+  ],
+  "ucd.ie": [
+    "university"
+  ],
+  "ucf.edu": [
+    "university"
+  ],
+  "uci.org": [
+    "cycling"
+  ],
+  "uclouvain.be": [
+    "university"
+  ],
+  "ucm.es": [
+    "university"
+  ],
+  "ucsfhealth.org": [
+    "health"
+  ],
+  "ucweb.com": [
+    "browser",
+    "mobile-apps"
+  ],
+  "udg.edu": [
+    "university",
+    "open-access"
+  ],
+  "udiseplus.gov.in": [
+    "government"
+  ],
+  "ufc.com": [
+    "martial-arts"
+  ],
+  "uffizi.it": [
+    "museums"
+  ],
+  "uh.edu": [
+    "university"
+  ],
+  "uhc.com": [
+    "insurance",
+    "health"
+  ],
+  "uibk.ac.at": [
+    "university"
+  ],
+  "uipath.com": [
+    "automation"
+  ],
+  "ukg.com": [
+    "payroll"
+  ],
+  "ukm.my": [
+    "open-access",
+    "university"
+  ],
+  "ulisboa.pt": [
+    "university"
+  ],
+  "ulster.ac.uk": [
+    "university"
+  ],
+  "umanitoba.ca": [
+    "university"
+  ],
+  "uml.edu": [
+    "university"
+  ],
+  "umu.se": [
+    "open-access",
+    "university"
+  ],
+  "unbounce.com": [
+    "website-builder"
+  ],
+  "unf.edu": [
+    "university"
+  ],
+  "uni-bamberg.de": [
+    "university"
+  ],
+  "uni-bielefeld.de": [
+    "university"
+  ],
+  "uni-bremen.de": [
+    "university"
+  ],
+  "uni-due.de": [
+    "university"
+  ],
+  "uni-freiburg.de": [
+    "university"
+  ],
+  "uni-goettingen.de": [
+    "university"
+  ],
+  "uni-greifswald.de": [
+    "university"
+  ],
+  "uni-kassel.de": [
+    "university"
+  ],
+  "uni-kiel.de": [
+    "university"
+  ],
+  "uni-koeln.de": [
+    "university"
+  ],
+  "uni-leipzig.de": [
+    "university"
+  ],
+  "uni-mainz.de": [
+    "university"
+  ],
+  "uni-mannheim.de": [
+    "university"
+  ],
+  "uni-marburg.de": [
+    "university"
+  ],
+  "uni-muenster.de": [
+    "university"
+  ],
+  "uni-potsdam.de": [
+    "university"
+  ],
+  "uni-regensburg.de": [
+    "university"
+  ],
+  "uni-saarland.de": [
+    "university"
+  ],
+  "uni-stuttgart.de": [
+    "university"
+  ],
+  "uni-trier.de": [
+    "university"
+  ],
+  "uni-tuebingen.de": [
+    "university"
+  ],
+  "uni-ulm.de": [
+    "university"
+  ],
+  "uni-wuerzburg.de": [
+    "university"
+  ],
+  "unicamp.br": [
+    "university"
+  ],
+  "unice.fr": [
+    "university"
+  ],
+  "unifesp.br": [
+    "university"
+  ],
+  "unige.ch": [
+    "university"
+  ],
+  "unil.ch": [
+    "university"
+  ],
+  "unine.ch": [
+    "university"
+  ],
+  "unirioja.es": [
+    "university"
+  ],
+  "united-domains.de": [
+    "domains"
+  ],
+  "unity.com": [
+    "game-dev"
+  ],
+  "univ-poitiers.fr": [
+    "university"
+  ],
+  "universalorlando.com": [
+    "travel"
+  ],
+  "universalstudioshollywood.com": [
+    "travel"
+  ],
+  "universiteitleiden.nl": [
+    "university"
+  ],
+  "univision.com": [
+    "television"
+  ],
+  "unlv.edu": [
+    "university"
+  ],
+  "unm.edu": [
+    "university"
+  ],
+  "unsw.edu.au": [
+    "university"
+  ],
+  "unu.edu": [
+    "university"
+  ],
+  "uol.com.br": [
+    "online-news"
+  ],
+  "up.pt": [
+    "university"
+  ],
+  "upenn.edu": [
+    "university"
+  ],
+  "upf.edu": [
+    "university"
+  ],
+  "uptodown.com": [
+    "downloads"
+  ],
+  "uregina.ca": [
+    "university"
+  ],
+  "usc.gal": [
+    "university"
+  ],
+  "usccb.org": [
+    "religion"
+  ],
+  "uscellular.com": [
+    "telecom"
+  ],
+  "usda.gov": [
+    "government"
+  ],
+  "userway.org": [
+    "accessibility"
+  ],
+  "usf.edu": [
+    "university"
+  ],
+  "ushmm.org": [
+    "museums"
+  ],
+  "usj.co.jp": [
+    "travel"
+  ],
+  "uswitch.com": [
+    "price-comparison"
+  ],
+  "utas.edu.au": [
+    "university"
+  ],
+  "utexas.edu": [
+    "university"
+  ],
+  "uts.edu.au": [
+    "university"
+  ],
+  "uu.nl": [
+    "university"
+  ],
+  "uv.es": [
+    "university"
+  ],
+  "uva.nl": [
+    "university"
+  ],
+  "uvic.ca": [
+    "university"
+  ],
+  "uwinnipeg.ca": [
+    "university"
+  ],
+  "uwm.edu": [
+    "university"
+  ],
+  "va.gov": [
+    "government",
+    "health"
+  ],
+  "vacationrenter.com": [
+    "vacation-rentals"
+  ],
+  "vaisala.com": [
+    "weather"
+  ],
+  "vanderbilt.edu": [
+    "university"
+  ],
+  "varonis.com": [
+    "cybersecurity",
+    "tech"
+  ],
+  "vcu.edu": [
+    "university"
+  ],
+  "veeam.com": [
+    "backup"
+  ],
+  "vegas.com": [
+    "hotel-booking"
+  ],
+  "venmo.com": [
+    "payments",
+    "fintech"
+  ],
+  "ventusky.com": [
+    "weather"
+  ],
+  "verisign.com": [
+    "domains"
+  ],
+  "verizonmedia.com": [
+    "media"
+  ],
+  "veteransunited.com": [
+    "mortgage"
+  ],
+  "vidiq.com": [
+    "video"
+  ],
+  "vie-publique.fr": [
+    "government"
+  ],
+  "visitberlin.de": [
+    "travel"
+  ],
+  "visitcalifornia.com": [
+    "travel"
+  ],
+  "visitsealife.com": [
+    "travel"
+  ],
+  "visual-paradigm.com": [
+    "diagramming"
+  ],
+  "vivaldi.com": [
+    "browser"
+  ],
+  "vivaldi.net": [
+    "browser",
+    "desktop-apps"
+  ],
+  "vk.me": [
+    "messaging"
+  ],
+  "vk.ru": [
+    "social"
+  ],
+  "vlaanderen.be": [
+    "government"
+  ],
+  "vllm.ai": [
+    "ai"
+  ],
+  "vogue.fr": [
+    "fashion",
+    "magazine"
+  ],
+  "voipbuster.com": [
+    "voip"
+  ],
+  "volksstimme.de": [
+    "newspaper"
+  ],
+  "volleybox.net": [
+    "sports"
+  ],
+  "votesmart.org": [
+    "elections"
+  ],
+  "vov.vn": [
+    "radio"
+  ],
+  "voya.com": [
+    "retirement"
+  ],
+  "vtm.be": [
+    "television"
+  ],
+  "vtvgo.vn": [
+    "television"
+  ],
+  "vu.nl": [
+    "university"
+  ],
+  "vuze.com": [
+    "torrent"
+  ],
+  "w3schools.com": [
+    "webdev",
+    "courses"
+  ],
+  "waikato.ac.nz": [
+    "open-access",
+    "university"
+  ],
+  "wakacje.pl": [
+    "travel"
+  ],
+  "walla.co.il": [
+    "online-news"
+  ],
+  "wallonie.be": [
+    "government"
+  ],
+  "wantedly.com": [
+    "jobs"
+  ],
+  "waseda.jp": [
+    "university"
+  ],
+  "washington.edu": [
+    "university"
+  ],
+  "washingtonpost.com": [
+    "newspaper"
+  ],
+  "waymo.com": [
+    "automotive"
+  ],
+  "wbur.org": [
+    "radio"
+  ],
+  "wcvb.com": [
+    "television"
+  ],
+  "wdc.com": [
+    "hardware"
+  ],
+  "web.nhk": [
+    "television"
+  ],
+  "webnode.com": [
+    "website-builder"
+  ],
+  "wegame.com.cn": [
+    "video-games"
+  ],
+  "wellcomecollection.org": [
+    "museums"
+  ],
+  "wenxuecity.com": [
+    "online-news"
+  ],
+  "westernunion.com": [
+    "payments"
+  ],
+  "westfalen-blatt.de": [
+    "newspaper"
+  ],
+  "westlaw.com": [
+    "legal"
+  ],
+  "westmarine.com": [
+    "boating"
+  ],
+  "wetter.com": [
+    "weather"
+  ],
+  "wetv.vip": [
+    "streaming"
+  ],
+  "weverse.io": [
+    "music",
+    "social"
+  ],
+  "wgtn.ac.nz": [
+    "university"
+  ],
+  "which.co.uk": [
+    "consumer"
+  ],
+  "whosampled.com": [
+    "music"
+  ],
+  "wien.gv.at": [
+    "municipality"
+  ],
+  "wikiart.org": [
+    "art",
+    "reference"
+  ],
+  "wikidata.org": [
+    "open-data"
+  ],
+  "wikiwand.com": [
+    "reference"
+  ],
+  "winamp.com": [
+    "media-player"
+  ],
+  "wine-searcher.com": [
+    "wine"
+  ],
+  "winehq.org": [
+    "open-source"
+  ],
+  "wired.it": [
+    "tech-news"
+  ],
+  "wireshark.org": [
+    "networking",
+    "open-source"
+  ],
+  "withpersona.com": [
+    "auth"
+  ],
+  "wits.ac.za": [
+    "university"
+  ],
+  "wiz.cn": [
+    "notes"
+  ],
+  "wko.at": [
+    "business"
+  ],
+  "wm.com": [
+    "business"
+  ],
+  "wmich.edu": [
+    "university"
+  ],
+  "wmur.com": [
+    "television"
+  ],
+  "wongnai.com": [
+    "restaurants"
+  ],
+  "workplace.com": [
+    "chat"
+  ],
+  "worldscientific.com": [
+    "academic-publisher"
+  ],
+  "wowhead.com": [
+    "game-database"
+  ],
+  "wowow.co.jp": [
+    "television"
+  ],
+  "wrc.com": [
+    "sports"
+  ],
+  "wrike.com": [
+    "project-management"
+  ],
+  "wttr.in": [
+    "weather"
+  ],
+  "wur.nl": [
+    "university"
+  ],
+  "wvu.edu": [
+    "university"
+  ],
+  "wwe.com": [
+    "sports"
+  ],
+  "wyndhamhotels.com": [
+    "hotel-chains"
+  ],
+  "wyze.com": [
+    "smart-home"
+  ],
+  "xero.com": [
+    "accounting"
+  ],
+  "xinhuanet.com": [
+    "news-agency"
+  ],
+  "xinmin.cn": [
+    "newspaper"
+  ],
+  "xiph.org": [
+    "open-source"
+  ],
+  "xkcd.com": [
+    "comics"
+  ],
+  "xoom.com": [
+    "payments"
+  ],
+  "xsolla.com": [
+    "payments"
+  ],
+  "xuexi.cn": [
+    "education"
+  ],
+  "xunlei.com": [
+    "downloads"
+  ],
+  "yaklass.ru": [
+    "edtech"
+  ],
+  "yale.edu": [
+    "university"
+  ],
+  "yanmaga.jp": [
+    "manga"
+  ],
+  "yarnpkg.com": [
+    "package-manager"
+  ],
+  "yell.com": [
+    "classifieds"
+  ],
+  "ymobile.jp": [
+    "telecom"
+  ],
+  "ynet.co.il": [
+    "online-news"
+  ],
+  "yoctoproject.org": [
+    "open-source"
+  ],
+  "york.ac.uk": [
+    "university"
+  ],
+  "youngliving.com": [
+    "health"
+  ],
+  "youtubekids.com": [
+    "video",
+    "parenting"
+  ],
+  "yu.edu": [
+    "university"
+  ],
+  "yubico.com": [
+    "cybersecurity"
+  ],
+  "yum.com": [
+    "restaurants"
+  ],
+  "yuque.com": [
+    "notes"
+  ],
+  "zabbix.com": [
+    "monitoring",
+    "open-source"
+  ],
+  "zbmath.org": [
+    "math"
+  ],
+  "zdfheute.de": [
+    "public-broadcaster"
+  ],
+  "zedge.net": [
+    "mobile-apps"
+  ],
+  "zend.com": [
+    "php"
+  ],
+  "zinzino.com": [
+    "health"
+  ],
+  "zippia.com": [
+    "jobs"
+  ],
+  "zoominfo.com": [
+    "crm"
+  ],
+  "zooplus.de": [
+    "pets"
+  ],
+  "zulipchat.com": [
+    "messaging"
+  ],
+  "zurb.com": [
+    "webdev"
+  ],
+  "zurich.com": [
+    "insurance"
+  ]
+}
