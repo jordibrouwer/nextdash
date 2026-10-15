@@ -73,6 +73,7 @@
      */
     const NEW_SINCE = {
         jellyfin: '1.20',
+        'jellyfin-playing': '1.20',
         sonarr: '1.20',
         radarr: '1.20',
         seerr: '1.20',

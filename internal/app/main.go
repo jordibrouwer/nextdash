@@ -301,6 +301,8 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/widgets/jellyfin", handlers.JellyfinWidgetHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/widgets/jellyfin/image", handlers.JellyfinImageHandler).Methods("GET")
 	r.HandleFunc("/api/widgets/jellyfin/setup", handlers.JellyfinSetupHandler).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/widgets/jellyfin-playing", handlers.JellyfinPlayingHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/widgets/jellyfin-playing/image", handlers.JellyfinPlayingImageHandler).Methods("GET")
 	r.HandleFunc("/api/widgets/sonarr", handlers.arrWidgetHandler(arrSonarr, WidgetTypeSonarr)).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/widgets/sonarr/image", handlers.arrImageHandler(arrSonarr)).Methods("GET")
 	r.HandleFunc("/api/widgets/sonarr/setup", handlers.arrSetupHandler(arrSonarr)).Methods("POST", "OPTIONS")

@@ -337,6 +337,16 @@ var widgetFields = map[WidgetType][]widgetField{
 		// more often only redraws the same list.
 		{Key: "ttl", Kind: "int", Min: 60, Max: 3600},
 	},
+	WidgetTypeJellyfinPlaying: {
+		{Key: "server", Kind: "url"},
+		{Key: "credentialId", Kind: "string"},
+		{Key: "hideNames", Kind: "bool"},
+		{Key: "click", Kind: "string", Allowed: []string{"open", "detail"}},
+		{Key: "target", Kind: "string", Allowed: []string{"inherit", "_blank", "_self"}},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+		// Seconds count here: a bar that moves once a minute says little.
+		{Key: "ttl", Kind: "int", Min: 5, Max: 300},
+	},
 	WidgetTypeUnraid:              unraidWidgetFields(false),
 	WidgetTypeUnraidArray:         unraidWidgetFields(false),
 	WidgetTypeUnraidParity:        unraidWidgetFields(false),
@@ -623,7 +633,7 @@ func widgetTypeNames() []string {
 		WidgetTypeWeather, WidgetTypeCalendar, WidgetTypeRSS, WidgetTypeNotes,
 		WidgetTypeUnraid, WidgetTypeUnraidArray, WidgetTypeUnraidParity, WidgetTypeUnraidShares,
 		WidgetTypeUnraidVMs, WidgetTypeUnraidUPS, WidgetTypeUnraidNotifications,
-		WidgetTypeJellyfin, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr,
+		WidgetTypeJellyfin, WidgetTypeJellyfinPlaying, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr,
 		WidgetTypeQBittorrent, WidgetTypeSABnzbd, WidgetTypeHomeAssistant,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone

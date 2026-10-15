@@ -67,6 +67,9 @@
         valueLocked: ['dashboard.widgetMediaValueLocked', 'locked'],
         valueUnlocked: ['dashboard.widgetMediaValueUnlocked', 'unlocked'],
         valueUnavailable: ['dashboard.widgetMediaValueUnavailable', 'unavailable'],
+        playingDirect: ['dashboard.widgetMediaPlayingDirect', 'Direct play'],
+        playingTranscode: ['dashboard.widgetMediaPlayingTranscode', 'Transcoding'],
+        playingLeft: ['dashboard.widgetMediaPlayingLeft', '−{n} min'],
     };
 
     /* A glyph per kind of entity; Home Assistant's own mdi: icons would need a font. */
@@ -212,6 +215,13 @@
     }
 
     function metaText(dash, widget, item, { wide = false } = {}) {
+        // A now-playing line: who, where, how, and how long still.
+        if (item.method) {
+            const left = Number(item.remaining) > 0
+                ? say(dash, widget, 'playingLeft', { n: Math.ceil(item.remaining / 60) }) : '';
+            const how = say(dash, widget, item.method === 'transcode' ? 'playingTranscode' : 'playingDirect');
+            return [item.who, item.device, how, left].filter(Boolean).join(' · ');
+        }
         const parts = [item.library];
         if (wide && item.year) parts.push(String(item.year));
         if (wide && item.genres?.length) parts.push(item.genres.slice(0, 2).join(', '));
@@ -265,6 +275,7 @@
             missing();
         }
         if (item.played) box.appendChild(textBlock('span', 'media-badge media-badge--played', '✓'));
+        if (item.paused) box.appendChild(textBlock('span', 'media-badge', '⏸'));
         if (Number(item.newCount) > 1) box.appendChild(textBlock('span', 'media-badge', `+${item.newCount}`));
         return box;
     }

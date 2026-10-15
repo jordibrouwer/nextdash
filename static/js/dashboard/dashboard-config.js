@@ -18524,7 +18524,7 @@ class DashboardConfig {
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'notes']],
-        ['media', ['jellyfin', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
+        ['media', ['jellyfin', 'jellyfin-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
     ];
 
     renderPagesTags() {
@@ -20715,7 +20715,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -20777,6 +20777,16 @@ class DashboardConfig {
      * widgets_config.go. The entities are chosen after Connect, so the media
      * panel draws them.
      */
+    /**
+     * Jellyfin now playing, mirroring WidgetTypeJellyfinPlaying in
+     * widgets_config.go. The address and the key are the media panel's.
+     */
+    static JELLYFIN_PLAYING_SETTINGS = [
+        { key: 'hideNames', kind: 'bool', label: ['config.widgetJellyfinPlayingHideNames', 'Hide who is watching'] },
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => ['click', 'target', 'rows'].includes(field.key)),
+        { key: 'ttl', kind: 'int', min: 5, max: 300, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
+    ];
+
     static HA_SETTINGS = [
         { key: 'groupBy', kind: 'choice', label: ['config.widgetHomeAssistantGroupBy', 'Group by'],
           options: [
@@ -21085,6 +21095,7 @@ class DashboardConfig {
         qbittorrent: DashboardConfig.DOWNLOAD_SETTINGS,
         sabnzbd: DashboardConfig.DOWNLOAD_SETTINGS,
         homeassistant: DashboardConfig.HA_SETTINGS,
+        'jellyfin-playing': DashboardConfig.JELLYFIN_PLAYING_SETTINGS,
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
               label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },

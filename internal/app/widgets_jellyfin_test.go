@@ -71,6 +71,8 @@ type fakeJellyfin struct {
 	modernOnly bool
 	// failParent makes the item lists of one library answer 500.
 	failParent string
+	// sessions is what /Sessions answers; empty is nobody watching.
+	sessions string
 }
 
 func newFakeJellyfin(t *testing.T) *fakeJellyfin {
@@ -107,6 +109,14 @@ func newFakeJellyfin(t *testing.T) *fakeJellyfin {
 				{"Name":"Series","ItemId":"lib-tv","CollectionType":"tvshows"},
 				{"Name":"Anime","ItemId":"lib-anime","CollectionType":"tvshows"},
 				{"Name":"Music","ItemId":"lib-music","CollectionType":"music"}]`))
+		case r.URL.Path == "/Sessions":
+			fake.mu.Lock()
+			body := fake.sessions
+			fake.mu.Unlock()
+			if body == "" {
+				body = "[]"
+			}
+			_, _ = w.Write([]byte(body))
 		case r.URL.Path == "/UserViews":
 			_, _ = w.Write([]byte(`{"Items":[{"Id":"lib-movies","Name":"Films","CollectionType":"movies"},
 				{"Id":"lib-tv","Name":"Series","CollectionType":"tvshows"},

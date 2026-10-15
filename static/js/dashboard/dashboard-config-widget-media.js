@@ -87,6 +87,19 @@
         });
 
     /*
+     * Jellyfin now playing: Jellyfin's address, key and words, checked by
+     * Jellyfin's own Connect. Who and which libraries do not apply: it shows
+     * every session the key can see.
+     */
+    Config.MEDIA_SERVICES['jellyfin-playing'] = {
+        ...Config.MEDIA_SERVICES.jellyfin,
+        id: 'jellyfin-playing',
+        setup: 'jellyfin',
+        choices: undefined,
+        connected: undefined,
+    };
+
+    /*
      * Seerr: whose requests to show is chosen from the users Connect lists.
      *
      * Its key is base64 and ends in "==" -- the part a double-click to copy
@@ -560,7 +573,7 @@
         if (status) status.textContent = this.mediaWord(service, 'connecting');
         let answer;
         try {
-            const res = await this.writeFetch(`/api/widgets/${service.id}/setup`, {
+            const res = await this.writeFetch(`/api/widgets/${service.setup || service.id}/setup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),

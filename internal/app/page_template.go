@@ -250,7 +250,7 @@ func templateWidgetURLs(widget Widget) []string {
 		if raw, ok := widget.Config["url"].(string); ok && raw != "" {
 			out = append(out, raw)
 		}
-	case WidgetTypeJellyfin, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr, WidgetTypeQBittorrent, WidgetTypeSABnzbd, WidgetTypeHomeAssistant:
+	case WidgetTypeJellyfin, WidgetTypeJellyfinPlaying, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr, WidgetTypeQBittorrent, WidgetTypeSABnzbd, WidgetTypeHomeAssistant:
 		if raw, ok := widget.Config["server"].(string); ok && raw != "" {
 			out = append(out, raw)
 		}
@@ -378,7 +378,7 @@ func buildPageTemplate(page PageWithBookmarks, options TemplateExportOptions, ic
 			// they name nobody, so the receiver connects and chooses again.
 			delete(config, "userId")
 			delete(config, "libraries")
-		case WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr:
+		case WidgetTypeJellyfinPlaying, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr:
 			if raw, ok := config["server"].(string); ok {
 				config["server"] = templatizeURL(raw, variables)
 			}
@@ -676,7 +676,7 @@ func (h *Handlers) planPageTemplateReplacing(tpl PageTemplate, rawValues map[str
 				filled, _ := fillTemplateURL(raw, values)
 				widget.Config["url"] = filled
 			}
-		case WidgetTypeJellyfin, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr, WidgetTypeQBittorrent, WidgetTypeSABnzbd, WidgetTypeHomeAssistant:
+		case WidgetTypeJellyfin, WidgetTypeJellyfinPlaying, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr, WidgetTypeQBittorrent, WidgetTypeSABnzbd, WidgetTypeHomeAssistant:
 			if raw, ok := widget.Config["server"].(string); ok {
 				filled, _ := fillTemplateURL(raw, values)
 				widget.Config["server"] = filled
