@@ -75,7 +75,9 @@ test('Cancel after Save as theme keeps the theme but puts the previous one back'
     await openStudio(page);
     await page.locator('[data-studio-save-theme]').click();
     await page.locator('[data-save-theme-dialog] [data-save-theme-submit]').click();
-    await expect(page.locator('[data-look-studio] #config-theme-editor')).toBeVisible();
+    // The save answers in a tenth of a second, but on the runners the page then
+    // stays busy for about five before the editor is drawn.
+    await expect(page.locator('[data-look-studio] #config-theme-editor')).toBeVisible({ timeout: 15_000 });
     await page.locator('[data-studio-cancel]').click();
     await expect(page.locator('[data-look-studio]')).toHaveCount(0);
     expect(Object.keys((await colors(page)).custom).length).toBeGreaterThan(0);
