@@ -144,6 +144,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 ### Docs
 
 - **Code cleanup in `search.js` and `dashboard-inbox.js`.** Moved doc comments back to their methods, dropped three comments for code that no longer exists (one contradicted `promoteRateFromStats`), removed ten unused `fetcher` variables and one unused `dash`, folded the duplicate filter-key list into `FILTER_KEYS`, and escaped the id in `highlightItem`. Specs: `search-inbox-review-fixes.spec.js`.
+- **docs — the page switcher picture in the manual is larger and centred.** It was a small crop floated beside the text; it is now taken at twice the pixels (`deviceScaleFactor: 2` in `manual-screenshots.spec.js`) and shown centred at 560 px.
 
 ---
 

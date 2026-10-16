@@ -596,11 +596,21 @@ test.describe('category count', () => {
         await prepare(page);
         await openDashboard(page);
         await snap(page, page.locator('.dashboard-section.section-controls .header-top'), '04-header.jpg');
-        await snap(page, [page.locator('.header-track'), page.locator('.header-destinations')], '04-page-switcher.jpg');
         await snap(page, row(page, 'Encyclopedia'), '04-bookmark-row.jpg', { pad: 8 });
         const header = page.locator('#category-title-utilities');
         await scrollToTop(page, header, 300);
         await snap(page, header, '04-category-header.jpg', { pad: 10 });
+    });
+});
+
+test.describe('page switcher', () => {
+    // A strip of small icons: shot at twice the pixels, so it can be shown
+    // large and centred in the manual without going soft.
+    test.use({ dataPatch: 'catcount', deviceScaleFactor: 2 });
+    test('04 page switcher', async ({ page }) => {
+        await prepare(page);
+        await openDashboard(page);
+        await snap(page, [page.locator('.header-track'), page.locator('.header-destinations')], '04-page-switcher.jpg');
     });
 });
 

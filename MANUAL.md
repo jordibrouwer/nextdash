@@ -825,7 +825,9 @@ The header has three zones.
 | **Plain text, underlined** | The page names as tabs |
 | **One button with a list** | The current page, with a list of the rest |
 
-<img src="screenshots/manual.md/04-page-switcher.jpg" alt="The page switcher: the page numbers 1 to 3, then the Dashboard, Bookmarks, Inbox, Containers and config icons, two of them with a count badge" width="343" align="right">
+<p align="center">
+  <img src="screenshots/manual.md/04-page-switcher.jpg" alt="The page switcher: the page numbers 1 to 3, then the Dashboard, Bookmarks, Inbox, Containers and config icons, two of them with a count badge" width="560">
+</p>
 
 **Page tabs shown before "+N"** (3–9, default 4) sets how many pages show before the rest fold into a **+N** list. Every page keeps its digit key. **Show page names in tabs** and **Show the dashboard title** sit in the same group. Double-click a page tab to rename it and give it an emoji and a colour dot.
 
