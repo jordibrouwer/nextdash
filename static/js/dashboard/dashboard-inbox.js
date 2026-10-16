@@ -1044,47 +1044,30 @@ class DashboardInbox {
     }
 
     /**
-     * Write the accepted tags, one PATCH per item.
+     * Write the accepted tags, one batch per tag.
      *
-     * Per item because that is the only write the inbox has -- there is no
-     * list to save whole, the way the kept page is saved -- and they are local
-     * writes, so they go at full speed rather than paced like a fetch.
+     * The batch adds a tag on the server, where a PATCH per item sent the
+     * whole list: a tag written to the same link in between -- a chip clicked,
+     * another tab -- was overwritten, the race acceptSuggestedTag already
+     * closed. It is also one request per tag rather than one per link.
      */
     async applySuggestions(picked) {
         if (!picked?.length) return;
-        const wanted = new Map();
-        picked.forEach(([tag, rows]) => {
-            rows.forEach((item) => {
-                const tags = wanted.get(item.id) || new Set();
-                tags.add(tag);
-                wanted.set(item.id, tags);
-            });
-        });
-        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        let ok = 0;
-        let failed = 0;
-        for (const [id, tags] of wanted) {
-            const item = this.items.find((entry) => entry.id === id);
-            if (!item) continue;
-            const current = Array.isArray(item.tags) ? item.tags : [];
-            const next = [...current];
-            tags.forEach((tag) => {
-                if (!next.includes(tag)) next.push(tag);
-            });
-            if (next.length === current.length) continue;
-            try {
-                const res = await this._inboxWrite('/api/inbox', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id, tags: next }),
-                });
-                if (!res.ok) throw new Error(`tags HTTP ${res.status}`);
-                item.tags = next;
-                ok += 1;
-            } catch {
-                failed += 1;
-            }
+        const tagged = new Set();
+        const missed = new Set();
+        for (const [tag, rows] of picked) {
+            const ids = rows
+                .map((row) => this.items.find((entry) => entry.id === row.id))
+                .filter((item) => item && !(Array.isArray(item.tags) ? item.tags : []).includes(tag))
+                .map((item) => item.id);
+            if (!ids.length) continue;
+            const { done } = await this.batchInboxSafe('tag', ids, { addTags: [tag] });
+            const doneSet = new Set(done);
+            ids.forEach((id) => (doneSet.has(id) ? tagged : missed).add(id));
         }
+        // A link that took one tag and missed another counts as tagged.
+        const ok = tagged.size;
+        const failed = [...missed].filter((id) => !tagged.has(id)).length;
         window.TagSuggestLive?.invalidate?.();
         this._trackAction('bulk-suggest', { size: this._countBucket(ok) });
         this.clearChecked();
@@ -1880,15 +1863,37 @@ class DashboardInbox {
         }
     }
 
+    /**
+     * Remember a read or unread this tab just wrote, stamped with the write
+     * counter as it stood once the write came back.
+     *
+     * A list read sent before that moment may not have seen the write, so
+     * fetchItems lays the local state over it. One sent after has, and from
+     * then on the server is the truth -- including a read or unread made on
+     * another device later. The overrides used to have no end: marked unread
+     * here and read on the phone, the link stayed unread in this tab until a
+     * reload, and the other way round.
+     */
+    _rememberReadState(ids, read) {
+        if (!this._localRead) this._localRead = new Map();
+        if (!this._deliberateUnread) this._deliberateUnread = new Map();
+        const seq = this._mutationSeq || 0;
+        const at = Date.now();
+        ids.forEach((id) => {
+            if (read) {
+                this._deliberateUnread.delete(id);
+                this._localRead.set(id, { seq, at });
+            } else {
+                this._localRead.delete(id);
+                this._deliberateUnread.set(id, seq);
+            }
+        });
+    }
+
     async fetchItems() {
         if (this._fetchPromise) {
             return this._fetchPromise;
         }
-        const preserveRead = new Map(
-            (this.items || [])
-                .filter((item) => item?.readAt)
-                .map((item) => [item.id, Number(item.readAt)])
-        );
         this._fetchPromise = (async () => {
             try {
                 const readList = async () => {
@@ -1901,23 +1906,33 @@ class DashboardInbox {
                 // A snapshot taken before a delete, snooze or note that landed
                 // while it was on the wire put the deleted row back (and a
                 // second delete then 404'd). Read again once when that happened.
-                const seqAtStart = this._mutationSeq || 0;
+                let seqAtStart = this._mutationSeq || 0;
                 let data = await readList();
                 if ((this._mutationSeq || 0) !== seqAtStart) {
+                    seqAtStart = this._mutationSeq || 0;
                     data = await readList();
                 }
                 this.items = Array.isArray(data.items) ? data.items : [];
                 this.items.forEach((item) => {
-                    // An explicit "mark unread" outranks the snapshot: it says
-                    // what the reader just asked for, where the snapshot only
-                    // says what was true when the request left.
-                    if (this._deliberateUnread?.has(item.id)) {
-                        item.readAt = 0;
-                        return;
+                    // A read or unread this tab wrote outranks a snapshot that
+                    // left before the write came back; a later one has seen it,
+                    // and the override is spent. See _rememberReadState.
+                    const unreadSeq = this._deliberateUnread?.get(item.id);
+                    if (unreadSeq !== undefined) {
+                        if (seqAtStart >= unreadSeq) {
+                            this._deliberateUnread.delete(item.id);
+                        } else {
+                            item.readAt = 0;
+                            return;
+                        }
                     }
-                    const local = preserveRead.get(item.id);
-                    if (local && (!item.readAt || Number(item.readAt) < local)) {
-                        item.readAt = local;
+                    const local = this._localRead?.get(item.id);
+                    if (local) {
+                        if (seqAtStart >= local.seq) {
+                            this._localRead.delete(item.id);
+                        } else if (!item.readAt) {
+                            item.readAt = local.at;
+                        }
                     }
                 });
                 this._itemsLoaded = true;
@@ -2075,11 +2090,8 @@ class DashboardInbox {
                 if (!doneSet.has(item.id)) return;
                 if (op === 'read') {
                     if (!item.readAt) item.readAt = now;
-                    this._deliberateUnread?.delete(item.id);
                 } else if (op === 'unread') {
                     item.readAt = 0;
-                    if (!this._deliberateUnread) this._deliberateUnread = new Set();
-                    this._deliberateUnread.add(item.id);
                 } else if (op === 'snooze') {
                     item.snoozedUntil = Number(extra.snoozedUntil) > now ? Number(extra.snoozedUntil) : 0;
                 } else if (op === 'tag') {
@@ -2094,6 +2106,7 @@ class DashboardInbox {
                 }
             });
         }
+        if (op === 'read' || op === 'unread') this._rememberReadState(done, op === 'read');
         this.dash.pageNav?.updateInboxTabBadge?.();
         return { done, failed: ids.length - done.length };
     }
@@ -2288,8 +2301,7 @@ class DashboardInbox {
         if (item) {
             item.readAt = Date.now();
         }
-        // Read again, so the unread override is spent.
-        this._deliberateUnread?.delete(id);
+        this._rememberReadState([id], true);
         this.dash.pageNav?.updateInboxTabBadge?.();
     }
 
@@ -2316,15 +2328,10 @@ class DashboardInbox {
         if (item) {
             item.readAt = 0;
         }
-        // Remembered, because fetchItems snapshots read stamps before its
-        // request and re-applies them after. Marking unread while a fetch was
-        // in flight -- the poll after a capture, an R refresh, the first load --
-        // let that snapshot put the old stamp straight back, and the row
-        // silently flipped to read again.
-        if (!this._deliberateUnread) {
-            this._deliberateUnread = new Set();
-        }
-        this._deliberateUnread.add(id);
+        // Remembered, because a list read already on the wire -- the poll
+        // after a capture, an R refresh, the first load -- still carries the
+        // old stamp, and the row silently flipped to read again.
+        this._rememberReadState([id], false);
         this.dash.pageNav?.updateInboxTabBadge?.();
     }
 
@@ -4399,6 +4406,12 @@ class DashboardInbox {
                 this.t('dashboard.inboxEmptyNoted', 'No links with a note'),
                 this.t('dashboard.inboxEmptyNotedHint', 'Press n on a link to record why you saved it, for when the title alone no longer says.'),
             ],
+            // Taking the last offer empties this filter. It fell back to the
+            // All copy, which announced "Inbox zero" over a full inbox.
+            suggested: [
+                this.t('dashboard.inboxEmptySuggested', 'No tags on offer'),
+                this.t('dashboard.inboxEmptySuggestedHint', 'Every suggestion here has been taken or turned down. Find tags in the ⋯ menu looks for more.'),
+            ],
         };
         const [title, hint] = messages[this.filter] || messages.all;
         /*
@@ -4423,13 +4436,16 @@ class DashboardInbox {
         // Offered only where there is something to clear, and it clears all
         // three: telling someone which of the filters is the one hiding their
         // links is work the view can do for them.
+        // Through applyViewChange, so the address and the stored state are
+        // cleared as well: rendering alone left ib_domain, ib_q and ib_tag in
+        // the URL, and a reload put the filters straight back.
         empty.querySelector('[data-inbox-clear-filters]')?.addEventListener('click', () => {
-            this.searchQuery = '';
-            this.domainFilter = '';
-            this.tagFilter = '';
             const box = document.querySelector('[data-inbox-search]');
             if (box) box.value = '';
-            this.render();
+            this.applyViewChange(
+                { searchQuery: '', domainFilter: '', tagFilter: '' },
+                { via: 'empty-state', action: 'clear-filters', track: false },
+            );
         });
         return empty;
     }
@@ -5711,6 +5727,9 @@ class DashboardInbox {
             return;
         }
         window.open(url, '_blank', 'noopener,noreferrer');
+        // Opening a read link again wrote a fresh read stamp, a PATCH for
+        // nothing that also moved the date the link was read.
+        if (item.readAt) return;
         // The link is already open either way; only the read mark is in doubt,
         // so the row is updated when the write lands rather than optimistically.
         void this.markReadReporting(item.id).then((ok) => {
@@ -6562,9 +6581,12 @@ class DashboardInbox {
         let added = 0;
         let duplicates = 0;
         let failed = 0;
+        let evicted = 0;
         for (const row of rows) {
             // One at a time and in order: there is no bulk endpoint. The inbox
-            // has no cap, so every row that is not a duplicate is added.
+            // has no cap, except in the public demo (demoInboxLimit), where an
+            // add at the limit pushes the oldest link out; counted, so the
+            // summary does not claim a clean import there.
             try {
                 const res = await this._inboxWrite('/api/inbox', {
                     method: 'POST',
@@ -6573,6 +6595,8 @@ class DashboardInbox {
                 });
                 if (res.ok) {
                     added += 1;
+                    const body = await res.json().catch(() => ({}));
+                    evicted += Number(body?.evicted) || 0;
                     continue;
                 }
                 const body = await res.json().catch(() => ({}));
@@ -6598,7 +6622,10 @@ class DashboardInbox {
         if (failed) {
             parts.push(this.t('dashboard.inboxImportFailed', '{count} failed', { count: failed }));
         }
-        this.dash.showNotification?.(parts.join(' · '), failed ? 'warning' : 'success');
+        if (evicted) {
+            parts.push(this.t('dashboard.inboxImportEvicted', '{count} oldest removed to make room', { count: evicted }));
+        }
+        this.dash.showNotification?.(parts.join(' · '), failed || evicted ? 'warning' : 'success');
     }
 
     highlightItem(id) {

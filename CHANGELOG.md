@@ -132,6 +132,15 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **new — `status:` completes untagged, tagged, noted and unnoted.** The filter knew them; the completions and the filter hints did not, and the empty state and the inline hints described status with different lists (`filterHintText`, one list for both).
 - **fix — the screen-reader position ("3 of 12") is translatable** (`dashboard.searchAnnouncePosition`; the key goes into the locales in the docs round).
 
+### Inbox
+
+- **fix — Clear filters clears the address too.** It reset the view without going through `applyViewChange`, so `ib_q`, `ib_domain` and `ib_tag` stayed in the URL and a reload put the filters back.
+- **fix — read and unread follow the server again.** A mark unread here, then read on another device, stayed unread in this tab until a reload, and the other way round. The local override now lasts only until a list read that started after the write (`_rememberReadState`).
+- **fix — an emptied "With a tag suggestion" filter no longer says Inbox zero.** It has its own empty state.
+- **fix — applying suggested tags no longer overwrites tags written in between.** One batch per tag adds on the server, instead of a PATCH per link with the whole list (`applySuggestions`).
+- **fix — opening a link that is already read sends no new read mark.**
+- **fix — an import in the demo names the links it pushed out.** Only the demo has an inbox limit (`demoInboxLimit`); elsewhere nothing changes.
+
 ---
 
 ## v1.19.8 — 15 October 2026
