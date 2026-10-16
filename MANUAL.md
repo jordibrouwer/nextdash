@@ -65,6 +65,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 <summary><b>2.</b> <a href="#2-installation-and-first-launch">Installation and first launch</a></summary>
 
 - [Docker Compose (recommended)](#docker-compose-recommended)
+- [Unraid (Community Applications)](#unraid-community-applications)
 - [Build from source](#build-from-source)
 - [Which branch to clone](#which-branch-to-clone)
 - [First launch](#first-launch)
@@ -677,6 +678,37 @@ From a git checkout, `docker-compose.prod.yml` is the production file (only `./d
 
 - **Check.** If `docker ps` shows the container running while `./data` is gone on the host, copy the data back out first: `docker exec nextDash tar cf - -C /app data | tar xf - -C .`, then `docker compose up -d --force-recreate` so the mount points at the new folder. (`nextDash` is the `container_name` in the snippet above; use the name in your own compose file.)
 - **Clean reset.** `docker compose down`, delete `./data`, then `docker compose up -d`. nextDash makes the folder and its default files again.
+
+<a id="unraid-community-applications"></a>
+
+### 🗄️ Unraid (Community Applications)
+
+nextDash is in Unraid's Community Applications, so on Unraid there is no compose file to write.
+
+1. Open the **Apps** tab and search for **nextDash**.
+2. Click **Install**. The template opens with every row filled in.
+3. Check the rows below, then click **Apply**. Unraid pulls the image and starts the container.
+4. Open it from the **Docker** tab: click the icon and choose **WebUI**, or go to `http://<server>:8103`.
+
+| Row | Default | What it is |
+|-----|---------|------------|
+| **WebUI Port** | `8103` | The port on the server. Change it if something else uses `8103`; inside the container it stays `8080` |
+| **AppData** | `/mnt/user/appdata/nextdash/` | All your data: bookmarks, settings, icons, backups. Back this folder up with the rest of appdata |
+| **Write token** | empty | A long random string. Needed before the Containers view may start or stop anything, and for scripts that change data ([§23.2](#232-the-write-token)) |
+| **Trusted proxies** | empty | The address of your reverse proxy, when nextDash sits behind one |
+| **Host proc**, **Host disks** | `/proc`, `/mnt`, read only | Let the Processor, Memory and Disks widgets read the server rather than the container |
+| **Docker socket** | `/var/run/docker.sock`, read only | Lets the Containers widget and view see the server's containers |
+| **Docker actions** | `0` | Set to `1` to start, stop, restart and update containers from nextDash. Needs the write token |
+| **Run as root** | `0` | Leave at `0`. Unraid's socket belongs to the `docker` group, which nextDash joins on its own |
+
+Every row except the port and AppData is optional: nextDash runs as a plain bookmark dashboard without them, and you can add them later under Docker → nextDash → **Edit**.
+
+**After the first launch.**
+
+- **Disks.** In the Disks widget, name `/mnt/user` for the whole array and `/mnt/cache` for the cache pool; `/mnt/diskN` shows one disk ([§14.6](#146-what-it-needs)).
+- **The Unraid widgets.** Seven widgets read the server through Unraid's own API: overview, array, parity, shares, VMs, UPS and notifications. They need an API key with the role **Viewer**, set once under **Config → Unraid** ([§15.6](#156-unraid-widgets)).
+- **A look that fits.** **Unraid Black**, **Unraid Azure**, **Unraid Ember** and **Unraid Blaze** follow Unraid's own colours, each in dark and light ([§16](#16-appearance)).
+- **Updates.** Unraid shows when a new image is out: **update ready** on the Docker tab. Click it, or let the Auto Update Applications plugin do it.
 
 <a id="build-from-source"></a>
 
