@@ -74,11 +74,21 @@ test('04 dashboard', async ({ page }) => {
     await prepare(page);
     await openDashboard(page);
     await shot(page, '04-dashboard.jpg');
-    // The bar slides into the edge after two seconds; ' brings it back and keeps it.
-    await page.keyboard.press("'");
-    const bar = page.locator('.dashboard-section.section-controls .header-shortcuts');
-    await page.waitForTimeout(600);
-    await crop(page, bar, '04-action-buttons.jpg', 24);
+});
+
+test.describe('action buttons', () => {
+    // A narrow column of small icons: shot at twice the pixels, with each
+    // button's key on its chip, so it reads beside the text and opens large.
+    test.use({ dataPatch: 'actionkeys', deviceScaleFactor: 2 });
+    test('04 action buttons', async ({ page }) => {
+        await prepare(page);
+        await openDashboard(page);
+        // The bar slides into the edge after two seconds; ' brings it back and keeps it.
+        await page.keyboard.press("'");
+        const bar = page.locator('.dashboard-section.section-controls .header-shortcuts');
+        await page.waitForTimeout(600);
+        await crop(page, bar, '04-action-buttons.jpg', 16);
+    });
 });
 
 test('sh homelab', async ({ page }) => {

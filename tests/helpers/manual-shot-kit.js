@@ -200,6 +200,8 @@ function tidyDemoData(dir, patch) {
         serverlog: { serverLogEnabled: true },
         // Quiet hours held, as 12-quiet-hours sets them through the panel.
         quiet: { quietHoursEnabled: true },
+        // The action bar with each button's key on a chip, as its picture shows.
+        actionkeys: { showActionKeys: true },
     };
     for (const name of patches) {
         if (!settingsPatch[name]) continue;

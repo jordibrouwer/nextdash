@@ -892,7 +892,7 @@ Every button is on to begin with. Switch the ones you do not want off under **Co
 | **In the header** | Beside the destinations. **Action buttons shown before "+N"** (default 2) folds the rest behind one control whose menu lists each action with its key. |
 | **Behind one menu in the header** | One control; every action is in its menu. |
 
-<img src="screenshots/manual.md/04-action-buttons.jpg" alt="The action buttons in a column along the right edge, each with its key on a small chip" width="89" align="right">
+<img src="screenshots/manual.md/04-action-buttons.jpg" alt="The action buttons in a column along the right edge, each with its key on a small chip" width="74" align="right">
 
 **A bar that slides away.** **Slide a docked bar away after** takes *always in view*, 2 (default), 5, 10 or 30 seconds, and applies to the three docked positions. The bar comes back when the pointer touches that edge or when focus moves into it, and then slides away again after the delay. Brought back with **`'`** or **`Shift + O`** it stays until you press the key again, or until the pointer has passed over it and left — from then on the delay runs as usual. Switching page or view leaves it where it is. A bar in use — the pointer over it, the keyboard in it, or a menu of its own open — never leaves while you are using it.
 
