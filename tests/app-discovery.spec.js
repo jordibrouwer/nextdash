@@ -2,7 +2,7 @@
 const fs = require('fs');
 const http = require('http');
 const { test, expect } = require('./fixtures');
-const { WRITE_TOKEN, E2E_WEB_SERVER_ENV, markWhatsNewSeen, markInboxTutorialSeen } = require('./e2e-helpers');
+const { WRITE_TOKEN, E2E_WEB_SERVER_ENV, markWhatsNewSeen, markInboxTutorialSeen, markConfigSettingPromosSeen, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
  * App discovery through the dashboard: the containers come from the fixture
@@ -352,4 +352,67 @@ test('Ignore on a proposal removes it and it never returns', async ({ page, requ
     expect((await settings(request)).discoveryIgnored).toContain('sonarr');
     const again = await runDiscovery(request);
     expect(again.proposed).toEqual([]);
+});
+
+test('Suggest new apps off: no card and no Inbox proposals', async ({ page, request, workerServer }) => {
+    const { radarr, sonarr } = await afterFirstRun(request, workerServer);
+    const inboxItems = async () => {
+        const body = await (await request.get('/api/inbox')).json();
+        return Array.isArray(body) ? body : body.items || [];
+    };
+    const openConfig = async () => {
+        await markWhatsNewSeen(page);
+        await markConfigSettingPromosSeen(page);
+        await page.setViewportSize({ width: 1400, height: 900 });
+        await page.goto('/#config/containers/view');
+        await page.waitForSelector('[data-behavior-field="discoverApps"]', { timeout: 20_000 });
+        await dismissBlockingOverlays(page);
+    };
+    const toggle = page.locator('[data-behavior-field="discoverApps"]');
+    const newApps = page.locator('[data-behavior-field="discoveryNewApps"]');
+
+    await openConfig();
+    await expect(toggle).toBeChecked();
+    await expect(newApps).toBeVisible();
+    await toggle.uncheck();
+    await expect.poll(async () => (await settings(request)).discoverApps).toBe(false);
+    await expect(newApps).toHaveCount(0);
+
+    // Off: sonarr is in the list and so is a newcomer; neither is looked at.
+    const lidarr = await startApp('Lidarr');
+    writeContainers(workerServer, [
+        container('radarr', 'linuxserver/radarr', radarr),
+        container('sonarr', 'linuxserver/sonarr', sonarr),
+        container('lidarr', 'linuxserver/lidarr', lidarr),
+    ]);
+    await runDiscovery(request);
+    await open(page);
+    await expect(card(page)).toHaveCount(0);
+    await expect(page.locator('#dashboard-layout .bookmark-link', { hasText: /sonarr|lidarr/ })).toHaveCount(0);
+    const names = (await bookmarks(request)).map((b) => b.name);
+    expect(names).not.toContain('sonarr');
+    expect(names).not.toContain('lidarr');
+    expect(await inboxItems()).toEqual([]);
+
+    // On again, proposing instead of adding.
+    await openConfig();
+    await expect(toggle).not.toBeChecked();
+    await toggle.check();
+    await expect.poll(async () => (await settings(request)).discoverApps).toBe(true);
+    await expect(newApps).toBeVisible();
+    await newApps.selectOption('inbox');
+    await expect.poll(async () => (await settings(request)).discoveryNewApps).toBe('inbox');
+
+    // The ignored list: Remove goes through the server's own route.
+    expect((await request.post('/api/discovery/ignore', { data: { name: 'sonarr' }, headers })).ok()).toBe(true);
+    expect((await request.post('/api/discovery/ignore', { data: { name: 'lidarr' }, headers })).ok()).toBe(true);
+    // The page has to read the list the server wrote.
+    await page.reload();
+    await openConfig();
+    const ignored = page.locator('[data-discovery-ignored-panel]');
+    await expect(ignored).toContainText('sonarr');
+    await ignored.locator('[data-discovery-unignore="sonarr"]').click();
+    await expect(ignored).not.toContainText('sonarr');
+    await expect(ignored).toContainText('lidarr');
+    await expect.poll(async () => (await settings(request)).discoveryIgnored).toEqual(['lidarr']);
 });

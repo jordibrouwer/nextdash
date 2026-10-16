@@ -3772,6 +3772,8 @@ class DashboardConfig {
         dockerNotify: ['docker', 'containers', 'notify', 'notification', 'alert', 'crash', 'restart', 'unhealthy', 'webhook'],
         dockerUsageAlerts: ['docker', 'containers', 'notify', 'alert', 'cpu', 'memory', 'ram', 'usage', 'threshold', 'hot'],
         dockerHostAddress: ['docker', 'containers', 'host', 'address', 'ip', 'web ui', 'port', 'link', 'proxy'],
+        discoverApps: ['docker', 'containers', 'discover', 'discovery', 'suggest', 'new', 'apps', 'found', 'inbox'],
+        discoveryNewApps: ['docker', 'containers', 'discover', 'discovery', 'new', 'apps', 'add', 'inbox', 'propose'],
         webSearchEngine: ['web', 'search', 'searxng', 'brave', 'internet', 'engine', 'privacy'],
         webSearchSearxngUrl: ['searxng', 'web', 'search', 'address', 'url', 'instance'],
         statusRecheckIntervalMinutes: ['status', 'check', 'interval', 'ping', 'uptime'],
@@ -13184,6 +13186,8 @@ class DashboardConfig {
         dockerViewCloseOutside: { def: true },
         dockerViewKeyLegend: { def: 'above' },
         dockerHostAddress: { def: '' },
+        discoverApps: { def: true },
+        discoveryNewApps: { def: 'add' },
         skipFastPing: { info: ['skipFastPingInfoTitle', 'skipFastPingInfoMessage'], def: false },
         statusOfflineRetries: { info: ['statusOfflineRetriesInfoTitle', 'statusOfflineRetriesInfoMessage'], def: 3 },
         statusOfflineRetryDelayMs: { info: ['statusOfflineRetryDelayInfoTitle', 'statusOfflineRetryDelayInfoMessage'], def: 450 },
@@ -13783,6 +13787,21 @@ class DashboardConfig {
                     // already means that, and the format is what people miss.
                     { field: 'dockerHostAddress', type: 'text', label: t('config.dockerHostAddressLabel', 'Docker host address'),
                         placeholder: '192.168.1.10' },
+                ],
+            },
+            {
+                section: 'containers',
+                tab: 'view',
+                title: t('config.containersGroupDiscovery', 'New apps'),
+                note: t('config.containersGroupDiscoveryNote', 'nextDash looks at the containers that run and notices when one has a web page. Apps you have turned down are listed below.'),
+                controls: [
+                    bool('discoverApps', 'config.discoverAppsLabel', 'Suggest new apps'),
+                    { field: 'discoveryNewApps', type: 'select', label: t('config.discoveryNewAppsLabel', 'New apps'),
+                        shown: (s) => s.discoverApps !== false,
+                        options: [
+                            opt('add', t('config.discoveryNewAppsAdd', 'Add straight away')),
+                            opt('inbox', t('config.discoveryNewAppsInbox', 'Propose in the Inbox')),
+                        ] },
                 ],
             },
             {
@@ -15134,6 +15153,8 @@ class DashboardConfig {
             if (c.type === 'note') {
                 return `<p class="config-field-hint">${esc(c.text)}</p>`;
             }
+            // A control that only makes sense while another is on.
+            if (typeof c.shown === 'function' && !c.shown(s)) return '';
             // A live card built from a real bookmark, redrawn as the checklist
             // beside it is flipped. Appearance previews its settings; this was
             // the one you had to leave the screen and hover something to see.
@@ -17647,6 +17668,12 @@ class DashboardConfig {
             d.settings.showLinkPreviewCards = value !== 'off';
         }
         // The header button and the search rows follow the switch at once.
+        // The "New apps" choice only shows while the switch is on.
+        if (field === 'discoverApps' && this.section === 'containers') {
+            const restoreFocus = this.captureControlPanelFocus();
+            this.repaintContainersBody();
+            restoreFocus();
+        }
         if (field === 'dockerViewEnabled') {
             window.DockerSearchIndex?.invalidate?.();
             void d.docker?.renderNavButton?.();
