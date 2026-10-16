@@ -109,11 +109,16 @@
       Promise.all([docsResults(q), siteResults(q)]).then(function (r) {
         if (mine !== seq) return;
         render(q, r[0], r[1]);
-        if (window.umami && typeof window.umami.track === 'function') {
+        // One Umami event per search: once the typing pauses a second, not per letter.
+        clearTimeout(trackTimer);
+        trackTimer = setTimeout(function () {
+          if (mine !== seq || q === tracked || !window.umami || typeof window.umami.track !== 'function') return;
+          tracked = q;
           window.umami.track('search', { q: q, site: 'site', results: r[0].length + r[1].length });
-        }
+        }, 1000);
       });
     };
+    var trackTimer, tracked = '';
 
     input.addEventListener('focus', loadPagefind, { once: true });
     input.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(run, 180); });
