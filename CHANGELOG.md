@@ -141,6 +141,10 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **fix — opening a link that is already read sends no new read mark.**
 - **fix — an import in the demo names the links it pushed out.** Only the demo has an inbox limit (`demoInboxLimit`); elsewhere nothing changes.
 
+### Docs
+
+- **Code cleanup in `search.js` and `dashboard-inbox.js`.** Moved doc comments back to their methods, dropped three comments for code that no longer exists (one contradicted `promoteRateFromStats`), removed ten unused `fetcher` variables and one unused `dash`, folded the duplicate filter-key list into `FILTER_KEYS`, and escaped the id in `highlightItem`. Specs: `search-inbox-review-fixes.spec.js`.
+
 ---
 
 ## v1.19.8 — 15 October 2026

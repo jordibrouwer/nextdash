@@ -635,7 +635,7 @@ class DashboardInbox {
         for (const snap of snapshots) {
             try {
                 if (keptEntries) {
-                    // Only what the keep marked read: one already read before
+                    // Only what the promote marked read: one already read before
                     // went back into the unread count and the badge.
                     if (!snap.readAt) await this.markUnread(snap.id);
                 } else if (!(await this.restoreItem(snap))) {
@@ -797,37 +797,6 @@ class DashboardInbox {
         else failed();
     }
 
-    /**
-     * A row's tags, as chips that filter.
-     *
-     * InboxLink.Tags has been a real field all along — normalised on add and
-     * restore, and the extension can send them — but nothing rendered them, so
-     * a link could be filed with tags the user was never shown. Clicking one
-     * filters to it, the way the domain button beside them already works.
-     */
-    /*
-     * Where the link came from, when that is worth a word.
-     *
-     * Every item has carried a source since capture -- paste, the extension, an
-     * import, the share sheet -- and it reached the CSV and the JSON export and
-     * never the screen. Config aggregates it into a table two screens away.
-     *
-     * Paste is left unsaid: it is how most links arrive, so printing it on
-     * every row would be a label that never distinguishes anything.
-     */
-    /*
-     * Of everything decided, how much became a bookmark.
-     *
-     * Against triaged rather than added, since links still waiting have not
-     * been decided and would drag the rate down for no reason.
-     *
-     * `kept` belongs in that sum and used to be missing here, so this panel and
-     * Config -> Stats printed materially different numbers under the same
-     * label -- and kept is the largest of the three, recorded on every
-     * mark-read. Config had already corrected it, with a comment saying the
-     * arithmetic otherwise failed to reconcile with the tiles beside it; the
-     * same reasoning applies on this side, so this is the half that moves.
-     */
     /*
      * Which way the backlog is going, in one line.
      *
@@ -873,6 +842,14 @@ class DashboardInbox {
         return triaged ? Math.round((promoted / triaged) * 100) : null;
     }
 
+    /**
+     * A row's tags, as chips that filter.
+     *
+     * InboxLink.Tags has been a real field all along — normalised on add and
+     * restore, and the extension can send them — but nothing rendered them, so
+     * a link could be filed with tags the user was never shown. Clicking one
+     * filters to it, the way the domain button beside them already works.
+     */
     renderItemTags(item) {
         const tags = Array.isArray(item?.tags) ? item.tags.filter(Boolean) : [];
         if (!tags.length) return '';
@@ -1983,7 +1960,6 @@ class DashboardInbox {
         if (!trimmed) {
             return null;
         }
-        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         try {
             const res = await this._inboxWrite('/api/inbox', {
                 method: 'POST',
@@ -2052,7 +2028,6 @@ class DashboardInbox {
     }
 
     async deleteItem(id, options = {}) {
-        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         // reason=promote lets the server attribute the delete as a conversion
         // (vs. a plain discard) in the durable inbox stats aggregate.
         const reasonParam = options.reason === 'promote' ? '&reason=promote' : '';
@@ -2071,7 +2046,6 @@ class DashboardInbox {
      * found; the rest come back as `missing`.
      */
     async batchInbox(op, ids, extra = {}) {
-        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const res = await this._inboxWrite('/api/inbox/batch', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -2124,7 +2098,6 @@ class DashboardInbox {
         if (!snapshot?.id || !snapshot?.url) {
             return null;
         }
-        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const res = await this._inboxWrite('/api/inbox', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -2288,7 +2261,6 @@ class DashboardInbox {
      * failures should say so once, not stack twenty identical toasts.
      */
     async markRead(id) {
-        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const res = await this._inboxWrite('/api/inbox', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -2315,7 +2287,6 @@ class DashboardInbox {
      * The only escape was Clear read, which removes the link.
      */
     async markUnread(id) {
-        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const res = await this._inboxWrite('/api/inbox', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -2577,14 +2548,6 @@ class DashboardInbox {
     }
 
     /**
-     * Fetch and run the one-time tour, the first time someone lands here.
-     *
-     * The cheap guards are repeated before the fetch so a session that has
-     * already seen it, or has session tips off, never asks for the script at
-     * all. Everything else — an open modal, active search, mobile — is left to
-     * the module, which re-checks the tip id too.
-     */
-    /**
      * The Tour button: the same tour, on request, whether or not it has been
      * seen. Loaded on demand like the first-visit showing, so a session that
      * never asks for it never fetches it.
@@ -2602,6 +2565,14 @@ class DashboardInbox {
         window.InboxTutorial?.open?.();
     }
 
+    /**
+     * Fetch and run the one-time tour, the first time someone lands here.
+     *
+     * The cheap guards are repeated before the fetch so a session that has
+     * already seen it, or has session tips off, never asks for the script at
+     * all. Everything else — an open modal, active search, mobile — is left to
+     * the module, which re-checks the tip id too.
+     */
     async maybeShowTutorial() {
         if (window.DiscoverabilityState?.hasSeenTip?.(DashboardInbox.TUTORIAL_TIP_ID)) return;
         if (this.dash.settings?.enableSessionTips === false) return;
@@ -3330,7 +3301,6 @@ class DashboardInbox {
 
     /** Persist a snooze wake time (or 0 to wake) via PATCH. */
     async patchSnooze(id, snoozedUntil) {
-        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const res = await this._inboxWrite('/api/inbox', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -4376,11 +4346,6 @@ class DashboardInbox {
     }
 
     /**
-     * Keyboard cheatsheet under the feed, mirroring the health view. One copy at the
-     * bottom; hidden from assistive tech since the actions it describes are the row
-     * buttons a screen reader already reaches.
-     */
-    /**
      * The "nothing here" panel, worded for the filter that came up empty.
      *
      * An empty Unread list is the goal, not a dead end, and "No matching links"
@@ -4450,6 +4415,11 @@ class DashboardInbox {
         return empty;
     }
 
+    /**
+     * Keyboard cheatsheet under the feed, mirroring the health view. One copy at the
+     * bottom; hidden from assistive tech since the actions it describes are the row
+     * buttons a screen reader already reaches.
+     */
     renderLegend() {
         const legend = document.createElement('p');
         legend.className = 'inbox-legend';
@@ -4729,14 +4699,6 @@ class DashboardInbox {
     }
 
     /**
-     * The toolbar, built once.
-     *
-     * This is what retires the caret workaround: the search box is created here
-     * and never touched by render(), so there is no rebuilt input to put the
-     * caret back into. Only the two selects' contents are refreshed, by
-     * syncToolbar().
-     */
-    /**
      * Config → Inbox: the rail on the left, or folded behind a Filters button
      * that lays it over the page -- the Bookmarks view's sheet, at every width.
      */
@@ -4774,6 +4736,14 @@ class DashboardInbox {
         if (toggle) toggle.hidden = !folded;
     }
 
+    /**
+     * The toolbar, built once.
+     *
+     * This is what retires the caret workaround: the search box is created here
+     * and never touched by render(), so there is no rebuilt input to put the
+     * caret back into. Only the two selects' contents are refreshed, by
+     * syncToolbar().
+     */
     buildToolbar(host) {
         const searchLabel = this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'));
         host.innerHTML = `
@@ -5739,12 +5709,6 @@ class DashboardInbox {
         });
     }
 
-    /**
-     * The silent promote: "Keep" from inbox triage. Unlike promoteItem() this
-     * never opens the bookmark form -- there is no category to choose, that is
-     * the entire point of Unsorted. Resolves the Unsorted page id once per
-     * session and caches it, matching bulkPromote's page-id-known model.
-     */
     /** The kept-page bookmark an inbox item becomes: everything it carried. */
     keptBookmarkFor(item) {
         return {
@@ -5772,6 +5736,12 @@ class DashboardInbox {
         };
     }
 
+    /**
+     * The silent promote: "Keep" from inbox triage. Unlike promoteItem() this
+     * never opens the bookmark form -- there is no category to choose, that is
+     * the entire point of Unsorted. Resolves the Unsorted page id once per
+     * session and caches it, matching bulkPromote's page-id-known model.
+     */
     async keepItem(item) {
         const d = this.dash;
         // With keeping off there is nowhere for this to land.
@@ -6049,7 +6019,7 @@ class DashboardInbox {
                     body: JSON.stringify({ page: pageId, bookmark: { url: item.url } }),
                 });
             }
-                await d.loadAllBookmarks?.();
+            await d.loadAllBookmarks?.();
             this.syncBadge();
             if (this.isActiveView()) await this.loadAndRender({ refresh: true });
         } catch {
@@ -6157,7 +6127,6 @@ class DashboardInbox {
      */
     async saveNote(item, next, options = {}) {
         if (!item) return false;
-        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const clearParam = next.trim() === '' ? '?clearNote=1' : '';
         try {
             const res = await this._inboxWrite(`/api/inbox${clearParam}`, {
@@ -6195,7 +6164,6 @@ class DashboardInbox {
         }
     }
 
-    /** Textarea modal → the entered note, or null if the user cancelled. */
     /**
      * Edit a row's tags.
      *
@@ -6217,7 +6185,6 @@ class DashboardInbox {
             return;
         }
 
-        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         try {
             const res = await this._inboxWrite('/api/inbox', {
                 method: 'PATCH',
@@ -6351,6 +6318,7 @@ class DashboardInbox {
         draw();
     }
 
+    /** Textarea modal → the entered note, or null if the user cancelled. */
     promptNote(current) {
         const modal = window.AppModal;
         if (!modal || typeof modal.show !== 'function') {
@@ -6577,7 +6545,6 @@ class DashboardInbox {
         if (!confirmed) return;
 
         this._trackAction('import', { size: this._countBucket(rows.length) });
-        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         let added = 0;
         let duplicates = 0;
         let failed = 0;
@@ -6629,7 +6596,7 @@ class DashboardInbox {
     }
 
     highlightItem(id) {
-        const card = document.querySelector(`[data-inbox-id="${id}"]`);
+        const card = document.querySelector(`[data-inbox-id="${CSS.escape(String(id))}"]`);
         if (!card) {
             return;
         }

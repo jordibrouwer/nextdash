@@ -521,14 +521,6 @@ class SearchComponent {
     }
 
     /**
-     * When a bookmark was last opened, in as few characters as say it.
-     *
-     * A recents list without an axis is twenty names in a row: nothing says
-     * whether the third one is from five minutes ago or from last week. Coarse
-     * on purpose -- minutes, then hours, then the weekday, then the date --
-     * because what is being answered is "roughly when", not "at what time".
-     */
-    /**
      * The badge's word, in the reader's language when the key is there.
      *
      * `t()` answers with the key itself when it is missing, so `t(...) || '…'`
@@ -556,10 +548,6 @@ class SearchComponent {
         if (isUnsorted(match?.bookmark) === true || isUnsorted(match) === true) {
             return true;
         }
-        // Not every match type hands over the stored record -- a fuzzy hit can
-        // arrive as a name and an address -- so the URL is the fallback. A badge
-        // that appeared for only some of the ways of finding the same bookmark
-        // would be worse than none.
         const url = String(match?.bookmark?.url || match?.url || '').trim();
         if (!url) return false;
         return (window.dashboardInstance?.unsortedBookmarks || [])
@@ -620,6 +608,14 @@ class SearchComponent {
         return rows.concat(this._capGroup(items, id));
     }
 
+    /**
+     * When a bookmark was last opened, in as few characters as say it.
+     *
+     * A recents list without an axis is twenty names in a row: nothing says
+     * whether the third one is from five minutes ago or from last week. Coarse
+     * on purpose -- minutes, then hours, then the weekday, then the date --
+     * because what is being answered is "roughly when", not "at what time".
+     */
     _relativeWhen(timestamp) {
         const when = Number(timestamp) || 0;
         if (!when) return '';
@@ -682,13 +678,6 @@ class SearchComponent {
         return only?.shortcut ? `?${String(only.shortcut).toUpperCase()} ` : '?';
     }
 
-    /**
-     * Open the overlay directly in commands (`:`) or finders (`?`) mode.
-     *
-     * The prefix is set before the first updateSearch() so the open is tracked as
-     * that mode — going through openSearchInterface() first would briefly run with
-     * an empty query and report a plain search open as well.
-     */
     /** Open the panel on the list of what was opened last. */
     openInRecentMode() {
         this._openInMode(SearchComponent.RECENT_MODE_QUERY);
@@ -699,7 +688,13 @@ class SearchComponent {
         this._openInMode(SearchComponent.TAG_MODE_QUERY);
     }
 
-
+    /**
+     * Open the overlay directly in commands (`:`) or finders (`?`) mode.
+     *
+     * The prefix is set before the first updateSearch() so the open is tracked as
+     * that mode — going through openSearchInterface() first would briefly run with
+     * an empty query and report a plain search open as well.
+     */
     _openInMode(prefix) {
         if (!this.searchActive) {
             this.searchMatches = [];
@@ -843,7 +838,6 @@ class SearchComponent {
      * them as type-to-search.
      */
     _isDashboardViewActive() {
-        const dash = window.dashboardInstance;
         if (this._isInboxViewActive()) {
             return true;
         }
