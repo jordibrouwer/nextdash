@@ -29,4 +29,7 @@ ref=$(node -e "console.log(require('./src/_meta.json').ref)")
 echo "Deploying the manual of $ref to $target"
 # -rlpt rather than -a: owner and group are not copied, so the files belong to
 # the remote user instead of the Mac's uid. Works with macOS's openrsync too.
-rsync -rlptz --delete --stats "$DIST/" "$target"
+# The build's scripts go first and without --delete: a page still open in a
+# browser asks for the previous build's scripts, which must stay there.
+rsync -rlptz "$DIST/assets/" "${target}assets/"
+rsync -rlptz --delete --exclude /assets/ --stats "$DIST/" "$target"

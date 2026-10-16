@@ -336,11 +336,17 @@ function main () {
   // /docs/ with index.php first; point it at the built pages instead.
   // RewriteEngine On without rules keeps WordPress's rewrite from sending a
   // missing docs page to WordPress's own 404.
+  // Pages must not be cached: an old page asks for the old build's scripts,
+  // and its menu then opens the 404 page. mod_expires is on in the image.
   mkdirSync(join(OUT, 'public'), { recursive: true })
   writeFileSync(join(OUT, 'public', '.htaccess'), [
     'DirectoryIndex index.html',
     'RewriteEngine On',
     'ErrorDocument 404 /docs/404.html',
+    '<IfModule mod_expires.c>',
+    '  ExpiresActive On',
+    '  ExpiresByType text/html "access plus 0 seconds"',
+    '</IfModule>',
     ''
   ].join('\n'))
   writeFileSync(join(OUT, '_meta.json'), JSON.stringify({ ref: shown, source: ref, blobRef, chapters: built.map(c => c.slug) }, null, 2))
