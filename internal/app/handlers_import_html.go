@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -73,10 +74,16 @@ func (h *Handlers) ImportBookmarksHTML(w http.ResponseWriter, r *http.Request) {
 	// parse that will do the work rather than from a second one in the browser
 	// -- and it can say how many are already here, which a total never could.
 	if r.URL.Query().Get("dryRun") == "1" {
-		writeJSON(w, h.previewImport(pageID, rows))
+		preview := h.previewImport(pageID, rows)
+		preview.Inbox = h.previewInboxImport(rows)
+		writeJSON(w, preview)
 		return
 	}
 
+	if importToInbox(r) {
+		h.importRowsToInbox(w, r, rows)
+		return
+	}
 	h.importRows(w, r, pageID, rows)
 }
 
@@ -86,6 +93,10 @@ type ImportPreview struct {
 	Duplicates int `json:"duplicates"`
 	Folders    int `json:"folders"`
 	Total      int `json:"total"`
+	// The same rows counted against the inbox, so the question "onto the
+	// page or into the inbox?" can say what each answer would do. Only on a
+	// dry run.
+	Inbox *ImportPreview `json:"inbox,omitempty"`
 }
 
 /*
@@ -121,6 +132,117 @@ func (h *Handlers) previewImport(pageID int, rows []ImportedRow) ImportPreview {
 		}
 	}
 	return preview
+}
+
+/*
+importToInbox says whether the reader sent this import to the inbox rather
+than onto a page. Every import asks (a backup restore does not), and the answer
+travels as ?inbox=1 on whichever route did the reading.
+*/
+func importToInbox(r *http.Request) bool {
+	return r.URL.Query().Get("inbox") == "1"
+}
+
+/*
+inboxKnownURLs is what an import into the inbox counts as "already here": the
+inbox itself and the whole dashboard. The inbox is where links wait to be
+sorted onto a page, and one the dashboard already holds has nowhere left to go.
+*/
+func (h *Handlers) inboxKnownURLs() map[string]struct{} {
+	bookmarks := h.store.GetAllBookmarks()
+	items := h.store.GetInboxItems()
+	known := make(map[string]struct{}, len(bookmarks)+len(items))
+	for _, b := range bookmarks {
+		known[canonicalBookmarkURLKey(b.URL)] = struct{}{}
+	}
+	for _, it := range items {
+		known[canonicalBookmarkURLKey(it.URL)] = struct{}{}
+	}
+	return known
+}
+
+// previewInboxImport is previewImport for the inbox answer. Folders stay zero:
+// in the inbox they become tags, not categories.
+func (h *Handlers) previewInboxImport(rows []ImportedRow) *ImportPreview {
+	known := h.inboxKnownURLs()
+	preview := ImportPreview{Total: len(rows)}
+	for _, row := range rows {
+		key := canonicalBookmarkURLKey(row.URL)
+		if _, dup := known[key]; dup {
+			preview.Duplicates++
+			continue
+		}
+		known[key] = struct{}{}
+		preview.New++
+	}
+	return &preview
+}
+
+/*
+inboxLinkFromRow turns an imported row into an inbox link.
+
+The inbox has no categories -- a link gets one when it is filed onto a page --
+so the folder the file kept it in becomes a tag, and the reader sorting the
+inbox still sees where it used to live.
+*/
+func inboxLinkFromRow(row ImportedRow) InboxLink {
+	tags := append([]string(nil), row.Tags...)
+	if folder := strings.TrimSpace(row.Category); folder != "" {
+		tags = append(tags, strings.Join(strings.Fields(folder), "-"))
+	}
+	return InboxLink{
+		URL:    strings.TrimSpace(row.URL),
+		Title:  strings.TrimSpace(row.Name),
+		Note:   strings.TrimSpace(row.Note),
+		Tags:   tags,
+		Source: "import",
+	}
+}
+
+/*
+importRowsToInbox is importRows for the inbox answer, with the same reply.
+
+No preview is fetched per link, as a single add does: a file of a few thousand
+would start a few thousand fetches at once. The startup backfill fetches the
+icons later, as it does for any item that has none.
+*/
+func (h *Handlers) importRowsToInbox(w http.ResponseWriter, r *http.Request, rows []ImportedRow) {
+	known := h.inboxKnownURLs()
+	links := make([]InboxLink, 0, len(rows))
+	invalid, skipped := 0, 0
+	for _, row := range rows {
+		url := strings.TrimSpace(row.URL)
+		if url == "" || h.validateBookmarkURL(url) != nil || inboxURLTooLong(url) {
+			invalid++
+			continue
+		}
+		key := canonicalBookmarkURLKey(url)
+		if _, dup := known[key]; dup {
+			skipped++
+			continue
+		}
+		known[key] = struct{}{}
+		links = append(links, inboxLinkFromRow(row))
+	}
+
+	added, err := h.store.AddInboxLinks(links)
+	if !respondStorePersistError(w, err) {
+		return
+	}
+	// Added to the inbox since it was read: already there, as a skip is.
+	skipped += len(links) - len(added)
+
+	events := make([]InboxEvent, 0, len(added))
+	for _, link := range added {
+		events = append(events, InboxEvent{Type: inboxEventAdded, Source: link.Source, AtMs: link.AddedAt})
+	}
+	h.store.RecordInboxEvents(events)
+
+	writeJSON(w, map[string]int{"imported": len(added), "skipped": skipped, "invalid": invalid})
+	logActivity(activityCategoryMutate, "bookmark.import_inbox", mergeActivityFields(activityFieldsFromRequest(r), map[string]any{
+		"imported": len(added),
+		"skipped":  skipped,
+	}), fmt.Sprintf("imported %d bookmarks into the inbox, %d skipped", len(added), skipped))
 }
 
 // writeJSON is the one-liner every handler here ends with.

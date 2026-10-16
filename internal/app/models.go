@@ -1522,6 +1522,7 @@ type Store interface {
 	// Inbox
 	GetInboxItems() []InboxLink
 	AddInboxLink(link InboxLink, dedupe bool, maxItems int) (InboxLink, []InboxLink, error)
+	AddInboxLinks(links []InboxLink) ([]InboxLink, error)
 	RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, error)
 	RestoreInboxLinkEvicting(link InboxLink, maxItems int) (InboxLink, []InboxLink, error)
 	DeleteInboxLink(id string) error

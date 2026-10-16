@@ -1993,6 +1993,10 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if importToInbox(r) {
+		h.importRowsToInbox(w, r, request.Bookmarks)
+		return
+	}
 	if request.PageID <= 0 {
 		http.Error(w, "Invalid page ID", http.StatusBadRequest)
 		return

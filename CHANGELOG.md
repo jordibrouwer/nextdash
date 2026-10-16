@@ -132,6 +132,10 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **new — `status:` completes untagged, tagged, noted and unnoted.** The filter knew them; the completions and the filter hints did not, and the empty state and the inline hints described status with different lists (`filterHintText`, one list for both).
 - **fix — the screen-reader position ("3 of 12") is translatable** (`dashboard.searchAnnouncePosition`; the key goes into the locales in the docs round).
 
+### Import
+
+- **new — an import asks where the bookmarks go: onto the dashboard, or into the inbox first.** A browser file, a CSV and a source round all show the same choice, with what each answer would add and skip. Into the inbox, a folder becomes a tag instead of a category, and a link the dashboard already holds is skipped. Restoring a backup does not ask. The dry run counts both answers (`ImportPreview.inbox`); `?inbox=1` sends the round to the inbox (`importRowsToInbox`, `AddInboxLinks`, one write for the whole file). The new strings go into the locales in the docs round.
+
 ### Inbox
 
 - **fix — Clear filters clears the address too.** It reset the view without going through `applyViewChange`, so `ib_q`, `ib_domain` and `ib_tag` stayed in the URL and a reload put the filters back.

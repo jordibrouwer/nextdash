@@ -63,9 +63,9 @@ async function importFile(page) {
     return modal;
 }
 
-async function chooseFile(page) {
+async function chooseFile(page, file = FILE) {
     await page.setInputFiles('#config-browser-import-input', {
-        name: 'bookmarks.html', mimeType: 'text/html', buffer: Buffer.from(FILE),
+        name: 'bookmarks.html', mimeType: 'text/html', buffer: Buffer.from(file),
     });
     const modal = page.locator('#config-confirm-modal');
     await modal.waitFor({ timeout: 10_000 });
@@ -151,6 +151,45 @@ test.describe('importing a bookmark file', () => {
         // a faithful export of that page should say.
         expect(reread.new).toBe(0);
         expect(reread.duplicates).toBeGreaterThanOrEqual(2);
+    });
+
+    /*
+     * Every import asks where the bookmarks go. Into the inbox, nothing lands
+     * on the page and nothing reloads; the folder rides along as a tag, since
+     * the inbox has no categories to put it in.
+     */
+    // Addresses of its own: the inbox skips what the dashboard holds, and the
+    // tests before this one put FILE's rows on the page in the same data dir.
+    const INBOX_FILE = FILE.replaceAll('e2e-import', 'e2e-inbox');
+
+    test('can send the file to the inbox instead', async ({ page }) => {
+        await openBackups(page);
+        const modal = await chooseFile(page, INBOX_FILE);
+        await expect(modal.locator('[data-import-dest="page"]')).toBeFocused();
+
+        // The keys a reader uses: down to the second answer, Enter to take it.
+        await page.keyboard.press('ArrowDown');
+        await expect(modal.locator('[data-import-dest="inbox"]')).toHaveAttribute('aria-checked', 'true');
+        await page.keyboard.press('Enter');
+        await expect(modal).toBeHidden();
+
+        await expect.poll(async () => page.evaluate(async () => {
+            const { items } = await (await fetch('/api/inbox')).json();
+            return (items || []).filter((i) => i.url.includes('e2e-inbox')).length;
+        }), { timeout: 15_000 }).toBe(2);
+
+        const { inbox, onPage } = await page.evaluate(async () => {
+            const { items } = await (await fetch('/api/inbox')).json();
+            const rows = await (await fetch('/api/bookmarks?page=1')).json();
+            return {
+                inbox: Object.fromEntries(items.map((i) => [i.url, i])),
+                onPage: rows.filter((b) => b.url.includes('e2e-inbox')).length,
+            };
+        });
+        expect(onPage).toBe(0);
+        expect(inbox['https://e2e-inbox.example.com/one'].tags).toEqual(['go', 'weekly', 'reading']);
+        expect(inbox['https://e2e-inbox.example.com/one'].note).toBe('A note from the file');
+        expect(inbox['https://e2e-inbox.example.com/two'].tags).toEqual(['toread', 'reading']);
     });
 
     test('the confirm says how many are already here', async ({ page }) => {

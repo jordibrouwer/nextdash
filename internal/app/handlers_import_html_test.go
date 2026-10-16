@@ -181,3 +181,59 @@ func TestExportBookmarksHTMLIsReadableAgain(t *testing.T) {
 		t.Error("the exported file does not contain the bookmark that was imported")
 	}
 }
+
+// Into the inbox: links land as inbox items, the folder becomes a tag, and a
+// link the dashboard already holds is not queued for sorting a second time.
+func TestImportBookmarksHTMLIntoInbox(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Setenv("NEXTDASH_DISABLE_PREFETCH", "1")
+	t.Chdir(t.TempDir())
+	store := NewStore()
+	h := NewHandlers(store, embeddedFiles)
+	if err := store.AddBookmarkToPage(1, Bookmark{Name: "Go", URL: "https://go.dev/blog/", PageID: 1}); err != nil {
+		t.Fatal(err)
+	}
+	pageBefore := len(store.GetBookmarksByPage(1))
+
+	rec := httptest.NewRecorder()
+	h.ImportBookmarksHTML(rec, httptest.NewRequest(http.MethodPost,
+		"/api/bookmarks/import-html?page=1&dryRun=1", strings.NewReader(importFixture)))
+	if !strings.Contains(rec.Body.String(), `"inbox":{"new":1,"duplicates":1,"folders":0,"total":2}`) {
+		t.Errorf("dry run = %s, want the inbox counted beside the page", rec.Body.String())
+	}
+
+	post := func() string {
+		rec := httptest.NewRecorder()
+		h.ImportBookmarksHTML(rec, httptest.NewRequest(http.MethodPost,
+			"/api/bookmarks/import-html?page=1&inbox=1", strings.NewReader(importFixture)))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, want 200: %s", rec.Code, rec.Body.String())
+		}
+		return rec.Body.String()
+	}
+	if got := post(); !strings.Contains(got, `"imported":1`) || !strings.Contains(got, `"skipped":1`) {
+		t.Errorf("import = %s, want one in and the dashboard's own skipped", got)
+	}
+
+	items := store.GetInboxItems()
+	if len(items) != 1 || items[0].URL != "https://example.com/later" {
+		t.Fatalf("inbox = %+v, want only the link the dashboard does not hold", items)
+	}
+	if strings.Join(items[0].Tags, ",") != "toread,reading" {
+		t.Errorf("tags = %v, want the folder kept as a tag", items[0].Tags)
+	}
+	if items[0].Title != "Something for later" {
+		t.Errorf("title = %q, want the file's name", items[0].Title)
+	}
+	if got := len(store.GetBookmarksByPage(1)); got != pageBefore {
+		t.Errorf("page holds %d bookmarks, want %d: nothing goes onto the page", got, pageBefore)
+	}
+
+	// Run twice, the inbox does not fill twice.
+	if got := post(); !strings.Contains(got, `"imported":0`) {
+		t.Errorf("second import = %s, want nothing new", got)
+	}
+	if n := len(store.GetInboxItems()); n != 1 {
+		t.Errorf("inbox holds %d after importing twice, want 1", n)
+	}
+}
