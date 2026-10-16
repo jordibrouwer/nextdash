@@ -23,6 +23,7 @@ export default withMermaid(defineConfig({
   appearance: true,
 
   head: [
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23232a27'/><path d='M8.5 10l6 5-6 5' fill='none' stroke='%2372ca9d' stroke-width='2.6' stroke-linecap='square'/><rect x='16' y='20.5' width='8' height='2.6' fill='%2372ca9d'/></svg>" }],
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
     ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
     ['link', { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600&family=Source+Code+Pro:wght@400;500&display=swap' }],
@@ -32,7 +33,7 @@ export default withMermaid(defineConfig({
 
   themeConfig: {
     siteTitle: 'nextDash',
-    logo: undefined,
+    logo: { light: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23232a27'/><path d='M8.5 10l6 5-6 5' fill='none' stroke='%2372ca9d' stroke-width='2.6' stroke-linecap='square'/><rect x='16' y='20.5' width='8' height='2.6' fill='%2372ca9d'/></svg>", dark: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2324352d'/><path d='M8.5 10l6 5-6 5' fill='none' stroke='%2372ca9d' stroke-width='2.6' stroke-linecap='square'/><rect x='16' y='20.5' width='8' height='2.6' fill='%2372ca9d'/></svg>", alt: '' },
     nav: [
       { text: 'Features', link: `${SITE}/features/`, target: '_self' },
       { text: 'Install', link: '/installation' },

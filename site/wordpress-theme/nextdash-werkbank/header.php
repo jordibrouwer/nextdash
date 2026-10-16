@@ -20,7 +20,7 @@ $links = ndw_links();
 <a class="nd-skip" href="#main">Skip to content</a>
 <header class="nd-header">
 	<div class="nd-wrap nd-header-row">
-		<a class="nd-word" href="<?php echo esc_url( home_url( '/' ) ); ?>" rel="home">nextDash</a>
+		<a class="nd-word" href="<?php echo esc_url( home_url( '/' ) ); ?>" rel="home"><svg class="nd-word-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><rect width="32" height="32" rx="7"/><path d="M8.5 10l6 5-6 5" fill="none" stroke="#72ca9d" stroke-width="2.6" stroke-linecap="square"/><rect x="16" y="20.5" width="8" height="2.6" fill="#72ca9d"/></svg>nextDash</a>
 		<button type="button" class="nd-menu-toggle" aria-expanded="false" aria-controls="nd-nav">Menu</button>
 		<nav class="nd-nav" id="nd-nav" aria-label="Main">
 			<ul>

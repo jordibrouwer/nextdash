@@ -68,8 +68,9 @@
   --vp-shadow-3: 0 6px 24px rgba(0, 0, 0, .12);
 }
 
-/* Header: wordmark in text, a hairline below, no blur. */
+/* Header: the >_ mark and the wordmark, a hairline below, no blur. */
 .VPNavBar .title { font-weight: 600; font-size: 17px; letter-spacing: -.005em; }
+.VPNavBar .title .logo { height: 26px; margin-right: 10px; }
 .VPNavBar.has-sidebar .content-body,
 .VPNavBar:not(.has-sidebar):not(.home.top) .divider-line { background-color: var(--nd-bg); }
 .VPNavBar .divider-line { background-color: var(--nd-line) !important; }

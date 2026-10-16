@@ -72,7 +72,11 @@ pre code { background: none; padding: 0; font-size: inherit; }
 .nd-header { border-bottom: 1px solid var(--nd-line); background: var(--nd-bg); position: sticky; top: 0; z-index: 20; }
 .admin-bar .nd-header { top: 32px; }
 .nd-header-row { display: flex; align-items: center; gap: 12px 26px; min-height: 64px; }
-.nd-word { font-weight: 600; font-size: 18px; color: var(--nd-fg); text-decoration: none; letter-spacing: -.005em; }
+.nd-word { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; font-size: 18px; color: var(--nd-fg); text-decoration: none; letter-spacing: -.005em; white-space: nowrap; }
+.nd-word-mark { flex: none; }
+.nd-word-mark rect:first-child { fill: #232a27; }
+:root[data-theme="dark"] .nd-word-mark rect:first-child { fill: #24352d; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .nd-word-mark rect:first-child { fill: #24352d; } }
 .nd-nav ul { display: flex; gap: 22px; list-style: none; margin: 0; padding: 0; }
 .nd-nav a { color: var(--nd-muted); text-decoration: none; font-size: 15px; font-weight: 500; }
 .nd-nav a:hover, .nd-nav a[aria-current] { color: var(--nd-fg); }
