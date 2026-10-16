@@ -34,6 +34,8 @@ $compose = "services:\n  nextdash:\n    image: ghcr.io/jordibrouwer/nextdash:lat
 	</div>
 </section>
 
+<?php echo ndw_home_slider(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+
 <section class="nd-sec">
 	<div class="nd-wrap">
 		<p class="nd-label">Quick start</p>

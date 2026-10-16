@@ -28,6 +28,16 @@ while ( have_posts() ) :
 			<?php if ( $blurb ) : ?><p class="nd-lead"><?php echo esc_html( $blurb ); ?></p><?php endif; ?>
 		</header>
 
+		<?php
+		$slug = get_post_field( 'post_name' );
+		// Theme studio opens on a strip of its gallery; Looks points at the looks in it.
+		if ( 'themes' === $slug ) {
+			echo ndw_gallery_teaser(); // phpcs:ignore WordPress.Security.EscapeOutput
+		} elseif ( 'looks' === $slug && ndw_gallery_data() ) {
+			printf( '<p class="nd-gal-pointer"><a href="%s">See all twelve looks on real dashboards in the theme gallery →</a></p>', esc_url( add_query_arg( 'show', 'look', home_url( '/themes/' ) ) ) );
+		}
+		?>
+
 		<?php if ( $loop ) : ?>
 			<figure class="nd-loop">
 				<video muted loop playsinline preload="metadata" <?php echo $poster ? 'poster="' . esc_url( $poster ) . '"' : ''; ?> aria-label="<?php echo esc_attr( sprintf( 'Short screen recording: %s', get_the_title() ) ); ?>" data-nd-loop>
@@ -71,6 +81,10 @@ while ( have_posts() ) :
 		</footer>
 	</article>
 	<?php
+	// The Theme studio page ends in the gallery of themes, looks, surfaces and backdrops.
+	if ( 'themes' === get_post_field( 'post_name' ) ) {
+		echo ndw_theme_gallery(); // phpcs:ignore WordPress.Security.EscapeOutput
+	}
 endwhile;
 
 get_footer();

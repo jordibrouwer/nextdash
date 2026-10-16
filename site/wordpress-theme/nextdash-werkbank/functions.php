@@ -18,6 +18,7 @@ define( 'NDW_VERSION', '1.0.0' );
 require_once get_template_directory() . '/inc/helpers.php';
 require_once get_template_directory() . '/inc/features.php';
 require_once get_template_directory() . '/inc/seo.php';
+require_once get_template_directory() . '/inc/gallery.php';
 
 function ndw_setup() {
 	add_theme_support( 'automatic-feed-links' );
@@ -42,8 +43,15 @@ function ndw_assets() {
 			'docs'    => home_url( '/docs/' ),
 			'search'  => rest_url( 'wp/v2/search' ),
 			'results' => home_url( '/?s=' ),
+			// Theme names, so the search can point at the gallery.
+			'themes'  => ndw_gallery_theme_names(),
+			'gallery' => home_url( '/themes/' ),
 		)
 	);
+	// The theme gallery and the homepage slider, where they are drawn.
+	if ( ndw_gallery_data() && ( is_front_page() || is_page( 'themes' ) ) ) {
+		wp_enqueue_script( 'ndw-gallery', get_template_directory_uri() . '/assets/js/gallery.js', array(), ndw_asset_version( 'assets/js/gallery.js' ), array( 'strategy' => 'defer', 'in_footer' => true ) );
+	}
 }
 add_action( 'wp_enqueue_scripts', 'ndw_assets' );
 

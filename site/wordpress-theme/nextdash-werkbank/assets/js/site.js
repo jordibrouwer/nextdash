@@ -87,6 +87,13 @@
 
     var render = function (q, docs, pages) {
       var html = '';
+      // A theme by name goes to the gallery, searched for that theme.
+      var ql = q.toLowerCase();
+      var themes = (site.themes || []).filter(function (n) { return n.toLowerCase().indexOf(ql) !== -1; }).slice(0, 3);
+      if (themes.length && site.gallery) {
+        html += '<div class="nd-sr-group">Themes</div>';
+        themes.forEach(function (n) { html += '<a class="nd-sr-hit" role="option" href="' + esc(site.gallery + '?find=' + encodeURIComponent(n)) + '"><b>' + esc(n) + '</b><small>In the theme gallery, dark and light</small></a>'; });
+      }
       if (docs.length) {
         html += '<div class="nd-sr-group">Docs</div>';
         docs.forEach(function (h) { html += '<a class="nd-sr-hit" role="option" href="' + esc(h.url) + '"><b>' + esc(h.title) + '</b><small>' + h.text + '</small></a>'; });
@@ -95,7 +102,7 @@
         html += '<div class="nd-sr-group">Site</div>';
         pages.forEach(function (h) { html += '<a class="nd-sr-hit" role="option" href="' + esc(h.url) + '"><b>' + esc(h.title) + '</b><small>' + esc(h.text) + '</small></a>'; });
       }
-      if (!docs.length && !pages.length) html += '<span class="nd-sr-empty">Nothing found for “' + esc(q) + '”.</span>';
+      if (!themes.length && !docs.length && !pages.length) html += '<span class="nd-sr-empty">Nothing found for “' + esc(q) + '”.</span>';
       html += '<a class="nd-sr-more" href="' + esc(site.docs) + '?q=' + encodeURIComponent(q) + '">Search the docs for “' + esc(q) + '” →</a>';
       box.innerHTML = html;
       active = -1;

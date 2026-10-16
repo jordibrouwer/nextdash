@@ -38,6 +38,7 @@ function ndw_nav_items() {
 		'ndw_nav_items',
 		array(
 			array( 'label' => 'Features', 'url' => home_url( '/features/' ) ),
+			array( 'label' => 'Themes', 'url' => home_url( '/themes/' ) ),
 			array( 'label' => 'Install', 'url' => home_url( '/docs/installation.html' ) ),
 			array( 'label' => 'Docs', 'url' => home_url( '/docs/' ) ),
 			array( 'label' => 'Integrations', 'url' => home_url( '/docs/widgets.html' ) ),
@@ -52,6 +53,13 @@ function ndw_nav_is_current( $url ) {
 	$path    = untrailingslashit( (string) wp_parse_url( $url, PHP_URL_PATH ) );
 	$current = untrailingslashit( (string) wp_parse_url( home_url( add_query_arg( null, null ) ), PHP_URL_PATH ) );
 	if ( '' === $path ) {
+		return false;
+	}
+	// /themes/ leads to the Theme studio page; there Themes is the section, not Features.
+	if ( '/themes' === $path ) {
+		return is_page( 'themes' );
+	}
+	if ( '/features' === $path && is_page( 'themes' ) ) {
 		return false;
 	}
 	if ( '/news' === $path ) {

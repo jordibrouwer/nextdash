@@ -21,6 +21,7 @@ $labels = ndw_feature_group_labels();
 		?>
 		<p class="nd-lead"><?php echo esc_html( $intro ? $intro : 'What nextDash does, one page per feature. Each page links to the docs chapter with every detail.' ); ?></p>
 	</header>
+	<?php echo ndw_gallery_card(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 	<?php foreach ( ndw_feature_groups() as $slug => $pages ) : ?>
 		<section class="nd-group">
 			<h2 class="nd-label"><?php echo esc_html( $labels[ $slug ] ); ?></h2>
