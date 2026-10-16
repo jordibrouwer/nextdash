@@ -123,6 +123,15 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 - **fix — code, addresses and shortcuts use Source Code Pro.** Text set in the mono font (code, URLs, shortcut chips, the terminal layout) fell back to the system's monospace, such as Menlo, because `--font-family-mono` was never defined. It now defaults to Source Code Pro. A mono font you or a look pick (JetBrains Mono, IBM Plex Mono) carries it along; a sans font such as Inter keeps code on Source Code Pro (`font-size.css`, `DashboardFont.applyMainFont`).
 
+### Search
+
+- **fix — clicking the "Press / to search names" hint runs that search.** The click kept its own copy of what Enter does and had no branch for the hint, so it closed search and threw. A click on any row now goes through the same dispatch as Enter, and Ctrl/Cmd+click opens a bookmark in a new tab everywhere (`SearchComponent._activateMatchAt`).
+- **fix — Tab and Shift+Tab leave the scope's own prefix behind.** Shift+Tab from tags opened finders on `?tag:`, and Tab from a finder line turned the finder's shortcut into a tag filter (`_scopeWord`).
+- **fix — the bookmarks heading counts bookmarks.** It counted rows, group headings and filter completions included, and missed what a closed or capped group holds (`_resultCount`).
+- **fix — a shortcut that opens as you type it is not kept as a search.** It filled Recent searches and the search picks with the shortcut.
+- **new — `status:` completes untagged, tagged, noted and unnoted.** The filter knew them; the completions and the filter hints did not, and the empty state and the inline hints described status with different lists (`filterHintText`, one list for both).
+- **fix — the screen-reader position ("3 of 12") is translatable** (`dashboard.searchAnnouncePosition`; the key goes into the locales in the docs round).
+
 ---
 
 ## v1.19.8 — 15 October 2026

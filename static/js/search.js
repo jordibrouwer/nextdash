@@ -1756,13 +1756,12 @@ class SearchComponent {
 
         const parts = SearchComponent.filterTokens(query);
         const remaining = [];
-        const KEYS = ['category', 'status', 'page', 'tag', 'opened', 'added'];
 
         parts.forEach((part) => {
             const negated = part.startsWith('-') && part.length > 1;
             const body = negated ? part.slice(1) : part;
             const lower = body.toLowerCase();
-            const key = KEYS.find((name) => lower.startsWith(`${name}:`));
+            const key = SearchComponent.FILTER_KEYS.find((name) => lower.startsWith(`${name}:`));
             if (!key) {
                 remaining.push(part);
                 return;
@@ -2074,51 +2073,35 @@ class SearchComponent {
         return pageValue;
     }
 
-    getFilterHintItems() {
-        return [
-            {
-                shortcut: '↳',
-                name: this.dashboardLabel('filterByCategory', 'Filter by category (example: category:work)'),
-                completion: 'category: ',
-                type: 'filter-completion',
-            },
-            {
-                shortcut: '↳',
-                name: this.dashboardLabel(
-                    'filterByStatusFull',
-                    'Filter by status (online/offline/checked/unchecked/pinned/unpinned/broken/ok)',
-                ),
-                completion: 'status: ',
-                type: 'filter-completion',
-            },
-            {
-                shortcut: '↳',
-                name: this.dashboardLabel('filterByPage', 'Filter by page (current/all/number)'),
-                completion: 'page: ',
-                type: 'filter-completion',
-            },
-            {
-                shortcut: '↳',
-                name: this.dashboardLabel('filterByTag', 'Filter by tag (example: tag:work)'),
-                completion: 'tag: ',
-                type: 'filter-completion',
-            },
-            {
-                shortcut: '↳',
-                name: this.dashboardLabel(
-                    'filterByOpened',
-                    'Filter by when it was last opened (never/today/week/month/year)',
-                ),
-                completion: 'opened: ',
-                type: 'filter-completion',
-            },
-            {
-                shortcut: '↳',
-                name: this.dashboardLabel('filterByAdded', 'Filter by when it was added (today/week/month/year)'),
-                completion: 'added: ',
-                type: 'filter-completion',
-            },
-        ];
+    /**
+     * One hint per filter key, in FILTER_KEYS order.
+     *
+     * The empty state and the inline completions each kept their own copy of
+     * these, and the two had drifted: the status hint listed different values
+     * in each, and neither named untagged or noted.
+     */
+    filterHintText(key) {
+        const hints = {
+            category: ['filterByCategory', 'Filter by category (example: category:work)'],
+            status: ['filterByStatusFull',
+                'Filter by status (online/offline/broken/ok/pinned/unpinned/checked/unchecked/tagged/untagged/noted/unnoted/feed/unfed)'],
+            page: ['filterByPage', 'Filter by page (current/all/number)'],
+            tag: ['filterByTag', 'Filter by tag (example: tag:work)'],
+            opened: ['filterByOpened', 'Filter by when it was last opened (never/today/week/month/year)'],
+            added: ['filterByAdded', 'Filter by when it was added (today/week/month/year)'],
+        };
+        const [labelKey, fallback] = hints[key] || [key, key];
+        return this.dashboardLabel(labelKey, fallback);
+    }
+
+    /** The filter keys as completions, after whatever the query already holds. */
+    getFilterHintItems(prefix = '') {
+        return SearchComponent.FILTER_KEYS.map((key) => ({
+            shortcut: '↳',
+            name: this.filterHintText(key),
+            completion: `${prefix}${key}: `,
+            type: 'filter-completion',
+        }));
     }
 
     getFilterAutocompleteMatches(rawQuery) {
@@ -2154,18 +2137,8 @@ class SearchComponent {
             type: 'filter-completion'
         });
 
-        const filterTypeHints = () => ([
-            toCompletion('category:', t('filterByCategory', 'Filter by category (example: category:work)')),
-            toCompletion('status:', t('filterByStatusFull', 'Filter by status (online/offline/checked/unchecked/pinned/unpinned/broken/ok/feed)')),
-            toCompletion('page:', t('filterByPage', 'Filter by page (current/all/number)')),
-            toCompletion('tag:', t('filterByTag', 'Filter by tag (example: tag:work)')),
-            toCompletion('opened:', t('filterByOpened', 'Filter by when it was last opened (never/today/week/month/year)')),
-            toCompletion('added:', t('filterByAdded', 'Filter by when it was added (today/week/month/year)'))
-        ]);
-
-        if (currentToken === '' || currentToken === 'category' || currentToken === 'status' || currentToken === 'page'
-            || currentToken === 'tag' || currentToken === 'opened' || currentToken === 'added') {
-            return filterTypeHints();
+        if (currentToken === '' || SearchComponent.FILTER_KEYS.includes(currentToken)) {
+            return this.getFilterHintItems(prefixWithSpace);
         }
 
         if (!currentToken.includes(':')) {
@@ -2191,25 +2164,10 @@ class SearchComponent {
                 valueHits.push(...tagHits);
             }
 
-            const partialHints = [];
-            if ('category'.startsWith(currentToken) && currentToken.length >= 2) {
-                partialHints.push(toCompletion('category:', t('filterByCategory', 'Filter by category (example: category:work)')));
-            }
-            if ('status'.startsWith(currentToken) && currentToken.length >= 2) {
-                partialHints.push(toCompletion('status:', t('filterByStatusFull', 'Filter by status (online/offline/checked/unchecked/pinned/unpinned/broken/ok/feed)')));
-            }
-            if ('page'.startsWith(currentToken) && currentToken.length >= 2) {
-                partialHints.push(toCompletion('page:', t('filterByPage', 'Filter by page (current/all/number)')));
-            }
-            if ('tag'.startsWith(currentToken) && currentToken.length >= 2) {
-                partialHints.push(toCompletion('tag:', t('filterByTag', 'Filter by tag (example: tag:work)')));
-            }
-            if ('opened'.startsWith(currentToken) && currentToken.length >= 2) {
-                partialHints.push(toCompletion('opened:', t('filterByOpened', 'Filter by when it was last opened (never/today/week/month/year)')));
-            }
-            if ('added'.startsWith(currentToken) && currentToken.length >= 2) {
-                partialHints.push(toCompletion('added:', t('filterByAdded', 'Filter by when it was added (today/week/month/year)')));
-            }
+            const partialHints = currentToken.length >= 2
+                ? this.getFilterHintItems(prefixWithSpace)
+                    .filter((hint) => hint.completion.slice(prefixWithSpace.length).startsWith(currentToken))
+                : [];
 
             const combined = [...valueHits, ...partialHints];
             if (combined.length > 0) {
@@ -2244,6 +2202,12 @@ class SearchComponent {
                 ['unchecked', t('filterStatusUnchecked', 'Status check disabled')],
                 ['feed', t('filterStatusFeed', 'Publishes a feed Fresh can read')],
                 ['unfed', t('filterStatusUnfed', 'No feed behind it')],
+                // The parser has known these four all along; the completion
+                // list was the one place that never offered them.
+                ['untagged', t('filterStatusUntagged', 'Without tags')],
+                ['tagged', t('filterStatusTagged', 'With at least one tag')],
+                ['noted', t('filterStatusNoted', 'With a note')],
+                ['unnoted', t('filterStatusUnnoted', 'Without a note')],
             ];
             return statusEntries
                 .filter(([status]) => status.startsWith(value))
@@ -2793,9 +2757,7 @@ class SearchComponent {
     setScope(scopeId) {
         const scope = SearchComponent.SCOPES.find((sc) => sc.id === scopeId);
         if (!scope) return;
-        const word = this._stripModeSwitchPrefix(this.currentQuery)
-            .replace(/^[:?*/]/, '')
-            .trim();
+        const word = this._scopeWord();
         this.commandsComponent.resetState();
         if (scope.id === 'all') {
             this.currentQuery = word;
@@ -2810,6 +2772,29 @@ class SearchComponent {
         }
         this.selectedMatchIndex = 0;
         this.updateSearch();
+    }
+
+    /**
+     * The word typed into the current scope, without what the scope itself put
+     * in front of it.
+     *
+     * Only the first character used to come off, so `tag:` travelled along as
+     * if it were typed: Shift+Tab from the tags opened finders on `?tag:`, and
+     * a finder's own shortcut (`?G foo`) became a tag filter for "G foo".
+     */
+    _scopeWord() {
+        const q = this._stripModeSwitchPrefix(this.currentQuery);
+        if (this._isRecentMode(q)) return '';
+        if (q.startsWith(SearchComponent.TAG_MODE_QUERY)) {
+            return q.slice(SearchComponent.TAG_MODE_QUERY.length).trim();
+        }
+        if (q.startsWith('?')) {
+            // Before the space a finder query is its shortcut, after it the text.
+            const rest = q.slice(1);
+            const space = rest.indexOf(' ');
+            return (space >= 0 ? rest.slice(space + 1) : rest).trim();
+        }
+        return q.replace(/^:/, '').trim();
     }
 
     /**
@@ -2883,6 +2868,30 @@ class SearchComponent {
         return 0;
     }
 
+    /**
+     * How many results a run of rows stands for.
+     *
+     * The rows are not the results: group headings, "N more" and filter
+     * completions sit among them, and a closed group or a capped one holds
+     * results that are not drawn. The heading counted rows, so it read 17
+     * over twelve bookmarks.
+     */
+    _resultCount(rows) {
+        let count = 0;
+        rows.forEach((row) => {
+            if (row.type === 'command-group-header') {
+                // An open group's rows are counted one by one below it.
+                if (!row.expanded && row.groupId !== 'inline_filters') count += Number(row.count) || 0;
+            } else if (row.type === 'group-more' || row.type === 'mode-hint') {
+                // The hint stands for the bookmarks a name search would find.
+                count += Number(row.count) || 0;
+            } else if (row.type !== 'filter-completion') {
+                count += 1;
+            }
+        });
+        return count;
+    }
+
     /** A heading in the one list: read, never selected. */
     _sectionHead(scopeId, count) {
         const scope = SearchComponent.SCOPES.find((s) => s.id === scopeId)
@@ -2929,7 +2938,7 @@ class SearchComponent {
         const out = [];
 
         if (bookmarkMatches.length) {
-            out.push(this._sectionHead('bookmarks', bookmarkMatches.length));
+            out.push(this._sectionHead('bookmarks', this._resultCount(bookmarkMatches)));
             out.push(...bookmarkMatches);
         }
 
@@ -3315,7 +3324,10 @@ class SearchComponent {
                 const queries = match.queries || [];
                 label = queries[this.selectedChipIndex] || queries[0] || label;
             }
-            const pos = `${this.selectedMatchIndex + 1} of ${this.matchElements.length}`;
+            const pos = this.dashboardLabel('searchAnnouncePosition', '{n} of {total}', {
+                n: this.selectedMatchIndex + 1,
+                total: this.matchElements.length,
+            });
             announceEl.textContent = label ? `${label}, ${pos}` : pos;
         }
     }
@@ -3879,63 +3891,11 @@ class SearchComponent {
                 });
             }
 
+            // A click is Enter on this row: one dispatch, in selectCurrentMatch.
+            // The click kept a copy of it that drifted -- the mode hint had no
+            // branch here and opened an undefined bookmark.
             matchElement.addEventListener('click', (e) => {
-                if (match.type === 'config') {
-                    this.openConfig();
-                } else if (match.type === 'colors') {
-                    this.openColors();
-                } else if (match.type === 'command') {
-                    this.invokeCommand(match);
-                } else if (match.type === 'command-completion') {
-                    this.currentQuery = match.completion;
-                    this.updateSearch();
-                    this.selectedMatchIndex = 0; // Auto-select first match after completion
-                    this.updateSelectionHighlight(); // Update visual selection
-                } else if (match.type === 'finder') {
-                    window.nextdashRecordKey?.(match.shortcut);
-                    this.recordSearchHistory(this.currentQuery);
-                    match.action();
-                    this.closeSearch();
-                } else if (match.type === 'finder-completion') {
-                    this.currentQuery = match.completion;
-                    this.updateSearch();
-                    this.selectedMatchIndex = 0; // Auto-select first match after completion
-                    this.updateSelectionHighlight(); // Update visual selection
-                } else if ((match.type === 'fuzzy' || match.type === 'global-search') && match.bookmark) {
-                    this.recordSearchHistory(this.currentQuery);
-                    this.openBookmark(match.bookmark, {
-                        newTab: Boolean(e?.ctrlKey || e?.metaKey),
-                        resultRank: this.selectableMatches.indexOf(match),
-                        queryLength: String(this.currentQuery || '').length,
-                    });
-                } else if (match.type === 'docker-container') {
-                    this.closeSearch();
-                    match.action();
-                } else if (match.type === 'history') {
-                    this.currentQuery = match.completion;
-                    this.updateSearch();
-                    this.selectedMatchIndex = 0;
-                    this.updateSelectionHighlight();
-                } else if (match.type === 'saved-search') {
-                    this.currentQuery = match.completion;
-                    this.updateSearch();
-                    this.selectedMatchIndex = 0;
-                    this.updateSelectionHighlight();
-                } else if (match.type === 'filter-completion') {
-                    this.currentQuery = match.completion;
-                    this.updateSearch();
-                    this.selectedMatchIndex = 0;
-                    this.updateSelectionHighlight();
-                } else if (match.type === 'whats-new') {
-                    this.closeSearch();
-                    window.openWhatsNewModal?.({ force: true });
-                } else if (String(match.type || '').startsWith('web-')) {
-                    this._activateWebMatch(match, {});
-                } else {
-                    this.openBookmark(match.bookmark, {
-                        resultRank: mySelectableIndex, queryLength: String(this.currentQuery || '').length,
-                    });
-                }
+                this._activateMatchAt(mySelectableIndex, { newTab: Boolean(e?.ctrlKey || e?.metaKey) });
             });
             this._bindMatchKeyboardActivate(matchElement, mySelectableIndex);
 
@@ -4067,7 +4027,7 @@ class SearchComponent {
                 this.updateSearch();
                 this.selectedMatchIndex = 0; // Auto-select first match after completion
                 this.updateSelectionHighlight(); // Update visual selection
-            } else if (selectedMatch.type === 'fuzzy') {
+            } else if (selectedMatch.type === 'fuzzy' || selectedMatch.type === 'global-search') {
                 this.recordSearchHistory(this.currentQuery);
                 // Through openBookmark rather than the match's own action, so
                 // Ctrl/Cmd+Enter opens a new tab here as on every other row.
@@ -4117,10 +4077,15 @@ class SearchComponent {
         // Read by closeSearch() when this session's search.query line goes
         // out — "did it end in an open" cannot be answered any earlier.
         this._searchOpened = true;
-        this.recordSearchHistory(this.currentQuery);
-        // The other half of the same fact: the history keeps what was typed,
-        // this keeps what it turned out to mean.
-        this.recordSearchPick(bookmark);
+        // A shortcut that opened as it was typed is not a search, so it leaves
+        // nothing in the history or the picks: "gh" was filling the recent
+        // searches row and ranking GitHub first for anything starting "gh".
+        if (source !== 'shortcut') {
+            this.recordSearchHistory(this.currentQuery);
+            // The other half of the same fact: the history keeps what was
+            // typed, this keeps what it turned out to mean.
+            this.recordSearchPick(bookmark);
+        }
         // Opening from search went uncounted before: it bypasses the dashboard row
         // handler that normally records the open. Attribute it to the search source.
         // resultRank/queryLength are the "full" open-detail extras for a search
