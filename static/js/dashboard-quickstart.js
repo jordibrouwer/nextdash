@@ -90,19 +90,16 @@
         }
 
         start() {
-            if (!this.shouldStart()) {
-                // An install that is set up still gets the apps card once.
-                this.offerDiscovery();
-                return;
-            }
-            // The first-start card comes first: what the page holds decides
-            // what the checklist can point at. Apps found on this server take
-            // the template card's place.
-            if (!this.state().templatePicked) {
-                this.showFirstCard();
-                return;
-            }
+            // The apps card waits for the end of the onboarding by itself, so
+            // it is asked for here whatever comes first.
             this.offerDiscovery();
+            if (!this.shouldStart()) return;
+            // The first-start card comes first: what the page holds decides
+            // what the checklist can point at.
+            if (!this.state().templatePicked) {
+                this.showTemplateCard();
+                return;
+            }
             this.renderChecklist();
         }
 
@@ -126,26 +123,10 @@
             }
         }
 
-        /** Fresh install: the apps card when there are apps, else the template card. */
-        async showFirstCard() {
-            const info = await this.discoveryInfo();
-            if (!info || !info.enabled || info.cardDone || !(info.running || (info.docker && info.apps?.length))
-                || !(await this.loadDiscoveryCard()) || !window.AppDiscoveryCard.wanted(info)) {
-                this.showTemplateCard();
-                return;
-            }
-            this.discoveryCard = new window.AppDiscoveryCard(this.dash, { onDone: (result) => {
-                this.discoveryCard = null;
-                if (result === 'none') { this.showTemplateCard(); return; }
-                // Answered: the template card does not follow.
-                this.state().templatePicked = 'apps';
-                this.persistState();
-                this.renderChecklist();
-            } });
-            this.discoveryCard.show(info);
-        }
-
-        /** Set-up install: the apps card once, for apps without a bookmark. */
+        /**
+         * The apps card, once, for apps without a bookmark. It opens only at
+         * the end of the onboarding (AppDiscoveryCard waits for its turn).
+         */
         async offerDiscovery() {
             const info = await this.discoveryInfo();
             if (!info || !info.enabled || info.cardDone || !(info.running || (info.docker && info.apps?.length))) return;

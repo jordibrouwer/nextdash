@@ -22,6 +22,7 @@ func registerDiscoveryRoutes(r *mux.Router, h *Handlers) {
 	r.HandleFunc("/api/discovery/ignore", h.DiscoveryIgnoreHandler).Methods("POST")
 	r.HandleFunc("/api/discovery/unignore", h.DiscoveryUnignoreHandler).Methods("POST")
 	r.HandleFunc("/api/discovery/link", h.DiscoveryLinkHandler).Methods("POST")
+	r.HandleFunc("/api/discovery/undo-add", h.DiscoveryUndoAddHandler).Methods("POST")
 	r.HandleFunc("/api/discovery/close", h.DiscoveryCloseHandler).Methods("POST")
 	r.HandleFunc("/api/discovery/host-seen", h.DiscoveryHostSeenHandler).Methods("POST")
 }
@@ -55,6 +56,9 @@ type discoveryGetResponse struct {
 	CardDone     bool                 `json:"cardDone"`
 	Apps         []discoveredApp      `json:"apps"`
 	RecentAdds   []discoveryRecentAdd `json:"recentAdds"`
+	// ReplacesStarter: main is still the starter page, so the card may offer
+	// to replace its links.
+	ReplacesStarter bool `json:"replacesStarter"`
 }
 
 // DiscoveryGetHandler answers what the card and the notice need: the apps
@@ -63,12 +67,13 @@ func (h *Handlers) DiscoveryGetHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	settings := h.store.GetSettings()
 	out := discoveryGetResponse{
-		Enabled:    settings.DiscoverApps && !demoMode(),
-		Docker:     h.discoveryDocker.Load(),
-		Running:    h.discoveryRunning.Load(),
-		CardDone:   settings.DiscoveryCardDone,
-		Apps:       []discoveredApp{},
-		RecentAdds: []discoveryRecentAdd{},
+		Enabled:         settings.DiscoverApps && !demoMode(),
+		Docker:          h.discoveryDocker.Load(),
+		Running:         h.discoveryRunning.Load(),
+		CardDone:        settings.DiscoveryCardDone,
+		ReplacesStarter: !settings.DiscoveryCardDone && h.isUntouchedMainPage(),
+		Apps:            []discoveredApp{},
+		RecentAdds:      []discoveryRecentAdd{},
 	}
 	h.discoveryMu.Lock()
 	st := h.discoveryLocked()
@@ -115,7 +120,10 @@ func (h *Handlers) DiscoveryRunHandler(w http.ResponseWriter, r *http.Request) {
 
 type discoveryAddRequest struct {
 	PageID int `json:"pageId"`
-	Apps   []struct {
+	// ReplaceStarter takes the starter links off main first, as a bundled
+	// template does; only while main is still the untouched starter page.
+	ReplaceStarter bool `json:"replaceStarter"`
+	Apps           []struct {
 		Name     string `json:"name"`
 		Category string `json:"category"`
 	} `json:"apps"`
@@ -158,10 +166,20 @@ func (h *Handlers) DiscoveryAddHandler(w http.ResponseWriter, r *http.Request) {
 		items = append(items, discoveryAddItem{App: a, Category: want.Category, IconFile: discoveryIconFile(r.Context(), a.Icon)})
 	}
 
+	replaced := false
+	if req.ReplaceStarter && len(items) > 0 && req.PageID == defaultMainPage().Page.ID {
+		var err error
+		if replaced, err = h.clearStarterLinks(); !respondStorePersistError(w, err) {
+			return
+		}
+	}
+
 	h.discoveryMu.Lock()
 	defer h.discoveryMu.Unlock()
 	st := h.discoveryLocked()
 	added, _, err := h.addDiscoveredBookmarks(r.Context(), st, req.PageID, items, false, true)
+	st.CardAdds = added
+	st.StarterReplaced = replaced
 	if saveErr := h.saveDiscoveryLocked(); saveErr != nil && err == nil {
 		err = saveErr
 	}
@@ -171,7 +189,90 @@ func (h *Handlers) DiscoveryAddHandler(w http.ResponseWriter, r *http.Request) {
 	if added == nil {
 		added = []discoveryRecentAdd{}
 	}
-	writeJSON(w, map[string]any{"status": "success", "added": added})
+	writeJSON(w, map[string]any{"status": "success", "added": added, "replaced": replaced})
+}
+
+// DiscoveryUndoAddHandler takes the card's last Add back: its bookmarks go to
+// the trash and lose their container links, and starter links it replaced
+// come back. The containers are not ignored -- the reader only changed their
+// mind about this page -- and the card does not return.
+func (h *Handlers) DiscoveryUndoAddHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	h.discoveryMu.Lock()
+	st := h.discoveryLocked()
+	adds := append([]discoveryRecentAdd(nil), st.CardAdds...)
+	restore := st.StarterReplaced
+	h.discoveryMu.Unlock()
+	if len(adds) == 0 && !restore {
+		http.Error(w, "Nothing to undo", http.StatusNotFound)
+		return
+	}
+	var names []string
+	for _, a := range adds {
+		names = append(names, a.Name)
+		if page, address, ok := strings.Cut(a.Key, "::"); ok {
+			if pageID, err := strconv.Atoi(page); err == nil {
+				h.trashDiscoveredBookmark(r, pageID, address)
+			}
+		}
+	}
+	if restore {
+		if err := h.restoreStarterLinks(); !respondStorePersistError(w, err) {
+			return
+		}
+	}
+	if !respondStorePersistError(w, h.updateSettings(func(s *Settings) {
+		for _, name := range names {
+			delete(s.DockerBookmarkLinks, name)
+		}
+	})) {
+		return
+	}
+	if !respondStorePersistError(w, h.withDiscoveryState(func(st *discoveryState) {
+		st.CardAdds = nil
+		st.StarterReplaced = false
+	})) {
+		return
+	}
+	writeJSON(w, map[string]any{"status": "success", "restored": restore})
+}
+
+// restoreStarterLinks puts the starter page's categories and links back on
+// main, ahead of what is there now, skipping any that are back already.
+func (h *Handlers) restoreStarterLinks() error {
+	pageTemplateImportMu.Lock()
+	defer pageTemplateImportMu.Unlock()
+	seed := defaultMainPage()
+	pageID := seed.Page.ID
+	cats := h.store.GetCategoriesByPage(pageID)
+	var restoredCats []Category
+	for _, c := range seed.Categories {
+		if findCategoryByName(cats, c.Name) == nil {
+			if c.OriginalID == "" {
+				c.OriginalID = c.ID
+			}
+			restoredCats = append(restoredCats, c)
+		}
+	}
+	for i := range cats {
+		if cats[i].OriginalID == "" {
+			cats[i].OriginalID = cats[i].ID
+		}
+	}
+	if err := h.store.SaveCategoriesByPage(pageID, append(restoredCats, cats...)); err != nil {
+		return err
+	}
+	marks := h.store.GetBookmarksByPage(pageID)
+	var restored []Bookmark
+	for _, b := range seed.Bookmarks {
+		if findBookmarkByURLKeyOnPage(h.store, pageID, canonicalBookmarkURLKey(b.URL)) == nil {
+			restored = append(restored, b)
+		}
+	}
+	return h.store.SaveBookmarksByPage(pageID, append(restored, marks...))
 }
 
 // DiscoveryUndoHandler takes a direct add back: the bookmark goes to the trash

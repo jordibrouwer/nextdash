@@ -12,6 +12,8 @@ const { WRITE_TOKEN, E2E_WEB_SERVER_ENV, markWhatsNewSeen, markInboxTutorialSeen
  */
 
 const headers = { 'X-NextDash-Token': WRITE_TOKEN };
+// The apps card waits for the corner cards' own delays after a load.
+const CARD_WAIT = 25_000;
 const stubs = [];
 
 /** A local web app: a page with a title, optionally slow to answer at first. */
@@ -70,7 +72,18 @@ async function install(request, { fresh }) {
         onboardingCompleted: !fresh,
         discoveryCardDone: false,
         dockerHostAddress: '127.0.0.1',
-        quickStart: { baselineBookmarks: -1, baselineTagged: -1, templatePicked: fresh ? '' : 'keep' },
+        ...(fresh ? {} : { enableHealthReviewNotice: false }),
+        quickStart: {
+            baselineBookmarks: -1, baselineTagged: -1, templatePicked: fresh ? '' : 'keep',
+            // A finished onboarding has answered the analytics card too.
+            ...(fresh ? {} : { seenAnalyticsNotice: true, analyticsChoiceMade: true }),
+        },
+        // A finished onboarding has had its dashboard tour as well.
+        // ... and its corner cards.
+        ...(fresh ? {} : { discoverabilityState: {
+            seenTips: ['dashboardTutorialV3', 'blockMoveIntro'],
+            seenSettingPromos: ['clock-weather-v1', 'install-count-v1', 'kept-pile-v1', 'theme-browser-try-v1'],
+        } }),
     };
     expect((await request.post('/api/settings', { data: settings, headers })).ok()).toBe(true);
 }
@@ -103,28 +116,25 @@ async function settings(request) {
     return (await request.get('/api/settings')).json();
 }
 
-test('fresh install with apps: the apps card replaces the template card, Add puts them on the page by kind', async ({ page, request, workerServer }) => {
+test('the apps card lists the apps by kind, and Add puts them on the page', async ({ page, request, workerServer }) => {
     const sonarr = await startApp('Sonarr');
     const jellyfin = await startApp('Jellyfin');
     writeContainers(workerServer, [
         container('sonarr', 'lscr.io/linuxserver/sonarr:latest', sonarr),
         container('jellyfin', 'jellyfin/jellyfin', jellyfin),
     ]);
-    await install(request, { fresh: true });
+    await install(request, { fresh: false });
     await runDiscovery(request);
     await open(page);
 
-    await expect(card(page)).toBeVisible();
-    await expect(card(page)).toContainText('2 apps found');
-    await expect(card(page).getByRole('checkbox')).toHaveCount(2);
-    for (const box of await card(page).getByRole('checkbox').all()) await expect(box).toBeChecked();
+    await expect(card(page)).toBeVisible({ timeout: CARD_WAIT });
+    await expect(card(page)).toContainText('2 apps are running here');
+    await expect(card(page).locator('[data-ad-tick]')).toHaveCount(2);
+    for (const box of await card(page).locator('[data-ad-tick]').all()) await expect(box).toBeChecked();
     await expect(card(page).locator('.app-discovery-kind')).toHaveText([/Media management/i, /^Media$/i]);
-    await expect(templateCard(page)).toHaveCount(0);
 
     await card(page).getByRole('button', { name: 'Add 2 apps' }).click();
     await expect(card(page)).toHaveCount(0);
-    // Answered: the template card does not follow.
-    await expect(templateCard(page)).toHaveCount(0);
 
     const cats = await categories(request);
     const mm = cats.find((c) => c.name === 'Media management');
@@ -142,17 +152,16 @@ test('fresh install with apps: the apps card replaces the template card, Add put
     const st = await settings(request);
     expect(st.dockerBookmarkLinks?.sonarr).toBe(`1::${s.url}`);
     expect(st.discoveryCardDone).toBe(true);
-    expect(st.quickStart?.templatePicked).toBe('apps');
 });
 
 test('Close keeps the card away and adds nothing', async ({ page, request, workerServer }) => {
     const sonarr = await startApp('Sonarr');
     writeContainers(workerServer, [container('sonarr', 'linuxserver/sonarr', sonarr)]);
-    await install(request, { fresh: true });
+    await install(request, { fresh: false });
     await runDiscovery(request);
     await open(page);
 
-    await card(page).getByRole('button', { name: 'Close' }).last().click();
+    await card(page).getByRole('button', { name: 'Not now' }).click();
     await expect(card(page)).toHaveCount(0);
     expect((await bookmarks(request)).some((b) => b.name === 'sonarr')).toBe(false);
     expect((await settings(request)).discoveryCardDone).toBe(true);
@@ -178,7 +187,7 @@ test('an existing install sees only apps without a bookmark', async ({ page, req
     await runDiscovery(request);
     await open(page);
 
-    await expect(card(page)).toBeVisible();
+    await expect(card(page)).toBeVisible({ timeout: CARD_WAIT });
     await expect(card(page).locator('.app-discovery-row')).toHaveCount(1);
     await expect(card(page).locator('.app-discovery-row')).toContainText('radarr');
     await expect(templateCard(page)).toHaveCount(0);
@@ -202,21 +211,6 @@ test('a page that already has "Media management" gets no second one', async ({ p
     expect(cats.filter((c) => /^media management$/i.test(c.name))).toHaveLength(1);
     const s = (await bookmarks(request)).find((b) => b.name === 'sonarr');
     expect(s?.category).toBe('tv-stuff');
-});
-
-test('while the first run is going the card says it is looking', async ({ page, request, workerServer }) => {
-    const sonarr = await startApp('Sonarr', { delayFirstMs: 3500 });
-    writeContainers(workerServer, [container('sonarr', 'linuxserver/sonarr', sonarr)]);
-    await install(request, { fresh: true });
-    const running = request.post('/api/discovery/run', { headers, timeout: 60_000 });
-    await expect.poll(async () => (await (await request.get('/api/discovery')).json()).running).toBe(true);
-    await open(page);
-
-    await expect(card(page)).toContainText('Looking for apps');
-    await expect(templateCard(page)).toHaveCount(0);
-    await running;
-    await expect(card(page)).toContainText('1 app found', { timeout: 10_000 });
-    await expect(card(page).locator('.app-discovery-row')).toContainText('sonarr');
 });
 
 test('no apps found: the template card shows', async ({ page, request, workerServer }) => {
@@ -292,6 +286,8 @@ test('Move on the notice opens the bookmark form for the new app', async ({ page
     await runDiscovery(request);
     await open(page);
 
+    // Done is there next to Undo and Move.
+    await expect(notice(page).getByRole('button', { name: 'Done' })).toBeVisible({ timeout: 15_000 });
     await notice(page).getByRole('button', { name: 'Move' }).click({ timeout: 15_000 });
     await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
     await expect(page.locator('#bookmark-form-modal [data-field="url"]')).toHaveValue(new RegExp(`127\\.0\\.0\\.1:${sonarr}`));
@@ -423,8 +419,9 @@ test('a direct add during the quick start still shows its notice with Undo', asy
     await install(request, { fresh: true });
     await runDiscovery(request);
     await open(page);
-    await card(page).getByRole('button', { name: 'Add 1 app' }).click();
+    await templateCard(page).getByRole('button', { name: /Keep these example links/ }).click();
     await expect(page.locator('.quickstart-checklist')).toBeVisible();
+    await expect(card(page)).toHaveCount(0);
 
     const sonarr = await startApp('Sonarr');
     writeContainers(workerServer, [
@@ -438,4 +435,144 @@ test('a direct add during the quick start still shows its notice with Undo', asy
     await expect(page.locator('.quickstart-checklist')).toBeVisible();
     await expect(notice(page)).toContainText('sonarr added to', { timeout: 15_000 });
     await expect(notice(page).getByRole('button', { name: 'Undo' })).toBeVisible();
+    await expect(card(page)).toHaveCount(0);
+});
+
+test('the card waits for What\'s new, then opens in the middle over a dimmed dashboard', async ({ page, request, workerServer }) => {
+    const sonarr = await startApp('Sonarr');
+    writeContainers(workerServer, [container('sonarr', 'linuxserver/sonarr', sonarr)]);
+    await install(request, { fresh: false });
+    // An install that last read an older release gets What's new first.
+    await page.setViewportSize({ width: 1400, height: 900 });
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    await page.evaluate(async () => {
+        window.DiscoverabilityState?.setLastWhatsNewRelease?.('2026.08-dashboard-release-v1.3.0');
+        await window.dashboardInstance.saveSettings?.();
+    });
+    await runDiscovery(request);
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    const whatsNew = page.locator('.whats-new-modal');
+    await expect(whatsNew).toBeVisible({ timeout: 15_000 });
+    await page.waitForTimeout(2500);
+    await expect(card(page)).toHaveCount(0);
+
+    await page.keyboard.press('Escape');
+    await expect(whatsNew).toHaveCount(0);
+    await expect(card(page)).toBeVisible({ timeout: 10_000 });
+    const box = await card(page).boundingBox();
+    const center = box.x + box.width / 2;
+    expect(Math.abs(center - 700)).toBeLessThan(40);
+    expect(box.y).toBeGreaterThan(40);
+    await expect(page.locator('[data-app-discovery-overlay]')).toBeVisible();
+    // Corner cards wait while it is up.
+    expect(await page.evaluate(() => window.NoticeCard.cornerIsFree('probe-card'))).toBe(false);
+});
+
+test('after Add the new categories are on top, light up, and a notice offers Undo', async ({ page, request, workerServer }) => {
+    const sonarr = await startApp('Sonarr');
+    const radarr = await startApp('Radarr');
+    writeContainers(workerServer, [
+        container('sonarr', 'linuxserver/sonarr', sonarr),
+        container('radarr', 'linuxserver/radarr', radarr),
+    ]);
+    await install(request, { fresh: false });
+    await runDiscovery(request);
+    await open(page);
+
+    await expect(card(page)).toContainText('Add puts the ticked apps on this page', { timeout: CARD_WAIT });
+    await expect(card(page)).toContainText('After that');
+    await card(page).getByRole('button', { name: 'Add 2 apps' }).click();
+    await expect(card(page)).toHaveCount(0);
+
+    const cats = await categories(request);
+    expect(cats[0].name).toBe('Media management');
+    const added = page.locator('.app-discovery-added-card');
+    await expect(added).toContainText('2 apps added to main');
+    await expect(added).toContainText('Media management: sonarr, radarr');
+    await expect(page.locator(`#dashboard-layout .category[data-category-id="${cats[0].id}"]`)).toHaveClass(/app-discovery-new/);
+    await added.getByRole('button', { name: 'Done' }).click();
+    await expect(added).toHaveCount(0);
+});
+
+test('Undo on the notice after Add takes the apps back without ignoring them', async ({ page, request, workerServer }) => {
+    const sonarr = await startApp('Sonarr');
+    writeContainers(workerServer, [container('sonarr', 'linuxserver/sonarr', sonarr)]);
+    await install(request, { fresh: false });
+    await runDiscovery(request);
+    await open(page);
+    await card(page).getByRole('button', { name: 'Add 1 app' }).click();
+
+    const added = page.locator('.app-discovery-added-card');
+    await added.getByRole('button', { name: 'Undo' }).click();
+    await expect(added).toHaveCount(0);
+    expect((await bookmarks(request)).some((b) => b.name === 'sonarr')).toBe(false);
+    const st = await settings(request);
+    expect(st.discoveryIgnored || []).not.toContain('sonarr');
+    expect(st.dockerBookmarkLinks?.sonarr).toBeUndefined();
+});
+
+test('Replace the starter links leaves only the apps on main, and Undo brings them back', async ({ page, request, workerServer }) => {
+    const sonarr = await startApp('Sonarr');
+    writeContainers(workerServer, [container('sonarr', 'linuxserver/sonarr', sonarr)]);
+    await install(request, { fresh: false });
+    const starter = (await bookmarks(request)).length;
+    await runDiscovery(request);
+    await open(page);
+
+    await expect(card(page)).toBeVisible({ timeout: CARD_WAIT });
+    const replace = card(page).getByLabel(/Replace the starter links/);
+    await expect(replace).not.toBeChecked();
+    await replace.check();
+    await card(page).getByRole('button', { name: 'Add 1 app' }).click();
+    await expect(card(page)).toHaveCount(0);
+    expect((await bookmarks(request)).map((b) => b.name)).toEqual(['sonarr']);
+
+    await page.locator('.app-discovery-added-card').getByRole('button', { name: 'Undo' }).click();
+    await expect.poll(async () => (await bookmarks(request)).length).toBe(starter);
+});
+
+test('on a new install the apps card comes last: after the starting page, the checklist and the tour', async ({ page, request, workerServer }) => {
+    const sonarr = await startApp('Sonarr');
+    writeContainers(workerServer, [container('sonarr', 'linuxserver/sonarr', sonarr)]);
+    await install(request, { fresh: true });
+    await runDiscovery(request);
+    await open(page);
+
+    // First the starting-page card, as on an install without Docker.
+    await expect(templateCard(page)).toBeVisible();
+    await page.waitForTimeout(1500);
+    await expect(card(page)).toHaveCount(0);
+    await templateCard(page).getByRole('button', { name: /Keep these example links/ }).click();
+
+    // Then the checklist; still no apps card.
+    const checklist = page.locator('.quickstart-checklist');
+    await expect(checklist).toBeVisible();
+    await page.waitForTimeout(1500);
+    await expect(card(page)).toHaveCount(0);
+    await checklist.locator('.quickstart-close').click();
+    await expect(checklist).toHaveCount(0);
+
+    // Then the dashboard tour, where it has not been seen (the test helpers
+    // mark it seen); the card waits for it as well.
+    const tour = page.locator('#app-modal.show');
+    if (await tour.waitFor({ state: 'visible', timeout: 5000 }).then(() => true, () => false)) {
+        await expect(card(page)).toHaveCount(0);
+        await page.keyboard.press('Escape');
+        await expect(tour).toHaveCount(0);
+    }
+
+    // Then the corner cards a new install gets; the card waits for each.
+    for (let i = 0; i < 6; i += 1) {
+        const corner = page.locator('.notice-card:not(.app-discovery-notice-card)');
+        if (!(await corner.first().waitFor({ state: 'visible', timeout: 8000 }).then(() => true, () => false))) break;
+        await expect(card(page)).toHaveCount(0);
+        await corner.first().locator('[data-notice-dismiss]').click();
+        await expect(corner).toHaveCount(0);
+    }
+
+    // And then, with nothing else waiting, the apps card.
+    await expect(card(page)).toBeVisible({ timeout: 20_000 });
+    await expect(card(page)).toContainText('1 app is running here');
 });

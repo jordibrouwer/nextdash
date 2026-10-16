@@ -1,21 +1,25 @@
 /**
  * The "x apps found" card: the web apps nextDash found among the containers
- * on this server, offered once, grouped by kind, all ticked. Add puts the
- * ticked ones on the page in a category per kind; Close leaves them in the
- * Containers view.
+ * on this server, offered once, grouped by kind, all ticked.
+ *
+ * It opens in the middle of the screen with the dashboard dimmed behind it,
+ * and only when nothing else asks for attention: What's new, a tour, a dialog
+ * or a corner card goes first, and while the card is up those wait for it.
+ * The card says what Add does and what happens afterwards.
  *
  * On a fresh install it takes the place of the "What do you run?" card, and
  * hands over to it when the first look through the containers finds nothing
- * (onDone('none')). On an install that is already set up it shows once, on
- * main, for the containers that have no bookmark yet.
+ * (onDone('none')). On an install that is already set up it shows once, for
+ * the containers that have no bookmark yet.
+ *
+ * After Add the new categories are at the top of the page; the page scrolls
+ * to them, they light up, and a notice says what was added, with Undo.
  */
 (function (global) {
     'use strict';
 
-    const MAIN_PAGE_ID = 1;
-    // Bars that belong to the grid and sit right above it; the card stays above them.
-    const GRID_BARS = '#grid-filter-bar, .multi-select-toolbar';
     const POLL_MS = 3000;
+    const TURN_MS = 1000;
 
     function t(key, fallback, params) {
         const lang = global.dashboardInstance?.language;
@@ -72,21 +76,164 @@
         });
     }
 
+    /** Whether the one-time dashboard tour is still to come. */
+    function tourPending(dash) {
+        if (global.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
+        if (dash.settings?.enableSessionTips === false) return false;
+        const id = global.DashboardPromos?.DASHBOARD_TOUR_TIP_ID;
+        return Boolean(id) && global.DiscoverabilityState?.hasSeenTip?.(id) !== true;
+    }
+
+    /**
+     * Whether it is the card's turn. It comes last: after the onboarding (the
+     * starting-page card and the quick-start checklist), after What's new and
+     * the dashboard tour, and after every corner card that is up or still on
+     * its way -- and never while a dialog or form is open.
+     */
+    async function turnIsFree(dash) {
+        if (!dash?.settings) return false;
+        if (dash.settings.onboardingCompleted !== true) return false;
+        if (document.querySelector('.first-start-card, .quickstart-card')) return false;
+        if (tourPending(dash)) return false;
+        if (global.NoticeCard?.busy && (await global.NoticeCard.busy())) return false;
+        if (global.DemoLock?.on) return false;
+        if (dash.activeView && dash.activeView !== 'bookmarks') return false;
+        if (typeof dash.isModalOpen === 'function' && dash.isModalOpen()) return false;
+        // What's new, and the tour of what changed (tutorials open in #app-modal).
+        if (document.querySelector('.whats-new-modal, .changes-tour-dim')) return false;
+        // What's new for a release not read yet goes first: it opens a moment
+        // after load, and the card would otherwise take the screen before it.
+        // Only where What's new can show at all (not during the first run).
+        if (dash.settings.onboardingCompleted && !dash.onboardingStartedInSession
+            && dash.promos?.shouldShowWhatsNewPrompt?.() === true) return false;
+        if (document.querySelector('.quickstart-card.notice-card, [data-holds-corner]')) return false;
+        if (document.body.classList.contains('is-block-move-intro')) return false;
+        if (document.body.classList.contains('bookmark-inline-edit-active')) return false;
+        return true;
+    }
+
+    // ---- The notice after Add --------------------------------------------------
+
+    let lastAdd = null;
+    let addedNotice = null;
+
+    function addedNoticeCard() {
+        if (addedNotice || !global.NoticeCard?.define) return addedNotice;
+        addedNotice = global.NoticeCard.define({
+            id: 'app-discovery-added',
+            essential: true,
+            showDelayMs: 0,
+            title: () => {
+                const n = lastAdd?.added.length || 0;
+                return n === 1
+                    ? t('added.titleOne', '{name} added to {page}', { name: lastAdd.added[0].name, page: lastAdd.page })
+                    : t('added.title', '{count} apps added to {page}', { count: n, page: lastAdd?.page || '' });
+            },
+            body: () => {
+                const groups = new Map();
+                (lastAdd?.added || []).forEach((a) => {
+                    if (!groups.has(a.category)) groups.set(a.category, []);
+                    groups.get(a.category).push(a.name);
+                });
+                const where = [...groups.entries()].map(([cat, names]) => `${cat}: ${names.join(', ')}`).join(' · ');
+                const later = t('added.later', 'Each has a status check. A new container later is added the same way, with a notice like this one.');
+                const starter = lastAdd?.replaced ? ` ${t('added.replaced', 'The starter links are gone; Undo brings them back.')}` : '';
+                return `${where}. ${later}${starter}`;
+            },
+            dismissLabel: () => t('added.close', 'Close'),
+            canShow: () => Boolean(lastAdd?.added.length),
+            actionAttr: 'data-app-discovery-added-action',
+            actions: [
+                { name: 'show', label: () => t('added.show', 'Show'), primary: true, onClick: () => highlightCategories(lastAdd?.categories || []) },
+                { name: 'undo', label: () => t('added.undo', 'Undo'), onClick: (card) => void undoAdd(card) },
+                { name: 'done', label: () => t('added.done', 'Done'), onClick: (card) => { card.close(); finishAdded(); } },
+            ],
+            onDismiss: () => finishAdded(),
+        });
+        return addedNotice;
+    }
+
+    /** Scroll to the new categories and let them light up. */
+    function highlightCategories(ids) {
+        const els = ids
+            .map((id) => document.querySelector(`#dashboard-layout .category[data-category-id="${CSS.escape(String(id))}"]`))
+            .filter(Boolean);
+        if (!els.length) return;
+        els[0].scrollIntoView({ behavior: global.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+        els.forEach((el) => {
+            el.classList.remove('app-discovery-new');
+            // Restart the animation when Show is pressed again.
+            void el.offsetWidth;
+            el.classList.add('app-discovery-new');
+            setTimeout(() => el.classList.remove('app-discovery-new'), 3600);
+        });
+    }
+
+    async function undoAdd(card) {
+        const d = global.dashboardInstance;
+        try {
+            const res = await post('/api/discovery/undo-add');
+            if (!res.ok) throw new Error(String(res.status));
+        } catch {
+            card.showError(t('added.undoFailed', 'Could not take it back'));
+            return;
+        }
+        global.nextdashTrack?.('discovery:undo-add');
+        const pageId = lastAdd?.pageId || Number(d?.currentPageId) || 1;
+        card.close();
+        await reloadPage(d, pageId);
+        finishAdded();
+    }
+
+    /** The notice is done with. */
+    function finishAdded() {
+        lastAdd = null;
+    }
+
+    async function reloadPage(d, pageId) {
+        try {
+            const res = await fetch('/api/settings', { cache: 'no-store' });
+            if (res.ok && d?.settings) {
+                const fresh = await res.json();
+                d.settings.dockerBookmarkLinks = fresh?.dockerBookmarkLinks || {};
+            }
+        } catch { /* the links catch up on the next load */ }
+        try {
+            const res = await fetch('/api/pages', { cache: 'no-store' });
+            if (res.ok && d) d.pages = await res.json();
+        } catch { /* the list catches up on the next revision check */ }
+        d?.data?.invalidatePageDataCache?.(pageId);
+        await d?.data?.loadAllBookmarks?.();
+        await d?.loadPageBookmarks?.(pageId, { forceFetch: true, skipInlineEditConfirm: true });
+        void d?.data?.fetchAndStoreDataRevision?.();
+    }
+
+    // ---- The card ----------------------------------------------------------------
+
     class AppDiscoveryCard {
         constructor(dash, { onDone } = {}) {
             this.dash = dash;
             this.onDone = typeof onDone === 'function' ? onDone : () => {};
+            this.overlay = null;
             this.el = null;
             this.apps = [];
             this.unticked = new Set();
+            this.replace = false;
+            this.replacesStarter = false;
             this.looking = false;
             this.busy = false;
             this.pollTimer = null;
-            this.pageTimer = null;
+            this.turnTimer = null;
+            this.lock = null;
             this.keyHandler = (event) => {
-                if (event.key !== 'Escape' || !this.el || this.el.hidden || this.busy) return;
-                if (this.dash?.isModalOpen?.()) return;
-                this.close();
+                if (!this.overlay || this.busy) return;
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    this.close();
+                } else if (event.key === 'Tab') {
+                    this.trapFocus(event);
+                }
             };
         }
 
@@ -107,14 +254,24 @@
                 }
             }
             if (!AppDiscoveryCard.wanted(data)) { this.onDone('none'); return; }
-            document.addEventListener('keydown', this.keyHandler);
-            // Only on main, as the template card: it follows the reader there
-            // and back without being answered by a page switch.
-            this.pageTimer = setInterval(() => this.place(), 500);
+            this.pending = data;
+            this.waitForTurn();
+        }
+
+        /** Open once nothing else holds the reader's attention. */
+        async waitForTurn() {
+            clearTimeout(this.turnTimer);
+            if (!(await turnIsFree(this.dash)) || !this.pending) {
+                if (this.pending) this.turnTimer = setTimeout(() => this.waitForTurn(), TURN_MS);
+                return;
+            }
+            const data = this.pending;
+            this.pending = null;
             this.update(data);
         }
 
         update(data) {
+            this.replacesStarter = data.replacesStarter === true;
             if (data.running) {
                 this.looking = true;
                 this.render();
@@ -134,7 +291,7 @@
         }
 
         async poll() {
-            if (!this.el) return;
+            if (!this.overlay) return;
             try {
                 this.update(await getDiscovery());
             } catch {
@@ -142,44 +299,50 @@
             }
         }
 
-        place() {
-            if (!this.el) return;
-            const grid = document.getElementById('dashboard-layout');
-            let anchor = grid;
-            while (anchor?.previousElementSibling
-                && anchor.previousElementSibling !== this.el
-                && anchor.previousElementSibling.matches(GRID_BARS)) {
-                anchor = anchor.previousElementSibling;
-            }
-            if (anchor && this.el.nextElementSibling !== anchor) anchor.before(this.el);
-            const onMain = Number(this.dash?.currentPageId) === MAIN_PAGE_ID && this.dash?.activeView !== 'config';
-            this.el.hidden = !onMain;
+        open() {
+            if (this.overlay) return;
+            this.overlay = document.createElement('div');
+            this.overlay.className = 'app-discovery-overlay';
+            this.overlay.setAttribute('data-app-discovery-overlay', '');
+            this.el = document.createElement('section');
+            this.el.className = 'app-discovery-card';
+            this.el.setAttribute('data-app-discovery-card', '');
+            this.el.setAttribute('role', 'dialog');
+            this.el.setAttribute('aria-modal', 'true');
+            this.el.setAttribute('aria-labelledby', 'app-discovery-title');
+            this.el.addEventListener('click', (event) => this.onClick(event));
+            this.el.addEventListener('change', (event) => this.onChange(event));
+            this.overlay.appendChild(this.el);
+            document.body.appendChild(this.overlay);
+            this.lock = global.ScrollLock?.acquire?.('app-discovery-card') ?? null;
+            document.addEventListener('keydown', this.keyHandler, true);
+            requestAnimationFrame(() => this.overlay?.classList.add('show'));
         }
 
         render() {
-            if (!this.el) {
-                this.el = document.createElement('section');
-                this.el.className = 'first-start-card app-discovery-card';
-                this.el.setAttribute('data-app-discovery-card', '');
-                this.el.setAttribute('aria-label', t('card.label', 'Apps found on this server'));
-                this.el.addEventListener('click', (event) => this.onClick(event));
-                this.el.addEventListener('change', (event) => this.onChange(event));
+            const first = !this.overlay;
+            this.open();
+            this.el.innerHTML = this.looking ? this.lookingHtml() : this.listHtml();
+            if (first || !this.el.contains(document.activeElement)) {
+                (this.el.querySelector('[data-ad-add]') || this.el.querySelector('[data-ad-close]'))?.focus({ preventScroll: true });
             }
-            this.el.innerHTML = `<div class="first-start-stripe"></div>${this.looking ? this.lookingHtml() : this.listHtml()}`;
-            this.place();
         }
 
-        headHtml(title) {
-            return `<div class="first-start-head">
-                <p class="first-start-title">// ${esc(title)}</p>
-                <button type="button" class="first-start-close" data-ad-close aria-label="${esc(t('card.close', 'Close'))}">×</button>
+        headHtml(kicker, title) {
+            return `<div class="app-discovery-head">
+                <span class="app-discovery-badge" aria-hidden="true">◎</span>
+                <div class="app-discovery-heading">
+                    <p class="app-discovery-kicker">${esc(kicker)}</p>
+                    <h2 class="app-discovery-title" id="app-discovery-title">${esc(title)}</h2>
+                </div>
+                <button type="button" class="app-discovery-x" data-ad-close aria-label="${esc(t('card.close', 'Close'))}">×</button>
             </div>`;
         }
 
         lookingHtml() {
-            return `<div class="first-start-inner">
-                ${this.headHtml(t('card.lookingTitle', 'apps on this server'))}
-                <p class="app-discovery-looking" data-ad-looking role="status"><span class="app-discovery-spin" aria-hidden="true"></span>${esc(t('card.looking', 'Looking for apps…'))}</p>
+            return `<div class="app-discovery-stripe"></div><div class="app-discovery-inner">
+                ${this.headHtml(t('card.kicker', 'Found on this server'), t('card.lookingTitle', 'Looking for apps…'))}
+                <p class="app-discovery-looking" data-ad-looking role="status"><span class="app-discovery-spin" aria-hidden="true"></span>${esc(t('card.looking', 'Looking for apps… nextDash is checking which containers have a web page.'))}</p>
             </div>`;
         }
 
@@ -193,24 +356,38 @@
             const rows = [...groups.entries()].map(([kind, apps]) => `
                 <div class="app-discovery-kind">${esc(kindLabel(kind))}</div>
                 ${apps.map((app) => this.rowHtml(app)).join('')}`).join('');
-            const ticked = this.apps.length - this.unticked.size;
             const title = this.apps.length === 1
-                ? t('card.foundOne', '1 app found')
-                : t('card.found', '{count} apps found', { count: this.apps.length });
-            const add = ticked === 1
-                ? t('card.addOne', 'Add 1 app')
-                : t('card.add', 'Add {count} apps', { count: ticked });
-            return `<div class="first-start-inner">
-                ${this.headHtml(title)}
-                <p class="first-start-sub">${esc(t('card.intro', 'Running on this server. Tick the ones you want on this page.'))}</p>
-                <div class="app-discovery-groups">${rows}</div>
-                <p class="first-start-error" data-ad-error role="alert" hidden></p>
-                <div class="first-start-actions">
-                    <button type="button" class="first-start-apply" data-ad-add ${ticked ? '' : 'disabled'}>${esc(add)}</button>
-                    <button type="button" class="first-start-back" data-ad-close>${esc(t('card.closeButton', 'Close'))}</button>
+                ? t('card.foundOne', '1 app is running here')
+                : t('card.found', '{count} apps are running here', { count: this.apps.length });
+            const showReplace = this.replacesStarter && Number(this.dash?.currentPageId) === 1;
+            return `<div class="app-discovery-stripe"></div><div class="app-discovery-inner">
+                ${this.headHtml(t('card.kicker', 'Found on this server'), title)}
+                <div class="app-discovery-info">
+                    <p><b>${esc(t('card.infoAddLead', 'Add'))}</b> ${esc(t('card.infoAdd', 'puts the ticked apps on this page:'))}</p>
+                    <ol>
+                        <li>${esc(t('card.infoTop', 'one category per kind, at the top of the page;'))}</li>
+                        <li>${esc(t('card.infoEach', 'each with its icon, a status check and a link to its container.'))}</li>
+                    </ol>
+                    <p><b>${esc(t('card.infoLaterLead', 'After that'))}</b>, ${esc(t('card.infoLater', 'a new container with a web page is added the same way, with a notice to undo it. Config → Containers changes that, or turns it off.'))}</p>
                 </div>
-                <p class="first-start-note">${esc(t('card.note', 'Added to this page, grouped by kind, each with a status check. Unticked apps stay in the Containers view.'))}</p>
+                <div class="app-discovery-groups">${rows}</div>
+                ${showReplace ? `<label class="app-discovery-replace">
+                    <input type="checkbox" data-ad-replace ${this.replace ? 'checked' : ''}>
+                    <span>${esc(t('card.replace', 'Replace the starter links on this page'))}
+                        <small>${esc(t('card.replaceHint', 'This page still holds the links nextDash starts with. Undo brings them back.'))}</small></span>
+                </label>` : ''}
+                <p class="app-discovery-error" data-ad-error role="alert" hidden></p>
+                <div class="app-discovery-actions">
+                    <button type="button" class="app-discovery-add" data-ad-add>${esc(this.addLabel())}</button>
+                    <button type="button" class="app-discovery-later" data-ad-close>${esc(t('card.notNow', 'Not now'))}</button>
+                </div>
+                <p class="app-discovery-note">${esc(t('card.note', 'Not now adds nothing; the apps stay in the Containers view.'))}</p>
             </div>`;
+        }
+
+        addLabel() {
+            const ticked = this.apps.length - this.unticked.size;
+            return ticked === 1 ? t('card.addOne', 'Add 1 app') : t('card.add', 'Add {count} apps', { count: ticked });
         }
 
         rowHtml(app) {
@@ -229,17 +406,16 @@
         }
 
         onChange(event) {
-            const name = event.target.getAttribute?.('data-ad-tick');
+            const target = event.target;
+            if (target.hasAttribute?.('data-ad-replace')) { this.replace = target.checked; return; }
+            const name = target.getAttribute?.('data-ad-tick');
             if (name == null) return;
-            if (event.target.checked) this.unticked.delete(name);
+            if (target.checked) this.unticked.delete(name);
             else this.unticked.add(name);
-            const ticked = this.apps.length - this.unticked.size;
             const button = this.el.querySelector('[data-ad-add]');
             if (button) {
-                button.disabled = ticked === 0;
-                button.textContent = ticked === 1
-                    ? t('card.addOne', 'Add 1 app')
-                    : t('card.add', 'Add {count} apps', { count: ticked });
+                button.disabled = this.apps.length - this.unticked.size === 0;
+                button.textContent = this.addLabel();
             }
         }
 
@@ -248,6 +424,20 @@
             if (!target || this.busy) return;
             if (target.hasAttribute('data-ad-close')) { this.close(); return; }
             if (target.hasAttribute('data-ad-add')) this.add();
+        }
+
+        trapFocus(event) {
+            const items = [...this.el.querySelectorAll('button, input')].filter((el) => !el.disabled);
+            if (!items.length) return;
+            const firstEl = items[0];
+            const lastEl = items[items.length - 1];
+            if (event.shiftKey && document.activeElement === firstEl) {
+                event.preventDefault();
+                lastEl.focus();
+            } else if (!event.shiftKey && document.activeElement === lastEl) {
+                event.preventDefault();
+                firstEl.focus();
+            }
         }
 
         showError(message) {
@@ -263,22 +453,40 @@
             this.busy = true;
             const button = this.el.querySelector('[data-ad-add]');
             if (button) button.disabled = true;
-            const pageId = Number(this.dash?.currentPageId) || MAIN_PAGE_ID;
+            const d = this.dash;
+            const pageId = Number(d?.currentPageId) || 1;
+            let answer;
             try {
                 const res = await post('/api/discovery/add', {
                     pageId,
+                    replaceStarter: this.replace === true,
                     apps: chosen.map((app) => ({ name: app.name, category: kindLabel(app.kind) })),
                 });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                answer = await res.json();
             } catch {
                 this.busy = false;
                 if (button) button.disabled = false;
                 this.showError(t('card.addError', 'Could not add the apps'));
                 return;
             }
-            global.nextdashTrack?.('discovery:add', { count: chosen.length });
-            await this.showPage(pageId);
-            this.finish('added');
+            global.nextdashTrack?.('discovery:add', { count: chosen.length, replaced: answer?.replaced === true });
+            if (d?.settings) d.settings.discoveryCardDone = true;
+            const added = Array.isArray(answer?.added) ? answer.added : [];
+            // The page first, then the quick start: its next step names an app
+            // that has to be on the page already.
+            this.teardown();
+            await reloadPage(d, pageId);
+            const page = (d?.pages || []).find((p) => Number(p.id) === pageId);
+            const categories = (d?.categories || [])
+                .filter((c) => added.some((a) => a.category === c.name))
+                .map((c) => c.id);
+            lastAdd = { added, categories, pageId, page: page?.name || 'this page', replaced: answer?.replaced === true };
+            highlightCategories(categories);
+            // The notice first, then the quick start, which waits for the
+            // corner to be free (renderChecklistWhenFree).
+            await addedNoticeCard()?.render();
+            this.onDone('added', added);
         }
 
         async close() {
@@ -289,34 +497,24 @@
             this.finish('closed');
         }
 
-        /** Bring the new bookmarks on screen without a reload. */
-        async showPage(pageId) {
-            const d = this.dash;
-            if (d?.settings) d.settings.discoveryCardDone = true;
-            try {
-                const res = await fetch('/api/settings', { cache: 'no-store' });
-                if (res.ok && d) {
-                    const fresh = await res.json();
-                    if (d.settings && fresh?.dockerBookmarkLinks) d.settings.dockerBookmarkLinks = fresh.dockerBookmarkLinks;
-                }
-            } catch { /* the links catch up on the next load */ }
-            d?.data?.invalidatePageDataCache?.(pageId);
-            await d?.data?.loadAllBookmarks?.();
-            await d?.loadPageBookmarks?.(pageId, { forceFetch: true, skipInlineEditConfirm: true });
-            void d?.data?.fetchAndStoreDataRevision?.();
-        }
-
-        finish(result) {
+        finish(result, added) {
             this.teardown();
-            this.onDone(result);
+            this.onDone(result, added || []);
         }
 
         teardown() {
-            document.removeEventListener('keydown', this.keyHandler);
-            clearInterval(this.pageTimer);
+            document.removeEventListener('keydown', this.keyHandler, true);
             clearTimeout(this.pollTimer);
-            this.el?.remove();
+            clearTimeout(this.turnTimer);
+            if (this.lock != null) {
+                global.ScrollLock?.release?.(this.lock);
+                this.lock = null;
+            }
+            this.overlay?.remove();
+            this.overlay = null;
             this.el = null;
+            // Whatever waited for the card -- a corner card -- may come now.
+            global.NoticeCard?.wakeQueue?.();
         }
     }
 

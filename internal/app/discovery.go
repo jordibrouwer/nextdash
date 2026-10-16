@@ -123,6 +123,10 @@ type discoveryState struct {
 	// KindCategory remembers the category the card used per page and kind.
 	KindCategory map[int]map[string]string `json:"kindCategory,omitempty"`
 	RecentAdds   []discoveryRecentAdd      `json:"recentAdds,omitempty"`
+	// CardAdds is what the card's last Add placed, for its Undo; StarterReplaced
+	// says that Add also took the starter links off main.
+	CardAdds        []discoveryRecentAdd `json:"cardAdds,omitempty"`
+	StarterReplaced bool                 `json:"starterReplaced,omitempty"`
 }
 
 func (st *discoveryState) normalize() {
@@ -770,6 +774,8 @@ func (h *Handlers) addDiscoveredBookmarks(ctx context.Context, st *discoveryStat
 		}
 	}
 	changed := false
+	// New categories go to the top of the page, where the reader sees them.
+	var made []Category
 	catOf := make([]string, len(items))
 	for i, it := range items {
 		kind := it.App.Kind
@@ -792,17 +798,21 @@ func (h *Handlers) addDiscoveredBookmarks(ctx context.Context, st *discoveryStat
 			name = kind
 		}
 		if cat == nil {
+			cat = findCategoryByName(made, name)
+		}
+		if cat == nil {
 			cat = findCategoryByName(cats, name)
 		}
 		if cat == nil {
-			cats = append(cats, Category{ID: newDiscoveryCategoryID(), Name: clampEntityName(name)})
-			cats[len(cats)-1].OriginalID = cats[len(cats)-1].ID
-			cat = &cats[len(cats)-1]
+			id := newDiscoveryCategoryID()
+			made = append(made, Category{ID: id, OriginalID: id, Name: clampEntityName(name)})
+			cat = &made[len(made)-1]
 			changed = true
 		}
 		catOf[i] = cat.ID
 	}
 	if changed {
+		cats = append(append([]Category(nil), made...), cats...)
 		if err := h.store.SaveCategoriesByPage(pageID, cats); err != nil {
 			return nil, outcome, err
 		}

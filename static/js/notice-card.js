@@ -180,10 +180,36 @@ canShow every time.
         }
     }
 
+    // Every card defined, for busy(): whether one is still to come.
+    const registry = [];
+
+    /**
+     * Whether a corner card is still on its way: up now, waiting out its own
+     * delay, or queued and wanting to show. Essential cards (reports of
+     * something that happened) do not count -- they are not part of the
+     * line-up a later invitation waits for.
+     */
+    async function busy() {
+        for (const card of registry) {
+            if (card.spec.essential === true) continue;
+            if (card.element() || card.waiting()) return true;
+            // Queued and able to show now. A card the corner holds back for
+            // the rest of this session (the first one, during onboarding)
+            // comes on a later load; nothing should wait for it until then.
+            if (queue.some((entry) => entry.id === card.id) && cornerIsFree(card.id)) {
+                try {
+                    if ((await card.spec.canShow?.()) !== false) return true;
+                } catch { /* a card that cannot answer is not waiting */ }
+            }
+        }
+        return false;
+    }
+
     function define(spec) {
         const cardClass = `${spec.id}-card`;
         let cardEl = null;
         let pending = null;
+        registry.push({ id: cardClass, spec, element: () => cardEl, waiting: () => pending != null });
 
         const text = (value) => (typeof value === 'function' ? value() : value);
 
@@ -348,5 +374,5 @@ canShow every time.
         };
     }
 
-    global.NoticeCard = { define, cornerIsFree, wakeQueue };
+    global.NoticeCard = { define, cornerIsFree, wakeQueue, busy };
 }(typeof window !== 'undefined' ? window : globalThis));

@@ -165,6 +165,16 @@
         actions: [
             { name: 'undo', label: () => (adds.length > 1 ? t('notice.undoAll', 'Undo all') : t('notice.undo', 'Undo')), primary: true, onClick: (c) => void undo(c) },
             { name: 'move', label: () => t('notice.move', 'Move'), onClick: (c) => move(c) },
+            {
+                name: 'done',
+                label: () => t('notice.done', 'Done'),
+                onClick: (c) => {
+                    const list = adds.slice();
+                    adds = [];
+                    c.close();
+                    void acknowledge(list);
+                },
+            },
         ],
     });
 
