@@ -175,6 +175,9 @@
 .vp-doc .nd-drawing div[class*='language-'] pre { white-space: pre; overflow-x: auto; scrollbar-width: none; }
 .vp-doc .nd-drawing div[class*='language-'] code {
   white-space: pre;
+  /* One font for every character: the web font has no box-drawing lines, and
+     a line from another font is wider in Safari, so the right edge broke. */
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
   font-size: max(9px, min(14px, calc((100cqw - 56px) / (var(--cols) * 0.62))));
   line-height: 1.35;
 }
