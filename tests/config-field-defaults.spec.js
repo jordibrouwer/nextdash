@@ -36,7 +36,7 @@ function serverDefaults() {
     }
 
     const named = {
-        defaultThemeID: 'matrix-bluepill-dark',
+        defaultThemeID: 'slate-dark',
         defaultThemeDepth: 'glass',
         defaultGlowStrength: 'soft',
         defaultHealthAutoRecheckIntervalHours: 24,

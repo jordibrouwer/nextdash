@@ -3103,7 +3103,7 @@ The strip wraps instead of scrolling: a group that does not fit moves to the nex
 
 ### 16.1 Themes
 
-nextDash ships **164 theme families**, each with a light and a dark half — 328 themes in all. A fresh install starts on **Matrix Bluepill**, cyan code on deep blue, with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made.
+nextDash ships **164 theme families**, each with a light and a dark half — 328 themes in all. A fresh install starts on **Slate**, blue-grey stone behind a pane of glass, with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made.
 
 **Theme** on the Theme & type tab lists every theme by name. Beside it:
 

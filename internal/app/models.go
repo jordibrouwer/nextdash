@@ -1125,18 +1125,18 @@ const defaultNotesWidgetID = "w_000000000002"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
-const defaultThemeID = "matrix-bluepill-dark"
+const defaultThemeID = "slate-dark"
 
 // defaultThemeLightID is the light counterpart auto dark mode switches to.
-const defaultThemeLightID = "matrix-bluepill-light"
+const defaultThemeLightID = "slate-light"
 
 /*
 The fallback depth and glow.
 
 Glass and a soft glow: the answer for a theme with no archetype of its own
 (themeIdealDepth, themeIdealGlow), and what an incomplete settings file gets.
-A fresh install itself is on "follow", so its theme answers -- Matrix
-Bluepill, a terminal theme, draws at soft with no glow. Contrast
+A fresh install itself is on "follow", so its theme answers -- Slate, a
+glass theme, draws at glass with a soft glow. Contrast
 stays at defaultInkGap, which reads as Normal in Appearance, and the backdrop
 is the theme's own.
 */

@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.19.9 — 16 October 2026](#v1199--16-october-2026)
 - [v1.19.8 — 15 October 2026](#v1198--15-october-2026)
 - [v1.19.7 — 14 October 2026](#v1197--14-october-2026)
 - [v1.19.6 — 14 October 2026](#v1196--14-october-2026)
@@ -109,6 +110,14 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.19.9 — 16 October 2026
+
+### Themes
+
+- **new — Slate is the theme a fresh install starts on.** Blue-grey stone behind a pane of glass, drawn at glass with a soft glow; auto dark mode switches to Slate [light]. Existing dashboards keep their theme. Server and first paint agree (`defaultThemeID`, `defaultThemeLightID`, `ThemeLoader.DEFAULT_THEME`); MANUAL §16.1 names it. The Help text in the six locales still says Matrix Bluepill until the docs round.
 
 ---
 
