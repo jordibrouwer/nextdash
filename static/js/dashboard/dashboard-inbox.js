@@ -5459,7 +5459,12 @@ class DashboardInbox {
         card.dataset.inboxShareName = item.previewTitle || item.title || item.domain || '';
         card.tabIndex = -1;
 
-        const title = item.previewTitle || item.title || item.domain || item.url;
+        const fromDiscovery = item.source === 'discovery';
+        // A proposal from app discovery is named after its container, not the
+        // page title: "New app: Sonarr".
+        const title = fromDiscovery
+            ? this.t('discovery.inbox.title', 'New app: {name}', { name: item.title || item.containerName || '' })
+            : (item.previewTitle || item.title || item.domain || item.url);
         // Config → Inbox: the site (as it was), the whole address, or none.
         const address = this.dash.settings?.inboxViewAddress || 'domain';
         const domain = address === 'hidden' ? ''
@@ -5518,6 +5523,7 @@ class DashboardInbox {
                 <h3 class="inbox-item-title" id="${this.escape(titleId)}">${this.escape(title)}</h3>
                 ${domain ? `<button type="button" class="inbox-item-domain inbox-item-domain-btn" data-inbox-domain="${this.escape(this.itemDomain(item))}">${this.escape(domain)}</button>` : ''}
                 ${this.rowTagsHtml(item)}
+                ${fromDiscovery ? this.discoveryRowHtml(item) : ''}
                 <span class="inbox-item-when"${addedLabel && !snoozed ? ` title="${this.escape(this.t('dashboard.inboxAddedOn', 'Added on {date}', { date: addedLabel }))}"` : ''}>${this.escape(when)}</span>
             </div>
         `;
@@ -5599,6 +5605,15 @@ class DashboardInbox {
             });
         });
 
+        card.querySelector('[data-inbox-discovery-promote]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            void this.promoteItem(item);
+        });
+        card.querySelector('[data-inbox-discovery-ignore]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            void this.ignoreDiscoveryItem(item);
+        });
+
         card.addEventListener('click', (e) => {
             if (e.target.closest('.inbox-action-btn, .inbox-item-domain-btn, .inbox-item-check, .tag-offer, .tag-offer-more, a')) {
                 return;
@@ -5623,6 +5638,88 @@ class DashboardInbox {
         d.contextMenu?.bindRow?.(card);
 
         return card;
+    }
+
+    /**
+     * What a proposal from app discovery adds to its row: where it came from,
+     * its kind, and the two answers -- Promote, or Ignore for good.
+     */
+    discoveryRowHtml(item) {
+        const kind = window.AppDiscoveryCard?.kindLabel?.(item.appKind)
+            || this.t(`discovery.kind.${String(item.appKind || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`, item.appKind || 'Apps');
+        return `<span class="inbox-item-discovery">
+                <span class="inbox-item-discovery-source">${this.escape(this.t('discovery.inbox.source', 'found on this server'))}</span>
+                <span class="inbox-item-discovery-kind">${this.escape(kind)}</span>
+                <button type="button" class="inbox-action-btn inbox-discovery-btn inbox-discovery-btn--primary" data-inbox-discovery-promote>${this.escape(this.t('discovery.inbox.promote', 'Promote'))}</button>
+                <button type="button" class="inbox-action-btn inbox-discovery-btn" data-inbox-discovery-ignore>${this.escape(this.t('discovery.inbox.ignore', 'Ignore'))}</button>
+            </span>`;
+    }
+
+    /** Ignore a proposal: the container is never proposed again. */
+    async ignoreDiscoveryItem(item) {
+        const d = this.dash;
+        const name = item?.containerName;
+        if (!name) return;
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await api('/api/discovery/ignore', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name }),
+            });
+            if (!res.ok) throw new Error(String(res.status));
+        } catch {
+            d.showNotification(this.t('discovery.inbox.ignoreFailed', 'Could not ignore this app'), 'error');
+            return;
+        }
+        if (d.settings) {
+            const list = Array.isArray(d.settings.discoveryIgnored) ? d.settings.discoveryIgnored : [];
+            if (!list.includes(name)) d.settings.discoveryIgnored = [...list, name];
+        }
+        this.syncBadge();
+        if (this.isActiveView()) await this.loadAndRender({ refresh: true });
+    }
+
+    /**
+     * After a promoted proposal is saved: tie its container to the new
+     * bookmark, so the Containers view and later runs know it has one.
+     */
+    async linkPromotedContainer(pageId, url) {
+        const d = this.dash;
+        const name = d._pendingDiscoveryLink;
+        d._pendingDiscoveryLink = null;
+        if (!name || !url) return;
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await api('/api/discovery/link', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, pageId: Number(pageId), url }),
+            });
+            if (!res.ok) return;
+            const { key } = await res.json();
+            if (d.settings && key) {
+                d.settings.dockerBookmarkLinks = { ...(d.settings.dockerBookmarkLinks || {}), [name]: key };
+            }
+        } catch { /* the Containers drawer can still set the link by hand */ }
+    }
+
+    /**
+     * The category a proposal's kind names on a page: one with that name
+     * (any case), else a new one, made now so the form can preselect it.
+     */
+    async discoveryCategoryFor(pageId, label) {
+        const d = this.dash;
+        const name = String(label || '').trim();
+        if (!name) return '';
+        try {
+            const res = await fetch(`/api/categories?page=${encodeURIComponent(pageId)}`, { cache: 'no-store' });
+            const list = res.ok ? await res.json() : [];
+            const hit = (list || []).find((c) => String(c?.name || '').trim().toLowerCase() === name.toLowerCase());
+            if (hit) return String(hit.id);
+        } catch { /* fall through to creating it */ }
+        const created = await d.structureCreate?.createCategoryFromForm?.(Number(pageId), name);
+        return created && !created.error ? String(created.id) : '';
     }
 
     /**
@@ -6038,7 +6135,7 @@ class DashboardInbox {
             return;
         }
         d._pendingInboxPromoteId = item.id;
-        handler.openModal({
+        const options = {
             url: item.url,
             name: item.previewTitle || item.title || '',
             note: item.note || '',
@@ -6046,7 +6143,23 @@ class DashboardInbox {
             // Left out, the form opened with an empty field and the save
             // dropped them unless the reader typed them in again.
             tags: Array.isArray(item.tags) ? item.tags : [],
-        });
+        };
+        d._pendingDiscoveryLink = null;
+        if (item.source === 'discovery') {
+            // A found app: its container's name, its kind as the category on
+            // the page last viewed, its set icon, and a status check.
+            const pageId = Number(d.currentPageId) || 1;
+            const kind = window.AppDiscoveryCard?.kindLabel?.(item.appKind)
+                || this.t(`discovery.kind.${String(item.appKind || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`, item.appKind || 'Apps');
+            options.name = item.title || item.containerName || options.name;
+            options.pageId = pageId;
+            options.category = await this.discoveryCategoryFor(pageId, kind);
+            options.icon = item.icon || '';
+            options.checkStatus = true;
+            d._pendingDiscoveryLink = item.containerName || null;
+            d._pendingInboxPromoteId = item.id;
+        }
+        handler.openModal(options);
     }
 
     /**

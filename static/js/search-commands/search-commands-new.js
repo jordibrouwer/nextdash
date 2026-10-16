@@ -226,6 +226,11 @@ class SearchCommandNew {
                 // them on the way.
                 tags: Array.isArray(options.tags) ? options.tags : undefined,
                 pageId: pageId || options.pageId,
+                // An app found on this server: its category, set icon and
+                // status check, from the Inbox's promote.
+                category: options.category,
+                icon: options.icon,
+                checkStatus: options.checkStatus,
             });
         }
         return this._legacyOpenModal(options);

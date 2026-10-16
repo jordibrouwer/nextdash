@@ -21,6 +21,7 @@ func registerDiscoveryRoutes(r *mux.Router, h *Handlers) {
 	r.HandleFunc("/api/discovery/ack", h.DiscoveryAckHandler).Methods("POST")
 	r.HandleFunc("/api/discovery/ignore", h.DiscoveryIgnoreHandler).Methods("POST")
 	r.HandleFunc("/api/discovery/unignore", h.DiscoveryUnignoreHandler).Methods("POST")
+	r.HandleFunc("/api/discovery/link", h.DiscoveryLinkHandler).Methods("POST")
 	r.HandleFunc("/api/discovery/close", h.DiscoveryCloseHandler).Methods("POST")
 	r.HandleFunc("/api/discovery/host-seen", h.DiscoveryHostSeenHandler).Methods("POST")
 }
@@ -348,6 +349,45 @@ func (h *Handlers) DiscoveryUnignoreHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	writeJSON(w, map[string]string{"status": "success"})
+}
+
+// DiscoveryLinkHandler ties a container to the bookmark an Inbox proposal was
+// promoted to. The key is the stored bookmark's own, found by its address on
+// that page, so it matches what the Containers view looks up.
+func (h *Handlers) DiscoveryLinkHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	var req struct {
+		Name   string `json:"name"`
+		PageID int    `json:"pageId"`
+		URL    string `json:"url"`
+	}
+	if !decodeDiscoveryBody(w, r, &req) {
+		return
+	}
+	name := discoveryContainerName(req.Name)
+	key := canonicalBookmarkURLKey(req.URL)
+	if name == "" || key == "" || req.PageID <= 0 {
+		http.Error(w, "name, pageId and url are required", http.StatusBadRequest)
+		return
+	}
+	b := findBookmarkByURLKeyOnPage(h.store, req.PageID, key)
+	if b == nil {
+		http.Error(w, "Bookmark not found", http.StatusNotFound)
+		return
+	}
+	link := strconv.Itoa(req.PageID) + "::" + b.URL
+	if !respondStorePersistError(w, h.updateSettings(func(s *Settings) {
+		if s.DockerBookmarkLinks == nil {
+			s.DockerBookmarkLinks = map[string]string{}
+		}
+		s.DockerBookmarkLinks[name] = link
+	})) {
+		return
+	}
+	writeJSON(w, map[string]string{"status": "success", "key": link})
 }
 
 // DiscoveryCloseHandler is the card's Close: nothing added, not shown again.

@@ -593,11 +593,9 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 
 	// Icons are fetched before the state lock is taken.
 	iconFiles := map[string]string{}
-	if settings.DiscoveryNewApps != "inbox" {
-		for _, e := range fresh {
-			if e.app.Icon != "" {
-				iconFiles[e.name] = discoveryIconFile(ctx, e.app.Icon)
-			}
+	for _, e := range fresh {
+		if e.app.Icon != "" {
+			iconFiles[e.name] = discoveryIconFile(ctx, e.app.Icon)
 		}
 	}
 
@@ -622,6 +620,7 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 					URL:           e.app.URL,
 					Title:         e.app.bookmarkName(),
 					Source:        "discovery",
+					Icon:          iconFiles[e.name],
 					PreviewTitle:  e.app.Title,
 					ContainerName: e.name,
 					AppKind:       e.app.Kind,

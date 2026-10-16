@@ -67,6 +67,7 @@ class DashboardInlineEdit {
         const bookmarkRef = ctx?.bookmarkRef;
         if (clearInboxPromote) {
             d._pendingInboxPromoteId = null;
+            d._pendingDiscoveryLink = null;
             // The resume goes with it. Closing the form without saving is
             // someone stopping, and a flag left set would reopen triage on the
             // next unrelated bookmark they happen to create.
@@ -150,9 +151,9 @@ class DashboardInlineEdit {
                     shortcut: '',
                     category: String(options.category || ''),
                     tags: Array.isArray(options.tags) ? [...options.tags] : [],
-                    icon: '',
+                    icon: String(options.icon || ''),
                     pinned: false,
-                    checkStatus: startMode !== 'off',
+                    checkStatus: options.checkStatus === true || startMode !== 'off',
                     monitor: startMode === 'monitor',
                     // The configured default for a monitor, else 15 -- the same
                     // figure check-mode.js and the server both default to. The
@@ -2485,6 +2486,7 @@ class DashboardInlineEdit {
 
             if (pendingInboxPromoteId && d.inbox) {
                 d._pendingInboxPromoteId = null;
+                await d.inbox.linkPromotedContainer?.(pageId, bookmark.url);
                 await d.inbox.completePromote(pendingInboxPromoteId);
                 if (bookmark.checkStatus === true || bookmark.monitor === true) {
                     d.inbox.triggerHealthCheckForUrl?.(bookmark.url);

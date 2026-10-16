@@ -1262,3 +1262,34 @@ html[data-theme] body[data-depth="glass"] #dashboard-layout .inbox-item.feed-row
 .inbox-tags-modal-suggest[hidden] {
     display: none;
 }
+
+/* A proposal from app discovery: its source, kind and two answers on the row. */
+.inbox-item-discovery {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 0.45rem);
+    flex: none;
+    font-size: var(--font-size-small, 0.75rem);
+    color: var(--text-tertiary, var(--text-secondary));
+}
+
+.inbox-item-discovery-source {
+    color: var(--accent-success, var(--text-secondary));
+}
+
+.inbox-discovery-btn {
+    padding: 0.2rem 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-3, 0.3rem);
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.inbox-discovery-btn--primary {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: var(--background-primary);
+    font-weight: 600;
+}

@@ -2,7 +2,7 @@
 const fs = require('fs');
 const http = require('http');
 const { test, expect } = require('./fixtures');
-const { WRITE_TOKEN, E2E_WEB_SERVER_ENV, markWhatsNewSeen } = require('./e2e-helpers');
+const { WRITE_TOKEN, E2E_WEB_SERVER_ENV, markWhatsNewSeen, markInboxTutorialSeen } = require('./e2e-helpers');
 
 /**
  * App discovery through the dashboard: the containers come from the fixture
@@ -241,4 +241,115 @@ test('a settings save from a page loaded earlier does not undo Ignore or Close',
     const st = await settings(request);
     expect(st.discoveryIgnored).toEqual(['radarr', 'sonarr']);
     expect(st.discoveryCardDone).toBe(true);
+});
+
+/** An install past its first run, with sonarr seen and the card answered. */
+async function afterFirstRun(request, workerServer, { newApps = '' } = {}) {
+    const radarr = await startApp('Radarr');
+    writeContainers(workerServer, [container('radarr', 'linuxserver/radarr', radarr)]);
+    await install(request, { fresh: false });
+    expect((await request.post('/api/settings', { data: { discoveryNewApps: newApps }, headers })).ok()).toBe(true);
+    expect((await request.post('/api/discovery/close', { headers })).ok()).toBe(true);
+    await runDiscovery(request);
+    const sonarr = await startApp('Sonarr');
+    writeContainers(workerServer, [
+        container('radarr', 'linuxserver/radarr', radarr),
+        container('sonarr', 'linuxserver/sonarr', sonarr),
+    ]);
+    return { radarr, sonarr };
+}
+
+const notice = (page) => page.locator('.app-discovery-notice-card');
+
+test('a new container is added to the dashboard with a notice, and Undo takes it back', async ({ page, request, workerServer }) => {
+    const { sonarr } = await afterFirstRun(request, workerServer);
+    expect((await runDiscovery(request)).added).toEqual(['sonarr']);
+    await open(page);
+
+    await expect(page.locator('#dashboard-layout .bookmark-link', { hasText: 'sonarr' })).toBeVisible();
+    await expect(notice(page)).toContainText('sonarr added to Media management', { timeout: 15_000 });
+    const added = (await bookmarks(request)).find((b) => b.name === 'sonarr');
+    expect(added?.url).toContain(`127.0.0.1:${sonarr}`);
+
+    await notice(page).getByRole('button', { name: 'Undo' }).click();
+    await expect(notice(page)).toHaveCount(0);
+    await expect(page.locator('#dashboard-layout .bookmark-link', { hasText: 'sonarr' })).toHaveCount(0);
+    expect((await bookmarks(request)).some((b) => b.name === 'sonarr')).toBe(false);
+    const st = await settings(request);
+    expect(st.discoveryIgnored).toContain('sonarr');
+    expect(st.dockerBookmarkLinks?.sonarr).toBeUndefined();
+    const trash = await (await request.get('/api/trash')).json();
+    expect(JSON.stringify(trash)).toContain('sonarr');
+
+    // Recreated or not, it does not come back.
+    const again = await runDiscovery(request);
+    expect(again.added).toEqual([]);
+    expect((await (await request.get('/api/discovery')).json()).recentAdds).toEqual([]);
+});
+
+test('Move on the notice opens the bookmark form for the new app', async ({ page, request, workerServer }) => {
+    const { sonarr } = await afterFirstRun(request, workerServer);
+    await runDiscovery(request);
+    await open(page);
+
+    await notice(page).getByRole('button', { name: 'Move' }).click({ timeout: 15_000 });
+    await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
+    await expect(page.locator('#bookmark-form-modal [data-field="url"]')).toHaveValue(new RegExp(`127\\.0\\.0\\.1:${sonarr}`));
+    await expect(page.locator('#bookmark-form-modal-title')).toHaveText(/Edit bookmark/i);
+    expect((await (await request.get('/api/discovery')).json()).recentAdds).toEqual([]);
+});
+
+async function openInbox(page) {
+    await markInboxTutorialSeen(page);
+    await page.evaluate(() => window.dashboardInstance.inbox?.openInboxView?.());
+    await expect.poll(async () => page.evaluate(async () => {
+        const inbox = window.dashboardInstance.inbox;
+        await inbox?.loadAndRender?.({ refresh: true });
+        return document.querySelectorAll('.inbox-item').length;
+    }), { timeout: 10_000 }).toBeGreaterThan(0);
+}
+
+test('with Propose in the Inbox, a new container arrives in the Inbox and Promote opens the form filled in', async ({ page, request, workerServer }) => {
+    const { sonarr } = await afterFirstRun(request, workerServer, { newApps: 'inbox' });
+    const res = await runDiscovery(request);
+    expect(res.proposed).toEqual(['sonarr']);
+    expect(res.added).toEqual([]);
+    await open(page);
+    await openInbox(page);
+
+    const row = page.locator('.inbox-item', { hasText: 'New app: sonarr' });
+    await expect(row).toContainText('Media management');
+    await row.getByRole('button', { name: 'Promote' }).click();
+    const form = page.locator('#bookmark-form-modal');
+    await expect(form).toHaveClass(/show/);
+    await expect(form.locator('[data-field="url"]')).toHaveValue(new RegExp(`127\\.0\\.0\\.1:${sonarr}`));
+    await expect(form.locator('[data-field="name"]')).toHaveValue('sonarr');
+    await form.locator('[data-field="name"]').press('Control+Enter');
+    await expect(form).not.toHaveClass(/show/);
+
+    const cats = await categories(request);
+    const mm = cats.find((c) => c.name === 'Media management');
+    const saved = (await bookmarks(request)).find((b) => b.name === 'sonarr');
+    expect(saved?.category).toBe(mm?.id);
+    expect(saved?.checkStatus).toBe(true);
+    expect(saved?.icon).toBeTruthy();
+    await expect.poll(async () => (await settings(request)).dockerBookmarkLinks?.sonarr).toBe(`1::${saved.url}`);
+    await expect.poll(async () => {
+        const body = await (await request.get('/api/inbox')).json();
+        return (Array.isArray(body) ? body : body.items || []).length;
+    }).toBe(0);
+});
+
+test('Ignore on a proposal removes it and it never returns', async ({ page, request, workerServer }) => {
+    await afterFirstRun(request, workerServer, { newApps: 'inbox' });
+    await runDiscovery(request);
+    await open(page);
+    await openInbox(page);
+
+    const row = page.locator('.inbox-item', { hasText: 'New app: sonarr' });
+    await row.getByRole('button', { name: 'Ignore' }).click();
+    await expect(row).toHaveCount(0);
+    expect((await settings(request)).discoveryIgnored).toContain('sonarr');
+    const again = await runDiscovery(request);
+    expect(again.proposed).toEqual([]);
 });
