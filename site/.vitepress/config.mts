@@ -38,6 +38,7 @@ export default withMermaid(defineConfig({
     logo: { light: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23232a27'/><path d='M8.5 10l6 5-6 5' fill='none' stroke='%2372ca9d' stroke-width='2.6' stroke-linecap='square'/><rect x='16' y='20.5' width='8' height='2.6' fill='%2372ca9d'/></svg>", dark: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2324352d'/><path d='M8.5 10l6 5-6 5' fill='none' stroke='%2372ca9d' stroke-width='2.6' stroke-linecap='square'/><rect x='16' y='20.5' width='8' height='2.6' fill='%2372ca9d'/></svg>", alt: '' },
     nav: [
       { text: 'Features', link: `${SITE}/features/`, target: '_self' },
+      { text: 'Themes', link: `${SITE}/themes/`, target: '_self' },
       { text: 'Install', link: '/installation' },
       { text: 'Docs', link: '/', activeMatch: '^/(?!installation)' },
       { text: 'Integrations', link: '/widgets' },

@@ -36,6 +36,11 @@ const GROUPS = [
 ]
 const SLUGS = { 1: 'what-is-nextdash', 2: 'installation', 'self-hosted-guide': 'self-hosted-guide' }
 
+// Notes of the site's own, under a chapter's lead, by chapter slug.
+const SITE_NOTES = {
+  appearance: '::: tip See them first\nThe [theme gallery](https://nextdash.cc/themes/) on nextdash.cc shows the dashboard in every material, dark and light, in the twelve looks, the surfaces and on every backdrop, with a search by name.\n:::'
+}
+
 // HTML the manual uses on purpose. Anything else that looks like a tag, such
 // as <name> in ":docker <name>", is text and must not reach Vue's compiler.
 const HTML_TAGS = new Set(['a', 'p', 'img', 'kbd', 'sub', 'sup', 'details', 'summary', 'b', 'i', 'em', 'strong',
@@ -311,7 +316,10 @@ function main () {
 
     const front = ['---', `title: ${JSON.stringify(ch.title)}`, 'outline: [2, 3]', '---', '']
     const h1 = `# ${ch.title} {#${ch.headingIds.get(-1)}}`
-    writeFileSync(join(OUT, `${ch.slug}.md`), [...front, h1, outsideFences(out, reshape, fitDrawing), ''].join('\n'))
+    let body = outsideFences(out, reshape, fitDrawing)
+    // A note of the site's own under a chapter's lead; the manual itself does not carry it.
+    if (SITE_NOTES[ch.slug]) body = body.replace(/\{\.nd-lead\}\n/, (m) => `${m}\n${SITE_NOTES[ch.slug]}\n`)
+    writeFileSync(join(OUT, `${ch.slug}.md`), [...front, h1, body, ''].join('\n'))
   }
 
   for (const path of images) {
