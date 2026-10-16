@@ -842,10 +842,11 @@ type Settings struct {
 	// The Containers view, its header button and its rows in search. On by
 	// default; a settings file from before this setting reads as on.
 	DockerViewEnabled        bool     `json:"dockerViewEnabled"`
-	DockerRefreshSeconds     int      `json:"dockerRefreshSeconds"`     // 2, 5, 10 or 30; list polling while the view is open
-	DockerLogLines           int      `json:"dockerLogLines"`           // 100, 200, 500 or 1000
-	DockerConfirmStopRestart bool     `json:"dockerConfirmStopRestart"` // ask before stop and restart as well
-	DockerHiddenContainers   []string `json:"dockerHiddenContainers"`   // names kept out of the view, search and widget
+	DockerRefreshSeconds     int      `json:"dockerRefreshSeconds"`       // 2, 5, 10 or 30; list polling while the view is open
+	DockerLogLines           int      `json:"dockerLogLines"`             // 100, 200, 500 or 1000
+	DockerConfirmStopRestart bool     `json:"dockerConfirmStopRestart"`   // ask before stop and restart as well
+	DockerHiddenContainers   []string `json:"dockerHiddenContainers"`     // names kept out of the view, search and widget
+	DiscoveryIgnored         []string `json:"discoveryIgnored,omitempty"` // container names the user turned down in the Inbox
 	// DockerStatsHistory keeps the last hour of CPU and memory per running
 	// container for the drawer's charts. On by default; off reads nothing.
 	DockerStatsHistory bool `json:"dockerStatsHistory"`
