@@ -416,3 +416,26 @@ test('Suggest new apps off: no card and no Inbox proposals', async ({ page, requ
     await expect(ignored).toContainText('lidarr');
     await expect.poll(async () => (await settings(request)).discoveryIgnored).toEqual(['lidarr']);
 });
+
+test('a direct add during the quick start still shows its notice with Undo', async ({ page, request, workerServer }) => {
+    const radarr = await startApp('Radarr');
+    writeContainers(workerServer, [container('radarr', 'linuxserver/radarr', radarr)]);
+    await install(request, { fresh: true });
+    await runDiscovery(request);
+    await open(page);
+    await card(page).getByRole('button', { name: 'Add 1 app' }).click();
+    await expect(page.locator('.quickstart-checklist')).toBeVisible();
+
+    const sonarr = await startApp('Sonarr');
+    writeContainers(workerServer, [
+        container('radarr', 'linuxserver/radarr', radarr),
+        container('sonarr', 'linuxserver/sonarr', sonarr),
+    ]);
+    expect((await runDiscovery(request)).added).toEqual(['sonarr']);
+    await page.reload();
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+
+    await expect(page.locator('.quickstart-checklist')).toBeVisible();
+    await expect(notice(page)).toContainText('sonarr added to', { timeout: 15_000 });
+    await expect(notice(page).getByRole('button', { name: 'Undo' })).toBeVisible();
+});

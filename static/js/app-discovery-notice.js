@@ -137,6 +137,9 @@
     const card = global.NoticeCard.define({
         id: 'app-discovery-notice',
         showDelayMs: 1500,
+        // The Undo for something already done: shown during the quick start
+        // and on a phone too.
+        essential: true,
         title,
         body,
         dismissLabel: () => t('notice.close', 'Close'),

@@ -237,6 +237,21 @@ func (h *Handlers) discoveryHost(s Settings) string {
 	return "localhost"
 }
 
+// discoveryProbeHost is where the server itself reaches the published ports:
+// the address set in the Containers view, else the default gateway when
+// nextDash runs in a container, else localhost. Not the host the browser last
+// used -- that name may resolve only on the reader's network, or be this
+// container's own loopback -- so links are moved to it afterwards (onHost).
+func (h *Handlers) discoveryProbeHost(s Settings) string {
+	if s.DockerHostAddress != "" {
+		return s.DockerHostAddress
+	}
+	if ip := containerGatewayIP(); ip != "" {
+		return ip
+	}
+	return "localhost"
+}
+
 func discoveryHosts(s Settings, host string) []string {
 	out := []string{host}
 	for _, c := range []string{s.DockerHostAddress, s.DockerHostSeen} {
@@ -433,11 +448,13 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 		prevProbed[k] = v
 	}
 	first := st.FirstRunDone
+	prevHost := st.Host
 	readState := st
 	h.discoveryMu.Unlock()
 
 	selfID := discoverySelfID()
-	host := h.discoveryHost(settings)
+	host := h.discoveryProbeHost(settings)
+	linkHost := h.discoveryHost(settings)
 	hosts := discoveryHosts(settings, host)
 	bareHost := strings.Trim(host, "[]")
 	lan := discoveryLanNetworks(ctx)
@@ -508,7 +525,8 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 			// asked before the budget ran out) keeps the entry it had; it is
 			// asked again next run.
 			if a, ok := prevApps[e.name]; ok {
-				e.app, e.ok, e.carried = a, true, true
+				// On the host this run probes, as the apps it found are.
+				e.app, e.ok, e.carried = a.onHost(prevHost, bareHost), true, true
 			}
 		}
 		if !e.ok {
@@ -639,7 +657,7 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 		} else {
 			items := make([]discoveryAddItem, 0, len(fresh))
 			for _, e := range fresh {
-				items = append(items, discoveryAddItem{App: e.app, IconFile: iconFiles[e.name]})
+				items = append(items, discoveryAddItem{App: e.app.onHost(bareHost, linkHost), IconFile: iconFiles[e.name]})
 			}
 			added, outcome, err := h.addDiscoveredBookmarks(ctx, st, h.discoveryTargetPage(st), items, true, false)
 			if err != nil {

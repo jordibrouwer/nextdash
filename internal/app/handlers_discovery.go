@@ -348,6 +348,14 @@ func (h *Handlers) DiscoveryUnignoreHandler(w http.ResponseWriter, r *http.Reque
 	})) {
 		return
 	}
+	// Noticed anew: the next run that finds it treats it as a new app.
+	if !respondStorePersistError(w, h.withDiscoveryState(func(st *discoveryState) {
+		delete(st.Known, name)
+		delete(st.Proposed, name)
+		delete(st.Probed, name)
+	})) {
+		return
+	}
 	writeJSON(w, map[string]string{"status": "success"})
 }
 

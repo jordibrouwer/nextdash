@@ -332,7 +332,8 @@ func TestDiscoveryHostSeenUsedForPortLinks(t *testing.T) {
 		t.Fatalf("dockerHostSeen = %q", got)
 	}
 	r.run()
-	apps := r.state().Apps
+	// Probed where the server reaches the port; offered on the host seen.
+	apps := r.getApps()
 	want := fmt.Sprintf("http://127.0.0.1:%d", p1)
 	if len(apps) != 1 || apps[0].URL != want {
 		t.Fatalf("apps = %+v, want %s", apps, want)

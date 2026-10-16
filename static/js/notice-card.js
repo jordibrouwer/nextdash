@@ -55,15 +55,20 @@
      * "another card is up" check so a card does not consider itself a blocker
      * when re-rendered.
      */
-    function cornerIsFree(selfClass) {
+    function cornerIsFree(selfClass, { essential = false } = {}) {
         const d = dash();
         if (!d?.settings) return false;
         // The public demo shows no corner cards: every visitor is new, and a
         // stack of invitations is not the product.
         if (global.DemoLock?.on) return false;
-        if (global.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
-        if (d.onboardingStartedInSession) return false;
-        if (d.settings.onboardingCompleted === false) return false;
+        // An essential card reports something that already happened and offers
+        // its undo; it is not an invitation, so the phone layout and an
+        // unfinished onboarding do not hold it back.
+        if (!essential) {
+            if (global.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
+            if (d.onboardingStartedInSession) return false;
+            if (d.settings.onboardingCompleted === false) return false;
+        }
         // Config, health and the inbox are hash routes on this same page, so
         // without this a card drops on top of whatever the user opened — including,
         // for a settings-related card, the very panel it is about. Only interrupt
@@ -72,7 +77,10 @@
         if (d.activeView && d.activeView !== 'bookmarks') return false;
         // Quick-start — the setup wizard *or* the checklist that follows it — owns
         // the same corner, as does any other notice card.
-        if (document.querySelector(`.quickstart-card:not(.${selfClass})`)) return false;
+        // An essential card waits for another notice, but stands above the
+        // checklist rather than waiting for it to be finished.
+        const blocker = essential ? `.quickstart-card.notice-card:not(.${selfClass})` : `.quickstart-card:not(.${selfClass})`;
+        if (document.querySelector(blocker)) return false;
         // Something that is not a card but stands in the corner too -- the
         // minimised weekly digest -- says so with this attribute.
         if (document.querySelector('[data-holds-corner]')) return false;
@@ -209,13 +217,13 @@ canShow every time.
 
         function gateSync() {
             if (cardEl) return false;
-            if (!cornerIsFree(cardClass)) return false;
+            if (!cornerIsFree(cardClass, { essential: spec.essential === true })) return false;
             return spec.canShow?.() !== false;
         }
 
         async function shouldShow() {
             if (cardEl) return false;
-            if (!cornerIsFree(cardClass)) return false;
+            if (!cornerIsFree(cardClass, { essential: spec.essential === true })) return false;
             // Async so a card may consult something that needs awaiting.
             return (await spec.canShow?.()) !== false;
         }
@@ -277,6 +285,12 @@ canShow every time.
 
             document.body.appendChild(el);
             cardEl = el;
+            if (spec.essential === true) {
+                // Above the quick-start checklist when it holds the corner.
+                const checklist = document.querySelector('.quickstart-card:not(.notice-card)');
+                const top = checklist?.getBoundingClientRect?.().top;
+                if (Number.isFinite(top) && top > 0) el.style.bottom = `${Math.round(window.innerHeight - top + 12)}px`;
+            }
             requestAnimationFrame(() => el.classList.add('show'));
             spec.onShown?.(handle);
             return true;
