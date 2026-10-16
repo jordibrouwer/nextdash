@@ -256,7 +256,7 @@ async function afterFirstRun(request, workerServer, { newApps = '' } = {}) {
 const notice = (page) => page.locator('.app-discovery-notice-card');
 
 test('a new container is added to the dashboard with a notice, and Undo takes it back', async ({ page, request, workerServer }) => {
-    const { sonarr } = await afterFirstRun(request, workerServer);
+    const { sonarr } = await afterFirstRun(request, workerServer, { newApps: 'add' });
     expect((await runDiscovery(request)).added).toEqual(['sonarr']);
     await open(page);
 
@@ -282,7 +282,7 @@ test('a new container is added to the dashboard with a notice, and Undo takes it
 });
 
 test('Move on the notice opens the bookmark form for the new app', async ({ page, request, workerServer }) => {
-    const { sonarr } = await afterFirstRun(request, workerServer);
+    const { sonarr } = await afterFirstRun(request, workerServer, { newApps: 'add' });
     await runDiscovery(request);
     await open(page);
 
@@ -417,6 +417,7 @@ test('a direct add during the quick start still shows its notice with Undo', asy
     const radarr = await startApp('Radarr');
     writeContainers(workerServer, [container('radarr', 'linuxserver/radarr', radarr)]);
     await install(request, { fresh: true });
+    expect((await request.post('/api/settings', { data: { discoveryNewApps: 'add' }, headers })).ok()).toBe(true);
     await runDiscovery(request);
     await open(page);
     await templateCard(page).getByRole('button', { name: /Keep these example links/ }).click();
@@ -575,4 +576,50 @@ test('on a new install the apps card comes last: after the starting page, the ch
     // And then, with nothing else waiting, the apps card.
     await expect(card(page)).toBeVisible({ timeout: 20_000 });
     await expect(card(page)).toContainText('1 app is running here');
+});
+
+test('a new container later is asked about in the middle first, and Add puts it on the page', async ({ page, request, workerServer }) => {
+    const { sonarr } = await afterFirstRun(request, workerServer);
+    const res = await runDiscovery(request);
+    expect(res.asked).toEqual(['sonarr']);
+    expect(res.added).toEqual([]);
+    expect((await bookmarks(request)).some((b) => b.name === 'sonarr')).toBe(false);
+    await open(page);
+
+    await expect(card(page)).toContainText('sonarr is running here', { timeout: CARD_WAIT });
+    await expect(card(page)).toContainText('New on this server');
+    await expect(card(page)).toContainText('Media management');
+    await expect(page.locator('[data-app-discovery-overlay]')).toBeVisible();
+    await card(page).getByRole('button', { name: 'Add', exact: true }).click();
+    await expect(card(page)).toHaveCount(0);
+
+    await expect(page.locator('#dashboard-layout .bookmark-link', { hasText: 'sonarr' })).toBeVisible();
+    const added = (await bookmarks(request)).find((b) => b.name === 'sonarr');
+    expect(added?.url).toContain(`127.0.0.1:${sonarr}`);
+    await expect(notice(page)).toContainText('sonarr added to Media management', { timeout: 15_000 });
+    expect((await (await request.get('/api/discovery')).json()).pending).toEqual([]);
+});
+
+test('Ignore on the question keeps the container away for good', async ({ page, request, workerServer }) => {
+    await afterFirstRun(request, workerServer);
+    await runDiscovery(request);
+    await open(page);
+    await card(page).getByRole('button', { name: 'Ignore' }).click({ timeout: CARD_WAIT });
+    await expect(card(page)).toHaveCount(0);
+    expect((await bookmarks(request)).some((b) => b.name === 'sonarr')).toBe(false);
+    expect((await settings(request)).discoveryIgnored).toContain('sonarr');
+    expect((await runDiscovery(request)).asked).toEqual([]);
+});
+
+test('Not now asks again on the next load', async ({ page, request, workerServer }) => {
+    await afterFirstRun(request, workerServer);
+    await runDiscovery(request);
+    await open(page);
+    await card(page).getByRole('button', { name: 'Not now' }).click({ timeout: CARD_WAIT });
+    await expect(card(page)).toHaveCount(0);
+    expect((await bookmarks(request)).some((b) => b.name === 'sonarr')).toBe(false);
+
+    await page.reload();
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    await expect(card(page)).toContainText('sonarr is running here', { timeout: CARD_WAIT });
 });

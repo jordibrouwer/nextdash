@@ -23,6 +23,7 @@ func registerDiscoveryRoutes(r *mux.Router, h *Handlers) {
 	r.HandleFunc("/api/discovery/unignore", h.DiscoveryUnignoreHandler).Methods("POST")
 	r.HandleFunc("/api/discovery/link", h.DiscoveryLinkHandler).Methods("POST")
 	r.HandleFunc("/api/discovery/undo-add", h.DiscoveryUndoAddHandler).Methods("POST")
+	r.HandleFunc("/api/discovery/accept", h.DiscoveryAcceptHandler).Methods("POST")
 	r.HandleFunc("/api/discovery/close", h.DiscoveryCloseHandler).Methods("POST")
 	r.HandleFunc("/api/discovery/host-seen", h.DiscoveryHostSeenHandler).Methods("POST")
 }
@@ -59,6 +60,10 @@ type discoveryGetResponse struct {
 	// ReplacesStarter: main is still the starter page, so the card may offer
 	// to replace its links.
 	ReplacesStarter bool `json:"replacesStarter"`
+	// Pending: new apps found after the first card, waiting for a yes, and
+	// the page a yes puts them on.
+	Pending    []discoveredApp `json:"pending"`
+	TargetPage int             `json:"targetPage"`
 }
 
 // DiscoveryGetHandler answers what the card and the notice need: the apps
@@ -74,12 +79,15 @@ func (h *Handlers) DiscoveryGetHandler(w http.ResponseWriter, r *http.Request) {
 		ReplacesStarter: !settings.DiscoveryCardDone && h.isUntouchedMainPage(),
 		Apps:            []discoveredApp{},
 		RecentAdds:      []discoveryRecentAdd{},
+		Pending:         []discoveredApp{},
 	}
 	h.discoveryMu.Lock()
 	st := h.discoveryLocked()
 	out.FirstRunDone = st.FirstRunDone
 	runHost := st.Host
 	apps := append([]discoveredApp(nil), st.Apps...)
+	pending := append([]string(nil), st.Pending...)
+	out.TargetPage = h.discoveryTargetPage(st)
 	out.RecentAdds = append(out.RecentAdds, st.RecentAdds...)
 	h.discoveryMu.Unlock()
 
@@ -97,6 +105,9 @@ func (h *Handlers) DiscoveryGetHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			a.IconURL = discoveryIconURL(a.Icon)
 			out.Apps = append(out.Apps, a)
+			if containsString(pending, a.Name) {
+				out.Pending = append(out.Pending, a)
+			}
 		}
 	}
 	writeJSON(w, out)
@@ -190,6 +201,93 @@ func (h *Handlers) DiscoveryAddHandler(w http.ResponseWriter, r *http.Request) {
 		added = []discoveryRecentAdd{}
 	}
 	writeJSON(w, map[string]any{"status": "success", "added": added, "replaced": replaced})
+}
+
+// DiscoveryAcceptHandler answers the question about new apps: those in add go
+// on the page the way a direct add does (with its notice and Undo), those in
+// ignore are never proposed again. Only names that are waiting count; the
+// addresses come from the run, not from the request.
+func (h *Handlers) DiscoveryAcceptHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	var req struct {
+		Add    []string `json:"add"`
+		Ignore []string `json:"ignore"`
+	}
+	if !decodeDiscoveryBody(w, r, &req) {
+		return
+	}
+	settings := h.store.GetSettings()
+	host := h.discoveryHost(settings)
+	h.discoveryMu.Lock()
+	st := h.discoveryLocked()
+	waiting := append([]string(nil), st.Pending...)
+	found := map[string]discoveredApp{}
+	for _, a := range st.Apps {
+		found[a.Name] = a.onHost(st.Host, host)
+	}
+	h.discoveryMu.Unlock()
+
+	var items []discoveryAddItem
+	var answered, ignored []string
+	for _, name := range req.Add {
+		a, ok := found[name]
+		if !ok || !containsString(waiting, name) || containsString(answered, name) {
+			continue
+		}
+		answered = append(answered, name)
+		items = append(items, discoveryAddItem{App: a, IconFile: discoveryIconFile(r.Context(), a.Icon)})
+	}
+	for _, name := range req.Ignore {
+		if containsString(waiting, name) && !containsString(answered, name) {
+			answered = append(answered, name)
+			ignored = append(ignored, name)
+		}
+	}
+	if len(ignored) > 0 {
+		if !respondStorePersistError(w, h.updateSettings(func(s *Settings) {
+			for _, name := range ignored {
+				if !containsString(s.DiscoveryIgnored, name) {
+					s.DiscoveryIgnored = append(s.DiscoveryIgnored, name)
+				}
+			}
+		})) {
+			return
+		}
+	}
+
+	h.discoveryMu.Lock()
+	defer h.discoveryMu.Unlock()
+	st = h.discoveryLocked()
+	var added []discoveryRecentAdd
+	var err error
+	if len(items) > 0 {
+		added, _, err = h.addDiscoveredBookmarks(r.Context(), st, h.discoveryTargetPage(st), items, true, false)
+		now := time.Now().UnixMilli()
+		for _, a := range added {
+			a.AddedAt = now
+			st.RecentAdds = append(st.RecentAdds, a)
+		}
+	}
+	kept := st.Pending[:0:0]
+	for _, name := range st.Pending {
+		if !containsString(answered, name) {
+			kept = append(kept, name)
+		}
+	}
+	st.Pending = kept
+	if saveErr := h.saveDiscoveryLocked(); saveErr != nil && err == nil {
+		err = saveErr
+	}
+	if !respondStorePersistError(w, err) {
+		return
+	}
+	if added == nil {
+		added = []discoveryRecentAdd{}
+	}
+	writeJSON(w, map[string]any{"status": "success", "added": added})
 }
 
 // DiscoveryUndoAddHandler takes the card's last Add back: its bookmarks go to

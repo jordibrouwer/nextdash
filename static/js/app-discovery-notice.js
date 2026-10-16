@@ -178,15 +178,52 @@
         ],
     });
 
-    function check() {
-        if (document.visibilityState === 'hidden' || card.element) return;
-        void card.render();
+    // The question about new apps (asking first): once per load, in the middle
+    // of the screen, when its turn comes (AppDiscoveryCard waits for it).
+    let askedThisLoad = false;
+    let asking = false;
+
+    async function checkPending() {
+        const d = dash();
+        if (askedThisLoad || asking || !d?.settings || d.settings.discoverApps === false) return;
+        let data;
+        try {
+            const res = await fetch('/api/discovery', { cache: 'no-store' });
+            if (!res.ok) return;
+            data = await res.json();
+        } catch {
+            return;
+        }
+        if (!data.enabled || !data.cardDone || !(data.pending || []).length) return;
+        asking = true;
+        try {
+            await global.LazyScript.loadScriptOnce('js/app-discovery-card.js', 'appDiscoveryCardScript',
+                () => typeof global.AppDiscoveryCard === 'function');
+        } catch {
+            asking = false;
+            return;
+        }
+        const question = new global.AppDiscoveryCard(d, { mode: 'ask', onDone: (result) => {
+            asking = false;
+            if (result !== 'none') askedThisLoad = true;
+        } });
+        question.show(data);
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', card.autoStart, { once: true });
-    } else {
+    function check() {
+        if (document.visibilityState === 'hidden') return;
+        if (!card.element) void card.render();
+        void checkPending();
+    }
+
+    const start = () => {
         card.autoStart();
+        setTimeout(() => { void checkPending(); }, 2000);
+    };
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start, { once: true });
+    } else {
+        start();
     }
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') check();

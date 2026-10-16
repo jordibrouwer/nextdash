@@ -35,6 +35,9 @@ func newDiscoveryRig(t *testing.T) *discoveryRig {
 	r.setSettings(func(s *Settings) {
 		s.DiscoverApps = true
 		s.DockerHostAddress = "127.0.0.1"
+		// Most tests here are about adding straight away; asking first is
+		// the default, and discovery_ask_test.go covers it.
+		s.DiscoveryNewApps = "add"
 	})
 	r.containers()
 	return r

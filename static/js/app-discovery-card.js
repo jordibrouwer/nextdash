@@ -14,6 +14,10 @@
  *
  * After Add the new categories are at the top of the page; the page scrolls
  * to them, they light up, and a notice says what was added, with Undo.
+ *
+ * The same card asks about a container that appears later (mode 'ask', the
+ * default for new apps): "Sonarr is running here", with Add, Ignore and Not
+ * now. Nothing lands on a page until the reader says yes.
  */
 (function (global) {
     'use strict';
@@ -211,9 +215,12 @@
     // ---- The card ----------------------------------------------------------------
 
     class AppDiscoveryCard {
-        constructor(dash, { onDone } = {}) {
+        constructor(dash, { onDone, mode = 'first' } = {}) {
             this.dash = dash;
             this.onDone = typeof onDone === 'function' ? onDone : () => {};
+            // 'first': the one-time apps card. 'ask': new apps found later.
+            this.mode = mode === 'ask' ? 'ask' : 'first';
+            this.targetPage = 1;
             this.overlay = null;
             this.el = null;
             this.apps = [];
@@ -238,7 +245,11 @@
         }
 
         /** Whether the answer from /api/discovery is worth a card at all. */
-        static wanted(info) {
+        static wanted(info, mode = 'first') {
+            if (mode === 'ask') {
+                // Asked only once the first card is answered.
+                return Boolean(info?.enabled && info.cardDone && (info.pending || []).length > 0);
+            }
             if (!info || !info.enabled || info.cardDone) return false;
             return info.running === true || (info.docker === true && (info.apps || []).length > 0);
         }
@@ -253,7 +264,7 @@
                     return;
                 }
             }
-            if (!AppDiscoveryCard.wanted(data)) { this.onDone('none'); return; }
+            if (!AppDiscoveryCard.wanted(data, this.mode)) { this.onDone('none'); return; }
             this.pending = data;
             this.waitForTurn();
         }
@@ -271,6 +282,13 @@
         }
 
         update(data) {
+            if (this.mode === 'ask') {
+                this.apps = withoutBookmark(data.pending || [], this.dash);
+                this.targetPage = Number(data.targetPage) || 1;
+                if (!this.apps.length) { this.teardown(); this.onDone('none'); return; }
+                this.render();
+                return;
+            }
             this.replacesStarter = data.replacesStarter === true;
             if (data.running) {
                 this.looking = true;
@@ -322,7 +340,8 @@
         render() {
             const first = !this.overlay;
             this.open();
-            this.el.innerHTML = this.looking ? this.lookingHtml() : this.listHtml();
+            if (this.mode === 'ask') this.el.innerHTML = this.askHtml();
+            else this.el.innerHTML = this.looking ? this.lookingHtml() : this.listHtml();
             if (first || !this.el.contains(document.activeElement)) {
                 (this.el.querySelector('[data-ad-add]') || this.el.querySelector('[data-ad-close]'))?.focus({ preventScroll: true });
             }
@@ -385,6 +404,44 @@
             </div>`;
         }
 
+        /** The question about apps that appeared after the first card. */
+        askHtml() {
+            const one = this.apps.length === 1;
+            const page = (this.dash?.pages || []).find((p) => Number(p.id) === this.targetPage);
+            const pageName = page?.name || t('ask.thisPage', 'the dashboard');
+            const title = one
+                ? t('ask.titleOne', '{name} is running here', { name: this.apps[0].displayName || this.apps[0].name })
+                : t('ask.title', '{count} new apps are running here', { count: this.apps.length });
+            let body;
+            if (one) {
+                const app = this.apps[0];
+                const name = app.displayName || app.name;
+                const icon = app.iconUrl
+                    ? `<img class="app-discovery-icon app-discovery-icon--large" src="${esc(app.iconUrl)}" alt="" loading="lazy">`
+                    : `<span class="app-discovery-icon app-discovery-icon--large app-discovery-icon--letter" aria-hidden="true">${esc(String(name).charAt(0).toUpperCase())}</span>`;
+                body = `<div class="app-discovery-one">${icon}
+                        <span class="app-discovery-text app-discovery-text--stack">
+                            <span class="app-discovery-name">${esc(name)}</span>
+                            <span class="app-discovery-address">${esc(shortAddress(app.url))}</span>
+                        </span>
+                    </div>
+                    <p class="app-discovery-where">${esc(t('ask.where', 'Goes to {page} in {category}, with its icon and a status check.', { page: pageName, category: kindLabel(app.kind) }))}</p>`;
+            } else {
+                body = `<div class="app-discovery-groups">${this.apps.map((app) => this.rowHtml(app)).join('')}</div>
+                    <p class="app-discovery-note">${esc(t('ask.untick', 'Untick one and choose Add: the unticked ones are ignored.'))}</p>`;
+            }
+            return `<div class="app-discovery-stripe"></div><div class="app-discovery-inner">
+                ${this.headHtml(t('ask.kicker', 'New on this server'), title)}
+                ${body}
+                <p class="app-discovery-error" data-ad-error role="alert" hidden></p>
+                <div class="app-discovery-actions">
+                    <button type="button" class="app-discovery-add" data-ad-add>${esc(one ? t('ask.add', 'Add') : this.addLabel())}</button>
+                    ${one ? `<button type="button" class="app-discovery-secondary" data-ad-ignore>${esc(t('ask.ignore', 'Ignore'))}</button>` : ''}
+                    <button type="button" class="app-discovery-later" data-ad-close>${esc(t('card.notNow', 'Not now'))}</button>
+                </div>
+            </div>`;
+        }
+
         addLabel() {
             const ticked = this.apps.length - this.unticked.size;
             return ticked === 1 ? t('card.addOne', 'Add 1 app') : t('card.add', 'Add {count} apps', { count: ticked });
@@ -423,7 +480,15 @@
             const target = event.target.closest('button');
             if (!target || this.busy) return;
             if (target.hasAttribute('data-ad-close')) { this.close(); return; }
-            if (target.hasAttribute('data-ad-add')) this.add();
+            if (target.hasAttribute('data-ad-ignore')) { void this.accept([], this.apps.map((a) => a.name)); return; }
+            if (target.hasAttribute('data-ad-add')) {
+                if (this.mode === 'ask') {
+                    const add = this.apps.filter((a) => !this.unticked.has(a.name)).map((a) => a.name);
+                    void this.accept(add, this.apps.filter((a) => this.unticked.has(a.name)).map((a) => a.name));
+                } else {
+                    this.add();
+                }
+            }
         }
 
         trapFocus(event) {
@@ -489,8 +554,36 @@
             this.onDone('added', added);
         }
 
+        /** The answer to the question: add these, ignore those. */
+        async accept(add, ignore) {
+            if (this.busy) return;
+            this.busy = true;
+            try {
+                const res = await post('/api/discovery/accept', { add, ignore });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            } catch {
+                this.busy = false;
+                this.showError(t('card.addError', 'Could not add the apps'));
+                return;
+            }
+            global.nextdashTrack?.('discovery:answer', { added: add.length, ignored: ignore.length });
+            this.teardown();
+            if (add.length) {
+                await reloadPage(this.dash, this.targetPage);
+                // The notice for what was added, with Undo, Move and Done.
+                global.AppDiscoveryNotice?.check?.();
+            }
+            this.onDone(add.length ? 'added' : 'ignored');
+        }
+
         async close() {
             if (this.busy) return;
+            if (this.mode === 'ask') {
+                // Not now: asked again on a later load.
+                this.teardown();
+                this.onDone('later');
+                return;
+            }
             this.busy = true;
             try { await post('/api/discovery/close'); } catch { /* the card still goes */ }
             if (this.dash?.settings) this.dash.settings.discoveryCardDone = true;

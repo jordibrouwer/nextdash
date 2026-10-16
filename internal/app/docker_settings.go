@@ -84,7 +84,7 @@ func normalizeDockerSettings(s *Settings) {
 	if len(s.DiscoveryIgnored) == 0 {
 		s.DiscoveryIgnored = nil
 	}
-	if s.DiscoveryNewApps != "add" && s.DiscoveryNewApps != "inbox" {
+	if s.DiscoveryNewApps != "add" && s.DiscoveryNewApps != "inbox" && s.DiscoveryNewApps != "ask" {
 		s.DiscoveryNewApps = ""
 	}
 	s.DockerHostSeen = normalizeDockerHostAddress(s.DockerHostSeen)

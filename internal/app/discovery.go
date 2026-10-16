@@ -127,6 +127,9 @@ type discoveryState struct {
 	// says that Add also took the starter links off main.
 	CardAdds        []discoveryRecentAdd `json:"cardAdds,omitempty"`
 	StarterReplaced bool                 `json:"starterReplaced,omitempty"`
+	// Pending holds the new apps waiting for the reader's yes (asking first,
+	// the default), by container name, until Add or Ignore answers them.
+	Pending []string `json:"pending,omitempty"`
 }
 
 func (st *discoveryState) normalize() {
@@ -159,6 +162,7 @@ type discoveryRunResult struct {
 	Apps     int      `json:"apps"`
 	Added    []string `json:"added"`
 	Proposed []string `json:"proposed"`
+	Asked    []string `json:"asked"`
 }
 
 func discoveryStatePath() string { return filepath.Join(ResolveDataDir(), "discovery.json") }
@@ -392,7 +396,7 @@ func (e *discoveryEntry) probeAll(ctx context.Context) {
 // runDiscovery is one look through the containers. now is injected so the
 // retry window can be tested.
 func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRunResult, error) {
-	res := discoveryRunResult{Added: []string{}, Proposed: []string{}}
+	res := discoveryRunResult{Added: []string{}, Proposed: []string{}, Asked: []string{}}
 	if demoMode() {
 		return res, nil
 	}
@@ -636,7 +640,8 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 	handled := map[string]bool{}
 	var runErr error
 	if len(fresh) > 0 {
-		if settings.DiscoveryNewApps == "inbox" {
+		switch settings.DiscoveryNewApps {
+		case "inbox":
 			for _, e := range fresh {
 				_, _, err := h.store.AddInboxLink(InboxLink{
 					URL:           e.app.URL,
@@ -658,7 +663,7 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 					runErr = err
 				}
 			}
-		} else {
+		case "add":
 			items := make([]discoveryAddItem, 0, len(fresh))
 			for _, e := range fresh {
 				items = append(items, discoveryAddItem{App: e.app.onHost(bareHost, linkHost), IconFile: iconFiles[e.name]})
@@ -677,6 +682,16 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 				if ok {
 					handled[name] = true
 				}
+			}
+		default:
+			// Ask first: the dashboard puts the question in the middle of the
+			// screen, and nothing lands on a page until it is answered.
+			for _, e := range fresh {
+				if !containsString(st.Pending, e.name) {
+					st.Pending = append(st.Pending, e.name)
+				}
+				res.Asked = append(res.Asked, e.name)
+				handled[e.name] = true
 			}
 		}
 	}

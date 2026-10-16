@@ -850,8 +850,9 @@ type Settings struct {
 	// DiscoverApps lets nextDash look through the containers for web apps and
 	// offer them. On by default; a settings file from before reads as on.
 	DiscoverApps bool `json:"discoverApps"`
-	// DiscoveryNewApps says what a new app does: "add" (or empty) puts it on
-	// the dashboard straight away, "inbox" proposes it in the Inbox.
+	// DiscoveryNewApps says what a new app does after the first apps card:
+	// "ask" (or empty) asks first in the middle of the screen, "add" puts it
+	// on the dashboard straight away, "inbox" proposes it in the Inbox.
 	DiscoveryNewApps string `json:"discoveryNewApps,omitempty"`
 	// DiscoveryCardDone is set once the first-start apps card was answered.
 	DiscoveryCardDone bool `json:"discoveryCardDone,omitempty"`
