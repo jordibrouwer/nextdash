@@ -182,6 +182,7 @@ function ndw_feature_pages() {
 			'url'    => get_permalink( $p ),
 			'blurb'  => (string) get_post_meta( $p->ID, 'ndt_feature_blurb', true ),
 			'thumb'  => $thumb ? ndw_feature_img_url( $thumb ) : '',
+			'video'  => (string) get_post_meta( $p->ID, 'ndt_feature_video', true ),
 			'group'  => (string) get_post_meta( $p->ID, 'ndt_feature_group', true ),
 			'order'  => (int) get_post_meta( $p->ID, 'ndt_feature_order', true ),
 			'status' => $p->post_status,

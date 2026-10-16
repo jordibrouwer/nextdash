@@ -23,15 +23,16 @@ $labels = ndw_feature_group_labels();
 	</header>
 	<?php echo ndw_gallery_card(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 	<?php foreach ( ndw_feature_groups() as $slug => $pages ) : ?>
-		<section class="nd-group">
+		<section class="nd-group nd-reveal">
 			<h2 class="nd-label"><?php echo esc_html( $labels[ $slug ] ); ?></h2>
-			<div class="nd-cards">
-				<?php foreach ( $pages as $p ) : ?>
-					<a class="nd-card" href="<?php echo esc_url( $p['url'] ); ?>">
-						<b><?php echo esc_html( $p['title'] ); ?><?php echo 'draft' === $p['status'] ? ' <em>(draft)</em>' : ''; ?></b>
-						<span><?php echo esc_html( $p['blurb'] ); ?></span>
-					</a>
-				<?php endforeach; ?>
+			<div class="nd-mcards">
+				<?php
+				// Each card shows the feature's picture and plays its recording on hover.
+				foreach ( $pages as $p ) {
+					$title = $p['title'] . ( 'draft' === $p['status'] ? ' (draft)' : '' );
+					echo ndw_motion_card( $p['video'] ? $p['video'] : $p['slug'], $title, esc_html( $p['blurb'] ), $p['url'], '', $p['thumb'] ); // phpcs:ignore WordPress.Security.EscapeOutput
+				}
+				?>
 			</div>
 		</section>
 	<?php endforeach; ?>

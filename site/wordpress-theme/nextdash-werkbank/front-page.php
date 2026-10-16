@@ -18,7 +18,7 @@ $docs    = function ( $page ) {
 };
 $compose = "services:\n  nextdash:\n    image: ghcr.io/jordibrouwer/nextdash:latest\n    ports: [\"8080:8080\"]\n    volumes: [\"./data:/app/data\"]\n    restart: unless-stopped";
 ?>
-<section class="nd-hero">
+<section class="nd-hero nd-hero--live">
 	<div class="nd-wrap nd-hero-row">
 		<div class="nd-hero-text">
 			<h1><?php echo esc_html( ndw_tagline() ); ?></h1>
@@ -28,52 +28,61 @@ $compose = "services:\n  nextdash:\n    image: ghcr.io/jordibrouwer/nextdash:lat
 				<a class="nd-btn" href="<?php echo esc_url( $links['demo'] ); ?>" rel="noopener">Live demo <span aria-hidden="true">↗</span></a>
 			</p>
 		</div>
-		<figure class="nd-hero-shot">
-			<img src="<?php echo esc_url( get_template_directory_uri() . '/assets/img/home-dashboard.jpg?v=' . ndw_asset_version( 'assets/img/home-dashboard.jpg' ) ); ?>" width="1440" height="900" alt="The nextDash dashboard: a header with clock, weather and page switcher, then categories of bookmarks and widgets in three columns" fetchpriority="high">
-		</figure>
+		<?php echo ndw_hero_shot(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+	</div>
+</section>
+
+<section class="nd-sec nd-reveal">
+	<div class="nd-wrap">
+		<ul class="nd-stats" data-nd-stats aria-label="nextDash in numbers">
+			<?php foreach ( ndw_stats() as $s ) : ?>
+				<li><b data-to="<?php echo (int) $s[0]; ?>"<?php echo $s[0] >= 1000 ? ' data-sep' : ''; ?>><?php echo esc_html( number_format( $s[0] ) ); ?></b><span><?php echo esc_html( $s[1] ); ?></span></li>
+			<?php endforeach; ?>
+		</ul>
 	</div>
 </section>
 
 <?php echo ndw_home_slider(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 
-<section class="nd-sec">
+<section class="nd-sec nd-reveal">
 	<div class="nd-wrap">
 		<p class="nd-label">Quick start</p>
 		<div class="nd-split">
-			<div class="nd-code">
-				<p class="nd-file">compose.yaml</p>
-				<pre><code><?php echo esc_html( $compose ); ?></code></pre>
+			<div class="nd-term">
+				<div class="nd-term-bar" aria-hidden="true"><i></i><i></i><i></i></div>
+				<?php
+				$term_out = array( '[+] Pulling 1/1', '✔ nextdash Pulled', '[+] Running 2/2', '✔ Network nextdash_default  Created', '✔ Container nextdash         Started', '', '$ open http://your-server:8080' );
+				?>
+				<pre data-nd-term data-cmd="docker compose up -d" data-out="<?php echo esc_attr( wp_json_encode( $term_out ) ); ?>"><span class="p">$</span> docker compose up -d
+<?php echo esc_html( implode( "\n", $term_out ) ); ?></pre>
 			</div>
 			<div>
 				<h2>One container, one folder.</h2>
 				<p><code>docker compose up -d</code> and open <code>http://your-server:8080</code>. Your bookmarks are plain JSON in <code>./data</code>.</p>
+				<details class="nd-compose">
+					<summary>Show compose.yaml</summary>
+					<pre><code><?php echo esc_html( $compose ); ?></code></pre>
+				</details>
 				<p class="nd-muted">On Unraid: <a href="<?php echo esc_url( $links['unraid'] ); ?>" rel="noopener">Community Applications</a>. Behind a reverse proxy, with the Docker socket, or from source: <a href="<?php echo $docs( 'installation.html' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>">Installation</a>.</p>
 			</div>
 		</div>
 	</div>
 </section>
 
-<section class="nd-sec">
-	<div class="nd-wrap nd-three">
-		<div>
-			<h3>Bookmarks with health</h3>
-			<p>Every link can be checked on a schedule: uptime over 30 days, response times, certificate expiry, dead links and pages that turn into something else.</p>
-			<a href="<?php echo $docs( 'checks-and-health.html' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>">Checks &amp; health →</a>
-		</div>
-		<div>
-			<h3>Your Docker host</h3>
-			<p>Containers next to the bookmarks for them. Start, stop and follow logs from the keyboard; updates in a nightly window that roll back when a container fails.</p>
-			<a href="<?php echo $docs( 'containers.html' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>">Containers →</a>
-		</div>
-		<div>
-			<h3>Keyboard-first</h3>
-			<p>Search, open, edit and move everything without the mouse. Press <kbd>!</kbd> for every key on the page you are on.</p>
-			<a href="<?php echo $docs( 'keyboard.html' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>">Keyboard →</a>
+<section class="nd-sec nd-reveal">
+	<div class="nd-wrap">
+		<p class="nd-label">What it does</p>
+		<div class="nd-mcards">
+			<?php
+			echo ndw_motion_card( 'health', 'Bookmarks with health', 'Every link checked on a schedule: uptime over 30 days, response times, certificate expiry, dead links and pages that turn into something else.', home_url( '/features/health/' ), 'Health →' ); // phpcs:ignore WordPress.Security.EscapeOutput
+			echo ndw_motion_card( 'containers', 'Your Docker host', 'Containers next to the bookmarks for them. Start, stop and follow logs from the keyboard; updates in a nightly window that roll back when a container fails.', home_url( '/features/containers/' ), 'Containers →' ); // phpcs:ignore WordPress.Security.EscapeOutput
+			echo ndw_motion_card( 'keys', 'Keyboard-first', 'Search, open, edit and move everything without the mouse. Press <kbd>!</kbd> for every key on the page you are on.', home_url( '/features/keys/' ), 'Keys →' ); // phpcs:ignore WordPress.Security.EscapeOutput
+			?>
 		</div>
 	</div>
 </section>
 
-<section class="nd-sec">
+<section class="nd-sec nd-reveal">
 	<div class="nd-wrap">
 		<p class="nd-label">Also on board</p>
 		<div class="nd-also">
@@ -88,14 +97,14 @@ $compose = "services:\n  nextdash:\n    image: ghcr.io/jordibrouwer/nextdash:lat
 	</div>
 </section>
 
-<section class="nd-sec">
+<section class="nd-sec nd-reveal">
 	<div class="nd-wrap">
 		<p class="nd-label">Works with</p>
 		<p class="nd-integr">Jellyfin · Emby · Plex · Sonarr · Radarr · Seerr · qBittorrent · SABnzbd · Home Assistant · Unraid · Pi-hole · Proxmox · ntfy · Pushover · Gotify · Telegram · Discord · Apprise · <a href="<?php echo $docs( 'widgets.html' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>">all integrations →</a></p>
 	</div>
 </section>
 
-<section class="nd-sec">
+<section class="nd-sec nd-reveal">
 	<div class="nd-wrap">
 		<p class="nd-label">Your data</p>
 		<div class="nd-three">

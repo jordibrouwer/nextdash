@@ -19,6 +19,7 @@ require_once get_template_directory() . '/inc/helpers.php';
 require_once get_template_directory() . '/inc/features.php';
 require_once get_template_directory() . '/inc/seo.php';
 require_once get_template_directory() . '/inc/gallery.php';
+require_once get_template_directory() . '/inc/motion.php';
 
 function ndw_setup() {
 	add_theme_support( 'automatic-feed-links' );
@@ -48,6 +49,10 @@ function ndw_assets() {
 			'gallery' => home_url( '/themes/' ),
 		)
 	);
+	// The moving parts of the homepage and Features.
+	if ( is_front_page() || is_page( 'features' ) ) {
+		wp_enqueue_script( 'ndw-motion', get_template_directory_uri() . '/assets/js/motion.js', array(), ndw_asset_version( 'assets/js/motion.js' ), array( 'strategy' => 'defer', 'in_footer' => true ) );
+	}
 	// The theme gallery and the homepage slider, where they are drawn.
 	if ( ndw_gallery_data() && ( is_front_page() || is_page( 'themes' ) ) ) {
 		wp_enqueue_script( 'ndw-gallery', get_template_directory_uri() . '/assets/js/gallery.js', array(), ndw_asset_version( 'assets/js/gallery.js' ), array( 'strategy' => 'defer', 'in_footer' => true ) );
@@ -55,9 +60,10 @@ function ndw_assets() {
 }
 add_action( 'wp_enqueue_scripts', 'ndw_assets' );
 
-/** Light or dark before the first paint: the reader's choice, else the system's. */
+/** Light or dark before the first paint: the choice made here or in the docs (one key for both), else the system. */
 function ndw_theme_boot() {
-	echo "<script>try{var t=localStorage.getItem('nd-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>\n";
+	// nd-motion: sections may fade in, unless the reader asked for less motion.
+	echo "<script>try{localStorage.removeItem('nd-theme');var t=localStorage.getItem('vitepress-theme-appearance');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}if(!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches))document.documentElement.classList.add('nd-motion')</script>\n";
 }
 add_action( 'wp_head', 'ndw_theme_boot', 1 );
 

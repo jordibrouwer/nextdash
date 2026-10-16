@@ -309,3 +309,80 @@ img.nd-zoomable { cursor: zoom-in; }
   .nd-gal-teaser ul { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .nd-gal-card { grid-template-columns: 1fr; }
 }
+
+/* ---------- Motion (homepage and Features) ----------
+   Everything here holds still under prefers-reduced-motion; without
+   JavaScript the page shows the first look and plain cards. */
+
+/* Hero backdrop: a dot grid in the accent, drifting slowly, and a soft glow */
+.nd-hero--live { position: relative; overflow: hidden; }
+.nd-hero--live::before { content: ""; position: absolute; inset: -40px; pointer-events: none; background-image: radial-gradient(circle, rgb(47 125 85 / .22) 1.2px, transparent 1.6px); background-size: 22px 22px; animation: nd-drift 40s linear infinite; -webkit-mask-image: radial-gradient(ellipse at 70% 40%, #000 20%, transparent 70%); mask-image: radial-gradient(ellipse at 70% 40%, #000 20%, transparent 70%); }
+.nd-hero--live::after { content: ""; position: absolute; width: 620px; height: 620px; right: -120px; top: -160px; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgb(47 125 85 / .16), transparent 65%); animation: nd-glow 14s ease-in-out infinite alternate; }
+.nd-hero--live > * { position: relative; z-index: 1; }
+:root[data-theme="dark"] .nd-hero--live::before { background-image: radial-gradient(circle, rgb(114 202 157 / .18) 1.2px, transparent 1.6px); }
+@keyframes nd-drift { to { background-position: 220px 110px; } }
+@keyframes nd-glow { to { transform: translate(-120px, 80px) scale(1.15); } }
+
+/* Hero look switcher */
+.nd-looks-shot { position: relative; border-radius: 8px; overflow: hidden; border: 1px solid var(--nd-line); box-shadow: 0 24px 60px rgb(35 42 39 / .18); aspect-ratio: 16 / 10; background: #151918; }
+.nd-looks-shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.02); transition: opacity .9s ease, transform 6s ease; }
+.nd-looks-shot img.is-on { opacity: 1; transform: none; }
+.nd-looks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; align-items: center; }
+.nd-looks-label { font-size: 13px; color: var(--nd-muted); margin-right: 4px; }
+.nd-look-chip { font: inherit; font-size: 13px; padding: 3px 11px; border: 1px solid var(--nd-line); border-radius: 99px; background: var(--nd-surface); color: var(--nd-muted); cursor: pointer; position: relative; overflow: hidden; }
+.nd-look-chip:hover { color: var(--nd-fg); }
+.nd-look-chip[aria-pressed="true"] { color: var(--nd-accent); border-color: var(--nd-accent); font-weight: 600; }
+.nd-looks.is-auto .nd-look-chip[aria-pressed="true"]::after { content: ""; position: absolute; left: 0; bottom: 0; height: 2px; background: var(--nd-accent); animation: nd-timer 5s linear forwards; }
+@keyframes nd-timer { from { width: 0; } to { width: 100%; } }
+
+/* Figures that count up */
+.nd-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px; text-align: center; margin: 0; padding: 0; list-style: none; }
+.nd-stats b { display: block; font-family: var(--nd-font-mono); font-size: 34px; font-weight: 600; color: var(--nd-fg); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.nd-stats span { font-size: 14px; color: var(--nd-muted); }
+
+/* The terminal that types the command */
+.nd-term { background: #151918; color: #e7e9e8; border-radius: 8px; font-family: var(--nd-font-mono); font-size: 14px; line-height: 1.7; overflow: hidden; border: 1px solid #313534; }
+.nd-term-bar { display: flex; gap: 6px; padding: 9px 12px; background: #1d211f; border-bottom: 1px solid #313534; }
+.nd-term-bar i { width: 10px; height: 10px; border-radius: 50%; background: #3a403d; }
+.nd-term pre { margin: 0; padding: 14px 16px; background: none; border: 0; color: inherit; min-height: 176px; white-space: pre-wrap; }
+.nd-term .p, .nd-term .ok { color: #72ca9d; }
+.nd-term .dim { color: #8b938f; }
+.nd-cursor { display: inline-block; width: 8px; height: 1.1em; background: #72ca9d; vertical-align: -3px; animation: nd-blink 1s steps(1) infinite; }
+@keyframes nd-blink { 50% { opacity: 0; } }
+.nd-compose summary { cursor: pointer; font-size: 15px; color: var(--nd-accent); margin-top: 6px; }
+.nd-compose pre { margin-top: 10px; }
+
+/* Cards that play their recording on hover */
+.nd-mcards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.nd-mcard { display: flex; flex-direction: column; border: 1px solid var(--nd-line); border-radius: 8px; background: var(--nd-surface); overflow: hidden; color: var(--nd-fg); text-decoration: none; transition: transform .25s ease, box-shadow .25s ease, border-color .25s; }
+.nd-mcard:hover, .nd-mcard:focus-visible { transform: translateY(-4px); box-shadow: 0 14px 34px rgb(35 42 39 / .14); border-color: var(--nd-accent); color: var(--nd-fg); }
+.nd-mcard-media { position: relative; aspect-ratio: 16 / 10; background: #151918; }
+.nd-mcard-media img, .nd-mcard-media video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.nd-mcard-media video { opacity: 0; transition: opacity .3s; }
+.nd-mcard.is-playing video { opacity: 1; }
+.nd-mcard-play { position: absolute; right: 8px; bottom: 8px; font-size: 11px; font-family: var(--nd-font-mono); color: #fff; background: rgb(0 0 0 / .55); padding: 2px 7px; border-radius: 99px; transition: opacity .3s; }
+.nd-mcard.is-playing .nd-mcard-play { opacity: 0; }
+.nd-mcard-text { padding: 12px 14px 14px; }
+.nd-mcard-text b { display: block; font-size: 17px; margin-bottom: 2px; }
+.nd-mcard-text span { font-size: 14px; color: var(--nd-muted); }
+.nd-mcard-text .nd-mcard-more { display: block; margin-top: 6px; color: var(--nd-accent); font-weight: 600; }
+
+/* Sections that fade in once */
+.nd-motion .nd-reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
+.nd-motion .nd-reveal.is-in { opacity: 1; transform: none; }
+
+@media (max-width: 860px) {
+  .nd-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nd-stats li:last-child { grid-column: 1 / -1; }
+  .nd-mcards { grid-template-columns: 1fr; }
+}
+@media (min-width: 861px) and (max-width: 1100px) { .nd-mcards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) {
+  .nd-hero--live::before, .nd-hero--live::after, .nd-cursor { animation: none; }
+  .nd-looks-shot img { transition: none; }
+  .nd-mcard, .nd-mcard:hover { transition: none; transform: none; }
+}
+/* Should the script not run, sections show after a moment anyway. */
+.nd-motion .nd-reveal:not(.is-in) { animation: nd-reveal-safety 0s 4s forwards; }
+@keyframes nd-reveal-safety { to { opacity: 1; transform: none; } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .nd-hero--live::before { background-image: radial-gradient(circle, rgb(114 202 157 / .18) 1.2px, transparent 1.6px); } }
