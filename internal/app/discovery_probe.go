@@ -93,7 +93,11 @@ func probeDiscoveryOnce(ctx context.Context, target string) (discoveryProbeResul
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusNotFound || resp.StatusCode >= 500 {
+	// A page, or a login in front of one. Any other answer -- an error page
+	// in HTML included -- is not the app.
+	switch resp.StatusCode {
+	case http.StatusOK, http.StatusUnauthorized, http.StatusForbidden:
+	default:
 		return discoveryProbeResult{Reason: fmt.Sprintf("status %d", resp.StatusCode)}, nil
 	}
 	mt, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type"))

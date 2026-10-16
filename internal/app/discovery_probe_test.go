@@ -77,3 +77,18 @@ func TestProbeManualAndLabelSkipProbe(t *testing.T) {
 		}
 	}
 }
+
+func TestProbeAcceptsOnlyPageAndLoginStatuses(t *testing.T) {
+	for _, code := range []int{400, 405, 410, 429} {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/html")
+			w.WriteHeader(code)
+			_, _ = w.Write([]byte("<title>Error</title>"))
+		}))
+		res := probeDiscoveryCandidate(context.Background(), discoveryCandidate{URL: srv.URL, Source: discoveryProxy})
+		srv.Close()
+		if res.OK {
+			t.Errorf("%d with an html error page is not a web app: %+v", code, res)
+		}
+	}
+}
