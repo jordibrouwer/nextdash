@@ -31,6 +31,8 @@
         system: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
     };
 
+    const MONO_PRESETS = new Set(['source-code-pro', 'jetbrains-mono', 'ibm-plex-mono']);
+
     function hasCustomFontPath(settings) {
         return !!(settings && settings.customFontPath && String(settings.customFontPath).trim());
     }
@@ -132,6 +134,12 @@
         }
         const stack = CSS_STACK[preset] || CSS_STACK['source-code-pro'];
         document.documentElement.style.setProperty('--font-family-main', stack);
+        // A sans preset keeps code and URLs on the default mono; a mono preset takes them along.
+        if (MONO_PRESETS.has(preset)) {
+            document.documentElement.style.setProperty('--font-family-mono', stack.replace(/, monospace$/, '') + ', ui-monospace, monospace');
+        } else {
+            document.documentElement.style.removeProperty('--font-family-mono');
+        }
     }
 
     global.DashboardFont = {

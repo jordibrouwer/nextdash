@@ -119,6 +119,10 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 - **new — Slate is the theme a fresh install starts on.** Blue-grey stone behind a pane of glass, drawn at glass with a soft glow; auto dark mode switches to Slate [light]. Existing dashboards keep their theme. Server and first paint agree (`defaultThemeID`, `defaultThemeLightID`, `ThemeLoader.DEFAULT_THEME`); MANUAL §16.1 names it. The Help text in the six locales still says Matrix Bluepill until the docs round.
 
+### Appearance
+
+- **fix — code, addresses and shortcuts use Source Code Pro.** Text set in the mono font (code, URLs, shortcut chips, the terminal layout) fell back to the system's monospace, such as Menlo, because `--font-family-mono` was never defined. It now defaults to Source Code Pro. A mono font you or a look pick (JetBrains Mono, IBM Plex Mono) carries it along; a sans font such as Inter keeps code on Source Code Pro (`font-size.css`, `DashboardFont.applyMainFont`).
+
 ---
 
 ## v1.19.8 — 15 October 2026
