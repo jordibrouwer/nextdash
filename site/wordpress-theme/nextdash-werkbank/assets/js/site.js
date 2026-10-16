@@ -5,17 +5,26 @@
   var site = window.ndwSite || {};
   var root = document.documentElement;
 
-  /* Light and dark: follows the system until the reader picks one. */
+  /* Light and dark follow the system. The button picks the other one; picking
+     what the system shows anyway goes back to following it. The choice is
+     the docs' own key, so the site and the docs keep the same one. */
+  var KEY = 'vitepress-theme-appearance';
+  function systemTheme() {
+    return window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
   function effectiveTheme() {
     var set = root.getAttribute('data-theme');
-    if (set === 'light' || set === 'dark') return set;
-    return window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return set === 'light' || set === 'dark' ? set : systemTheme();
   }
   document.querySelectorAll('[data-nd-theme]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var next = effectiveTheme() === 'dark' ? 'light' : 'dark';
-      root.setAttribute('data-theme', next);
-      try { localStorage.setItem('nd-theme', next); } catch (e) { /* private window */ }
+      try {
+        localStorage.removeItem('nd-theme');
+        localStorage.setItem(KEY, next === systemTheme() ? 'auto' : next);
+      } catch (e) { /* private window */ }
+      if (next === systemTheme()) root.removeAttribute('data-theme');
+      else root.setAttribute('data-theme', next);
     });
   });
 
