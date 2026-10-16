@@ -13,18 +13,18 @@ module.exports = {
             kind: 'video',
             alt: 'The Jellyfin widget on the dashboard: posters of what was added lately, with the library under each',
             viewport: { width: 1280, height: 900 },
-            target: (page) => page.locator('.dashboard-widget-panel.jellyfin-panel').first(),
+            target: (page) => page.locator('.dashboard-widget[data-widget-type="jellyfin"] .dashboard-widget-panel').first(),
             async setup(page, { settle }) {
                 await page.goto('/#1');
-                const tile = page.locator('.dashboard-widget-panel.jellyfin-panel').first();
+                const tile = page.locator('.dashboard-widget[data-widget-type="jellyfin"] .dashboard-widget-panel').first();
                 await tile.waitFor();
-                await page.locator('[data-jellyfin-item] img').first().waitFor();
+                await page.locator('[data-media-item] img').first().waitFor();
                 await tile.evaluate((el) => el.scrollIntoView({ block: 'center' }));
                 await settle(page);
             },
             async act(page) {
                 // Rest the pointer on a few posters, left to right.
-                const posters = page.locator('[data-jellyfin-item]');
+                const posters = page.locator('[data-media-item]');
                 const n = Math.min(await posters.count(), 4);
                 for (let i = 0; i < n; i += 1) {
                     await posters.nth(i).hover();
