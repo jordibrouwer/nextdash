@@ -36,6 +36,24 @@ const GROUPS = [
 ]
 const SLUGS = { 1: 'what-is-nextdash', 2: 'installation', 'self-hosted-guide': 'self-hosted-guide' }
 
+// The feature recording on nextdash.cc that shows a chapter, by chapter slug:
+// the folder under the WordPress theme's assets/img/features/.
+const CHAPTER_LOOPS = {
+  installation: 'install', keyboard: 'keys', 'search-commands-and-finders': 'find',
+  'pages-categories-and-collections': 'collections', tags: 'tags', 'checks-and-health': 'health',
+  inbox: 'inbox', containers: 'containers', widgets: 'widgets', appearance: 'appearance',
+  config: 'config', statistics: 'statistics', 'data-backups-and-import': 'data',
+  'browser-extension-and-capture': 'capture', 'security-and-self-hosting': 'trust'
+}
+const FEATURE_IMG = 'https://nextdash.cc/wp-content/themes/nextdash-werkbank/assets/img/features'
+
+// A muted recording that plays while it is in view (the docs theme starts it).
+function chapterLoop (slug) {
+  const f = CHAPTER_LOOPS[slug]
+  if (!f) return ''
+  return `<figure class="nd-chapter-loop"><video muted loop playsinline preload="none" poster="${FEATURE_IMG}/${f}/poster.jpg" aria-label="A short screen recording of this part of nextDash"><source src="${FEATURE_IMG}/${f}/loop.webm" type="video/webm"></video></figure>`
+}
+
 // Notes of the site's own, under a chapter's lead, by chapter slug.
 const SITE_NOTES = {
   appearance: '::: tip See them first\nThe [theme gallery](https://nextdash.cc/themes/) on nextdash.cc shows the dashboard in every material, dark and light, in the twelve looks, the surfaces and on every backdrop, with a search by name.\n:::'
@@ -107,6 +125,29 @@ function splitChapters (text) {
     chunks.at(-1).lines.push(line)
   }
   return chunks
+}
+
+// The first sentence of a chapter's "In short" note, as plain text.
+function chapterLead (ch) {
+  const at = ch.lines.findIndex(l => /^> \*\*In short:\*\*/.test(l))
+  // Without one, the chapter's first paragraph of plain text.
+  let text = at < 0
+    ? (ch.lines.find(l => /^[A-Za-z*]/.test(l.trim()) && !/^</.test(l.trim())) || '')
+    : ch.lines[at].replace(/^> \*\*In short:\*\*\s*/, '')
+  for (let i = at + 1; at >= 0 && i < ch.lines.length && /^>/.test(ch.lines[i]); i++) text += ' ' + ch.lines[i].replace(/^>\s?/, '')
+  if (CARD_LINES[ch.slug]) return CARD_LINES[ch.slug]
+  text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[*`]/g, '').replace(/\s+/g, ' ').trim()
+  // A sentence ends at a full stop before a capital, not at the ! or ? of a key.
+  const first = text.match(/^.*?\.(?=\s+[A-Z]|$)/)
+  const s = first ? first[0] : text
+  return /^nextDash/.test(s) ? s : s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+// A line for the chapters whose opening is a code block or a table.
+const CARD_LINES = {
+  installation: 'Docker Compose, Unraid or a build from source, and what you see the first time.',
+  'quick-reference': 'The keys, commands and settings in short, on one page.',
+  glossary: 'The words nextDash uses, A to Z, each with where it is explained.'
 }
 
 function describe (chunk) {
@@ -317,8 +358,10 @@ function main () {
     const front = ['---', `title: ${JSON.stringify(ch.title)}`, 'outline: [2, 3]', '---', '']
     const h1 = `# ${ch.title} {#${ch.headingIds.get(-1)}}`
     let body = outsideFences(out, reshape, fitDrawing)
-    // A note of the site's own under a chapter's lead; the manual itself does not carry it.
-    if (SITE_NOTES[ch.slug]) body = body.replace(/\{\.nd-lead\}\n/, (m) => `${m}\n${SITE_NOTES[ch.slug]}\n`)
+    // The feature's recording and a note of the site's own go under a chapter's
+    // lead; the manual itself carries neither.
+    const extra = [chapterLoop(ch.slug), SITE_NOTES[ch.slug]].filter(Boolean)
+    if (extra.length) body = body.replace(/\{\.nd-lead\}\n/, (m) => `${m}\n${extra.join('\n\n')}\n`)
     writeFileSync(join(OUT, `${ch.slug}.md`), [...front, h1, body, ''].join('\n'))
   }
 
@@ -361,14 +404,19 @@ function main () {
 
   const index = ['---', 'title: Documentation', 'pageClass: nd-index', '---', '', '# nextDash documentation', '',
     `How nextDash works, from the first launch to running it next to your own services. This is the manual of ${shown === 'WORKTREE' ? 'the development version' : `nextDash ${shown}`}.`, '']
+  // A card per chapter: its icon from the manual's heading, its number, its
+  // title and the first sentence of its "In short".
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
   for (const g of sidebar) {
-    index.push(`## ${g.text}`, '')
-    // The chapter number stands before the link, in its own column, as in the sidebar.
+    index.push(`## ${g.text}`, '', '<div class="nd-dgrid">')
     for (const item of g.items) {
-      const num = (item.text.match(/<span class="nd-n">([^<]*)<\/span>/) || [])[1] || ''
-      index.push(`- <span class="nd-n">${num}</span>[${item.text.replace(/<[^>]+>/g, '').slice(num.length)}](.${item.link}.md)`)
+      const ch = built.find(c => `/${c.slug}` === item.link)
+      if (!ch) continue
+      const raw = ch.heading.replace(/^##\s+/, '').replace(/^\d+\.\s+/, '')
+      const icon = (raw.match(/^[\p{Extended_Pictographic}\u{FE0F}\u{200D}\u{20E3}]+/u) || [''])[0]
+      index.push(`<a class="nd-dcard" href=".${item.link}.html">${ch.num ? `<em aria-hidden="true">${ch.num}</em>` : ''}<span class="nd-dcard-ic" aria-hidden="true">${icon}</span><b>${esc(ch.short)}</b><span>${esc(chapterLead(ch))}</span></a>`)
     }
-    index.push('')
+    index.push('</div>', '')
   }
   writeFileSync(join(OUT, 'index.md'), index.join('\n'))
 
