@@ -121,6 +121,15 @@ func saveUnraidAPIKey(serverID, key string) error {
 // suggestUnraidBaseURL proposes the Docker bridge gateway when nextDash runs in
 // a container: on Unraid that is the host itself, where the API listens.
 func suggestUnraidBaseURL() string {
+	if ip := containerGatewayIP(); ip != "" {
+		return "http://" + ip
+	}
+	return ""
+}
+
+// containerGatewayIP is the default gateway's address when nextDash runs in a
+// container, else "". On Unraid and most bridge setups that is the Docker host.
+func containerGatewayIP() string {
 	if _, err := os.Stat("/.dockerenv"); err != nil {
 		return ""
 	}
@@ -140,7 +149,7 @@ func suggestUnraidBaseURL() string {
 				fmt.Sscanf(fields[2][6-2*i:8-2*i], "%02X", &v)
 				b[i] = v
 			}
-			return "http://" + net.IP(b[:]).String()
+			return net.IP(b[:]).String()
 		}
 	}
 	return ""

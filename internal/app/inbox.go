@@ -48,6 +48,12 @@ type InboxLink struct {
 	// 0 means not snoozed. No server-side timer is needed — the client re-surfaces
 	// the item once now passes this value.
 	SnoozedUntil int64 `json:"snoozedUntil,omitempty"`
+	// ContainerName, AppKind and AppIcon are set on a proposal from app
+	// discovery (Source "discovery"): the container it came from, the kind
+	// that becomes its category, and its icon-set entry ("set/name").
+	ContainerName string `json:"containerName,omitempty"`
+	AppKind       string `json:"appKind,omitempty"`
+	AppIcon       string `json:"appIcon,omitempty"`
 }
 
 // InboxData is persisted at data/inbox.json.

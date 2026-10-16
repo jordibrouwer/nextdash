@@ -17,12 +17,12 @@ import (
 )
 
 // writeRoutesInSource lists every route main.go and handlers_unraid.go
-// register for a method that writes, as they are written there.
+// and handlers_discovery.go register for a method that writes, as they are written there.
 func writeRoutesInSource(t *testing.T) []string {
 	t.Helper()
 	routeRE := regexp.MustCompile(`(?:HandleFunc|PathPrefix)\("([^"]+)"[^\n]*\.Methods\(([^)]*)\)`)
 	seen := map[string]bool{}
-	for _, file := range []string{"main.go", "handlers_unraid.go"} {
+	for _, file := range []string{"main.go", "handlers_unraid.go", "handlers_discovery.go"} {
 		src, err := os.ReadFile(file)
 		if err != nil {
 			t.Fatal(err)
@@ -82,13 +82,14 @@ func TestDemoClassifiesEveryWriteRoute(t *testing.T) {
 // source. A new one fails here until it is looked at.
 func TestDemoKnowsEveryOutboundClient(t *testing.T) {
 	known := map[string]string{
-		"url_safety.go":    "ssrfSafeDialContext itself",
-		"ping.go":          "newSSRFSafeTransport",
-		"handlers.go":      "newSSRFSafeTransport",
-		"unraid_client.go": "newSSRFSafeTransportWithHeaderTimeout",
-		"install_ping.go":  "refuses at its source",
-		"push_send.go":     "refuses at its source",
-		"system_docker.go": "the local Docker socket, not another host",
+		"url_safety.go":      "ssrfSafeDialContext itself",
+		"ping.go":            "newSSRFSafeTransport",
+		"handlers.go":        "newSSRFSafeTransport",
+		"unraid_client.go":   "newSSRFSafeTransportWithHeaderTimeout",
+		"discovery_probe.go": "newSSRFSafeTransport",
+		"install_ping.go":    "refuses at its source",
+		"push_send.go":       "refuses at its source",
+		"system_docker.go":   "the local Docker socket, not another host",
 	}
 	clientRE := regexp.MustCompile(`http\.Client\{|http\.Transport\{|http\.DefaultClient|http\.DefaultTransport|net\.Dial\(|net\.Dialer\{|http\.Get\(|http\.Post\(`)
 	files, _ := filepath.Glob("*.go")

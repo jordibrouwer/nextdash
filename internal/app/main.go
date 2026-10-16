@@ -275,6 +275,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/web-search", handlers.WebSearchHandler).Methods("GET")
 	r.HandleFunc("/api/web-search/status", handlers.WebSearchStatusHandler).Methods("GET")
 	registerUnraidRoutes(r, handlers)
+	registerDiscoveryRoutes(r, handlers)
 	r.HandleFunc("/api/docker/updates/check", handlers.DockerUpdatesCheckHandler).Methods("POST")
 	r.HandleFunc("/api/docker/updates/choice", handlers.DockerUpdateChoiceHandler).Methods("POST")
 	r.HandleFunc("/api/docker/disk", handlers.DockerDiskHandler).Methods("GET")
@@ -466,6 +467,8 @@ func Run(files assetFS) {
 	handlers.StartDockerAutoUpdater(schedulerStop)
 	handlers.StartDockerNotifier(schedulerStop)
 	handlers.StartUnraidWatcher(schedulerStop)
+	// Looks through the containers for web apps, every few minutes.
+	handlers.StartDiscoveryScheduler(schedulerStop)
 	// Ends the quiet hours with one summary, and sends the reminders.
 	handlers.StartQuietHoursScheduler(schedulerStop)
 	// One digest a week, after the quiet hours.

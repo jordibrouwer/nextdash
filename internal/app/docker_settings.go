@@ -80,6 +80,14 @@ func normalizeDockerSettings(s *Settings) {
 	s.DockerBookmarkLinks = normalizeDockerBookmarkLinks(s.DockerBookmarkLinks)
 	s.DockerContainerIcons = normalizeDockerContainerIcons(s.DockerContainerIcons)
 	s.DockerHostAddress = normalizeDockerHostAddress(s.DockerHostAddress)
+	s.DiscoveryIgnored = normalizeDockerNameList(s.DiscoveryIgnored)
+	if len(s.DiscoveryIgnored) == 0 {
+		s.DiscoveryIgnored = nil
+	}
+	if s.DiscoveryNewApps != "add" && s.DiscoveryNewApps != "inbox" {
+		s.DiscoveryNewApps = ""
+	}
+	s.DockerHostSeen = normalizeDockerHostAddress(s.DockerHostSeen)
 }
 
 // normalizeDockerNameList trims, de-duplicates and caps a list of container

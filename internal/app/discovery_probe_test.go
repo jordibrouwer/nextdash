@@ -51,6 +51,10 @@ func TestProbePortFallsBackToHTTPS(t *testing.T) {
 	if !res.OK {
 		t.Fatalf("self-signed https on the port must be accepted for the probe: %+v", res)
 	}
+	// The address that answered is the one an app is filed under.
+	if res.URL != srv.URL {
+		t.Fatalf("answered on %q, want %q", res.URL, srv.URL)
+	}
 }
 
 func TestProbeProxyUnresolvableIsAccepted(t *testing.T) {

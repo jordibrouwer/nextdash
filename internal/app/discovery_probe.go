@@ -28,6 +28,9 @@ type discoveryProbeResult struct {
 	OK     bool
 	Reason string
 	Title  string
+	// URL is the address that answered when it is not the one asked: a port
+	// candidate that only answers on https. Empty means the candidate's own.
+	URL string
 }
 
 var discoveryTitleRE = regexp.MustCompile(`(?is)<title[^>]*>(.*?)</title>`)
@@ -49,7 +52,9 @@ func probeDiscoveryCandidate(ctx context.Context, cand discoveryCandidate) disco
 	// A TLS port answers a plain request with an error page, so a no-page
 	// answer falls back too, not only a failed connection.
 	if (err != nil || !res.OK) && cand.Source == discoveryPort && strings.HasPrefix(cand.URL, "http://") {
-		if res2, err2 := probeDiscoveryOnce(ctx, "https://"+strings.TrimPrefix(cand.URL, "http://")); err2 == nil && res2.OK {
+		secure := "https://" + strings.TrimPrefix(cand.URL, "http://")
+		if res2, err2 := probeDiscoveryOnce(ctx, secure); err2 == nil && res2.OK {
+			res2.URL = secure
 			return res2
 		}
 	}

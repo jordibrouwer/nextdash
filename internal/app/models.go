@@ -847,6 +847,17 @@ type Settings struct {
 	DockerConfirmStopRestart bool     `json:"dockerConfirmStopRestart"`   // ask before stop and restart as well
 	DockerHiddenContainers   []string `json:"dockerHiddenContainers"`     // names kept out of the view, search and widget
 	DiscoveryIgnored         []string `json:"discoveryIgnored,omitempty"` // container names the user turned down in the Inbox
+	// DiscoverApps lets nextDash look through the containers for web apps and
+	// offer them. On by default; a settings file from before reads as on.
+	DiscoverApps bool `json:"discoverApps"`
+	// DiscoveryNewApps says what a new app does: "add" (or empty) puts it on
+	// the dashboard straight away, "inbox" proposes it in the Inbox.
+	DiscoveryNewApps string `json:"discoveryNewApps,omitempty"`
+	// DiscoveryCardDone is set once the first-start apps card was answered.
+	DiscoveryCardDone bool `json:"discoveryCardDone,omitempty"`
+	// DockerHostSeen is the host name the dashboard was last opened on, the
+	// fallback host for port links when DockerHostAddress is empty.
+	DockerHostSeen string `json:"dockerHostSeen,omitempty"`
 	// DockerStatsHistory keeps the last hour of CPU and memory per running
 	// container for the drawer's charts. On by default; off reads nothing.
 	DockerStatsHistory bool `json:"dockerStatsHistory"`
@@ -1891,6 +1902,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:           "off",
 			DockerViewEnabled:              true,
+			DiscoverApps:                   true,
 			DockerStatsHistory:             true,
 			DockerNotify:                   true,
 			DockerUsageAlerts:              true,
@@ -4466,6 +4478,7 @@ func (fs *FileStore) GetSettings() Settings {
 			HealthAutoRecheckIntervalHours:  defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:            "off",
 			DockerViewEnabled:               true,
+			DiscoverApps:                    true,
 			DockerStatsHistory:              true,
 			DockerNotify:                    true,
 			DockerUsageAlerts:               true,
@@ -5208,6 +5221,9 @@ func (fs *FileStore) GetSettings() Settings {
 		settings.InboxEnabled = true
 		if _, ok := rawSettings["dockerViewEnabled"]; !ok {
 			settings.DockerViewEnabled = true
+		}
+		if _, ok := rawSettings["discoverApps"]; !ok {
+			settings.DiscoverApps = true
 		}
 		if _, ok := rawSettings["dockerStatsHistory"]; !ok {
 			settings.DockerStatsHistory = true
