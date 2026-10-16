@@ -87,7 +87,7 @@ jobs:
       # said so — it only surfaced because it also broke the e2e run it was
       # being collected into. They cost seconds; the silence cost a release.
       - name: Run node unit tests
-        run: npm run test:news-stream && npm run test:analytics-buckets && npm run test:search-groups
+        run: npm run test:news-stream && npm run test:analytics-buckets && npm run test:search-groups && npm run test:container-match
       # Eleven checks the repo already had and nothing ran. They are the
       # mechanism Scan 2's N5 asked for, left unplugged -- locale parity is held
       # by hand at 6011 keys across six files, and the v1.11.0 changelog even
