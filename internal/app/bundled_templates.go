@@ -290,3 +290,42 @@ func (h *Handlers) ApplyOnboardingTemplate(w http.ResponseWriter, r *http.Reques
 	plan.result.PageID = pageID
 	writeJSON(w, map[string]any{"result": plan.result, "replaced": false})
 }
+
+// clearStarterLinks takes the starter links and their categories off main
+// while main is still the untouched starter page; its widgets stay. It
+// reports whether it cleared anything.
+func (h *Handlers) clearStarterLinks() (bool, error) {
+	pageTemplateImportMu.Lock()
+	defer pageTemplateImportMu.Unlock()
+	if !h.isUntouchedMainPage() {
+		return false, nil
+	}
+	pageID := defaultMainPage().Page.ID
+	if err := h.store.SaveBookmarksByPage(pageID, []Bookmark{}); err != nil {
+		return false, err
+	}
+	if err := h.store.SaveCategoriesByPage(pageID, []Category{}); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+/*
+StartEmptyOnboarding answers POST /api/onboarding/start-empty: the
+first-start card's "start with an empty page". Only on a main page that is
+still the starter page; anything somebody made stays (409).
+*/
+func (h *Handlers) StartEmptyOnboarding(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	cleared, err := h.clearStarterLinks()
+	if !respondStorePersistError(w, err) {
+		return
+	}
+	if !cleared {
+		http.Error(w, "Main is no longer the starter page", http.StatusConflict)
+		return
+	}
+	writeJSON(w, map[string]any{"status": "success", "pageId": defaultMainPage().Page.ID})
+}

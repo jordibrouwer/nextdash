@@ -181,6 +181,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/page-templates/bundled", handlers.BundledTemplates).Methods("GET")
 	r.HandleFunc("/api/page-templates/bundled/{id:[a-z-]+}", handlers.BundledTemplateFile).Methods("GET")
 	r.HandleFunc("/api/onboarding/template", handlers.ApplyOnboardingTemplate).Methods("POST")
+	r.HandleFunc("/api/onboarding/start-empty", handlers.StartEmptyOnboarding).Methods("POST")
 	r.HandleFunc("/api/demo", handlers.DemoStatus).Methods("GET")
 	r.HandleFunc("/api/data-revision", handlers.GetDataRevision).Methods("GET")
 	r.HandleFunc("/static/bundle/dashboard.js", handlers.ServeAssetBundle).Methods("GET")

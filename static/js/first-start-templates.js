@@ -1,16 +1,18 @@
 /**
- * First-start card: "What do you run?"
+ * First-start card: "What do you want?"
  *
- * A fresh install opens on starter links nobody runs a self-hosted dashboard
- * for. This card, at the top of main and before the quick-start checklist,
- * offers the three bundled templates -- Homelab, Media server, Developer --
- * filled in on one server address, or keeps the starter links.
+ * A fresh install opens on example links. This card, at the top of main and
+ * before the quick-start checklist, asks whether to keep them or to start
+ * with an empty page. The apps found on this server come later, at the end of
+ * the onboarding (app-discovery-card.js).
  *
  * Part of the page, not a corner card: it sits above the blocks and the page
- * under it keeps working. Answering it (a template, Keep, ✕ or Esc) records
+ * under it keeps working. Answering it (Keep, Start empty, ✕ or Esc) records
  * settings.quickStart.templatePicked, and QuickStart carries on with the
- * checklist. The server decides whether the template replaces main (still
- * the seed) or comes as a new page; the sentence under the button says which.
+ * checklist.
+ *
+ * expandDefault stays here for the import dialog, which fills the bundled
+ * templates from one server address.
  */
 (function (global) {
     'use strict';
@@ -34,8 +36,6 @@
     }
 
     const esc = (value) => global.NextDashHtml.escapeHtml(String(value ?? ''));
-
-    const ICONS = { homelab: '⌂', 'media-server': '▶', developer: '</>' };
 
     /**
      * A variable's Default filled with the one server address. Mirrors
@@ -74,18 +74,10 @@
             this.dash = dash;
             this.onDone = typeof onDone === 'function' ? onDone : () => {};
             this.el = null;
-            this.list = [];
-            this.replacesMain = true;
-            this.chosen = null;
-            this.server = '';
-            this.edited = {};
-            this.moreOpen = false;
             this.busy = false;
             this.keyHandler = (event) => {
-                if (event.key !== 'Escape' || !this.el || this.el.hidden) return;
+                if (event.key !== 'Escape' || !this.el || this.el.hidden || this.busy) return;
                 if (this.dash?.isModalOpen?.()) return;
-                // Esc in the open card goes back to the tiles first.
-                if (this.chosen) { this.chosen = null; this.render(); return; }
                 this.finish('keep');
             };
             this.pageTimer = null;
@@ -96,14 +88,13 @@
                 const res = await fetch('/api/page-templates/bundled');
                 if (!res.ok) throw new Error(String(res.status));
                 const data = await res.json();
-                this.list = Array.isArray(data.templates) ? data.templates : [];
-                this.replacesMain = data.replacesMain === true;
+                // Only main as it started can be emptied; anything else
+                // somebody made is theirs, and there is nothing to ask.
+                if (data.replacesMain !== true) { this.onDone(); return; }
             } catch {
-                // Nothing to offer is no reason to hold up the checklist.
                 this.onDone();
                 return;
             }
-            if (!this.list.length) { this.onDone(); return; }
             this.render();
             document.addEventListener('keydown', this.keyHandler);
             // Only on main: the card is about that page, and follows the reader
@@ -137,114 +128,36 @@
             if (!this.el) {
                 this.el = document.createElement('section');
                 this.el.className = 'first-start-card';
-                this.el.setAttribute('aria-label', t('label', 'Choose a starting page'));
+                this.el.setAttribute('aria-label', t('label', 'Choose how to start'));
                 this.el.addEventListener('click', (event) => this.onClick(event));
-                this.el.addEventListener('input', (event) => this.onInput(event));
-                this.el.addEventListener('submit', (event) => { event.preventDefault(); this.apply(); });
             }
-            this.el.innerHTML = `<div class="first-start-stripe"></div>${this.chosen ? this.openHtml() : this.tilesHtml()}`;
-            this.place();
-            if (this.chosen) this.el.querySelector('[data-fs-server]')?.focus({ preventScroll: true });
-        }
-
-        tilesHtml() {
-            const tiles = this.list.map((tpl) => `
-                <button type="button" class="first-start-tile" data-fs-pick="${esc(tpl.id)}">
-                    <span class="first-start-tile-name"><span class="first-start-tile-icon" aria-hidden="true">${esc(ICONS[tpl.id] || tpl.icon || '')}</span> ${esc(tpl.name)}</span>
-                    <span class="first-start-tile-services">${esc(tpl.services.slice(0, 3).join(', '))} …</span>
-                    <span class="first-start-tile-count">${esc(t('links', '{count} links', { count: tpl.links }))}</span>
-                </button>`).join('');
-            return `
+            this.el.innerHTML = `<div class="first-start-stripe"></div>
                 <div class="first-start-inner">
                     <div class="first-start-head">
-                        <p class="first-start-title">// ${esc(t('title', 'what do you run?'))}</p>
+                        <p class="first-start-title">// ${esc(t('titleWant', 'what do you want?'))}</p>
                         <button type="button" class="first-start-close" data-fs-keep aria-label="${esc(t('close', 'Keep these links'))}">×</button>
                     </div>
-                    <p class="first-start-sub">${esc(t('intro', 'Pick a starting page. Your services, on your own address.'))}</p>
+                    <p class="first-start-sub">${esc(t('introWant', 'This page starts with example links. Keep them to look around, or clear them and add your own.'))}</p>
                     <div class="first-start-tiles">
-                        ${tiles}
                         <button type="button" class="first-start-tile first-start-tile--keep" data-fs-keep>
-                            <span class="first-start-tile-name"><span class="first-start-tile-icon" aria-hidden="true">○</span> ${esc(t('keep', 'Keep these links'))}</span>
-                            <span class="first-start-tile-services">${esc(t('keepHint', 'The starter page as it is'))}</span>
+                            <span class="first-start-tile-name"><span class="first-start-tile-icon" aria-hidden="true">○</span> ${esc(t('keepExamples', 'Keep these example links'))}</span>
+                            <span class="first-start-tile-services">${esc(t('keepExamplesHint', 'The starter page as it is; remove them any time'))}</span>
+                        </button>
+                        <button type="button" class="first-start-tile" data-fs-empty>
+                            <span class="first-start-tile-name"><span class="first-start-tile-icon" aria-hidden="true">＋</span> ${esc(t('startEmpty', 'Start with an empty page'))}</span>
+                            <span class="first-start-tile-services">${esc(t('startEmptyHint', 'Remove the example links and add your own'))}</span>
                         </button>
                     </div>
-                </div>`;
-        }
-
-        valueFor(variable) {
-            if (Object.prototype.hasOwnProperty.call(this.edited, variable.key)) return this.edited[variable.key];
-            return expandDefault(variable.default, this.server);
-        }
-
-        openHtml() {
-            const tpl = this.chosen;
-            const rows = (tpl.variables || []).map((variable) => `
-                <label class="first-start-svc-name" for="fs-var-${esc(variable.key)}">${esc(variable.label)}</label>
-                <input id="fs-var-${esc(variable.key)}" class="first-start-input" type="text" spellcheck="false" autocomplete="off"
-                    data-fs-var="${esc(variable.key)}" value="${esc(this.valueFor(variable))}">`).join('');
-            const note = this.replacesMain
-                ? t('replaces', 'Replaces the starter links on this page.')
-                : t('adds', 'Adds a new page; this one stays as it is.');
-            return `
-                <form class="first-start-inner" novalidate>
-                    <div class="first-start-head">
-                        <p class="first-start-title">// ${esc(tpl.name.toLowerCase())}</p>
-                        <button type="button" class="first-start-close" data-fs-keep aria-label="${esc(t('close', 'Keep these links'))}">×</button>
-                    </div>
-                    <p class="first-start-sub">${esc(tpl.services.join(', '))}</p>
-                    <div class="first-start-row">
-                        <label for="fs-server">${esc(t('where', 'Where do these run?'))}</label>
-                        <input id="fs-server" class="first-start-input" type="text" spellcheck="false" autocomplete="off"
-                            data-fs-server placeholder="${esc(t('serverPlaceholder', '192.168.1.10 or nas.local'))}" value="${esc(this.server)}">
-                        <button type="button" class="first-start-more" data-fs-more aria-expanded="${this.moreOpen}">${esc(t('more', 'More'))} ${this.moreOpen ? '▾' : '▸'}</button>
-                    </div>
-                    <div class="first-start-svcs" ${this.moreOpen ? '' : 'hidden'}>${rows}</div>
                     <p class="first-start-error" data-fs-error role="alert" hidden></p>
-                    <div class="first-start-actions">
-                        <button type="submit" class="first-start-apply">${esc(t('apply', 'Set up the page'))}</button>
-                        <button type="button" class="first-start-back" data-fs-back>${esc(t('back', 'Back'))}</button>
-                    </div>
-                    <p class="first-start-note">${esc(note)}</p>
-                </form>`;
+                </div>`;
+            this.place();
         }
 
         onClick(event) {
             const target = event.target.closest('button');
             if (!target || this.busy) return;
             if (target.hasAttribute('data-fs-keep')) { this.finish('keep'); return; }
-            if (target.hasAttribute('data-fs-back')) { this.chosen = null; this.render(); return; }
-            if (target.hasAttribute('data-fs-more')) {
-                this.moreOpen = !this.moreOpen;
-                const svcs = this.el.querySelector('.first-start-svcs');
-                if (svcs) svcs.hidden = !this.moreOpen;
-                target.setAttribute('aria-expanded', String(this.moreOpen));
-                target.textContent = `${t('more', 'More')} ${this.moreOpen ? '▾' : '▸'}`;
-                return;
-            }
-            const pick = target.getAttribute('data-fs-pick');
-            if (pick) {
-                this.chosen = this.list.find((tpl) => tpl.id === pick) || null;
-                this.edited = {};
-                this.render();
-            }
-        }
-
-        onInput(event) {
-            const input = event.target;
-            const error = this.el.querySelector('[data-fs-error]');
-            if (error) error.hidden = true;
-            if (input.hasAttribute('data-fs-server')) {
-                this.server = input.value;
-                // Every service not edited by hand follows the server address.
-                (this.chosen?.variables || []).forEach((variable) => {
-                    if (Object.prototype.hasOwnProperty.call(this.edited, variable.key)) return;
-                    const field = this.el.querySelector(`[data-fs-var="${CSS.escape(variable.key)}"]`);
-                    if (field) field.value = this.valueFor(variable);
-                });
-                return;
-            }
-            const key = input.getAttribute('data-fs-var');
-            if (key) this.edited[key] = input.value;
+            if (target.hasAttribute('data-fs-empty')) void this.startEmpty();
         }
 
         showError(message) {
@@ -254,53 +167,29 @@
             error.hidden = false;
         }
 
-        async apply() {
-            if (!this.chosen || this.busy) return;
-            const needsServer = (this.chosen.variables || []).some((variable) =>
-                String(variable.default || '').includes(SERVER) && !String(this.edited[variable.key] || '').trim());
-            if (needsServer && !expandDefault(`http://${SERVER}`, this.server)) {
-                this.showError(t('serverMissing', 'Enter an address like 192.168.1.10 or nas.local'));
-                this.el.querySelector('[data-fs-server]')?.focus();
-                return;
-            }
+        async startEmpty() {
             this.busy = true;
-            const button = this.el.querySelector('.first-start-apply');
-            if (button) button.disabled = true;
-            const values = {};
-            Object.entries(this.edited).forEach(([key, value]) => {
-                if (String(value).trim()) values[key] = String(value).trim();
-            });
-            let answer = null;
             try {
                 const api = typeof global.nextDashFetch === 'function' ? global.nextDashFetch : fetch;
-                const res = await api('/api/onboarding/template', {
+                const res = await api('/api/onboarding/start-empty', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: this.chosen.id, server: this.server.trim(), values }),
+                    body: '{}',
                 });
-                answer = await res.json().catch(() => ({}));
-                if (!res.ok) throw new Error(answer?.error || `HTTP ${res.status}`);
-            } catch (error) {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            } catch {
                 this.busy = false;
-                if (button) button.disabled = false;
-                this.showError(String(error?.message || '').startsWith('HTTP')
-                    ? t('applyError', 'Could not set up the page')
-                    : error.message);
+                this.showError(t('startEmptyError', 'Could not clear the page'));
                 return;
             }
-            window.nextdashTrack?.('first-start:template', { template: this.chosen.id, replaced: answer.replaced === true });
-            await this.showPage(Number(answer.result?.pageId) || MAIN_PAGE_ID);
-            this.finish(this.chosen.id);
+            global.nextdashTrack?.('first-start:empty');
+            await this.showPage(MAIN_PAGE_ID);
+            this.finish('empty');
         }
 
-        /** Bring the new or rewritten page on screen without a reload. */
+        /** Bring the emptied page on screen without a reload. */
         async showPage(pageId) {
             const d = this.dash;
-            try {
-                const res = await fetch('/api/pages');
-                if (res.ok) d.pages = await res.json();
-            } catch { /* the list catches up on the next revision check */ }
-            d.pageNav?.renderPageNavigation?.();
             d.data?.invalidatePageDataCache?.(pageId);
             await d.data?.loadAllBookmarks?.();
             await d.loadPageBookmarks?.(pageId, { forceFetch: true, skipInlineEditConfirm: true });

@@ -3,8 +3,8 @@ const { test, expect } = require('./fixtures');
 const { WRITE_TOKEN, markWhatsNewSeen } = require('./e2e-helpers');
 
 /**
- * The first-start card: "What do you run?" above main on a fresh install,
- * before the quick-start checklist. fixtures.js answers it with Keep for every
+ * The first-start card: "What do you want?" above main on a fresh install,
+ * before the quick-start checklist: keep the example links or start empty. fixtures.js answers it with Keep for every
  * other spec; these put the store back to a fresh install with the card
  * unanswered.
  */
@@ -31,37 +31,26 @@ async function mainLinks(page) {
     });
 }
 
-test('a template on one address replaces the starter links, then the checklist names a service', async ({ page, request }) => {
+test('Start with an empty page clears the example links, then the checklist asks for a first bookmark', async ({ page, request }) => {
     await freshInstall(page, request);
     await expect(card(page)).toBeVisible();
+    await expect(card(page)).toContainText('what do you want?');
     await expect(page.locator('.quickstart-checklist')).toHaveCount(0);
 
-    await card(page).getByRole('button', { name: /Media server/ }).click();
-    await card(page).getByLabel('Where do these run?').fill('192.168.1.10');
-    await card(page).getByRole('button', { name: /More/ }).click();
-    await expect(card(page).getByLabel('Jellyfin', { exact: true })).toHaveValue('http://192.168.1.10:8096');
-    await card(page).getByLabel('qBittorrent').fill('http://10.0.0.5:8081');
-    // A field edited by hand stops following the server address.
-    await card(page).getByLabel('Where do these run?').fill('nas.local');
-    await expect(card(page).getByLabel('Sonarr')).toHaveValue('http://nas.local:8989');
-    await expect(card(page).getByLabel('qBittorrent')).toHaveValue('http://10.0.0.5:8081');
-    await expect(card(page)).toContainText('Replaces the starter links on this page.');
-    await card(page).getByRole('button', { name: 'Set up the page' }).click();
-
+    await card(page).getByRole('button', { name: /Start with an empty page/ }).click();
     await expect(card(page)).toHaveCount(0);
-    const links = await mainLinks(page);
-    expect(links.Jellyfin).toBe('http://nas.local:8096/');
-    expect(links.qBittorrent).toBe('http://10.0.0.5:8081/');
-    expect(links.nextDash).toBe('https://nextdash.cc/');
-    expect(links.YouTube).toBeUndefined();
-    await expect(page).toHaveTitle(/Media server/);
-    await expect(page.locator('.quickstart-checklist')).toContainText('Open Jellyfin from the dashboard');
-    await expect(page.locator('.quickstart-checklist')).toContainText('Type j');
+    expect(await mainLinks(page)).toEqual({});
+    await expect(page.locator('#dashboard-layout .bookmark-link')).toHaveCount(0);
+    await expect(page.locator('.quickstart-checklist')).toContainText('Add your first bookmark');
+
+    await page.reload();
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    await expect(card(page)).toHaveCount(0);
 });
 
 test('Keep these links leaves main alone and the card does not come back', async ({ page, request }) => {
     await freshInstall(page, request);
-    await card(page).getByRole('button', { name: /Keep these links/ }).last().click();
+    await card(page).getByRole('button', { name: /Keep these example links/ }).click();
     await expect(card(page)).toHaveCount(0);
     await expect(page.locator('.quickstart-checklist')).toBeVisible();
     await expect(page.locator('.quickstart-checklist')).toContainText('Add your first bookmark');
@@ -81,7 +70,7 @@ test('an install that finished its first run never sees the card', async ({ page
     await expect(card(page)).toHaveCount(0);
 });
 
-test('a changed main page gets the template as a new page', async ({ page, request }) => {
+test('a main page somebody changed gets no card', async ({ page, request }) => {
     await freshInstall(page, request);
     await page.evaluate(async () => {
         await nextDashFetch('/api/bookmarks/add', {
@@ -91,36 +80,9 @@ test('a changed main page gets the template as a new page', async ({ page, reque
     });
     await page.reload();
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
-    await card(page).getByRole('button', { name: /Developer/ }).click();
-    await expect(card(page)).toContainText('Adds a new page');
-    await card(page).getByLabel('Where do these run?').fill('192.168.1.20');
-    await card(page).getByRole('button', { name: 'Set up the page' }).click();
+    await page.waitForTimeout(1500);
     await expect(card(page)).toHaveCount(0);
     expect((await mainLinks(page)).Mine).toBe('https://example.com/');
-    await expect.poll(() => page.evaluate(() => window.dashboardInstance.currentPageId)).not.toBe(1);
-    const gitea = await page.evaluate(async () => {
-        const id = window.dashboardInstance.currentPageId;
-        const rows = await (await fetch(`/api/bookmarks?page=${id}`)).json();
-        return rows.find((b) => b.name === 'Gitea')?.url;
-    });
-    expect(gitea).toBe('http://192.168.1.20:3000/');
-});
-
-test('the dashboard tour names a service on the page', async ({ page, request }) => {
-    await freshInstall(page, request);
-    await card(page).getByRole('button', { name: /Media server/ }).click();
-    await card(page).getByLabel('Where do these run?').fill('192.168.1.10');
-    await card(page).getByRole('button', { name: 'Set up the page' }).click();
-    await expect(card(page)).toHaveCount(0);
-    await page.evaluate(() => window.dashboardInstance.promos.openDashboardTour());
-    const tour = page.locator('#app-modal.show .dashboard-tutorial-modal');
-    await expect(tour).toBeVisible();
-    await expect.poll(async () => {
-        const text = await tour.innerText();
-        if (/type j for Jellyfin/.test(text)) return 'found';
-        await page.locator('.modal-actions .modal-button').first().click();
-        return text.slice(0, 40);
-    }, { timeout: 15_000 }).toBe('found');
 });
 
 test('the import dialog offers the bundled templates and fills them from one address', async ({ page, request }) => {
