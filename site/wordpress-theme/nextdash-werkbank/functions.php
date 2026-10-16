@@ -54,7 +54,7 @@ function ndw_assets() {
 		wp_enqueue_script( 'ndw-motion', get_template_directory_uri() . '/assets/js/motion.js', array(), ndw_asset_version( 'assets/js/motion.js' ), array( 'strategy' => 'defer', 'in_footer' => true ) );
 	}
 	// The theme gallery and the homepage slider, where they are drawn.
-	if ( ndw_gallery_data() && ( is_front_page() || is_page( 'themes' ) ) ) {
+	if ( ndw_gallery_data() && is_page( 'themes' ) ) {
 		wp_enqueue_script( 'ndw-gallery', get_template_directory_uri() . '/assets/js/gallery.js', array(), ndw_asset_version( 'assets/js/gallery.js' ), array( 'strategy' => 'defer', 'in_footer' => true ) );
 	}
 }

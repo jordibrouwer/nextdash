@@ -52,6 +52,7 @@ function ndw_hero_shot() {
 				<?php $i = 0; foreach ( array_keys( $looks ) as $label ) : ?>
 					<button type="button" class="nd-look-chip" aria-pressed="<?php echo 0 === $i ? 'true' : 'false'; ?>"><?php echo esc_html( $label ); ?></button>
 				<?php $i++; endforeach; ?>
+				<?php if ( ndw_gallery_page() ) : ?><a class="nd-looks-more" href="<?php echo esc_url( home_url( '/themes/' ) ); ?>">All themes →</a><?php endif; ?>
 			</div>
 		<?php endif; ?>
 	</figure>

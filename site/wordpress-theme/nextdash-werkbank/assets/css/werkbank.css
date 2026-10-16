@@ -386,3 +386,4 @@ img.nd-zoomable { cursor: zoom-in; }
 .nd-motion .nd-reveal:not(.is-in) { animation: nd-reveal-safety 0s 4s forwards; }
 @keyframes nd-reveal-safety { to { opacity: 1; transform: none; } }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .nd-hero--live::before { background-image: radial-gradient(circle, rgb(114 202 157 / .18) 1.2px, transparent 1.6px); } }
+.nd-looks-more { font-size: 14px; margin-left: 6px; color: var(--nd-accent); }

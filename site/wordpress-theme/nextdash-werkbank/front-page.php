@@ -26,6 +26,7 @@ $compose = "services:\n  nextdash:\n    image: ghcr.io/jordibrouwer/nextdash:lat
 			<p class="nd-btns">
 				<a class="nd-btn nd-btn--primary" href="<?php echo $docs( 'installation.html' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>">Install</a>
 				<a class="nd-btn" href="<?php echo esc_url( $links['demo'] ); ?>" rel="noopener">Live demo <span aria-hidden="true">↗</span></a>
+				<a class="nd-btn" href="<?php echo esc_url( home_url( '/features/' ) ); ?>">Features</a>
 			</p>
 		</div>
 		<?php echo ndw_hero_shot(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
@@ -41,8 +42,6 @@ $compose = "services:\n  nextdash:\n    image: ghcr.io/jordibrouwer/nextdash:lat
 		</ul>
 	</div>
 </section>
-
-<?php echo ndw_home_slider(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 
 <section class="nd-sec nd-reveal">
 	<div class="nd-wrap">
