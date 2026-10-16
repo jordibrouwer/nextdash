@@ -92,7 +92,10 @@ async function startWorkerServer(workerIndex, env) {
     fs.mkdirSync(dataDir, { recursive: true });
 
     const child = spawn(binaryPath(), [], {
-        env: { ...process.env, ...env, PORT: String(port), NEXTDASH_DATA_DIR: dataDir },
+        // Discovery reads containers from a file in the worker's own data dir,
+        // never the machine's Docker socket; app-discovery.spec.js writes it.
+        env: { ...process.env, ...env, PORT: String(port), NEXTDASH_DATA_DIR: dataDir,
+            NEXTDASH_DISCOVERY_FIXTURE: path.join(dataDir, 'discovery-fixture.json') },
         stdio: ['ignore', 'pipe', 'pipe'],
     });
 
@@ -112,6 +115,7 @@ async function startWorkerServer(workerIndex, env) {
 
     return {
         baseURL,
+        discoveryFixture: path.join(dataDir, 'discovery-fixture.json'),
         async stop() {
             child.kill('SIGTERM');
             await new Promise((resolve) => {

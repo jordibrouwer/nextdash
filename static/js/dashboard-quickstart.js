@@ -90,14 +90,68 @@
         }
 
         start() {
-            if (!this.shouldStart()) return;
+            if (!this.shouldStart()) {
+                // An install that is set up still gets the apps card once.
+                this.offerDiscovery();
+                return;
+            }
             // The first-start card comes first: what the page holds decides
-            // what the checklist can point at.
+            // what the checklist can point at. Apps found on this server take
+            // the template card's place.
             if (!this.state().templatePicked) {
+                this.showFirstCard();
+                return;
+            }
+            this.offerDiscovery();
+            this.renderChecklist();
+        }
+
+        async discoveryInfo() {
+            if (this.dash?.settings?.discoverApps === false || this.dash?.settings?.discoveryCardDone === true) return null;
+            try {
+                const res = await fetch('/api/discovery', { cache: 'no-store' });
+                return res.ok ? await res.json() : null;
+            } catch {
+                return null;
+            }
+        }
+
+        async loadDiscoveryCard() {
+            try {
+                await window.LazyScript.loadScriptOnce('js/app-discovery-card.js', 'appDiscoveryCardScript',
+                    () => typeof window.AppDiscoveryCard === 'function');
+                return true;
+            } catch {
+                return false;
+            }
+        }
+
+        /** Fresh install: the apps card when there are apps, else the template card. */
+        async showFirstCard() {
+            const info = await this.discoveryInfo();
+            if (!info || !info.enabled || info.cardDone || !(info.running || (info.docker && info.apps?.length))
+                || !(await this.loadDiscoveryCard()) || !window.AppDiscoveryCard.wanted(info)) {
                 this.showTemplateCard();
                 return;
             }
-            this.renderChecklist();
+            this.discoveryCard = new window.AppDiscoveryCard(this.dash, { onDone: (result) => {
+                this.discoveryCard = null;
+                if (result === 'none') { this.showTemplateCard(); return; }
+                // Answered: the template card does not follow.
+                this.state().templatePicked = 'apps';
+                this.persistState();
+                this.renderChecklist();
+            } });
+            this.discoveryCard.show(info);
+        }
+
+        /** Set-up install: the apps card once, for apps without a bookmark. */
+        async offerDiscovery() {
+            const info = await this.discoveryInfo();
+            if (!info || !info.enabled || info.cardDone || !(info.running || (info.docker && info.apps?.length))) return;
+            if (!(await this.loadDiscoveryCard()) || !window.AppDiscoveryCard.wanted(info)) return;
+            this.discoveryCard = new window.AppDiscoveryCard(this.dash, { onDone: () => { this.discoveryCard = null; } });
+            this.discoveryCard.show(info);
         }
 
         async showTemplateCard() {

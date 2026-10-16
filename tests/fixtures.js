@@ -62,7 +62,9 @@ async function resetStore(request) {
      * test the card itself.
      */
     const answered = await request.post('/api/settings', {
-        data: { quickStart: { baselineBookmarks: -1, baselineTagged: -1, templatePicked: 'keep' } },
+        // The apps card, the template card's stand-in when containers have
+        // web apps, is answered the same way; app-discovery.spec.js clears it.
+        data: { quickStart: { baselineBookmarks: -1, baselineTagged: -1, templatePicked: 'keep' }, discoveryCardDone: true },
         headers: { 'X-NextDash-Token': WRITE_TOKEN },
     });
     if (!answered.ok()) {

@@ -666,3 +666,113 @@
     opacity: 0.6;
     cursor: progress;
 }
+
+/* The "x apps found" card (app-discovery-card.js): the first-start card's
+   frame, with the found apps grouped by kind under small headings. */
+.app-discovery-groups {
+    max-height: 19rem;
+    overflow: auto;
+    margin: 0 0 var(--space-1, 0.25rem);
+}
+
+.app-discovery-kind {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    margin: var(--space-3, 0.7rem) 0 var(--space-1, 0.25rem);
+    font-size: var(--font-size-small, 0.7rem);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-tertiary, var(--text-secondary));
+}
+
+.app-discovery-kind:first-child {
+    margin-top: 0;
+}
+
+.app-discovery-kind::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--border-secondary, var(--border-primary));
+}
+
+.app-discovery-row {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    gap: var(--space-2, 0.55rem);
+    align-items: center;
+    padding: var(--space-1, 0.28rem) var(--space-1, 0.2rem);
+    border-radius: var(--radius-3, 0.25rem);
+    cursor: pointer;
+}
+
+.app-discovery-row:hover {
+    background: color-mix(in srgb, var(--accent-primary) 6%, transparent);
+}
+
+.app-discovery-row input {
+    margin: 0;
+    accent-color: var(--accent-primary);
+}
+
+.app-discovery-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: var(--radius-3, 0.3rem);
+    object-fit: contain;
+}
+
+.app-discovery-icon--letter {
+    display: grid;
+    place-items: center;
+    background: var(--background-primary);
+    border: 1px solid var(--border-primary);
+    font-size: var(--font-size-small, 0.7rem);
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.app-discovery-text {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
+}
+
+.app-discovery-name {
+    font-size: var(--font-size-controls, 0.85rem);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.app-discovery-address {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-family-mono, ui-monospace, monospace);
+    font-size: var(--font-size-small, 0.75rem);
+    color: var(--text-tertiary, var(--text-secondary));
+}
+
+.app-discovery-looking {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.55rem);
+    margin: var(--space-2, 0.5rem) 0 0;
+    font-size: var(--font-size-small, 0.8rem);
+    color: var(--text-secondary);
+}
+
+.app-discovery-spin {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--border-primary);
+    border-top-color: var(--accent-primary);
+    animation: app-discovery-spin 1s linear infinite;
+}
+
+@keyframes app-discovery-spin {
+    to { transform: rotate(360deg); }
+}

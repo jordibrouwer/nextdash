@@ -47,6 +47,10 @@ const E2E_WEB_SERVER_ENV = {
     // The app-icon sets from the Go tests' fixture, read from disk: a spec
     // never reaches jsDelivr, and outbound fetches refuse a local stub.
     NEXTDASH_ICON_SETS_FIXTURE: path.join(__dirname, '..', 'internal', 'app', 'testdata', 'icon-sets'),
+    // App discovery reads containers from this file instead of the Docker
+    // socket; it does not exist until app-discovery.spec.js writes it.
+    NEXTDASH_DISCOVERY_FIXTURE: process.env.NEXTDASH_DISCOVERY_FIXTURE
+        || path.join(require('os').tmpdir(), 'nextdash-e2e-discovery-fixture.json'),
     ...(process.env.NEXTDASH_DATA_DIR ? { NEXTDASH_DATA_DIR: process.env.NEXTDASH_DATA_DIR } : {}),
 };
 

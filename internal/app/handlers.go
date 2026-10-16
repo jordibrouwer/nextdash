@@ -2495,6 +2495,7 @@ func (h *Handlers) ResetAllData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	logDataReset(r)
+	h.resetDiscovery()
 	if h.store.TakeDefaultBookmarkIconPrefetch() {
 		h.startDefaultBookmarkIconPrefetch()
 	}

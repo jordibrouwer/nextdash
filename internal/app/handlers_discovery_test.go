@@ -368,3 +368,35 @@ func TestDiscoveryAddAdoptsSetIcon(t *testing.T) {
 	}
 	t.Fatal("no bookmark")
 }
+
+func TestDiscoveryGetGivesIconURL(t *testing.T) {
+	r := newDiscoveryRig(t)
+	useIconSetsFixture(t)
+	r.seedApps(discoveredApp{Name: "sonarr", URL: "http://10.9.9.9:8989", Kind: "Media management", Icon: "dashboard-icons/sonarr"})
+	var got struct {
+		Apps []discoveredApp `json:"apps"`
+	}
+	rec := r.call("GET", "/api/discovery", nil)
+	if json.Unmarshal(rec.Body.Bytes(), &got) != nil || len(got.Apps) != 1 {
+		t.Fatalf("get: %s", rec.Body.String())
+	}
+	if !strings.HasPrefix(got.Apps[0].IconURL, "/data/icon-sets/dashboard-icons/") {
+		t.Fatalf("iconUrl = %q", got.Apps[0].IconURL)
+	}
+}
+
+func TestResetForgetsDiscovery(t *testing.T) {
+	r := newDiscoveryRig(t)
+	r.seedApps(discoveredApp{Name: "sonarr", URL: "http://10.9.9.9:8989"})
+	r.h.withDiscoveryState(func(st *discoveryState) { st.FirstRunDone = true; st.Seen["sonarr"] = "id1" })
+	req := httptest.NewRequest("POST", "/api/reset", strings.NewReader(`{"confirm":true}`))
+	rec := httptest.NewRecorder()
+	r.h.ResetAllData(rec, req)
+	if rec.Code != 200 {
+		t.Fatalf("reset: %d %s", rec.Code, rec.Body.String())
+	}
+	st := r.state()
+	if st.FirstRunDone || len(st.Seen) != 0 || len(st.Apps) != 0 {
+		t.Fatalf("a reset install still remembers its containers: %+v", st)
+	}
+}

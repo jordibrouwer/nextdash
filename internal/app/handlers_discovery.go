@@ -85,6 +85,7 @@ func (h *Handlers) DiscoveryGetHandler(w http.ResponseWriter, r *http.Request) {
 			if discoveryAppMatches(a, bookmarks, settings.DockerBookmarkLinks, hosts) {
 				continue
 			}
+			a.IconURL = discoveryIconURL(a.Icon)
 			out.Apps = append(out.Apps, a)
 		}
 	}

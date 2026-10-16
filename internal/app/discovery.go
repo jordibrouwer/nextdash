@@ -48,6 +48,9 @@ type discoveredApp struct {
 	Source      string `json:"source"`
 	Title       string `json:"title,omitempty"`
 	DisplayName string `json:"displayName,omitempty"`
+	// IconURL is where the card shows the set icon from; filled in for the
+	// answer, never stored.
+	IconURL string `json:"iconUrl,omitempty"`
 }
 
 func (a discoveredApp) bookmarkName() string {
@@ -228,6 +231,33 @@ func discoveryIconRef(c dockerContainerSummary) string {
 		return e.Set + "/" + e.Name
 	}
 	return ""
+}
+
+// discoveryIconURL is the address of a "set/name" icon's file, for a preview.
+func discoveryIconURL(icon string) string {
+	set, name, ok := strings.Cut(icon, "/")
+	if !ok {
+		return ""
+	}
+	x := currentIconSets()
+	if x == nil {
+		return ""
+	}
+	e := x.entry(set, name)
+	if e == nil {
+		return ""
+	}
+	return iconSetFileURL(e.Set, e.variantFile("base"))
+}
+
+// resetDiscovery forgets every container seen, as a fresh install has not
+// seen any: after a reset the apps card is offered again.
+func (h *Handlers) resetDiscovery() {
+	h.discoveryMu.Lock()
+	defer h.discoveryMu.Unlock()
+	h.discovery = &discoveryState{}
+	h.discovery.normalize()
+	_ = os.Remove(discoveryStatePath())
 }
 
 // discoveryIconFile copies a set icon into data/icons/ and returns the name a

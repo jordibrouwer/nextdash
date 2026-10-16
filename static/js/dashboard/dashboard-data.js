@@ -1114,10 +1114,31 @@ class DashboardData {
         }
 
         d._bookmarksReady = true;
+        this.reportHostSeen();
         if (d._pendingRecentModalRefresh && d.isRecentBookmarksModalOpen()) {
             d._pendingRecentModalRefresh = false;
             d._fillRecentBookmarksModal();
         }
+    }
+
+    /**
+     * The host this dashboard was opened on, told to the server once per load
+     * when it changed: links that app discovery makes to a container's port
+     * then open where the Containers view's links open.
+     */
+    reportHostSeen() {
+        const d = this.dash;
+        if (this._hostSeenReported || !d?.settings) return;
+        this._hostSeenReported = true;
+        const host = String(window.location.hostname || '').replace(/^\[|\]$/g, '');
+        if (!host || host === d.settings.dockerHostSeen) return;
+        d.settings.dockerHostSeen = host;
+        const api = typeof window.nextDashFetch === 'function' ? window.nextDashFetch : fetch;
+        Promise.resolve(api('/api/discovery/host-seen', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ host }),
+        })).catch(() => {});
     }
 
     async loadPageBookmarks(pageId, options = {}) {
