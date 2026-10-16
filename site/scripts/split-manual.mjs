@@ -351,11 +351,15 @@ function main () {
   ].join('\n'))
   writeFileSync(join(OUT, '_meta.json'), JSON.stringify({ ref: shown, source: ref, blobRef, chapters: built.map(c => c.slug) }, null, 2))
 
-  const index = ['---', 'title: Documentation', '---', '', '# nextDash documentation', '',
+  const index = ['---', 'title: Documentation', 'pageClass: nd-index', '---', '', '# nextDash documentation', '',
     `How nextDash works, from the first launch to running it next to your own services. This is the manual of ${shown === 'WORKTREE' ? 'the development version' : `nextDash ${shown}`}.`, '']
   for (const g of sidebar) {
     index.push(`## ${g.text}`, '')
-    for (const item of g.items) index.push(`- [${item.text.replace(/<[^>]+>/g, '')}](.${item.link}.md)`)
+    // The chapter number stands before the link, in its own column, as in the sidebar.
+    for (const item of g.items) {
+      const num = (item.text.match(/<span class="nd-n">([^<]*)<\/span>/) || [])[1] || ''
+      index.push(`- <span class="nd-n">${num}</span>[${item.text.replace(/<[^>]+>/g, '').slice(num.length)}](.${item.link}.md)`)
+    }
     index.push('')
   }
   writeFileSync(join(OUT, 'index.md'), index.join('\n'))

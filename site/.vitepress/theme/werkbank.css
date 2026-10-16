@@ -96,6 +96,10 @@
 .VPSidebarItem.level-1 .text:has(.nd-n) { display: flex; align-items: baseline; }
 .nd-n { flex: 0 0 24px; font-family: var(--nd-font-mono); font-size: 12px; color: var(--nd-muted); font-weight: 400; }
 .VPSidebarItem.is-active .nd-n { color: var(--nd-accent); }
+/* The number outside the sidebar: the pager under a page and the contents on the docs home. */
+.pager-link .nd-n:not(:empty) { margin-right: .6em; }
+.nd-index .vp-doc ul { list-style: none; padding-left: 0; }
+.nd-index .vp-doc li > .nd-n { display: inline-block; width: 2.2em; }
 
 /* Text */
 .vp-doc h1, .vp-doc h2, .vp-doc h3 { font-weight: 600; letter-spacing: -.005em; text-wrap: balance; }
