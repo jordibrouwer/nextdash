@@ -20,6 +20,7 @@ func registerDiscoveryRoutes(r *mux.Router, h *Handlers) {
 	r.HandleFunc("/api/discovery/undo", h.DiscoveryUndoHandler).Methods("POST")
 	r.HandleFunc("/api/discovery/ack", h.DiscoveryAckHandler).Methods("POST")
 	r.HandleFunc("/api/discovery/ignore", h.DiscoveryIgnoreHandler).Methods("POST")
+	r.HandleFunc("/api/discovery/unignore", h.DiscoveryUnignoreHandler).Methods("POST")
 	r.HandleFunc("/api/discovery/close", h.DiscoveryCloseHandler).Methods("POST")
 	r.HandleFunc("/api/discovery/host-seen", h.DiscoveryHostSeenHandler).Methods("POST")
 }
@@ -71,14 +72,17 @@ func (h *Handlers) DiscoveryGetHandler(w http.ResponseWriter, r *http.Request) {
 	h.discoveryMu.Lock()
 	st := h.discoveryLocked()
 	out.FirstRunDone = st.FirstRunDone
+	runHost := st.Host
 	apps := append([]discoveredApp(nil), st.Apps...)
 	out.RecentAdds = append(out.RecentAdds, st.RecentAdds...)
 	h.discoveryMu.Unlock()
 
 	if out.Enabled {
 		bookmarks := h.store.GetAllBookmarks()
-		hosts := discoveryHosts(settings, h.discoveryHost(settings))
+		host := h.discoveryHost(settings)
+		hosts := discoveryHosts(settings, host)
 		for _, a := range apps {
+			a = a.onHost(runHost, host)
 			if containsString(settings.DiscoveryIgnored, a.Name) || containsString(settings.DockerHiddenContainers, a.Name) {
 				continue
 			}
@@ -132,10 +136,12 @@ func (h *Handlers) DiscoveryAddHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	host := h.discoveryHost(h.store.GetSettings())
 	h.discoveryMu.Lock()
 	found := map[string]discoveredApp{}
+	runHost := h.discoveryLocked().Host
 	for _, a := range h.discoveryLocked().Apps {
-		found[a.Name] = a
+		found[a.Name] = a.onHost(runHost, host)
 	}
 	h.discoveryMu.Unlock()
 
@@ -307,6 +313,39 @@ func (h *Handlers) DiscoveryIgnoreHandler(w http.ResponseWriter, r *http.Request
 		if err := h.store.DeleteInboxLink(item.ID); err == nil {
 			h.store.removeUnusedIconFile(item.Icon)
 		}
+	}
+	writeJSON(w, map[string]string{"status": "success"})
+}
+
+// DiscoveryUnignoreHandler is Config's Remove on the ignored list. The list
+// has routes of its own because the settings save leaves it out: a page loaded
+// before an Ignore would otherwise send the old list back.
+func (h *Handlers) DiscoveryUnignoreHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	var req struct {
+		Name string `json:"name"`
+	}
+	if !decodeDiscoveryBody(w, r, &req) {
+		return
+	}
+	name := discoveryContainerName(req.Name)
+	if name == "" {
+		http.Error(w, "name is required", http.StatusBadRequest)
+		return
+	}
+	if !respondStorePersistError(w, h.updateSettings(func(s *Settings) {
+		kept := s.DiscoveryIgnored[:0:0]
+		for _, n := range s.DiscoveryIgnored {
+			if n != name {
+				kept = append(kept, n)
+			}
+		}
+		s.DiscoveryIgnored = kept
+	})) {
+		return
 	}
 	writeJSON(w, map[string]string{"status": "success"})
 }

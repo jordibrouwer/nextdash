@@ -16,6 +16,12 @@
         delete copy.archiveSaveSecret;
         // The Unraid server likewise has its own route (/api/unraid/settings).
         delete copy.unraidServers;
+        // App discovery writes these from the server (Close, Add, Ignore, Undo,
+        // the host the page was opened on); a page loaded before would send
+        // its older copy back and undo them.
+        delete copy.discoveryCardDone;
+        delete copy.discoveryIgnored;
+        delete copy.dockerHostSeen;
 
         return copy;
     }

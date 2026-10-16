@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math/big"
+	"net"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -22,9 +23,11 @@ where each one's web page lives (discovery_candidates.go), asks that address
 for a page (discovery_probe.go) and keeps what it found in data/discovery.json.
 
 The first run only feeds the first-start card. After that a container is
-"new" when its NAME was not among the names the previous run saw: an update
+"new" when its NAME is not among the names known from earlier runs: an update
 recreates a container under the same name with a new id, and that is not a new
-app. A new app is added to the dashboard straight away, or proposed in the
+app, and neither is one that was gone for a run or two (compose down, then up).
+A name a run cannot decide on yet -- a new container still booting, or one
+that is stopped -- is not known until it is. A new app is added to the dashboard straight away, or proposed in the
 Inbox, as the setting says.
 */
 
@@ -35,6 +38,8 @@ const (
 	discoveryBatch       = 8
 	discoveryRunBudget   = 60 * time.Second
 	discoveryEvery       = 5 * time.Minute
+	// discoveryForget is how long a name that is no longer listed stays known.
+	discoveryForget = 7 * 24 * time.Hour
 )
 
 // discoveredApp is one container with a web page. Icon is the icon-set entry as
@@ -51,6 +56,31 @@ type discoveredApp struct {
 	// IconURL is where the card shows the set icon from; filled in for the
 	// answer, never stored.
 	IconURL string `json:"iconUrl,omitempty"`
+	// HostBound marks an address on the host the run probed through (a port,
+	// an Unraid [IP]); it follows the host the dashboard is opened on.
+	HostBound bool `json:"hostBound,omitempty"`
+}
+
+// onHost is the app with its host-bound address moved from the host the run
+// used to host, the one the browser reaches the server on.
+func (a discoveredApp) onHost(runHost, host string) discoveredApp {
+	runHost, host = strings.Trim(runHost, "[]"), strings.Trim(host, "[]")
+	if !a.HostBound || runHost == "" || host == "" || strings.EqualFold(runHost, host) {
+		return a
+	}
+	u, err := url.Parse(a.URL)
+	if err != nil || !strings.EqualFold(u.Hostname(), runHost) {
+		return a
+	}
+	if port := u.Port(); port != "" {
+		u.Host = net.JoinHostPort(host, port)
+	} else if strings.Contains(host, ":") {
+		u.Host = "[" + host + "]"
+	} else {
+		u.Host = host
+	}
+	a.URL = u.String()
+	return a
 }
 
 func (a discoveredApp) bookmarkName() string {
@@ -74,6 +104,14 @@ type discoveryState struct {
 	FirstRunDone bool `json:"firstRunDone"`
 	// Seen maps every container name of the previous run to its id.
 	Seen map[string]string `json:"seen"`
+	// Known holds every name decided on, with the last time a run listed it;
+	// a name is new when it is not here. Kept a week after it was last listed.
+	Known map[string]int64 `json:"known"`
+	// Probed maps a name to the id last probed to the end while it ran: that
+	// container is not asked again until it is recreated.
+	Probed map[string]string `json:"probed"`
+	// Host is the host the last run put port addresses on.
+	Host string `json:"host,omitempty"`
 	// Proposed holds the names already added or put in the Inbox: once only.
 	Proposed map[string]bool `json:"proposed"`
 	// Retry holds the containers still being probed because they may be
@@ -96,6 +134,18 @@ func (st *discoveryState) normalize() {
 	}
 	if st.Retry == nil {
 		st.Retry = map[string]int64{}
+	}
+	if st.Known == nil {
+		st.Known = map[string]int64{}
+		for name := range st.Seen {
+			st.Known[name] = time.Now().Unix()
+		}
+	}
+	if st.Probed == nil {
+		st.Probed = map[string]string{}
+		for name, id := range st.Seen {
+			st.Probed[name] = id
+		}
 	}
 }
 
@@ -290,6 +340,7 @@ type discoveryEntry struct {
 	ok      bool
 	app     discoveredApp
 	carried bool // an app from the previous run, not probed this time
+	stopped bool // listed but not running: not probed this time
 }
 
 func (e *discoveryEntry) probeAll(ctx context.Context) {
@@ -373,7 +424,16 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 	for _, a := range st.Apps {
 		prevApps[a.Name] = a
 	}
+	prevKnown := make(map[string]int64, len(st.Known))
+	for k, v := range st.Known {
+		prevKnown[k] = v
+	}
+	prevProbed := make(map[string]string, len(st.Probed))
+	for k, v := range st.Probed {
+		prevProbed[k] = v
+	}
 	first := st.FirstRunDone
+	readState := st
 	h.discoveryMu.Unlock()
 
 	selfID := discoverySelfID()
@@ -401,9 +461,14 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 		e.cands = discoveryCandidates(c, bareHost, lanIP, settings.DockerWebUIs[e.name])
 		_, inRetry := prevRetry[e.name]
 		_, wasApp := prevApps[e.name]
-		// A container seen before under this id that was not a web app and is
-		// out of its retry window stays that way until it is recreated.
-		e.probe = prevSeen[e.name] != c.ID || inRetry || wasApp
+		if c.State != "" && c.State != "running" {
+			// Stopped: nothing answers, so nothing is decided about it yet.
+			e.stopped = true
+			continue
+		}
+		// A container probed before under this id that was not a web app and
+		// is out of its retry window stays that way until it is recreated.
+		e.probe = prevProbed[e.name] != c.ID || inRetry || wasApp
 	}
 
 	budget, cancel := context.WithTimeout(ctx, discoveryRunBudget)
@@ -438,7 +503,7 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 		if e.skip || e.matched {
 			continue
 		}
-		if e.probe && !e.ok {
+		if (e.probe && !e.ok) || e.stopped {
 			// An app that did not answer this time (down for a moment, or not
 			// asked before the budget ran out) keeps the entry it had; it is
 			// asked again next run.
@@ -449,6 +514,11 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 		if !e.ok {
 			continue
 		}
+		if !e.carried && (e.app.Source == string(discoveryPort) || e.app.Source == string(discoveryUnraid)) {
+			if u, err := url.Parse(e.app.URL); err == nil && strings.EqualFold(u.Hostname(), bareHost) {
+				e.app.HostBound = true
+			}
+		}
 		key := canonicalBookmarkURLKey(e.app.URL)
 		if key == "" || byURL[key] {
 			e.ok = false
@@ -458,17 +528,16 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 		apps = append(apps, e)
 	}
 
-	// What is new, by name. A container accepted out of retry counts as new:
-	// its name was seen while it was still booting.
+	// What is new, by name: not known from an earlier run. A new container
+	// that was still booting, or stopped, was not decided on, so it is not
+	// known yet and counts as new once it answers.
 	var fresh []*discoveryEntry
 	if first {
 		for _, e := range apps {
 			if e.carried {
 				continue
 			}
-			_, wasSeen := prevSeen[e.name]
-			_, inRetry := prevRetry[e.name]
-			if (!wasSeen || inRetry) && !prevProposed[e.name] {
+			if _, known := prevKnown[e.name]; !known && !prevProposed[e.name] {
 				fresh = append(fresh, e)
 			}
 		}
@@ -476,7 +545,27 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 
 	newSeen := map[string]string{}
 	newRetry := map[string]int64{}
+	newKnown := map[string]int64{}
+	for name, last := range prevKnown {
+		if now.Sub(time.Unix(last, 0)) < discoveryForget {
+			newKnown[name] = last
+		}
+	}
+	newProbed := map[string]string{}
+	listed := map[string]bool{}
 	for _, e := range entries {
+		listed[e.name] = true
+	}
+	for name, id := range prevProbed {
+		if listed[name] {
+			newProbed[name] = id
+		}
+	}
+	for _, e := range entries {
+		_, wasKnown := prevKnown[e.name]
+		if wasKnown {
+			newKnown[e.name] = now.Unix()
+		}
 		if e.probe && !e.reached {
 			// Not asked in time: its old state stands.
 			if id, ok := prevSeen[e.name]; ok {
@@ -488,8 +577,17 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 			continue
 		}
 		newSeen[e.name] = e.c.ID
-		if e.probe && !e.ok && now.Sub(time.Unix(e.c.Created, 0)) < discoveryRetryWindow {
+		retrying := e.probe && !e.ok && now.Sub(time.Unix(e.c.Created, 0)) < discoveryRetryWindow
+		if retrying {
 			newRetry[e.name] = e.c.Created
+		}
+		if e.probe {
+			newProbed[e.name] = e.c.ID
+		}
+		// The first run knows everything it lists. After it, a new name that
+		// is still booting or stopped is left undecided.
+		if !first || !(retrying || e.stopped) {
+			newKnown[e.name] = now.Unix()
 		}
 	}
 
@@ -503,9 +601,17 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 		}
 	}
 
+	if discoveryBeforeSaveHook != nil {
+		discoveryBeforeSaveHook()
+	}
 	h.discoveryMu.Lock()
 	defer h.discoveryMu.Unlock()
 	st = h.discoveryLocked()
+	if st != readState {
+		// Reset while this run was probing: what it found belongs to the data
+		// that is gone.
+		return res, nil
+	}
 
 	handled := map[string]bool{}
 	var runErr error
@@ -557,9 +663,9 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 		if handled[e.name] {
 			st.Proposed[e.name] = true
 		} else {
-			// Not placed: left out of what was seen, so the next run finds it
+			// Not placed: left out of what is known, so the next run finds it
 			// new again.
-			delete(newSeen, e.name)
+			delete(newKnown, e.name)
 		}
 	}
 
@@ -570,6 +676,9 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 	res.Apps = len(st.Apps)
 	st.Seen = newSeen
 	st.Retry = newRetry
+	st.Known = newKnown
+	st.Probed = newProbed
+	st.Host = bareHost
 	st.FirstRunDone = true
 	if err := h.saveDiscoveryLocked(); err != nil && runErr == nil {
 		runErr = err
@@ -817,3 +926,7 @@ func discoveryAppMatches(a discoveredApp, bookmarks []Bookmark, links map[string
 	_, _, ok := matchContainerBookmark(c, bookmarks, links, hosts)
 	return ok
 }
+
+// discoveryBeforeSaveHook runs between a run's probing and its save; tests use
+// it to change the state underneath a run.
+var discoveryBeforeSaveHook func()

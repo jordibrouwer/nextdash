@@ -228,3 +228,17 @@ test('no apps found: the template card shows', async ({ page, request, workerSer
     await expect(templateCard(page)).toBeVisible();
     await expect(card(page)).toHaveCount(0);
 });
+
+test('a settings save from a page loaded earlier does not undo Ignore or Close', async ({ page, request }) => {
+    await install(request, { fresh: false });
+    expect((await request.post('/api/discovery/ignore', { data: { name: 'radarr' }, headers })).ok()).toBe(true);
+    await open(page);
+
+    // Ignored and closed on another device, then this page saves its own copy.
+    expect((await request.post('/api/discovery/ignore', { data: { name: 'sonarr' }, headers })).ok()).toBe(true);
+    expect((await request.post('/api/discovery/close', { headers })).ok()).toBe(true);
+    await page.evaluate(async () => { await window.dashboardInstance.saveSettings(); });
+    const st = await settings(request);
+    expect(st.discoveryIgnored).toEqual(['radarr', 'sonarr']);
+    expect(st.discoveryCardDone).toBe(true);
+});

@@ -118,7 +118,7 @@ var demoAllowedWrites = []string{
 	"/api/icon-sets/adopt", "/api/icon-sets/match",
 	// Discovery is off in the demo (discovery.go); these only change its own data.
 	"/api/discovery/add", "/api/discovery/ack", "/api/discovery/close", "/api/discovery/host-seen",
-	"/api/discovery/ignore", "/api/discovery/run", "/api/discovery/undo",
+	"/api/discovery/ignore", "/api/discovery/unignore", "/api/discovery/run", "/api/discovery/undo",
 	"/api/inbox", "/api/inbox/batch", "/api/logs", "/api/onboarding/template",
 	"/api/pages", "/api/pages/template", "/api/pages/{id:[0-9]+}", "/api/pages/{id:[0-9]+}/blocks",
 	"/api/pages/{id:[0-9]+}/template", "/api/previews/clear", "/api/previews/images/clear",
