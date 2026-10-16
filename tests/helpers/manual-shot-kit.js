@@ -656,6 +656,13 @@ async function openDashboard(page, hash = '') {
     await settle(page);
     // Pings, icons and widgets land a moment after the grid.
     await page.waitForTimeout(1_500);
+    // Media widgets on real servers take longer; wait until none says Loading…
+    // and its posters are in, or give up and shoot what there is.
+    await page.waitForFunction(() => {
+        const tiles = [...document.querySelectorAll('[data-widget-id]')];
+        if (tiles.some((t) => t.textContent.includes('Loading…'))) return false;
+        return [...document.querySelectorAll('[data-media-item] img')].every((img) => img.complete);
+    }, null, { timeout: 20_000 }).catch(() => {});
 }
 
 module.exports = {
