@@ -3605,6 +3605,7 @@ class DashboardConfig {
         { tab: 'bookmarks', titleKey: 'config.helpBmKeysTitle', fallback: 'Keys' },
         { tab: 'containers', titleKey: 'config.helpContainersSetupTitle', fallback: 'Before it works: Docker, a write token and sometimes root' },
         { tab: 'containers', titleKey: 'config.helpContainersTogetherTitle', fallback: 'Containers, bookmarks and health together' },
+        { tab: 'containers', titleKey: 'config.helpContainersDiscoveryTitle', fallback: 'Apps nextDash finds on its own' },
         { tab: 'containers', titleKey: 'config.helpContainersTitle', fallback: 'The Containers view' },
         { tab: 'containers', titleKey: 'config.helpContainersConfigTitle', fallback: 'Setting it up' },
         { tab: 'search', titleKey: 'config.helpSearchTitle', fallback: 'Searching your bookmarks' },
@@ -29777,6 +29778,9 @@ class DashboardConfig {
             // the link to the bookmark, its checks and the shared alerts.
             + this.helpPanel('config.helpContainersTogetherTitle', 'Containers, bookmarks and health together',
                 'config.helpContainersTogetherBody', '')
+            // Third: the bookmarks it can make from them on its own.
+            + this.helpPanel('config.helpContainersDiscoveryTitle', 'Apps nextDash finds on its own',
+                'config.helpContainersDiscoveryBody', '')
             + this.helpPanel('config.helpContainersTitle', 'The Containers view',
             'config.helpContainersBody', '')
             + this.helpPanel('config.helpContainersConfigTitle', 'Setting it up',
