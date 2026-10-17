@@ -744,7 +744,7 @@ Data is stored in `./data` next to the binary. `NEXTDASH_DATA_DIR` points it els
 <details>
 <summary>📷 Screenshot — a new install on its first launch, full page</summary>
 
-<p align="center"><img src="screenshots/manual.md/02-first-launch.jpg" alt="A new install on its first launch: example bookmarks in Today, Development, Search, Social and Media, a Health widget, and the Quick start card in the bottom-left corner with its three first tasks" width="860"></p>
+<p align="center"><img src="screenshots/manual.md/02-first-launch.jpg" alt="A new install on its first launch: the card at the top of main asks whether to keep the example links or start with an empty page; below it Today, the Health and Health trend widgets, and the Development, Docker and Unraid example links" width="860"></p>
 
 </details>
 

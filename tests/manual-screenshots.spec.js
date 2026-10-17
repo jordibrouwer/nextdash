@@ -1103,15 +1103,15 @@ test.describe('phone bookmarks', () => {
  */
 
 test.describe('first launch', () => {
-    // The demo collection, not a bare install's few starter links, with the
-    // quick-start card as a first launch shows it.
-    test.use({ dataPatch: 'quickstart' });
+    // A new install as it really starts: the example links, and the card
+    // that asks whether to keep them.
+    test.use({ dataPatch: 'empty' });
     test('full 02 first launch', async ({ page }) => {
         await prepare(page);
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 30_000 });
-        // The quick-start card is the subject; settle() would close it.
-        await page.locator('.quickstart-checklist').waitFor({ state: 'visible' });
+        // The first-start card is the subject; settle() would close it.
+        await page.locator('.first-start-card').waitFor({ state: 'visible' });
         await page.waitForTimeout(1_500);
         await shot(page, '02-first-launch.jpg');
     });
