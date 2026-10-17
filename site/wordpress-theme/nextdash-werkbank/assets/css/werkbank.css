@@ -391,3 +391,6 @@ img.nd-zoomable { cursor: zoom-in; }
 .nd-stats { grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); row-gap: 24px; }
 .nd-stats b { font-size: 30px; }
 @media (max-width: 860px) { .nd-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Only the look on show takes the click, so the large view opens that one
+   and not the last picture in the stack. */
+.nd-looks-shot img:not(.is-on) { pointer-events: none; }
