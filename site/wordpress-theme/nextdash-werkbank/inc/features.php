@@ -261,6 +261,7 @@ function ndw_feature_docs_url( $slug ) {
 			'widgets'        => 'widgets',
 			'custom-widgets' => 'widgets',
 			'media-widgets'  => 'widgets',
+			'app-discovery'  => 'containers',
 			'tags'           => 'tags',
 			'appearance'     => 'appearance',
 			'inbox'          => 'inbox',
