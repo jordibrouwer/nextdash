@@ -103,6 +103,18 @@ $compose = "services:\n  nextdash:\n    image: ghcr.io/jordibrouwer/nextdash:lat
 	</div>
 </section>
 
+<?php if ( ndw_compare_live() ) : ?>
+<section class="nd-sec nd-reveal">
+	<div class="nd-wrap nd-cmp-band">
+		<div>
+			<p class="nd-label">Choosing a dashboard</p>
+			<p>nextDash next to Homarr, Homepage, Glance, Dashy, Heimdall and Homer: what each does well, and where nextDash falls short.</p>
+		</div>
+		<a class="nd-btn" href="<?php echo esc_url( home_url( '/compare/' ) ); ?>">How nextDash compares</a>
+	</div>
+</section>
+<?php endif; ?>
+
 <section class="nd-sec nd-reveal">
 	<div class="nd-wrap">
 		<p class="nd-label">Your data</p>

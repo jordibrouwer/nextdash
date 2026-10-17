@@ -432,3 +432,5 @@ img.nd-zoomable { cursor: zoom-in; }
 .nd-cmp-short ul { padding-left: 20px; }
 .nd-cmp-short li { margin-bottom: 6px; }
 .nd-cmp-pointer { margin: -18px 0 32px; font-size: 15px; }
+.nd-cmp-band { display: flex; align-items: center; justify-content: space-between; gap: 16px 32px; flex-wrap: wrap; }
+.nd-cmp-band p:last-child { margin: 0; max-width: 60ch; color: var(--nd-muted); }
