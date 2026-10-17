@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent, WRITE_TOKEN } = require('./e2e-helpers');
 
 /*
  * The first time the dashboard is quiet, a see-through copy of the first
@@ -22,13 +22,15 @@ async function openDashboard(page, { lockLayout = false } = {}) {
     // intro stands down once the first-move coach has been seen, so both are wanted.
     await page.addInitScript(({ tip, lock }) => {
         window.__e2eWantTours = [tip, 'blockMoveCoach'];
-        // Another test in this worker may have left the tips cooldown set on the server.
+        // Another test in this worker may have left the tips cooldown set on the
+        // server, or used up the day's tip by answering the intro.
         const desc = Object.getOwnPropertyDescriptor(window, 'DiscoverabilityState');
         Object.defineProperty(window, 'DiscoverabilityState', {
             configurable: true,
             get: desc?.get,
             set(value) {
                 if (value && typeof value.getTipsNotBefore === 'function') value.getTipsNotBefore = () => 0;
+                if (value && typeof value.tipsAllowedNow === 'function') value.tipsAllowedNow = () => true;
                 desc?.set?.call(this, value);
             },
         });
@@ -168,5 +170,39 @@ test.describe('one-time intro that shows blocks can be moved', () => {
         await expect(page.locator('.block-intro-ghost')).toHaveCount(0);
         await expect(card(page)).toHaveCount(0);
         expect(await storedSeen(page)).toBe(false);
+    });
+
+    /*
+     * The corner cards wait for the intro: a card that came first made the
+     * intro wait in turn, so the reader saw invitations before the one thing a
+     * new dashboard should show. They come once the intro is answered.
+     */
+    test('a corner card waits until the intro is answered', async ({ page, request }) => {
+        // The locked-layout test above saves its lock to the server it shares.
+        const unlocked = await request.post('/api/settings', {
+            data: { lockLayout: false },
+            headers: { 'X-NextDash-Token': WRITE_TOKEN },
+        });
+        expect(unlocked.ok()).toBe(true);
+        await openDashboard(page);
+        await page.evaluate(() => {
+            const probe = window.NoticeCard.define({
+                id: 'probe-corner',
+                showDelayMs: 50,
+                title: () => 'probe',
+                body: () => 'probe',
+                canShow: () => true,
+                actions: [{ name: 'ok', label: () => 'ok', onClick: (c) => c.close() }],
+            });
+            probe.autoStart();
+        });
+        // Any corner card, the probe or a real one queued before it: none of
+        // them may stand beside the intro.
+        await expect(page.locator('.block-intro-ghost')).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('.notice-card')).toHaveCount(0);
+        await expect(card(page)).toBeVisible({ timeout: 10_000 });
+        await expect(page.locator('.notice-card')).toHaveCount(0);
+        await card(page).getByRole('button', { name: 'Got it' }).click();
+        await expect(page.locator('.notice-card').first()).toBeVisible({ timeout: 10_000 });
     });
 });
