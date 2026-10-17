@@ -115,6 +115,19 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## v1.19.9 — 16 October 2026
 
+### App discovery
+
+- **new — nextDash finds the apps running in your Docker containers and offers them as bookmarks.** A container counts when it answers with a web page or a login, probed from where the server itself reaches. The address comes from the `nextdash.url` label, a reverse-proxy label on the container or a published port, and a port link follows the host you opened nextDash on. Each app gets a kind (Media, Downloads, Monitoring and so on), an icon, a status check and a link to its container. Discovery talks only to the Docker socket and its own probes, never to a proxy's or another container's API (`discovery.go`, `discovery_candidates.go`, `discovery_rules.go`, `discovery_probe.go`).
+- **new — the "apps found" card.** On a dashboard with the Docker integration, a card in the middle of the screen lists what was found, grouped by kind and all ticked. Add puts the ticked apps on the page: new categories go to the top and light up, and a notice offers Show, Undo and Done. An optional "Replace the starter links" box is off by default. The card comes last: after the first-start card, the checklist, the dashboard tour and every corner card that can show, and never alongside a modal (`app-discovery-card.js`, `app-discovery-notice.js`).
+- **new — a new container later is asked about first.** The same card asks with Add, Ignore and Not now (`POST /api/discovery/accept`). Config → Containers → View has two other choices under New apps: Add straight away, with an Undo, Move and Done notice, or Propose in the Inbox, where Promote fills in the bookmark form and Ignore keeps the app away (`discoveryNewApps`).
+- **new — Config → Containers → View: Suggest new apps, New apps, and the ignored apps,** each with Remove, so nextDash notices that app again (`discoverApps`, `discoveryIgnored`).
+- **new — container labels steer it:** `nextdash.url` sets the address and wins over everything else, `nextdash.name` the name, `nextdash.category` the category, `nextdash.icon` an icon-set name or image URL, and `nextdash.hide=true` keeps a container out.
+- **fix — new means never seen.** A container that was already there when discovery first looked is not proposed again as new, and a container that already has a bookmark is matched on the server the same way the browser matches it (`discovery_match.go`). A settings save from a browser no longer overwrites what the server wrote (`discoveryCardDone`, `discoveryIgnored`, `dockerHostSeen`). Undo also works while the quick start is open.
+
+### First start
+
+- **new — the first-start card asks what you want: keep the example links, or start empty.** Starting empty clears the starter links (`POST /api/onboarding/start-empty`). The bundled templates are now only in the import dialog.
+
 ### Themes
 
 - **new — Slate is the theme a fresh install starts on.** Blue-grey stone behind a pane of glass, drawn at glass with a soft glow; auto dark mode switches to Slate [light]. Existing dashboards keep their theme. Server and first paint agree (`defaultThemeID`, `defaultThemeLightID`, `ThemeLoader.DEFAULT_THEME`); MANUAL §16.1 names it. The Help text in the six locales still says Matrix Bluepill until the docs round.
@@ -149,6 +162,12 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 - **Code cleanup in `search.js` and `dashboard-inbox.js`.** Moved doc comments back to their methods, dropped three comments for code that no longer exists (one contradicted `promoteRateFromStats`), removed ten unused `fetcher` variables and one unused `dash`, folded the duplicate filter-key list into `FILTER_KEYS`, and escaped the id in `highlightItem`. Specs: `search-inbox-review-fixes.spec.js`.
 - **docs — the page switcher picture in the manual is larger and centred.** It was a small crop floated beside the text; it is now taken at twice the pixels (`deviceScaleFactor: 2` in `manual-screenshots.spec.js`) and shown centred at 560 px.
+- **docs — every manual screenshot is taken in Gloss Chrome dark.** `SHOT_THEME` puts the theme into each copy of the demo data; the demo keeps its own. Three scenes that broke since the last run were fixed (the More menu around the character chips, the new first-start card, the tag view's offers).
+- **docs — the manual as a website.** `site/` builds nextdash.cc/docs/ with VitePress from MANUAL.md: one page per chapter, the Mermaid flowcharts drawn, a reading layout with captioned figures, a Pagefind search index and a deploy script. `site/` stays off `main` and out of the Docker image (`PRUNE_DIRS`, `.dockerignore`).
+
+### Tests
+
+- **tests — `health_badge_test.go` seeds the uptime history oldest first**, the order the history file keeps it in. Newest first, the badge counted samples twice whenever the span crossed UTC midnight, and the test failed around that hour.
 
 ---
 
