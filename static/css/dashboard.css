@@ -2567,6 +2567,61 @@ body[data-category-spacing="airy"] {
 }
 
 /*
+ * A title that lines up with the bookmarks under it.
+ *
+ * A bookmark row is an icon slot and then its name, and the names all start
+ * one lead column in (the slot and the gap after it). The title put the //
+ * and its icon in front of its name in that same row, which pushed the name
+ * about 27px past the bookmarks'. Now the // hangs in the gutter to the left
+ * of the column, where it stays reachable as the drag handle without taking
+ * any room, the icon sits in the icon column and the name starts on the
+ * bookmarks' text, with or without an icon.
+ *
+ * The gutter is the 24px between columns and the 8px of padding either side
+ * of them; below 600px the page edge is nearer than that, so the title keeps
+ * the // in line there. Only the default and masonry layouts: the others draw
+ * their rows and titles differently (terminal and launcher place the handle
+ * themselves).
+ */
+@media (min-width: 601px) {
+    .dashboard-grid:is(.layout-default, .layout-masonry) .category:not(.dashboard-widget) .category-title-label {
+        --cat-title-lead: calc(var(--font-size-bookmark) * 1.15 + var(--space-2, 0.5rem));
+        --cat-title-hang: 2.2rem;
+        /* The // sits in the label's own padding, inside its overflow clip.
+           The row's own start padding is added so the icon lands on the
+           bookmarks' icons rather than on the edge of the column. */
+        padding-left: calc(0.2em + var(--cat-title-hang) + var(--bookmark-row-start-pad, 6px));
+        margin-left: calc(-0.2em - var(--cat-title-hang));
+    }
+
+    .dashboard-grid:is(.layout-default, .layout-masonry) .category:not(.dashboard-widget) .category-reorder-handle {
+        position: relative;
+        flex: 0 0 0;
+        width: 0;
+        min-width: 0;
+        overflow: visible;
+    }
+
+    .dashboard-grid:is(.layout-default, .layout-masonry) .category:not(.dashboard-widget) .category-reorder-glyph {
+        position: absolute;
+        right: 0.2em;
+        margin-left: 0;
+    }
+
+    .dashboard-grid:is(.layout-default, .layout-masonry) .category:not(.dashboard-widget) .category-title-label .category-title-icon,
+    .dashboard-grid:is(.layout-default, .layout-masonry) .category:not(.dashboard-widget) .category-title-label .bookmark-icon {
+        /* At least the lead column; an icon that is wider, such as a short
+           text mark, keeps its own width rather than running into the name. */
+        flex: 0 0 auto;
+        min-width: var(--cat-title-lead);
+    }
+
+    .dashboard-grid:is(.layout-default, .layout-masonry) .category:not(.dashboard-widget) .category-title-label .category-reorder-handle + .category-title-name {
+        margin-left: var(--cat-title-lead);
+    }
+}
+
+/*
  * Reached by Tab: it has to show where focus is, in every header style. In
  * the tint of the row the cursor is on, inside the slashes' own box, rather
  * than an outline around the button: that took the space after // and the

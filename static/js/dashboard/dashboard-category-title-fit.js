@@ -138,7 +138,11 @@
      * beneath it with a whole column to spare.
      */
     function readLabelOverhead(labelEl, nameEl) {
-        return Math.max(0, labelEl.clientWidth - nameEl.clientWidth);
+        // The label's negative margin gives back the padding the // hangs in,
+        // which takes no room in the row.
+        const style = getComputedStyle(labelEl);
+        const margins = (parseFloat(style.marginLeft) || 0) + (parseFloat(style.marginRight) || 0);
+        return Math.max(0, labelEl.clientWidth - nameEl.clientWidth + margins);
     }
 
     function getMaxNameWidth(titleEl, labelEl, nameEl, labelOverhead) {
