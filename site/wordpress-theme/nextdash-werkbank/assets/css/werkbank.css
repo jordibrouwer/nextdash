@@ -394,3 +394,41 @@ img.nd-zoomable { cursor: zoom-in; }
 /* Only the look on show takes the click, so the large view opens that one
    and not the last picture in the stack. */
 .nd-looks-shot img:not(.is-on) { pointer-events: none; }
+
+/* ---------- Compare ---------- */
+.nd-compare { padding-block: 40px 64px; }
+.nd-cmp-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 0; margin: 8px 0 18px; font-size: 14px; color: var(--nd-muted); }
+.nd-cmp-legend li { display: flex; align-items: center; gap: 6px; }
+.nd-cmp-scroll { position: relative; overflow-x: auto; border: 1px solid var(--nd-line); border-radius: 8px; background: var(--nd-surface); }
+.nd-cmp-scroll:focus-visible { outline: 2px solid var(--nd-accent); outline-offset: 2px; }
+.nd-cmp { width: 100%; min-width: 980px; border-collapse: separate; border-spacing: 0; font-size: 14px; }
+.nd-cmp th, .nd-cmp td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--nd-line); }
+.nd-cmp thead th { background: var(--nd-surface); font-size: 15px; vertical-align: bottom; }
+.nd-cmp thead th a { color: var(--nd-fg); text-decoration: none; font-weight: 600; }
+.nd-cmp thead th small { display: block; font-weight: 400; font-size: 12px; color: var(--nd-muted); }
+.nd-cmp .nd-cmp-feature { position: sticky; left: 0; z-index: 1; background: var(--nd-surface); min-width: 170px; font-weight: 600; color: var(--nd-fg); }
+.nd-cmp thead .nd-cmp-feature { z-index: 3; }
+.nd-cmp .nd-cmp-us { background: var(--nd-accent-soft); }
+.nd-cmp thead .nd-cmp-us a { color: var(--nd-accent); }
+.nd-cmp-group th { background: var(--nd-code-bg); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--nd-muted); padding-block: 8px; }
+.nd-cmp-group th { text-align: left; }
+.nd-cmp tfoot td, .nd-cmp tfoot th { border-bottom: 0; font-size: 13px; color: var(--nd-muted); }
+.nd-cmp-text { color: var(--nd-fg); }
+.nd-cmp-note { display: block; margin-top: 3px; font-size: 12.5px; line-height: 1.4; color: var(--nd-muted); }
+.nd-cmp-quiet { opacity: .7; }
+.nd-cmp-mark { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: -1px; flex: none; }
+.nd-cmp-y { background: var(--nd-accent); }
+.nd-cmp-p { background: linear-gradient(90deg, var(--nd-accent) 50%, transparent 50%); box-shadow: inset 0 0 0 1.5px var(--nd-accent); }
+.nd-cmp-n { box-shadow: inset 0 0 0 1.5px var(--nd-muted); }
+.nd-cmp-u { box-shadow: inset 0 0 0 1.5px var(--nd-line); background: repeating-linear-gradient(45deg, transparent 0 2px, var(--nd-line) 2px 3px); }
+.nd-cmp-x { width: 12px; height: 2px; border-radius: 1px; background: var(--nd-line); vertical-align: 3px; }
+.nd-cmp-notes { margin-top: 48px; }
+.nd-cmp-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-top: 14px; }
+.nd-cmp-card { border: 1px solid var(--nd-line); border-radius: 8px; padding: 16px 18px; background: var(--nd-surface); }
+.nd-cmp-card h3 { margin: 0 0 8px; font-size: 18px; }
+.nd-cmp-card h3 small { font-size: 13px; font-weight: 400; color: var(--nd-muted); margin-left: 4px; }
+.nd-cmp-card p { font-size: 15px; margin: 0 0 8px; }
+.nd-cmp-short { margin-top: 48px; }
+.nd-cmp-short ul { padding-left: 20px; }
+.nd-cmp-short li { margin-bottom: 6px; }
+.nd-cmp-pointer { margin: -18px 0 32px; font-size: 15px; }

@@ -20,6 +20,7 @@ require_once get_template_directory() . '/inc/features.php';
 require_once get_template_directory() . '/inc/seo.php';
 require_once get_template_directory() . '/inc/gallery.php';
 require_once get_template_directory() . '/inc/motion.php';
+require_once get_template_directory() . '/inc/compare.php';
 
 function ndw_setup() {
 	add_theme_support( 'automatic-feed-links' );
