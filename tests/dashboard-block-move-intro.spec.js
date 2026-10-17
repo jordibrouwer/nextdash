@@ -21,7 +21,10 @@ async function openDashboard(page, { lockLayout = false } = {}) {
     // The fixture keeps every listed tip seen unless the spec asks for it. The
     // intro stands down once the first-move coach has been seen, so both are wanted.
     await page.addInitScript(({ tip, lock }) => {
-        window.__e2eWantTours = [tip, 'blockMoveCoach'];
+        // Once a test has answered the card, a reload asks for nothing: the
+        // fixture would otherwise take the tip out of what the server sent back,
+        // and the intro played again behind the check that it does not.
+        window.__e2eWantTours = sessionStorage.getItem('e2e-intro-answered') ? [] : [tip, 'blockMoveCoach'];
         // Another test in this worker may have left the tips cooldown set on the
         // server, or used up the day's tip by answering the intro.
         const desc = Object.getOwnPropertyDescriptor(window, 'DiscoverabilityState');
@@ -103,6 +106,7 @@ test.describe('one-time intro that shows blocks can be moved', () => {
         await expect.poll(() => storedSeen(page), { timeout: 10_000 }).toBe(true);
 
         // A reload shows nothing, whatever the page itself would otherwise want.
+        await page.evaluate(() => sessionStorage.setItem('e2e-intro-answered', '1'));
         await page.reload();
         await page.waitForSelector(blockSel, { timeout: 15_000 });
         // A fixed wait: the intro plays a few seconds after load, so for as long as it
@@ -110,6 +114,8 @@ test.describe('one-time intro that shows blocks can be moved', () => {
         await page.waitForTimeout(6000);
         await expect(card(page)).toHaveCount(0);
         await expect(page.locator('.block-intro-ghost')).toHaveCount(0);
+        // Not merely slow to get to its card: it is not playing at all.
+        expect(await page.evaluate(() => window.DashboardBlockMoveIntro.isRunning())).toBe(false);
     });
 
     test('Try it picks the first category up with the keyboard', async ({ page }) => {

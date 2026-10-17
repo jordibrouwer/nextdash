@@ -11,6 +11,8 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * page a near-neutral cell is the right answer and proves nothing.
  */
 
+const THEME = 'matrix-bluepill-dark';
+
 async function dashboard(page) {
     await page.setViewportSize({ width: 1400, height: 1000 });
     await markWhatsNewSeen(page);
@@ -18,6 +20,14 @@ async function dashboard(page) {
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // The theme these floors were measured on. The track takes a share of the
+    // theme's ink, and Slate, the default since v1.19.9, has a blue-grey one
+    // that pulls the brown below the floor. In this page only, not saved.
+    await page.waitForFunction(() => !!window.dashboardInstance?.settings);
+    await page.evaluate(async (id) => {
+        window.ThemeLoader.applyTheme(id);
+        await window.ThemeLoader.applySurfacesForTheme(id, window.dashboardInstance.settings);
+    }, THEME);
 }
 
 /**
