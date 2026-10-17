@@ -235,6 +235,7 @@ func defaultNewsPage() PageWithBookmarks {
 		},
 	}
 }
+
 // minimalMainPage is the one-page starter set the e2e suite runs against
 // (NEXTDASH_SEED=minimal), as it was before the demo set.
 func minimalMainPage() PageWithBookmarks {
@@ -302,7 +303,6 @@ func minimalMainPage() PageWithBookmarks {
 		},
 	}
 }
-
 
 // hasAnyPageFile says whether the data directory already holds a page.
 func (fs *FileStore) hasAnyPageFile() bool {

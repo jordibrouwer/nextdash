@@ -151,6 +151,9 @@ test.describe('config info + reset affordances', () => {
             'dockerUpdateInterval', 'dockerConfirmStopRestart', 'dockerHostAddress', 'dockerNotify', 'dockerViewCloseOutside', 'dockerViewKeyLegend',
             'dockerUsageAlerts', 'dockerCpuAlertPercent', 'dockerMemAlertPercent', 'dockerUsageAlertMinutes',
             'dockerAutoUpdateFrom', 'dockerAutoUpdateTo',
+            // New apps: the switch and the choice under it, below a note that
+            // says what nextDash looks for and where turned-down apps go.
+            'discoverApps', 'discoveryNewApps',
             // Monitoring → Notifications → Weekly digest. The switch carries the
             // ℹ; the day, the hour and the three parts under it read as part of
             // it, under a panel note that says what the digest holds.

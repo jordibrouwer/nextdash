@@ -153,6 +153,18 @@ func TestDockerViewKeyLegendChoices(t *testing.T) {
 	}
 }
 
+// What a new app does reads "ask" when nothing or something unknown is
+// stored, so the browser sees its own default and offers no Reset panel.
+func TestDiscoveryNewAppsChoices(t *testing.T) {
+	for in, want := range map[string]string{"": "ask", "ask": "ask", "add": "add", "inbox": "inbox", "later": "ask"} {
+		s := Settings{DiscoveryNewApps: in}
+		normalizeDockerSettings(&s)
+		if s.DiscoveryNewApps != want {
+			t.Errorf("%q -> %q, want %q", in, s.DiscoveryNewApps, want)
+		}
+	}
+}
+
 // A container's bookmark: "-" for none, or a page and a web address.
 func TestNormalizeDockerBookmarkLinks(t *testing.T) {
 	got := normalizeDockerBookmarkLinks(map[string]string{

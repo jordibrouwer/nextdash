@@ -80,6 +80,7 @@ test('a main page somebody changed gets no card', async ({ page, request }) => {
     });
     await page.reload();
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    // A check that the card does NOT come back after a change: give it the time it would take to show.
     await page.waitForTimeout(1500);
     await expect(card(page)).toHaveCount(0);
     expect((await mainLinks(page)).Mine).toBe('https://example.com/');

@@ -123,6 +123,8 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **new — Config → Containers → View: Suggest new apps, New apps, and the ignored apps,** each with Remove, so nextDash notices that app again (`discoverApps`, `discoveryIgnored`).
 - **new — container labels steer it:** `nextdash.url` sets the address and wins over everything else, `nextdash.name` the name, `nextdash.category` the category, `nextdash.icon` an icon-set name or image URL, and `nextdash.hide=true` keeps a container out.
 - **fix — new means never seen.** A container that was already there when discovery first looked is not proposed again as new, and a container that already has a bookmark is matched on the server the same way the browser matches it (`discovery_match.go`). A settings save from a browser no longer overwrites what the server wrote (`discoveryCardDone`, `discoveryIgnored`, `dockerHostSeen`). Undo also works while the quick start is open.
+- **fix — the New apps panel no longer offers Reset panel on a fresh install.** An unset choice reached the browser empty, which differs from its default of Ask first, so the panel counted as changed and Config → Overview listed it. The server now sends `ask` for an empty or unknown value (`normalizeDockerSettings`, `TestDiscoveryNewAppsChoices`).
+- **fix — the page goes quiet on the network after it loads.** The host the dashboard was opened on is reported once per load, and that request's answer was never read, so Chromium kept it open (`reportHostSeen`).
 
 ### First start
 
@@ -182,6 +184,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 - **tests — `health_badge_test.go` seeds the uptime history oldest first**, the order the history file keeps it in. Newest first, the badge counted samples twice whenever the span crossed UTC midnight, and the test failed around that hour.
 - **tests — `dashboard-block-move-intro.spec.js` no longer depends on test order.** Answering the intro used up the day's tip and the locked-layout test left the layout locked on the shared server, so "Try it" and "a key press during the animation" failed after them. The helper lifts the tip limit, and the new corner-card test unlocks the layout first.
+- **tests — the specs follow this release.** `app-discovery.spec.js` finds a placed link outside Today, which now shows a link added today on main, and finds an inbox proposal by its heading, since the row shows the app's name; `config-containers-tabs.spec.js` knows the New apps and Ignored apps panels; `config-info-reset.spec.js` lets the New apps pair explain itself through its panel note; `whats-new-hidden-release.spec.js` has v1.19.9 leading. Seven fixed waits that check something does not happen say so (`validate:test-waits`), and `default_seed.go` is gofmt'd.
 
 ---
 

@@ -14,7 +14,7 @@ const TABS = ['connection', 'view', 'updates', 'alerts'];
 // What each tab shows, in order.
 const TITLES = {
     connection: ['Connection', 'Safety'],
-    view: ['View', 'Links', 'Hidden containers'],
+    view: ['View', 'Links', 'New apps', 'Ignored apps', 'Hidden containers'],
     updates: ['Updates', 'GitHub'],
     alerts: ['Notifications', 'Muted containers'],
 };

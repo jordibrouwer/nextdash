@@ -1134,11 +1134,13 @@ class DashboardData {
         if (!host || host === d.settings.dockerHostSeen) return;
         d.settings.dockerHostSeen = host;
         const api = typeof window.nextDashFetch === 'function' ? window.nextDashFetch : fetch;
+        // The answer is read, though nothing uses it: a body left unread kept
+        // the request open, so the page never went quiet on the network.
         Promise.resolve(api('/api/discovery/host-seen', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ host }),
-        })).catch(() => {});
+        })).then((res) => res?.text?.()).catch(() => {});
     }
 
     async loadPageBookmarks(pageId, options = {}) {

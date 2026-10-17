@@ -103,6 +103,9 @@ async function open(page) {
 
 const card = (page) => page.locator('[data-app-discovery-card]');
 const templateCard = (page) => page.locator('.first-start-card:not([data-app-discovery-card])');
+// A link in the category it was added to. Today, on main since the demo
+// starter set, shows a link added today as well.
+const placedLink = (page, text) => page.locator('#dashboard-layout .bookmark-link:not([data-category-id^="__smart"])', { hasText: text });
 
 async function categories(request, pageId = 1) {
     return (await request.get(`/api/categories?page=${pageId}`)).json();
@@ -147,7 +150,7 @@ test('the apps card lists the apps by kind, and Add puts them on the page', asyn
     expect(s?.category).toBe(mm.id);
     expect(s?.checkStatus).toBe(true);
     expect(s?.icon).toBeTruthy();
-    await expect(page.locator('#dashboard-layout .bookmark-link', { hasText: 'sonarr' })).toBeVisible();
+    await expect(placedLink(page, 'sonarr')).toBeVisible();
 
     const st = await settings(request);
     expect(st.dockerBookmarkLinks?.sonarr).toBe(`1::${s.url}`);
@@ -168,6 +171,7 @@ test('Close keeps the card away and adds nothing', async ({ page, request, worke
 
     await page.reload();
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    // A check that the card does NOT come back: give it the time it would take to show.
     await page.waitForTimeout(1000);
     await expect(card(page)).toHaveCount(0);
 });
@@ -260,7 +264,7 @@ test('a new container is added to the dashboard with a notice, and Undo takes it
     expect((await runDiscovery(request)).added).toEqual(['sonarr']);
     await open(page);
 
-    await expect(page.locator('#dashboard-layout .bookmark-link', { hasText: 'sonarr' })).toBeVisible();
+    await expect(placedLink(page, 'sonarr')).toBeVisible();
     await expect(notice(page)).toContainText('sonarr added to Media management', { timeout: 15_000 });
     const added = (await bookmarks(request)).find((b) => b.name === 'sonarr');
     expect(added?.url).toContain(`127.0.0.1:${sonarr}`);
@@ -313,7 +317,7 @@ test('with Propose in the Inbox, a new container arrives in the Inbox and Promot
     await open(page);
     await openInbox(page);
 
-    const row = page.locator('.inbox-item', { hasText: 'New app: sonarr' });
+    const row = page.locator('.inbox-item', { has: page.getByRole('heading', { name: 'New app: sonarr' }) });
     await expect(row).toContainText('Media management');
     await row.getByRole('button', { name: 'Promote' }).click();
     const form = page.locator('#bookmark-form-modal');
@@ -342,7 +346,7 @@ test('Ignore on a proposal removes it and it never returns', async ({ page, requ
     await open(page);
     await openInbox(page);
 
-    const row = page.locator('.inbox-item', { hasText: 'New app: sonarr' });
+    const row = page.locator('.inbox-item', { has: page.getByRole('heading', { name: 'New app: sonarr' }) });
     await row.getByRole('button', { name: 'Ignore' }).click();
     await expect(row).toHaveCount(0);
     expect((await settings(request)).discoveryIgnored).toContain('sonarr');
@@ -456,6 +460,7 @@ test('the card waits for What\'s new, then opens in the middle over a dimmed das
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
     const whatsNew = page.locator('.whats-new-modal');
     await expect(whatsNew).toBeVisible({ timeout: 15_000 });
+    // A check that the card does NOT show behind What's new: give it the time it would take.
     await page.waitForTimeout(2500);
     await expect(card(page)).toHaveCount(0);
 
@@ -543,6 +548,7 @@ test('on a new install the apps card comes last: after the starting page, the ch
 
     // First the starting-page card, as on an install without Docker.
     await expect(templateCard(page)).toBeVisible();
+    // A check that the apps card does NOT show beside the first-start card: give it the time it would take.
     await page.waitForTimeout(1500);
     await expect(card(page)).toHaveCount(0);
     await templateCard(page).getByRole('button', { name: /Keep these example links/ }).click();
@@ -550,6 +556,7 @@ test('on a new install the apps card comes last: after the starting page, the ch
     // Then the checklist; still no apps card.
     const checklist = page.locator('.quickstart-checklist');
     await expect(checklist).toBeVisible();
+    // A check that the apps card does NOT show beside the checklist: give it the time it would take.
     await page.waitForTimeout(1500);
     await expect(card(page)).toHaveCount(0);
     await checklist.locator('.quickstart-close').click();
@@ -593,7 +600,7 @@ test('a new container later is asked about in the middle first, and Add puts it 
     await card(page).getByRole('button', { name: 'Add', exact: true }).click();
     await expect(card(page)).toHaveCount(0);
 
-    await expect(page.locator('#dashboard-layout .bookmark-link', { hasText: 'sonarr' })).toBeVisible();
+    await expect(placedLink(page, 'sonarr')).toBeVisible();
     const added = (await bookmarks(request)).find((b) => b.name === 'sonarr');
     expect(added?.url).toContain(`127.0.0.1:${sonarr}`);
     await expect(notice(page)).toContainText('sonarr added to Media management', { timeout: 15_000 });

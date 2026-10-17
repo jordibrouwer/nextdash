@@ -84,8 +84,12 @@ func normalizeDockerSettings(s *Settings) {
 	if len(s.DiscoveryIgnored) == 0 {
 		s.DiscoveryIgnored = nil
 	}
-	if s.DiscoveryNewApps != "add" && s.DiscoveryNewApps != "inbox" && s.DiscoveryNewApps != "ask" {
-		s.DiscoveryNewApps = ""
+	// Empty asks too, but sent as "ask": the browser compares the value with
+	// its default, and an empty one showed Reset panel on a fresh install.
+	switch s.DiscoveryNewApps {
+	case "add", "inbox", "ask":
+	default:
+		s.DiscoveryNewApps = "ask"
 	}
 	s.DockerHostSeen = normalizeDockerHostAddress(s.DockerHostSeen)
 }

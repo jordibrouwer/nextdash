@@ -59,6 +59,7 @@ test.describe('search', () => {
 
         await expect.poll(() => query(page)).toBe('/qwertyprobe');
         await expect(page.locator('#shortcut-search.show')).toBeVisible();
+        // A check that NO error follows the click: give a late throw the time to land.
         await page.waitForTimeout(250);
         expect(errors).toEqual([]);
     });
@@ -282,6 +283,7 @@ test.describe('inbox', () => {
             const inbox = window.dashboardInstance.inbox.instance;
             inbox.openItem(inbox.items.find((item) => item.id === itemId));
         }, id);
+        // A check that NO read mark is sent: give a PATCH the time it would take to go out.
         await page.waitForTimeout(400);
         expect(patches).toEqual([]);
     });
