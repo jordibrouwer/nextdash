@@ -1981,6 +1981,8 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
 
 .dashboard-grid.layout-terminal .category-title-label::before {
     content: '$ ';
+    /* The label is a flex row, where the space after the $ would be dropped. */
+    white-space: pre;
 }
 
 /* Terminal layout uses "$ " instead of "// "; hide the "//" handle. */
@@ -2510,6 +2512,20 @@ body[data-category-spacing="airy"] {
        margin, so nothing in the title moves. */
     padding: 2px 0 2px 0.2em;
     margin: -2px 0 -2px -0.2em;
+    /* One baseline for the //, the icon and the name. The name is an
+       inline-block with overflow: hidden, and such a box sits on its bottom
+       edge instead of its text: in a line of inline boxes it rode about 5px
+       above the // and the icon, with that much empty room left under it
+       before the line. A flex row aligns them on the text itself. */
+    display: flex;
+    align-items: baseline;
+}
+
+/* A flex item loses the space at the end of its text; the one after the icon
+   is what keeps the name off it. */
+.category-title-label .category-title-icon,
+.category-title-label .bookmark-icon {
+    white-space: pre;
 }
 
 /* The "//" prefix is now a real element that doubles as the drag-reorder handle. */
