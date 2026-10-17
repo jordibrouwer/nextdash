@@ -30,6 +30,7 @@ Key features:
 • Video bookmarks marked in the list, and played in the hover card without leaving the dashboard
 • Widgets beside your bookmarks: 36 built-in kinds (uptime, feeds, weather, calendar, disks, containers and more) plus a Custom widget for any JSON API
 • Your media stack on the dashboard: Jellyfin, Sonarr, Radarr, Seerr, qBittorrent and SABnzbd, with the posters from your own library
+• Finds the web apps in your Docker containers and offers them as bookmarks, with an icon and a status check (needs the Docker socket below)
 • Your Unraid server on the dashboard: seven widgets for the array, parity, shares, VMs, the UPS and notifications, with alerts
 • Web search in the search panel through your own SearXNG or the Brave Search API
 • Six interface languages: English, Dutch, German, French, Spanish and Chinese
@@ -50,6 +51,14 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.19.9 (2026-10-17)
+- Containers: nextDash finds the web apps in your Docker containers and offers them as bookmarks; a container that turns up later is asked about first
+- Containers: the labels nextdash.url, nextdash.name, nextdash.category, nextdash.icon and nextdash.hide steer what is found
+- First start: a fresh install starts with 98 example links on two pages, or empty if you choose, on the new Slate theme
+- Import: an import asks whether the bookmarks go onto the dashboard or into the inbox first
+- Appearance: code, addresses and shortcuts use Source Code Pro
+- Fixes: clicking the search hint runs that search, and read and unread in the inbox follow the server across devices
+
 ### v1.19.8 (2026-10-15)
 - Widgets: now playing tiles for Jellyfin, Emby and Plex, and Emby and Plex tiles of what was added lately (Plex is read through Tautulli)
 - Tags: Shift + T opens the tag view of every bookmark, with a Without tags filter
@@ -81,15 +90,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Widgets: Add a widget opens a picker you can search, and new kinds carry a New badge in the Catalogue
 - Translations: the widget picker and a few Inbox messages no longer show English in the other languages
 
-### v1.19.4 (2026-10-12)
-- Widgets: a Jellyfin widget shows what was added to your media server lately, with the posters from your own library
-- Widgets: Config → Widgets has the tabs Your widgets, Catalogue and Custom widget, with the list and the open widget side by side on a wide screen
-- Weekly digest: one message a week about broken links, certificates running out, container updates and bookmarks nobody opens, with a window to read it
-- Monitoring: Status &amp; alerts moved from Behavior to its own Config → Monitoring section with Checks, Notifications and Schedules
-- What's new: a release's highlight gets a picture or short clip, and every release since your last visit opens
-- Dashboard: pasting a link shows what it is before you choose Bookmark or Inbox
-- Fixes: the focus stays on the control you are using in Config, the block grip drags with the mouse again, and tag suggestions know a subdomain by its parent domain
-
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -97,7 +97,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-10-15</Date>
+  <Date>2026-10-17</Date>
 
   <Config Name="WebUI Port"
           Target="8080"
