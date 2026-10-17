@@ -26,6 +26,9 @@ is made and removed by hand.
 */
 func TestMain(m *testing.M) {
 	os.Setenv("NEXTDASH_DISABLE_PREFETCH", "1")
+	// The one-page starter set the suite was written against. Tests about
+	// the demo set clear this themselves (useDemoSeed).
+	os.Setenv("NEXTDASH_SEED", "minimal")
 	/*
 	 * The outbound rate limiter is a package-level singleton on one bucket with
 	 * a one-minute window, so every test in this binary shares it. A full run

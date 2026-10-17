@@ -15,16 +15,20 @@ looking for, which is a poor way to find out the thing exists. One health block
 ships on the seeded page, above the categories it summarises.
 */
 func TestFreshInstallSeedsAHealthWidget(t *testing.T) {
+	useDemoSeed(t)
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	store := NewStore()
 
 	widgets, order := store.GetPageBlocks(1)
 
-	if len(widgets) != 2 {
-		t.Fatalf("seeded widgets = %d, want 2 (health and notes)", len(widgets))
+	if len(widgets) != 3 {
+		t.Fatalf("seeded widgets = %d, want 3 (health, trend and notes)", len(widgets))
 	}
-	if widgets[1].Type != WidgetTypeNotes || widgets[1].ID != defaultNotesWidgetID {
-		t.Errorf("second seeded widget = %+v, want the notes widget", widgets[1])
+	if widgets[1].Type != WidgetTypeTrend || widgets[1].ID != defaultTrendWidgetID {
+		t.Errorf("second seeded widget = %+v, want the trend widget", widgets[1])
+	}
+	if widgets[2].Type != WidgetTypeNotes || widgets[2].ID != defaultNotesWidgetID {
+		t.Errorf("third seeded widget = %+v, want the notes widget", widgets[2])
 	}
 	w := widgets[0]
 	if w.Type != WidgetTypeHealth {
@@ -59,8 +63,8 @@ func TestFreshInstallSeedsAHealthWidget(t *testing.T) {
 			t.Errorf("category %q is missing from the block order", c.ID)
 		}
 	}
-	if len(order) != len(categories)+2 {
-		t.Errorf("block order has %d entries, want %d categories plus the two widgets",
+	if len(order) != len(categories)+len(widgets) {
+		t.Errorf("block order has %d entries, want %d categories plus the three widgets",
 			len(order), len(categories))
 	}
 }

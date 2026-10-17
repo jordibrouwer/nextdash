@@ -42,6 +42,9 @@ const RAINDROP_STUB_PORT = 18076;
 const E2E_WEB_SERVER_ENV = {
     NEXTDASH_WRITE_TOKEN: WRITE_TOKEN,
     NEXTDASH_DISABLE_PREFETCH: '1',
+    // The one-page starter set the specs were written against, not the
+    // hundred-link demo set a real install gets.
+    NEXTDASH_SEED: 'minimal',
     NEXTDASH_GITHUB_API_BASE: `http://127.0.0.1:${GITHUB_STUB_PORT}`,
     NEXTDASH_RAINDROP_API_BASE: `http://127.0.0.1:${RAINDROP_STUB_PORT}`,
     // The app-icon sets from the Go tests' fixture, read from disk: a spec

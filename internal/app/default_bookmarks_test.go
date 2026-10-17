@@ -1,6 +1,7 @@
 package app
 
 import (
+	"os"
 	"testing"
 	"time"
 )
@@ -10,6 +11,7 @@ import (
 // cleanup filters — had to treat as unknown. A fresh install should have a
 // usable value from the first run.
 func TestDefaultBookmarksCarryCreatedAt(t *testing.T) {
+	useDemoSeed(t)
 	dir := t.TempDir()
 	store := &FileStore{
 		settingsFile: dir + "/settings.json",
@@ -65,6 +67,7 @@ func TestDefaultBookmarkCreatedAtIsDistinct(t *testing.T) {
 // find nextdash.cc on the dashboard rather than only behind a button in About,
 // and Fresh needs a feed to count before anyone has added one.
 func TestDefaultBookmarksIncludeTheProjectSite(t *testing.T) {
+	useDemoSeed(t)
 	dir := t.TempDir()
 	store := &FileStore{
 		settingsFile: dir + "/settings.json",
@@ -102,4 +105,93 @@ func TestDefaultBookmarksIncludeTheProjectSite(t *testing.T) {
 		}
 		seen[b.Shortcut] = b.Name
 	}
+}
+
+// A fresh install gets the demo set: two pages, around a hundred links, the
+// project listed twice (site and repository), no address twice, and Today on
+// main only.
+func TestFreshInstallSeedsTheDemoPages(t *testing.T) {
+	useDemoSeed(t)
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	store := NewStore()
+
+	pages := store.GetPages()
+	if len(pages) != 2 || pages[0].ID != 1 || pages[1].ID != defaultNewsPageID {
+		t.Fatalf("pages = %+v, want main and news", pages)
+	}
+
+	bookmarks := store.GetAllBookmarks()
+	if n := len(bookmarks); n < 90 || n > 110 {
+		t.Errorf("seeded %d bookmarks, want around a hundred", n)
+	}
+	perPage := map[int]int{}
+	urls := map[string]string{}
+	for _, b := range bookmarks {
+		perPage[b.PageID]++
+		if other, dup := urls[b.URL]; dup {
+			t.Errorf("%q and %q share %s", other, b.Name, b.URL)
+		}
+		urls[b.URL] = b.Name
+	}
+	if perPage[1] == 0 || perPage[defaultNewsPageID] == 0 {
+		t.Errorf("bookmarks per page = %v, want both pages filled", perPage)
+	}
+	for _, want := range []string{"https://nextdash.cc/", "https://github.com/jordibrouwer/nextdash"} {
+		if _, ok := urls[want]; !ok {
+			t.Errorf("the seed lacks %s", want)
+		}
+	}
+
+	if got := store.GetSettings().SmartTodayPageIds; len(got) != 1 || got[0] != 1 {
+		t.Errorf("Today pages = %v, want main only", got)
+	}
+
+	// Every bookmark's category exists on its own page.
+	for _, page := range pages {
+		known := map[string]bool{}
+		for _, c := range store.GetCategoriesByPage(page.ID) {
+			known[c.ID] = true
+		}
+		for _, b := range bookmarks {
+			if b.PageID == page.ID && !known[b.Category] {
+				t.Errorf("%q is filed under %q, not a category on page %d", b.Name, b.Category, page.ID)
+			}
+		}
+	}
+}
+
+// A data directory that already has pages gets no second starter page, even
+// with main's file gone.
+func TestSeedLeavesExistingPagesAlone(t *testing.T) {
+	useDemoSeed(t)
+	dir := t.TempDir()
+	t.Setenv("NEXTDASH_DATA_DIR", dir)
+	if err := os.WriteFile(dir+"/bookmarks-2.json", []byte(`{"page":{"id":2,"name":"mine"},"bookmarks":[]}`), 0644); err != nil {
+		t.Fatal(err)
+	}
+	store := NewStore()
+	for _, page := range store.GetPages() {
+		if page.ID == 2 && page.Name != "mine" {
+			t.Errorf("page 2 was overwritten: %+v", page)
+		}
+	}
+}
+
+// The e2e suite's server keeps the one-page set its specs were written for.
+func TestMinimalSeedIsOnePage(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	t.Setenv("NEXTDASH_SEED", "minimal")
+	store := NewStore()
+	if pages := store.GetPages(); len(pages) != 1 {
+		t.Errorf("pages = %+v, want main alone", pages)
+	}
+	if got := store.GetSettings().SmartTodayPageIds; len(got) != 0 {
+		t.Errorf("Today pages = %v, want every page", got)
+	}
+}
+
+// useDemoSeed undoes TestMain's NEXTDASH_SEED=minimal for one test.
+func useDemoSeed(t *testing.T) {
+	t.Helper()
+	t.Setenv("NEXTDASH_SEED", "")
 }
