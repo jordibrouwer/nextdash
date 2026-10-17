@@ -1,0 +1,16 @@
+/*
+Theme Name: nextDash Werkbank
+Theme URI: https://nextdash.cc
+Author: Jordi Brouwer
+Author URI: https://jordibrw.nl
+Description: The quiet theme for nextdash.cc: graphite with one green accent, Source Sans 3 and Source Code Pro, light and dark. It shares its look with the docs at /docs/.
+Version: 1.0.0
+Requires at least: 6.4
+Tested up to: 6.8
+Requires PHP: 8.0
+License: GNU General Public License v2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: nextdash-werkbank
+*/
+
+/* The styles live in assets/css/werkbank.css. */

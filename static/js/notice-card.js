@@ -55,15 +55,20 @@
      * "another card is up" check so a card does not consider itself a blocker
      * when re-rendered.
      */
-    function cornerIsFree(selfClass) {
+    function cornerIsFree(selfClass, { essential = false } = {}) {
         const d = dash();
         if (!d?.settings) return false;
         // The public demo shows no corner cards: every visitor is new, and a
         // stack of invitations is not the product.
         if (global.DemoLock?.on) return false;
-        if (global.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
-        if (d.onboardingStartedInSession) return false;
-        if (d.settings.onboardingCompleted === false) return false;
+        // An essential card reports something that already happened and offers
+        // its undo; it is not an invitation, so the phone layout and an
+        // unfinished onboarding do not hold it back.
+        if (!essential) {
+            if (global.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
+            if (d.onboardingStartedInSession) return false;
+            if (d.settings.onboardingCompleted === false) return false;
+        }
         // Config, health and the inbox are hash routes on this same page, so
         // without this a card drops on top of whatever the user opened — including,
         // for a settings-related card, the very panel it is about. Only interrupt
@@ -72,14 +77,20 @@
         if (d.activeView && d.activeView !== 'bookmarks') return false;
         // Quick-start — the setup wizard *or* the checklist that follows it — owns
         // the same corner, as does any other notice card.
-        if (document.querySelector(`.quickstart-card:not(.${selfClass})`)) return false;
+        // An essential card waits for another notice, but stands above the
+        // checklist rather than waiting for it to be finished.
+        const blocker = essential ? `.quickstart-card.notice-card:not(.${selfClass})` : `.quickstart-card:not(.${selfClass})`;
+        if (document.querySelector(blocker)) return false;
         // Something that is not a card but stands in the corner too -- the
         // minimised weekly digest -- says so with this attribute.
         if (document.querySelector('[data-holds-corner]')) return false;
         if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
         if (document.querySelector('.whats-new-modal')) return false;
-        // The block-move intro (animation, then its card) has the screen until it is answered.
+        // The block-move intro (animation, then its card) has the screen until it
+        // is answered, and comes first when it is still to play in this load: it
+        // wakes the queue once it is done or gives up.
         if (document.body.classList.contains('is-block-move-intro')) return false;
+        if (global.DashboardBlockMoveIntro?.isPending?.()) return false;
         if (document.body.classList.contains('bookmark-inline-edit-active')) return false;
         return true;
     }
@@ -172,10 +183,36 @@ canShow every time.
         }
     }
 
+    // Every card defined, for busy(): whether one is still to come.
+    const registry = [];
+
+    /**
+     * Whether a corner card is still on its way: up now, waiting out its own
+     * delay, or queued and wanting to show. Essential cards (reports of
+     * something that happened) do not count -- they are not part of the
+     * line-up a later invitation waits for.
+     */
+    async function busy() {
+        for (const card of registry) {
+            if (card.spec.essential === true) continue;
+            if (card.element() || card.waiting()) return true;
+            // Queued and able to show now. A card the corner holds back for
+            // the rest of this session (the first one, during onboarding)
+            // comes on a later load; nothing should wait for it until then.
+            if (queue.some((entry) => entry.id === card.id) && cornerIsFree(card.id)) {
+                try {
+                    if ((await card.spec.canShow?.()) !== false) return true;
+                } catch { /* a card that cannot answer is not waiting */ }
+            }
+        }
+        return false;
+    }
+
     function define(spec) {
         const cardClass = `${spec.id}-card`;
         let cardEl = null;
         let pending = null;
+        registry.push({ id: cardClass, spec, element: () => cardEl, waiting: () => pending != null });
 
         const text = (value) => (typeof value === 'function' ? value() : value);
 
@@ -209,13 +246,13 @@ canShow every time.
 
         function gateSync() {
             if (cardEl) return false;
-            if (!cornerIsFree(cardClass)) return false;
+            if (!cornerIsFree(cardClass, { essential: spec.essential === true })) return false;
             return spec.canShow?.() !== false;
         }
 
         async function shouldShow() {
             if (cardEl) return false;
-            if (!cornerIsFree(cardClass)) return false;
+            if (!cornerIsFree(cardClass, { essential: spec.essential === true })) return false;
             // Async so a card may consult something that needs awaiting.
             return (await spec.canShow?.()) !== false;
         }
@@ -277,6 +314,12 @@ canShow every time.
 
             document.body.appendChild(el);
             cardEl = el;
+            if (spec.essential === true) {
+                // Above the quick-start checklist when it holds the corner.
+                const checklist = document.querySelector('.quickstart-card:not(.notice-card)');
+                const top = checklist?.getBoundingClientRect?.().top;
+                if (Number.isFinite(top) && top > 0) el.style.bottom = `${Math.round(window.innerHeight - top + 12)}px`;
+            }
             requestAnimationFrame(() => el.classList.add('show'));
             spec.onShown?.(handle);
             return true;
@@ -334,5 +377,5 @@ canShow every time.
         };
     }
 
-    global.NoticeCard = { define, cornerIsFree, wakeQueue };
+    global.NoticeCard = { define, cornerIsFree, wakeQueue, busy };
 }(typeof window !== 'undefined' ? window : globalThis));

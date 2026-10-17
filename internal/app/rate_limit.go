@@ -1,6 +1,7 @@
 package app
 
 import (
+	"math"
 	"net"
 	"net/http"
 	"os"
@@ -78,8 +79,13 @@ func (l *slidingWindowLimiter) allow(key string) bool {
 // saturated reports whether key has used its whole window, without counting
 // a request of its own.
 func (l *slidingWindowLimiter) saturated(key string) bool {
+	return l.room(key) <= 0
+}
+
+// room is how many requests key has left in its window, without counting one.
+func (l *slidingWindowLimiter) room(key string) int {
 	if l == nil || l.limit <= 0 {
-		return false
+		return math.MaxInt
 	}
 	cutoff := time.Now().Add(-l.window)
 	l.mu.Lock()
@@ -90,7 +96,7 @@ func (l *slidingWindowLimiter) saturated(key string) bool {
 			n++
 		}
 	}
-	return n >= l.limit
+	return l.limit - n
 }
 
 // limiterSweepThreshold is the map size above which allow() drops keys whose

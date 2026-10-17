@@ -50,6 +50,14 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.19.8 (2026-10-15)
+- Widgets: now playing tiles for Jellyfin, Emby and Plex, and Emby and Plex tiles of what was added lately (Plex is read through Tautulli)
+- Tags: Shift + T opens the tag view of every bookmark, with a Without tags filter
+- Tag suggestions: Find tags works in the inbox, what you turned down is easy to find again, and self-hosted apps are recognised by name
+- Tag suggestions: thousands more sites and dozens of new subjects in the catalogue
+- Dashboard: the page filter stays at the top on a phone
+- Fixes: Keep settings on this device only keeps them on this device, and media tiles refresh without the Loading line
+
 ### v1.19.7 (2026-10-14)
 - Appearance: nine tabs in three groups (Look, Bookmarks, Header &amp; bars), with link previews on a tab of their own
 - Appearance: panels fold to one line that says what they are set to, and long tabs list their panels
@@ -81,11 +89,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - What's new: a release's highlight gets a picture or short clip, and every release since your last visit opens
 - Dashboard: pasting a link shows what it is before you choose Bookmark or Inbox
 - Fixes: the focus stays on the control you are using in Config, the block grip drags with the mouse again, and tag suggestions know a subdomain by its parent domain
-
-### v1.19.2 (2026-10-10)
-- Config: every section opens on its first tab when you were last there more than five minutes ago; come back sooner and it shows the tab you had open
-- Config: a link to Status page or Unraid always names the tab it shows
-- Bookmarks: click anywhere on a Tag suggestions row to see the bookmarks it means, not only on the count
 
   </Changes>
 

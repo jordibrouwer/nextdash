@@ -80,6 +80,18 @@ func normalizeDockerSettings(s *Settings) {
 	s.DockerBookmarkLinks = normalizeDockerBookmarkLinks(s.DockerBookmarkLinks)
 	s.DockerContainerIcons = normalizeDockerContainerIcons(s.DockerContainerIcons)
 	s.DockerHostAddress = normalizeDockerHostAddress(s.DockerHostAddress)
+	s.DiscoveryIgnored = normalizeDockerNameList(s.DiscoveryIgnored)
+	if len(s.DiscoveryIgnored) == 0 {
+		s.DiscoveryIgnored = nil
+	}
+	// Empty asks too, but sent as "ask": the browser compares the value with
+	// its default, and an empty one showed Reset panel on a fresh install.
+	switch s.DiscoveryNewApps {
+	case "add", "inbox", "ask":
+	default:
+		s.DiscoveryNewApps = "ask"
+	}
+	s.DockerHostSeen = normalizeDockerHostAddress(s.DockerHostSeen)
 }
 
 // normalizeDockerNameList trims, de-duplicates and caps a list of container

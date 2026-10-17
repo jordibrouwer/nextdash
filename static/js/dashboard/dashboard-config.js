@@ -3605,6 +3605,7 @@ class DashboardConfig {
         { tab: 'bookmarks', titleKey: 'config.helpBmKeysTitle', fallback: 'Keys' },
         { tab: 'containers', titleKey: 'config.helpContainersSetupTitle', fallback: 'Before it works: Docker, a write token and sometimes root' },
         { tab: 'containers', titleKey: 'config.helpContainersTogetherTitle', fallback: 'Containers, bookmarks and health together' },
+        { tab: 'containers', titleKey: 'config.helpContainersDiscoveryTitle', fallback: 'Apps nextDash finds on its own' },
         { tab: 'containers', titleKey: 'config.helpContainersTitle', fallback: 'The Containers view' },
         { tab: 'containers', titleKey: 'config.helpContainersConfigTitle', fallback: 'Setting it up' },
         { tab: 'search', titleKey: 'config.helpSearchTitle', fallback: 'Searching your bookmarks' },
@@ -3772,6 +3773,8 @@ class DashboardConfig {
         dockerNotify: ['docker', 'containers', 'notify', 'notification', 'alert', 'crash', 'restart', 'unhealthy', 'webhook'],
         dockerUsageAlerts: ['docker', 'containers', 'notify', 'alert', 'cpu', 'memory', 'ram', 'usage', 'threshold', 'hot'],
         dockerHostAddress: ['docker', 'containers', 'host', 'address', 'ip', 'web ui', 'port', 'link', 'proxy'],
+        discoverApps: ['docker', 'containers', 'discover', 'discovery', 'suggest', 'new', 'apps', 'found', 'inbox'],
+        discoveryNewApps: ['docker', 'containers', 'discover', 'discovery', 'new', 'apps', 'ask', 'confirm', 'add', 'inbox', 'propose'],
         webSearchEngine: ['web', 'search', 'searxng', 'brave', 'internet', 'engine', 'privacy'],
         webSearchSearxngUrl: ['searxng', 'web', 'search', 'address', 'url', 'instance'],
         statusRecheckIntervalMinutes: ['status', 'check', 'interval', 'ping', 'uptime'],
@@ -9523,24 +9526,28 @@ class DashboardConfig {
         const targetPage = Number(preview.page) || Number(this.dash.currentPageId) || 1;
         const pageName = (this.dash.pages || []).find((p) => Number(p.id) === targetPage)?.name || '';
 
-        const question = Number(preview.duplicates) > 0
-            ? this.t('config.sourceConfirmDetail', 'Import {n} bookmarks onto {p}? {d} are already here and will be skipped.')
-                .replace('{n}', String(preview.new)).replace('{d}', String(preview.duplicates)).replace('{p}', pageName)
-            : this.t('config.sourceConfirm', 'Import {n} bookmarks onto {p}?')
-                .replace('{n}', String(preview.new)).replace('{p}', pageName);
-        const ok = await this.confirmAction(question,
-            { confirmLabel: this.t('config.confirmImport', 'Import'), danger: false });
-        if (!ok) return;
+        const dest = await this.chooseImportDestination({
+            total: preview.new, pageName, onPage: preview, toInbox: preview.inbox,
+        });
+        if (!dest) return;
+        const toInbox = dest === 'inbox';
 
         this.showProgressOverlay(
             this.t('config.sourceImportingTitle', 'Importing from {s}…').replace('{s}', serviceName),
             this.t('config.sourceImportingStatus', '{n} bookmarks').replace('{n}', String(preview.new)));
 
         try {
-            const res = await this.writeFetch(url, { method: 'POST' });
+            const res = await this.writeFetch(toInbox ? `${url}?inbox=1` : url, { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const result = await res.json();
             const imported = result.imported ?? preview.new;
+            if (toInbox) {
+                this.finishProgressOverlay(this.t('config.importedToInbox', 'Added {n} to the inbox.').replace('{n}', String(imported)));
+                this.notify(this.t('config.importedToInbox', 'Added {n} to the inbox.').replace('{n}', String(imported)), 'success');
+                await this.dash.inbox?.refreshBadge?.();
+                void this.loadSourceStates();
+                return;
+            }
             this.finishProgressOverlay(
                 this.t('config.sourceImported', 'Imported {n} bookmarks.').replace('{n}', String(imported)));
             this.notify(this.t('config.sourceImported', 'Imported {n} bookmarks.')
@@ -9613,25 +9620,31 @@ class DashboardConfig {
             return;
         }
 
-        const question = Number(preview.duplicates) > 0
-            ? this.t('config.browserImportConfirmDetail',
-                'Import {n} bookmarks onto the current page? {d} are already here and will be skipped.')
-                .replace('{n}', String(preview.new)).replace('{d}', String(preview.duplicates))
-            : this.t('config.browserImportConfirm', 'Import {n} bookmarks onto the current page?')
-                .replace('{n}', String(preview.new));
-        const ok = await this.confirmAction(question,
-            { confirmLabel: this.t('config.confirmImport', 'Import'), danger: false });
-        if (!ok) return;
+        const pageName = (this.dash.pages || []).find((p) => Number(p.id) === Number(pageId))?.name || '';
+        const dest = await this.chooseImportDestination({
+            total: preview.total, pageName, onPage: preview, toInbox: preview.inbox,
+        });
+        if (!dest) return;
+        const toInbox = dest === 'inbox';
 
         // Shown for as long as the import runs and the page reloads after it.
         this.showProgressOverlay(this.t('config.csvImportTitle', 'Importing bookmarks…'),
-            this.t('config.waitImportStatus', '{n} bookmarks').replace('{n}', String(preview.new)));
+            this.t('config.waitImportStatus', '{n} bookmarks')
+                .replace('{n}', String((toInbox ? preview.inbox?.new : preview.new) ?? preview.new)));
         try {
-            const res = await this.writeFetch(url, { method: 'POST', body: file });
+            const res = await this.writeFetch(toInbox ? `${url}&inbox=1` : url, { method: 'POST', body: file });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const result = await res.json().catch(() => ({}));
             const imported = Number(result.imported) || 0;
             const skipped = Number(result.skipped) || 0;
+            if (toInbox) {
+                // Nothing on the dashboard changed, so no reload: the inbox
+                // count is the one thing that moved.
+                this.finishProgressOverlay(this.t('config.importedToInbox', 'Added {n} to the inbox.').replace('{n}', String(imported)));
+                this.notify(this.t('config.importedToInbox', 'Added {n} to the inbox.').replace('{n}', String(imported)), 'success');
+                await this.dash.inbox?.refreshBadge?.();
+                return;
+            }
             this.finishProgressOverlay(this.t('config.sourceImported', 'Imported {n} bookmarks.').replace('{n}', String(imported)));
             this.notify(
                 this.t('config.browserImportDone', 'Imported {i}, skipped {s} duplicates. Reloading…')
@@ -9676,12 +9689,12 @@ class DashboardConfig {
         }
 
         const pageId = Number(this.dash.currentPageId) || (this.dash.pages?.[0]?.id) || 1;
-        const ok = await this.confirmAction(
-            this.t('config.csvImportConfirm', 'Import {n} bookmarks onto the current page?')
-                .replace('{n}', String(rows.length)),
-            { confirmLabel: this.t('config.confirmImport', 'Import'), danger: false }
-        );
-        if (!ok) return;
+        // No dry run here, so the cards go without counts: the server skips
+        // what is already there either way.
+        const pageName = (this.dash.pages || []).find((p) => Number(p.id) === Number(pageId))?.name || '';
+        const dest = await this.chooseImportDestination({ total: rows.length, pageName });
+        if (!dest) return;
+        const toInbox = dest === 'inbox';
 
         try {
             // After the confirm, so the overlay never covers the question it
@@ -9689,13 +9702,20 @@ class DashboardConfig {
             this.showProgressOverlay(
                 this.t('config.csvImportTitle', 'Importing bookmarks…'),
                 this.t('config.csvImportStatus', 'Writing them to the page'));
-            const res = await this.writeFetch('/api/bookmarks/import-browser', {
+            const res = await this.writeFetch(`/api/bookmarks/import-browser${toInbox ? '?inbox=1' : ''}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ pageId, bookmarks: rows }),
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const result = await res.json().catch(() => ({}));
+            if (toInbox) {
+                this.hideProgressOverlay();
+                this.notify(this.t('config.importedToInbox', 'Added {n} to the inbox.')
+                    .replace('{n}', String(Number(result.imported) || 0)), 'success');
+                await this.dash.inbox?.refreshBadge?.();
+                return;
+            }
             this.notify(
                 this.t('config.csvImportDone', 'Imported {i}, skipped {s} duplicates. Reloading…')
                     .replace('{i}', String(Number(result.imported) || 0))
@@ -11744,7 +11764,7 @@ class DashboardConfig {
         const storedGone = this.dash.settings?.theme === id;
         const wasActive = storedGone || shownBefore === id;
         if (storedGone) {
-            this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'matrix-bluepill-dark';
+            this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'slate-dark';
         }
         if (storedGone || rowsLeft) void this.saveSettingsWithFeedback();
         this.repaintAppearanceBody();
@@ -13167,6 +13187,8 @@ class DashboardConfig {
         dockerViewCloseOutside: { def: true },
         dockerViewKeyLegend: { def: 'above' },
         dockerHostAddress: { def: '' },
+        discoverApps: { def: true },
+        discoveryNewApps: { def: 'ask' },
         skipFastPing: { info: ['skipFastPingInfoTitle', 'skipFastPingInfoMessage'], def: false },
         statusOfflineRetries: { info: ['statusOfflineRetriesInfoTitle', 'statusOfflineRetriesInfoMessage'], def: 3 },
         statusOfflineRetryDelayMs: { info: ['statusOfflineRetryDelayInfoTitle', 'statusOfflineRetryDelayInfoMessage'], def: 450 },
@@ -13211,7 +13233,7 @@ class DashboardConfig {
         bookmarkArchiveUrl: { info: ['bookmarkArchiveUrlInfoTitle', 'bookmarkArchiveUrlInfoMessage'], def: 'https://web.archive.org/web/*/{url}' },
         pasteDestination: { hint: 'pasteDestinationHint', def: 'ask' },
         monitorEmphasis: { hint: 'monitorEmphasisHint', def: 'problems' },
-        theme: { def: 'matrix-bluepill-dark' },
+        theme: { def: 'slate-dark' },
         // Appearance → Theme: the three Surfaces answers and the two Backdrop
         // ones. Without a `def` renderFieldAffordances draws no ↺ at all, which
         // is why these five were the only controls on the page without one.
@@ -13766,6 +13788,22 @@ class DashboardConfig {
                     // already means that, and the format is what people miss.
                     { field: 'dockerHostAddress', type: 'text', label: t('config.dockerHostAddressLabel', 'Docker host address'),
                         placeholder: '192.168.1.10' },
+                ],
+            },
+            {
+                section: 'containers',
+                tab: 'view',
+                title: t('config.containersGroupDiscovery', 'New apps'),
+                note: t('config.containersGroupDiscoveryNote', 'nextDash looks at the containers that run and notices when one has a web page. Apps you have turned down are listed below.'),
+                controls: [
+                    bool('discoverApps', 'config.discoverAppsLabel', 'Suggest new apps'),
+                    { field: 'discoveryNewApps', type: 'select', label: t('config.discoveryNewAppsLabel', 'New apps'),
+                        shown: (s) => s.discoverApps !== false,
+                        options: [
+                            opt('ask', t('config.discoveryNewAppsAsk', 'Ask first')),
+                            opt('add', t('config.discoveryNewAppsAdd', 'Add straight away')),
+                            opt('inbox', t('config.discoveryNewAppsInbox', 'Propose in the Inbox')),
+                        ] },
                 ],
             },
             {
@@ -15117,6 +15155,8 @@ class DashboardConfig {
             if (c.type === 'note') {
                 return `<p class="config-field-hint">${esc(c.text)}</p>`;
             }
+            // A control that only makes sense while another is on.
+            if (typeof c.shown === 'function' && !c.shown(s)) return '';
             // A live card built from a real bookmark, redrawn as the checklist
             // beside it is flipped. Appearance previews its settings; this was
             // the one you had to leave the screen and hover something to see.
@@ -17630,6 +17670,12 @@ class DashboardConfig {
             d.settings.showLinkPreviewCards = value !== 'off';
         }
         // The header button and the search rows follow the switch at once.
+        // The "New apps" choice only shows while the switch is on.
+        if (field === 'discoverApps' && this.section === 'containers') {
+            const restoreFocus = this.captureControlPanelFocus();
+            this.repaintContainersBody();
+            restoreFocus();
+        }
         if (field === 'dockerViewEnabled') {
             window.DockerSearchIndex?.invalidate?.();
             void d.docker?.renderNavButton?.();
@@ -25514,6 +25560,141 @@ class DashboardConfig {
     }
 
     /**
+     * The question every bookmark import asks before it writes: onto the
+     * dashboard, or into the inbox to sort them there first.
+     *
+     * A backup restore never asks it -- that puts back a whole install, not a
+     * pile of links. Built on confirmAction's overlay and keyboard contract,
+     * with the config view's choice cards as the two answers.
+     *
+     * `onPage` and `toInbox` are the dry run's counts for each answer
+     * ({ new, duplicates }); either may be missing when nothing was counted
+     * up front (the CSV import), and the card then leaves the numbers out.
+     * Resolves 'page', 'inbox', or null for cancel.
+     */
+    chooseImportDestination({ total, pageName, onPage, toInbox } = {}) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        document.getElementById('config-confirm-modal')?.remove();
+        const counts = (c) => {
+            if (!c) return '';
+            const parts = [this.t('config.importDestNew', '{n} new').replace('{n}', String(Number(c.new) || 0))];
+            if (Number(c.duplicates) > 0) {
+                parts.push(this.t('config.importDestDuplicates', '{d} already here, skipped')
+                    .replace('{d}', String(c.duplicates)));
+            }
+            return parts.join(' · ');
+        };
+        const cards = [
+            {
+                value: 'page',
+                title: this.t('config.importDestPage', 'Onto the dashboard'),
+                body: this.t('config.importDestPageBody', 'On “{p}”. Folders become categories.').replace('{p}', pageName || ''),
+                counts: counts(onPage),
+            },
+            {
+                value: 'inbox',
+                title: this.t('config.importDestInbox', 'Into the inbox first'),
+                body: this.t('config.importDestInboxBody', 'Sort them out one by one later. Folders become tags.'),
+                counts: counts(toInbox),
+            },
+        ].map((c, i) => `
+            <button type="button" class="config-choice-card${i === 0 ? ' is-active' : ''}" data-import-dest="${c.value}"
+                    role="radio" aria-checked="${i === 0 ? 'true' : 'false'}" tabindex="${i === 0 ? '0' : '-1'}">
+                <span class="config-choice-card-title">${esc(c.title)}</span>
+                <span class="config-choice-card-body">${esc(c.body)}</span>
+                ${c.counts ? `<span class="config-choice-card-body">${esc(c.counts)}</span>` : ''}
+            </button>`).join('');
+        const heading = this.t('config.importDestTitle', 'Import {n} bookmarks').replace('{n}', String(Number(total) || 0));
+        const question = this.t('config.importDestQuestion', 'Where should they go?');
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="config-confirm-modal" class="modal-overlay" aria-hidden="false">
+                <div class="modal" role="dialog" aria-modal="true" aria-labelledby="config-confirm-title">
+                    <div class="modal-header">
+                        <span class="modal-title" id="config-confirm-title">${esc(heading)}</span>
+                    </div>
+                    <div class="modal-body">
+                        <p class="config-confirm-message">${esc(question)}</p>
+                        <div class="config-choice-cards config-import-dest" role="radiogroup" aria-label="${esc(question)}">${cards}</div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="modal-button" data-confirm="cancel">
+                            <span class="modal-button-name">${esc(this.t('config.confirmCancel', 'Cancel'))}</span>
+                        </button>
+                        <button type="button" class="modal-button" data-confirm="ok">
+                            <span class="modal-button-name">${esc(this.t('config.confirmImport', 'Import'))}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>`);
+        const overlay = document.getElementById('config-confirm-modal');
+        const options = [...overlay.querySelectorAll('[data-import-dest]')];
+        // The overlay is visibility:hidden until .show, and the scrim
+        // transitions visibility too, so it is still hidden in the frame .show
+        // goes on. A hidden button refuses focus and the arrows went to the
+        // config view behind the dialog; tried again once the scrim is in.
+        const focusFirst = () => {
+            if (overlay.isConnected && !overlay.contains(document.activeElement)) options[0].focus();
+        };
+        requestAnimationFrame(() => {
+            overlay.classList.add('show');
+            focusFirst();
+        });
+        overlay.addEventListener('transitionend', focusFirst);
+        const previouslyFocused = document.activeElement;
+        let chosen = 'page';
+        const select = (card, focus) => {
+            chosen = card.dataset.importDest;
+            for (const o of options) {
+                const on = o === card;
+                o.classList.toggle('is-active', on);
+                o.setAttribute('aria-checked', on ? 'true' : 'false');
+                o.tabIndex = on ? 0 : -1;
+            }
+            if (focus) card.focus();
+        };
+
+        return new Promise((resolve) => {
+            let done = false;
+            const finish = (result) => {
+                if (done) return;
+                done = true;
+                document.removeEventListener('keydown', onKey, true);
+                overlay.remove();
+                if (previouslyFocused?.isConnected) previouslyFocused.focus?.();
+                resolve(result);
+            };
+            const onKey = (e) => {
+                if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(null); return; }
+                if (e.key === 'Tab') {
+                    window.FocusTrapUtils?.trapTabKey?.(e, overlay.querySelector('.modal') || overlay);
+                    return;
+                }
+                // A radio group moves with the arrows, as every other one does.
+                const at = options.indexOf(document.activeElement);
+                if (at >= 0 && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const step = e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 1;
+                    select(options[(at + step + options.length) % options.length], true);
+                } else if (at >= 0 && e.key === 'Enter') {
+                    // Enter on a card is the answer, not a second click on it.
+                    e.preventDefault();
+                    e.stopPropagation();
+                    finish(chosen);
+                }
+            };
+            document.addEventListener('keydown', onKey, true);
+            for (const o of options) {
+                o.addEventListener('click', () => select(o, false));
+                o.addEventListener('dblclick', () => { select(o, false); finish(chosen); });
+            }
+            overlay.querySelector('[data-confirm="ok"]').addEventListener('click', () => finish(chosen));
+            overlay.querySelector('[data-confirm="cancel"]').addEventListener('click', () => finish(null));
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) finish(null); });
+        });
+    }
+
+    /**
      * Second gate for the irreversible actions: the reader has to type a word
      * before the confirm button does anything. The token is translated, so a
      * Dutch reader types the Dutch word, and matching ignores case and padding.
@@ -29597,6 +29778,9 @@ class DashboardConfig {
             // the link to the bookmark, its checks and the shared alerts.
             + this.helpPanel('config.helpContainersTogetherTitle', 'Containers, bookmarks and health together',
                 'config.helpContainersTogetherBody', '')
+            // Third: the bookmarks it can make from them on its own.
+            + this.helpPanel('config.helpContainersDiscoveryTitle', 'Apps nextDash finds on its own',
+                'config.helpContainersDiscoveryBody', '')
             + this.helpPanel('config.helpContainersTitle', 'The Containers view',
             'config.helpContainersBody', '')
             + this.helpPanel('config.helpContainersConfigTitle', 'Setting it up',

@@ -496,6 +496,10 @@
     font-weight: 600;
 }
 
+.first-start-card .first-start-sub {
+    text-align: center;
+}
+
 .first-start-sub,
 .first-start-note {
     margin: var(--space-1, 0.25rem) 0 var(--space-3, 0.75rem);
@@ -524,15 +528,24 @@
     color: var(--text-primary);
 }
 
+/* Two answers side by side in the middle of the card, the same width; on a
+   narrow screen they stack. */
 .first-start-tiles {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--space-2, 0.5rem);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-3, 0.75rem);
+}
+
+.first-start-tiles .first-start-tile {
+    flex: 0 1 18rem;
+    align-items: center;
+    text-align: center;
 }
 
 @media (max-width: 720px) {
-    .first-start-tiles {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .first-start-tiles .first-start-tile {
+        flex-basis: 100%;
     }
 }
 
@@ -665,4 +678,360 @@
 .first-start-apply:disabled {
     opacity: 0.6;
     cursor: progress;
+}
+
+/* The "x apps found" card (app-discovery-card.js): a dialog in the middle of
+   the screen, the dashboard dimmed behind it. Sized with top/left and
+   100vw/100vh rather than inset:0, so the scrollbar gutter is covered too. */
+.app-discovery-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 2000; /* the modal overlay's layer (modal.css) */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4, 1rem);
+    background: color-mix(in srgb, #000 55%, transparent);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.app-discovery-overlay.show {
+    opacity: 1;
+}
+
+.app-discovery-card {
+    width: min(34rem, 100%);
+    max-height: calc(100vh - 2rem);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: linear-gradient(180deg, color-mix(in srgb, #fff 6%, transparent), transparent 45%), var(--background-secondary);
+    border: 1px solid var(--accent-primary);
+    border-radius: var(--radius-5, 0.6rem);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 40px color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    color: var(--text-primary);
+    font-family: var(--font-family-main, inherit);
+    transform: translateY(8px) scale(0.98);
+    transition: transform 0.2s ease;
+}
+
+.app-discovery-overlay.show .app-discovery-card {
+    transform: none;
+}
+
+.app-discovery-stripe {
+    flex: none;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent-primary), color-mix(in srgb, var(--accent-primary) 35%, var(--accent-success, var(--accent-primary))));
+}
+
+.app-discovery-inner {
+    overflow: auto;
+    padding: var(--space-4, 1rem) var(--space-4, 1.1rem) var(--space-4, 1.1rem);
+}
+
+.app-discovery-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 0.6rem);
+}
+
+.app-discovery-badge {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-4, 0.5rem);
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    color: var(--accent-primary);
+    font-size: 1.05rem;
+}
+
+.app-discovery-heading {
+    min-width: 0;
+}
+
+.app-discovery-kicker {
+    margin: 0;
+    font-size: var(--font-size-small, 0.7rem);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--accent-success, var(--text-secondary));
+}
+
+.app-discovery-title {
+    margin: 0;
+    font-size: var(--text-lg, 1.05rem);
+    font-weight: 700;
+}
+
+.app-discovery-x {
+    margin-left: auto;
+    align-self: flex-start;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: var(--text-lg, 1.15rem);
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 var(--space-1, 0.2rem);
+    border-radius: var(--radius-3, 0.25rem);
+}
+
+.app-discovery-info {
+    margin: var(--space-3, 0.8rem) 0 var(--space-3, 0.9rem);
+    padding: var(--space-2, 0.6rem) var(--space-3, 0.75rem);
+    border: 1px solid var(--border-secondary, var(--border-primary));
+    border-radius: var(--radius-4, 0.45rem);
+    background: color-mix(in srgb, var(--accent-primary) 7%, transparent);
+    font-size: var(--font-size-small, 0.8rem);
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.app-discovery-info p {
+    margin: 0;
+}
+
+.app-discovery-info p + ol,
+.app-discovery-info ol + p {
+    margin-top: var(--space-1, 0.3rem);
+}
+
+.app-discovery-info ol {
+    margin: 0;
+    padding-left: 1.2rem;
+}
+
+.app-discovery-info b {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.app-discovery-groups {
+    max-height: 16rem;
+    overflow: auto;
+}
+
+.app-discovery-kind {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    margin: var(--space-3, 0.7rem) 0 var(--space-1, 0.25rem);
+    font-size: var(--font-size-small, 0.7rem);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-tertiary, var(--text-secondary));
+}
+
+.app-discovery-kind:first-child {
+    margin-top: 0;
+}
+
+.app-discovery-kind::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--border-secondary, var(--border-primary));
+}
+
+.app-discovery-row {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    gap: var(--space-2, 0.55rem);
+    align-items: center;
+    padding: var(--space-1, 0.28rem) var(--space-1, 0.2rem);
+    border-radius: var(--radius-3, 0.25rem);
+    cursor: pointer;
+}
+
+.app-discovery-row:hover {
+    background: color-mix(in srgb, var(--accent-primary) 6%, transparent);
+}
+
+.app-discovery-row input,
+.app-discovery-replace input {
+    margin: 0;
+    accent-color: var(--accent-primary);
+}
+
+.app-discovery-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: var(--radius-3, 0.3rem);
+    object-fit: contain;
+}
+
+.app-discovery-icon--letter {
+    display: grid;
+    place-items: center;
+    background: var(--background-primary);
+    border: 1px solid var(--border-primary);
+    font-size: var(--font-size-small, 0.7rem);
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.app-discovery-text {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
+}
+
+.app-discovery-name {
+    font-size: var(--font-size-controls, 0.85rem);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.app-discovery-address {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-family-mono, ui-monospace, monospace);
+    font-size: var(--font-size-small, 0.75rem);
+    color: var(--text-tertiary, var(--text-secondary));
+}
+
+.app-discovery-replace {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+    align-items: flex-start;
+    margin: var(--space-3, 0.8rem) 0 0;
+    font-size: var(--font-size-small, 0.8rem);
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.app-discovery-replace small {
+    display: block;
+    color: var(--text-tertiary, var(--text-secondary));
+}
+
+.app-discovery-error {
+    margin: var(--space-2, 0.5rem) 0 0;
+    font-size: var(--font-size-small, 0.8rem);
+    color: var(--accent-error, #c0392b);
+}
+
+.app-discovery-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    margin-top: var(--space-4, 1rem);
+}
+
+.app-discovery-add {
+    padding: var(--space-2, 0.45rem) var(--space-4, 0.95rem);
+    background: var(--accent-primary);
+    border: 1px solid var(--accent-primary);
+    border-radius: var(--radius-3, 0.3rem);
+    color: var(--background-primary);
+    font: inherit;
+    font-size: var(--font-size-controls, 0.85rem);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.app-discovery-add:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.app-discovery-later {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-controls, 0.85rem);
+    cursor: pointer;
+}
+
+.app-discovery-note {
+    margin: var(--space-2, 0.5rem) 0 0;
+    font-size: var(--font-size-small, 0.75rem);
+    color: var(--text-tertiary, var(--text-secondary));
+}
+
+.app-discovery-looking {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.55rem);
+    margin: var(--space-3, 0.8rem) 0 0;
+    font-size: var(--font-size-small, 0.8rem);
+    color: var(--text-secondary);
+}
+
+.app-discovery-spin {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--border-primary);
+    border-top-color: var(--accent-primary);
+    animation: app-discovery-spin 1s linear infinite;
+}
+
+@keyframes app-discovery-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* The categories Add just made, lit up twice after the page scrolls to them. */
+.app-discovery-new {
+    border-radius: var(--radius-4, 0.45rem);
+    animation: app-discovery-glow 1.6s ease-out 2;
+}
+
+@keyframes app-discovery-glow {
+    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-primary) 60%, transparent); }
+    100% { box-shadow: 0 0 0 12px transparent; }
+}
+
+/* The question about one new app: the app itself, larger, and where it goes. */
+.app-discovery-one {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-3, 0.7rem);
+    align-items: center;
+    margin: var(--space-3, 0.8rem) 0 0;
+    padding: var(--space-2, 0.6rem) var(--space-3, 0.7rem);
+    border: 1px solid var(--border-secondary, var(--border-primary));
+    border-radius: var(--radius-4, 0.45rem);
+    background: var(--background-primary);
+}
+
+.app-discovery-icon--large {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-4, 0.45rem);
+}
+
+.app-discovery-text--stack {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
+}
+
+.app-discovery-where {
+    margin: var(--space-2, 0.6rem) 0 0;
+    font-size: var(--font-size-small, 0.8rem);
+    color: var(--text-secondary);
+}
+
+.app-discovery-secondary {
+    padding: var(--space-2, 0.45rem) var(--space-3, 0.8rem);
+    background: transparent;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-3, 0.3rem);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-controls, 0.85rem);
+    cursor: pointer;
 }

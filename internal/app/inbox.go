@@ -48,6 +48,12 @@ type InboxLink struct {
 	// 0 means not snoozed. No server-side timer is needed — the client re-surfaces
 	// the item once now passes this value.
 	SnoozedUntil int64 `json:"snoozedUntil,omitempty"`
+	// ContainerName, AppKind and AppIcon are set on a proposal from app
+	// discovery (Source "discovery"): the container it came from, the kind
+	// that becomes its category, and its icon-set entry ("set/name").
+	ContainerName string `json:"containerName,omitempty"`
+	AppKind       string `json:"appKind,omitempty"`
+	AppIcon       string `json:"appIcon,omitempty"`
 }
 
 // InboxData is persisted at data/inbox.json.
@@ -368,6 +374,67 @@ func (fs *FileStore) AddInboxLink(link InboxLink, dedupe bool, maxItems int) (In
 	// lock, which this function still holds, and it must see the saved state
 	// before deciding an icon is unreferenced.
 	return link, evicted, nil
+}
+
+/*
+AddInboxLinks adds many links under one lock and one write.
+
+An import can bring thousands, and AddInboxLink rewrites inbox.json for each.
+A link whose address the inbox already holds is left out whatever the dedupe
+setting says: running the same import twice must not fill the inbox twice.
+Returns the links that went in.
+*/
+func (fs *FileStore) AddInboxLinks(links []InboxLink) ([]InboxLink, error) {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	inbox, err := fs.readInboxDataForWriteLocked()
+	if err != nil {
+		return nil, err
+	}
+	known := make(map[string]struct{}, len(inbox.Items)+len(links))
+	for _, existing := range inbox.Items {
+		known[canonicalBookmarkURLKey(existing.URL)] = struct{}{}
+	}
+
+	now := time.Now().UnixMilli()
+	added := make([]InboxLink, 0, len(links))
+	for _, link := range links {
+		link.URL = strings.TrimSpace(link.URL)
+		urlKey := canonicalBookmarkURLKey(link.URL)
+		if urlKey == "" {
+			continue
+		}
+		if _, dup := known[urlKey]; dup {
+			continue
+		}
+		known[urlKey] = struct{}{}
+		if strings.TrimSpace(link.ID) == "" {
+			link.ID = generateInboxID()
+		}
+		if link.AddedAt == 0 {
+			link.AddedAt = now
+		}
+		link.Domain = inboxDomainFromURL(link.URL)
+		if strings.TrimSpace(link.Title) == "" {
+			if link.Domain != "" {
+				link.Title = link.Domain
+			} else {
+				link.Title = link.URL
+			}
+		}
+		link.Tags = normalizeTags(link.Tags)
+		clampInboxLinkFields(&link)
+		added = append(added, link)
+	}
+	if len(added) == 0 {
+		return added, nil
+	}
+	inbox.Items = append(inbox.Items, added...)
+	if err := fs.saveInboxDataLocked(inbox); err != nil {
+		return nil, err
+	}
+	return added, nil
 }
 
 var ErrInboxDuplicateURL = errors.New("inbox duplicate url")

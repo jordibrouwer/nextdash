@@ -224,6 +224,8 @@ var lazyLoadedAssets = []string{
 	"js/dashboard-tutorial.js",
 	// The first-start card, before the quick-start checklist on a fresh install.
 	"js/first-start-templates.js",
+	// The "x apps found" card, in its place when containers have web apps.
+	"js/app-discovery-card.js",
 	"js/widgets-tutorial.js",
 	"js/dashboard/dashboard-inline-edit.js",
 	"js/dashboard/dashboard-context-menu.js",

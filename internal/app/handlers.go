@@ -47,6 +47,14 @@ type Handlers struct {
 	healthReportMu    sync.RWMutex
 	// One Docker action per container at a time, keyed by container id.
 	dockerBusy sync.Map
+	// App discovery (discovery.go): its state is loaded from data/discovery.json
+	// on first use. Runs are one at a time; the state lock is only held for
+	// reads and writes of the state, never while probing.
+	discoveryRunMu   sync.Mutex
+	discoveryMu      sync.Mutex
+	discovery        *discoveryState
+	discoveryRunning atomic.Bool
+	discoveryDocker  atomic.Bool
 	// The update store is one file; the check and the scheduler share it.
 	dockerUpdatesMu    sync.Mutex
 	dockerCheckRunning atomic.Bool
@@ -1993,6 +2001,10 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if importToInbox(r) {
+		h.importRowsToInbox(w, r, request.Bookmarks)
+		return
+	}
 	if request.PageID <= 0 {
 		http.Error(w, "Invalid page ID", http.StatusBadRequest)
 		return
@@ -2483,6 +2495,7 @@ func (h *Handlers) ResetAllData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	logDataReset(r)
+	h.resetDiscovery()
 	if h.store.TakeDefaultBookmarkIconPrefetch() {
 		h.startDefaultBookmarkIconPrefetch()
 	}

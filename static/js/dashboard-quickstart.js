@@ -90,6 +90,9 @@
         }
 
         start() {
+            // The apps card waits for the end of the onboarding by itself, so
+            // it is asked for here whatever comes first.
+            this.offerDiscovery();
             if (!this.shouldStart()) return;
             // The first-start card comes first: what the page holds decides
             // what the checklist can point at.
@@ -98,6 +101,38 @@
                 return;
             }
             this.renderChecklist();
+        }
+
+        async discoveryInfo() {
+            if (this.dash?.settings?.discoverApps === false || this.dash?.settings?.discoveryCardDone === true) return null;
+            try {
+                const res = await fetch('/api/discovery', { cache: 'no-store' });
+                return res.ok ? await res.json() : null;
+            } catch {
+                return null;
+            }
+        }
+
+        async loadDiscoveryCard() {
+            try {
+                await window.LazyScript.loadScriptOnce('js/app-discovery-card.js', 'appDiscoveryCardScript',
+                    () => typeof window.AppDiscoveryCard === 'function');
+                return true;
+            } catch {
+                return false;
+            }
+        }
+
+        /**
+         * The apps card, once, for apps without a bookmark. It opens only at
+         * the end of the onboarding (AppDiscoveryCard waits for its turn).
+         */
+        async offerDiscovery() {
+            const info = await this.discoveryInfo();
+            if (!info || !info.enabled || info.cardDone || !(info.running || (info.docker && info.apps?.length))) return;
+            if (!(await this.loadDiscoveryCard()) || !window.AppDiscoveryCard.wanted(info)) return;
+            this.discoveryCard = new window.AppDiscoveryCard(this.dash, { onDone: () => { this.discoveryCard = null; } });
+            this.discoveryCard.show(info);
         }
 
         async showTemplateCard() {

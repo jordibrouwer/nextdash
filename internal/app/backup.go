@@ -201,6 +201,7 @@ var dataFiles = map[string]dataFilePolicy{
 	"docker-bind-sizes.json":     dataNever, // measured from this host's disks
 	"status-page-secrets.json":   dataNever, // the link's token: a restore makes a new link
 	"docker-events.json":         dataNever, // this host's container timeline
+	"discovery.json":             dataNever, // this host's containers: what was seen, proposed and found
 	"docker-update-history.json": dataNever, // rollbacks name this host's image ids
 	"digest.json":                dataNever, // last week's digest; without it the next tick only records the slot
 	"activity.log":               dataNever,

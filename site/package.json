@@ -1,0 +1,19 @@
+{
+  "name": "nextdash-docs",
+  "private": true,
+  "type": "module",
+  "description": "nextdash.cc/docs/, built from MANUAL.md of a release tag",
+  "scripts": {
+    "split": "node scripts/split-manual.mjs",
+    "dev": "node scripts/split-manual.mjs && vitepress dev --port ${DOCS_PORT:-8099} --strictPort",
+    "build": "node scripts/split-manual.mjs && vitepress build && pagefind --site .vitepress/dist --root-selector .vp-doc --exclude-selectors .header-anchor",
+    "preview": "vitepress preview --port ${DOCS_PORT:-8099} --strictPort",
+    "deploy": "sh scripts/deploy.sh"
+  },
+  "devDependencies": {
+    "mermaid": "11.17.2",
+    "pagefind": "1.5.2",
+    "vitepress": "1.6.4",
+    "vitepress-plugin-mermaid": "2.0.17"
+  }
+}

@@ -39,6 +39,7 @@
             titleFallback: 'Adding bookmarks',
             tips: [
                 'tipAddPaste',
+                'tipAddImportDestination',
                 'tipAddQuickAdd',
                 'tipAddAnywhere',
                 'tipAddCapture',
@@ -126,6 +127,8 @@
                 'tipDataContainers',
                 'tipHostMonitorWebUI',
                 'tipDataContainerBookmark',
+                'tipHostDiscovery',
+                'tipHostDiscoveryLabels',
                 'tipHostRunsIn',
                 'tipDataContainerWebUI',
                 'tipHostOnePlace',

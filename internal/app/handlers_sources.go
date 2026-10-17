@@ -243,6 +243,7 @@ func (h *Handlers) RunSourceHandler(w http.ResponseWriter, r *http.Request) {
 	preview := h.previewImport(pageID, rows)
 
 	if r.Method == http.MethodGet || r.URL.Query().Get("dryRun") == "1" {
+		preview.Inbox = h.previewInboxImport(rows)
 		// A preview is not a round: it moves no cursor and claims no result,
 		// or a reader who previewed and thought better of it would never see
 		// those stars again.
@@ -275,7 +276,13 @@ func (h *Handlers) RunSourceHandler(w http.ResponseWriter, r *http.Request) {
 	// The cursor moves only once the rows are written. Recorded first, a
 	// refused or failed import skipped that round's rows for good.
 	rec := &bufferedResponse{header: http.Header{}}
-	h.importRows(rec, r, pageID, valid)
+	// The reader can send one round to the inbox instead; the source keeps
+	// its page for the next.
+	if importToInbox(r) {
+		h.importRowsToInbox(rec, r, valid)
+	} else {
+		h.importRows(rec, r, pageID, valid)
+	}
 	if rec.status == 0 || rec.status == http.StatusOK {
 		RecordSourceRun(id, cursor, sourceRunSummary(preview), nil)
 		keys := make([]string, 0, len(valid))

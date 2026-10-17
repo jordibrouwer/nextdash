@@ -84,7 +84,7 @@
         const schema = () => this.renderControlPanels(this.panelsFor('containers', tab), 'behavior');
         switch (tab) {
             case 'view':
-                return `${schema()}${this.renderContainersHiddenPanel()}`;
+                return `${schema()}${this.renderContainersIgnoredPanel()}${this.renderContainersHiddenPanel()}`;
             case 'updates':
                 return `${schema()}${this.renderContainersTokenPanel()}`;
             case 'alerts':
@@ -124,6 +124,57 @@
                 ${row('self', this.t('config.dockerStatusSelf', 'This container'))}
                 <div data-docker-status-help hidden></div>
             </div>`;
+    },
+
+    /**
+     * The apps turned down, one row each. The server keeps this list itself
+     * (a stale page must not undo an Ignore), so Remove goes through its own
+     * route instead of the settings save.
+     */
+    renderContainersIgnoredPanel() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const names = Array.isArray(this.dash.settings?.discoveryIgnored) ? this.dash.settings.discoveryIgnored : [];
+        const rows = names.map((name) => `
+            <div class="config-field">
+                <span class="config-field-label">${esc(name)}</span>
+                <button type="button" class="config-btn" data-discovery-unignore="${esc(name)}"
+                        aria-label="${esc(this.t('config.discoveryUnignoreLabel', 'Suggest {name} again').replace('{name}', name))}">${esc(this.t('config.discoveryUnignore', 'Remove'))}</button>
+            </div>`).join('');
+        const empty = names.length ? '' : `<p class="config-field-hint">${esc(this.t('config.discoveryIgnoredNone', 'No app is ignored.'))}</p>`;
+        return `
+            <div class="config-panel" data-discovery-ignored-panel>
+                <h3 class="config-panel-title">${esc(this.t('config.containersGroupIgnored', 'Ignored apps'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.containersGroupIgnoredNote', 'Never suggested again. Remove one to let nextDash notice it anew.'))}</p>
+                ${rows}${empty}
+            </div>`;
+    },
+
+    bindContainersIgnored(container) {
+        const panel = container.querySelector('[data-discovery-ignored-panel]');
+        if (!panel) return;
+        panel.querySelectorAll('[data-discovery-unignore]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const name = btn.getAttribute('data-discovery-unignore');
+                btn.disabled = true;
+                try {
+                    const res = await window.nextDashFetch('/api/discovery/unignore', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name }),
+                    });
+                    if (!res.ok) throw new Error(String(res.status));
+                    const left = (this.dash.settings?.discoveryIgnored || []).filter((n) => n !== name);
+                    this.dash.settings.discoveryIgnored = left;
+                    const fresh = document.createElement('div');
+                    fresh.innerHTML = this.renderContainersIgnoredPanel();
+                    panel.replaceWith(fresh.firstElementChild);
+                    this.bindContainersIgnored(container);
+                } catch {
+                    btn.disabled = false;
+                    this.notify(this.t('config.discoveryUnignoreFailed', 'Could not remove it. Try again.'), 'error');
+                }
+            });
+        });
     },
 
     renderContainersHiddenPanel() {
@@ -252,6 +303,7 @@
         }
         this.bindContainersHostCheck(container);
         this.bindContainersHidden(container);
+        this.bindContainersIgnored(container);
         this.bindContainersMuted(container);
         this.bindContainersToken(container);
     },

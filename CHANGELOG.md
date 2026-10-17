@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.19.9 — 17 October 2026](#v1199--17-october-2026)
 - [v1.19.8 — 15 October 2026](#v1198--15-october-2026)
 - [v1.19.7 — 14 October 2026](#v1197--14-october-2026)
 - [v1.19.6 — 14 October 2026](#v1196--14-october-2026)
@@ -109,6 +110,83 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.19.9 — 17 October 2026
+
+### App discovery
+
+- **new — nextDash finds the apps running in your Docker containers and offers them as bookmarks.** A container counts when it answers with a web page or a login, probed from where the server itself reaches. The address comes from the `nextdash.url` label, a reverse-proxy label on the container or a published port, and a port link follows the host you opened nextDash on. Each app gets a kind (Media, Downloads, Monitoring and so on), an icon, a status check and a link to its container. Discovery talks only to the Docker socket and its own probes, never to a proxy's or another container's API (`discovery.go`, `discovery_candidates.go`, `discovery_rules.go`, `discovery_probe.go`).
+- **new — the "apps found" card.** On a dashboard with the Docker integration, a card in the middle of the screen lists what was found, grouped by kind and all ticked. Add puts the ticked apps on the page: new categories go to the top and light up, and a notice offers Show, Undo and Done. An optional "Replace the starter links" box is off by default. The card comes last: after the first-start card, the checklist, the dashboard tour and every corner card that can show, and never alongside a modal (`app-discovery-card.js`, `app-discovery-notice.js`).
+- **new — a new container later is asked about first.** The same card asks with Add, Ignore and Not now (`POST /api/discovery/accept`). Config → Containers → View has two other choices under New apps: Add straight away, with an Undo, Move and Done notice, or Propose in the Inbox, where Promote fills in the bookmark form and Ignore keeps the app away (`discoveryNewApps`).
+- **new — Config → Containers → View: Suggest new apps, New apps, and the ignored apps,** each with Remove, so nextDash notices that app again (`discoverApps`, `discoveryIgnored`).
+- **new — container labels steer it:** `nextdash.url` sets the address and wins over everything else, `nextdash.name` the name, `nextdash.category` the category, `nextdash.icon` an icon-set name or image URL, and `nextdash.hide=true` keeps a container out.
+- **fix — new means never seen.** A container that was already there when discovery first looked is not proposed again as new, and a container that already has a bookmark is matched on the server the same way the browser matches it (`discovery_match.go`). A settings save from a browser no longer overwrites what the server wrote (`discoveryCardDone`, `discoveryIgnored`, `dockerHostSeen`). Undo also works while the quick start is open.
+- **fix — the New apps panel no longer offers Reset panel on a fresh install.** An unset choice reached the browser empty, which differs from its default of Ask first, so the panel counted as changed and Config → Overview listed it. The server now sends `ask` for an empty or unknown value (`normalizeDockerSettings`, `TestDiscoveryNewAppsChoices`).
+- **fix — the page goes quiet on the network after it loads.** The host the dashboard was opened on is reported once per load, and that request's answer was never read, so Chromium kept it open (`reportHostSeen`).
+
+### First start
+
+- **new — a fresh install starts with 98 English-language links on two pages.** Main holds Development, Docker, Unraid, Self-hosted, Tools and Daily, with the health, trend and notes widgets; news holds tech news, dev blogs, security, communities, homelab videos and a few general news sites. nextDash is in it twice: nextdash.cc and the GitHub repository. Today shows on main only. Existing installs are untouched, and a data folder that already has a page never gets the second one (`default_seed.go`). The e2e server and the Go suite keep the old one-page set with `NEXTDASH_SEED=minimal`.
+- **new — the first-start card asks what you want: keep the example links, or start empty.** Starting empty takes the starter links off main and removes the news page, as long as nobody changed it; the page tabs follow without a reload (`POST /api/onboarding/start-empty`, `isUntouchedSeedPage`). The bundled templates are now only in the import dialog.
+- **fix — starter icons are fetched for every starter link.** The first-start icon round stopped at the first batch where no fetch succeeded, and ran into the shared outbound limit after about thirty links, so most of a larger set stayed letter tiles. It now steps past links without an icon, waits for room in the limit, and retries a batch the limit refused (`prefetchStarterPageIcons`).
+- **fix — corner cards wait for the move intro.** A card such as Clock and weather or analytics could take the corner a few seconds after load, and the intro that shows how to move categories and widgets then waited behind it. While the intro is still to play in this visit, the cards hold back, and they come once it is answered or gives up (`DashboardBlockMoveIntro.isPending`, `cornerIsFree`).
+- **fix — after "Try it" on the move intro the page answers the mouse again.** Try it picks the block up with the keyboard, and the "Moving a block" card then let every click through, as it does under a dragged block, so Got it could not be pressed and the `//` could not be dragged; the grabbing hand showed all over the page. While a block is held with the keyboard the card now takes clicks, Got it puts the block back and closes the card, a press on a `//` starts an ordinary drag, and the grabbing hand shows only while the mouse holds a block (`showCoach`, `is-moving-block-by-pointer`).
+
+### Themes
+
+- **new — Slate is the theme a fresh install starts on.** Blue-grey stone behind a pane of glass, drawn at glass with a soft glow; auto dark mode switches to Slate [light]. Existing dashboards keep their theme. Server and first paint agree (`defaultThemeID`, `defaultThemeLightID`, `ThemeLoader.DEFAULT_THEME`); MANUAL §16.1 and Config → Help name it.
+
+### Appearance
+
+- **fix — code, addresses and shortcuts use Source Code Pro.** Text set in the mono font (code, URLs, shortcut chips, the terminal layout) fell back to the system's monospace, such as Menlo, because `--font-family-mono` was never defined. It now defaults to Source Code Pro. A mono font you or a look pick (JetBrains Mono, IBM Plex Mono) carries it along; a sans font such as Inter keeps code on Source Code Pro (`font-size.css`, `DashboardFont.applyMainFont`).
+
+### Search
+
+- **fix — clicking the "Press / to search names" hint runs that search.** The click kept its own copy of what Enter does and had no branch for the hint, so it closed search and threw. A click on any row now goes through the same dispatch as Enter, and Ctrl/Cmd+click opens a bookmark in a new tab everywhere (`SearchComponent._activateMatchAt`).
+- **fix — Tab and Shift+Tab leave the scope's own prefix behind.** Shift+Tab from tags opened finders on `?tag:`, and Tab from a finder line turned the finder's shortcut into a tag filter (`_scopeWord`).
+- **fix — the bookmarks heading counts bookmarks.** It counted rows, group headings and filter completions included, and missed what a closed or capped group holds (`_resultCount`).
+- **fix — a shortcut that opens as you type it is not kept as a search.** It filled Recent searches and the search picks with the shortcut.
+- **new — `status:` completes untagged, tagged, noted and unnoted.** The filter knew them; the completions and the filter hints did not, and the empty state and the inline hints described status with different lists (`filterHintText`, one list for both).
+- **fix — the screen-reader position ("3 of 12") is translatable** (`dashboard.searchAnnouncePosition`).
+
+### Import
+
+- **new — an import asks where the bookmarks go: onto the dashboard, or into the inbox first.** A browser file, a CSV and a source round all show the same choice, with what each answer would add and skip. Into the inbox, a folder becomes a tag instead of a category, and a link the dashboard already holds is skipped. Restoring a backup does not ask. The dry run counts both answers (`ImportPreview.inbox`); `?inbox=1` sends the round to the inbox (`importRowsToInbox`, `AddInboxLinks`, one write for the whole file).
+
+### Inbox
+
+- **fix — a found app reads on one row.** Its name stands in the title column with a *found on this server* pill and its kind under it, and Promote and Ignore take the tags column, with a green edge on the row. The source, kind and buttons had fallen into the narrow first column and wrapped word by word (`discoveryTitleHtml`, `discoveryActionsHtml`, `dashboard-inbox.css`).
+- **fix — Clear filters clears the address too.** It reset the view without going through `applyViewChange`, so `ib_q`, `ib_domain` and `ib_tag` stayed in the URL and a reload put the filters back.
+- **fix — read and unread follow the server again.** A mark unread here, then read on another device, stayed unread in this tab until a reload, and the other way round. The local override now lasts only until a list read that started after the write (`_rememberReadState`).
+- **fix — an emptied "With a tag suggestion" filter no longer says Inbox zero.** It has its own empty state.
+- **fix — applying suggested tags no longer overwrites tags written in between.** One batch per tag adds on the server, instead of a PATCH per link with the whole list (`applySuggestions`).
+- **fix — opening a link that is already read sends no new read mark.**
+- **fix — an import in the demo names the links it pushed out.** Only the demo has an inbox limit (`demoInboxLimit`); elsewhere nothing changes.
+
+### Docs
+
+- **Code cleanup in `search.js` and `dashboard-inbox.js`.** Moved doc comments back to their methods, dropped three comments for code that no longer exists (one contradicted `promoteRateFromStats`), removed ten unused `fetcher` variables and one unused `dash`, folded the duplicate filter-key list into `FILTER_KEYS`, and escaped the id in `highlightItem`. Specs: `search-inbox-review-fixes.spec.js`.
+- **docs — the page switcher picture in the manual is larger and centred.** It was a small crop floated beside the text; it is now taken at twice the pixels (`deviceScaleFactor: 2` in `manual-screenshots.spec.js`) and shown centred at 560 px.
+- **i18n — this release's strings are in all six languages.** 99 keys that only had an English fallback in the code: the discovery card, the ask card, the notice, the kinds and the inbox proposal (a new `discovery` section), Config → Containers' New apps and Ignored apps, the import's destination question, the new first-start card (`firstStart.*`), the inbox's empty suggested filter and import note, the search position read to screen readers (`dashboard.searchAnnouncePosition`), and five older strings that had never reached the locales.
+- **docs — Config → Help and its tips cover this release, in all six languages.** A new Containers panel, *Apps nextDash finds on its own* (`helpContainersDiscoveryBody`), covers the first card, what happens to a container that turns up later, the ignored apps and the labels. Getting started describes the new first-start card, Themes names Slate and Source Code Pro, Backups, import & export describes the import's destination question, and Config → Containers lists the View tab's two new panels. Three new tips: `tipHostDiscovery`, `tipHostDiscoveryLabels` and `tipAddImportDestination`.
+- **docs — every manual screenshot is taken in Gloss Chrome dark.** `SHOT_THEME` puts the theme into each copy of the demo data; the demo keeps its own. Three scenes that broke since the last run were fixed (the More menu around the character chips, the new first-start card, the tag view's offers).
+- **docs — the manual as a website.** `site/` builds nextdash.cc/docs/ with VitePress from MANUAL.md: one page per chapter, the Mermaid flowcharts drawn, a reading layout with captioned figures, a Pagefind search index and a deploy script. `site/` stays off `main` and out of the Docker image (`PRUNE_DIRS`, `.dockerignore`).
+- **docs — nextdash.cc on its own WordPress theme, Werkbank.** In the docs' colours and type: a homepage that moves, News with the releases, a features overview with pages for the media widgets, tags and appearance, a theme gallery on Theme studio, one search box over the docs (Pagefind) and the site, and light and dark following the system, one choice for site and docs. New logo files from the app's `>_` icon and a new share image. Searches count once in Umami, docs included.
+- **docs — nextdash.cc has an App discovery page and a compare page.** The feature pages for Install, Containers, Inbox and Data carry this release's changes, and the compare page sets nextDash next to six other dashboards, linked from the homepage, the footer and the features index.
+- **docs — the manual covers app discovery.** A new §14.10, *Apps it finds on its own*, with three screenshots (the apps card, the card for one new container, and Config → Containers' New apps and Ignored apps), the New apps choices and the `nextdash.*` labels; the self-hosted guide, first launch, §13.1, §17.7, the troubleshooting chapter (*No apps are offered*) and the glossary point to it. §19.1 describes the import's destination question, and §16.4 the mono typeface for code.
+- **docs — the manual's first launch describes the new start:** the "what do you want?" card, with its screenshot retaken on a fresh install.
+- **docs — the manual explains installing on Unraid from Community Applications,** in a new section of the install chapter.
+- **docs — the v1.19.4 Jellyfin recording in What's new is retaken from a real server.** Its plan finds the widget by its type, and the manual's dashboard screenshots wait for the media widgets to load.
+
+### Tests
+
+- **tests — `health_badge_test.go` seeds the uptime history oldest first**, the order the history file keeps it in. Newest first, the badge counted samples twice whenever the span crossed UTC midnight, and the test failed around that hour.
+- **tests — `dashboard-block-move-intro.spec.js` no longer depends on test order.** Answering the intro used up the day's tip and the locked-layout test left the layout locked on the shared server, so "Try it" and "a key press during the animation" failed after them. The helper lifts the tip limit, and the new corner-card test unlocks the layout first.
+- **tests — the specs follow this release.** `app-discovery.spec.js` finds a placed link outside Today, which now shows a link added today on main, and finds an inbox proposal by its heading, since the row shows the app's name; `config-containers-tabs.spec.js` knows the New apps and Ignored apps panels; `config-info-reset.spec.js` lets the New apps pair explain itself through its panel note; `whats-new-hidden-release.spec.js` has v1.19.9 leading. Seven fixed waits that check something does not happen say so (`validate:test-waits`), and `default_seed.go` is gofmt'd.
+- **tests — `widget-theme-tint.spec.js` measures on the theme it was written for.** The meter track takes a share of the theme's ink, and Slate's blue-grey one pulled the brown test page just under the floor; the spec applies `matrix-bluepill-dark` in its own page, without saving it.
+- **tests — "Got it" in `dashboard-block-move-intro.spec.js` checks the reload for real.** The spec's init script asked for the intro again on the reload, so the fixture took the tip out of what the server sent and the intro played again; the test passed only while its card came later than the six-second wait. After the answer the reload asks for nothing, and the test also checks that the intro is not running.
 
 ---
 

@@ -842,10 +842,23 @@ type Settings struct {
 	// The Containers view, its header button and its rows in search. On by
 	// default; a settings file from before this setting reads as on.
 	DockerViewEnabled        bool     `json:"dockerViewEnabled"`
-	DockerRefreshSeconds     int      `json:"dockerRefreshSeconds"`     // 2, 5, 10 or 30; list polling while the view is open
-	DockerLogLines           int      `json:"dockerLogLines"`           // 100, 200, 500 or 1000
-	DockerConfirmStopRestart bool     `json:"dockerConfirmStopRestart"` // ask before stop and restart as well
-	DockerHiddenContainers   []string `json:"dockerHiddenContainers"`   // names kept out of the view, search and widget
+	DockerRefreshSeconds     int      `json:"dockerRefreshSeconds"`       // 2, 5, 10 or 30; list polling while the view is open
+	DockerLogLines           int      `json:"dockerLogLines"`             // 100, 200, 500 or 1000
+	DockerConfirmStopRestart bool     `json:"dockerConfirmStopRestart"`   // ask before stop and restart as well
+	DockerHiddenContainers   []string `json:"dockerHiddenContainers"`     // names kept out of the view, search and widget
+	DiscoveryIgnored         []string `json:"discoveryIgnored,omitempty"` // container names the user turned down in the Inbox
+	// DiscoverApps lets nextDash look through the containers for web apps and
+	// offer them. On by default; a settings file from before reads as on.
+	DiscoverApps bool `json:"discoverApps"`
+	// DiscoveryNewApps says what a new app does after the first apps card:
+	// "ask" (or empty) asks first in the middle of the screen, "add" puts it
+	// on the dashboard straight away, "inbox" proposes it in the Inbox.
+	DiscoveryNewApps string `json:"discoveryNewApps,omitempty"`
+	// DiscoveryCardDone is set once the first-start apps card was answered.
+	DiscoveryCardDone bool `json:"discoveryCardDone,omitempty"`
+	// DockerHostSeen is the host name the dashboard was last opened on, the
+	// fallback host for port links when DockerHostAddress is empty.
+	DockerHostSeen string `json:"dockerHostSeen,omitempty"`
 	// DockerStatsHistory keeps the last hour of CPU and memory per running
 	// container for the drawer's charts. On by default; off reads nothing.
 	DockerStatsHistory bool `json:"dockerStatsHistory"`
@@ -1125,18 +1138,18 @@ const defaultNotesWidgetID = "w_000000000002"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
-const defaultThemeID = "matrix-bluepill-dark"
+const defaultThemeID = "slate-dark"
 
 // defaultThemeLightID is the light counterpart auto dark mode switches to.
-const defaultThemeLightID = "matrix-bluepill-light"
+const defaultThemeLightID = "slate-light"
 
 /*
 The fallback depth and glow.
 
 Glass and a soft glow: the answer for a theme with no archetype of its own
 (themeIdealDepth, themeIdealGlow), and what an incomplete settings file gets.
-A fresh install itself is on "follow", so its theme answers -- Matrix
-Bluepill, a terminal theme, draws at soft with no glow. Contrast
+A fresh install itself is on "follow", so its theme answers -- Slate, a
+glass theme, draws at glass with a soft glow. Contrast
 stays at defaultInkGap, which reads as Normal in Appearance, and the backdrop
 is the theme's own.
 */
@@ -1522,6 +1535,7 @@ type Store interface {
 	// Inbox
 	GetInboxItems() []InboxLink
 	AddInboxLink(link InboxLink, dedupe bool, maxItems int) (InboxLink, []InboxLink, error)
+	AddInboxLinks(links []InboxLink) ([]InboxLink, error)
 	RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, error)
 	RestoreInboxLinkEvicting(link InboxLink, maxItems int) (InboxLink, []InboxLink, error)
 	DeleteInboxLink(id string) error
@@ -1609,85 +1623,32 @@ func stampDefaultBookmarkCreatedAt(bookmarks []Bookmark, now time.Time) {
 	}
 }
 
-// defaultMainPage is the page a fresh install starts on. The first-start
-// card reads it too: main still equal to it means nobody has touched it, and
-// a template may take its place (isUntouchedMainPage).
-func defaultMainPage() PageWithBookmarks {
-	return PageWithBookmarks{
-		Page: Page{
-			ID:   1,
-			Name: "main",
-		},
-		Categories: []Category{
-			{ID: "development", Name: "Development"},
-			{ID: "media", Name: "Media"},
-			{ID: "social", Name: "Social"},
-			{ID: "search", Name: "Search"},
-			{ID: "utilities", Name: "Utilities"},
-		},
-		/*
-		 * A health widget, on the page from the first load.
-		 *
-		 * A page can hold something other than links, and nothing on a
-		 * fresh install said so: widgets were a config section you had to
-		 * go looking for, which is a poor way to learn that the thing
-		 * exists. One block, at the top, reporting the collection it sits
-		 * above.
-		 *
-		 * Health rather than any of the other twelve because it is the only
-		 * one that reads correctly on an install with no history: it counts
-		 * what the header badge has already fetched, so it says something
-		 * true on the first paint rather than "nothing recorded yet". An
-		 * inbox tile would be empty, uptime and trend have no samples, and
-		 * sources and feeds have nothing registered.
-		 *
-		 * Empty config on purpose: `show` absent means every figure, which
-		 * is what a reader who has not chosen wants. Deletable like any
-		 * other seeded row.
-		 */
-		Widgets: []Widget{
-			{ID: defaultHealthWidgetID, Type: WidgetTypeHealth, Config: map[string]any{}},
-			// Notes after the links it sits beside, with the example note:
-			// it shows what the widget does and is one Edit away from yours.
-			{ID: defaultNotesWidgetID, Type: WidgetTypeNotes, Config: notesStarterConfig()},
-		},
-		// The widget leads, then the categories in the order above. Without
-		// an explicit order the widget would fall wherever resolveBlockOrder
-		// put it, which is after every category it is meant to summarise.
-		BlockOrder: []string{
-			defaultHealthWidgetID,
-			"development", "media", "social", "search", "utilities",
-			defaultNotesWidgetID,
-		},
-		Bookmarks: []Bookmark{
-			// The project's own site, in the seed rather than only behind the
-			// "follow it from your own dashboard" button in About: it is the
-			// place a new install finds out what changed, it publishes a feed
-			// so Fresh has something to count on day one, and a bookmark
-			// dashboard whose own site is not on the dashboard is an odd
-			// advertisement for itself. Deletable like any other starter row.
-			{Name: "nextDash", URL: "https://nextdash.cc/", Shortcut: "N", Category: "development", CheckStatus: false, Tags: []string{"dev", "bookmarks", "self-hosted"}},
-			{Name: "GitHub", URL: "https://github.com", Shortcut: "G", Category: "development", CheckStatus: true, Tags: []string{"dev", "code"}},
-			{Name: "GitHub Issues", URL: "https://github.com/issues", Shortcut: "GI", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
-			{Name: "GitHub Pull Requests", URL: "https://github.com/pulls", Shortcut: "GP", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
-			{Name: "YouTube", URL: "https://youtube.com", Shortcut: "Y", Category: "media", CheckStatus: false, Tags: []string{"video", "entertainment"}},
-			{Name: "YouTube Studio", URL: "https://studio.youtube.com", Shortcut: "YS", Category: "media", CheckStatus: false, Tags: []string{"video", "creator"}},
-			{Name: "Bluesky", URL: "https://bsky.app", Shortcut: "B", Category: "social", CheckStatus: false, Tags: []string{"social"}},
-			{Name: "Google", URL: "https://google.com", Shortcut: "", Category: "search", CheckStatus: false, Tags: []string{"search"}},
-		},
-	}
-}
-
 func (fs *FileStore) initializeDefaultFiles() {
 	fs.ensureDataDir()
 
-	// Initialize bookmarks for main page if file doesn't exist
+	// Seed the starter pages. Every one of them only on a fresh install, with
+	// no page file at all: a second page must never land on top of pages
+	// someone made. Main alone, as before, when only its file is missing.
 	mainPageBookmarksFile := filepath.Join(fs.dataDir, "bookmarks-1.json")
 	if _, err := os.Stat(mainPageBookmarksFile); os.IsNotExist(err) {
-		defaultPageWithBookmarks := defaultMainPage()
-		stampDefaultBookmarkCreatedAt(defaultPageWithBookmarks.Bookmarks, time.Now())
-		data, _ := json.MarshalIndent(defaultPageWithBookmarks, "", "  ")
-		writeFileAtomic(mainPageBookmarksFile, data, 0644)
+		seedPages := []PageWithBookmarks{defaultMainPage()}
+		fresh := !fs.hasAnyPageFile()
+		if fresh {
+			seedPages = defaultSeedPages()
+		}
+		// One clock across the pages, so the stamps stay distinct and in
+		// written order over the whole seed, not per page.
+		stampAt := time.Now()
+		for _, seedPage := range seedPages {
+			stampDefaultBookmarkCreatedAt(seedPage.Bookmarks, stampAt)
+			stampAt = stampAt.Add(time.Duration(len(seedPage.Bookmarks)) * time.Millisecond)
+			data, _ := json.MarshalIndent(seedPage, "", "  ")
+			writeFileAtomic(filepath.Join(fs.dataDir, fmt.Sprintf("bookmarks-%d.json", seedPage.Page.ID)), data, 0644)
+		}
+		if fresh {
+			data, _ := json.MarshalIndent(PageOrder{Order: defaultSeedPageIDs()}, "", "  ")
+			writeFileAtomic(fs.pageOrderFile, data, 0644)
+		}
 		fs.markDefaultBookmarkIconPrefetch()
 	}
 
@@ -1833,7 +1794,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			SmartTodayWorkKeywords:          "calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams",
 			SmartTodayEveningKeywords:       "youtube,spotify,netflix,reddit",
 			SmartTodayWeekendKeywords:       "news,weather,maps",
-			SmartTodayPageIds:               []int{},
+			SmartTodayPageIds:               defaultSmartTodayPageIDs(),
 			SmartRecentPageIds:              []int{},
 			SmartStalePageIds:               []int{},
 			SmartMostUsedPageIds:            []int{},
@@ -1889,6 +1850,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:           "off",
 			DockerViewEnabled:              true,
+			DiscoverApps:                   true,
 			DockerStatsHistory:             true,
 			DockerNotify:                   true,
 			DockerUsageAlerts:              true,
@@ -4464,6 +4426,7 @@ func (fs *FileStore) GetSettings() Settings {
 			HealthAutoRecheckIntervalHours:  defaultHealthAutoRecheckIntervalHours,
 			DockerUpdateInterval:            "off",
 			DockerViewEnabled:               true,
+			DiscoverApps:                    true,
 			DockerStatsHistory:              true,
 			DockerNotify:                    true,
 			DockerUsageAlerts:               true,
@@ -5206,6 +5169,9 @@ func (fs *FileStore) GetSettings() Settings {
 		settings.InboxEnabled = true
 		if _, ok := rawSettings["dockerViewEnabled"]; !ok {
 			settings.DockerViewEnabled = true
+		}
+		if _, ok := rawSettings["discoverApps"]; !ok {
+			settings.DiscoverApps = true
 		}
 		if _, ok := rawSettings["dockerStatsHistory"]; !ok {
 			settings.DockerStatsHistory = true

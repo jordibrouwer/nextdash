@@ -41,6 +41,8 @@
     // The run in progress, animation or card.
     let run = null;
     let finished = false;
+    // Polling stopped for good this load without the card being answered.
+    let gaveUp = false;
 
     function dash() { return global.dashboardInstance || null; }
     function mover() { return global.DashboardBlockMover || null; }
@@ -120,7 +122,7 @@
         pollTimer = null;
         if (finished || run) return;
         checks += 1;
-        if (checks > MAX_CHECKS || starts >= MAX_STARTS || neverThisLoad()) return;
+        if (checks > MAX_CHECKS || starts >= MAX_STARTS || neverThisLoad()) { giveUp(); return; }
         const again = () => { pollTimer = setTimeout(poll, RETRY_MS); };
         const d = dash();
         const grid = document.getElementById('dashboard-layout');
@@ -136,6 +138,28 @@
         const pick = settled ? firstMovable(grid, order) : null;
         if (!pick) { again(); return; }
         start(grid, order, pick);
+    }
+
+    /** The intro will not run again this load: let the corner cards have the screen. */
+    function giveUp() {
+        if (gaveUp) return;
+        gaveUp = true;
+        global.NoticeCard?.wakeQueue?.();
+    }
+
+    /**
+     * Whether the intro is playing, or still to come in this page load. The
+     * corner cards wait for it rather than take the screen first: a card that
+     * is up makes the intro wait in turn (busy), and the reader saw the
+     * invitations before the one thing every new dashboard should show.
+     */
+    function isPending() {
+        if (run) return true;
+        if (finished || gaveUp) return false;
+        if (checks > MAX_CHECKS || starts >= MAX_STARTS || neverThisLoad()) return false;
+        // A locked layout cannot be moved, so the intro waits it out; the
+        // cards need not.
+        return !dash()?.settings?.lockLayout;
     }
 
     function schedule(delay) {
@@ -308,6 +332,7 @@
         teardown(r);
         // A redraw or page change can be tried again; the reader's own input cannot.
         if (reason !== 'input') schedule(RETRY_MS * 2);
+        else giveUp();
     }
 
     // How the card ended, as the demo reports it: the block was moved, the
@@ -321,6 +346,8 @@
         const { handle, id } = r;
         teardown(r);
         finished = true;
+        // The corner cards held back for the intro may come now.
+        global.NoticeCard?.wakeQueue?.();
         tips()?.markTipSeen?.(TIP_ID);
         // A tip like the others: it counts toward the rate limit.
         tips()?.noteTipShown?.();
@@ -447,7 +474,7 @@
         schedule(FIRST_CHECK_MS);
     }
 
-    global.DashboardBlockMoveIntro = { TIP_ID, autoStart, isRunning: () => Boolean(run) };
+    global.DashboardBlockMoveIntro = { TIP_ID, autoStart, isRunning: () => Boolean(run), isPending };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', autoStart, { once: true });
