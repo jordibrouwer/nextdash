@@ -3861,6 +3861,8 @@ class DashboardConfig {
         language: ['language', 'locale', 'translation', 'nederlands', 'deutsch', 'français'],
         deviceSpecificSettings: ['device', 'sync', 'local'],
         detectSoftNotFound: ['404', 'not found', 'rot', 'gone', 'dead'],
+        domainExpiry: ['domain', 'expiry', 'registration', 'rdap', 'whois', 'renew'],
+        domainWarnDays: ['domain', 'expiry', 'warn', 'renew'],
         pasteDestination: ['paste', 'clipboard', 'inbox'],
         pasteUrlQuickAdd: ['paste', 'clipboard', 'quick add'],
         columnsPerRow: ['columns', 'grid', 'layout'],
@@ -6573,6 +6575,8 @@ class DashboardConfig {
             'health.up': this.t('config.webhookEventHealthUp', 'A monitored bookmark comes back'),
             'health.cert-expiring': this.t('config.webhookEventHealthCertExpiring',
                 'A TLS certificate is about to expire'),
+            'health.domain-expiring': this.t('config.webhookEventHealthDomainExpiring',
+                'A domain registration is about to expire'),
         };
         const boxes = (this._webhookEvents || Object.keys(labels)).map((name) => `
             <label class="config-check">
@@ -13320,6 +13324,8 @@ class DashboardConfig {
         rememberScrollPosition: { info: ['rememberScrollPositionInfoTitle', 'rememberScrollPositionInfoMessage'], def: true },
         detectSoftNotFound: { info: ['detectSoftNotFoundInfoTitle', 'detectSoftNotFoundInfoMessage'], def: true },
         certWarnDays: { info: ['certWarnDaysInfoTitle', 'certWarnDaysInfoMessage'], def: 0 },
+        domainExpiry: { info: ['domainExpiryInfoTitle', 'domainExpiryInfoMessage'], def: true },
+        domainWarnDays: { info: ['domainWarnDaysInfoTitle', 'domainWarnDaysInfoMessage'], def: 0 },
         includeFindersInSearch: { info: ['includeFindersInSearchInfoTitle', 'includeFindersInSearchInfoMessage'], def: true },
         searchUnsorted: { info: ['searchUnsortedInfoTitle', 'searchUnsortedInfoMessage'], def: true },
         webSearchEngine: { info: ['webSearchEngineInfoTitle', 'webSearchEngineInfoMessage'], def: 'off' },
@@ -15059,6 +15065,15 @@ class DashboardConfig {
                         opt(14, t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', '14')),
                         opt(60, t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', '60')),
                         opt(90, t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', '90')),
+                    ] },
+                    // A registration, not a certificate: looked up through the registries'
+                    // public RDAP service, so it is a switch and says what it sends.
+                    bool('domainExpiry', 'config.domainExpiryLabel', 'Look up when my domains expire'),
+                    { field: 'domainWarnDays', type: 'select', label: t('config.domainWarnDaysLabel', 'Warn about domains'), numeric: true, options: [
+                        opt(0, t('config.domainWarnDaysDefault', 'Default (60 days ahead)')),
+                        opt(30, t('config.domainWarnDaysAhead', '{n} days ahead').replace('{n}', '30')),
+                        opt(90, t('config.domainWarnDaysAhead', '{n} days ahead').replace('{n}', '90')),
+                        opt(120, t('config.domainWarnDaysAhead', '{n} days ahead').replace('{n}', '120')),
                     ] },
                 ],
             },
@@ -18803,7 +18818,7 @@ class DashboardConfig {
      * is the way to build a tile nobody has written.
      */
     static WIDGET_TYPE_GROUPS = [
-        ['links', ['health', 'uptime', 'certs', 'trend']],
+        ['links', ['health', 'uptime', 'certs', 'domains', 'trend']],
         ['incoming', ['inbox', 'unsorted', 'feeds', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
         ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'glances', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage']],
@@ -21006,7 +21021,7 @@ class DashboardConfig {
     ];
 
     /** The types a reader may add. Mirrors the server's register. */
-    static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
+    static WIDGET_TYPES = ['health', 'uptime', 'certs', 'domains', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
         'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'glances', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
@@ -21314,6 +21329,12 @@ class DashboardConfig {
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
         certs: [
+            { key: 'withinDays', kind: 'int', min: 1, max: 730,
+              label: ['config.widgetWithinDays', 'Expiring within (days)'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+            { key: 'showDomains', kind: 'bool', label: ['config.widgetCertsShowDomains', 'Also list domains that expire in this window'] },
+        ],
+        domains: [
             { key: 'withinDays', kind: 'int', min: 1, max: 730,
               label: ['config.widgetWithinDays', 'Expiring within (days)'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
@@ -24355,7 +24376,7 @@ class DashboardConfig {
     static HEALTH_STATES = ['healthy', 'broken', 'down', 'unchecked'];
 
     /** The Health filters, with the Health module's meaning (matchesFilter). */
-    static HEALTH_FILTERS = ['broken', 'content', 'duplicate', 'stale', 'unused', 'unchecked', 'monitored', 'certificates', 'healthy'];
+    static HEALTH_FILTERS = ['broken', 'content', 'duplicate', 'stale', 'unused', 'unchecked', 'monitored', 'certificates', 'domains', 'healthy'];
 
     /**
      * Every health filter the list can be narrowed by: the rail's nine, and the

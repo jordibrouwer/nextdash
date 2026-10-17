@@ -1231,6 +1231,7 @@ class DashboardHealthFocus {
 
                 <div class="health-focus-badges">
                     ${this.health.renderCertBadge(issue)}
+                    ${this.health.renderDomainBadge(issue)}
                     ${this.health.renderDriftBadge(issue)}
                     ${this.health.renderMutedBadge(issue)}
                 </div>

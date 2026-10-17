@@ -44,7 +44,7 @@ func (h *Handlers) pushMonitorNotifications(ctx context.Context, notifications [
 		switch {
 		case n.Event == "up":
 			msg.Body = name + " is reachable again."
-		case n.Event == "cert-expiring":
+		case n.Event == "cert-expiring" || n.Event == "domain-expiring":
 			if n.Error != "" {
 				msg.Body = n.Error + "."
 			} else {

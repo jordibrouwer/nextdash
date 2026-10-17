@@ -485,7 +485,7 @@ A running container is not the same as a working service. A container can be *up
 
 Local addresses are checked once **Allow local bookmarks** is on ([§23.3](#233-local-addresses-and-outgoing-requests)). Planned downtime — the nightly backup that stops a database — goes in a **maintenance window** ([§12.5](#125-maintenance-windows)), so it opens no incident and sends no alert.
 
-**Collection health** shows uptime and certificates for every monitor at once; the **Uptime** and **Certificates** widgets put the same on a dashboard page.
+**Collection health** shows uptime and certificates for every monitor at once; the **Uptime**, **Certificates** and **Domains** widgets put the same on a dashboard page.
 
 <a id="sh-get-told"></a>
 
@@ -512,7 +512,7 @@ For containers on your phone, also switch on **Notify when a container stops, ke
 
 **Keeping it quiet.** nextDash leaves out what you did yourself: a stop you asked for is not a notice, nor is a crash the restart policy fixes within 30 seconds. One incident is one notice; four or more at once become one message, and a host that takes many bookmarks down together sends one downtime alert. Mute what you do not care about — a container with `m` or its row menu, a bookmark with **Do not alert me about this bookmark** — and it still shows its state on screen. **Config → Containers → Muted containers** says where container notices go, and **Hidden containers** keeps test containers out of the view and the widget count altogether. To hold notices overnight, or to be reminded of an outage that goes on, use **Quiet hours** and **Reminders** ([§12.5](#125-maintenance-windows)). Once a week the **Weekly digest** sums it all up — what broke, what can be updated, what nobody opens ([§12.4](#weekly-digest)).
 
-**For other programs.** Outgoing webhooks send `health.down`, `health.up` and `health.cert-expiring`, signed, to anything that listens — Home Assistant, n8n, a script ([§19.3](#193-webhooks)).
+**For other programs.** Outgoing webhooks send `health.down`, `health.up`, `health.cert-expiring` and `health.domain-expiring`, signed, to anything that listens — Home Assistant, n8n, a script ([§19.3](#193-webhooks)).
 
 <a id="sh-keep-current"></a>
 
@@ -564,6 +564,7 @@ Give your services their own page — *Homelab*, *Server* — and put the bookma
 | **Container list** | Every container on its own row, problems first; a click opens it in the Containers view or goes straight to its web UI |
 | **Uptime** | The monitored bookmarks on this page, worst first, with a heartbeat |
 | **Certificates** | The ones that run out soon |
+| **Domains** | The domain names that run out soon, by registered domain |
 | **Health** | Broken, down and changed bookmarks on this page; each figure opens its filter |
 | **Processor**, **Memory**, **Disks** | The machine itself — name `/mnt/user` and `/mnt/cache` on Unraid |
 | **Beszel systems**, **Beszel attention** | Your other machines, through a Beszel hub: whether each is up and how busy and full it is, or only the ones that need a look |
@@ -2098,6 +2099,7 @@ One finding per check, in that order. The row badge reads *Moved*, *Retitled* or
 - Local addresses are refused unless *Allow local bookmarks* is on.
 - **Many at once** — when a host takes many bookmarks down together, the alerts are collapsed into one message. Certificate warnings are always separate.
 - **Certificates** — warnings at 30, 7 and 3 days before expiry, through the same channels, and to any webhook subscribed to `health.cert-expiring` ([§19.3](#193-webhooks)).
+- **Domains** — the registration behind your bookmarks, looked up through the registries' public RDAP service. On by default; **Monitoring → Checks → Look up when my domains expire** switches it off. Only the domain names of checked and monitored bookmarks are looked up, one request per domain a day, and each name goes to the registry of its extension (Verisign for `.com`, for example). Warnings come at 60, 7 and 3 days (**Warn about domains** moves the first), by the same channels, and to any webhook subscribed to `health.domain-expiring`. Not every registry publishes a date: `.nl` answers without one, and `.de`, `.io`, `.be`, `.eu` and a few others have no RDAP service. Those domains are listed as having no date and are never warned about. In the Bookmarks view a bookmark whose domain is close gets a **Domain** badge, and the **Domains** filter lists them.
 
 <a id="muting-one-bookmark"></a>
 
@@ -2681,7 +2683,8 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 |---|---|
 | **Health** | Broken, down, changed and fine; each figure opens its filter |
 | **Uptime** | Monitored bookmarks, worst first, with a heartbeat |
-| **Certificates** | Certificates close to expiry, per host |
+| **Certificates** | Certificates close to expiry, per host. **Also list domains** adds the domains that run out in the same window |
+| **Domains** | Domain registrations close to expiry, per registered domain, and the domains no registry gives a date for |
 | **Health trend** | How the collection's health has moved, drawn like the summary in Collection health |
 
 <p align="center"><img src="screenshots/manual.md/15-uptime.jpg" alt="The Uptime tile: five monitored addresses, worst first, each with its uptime and a heartbeat bar, and 2 more" width="380"></p>
@@ -3925,6 +3928,7 @@ Webhooks tell another program the moment something happens here. Add a receiver 
 | `health.down` | A monitored bookmark stops answering |
 | `health.up` | It comes back |
 | `health.cert-expiring` | A TLS certificate is about to run out ([§12.4](#124-alerts)) |
+| `health.domain-expiring` | A domain registration is about to run out ([§12.4](#124-alerts)) |
 
 Every delivery is signed with the [Standard Webhooks](https://www.standardwebhooks.com/) scheme:
 

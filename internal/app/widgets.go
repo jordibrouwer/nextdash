@@ -41,6 +41,9 @@ const (
 	// bookmarks on one domain are one line, because expiry is a property of the
 	// host and not of any one bookmark.
 	WidgetTypeCerts WidgetType = "certs"
+	// WidgetTypeDomains is the same list for the registrations behind the hosts:
+	// which domain names run out, by registrable domain.
+	WidgetTypeDomains WidgetType = "domains"
 	// WidgetTypeTrend draws broken links over time. One number cannot say
 	// whether things are getting better; the line can.
 	WidgetTypeTrend WidgetType = "trend"
@@ -189,6 +192,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeHealth:          {},
 	WidgetTypeUptime:          {},
 	WidgetTypeCerts:           {},
+	WidgetTypeDomains:         {},
 	WidgetTypeTrend:           {},
 	WidgetTypeInbox:           {},
 	WidgetTypeUnsorted:        {},

@@ -6815,6 +6815,30 @@ button.dashboard-widget-row.keyboard-selected {
     color: var(--accent-warning);
 }
 
+/* A heading between two groups of rows in one tile: the domains under the
+   certificates, the registrations with no date under the ones that have one. */
+.dashboard-widget-group-label {
+    margin: 0.6rem 0 0.15rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+/* A row that is information, not a task: nothing to click, nothing to fix. */
+.dashboard-widget-row--quiet {
+    cursor: default;
+}
+
+.dashboard-widget-row--quiet .dashboard-widget-row-name,
+.dashboard-widget-row--quiet .dashboard-widget-row-detail {
+    color: var(--text-tertiary);
+}
+
+.dashboard-widget-row--quiet .dashboard-widget-row-detail {
+    min-width: 0;
+}
+
 /* Off is not a problem: a sleeping disk, a stopped VM. Grey, name and all. */
 .dashboard-widget-row--off .dashboard-widget-row-name,
 .dashboard-widget-row--off .dashboard-widget-row-detail {

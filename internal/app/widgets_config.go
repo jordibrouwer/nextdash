@@ -176,6 +176,15 @@ var widgetFields = map[WidgetType][]widgetField{
 		// one domain are one line. The threshold is the whole question.
 		{Key: "withinDays", Kind: "int", Min: 1, Max: widgetMaxDays},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+		// A second group under the hosts: the domains that run out inside the same
+		// window. Off for every widget saved before it existed.
+		{Key: "showDomains", Kind: "bool"},
+	},
+	WidgetTypeDomains: {
+		// A registration is renewed less often and further ahead than a
+		// certificate, so its window is its own and wider by default.
+		{Key: "withinDays", Kind: "int", Min: 1, Max: widgetMaxDays},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 	},
 	WidgetTypeTrend: {
 		// One line over everything. Filtering it would make the line mean
@@ -681,7 +690,7 @@ func widgetValueAllowed(value string, allowed []string) bool {
 // to present the types rather than dispatch on them.
 func widgetTypeNames() []string {
 	ordered := []WidgetType{
-		WidgetTypeHealth, WidgetTypeUptime, WidgetTypeCerts, WidgetTypeTrend,
+		WidgetTypeHealth, WidgetTypeUptime, WidgetTypeCerts, WidgetTypeDomains, WidgetTypeTrend,
 		WidgetTypeInbox, WidgetTypeUnsorted, WidgetTypeFeeds, WidgetTypeSources, WidgetTypeNeglected,
 		WidgetTypeArchive, WidgetTypeUnchecked, WidgetTypeDuplicates,
 		WidgetTypeTrash, WidgetTypeBackups,

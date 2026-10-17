@@ -27,6 +27,7 @@
         health: { rows: [['broken', '3', 'bad'], ['down now', '1', 'warn'], ['healthy', '412', 'good']] },
         uptime: { big: '99.2%', spark: [90, 95, 60, 100, 97, 100, 99] },
         certs: { rows: [['nas.lan', '12 days', 'warn'], ['git.lan', '71 days', 'good']] },
+        domains: { rows: [['photos-home.com', '23 days', 'warn'], ['wiki-intern.org', '212 days', 'good']] },
         trend: { big: '+12', spark: [30, 42, 38, 55, 61, 58, 70] },
         inbox: { big: '14', rows: [['oldest', '3 days']] },
         unsorted: { big: '27', rows: [['newest', 'today']] },

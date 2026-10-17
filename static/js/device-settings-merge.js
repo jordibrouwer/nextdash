@@ -48,6 +48,8 @@
         'detectSoftNotFound',
         'tagLookupOnline',
         'certWarnDays',
+        'domainExpiry',
+        'domainWarnDays',
         'healthCheckTimeoutSeconds',
         'previewImageCacheMB',
         'dockerStatsHistory',

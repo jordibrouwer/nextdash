@@ -1151,6 +1151,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				// would render a control that governs nothing.
 				NotifyMuted: bm.Monitor && bm.NotifyMuted,
 				CertHost:    bm.CertHost,
+				Domain:      bookmarkDomain(bm),
 				// Not gated on Monitor, unlike the block above: these say how to
 				// reach the service rather than what to expect back, and every
 				// check uses them.
@@ -1204,6 +1205,14 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	// but not news, and sending every host would grow the report by an entry per
 	// domain for something the UI would immediately filter out again.
 	report.Certificates = expiringCertificatesWith(h.hostCertificates(), monitorNow, certThresholdsFor(h.store.GetSettings()))
+	domainSettings := h.store.GetSettings()
+	if domainSettings.DomainExpiry {
+		storedDomains := h.hostDomains()
+		report.Domains = datedDomains(storedDomains)
+		report.DomainSummary = summarizeDomains(storedDomains, true)
+	} else {
+		report.DomainSummary = summarizeDomains(nil, false)
+	}
 
 	return report
 }

@@ -3009,6 +3009,7 @@
             health: 'How many bookmarks are broken, down, changed or fine — each figure opens its own filter.',
             uptime: 'The bookmarks you monitor, worst first, with uptime over the last week.',
             certs: 'Certificates about to expire, grouped by host rather than by bookmark.',
+            domains: 'Domain names about to expire, by registered domain rather than by host.',
             trend: 'The health view\'s summary: the score and its direction over time, what is broken, and the monitors\' last day.',
             inbox: 'How much is waiting to be filed, and how long the oldest has waited.',
             unsorted: 'Bookmarks kept from the inbox without picking a category — most recent, at random, or by tag.',

@@ -163,7 +163,7 @@ func quietAllowSet(s Settings) map[string]bool {
 // what it raises.
 func noticeKinds(n monitorNotification) []string {
 	var kinds []string
-	if n.Event == "cert-expiring" && n.DaysLeft <= 0 {
+	if (n.Event == "cert-expiring" || n.Event == "domain-expiring") && n.DaysLeft <= 0 {
 		kinds = append(kinds, quietKindCertExpired)
 	}
 	if n.Source == noticeSourceBackup && n.Event == "backup-failed" {

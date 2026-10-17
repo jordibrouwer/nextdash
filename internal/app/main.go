@@ -485,6 +485,7 @@ func Run(files assetFS) {
 	handlers.StartDigestScheduler(schedulerStop)
 	// Uptime monitoring for bookmarks opted into the faster monitor tier.
 	handlers.StartHealthMonitorScheduler(schedulerStop)
+	handlers.StartDomainExpiryScheduler(schedulerStop)
 	// Feed polling for bookmarks whose page advertises one (opt-in, same cadence
 	// as the background recheck).
 	handlers.StartFeedPollScheduler(schedulerStop)

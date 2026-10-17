@@ -96,7 +96,7 @@ func notifyColor(n monitorNotification) (hex string, decimal int) {
 	switch n.Event {
 	case "up":
 		return "#2eb886", 3066502 // green
-	case "cert-expiring":
+	case "cert-expiring", "domain-expiring":
 		return "#daa038", 14329912 // amber
 	default:
 		return "#e01e5a", 14431333 // red — "down" and anything unrecognised
