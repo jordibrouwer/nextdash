@@ -2622,6 +2622,61 @@ body[data-category-spacing="airy"] {
 }
 
 /*
+ * A title that outranks what is under it.
+ *
+ * It had the same size and weight as the bookmarks and a dimmer colour, so the
+ * row of the thing it named was the loudest line of its own block. The title
+ * now takes the primary text colour, the names under it go to regular weight,
+ * and a short accent tab on the rule says where a block starts. The weight is
+ * still the theme's (--theme-label-weight); Slate, the default, asks for 700.
+ */
+.dashboard-grid:is(.layout-default, .layout-masonry) .category:not(.dashboard-widget) .category-title {
+    color: var(--text-primary);
+}
+
+/* The tab rides on the rule under the title, and flat depth draws none. */
+body:not([data-depth="flat"]) .dashboard-grid:is(.layout-default, .layout-masonry) .category:not(.dashboard-widget) .category-title {
+    background:
+        linear-gradient(var(--accent-primary), var(--accent-primary))
+        left bottom / 2.25rem 2px no-repeat;
+    background-origin: border-box;
+}
+
+/*
+ * A widget's title is the head of its card.
+ *
+ * A category is a list under a rule; a widget is a card, and its title used to
+ * float above the card exactly as a category's does, so the two read as the
+ * same kind of block. The title is now a strip on the card's own surface,
+ * joined to it, and a collapsed widget closes the strip's bottom edge.
+ */
+.dashboard-grid:is(.layout-default, .layout-masonry) .category.dashboard-widget {
+    /* The strip and the card are one block: no gap between them. */
+    gap: 0;
+}
+
+html body .dashboard-grid:is(.layout-default, .layout-masonry) .category.dashboard-widget > .category-title {
+    color: var(--text-primary);
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.85rem);
+    border: 1px solid var(--border-primary);
+    border-bottom: 0;
+    border-image: none;
+    border-radius: var(--radius-5, 9px) var(--radius-5, 9px) 0 0;
+    background: var(--dashboard-widget-surface);
+    margin-bottom: 0;
+}
+
+html body .dashboard-grid:is(.layout-default, .layout-masonry) .category.dashboard-widget > .category-title[aria-expanded="false"] {
+    border-bottom: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 9px);
+}
+
+html body .dashboard-grid:is(.layout-default, .layout-masonry) .category.dashboard-widget .dashboard-widget-body {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+/*
  * Reached by Tab: it has to show where focus is, in every header style. In
  * the tint of the row the cursor is on, inside the slashes' own box, rather
  * than an outline around the button: that took the space after // and the
@@ -3232,7 +3287,7 @@ body.bookmark-dragging .bookmarks-list.reorder-container:not([data-smart-collect
     column-gap: var(--bookmark-row-gap);
     text-decoration: none;
     font-size: var(--font-size-bookmark);
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--font-weight-normal);
     transition: transform 140ms ease, opacity 120ms ease, color 140ms ease, background 140ms ease;
     position: relative;
     padding: var(--space-2, 0.5rem) var(--bookmark-row-end-pad, 3px) var(--space-2, 0.5rem) var(--bookmark-row-start-pad, 6px);

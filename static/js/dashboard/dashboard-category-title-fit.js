@@ -146,8 +146,11 @@
     }
 
     function getMaxNameWidth(titleEl, labelEl, nameEl, labelOverhead) {
-        const titleWidth = titleEl.clientWidth;
-        if (titleWidth <= 0) {
+        const titleStyle = getComputedStyle(titleEl);
+        const titleWidth = titleEl.clientWidth
+            - (parseFloat(titleStyle.paddingLeft) || 0)
+            - (parseFloat(titleStyle.paddingRight) || 0);
+        if (titleEl.clientWidth <= 0 || titleWidth <= 0) {
             return 0;
         }
         const trailingEl = titleEl.querySelector('.category-title-trailing');
