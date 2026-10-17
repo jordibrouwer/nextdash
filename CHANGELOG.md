@@ -12,7 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
-- [v1.19.9 — 16 October 2026](#v1199--16-october-2026)
+- [v1.19.9 — 17 October 2026](#v1199--17-october-2026)
 - [v1.19.8 — 15 October 2026](#v1198--15-october-2026)
 - [v1.19.7 — 14 October 2026](#v1197--14-october-2026)
 - [v1.19.6 — 14 October 2026](#v1196--14-october-2026)
@@ -113,7 +113,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ---
 
-## v1.19.9 — 16 October 2026
+## v1.19.9 — 17 October 2026
 
 ### App discovery
 
@@ -126,11 +126,10 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ### First start
 
-- **new — the first-start card asks what you want: keep the example links, or start empty.** Starting empty clears the starter links (`POST /api/onboarding/start-empty`). The bundled templates are now only in the import dialog.
 - **new — a fresh install starts with 98 English-language links on two pages.** Main holds Development, Docker, Unraid, Self-hosted, Tools and Daily, with the health, trend and notes widgets; news holds tech news, dev blogs, security, communities, homelab videos and a few general news sites. nextDash is in it twice: nextdash.cc and the GitHub repository. Today shows on main only. Existing installs are untouched, and a data folder that already has a page never gets the second one (`default_seed.go`). The e2e server and the Go suite keep the old one-page set with `NEXTDASH_SEED=minimal`.
+- **new — the first-start card asks what you want: keep the example links, or start empty.** Starting empty takes the starter links off main and removes the news page, as long as nobody changed it; the page tabs follow without a reload (`POST /api/onboarding/start-empty`, `isUntouchedSeedPage`). The bundled templates are now only in the import dialog.
 - **fix — starter icons are fetched for every starter link.** The first-start icon round stopped at the first batch where no fetch succeeded, and ran into the shared outbound limit after about thirty links, so most of a larger set stayed letter tiles. It now steps past links without an icon, waits for room in the limit, and retries a batch the limit refused (`prefetchStarterPageIcons`).
 - **fix — corner cards wait for the move intro.** A card such as Clock and weather or analytics could take the corner a few seconds after load, and the intro that shows how to move categories and widgets then waited behind it. While the intro is still to play in this visit, the cards hold back, and they come once it is answered or gives up (`DashboardBlockMoveIntro.isPending`, `cornerIsFree`).
-- **fix — start empty clears the news page too.** Start with an empty page took the links off main but left the starter news page with its 46 links. It now removes that page as well, as long as nobody changed it, and the page tabs follow without a reload (`removeUntouchedNewsPage`, `isUntouchedSeedPage`).
 
 ### Themes
 
@@ -169,10 +168,14 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **docs — Config → Help and its tips cover this release, in all six languages.** A new Containers panel, *Apps nextDash finds on its own* (`helpContainersDiscoveryBody`), covers the first card, what happens to a container that turns up later, the ignored apps and the labels. Getting started describes the new first-start card, Themes names Slate and Source Code Pro, Backups, import & export describes the import's destination question, and Config → Containers lists the View tab's two new panels. Three new tips: `tipHostDiscovery`, `tipHostDiscoveryLabels` and `tipAddImportDestination`.
 - **docs — every manual screenshot is taken in Gloss Chrome dark.** `SHOT_THEME` puts the theme into each copy of the demo data; the demo keeps its own. Three scenes that broke since the last run were fixed (the More menu around the character chips, the new first-start card, the tag view's offers).
 - **docs — the manual as a website.** `site/` builds nextdash.cc/docs/ with VitePress from MANUAL.md: one page per chapter, the Mermaid flowcharts drawn, a reading layout with captioned figures, a Pagefind search index and a deploy script. `site/` stays off `main` and out of the Docker image (`PRUNE_DIRS`, `.dockerignore`).
+- **docs — nextdash.cc on its own WordPress theme, Werkbank.** In the docs' colours and type: a homepage that moves, News with the releases, a features overview with pages for the media widgets, tags and appearance, a theme gallery on Theme studio, one search box over the docs (Pagefind) and the site, and light and dark following the system, one choice for site and docs. New logo files from the app's `>_` icon and a new share image. Searches count once in Umami, docs included.
+- **docs — the manual explains installing on Unraid from Community Applications,** in a new section of the install chapter.
+- **docs — the v1.19.4 Jellyfin recording in What's new is retaken from a real server.** Its plan finds the widget by its type, and the manual's dashboard screenshots wait for the media widgets to load.
 
 ### Tests
 
 - **tests — `health_badge_test.go` seeds the uptime history oldest first**, the order the history file keeps it in. Newest first, the badge counted samples twice whenever the span crossed UTC midnight, and the test failed around that hour.
+- **tests — `dashboard-block-move-intro.spec.js` no longer depends on test order.** Answering the intro used up the day's tip and the locked-layout test left the layout locked on the shared server, so "Try it" and "a key press during the animation" failed after them. The helper lifts the tip limit, and the new corner-card test unlocks the layout first.
 
 ---
 
