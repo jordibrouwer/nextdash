@@ -25,7 +25,10 @@ func TestUptimeBadgeIsOffUnlessSwitchedOn(t *testing.T) {
 }
 
 // seedBadgeHistory gives an address 100 samples, one of them down, and a
-// bookmark on page 1 that monitors it or not.
+// bookmark on page 1 that monitors it or not. Samples run oldest first, as the
+// history file keeps them: the badge reads samples[0] as the start of the raw
+// history, and newest-first order double-counts whenever the span crosses UTC
+// midnight.
 func seedBadgeHistory(t *testing.T, dir, address string, monitor bool) {
 	t.Helper()
 	page := `{"id":1,"name":"Page 1","bookmarks":[{"name":"x","url":"` + address + `","monitor":` + map[bool]string{true: "true", false: "false"}[monitor] + `}]}`
@@ -35,7 +38,7 @@ func seedBadgeHistory(t *testing.T, dir, address string, monitor bool) {
 	now := time.Now().UnixMilli()
 	samples := make([]HealthSample, 0, 100)
 	for i := 0; i < 100; i++ {
-		samples = append(samples, HealthSample{T: now - int64(i+1)*60_000, Up: i != 0})
+		samples = append(samples, HealthSample{T: now - int64(100-i)*60_000, Up: i != 99})
 	}
 	history := emptyHealthHistory()
 	history.Samples[canonicalBookmarkURLKey(address)] = samples
