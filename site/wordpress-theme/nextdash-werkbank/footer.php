@@ -13,6 +13,7 @@ $links = ndw_links();
 	<div class="nd-wrap nd-footer-row">
 		<nav class="nd-footer-links" aria-label="Footer">
 			<a href="<?php echo esc_url( $links['license'] ); ?>">MIT licence</a>
+			<?php if ( ndw_compare_live() ) : ?><a href="<?php echo esc_url( home_url( '/compare/' ) ); ?>">Compare</a><?php endif; ?>
 			<a href="<?php echo esc_url( home_url( '/docs/' ) ); ?>">Docs</a>
 			<a href="<?php echo esc_url( home_url( '/news/' ) ); ?>">News</a>
 			<a href="<?php echo esc_url( $links['changelog'] ); ?>">Changelog</a>
