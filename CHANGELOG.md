@@ -154,6 +154,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ### Inbox
 
+- **fix — a found app reads on one row.** Its name stands in the title column with a *found on this server* pill and its kind under it, and Promote and Ignore take the tags column, with a green edge on the row. The source, kind and buttons had fallen into the narrow first column and wrapped word by word (`discoveryTitleHtml`, `discoveryActionsHtml`, `dashboard-inbox.css`).
 - **fix — Clear filters clears the address too.** It reset the view without going through `applyViewChange`, so `ib_q`, `ib_domain` and `ib_tag` stayed in the URL and a reload put the filters back.
 - **fix — read and unread follow the server again.** A mark unread here, then read on another device, stayed unread in this tab until a reload, and the other way round. The local override now lasts only until a list read that started after the write (`_rememberReadState`).
 - **fix — an emptied "With a tag suggestion" filter no longer says Inbox zero.** It has its own empty state.

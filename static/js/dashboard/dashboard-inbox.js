@@ -5520,10 +5520,11 @@ class DashboardInbox {
                         aria-label="${this.escape(this.t('dashboard.inboxSelectItem', 'Select {title}', { title }))}">
                 </label>
                 ${thumb}
-                <h3 class="inbox-item-title" id="${this.escape(titleId)}">${this.escape(title)}</h3>
+                ${fromDiscovery
+                    ? this.discoveryTitleHtml(item, titleId)
+                    : `<h3 class="inbox-item-title" id="${this.escape(titleId)}">${this.escape(title)}</h3>`}
                 ${domain ? `<button type="button" class="inbox-item-domain inbox-item-domain-btn" data-inbox-domain="${this.escape(this.itemDomain(item))}">${this.escape(domain)}</button>` : ''}
-                ${this.rowTagsHtml(item)}
-                ${fromDiscovery ? this.discoveryRowHtml(item) : ''}
+                ${fromDiscovery ? this.discoveryActionsHtml() : this.rowTagsHtml(item)}
                 <span class="inbox-item-when"${addedLabel && !snoozed ? ` title="${this.escape(this.t('dashboard.inboxAddedOn', 'Added on {date}', { date: addedLabel }))}"` : ''}>${this.escape(when)}</span>
             </div>
         `;
@@ -5644,12 +5645,28 @@ class DashboardInbox {
      * What a proposal from app discovery adds to its row: where it came from,
      * its kind, and the two answers -- Promote, or Ignore for good.
      */
-    discoveryRowHtml(item) {
+    /**
+     * A proposal from app discovery in the title column: the app's name, and
+     * under it a pill that says where it came from, with its kind. The
+     * heading keeps the whole "New app: …" for a screen reader.
+     */
+    discoveryTitleHtml(item, titleId) {
+        const name = item.title || item.containerName || '';
         const kind = window.AppDiscoveryCard?.kindLabel?.(item.appKind)
             || this.t(`discovery.kind.${String(item.appKind || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`, item.appKind || 'Apps');
-        return `<span class="inbox-item-discovery">
-                <span class="inbox-item-discovery-source">${this.escape(this.t('discovery.inbox.source', 'found on this server'))}</span>
-                <span class="inbox-item-discovery-kind">${this.escape(kind)}</span>
+        const full = this.t('discovery.inbox.title', 'New app: {name}', { name });
+        return `<div class="inbox-item-titlecell">
+                <h3 class="inbox-item-title" id="${this.escape(titleId)}" aria-label="${this.escape(full)}">${this.escape(name)}</h3>
+                <span class="inbox-item-discovery">
+                    <span class="inbox-item-discovery-source">${this.escape(this.t('discovery.inbox.source', 'found on this server'))}</span>
+                    <span class="inbox-item-discovery-kind">${this.escape(kind)}</span>
+                </span>
+            </div>`;
+    }
+
+    /** Its two answers, in the tags column: an app has no tags to offer yet. */
+    discoveryActionsHtml() {
+        return `<span class="inbox-item-discovery-actions">
                 <button type="button" class="inbox-action-btn inbox-discovery-btn inbox-discovery-btn--primary" data-inbox-discovery-promote>${this.escape(this.t('discovery.inbox.promote', 'Promote'))}</button>
                 <button type="button" class="inbox-action-btn inbox-discovery-btn" data-inbox-discovery-ignore>${this.escape(this.t('discovery.inbox.ignore', 'Ignore'))}</button>
             </span>`;
