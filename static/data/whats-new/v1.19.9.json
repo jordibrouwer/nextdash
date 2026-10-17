@@ -1,0 +1,81 @@
+{
+  "tag": "v1.19.9",
+  "date": "17 October 2026",
+  "releasedAt": "2026-10-17",
+  "modalLead": "<strong>nextDash finds the apps in your Docker containers</strong> and offers them as bookmarks. A fresh install starts with 98 example links on <strong>Slate</strong>, and an import asks where the bookmarks go.",
+  "sections": [
+    {
+      "title": "Containers",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>nextDash finds your apps.</strong> A card lists the web apps running in your containers, grouped by kind and all ticked. Add puts them on the page with their icon and a status check, and an app that turns up later is asked about first.",
+          "highlight": true,
+          "title": "Apps found on your server",
+          "link": "#config/containers/view",
+          "linkLabel": "Set it up",
+          "media": {
+            "image": "media/v1.19.9-apps-found.jpg",
+            "alt": "The apps found card: Plex, Jellyseerr, Grafana and Home Assistant grouped by kind, all ticked, with an Add button"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Container labels steer it.</strong> <code>nextdash.url</code>, <code>nextdash.name</code>, <code>nextdash.category</code>, <code>nextdash.icon</code> and <code>nextdash.hide=true</code> set the address, name, category and icon, or keep a container out."
+        }
+      ]
+    },
+    {
+      "title": "Getting started",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A fresh install starts with 98 example links</strong> on two pages. The first-start card asks whether to keep them or start empty."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Slate is the theme a new install starts on.</strong> Existing dashboards keep their theme."
+        }
+      ]
+    },
+    {
+      "title": "Import",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>An import asks where the bookmarks go:</strong> onto the dashboard, or into the inbox first. Into the inbox, a folder becomes a tag and links you already have are skipped.",
+          "highlight": true,
+          "title": "Import to the inbox first",
+          "link": "#inbox",
+          "linkLabel": "Open Inbox",
+          "media": {
+            "image": "media/v1.19.9-import-destination.jpg",
+            "alt": "The import question: onto the dashboard, or into the inbox first, with what each answer adds and skips"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Search and appearance",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Clicking the \"Press / to search names\" hint</strong> now runs that search, and Tab and Shift+Tab no longer leave a stray prefix behind."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Code, addresses and shortcuts use Source Code Pro</strong> instead of the system's monospace font."
+        }
+      ]
+    },
+    {
+      "title": "Inbox",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Read and unread follow the server again</strong> when you use more than one device, and Clear filters clears the address too."
+        }
+      ]
+    }
+  ]
+}
