@@ -129,6 +129,46 @@ test.describe('one-time intro that shows blocks can be moved', () => {
         await page.keyboard.press('Escape');
     });
 
+    test('after Try it the coach takes a click: Got it closes it and puts the block back', async ({ page }) => {
+        await openDashboard(page);
+        await expect(card(page)).toBeVisible({ timeout: 25_000 });
+        const before = await blockOrder(page);
+        await card(page).getByRole('button', { name: 'Try it' }).click();
+        const coach = page.locator('.block-move-coach:not(.block-intro-card)');
+        await expect(coach).toBeVisible();
+        await expect(coach).not.toHaveClass(/is-carried/);
+        // The pointer's own hit test, not a dispatched click.
+        const hit = await page.evaluate(() => {
+            const r = document.querySelector('.block-move-coach-done').getBoundingClientRect();
+            return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.classList.contains('block-move-coach-done');
+        });
+        expect(hit).toBe(true);
+        await coach.getByRole('button', { name: 'Got it' }).click();
+        await expect(coach).toHaveCount(0);
+        expect(await page.evaluate(() => window.DashboardBlockMover.isMoving())).toBe(false);
+        await expect(page.locator('.block-landing')).toHaveCount(0);
+        expect(await blockOrder(page)).toEqual(before);
+    });
+
+    test('after Try it the mouse can still drag a block by its "//"', async ({ page }) => {
+        await openDashboard(page);
+        await expect(card(page)).toBeVisible({ timeout: 25_000 });
+        await card(page).getByRole('button', { name: 'Try it' }).click();
+        expect(await page.evaluate(() => window.DashboardBlockMover.state?.mode)).toBe('keyboard');
+        // No grabbing hand while nothing follows the mouse.
+        expect(await page.evaluate(() => getComputedStyle(document.body).cursor)).not.toBe('grabbing');
+        const handle = page.locator(`${blockSel} button.category-reorder-handle`).first();
+        const box = await handle.boundingBox();
+        if (!box) throw new Error('no handle');
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(box.x + 300, box.y + 200, { steps: 6 });
+        expect(await page.evaluate(() => window.DashboardBlockMover.state?.mode)).toBe('pointer');
+        await expect(page.locator('.block-drag-chip')).toBeVisible();
+        await page.keyboard.press('Escape');
+        await page.mouse.up();
+    });
+
     test('Escape closes the card and remembers it', async ({ page }) => {
         await openDashboard(page);
         await expect(card(page)).toBeVisible({ timeout: 25_000 });

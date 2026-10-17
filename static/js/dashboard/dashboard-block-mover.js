@@ -194,8 +194,9 @@
      * the first pick-up, stays beside the block after the drop or a cancel, and
      * goes when the reader says "Got it" or presses Escape; only then is it
      * remembered (in the server-backed list of tips already shown), so a reload
-     * before that shows it again. While a block is carried it takes no pointer
-     * events, so it never takes the drop.
+     * before that shows it again. While a block is carried by the pointer it
+     * takes no pointer events, so it never takes the drop. Carried with the
+     * keyboard there is no drop to take: "Got it" stays clickable.
      */
     const COACH_TIP = 'blockMoveCoach';
     const COACH_GAP = 12;
@@ -258,7 +259,12 @@
         done.type = 'button';
         done.className = 'block-move-coach-done';
         done.textContent = t('blockCoachGotIt', {}, 'Got it');
-        done.addEventListener('click', () => dismissCoach());
+        done.addEventListener('click', () => {
+            // Clicked while a block is held with the keyboard: it goes back too,
+            // rather than leaving a landing box nobody is steering.
+            if (state?.mode === 'keyboard') finish(false);
+            dismissCoach();
+        });
         nodes.push(done);
         card.replaceChildren(...nodes);
     }
@@ -353,8 +359,12 @@
             s.coachFilled = true;
             coach.id = s.id;
             fillCoach(coach.el, s);
-            coach.el.classList.add('is-carried');
-            coach.el.inert = true;
+            // "Try it" on the intro picks up with the keyboard, but the reader's
+            // hand is on the mouse: a card that ignores it reads as a page that
+            // has stopped working.
+            const carried = s.mode === 'pointer';
+            coach.el.classList.toggle('is-carried', carried);
+            coach.el.inert = carried;
         }
         placeCoach();
     }
@@ -430,6 +440,8 @@
         }
         sourceEl.classList.add('is-move-source');
         document.body.classList.add('is-moving-block');
+        // The grabbing hand only where the mouse holds the block.
+        document.body.classList.toggle('is-moving-block-by-pointer', mode === 'pointer');
         state.seams = mode === 'pointer' ? drawSeams(grid) : [];
         // What the seams read where the block was picked up: the width only
         // changes when the pointer crosses into or out of a seam band from
@@ -451,7 +463,7 @@
         s.grid.querySelectorAll('.block-seam').forEach((n) => n.remove());
         if (s.madeRelative) s.grid.style.position = '';
         s.sourceEl.classList.remove('is-move-source');
-        document.body.classList.remove('is-moving-block');
+        document.body.classList.remove('is-moving-block', 'is-moving-block-by-pointer');
         const changed = s.order.join('|') !== s.startOrder.join('|') || s.width !== s.startWidth;
         if (commit && changed) {
             const redrawn = global.dashboardInstance.renderCore.commitBlockMove({
@@ -625,6 +637,9 @@
         };
         const onDown = (e) => {
             const handle = e.target.closest?.('.category-reorder-handle');
+            // A block held with the keyboard does not keep the mouse from
+            // dragging one: the press on a "//" puts it back and takes over.
+            if (handle && e.button === 0 && state?.mode === 'keyboard') finish(false);
             if (!handle || e.button !== 0 || state || isFixedBlock(handle.closest('.category'))) return;
             if (global.dashboardInstance?.settings?.lockLayout) return;
             e.preventDefault();

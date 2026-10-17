@@ -2579,7 +2579,8 @@ body.layout-locked .category-reorder-handle {
 }
 
 /* Moving a block: the page holds still and a box shows where it lands. */
-body.is-moving-block { cursor: grabbing; user-select: none; }
+body.is-moving-block { user-select: none; }
+body.is-moving-block-by-pointer { cursor: grabbing; }
 .category.is-move-source { opacity: .35; outline: 1px dashed var(--border-primary); outline-offset: -1px; }
 .block-landing {
     position: absolute; z-index: 4; pointer-events: none; box-sizing: border-box;
