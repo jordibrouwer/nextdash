@@ -134,7 +134,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ### Themes
 
-- **new — Slate is the theme a fresh install starts on.** Blue-grey stone behind a pane of glass, drawn at glass with a soft glow; auto dark mode switches to Slate [light]. Existing dashboards keep their theme. Server and first paint agree (`defaultThemeID`, `defaultThemeLightID`, `ThemeLoader.DEFAULT_THEME`); MANUAL §16.1 names it. The Help text in the six locales still says Matrix Bluepill until the docs round.
+- **new — Slate is the theme a fresh install starts on.** Blue-grey stone behind a pane of glass, drawn at glass with a soft glow; auto dark mode switches to Slate [light]. Existing dashboards keep their theme. Server and first paint agree (`defaultThemeID`, `defaultThemeLightID`, `ThemeLoader.DEFAULT_THEME`); MANUAL §16.1 and Config → Help name it.
 
 ### Appearance
 
@@ -147,11 +147,11 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **fix — the bookmarks heading counts bookmarks.** It counted rows, group headings and filter completions included, and missed what a closed or capped group holds (`_resultCount`).
 - **fix — a shortcut that opens as you type it is not kept as a search.** It filled Recent searches and the search picks with the shortcut.
 - **new — `status:` completes untagged, tagged, noted and unnoted.** The filter knew them; the completions and the filter hints did not, and the empty state and the inline hints described status with different lists (`filterHintText`, one list for both).
-- **fix — the screen-reader position ("3 of 12") is translatable** (`dashboard.searchAnnouncePosition`; the key goes into the locales in the docs round).
+- **fix — the screen-reader position ("3 of 12") is translatable** (`dashboard.searchAnnouncePosition`).
 
 ### Import
 
-- **new — an import asks where the bookmarks go: onto the dashboard, or into the inbox first.** A browser file, a CSV and a source round all show the same choice, with what each answer would add and skip. Into the inbox, a folder becomes a tag instead of a category, and a link the dashboard already holds is skipped. Restoring a backup does not ask. The dry run counts both answers (`ImportPreview.inbox`); `?inbox=1` sends the round to the inbox (`importRowsToInbox`, `AddInboxLinks`, one write for the whole file). The new strings go into the locales in the docs round.
+- **new — an import asks where the bookmarks go: onto the dashboard, or into the inbox first.** A browser file, a CSV and a source round all show the same choice, with what each answer would add and skip. Into the inbox, a folder becomes a tag instead of a category, and a link the dashboard already holds is skipped. Restoring a backup does not ask. The dry run counts both answers (`ImportPreview.inbox`); `?inbox=1` sends the round to the inbox (`importRowsToInbox`, `AddInboxLinks`, one write for the whole file).
 
 ### Inbox
 
@@ -172,6 +172,8 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **docs — every manual screenshot is taken in Gloss Chrome dark.** `SHOT_THEME` puts the theme into each copy of the demo data; the demo keeps its own. Three scenes that broke since the last run were fixed (the More menu around the character chips, the new first-start card, the tag view's offers).
 - **docs — the manual as a website.** `site/` builds nextdash.cc/docs/ with VitePress from MANUAL.md: one page per chapter, the Mermaid flowcharts drawn, a reading layout with captioned figures, a Pagefind search index and a deploy script. `site/` stays off `main` and out of the Docker image (`PRUNE_DIRS`, `.dockerignore`).
 - **docs — nextdash.cc on its own WordPress theme, Werkbank.** In the docs' colours and type: a homepage that moves, News with the releases, a features overview with pages for the media widgets, tags and appearance, a theme gallery on Theme studio, one search box over the docs (Pagefind) and the site, and light and dark following the system, one choice for site and docs. New logo files from the app's `>_` icon and a new share image. Searches count once in Umami, docs included.
+- **docs — nextdash.cc has an App discovery page and a compare page.** The feature pages for Install, Containers, Inbox and Data carry this release's changes, and the compare page sets nextDash next to six other dashboards, linked from the homepage, the footer and the features index.
+- **docs — the manual's first launch describes the new start:** the "what do you want?" card, with its screenshot retaken on a fresh install.
 - **docs — the manual explains installing on Unraid from Community Applications,** in a new section of the install chapter.
 - **docs — the v1.19.4 Jellyfin recording in What's new is retaken from a real server.** Its plan finds the widget by its type, and the manual's dashboard screenshots wait for the media widgets to load.
 
