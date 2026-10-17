@@ -127,7 +127,21 @@
         titleEl.classList.remove(TITLE_MULTILINE_CLASS);
     }
 
-    function getMaxNameWidth(titleEl, labelEl, nameEl) {
+    /*
+     * What the label holds besides the name: the // handle, the icon, its padding.
+     *
+     * Read with the label shrunk to its content. .category-title-label is
+     * flex: 1 1 auto and stretches over every free pixel of the row, so its
+     * width minus the name's counted the empty room as overhead too. A short
+     * name then looked as if it had almost no space, missed by a pixel at full
+     * size and was stepped down -- "vps" ended up smaller than the bookmarks
+     * beneath it with a whole column to spare.
+     */
+    function readLabelOverhead(labelEl, nameEl) {
+        return Math.max(0, labelEl.clientWidth - nameEl.clientWidth);
+    }
+
+    function getMaxNameWidth(titleEl, labelEl, nameEl, labelOverhead) {
         const titleWidth = titleEl.clientWidth;
         if (titleWidth <= 0) {
             return 0;
@@ -136,7 +150,6 @@
         const trailingWidth = trailingEl ? trailingEl.getBoundingClientRect().width : 0;
         const titleGap = parseFloat(getComputedStyle(titleEl).columnGap || getComputedStyle(titleEl).gap) || 0;
         const labelWidth = Math.max(0, titleWidth - trailingWidth - titleGap);
-        const labelOverhead = Math.max(0, labelEl.clientWidth - nameEl.clientWidth);
         return Math.max(0, labelWidth - labelOverhead - 1);
     }
 
@@ -174,9 +187,14 @@
         });
         // Hidden titles are skipped before anything is reset, as before.
         const shown = fits.filter((f) => f.titleEl.clientWidth > 0);
-        shown.forEach((f) => resetNameFit(f.titleEl, f.nameEl));
         shown.forEach((f) => {
-            f.max = getMaxNameWidth(f.titleEl, f.labelEl, f.nameEl);
+            resetNameFit(f.titleEl, f.nameEl);
+            f.labelEl.style.flex = '0 0 auto';
+        });
+        shown.forEach((f) => { f.overhead = readLabelOverhead(f.labelEl, f.nameEl); });
+        shown.forEach((f) => { f.labelEl.style.flex = ''; });
+        shown.forEach((f) => {
+            f.max = getMaxNameWidth(f.titleEl, f.labelEl, f.nameEl, f.overhead);
             f.basePx = getBaseCategoryFontPx(f.titleEl);
         });
         const todo = shown.filter((f) => f.max > 0);
