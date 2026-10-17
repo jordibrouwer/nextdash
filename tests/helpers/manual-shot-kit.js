@@ -356,6 +356,19 @@ function tidyDemoData(dir, patch) {
         writeJSON(path.join(dir, 'inbox.json'), inbox);
     }
 
+    // One shot only: the apps card not answered yet, so it offers what the
+    // shot's /api/discovery answer says is running.
+    if (patches.includes('discovery')) {
+        const settingsFile = path.join(dir, 'settings.json');
+        writeJSON(settingsFile, { ...readJSON(settingsFile), discoverApps: true, discoveryCardDone: false });
+    }
+
+    // One shot only: two apps turned down, for Config → Containers' list.
+    if (patches.includes('discoveryignored')) {
+        const settingsFile = path.join(dir, 'settings.json');
+        writeJSON(settingsFile, { ...readJSON(settingsFile), discoverApps: true, discoveryIgnored: ['portainer', 'watchtower'] });
+    }
+
     // One shot only: a page of the seven Unraid widgets.
     if (patch === 'unraid') {
         const pages = readJSON(path.join(dir, 'pages.json'));

@@ -910,6 +910,76 @@ test('14 config panels', async ({ page }) => {
     await snap(page, panel(/^Notifications/), '14-notice.jpg', { pad: 10 });
 });
 
+/*
+ * App discovery. The shot servers have no Docker socket, so /api/discovery is
+ * answered here: what a run on a homelab would have found. Icons come from the
+ * icon-set fixture where it has one; the rest show their letter, as they do
+ * for an app no set knows.
+ */
+const discoveredApp = (name, kind, port, icon, displayName) => ({
+    name, kind, url: `http://192.168.1.10:${port}`, icon: icon ? `dashboard-icons/${name}` : '', source: 'port',
+    ...(icon ? { iconUrl: `/data/icon-sets/dashboard-icons/${name}.svg` } : {}),
+    ...(displayName ? { displayName } : {}),
+});
+const FOUND_APPS = [
+    discoveredApp('plex', 'Media', 32400, true, 'Plex'),
+    discoveredApp('jellyseerr', 'Media management', 5055, true, 'Jellyseerr'),
+    discoveredApp('grafana', 'Monitoring', 3000, false, 'Grafana'),
+    discoveredApp('home-assistant', 'Home', 8123, false, 'Home Assistant'),
+];
+
+async function answerDiscovery(page, body) {
+    await page.route('**/api/discovery', (route) => (route.request().method() === 'GET'
+        ? route.fulfill({ contentType: 'application/json', body: JSON.stringify({ enabled: true, docker: true, running: false, ...body }) })
+        : route.fallback()));
+}
+
+/** Corner cards that come a few seconds after load (the digest) go first: the apps card waits for them. */
+async function clearCorner(page) {
+    await page.waitForTimeout(4_000);
+    await settle(page);
+}
+
+test.describe('app discovery', () => {
+    test.describe('first card', () => {
+        test.use({ dataPatch: 'discovery' });
+        test('14 discovery card', async ({ page }) => {
+            await prepare(page);
+            await answerDiscovery(page, { cardDone: false, apps: FOUND_APPS });
+            await openDashboard(page);
+            await clearCorner(page);
+            const card = page.locator('.app-discovery-card').first();
+            await card.waitFor({ state: 'visible', timeout: 40_000 });
+            await page.waitForTimeout(1_000);
+            await snap(page, card, '14-discovery-card.jpg', { pad: 16 });
+        });
+    });
+
+    test('14 discovery ask', async ({ page }) => {
+        await prepare(page);
+        await answerDiscovery(page, { cardDone: true, pending: [FOUND_APPS[0]], targetPage: 1 });
+        await openDashboard(page);
+        await clearCorner(page);
+        const card = page.locator('.app-discovery-card').first();
+        await card.waitFor({ state: 'visible', timeout: 40_000 });
+        await page.waitForTimeout(1_000);
+        await snap(page, card, '14-discovery-ask.jpg', { pad: 16 });
+    });
+
+    test.describe('config', () => {
+        test.use({ dataPatch: 'discoveryignored' });
+        test('14 discovery config', async ({ page }) => {
+            await prepare(page);
+            await openConfig(page, 'containers');
+            await subtab(page, 'View').click();
+            await page.waitForTimeout(800);
+            const panel = (title) => page.locator('.config-panel', { has: page.locator('.config-panel-title', { hasText: title }) }).first();
+            await scrollToTop(page, panel(/^New apps/));
+            await snap(page, [panel(/^New apps/), panel(/^Ignored apps/)], '14-discovery-config.jpg', { pad: 10 });
+        });
+    });
+});
+
 test('15 widget tiles', async ({ page }) => {
     await prepare(page);
     await openDashboard(page);

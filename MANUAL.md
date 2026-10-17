@@ -224,6 +224,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 - [Disk](#147-disk)
 - [The logs window](#148-the-logs-window)
 - [Notices](#149-notices)
+- [Apps it finds on its own](#1410-apps-it-finds-on-its-own)
 
 </details>
 
@@ -443,6 +444,8 @@ Then open **Config → Containers**. **Connection** shows what the server sees �
 <a id="sh-link-bookmarks"></a>
 
 ### Link each web UI to a bookmark
+
+No bookmarks for your services yet? With the socket mounted, nextDash offers them itself: a card lists the containers that answer with a web page, and **Add** puts them on the page, each with an icon, a status check and the link to its container already made ([§14.10](#1410-apps-it-finds-on-its-own)).
 
 You probably have bookmarks for your services already. nextDash finds the one that belongs to each container on its own, in this order, and stops at the first step that finds exactly one:
 
@@ -735,6 +738,7 @@ Data is stored in `./data` next to the binary. `NEXTDASH_DATA_DIR` points it els
 
 1. **What do you want?** A card at the top of the first page asks how to start. **Keep these example links** leaves the starter pages as they are, to look around; remove the links any time. **Start with an empty page** clears the example links and their categories off the first page — its widgets stay — and removes the example news page too, as long as you have not changed it. The card only appears while the first page is still the starter page; **×** or `Escape` keeps the links. **Show quick-start card again** (Behavior → Privacy & sync → Onboarding) brings the card back. The page templates (Homelab, Media server, Developer) are in the import dialog ([§9.8](#98-page-templates)).
 2. **Quick-start card.** After that, a small checklist in the bottom-left corner with three first tasks: **Add your first bookmark** (`+` or paste a URL), **Open Config → Behavior** (language, theme and layout) and **See the keyboard shortcuts** (`!` or `F1`). Each ticks itself off as you do it, and the card closes itself when all three are done. Skip it with its × whenever you like; it asks nothing, and every setting is in config.
+   With the Docker socket mounted, a card in the middle of the screen then offers the apps running on this server as bookmarks — once the checklist, the tour and any corner card are out of the way ([§14.10](#1410-apps-it-finds-on-its-own)).
 3. **Example bookmarks.** Kept the example links? A new install starts with 98 links on two pages, so there is something to try search, tags and the keys on. **main** has Development, Docker, Unraid, Self-hosted, Tools and Daily, with a Health, a Health trend and a Notes widget and the **Today** collection; **news** has Tech news, Dev & blogs, Security, Communities, Videos and News.
 4. **Your own bookmarks.** Import your browser's bookmark file under **Config → Data & backups** ([§19](#19-data-backups-and-import)), or add them with **+** and **&** ([§5](#5-adding-bookmarks)).
 5. **Config.** Press **`Shift + S`** or click the gear. Config is a view inside the dashboard; **`Escape`** takes you back.
@@ -2220,6 +2224,8 @@ flowchart LR
 - **The extension** — **Save to Inbox** in its popup, the right-click entry, or `Ctrl/Cmd + Shift + U`.
 - **The share sheet, the bookmarklet and `/add`** — see [§21](#21-browser-extension-and-capture).
 - **The API** — `POST /api/inbox`.
+- **App discovery** — with **Propose in the Inbox** under Config → Containers → View → New apps, a new container with a web page arrives here instead of on the dashboard: its name, a *found on this server* pill and its kind, with **Promote** (fills in the bookmark form) and **Ignore** (never proposed again) ([§14.10](#1410-apps-it-finds-on-its-own)).
+- **An import** — Config → Data & backups asks where an import goes; **Into the inbox first** sends it here, folders as tags ([§19.1](#191-backups-data)).
 
 A URL already in the inbox is not added again: a toast says *Already in Inbox* and the view jumps to it.
 
@@ -2581,6 +2587,58 @@ They go where Health's downtime alerts go: the alert webhook under **Monitoring 
 <p align="center"><sub>Config → Containers → Alerts: notices on, and the lines for running hot.</sub></p>
 
 **Automatic updates** send a notice when one went through, when one was rolled back and why, and when one could not be done.
+
+<a id="1410-apps-it-finds-on-its-own"></a>
+
+### 14.10 Apps it finds on its own
+
+With the Docker socket mounted, nextDash notices which containers are web apps and offers them as bookmarks. A container counts when it answers with a web page or a sign-in page, checked from where the server itself reaches. Its address comes from, in this order:
+
+1. a `nextdash.url` label on the container;
+2. a reverse-proxy label on the container (Traefik's `Host(…)` rule or a Caddy host);
+3. a published port, on the **Docker host address** ([§17.7](#177-config-containers)) — a port link follows the host you opened nextDash on.
+
+Nothing outside nextDash is asked: only the Docker socket and its own checks, never a proxy's or another container's API. Databases, message brokers, socket proxies, updaters and nextDash itself are never proposed, and neither is a container that already has a bookmark — matched the same way the Containers view links one ([§14.2](#142-the-list)).
+
+**The first time.** Once the first-start card, the checklist, the tour and any corner card are out of the way, a card in the middle of the screen says how many apps are running here, grouped by kind — Media, Media management, Downloads, Monitoring, Network, Home, Documents & photos, Development, Tools — and all ticked. **Add** puts the ticked ones on the page: one category per kind, at the top, each bookmark with its icon, a status check and a link to its container. While the page still holds the links nextDash starts with, **Replace the starter links on this page** clears them as well. A notice afterwards offers **Show**, **Undo** and **Done**. **Not now** adds nothing; the apps stay in the Containers view.
+
+<p align="center"><img src="screenshots/manual.md/14-discovery-card.jpg" alt="The apps card in the middle of the screen: Found on this server, 4 apps are running here, with Plex under Media, Jellyseerr under Media management, Grafana under Monitoring and Home Assistant under Home, all ticked, and the buttons Add 4 apps and Not now" width="460"></p>
+<p align="center"><sub>The first card: what is running, grouped by kind.</sub></p>
+
+**A new container later.** Config → Containers → View → **New apps** decides what happens to a container that turns up after that:
+
+| New apps | What happens |
+|---|---|
+| **Ask first** (default) | The same card, for the new ones only, with **Add**, **Ignore** and **Not now**. Untick one and choose Add: the unticked ones are ignored. |
+| **Add straight away** | It goes on the dashboard at once, with a notice that offers **Undo**, **Move** and **Done**. |
+| **Propose in the Inbox** | It waits in the inbox, where **Promote** fills in the bookmark form and **Ignore** keeps it away ([§13.1](#131-getting-links-in)). |
+
+<p align="center"><img src="screenshots/manual.md/14-discovery-ask.jpg" alt="The card for one new container: New on this server, Plex is running here, at 192.168.1.10:32400, Goes to Home in Media, with the buttons Add, Ignore and Not now" width="460"></p>
+<p align="center"><sub>Ask first: one new container, and where it would go.</sub></p>
+
+A container that was already there when nextDash first looked is not new, so it is not asked about again. **Suggest new apps** turns all of it off. **Ignored apps** lists every app you turned down; **Remove** lets nextDash notice it again.
+
+<p align="center"><img src="screenshots/manual.md/14-discovery-config.jpg" alt="Config, Containers, View: the New apps panel with Suggest new apps ticked and New apps set to Ask first, and the Ignored apps panel listing portainer and watchtower, each with Remove" width="700"></p>
+<p align="center"><sub>Config → Containers → View: the choice, and the apps you turned down.</sub></p>
+
+**Labels.** On the container itself, these steer the bookmark:
+
+| Label | Meaning |
+|---|---|
+| `nextdash.url` | The address to use; wins over everything else. |
+| `nextdash.name` | The bookmark's name instead of the container's. |
+| `nextdash.category` | The category instead of the detected kind. |
+| `nextdash.icon` | An icon-set name or an image address. |
+| `nextdash.hide` | `true`: never propose this container. |
+
+```yaml
+services:
+  grafana:
+    image: grafana/grafana
+    labels:
+      - nextdash.url=https://grafana.lan
+      - nextdash.category=Monitoring
+```
 
 <sub>[↑ Contents](#table-of-contents)</sub>
 
@@ -3282,7 +3340,7 @@ other theme keeps its own. The backdrop and the card glass work the same way.
 
 ### 16.4 Type and background
 
-- **Typeface** — Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans or System UI — or **upload a font file**.
+- **Typeface** — Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans or System UI — or **upload a font file**. Code, addresses and key chips are set in Source Code Pro, or in the monospaced typeface you pick; a proportional one leaves them on Source Code Pro.
 - **Weight** — Normal, Semi-bold or Bold. **Size** — seven steps from XS to XL; pointing at a size previews it.
 
 Type is in the **Type** panel on the **Theme & type** tab; everything behind the bookmarks is on the **Background** tab, drawn in three layers from the bottom up: the theme's backdrop, a pattern over it, and a background of your own on top.
@@ -3568,7 +3626,7 @@ Four tabs, with the same strip, keys and memory as Config → Inbox. It opens on
 | Tab | Panels |
 |---|---|
 | **Connection** | **Connection**: the Docker socket, actions, the write token and whether this is the container nextDash itself runs in, as the environment set them — nothing here is editable. **Safety**: also confirm stop and restart (update and remove always ask first) |
-| **View** | **View**: show the Containers view, refresh the list every 2, 5, 10 or 30 seconds, log lines to show (100, 200, 500 or 1000), keep the last hour of CPU and memory for the CPU and RAM columns and the charts, close the side panel on a click beside it, and the key legend: above the list, below it, or hidden. **Links**: the Docker host address that port and web UI links point at. **Hidden containers**: kept out of the view, search and the widget count — they keep running |
+| **View** | **View**: show the Containers view, refresh the list every 2, 5, 10 or 30 seconds, log lines to show (100, 200, 500 or 1000), keep the last hour of CPU and memory for the CPU and RAM columns and the charts, close the side panel on a click beside it, and the key legend: above the list, below it, or hidden. **Links**: the Docker host address that port and web UI links point at. **New apps**: suggest new apps, and what happens to a new one — ask first, add straight away or propose in the inbox ([§14.10](#1410-apps-it-finds-on-its-own)). **Ignored apps**: the apps you turned down, each with Remove. **Hidden containers**: kept out of the view, search and the widget count — they keep running |
 | **Updates** | **Updates**: check for image updates: off, every 6, 12 or 24 hours; the window automatic updates run in, **from** and **until** a full hour (03:00 to 05:00 at first) ([§14.5](#145-actions-and-updates)). **GitHub**: a token that raises the rate limit for release notes, for images hosted on GHCR and for nextDash's own check for a new release ([§24](#the-update-check-fails)) |
 | **Alerts** | **Notifications**: notify about containers — on by default; also when one uses too much CPU or memory, with the CPU line (50–95 %), the memory line (70–95 %) and how long (5–30 minutes) ([§14.9](#149-notices)). **Muted containers**: where notices go, or that nothing receives them yet, and the containers you muted — × lets one back in |
 
@@ -3730,10 +3788,10 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 
 | Button | What it does |
 |---|---|
-| **Import browser bookmarks…** | Reads the HTML file every browser exports — and Pocket, Pinboard, Raindrop, linkding, Shiori, Linkwarden and Karakeep. Shows a preview (*12 new, 3 conflicts*), asks for a page, and imports. Folders become categories; tags, notes and dates come along; duplicates are skipped; missing icons are fetched afterwards. |
+| **Import browser bookmarks…** | Reads the HTML file every browser exports — and Pocket, Pinboard, Raindrop, linkding, Shiori, Linkwarden and Karakeep. Shows a preview (*12 new, 3 conflicts*), then asks where the bookmarks go: **Onto the dashboard** (on the current page) or **Into the inbox first**, to sort them one by one — folders then become tags, and links the dashboard already holds are skipped. Each answer says how many it would add and skip. Folders become categories; tags, notes and dates come along; duplicates are skipped; missing icons are fetched afterwards. |
 | **Export bookmarks (HTML)** | The same format, for a browser or another tool |
 | **Export bookmarks (CSV)** | Name, URL, category, page, shortcut, tags and notes, with translated headers |
-| **Import bookmarks (CSV)** | Reads that file back onto the current page. Columns are matched by name; rows without a URL and existing URLs are skipped. |
+| **Import bookmarks (CSV)** | Reads that file back, onto the current page or into the inbox — the same question as above. Columns are matched by name; rows without a URL and existing URLs are skipped. |
 
 **Settings** exports or imports `settings.json` alone. The Unraid server is left out of an import: it is set only under Config → Unraid, so an imported file can never point the saved key at another address.
 
@@ -4412,6 +4470,12 @@ They need HTTPS in Safari and on iPhone and iPad, and nextDash on the home scree
 
 <a id="the-containers-view-is-missing-or-read-only"></a>
 
+### No apps are offered
+
+- **No card at all** — the Docker socket is not mounted, **Suggest new apps** is off (Config → Containers → View), or the first card was already answered; a new container is then asked about, added or proposed in the inbox as **New apps** says.
+- **An app is missing** — it has a bookmark already, it answers with neither a page nor a sign-in page from where the server reaches, it is under **Ignored apps**, or it carries `nextdash.hide=true`. A container behind a proxy nextDash cannot read the host from: give it `nextdash.url` ([§14.10](#1410-apps-it-finds-on-its-own)).
+- **The address is wrong** — set **Docker host address** under Config → Containers → View → Links, or the `nextdash.url` label.
+
 ### The Containers view is missing or read-only
 
 - **Missing entirely** — `NEXTDASH_DOCKER_SOCKET` is not set, or the socket is not mounted; the Containers widget will say so too.
@@ -4512,6 +4576,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 | Term | Meaning | Explained in |
 |---|---|---|
 | Action buttons | The fixed buttons beside the grid: add, search, commands, finders and the rest, each with its key. | [§4](#the-action-buttons) |
+| App discovery | nextDash noticing which containers are web apps and offering them as bookmarks, with their icon, a status check and a link to the container. | [§14.10](#1410-apps-it-finds-on-its-own) |
 | Activity trail | A machine-readable record, one JSON line per event, kept apart from the readable log. | [§20.2](#202-activity-trail) |
 | Alert | A message posted when a monitored bookmark goes down and again when it recovers, with how long it was down; when a host takes many bookmarks down at once, the alerts become one message. | [§12.4](#124-alerts) |
 | Analytics | Anonymous usage statistics sent to a self-hosted Umami instance, off until you turn them on. | [§23.8](#238-analytics) |
