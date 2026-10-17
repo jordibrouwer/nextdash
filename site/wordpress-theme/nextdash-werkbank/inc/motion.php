@@ -63,7 +63,8 @@ function ndw_hero_shot() {
 /**
  * The figures under the hero, as number => label. Checked against the code:
  * the theme families and backdrops in the server, the looks in the studio,
- * the Custom widget's presets and the tag catalogue.
+ * the Custom widget's presets, the widget register (knownWidgetTypes), the
+ * two app lists of the tag suggestions and the locale files.
  */
 function ndw_stats() {
 	return apply_filters(
@@ -73,7 +74,9 @@ function ndw_stats() {
 			array( 12, 'looks' ),
 			array( 26, 'backdrops' ),
 			array( 41, 'services for the Custom widget' ),
-			array( 81000, 'sites in the tag catalogue' ),
+			array( 43, 'kinds of widget' ),
+			array( 1905, 'self-hosted apps known by name' ),
+			array( 6, 'languages' ),
 		)
 	);
 }
