@@ -130,7 +130,11 @@ unedited. Icons, dates and health do not count; they change by themselves.
 Only then may a template take its place.
 */
 func (h *Handlers) isUntouchedMainPage() bool {
-	seed := defaultMainPage()
+	return h.isUntouchedSeedPage(defaultMainPage())
+}
+
+// isUntouchedSeedPage is the same check for any page the seed writes.
+func (h *Handlers) isUntouchedSeedPage(seed PageWithBookmarks) bool {
 	page, ok := h.readTemplatePage(seed.Page.ID)
 	if !ok || page.Page.Name != seed.Page.Name {
 		return false
@@ -292,8 +296,9 @@ func (h *Handlers) ApplyOnboardingTemplate(w http.ResponseWriter, r *http.Reques
 }
 
 // clearStarterLinks takes the starter links and their categories off main
-// while main is still the untouched starter page; its widgets stay. It
-// reports whether it cleared anything.
+// while main is still the untouched starter page; its widgets stay. The
+// starter news page goes too, if nobody has changed it: an empty start with
+// 46 links on page 2 is not empty. It reports whether it cleared anything.
 func (h *Handlers) clearStarterLinks() (bool, error) {
 	pageTemplateImportMu.Lock()
 	defer pageTemplateImportMu.Unlock()
@@ -307,7 +312,30 @@ func (h *Handlers) clearStarterLinks() (bool, error) {
 	if err := h.store.SaveCategoriesByPage(pageID, []Category{}); err != nil {
 		return false, err
 	}
+	if err := h.removeUntouchedNewsPage(); err != nil {
+		return false, err
+	}
 	return true, nil
+}
+
+// removeUntouchedNewsPage deletes the starter news page while it is still
+// exactly as seeded, and takes it out of the page order. Not to the trash:
+// like main's starter links, nothing on it was the reader's.
+func (h *Handlers) removeUntouchedNewsPage() error {
+	if minimalSeed() || !h.isUntouchedSeedPage(defaultNewsPage()) {
+		return nil
+	}
+	if err := h.store.DeletePage(defaultNewsPageID); err != nil {
+		return err
+	}
+	order := h.store.GetPageOrder()
+	kept := make([]int, 0, len(order))
+	for _, id := range order {
+		if id != defaultNewsPageID {
+			kept = append(kept, id)
+		}
+	}
+	return h.store.SavePageOrder(kept)
 }
 
 /*

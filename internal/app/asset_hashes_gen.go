@@ -223,7 +223,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/device-settings-merge.js":                            "1991f3117842",
 	"js/digest-notice.js":                                    "02f21b99344a",
 	"js/discoverability-state.js":                            "520682251211",
-	"js/first-start-templates.js":                            "d949b09e6dd2",
+	"js/first-start-templates.js":                            "fa892e71a420",
 	"js/focus-trap-utils.js":                                 "a6c5d003437a",
 	"js/font-presets.js":                                     "5b3e73ce4e8a",
 	"js/fuzzy-search.js":                                     "703cfac03fb4",

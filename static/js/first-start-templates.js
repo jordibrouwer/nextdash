@@ -190,6 +190,15 @@
         /** Bring the emptied page on screen without a reload. */
         async showPage(pageId) {
             const d = this.dash;
+            // Start empty can take the starter news page away: the tabs
+            // follow, or page 2 stays in the header with nothing behind it.
+            try {
+                const res = await fetch('/api/pages', { cache: 'no-store' });
+                if (res.ok) {
+                    d.pages = await res.json();
+                    d.pageNav?.renderPageNavigation?.();
+                }
+            } catch { /* the tabs catch up on the next revision check */ }
             d.data?.invalidatePageDataCache?.(pageId);
             await d.data?.loadAllBookmarks?.();
             await d.loadPageBookmarks?.(pageId, { forceFetch: true, skipInlineEditConfirm: true });
