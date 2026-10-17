@@ -174,21 +174,43 @@ func (h *Handlers) startDefaultBookmarkIconPrefetch() {
 }
 
 func (h *Handlers) prefetchDefaultBookmarkIcons() {
-	const pageID = 1
+	for _, pageID := range defaultSeedPageIDs() {
+		h.prefetchStarterPageIcons(pageID)
+	}
+}
+
+func (h *Handlers) prefetchStarterPageIcons(pageID int) {
 	const batchLimit = 8
 	totalApplied := 0
+	offset := 0
+	limitedRetries := 0
 	for {
-		result := h.prefetchBookmarkIconsBatch(pageID, batchLimit, false, false, 0)
+		// A hundred starter links is more than a minute of the shared
+		// outbound limit, and a refused fetch reads as a site without an
+		// icon. Wait for room first, and leave some over for the status
+		// checks and feeds that start at the same moment.
+		waitForOutboundHeadroom(starterIconHeadroom)
+		result := h.prefetchBookmarkIconsBatch(pageID, batchLimit, false, false, offset)
 		totalApplied += result.Applied
-		// Stop when done, when nothing was attempted, OR when a batch made no
-		// progress. Without the Applied==0 guard, a single bookmark whose favicon
-		// can never be fetched (dead URL, timeout, blocked outbound) stays
-		// "needing icon" forever, so Done never flips and this loop spins on the
-		// same failing network fetches — a busy loop that pins CPU (worst on
-		// servers with restricted outbound access).
-		if result.Done || result.Attempted == 0 || result.Applied == 0 {
+		if result.Done || result.Attempted == 0 {
 			break
 		}
+		// Failures with the limit spent were refused, not missing: the same
+		// batch again once there is room, a few times at most.
+		if result.Applied < result.Attempted && globalOutboundLimiter.saturated("global") && limitedRetries < 3 {
+			limitedRetries++
+			continue
+		}
+		limitedRetries = 0
+		// A bookmark whose favicon can never be fetched (dead URL, timeout,
+		// blocked outbound) stays "needing icon" and keeps its place at the
+		// front of the list, so the next batch steps past the ones that
+		// failed. Fetched ones drop out of the list by themselves. Every
+		// round either shrinks the list or moves the offset, so this ends;
+		// retrying the same failing fetches at offset 0 would spin forever,
+		// and stopping at the first batch with no success left a page of a
+		// hundred links half drawn.
+		offset = max(0, offset+result.Attempted-result.Applied)
 	}
 	if totalApplied > 0 {
 		logInfo(logComponentServer, "fetched icons for %s on page %d", plural(totalApplied, "starter bookmark", "starter bookmarks"), pageID)
@@ -406,4 +428,17 @@ func (h *Handlers) PrefetchBookmarkIcons(w http.ResponseWriter, r *http.Request)
 	result := h.prefetchBookmarkIconsBatch(req.PageID, limit, req.CountOnly, req.RefreshAll, req.Offset)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
+}
+
+// starterIconHeadroom is how much of the outbound limit a starter icon batch
+// waits for: its own eight fetches, each a page and an icon or two, and room
+// to spare for everything else running at first start.
+const starterIconHeadroom = 40
+
+// waitForOutboundHeadroom waits, two minutes at most, until the shared
+// outbound limit has n requests to spare.
+func waitForOutboundHeadroom(n int) {
+	for i := 0; i < 60 && globalOutboundLimiter.room("global") < n; i++ {
+		time.Sleep(2 * time.Second)
+	}
 }

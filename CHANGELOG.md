@@ -128,6 +128,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 - **new — the first-start card asks what you want: keep the example links, or start empty.** Starting empty clears the starter links (`POST /api/onboarding/start-empty`). The bundled templates are now only in the import dialog.
 - **new — a fresh install starts with 98 English-language links on two pages.** Main holds Development, Docker, Unraid, Self-hosted, Tools and Daily, with the health, trend and notes widgets; news holds tech news, dev blogs, security, communities, homelab videos and a few general news sites. nextDash is in it twice: nextdash.cc and the GitHub repository. Today shows on main only. Existing installs are untouched, and a data folder that already has a page never gets the second one (`default_seed.go`). The e2e server and the Go suite keep the old one-page set with `NEXTDASH_SEED=minimal`.
+- **fix — starter icons are fetched for every starter link.** The first-start icon round stopped at the first batch where no fetch succeeded, and ran into the shared outbound limit after about thirty links, so most of a larger set stayed letter tiles. It now steps past links without an icon, waits for room in the limit, and retries a batch the limit refused (`prefetchStarterPageIcons`).
 
 ### Themes
 
