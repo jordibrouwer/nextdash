@@ -104,7 +104,7 @@
                  data-preview-buttons="${s.headerButtonStyle === 'plated' ? 'plated' : 'plain'}"
                  data-preview-clock="${esc(clockPlace)}"
                  data-preview-highlight="${esc(s.rowHighlight || 'subtle')}"
-                 data-preview-cathead="${esc(s.categoryHeaderStyle || 'theme')}" data-preview-catsize="${esc(s.categoryHeaderSize || 'm')}"
+                 data-preview-cathead="${esc(s.categoryHeaderStyle || 'theme')}" data-preview-catsize="${esc(s.categoryHeaderSize || 's')}"
                  data-preview-caticon="${s.showCategoryIcon === false ? 'off' : 'on'}" data-preview-catcount="${s.showCategoryCount === true ? 'on' : 'off'}"
                  data-preview-cataccent="${s.categoryHeaderAccentLine === true ? 'on' : 'off'}">
                 <div class="config-pv-head" data-pv-part="head">

@@ -97,7 +97,7 @@ test.describe('Reset all in the look studio', () => {
         expect(reset.backgroundPattern).toBe('auto');
         expect(reset.backdropTuning).toEqual({ strength: 1, scale: 1, seed: 0, blur: 0, brightness: 1, saturate: 1, tint: 0 });
         expect(reset.categoryHeaderStyle).toBe('theme');
-        expect(reset.categoryHeaderSize).toBe('m');
+        expect(reset.categoryHeaderSize).toBe('s');
         expect(reset.showCategoryIcon).toBe(true);
         expect(reset.showCategoryCount).toBe(false);
         expect(reset.categoryHeaderAccentLine).toBe(false);

@@ -83,7 +83,7 @@
         labelKey: `config.look.${id}`, noteKey: `config.look.${id}Note`,
         tuning: { strength: 1, blur: 0, brightness: 1, saturate: 1, tint: 0, ...tuning },
         glass: { border: null, ...glass },
-        heads: { categoryHeaderSize: 'm', showCategoryIcon: true, showCategoryCount: false,
+        heads: { categoryHeaderSize: 's', showCategoryIcon: true, showCategoryCount: false,
             categoryHeaderAccentLine: false, ...heads },
     });
 

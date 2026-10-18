@@ -15,7 +15,7 @@ func TestCategoryHeaderWordsNormalise(t *testing.T) {
 			t.Errorf("style %q = %q, want %q", in, got, want)
 		}
 	}
-	for in, want := range map[string]string{"": "m", "s": "s", "L": "l", "m": "m", "xl": "m"} {
+	for in, want := range map[string]string{"": "s", "s": "s", "L": "l", "m": "m", "xl": "s"} {
 		if got := normalizeCategoryHeaderSize(in); got != want {
 			t.Errorf("size %q = %q, want %q", in, got, want)
 		}
@@ -31,7 +31,7 @@ func TestCategoryHeaderDefaultsAndMissingKeys(t *testing.T) {
 	if !fresh.ShowCategoryIcon || fresh.ShowCategoryCount || fresh.CategoryHeaderAccentLine {
 		t.Errorf("fresh install: icon %v count %v accent %v", fresh.ShowCategoryIcon, fresh.ShowCategoryCount, fresh.CategoryHeaderAccentLine)
 	}
-	if fresh.CategoryHeaderStyle != "theme" || fresh.CategoryHeaderSize != "m" {
+	if fresh.CategoryHeaderStyle != "theme" || fresh.CategoryHeaderSize != "s" {
 		t.Errorf("fresh install: style %q size %q", fresh.CategoryHeaderStyle, fresh.CategoryHeaderSize)
 	}
 

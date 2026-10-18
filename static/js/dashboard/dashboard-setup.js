@@ -123,7 +123,7 @@ class DashboardSetup {
         // name. CSS reads them off <body> (category-header.css); "theme" is the
         // header as the theme and layout draw it.
         document.body.setAttribute('data-cat-head', d.settings.categoryHeaderStyle || 'theme');
-        document.body.setAttribute('data-cat-size', d.settings.categoryHeaderSize || 'm');
+        document.body.setAttribute('data-cat-size', d.settings.categoryHeaderSize || 's');
         document.body.setAttribute('data-cat-icon', d.settings.showCategoryIcon === false ? 'off' : 'on');
         document.body.setAttribute('data-cat-count', d.settings.showCategoryCount === true ? 'on' : 'off');
         document.body.setAttribute('data-cat-accent', d.settings.categoryHeaderAccentLine === true ? 'on' : 'off');

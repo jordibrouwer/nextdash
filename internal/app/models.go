@@ -455,6 +455,7 @@ type Settings struct {
 	SurfaceDefaultsMigrated         bool   `json:"surfaceDefaultsMigrated,omitempty"`         // one-time: backdrop on, glow off, depth — the three Surfaces answers agreed on once
 	DepthDefaultFlatMigrated        bool   `json:"depthDefaultFlatMigrated,omitempty"`        // one-time: the depth default moved to flat
 	GridDefaultsMigrated            bool   `json:"gridDefaultsMigrated,omitempty"`            // one-time: layout masonry and density auto, for an install still on compact and default
+	CategoryHeaderSmallMigrated     bool   `json:"categoryHeaderSmallMigrated,omitempty"`     // one-time: the category header size moved from m to s, for an install still on the old default
 	FontSizeLgMigrated              bool   `json:"fontSizeLgMigrated,omitempty"`              // one-time: the type size moved from m to lg, for an install still on the old default
 	FontDefaultInterMigrated        bool   `json:"fontDefaultInterMigrated,omitempty"`        // one-time: the UI font moved from Source Code Pro to Inter
 	SurfaceFollowMigrated           bool   `json:"surfaceFollowMigrated,omitempty"`           // one-time: depth, glow and effects moved to follow-the-theme
@@ -1798,7 +1799,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ThemeBackdrop:                   surfaceFollow,
 			BackdropTuning:                  defaultBackdropTuning(),
 			CategoryHeaderStyle:             categoryHeaderThemeOwn,
-			CategoryHeaderSize:              "m",
+			CategoryHeaderSize:              "s",
+			CategoryHeaderSmallMigrated:     true,
 			ShowCategoryIcon:                true,
 			BackgroundPattern:               "auto",
 			BackgroundOpacity:               1,
@@ -4423,7 +4425,8 @@ func (fs *FileStore) GetSettings() Settings {
 			ThemeBackdrop:                   surfaceFollow,
 			BackdropTuning:                  defaultBackdropTuning(),
 			CategoryHeaderStyle:             categoryHeaderThemeOwn,
-			CategoryHeaderSize:              "m",
+			CategoryHeaderSize:              "s",
+			CategoryHeaderSmallMigrated:     true,
 			ShowCategoryIcon:                true,
 			BackgroundPattern:               "auto",
 			DensityMode:                     "auto",
@@ -5226,6 +5229,17 @@ func (fs *FileStore) GetSettings() Settings {
 			}
 			settings.FontSizeLgMigrated = true
 		}
+		/*
+		 * Small category headers, once. An install still on the old default
+		 * size, m, moves to s; one that chose large keeps it, and so does anyone
+		 * who goes back to m after this pass has run.
+		 */
+		if !settings.CategoryHeaderSmallMigrated {
+			if settings.CategoryHeaderSize == "m" || settings.CategoryHeaderSize == "" {
+				settings.CategoryHeaderSize = "s"
+			}
+			settings.CategoryHeaderSmallMigrated = true
+		}
 		settings.EnableCustomFont = settings.FontPreset == "custom" && settings.CustomFontPath != ""
 		if _, ok := rawSettings["backgroundType"]; !ok {
 			settings.BackgroundType = "none"
@@ -5403,6 +5417,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.DepthDefaultFlatMigrated = settings.DepthDefaultFlatMigrated || stored.DepthDefaultFlatMigrated
 			settings.GridDefaultsMigrated = settings.GridDefaultsMigrated || stored.GridDefaultsMigrated
 			settings.FontSizeLgMigrated = settings.FontSizeLgMigrated || stored.FontSizeLgMigrated
+			settings.CategoryHeaderSmallMigrated = settings.CategoryHeaderSmallMigrated || stored.CategoryHeaderSmallMigrated
 			settings.FontDefaultInterMigrated = settings.FontDefaultInterMigrated || stored.FontDefaultInterMigrated
 			settings.SurfaceFollowMigrated = settings.SurfaceFollowMigrated || stored.SurfaceFollowMigrated
 			settings.LauncherDefaultsMigrated = settings.LauncherDefaultsMigrated || stored.LauncherDefaultsMigrated

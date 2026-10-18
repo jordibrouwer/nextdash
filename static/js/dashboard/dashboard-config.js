@@ -13281,7 +13281,7 @@ class DashboardConfig {
         categoryHeaderStyle: { info: ['categoryHeaderStyleInfoTitle', 'categoryHeaderStyleInfoMessage',
             'Category header style', 'How the name above each category is drawn: clean, underlined, in a box, as a small label, or as the head of a card round the whole group. Follow the theme leaves it as the theme and the layout draw it.'], def: 'theme' },
         categoryHeaderSize: { info: ['categoryHeaderSizeInfoTitle', 'categoryHeaderSizeInfoMessage',
-            'Header size', 'How large the category names are drawn, from a small label to a heading.'], def: 'm' },
+            'Header size', 'How large the category names are drawn, from a small label to a heading.'], def: 's' },
         showCategoryCount: { info: ['showCategoryCountInfoTitle', 'showCategoryCountInfoMessage',
             'Bookmark count', 'Shows how many bookmarks a category holds beside its name.'], def: false },
         categoryHeaderAccentLine: { info: ['categoryHeaderAccentLineInfoTitle', 'categoryHeaderAccentLineInfoMessage',

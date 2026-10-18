@@ -40,11 +40,11 @@ func normalizeCategoryHeaderStyle(value string) string {
 	return categoryHeaderThemeOwn
 }
 
-// normalizeCategoryHeaderSize is s, m or l, and m when it is anything else.
+// normalizeCategoryHeaderSize is s, m or l, and s when it is anything else.
 func normalizeCategoryHeaderSize(value string) string {
 	switch value = strings.ToLower(strings.TrimSpace(value)); value {
-	case "s", "l":
+	case "m", "l":
 		return value
 	}
-	return "m"
+	return "s"
 }
