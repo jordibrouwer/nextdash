@@ -1773,6 +1773,7 @@
                 this.renderStatsCertificates(certs),
                 this.renderStatsIssues(h, s),
                 this.renderStatsArchive(),
+                this.renderStatsNotify(),
             ]);
         },
 
@@ -2616,6 +2617,65 @@
                 });
             }
             return lines;
+        },
+
+        /* ------------------------------------------------------------------
+         * Health → Notifications
+         * ------------------------------------------------------------------ */
+
+        renderStatsNotify() {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const n = this._statsNotify;
+            const title = this.t('config.statsNotifyTitle', 'Notifications');
+            if (n === undefined) {
+                return this.statsPanel({ title, body: `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>` });
+            }
+            const rows = [];
+            const q = n?.quiet;
+            if (q) {
+                rows.push([this.t('config.statsNotifyOpen', 'Open alerts'), this.statsNumber(q.open || 0), q.open ? 'warn' : '',
+                    this.t('config.statsNotifyOpenSub', 'still down since they were sent')]);
+                rows.push([this.t('config.statsNotifyHeld', 'Held in quiet hours'), q.enabled
+                    ? this.statsNumber(q.held || 0)
+                    : this.t('config.statsLibraryOff', 'switched off'), '', q.quiet ? this.t('config.statsNotifyQuietNow', 'quiet right now') : '']);
+            }
+            const push = n?.push;
+            if (push) {
+                const devices = Array.isArray(push.devices) ? push.devices.length : 0;
+                rows.push([this.t('config.statsNotifyPush', 'Push devices'), push.enabled
+                    ? this.statsNumber(devices)
+                    : this.t('config.statsLibraryOff', 'switched off')]);
+            }
+            const hooks = Array.isArray(n?.webhooks?.endpoints) ? n.webhooks.endpoints : null;
+            if (hooks) {
+                const on = hooks.filter((e) => e.enabled).length;
+                rows.push([this.t('config.statsNotifyWebhooks', 'Webhooks'), hooks.length
+                    ? this.t('config.statsNofMOn', '{n} of {m} on').replace('{n}', this.statsNumber(on)).replace('{m}', this.statsNumber(hooks.length))
+                    : this.t('config.statsNotifyNone', 'none')]);
+            }
+            const st = this.dash.settings || {};
+            const preset = String(st.monitorNotifyPreset || '').trim();
+            rows.push([this.t('config.statsNotifyAlertRoute', 'Alert service'),
+                st.monitorNotifyUrl || preset
+                    ? (preset ? preset.charAt(0).toUpperCase() + preset.slice(1) : this.t('config.statsNotifyWebhook', 'webhook'))
+                    : this.t('config.statsNotifyNone', 'none')]);
+            const d = n?.digest;
+            if (d && Number(d.generatedAt)) {
+                const bits = [];
+                if (d.health?.newlyBroken?.length) bits.push(this.t('config.statsDigestBroken', '{n} newly broken').replace('{n}', this.statsNumber(d.health.newlyBroken.length)));
+                if (d.health?.certsExpiring?.length) bits.push(this.t('config.statsDigestCerts', '{n} certificates').replace('{n}', this.statsNumber(d.health.certsExpiring.length)));
+                if (d.updates?.available?.length) bits.push(this.t('config.statsDigestUpdates', '{n} updates').replace('{n}', this.statsNumber(d.updates.available.length)));
+                if (d.usage?.stale) bits.push(this.t('config.statsDigestStale', '{n} unused lately').replace('{n}', this.statsNumber(d.usage.stale)));
+                rows.push([this.t('config.statsNotifyDigest', 'Last weekly digest'), this.statsRelativeTime(d.generatedAt), '', bits.join(' · ')]);
+            } else if (st.digestEnabled === false) {
+                rows.push([this.t('config.statsNotifyDigest', 'Last weekly digest'), this.t('config.statsLibraryOff', 'switched off')]);
+            }
+            return this.statsPanel({
+                title,
+                info: this.t('config.statsNotifyInfo', 'Where notices go, and what is waiting. How many were sent is not recorded.'),
+                right: `<button type="button" class="config-btn config-btn--small" data-stats-section-goto="monitoring:notifications">${esc(this.t('config.statsNotifySettings', 'Settings'))} →</button>`,
+                body: this.statsFacts(rows),
+            });
         },
 
     });

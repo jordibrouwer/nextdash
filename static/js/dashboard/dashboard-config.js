@@ -321,8 +321,10 @@ class DashboardConfig {
         // Same contract for the counts that are not bookmarks — widgets, feeds,
         // sources, trash, backups.
         this._statsLibrary = undefined;
-        // Same contract for the Server tab: containers, Unraid, backups.
+        // Same contract for the Server tab (containers, Unraid, backups) and
+        // the notification routes Health lists.
         this._statsServer = undefined;
+        this._statsNotify = undefined;
         // How far back the activity chart looks, in days. Restored from the last
         // visit, falling back to 30.
         this.statsRange = DashboardConfig.readStoredStatsRange();
@@ -1058,12 +1060,14 @@ class DashboardConfig {
             library: all || tab === 'collection',
             // Overview reads it for the server lines in its attention list.
             server: all || tab === 'server' || tab === 'overview',
+            notify: all || tab === 'health',
         };
         if (wants.inbox && this._statsInboxItems === undefined) once('inbox', () => this.loadStatsInbox());
         if (wants.finders && this._statsFinders === undefined) once('finders', () => this.loadStatsFinders());
         if (wants.health && this._statsHealth === undefined) once('health', () => this.loadStatsHealth());
         if (wants.library && this._statsLibrary === undefined) once('library', () => this.loadStatsLibrary());
         if (wants.server && this._statsServer === undefined) once('server', () => this.loadStatsServer());
+        if (wants.notify && this._statsNotify === undefined) once('notify', () => this.loadStatsNotify());
     }
 
     /**
@@ -27443,6 +27447,29 @@ class DashboardConfig {
         }
     }
 
+    /** The ways a notice can leave this install, for Health's Notifications panel. */
+    async loadStatsNotify() {
+        const get = async (url, { token = false } = {}) => {
+            try {
+                const res = token ? await this.writeFetch(url) : await fetch(url, { cache: 'no-store' });
+                if (res && res.status === 204) return {};
+                return res && res.ok ? await res.json() : null;
+            } catch {
+                return null;
+            }
+        };
+        const [quiet, push, webhooks, digest] = await Promise.all([
+            get('/api/notify/quiet'),
+            get('/api/push/devices'),
+            get('/api/webhooks', { token: true }),
+            get('/api/digest/latest'),
+        ]);
+        this._statsNotify = { quiet, push, webhooks, digest };
+        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'health') {
+            this.repaintStatsBody();
+        }
+    }
+
     /**
      * The per-page category names, as one lookup.
      *
@@ -28291,6 +28318,7 @@ class DashboardConfig {
                     this._statsFinders = undefined;
                     this._statsLibrary = undefined;
                     this._statsServer = undefined;
+                    this._statsNotify = undefined;
                     // Refresh means "work them out again", so the memo goes too
                     // — otherwise the button would only re-fetch the two
                     // server-side tabs and hand back the same cached arithmetic

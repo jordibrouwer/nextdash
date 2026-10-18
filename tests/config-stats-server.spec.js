@@ -123,4 +123,12 @@ test.describe('statistics: server', () => {
         await expect(list.locator('[data-attention="containers-unhealthy"]')).toBeVisible();
         await expect(list.locator('[data-attention="backup-late"]')).toHaveCount(0);
     });
+
+    test('Health lists where notices go', async ({ page }) => {
+        await openStats(page);
+        await page.locator('[data-stats-tab="health"]').click();
+        const notify = page.locator('#config-stats-body .config-stats-panel').filter({ hasText: 'Notifications' });
+        await expect(notify).toContainText('Open alerts');
+        await expect(notify).toContainText('Push devices');
+    });
 });
