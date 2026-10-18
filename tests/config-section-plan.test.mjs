@@ -269,7 +269,9 @@ console.log('planner (ground truth: the help split)');
     test('catches bindHelpActions, which a dispatcher calls for About', () => {
         const hit = result.wrong.find((w) => w.name === 'bindHelpActions');
         assert.ok(hit, 'bindHelpActions was not flagged');
-        assert.match(hit.why, /about/, `flagged for the wrong reason: ${hit.why}`);
+        // Named for About while only its dispatcher reached it; once other sections
+        // reached it too, the planner names them instead. Either way it must not move.
+        assert.match(hit.why, /about|reached from/, `flagged for the wrong reason: ${hit.why}`);
     });
 
     test('still lets renderHelp through', () => {
