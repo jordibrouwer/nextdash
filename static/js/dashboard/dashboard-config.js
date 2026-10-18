@@ -321,6 +321,8 @@ class DashboardConfig {
         // Same contract for the counts that are not bookmarks — widgets, feeds,
         // sources, trash, backups.
         this._statsLibrary = undefined;
+        // Same contract for the Server tab: containers, Unraid, backups.
+        this._statsServer = undefined;
         // How far back the activity chart looks, in days. Restored from the last
         // visit, falling back to 30.
         this.statsRange = DashboardConfig.readStoredStatsRange();
@@ -1054,11 +1056,14 @@ class DashboardConfig {
             finders: all || tab === 'usage',
             health: all || tab === 'health' || tab === 'overview' || tab === 'collection',
             library: all || tab === 'collection',
+            // Overview reads it for the server lines in its attention list.
+            server: all || tab === 'server' || tab === 'overview',
         };
         if (wants.inbox && this._statsInboxItems === undefined) once('inbox', () => this.loadStatsInbox());
         if (wants.finders && this._statsFinders === undefined) once('finders', () => this.loadStatsFinders());
         if (wants.health && this._statsHealth === undefined) once('health', () => this.loadStatsHealth());
         if (wants.library && this._statsLibrary === undefined) once('library', () => this.loadStatsLibrary());
+        if (wants.server && this._statsServer === undefined) once('server', () => this.loadStatsServer());
     }
 
     /**
@@ -17925,6 +17930,7 @@ class DashboardConfig {
             'collection': ['config.statsNoteCollection', 'What the collection holds and how it is built up: categories, domains, tags and age.'],
             'inbox': ['config.statsNoteInbox', 'What arrived, what you filed, and how long things wait before you get to them.'],
             'health': ['config.statsNoteHealth', 'Whether everything still answers, how reliably, and what is wearing out.'],
+            'server': ['config.statsNoteServer', 'The machine behind the dashboard: containers, Unraid and backups.'],
         },
         containers: {
             'connection': ['config.containersNoteConnection', 'How nextDash reaches Docker, and whether that connection works right now.'],
@@ -18536,7 +18542,7 @@ class DashboardConfig {
         'bookmarks-layout': 'layout',
     };
 
-    static STATS_TABS = ['overview', 'usage', 'collection', 'inbox', 'health'];
+    static STATS_TABS = ['overview', 'usage', 'collection', 'inbox', 'health', 'server'];
 
     // The tabs' names until September 2026, kept so an old link still lands.
     static STATS_TAB_ALIASES = { activity: 'usage', content: 'collection' };
@@ -27127,6 +27133,7 @@ class DashboardConfig {
             collection: ['config.statsTabCollection', 'Collection'],
             inbox: ['config.statsTabInbox', 'Inbox'],
             health: ['config.statsTabHealth', 'Health'],
+            server: ['config.statsTabServer', 'Server'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
         return this.t(key, fallback);
@@ -27399,6 +27406,40 @@ class DashboardConfig {
         if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'collection') {
             const host = document.getElementById('config-stats-library');
             if (host) host.innerHTML = this.renderStatsLibraryBody();
+        }
+    }
+
+    /**
+     * What the Server tab draws: the containers and their last thirty days,
+     * Unraid, and the automatic backups. Each part that cannot be read is
+     * null, so a panel can say why instead of showing zeroes.
+     */
+    async loadStatsServer() {
+        const get = async (url, { token = false } = {}) => {
+            try {
+                const res = token ? await this.writeFetch(url) : await fetch(url, { cache: 'no-store' });
+                return res && res.ok ? await res.json() : null;
+            } catch {
+                return null;
+            }
+        };
+        const [status, list, history, unraid, backups] = await Promise.all([
+            get('/api/docker/status'),
+            get('/api/docker/containers'),
+            get('/api/docker/history'),
+            get('/api/unraid/area/overview'),
+            get('/api/auto-backups', { token: true }),
+        ]);
+        this._statsServer = {
+            docker: status ? { socket: status.socket === true, reason: status.reason || '' } : null,
+            containers: list && list.available ? (Array.isArray(list.containers) ? list.containers : []) : null,
+            usageEnabled: list ? list.usageEnabled === true : false,
+            history: history || null,
+            unraid: unraid || null,
+            backups: backups || null,
+        };
+        if (this.isActiveView() && this.section === 'stats' && (this.statsTab === 'server' || this.statsTab === 'overview')) {
+            this.repaintStatsBody();
         }
     }
 
@@ -28249,6 +28290,7 @@ class DashboardConfig {
                     this._statsInboxAgg = undefined;
                     this._statsFinders = undefined;
                     this._statsLibrary = undefined;
+                    this._statsServer = undefined;
                     // Refresh means "work them out again", so the memo goes too
                     // — otherwise the button would only re-fetch the two
                     // server-side tabs and hand back the same cached arithmetic
@@ -28357,6 +28399,15 @@ class DashboardConfig {
                 this.loadStatsTabData(tab);
                 this.repaintStatsBody();
                 this.syncSubTabStrip('data-stats-tab', this.statsTab);
+            });
+        });
+        // "containers:updates" opens that section on that tab.
+        container.querySelectorAll('[data-stats-section-goto]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const [section, tab] = String(btn.getAttribute('data-stats-section-goto') || '').split(':');
+                const state = DashboardConfig.SUB_TAB_STATE[section];
+                if (tab && state && DashboardConfig.SUB_TABS[section]?.includes(tab)) this[state] = tab;
+                this.selectSection(section);
             });
         });
         container.querySelectorAll('[data-stats-opens-mode]').forEach((btn) => {

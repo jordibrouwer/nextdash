@@ -715,7 +715,7 @@ test.describe('onboarding settings', () => {
 });
 
 test.describe('statistics tabs', () => {
-    const TABS = ['overview', 'usage', 'collection', 'inbox', 'health'];
+    const TABS = ['overview', 'usage', 'collection', 'inbox', 'health', 'server'];
 
     test('the section is split into tabs instead of one long scroll', async ({ page }) => {
         const errors = [];
@@ -850,7 +850,7 @@ test.describe('statistics tabs', () => {
         await openSection(page, 'stats');
         const order = await page.locator('[data-stats-tab]')
             .evaluateAll((els) => els.map((e) => e.getAttribute('data-stats-tab')));
-        expect(order).toEqual(['overview', 'usage', 'collection', 'inbox', 'health']);
+        expect(order).toEqual(['overview', 'usage', 'collection', 'inbox', 'health', 'server']);
 
         await page.locator('[data-stats-tab="inbox"]').click();
         // The snapshot comes from /api/inbox and the lifetime counters from
