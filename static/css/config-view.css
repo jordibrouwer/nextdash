@@ -1655,11 +1655,29 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
  * and the choice pills, which are wider than a control column and read better
  * on their own line once they wrap.
  */
+/* The space between a control and the sentence under it is one token. It was
+   margin-top: -4px against a row gap of 4px, which left nothing at all. */
+:root {
+    --config-note-gap: 0.5rem;
+}
+
 .config-field > .config-field-hint,
 .config-field > .config-field-warning,
 .config-field > .config-panel-note {
     grid-column: 1 / -1;
-    margin-top: -4px;
+    margin-top: 0;
+}
+
+/* !important on purpose: five rules set this field's row gap, from 0 to 14px,
+   one of them behind an id (#config-appearance-body). The gap above a note is
+   one number in every panel, and this is the only way to make it so without
+   chasing each of them. */
+.config-view .config-field:has(> .config-field-hint, > .config-field-warning, > .config-panel-note) {
+    row-gap: var(--config-note-gap) !important;
+}
+
+.config-field > .config-panel-note {
+    line-height: 1.45;
 }
 
 /*

@@ -21,6 +21,8 @@
     // Bars that belong to the grid and sit right above it; the card stays above them.
     const GRID_BARS = '#grid-filter-bar, .multi-select-toolbar';
     const SERVER = '{server}';
+    // The manual, for a reader who wants it before choosing.
+    const DOCS_URL = 'https://nextdash.cc/docs/';
 
     function t(key, fallback, params) {
         const lang = global.dashboardInstance?.language;
@@ -147,6 +149,14 @@
                             <span class="first-start-tile-name"><span class="first-start-tile-icon" aria-hidden="true">＋</span> ${esc(t('startEmpty', 'Start with an empty page'))}</span>
                             <span class="first-start-tile-services">${esc(t('startEmptyHint', 'Remove the example links and add your own'))}</span>
                         </button>
+                        <button type="button" class="first-start-tile" data-fs-manual>
+                            <span class="first-start-tile-name"><span class="first-start-tile-icon" aria-hidden="true">?</span> ${esc(t('showManual', 'Show me the manual first'))}</span>
+                            <span class="first-start-tile-services">${esc(t('showManualHint', 'Opens nextdash.cc/docs in a new window'))}</span>
+                        </button>
+                        <button type="button" class="first-start-tile" data-fs-studio>
+                            <span class="first-start-tile-name"><span class="first-start-tile-icon" aria-hidden="true">✦</span> ${esc(t('openStudio', 'Open the theme studio'))}</span>
+                            <span class="first-start-tile-services">${esc(t('openStudioHint', 'Experiment with the surface settings for a look of your own (Shift+A)'))}</span>
+                        </button>
                     </div>
                     <p class="first-start-error" data-fs-error role="alert" hidden></p>
                 </div>`;
@@ -157,6 +167,15 @@
             const target = event.target.closest('button');
             if (!target || this.busy) return;
             if (target.hasAttribute('data-fs-keep')) { this.finish('keep'); return; }
+            // These two answer nothing: the card stays until the reader has chosen.
+            if (target.hasAttribute('data-fs-manual')) {
+                global.open(DOCS_URL, '_blank', 'noopener');
+                return;
+            }
+            if (target.hasAttribute('data-fs-studio')) {
+                void this.dash?.config?.openThemeBrowser?.();
+                return;
+            }
             if (target.hasAttribute('data-fs-empty')) void this.startEmpty();
         }
 

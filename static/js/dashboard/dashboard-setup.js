@@ -35,6 +35,17 @@ class DashboardSetup {
     }
 
 
+    /** Lights the first visible bookmark row for a moment, in the strength just chosen. */
+    demoRowHighlight() {
+        const row = [...document.querySelectorAll('#dashboard-layout .bookmark-link')]
+            .find((el) => el.getClientRects().length > 0 && !el.classList.contains('bookmark-inline-editing'));
+        if (!row) return;
+        document.querySelectorAll('#dashboard-layout .row-highlight-demo').forEach((el) => el.classList.remove('row-highlight-demo'));
+        row.classList.add('row-highlight-demo');
+        clearTimeout(this._rowHighlightDemoTimer);
+        this._rowHighlightDemoTimer = setTimeout(() => row.classList.remove('row-highlight-demo'), 1600);
+    }
+
     setupDOM() {
         const d = this.dash;
         d.updateDateVisibility();
@@ -47,8 +58,13 @@ class DashboardSetup {
         // How far a row's accent carries when it lights up. Written here as
         // well as by the server, so changing it in config lands without a
         // reload; the CSS reads the attribute, see dashboard-bookmark-row.css.
-        document.body.setAttribute('data-row-highlight',
-            d.settings.rowHighlight === 'strong' ? 'strong' : 'subtle');
+        const rowHighlight = d.settings.rowHighlight === 'strong' ? 'strong' : 'subtle';
+        const previousHighlight = document.body.getAttribute('data-row-highlight');
+        document.body.setAttribute('data-row-highlight', rowHighlight);
+        // A row lights up under the pointer, and a reader choosing the strength has
+        // the pointer on the panel: light the first row for a moment so the choice
+        // is seen. Not on load, and not when nothing changed.
+        if (previousHighlight && previousHighlight !== rowHighlight) this.demoRowHighlight();
         document.body.setAttribute('data-show-date', d.settings.showDate);
         document.body.setAttribute('data-show-config-button', d.settings.showConfigButton !== false);
         document.body.setAttribute('data-show-pages-button', d.settings.showPagesButton !== false);

@@ -135,3 +135,93 @@ test('the filter bar stays between the card and the grid', async ({ page, reques
     });
     expect(order).toEqual({ barRightAboveGrid: true, cardAboveBar: true });
 });
+
+// The card sits on the same surface as the categories under it and sets its
+// title the way a category title is set, from the theme's own label settings.
+test('the card is a pane like the categories, and its title takes the theme label', async ({ page, request }) => {
+    await freshInstall(page, request);
+    await expect(card(page)).toBeVisible();
+
+    const read = () => page.evaluate(() => {
+        const el = document.querySelector('.first-start-card');
+        const cs = getComputedStyle(el);
+        const title = getComputedStyle(el.querySelector('.first-start-title'));
+        const m = cs.backgroundColor.match(/\/\s*([\d.]+)\s*\)/);
+        return {
+            blur: cs.backdropFilter, alpha: m ? parseFloat(m[1]) : 1,
+            weight: title.fontWeight, transform: title.textTransform,
+            tab: getComputedStyle(el.querySelector('.first-start-head')).backgroundSize,
+            tile: getComputedStyle(el.querySelector('.first-start-tile')).backgroundColor,
+        };
+    });
+
+    await page.evaluate(() => window.ThemeLoader.applyCatSurface('glass'));
+    const glass = await read();
+    expect(glass.blur).not.toBe('none');
+    expect(glass.alpha).toBeLessThan(1);
+    // The accent is a short tab under the title, not a bar across the card.
+    expect(parseFloat(glass.tab)).toBeLessThan(80);
+    // The tiles are light glass chips, not solid blocks.
+    expect(glass.tile).not.toMatch(/rgb\(\d+, \d+, \d+\)$/);
+
+    // The title is set by --theme-label-*.
+    await page.evaluate(() => {
+        document.documentElement.style.setProperty('--theme-label-weight', '800');
+        document.documentElement.style.setProperty('--theme-label-transform', 'uppercase');
+    });
+    const labelled = await read();
+    expect(labelled.weight).toBe('800');
+    expect(labelled.transform).toBe('uppercase');
+
+    await page.evaluate(() => window.ThemeLoader.applyCatSurface('card'));
+    const solid = await read();
+    expect(solid.blur).toBe('none');
+    expect(solid.alpha).toBe(1);
+});
+
+// Four answers side by side, centred: keep, empty, the manual first, the theme studio.
+test('the card offers four answers in one centred row', async ({ page, request }) => {
+    await freshInstall(page, request);
+    await expect(card(page)).toBeVisible();
+    const tiles = card(page).locator('.first-start-tile');
+    await expect(tiles).toHaveCount(4);
+    await expect(card(page).getByRole('button', { name: /Show me the manual first/ })).toBeVisible();
+    await expect(card(page).getByRole('button', { name: /Open the theme studio/ })).toBeVisible();
+
+    const geo = await page.evaluate(() => {
+        const el = document.querySelector('.first-start-card');
+        const box = el.getBoundingClientRect();
+        const rects = [...el.querySelectorAll('.first-start-tile')].map((t) => t.getBoundingClientRect());
+        const left = Math.min(...rects.map((r) => r.left));
+        const right = Math.max(...rects.map((r) => r.right));
+        return {
+            tops: [...new Set(rects.map((r) => Math.round(r.top)))].length,
+            offCentre: Math.abs((left + right) / 2 - (box.left + box.right) / 2),
+            widths: rects.map((r) => Math.round(r.width)),
+            clipped: [...el.querySelectorAll('.first-start-tile-name, .first-start-tile-services')].some((n) => n.scrollWidth > n.clientWidth + 1),
+        };
+    });
+    expect(geo.tops, 'all four sit in one row').toBe(1);
+    expect(geo.offCentre).toBeLessThanOrEqual(2);
+    expect(geo.clipped, 'no text is cut off').toBe(false);
+});
+
+test('Show me the manual first opens the docs in a new window and leaves the card', async ({ page, request, context }) => {
+    await context.route('https://nextdash.cc/**', (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '<title>docs</title>' }));
+    await freshInstall(page, request);
+    const popup = context.waitForEvent('page');
+    await card(page).getByRole('button', { name: /Show me the manual first/ }).click();
+    const opened = await popup;
+    expect(opened.url()).toMatch(/^https:\/\/nextdash\.cc\/docs/);
+    await expect(card(page)).toBeVisible();
+});
+
+test('Open the theme studio opens it, says what to try, and leaves the card', async ({ page, request }) => {
+    await freshInstall(page, request);
+    const studio = card(page).getByRole('button', { name: /Open the theme studio/ });
+    await expect(studio).toContainText(/surface/i);
+    await expect(studio).toContainText(/Shift\+A/);
+    await studio.click();
+    await expect(page.locator('[data-look-studio]')).toBeVisible({ timeout: 10_000 });
+    await expect(card(page)).toHaveCount(1);
+});
