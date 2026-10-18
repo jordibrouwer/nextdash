@@ -51,6 +51,10 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.19.10 (2026-10-18)
+- Dashboard: category and widget titles keep their size, line up with the bookmarks under them and stand out from them; a widget's title is the head of its card
+- Fixes: a short category name no longer shrinks below the bookmarks, and the Open button on Status page has no underline
+
 ### v1.19.9 (2026-10-17)
 - Containers: nextDash finds the web apps in your Docker containers and offers them as bookmarks; a container that turns up later is asked about first
 - Containers: the labels nextdash.url, nextdash.name, nextdash.category, nextdash.icon and nextdash.hide steer what is found
@@ -97,7 +101,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-10-17</Date>
+  <Date>2026-10-18</Date>
 
   <Config Name="WebUI Port"
           Target="8080"

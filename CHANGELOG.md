@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.19.11 — 18 October 2026](#v11911--18-october-2026)
 - [v1.19.10 — 18 October 2026](#v11910--18-october-2026)
 - [v1.19.9 — 17 October 2026](#v1199--17-october-2026)
 - [v1.19.8 — 15 October 2026](#v1198--15-october-2026)
@@ -111,6 +112,23 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.19.11 — 18 October 2026
+
+Widget titles go back to a plain title over their card, and a page of categories and widgets keeps one column of //. Pointing at a title no longer makes it jump. Held back from the What's new window (`hideFromModal`) like v1.19.10, so v1.19.9 keeps leading it.
+
+### Dashboard titles
+
+- **fix — widgets are not headers.** v1.19.10 made a widget's title a strip on the card's own surface, joined to it. That is gone: the title is a title over the card again, as a category's is over its list (`.dashboard-widget > .category-title` and its collapsed-state rule are removed).
+- **fix — the // sat in two places.** A category hung it in the gutter left of the column and a widget kept it in the row, so a page with both had two columns of them. Both hang it at the same place now, 24.4px left of the block (`.category-reorder-handle`, one rule for both). The row's own start padding moved from the label to the icon and the name, which is what lets the // sit alike.
+- **new — a widget's name starts on its card's content.** The card's border and padding in (1px + `--space-3`), where the first line of the card starts; categories keep theirs on the bookmarks' text.
+- **fix — a title jumped when pointed at.** The general hover grew the title 4px to the left (padding and a negative margin) and painted it with the `background` shorthand, which also took the accent tab off the rule under it. Pointing at a title now tints it where it is, with a background colour, and the tab stays. The old tint was never drawn on the dashboard at all: it read `--hover-bg`, which only exists inside Config. It is `--text-primary` at 7% now.
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.19.11.json` and its index entry** (`hideFromModal`); `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v341`, `DASHBOARD_RELEASE` stays on v1.19.9. `tests/dashboard-title-alignment.spec.js` covers the // position for a category and a widget, the missing strip and the hover (it fails on v1.19.10's CSS); `tests/whats-new-hidden-release.spec.js` names v1.19.11 as held back next to v1.19.10. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 

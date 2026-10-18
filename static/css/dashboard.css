@@ -2567,7 +2567,7 @@ body[data-category-spacing="airy"] {
 }
 
 /*
- * A title that lines up with the bookmarks under it.
+ * A title that lines up with what is under it.
  *
  * A bookmark row is an icon slot and then its name, and the names all start
  * one lead column in (the slot and the gap after it). The title put the //
@@ -2577,6 +2577,11 @@ body[data-category-spacing="airy"] {
  * any room, the icon sits in the icon column and the name starts on the
  * bookmarks' text, with or without an icon.
  *
+ * A widget's title hangs its // in the same place, so a page of categories and
+ * widgets keeps one column of them, and starts its name where the card's own
+ * content starts: the card's border and padding in, the way its first line
+ * does.
+ *
  * The gutter is the 24px between columns and the 8px of padding either side
  * of them; below 600px the page edge is nearer than that, so the title keeps
  * the // in line there. Only the default and masonry layouts: the others draw
@@ -2584,17 +2589,15 @@ body[data-category-spacing="airy"] {
  * themselves).
  */
 @media (min-width: 601px) {
-    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category:not(.dashboard-widget) .category-title-label {
+    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-title-label {
         --cat-title-lead: calc(var(--font-size-bookmark) * 1.15 + var(--space-2, 0.5rem));
         --cat-title-hang: 2.2rem;
-        /* The // sits in the label's own padding, inside its overflow clip.
-           The row's own start padding is added so the icon lands on the
-           bookmarks' icons rather than on the edge of the column. */
-        padding-left: calc(0.2em + var(--cat-title-hang) + var(--bookmark-row-start-pad, 6px));
+        /* The // sits in the label's own padding, inside its overflow clip. */
+        padding-left: calc(0.2em + var(--cat-title-hang));
         margin-left: calc(-0.2em - var(--cat-title-hang));
     }
 
-    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category:not(.dashboard-widget) .category-reorder-handle {
+    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-reorder-handle {
         /* A real box, so it can be pointed at and picked up, that takes no
            room in the row: its own width is given back by the margin. */
         display: flex;
@@ -2613,10 +2616,19 @@ body[data-category-spacing="airy"] {
            text mark, keeps its own width rather than running into the name. */
         flex: 0 0 auto;
         min-width: var(--cat-title-lead);
+        /* The row's own start padding, so the icon lands on the bookmarks'
+           icons rather than on the edge of the column. It is a margin here and
+           not padding on the label, so the // hangs at the same place whether
+           the block is a category or a widget. */
+        margin-left: var(--bookmark-row-start-pad, 6px);
     }
 
     body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category:not(.dashboard-widget) .category-title-label .category-reorder-handle + .category-title-name {
-        margin-left: var(--cat-title-lead);
+        margin-left: calc(var(--cat-title-lead) + var(--bookmark-row-start-pad, 6px));
+    }
+
+    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category.dashboard-widget .category-title-label .category-reorder-handle + .category-title-name {
+        margin-left: calc(1px + var(--space-3, 0.85rem));
     }
 }
 
@@ -2629,50 +2641,34 @@ body[data-category-spacing="airy"] {
  * and a short accent tab on the rule says where a block starts. The weight is
  * still the theme's (--theme-label-weight); Slate, the default, asks for 700.
  */
-.dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category:not(.dashboard-widget) .category-title {
+.dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-title {
     color: var(--text-primary);
 }
 
-/* The tab rides on the rule under the title, and flat depth draws none. */
-body:not([data-depth="flat"]) .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category:not(.dashboard-widget) .category-title {
-    background:
-        linear-gradient(var(--accent-primary), var(--accent-primary))
-        left bottom / 2.25rem 2px no-repeat;
+/* The tab rides on the rule under the title, and flat depth draws none. It is
+   a background image, so the hover tint below can sit under it. */
+body:not([data-depth="flat"]) .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-title {
+    background-image: linear-gradient(var(--accent-primary), var(--accent-primary));
+    background-size: 2.25rem 2px;
+    background-position: left bottom;
+    background-repeat: no-repeat;
     background-origin: border-box;
 }
 
 /*
- * A widget's title is the head of its card.
+ * Pointing at a title tints it where it is.
  *
- * A category is a list under a rule; a widget is a card, and its title used to
- * float above the card exactly as a category's does, so the two read as the
- * same kind of block. The title is now a strip on the card's own surface,
- * joined to it, and a collapsed widget closes the strip's bottom edge.
+ * The general hover grows the title 4px to the left (padding and a negative
+ * margin) and paints it with the `background` shorthand, which took the accent
+ * tab with it: the rule under the title jumped and lost its tab. Here the tint
+ * is a background colour on the title's own box, and nothing moves.
  */
-.dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category.dashboard-widget {
-    /* The strip and the card are one block: no gap between them. */
-    gap: 0;
-}
-
-html body .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category.dashboard-widget > .category-title {
-    color: var(--text-primary);
-    padding: var(--space-2, 0.55rem) var(--space-3, 0.85rem);
-    border: 1px solid var(--border-primary);
-    border-bottom: 0;
-    border-image: none;
-    border-radius: var(--radius-5, 9px) var(--radius-5, 9px) 0 0;
-    background: var(--dashboard-widget-surface);
-    margin-bottom: 0;
-}
-
-html body .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category.dashboard-widget > .category-title[aria-expanded="false"] {
-    border-bottom: 1px solid var(--border-primary);
-    border-radius: var(--radius-5, 9px);
-}
-
-html body .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category.dashboard-widget .dashboard-widget-body {
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
+body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-title:hover {
+    /* --hover-bg is only defined inside Config, so the old tint was never drawn here. */
+    background-color: color-mix(in srgb, var(--text-primary) 7%, transparent);
+    border-radius: var(--layout-radius-sm, 8px) var(--layout-radius-sm, 8px) 0 0;
+    padding-left: 0;
+    margin-left: 0;
 }
 
 /*
