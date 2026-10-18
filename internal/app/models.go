@@ -361,6 +361,7 @@ type Category struct {
 	Icon       string `json:"icon,omitempty"`       // Custom icon for category
 	SortMode   string `json:"sortMode,omitempty"`   // Bookmark sort within category: order, az, recent
 	Spread     bool   `json:"spread,omitempty"`     // May run across several grid columns; how many follows from the item limit
+	View       string `json:"view,omitempty"`       // How the bookmarks are drawn: empty is rows, "tiles" is a grid of icons; see category_view.go
 }
 
 type Page struct {
@@ -1920,6 +1921,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 	fs.migrateStripBookmarkPreviewImages()
 	fs.migrateCustomPercentToGuess()
 	fs.migrateNotesWidgetOnFirstPage()
+	fs.migrateCategoryIconsIntoNames()
 
 }
 
@@ -3104,7 +3106,9 @@ func (fs *FileStore) GetCategoriesByPage(pageID int) []Category {
 // It also updates bookmarks to use the new category IDs when category names change
 func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) error {
 	for i := range categories {
+		categories[i] = foldCategoryIcon(categories[i])
 		categories[i].Name = clampEntityName(categories[i].Name)
+		categories[i].View = normalizeCategoryView(categories[i].View)
 	}
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()

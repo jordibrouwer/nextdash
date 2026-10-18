@@ -1,0 +1,130 @@
+/* Bookmarks als tegels, per categorie.
+
+   Een categorie met data-view="tiles" tekent zijn bookmarks als een raster van
+   tegels in plaats van rijen: een groot icoon, de naam eronder, de status als
+   stip op de hoek en de responstijd klein onder de naam. Rijen blijven de
+   standaard en staan nergens vermeld. De DOM van een bookmark is dezelfde als
+   in een rij; alleen de CSS maakt er een tegel van, dus slepen, het
+   contextmenu, het toetsenbord en de inline bewerking werken zoals in een rij.
+
+   Terminal en launcher hebben hun eigen ontwerp voor een rij en een tegel. */
+
+.dashboard-grid:not(.layout-terminal):not(.layout-launcher) .category[data-view="tiles"] .bookmarks-list[data-bookmarks-list="true"] {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(4.4rem, 1fr));
+    gap: var(--space-2, 0.5rem);
+    padding-block: var(--space-1, 0.25rem);
+}
+
+.dashboard-grid:not(.layout-terminal):not(.layout-launcher) .category[data-view="tiles"] .bookmarks-list[data-bookmarks-list="true"] > .bookmark-link {
+    position: relative;
+    grid-column: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.4rem;
+    min-width: 0;
+    padding: 0.7rem 0.35rem 0.55rem;
+    border-radius: var(--radius-7, 12px);
+    background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+    text-align: center;
+}
+
+.dashboard-grid:not(.layout-terminal):not(.layout-launcher) .category[data-view="tiles"] .bookmarks-list > .bookmark-link:hover,
+.dashboard-grid:not(.layout-terminal):not(.layout-launcher) .category[data-view="tiles"] .bookmarks-list > .bookmark-link.keyboard-selected {
+    background: color-mix(in srgb, var(--text-primary) 13%, transparent);
+}
+
+.category[data-view="tiles"] .bookmarks-list > .bookmark-link .bookmark-lead {
+    display: flex;
+    justify-content: center;
+    width: auto;
+    padding: 0;
+}
+
+.category[data-view="tiles"] .bookmarks-list > .bookmark-link .bookmark-reorder-handle,
+.category[data-view="tiles"] .bookmarks-list > .bookmark-link .bookmark-shortcut {
+    display: none;
+}
+
+.category[data-view="tiles"] .bookmarks-list > .bookmark-link .bookmark-icon-slot {
+    width: 2.4rem;
+    height: 2.4rem;
+}
+
+.category[data-view="tiles"] .bookmarks-list > .bookmark-link .bookmark-icon {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.category[data-view="tiles"] .bookmarks-list > .bookmark-link .bookmark-open {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    text-align: center;
+}
+
+.category[data-view="tiles"] .bookmarks-list > .bookmark-link .bookmark-text {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-size: 0.85em;
+    line-height: 1.25;
+}
+
+.category[data-view="tiles"] .bookmarks-list > .bookmark-link .bookmark-superscript-badge {
+    position: static;
+    font-size: 0.7em;
+    opacity: 0.7;
+    font-variant-numeric: tabular-nums;
+}
+
+/* The status as a dot on the corner; a tile without health checking has none. */
+.category[data-view="tiles"] .bookmarks-list > .bookmark-link:is(.status-online, .status-offline, .status-checking)::after {
+    content: "";
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--accent-success, #46d399);
+}
+
+.category[data-view="tiles"] .bookmarks-list > .bookmark-link.status-offline::after {
+    background: var(--accent-error, #fb7185);
+}
+
+.category[data-view="tiles"] .bookmarks-list > .bookmark-link.status-checking::after {
+    background: var(--text-tertiary, #8a93a6);
+}
+
+/* Een tegel die je bewerkt krijgt de hele rij, zoals in de launcher: in één
+   cel van 4.4rem is er geen formulier. */
+.dashboard-grid:not(.layout-terminal):not(.layout-launcher) .category[data-view="tiles"] .bookmarks-list[data-bookmarks-list="true"] > .bookmark-link.bookmark-inline-editing {
+    grid-column: 1 / -1;
+    display: block;
+    text-align: start;
+    background: none;
+}
+
+/* Wat geen bookmark is -- "geen bookmarks" met de knop -- staat over de hele rij. */
+.dashboard-grid:not(.layout-terminal):not(.layout-launcher) .category[data-view="tiles"] .bookmarks-list[data-bookmarks-list="true"] > :not(.bookmark-link) {
+    grid-column: 1 / -1;
+}
+
+/* Op een touchscreen sleep je alleen aan de greep (DragReorder): hij blijft,
+   klein op de hoek van de tegel. */
+@media (pointer: coarse) {
+    .category[data-view="tiles"] .bookmarks-list > .bookmark-link .bookmark-reorder-handle {
+        display: block;
+        position: absolute;
+        top: 0.3rem;
+        left: 0.3rem;
+    }
+}

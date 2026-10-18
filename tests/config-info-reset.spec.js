@@ -107,7 +107,7 @@ test.describe('config info + reset affordances', () => {
             'rowTagsMax', 'smartAddedLimit',
             // The category header: the panel's note says what the five do and
             // each control is a plain word, so the explanation is on screen.
-            'categoryHeaderStyle', 'categoryHeaderSize', 'showCategoryIcon',
+            'categoryHeaderStyle', 'categoryHeaderSize',
             'showCategoryCount', 'categoryHeaderAccentLine',
             // The control names its own default: the first option is
             // "Default (3 seconds)", so an ℹ would repeat the select.

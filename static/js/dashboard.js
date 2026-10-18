@@ -2159,10 +2159,6 @@ class Dashboard {
     createCategoryElement(category, bookmarks) {
         return this.renderCore.createCategoryElement(...arguments);
     }
-
-    isUploadedCategoryIcon(iconValue) {
-        return this.renderCore.isUploadedCategoryIcon(...arguments);
-    }
 }
 
 window.Dashboard = Dashboard;

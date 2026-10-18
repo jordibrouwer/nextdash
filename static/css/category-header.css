@@ -26,12 +26,6 @@ body[data-cat-size="l"] .dashboard-grid .category-title {
     font-size: calc(var(--font-size-category) * var(--cat-head-scale, 1));
 }
 
-/* ---- icoon ---- */
-body[data-cat-icon="off"] .dashboard-grid .category-title-icon,
-body[data-cat-icon="off"] .dashboard-grid .category-title-label .bookmark-icon {
-    display: none;
-}
-
 /* ---- aantal bookmarks, rechts van de naam ---- */
 .category-title-count {
     display: none;

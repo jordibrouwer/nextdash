@@ -509,7 +509,7 @@ class DashboardRenderCore {
         const label = widget.title || this.widgetTypeLabel(widget.type);
         // Lower-cased like every other block title, so one heading in the grid
         // does not shout.
-        name.textContent = String(label).toLowerCase();
+        window.DashboardTitleIcons.set(name, label, d);
         name.title = label;
         labelWrap.appendChild(name);
 
@@ -2555,14 +2555,14 @@ class DashboardRenderCore {
             input.replaceWith(nameSpan);
             const unchanged = newName === originalName || (!newName && !allowEmpty);
             if (unchanged) {
-                nameSpan.textContent = String(displayFor(originalName)).toLowerCase();
+                window.DashboardTitleIcons.set(nameSpan, displayFor(originalName), d);
                 window.DashboardCategoryTitleFit?.fitCategoryTitle?.(titleEl);
                 return;
             }
             // On screen before the write: the header is what the reader just
             // typed into, and a name that only appears once the server has
             // answered reads as a rename that did not take.
-            nameSpan.textContent = String(displayFor(newName)).toLowerCase();
+            window.DashboardTitleIcons.set(nameSpan, displayFor(newName), d);
             await onCommit(newName);
             window.DashboardCategoryTitleFit?.fitCategoryTitle?.(titleEl);
         };
@@ -2572,7 +2572,7 @@ class DashboardRenderCore {
             done = true;
             titleEl.classList.remove('category-title--renaming');
             input.replaceWith(nameSpan);
-            nameSpan.textContent = String(displayFor(originalName)).toLowerCase();
+            window.DashboardTitleIcons.set(nameSpan, displayFor(originalName), d);
             window.DashboardCategoryTitleFit?.fitCategoryTitle?.(titleEl);
         };
 
@@ -2831,6 +2831,10 @@ class DashboardRenderCore {
         if (isSmartCollection) {
             categoryDiv.setAttribute('data-smart-collection', 'true');
         }
+        // Tiles are a choice of a stored category; rows are everything else.
+        if (!isSmartCollection && category.isVirtualCategory !== true && category.view === 'tiles') {
+            categoryDiv.setAttribute('data-view', 'tiles');
+        }
         // Other and an unknown category are views over bookmarks, built last
         // on every render (applyBlockOrder): there is no place of theirs to move.
         const isVirtualBlock = category.isVirtualCategory === true && !isSmartCollection;
@@ -2865,7 +2869,6 @@ class DashboardRenderCore {
         titleElement.setAttribute('role', 'rowheader');
         titleElement.tabIndex = 0;
         titleElement.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
-        const categoryIcon = (category.icon || '').trim();
         titleElement.innerHTML = '';
 
         const labelWrap = document.createElement('span');
@@ -2897,39 +2900,9 @@ class DashboardRenderCore {
 
         const nameSpan = document.createElement('span');
         nameSpan.className = 'category-title-name';
-        nameSpan.textContent = category.name.toLowerCase();
+        window.DashboardTitleIcons.set(nameSpan, category.name, d);
         nameSpan.title = category.name;
 
-        if (this.isUploadedCategoryIcon(categoryIcon)) {
-            const iconImage = document.createElement('img');
-            iconImage.src = `/data/icons/${encodeURIComponent(categoryIcon)}`;
-            iconImage.alt = '';
-            iconImage.loading = 'lazy';
-            iconImage.decoding = 'async';
-            iconImage.className = 'bookmark-icon';
-            labelWrap.appendChild(iconImage);
-            window.ThemeIconStyling.applyThemeIconStylingToElement(
-                labelWrap,
-                window.ThemeIconStyling.getThemeIconStylingEntry(d.settings)
-            );
-            labelWrap.appendChild(document.createTextNode(' '));
-        } else {
-            // In a span rather than a bare text node: the icon editor previews
-            // what you type by writing into this element, and a text node
-            // between two others is not something anything can address.
-            const textIcon = document.createElement('span');
-            // icon-themed-glyph is what lets favicon harmonisation reach a glyph:
-            // the variant rules in theme.css are written for <img>, and an emoji
-            // in a category header is the same kind of thing to the eye — leaving
-            // it at full colour beside harmonised favicons is what looked wrong.
-            textIcon.className = 'category-title-icon icon-themed-glyph';
-            textIcon.textContent = `${categoryIcon || '▣'} `;
-            window.ThemeIconStyling.applyThemeIconStylingToElement(
-                textIcon,
-                window.ThemeIconStyling.getThemeIconStylingEntry(d.settings)
-            );
-            labelWrap.appendChild(textIcon);
-        }
         labelWrap.appendChild(nameSpan);
 
         if (!isSmartCollection && window.DashboardCategorySort?.createSortControls) {
@@ -3129,11 +3102,6 @@ class DashboardRenderCore {
         if (isSmartCollection) d.categoryMenu?.bindCollection?.(categoryDiv, category);
         else d.categoryMenu?.bindCategory(categoryDiv, category);
         return categoryDiv;
-    }
-
-
-    isUploadedCategoryIcon(iconValue) {
-        return typeof iconValue === 'string' && /\.[a-z0-9]+$/i.test(iconValue);
     }
 
 }

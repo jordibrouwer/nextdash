@@ -3814,7 +3814,6 @@ class DashboardConfig {
         categoryHeaderStyle: ['category', 'header', 'heading', 'title', 'underline', 'boxed', 'label', 'group', 'clean'],
         categoryHeaderSize: ['category', 'header', 'heading', 'title', 'size', 'small', 'large'],
         actionBarSize: ['action', 'bar', 'button', 'size', 'small', 'large', 'bigger'],
-        showCategoryIcon: ['category', 'header', 'icon', 'emoji'],
         showCategoryCount: ['category', 'header', 'count', 'number', 'bookmarks'],
         categoryHeaderAccentLine: ['category', 'header', 'underline', 'accent', 'line', 'colour', 'color'],
         showIcons: ['favicon', 'icon', 'image'],
@@ -13266,8 +13265,6 @@ class DashboardConfig {
             'Category header style', 'How the name above each category is drawn: clean, underlined, in a box, as a small label, or as the head of a card round the whole group. Follow the theme leaves it as the theme and the layout draw it.'], def: 'theme' },
         categoryHeaderSize: { info: ['categoryHeaderSizeInfoTitle', 'categoryHeaderSizeInfoMessage',
             'Header size', 'How large the category names are drawn, from a small label to a heading.'], def: 'm' },
-        showCategoryIcon: { info: ['showCategoryIconInfoTitle', 'showCategoryIconInfoMessage',
-            'Category icon', 'Shows the icon a category was given in front of its name. The icon is chosen per category, from its menu.'], def: true },
         showCategoryCount: { info: ['showCategoryCountInfoTitle', 'showCategoryCountInfoMessage',
             'Bookmark count', 'Shows how many bookmarks a category holds beside its name.'], def: false },
         categoryHeaderAccentLine: { info: ['categoryHeaderAccentLineInfoTitle', 'categoryHeaderAccentLineInfoMessage',
@@ -14382,7 +14379,7 @@ class DashboardConfig {
                 tab: 'display',
                 order: -10,
                 title: t('config.categoryHeaderGroup', 'Category header'),
-                note: t('config.categoryHeaderNote', 'What a category is called above its bookmarks. Follow the theme leaves it as the theme and layout draw it. The icon is chosen per category, from its menu.'),
+                note: t('config.categoryHeaderNote', 'What a category is called above its bookmarks. Follow the theme leaves it as the theme and layout draw it. An icon goes in the name: an emoji, or one from the category menu (Insert icon…).'),
                 controls: [
                     { field: 'categoryHeaderStyle', type: 'select', special: 'chrome',
                         label: t('config.categoryHeaderStyleLabel', 'Style'),
@@ -14402,7 +14399,6 @@ class DashboardConfig {
                             opt('l', t('config.categoryHeaderLarge', 'Large')),
                         ] },
                     { type: 'chips', label: t('config.categoryHeaderExtrasLabel', 'Shown in the header'), items: [
-                        chip('showCategoryIcon', 'chrome', 'config.chipCategoryIcon', 'Icon', 'config.showCategoryIconLabel', 'Show the category icon'),
                         chip('showCategoryCount', 'chrome', 'config.chipCategoryCount', 'Count', 'config.showCategoryCountLabel', 'Show how many bookmarks it holds'),
                         chip('categoryHeaderAccentLine', 'chrome', 'config.chipCategoryUnderline', 'Underline', 'config.categoryHeaderAccentLabel', 'Underline in the accent colour'),
                     ] },

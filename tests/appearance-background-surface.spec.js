@@ -195,21 +195,4 @@ test.describe('the Background and Surface tabs', () => {
         await expect.poll(() => page.getAttribute('body', 'data-cat-count')).toBe('off');
     });
 
-    test('hiding the icon takes it off every header', async ({ page }) => {
-        await openTab(page, 'display');
-        await openConfigPanel(page, page.locator('[data-behavior-field="showCategoryIcon"]'));
-        await setChip(page.locator('[data-behavior-field="showCategoryIcon"]'), false);
-        await expect.poll(() => page.getAttribute('body', 'data-cat-icon')).toBe('off');
-        await expect.poll(async () => (await stored(page)).showCategoryIcon, { timeout: 5_000 }).toBe(false);
-        await reloadDashboard(page);
-        await showGrid(page);
-        const shown = await page.evaluate(() => [...document.querySelectorAll('.dashboard-grid .category-title-icon')]
-            .map((el) => getComputedStyle(el).display));
-        expect(shown.length, 'no category icons on the page to check').toBeGreaterThan(0);
-        expect(shown.every((display) => display === 'none')).toBe(true);
-
-        await openTab(page, 'display');
-        await setChip(page.locator('[data-behavior-field="showCategoryIcon"]'), true);
-        await expect.poll(() => page.getAttribute('body', 'data-cat-icon')).toBe('on');
-    });
 });

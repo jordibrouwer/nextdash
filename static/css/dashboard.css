@@ -2521,11 +2521,15 @@ body[data-category-spacing="airy"] {
     align-items: baseline;
 }
 
-/* A flex item loses the space at the end of its text; the one after the icon
-   is what keeps the name off it. */
-.category-title-label .category-title-icon,
-.category-title-label .bookmark-icon {
-    white-space: pre;
+/* An icon in a title (":file.svg: name"): the height of the text, kept off the
+   words after it. */
+.category-title-name .category-title-inline-icon {
+    height: 1.15em;
+    width: auto;
+    max-width: 1.8em;
+    object-fit: contain;
+    vertical-align: -0.2em;
+    margin-right: 0.35em;
 }
 
 /* The "//" prefix is now a real element that doubles as the drag-reorder handle. */
@@ -2608,19 +2612,6 @@ body[data-category-spacing="airy"] {
         margin-left: -1.6em;
         padding: 0 0.2em 0 0;
         overflow: visible;
-    }
-
-    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category:not(.dashboard-widget) .category-title-label .category-title-icon,
-    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category:not(.dashboard-widget) .category-title-label .bookmark-icon {
-        /* At least the lead column; an icon that is wider, such as a short
-           text mark, keeps its own width rather than running into the name. */
-        flex: 0 0 auto;
-        min-width: var(--cat-title-lead);
-        /* The row's own start padding, so the icon lands on the bookmarks'
-           icons rather than on the edge of the column. It is a margin here and
-           not padding on the label, so the // hangs at the same place whether
-           the block is a category or a widget. */
-        margin-left: var(--bookmark-row-start-pad, 6px);
     }
 
     body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category:not(.dashboard-widget) .category-title-label .category-reorder-handle + .category-title-name {

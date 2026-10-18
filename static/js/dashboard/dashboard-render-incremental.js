@@ -165,9 +165,8 @@ class DashboardRenderIncremental {
         if (!nameSpan || !category.name) {
             return;
         }
-        const nextName = String(category.name).toLowerCase();
-        if (nameSpan.textContent !== nextName) {
-            nameSpan.textContent = nextName;
+        if (nameSpan.dataset.rawName !== String(category.name)) {
+            window.DashboardTitleIcons.set(nameSpan, category.name, d);
             nameSpan.title = category.name;
         }
         window.DashboardCategorySort?.ensureCategorySortControls?.(d, categoryEl, category, d.renderCore);

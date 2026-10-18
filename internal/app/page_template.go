@@ -349,9 +349,9 @@ func buildPageTemplate(page PageWithBookmarks, options TemplateExportOptions, ic
 		tpl.Categories = append(tpl.Categories, Category{
 			ID:       category.ID,
 			Name:     category.Name,
-			Icon:     category.Icon,
 			SortMode: category.SortMode,
 			Spread:   category.Spread,
+			View:     normalizeCategoryView(category.View),
 		})
 	}
 
@@ -629,10 +629,13 @@ func (h *Handlers) planPageTemplateReplacing(tpl PageTemplate, rawValues map[str
 		if strings.ContainsAny(icon, "/\\") || len(icon) > 64 {
 			icon = ""
 		}
-		plan.categories = append(plan.categories, Category{
+		// An icon in an older template goes to the front of the name, as it does
+		// everywhere else; the field is not kept.
+		plan.categories = append(plan.categories, foldCategoryIcon(Category{
 			ID: id, Name: clampEntityName(category.Name), Icon: icon,
 			SortMode: category.SortMode, Spread: category.Spread,
-		})
+			View: normalizeCategoryView(category.View),
+		}))
 	}
 
 	// Variables, with how many links wait on each -- counted before the
