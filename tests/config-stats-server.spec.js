@@ -131,4 +131,10 @@ test.describe('statistics: server', () => {
         await expect(notify).toContainText('Open alerts');
         await expect(notify).toContainText('Push devices');
     });
+
+    test('Collection counts widgets by kind', async ({ page }) => {
+        await openStats(page);
+        await page.locator('[data-stats-tab="collection"]').click();
+        await expect(page.locator('#config-stats-body .config-stats-panel').filter({ hasText: 'Widgets by kind' })).toBeVisible();
+    });
 });

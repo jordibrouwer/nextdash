@@ -1178,6 +1178,8 @@
                 this.renderStatsDomains(domains),
                 this.renderStatsTagBands(all, domains),
                 this.renderStatsPerPage(s),
+                this.renderStatsWidgets(),
+                this.renderStatsWidgetPages(),
                 this.renderStatsLibrary(),
                 this.renderStatsCleanup(s),
             ]);
@@ -1379,12 +1381,6 @@
                 if (value === null || value === undefined) return;
                 rows.push([label, format ? this.statsNumber(value) : value, '', detail || '']);
             };
-            const types = lib.widgetTypes || [];
-            add(this.t('config.statsLibraryWidgets', 'Widgets on your pages'),
-                lib.widgets,
-                types.length
-                    ? types.slice(0, 4).map(([type, n]) => `${this.widgetTypeName(type)} ${this.statsNumber(n)}`).join(' · ')
-                    : '');
             add(this.t('config.statsLibraryFeeds', 'Feeds'), lib.feeds,
                 lib.feedsEnabled === false ? this.t('config.statsLibraryOff', 'switched off') : '');
             add(this.t('config.statsLibrarySources', 'Import sources'), lib.sources);
@@ -2620,7 +2616,7 @@
         },
 
         /* ------------------------------------------------------------------
-         * Health → Notifications
+         * Health → Notifications, Collection → Widgets
          * ------------------------------------------------------------------ */
 
         renderStatsNotify() {
@@ -2678,6 +2674,44 @@
             });
         },
 
+        renderStatsWidgets() {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const lib = this._statsLibrary;
+            const title = this.t('config.statsWidgetsTitle', 'Widgets by kind');
+            if (lib === undefined) {
+                return this.statsPanel({ title, body: `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>` });
+            }
+            const types = lib?.widgetTypes || [];
+            if (!lib || lib.widgets === null) {
+                return this.statsPanel({ title, body: `<p class="config-panel-empty">${esc(this.t('config.statsLibraryUnavailable', 'These figures could not be read.'))}</p>` });
+            }
+            if (!types.length) {
+                return this.statsPanel({ title, body: `<p class="config-panel-empty">${esc(this.t('config.statsWidgetsNone', 'No widgets on any page yet.'))}</p>` });
+            }
+            const pages = lib.widgetPages || [];
+            const withWidgets = pages.filter(([, n]) => n > 0).length;
+            return this.statsPanel({
+                title,
+                body: this.statsBars(types.slice(0, DashboardConfig.STATS_LIST_LIMIT).map(([type, n]) => [this.widgetTypeName(type), n]),
+                    { axis: [this.t('config.statsAxisKind', 'Kind'), this.t('config.statsAxisWidgets', 'Widgets')] })
+                    + this.statsListTruncationNote(Math.min(types.length, DashboardConfig.STATS_LIST_LIMIT), types.length)
+                    + `<p class="config-panel-note">${esc(this.t('config.statsWidgetsSummary', '{n} widgets on {p} of {m} pages.')
+                        .replace('{n}', this.statsNumber(lib.widgets))
+                        .replace('{p}', this.statsNumber(withWidgets))
+                        .replace('{m}', this.statsNumber(pages.length)))}</p>`,
+            });
+        },
+
+        renderStatsWidgetPages() {
+            const lib = this._statsLibrary;
+            const pages = (lib?.widgetPages || []).filter(([, n]) => n > 0);
+            if (pages.length < 2) return '';
+            return this.statsPanel({
+                title: this.t('config.statsWidgetPagesTitle', 'Widgets per page'),
+                body: this.statsBars([...pages].sort((a, b) => b[1] - a[1]),
+                    { axis: [this.t('config.statsAxisPage', 'Page'), this.t('config.statsAxisWidgets', 'Widgets')] }),
+            });
+        },
     });
 
     global.DashboardConfigStatsReady = true;

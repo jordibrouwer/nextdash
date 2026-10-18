@@ -27381,10 +27381,13 @@ class DashboardConfig {
         ]);
 
         const widgetTypes = new Map();
+        const widgetPages = [];
         let widgetCount = null;
         if (blocks.some(Boolean)) {
             widgetCount = 0;
-            blocks.forEach((b) => {
+            blocks.forEach((b, i) => {
+                const n = (b?.widgets || []).length;
+                if (b) widgetPages.push([pages[i]?.name || `#${pages[i]?.id}`, n]);
                 (b?.widgets || []).forEach((w) => {
                     widgetCount += 1;
                     const type = String(w?.type || '').trim() || 'unknown';
@@ -27397,6 +27400,7 @@ class DashboardConfig {
         this._statsLibrary = {
             widgets: widgetCount,
             widgetTypes: [...widgetTypes.entries()].sort((a, b) => b[1] - a[1]),
+            widgetPages,
             feedsEnabled: feeds ? feeds.enabled === true : null,
             feeds: feedMap ? Object.keys(feedMap).length : null,
             sources: Array.isArray(sources) ? sources.length : null,
@@ -27407,9 +27411,10 @@ class DashboardConfig {
                 ? backups.backups[0]?.createdAt || null
                 : null,
         };
+        // The widget panels are drawn from it too, so the body is repainted
+        // rather than only the library list.
         if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'collection') {
-            const host = document.getElementById('config-stats-library');
-            if (host) host.innerHTML = this.renderStatsLibraryBody();
+            this.repaintStatsBody();
         }
     }
 
