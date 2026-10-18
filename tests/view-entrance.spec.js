@@ -189,6 +189,42 @@ function openTransition(page, selector) {
     }, selector);
 }
 
+/**
+ * The pace a modal's panel opens at: the duration its transform transition (or
+ * its modalRise keyframe) is set to, in ms, read from the style it opens with.
+ *
+ * This used to look for the running transition in document.getAnimations(),
+ * 160ms after the key. The browser reports a transition a frame after it
+ * starts, and on a loaded CI runner that frame came after the 160ms were over:
+ * the animation was already gone, the poll read null with the modal open in
+ * front of the test, and it did so on commits that changed nothing but an XML
+ * file. The duration is a fact of the style, so it is read from there and there
+ * is no moment to miss. That the panel does move is still checked, with the
+ * switch that turns it off, below.
+ */
+function openPace(page, selector) {
+    return page.evaluate((sel) => {
+        const el = document.querySelector(sel);
+        if (!el) return null;
+        const cs = getComputedStyle(el);
+        const list = (v) => v.split(',').map((x) => x.trim());
+        const ms = (v) => (v.endsWith('ms') ? parseFloat(v) : parseFloat(v) * 1000);
+        const props = list(cs.transitionProperty);
+        const at = props.indexOf('transform');
+        if (at >= 0) {
+            const durations = list(cs.transitionDuration);
+            return Math.round(ms(durations[at % durations.length]));
+        }
+        const names = list(cs.animationName);
+        const rise = names.indexOf('modalRise');
+        if (rise >= 0) {
+            const durations = list(cs.animationDuration);
+            return Math.round(ms(durations[rise % durations.length]));
+        }
+        return null;
+    }, selector);
+}
+
 test.describe('modals', () => {
     const MODALS = [
         { name: 'the cheat sheet', key: '!', panel: '.modal-overlay.show .modal' },
@@ -200,9 +236,9 @@ test.describe('modals', () => {
         test(`${modal.name} rises in like the tag cloud, at the default pace`, async ({ page }) => {
             await openDashboard(page);
             await page.locator('body').press(modal.key);
-            await expect.poll(() => openTransition(page, modal.panel), { timeout: 3000, intervals: [10] }).not.toBeNull();
+            await expect(page.locator(modal.panel).first()).toBeVisible({ timeout: 10_000 });
             // The cloud's 320ms at the Normal step.
-            expect(await openTransition(page, modal.panel)).toBe(160);
+            expect(await openPace(page, modal.panel)).toBe(160);
         });
     }
 
