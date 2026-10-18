@@ -18016,19 +18016,16 @@ class DashboardConfig {
             const label = this.subTabLabel(section, tab);
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}${isNew ? ' config-subtab--animated' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-${section}-body" ${attr}="${esc(tab)}">${esc(label)}${stars}</button>`;
         };
-        if (isAppearance) {
+        const grouped = DashboardConfig.SUB_TAB_GROUPS[section];
+        if (grouped) {
             // One tablist, grouped by presentation wrappers: the labels are
             // aria-hidden because the tab names carry the meaning, and the
             // arrow keys walk the buttons as one list across the groups.
-            const labels = {
-                look: this.t('config.appearanceGroupLook', 'Look'),
-                bookmarks: this.t('config.appearanceGroupBookmarks', 'Bookmarks'),
-                chrome: this.t('config.appearanceGroupChrome', 'Header & bars'),
-            };
-            const groups = DashboardConfig.APPEARANCE_TAB_GROUPS.map((group) => {
+            const groups = grouped.map((group) => {
                 const inGroup = group.tabs.filter((tab) => tabs.includes(tab));
                 if (!inGroup.length) return '';
-                return `<div class="config-subtab-group" role="presentation" data-appearance-group="${esc(group.key)}"><span class="config-subtab-group-label" aria-hidden="true">${esc(labels[group.key])}</span>${inGroup.map(button).join('')}</div>`;
+                const label = this.t(group.label[0], group.label[1]);
+                return `<div class="config-subtab-group" role="presentation" data-${section}-group="${esc(group.key)}"><span class="config-subtab-group-label" aria-hidden="true">${esc(label)}</span>${inGroup.map(button).join('')}</div>`;
             }).join('');
             return `<div class="config-subtabs config-subtabs--grouped" role="tablist">${groups}</div>`;
         }
@@ -18510,9 +18507,9 @@ class DashboardConfig {
      * missing here would simply not be drawn.
      */
     static APPEARANCE_TAB_GROUPS = [
-        { key: 'look', tabs: ['general', 'background', 'surface'] },
-        { key: 'bookmarks', tabs: ['layout', 'display', 'previews'] },
-        { key: 'chrome', tabs: ['header', 'buttonbar', 'datetime'] },
+        { key: 'look', label: ['config.appearanceGroupLook', 'Look'], tabs: ['general', 'background', 'surface'] },
+        { key: 'bookmarks', label: ['config.appearanceGroupBookmarks', 'Bookmarks'], tabs: ['layout', 'display', 'previews'] },
+        { key: 'chrome', label: ['config.appearanceGroupChrome', 'Header & bars'], tabs: ['header', 'buttonbar', 'datetime'] },
     ];
 
     /** Tabs a section keeps addressable but does not draw on its strip. */
@@ -28599,7 +28596,24 @@ class DashboardConfig {
      * rendered nowhere in this config, while the Start tab showed eleven of
      * them under "Everyday keys" and the prose promised the rest were here.
      */
-    static HELP_TABS = ['start', 'tips', 'config', 'appearance', 'organizing', 'bookmarks', 'widgets', 'containers', 'search', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs'];
+    static HELP_TABS = ['start', 'tips', 'config', 'search', 'appearance', 'organizing', 'bookmarks', 'widgets', 'containers', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs'];
+
+    /*
+     * Fifteen tabs on one scrolling line hid most of them past the edge, so
+     * Help's strip reads in labelled groups the way Appearance's does, in the
+     * order of the tabs above.
+     */
+    static HELP_TAB_GROUPS = [
+        { key: 'basics', label: ['config.helpGroupBasics', 'Basics'], tabs: ['start', 'tips', 'config', 'search'] },
+        { key: 'dashboard', label: ['config.helpGroupDashboard', 'Dashboard'], tabs: ['appearance', 'organizing', 'bookmarks', 'widgets'] },
+        { key: 'status', label: ['config.helpGroupStatus', 'Status & checks'], tabs: ['containers', 'health', 'monitoring'] },
+        { key: 'data', label: ['config.helpGroupData', 'Data'], tabs: ['inbox', 'stats', 'data', 'logs'] },
+    ];
+
+    /** Sections whose strip is drawn in labelled groups. */
+    static get SUB_TAB_GROUPS() {
+        return { appearance: DashboardConfig.APPEARANCE_TAB_GROUPS, help: DashboardConfig.HELP_TAB_GROUPS };
+    }
 
     helpTabLabel(tab) {
         const map = {
@@ -28663,10 +28677,6 @@ class DashboardConfig {
     renderHelp() {
         this.ensureHelpProse();
         const esc = (v) => this.dash.escapeHtml(v);
-        const tabs = DashboardConfig.HELP_TABS.map((tab) => {
-            const active = tab === this.helpTab;
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-help-body" data-help-tab="${esc(tab)}">${esc(this.helpTabLabel(tab))}</button>`;
-        }).join('');
         return `
             <!--
                 The opening line is a direct child of the body so the shell
@@ -28676,7 +28686,7 @@ class DashboardConfig {
                 text stood above the tab strip instead of under it.
             -->
             <p class="config-view-intro">${esc(this.t('config.helpIntro', 'How nextDash works, what each part of config does, and where to go next.'))}</p>
-            <div class="config-subtabs" role="tablist">${tabs}</div>
+            ${this.renderSectionTabStrip('help')}
             <!--
                 The sheet and the search share the tab note's row rather than
                 standing above the strip: a block above it put Help's tabs

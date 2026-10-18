@@ -105,3 +105,20 @@ test.describe('the version panel reads its own version', () => {
             .toHaveText(`nextDash ${tag}`, { timeout: 10_000 });
     });
 });
+
+test.describe('the Help strip reads in groups', () => {
+    test('labelled groups like Appearance, and every tab stays on screen', async ({ page }) => {
+        await page.setViewportSize({ width: 800, height: 900 });
+        await openHelp(page, 'start');
+        const strip = page.locator('.config-subtabs--grouped');
+        await expect(strip).toHaveAttribute('role', 'tablist');
+        await expect(strip.locator('.config-subtab-group-label')).toHaveText(['Basics', 'Dashboard', 'Status & checks', 'Data']);
+        await expect(page.locator('[data-help-group="basics"] [data-help-tab]'))
+            .toHaveText(['Getting started', 'Tips', 'Configuring', 'Search & keyboard']);
+        expect(await strip.evaluate((el) => el.scrollWidth > el.clientWidth + 1)).toBe(false);
+        // The arrow keys still walk one list across the group boundary.
+        await page.locator('[data-help-tab="search"]').focus();
+        await page.keyboard.press('ArrowRight');
+        await expect(page.locator('[data-help-tab="appearance"]')).toHaveAttribute('aria-selected', 'true');
+    });
+});
