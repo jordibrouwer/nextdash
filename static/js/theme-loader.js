@@ -235,12 +235,12 @@
      */
     function getFontSize() {
         const deviceSpecific = readStorage('deviceSpecificSettings') === 'true';
-        let fontSize = 'm'; // default
+        let fontSize = 'lg'; // default
 
         if (deviceSpecific) {
             const parsed = readDeviceLocalSettings();
             if (parsed) {
-                fontSize = parsed.fontSize || 'm';
+                fontSize = parsed.fontSize || 'lg';
             }
         } else {
             // Use server-side fontSize from html element data attribute
@@ -582,7 +582,7 @@
         });
     }
 
-    function applyTheme(theme, fontSize = 'm') {
+    function applyTheme(theme, fontSize = 'lg') {
         // Remove existing FOUC prevention style if present
         const existingStyle = document.head.querySelector('style[data-fouc-prevention]');
         if (existingStyle) {

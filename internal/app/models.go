@@ -455,6 +455,7 @@ type Settings struct {
 	SurfaceDefaultsMigrated         bool   `json:"surfaceDefaultsMigrated,omitempty"`         // one-time: backdrop on, glow off, depth — the three Surfaces answers agreed on once
 	DepthDefaultFlatMigrated        bool   `json:"depthDefaultFlatMigrated,omitempty"`        // one-time: the depth default moved to flat
 	GridDefaultsMigrated            bool   `json:"gridDefaultsMigrated,omitempty"`            // one-time: layout masonry and density auto, for an install still on compact and default
+	FontSizeLgMigrated              bool   `json:"fontSizeLgMigrated,omitempty"`              // one-time: the type size moved from m to lg, for an install still on the old default
 	FontDefaultInterMigrated        bool   `json:"fontDefaultInterMigrated,omitempty"`        // one-time: the UI font moved from Source Code Pro to Inter
 	SurfaceFollowMigrated           bool   `json:"surfaceFollowMigrated,omitempty"`           // one-time: depth, glow and effects moved to follow-the-theme
 	LauncherDefaultsMigrated        bool   `json:"launcherDefaultsMigrated,omitempty"`        // one-time: tags, recents, the cheat sheet and pages left the action bar for the search panel
@@ -1688,7 +1689,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			DetectSoftNotFound:        true,
 			TagLookupOnline:           true,
 			ColumnsPerRow:             3,
-			FontSize:                  "m",
+			FontSize:                  "lg",
 			ShowTitle:                 true,
 			ShowDate:                  true,
 			ShowTime:                  true,
@@ -1779,6 +1780,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			SurfaceDefaultsMigrated:         true,
 			DepthDefaultFlatMigrated:        true,
 			GridDefaultsMigrated:            true,
+			FontSizeLgMigrated:              true,
 			FontDefaultInterMigrated:        true,
 			LauncherDefaultsMigrated:        true,
 			ActionButtonsAllOnMigrated:      true,
@@ -4279,7 +4281,7 @@ func (fs *FileStore) GetSettings() Settings {
 			DetectSoftNotFound:              true,
 			TagLookupOnline:                 true,
 			ColumnsPerRow:                   3,
-			FontSize:                        "m",
+			FontSize:                        "lg",
 			ShowTitle:                       true,
 			ShowDate:                        true,
 			ShowTime:                        true,
@@ -4403,6 +4405,7 @@ func (fs *FileStore) GetSettings() Settings {
 			SurfaceDefaultsMigrated:         true,
 			DepthDefaultFlatMigrated:        true,
 			GridDefaultsMigrated:            true,
+			FontSizeLgMigrated:              true,
 			FontDefaultInterMigrated:        true,
 			LauncherDefaultsMigrated:        true,
 			ActionButtonsAllOnMigrated:      true,
@@ -5212,6 +5215,17 @@ func (fs *FileStore) GetSettings() Settings {
 			}
 			settings.FontDefaultInterMigrated = true
 		}
+		/*
+		 * Large type, once. An install still on the old default size, m, moves
+		 * to lg; one that chose another size keeps it, and so does anyone who
+		 * goes back to m after this pass has run.
+		 */
+		if !settings.FontSizeLgMigrated {
+			if settings.FontSize == "m" {
+				settings.FontSize = "lg"
+			}
+			settings.FontSizeLgMigrated = true
+		}
 		settings.EnableCustomFont = settings.FontPreset == "custom" && settings.CustomFontPath != ""
 		if _, ok := rawSettings["backgroundType"]; !ok {
 			settings.BackgroundType = "none"
@@ -5388,6 +5402,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.SurfaceDefaultsMigrated = settings.SurfaceDefaultsMigrated || stored.SurfaceDefaultsMigrated
 			settings.DepthDefaultFlatMigrated = settings.DepthDefaultFlatMigrated || stored.DepthDefaultFlatMigrated
 			settings.GridDefaultsMigrated = settings.GridDefaultsMigrated || stored.GridDefaultsMigrated
+			settings.FontSizeLgMigrated = settings.FontSizeLgMigrated || stored.FontSizeLgMigrated
 			settings.FontDefaultInterMigrated = settings.FontDefaultInterMigrated || stored.FontDefaultInterMigrated
 			settings.SurfaceFollowMigrated = settings.SurfaceFollowMigrated || stored.SurfaceFollowMigrated
 			settings.LauncherDefaultsMigrated = settings.LauncherDefaultsMigrated || stored.LauncherDefaultsMigrated

@@ -281,7 +281,7 @@
 
     function applyDisplayTheme(settings) {
         const displayTheme = resolveTheme(settings);
-        const fontSize = settings?.fontSize || 'm';
+        const fontSize = settings?.fontSize || 'lg';
         if (global.ThemeLoader?.applyTheme) {
             global.ThemeLoader.applyTheme(displayTheme, fontSize);
         } else {
@@ -432,7 +432,7 @@
                 base,
                 settings.autoDarkMode === true
             );
-            const fontSize = settings.fontSize || 'm';
+            const fontSize = settings.fontSize || 'lg';
             global.ThemeLoader.applyTheme(displayTheme, fontSize);
             autoDarkOnApply?.(displayTheme, settings);
             return;

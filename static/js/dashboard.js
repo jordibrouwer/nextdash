@@ -83,7 +83,7 @@ class Dashboard {
             openInNewTab: true,
             showGridKeyLegend: true,
             columnsPerRow: 3,
-            fontSize: 'm',
+            fontSize: 'lg',
             showTitle: true,
             showDate: true,
             showTime: true,

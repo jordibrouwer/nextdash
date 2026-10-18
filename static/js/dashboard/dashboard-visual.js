@@ -156,7 +156,7 @@ class DashboardVisual {
         if (window.ThemeLoader?.applyTheme) {
             window.ThemeLoader.applyTheme(
                 displayTheme,
-                d.settings.fontSize || 'm'
+                d.settings.fontSize || 'lg'
             );
         }
         this.applyBackground();
@@ -213,7 +213,7 @@ class DashboardVisual {
         document.body.classList.remove('font-size-small', 'font-size-medium', 'font-size-large'); // Remove old classes
         
         // Migrate old values to new values
-        let fontSize = d.settings.fontSize || 'm';
+        let fontSize = d.settings.fontSize || 'lg';
         if (fontSize === 'small') fontSize = 'sm';
         if (fontSize === 'medium') fontSize = 'm';
         if (fontSize === 'large') fontSize = 'l';
