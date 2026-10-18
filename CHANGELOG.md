@@ -12,8 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
-- [v1.20.1 — 18 October 2026](#v1201--18-october-2026)
-- [v1.19.11 — 18 October 2026](#v11911--18-october-2026)
+- [v1.20.0 — 18 October 2026](#v1200--18-october-2026)
 - [v1.19.10 — 18 October 2026](#v11910--18-october-2026)
 - [v1.19.9 — 17 October 2026](#v1199--17-october-2026)
 - [v1.19.8 — 15 October 2026](#v1198--15-october-2026)
@@ -116,9 +115,46 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ---
 
-## v1.20.1 — 18 October 2026
+## v1.20.0 — 18 October 2026
 
-The keyboard shortcuts sheet is easier to scan and search.
+A new default look, and a lot of ways to change it. A fresh install starts on Confetti with masonry columns and Inter; twenty-four colour-burst themes arrive with three new backdrops; categories and widgets sit on glass, a card or nothing; a category can show tiles; Config and the list views are panes like the dashboard; Statistics gains a Server tab. The keyboard shortcuts sheet is easier to scan and search, and widget titles go back to a plain title over their card.
+
+### New defaults
+
+- **new — a fresh install starts on Confetti** (`look-confetti-dark`, its light half for auto dark mode), with **masonry** columns, a density that follows the screen (**auto**) and **Inter** for text; code, addresses and the // stay on the mono face. Category spacing follows its setting. An install that already has a theme keeps it.
+- **new — one-time moves for existing installs.** An install still on the old defaults (compact rows and the default layout; Source Code Pro; type size m) moves once to masonry and auto density, to Inter, and to type size **lg**. One that chose something else keeps it, and so does anyone who goes back after the pass has run (`GridDefaultsMigrated`, `FontSizeLgMigrated`).
+- **new — a one-time card to try Confetti.** Someone with a dashboard already is asked once whether to switch. *Try Confetti* applies the dark half whatever theme they are on, and the card turns into *Go back* and *Keep Confetti*, so trying it costs one click to undo; *Not interested* is a final answer. Nothing is offered on Confetti itself or with a random theme rotating (`confetti-theme-notice.js`, built on `NoticeCard`).
+- **new — the start card has two more buttons:** *Show me the manual first* opens nextdash.cc/docs in a new window and *Open the theme studio* opens the theme browser. Neither answers the card, which stays until a choice is made.
+- **fix — the mobile info banners are gone** from the dashboard and from config (`mobile-experience.js`, its CSS and five locale strings in each language).
+
+### Themes and looks
+
+- **new — twenty-four colour-burst theme families**, a collection named *Looks* (`look-ember` to `look-holo`), added to the *New* set. The theme browser gains a **New** segment next to All, Favourites, Light, Dark and Yours.
+- **new — three backdrops: burst, splash and leak.** A burst fans the theme's colours round one point, a splash is four large soft blots, a leak is light coming in from an edge. They are loud, so each is drawn over a **scrim floor** of theme tint (0.24, 0.22 and 0.2) that the reader's own *Theme tint* can raise but never go below. The hash that picks a backdrop for a theme still covers only the original 26, so no existing theme moves; the new three are reached by naming them.
+- **new — categories and widgets sit on glass, a card or open.** *Appearance → Surfaces → Category surface* (and the theme studio's Surface tab) chooses what a category and a widget stand on: a see-through pane, a solid card, or nothing at all. *Follow the theme* lets each theme bring its own, as with depth and glow; flat depth defaults to open. It has its own ↺ and ℹ like depth and glow.
+- **new — velvet, paper and aurora themes ship flat of glow, at the lowest opacity, on glass panes.**
+- **fix — a row's highlight strength shows when it is chosen.** Changing the row highlight strength lights the first visible bookmark row for a moment in the strength just picked, so the choice is seen without moving the pointer off the panel.
+
+### Categories and widgets
+
+- **new — tiles per category.** A category's menu has *Show as tiles* / *Show as rows*. Tiles draw the bookmarks as a grid: a large icon, the name under it, the status as a dot on the corner and the response time small below the name. The DOM is the row's, so drag, the context menu, the keyboard and inline editing work as in a row. Terminal and launcher keep their own designs (`category.view`, `dashboard-tiles.css`).
+- **new — icons live in titles.** A category used to have an icon field; the icon is part of the title now. An emoji typed in the name is text; an app icon is written `:file.svg:` (a file in `data/icons/`), drawn as the image it names, and the category menu has **Insert icon…**. Categories and widgets are titled the same way, and only the words are lower-cased, so a file name keeps its case (`dashboard-title-icons.js`).
+- **new — Settings from a widget opens that widget's settings.** Its row opens and every other row is closed, the search is cleared and the list moves to the widget's page, so it is clear which widget the fields belong to.
+- **fix — a category title starts where a widget's does.**
+
+### Config
+
+- **new — Config and the list views are panes.** Config drew flat rectangles and left its tables bare, so it read as another application. Its panels, overview cards and tables now take the pane the dashboard draws, the same glass, card or open (open keeps a light frame); selects and inputs stay fields. The tag view, inbox, containers view and bookmarks view are one pane each, and the header of a list view is the top of its pane at rest, turning solid when rows scroll behind it. Config has two arrangements: **loose panes** (the default) and one pane round everything (`data-config-panes="one"`). The opening text of a tab is a pane too.
+- **new — Help tabs in labelled groups, one row.** The fifteen tabs sat on one scrolling line, hiding most of them. The row keeps *Basics*; *Dashboard*, *Status & checks* and *Data* are a menu under **More topics**.
+- **fix — room under field notes.** The gap between a control and the sentence under it is one token, `--config-note-gap` (it had been a −4px margin against a 4px row gap, which left nothing).
+- **fix — *Share this page* and *Import a page* are themed buttons** in the page-template modal.
+
+### Statistics
+
+- **new — a Server tab.** Six figures and panels for the machine behind the dashboard: containers running, unhealthy and waiting for an update, crashes over thirty days, container trouble and updates per day, the most restless containers, memory and CPU now with the total, Docker disk use by images, volumes, build cache and stopped containers (and what could be freed), the Unraid array, disks with temperature and read errors, parity, VMs, UPS and notices, automatic backups and container updates. A panel without a connection says what is missing and links to where to set it up. Overview's *Needs attention* gains server lines: unhealthy containers, waiting updates, an Unraid disk with errors, disabled, missing, hot or full, and a late or missing automatic backup.
+- **new — a Notifications panel on Health:** open alerts and how long they have been down, what is held in quiet hours, push devices, webhooks, the alert service and the last weekly digest. How many were sent is not recorded.
+- **new — widgets by kind and per page on Collection.**
+- **new — one route for every container's last thirty days.** `GET /api/docker/history` returns the fleet's events, update history and last disk measurement in one read, instead of asking the drawer's route once per container (`docker_history.go`). Nothing new is stored.
 
 ### Keyboard shortcuts sheet
 
@@ -129,12 +165,6 @@ The keyboard shortcuts sheet is easier to scan and search.
 - **new — `/` jumps to the filter**, next to Ctrl/Cmd+F. The filter stays at the top while the sections scroll.
 - **fix — easier to read.** Section titles are larger and no longer all lowercase, each shows how many shortcuts it holds, and the rows have more room.
 
----
-
-## v1.19.11 — 18 October 2026
-
-Widget titles go back to a plain title over their card, and a page of categories and widgets keeps one column of //. Pointing at a title no longer makes it jump. Held back from the What's new window (`hideFromModal`) like v1.19.10, so v1.19.9 keeps leading it.
-
 ### Dashboard titles
 
 - **fix — widgets are not headers.** v1.19.10 made a widget's title a strip on the card's own surface, joined to it. That is gone: the title is a title over the card again, as a category's is over its list (`.dashboard-widget > .category-title` and its collapsed-state rule are removed).
@@ -144,6 +174,8 @@ Widget titles go back to a plain title over their card, and a page of categories
 
 ### Docs
 
+- **docs — 147 interface strings that only existed as English fallbacks in the code are now in all six locale files** (the Confetti card, the category menu, Statistics → Server, Notifications and Widgets, the Help tab groups, the category surface), translated into nl, de, fr, zh and es; `validate:locale-parity` could not see them because the keys were missing everywhere, not in one file.
+- **docs — Config → Help follows this release:** 188 theme families and the Looks collection, Confetti as the starting theme, 29 backdrops, the category surface, six Statistics tabs with Server, tiles and icons in titles, in six languages; the matching tips carry the new counts.
 - **docs — `static/data/whats-new/v1.19.11.json` and its index entry** (`hideFromModal`); `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v341`, `DASHBOARD_RELEASE` stays on v1.19.9. `tests/dashboard-title-alignment.spec.js` covers the // position for a category and a widget, the missing strip and the hover (it fails on v1.19.10's CSS); `tests/whats-new-hidden-release.spec.js` names v1.19.11 as held back next to v1.19.10. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
