@@ -1,0 +1,25 @@
+{
+  "tag": "v1.19.11",
+  "date": "18 October 2026",
+  "releasedAt": "2026-10-18",
+  "modalLead": "<strong>Widget titles</strong> are plain titles again, the <strong>//</strong> sits in one place on the whole page, and a title <strong>no longer jumps</strong> when you point at it.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Widget titles are plain titles again,</strong> over their card, not a header on top of it."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The // is in one place</strong> for categories and widgets alike, and a widget's name starts where the content of its card does."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A title stays put when you point at it,</strong> and is tinted where it stands."
+        }
+      ]
+    }
+  ]
+}
