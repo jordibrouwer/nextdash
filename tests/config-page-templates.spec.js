@@ -209,3 +209,18 @@ test('an empty page starts from a template in place', async ({ page, browserName
     expect(await page.evaluate(() => window.dashboardInstance.pages.length)).toBe(pagesBefore);
     await expect(page.locator('#empty-state-template')).toHaveCount(0);
 });
+
+test('Share this page and Import a page are themed buttons, not underlined links', async ({ page }) => {
+    await openDashboard(page);
+    await page.getByRole('button', { name: 'Choose a page' }).click();
+    for (const id of ['#page-overview-share', '#page-overview-import']) {
+        const style = await page.locator(id).evaluate((el) => {
+            const cs = getComputedStyle(el);
+            return { border: parseFloat(cs.borderTopWidth), radius: parseFloat(cs.borderTopLeftRadius), underline: cs.textDecorationLine, bg: cs.backgroundColor };
+        });
+        expect(style.border).toBeGreaterThan(0);
+        expect(style.radius).toBeGreaterThan(0);
+        expect(style.underline).toBe('none');
+        expect(style.bg).not.toBe('rgba(0, 0, 0, 0)');
+    }
+});

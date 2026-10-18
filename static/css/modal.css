@@ -1154,19 +1154,27 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     contain: inline-size;
 }
 .page-overview-modal-file {
-    padding: 2px 4px;
-    border: 0;
-    background: none;
+    padding: 6px 14px;
+    border: 1px solid var(--hairline, color-mix(in srgb, var(--text-primary) 16%, transparent));
+    border-radius: var(--radius-3, 4px);
+    background: color-mix(in srgb, var(--text-primary) 5%, transparent);
     color: var(--text-secondary);
     font: inherit;
     font-size: var(--font-size-controls);
     cursor: pointer;
-    text-decoration: underline;
-    text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
-    text-underline-offset: 3px;
+    text-decoration: none;
+    transition: background 0.1s ease, border-color 0.1s ease, color 0.1s ease;
 }
 .page-overview-modal-file:hover,
-.page-overview-modal-file:focus-visible { color: var(--text-primary); }
+.page-overview-modal-file:focus-visible {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    outline: none;
+}
+.page-overview-modal-file:focus-visible {
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) calc(28% * var(--theme-depth, 1)), transparent);
+}
 
 .page-overview-modal-newhint {
     display: block;
