@@ -365,6 +365,14 @@ class DashboardCategoryMenu {
             return;
         }
         if (action === 'settings') {
+            // This widget's own settings, open and focused, the rest closed.
+            // The widgets code loads on demand, so it is asked for first.
+            const config = d.config;
+            if (typeof config?.ensureSection === 'function' && await config.ensureSection('widgets')
+                && typeof config.openWidgetSettings === 'function') {
+                await config.openWidgetSettings(widget.id);
+                return;
+            }
             window.DashboardWidgetUtils?.openConfigTab?.(d, 'widgets');
             return;
         }
