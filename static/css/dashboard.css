@@ -2621,11 +2621,7 @@ body[data-category-spacing="airy"] {
         overflow: visible;
     }
 
-    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category:not(.dashboard-widget) .category-title-label .category-reorder-handle + .category-title-name {
-        margin-left: calc(var(--cat-title-lead) + var(--bookmark-row-start-pad, 6px));
-    }
-
-    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category.dashboard-widget .category-title-label .category-reorder-handle + .category-title-name {
+    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-title-label .category-reorder-handle + .category-title-name {
         margin-left: calc(1px + var(--space-3, 0.85rem));
     }
 }

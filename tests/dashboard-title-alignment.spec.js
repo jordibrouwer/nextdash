@@ -56,6 +56,14 @@ test.describe('titles of categories and widgets', () => {
         expect(widget.glyph).toBe(category.glyph);
     });
 
+    test('on open, the name starts at one place for a category and a widget', async ({ page }) => {
+        await openDashboard(page);
+        await page.evaluate(() => window.ThemeLoader.applyCatSurface('open'));
+        const category = await measure(page, false);
+        const widget = await measure(page, true);
+        expect(category.name).toBe(widget.name);
+    });
+
     test('on a glass pane the // stands inside it, at one place for a category and a widget', async ({ page }) => {
         await openDashboard(page);
         await page.evaluate(() => window.ThemeLoader.applyCatSurface('glass'));
