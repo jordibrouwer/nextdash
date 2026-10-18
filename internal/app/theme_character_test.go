@@ -547,3 +547,23 @@ func TestThemeContractCoversInfoAndTheLadder(t *testing.T) {
 		}
 	})
 }
+
+// Velvet, paper and aurora themes ship flat of glow, at the lowest opacity, on
+// glass panes.
+func TestVelvetPaperAuroraThemesShipGlassWithoutGlow(t *testing.T) {
+	seen := 0
+	for id, tc := range getDefaultBuiltInThemes() {
+		switch tc.Character {
+		case "velvet", "paper", "aurora":
+		default:
+			continue
+		}
+		seen++
+		if tc.Glow != "off" || tc.SurfaceAlpha != 0.2 || tc.Surface != "glass" {
+			t.Errorf("%s: glow=%q alpha=%v surface=%q, want off / 0.2 / glass", id, tc.Glow, tc.SurfaceAlpha, tc.Surface)
+		}
+	}
+	if seen == 0 {
+		t.Fatal("no velvet, paper or aurora theme found")
+	}
+}
