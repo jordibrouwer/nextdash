@@ -183,8 +183,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # --only-changed compares with the commit before the push.
-          fetch-depth: ${{ needs.changes.outputs.mode == 'changed' && 0 || 1 }}
+          # --only-changed compares with the commit before the push. The 0 is a
+          # string: `cond && 0 || 1` is always 1, because 0 is falsy in an
+          # expression, so a test-only push got a one-commit checkout and
+          # --only-changed failed with "bad object" before any spec ran.
+          fetch-depth: ${{ needs.changes.outputs.mode == 'changed' && '0' || '1' }}
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
