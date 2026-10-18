@@ -170,7 +170,7 @@ class DashboardUiHelpers {
             }
             return keys;
         };
-        const filterPlaceholder = d.language?.t('dashboard.cheatsheetFilterPlaceholder') || 'Filter shortcuts…';
+        const filterPlaceholder = d.language?.t('dashboard.cheatsheetFilterPlaceholder') || 'Filter by description, key, or section…';
         const noResultsText = d.language?.t('dashboard.cheatsheetNoResults') || 'No shortcuts match your filter.';
         const esc = (text) => this.escapeHtml(String(text ?? ''));
         // Opening from Health should not mean scrolling past eight sections to
@@ -196,7 +196,7 @@ class DashboardUiHelpers {
             const open = contextIndex >= 0 ? isContext : i === 0;
             return `
                     <details class="cheat-sheet-group${isContext ? ' cheat-sheet-group--context' : ''}" ${open ? 'open' : ''}${isContext ? ' data-context-section="true"' : ''}>
-                        <summary class="cheat-sheet-group-title">${esc(section.title)}</summary>
+                        <summary class="cheat-sheet-group-title"><span class="cheat-sheet-group-label">${esc(section.title)}</span><span class="cheat-sheet-group-count">${section.items.length}</span></summary>
                         <table class="keyboard-cheat-sheet-table">
                             <tbody>
                                 ${section.items.map((shortcut) => `
@@ -261,15 +261,20 @@ class DashboardUiHelpers {
         if (!filterInput) return;
 
         filterInput.addEventListener('input', () => {
-            const q = filterInput.value.toLowerCase().trim();
+            // Spaces drop out on both sides, so "shift + y" finds the Shift+Y chip.
+            const squash = (text) => text.toLowerCase().replace(/\s+/g, '');
+            const q = squash(filterInput.value);
             const groups = document.querySelectorAll('.cheat-sheet-group');
             const noResults = document.getElementById('cheat-sheet-no-results');
             let anyVisible = false;
             groups.forEach((group, i) => {
                 const rows = group.querySelectorAll('tr');
+                // A section name that matches shows the whole section.
+                const titleMatch = Boolean(q)
+                    && squash(group.querySelector('.cheat-sheet-group-label')?.textContent || '').includes(q);
                 let visible = 0;
                 rows.forEach(row => {
-                    const match = !q || row.textContent.toLowerCase().includes(q);
+                    const match = !q || titleMatch || squash(row.textContent).includes(q);
                     row.style.display = match ? '' : 'none';
                     if (match) visible++;
                 });
@@ -345,6 +350,16 @@ class DashboardUiHelpers {
             const isTypingTarget = active instanceof HTMLElement
                 && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
             if (isTypingTarget) {
+                return;
+            }
+
+            if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                const filter = panel.querySelector('#cheat-sheet-filter');
+                if (filter instanceof HTMLElement) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    filter.focus({ preventScroll: true });
+                }
                 return;
             }
 

@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.20.1 — 18 October 2026](#v1201--18-october-2026)
 - [v1.19.11 — 18 October 2026](#v11911--18-october-2026)
 - [v1.19.10 — 18 October 2026](#v11910--18-october-2026)
 - [v1.19.9 — 17 October 2026](#v1199--17-october-2026)
@@ -112,6 +113,19 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.20.1 — 18 October 2026
+
+The keyboard shortcuts sheet is easier to scan and search.
+
+### Keyboard shortcuts sheet
+
+- **new — two columns.** The sections sit side by side (one column below 40rem) instead of in one long column, so the sheet fits a window without scrolling past every section (`.cheat-sheet-groups`).
+- **new — find by key or section.** The filter also matches the key chips and the section name, and ignores spaces, so `shift + y` finds Shift+Y and `tag view` shows the whole Tag view section.
+- **new — `/` jumps to the filter**, next to Ctrl/Cmd+F. The filter stays at the top while the sections scroll.
+- **fix — easier to read.** Section titles are larger and no longer all lowercase, each shows how many shortcuts it holds, and the rows have more room.
 
 ---
 

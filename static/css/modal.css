@@ -1656,12 +1656,24 @@ body.no-animations .modal-button.danger.selected {
 }
 
 .cheat-sheet-groups {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2, 0.5rem);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
 }
 
+@media (max-width: 40rem) {
+    .cheat-sheet-groups {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Stays at the top while the groups scroll, so a search never scrolls away. */
 .cheat-sheet-filter {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--background-primary);
     width: 100%;
     box-sizing: border-box;
     background: transparent;
@@ -1724,11 +1736,9 @@ body.no-animations .modal-button.danger.selected {
     margin-bottom: var(--space-1, 0.25rem);
     padding: var(--space-1, 0.25rem) 0;
     border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
-    font-size: var(--text-xs, 0.7rem);
+    font-size: var(--text-sm, 0.82rem);
     font-weight: var(--font-weight-bold);
-    letter-spacing: 0.06em;
-    text-transform: lowercase;
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     display: flex;
     align-items: center;
     gap: var(--space-1-5, 0.4rem);
@@ -1753,7 +1763,17 @@ body.no-animations .modal-button.danger.selected {
 }
 
 .cheat-sheet-group-title:hover {
-    color: var(--text-secondary);
+    color: var(--text-primary);
+}
+
+.cheat-sheet-group-count {
+    margin-left: auto;
+    padding: 0 0.45rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    color: var(--text-tertiary);
+    font-size: var(--text-xs, 0.7rem);
+    font-weight: var(--font-weight-normal);
 }
 
 /* Keyboard clarity: always show where focus is inside cheat sheet modal. */
@@ -1777,9 +1797,9 @@ body.no-animations .modal-button.danger.selected {
 }
 
 .keyboard-cheat-sheet-table td {
-    padding: var(--space-1, 0.22rem) 0;
+    padding: var(--space-1-5, 0.35rem) 0;
     border-bottom: 1px solid var(--border-primary);
-    vertical-align: top;
+    vertical-align: middle;
     line-height: 1.35;
 }
 
@@ -1808,7 +1828,7 @@ body.no-animations .modal-button.danger.selected {
 
 .keyboard-cheat-sheet-description {
     color: var(--text-secondary);
-    font-size: var(--text-xs, 0.78rem);
+    font-size: var(--text-sm, 0.82rem);
     min-width: 0;
     overflow-wrap: anywhere;
     width: auto;
