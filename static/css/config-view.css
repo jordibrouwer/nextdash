@@ -1462,6 +1462,8 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
     color: var(--text-color, inherit);
     font: inherit;
     font-size: calc(var(--font-size-text) * 0.971);
+    /* Also worn by an <a> (Open on the status page), which would underline. */
+    text-decoration: none;
     cursor: pointer;
     transition: background 0.12s ease, border-color 0.12s ease;
 }

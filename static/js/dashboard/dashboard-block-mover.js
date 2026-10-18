@@ -520,6 +520,13 @@
 
     function onPointerUp(e) {
         if (!state || state.mode !== 'pointer') return;
+        // A press that did not travel is a click on the handle, not a drop: the
+        // handle hangs in the gutter between columns, where a jiggle would
+        // otherwise land the block on the seam.
+        if (state.press && Math.hypot(e.clientX - state.press.x, e.clientY - state.press.y) < 6) {
+            finish(false);
+            return;
+        }
         const g = state.grid.getBoundingClientRect();
         const slack = 40;
         const inside = e.clientX >= g.left - slack && e.clientX <= g.right + slack
@@ -629,6 +636,7 @@
             // The one pointer that carries it: a second finger or pen lifting
             // is not this drop.
             state.pointerId = e.pointerId ?? null;
+            state.press = { x: e.clientX, y: e.clientY };
             state.chip = document.createElement('div');
             state.chip.className = 'block-drag-chip';
             state.chip.textContent = `// ${global.dashboardInstance.renderCore.blockName(state.id)}`;

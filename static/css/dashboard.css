@@ -1981,6 +1981,8 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
 
 .dashboard-grid.layout-terminal .category-title-label::before {
     content: '$ ';
+    /* The label is a flex row, where the space after the $ would be dropped. */
+    white-space: pre;
 }
 
 /* Terminal layout uses "$ " instead of "// "; hide the "//" handle. */
@@ -2510,6 +2512,20 @@ body[data-category-spacing="airy"] {
        margin, so nothing in the title moves. */
     padding: 2px 0 2px 0.2em;
     margin: -2px 0 -2px -0.2em;
+    /* One baseline for the //, the icon and the name. The name is an
+       inline-block with overflow: hidden, and such a box sits on its bottom
+       edge instead of its text: in a line of inline boxes it rode about 5px
+       above the // and the icon, with that much empty room left under it
+       before the line. A flex row aligns them on the text itself. */
+    display: flex;
+    align-items: baseline;
+}
+
+/* A flex item loses the space at the end of its text; the one after the icon
+   is what keeps the name off it. */
+.category-title-label .category-title-icon,
+.category-title-label .bookmark-icon {
+    white-space: pre;
 }
 
 /* The "//" prefix is now a real element that doubles as the drag-reorder handle. */
@@ -2548,6 +2564,115 @@ body[data-category-spacing="airy"] {
     border-radius: 4px;
     padding: 0 0.2em;
     margin-left: -0.2em;
+}
+
+/*
+ * A title that lines up with the bookmarks under it.
+ *
+ * A bookmark row is an icon slot and then its name, and the names all start
+ * one lead column in (the slot and the gap after it). The title put the //
+ * and its icon in front of its name in that same row, which pushed the name
+ * about 27px past the bookmarks'. Now the // hangs in the gutter to the left
+ * of the column, where it stays reachable as the drag handle without taking
+ * any room, the icon sits in the icon column and the name starts on the
+ * bookmarks' text, with or without an icon.
+ *
+ * The gutter is the 24px between columns and the 8px of padding either side
+ * of them; below 600px the page edge is nearer than that, so the title keeps
+ * the // in line there. Only the default and masonry layouts: the others draw
+ * their rows and titles differently (terminal and launcher place the handle
+ * themselves).
+ */
+@media (min-width: 601px) {
+    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category:not(.dashboard-widget) .category-title-label {
+        --cat-title-lead: calc(var(--font-size-bookmark) * 1.15 + var(--space-2, 0.5rem));
+        --cat-title-hang: 2.2rem;
+        /* The // sits in the label's own padding, inside its overflow clip.
+           The row's own start padding is added so the icon lands on the
+           bookmarks' icons rather than on the edge of the column. */
+        padding-left: calc(0.2em + var(--cat-title-hang) + var(--bookmark-row-start-pad, 6px));
+        margin-left: calc(-0.2em - var(--cat-title-hang));
+    }
+
+    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category:not(.dashboard-widget) .category-reorder-handle {
+        /* A real box, so it can be pointed at and picked up, that takes no
+           room in the row: its own width is given back by the margin. */
+        display: flex;
+        justify-content: flex-end;
+        box-sizing: border-box;
+        flex: 0 0 auto;
+        width: 1.6em;
+        margin-left: -1.6em;
+        padding: 0 0.2em 0 0;
+        overflow: visible;
+    }
+
+    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category:not(.dashboard-widget) .category-title-label .category-title-icon,
+    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category:not(.dashboard-widget) .category-title-label .bookmark-icon {
+        /* At least the lead column; an icon that is wider, such as a short
+           text mark, keeps its own width rather than running into the name. */
+        flex: 0 0 auto;
+        min-width: var(--cat-title-lead);
+    }
+
+    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category:not(.dashboard-widget) .category-title-label .category-reorder-handle + .category-title-name {
+        margin-left: var(--cat-title-lead);
+    }
+}
+
+/*
+ * A title that outranks what is under it.
+ *
+ * It had the same size and weight as the bookmarks and a dimmer colour, so the
+ * row of the thing it named was the loudest line of its own block. The title
+ * now takes the primary text colour, the names under it go to regular weight,
+ * and a short accent tab on the rule says where a block starts. The weight is
+ * still the theme's (--theme-label-weight); Slate, the default, asks for 700.
+ */
+.dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category:not(.dashboard-widget) .category-title {
+    color: var(--text-primary);
+}
+
+/* The tab rides on the rule under the title, and flat depth draws none. */
+body:not([data-depth="flat"]) .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category:not(.dashboard-widget) .category-title {
+    background:
+        linear-gradient(var(--accent-primary), var(--accent-primary))
+        left bottom / 2.25rem 2px no-repeat;
+    background-origin: border-box;
+}
+
+/*
+ * A widget's title is the head of its card.
+ *
+ * A category is a list under a rule; a widget is a card, and its title used to
+ * float above the card exactly as a category's does, so the two read as the
+ * same kind of block. The title is now a strip on the card's own surface,
+ * joined to it, and a collapsed widget closes the strip's bottom edge.
+ */
+.dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category.dashboard-widget {
+    /* The strip and the card are one block: no gap between them. */
+    gap: 0;
+}
+
+html body .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category.dashboard-widget > .category-title {
+    color: var(--text-primary);
+    padding: var(--space-2, 0.55rem) var(--space-3, 0.85rem);
+    border: 1px solid var(--border-primary);
+    border-bottom: 0;
+    border-image: none;
+    border-radius: var(--radius-5, 9px) var(--radius-5, 9px) 0 0;
+    background: var(--dashboard-widget-surface);
+    margin-bottom: 0;
+}
+
+html body .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category.dashboard-widget > .category-title[aria-expanded="false"] {
+    border-bottom: 1px solid var(--border-primary);
+    border-radius: var(--radius-5, 9px);
+}
+
+html body .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category.dashboard-widget .dashboard-widget-body {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
 }
 
 /*
@@ -3161,7 +3286,7 @@ body.bookmark-dragging .bookmarks-list.reorder-container:not([data-smart-collect
     column-gap: var(--bookmark-row-gap);
     text-decoration: none;
     font-size: var(--font-size-bookmark);
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--font-weight-normal);
     transition: transform 140ms ease, opacity 120ms ease, color 140ms ease, background 140ms ease;
     position: relative;
     padding: var(--space-2, 0.5rem) var(--bookmark-row-end-pad, 3px) var(--space-2, 0.5rem) var(--bookmark-row-start-pad, 6px);
