@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent, openHelpTab } = require('./e2e-helpers');
 
 /**
  * Two things a reader does inside Help that it did not answer.
@@ -19,8 +19,7 @@ async function openHelp(page, tab) {
     await dismissBlockingOverlays(page);
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('help'));
     await page.waitForSelector('#config-help-body', { timeout: 15_000 });
-    await page.click(`[data-help-tab="${tab}"]`);
-    await expect(page.locator(`[data-help-tab="${tab}"]`)).toHaveAttribute('aria-selected', 'true');
+    await openHelpTab(page, tab);
 }
 
 test.describe('the Tips tab filters itself', () => {
@@ -106,19 +105,53 @@ test.describe('the version panel reads its own version', () => {
     });
 });
 
-test.describe('the Help strip reads in groups', () => {
-    test('labelled groups like Appearance, and every tab stays on screen', async ({ page }) => {
-        await page.setViewportSize({ width: 800, height: 900 });
+test.describe('the Help strip is one row and a menu', () => {
+    const row = (page) => page.locator('.config-subtabs--more [data-help-tab]');
+    const toggle = (page) => page.locator('[data-help-more-toggle]');
+    const menu = (page) => page.locator('#config-help-more-menu');
+
+    test('Basics on the row, the rest under More topics in their groups', async ({ page }) => {
+        await page.setViewportSize({ width: 1000, height: 900 });
         await openHelp(page, 'start');
-        const strip = page.locator('.config-subtabs--grouped');
-        await expect(strip).toHaveAttribute('role', 'tablist');
-        await expect(strip.locator('.config-subtab-group-label')).toHaveText(['Basics', 'Dashboard', 'Status & checks', 'Data']);
-        await expect(page.locator('[data-help-group="basics"] [data-help-tab]'))
-            .toHaveText(['Getting started', 'Tips', 'Configuring', 'Search & keyboard']);
+        await expect(row(page)).toHaveText(['Getting started', 'Tips', 'Configuring', 'Search & keyboard']);
+        const strip = page.locator('.config-subtabs--more');
         expect(await strip.evaluate((el) => el.scrollWidth > el.clientWidth + 1)).toBe(false);
-        // The arrow keys still walk one list across the group boundary.
-        await page.locator('[data-help-tab="search"]').focus();
-        await page.keyboard.press('ArrowRight');
+
+        await toggle(page).click();
+        await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true');
+        await expect(menu(page).locator('.move-popover-section-label')).toHaveText(['Dashboard', 'Status & checks', 'Data']);
+        await expect(menu(page).locator('[data-help-more]')).toHaveCount(11);
+
+        // Picking a topic opens it and puts it on the row, marked.
+        await menu(page).locator('[data-help-more="widgets"]').click();
+        await expect(menu(page)).toHaveCount(0);
+        await expect(row(page)).toHaveText(['Getting started', 'Tips', 'Configuring', 'Search & keyboard', 'Widgets']);
+        await expect(page.locator('[data-help-tab="widgets"]')).toHaveAttribute('aria-selected', 'true');
+        await expect(page).toHaveURL(/#config\/help\/widgets/);
+
+        // Back to a Basics tab, and the extra one leaves the row.
+        await page.click('[data-help-tab="tips"]');
+        await expect(row(page)).toHaveCount(4);
+    });
+
+    test('Escape closes the menu and leaves config open', async ({ page }) => {
+        await openHelp(page, 'start');
+        await toggle(page).click();
+        await expect(menu(page)).toBeVisible();
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('Escape');
+        await expect(menu(page)).toHaveCount(0);
+        await expect(toggle(page)).toBeFocused();
+        expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('config');
+    });
+
+    test('] walks on into the menu topics and shows them on the row', async ({ page }) => {
+        await openHelp(page, 'search');
+        await page.locator('#config-section-panel').focus();
+        await page.keyboard.press(']');
         await expect(page.locator('[data-help-tab="appearance"]')).toHaveAttribute('aria-selected', 'true');
+        await page.keyboard.press(']');
+        await expect(page.locator('[data-help-tab="organizing"]')).toHaveAttribute('aria-selected', 'true');
+        await expect(page.locator('[data-help-tab="appearance"]')).toHaveCount(0);
     });
 });

@@ -674,7 +674,23 @@ async function openConfigPanel(page, target) {
     return panel;
 }
 
+/**
+ * Open a Help tab the way a reader does: from the row when it is there,
+ * otherwise from the More topics menu, where everything past Basics lives.
+ */
+async function openHelpTab(page, tab) {
+    const onRow = page.locator(`.config-subtabs--more [data-help-tab="${tab}"]`);
+    if (await onRow.count()) {
+        await onRow.click();
+    } else {
+        await page.locator('[data-help-more-toggle]').click();
+        await page.locator(`#config-help-more-menu [data-help-more="${tab}"]`).click();
+    }
+    await page.locator(`[data-help-tab="${tab}"][aria-selected="true"]`).waitFor();
+}
+
 module.exports = {
+    openHelpTab,
     openConfigPanel,
     setChip,
     answerNoCategory,

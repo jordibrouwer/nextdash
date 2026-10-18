@@ -2257,6 +2257,64 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
     opacity: 0.8;
 }
 
+/*
+ * Help's strip: Basics on one row, the rest behind "More topics".
+ *
+ * A thin rule sets the menu's button apart from the tabs, so it reads as a way
+ * to more of them rather than as a tab called "More topics". The menu is a
+ * .move-popover hung on the body, sized to its rows.
+ */
+.config-subtabs.config-subtabs--more {
+    align-items: center;
+    /* Wraps rather than scrolls: scrolled, the menu's button was the first
+       thing to go past the edge on a narrow window. */
+    flex-wrap: wrap;
+    overflow-x: visible;
+    row-gap: 4px;
+}
+
+.config-subtab-more-sep {
+    flex: 0 0 auto;
+    width: 1px;
+    height: 1.2em;
+    margin: 0 6px;
+    background: var(--border-primary);
+}
+
+.config-subtab-more-caret {
+    margin-left: 6px;
+    font-size: 0.8em;
+}
+
+.config-subtab-more[aria-expanded="true"] {
+    color: var(--text-primary);
+}
+
+.move-popover.config-help-more-menu {
+    width: max-content;
+    max-width: min(24rem, calc(100vw - 1rem));
+    max-height: min(80vh, 32rem);
+}
+
+.config-help-more-menu .move-popover-item {
+    display: flex;
+    width: calc(100% - 2 * var(--space-1, 0.3rem));
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    text-align: left;
+}
+
+.config-help-more-menu .move-popover-item:hover,
+.config-help-more-menu .move-popover-item:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-primary));
+    outline: none;
+}
+
+.config-help-more-menu .move-popover-item.is-current {
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-primary));
+}
+
 .config-subtab {
     padding: 7px 14px;
     border: none;

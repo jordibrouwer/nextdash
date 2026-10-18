@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel, openHelpTab } = require('./e2e-helpers');
 
 async function loadDashboard(page) {
     await page.goto('/');
@@ -183,15 +183,18 @@ test.describe('config: sections restored from the old config', () => {
         await loadDashboard(page);
         await openSection(page, 'help');
 
-        const tabs = await page.locator('[data-help-tab]')
-            .evaluateAll((els) => els.map((e) => e.getAttribute('data-help-tab')));
-        // Against HELP_TABS rather than a copy of it: tabs have been added
-        // since (inbox, stats) and a hardcoded list only says the test is old.
-        const declared = await page.evaluate(() => window.DashboardConfig.HELP_TABS);
-        expect(tabs).toEqual(declared);
+        // Every tab, from the row or the More topics menu: against HELP_TABS
+        // rather than a copy of it, since tabs have been added (inbox, stats)
+        // and a hardcoded list only says the test is old.
+        const tabs = await page.evaluate(() => window.DashboardConfig.HELP_TABS);
+        const reachable = await page.evaluate(() => [
+            ...DashboardConfig.HELP_TAB_GROUPS[0].tabs,
+            ...DashboardConfig.HELP_TAB_GROUPS.slice(1).flatMap((g) => g.tabs),
+        ]);
+        expect([...reachable].sort()).toEqual([...tabs].sort());
 
         for (const tab of tabs) {
-            await page.locator(`[data-help-tab="${tab}"]`).click();
+            await openHelpTab(page, tab);
             const info = await page.evaluate(() => {
                 const body = document.getElementById('config-help-body');
                 return { panels: body.querySelectorAll('.config-panel').length, text: body.innerText };
@@ -604,7 +607,7 @@ test.describe('config help coverage', () => {
         await loadDashboard(page);
         await openSection(page, 'help');
         for (const tab of TABS) {
-            await page.locator(`[data-help-tab="${tab}"]`).click();
+            await openHelpTab(page, tab);
             const body = page.locator('#config-help-body');
             await expect(body.locator('.config-panel').first()).toBeVisible();
             // A missing key renders as "config.helpSomethingBody".
@@ -637,7 +640,7 @@ test.describe('config help coverage', () => {
         await openSection(page, 'help');
         let total = 0;
         for (const tab of TABS) {
-            await page.locator(`[data-help-tab="${tab}"]`).click();
+            await openHelpTab(page, tab);
             total += await page.locator('#config-help-body').evaluate((e) => e.innerText.length);
         }
         // The first pass was ~9k characters rendered; the old config's help was

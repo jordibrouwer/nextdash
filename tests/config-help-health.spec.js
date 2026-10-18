@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { prepareDashboardInteraction } = require('./e2e-helpers');
+const { prepareDashboardInteraction, openHelpTab: pickHelpTab } = require('./e2e-helpers');
 
 /**
  * The Health tab of config help.
@@ -16,8 +16,8 @@ async function openHelpTab(page, tab) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await prepareDashboardInteraction(page);
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('help'));
-    await page.waitForSelector(`[data-help-tab="${tab}"]`, { timeout: 15_000 });
-    await page.locator(`[data-help-tab="${tab}"]`).click();
+    await page.waitForSelector('[data-help-more-toggle]', { timeout: 15_000 });
+    await pickHelpTab(page, tab);
     await page.waitForSelector('#config-help-body .config-panel', { timeout: 15_000 });
 }
 

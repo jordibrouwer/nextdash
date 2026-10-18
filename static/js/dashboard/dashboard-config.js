@@ -1560,6 +1560,13 @@ class DashboardConfig {
                 this._logSettingsPopoverClose();
                 return;
             }
+            // Help's More topics menu, the same way.
+            if (this._helpMoreClose) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this._helpMoreClose();
+                return;
+            }
             e.preventDefault();
             // Stop here rather than letting the event bubble on. The tag-filter
             // shortcut listens on document too and registers first, so without
@@ -1588,6 +1595,7 @@ class DashboardConfig {
             b.setAttribute('aria-selected', on ? 'true' : 'false');
             b.setAttribute('tabindex', on ? '0' : '-1');
         });
+        if (attr === 'data-help-tab') this.repaintHelpStripIfNeeded();
     }
 
     /**
@@ -18016,6 +18024,12 @@ class DashboardConfig {
             const label = this.subTabLabel(section, tab);
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}${isNew ? ' config-subtab--animated' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-${section}-body" ${attr}="${esc(tab)}">${esc(label)}${stars}</button>`;
         };
+        if (section === 'help') {
+            // One row: Basics, the open tab when it lives in the menu, and the
+            // menu's button. The menu itself is built when it opens.
+            const more = this.t('config.helpMoreTopics', 'More topics');
+            return `<div class="config-subtabs config-subtabs--more" role="tablist">${this.helpStripTabs().map(button).join('')}<span class="config-subtab-more-sep" aria-hidden="true"></span><button type="button" class="config-subtab config-subtab-more" data-label="${esc(more)}" aria-haspopup="menu" aria-expanded="false" aria-controls="config-help-more-menu" data-help-more-toggle>${esc(more)}<span class="config-subtab-more-caret" aria-hidden="true">▾</span></button></div>`;
+        }
         const grouped = DashboardConfig.SUB_TAB_GROUPS[section];
         if (grouped) {
             // One tablist, grouped by presentation wrappers: the labels are
@@ -28599,9 +28613,9 @@ class DashboardConfig {
     static HELP_TABS = ['start', 'tips', 'config', 'search', 'appearance', 'organizing', 'bookmarks', 'widgets', 'containers', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs'];
 
     /*
-     * Fifteen tabs on one scrolling line hid most of them past the edge, so
-     * Help's strip reads in labelled groups the way Appearance's does, in the
-     * order of the tabs above.
+     * Fifteen tabs on one scrolling line hid most of them past the edge, and
+     * fifteen in labelled rows took four lines. The row keeps Basics; the
+     * other groups are a menu under "More topics", with these labels.
      */
     static HELP_TAB_GROUPS = [
         { key: 'basics', label: ['config.helpGroupBasics', 'Basics'], tabs: ['start', 'tips', 'config', 'search'] },
@@ -28612,7 +28626,7 @@ class DashboardConfig {
 
     /** Sections whose strip is drawn in labelled groups. */
     static get SUB_TAB_GROUPS() {
-        return { appearance: DashboardConfig.APPEARANCE_TAB_GROUPS, help: DashboardConfig.HELP_TAB_GROUPS };
+        return { appearance: DashboardConfig.APPEARANCE_TAB_GROUPS };
     }
 
     helpTabLabel(tab) {
@@ -28675,6 +28689,8 @@ class DashboardConfig {
     }
 
     renderHelp() {
+        // A full repaint replaces the menu's button; the menu goes with it.
+        this._helpMoreClose?.({ refocus: false });
         this.ensureHelpProse();
         const esc = (v) => this.dash.escapeHtml(v);
         return `
@@ -30434,28 +30450,137 @@ class DashboardConfig {
 
     bindHelp(container) {
         this.bindCapturePanel(container);
-        this.bindSubTabStrip(container, 'data-help-tab', (tab) => {
-            {
-                if (tab === this.helpTab) return;
-                this.helpTab = tab;
-                // Switching tabs by hand means the reader has stopped searching;
-                // leaving the query on would show results instead of the tab
-                // they just clicked.
-                this.helpQuery = '';
-                const field = document.getElementById('config-help-search');
-                if (field) field.value = '';
-                this.restoreConfigHash();
-                const body = document.getElementById('config-help-body');
-                if (!body) { this.render(); return; }
-                body.innerHTML = this.renderHelpBody();
-                this.syncSubTabStrip('data-help-tab', this.helpTab);
-                this.syncSectionTabNote('help', this.helpTab, body.parentElement?.querySelector(':scope > .config-help-header'));
-                // The new body carries its own action buttons.
-                this.bindHelpActions(body);
-            }
-        });
+        this.bindHelpTabStrip(container);
         this.bindHelpSearch(container);
         this.bindHelpActions(container);
+    }
+
+    bindHelpTabStrip(container) {
+        this.bindSubTabStrip(container, 'data-help-tab', (tab) => this.switchHelpTab(tab));
+        const toggle = container.querySelector('[data-help-more-toggle]');
+        if (toggle && toggle.dataset.helpMoreBound !== '1') {
+            toggle.dataset.helpMoreBound = '1';
+            toggle.addEventListener('click', () => {
+                if (this._helpMoreClose) this._helpMoreClose();
+                else this.openHelpMoreMenu(toggle);
+            });
+        }
+    }
+
+    switchHelpTab(tab) {
+        if (tab === this.helpTab) return;
+        this.helpTab = tab;
+        // Switching tabs by hand means the reader has stopped searching;
+        // leaving the query on would show results instead of the tab
+        // they just clicked.
+        this.helpQuery = '';
+        const field = document.getElementById('config-help-search');
+        if (field) field.value = '';
+        this.restoreConfigHash();
+        const body = document.getElementById('config-help-body');
+        if (!body) { this.render(); return; }
+        body.innerHTML = this.renderHelpBody();
+        this.syncSubTabStrip('data-help-tab', this.helpTab);
+        this.syncSectionTabNote('help', this.helpTab, body.parentElement?.querySelector(':scope > .config-help-header'));
+        // The new body carries its own action buttons.
+        this.bindHelpActions(body);
+    }
+
+    /**
+     * The topics past Basics, as a menu under "More topics".
+     *
+     * Built on open and dropped on close, and hung on the body rather than in
+     * the strip: the strip scrolls sideways and clips what overflows it, and a
+     * panel under Glass would make a fixed menu's coordinates its own.
+     */
+    openHelpMoreMenu(toggle) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const [, ...rest] = DashboardConfig.HELP_TAB_GROUPS;
+        const menu = document.createElement('div');
+        menu.className = 'move-popover config-help-more-menu';
+        menu.id = 'config-help-more-menu';
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-label', this.t('config.helpMoreTopics', 'More topics'));
+        menu.innerHTML = rest.map((group) => `
+            <div class="move-popover-section-label" role="presentation">${esc(this.t(group.label[0], group.label[1]))}</div>
+            ${group.tabs.map((tab) => `<button type="button" class="move-popover-item${tab === this.helpTab ? ' is-current' : ''}" role="menuitem" tabindex="-1" data-help-more="${esc(tab)}">${esc(this.helpTabLabel(tab))}</button>`).join('')}
+        `).join('');
+        document.body.appendChild(menu);
+        const items = [...menu.querySelectorAll('[data-help-more]')];
+
+        const MARGIN = 8;
+        const position = () => {
+            const rect = toggle.getBoundingClientRect();
+            const width = menu.offsetWidth;
+            const left = Math.min(Math.max(MARGIN, rect.left), window.innerWidth - width - MARGIN);
+            menu.style.left = `${Math.round(left)}px`;
+            menu.style.top = `${Math.round(rect.bottom + 4)}px`;
+        };
+        let onOutside = null;
+        const close = ({ refocus = true } = {}) => {
+            if (this._helpMoreClose !== close) return;
+            this._helpMoreClose = null;
+            menu.remove();
+            toggle.setAttribute('aria-expanded', 'false');
+            document.removeEventListener('click', onOutside, true);
+            window.removeEventListener('resize', position);
+            window.removeEventListener('scroll', position, true);
+            if (refocus && toggle.isConnected) toggle.focus({ preventScroll: true });
+        };
+        onOutside = (e) => {
+            if (menu.contains(e.target) || toggle.contains(e.target)) return;
+            close({ refocus: false });
+        };
+        items.forEach((item, i) => {
+            item.addEventListener('click', () => {
+                close({ refocus: false });
+                this.switchHelpTab(item.getAttribute('data-help-more'));
+                document.querySelector(`[data-help-tab="${CSS.escape(this.helpTab)}"]`)?.focus();
+            });
+            item.addEventListener('keydown', (e) => {
+                const last = items.length - 1;
+                const next = { ArrowDown: i === last ? 0 : i + 1, ArrowUp: i === 0 ? last : i - 1, Home: 0, End: last }[e.key];
+                if (next != null) {
+                    e.preventDefault();
+                    items[next].focus();
+                } else if (e.key === 'Tab') {
+                    close({ refocus: false });
+                }
+            });
+        });
+
+        toggle.setAttribute('aria-expanded', 'true');
+        position();
+        // Bound on the next tick, or the click that opened the menu closes it.
+        setTimeout(() => document.addEventListener('click', onOutside, true), 0);
+        window.addEventListener('resize', position);
+        window.addEventListener('scroll', position, true);
+        this._helpMoreClose = close;
+        (items.find((item) => item.classList.contains('is-current')) || items[0])?.focus();
+    }
+
+    /**
+     * Draw the Help strip again when the tab it should show has changed.
+     *
+     * The row holds Basics plus the open tab when that one lives in the menu,
+     * so a switch to or from a menu topic changes which buttons the row has --
+     * marking a different button active is not enough.
+     */
+    repaintHelpStripIfNeeded() {
+        const strip = document.querySelector('.config-subtabs--more');
+        if (!strip) return;
+        const have = [...strip.querySelectorAll('[data-help-tab]')].map((b) => b.getAttribute('data-help-tab')).join(',');
+        if (have === this.helpStripTabs().join(',')) return;
+        const host = strip.parentElement;
+        strip.outerHTML = this.renderSectionTabStrip('help');
+        this.bindHelpTabStrip(host);
+    }
+
+    /** The tabs on Help's row: Basics, and the open tab if it is past them. */
+    helpStripTabs() {
+        const shown = [...DashboardConfig.HELP_TAB_GROUPS[0].tabs];
+        if (!shown.includes(this.helpTab)) shown.push(this.helpTab);
+        return shown;
     }
 
     /**
