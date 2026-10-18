@@ -168,15 +168,15 @@ test.describe('a release flagged hideFromModal', () => {
     // so v1.19.4 led and brought all three back in, so nothing in the index is held back.
     // v1.19.5 led, with v1.19.4 under it; v1.19.6 led with v1.19.5 under it;
     // v1.19.7 led, with v1.19.6 under it; v1.19.8 led, with v1.19.7 under it;
-    // v1.19.9 leads now, with v1.19.8 under it.
-    test('v1.19.9 leads the modal, with v1.19.8 and the releases before it under it', async ({ page }) => {
+    // v1.19.9 leads now, with v1.19.8 under it. v1.19.10 is held back, so v1.19.9 keeps leading.
+    test('v1.19.9 leads the modal, v1.19.10 is held back, and the releases before it show under it', async ({ page }) => {
         await loadDashboard(page);
 
         const index = await page.evaluate(async () =>
             (await fetch('/static/data/whats-new/index.json')).json());
 
-        expect(index[0].tag).toBe('v1.19.9');
-        expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual([]);
+        expect(index[0].tag).toBe('v1.19.10');
+        expect(index.filter((e) => e.hideFromModal).map((e) => e.tag)).toEqual(['v1.19.10']);
 
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
         const modal = page.locator('.whats-new-modal');
@@ -190,6 +190,7 @@ test.describe('a release flagged hideFromModal', () => {
                 .filter((t) => /^v\d+\.\d+\.\d+(\.\d+)?$/.test(t)),
         )]);
         await expect.poll(shownTags).toContain('v1.19.9');
+        expect(await shownTags()).not.toContain('v1.19.10');
         expect(await shownTags()).toContain('v1.19.8');
         expect(await shownTags()).toContain('v1.19.7');
         expect(await shownTags()).toContain('v1.19.6');
@@ -239,15 +240,15 @@ test.describe('a release flagged hideFromModal', () => {
         /*
          * The release token names what the modal leads with, so it moves for a
          * release that leads and stays put for one that is held back. v1.13.1,
-         * v1.13.5, v1.13.6, v1.18.4.1, v1.19.1 and v1.19.2 were held back and
-         * were never named here; v1.19.9 leads, so it is.
+         * v1.13.5, v1.13.6, v1.18.4.1, v1.19.1, v1.19.2 and v1.19.10 were held back
+         * and were never named here; v1.19.9 leads, so it is.
          *
          * Leaving it behind is the quiet failure this pins: every install that
          * had already read v1.19.8's notes would simply never be shown v1.19.9.
          */
         expect(src).toContain("DASHBOARD_RELEASE = '2026.10-dashboard-release-v1.19.9'");
         // The data token moves regardless: the index changed, and a browser
-        // holding its old copy would never learn v1.19.5 exists.
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v339'");
+        // holding its old copy would never learn v1.19.10 exists.
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v340'");
     });
 });

@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.19.10 — 18 October 2026](#v11910--18-october-2026)
 - [v1.19.9 — 17 October 2026](#v1199--17-october-2026)
 - [v1.19.8 — 15 October 2026](#v1198--15-october-2026)
 - [v1.19.7 — 14 October 2026](#v1197--14-october-2026)
@@ -110,6 +111,29 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.19.10 — 18 October 2026
+
+Category and widget titles are redrawn: they keep their size, line up with the bookmarks under them and outrank them, and a widget's title becomes the head of its card. One Config button loses a stray underline. Held back from the What's new window (`hideFromModal`) like v1.19.1–v1.19.2, so v1.19.9 keeps leading it.
+
+### Dashboard titles
+
+- **fix — a category title shrank for no reason.** `dashboard-category-title-fit.js` read the label's overhead as `label.clientWidth − name.clientWidth`, but `.category-title-label` is `flex: 1 1 auto` and stretches over every free pixel, so the empty room counted as overhead and even a three-letter name "missed by a pixel" at full size and was stepped down (`vps` ended at 15 px under 16 px bookmarks). The label is now measured shrunk to its content (`readLabelOverhead`), the title's own padding is taken off the room, and the label's negative margin is given back. The bug dates from 23 September (`4802f509`), when the fit started to work at all.
+- **fix — the //, the icon and the name sat on three different lines.** `.category-title-name` is an inline-block with `overflow: hidden`, which rests on its bottom edge instead of its text, so it rode about 5 px above the // and the icon and left that much empty room before the rule. The label is now a flex row with `align-items: baseline`; the icon keeps the space after it (`white-space: pre`), and so does the terminal layout's `$ `. A title is 5 px shorter (34.1 → 29.1 px) with 5.6 px between the text and its rule.
+- **new — a title lines up with the bookmarks under it.** The // now hangs in the gutter left of the column (still the drag handle, still reached by Tab), the icon sits on the bookmarks' icon column and the name starts on their text, with or without an icon. Default and masonry layouts with the theme's own header style, from 601 px; the other header styles, the terminal layout and anything below 601 px keep the // in the row, because their grips are drawn differently or the page edge is nearer than the hang. The // is a real box (`1.6em`, given back by a negative margin) so it can still be pointed at and picked up, and a wider icon keeps its own width (`min-width`).
+- **fix — a click on the // could move the block.** Hanging in the gutter put the handle on the seam between two columns, so a press that jiggled a couple of pixels dropped the block there. A press that does not travel 6 px is now a click and drops nothing (`dashboard-block-mover.js`; `dashboard-block-move.spec.js` — *a jiggle on the handle of a spread category leaves it spread*).
+- **new — a title outranks the bookmarks under it.** The title takes the primary text colour and a short accent tab on its rule (not at flat depth, which draws no rule); bookmark names go from semibold to regular. Slate, the default theme, asks for a title weight of 700 (`LabelWeight`); every other theme keeps its own `--theme-label-weight`.
+- **new — a widget's title heads its card.** In the default and masonry layouts the title is a strip on the card's own surface, joined to it with no gap, with the card's top corners square; a collapsed widget closes the strip's bottom edge (`.category-title[aria-expanded="false"]`). The // stays in the row there.
+
+### Config
+
+- **fix — Status page → Open was underlined.** It is an `<a class="config-btn">` next to two buttons, and `.config-btn` never reset `text-decoration`. It does now, which also covers any other link drawn as a button.
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.19.10.json` and its index entry** (`hideFromModal`); `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v340`, `DASHBOARD_RELEASE` stays on v1.19.9. `tests/whats-new-hidden-release.spec.js` names v1.19.10 as the held-back release, and the reference fit in `tests/category-title-fit-batched.spec.js` reads the label's overhead the way the fit now does. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 

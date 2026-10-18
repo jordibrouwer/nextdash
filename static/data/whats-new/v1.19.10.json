@@ -1,0 +1,34 @@
+{
+  "tag": "v1.19.10",
+  "date": "18 October 2026",
+  "releasedAt": "2026-10-18",
+  "modalLead": "Category and widget <strong>titles keep their size</strong>, line up with the bookmarks and stand out from them, and a widget's title <strong>heads its card</strong>.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Titles no longer shrink without a reason.</strong> A short category name stays at full size when there is room, instead of sitting smaller than the bookmarks under it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Titles line up with the bookmarks.</strong> The // hangs beside the column, the icon sits above the bookmark icons and the name starts where the bookmark names do."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Titles stand out.</strong> Bolder and brighter with a short accent mark on the line, over bookmark names in regular weight. A widget's title is now the head of its card."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The Open button on Status page</strong> looks like the buttons beside it, without the underline."
+        }
+      ]
+    }
+  ]
+}

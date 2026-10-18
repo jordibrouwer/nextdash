@@ -19,7 +19,7 @@ const NAMES = Array.from({ length: 30 }, (_, i) => [
     'Supercalifragilisticexpialidocious-and-then-some-more',
 ][i % 6] + (i >= 6 ? ` ${i}` : ''));
 
-/** The one-at-a-time fit as it was, kept here as the reference. */
+/** The one-at-a-time fit, kept here as the reference. It reads the label's overhead the way the fit now does. */
 function referenceFit(titleEl, minPx) {
     const nameEl = titleEl.querySelector('.category-title-name');
     const labelEl = titleEl.querySelector('.category-title-label');
@@ -27,12 +27,21 @@ function referenceFit(titleEl, minPx) {
     nameEl.style.fontSize = '';
     nameEl.classList.remove('category-title-name--multiline');
     titleEl.classList.remove('category-title--multiline');
-    const titleWidth = titleEl.clientWidth;
+    const titleStyle = getComputedStyle(titleEl);
+    const titleWidth = titleEl.clientWidth
+        - (parseFloat(titleStyle.paddingLeft) || 0) - (parseFloat(titleStyle.paddingRight) || 0);
     const trailingEl = titleEl.querySelector('.category-title-trailing');
     const trailingWidth = trailingEl ? trailingEl.getBoundingClientRect().width : 0;
     const gap = parseFloat(getComputedStyle(titleEl).columnGap || getComputedStyle(titleEl).gap) || 0;
     const labelWidth = Math.max(0, titleWidth - trailingWidth - gap);
-    const overhead = Math.max(0, labelEl.clientWidth - nameEl.clientWidth);
+    // What the label holds besides the name, read with the label shrunk to its
+    // content: it is flex: 1 1 auto, and its free room is no overhead. Its
+    // negative margin gives back the padding the // hangs in.
+    labelEl.style.flex = '0 0 auto';
+    const labelStyle = getComputedStyle(labelEl);
+    const overhead = Math.max(0, labelEl.clientWidth - nameEl.clientWidth
+        + (parseFloat(labelStyle.marginLeft) || 0) + (parseFloat(labelStyle.marginRight) || 0));
+    labelEl.style.flex = '';
     const max = Math.max(0, labelWidth - overhead - 1);
     if (max <= 0) return;
     const raw = getComputedStyle(titleEl).getPropertyValue('--font-size-category').trim();
