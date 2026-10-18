@@ -70,9 +70,9 @@ for (const [view, key] of [['health', 'Shift+H'], ['inbox', 'Shift+I']]) {
             };
         });
 
-        const rest = await read();
-        expect(rest.background, 'the header is still the page colour').not.toBe(rest.page);
-        expect(rest.radius, 'the header is still a full-width band').toBeGreaterThan(0);
+        // At rest the header is the top of the view's pane (see config-panes.spec.js),
+        // not a card of its own; what has to hold is the scrolled state below.
+        await read();
 
         // Scrolled the way a reader scrolls: the wheel over the list.
         await page.mouse.move(700, 600);
