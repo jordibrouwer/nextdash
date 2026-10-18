@@ -318,13 +318,12 @@ class Dashboard {
             this.visual.setupThemeIconStylingListener?.();
             this.loadCollapsedStates();
             await this.language.init(this.settings.language);
-            // Expose instance before mobile banner / i18n helpers (refresh runs before status monitor).
+            // Expose instance before mobile / i18n helpers (refresh runs before status monitor).
             window.dashboardInstance = this;
             window.MobileExperience?.initDashboard?.();
             this.setupDOM();
             this.initializeSearchComponent();
             this.initializeStatusMonitor();
-            window.MobileExperience?.refreshBannerTranslations?.();
             this.initializeKeyboardNavigation();
             this.initializeSwipeNavigation();
             this.initializeHyprMode();

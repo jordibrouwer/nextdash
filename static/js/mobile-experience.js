@@ -9,9 +9,6 @@
     /** Hash-deep-link tabs allowed on phone with a blocking card instead of redirecting to General. */
     const MOBILE_PHONE_CONTEXT_TABS = ['bookmarks'];
     const MOBILE_GENERAL_PANELS = ['localization', 'basics-core', 'layout'];
-    /** Set when the mobile info banner was shown and dismissed (persists across sessions). */
-    const BANNER_SEEN_KEY = 'nextdash-mobile-banner-seen-v1';
-    const DEVICE_SUGGEST_KEY = 'nextdash-mobile-device-suggest-done';
 
     /**
      * A touch device without a hover-capable pointer — a phone or tablet, never a
@@ -39,116 +36,6 @@
         if (typeof window.matchMedia !== 'function') return false;
         if (!isTouchDevice()) return false;
         return window.matchMedia('(max-width: 991px)').matches;
-    }
-
-    function t(key, fallback) {
-        const lang = window.dashboardInstance?.language || window.configManager?.language;
-        if (lang?.t) {
-            const v = lang.t(key);
-            if (v && v !== key) return v;
-        }
-        return fallback;
-    }
-
-    function translateBanner(el) {
-        if (!el) return;
-        const textEl = el.querySelector('[data-mobile-banner-text]');
-        const dismissBtn = el.querySelector('[data-mobile-banner-dismiss]');
-        const deviceBtn = el.querySelector('[data-mobile-device-suggest]');
-        const isConfig = el.dataset.mobileBannerContext === 'config';
-        const textKey = isConfig ? 'config.mobileExperienceBanner' : 'dashboard.mobileExperienceBanner';
-        if (textEl) textEl.innerHTML = t(textKey, textEl.innerHTML);
-        if (dismissBtn) {
-            dismissBtn.setAttribute('aria-label', t('dashboard.mobileExperienceDismiss', 'Dismiss'));
-        }
-        if (deviceBtn) {
-            deviceBtn.textContent = t('dashboard.mobileDeviceSpecificSuggest', 'Use device-specific settings');
-        }
-    }
-
-    function isBannerSeen() {
-        try {
-            return localStorage.getItem(BANNER_SEEN_KEY) === '1';
-        } catch {
-            return false;
-        }
-    }
-
-    function markBannerSeen() {
-        try {
-            localStorage.setItem(BANNER_SEEN_KEY, '1');
-        } catch { /* ignore */ }
-        removeBanners();
-    }
-
-    function dismissBanner() {
-        markBannerSeen();
-    }
-
-    function shouldSuggestDeviceSpecific() {
-        if (!isMobileLayout()) return false;
-        try {
-            if (localStorage.getItem('deviceSpecificSettings') === 'true') return false;
-            if (localStorage.getItem(DEVICE_SUGGEST_KEY) === '1') return false;
-        } catch {
-            return false;
-        }
-        return true;
-    }
-
-    function enableDeviceSpecificSuggest() {
-        try {
-            localStorage.setItem('deviceSpecificSettings', 'true');
-            localStorage.setItem(DEVICE_SUGGEST_KEY, '1');
-        } catch { /* ignore */ }
-        const msg = t(
-            'dashboard.mobileDeviceSpecificEnabled',
-            'Device-specific settings enabled for this phone. Open config to adjust and save.'
-        );
-        if (window.AppNotification?.show) {
-            window.AppNotification.show(msg, 'success');
-        }
-        document.querySelectorAll('[data-mobile-device-suggest]').forEach((btn) => {
-            btn.hidden = true;
-        });
-    }
-
-    function createBannerMarkup(context) {
-        const wrap = document.createElement('div');
-        wrap.id = context === 'config' ? 'mobile-experience-banner-config' : 'mobile-experience-banner';
-        wrap.className = 'mobile-experience-banner';
-        wrap.setAttribute('role', 'status');
-        wrap.dataset.mobileBannerContext = context;
-        wrap.innerHTML = `
-            <p class="mobile-experience-banner-text" data-mobile-banner-text></p>
-            <div class="mobile-experience-banner-actions">
-                <button type="button" class="btn btn-secondary btn-small" data-mobile-device-suggest hidden></button>
-                <button type="button" class="mobile-experience-banner-dismiss" data-mobile-banner-dismiss aria-label="Dismiss">&times;</button>
-            </div>
-        `;
-        return wrap;
-    }
-
-    function installBanner(context, anchor) {
-        if (!isMobileLayout() || isBannerSeen() || !anchor) return null;
-        const existing = document.getElementById(
-            context === 'config' ? 'mobile-experience-banner-config' : 'mobile-experience-banner'
-        );
-        if (existing) return existing;
-
-        const banner = createBannerMarkup(context);
-        anchor.insertAdjacentElement('afterbegin', banner);
-        translateBanner(banner);
-
-        banner.querySelector('[data-mobile-banner-dismiss]')?.addEventListener('click', dismissBanner);
-
-        const deviceBtn = banner.querySelector('[data-mobile-device-suggest]');
-        if (deviceBtn && shouldSuggestDeviceSpecific()) {
-            deviceBtn.hidden = false;
-            deviceBtn.addEventListener('click', enableDeviceSpecificSuggest);
-        }
-
-        return banner;
     }
 
     function applyBodyFlag() {
@@ -244,26 +131,6 @@
         window.ConfigSettingsSearch?.relocateForLayout?.();
     }
 
-    function removeBanners() {
-        document.querySelectorAll('.mobile-experience-banner').forEach((el) => el.remove());
-    }
-
-    function syncBannersForLayout() {
-        if (!isMobileLayout() || isBannerSeen()) {
-            removeBanners();
-            return;
-        }
-        const dashAnchor = document.querySelector('.section-content .container');
-        if (dashAnchor) installBanner('dashboard', dashAnchor);
-        const configAnchor = document.getElementById('config-breadcrumb') || document.getElementById('config-main');
-        if (configAnchor) installBanner('config', configAnchor);
-        document.querySelectorAll('.mobile-experience-banner').forEach(translateBanner);
-    }
-
-    function refreshBanners() {
-        syncBannersForLayout();
-    }
-
     let resizeTimer = null;
     let dashboardWasStacked = null;
 
@@ -307,7 +174,6 @@
         const wasPhone = document.body.dataset.phoneLayout === 'true';
         const nowMobile = applyBodyFlag();
         const nowPhone = isPhoneLayout();
-        syncBannersForLayout();
         syncDashboardColumnLayout();
 
         if (window.configManager?.generalLayers) {
@@ -354,7 +220,6 @@
     function initDashboard() {
         applyBodyFlag();
         syncDashboardColumnLayout();
-        installBanner('dashboard', document.querySelector('.section-content .container'));
 
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimer);
@@ -365,9 +230,6 @@
     function initConfig() {
         applyBodyFlag();
         applyConfigTabGuard();
-        const main = document.getElementById('config-main');
-        const breadcrumb = document.getElementById('config-breadcrumb');
-        installBanner('config', breadcrumb || main);
 
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimer);
@@ -399,8 +261,5 @@
         applyBodyFlag,
         initDashboard,
         initConfig,
-        refreshBannerTranslations() {
-            document.querySelectorAll('.mobile-experience-banner').forEach(translateBanner);
-        },
     };
 })();
