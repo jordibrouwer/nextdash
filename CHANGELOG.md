@@ -12,7 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
-- [v1.20.0 — 18 October 2026](#v1200--18-october-2026)
+- [v1.20.0 — 19 October 2026](#v1200--19-october-2026)
 - [v1.19.10 — 18 October 2026](#v11910--18-october-2026)
 - [v1.19.9 — 17 October 2026](#v1199--17-october-2026)
 - [v1.19.8 — 15 October 2026](#v1198--15-october-2026)
@@ -115,7 +115,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ---
 
-## v1.20.0 — 18 October 2026
+## v1.20.0 — 19 October 2026
 
 A new default look, and a lot of ways to change it. A fresh install starts on Confetti with masonry columns and Inter; twenty-four colour-burst themes arrive with three new backdrops; categories and widgets sit on glass, a card or nothing; a category can show tiles; Config and the list views are panes like the dashboard; Statistics gains a Server tab. The keyboard shortcuts sheet is easier to scan and search, and widget titles go back to a plain title over their card.
 
@@ -178,6 +178,7 @@ A new default look, and a lot of ways to change it. A fresh install starts on Co
 
 - **docs — 147 interface strings that only existed as English fallbacks in the code are now in all six locale files** (the Confetti card, the category menu, Statistics → Server, Notifications and Widgets, the Help tab groups, the category surface), translated into nl, de, fr, zh and es; `validate:locale-parity` could not see them because the keys were missing everywhere, not in one file.
 - **docs — Config → Help follows this release:** 188 theme families and the Looks collection, Confetti as the starting theme, 29 backdrops, the category surface, six Statistics tabs with Server, tiles and icons in titles, in six languages; the matching tips carry the new counts.
+- **docs — `static/data/whats-new/v1.20.0.json` and its index entry**, with two highlights (Confetti and the new Looks, the Server tab) and their pictures under `static/data/whats-new/media/`; `whats-new-stub.js` moved `DASHBOARD_RELEASE` to v1.20.0, which leads the window again, and `NEXTDASH_WHATS_NEW_DATA_VERSION` to `whats-new-v342`. v1.19.10 and v1.19.11 lose their `hideFromModal`, so every release shows in the window again. `tests/whats-new-hidden-release.spec.js` names v1.20.0 and expects nothing held back.
 - **docs — `static/data/whats-new/v1.19.11.json` and its index entry** (`hideFromModal`); `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v341`, `DASHBOARD_RELEASE` stays on v1.19.9. `tests/dashboard-title-alignment.spec.js` covers the // position for a category and a widget, the missing strip and the hover (it fails on v1.19.10's CSS); `tests/whats-new-hidden-release.spec.js` names v1.19.11 as held back next to v1.19.10. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
