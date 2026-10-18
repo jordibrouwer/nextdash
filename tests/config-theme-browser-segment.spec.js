@@ -63,3 +63,19 @@ test.describe('theme browser segments', () => {
             .toHaveAttribute('data-theme-id', /-dark$|^dark$/);
     });
 });
+
+test.describe('the New segment', () => {
+    test('sits with Favourites, Light and Dark and shows only the newest themes', async ({ page }) => {
+        await openBrowser(page);
+        const segments = await page.locator('.theme-browser-segments [data-theme-segment]').evaluateAll((els) => els.map((el) => el.getAttribute('data-theme-segment')));
+        expect(segments.slice(0, 5)).toEqual(['all', 'favorites', 'new', 'light', 'dark']);
+
+        const total = await page.locator('[data-theme-card]').count();
+        await page.locator('[data-theme-segment="new"]').click();
+        const shown = await page.locator('[data-theme-card]').count();
+        expect(shown).toBeGreaterThan(0);
+        expect(shown).toBeLessThan(total);
+        // Every card that is left carries the badge.
+        expect(await page.locator('[data-theme-card]:not(:has([data-theme-new]))').count()).toBe(0);
+    });
+});

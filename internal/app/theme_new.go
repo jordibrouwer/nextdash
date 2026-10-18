@@ -48,6 +48,30 @@ var themeNewFamilies = map[string]bool{
 	"unraid-azure":       true,
 	"unraid-ember":       true,
 	"unraid-blaze":       true,
+	"look-ember":         true,
+	"look-supernova":     true,
+	"look-solar-flare":   true,
+	"look-candy-burst":   true,
+	"look-magma":         true,
+	"look-ocean":         true,
+	"look-lagoon":        true,
+	"look-confetti":      true,
+	"look-koi":           true,
+	"look-tropic":        true,
+	"look-twilight":      true,
+	"look-orchid":        true,
+	"look-mint-haze":     true,
+	"look-cobalt":        true,
+	"look-northern":      true,
+	"look-polar":         true,
+	"look-verdant":       true,
+	"look-berry":         true,
+	"look-golden-hour":   true,
+	"look-neon-alley":    true,
+	"look-film":          true,
+	"look-dusk":          true,
+	"look-opal":          true,
+	"look-holo":          true,
 }
 
 // themeIsNew reports whether a theme belongs to the latest collection.
@@ -58,4 +82,4 @@ func themeIsNew(themeID string) bool {
 // themeCollectionOrder is the order the browser lists collections in. A theme
 // names its own in ThemeColors.Collection; one that is not listed here still
 // filters, but after these.
-var themeCollectionOrder = []string{"neutrals"}
+var themeCollectionOrder = []string{"neutrals", "looks"}

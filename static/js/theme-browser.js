@@ -25,7 +25,7 @@
 (function (global) {
     'use strict';
 
-    const SEGMENTS = ['all', 'favorites', 'light', 'dark', 'yours'];
+    const SEGMENTS = ['all', 'favorites', 'new', 'light', 'dark', 'yours'];
 
     /*
      * The archetypes, as their own row of chips.
@@ -278,6 +278,8 @@
             const ids = Object.values(family.variants).map((v) => v.id);
             if (!ids.some((id) => state.favorites.includes(id))) return false;
         }
+        // The newest collection: the same themes that wear the badge.
+        if (state.segment === 'new' && !Object.values(family.variants).some((v) => metaFor(v.id).new === true)) return false;
         if (state.segment === 'yours' && !isOwnFamily(family)) return false;
         if (state.segment === 'light' && !family.variants.light) return false;
         if (state.segment === 'dark' && !family.variants.dark) return false;
@@ -390,6 +392,7 @@
                     <span class="theme-browser-segments" role="group">
                         ${segmentButton('all', t('config.themeSegmentAll', 'All'))}
                         ${segmentButton('favorites', t('config.themeSegmentFavorites', 'Favourites'))}
+                        ${segmentButton('new', t('config.themeSegmentNew', 'New'))}
                         ${segmentButton('light', t('config.themeSegmentLight', 'Light'))}
                         ${segmentButton('dark', t('config.themeSegmentDark', 'Dark'))}
                         ${hasOwn ? segmentButton('yours', t('config.themeSegmentYours', 'Yours')) : ''}
