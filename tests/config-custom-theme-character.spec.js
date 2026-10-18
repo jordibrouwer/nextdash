@@ -79,7 +79,7 @@ test('titles, weight and backdrop are kept', async ({ page }) => {
 test('every backdrop is offered as a tile, and a late one saves', async ({ page }) => {
     const id = await openEditor(page);
     const tiles = page.locator('[data-theme-backdrops] [data-theme-backdrop-tile]');
-    await expect(tiles).toHaveCount(27); // Automatic + 26
+    await expect(tiles).toHaveCount(30); // Automatic + 29
     await page.locator('[data-theme-backdrop-tile="prism"]').click();
     await expect(page.locator('[data-theme-backdrop-tile="prism"]')).toHaveAttribute('aria-pressed', 'true');
     await expect.poll(async () => (await colors(page)).custom[id].backdrop).toBe('prism');

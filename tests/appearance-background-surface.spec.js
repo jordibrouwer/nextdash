@@ -77,7 +77,7 @@ test.describe('the Background and Surface tabs', () => {
         await openConfigPanel(page, 'Backdrop');
 
         await page.locator('[data-backdrop-mode="pick"]').click();
-        await expect(page.locator('.config-backdrop-thumb')).toHaveCount(26);
+        await expect(page.locator('.config-backdrop-thumb')).toHaveCount(29);
         await page.locator('[data-backdrop-recipe="hexagons"]').click();
         await expect.poll(() => page.getAttribute('body', 'data-backdrop-recipe')).toBe('hexagons');
 

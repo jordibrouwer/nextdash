@@ -52,8 +52,17 @@ func TestChosenBackdropsAreSpreadAcrossTheRecipes(t *testing.T) {
 	for _, recipe := range themeBackdropChoice {
 		uses[recipe]++
 	}
-	for _, name := range themeBackdropRecipes {
-		if n := uses[name]; n < 3 || n > 10 {
+	for i, name := range themeBackdropRecipes {
+		n := uses[name]
+		if i >= themeBackdropHashedRecipes {
+			// The colour-burst recipes are chosen by the looks written for them,
+			// not by the older pairs; they only may not be the whole library's.
+			if n > 10 {
+				t.Errorf("%s is used by %d pairs, want at most 10", name, n)
+			}
+			continue
+		}
+		if n < 3 || n > 10 {
 			t.Errorf("%s is used by %d pairs, want 3 to 10", name, n)
 		}
 	}
@@ -74,10 +83,15 @@ func TestNoChoiceIsLeftForAThemeThatIsGone(t *testing.T) {
 			t.Errorf("%s has an entry but no dark half", key)
 		}
 	}
-	// Every pair has an entry, so the count of entries is the count of pairs.
+	// Every pair has an entry, so the count of entries is the count of pairs --
+	// leaving out a look that names its own recipe and was never given one.
 	pairs := map[string]bool{}
-	for id := range themes {
-		pairs[themeBackdropHashID(id)] = true
+	for id, tc := range themes {
+		key := themeBackdropHashID(id)
+		if _, chosen := themeBackdropChoice[key]; !chosen && themeBackdropRecipeIndex(tc.Backdrop) >= 0 {
+			continue
+		}
+		pairs[key] = true
 	}
 	if len(themeBackdropChoice) != len(pairs) {
 		t.Errorf("%d entries for %d pairs", len(themeBackdropChoice), len(pairs))
