@@ -1482,3 +1482,22 @@ test('16 appearance action bar', async ({ page }) => {
     await page.waitForTimeout(600);
     await shot(page, '16-appearance-action-bar.jpg');
 });
+
+test('full 18 server', async ({ page }) => {
+    await prepare(page);
+    await openConfig(page, 'stats');
+    await subtab(page, 'Server').click();
+    await page.waitForTimeout(2_500);
+    await shot(page, '18-server.jpg');
+});
+
+test('09 category tiles', async ({ page }) => {
+    await prepare(page);
+    await openDashboard(page);
+    await page.locator('#category-title-dev').click({ button: 'right' });
+    const menu = page.locator('.bookmark-context-menu').first();
+    await menu.waitFor({ state: 'visible' });
+    await menu.getByText('Show as tiles').click();
+    await page.waitForTimeout(800);
+    await snap(page, page.locator('.category[data-view="tiles"]').first(), '09-category-tiles.jpg', { pad: 14 });
+});
