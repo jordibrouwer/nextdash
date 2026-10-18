@@ -1695,6 +1695,45 @@ body.no-animations .modal-button.danger.selected {
     opacity: 0.65;
 }
 
+/* Topics: a row of chips under the filter that narrows the sheet to one subject. */
+.cheat-sheet-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.4rem);
+    margin-bottom: var(--space-3, 0.75rem);
+}
+
+.cheat-sheet-tab {
+    background: transparent;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: var(--text-xs, 0.75rem);
+    padding: 0.2rem 0.7rem;
+}
+
+.cheat-sheet-tab:hover {
+    color: var(--text-primary);
+}
+
+.cheat-sheet-tab.is-active {
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.keyboard-cheat-sheet-modal .cheat-sheet-tab:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent-primary) 82%, #fff 18%);
+    outline-offset: 2px;
+}
+
+/* The view's own section spans the grid, so it leads instead of sharing a row. */
+.cheat-sheet-group--context {
+    grid-column: 1 / -1;
+}
+
 .cheat-sheet-no-results {
     margin: var(--space-3, 0.75rem) 0 0;
     color: var(--text-tertiary);

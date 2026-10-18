@@ -163,7 +163,7 @@ class DashboardUiHelpers {
 
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
 
-        const sections = this.getKeyboardCheatSheetItems();
+        const allSections = this.getKeyboardCheatSheetItems();
         const formatKeys = (keys) => {
             if (window.ShortcutFormat && typeof window.ShortcutFormat.keysToHtml === 'function') {
                 return window.ShortcutFormat.keysToHtml(keys);
@@ -179,9 +179,48 @@ class DashboardUiHelpers {
         const context = this.getKeyboardCheatSheetContext();
         // Bookmarks is the default the sheet has always opened on, so it gets no
         // lead line and no marked section: there is nothing to orient someone to.
-        const contextIndex = context === 'bookmarks'
+        const foundContext = context === 'bookmarks'
             ? -1
-            : sections.findIndex((section) => section.contextId === context);
+            : allSections.findIndex((section) => section.contextId === context);
+        // The view's own section leads, across the full width, so it is the
+        // first thing under the filter instead of somewhere down the grid.
+        const sections = foundContext > 0
+            ? [allSections[foundContext], ...allSections.filter((_s, i) => i !== foundContext)]
+            : allSections;
+        const contextIndex = foundContext >= 0 ? 0 : -1;
+        // Sections by what they are for, so the sheet can be read one topic at
+        // a time. A section the map does not know lands in "other".
+        const TAB_OF_SECTION = {
+            sectionNavigation: 'navigation',
+            sectionBookmarks: 'bookmarks',
+            sectionWidgets: 'bookmarks',
+            sectionMultiSelect: 'bookmarks',
+            sectionLibraryView: 'views',
+            sectionTagView: 'views',
+            sectionInboxView: 'views',
+            sectionInboxTriage: 'views',
+            sectionDockerView: 'views',
+            sectionConfigView: 'views',
+            sectionThemeBrowser: 'views',
+            sectionSearchModes: 'search',
+            sectionCommandsBookmarks: 'search',
+            sectionCommandsNavigation: 'search',
+            sectionCommandsAppearance: 'search',
+            sectionCommandsTools: 'search',
+        };
+        const tabOf = (section) => TAB_OF_SECTION[section.id] || 'other';
+        const tabDefs = [
+            { id: 'all', key: 'cheatsheetTabAll', fallback: 'All' },
+            { id: 'navigation', key: 'cheatsheetTabNavigation', fallback: 'Navigation' },
+            { id: 'bookmarks', key: 'cheatsheetTabBookmarks', fallback: 'Bookmarks' },
+            { id: 'views', key: 'cheatsheetTabViews', fallback: 'Views' },
+            { id: 'search', key: 'cheatsheetTabSearch', fallback: 'Search and commands' },
+            { id: 'other', key: 'cheatsheetTabOther', fallback: 'Other' },
+        ].filter((tab) => tab.id === 'all' || sections.some((section) => tabOf(section) === tab.id));
+        const tabLabel = (tab) => {
+            const text = d.language?.t(`dashboard.${tab.key}`);
+            return text && text !== `dashboard.${tab.key}` ? text : tab.fallback;
+        };
         const leadKey = `cheatsheetContext${context.replace(/(^|-)([a-z])/g, (_m, _d, c) => c.toUpperCase())}Lead`;
         const leadText = context === 'bookmarks'
             ? ''
@@ -195,7 +234,7 @@ class DashboardUiHelpers {
             // its own, which is the behaviour this always had.
             const open = contextIndex >= 0 ? isContext : i === 0;
             return `
-                    <details class="cheat-sheet-group${isContext ? ' cheat-sheet-group--context' : ''}" ${open ? 'open' : ''}${isContext ? ' data-context-section="true"' : ''}>
+                    <details class="cheat-sheet-group${isContext ? ' cheat-sheet-group--context' : ''}" data-tab="${tabOf(section)}" ${open ? 'open' : ''}${isContext ? ' data-context-section="true"' : ''}>
                         <summary class="cheat-sheet-group-title"><span class="cheat-sheet-group-label">${esc(section.title)}</span><span class="cheat-sheet-group-count">${section.items.length}</span></summary>
                         <table class="keyboard-cheat-sheet-table">
                             <tbody>
@@ -215,7 +254,10 @@ class DashboardUiHelpers {
                 <input type="text" id="cheat-sheet-filter" class="cheat-sheet-filter"
                        placeholder="${esc(filterPlaceholder)}" autocomplete="off" spellcheck="false"
                        aria-label="${esc(filterPlaceholder)}">
-                <p id="cheat-sheet-no-results" class="cheat-sheet-no-results" hidden>${esc(noResultsText)}</p>
+                <div class="cheat-sheet-tabs" role="group" aria-label="${esc(d.language?.t('dashboard.cheatsheetTabsLabel') || 'Shortcut topics')}">
+                    ${tabDefs.map((tab) => `<button type="button" class="cheat-sheet-tab${tab.id === 'all' ? ' is-active' : ''}" data-tab="${tab.id}" aria-pressed="${tab.id === 'all'}">${esc(tabLabel(tab))}</button>`).join('')}
+                </div>
+                <p id="cheat-sheet-no-results"class="cheat-sheet-no-results" hidden>${esc(noResultsText)}</p>
                 <div class="cheat-sheet-groups">${groupHtml.join('')}</div>
                 <div class="cheat-sheet-foot">
                     <span>${esc(d.formatDashboardLabel('cheatsheetCount', { n: shortcutCount },
@@ -260,9 +302,13 @@ class DashboardUiHelpers {
         const filterInput = document.getElementById('cheat-sheet-filter');
         if (!filterInput) return;
 
-        filterInput.addEventListener('input', () => {
-            // Spaces drop out on both sides, so "shift + y" finds the Shift+Y chip.
-            const squash = (text) => text.toLowerCase().replace(/\s+/g, '');
+        // Spaces drop out on both sides, so "shift + y" finds the Shift+Y chip.
+        const squash = (text) => text.toLowerCase().replace(/\s+/g, '');
+        let activeTab = 'all';
+        // One pass from the two things the reader controls: the topic and the
+        // filter. Typing searches every topic; the topic only narrows a sheet
+        // that is not being searched.
+        const applyView = () => {
             const q = squash(filterInput.value);
             const groups = document.querySelectorAll('.cheat-sheet-group');
             const noResults = document.getElementById('cheat-sheet-no-results');
@@ -278,6 +324,7 @@ class DashboardUiHelpers {
                     row.style.display = match ? '' : 'none';
                     if (match) visible++;
                 });
+                const inTab = activeTab === 'all' || group.dataset.tab === activeTab;
                 if (q) {
                     group.hidden = visible === 0;
                     if (visible > 0) {
@@ -285,15 +332,30 @@ class DashboardUiHelpers {
                         anyVisible = true;
                     }
                 } else {
-                    group.hidden = false;
-                    // Back as it opened: the view's own section, not Navigation.
-                    group.open = contextIndex >= 0 ? i === contextIndex : i === 0;
-                    anyVisible = true;
+                    group.hidden = !inTab;
+                    // A chosen topic opens all its sections; otherwise back as it
+                    // opened: the view's own section, not Navigation.
+                    group.open = activeTab !== 'all'
+                        ? inTab
+                        : (contextIndex >= 0 ? i === contextIndex : i === 0);
+                    if (inTab) anyVisible = true;
                 }
             });
             if (noResults) {
                 noResults.hidden = !q || anyVisible;
             }
+        };
+        filterInput.addEventListener('input', applyView);
+        document.querySelectorAll('.cheat-sheet-tab').forEach((button) => {
+            button.addEventListener('click', () => {
+                activeTab = button.dataset.tab || 'all';
+                document.querySelectorAll('.cheat-sheet-tab').forEach((other) => {
+                    const on = other === button;
+                    other.classList.toggle('is-active', on);
+                    other.setAttribute('aria-pressed', String(on));
+                });
+                applyView();
+            });
         });
         this._setupCheatSheetKeyboardNav();
     }

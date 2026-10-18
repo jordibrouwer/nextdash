@@ -124,6 +124,8 @@ The keyboard shortcuts sheet is easier to scan and search.
 
 - **new — two columns.** The sections sit side by side (one column below 40rem) instead of in one long column, so the sheet fits a window without scrolling past every section (`.cheat-sheet-groups`).
 - **new — find by key or section.** The filter also matches the key chips and the section name, and ignores spaces, so `shift + y` finds Shift+Y and `tag view` shows the whole Tag view section.
+- **new — topics.** A row of chips under the filter narrows the sheet to Navigation, Bookmarks, Views, Search and commands, or Other, and opens every section of that topic. Typing in the filter still searches all topics.
+- **new — the view's own section leads.** Opened from a view with a section of its own, that section moves to the top and spans the full width instead of sitting somewhere in the grid.
 - **new — `/` jumps to the filter**, next to Ctrl/Cmd+F. The filter stays at the top while the sections scroll.
 - **fix — easier to read.** Section titles are larger and no longer all lowercase, each shows how many shortcuts it holds, and the rows have more room.
 
