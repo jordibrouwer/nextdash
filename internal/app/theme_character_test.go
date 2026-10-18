@@ -293,8 +293,8 @@ func TestTheFourCharacterThemesShip(t *testing.T) {
 	if crt := themes["retro-crt-mk2-dark"]; crt.RadiusScale > 0.2 || crt.LabelTransform != "uppercase" {
 		t.Errorf("Retro CRT Mk II lost its shape: radius %v, transform %q", crt.RadiusScale, crt.LabelTransform)
 	}
-	// The default theme must not have moved.
-	if defaultThemeID != "slate-dark" {
+	// The default theme is Confetti; a new theme does not change it by accident.
+	if defaultThemeID != "look-confetti-dark" {
 		t.Errorf("a new theme changed what a fresh install starts on: %q", defaultThemeID)
 	}
 }

@@ -71,6 +71,7 @@
          stylesheet, which is served as-is and so cannot render the asset helper.
          A hashed URL here would not match it, making the browser fetch the font
          twice and warn that the preload went unused. Both sides must agree. -->
+    <link rel="preload" href="/static/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/static/fonts/source-code-pro-latin.woff2" as="font" type="font/woff2" crossorigin>
     <!-- Kept OUTSIDE the bundle block: replaceBundleBlock swaps the whole block
          for a single <link>, so a literal URL in there is discarded. Inside it,

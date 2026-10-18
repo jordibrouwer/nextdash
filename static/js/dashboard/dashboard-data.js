@@ -313,7 +313,7 @@ class DashboardData {
             if (window.DashboardFont) {
                 window.DashboardFont.normalizeFontSettings(d.settings);
             } else if (!d.settings.fontPreset) {
-                d.settings.fontPreset = 'source-code-pro';
+                d.settings.fontPreset = 'inter';
             }
             if (typeof d.settings.showShortcuts === 'undefined') {
                 d.settings.showShortcuts = true;

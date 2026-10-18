@@ -9948,7 +9948,7 @@ class DashboardConfig {
         }).join('');
 
         const presets = (window.DashboardFont?.PRESET_IDS) || ['source-code-pro', 'jetbrains-mono', 'ibm-plex-mono', 'inter', 'ibm-plex-sans', 'dm-sans', 'system'];
-        const activePreset = window.DashboardFont?.resolveActiveFontPreset?.(s) || s.fontPreset || 'source-code-pro';
+        const activePreset = window.DashboardFont?.resolveActiveFontPreset?.(s) || s.fontPreset || 'inter';
         const fontPresetOptions = presets.map((p) =>
             `<option value="${esc(p)}" ${p === activePreset ? 'selected' : ''}>${esc(this.fontPresetLabel(p))}</option>`
         ).join('');
@@ -11764,7 +11764,7 @@ class DashboardConfig {
         const storedGone = this.dash.settings?.theme === id;
         const wasActive = storedGone || shownBefore === id;
         if (storedGone) {
-            this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'slate-dark';
+            this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'look-confetti-dark';
         }
         if (storedGone || rowsLeft) void this.saveSettingsWithFeedback();
         this.repaintAppearanceBody();
@@ -13086,7 +13086,7 @@ class DashboardConfig {
         weatherLocation: { info: ['weatherLocationInfoTitle', 'weatherLocationInfoMessage'], def: '' },
         // Layout
         columnsPerRow: { info: ['columnsInfoTitle', 'columnsInfoMessage'], def: 3 },
-        densityMode: { info: ['densityModeInfoTitle', 'densityModeInfoMessage'], def: 'compact' },
+        densityMode: { info: ['densityModeInfoTitle', 'densityModeInfoMessage'], def: 'auto' },
         categorySpacing: { info: ['categorySpacingInfoTitle', 'categorySpacingInfoMessage'], def: 'balanced' },
         sideMargin: { info: ['sideMarginInfoTitle', 'sideMarginInfoMessage'], def: 'balanced' },
         packedColumns: { info: ['packedColumnsInfoTitle', 'packedColumnsInfoMessage'], def: true },
@@ -13095,7 +13095,7 @@ class DashboardConfig {
         interleaveMode: { info: ['interleaveModeInfoTitle', 'interleaveModeInfoMessage'], def: false },
         hideEmptyCategories: { info: ['hideEmptyCategoriesInfoTitle', 'hideEmptyCategoriesInfoMessage'], def: true },
         alwaysCollapseCategories: { info: ['alwaysCollapseCategoriesInfoTitle', 'alwaysCollapseCategoriesInfoMessage'], def: false },
-        layoutPreset: { info: ['layoutPresetInfoTitle', 'layoutPresetInfoMessage'], def: 'default' },
+        layoutPreset: { info: ['layoutPresetInfoTitle', 'layoutPresetInfoMessage'], def: 'masonry' },
         categoryItemLimit: { info: ['categoryItemLimitInfoTitle', 'categoryItemLimitInfoMessage'], hint: 'categoryItemLimitHint', def: 15 },
         launcherIconSize: { info: ['launcherIconSizeInfoTitle', 'launcherIconSizeInfoMessage'], def: 'normal' },
         // Bookmark display
@@ -13238,7 +13238,7 @@ class DashboardConfig {
         bookmarkArchiveUrl: { info: ['bookmarkArchiveUrlInfoTitle', 'bookmarkArchiveUrlInfoMessage'], def: 'https://web.archive.org/web/*/{url}' },
         pasteDestination: { hint: 'pasteDestinationHint', def: 'ask' },
         monitorEmphasis: { hint: 'monitorEmphasisHint', def: 'problems' },
-        theme: { def: 'slate-dark' },
+        theme: { def: 'look-confetti-dark' },
         // Appearance → Theme: the three Surfaces answers and the two Backdrop
         // ones. Without a `def` renderFieldAffordances draws no ↺ at all, which
         // is why these five were the only controls on the page without one.
@@ -13340,7 +13340,7 @@ class DashboardConfig {
         animationsEnabled: { info: ['enableAnimationsInfoTitle', 'enableAnimationsInfoMessage'], def: true },
         viewAnimationsEnabled: { info: ['viewAnimationsInfoTitle', 'viewAnimationsInfoMessage'], def: true },
         animationSpeed: { info: ['animationSpeedInfoTitle', 'animationSpeedInfoMessage'], def: 'normal' },
-        fontPreset: { info: ['fontPresetInfoTitle', 'fontPresetInfoMessage'], def: 'source-code-pro' },
+        fontPreset: { info: ['fontPresetInfoTitle', 'fontPresetInfoMessage'], def: 'inter' },
         fontWeight: { info: ['fontWeightInfoTitle', 'fontWeightInfoMessage'], def: 'normal' },
         backgroundType: { info: ['backgroundPickerInfoTitle', 'backgroundPickerInfoMessage'], def: 'none' },
         backgroundOpacity: { info: ['backgroundOpacityInfoTitle', 'backgroundOpacityInfoMessage'], def: 1 },

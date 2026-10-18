@@ -1684,7 +1684,10 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
 .dashboard-grid.packed-columns .dashboard-column {
     display: flex;
     flex-direction: column;
-    gap: var(--space-7, 3rem);
+    /* Category spacing: the same gap the spread layout (packed-masonry) already
+       took from the setting. A fixed 3rem here is why choosing a spacing did
+       nothing on the layout a fresh install opens on. */
+    gap: var(--category-row-gap, var(--space-7, 3rem));
     flex: 0 0 var(--packed-column-width);
     width: var(--packed-column-width);
     max-width: var(--packed-column-width);
@@ -2029,7 +2032,11 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
 
 /* New layout presets: masonry, list, widgets */
 .dashboard-grid.layout-masonry {
-    gap: var(--space-4, 1rem);
+    /* The row gap is Category spacing, like the default layout's; only the column
+       gap is masonry's own. It was one fixed gap before, and the setting did
+       nothing in the layout a fresh install opens on. */
+    row-gap: var(--category-row-gap, 2rem);
+    column-gap: var(--space-4, 1rem);
 }
 .dashboard-grid.layout-masonry .category {
     /* allow variable-height cards and denser packing */

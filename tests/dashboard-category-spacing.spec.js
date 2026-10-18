@@ -21,6 +21,8 @@ async function loadDashboard(page) {
     // row-gap only applies to the non-packed grid; packed columns are flex.
     await page.evaluate(async () => {
         const d = window.dashboardInstance;
+        // The default layout's row gap; masonry, a fresh install's default, sets its own.
+        d.settings.layoutPreset = 'default';
         d.settings.packedColumns = false;
         await d.renderDashboard({ animate: false });
     });
@@ -48,6 +50,55 @@ test.describe('category spacing', () => {
             }, mode);
             expect(await rowGap(page)).toBe(expected);
         }
+    });
+
+    // Masonry is the default layout of a fresh install; it drew its blocks on a
+    // fixed gap of its own and the setting did nothing there.
+    test('each choice drives the gap in masonry too', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            d.settings.layoutPreset = 'masonry';
+            await d.renderDashboard({ animate: false });
+        });
+        await expect.poll(() => page.evaluate(() => document.querySelector('.dashboard-grid').classList.contains('layout-masonry'))).toBe(true);
+        const seen = {};
+        for (const mode of ['snug', 'balanced', 'airy']) {
+            await page.evaluate(async (m) => {
+                const d = window.dashboardInstance;
+                d.settings.categorySpacing = m;
+                document.body.setAttribute('data-category-spacing', m);
+                await d.renderDashboard({ animate: false });
+            }, mode);
+            seen[mode] = parseFloat(await rowGap(page));
+        }
+        expect(seen.snug).toBeLessThan(seen.balanced);
+        expect(seen.balanced).toBeLessThan(seen.airy);
+    });
+
+    // Packed columns is what a fresh install opens on, and its columns kept a fixed
+    // 3rem between blocks: the setting only reached the spread layout.
+    test('each choice drives the gap between blocks in packed columns', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            d.settings.packedColumns = true;
+            await d.renderDashboard({ animate: false, forceFull: true });
+        });
+        await expect.poll(() => page.evaluate(() => !!document.querySelector('.dashboard-grid.packed-columns .dashboard-column'))).toBe(true);
+        const columnGap = () => page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.dashboard-grid.packed-columns .dashboard-column')).rowGap));
+        const seen = {};
+        for (const mode of ['snug', 'balanced', 'airy']) {
+            await page.evaluate(async (m) => {
+                const d = window.dashboardInstance;
+                d.settings.categorySpacing = m;
+                document.body.setAttribute('data-category-spacing', m);
+            }, mode);
+            seen[mode] = await columnGap();
+        }
+        expect(seen.snug).toBe(20);
+        expect(seen.balanced).toBe(32);
+        expect(seen.airy).toBe(48);
     });
 
     test('changing it in config applies without a reload', async ({ page }) => {

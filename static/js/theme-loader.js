@@ -16,7 +16,7 @@
      * missing: a device with device-specific settings on and no theme in them,
      * or a shell served without the data-theme attribute filled in.
      */
-    const DEFAULT_THEME = 'slate-dark';
+    const DEFAULT_THEME = 'look-confetti-dark';
 
     const LEGACY_THEME_MAP = {
         aurora: 'midnight-neon-dark',
@@ -741,7 +741,7 @@
         window.DashboardFont.applyMainFont({
             enableCustomFont: root.getAttribute('data-enable-custom-font') === 'true',
             customFontPath: root.getAttribute('data-custom-font-path') || '',
-            fontPreset: root.getAttribute('data-font-preset') || 'source-code-pro'
+            fontPreset: root.getAttribute('data-font-preset') || 'inter'
         });
     });
     

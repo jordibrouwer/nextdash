@@ -254,6 +254,14 @@ test.describe('a tab strip too long for the window', () => {
         await open(page, '#config/behavior/privacy');
         await expect(page.locator('[data-behavior-tab="privacy"]')).toHaveAttribute('aria-selected', 'true');
 
+        // Too long for the window is a property of the strip against its room, not of a
+        // typeface: Inter sets the four tabs tighter than the mono did and they fit at
+        // 800px. Give the strip less room than they need and let it settle.
+        await page.evaluate(() => {
+            document.querySelector('[data-behavior-tab]').parentElement.style.maxWidth = '260px';
+            window.dashboardInstance.config.syncSubtabStrips();
+        });
+
         const strip = await page.evaluate(() => {
             const el = document.querySelector('[data-behavior-tab]').parentElement;
             const box = el.getBoundingClientRect();

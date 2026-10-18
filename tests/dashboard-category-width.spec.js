@@ -49,6 +49,9 @@ async function openDashboard(page, { packed = false, columns = 3, itemLimit = 15
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
     await page.evaluate(async ({ packed, columns, itemLimit }) => {
         const d = window.dashboardInstance;
+        // These measure the grid's own geometry, which is the default layout's;
+        // masonry, the default of a fresh install, lays its blocks out differently.
+        d.settings.layoutPreset = 'default';
         d.settings.packedColumns = packed;
         d.settings.columnsPerRow = columns;
         // Spreading needs a limit: the limit is what decides how many columns a

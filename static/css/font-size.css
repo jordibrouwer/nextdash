@@ -2,7 +2,7 @@
 
 /* Global font for the entire app */
 :root {
-    --font-family-main: 'Source Code Pro', monospace;
+    --font-family-main: 'Inter', system-ui, sans-serif;
     /* Code, URLs and shortcuts. Follows the main font when that is a mono preset (font-presets.js). */
     --font-family-mono: 'Source Code Pro', ui-monospace, monospace;
     --font-mono: var(--font-family-mono);
@@ -167,4 +167,19 @@ body.font-size-xl {
     body.font-size-xs {
         --font-size-title: 1.25rem;
     }
+}
+
+/* Where the mono stays when the text is Inter: the // that is also the drag
+   handle, the response time, the shortcut, the figures in a widget. They are
+   code-like and line up in columns; the names and the sentences are Inter. */
+.category-reorder-glyph,
+.status-text,
+.bookmark-superscript-badge,
+.bookmark-shortcut,
+.dashboard-widget-health-value,
+.dashboard-widget-stat-value,
+.dashboard-widget-trend-value,
+.dashboard-widget-weather-temp {
+    font-family: var(--font-family-mono, 'Source Code Pro', ui-monospace, monospace);
+    font-variant-numeric: tabular-nums;
 }

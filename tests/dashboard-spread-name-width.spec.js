@@ -23,6 +23,8 @@ async function openDashboard(page, { columns, density, ping }) {
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
     await page.evaluate(async ({ columns, density, ping }) => {
         const d = window.dashboardInstance;
+        // The default layout's geometry; masonry is a fresh install's default.
+        d.settings.layoutPreset = 'default';
         d.settings.packedColumns = false;
         d.settings.columnsPerRow = columns;
         // Room for every bookmark, so the single column is measured with all

@@ -26,8 +26,8 @@ func TestNormalizeFontPreset(t *testing.T) {
 	if got := normalizeFontPreset("inter"); got != "inter" {
 		t.Fatalf("valid preset = %q", got)
 	}
-	if got := normalizeFontPreset("unknown-font"); got != "source-code-pro" {
-		t.Fatalf("invalid preset = %q, want source-code-pro", got)
+	if got := normalizeFontPreset("unknown-font"); got != "inter" {
+		t.Fatalf("invalid preset = %q, want inter", got)
 	}
 }
 

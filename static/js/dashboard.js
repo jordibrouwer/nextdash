@@ -79,7 +79,7 @@ class Dashboard {
         this.pinnedEmptyCategoryId = null;
         this.settings = {
             currentPage: 'default',
-            theme: 'slate-dark',
+            theme: 'look-confetti-dark',
             openInNewTab: true,
             showGridKeyLegend: true,
             columnsPerRow: 3,
@@ -118,8 +118,8 @@ class Dashboard {
             linkPreviewHoverDelayMs: 250,
             showSiteNews: true,
             categorySortModesMigrated: true,
-            layoutPreset: 'default',
-            densityMode: 'compact',
+            layoutPreset: 'masonry',
+            densityMode: 'auto',
             categorySpacing: 'balanced',
             sideMargin: 'balanced',
             packedColumns: true,
@@ -128,7 +128,7 @@ class Dashboard {
             backgroundType: 'none',
             backgroundOpacity: 1,
             fontWeight: 'normal',
-            fontPreset: 'source-code-pro',
+            fontPreset: 'inter',
             autoDarkMode: true,
             showSmartRecentCollection: false,
             showSmartTodayCollection: true,

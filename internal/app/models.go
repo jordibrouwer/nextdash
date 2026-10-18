@@ -454,6 +454,8 @@ type Settings struct {
 	ConfigButtonDefaultOnMigrated   bool   `json:"configButtonDefaultOnMigrated,omitempty"`   // one-time: restore config header icon after visibility fix
 	SurfaceDefaultsMigrated         bool   `json:"surfaceDefaultsMigrated,omitempty"`         // one-time: backdrop on, glow off, depth — the three Surfaces answers agreed on once
 	DepthDefaultFlatMigrated        bool   `json:"depthDefaultFlatMigrated,omitempty"`        // one-time: the depth default moved to flat
+	GridDefaultsMigrated            bool   `json:"gridDefaultsMigrated,omitempty"`            // one-time: layout masonry and density auto, for an install still on compact and default
+	FontDefaultInterMigrated        bool   `json:"fontDefaultInterMigrated,omitempty"`        // one-time: the UI font moved from Source Code Pro to Inter
 	SurfaceFollowMigrated           bool   `json:"surfaceFollowMigrated,omitempty"`           // one-time: depth, glow and effects moved to follow-the-theme
 	LauncherDefaultsMigrated        bool   `json:"launcherDefaultsMigrated,omitempty"`        // one-time: tags, recents, the cheat sheet and pages left the action bar for the search panel
 	ActionButtonsAllOnMigrated      bool   `json:"actionButtonsAllOnMigrated,omitempty"`      // one-time: every action button back on
@@ -1150,10 +1152,10 @@ const defaultNotesWidgetID = "w_000000000002"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
-const defaultThemeID = "slate-dark"
+const defaultThemeID = "look-confetti-dark"
 
 // defaultThemeLightID is the light counterpart auto dark mode switches to.
-const defaultThemeLightID = "slate-light"
+const defaultThemeLightID = "look-confetti-light"
 
 /*
 The fallback depth and glow.
@@ -1250,7 +1252,7 @@ func normalizeFontPreset(s string) string {
 	if isValidFontPreset(s) {
 		return s
 	}
-	return "source-code-pro"
+	return "inter"
 }
 
 // Shortcut label visibility. "hover" means the label is on screen only while
@@ -1768,7 +1770,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowVideoIcon:                   true,
 			IncludeFindersInSearch:          true,
 			SortMethod:                      "order",
-			LayoutPreset:                    "default",
+			LayoutPreset:                    "masonry",
 			ThemeDepth:                      surfaceFollow,
 			GlowStrength:                    surfaceFollow,
 			ThemeEffects:                    surfaceFollow,
@@ -1776,6 +1778,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			SurfaceFollowMigrated:           true,
 			SurfaceDefaultsMigrated:         true,
 			DepthDefaultFlatMigrated:        true,
+			GridDefaultsMigrated:            true,
+			FontDefaultInterMigrated:        true,
 			LauncherDefaultsMigrated:        true,
 			ActionButtonsAllOnMigrated:      true,
 			ActionKeysOffMigrated:           true,
@@ -1797,7 +1801,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			BackgroundPattern:               "auto",
 			BackgroundOpacity:               1,
 			FontWeight:                      "normal",
-			FontPreset:                      "source-code-pro",
+			FontPreset:                      "inter",
 			AutoDarkMode:                    false,
 			ShowSmartRecentCollection:       false,
 			ShowSmartTodayCollection:        true,
@@ -4356,7 +4360,7 @@ func (fs *FileStore) GetSettings() Settings {
 			IncludeFindersInSearch:          true,
 			BackgroundOpacity:               1,
 			FontWeight:                      "normal",
-			FontPreset:                      "source-code-pro",
+			FontPreset:                      "inter",
 			AutoDarkMode:                    false,
 			ShowSmartRecentCollection:       false,
 			ShowSmartTodayCollection:        true,
@@ -4390,7 +4394,7 @@ func (fs *FileStore) GetSettings() Settings {
 			NewBookmarkCheckMode:            defaultNewBookmarkCheckMode,
 			BookmarkStaleDays:               defaultBookmarkStaleDays,
 			BookmarkArchiveUrl:              defaultBookmarkArchiveUrl,
-			LayoutPreset:                    "default",
+			LayoutPreset:                    "masonry",
 			ThemeDepth:                      surfaceFollow,
 			GlowStrength:                    surfaceFollow,
 			ThemeEffects:                    surfaceFollow,
@@ -4398,6 +4402,8 @@ func (fs *FileStore) GetSettings() Settings {
 			SurfaceFollowMigrated:           true,
 			SurfaceDefaultsMigrated:         true,
 			DepthDefaultFlatMigrated:        true,
+			GridDefaultsMigrated:            true,
+			FontDefaultInterMigrated:        true,
 			LauncherDefaultsMigrated:        true,
 			ActionButtonsAllOnMigrated:      true,
 			ActionKeysOffMigrated:           true,
@@ -4417,7 +4423,7 @@ func (fs *FileStore) GetSettings() Settings {
 			CategoryHeaderSize:              "m",
 			ShowCategoryIcon:                true,
 			BackgroundPattern:               "auto",
-			DensityMode:                     "compact",
+			DensityMode:                     "auto",
 			CategorySpacing:                 "balanced",
 			SideMargin:                      "balanced",
 			PackedColumns:                   true,
@@ -5114,7 +5120,24 @@ func (fs *FileStore) GetSettings() Settings {
 			settings.AnimationSpeed = "normal"
 		}
 		if _, ok := rawSettings["densityMode"]; !ok || (settings.DensityMode != "comfortable" && settings.DensityMode != "compact" && settings.DensityMode != "dense" && settings.DensityMode != "auto") {
-			settings.DensityMode = "compact"
+			settings.DensityMode = "auto"
+		}
+		/*
+		 * Masonry columns and the density that follows the screen, once.
+		 *
+		 * These are the new defaults. An install still on the old ones --
+		 * compact rows, the default layout -- moves with them; one that chose
+		 * something else keeps it, and so does anyone who goes back to the old
+		 * answers after this pass has run.
+		 */
+		if !settings.GridDefaultsMigrated {
+			if settings.DensityMode == "compact" {
+				settings.DensityMode = "auto"
+			}
+			if settings.LayoutPreset == "" || settings.LayoutPreset == "default" {
+				settings.LayoutPreset = "masonry"
+			}
+			settings.GridDefaultsMigrated = true
 		}
 		// Distinct from densityMode, which sizes bookmark rows: this is the gap
 		// between category rows. "balanced" is a deliberate reduction from the
@@ -5170,9 +5193,24 @@ func (fs *FileStore) GetSettings() Settings {
 		if settings.EnableCustomFont && settings.CustomFontPath != "" {
 			settings.FontPreset = "custom"
 		} else if settings.FontPreset == "custom" && settings.CustomFontPath == "" {
-			settings.FontPreset = "source-code-pro"
+			settings.FontPreset = "inter"
 		} else if _, ok := rawSettings["fontPreset"]; !ok || !isValidFontPreset(settings.FontPreset) {
-			settings.FontPreset = "source-code-pro"
+			settings.FontPreset = "inter"
+		}
+		/*
+		 * Inter for the text, once.
+		 *
+		 * The UI font was Source Code Pro, a mono that cut long names short in
+		 * narrow columns. Everyone still on it moves to Inter; code, addresses,
+		 * the // and the figures stay on the mono (--font-family-mono). Another
+		 * preset, or an uploaded font, stays. After this pass going back to
+		 * Source Code Pro is the reader's own choice.
+		 */
+		if !settings.FontDefaultInterMigrated {
+			if settings.FontPreset == "source-code-pro" {
+				settings.FontPreset = "inter"
+			}
+			settings.FontDefaultInterMigrated = true
 		}
 		settings.EnableCustomFont = settings.FontPreset == "custom" && settings.CustomFontPath != ""
 		if _, ok := rawSettings["backgroundType"]; !ok {
@@ -5349,6 +5387,8 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.ConfigButtonDefaultOnMigrated = settings.ConfigButtonDefaultOnMigrated || stored.ConfigButtonDefaultOnMigrated
 			settings.SurfaceDefaultsMigrated = settings.SurfaceDefaultsMigrated || stored.SurfaceDefaultsMigrated
 			settings.DepthDefaultFlatMigrated = settings.DepthDefaultFlatMigrated || stored.DepthDefaultFlatMigrated
+			settings.GridDefaultsMigrated = settings.GridDefaultsMigrated || stored.GridDefaultsMigrated
+			settings.FontDefaultInterMigrated = settings.FontDefaultInterMigrated || stored.FontDefaultInterMigrated
 			settings.SurfaceFollowMigrated = settings.SurfaceFollowMigrated || stored.SurfaceFollowMigrated
 			settings.LauncherDefaultsMigrated = settings.LauncherDefaultsMigrated || stored.LauncherDefaultsMigrated
 			settings.ActionButtonsAllOnMigrated = settings.ActionButtonsAllOnMigrated || stored.ActionButtonsAllOnMigrated
