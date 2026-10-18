@@ -548,19 +548,22 @@ func TestThemeContractCoversInfoAndTheLadder(t *testing.T) {
 	})
 }
 
-// Velvet, paper and aurora themes ship flat of glow, at the lowest opacity, on
-// glass panes.
-func TestVelvetPaperAuroraThemesShipGlassWithoutGlow(t *testing.T) {
+// Paper and aurora themes ship flat of glow, at the lowest opacity, on glass
+// panes. Velvet ones are flat in depth with a soft glow, on glass panes.
+func TestVelvetPaperAuroraThemesShipGlass(t *testing.T) {
 	seen := 0
 	for id, tc := range getDefaultBuiltInThemes() {
 		switch tc.Character {
-		case "velvet", "paper", "aurora":
-		default:
-			continue
-		}
-		seen++
-		if tc.Glow != "off" || tc.SurfaceAlpha != 0.2 || tc.Surface != "glass" {
-			t.Errorf("%s: glow=%q alpha=%v surface=%q, want off / 0.2 / glass", id, tc.Glow, tc.SurfaceAlpha, tc.Surface)
+		case "velvet":
+			seen++
+			if tc.Depth != "flat" || tc.Glow != "soft" || tc.SurfaceAlpha != 0.2 || tc.Surface != "glass" {
+				t.Errorf("%s: depth=%q glow=%q alpha=%v surface=%q, want flat / soft / 0.2 / glass", id, tc.Depth, tc.Glow, tc.SurfaceAlpha, tc.Surface)
+			}
+		case "paper", "aurora":
+			seen++
+			if tc.Glow != "off" || tc.SurfaceAlpha != 0.2 || tc.Surface != "glass" {
+				t.Errorf("%s: glow=%q alpha=%v surface=%q, want off / 0.2 / glass", id, tc.Glow, tc.SurfaceAlpha, tc.Surface)
+			}
 		}
 	}
 	if seen == 0 {

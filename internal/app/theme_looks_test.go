@@ -31,7 +31,7 @@ func TestLooksCollection(t *testing.T) {
 		t.Fatalf("%d families in Looks, want 24", len(families))
 	}
 
-	wantSurface := map[string]string{"look-magma": "card", "look-polar": "open", "look-golden-hour": "card", "look-film": "card", "look-opal": "card"}
+	wantSurface := map[string]string{"look-magma": "card", "look-film": "card", "look-opal": "card"}
 	recipes := map[string]int{}
 	for family, pair := range families {
 		dark, light := pair[0], pair[1]
@@ -95,7 +95,8 @@ func TestLooksTextClearsAA(t *testing.T) {
 }
 
 // A look draws on glass with no glow and a pane that is mostly see-through, whatever the
-// reader's other settings are: these are the three answers it brings with it.
+// reader's other settings are: these are the three answers it brings with it. The velvet
+// ones are the exception: flat in depth, with a soft glow.
 func TestLooksBringGlassNoGlowAndFifthOpacity(t *testing.T) {
 	n := 0
 	for id, tc := range getDefaultBuiltInThemes() {
@@ -103,11 +104,15 @@ func TestLooksBringGlassNoGlowAndFifthOpacity(t *testing.T) {
 			continue
 		}
 		n++
-		if tc.Depth != "glass" {
-			t.Errorf("%s: depth %q, want glass", id, tc.Depth)
+		wantDepth, wantGlow := "glass", "off"
+		if tc.Character == "velvet" {
+			wantDepth, wantGlow = "flat", "soft"
 		}
-		if tc.Glow != "off" {
-			t.Errorf("%s: glow %q, want off", id, tc.Glow)
+		if tc.Depth != wantDepth {
+			t.Errorf("%s: depth %q, want %s", id, tc.Depth, wantDepth)
+		}
+		if tc.Glow != wantGlow {
+			t.Errorf("%s: glow %q, want %s", id, tc.Glow, wantGlow)
 		}
 		if tc.SurfaceAlpha != 0.2 {
 			t.Errorf("%s: opacity %v, want 0.2", id, tc.SurfaceAlpha)
