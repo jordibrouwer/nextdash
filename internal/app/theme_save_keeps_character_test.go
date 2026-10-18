@@ -77,7 +77,7 @@ func TestSavingColoursHoldsCharacterToItsRange(t *testing.T) {
 	})
 	want := ThemeColors{
 		SurfaceStep:  1.8,
-		SurfaceAlpha: 0.3,
+		SurfaceAlpha: 0.2,
 		SurfaceBlur:  32,
 		SurfaceGlow:  1,
 		RadiusScale:  1.6,

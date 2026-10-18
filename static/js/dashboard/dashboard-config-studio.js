@@ -41,7 +41,7 @@
 
     /** Every setting the studio previews. Only these are gated and put back. */
     const LOOK_FIELDS = ['theme', 'themeBackdrop', 'themeSurfacePrefs', 'themeSurfacesForceAll',
-        'backdropTuning', 'backgroundPattern', 'cardGlass', 'themeDepth', 'glowStrength', 'themeEffects',
+        'backdropTuning', 'backgroundPattern', 'cardGlass', 'themeDepth', 'glowStrength', 'themeEffects', 'categorySurface',
         ...HEAD_FIELDS, ...BAR_FIELDS, ...TEXT_FIELDS, ...GRID_FIELDS];
 
     /*
@@ -51,8 +51,8 @@
     const TAB_FIELDS = {
         themes: { fields: ['theme'], prefs: [] },
         backdrop: { fields: ['themeBackdrop', 'backdropTuning', 'backgroundPattern'], prefs: ['backdrop'] },
-        surface: { fields: ['themeDepth', 'glowStrength', 'themeEffects', 'cardGlass'],
-            prefs: ['depth', 'glow', 'effects', 'alpha', 'blur', 'border'] },
+        surface: { fields: ['themeDepth', 'glowStrength', 'themeEffects', 'categorySurface', 'cardGlass'],
+            prefs: ['depth', 'glow', 'effects', 'catSurface', 'alpha', 'blur', 'border'] },
         heads: { fields: [...HEAD_FIELDS, ...BAR_FIELDS], prefs: [] },
         layout: { fields: [...TEXT_FIELDS, ...GRID_FIELDS], prefs: [] },
         looks: { fields: [], prefs: [] },

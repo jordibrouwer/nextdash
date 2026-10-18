@@ -3704,6 +3704,7 @@ class DashboardConfig {
         { field: 'themeDepth', labelKey: 'themeDepthLabel', fallback: 'Depth', section: 'appearance', subTab: 'surface' },
         { field: 'glowStrength', labelKey: 'glowStrengthLabel', fallback: 'Glow', section: 'appearance', subTab: 'surface' },
         { field: 'themeEffects', labelKey: 'themeEffectsLabel', fallback: 'Effects', section: 'appearance', subTab: 'surface' },
+        { field: 'categorySurface', labelKey: 'categorySurfaceLabel', fallback: 'Category surface', section: 'appearance', subTab: 'surface' },
         { field: 'themeSurfacesForceAll', labelKey: 'themeSurfacesForceAllLabel', fallback: 'Use these for every theme', section: 'appearance', subTab: 'surface' },
         { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
         { field: 'colorizeStatus', labelKey: 'colorizeStatus', fallback: 'Colour status on bookmark rows', section: 'appearance', subTab: 'display' },
@@ -12318,7 +12319,7 @@ class DashboardConfig {
     }
 
     /** Hand-written Appearance fields that already explain themselves in a note. */
-    static APPEARANCE_OWN_NOTES = new Set(['themeEditor', 'themeDepth', 'glowStrength', 'themeEffects',
+    static APPEARANCE_OWN_NOTES = new Set(['themeEditor', 'themeDepth', 'glowStrength', 'themeEffects', 'categorySurface',
         'themeSurfacesForceAll', 'inkGap', 'themeBackdrop', 'backgroundPattern',
         'iconStylingStyle', 'iconStylingIntensity']);
 
@@ -12465,6 +12466,7 @@ class DashboardConfig {
             case 'themeDepth': this.setSurface('themeDepth', value); break;
             case 'glowStrength': this.setSurface('glowStrength', value); break;
             case 'themeEffects': this.setSurface('themeEffects', value); break;
+            case 'categorySurface': this.setSurface('categorySurface', value); break;
             case 'animationSpeed':
                 this.dash.settings.animationSpeed = 'normal';
                 window.VisualSettings?.applyAnimationSpeed?.('normal');
@@ -12521,7 +12523,7 @@ class DashboardConfig {
         const settings = this.dash.settings;
         if (!settings) return;
         const themeId = this.currentThemeId();
-        const key = { themeDepth: 'depth', glowStrength: 'glow', themeEffects: 'effects' }[field];
+        const key = { themeDepth: 'depth', glowStrength: 'glow', themeEffects: 'effects', categorySurface: 'catSurface' }[field];
 
         if (this.surfaceScope() === 'global') {
             settings[field] = value;
@@ -12566,6 +12568,7 @@ class DashboardConfig {
         settings.themeDepth = 'follow';
         settings.glowStrength = 'follow';
         settings.themeEffects = 'follow';
+        settings.categorySurface = 'follow';
 
         void this.applyResolvedSurfaces();
         this.persistAppearance();
@@ -12591,7 +12594,7 @@ class DashboardConfig {
     surfaceSelectValue(field) {
         const settings = this.dash.settings || {};
         if (this.surfaceScope() === 'global') return settings[field] || 'follow';
-        const key = { themeDepth: 'depth', glowStrength: 'glow', themeEffects: 'effects' }[field];
+        const key = { themeDepth: 'depth', glowStrength: 'glow', themeEffects: 'effects', categorySurface: 'catSurface' }[field];
         return settings.themeSurfacePrefs?.[this.currentThemeId()]?.[key] || 'follow';
     }
 
@@ -12714,10 +12717,12 @@ class DashboardConfig {
                     d.settings.themeDepth = body?.getAttribute('data-depth') || 'soft';
                     d.settings.glowStrength = body?.getAttribute('data-glow') || 'off';
                     d.settings.themeEffects = body?.getAttribute('data-effects') || 'held';
+                    d.settings.categorySurface = body?.getAttribute('data-cat-surface') || 'glass';
                 } else {
                     d.settings.themeDepth = 'follow';
                     d.settings.glowStrength = 'follow';
                     d.settings.themeEffects = 'follow';
+                    d.settings.categorySurface = 'follow';
                 }
                 void this.applyResolvedSurfaces();
                 this.repaintAppearanceBody();
@@ -12888,6 +12893,7 @@ class DashboardConfig {
             glowStrength: ['follow', 'off', 'soft', 'full'],
             themeDepth: ['follow', 'flat', 'soft', 'rich', 'vivid', 'glass'],
             themeEffects: ['follow', 'off', 'held', 'full'],
+            categorySurface: ['follow', 'glass', 'card', 'open'],
         };
         if (surfaces[name]) {
             this.setSurface(name, surfaces[name].includes(value) ? value : 'follow');
@@ -13252,6 +13258,7 @@ class DashboardConfig {
         themeDepth: { info: ['themeDepthInfoTitle', 'themeDepthInfoMessage'], def: 'follow' },
         glowStrength: { info: ['glowStrengthInfoTitle', 'glowStrengthInfoMessage'], def: 'follow' },
         themeEffects: { info: ['themeEffectsInfoTitle', 'themeEffectsInfoMessage'], def: 'follow' },
+        categorySurface: { info: ['categorySurfaceInfoTitle', 'categorySurfaceInfoMessage'], def: 'follow' },
         themeSurfacesForceAll: { info: ['themeSurfacesForceAllInfoTitle', 'themeSurfacesForceAllInfoMessage'], def: false },
         inkGap: { info: ['inkGapInfoTitle', 'inkGapInfoMessage'], def: 0.47 },
         themeBackdrop: { info: ['themeBackdropInfoTitle', 'themeBackdropInfoMessage'], def: 'follow' },

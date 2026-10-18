@@ -46,11 +46,25 @@ const measure = (page, widget) => page.evaluate((isWidget) => {
 test.describe('titles of categories and widgets', () => {
     test('the // hangs at the same place for a category and a widget', async ({ page }) => {
         await openDashboard(page);
+        // Open: no pane, so the // hangs in the gutter left of the column.
+        await page.evaluate(() => window.ThemeLoader.applyCatSurface('open'));
         const category = await measure(page, false);
         const widget = await measure(page, true);
         expect(category).not.toBeNull();
         expect(widget).not.toBeNull();
         expect(category.glyph).toBeLessThan(0);
+        expect(widget.glyph).toBe(category.glyph);
+    });
+
+    test('on a glass pane the // stands inside it, at one place for a category and a widget', async ({ page }) => {
+        await openDashboard(page);
+        await page.evaluate(() => window.ThemeLoader.applyCatSurface('glass'));
+        const category = await measure(page, false);
+        const widget = await measure(page, true);
+        expect(category).not.toBeNull();
+        expect(widget).not.toBeNull();
+        // Inside the pane, not over its edge.
+        expect(category.glyph).toBeGreaterThan(0);
         expect(widget.glyph).toBe(category.glyph);
     });
 

@@ -1357,6 +1357,7 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	settings.ThemeDepth = surfaces.Depth
 	settings.GlowStrength = surfaces.Glow
 	settings.ThemeEffects = surfaces.Effects
+	settings.CategorySurface = surfaces.CatSurface
 	settings.ThemeBackdrop = surfaces.Backdrop
 	return htmlPageData{
 		Settings:               settings,
@@ -3201,7 +3202,7 @@ func themeSurfaceAlpha(tc ThemeColors) string {
 		return "1"
 	}
 	if tc.SurfaceAlpha > 0 {
-		return formatFloat(clampFloat(tc.SurfaceAlpha, 0.3, 1, 1))
+		return formatFloat(clampFloat(tc.SurfaceAlpha, 0.2, 1, 1))
 	}
 	// The archetype scales what the palette earned rather than replacing it:
 	// glass on a pale slate and glass on a near-black terminal are both glass,

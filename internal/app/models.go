@@ -586,6 +586,17 @@ type Settings struct {
 	ThemeEffects string `json:"themeEffects,omitempty"`
 
 	/*
+	 * CategorySurface is how a category and a widget are drawn on the page:
+	 * glass (see-through, blurred), card (solid) or open (no pane at all).
+	 * The fourth answer next to depth, glow and effects, and answered the same
+	 * way: "follow" hands it to the theme, any other word is one answer for
+	 * every theme. See category_surface.go.
+	 *
+	 * follow | glass | card | open. Empty means follow.
+	 */
+	CategorySurface string `json:"categorySurface,omitempty"`
+
+	/*
 	 * ThemeSurfacePrefs is what the reader changed, per theme.
 	 *
 	 * With the three settings above on "follow", a theme brings its own
@@ -1367,7 +1378,7 @@ type ThemeColors struct {
 	 * AccentPrimary when it arrived.
 	 */
 
-	// SurfaceAlpha is how solid a raised surface is, 0.3 to 1. Below 1 the
+	// SurfaceAlpha is how solid a raised surface is, 0.2 to 1. Below 1 the
 	// theme becomes glass -- cards let the backdrop through. Only spent at
 	// data-depth="glass"; the other depths keep surfaces solid, because a
 	// reader who asked for flat did not ask to see through things.
@@ -1457,6 +1468,11 @@ type ThemeColors struct {
 	Depth   string `json:"depth,omitempty"`   // flat | soft | rich | vivid | glass
 	Glow    string `json:"glow,omitempty"`    // off | soft | full
 	Effects string `json:"effects,omitempty"` // off | held | full
+
+	// Surface is how this theme draws a category and a widget when nothing
+	// overrides it: glass | card | open. Empty falls back as
+	// themeIdealCatSurface says, so every theme written before it keeps working.
+	Surface string `json:"surface,omitempty"`
 
 	// Look is what a theme of the reader's own brings along when it is
 	// picked; see theme_look.go. Never kept on a built-in.
@@ -1755,6 +1771,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ThemeDepth:                      surfaceFollow,
 			GlowStrength:                    surfaceFollow,
 			ThemeEffects:                    surfaceFollow,
+			CategorySurface:                 surfaceFollow,
 			SurfaceFollowMigrated:           true,
 			SurfaceDefaultsMigrated:         true,
 			DepthDefaultFlatMigrated:        true,
@@ -4373,6 +4390,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ThemeDepth:                      surfaceFollow,
 			GlowStrength:                    surfaceFollow,
 			ThemeEffects:                    surfaceFollow,
+			CategorySurface:                 surfaceFollow,
 			SurfaceFollowMigrated:           true,
 			SurfaceDefaultsMigrated:         true,
 			DepthDefaultFlatMigrated:        true,
@@ -4901,6 +4919,7 @@ func (fs *FileStore) GetSettings() Settings {
 		default:
 			settings.ThemeEffects = surfaceFollow
 		}
+		settings.CategorySurface = normalizeCategorySurface(settings.CategorySurface)
 		// Written by the client, read on every render: only words the
 		// stylesheet knows may reach an attribute. Themes are not checked here
 		// -- the store knows which exist, this does not -- so the map is
@@ -6197,6 +6216,9 @@ func fillThemeCharacter(current, defaults ThemeColors) ThemeColors {
 	}
 	if strings.TrimSpace(current.Depth) == "" {
 		current.Depth = defaults.Depth
+	}
+	if strings.TrimSpace(current.Surface) == "" {
+		current.Surface = defaults.Surface
 	}
 	if strings.TrimSpace(current.Glow) == "" {
 		current.Glow = defaults.Glow

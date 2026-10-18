@@ -40,6 +40,10 @@ type ThemeSurfacePref struct {
 	Glow    string `json:"glow,omitempty"`
 	Effects string `json:"effects,omitempty"`
 
+	// CatSurface is glass, card or open for a category and a widget. Empty is
+	// the theme's own.
+	CatSurface string `json:"catSurface,omitempty"`
+
 	// Backdrop is "off" or the name of a recipe. Empty is the theme's own.
 	Backdrop string `json:"backdrop,omitempty"`
 
@@ -95,6 +99,9 @@ type ResolvedSurfaces struct {
 	Backdrop string
 	Recipe   string
 
+	// CatSurface is glass, card or open. Never follow: that is resolved away.
+	CatSurface string
+
 	// The card glass as the stylesheet wants it: a number as text, or empty for
 	// the theme's own. Border is "on" or empty.
 	GlassAlpha  string
@@ -134,6 +141,7 @@ func resolveSurfaces(settings Settings, themeID string, tc ThemeColors) Resolved
 		Effects:  pick(settings.ThemeEffects, pref.Effects, themeIdealEffects(tc)),
 		Backdrop: "on",
 	}
+	resolved.CatSurface = pick(settings.CategorySurface, pref.CatSurface, themeIdealCatSurface(tc, resolved.Depth))
 	switch {
 	case backdrop == "off":
 		resolved.Backdrop = "off"
@@ -180,6 +188,7 @@ func sanitizeSurfacePrefs(prefs map[string]ThemeSurfacePref, known map[string]bo
 	depths := map[string]bool{"flat": true, "soft": true, "rich": true, "vivid": true, "glass": true}
 	glows := map[string]bool{"off": true, "soft": true, "full": true}
 	effects := map[string]bool{"off": true, "held": true, "full": true}
+	catSurfaces := map[string]bool{"glass": true, "card": true, "open": true}
 
 	keep := func(value string, allowed map[string]bool) string {
 		value = strings.ToLower(strings.TrimSpace(value))
@@ -206,13 +215,14 @@ func sanitizeSurfacePrefs(prefs map[string]ThemeSurfacePref, known map[string]bo
 		}
 		alpha, blur, border := cleanGlass(pref)
 		clean := ThemeSurfacePref{
-			Depth:    keep(pref.Depth, depths),
-			Glow:     keep(pref.Glow, glows),
-			Effects:  keep(pref.Effects, effects),
-			Backdrop: keepBackdrop(pref.Backdrop),
-			Alpha:    alpha,
-			Blur:     blur,
-			Border:   border,
+			Depth:      keep(pref.Depth, depths),
+			Glow:       keep(pref.Glow, glows),
+			Effects:    keep(pref.Effects, effects),
+			CatSurface: keep(pref.CatSurface, catSurfaces),
+			Backdrop:   keepBackdrop(pref.Backdrop),
+			Alpha:      alpha,
+			Blur:       blur,
+			Border:     border,
 		}
 		// An entry with nothing left in it is not a preference.
 		if clean == (ThemeSurfacePref{}) {

@@ -363,6 +363,9 @@ test.describe('the look studio', () => {
             const d = window.dashboardInstance;
             Object.assign(d.settings, {
                 layoutPreset: 'default', themeDepth: 'flat', themeSurfacesForceAll: false,
+                // Open: the category surface would otherwise draw a pane of its own,
+                // and this is about the pane that card glass alone gives.
+                categorySurface: 'open',
                 themeSurfacePrefs: {}, cardGlass: {},
             });
             await d.saveSettings();

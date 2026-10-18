@@ -367,6 +367,9 @@
                     ${select('themeDepth', 'config.themeDepthLabel', 'Depth',
                         [['flat', 'Flat'], ['soft', 'Soft'], ['rich', 'Rich'], ['vivid', 'Vivid'], ['glass', 'Glass']], 'config.themeDepth',
                         'config.themeDepthNote', 'How much of the theme is drawn behind the content: the tint in its greys, the raised surfaces, the wash behind the page. Follow the theme lets each theme bring its own.')}
+                    ${select('categorySurface', 'config.categorySurfaceLabel', 'Category surface',
+                        [['glass', 'Glass'], ['card', 'Card'], ['open', 'Open']], 'config.categorySurface',
+                        'config.categorySurfaceNote', 'What a category and a widget sit on: a see-through pane, a solid card, or nothing at all. Follow the theme lets each theme bring its own.')}
                     ${select('glowStrength', 'config.glowStrengthLabel', 'Glow',
                         [['soft', 'Soft'], ['full', 'Full'], ['off', 'Off']], 'config.glowStrength',
                         'config.glowStrengthNote', 'How far the theme’s own colour carries around a surface and around what you are acting on. Follow the theme lets each theme bring its own.')}

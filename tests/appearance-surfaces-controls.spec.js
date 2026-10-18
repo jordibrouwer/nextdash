@@ -35,7 +35,7 @@ const saveIdle = (page) => page.waitForFunction(() => !window.dashboardInstance.
 // A control from each tab that is drawn with it.
 const TAB_PROBES = {
     general: ['[data-appearance-select="inkGap"]'],
-    surface: ['[data-appearance-select="themeDepth"]', '[data-appearance-select="glowStrength"]'],
+    surface: ['[data-appearance-select="themeDepth"]', '[data-appearance-select="glowStrength"]', '[data-appearance-select="categorySurface"]'],
     background: ['[data-reset-field="backgroundPattern"]'],
 };
 
@@ -176,4 +176,23 @@ test('the reset puts the value back and repaints the page', async ({ page }) => 
     await reset('inkGap').click();
     await expect.poll(() => page.evaluate(
         () => Number(window.dashboardInstance.settings.inkGap)), { timeout: 5_000 }).toBe(0.47);
+});
+
+test('the category surface is a dropdown on Surface and draws at once', async ({ page }) => {
+    await openAppearance(page);
+    await openTab(page, 'surface');
+
+    const select = page.locator('[data-appearance-select="categorySurface"]');
+    await expect(select).toBeVisible();
+    const options = await select.locator('option').allTextContents();
+    expect(options.map((o) => o.trim())).toEqual(['Follow the theme', 'Glass', 'Card', 'Open']);
+
+    await select.selectOption('card');
+    await expect(page.locator('body')).toHaveAttribute('data-cat-surface', 'card');
+    await saveIdle(page);
+
+    // Back to the theme's own: glass, or open for somebody who chose flat depth.
+    await select.selectOption('follow');
+    const depth = await page.locator('body').getAttribute('data-depth');
+    await expect(page.locator('body')).toHaveAttribute('data-cat-surface', depth === 'flat' ? 'open' : 'glass');
 });

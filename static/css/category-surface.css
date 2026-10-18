@@ -1,0 +1,126 @@
+/* Wat een categorie en een widget op staan.
+
+   Een categorie was tekst op de pagina, in elk theme. data-cat-surface op <body>
+   zegt nu waar hij op ligt:
+
+     glass   een doorzichtige ruit, met blur, waar de achtergrond doorheen valt
+     card    een massief vlak
+     open    geen vlak: de lijst zoals hij was
+
+   Het theme kiest, de lezer overschrijft het (category_surface.go). Alles
+   hangt aan <body>, dus wisselen is een herschildering; er verandert niets
+   aan de DOM van .category, en de titel-fit rekent met de padding mee.
+
+   Terminal en launcher houden hun eigen ontwerp: daar is een ruit om een
+   categorie geen verbetering maar een ander ontwerp eroverheen. */
+
+html[data-theme] body[data-cat-surface="glass"] {
+    /* Een theme dat zelf glas draagt bepaalt hoe doorzichtig en hoe wazig; een
+       theme dat niets zegt (alpha 1, blur 0) krijgt een ruit die werkt. */
+    --cat-glass-alpha: min(var(--theme-surface-alpha, 1), 0.62);
+    --cat-glass-blur: max(var(--theme-surface-blur, 0px), 14px);
+}
+
+/* De rand is een inset-schaduw en geen border, en er komt alleen padding boven
+   en onder bij: de zij-padding (--category-inline-pad) staat al op .category en
+   een brede categorie rekent zijn binnenkolommen erop uit. Een border of meer
+   padding opzij schuift die kolommen uit het raster. */
+html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: var(--radius-6, 10px);
+    padding-block: var(--space-3, 0.75rem);
+    /* The theme's own shine and grain, scaled by Effects: without it a pane is
+       the same flat colour in every theme and the setting has nothing to turn. */
+    background-image: var(--surface-sheen, none);
+    box-shadow:
+        inset 0 0 0 1px var(--hairline, color-mix(in srgb, var(--text-primary) 14%, transparent)),
+        var(--edge-light, inset 0 1px 0 color-mix(in srgb, var(--text-primary) 12%, transparent)),
+        var(--surface-cast, 0 8px 24px rgba(0, 0, 0, 0.22));
+}
+
+html[data-theme] body[data-cat-surface="glass"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    background-color: color-mix(in srgb,
+        var(--surface-2, var(--background-secondary)) calc(var(--cat-glass-alpha) * 100%), transparent);
+    backdrop-filter: blur(var(--cat-glass-blur)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
+    -webkit-backdrop-filter: blur(var(--cat-glass-blur)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
+}
+
+html[data-theme] body[data-cat-surface="card"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    background-color: var(--surface-2, var(--background-secondary));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* Een ruit zonder doorzichtigheid is een kaart: wie dat vraagt krijgt de
+   massieve variant, en wie geen blur kan tekenen valt er ook op terug. */
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme] body[data-cat-surface="glass"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+        background-color: var(--surface-2, var(--background-secondary));
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}
+
+/* Eén vlak per widget.
+
+   Een widget tekent een eigen kaart. Onder een ruit of kaart van de categorie
+   zelf stond die kaart in de kaart. Het widgetlichaam laat dan zijn vlak, rand,
+   schaduw en blur vallen, zoals theme-character.css dat bij Cards en Widgets
+   al doet; de cellen erin blijven een stap boven de ruit. Bij open is er geen
+   vlak: ook de widget staat dan zonder kaart op de pagina, net als de lijsten
+   naast hem. Zo bepaalt één instelling (Category surface) wat achter een blok
+   staat, voor een categorie en een widget alike. */
+html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"], [data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget .dashboard-widget-body {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    outline: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* Wie eigen kaartglas koos (Appearance → Surface → Card glass) krijgt precies
+   die doorzichtigheid en blur, ook als dat minder is dan de ruit die een theme
+   zonder glas krijgt. */
+html[data-theme] body[data-cat-surface="glass"][data-card-glass="own"] {
+    --cat-glass-alpha: var(--theme-surface-alpha, 1);
+    --cat-glass-blur: var(--theme-surface-blur, 0px);
+}
+
+/* De // hangt niet meer in de goot.
+
+   Zonder vlak hangt hij links van de kolom, in de ruimte tussen kolommen. Een
+   categorie met een vlak heeft een eigen rand, en een // die over die rand heen
+   hangt tekent op het vlak ernaast. Hier staat hij in het vlak, voor het icoon:
+   de kop leest als "// naam", en de greep blijft een echt vak dat je kunt
+   aanwijzen en oppakken. */
+@media (min-width: 601px) {
+    html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"])[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-title-label {
+        padding-left: 0;
+        margin-left: 0;
+    }
+
+    html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"])[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-reorder-handle {
+        width: auto;
+        margin-left: 0;
+        padding: 0 0.45em 0 0;
+    }
+
+    html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"])[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-title-label .category-reorder-handle + .category-title-name {
+        margin-left: 0;
+    }
+}
+
+/* De cellen in een widget: lichte glas-chips.
+
+   Een cel was een massieve kleur, 8% tekstkleur gemengd met de paginakleur,
+   en op een ruit las dat als een donker blok dat de backdrop niet meenam. Nu
+   is het een doorzichtige lichte laag: de kleur van de backdrop schijnt erdoor,
+   en de scheiding tussen cellen is een fijne lichtere lijn. */
+html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"], [data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget {
+    --dashboard-widget-cell: color-mix(in srgb, var(--text-primary) 9%, transparent);
+    --dashboard-widget-cell-hover: color-mix(in srgb, var(--text-primary) 15%, transparent);
+    --dashboard-widget-rule: color-mix(in srgb, var(--text-primary) 10%, transparent);
+}
+

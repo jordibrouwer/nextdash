@@ -529,6 +529,11 @@
             depth: pick(s.themeDepth, prefs.depth, ideal.depth || 'soft'),
             glow: pick(s.glowStrength, prefs.glow, ideal.glow || 'off'),
             effects: pick(s.themeEffects, prefs.effects, ideal.effects || 'held'),
+            catSurface: (function () {
+                const depth = pick(s.themeDepth, prefs.depth, ideal.depth || 'soft');
+                // A reader who asked for flat did not ask to see through things.
+                return pick(s.categorySurface, prefs.catSurface, depth === 'flat' ? 'open' : (ideal.catSurface || 'glass'));
+            })(),
             backdrop: backdrop === 'off' ? 'off' : 'on',
             backdropRecipe: backdrop === 'off' || backdrop === 'follow' ? '' : backdrop,
         };
@@ -555,6 +560,14 @@
         }
     }
 
+    /** Mirrors how a category is drawn (glass, card or open) onto <html> and <body>. */
+    function applyCatSurface(value) {
+        const word = ['glass', 'card', 'open'].includes(value) ? value : 'glass';
+        document.documentElement.setAttribute('data-cat-surface', word);
+        if (document.body) document.body.setAttribute('data-cat-surface', word);
+        return word;
+    }
+
     /** Resolve and write all three attributes for a theme. */
     function applySurfacesForTheme(theme, settings, prefsId) {
         return loadSurfaceMeta().then(() => {
@@ -562,6 +575,7 @@
             applyThemeDepth(resolved.depth);
             applyGlowStrength(resolved.glow);
             applyThemeEffects(resolved.effects);
+            applyCatSurface(resolved.catSurface);
             applyThemeBackdrop(resolved.backdrop === 'off' ? 'off' : (resolved.backdropRecipe || 'follow'));
             applyCardGlass(resolved.glass);
             return resolved;
@@ -755,6 +769,7 @@
         applyThemeDepth: applyThemeDepth,
         applyGlowStrength: applyGlowStrength,
         applyThemeEffects: applyThemeEffects,
+        applyCatSurface: applyCatSurface,
         applySurfacesForTheme: applySurfacesForTheme,
         resolveSurfacesFor: resolveSurfacesFor,
         refreshSurfaceMeta: refreshSurfaceMeta,
