@@ -550,3 +550,16 @@ test('Move to page… keeps what a tokenless read leaves out', async ({ page }) 
         });
     }, { id: target.id, widgetId: moved.id });
 });
+
+test.describe('Settings in the widget menu', () => {
+    test('goes to that widget\'s own settings in Config → Widgets', async ({ page }) => {
+        await dashboardWithAWidget(page);
+        const menu = await openMenu(page);
+        await menu.locator('[data-action="settings"]').click();
+
+        await expect(page).toHaveURL(/#config\/widgets/, { timeout: 15_000 });
+        await expect(page.locator('#config-widgets-body')).toBeVisible({ timeout: 15_000 });
+        // The row of the widget that was clicked, by its title.
+        await expect(page.locator('#config-widgets-body [data-widget="title"]').first()).toHaveValue('Status');
+    });
+});
