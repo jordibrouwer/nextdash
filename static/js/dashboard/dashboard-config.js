@@ -14363,8 +14363,9 @@ class DashboardConfig {
                         { value: 'airy', label: t('config.categorySpacingAiry', 'Airy'), body: t('config.categorySpacingAiryBody', 'Extra room between rows.') },
                     ] },
                     { field: 'columnSpacing', type: 'cards', label: t('config.columnSpacingLabel', 'Space between columns'), special: 'chromeRender', art: 'columnGap', options: [
+                        { value: 'theme', label: t('config.columnSpacingTheme', 'Follow the theme'), body: t('config.columnSpacingThemeBody', 'Balanced, and airy on Confetti.') },
                         { value: 'snug', label: t('config.columnSpacingSnug', 'Snug'), body: t('config.columnSpacingSnugBody', 'Columns sit close together.') },
-                        { value: 'balanced', label: t('config.columnSpacingBalanced', 'Balanced'), body: t('config.columnSpacingBalancedBody', 'The default.') },
+                        { value: 'balanced', label: t('config.columnSpacingBalanced', 'Balanced'), body: t('config.columnSpacingBalancedBody', 'A steady gap.') },
                         { value: 'airy', label: t('config.columnSpacingAiry', 'Airy'), body: t('config.columnSpacingAiryBody', 'Extra room between columns.') },
                     ] },
                     { field: 'sideMargin', type: 'cards', label: t('config.sideMarginLabel', 'Page margins'), special: 'chromeRender', art: 'margins', options: [

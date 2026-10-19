@@ -172,7 +172,10 @@ class DashboardSetup {
         // the bookmark rows themselves — see dashboard.css.
         document.body.setAttribute('data-category-spacing', d.settings.categorySpacing || 'balanced');
         // The horizontal counterpart: the space between columns.
-        document.body.setAttribute('data-column-spacing', d.settings.columnSpacing || 'balanced');
+        // On "Follow the theme" a theme may state its own (Confetti: airy).
+        document.body.setAttribute('data-column-spacing', window.ThemeLoader?.resolveColumnSpacing
+            ? window.ThemeLoader.resolveColumnSpacing(d.settings.columnSpacing, document.body.getAttribute('data-theme') || d.settings.theme)
+            : (d.settings.columnSpacing === 'theme' ? 'balanced' : (d.settings.columnSpacing || 'balanced')));
         // The left/right band beside the grid.
         document.body.setAttribute('data-side-margin', d.settings.sideMargin || 'balanced');
         // How loudly a monitored bookmark announces itself. CSS keys off this,

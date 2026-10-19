@@ -617,6 +617,21 @@
         return word;
     }
 
+    // What "Follow the theme" means for the room between columns: balanced, except
+    // for the themes that state their own. Confetti is airy.
+    const THEME_COLUMN_SPACING = { 'look-confetti-dark': 'airy', 'look-confetti-light': 'airy' };
+
+    function resolveColumnSpacing(value, theme) {
+        const word = value || 'theme';
+        return word === 'theme' ? (THEME_COLUMN_SPACING[theme] || 'balanced') : word;
+    }
+
+    function applyColumnSpacing(value, theme) {
+        const word = resolveColumnSpacing(value, theme);
+        if (document.body) document.body.setAttribute('data-column-spacing', word);
+        return word;
+    }
+
     function applySurfacesForTheme(theme, settings, prefsId) {
         return loadSurfaceMeta().then(() => {
             const resolved = resolveSurfacesFor(theme, settings, prefsId);
@@ -627,6 +642,7 @@
             if (settings && typeof settings.widgetOpacity === 'number') applyWidgetOpacity(settings.widgetOpacity);
             applyCatSurface(resolved.catSurface);
             applyCatHead(settings && settings.categoryHeaderStyle, theme);
+            applyColumnSpacing(settings && settings.columnSpacing, theme);
             applyThemeBackdrop(resolved.backdrop === 'off' ? 'off' : (resolved.backdropRecipe || 'follow'));
             applyCardGlass(resolved.glass);
             return resolved;
@@ -822,6 +838,8 @@
         applyThemeEffects: applyThemeEffects,
         applyCatSurface: applyCatSurface,
         applyCatHead: applyCatHead,
+        applyColumnSpacing: applyColumnSpacing,
+        resolveColumnSpacing: resolveColumnSpacing,
         resolveCatHead: resolveCatHead,
         applyWidgetSurface: applyWidgetSurface,
         applyWidgetOpacity: applyWidgetOpacity,

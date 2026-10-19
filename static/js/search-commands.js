@@ -3157,6 +3157,7 @@ class SearchCommandsComponent {
             shortcut: ':COLUMNGAP',
             apply: 'chromeRender',
             options: [
+                { value: 'theme', label: t('config.columnSpacingTheme', 'Follow the theme') },
                 { value: 'snug', label: t('config.spacingSnug', 'Snug') },
                 { value: 'balanced', label: t('config.spacingBalanced', 'Balanced') },
                 { value: 'airy', label: t('config.spacingAiry', 'Airy') },

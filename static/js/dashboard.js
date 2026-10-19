@@ -121,7 +121,7 @@ class Dashboard {
             layoutPreset: 'masonry',
             densityMode: 'auto',
             categorySpacing: 'balanced',
-            columnSpacing: 'balanced',
+            columnSpacing: 'theme',
             sideMargin: 'balanced',
             packedColumns: true,
             defaultCategorySpread: false,

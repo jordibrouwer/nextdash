@@ -50,9 +50,32 @@ async function palette(page, typed) {
 const setting = (page, key) => page.evaluate((k) => window.dashboardInstance.settings[k], key);
 
 test.describe('space between columns', () => {
-    test('balanced is the default, and each choice moves the columns', async ({ page }) => {
+    test('Follow the theme: Confetti is airy, another theme balanced, a pick stays', async ({ page }) => {
         await loadDashboard(page);
-        expect(await page.evaluate(() => document.body.getAttribute('data-column-spacing'))).toBe('balanced');
+        const startTheme = await page.evaluate(() => window.dashboardInstance.settings.theme);
+        const word = () => page.evaluate(() => document.body.getAttribute('data-column-spacing'));
+        const use = (theme, v) => page.evaluate(async ([t, s]) => {
+            const d = window.dashboardInstance;
+            d.settings.columnSpacing = s;
+            await d.config.setTheme(t);
+            d.setupDOM();
+        }, [theme, v]);
+        await use('look-confetti-dark', 'theme');
+        await expect.poll(word).toBe('airy');
+        await use('look-confetti-light', 'theme');
+        await expect.poll(word).toBe('airy');
+        await use('slate-dark', 'theme');
+        await expect.poll(word).toBe('balanced');
+        await use('look-confetti-dark', 'snug');
+        await expect.poll(word).toBe('snug');
+        // Leave the install as found: the setting and the theme are saved.
+        await use(startTheme, 'theme');
+        await page.evaluate(() => window.dashboardInstance.config.saveSettingsWithFeedback());
+    });
+
+    test('the default follows the theme (balanced), and each choice moves the columns', async ({ page }) => {
+        await loadDashboard(page);
+        await expect.poll(() => page.evaluate(() => document.body.getAttribute('data-column-spacing') === window.ThemeLoader.resolveColumnSpacing('theme', document.body.getAttribute('data-theme')))).toBe(true);
         const seen = {};
         for (const mode of ['snug', 'balanced', 'airy']) {
             await setSpacing(page, mode);

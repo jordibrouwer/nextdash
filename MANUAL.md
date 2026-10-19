@@ -3416,7 +3416,7 @@ Type is in the **Type** panel on the **Theme & type** tab; everything behind the
 | **Layout preset** | Default, Compact, Cards, Terminal-ish, Masonry (default on a fresh install), List, Widgets and Launcher (large icon tiles) |
 | **Density** | Comfortable, Compact, Dense or Auto (default on a fresh install) — one setting for the dashboard, the inbox and the Containers view; the Bookmarks view has its own row height ([§17.4](#174-config--bookmarks)) |
 | **Space between categories** | Snug · Balanced (default) · Airy — the gap down the page, between rows of categories |
-| **Space between columns** | Snug (12 px) · Balanced (24 px, default) · Airy (40 px) — the gap across the page, between one column and the next. `:columngap` sets it from the palette, and the theme studio has it on its Layout tab |
+| **Space between columns** | Follow the theme (default; balanced, and Airy on Confetti) · Snug (12 px) · Balanced (24 px) · Airy (40 px) — the gap across the page, between one column and the next. `:columngap` sets it from the palette, and the theme studio has it on its Layout tab |
 | **Page margins** | Snug · Balanced (default) · Airy — the empty band left and right |
 | **Pack columns tightly** | Categories fill the columns without waiting for a full row |
 | **Hide empty categories** | |
