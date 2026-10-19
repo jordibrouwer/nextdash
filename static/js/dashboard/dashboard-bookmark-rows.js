@@ -1414,7 +1414,10 @@ class DashboardBookmarkRows {
                     return `<span${more}><kbd>${d.escapeHtml(row.keys)}</kbd> ${d.escapeHtml(label)}</span>`;
                 })
                 .join('');
-            return `<span class="dashboard-legend-line">${spans}</span>`;
+            // A line of nothing but `more` rows would leave an empty gap before
+            // the first cursor move, so the whole line waits.
+            const lineMore = rows.filter((row) => (row.line || 1) === line).every((row) => row.more);
+            return `<span class="dashboard-legend-line${lineMore ? ' dashboard-legend-line-more' : ''}">${spans}</span>`;
         }).join('');
         let legend = host.querySelector(':scope > .dashboard-legend');
         if (!legend) {
