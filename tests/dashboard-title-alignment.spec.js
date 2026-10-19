@@ -38,6 +38,10 @@ const measure = (page, widget) => page.evaluate((isWidget) => {
         glyph: Math.round((block.querySelector('.category-reorder-glyph').getBoundingClientRect().left - left) * 10) / 10,
         name: Math.round((block.querySelector('.category-title-name').getBoundingClientRect().left - left) * 10) / 10,
         title: { x: Math.round((box.left - left) * 10) / 10, w: Math.round(box.width * 10) / 10 },
+        block: Math.round(block.getBoundingClientRect().width * 10) / 10,
+        top: Math.round((box.top - block.getBoundingClientRect().top) * 10) / 10,
+        // Where the accent tab on the rule really is, from the block's left edge.
+        tabX: Math.round((box.left - left + (parseFloat(getComputedStyle(title).backgroundPositionX) || 0)) * 10) / 10,
         tab: getComputedStyle(title).backgroundImage,
     };
 }, widget);
@@ -94,7 +98,7 @@ test.describe('titles of categories and widgets', () => {
         expect(gap.gap).toBeGreaterThan(4);
     });
 
-    test('pointing at a title tints it and does not move it', async ({ page }) => {
+    test('pointing at a title tints the whole header and does not move its text', async ({ page }) => {
         await openDashboard(page);
         for (const widget of [false, true]) {
             const before = await measure(page, widget);
@@ -104,7 +108,14 @@ test.describe('titles of categories and widgets', () => {
             await page.mouse.move(box.x + box.width * 0.6, box.y + box.height / 2);
             await expect(block.locator('.category-title')).toHaveCSS('background-color', /rgba?\(.*, 0\.\d+\)|color\(.* \/ 0\.\d+\)/);
             const during = await measure(page, widget);
-            expect(during.title).toEqual(before.title);
+            // The tint is the whole header, from one edge of the block to the other,
+            // and the text inside it stays where it was.
+            expect(during.title.x).toBe(0);
+            expect(during.title.w).toBe(during.block);
+            // And up to the block's top edge, where a pane has padding above the title.
+            expect(during.top).toBe(0);
+            // The accent tab does not slide when the title grows to the edges.
+            expect(during.tabX).toBe(before.tabX);
             expect(during.glyph).toBe(before.glyph);
             expect(during.name).toBe(before.name);
             // The accent tab on the rule is still there under the tint.

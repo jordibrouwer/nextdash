@@ -2606,14 +2606,23 @@ body:not([data-depth="flat"]) .dashboard-grid:is(.layout-default, .layout-masonr
  * The general hover grows the title 4px to the left (padding and a negative
  * margin) and paints it with the `background` shorthand, which took the accent
  * tab with it: the rule under the title jumped and lost its tab. Here the tint
- * is a background colour on the title's own box, and nothing moves.
+ * is a background colour on the title's own box, and nothing moves. It spans
+ * the whole header, from one edge of the block to the other.
  */
 body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-title:hover {
     /* --hover-bg is only defined inside Config, so the old tint was never drawn here. */
     background-color: color-mix(in srgb, var(--text-primary) 7%, transparent);
-    border-radius: var(--layout-radius-sm, 8px) var(--layout-radius-sm, 8px) 0 0;
-    padding-left: 0;
-    margin-left: 0;
+    border-radius: var(--category-block-radius, var(--layout-radius-sm, 8px)) var(--category-block-radius, var(--layout-radius-sm, 8px)) 0 0;
+    /* The whole header, edge to edge of the block: the category's side padding
+       (and, on a pane, the padding above the title) is taken into the title and
+       given back as its own padding, so the tint reaches the block's edges and
+       the text stays where it is. The accent tab moves in by the same amount,
+       or it would slide out to the edge. */
+    margin-inline: calc(-1 * var(--category-inline-pad, 0.5rem));
+    padding-inline: var(--category-inline-pad, 0.5rem);
+    margin-top: calc(-1 * var(--category-block-pad, 0px));
+    padding-top: var(--category-block-pad, 0px);
+    background-position: var(--category-inline-pad, 0.5rem) bottom;
 }
 
 /*

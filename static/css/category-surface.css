@@ -28,6 +28,9 @@ html[data-theme] body[data-cat-surface="glass"] {
 html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
     border-radius: var(--radius-6, 10px);
     padding-block: var(--space-3, 0.75rem);
+    /* What a header takes back on hover, to light up to the pane's own edge. */
+    --category-block-pad: var(--space-3, 0.75rem);
+    --category-block-radius: var(--radius-6, 10px);
     /* The theme's own shine and grain, scaled by Effects: without it a pane is
        the same flat colour in every theme and the setting has nothing to turn. */
     background-image: var(--surface-sheen, none);
@@ -98,10 +101,20 @@ html[data-theme] body[data-widget-bg="background"] .dashboard-grid:is(.layout-de
     background-color: color-mix(in srgb, var(--text-primary) 8%, color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--widget-bg, 70) * 1%), transparent));
     border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 10%, transparent);
     border-radius: var(--radius-6, 12px) var(--radius-6, 12px) 0 0;
-    padding: 0.5rem 0.85rem;
+    padding: calc(0.5rem + var(--category-block-pad, 0px)) 0.85rem 0.5rem;
     /* De categorie heeft zij-padding; de strook loopt er dwars doorheen, tot op
-       de rand van de kaart, en de rand ligt dan strak om hem heen. */
-    margin: 0 calc(-1 * var(--category-inline-pad, 0.5rem));
+       de rand van de kaart, en de rand ligt dan strak om hem heen. Bij een ruit
+       of kaart ook tot de bovenrand, waar de ruit padding heeft. */
+    margin: calc(-1 * var(--category-block-pad, 0px)) calc(-1 * var(--category-inline-pad, 0.5rem)) 0;
+}
+
+/* Pointing at the strip tints the strip, the whole of it, and nothing moves. */
+html[data-theme] body[data-widget-bg="background"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget .category-title:hover {
+    background-color: color-mix(in srgb, var(--text-primary) 15%, color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--widget-bg, 70) * 1%), transparent));
+    border-radius: var(--radius-6, 12px) var(--radius-6, 12px) 0 0;
+    padding: calc(0.5rem + var(--category-block-pad, 0px)) 0.85rem 0.5rem;
+    margin: calc(-1 * var(--category-block-pad, 0px)) calc(-1 * var(--category-inline-pad, 0.5rem)) 0;
+    background-position: left bottom;
 }
 
 html[data-theme] body[data-widget-bg="background"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget .dashboard-widget-body {
