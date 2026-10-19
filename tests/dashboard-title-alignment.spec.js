@@ -5,9 +5,8 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
 /**
  * A page of categories and widgets keeps its titles in step.
  *
- * The // hangs in the gutter left of the column, and it hung there for a
- * category while a widget kept it in the row: the two kinds of block on one
- * page did not share a column of them. And pointing at a title grew it four
+ * The // stands in the title, for a category as for a widget: the two kinds of
+ * block on one page share it. Pointing at a title grew it four
  * pixels to the left and painted it with the `background` shorthand, which took
  * the accent tab off the rule under it, so the rule jumped. Now the // is at one
  * place for both, a widget's name starts where its card's content does, and
@@ -44,17 +43,15 @@ const measure = (page, widget) => page.evaluate((isWidget) => {
 }, widget);
 
 test.describe('titles of categories and widgets', () => {
-    test('the // hangs at the same place for a category and a widget', async ({ page }) => {
+    test('the // stands in the title, at one place for a category and a widget', async ({ page }) => {
         await openDashboard(page);
-        // Open: no pane, so the // hangs in the gutter left of the column.
-        // A widget with a card of its own (Widget background) has its // inside the
-        // card; these two are about a widget without one.
         await page.evaluate(() => { window.ThemeLoader.applyWidgetSurface('none'); window.ThemeLoader.applyCatSurface('open'); });
         const category = await measure(page, false);
         const widget = await measure(page, true);
         expect(category).not.toBeNull();
         expect(widget).not.toBeNull();
-        expect(category.glyph).toBeLessThan(0);
+        // In the title's row, not hung in the gutter before it.
+        expect(category.glyph).toBeGreaterThanOrEqual(0);
         expect(widget.glyph).toBe(category.glyph);
     });
 

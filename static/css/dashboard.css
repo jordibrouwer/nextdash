@@ -2578,55 +2578,6 @@ body[data-category-spacing="airy"] {
 }
 
 /*
- * A title that lines up with what is under it.
- *
- * A bookmark row is an icon slot and then its name, and the names all start
- * one lead column in (the slot and the gap after it). The title put the //
- * and its icon in front of its name in that same row, which pushed the name
- * about 27px past the bookmarks'. Now the // hangs in the gutter to the left
- * of the column, where it stays reachable as the drag handle without taking
- * any room, the icon sits in the icon column and the name starts on the
- * bookmarks' text, with or without an icon.
- *
- * A widget's title hangs its // in the same place, so a page of categories and
- * widgets keeps one column of them, and starts its name where the card's own
- * content starts: the card's border and padding in, the way its first line
- * does.
- *
- * The gutter is the 24px between columns and the 8px of padding either side
- * of them; below 600px the page edge is nearer than that, so the title keeps
- * the // in line there. Only the default and masonry layouts: the others draw
- * their rows and titles differently (terminal and launcher place the handle
- * themselves).
- */
-@media (min-width: 601px) {
-    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-title-label {
-        --cat-title-lead: calc(var(--font-size-bookmark) * 1.15 + var(--space-2, 0.5rem));
-        --cat-title-hang: 2.2rem;
-        /* The // sits in the label's own padding, inside its overflow clip. */
-        padding-left: calc(0.2em + var(--cat-title-hang));
-        margin-left: calc(-0.2em - var(--cat-title-hang));
-    }
-
-    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-reorder-handle {
-        /* A real box, so it can be pointed at and picked up, that takes no
-           room in the row: its own width is given back by the margin. */
-        display: flex;
-        justify-content: flex-end;
-        box-sizing: border-box;
-        flex: 0 0 auto;
-        width: 1.6em;
-        margin-left: -1.6em;
-        padding: 0 0.2em 0 0;
-        overflow: visible;
-    }
-
-    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-title-label .category-reorder-handle + .category-title-name {
-        margin-left: calc(1px + var(--space-3, 0.85rem));
-    }
-}
-
-/*
  * A title that outranks what is under it.
  *
  * It had the same size and weight as the bookmarks and a dimmer colour, so the

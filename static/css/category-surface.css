@@ -106,55 +106,12 @@ html[data-theme] body[data-widget-bg="background"] .dashboard-grid:is(.layout-de
     padding: 0.5rem 0.85rem 0.7rem;
 }
 
-/* De // hangt in de goot, buiten een kolom. Een widget met een kaart heeft een
-   rand: de // staat dan in de kopstrook, zoals bij een ruit. */
-@media (min-width: 601px) {
-    html[data-theme] body[data-widget-bg="background"][data-cat-surface="open"][data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .dashboard-widget .category-title-label {
-        padding-left: 0;
-        margin-left: 0;
-    }
-
-    html[data-theme] body[data-widget-bg="background"][data-cat-surface="open"][data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .dashboard-widget .category-reorder-handle {
-        width: auto;
-        margin-left: 0;
-        padding: 0 0.45em 0 0;
-    }
-
-    html[data-theme] body[data-widget-bg="background"][data-cat-surface="open"][data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .dashboard-widget .category-title-label .category-reorder-handle + .category-title-name {
-        margin-left: 0;
-    }
-}
-
 /* Wie eigen kaartglas koos (Appearance → Surface → Card glass) krijgt precies
    die doorzichtigheid en blur, ook als dat minder is dan de ruit die een theme
    zonder glas krijgt. */
 html[data-theme] body[data-cat-surface="glass"][data-card-glass="own"] {
     --cat-glass-alpha: var(--theme-surface-alpha, 1);
     --cat-glass-blur: var(--theme-surface-blur, 0px);
-}
-
-/* De // hangt niet meer in de goot.
-
-   Zonder vlak hangt hij links van de kolom, in de ruimte tussen kolommen. Een
-   categorie met een vlak heeft een eigen rand, en een // die over die rand heen
-   hangt tekent op het vlak ernaast. Hier staat hij in het vlak, voor het icoon:
-   de kop leest als "// naam", en de greep blijft een echt vak dat je kunt
-   aanwijzen en oppakken. */
-@media (min-width: 601px) {
-    html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"])[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-title-label {
-        padding-left: 0;
-        margin-left: 0;
-    }
-
-    html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"])[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-reorder-handle {
-        width: auto;
-        margin-left: 0;
-        padding: 0 0.45em 0 0;
-    }
-
-    html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"])[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-title-label .category-reorder-handle + .category-title-name {
-        margin-left: 0;
-    }
 }
 
 /* De cellen in een widget: lichte glas-chips.
