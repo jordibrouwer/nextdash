@@ -46,7 +46,7 @@ func resolveWidgetBackground(setting string) string {
 // surface colour: mostly solid, so a widget reads as a card on any backdrop.
 // maxWidgetOpacity is the most it can be.
 const (
-	defaultWidgetOpacity = 70
+	defaultWidgetOpacity = 50
 	maxWidgetOpacity     = 100
 )
 

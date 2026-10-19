@@ -12653,8 +12653,8 @@ class DashboardConfig {
         settings.categorySurface = 'follow';
         settings.widgetSurface = 'background';
         window.ThemeLoader?.applyWidgetSurface?.('background');
-        settings.widgetOpacity = 80;
-        window.ThemeLoader?.applyWidgetOpacity?.(80);
+        settings.widgetOpacity = 50;
+        window.ThemeLoader?.applyWidgetOpacity?.(50);
 
         void this.applyResolvedSurfaces();
         this.persistAppearance();

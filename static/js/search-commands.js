@@ -2783,7 +2783,7 @@ class SearchCommandsComponent {
             : steps.filter((n) => !typed || String(n).startsWith(typed));
         const dashboard = window.dashboardInstance;
         if (!dashboard) return [];
-        const current = Number.isFinite(dashboard.settings.widgetOpacity) ? dashboard.settings.widgetOpacity : 70;
+        const current = Number.isFinite(dashboard.settings.widgetOpacity) ? dashboard.settings.widgetOpacity : 50;
         return values.map((n) => ({
             ...this._markCurrentRow(`${n}%`, n === current),
             shortcut: ':WIDGETOPACITY',

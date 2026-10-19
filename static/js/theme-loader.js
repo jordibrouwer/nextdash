@@ -580,7 +580,7 @@
     /** Widget opacity: how solid a widget's card is, in percent (0 to 100), as a variable on <html>. */
     function applyWidgetOpacity(value) {
         const n = Number(value);
-        const percent = Number.isFinite(n) ? Math.min(100, Math.max(0, Math.round(n))) : 70;
+        const percent = Number.isFinite(n) ? Math.min(100, Math.max(0, Math.round(n))) : 50;
         document.documentElement.style.setProperty('--widget-bg', String(percent));
         return percent;
     }

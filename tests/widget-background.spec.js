@@ -60,10 +60,10 @@ test.describe('widget background', () => {
         await setSurface(page, 'open');
         const open = await body(page);
         expect(open.attr).toBe('background');
-        // The widget is one card, mostly solid by default (70%), not a see-through
+        // The widget is one card, half solid by default (50%), not a see-through
         // wash: its own fill and hairline, round corners...
-        expect(open.alpha).toBeGreaterThanOrEqual(0.7);
-        expect(open.alpha).toBeLessThanOrEqual(0.9);
+        expect(open.alpha).toBeGreaterThanOrEqual(0.45);
+        expect(open.alpha).toBeLessThanOrEqual(0.6);
         expect(open.hairline).toBe(true);
         expect(open.radius).toBeGreaterThanOrEqual(10);
         // ...a strip for the title, with a line under it...
@@ -141,7 +141,7 @@ test.describe('widget background', () => {
         await expect(page.locator('body')).toHaveAttribute('data-widget-bg', 'background');
     });
 
-    test('Widget opacity: a slider from 0 to 100, 70 by default, paints the card and saves', async ({ page, request }) => {
+    test('Widget opacity: a slider from 0 to 100, 50 by default, paints the card and saves', async ({ page, request }) => {
         await openDashboard(page);
         await setWidget(page, 'background');
         await setSurface(page, 'open');
@@ -151,10 +151,10 @@ test.describe('widget background', () => {
         await expect(range).toBeVisible({ timeout: 15_000 });
         await expect(range).toHaveAttribute('min', '0');
         await expect(range).toHaveAttribute('max', '100');
-        await expect(range).toHaveValue('70');
-        await expect(range.locator('xpath=..').locator('.config-range-value')).toHaveText('70%');
+        await expect(range).toHaveValue('50');
+        await expect(range.locator('xpath=..').locator('.config-range-value')).toHaveText('50%');
         const css = () => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--widget-bg').trim());
-        expect(await css()).toBe('70');
+        expect(await css()).toBe('50');
 
         await range.fill('20');
         await expect(range.locator('xpath=..').locator('.config-range-value')).toHaveText('20%');
@@ -174,7 +174,7 @@ test.describe('widget background', () => {
         });
         expect(alphas.card).toBeCloseTo(0.2, 1);
         expect(alphas.strip).toBeGreaterThan(alphas.card);
-        await request.post('/api/settings', { headers: { 'X-NextDash-Token': WRITE_TOKEN }, data: { widgetOpacity: 70 } });
+        await request.post('/api/settings', { headers: { 'X-NextDash-Token': WRITE_TOKEN }, data: { widgetOpacity: 50 } });
     });
 
     test('Widget opacity 0 is kept, and the first paint carries the value', async ({ page, request }) => {
@@ -187,7 +187,7 @@ test.describe('widget background', () => {
             expect((await request.post('/api/settings', { headers, data: { widgetOpacity: 33 } })).ok()).toBe(true);
             expect(await (await request.get('/')).text()).toMatch(/--widget-bg:\s*33;/);
         } finally {
-            await request.post('/api/settings', { headers, data: { widgetOpacity: before.widgetOpacity ?? 70 } });
+            await request.post('/api/settings', { headers, data: { widgetOpacity: before.widgetOpacity ?? 50 } });
         }
     });
 

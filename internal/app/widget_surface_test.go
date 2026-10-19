@@ -50,14 +50,14 @@ func TestNormalizeWidgetOpacity(t *testing.T) {
 	}
 }
 
-// The default is 70 percent, a card that is mostly solid, for a fresh install
+// The default is 50 percent, a card that is mostly solid, for a fresh install
 // and for one from before the setting; and 0 is an answer, not a missing one.
 func TestWidgetOpacityDefaultAndZero(t *testing.T) {
-	if got := gridSettings(t, nil); got.WidgetOpacity != 70 {
-		t.Errorf("fresh install: %d, want 70", got.WidgetOpacity)
+	if got := gridSettings(t, nil); got.WidgetOpacity != 50 {
+		t.Errorf("fresh install: %d, want 50", got.WidgetOpacity)
 	}
-	if got := gridSettings(t, gridFile(map[string]any{"theme": "slate-dark"})); got.WidgetOpacity != 70 {
-		t.Errorf("an install from before the setting: %d, want 70", got.WidgetOpacity)
+	if got := gridSettings(t, gridFile(map[string]any{"theme": "slate-dark"})); got.WidgetOpacity != 50 {
+		t.Errorf("an install from before the setting: %d, want 50", got.WidgetOpacity)
 	}
 	if got := gridSettings(t, gridFile(map[string]any{"widgetOpacity": 0})); got.WidgetOpacity != 0 {
 		t.Errorf("a reader's 0 became %d", got.WidgetOpacity)
