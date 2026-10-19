@@ -497,7 +497,7 @@ class DashboardRenderCore {
         // In the tab order, straight after the title: Space on it picks the block up.
         prefix.tabIndex = 0;
         prefix.className = 'category-reorder-handle';
-        prefix.append(this.reorderGlyph(), ' ');
+        prefix.append(this.reorderGlyph('widget'), ' ');
         prefix.setAttribute('aria-label', d.formatDashboardLabel('blockMoveHandle', { name: widget.title || this.widgetTypeLabel(widget.type) }, 'Move {name}'));
         // Dragging the handle must not do whatever clicking the header does.
         prefix.addEventListener('click', (e) => e.stopPropagation());
@@ -1776,9 +1776,15 @@ class DashboardRenderCore {
      * "// "; the span is what keyboard focus tints, so the tint sits on the
      * two slashes and not on the space after them.
      */
-    reorderGlyph() {
+    reorderGlyph(kind) {
         const glyph = document.createElement('span');
         glyph.className = 'category-reorder-glyph';
+        if (kind === 'widget') {
+            // A widget's handle is drawn over the slashes: a small panel with a
+            // filled side, so a block that is not a list of links says so before
+            // it is read. The slashes stay, hidden, to keep the box the same.
+            glyph.classList.add('category-reorder-glyph--widget');
+        }
         glyph.textContent = '//';
         return glyph;
     }

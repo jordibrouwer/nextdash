@@ -2608,6 +2608,32 @@ body[data-column-spacing] .dashboard-grid.layout-masonry {
 }
 
 /*
+ * A widget's handle is a small panel with a filled side, drawn in CSS so it is
+ * the same in every font, in the accent colour. A category keeps its two slashes.
+ */
+.category-reorder-glyph--widget {
+    /* The two slashes stay in the box, hidden, so the handle is exactly as wide
+       as a category's whatever the font or letter spacing, and a name starts
+       where it does after "//"; the panel is drawn over them. */
+    position: relative;
+    color: transparent;
+}
+
+.category-reorder-glyph--widget::before {
+    content: '';
+    position: absolute;
+    left: 0.2em;
+    right: 0.2em;
+    top: 50%;
+    height: 0.8em;
+    transform: translateY(-50%);
+    box-sizing: border-box;
+    border: 1.5px solid var(--accent-primary);
+    border-radius: 0.18em;
+    background: linear-gradient(90deg, var(--accent-primary) 0 42%, transparent 42%);
+}
+
+/*
  * A title that outranks what is under it.
  *
  * It had the same size and weight as the bookmarks and a dimmer colour, so the

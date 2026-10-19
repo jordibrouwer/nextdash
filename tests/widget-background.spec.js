@@ -213,6 +213,24 @@ test.describe('widget background', () => {
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.widgetSurface || 'auto')).toBe(surfaceBefore);
     });
 
+    test('a widget has its own handle where a category has slashes', async ({ page }) => {
+        await openDashboard(page);
+        const read = (selector) => page.evaluate((sel) => {
+            const block = [...document.querySelectorAll('.dashboard-grid .category')].find((c) => c.matches(sel) && c.querySelector('.category-title-name'));
+            const glyph = block.querySelector('.category-reorder-glyph');
+            return { glyphText: glyph.textContent, widgetGlyph: glyph.classList.contains('category-reorder-glyph--widget') };
+        }, selector);
+        const widget = await read('.dashboard-widget');
+        expect(widget.widgetGlyph).toBe(true);
+        const category = await read('.category:not(.dashboard-widget)');
+        expect(category.widgetGlyph).toBe(false);
+        expect(category.glyphText).toBe('//');
+        // The widget's box is the same, slashes and all, with the panel drawn over them.
+        expect(widget.glyphText).toBe('//');
+        // No kind chip in the header: the handle and the strip say what it is.
+        expect(await page.locator('.category-title-kind').count()).toBe(0);
+    });
+
     // The stylesheet keys off <body>; the server had written the answer on <html>
     // only, so until a setting was touched the strip was not drawn on a plain load.
     test('a plain load has the answer on the body, and the strip is drawn', async ({ page }) => {
