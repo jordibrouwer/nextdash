@@ -1706,6 +1706,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 		if fresh {
 			data, _ := json.MarshalIndent(PageOrder{Order: defaultSeedPageIDs()}, "", "  ")
 			writeFileAtomic(fs.pageOrderFile, data, 0644)
+			// Links to judge, so the Inbox is not an empty view on day one.
+			fs.seedStarterInbox(time.Now())
 		}
 		fs.markDefaultBookmarkIconPrefetch()
 	}

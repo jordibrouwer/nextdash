@@ -315,6 +315,11 @@ func (h *Handlers) clearStarterLinks() (bool, error) {
 	if err := h.removeUntouchedNewsPage(); err != nil {
 		return false, err
 	}
+	// The starter Inbox is starter content too: an empty start with ten links
+	// waiting in the Inbox is not empty.
+	if err := h.clearStarterInbox(); err != nil {
+		return false, err
+	}
 	return true, nil
 }
 
