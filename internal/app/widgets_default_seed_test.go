@@ -12,7 +12,7 @@ A fresh install has a widget on its page, not only bookmarks.
 A page being able to hold something other than links was a v1.4.0 feature that
 nothing on a new install mentioned: widgets were a config section you had to go
 looking for, which is a poor way to find out the thing exists. One health block
-ships on the seeded page, above the categories it summarises.
+ships on the seeded page, below the categories it summarises.
 */
 func TestFreshInstallSeedsAHealthWidget(t *testing.T) {
 	useDemoSeed(t)
@@ -45,10 +45,10 @@ func TestFreshInstallSeedsAHealthWidget(t *testing.T) {
 
 	categories := store.GetCategoriesByPage(1)
 
-	// It leads: without an explicit order the widget falls in after every
-	// category it is meant to summarise.
-	if len(order) == 0 || order[0] != defaultHealthWidgetID {
-		t.Fatalf("block order = %v, want the widget first", order)
+	// Health and trend close the page, after the links and the notes: the
+	// links are what a dashboard is opened for.
+	if len(order) < 2 || order[len(order)-2] != defaultHealthWidgetID || order[len(order)-1] != defaultTrendWidgetID {
+		t.Fatalf("block order = %v, want health and trend last", order)
 	}
 	// And every category is still placed, or the ones left out would not draw.
 	for _, c := range categories {
