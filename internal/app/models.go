@@ -1119,6 +1119,22 @@ type SearchPick struct {
 	At    int64  `json:"at"` // Unix milliseconds of the most recent pick
 }
 
+// confettiThemePromoID is the one-time card that asks an install which already
+// existed whether to try Confetti. A fresh install starts on Confetti, so it
+// begins with the question answered.
+const confettiThemePromoID = "confetti-theme-try-v1"
+
+// freshDiscoverabilityState is what a new install starts with.
+func freshDiscoverabilityState() *DiscoverabilityState {
+	return &DiscoverabilityState{
+		// The cards the start guide makes redundant: Confetti is the theme a
+		// new install begins on, the guide asks for the weather and offers the
+		// theme studio, and the dashboard tour is one of its steps.
+		SeenSettingPromos: []string{confettiThemePromoID, "clock-weather-v1", "theme-browser-try-v1"},
+		SeenTips:          []string{"dashboardTutorialV3"},
+	}
+}
+
 // DiscoverabilityState persists UI discoverability progress in settings.json (shared across browsers).
 type DiscoverabilityState struct {
 	LastWhatsNewRelease string `json:"lastWhatsNewRelease,omitempty"`
@@ -1239,6 +1255,13 @@ type QuickStartState struct {
 	// free. -1 means "not captured yet".
 	BaselineBookmarks int `json:"baselineBookmarks"`
 	BaselineTagged    int `json:"baselineTagged"`
+	// StepsDone lists the start guide's steps the reader has done or ticked
+	// off, by id: the ones the app cannot measure are kept here.
+	StepsDone []string `json:"stepsDone,omitempty"`
+	// CompletedAt is when the start guide was finished or closed, in Unix
+	// seconds. The corner cards wait a few minutes after it, so they do not
+	// arrive on the heels of the setup. Zero means never finished.
+	CompletedAt int64 `json:"completedAt,omitempty"`
 }
 
 func isValidFontPreset(s string) bool {
@@ -1682,6 +1705,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			AnalyticsOptIn:            false,
 			EnableSessionTips:         true,
 			EnableTagSuggestionNotice: true,
+			DiscoverabilityState:      freshDiscoverabilityState(),
 			EnableHealthReviewNotice:  true,
 			ShowShortcutTooltips:      false,
 			ShowGridKeyLegend:         true,
@@ -4275,6 +4299,7 @@ func (fs *FileStore) GetSettings() Settings {
 			AnalyticsOptIn:                  false,
 			EnableSessionTips:               true,
 			EnableTagSuggestionNotice:       true,
+			DiscoverabilityState:            freshDiscoverabilityState(),
 			EnableHealthReviewNotice:        true,
 			ShowShortcutTooltips:            false,
 			ShowGridKeyLegend:               true,
