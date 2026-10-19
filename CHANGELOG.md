@@ -133,6 +133,9 @@ A new default look, and a lot of ways to change it. A fresh install starts on Co
 - **new — the start card has two more buttons:** *Show me the manual first* opens nextdash.cc/docs in a new window and *Open the theme studio* opens the theme browser. Neither answers the card, which stays until a choice is made.
 - **fix — the mobile info banners are gone** from the dashboard and from config (`mobile-experience.js`, its CSS and five locale strings in each language).
 - **fix — config no longer greets a fresh install with a keyboard tip.** The *In config: j/k…* tip that popped up the first time config opened is gone; the same tip stays in Help → Tips.
+- **fix — Space between columns applies to the default layout.** The default layout kept its own 1.5rem column gap, so *Airy* (and Confetti, which follows the theme to airy) moved only a wide category's inner columns and left them off the grid. The gap now follows the setting.
+- **fix — Space between columns is not shown as changed on a fresh install.** Its default is *Follow the theme*; Config → Appearance compared it with *Balanced* and put it first in the folded summary.
+- **fix — the terminal layout hides the category handle again** under the clean header styles, where the grip drew back in and caught Tab.
 
 ### Themes and looks
 

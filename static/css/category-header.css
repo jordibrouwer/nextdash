@@ -52,6 +52,11 @@ body:not([data-cat-head="theme"]) .dashboard-grid .category-reorder-handle {
     opacity: 1;
 }
 
+/* The terminal layout has no handle: it draws "$ " where the grip would be. */
+body:not([data-cat-head="theme"]) .dashboard-grid.layout-terminal .category-reorder-handle {
+    display: none;
+}
+
 body:not([data-cat-head="theme"]) .dashboard-grid .category-reorder-handle::before {
     content: "\22EE\22EE";
     font-size: 0.8rem;

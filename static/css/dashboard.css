@@ -1761,7 +1761,7 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
 /* Layout presets */
 .dashboard-grid.layout-default {
     row-gap: var(--category-row-gap, 2rem);
-    column-gap: var(--space-5, 1.5rem);
+    column-gap: var(--dashboard-column-gap, var(--space-5, 1.5rem));
 }
 
 .dashboard-grid.layout-compact {

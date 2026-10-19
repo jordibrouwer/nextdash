@@ -13205,7 +13205,7 @@ class DashboardConfig {
         columnsPerRow: { info: ['columnsInfoTitle', 'columnsInfoMessage'], def: 3 },
         densityMode: { info: ['densityModeInfoTitle', 'densityModeInfoMessage'], def: 'auto' },
         categorySpacing: { info: ['categorySpacingInfoTitle', 'categorySpacingInfoMessage'], def: 'balanced' },
-        columnSpacing: { info: ['columnSpacingInfoTitle', 'columnSpacingInfoMessage', 'Space between columns', 'How much room sits between one column and the next, across the page. Space between categories sets the room down the page.'], def: 'balanced' },
+        columnSpacing: { info: ['columnSpacingInfoTitle', 'columnSpacingInfoMessage', 'Space between columns', 'How much room sits between one column and the next, across the page. Space between categories sets the room down the page.'], def: 'theme' },
         sideMargin: { info: ['sideMarginInfoTitle', 'sideMarginInfoMessage'], def: 'balanced' },
         packedColumns: { info: ['packedColumnsInfoTitle', 'packedColumnsInfoMessage'], def: true },
         defaultCategorySpread: { info: ['defaultCategorySpreadInfoTitle', 'defaultCategorySpreadInfoMessage'], hint: 'defaultCategorySpreadHint', def: true },
