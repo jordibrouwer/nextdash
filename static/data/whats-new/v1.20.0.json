@@ -2,8 +2,23 @@
   "tag": "v1.20.0",
   "date": "19 October 2026",
   "releasedAt": "2026-10-19",
-  "modalLead": "<strong>Confetti</strong> is the new default look, with twenty-four colour-burst themes to go with it. <strong>Statistics</strong> gets a Server tab, a category can show <strong>tiles</strong>, and the keyboard shortcuts sheet is easier to search.",
+  "modalLead": "<strong>Confetti</strong> is the new default look, with twenty-four colour-burst themes to go with it. <strong>Statistics</strong> gets a Server tab, a category can show <strong>tiles</strong>, and the keyboard shortcuts sheet is easier to search. A new install opens with a <strong>Quick start</strong> guide.",
   "sections": [
+    {
+      "title": "Getting started",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A quick start for a new install.</strong> After a moment a Quick start bar slides in at the bottom of the dashboard and opens a guide: what to do with the example links, your language, the weather and nine next steps. A new install also has ten example links waiting in the Inbox.",
+          "highlight": true,
+          "title": "A quick start for a new install",
+          "media": {
+            "image": "media/v1.20.0-quick-start.jpg",
+            "alt": "The Quick start guide open over the dashboard of a new install: what to do with the example links, the language, the weather and the first of the next steps"
+          }
+        }
+      ]
+    },
     {
       "title": "Look",
       "items": [
@@ -74,6 +89,14 @@
         {
           "badge": "new",
           "text": "<strong>Settings in a widget's menu</strong> opens just that widget's settings."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Space between columns</strong> is a setting of its own next to Space between categories: Snug, Balanced or Airy, under Appearance → Layout."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Surfaces from the palette.</strong> <code>:surface</code>, <code>:effects</code>, <code>:widgetbg</code>, <code>:widgetopacity</code> and <code>:columngap</code> change how it is drawn without opening config."
         }
       ]
     }
