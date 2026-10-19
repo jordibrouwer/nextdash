@@ -195,7 +195,15 @@ canShow every time.
     async function busy() {
         for (const card of registry) {
             if (card.spec.essential === true) continue;
-            if (card.element() || card.waiting()) return true;
+            if (card.element()) return true;
+            // Waiting out its delay, but a card that would not show anyway (answered, or nothing
+            // to offer) is not part of the line-up: nothing should wait the length of its delay.
+            if (card.waiting()) {
+                try {
+                    if ((await card.spec.canShow?.()) === false) continue;
+                } catch { /* a card that cannot answer may still come */ }
+                return true;
+            }
             // Queued and able to show now. A card the corner holds back for
             // the rest of this session (the first one, during onboarding)
             // comes on a later load; nothing should wait for it until then.
