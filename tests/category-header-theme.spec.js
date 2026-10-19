@@ -73,8 +73,6 @@ test.describe('category header follows the theme', () => {
     test('the first paint has it: the server writes the resolved style', async ({ page, request }) => {
         await openDashboard(page);
         await use(page, 'look-confetti-dark', 'theme');
-        await page.waitForTimeout(500);
-        const html = await (await request.get('/')).text();
-        expect(html).toContain('data-cat-head="clean"');
+        await expect.poll(async () => (await (await request.get('/')).text()).includes('data-cat-head="clean"')).toBe(true);
     });
 });

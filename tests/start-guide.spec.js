@@ -175,6 +175,8 @@ test.describe('closing', () => {
 
         await page.reload();
         await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+        // A check that the bar does NOT come back: it slides in after a delay,
+        // so a count taken at once would pass before it could appear.
         await page.waitForTimeout(2500);
         await expect(bar(page)).toHaveCount(0);
     });
