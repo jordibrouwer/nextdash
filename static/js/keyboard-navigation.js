@@ -2201,7 +2201,7 @@ class KeyboardNavigation {
         // structure that is not there. aria-current says the same thing without
         // claiming a role.
         this.navigableElements.forEach(element => {
-            element.classList.remove('keyboard-selected');
+            element.classList.remove('keyboard-selected', 'keyboard-selected-pointer');
             element.removeAttribute('aria-current');
             // A class test rather than _isWidgetElement: this runs for every
             // stop on every cursor move, and closest() up the tree per row is a
@@ -2216,6 +2216,12 @@ class KeyboardNavigation {
         if (this.currentIndex >= 0 && this.currentIndex < this.navigableElements.length) {
             const currentElement = this.navigableElements[this.currentIndex];
             currentElement.classList.add('keyboard-selected');
+            // The cursor got here by a click or by focus, not by a key: it is
+            // still the cursor, but a widget does not draw its ring round it.
+            currentElement.classList.toggle(
+                'keyboard-selected-pointer',
+                options.keyboardNav !== true && this._selectionFromKeyboard === false,
+            );
             currentElement.setAttribute('aria-current', 'true');
             if (currentElement.classList.contains('bookmark-link')) {
                 currentElement.setAttribute('aria-selected', 'true');

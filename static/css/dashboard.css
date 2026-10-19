@@ -6726,8 +6726,10 @@ button.dashboard-widget-row.keyboard-selected {
 /* The cursor has to read as "here" even without :focus-visible, which browsers
    withhold after a click — the same reason the show-more toggle carries a ring
    of its own. Inside a widget it also has to stand apart from the hover above,
-   since a reader arrowing through a tile is often hovering something else. */
-.dashboard-widget-body button.keyboard-selected {
+   since a reader arrowing through a tile is often hovering something else.
+   Not after a click: then the cursor is where the pointer was, and a ring round
+   the row only looks like a border that should not be there. */
+.dashboard-widget-body button.keyboard-selected:not(.keyboard-selected-pointer) {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 45%, transparent);
     outline: none;
 }

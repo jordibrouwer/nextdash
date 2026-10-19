@@ -153,6 +153,7 @@ A new default look, and a lot of ways to change it. A fresh install starts on Co
 - **fix — room under field notes.** The gap between a control and the sentence under it is one token, `--config-note-gap` (it had been a −4px margin against a 4px row gap, which left nothing).
 - **fix — *Share this page* and *Import a page* are themed buttons** in the page-template modal.
 - **fix — the rows of a widget list no longer sit on a lighter band.** The rows of Health, its trend and the forecast were filled 9% lighter than the pane, so a few lines of text looked to have another background. They are unfilled now, with a hairline between them and a light wash when pointed at; the figures of a stats widget keep a faint chip (4%) (`category-surface.css`).
+- **fix — a click on a row in a widget leaves no ring round it.** The keyboard cursor follows focus, and a click focuses the row it hit, so the cursor's 2px ring appeared round every clicked row. The ring now shows only when the cursor got there by key (`keyboard-selected-pointer`, `keyboard-navigation.js`).
 
 ### Statistics
 
