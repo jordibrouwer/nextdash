@@ -76,3 +76,44 @@ test.describe('clicking away from a multi-select popover', () => {
         });
     }
 });
+
+/*
+ * A popover answers from the moment it is on screen.
+ *
+ * Its outside-click and Escape handlers were bound on a 0ms timer, to skip the
+ * gesture that opened it. Browsers run input before timers, so a click or key
+ * arriving a few milliseconds after the popover appeared was handled while
+ * nothing listened, and the popover stayed open. That showed as a test that
+ * failed one run in ten, and as a popover that ignored a quick click-away.
+ * Here the click and the key follow the opening in the same task, which is
+ * the worst case of that.
+ */
+test.describe('a popover that has only just opened', () => {
+    test('closes on a click away straight after opening', async ({ page }) => {
+        await openDashboard(page);
+        await selectTwoRows(page);
+        await page.evaluate(() => {
+            document.querySelector('.multi-select-tags-btn').click();
+            document.querySelector('.header-top, body').click();
+        });
+        await expect(page.locator('#multi-select-tags-popover')).toHaveCount(0, { timeout: 2000 });
+    });
+
+    test('closes on Escape straight after opening', async ({ page }) => {
+        await openDashboard(page);
+        await selectTwoRows(page);
+        await page.evaluate(() => {
+            document.querySelector('.multi-select-tags-btn').click();
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+        });
+        await expect(page.locator('#multi-select-tags-popover')).toHaveCount(0, { timeout: 2000 });
+    });
+
+    test('the click that opens it does not close it again', async ({ page }) => {
+        await openDashboard(page);
+        await selectTwoRows(page);
+        await page.click('.multi-select-tags-btn');
+        await page.waitForTimeout(200);
+        await expect(page.locator('#multi-select-tags-popover')).toHaveCount(1);
+    });
+});

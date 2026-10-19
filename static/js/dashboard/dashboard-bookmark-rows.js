@@ -2502,25 +2502,28 @@ class DashboardBookmarkRows {
      * @returns {() => void} unbind
      */
     _bindActionPopoverOutsideClose(pop, close, { anchorEl = null } = {}) {
-        let handler = null;
-        const timer = setTimeout(() => {
-            handler = (e) => {
-                if (pop.contains(e.target)) return;
-                // The anchor's own gesture is what toggles the popover; letting
-                // this handler see it too would close and reopen in one click.
-                if (anchorEl && (e.target === anchorEl || anchorEl.contains(e.target))) return;
-                close();
-            };
-            document.addEventListener('click', handler, true);
-            document.addEventListener('contextmenu', handler, true);
-        }, 0);
+        /*
+         * Bound at once. It used to wait a tick, so the click that opened the
+         * popover could not close it; but input runs before timers, and a click
+         * a few milliseconds after the popover appeared was handled while
+         * nothing listened. An event that began before the popover did is the
+         * opener's, and is skipped by its time stamp instead.
+         */
+        const openedAt = performance.now();
+        const handler = (e) => {
+            if (e.timeStamp < openedAt) return;
+            if (pop.contains(e.target)) return;
+            // The anchor's own gesture is what toggles the popover; letting
+            // this handler see it too would close and reopen in one click.
+            if (anchorEl && (e.target === anchorEl || anchorEl.contains(e.target))) return;
+            close();
+        };
+        document.addEventListener('click', handler, true);
+        document.addEventListener('contextmenu', handler, true);
 
         return () => {
-            clearTimeout(timer);
-            if (!handler) return;
             document.removeEventListener('click', handler, true);
             document.removeEventListener('contextmenu', handler, true);
-            handler = null;
         };
     }
 
