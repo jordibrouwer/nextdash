@@ -40,8 +40,8 @@
     // closing — wakes the queue directly.
     const POLL_WINDOW_MS = 40000;
     const TEARDOWN_MS = 260;
-    // How long after the start guide is finished no card is shown: fifteen minutes.
-    const QUIET_AFTER_GUIDE_S = 15 * 60;
+    // How long after the start guide is finished no card is shown: thirty seconds.
+    const QUIET_AFTER_GUIDE_S = 30;
 
     function dash() {
         return global.dashboardInstance || null;
@@ -152,6 +152,25 @@ canShow every time.
         if (queue.length && Date.now() < queueDeadline && !queueTimer) {
             queueTimer = setTimeout(runQueue, RETRY_MS);
         }
+        wakeAfterQuiet();
+    }
+
+    /**
+     * The quiet after the start guide ends without any event, so the poll
+     * window (forty seconds) is long over by then and nothing would ask again:
+     * the cards stayed queued until the next load. One timer, set for the end
+     * of the quiet, wakes the queue then.
+     */
+    let quietTimer = null;
+    function wakeAfterQuiet() {
+        if (quietTimer || !queue.length) return;
+        const finishedAt = Number(dash()?.settings?.quickStart?.completedAt) || 0;
+        const leftMs = finishedAt > 0 ? (finishedAt + QUIET_AFTER_GUIDE_S) * 1000 - Date.now() : 0;
+        if (leftMs <= 0) return;
+        quietTimer = setTimeout(() => {
+            quietTimer = null;
+            wakeQueue();
+        }, leftMs + 500);
     }
 
     /** Ask the queue to try again, and give it a fresh window to poll in. */
