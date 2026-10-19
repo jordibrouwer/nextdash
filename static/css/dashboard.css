@@ -5844,6 +5844,14 @@ body[data-grid-keys="shown"] .dashboard-legend-more {
     display: inline;
 }
 
+.dashboard-legend-line-more {
+    display: none;
+}
+
+body[data-grid-keys="shown"] .dashboard-legend-line-more {
+    display: flex;
+}
+
 .dashboard-legend kbd {
     font-size: var(--text-xs, 0.7rem);
     padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.32rem);

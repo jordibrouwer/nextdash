@@ -39,8 +39,8 @@
      * built; the dashboard -- the view everyone starts in -- had none, so the
      * keys were discoverable only through the cheat sheet. Ten rows in one
      * paragraph was as tall as a grid of seven bookmarks, so the rows are
-     * grouped instead: `line` 1 is the cursor, 2 is finding things, 3 is adding,
-     * editing and pages.
+     * grouped instead: `line` 1 is the cursor, 2 is finding things, 3 is adding
+     * and pages, 4 is what to do with the bookmark under the cursor.
      *
      * `more` rows are the ones that act on a row or presume the keyboard is in
      * use. They stay out of sight until the first cursor move
@@ -66,13 +66,17 @@
         { line: 2, keys: '?', legendKey: 'dashboardKeyFinders', cheatKey: 'dvFinders', fallback: 'finders' },
         { line: 2, keys: ':', legendKey: 'dashboardKeyCommands', cheatKey: 'dvCommands', fallback: 'commands' },
         { line: 3, keys: '1\u20139', legendKey: 'dashboardKeyPage', cheatKey: 'dvPage', fallback: 'page' },
-        { line: 3, keys: 'Shift+B', legendKey: 'dashboardKeyAddBookmark', cheatKey: 'dvAddBookmark', fallback: 'add bookmark' },
+        { line: 3, keys: '+', legendKey: 'dashboardKeyAddBookmark', cheatKey: 'dvAddBookmark', fallback: 'add bookmark' },
         { line: 3, keys: 'Shift+N', legendKey: 'dashboardKeyAddCategory', cheatKey: 'dvAddCategory', fallback: 'add category' },
         { line: 3, more: true, keys: 'Shift+\u2190/\u2192', legendKey: 'dashboardKeyPrevNextPage', cheatKey: 'dvPrevNextPage', fallback: 'prev / next page' },
-        { line: 3, more: true, keys: 'Shift+E', legendKey: 'dashboardKeyEdit', cheatKey: 'dvEdit', fallback: 'edit' },
-        { line: 3, more: true, keys: 'Shift+M', legendKey: 'dashboardKeyMoveBookmark', cheatKey: 'dvMoveBookmark', fallback: 'move to' },
         { line: 3, more: true, keys: 'Shift+F', legendKey: 'dashboardKeyFilter', cheatKey: 'dvFilter', fallback: 'filter' },
         { line: 3, more: true, keys: '.', legendKey: 'dashboardKeyFoldAll', cheatKey: 'dvFoldAll', fallback: 'fold all' },
+        { line: 4, more: true, keys: 'Shift+E', legendKey: 'dashboardKeyEdit', cheatKey: 'dvEdit', fallback: 'edit' },
+        { line: 4, more: true, keys: 'Shift+M', legendKey: 'dashboardKeyMoveBookmark', cheatKey: 'dvMoveBookmark', fallback: 'move to' },
+        { line: 4, more: true, keys: 'Shift+T', legendKey: 'dashboardKeyTag', cheatKey: 'dvTag', fallback: 'tag' },
+        { line: 4, more: true, keys: 'Shift+P', legendKey: 'dashboardKeyPin', cheatKey: 'dvPin', fallback: 'pin' },
+        { line: 4, more: true, keys: '\u2318/Ctrl+Enter', legendKey: 'dashboardKeyNewTab', cheatKey: 'dvNewTab', fallback: 'new tab' },
+        { line: 4, more: true, keys: 'Shift+D', legendKey: 'dashboardKeyDelete', cheatKey: 'dvDelete', fallback: 'delete' },
     ];
 
     /** @type {LegendRow[]} */
