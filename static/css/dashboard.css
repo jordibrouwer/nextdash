@@ -2665,7 +2665,7 @@ body:not([data-depth="flat"]) .dashboard-grid:is(.layout-default, .layout-masonr
  * is a background colour on the title's own box, and nothing moves. It spans
  * the whole header, from one edge of the block to the other.
  */
-body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-title:hover {
+body:is([data-cat-head="theme"], [data-cat-head="clean"]) .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-title:hover {
     /* --hover-bg is only defined inside Config, so the old tint was never drawn here. */
     background-color: color-mix(in srgb, var(--text-primary) 7%, transparent);
     border-radius: var(--category-block-radius, var(--layout-radius-sm, 8px)) var(--category-block-radius, var(--layout-radius-sm, 8px)) 0 0;

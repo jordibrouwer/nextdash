@@ -1361,6 +1361,8 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	// The first paint needs the answer, not the word: the template writes it
 	// as data-widget-bg, and a script keeps it in step with the surface after.
 	settings.WidgetSurface = resolveWidgetBackground(settings.WidgetSurface)
+	// Likewise the header: on "Follow the theme" a theme may state its own.
+	settings.CategoryHeaderStyle = resolveCategoryHeader(settings.CategoryHeaderStyle, themeID)
 	settings.ThemeBackdrop = surfaces.Backdrop
 	return htmlPageData{
 		Settings:               settings,

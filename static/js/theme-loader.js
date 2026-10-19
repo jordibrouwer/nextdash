@@ -602,6 +602,21 @@
     }
 
     /** Resolve and write all three attributes for a theme. */
+    // What "Follow the theme" means for a category header, for the themes that
+    // state one. Mirrors themeCategoryHeads in Go.
+    const THEME_CAT_HEADS = { 'look-confetti-dark': 'clean', 'look-confetti-light': 'clean' };
+
+    function resolveCatHead(style, theme) {
+        const word = style || 'theme';
+        return word === 'theme' && THEME_CAT_HEADS[theme] ? THEME_CAT_HEADS[theme] : word;
+    }
+
+    function applyCatHead(style, theme) {
+        const word = resolveCatHead(style, theme);
+        if (document.body) document.body.setAttribute('data-cat-head', word);
+        return word;
+    }
+
     function applySurfacesForTheme(theme, settings, prefsId) {
         return loadSurfaceMeta().then(() => {
             const resolved = resolveSurfacesFor(theme, settings, prefsId);
@@ -611,6 +626,7 @@
             widgetSurfaceWord = ['auto', 'background', 'none'].includes(settings && settings.widgetSurface) ? settings.widgetSurface : 'auto';
             if (settings && typeof settings.widgetOpacity === 'number') applyWidgetOpacity(settings.widgetOpacity);
             applyCatSurface(resolved.catSurface);
+            applyCatHead(settings && settings.categoryHeaderStyle, theme);
             applyThemeBackdrop(resolved.backdrop === 'off' ? 'off' : (resolved.backdropRecipe || 'follow'));
             applyCardGlass(resolved.glass);
             return resolved;
@@ -805,6 +821,8 @@
         applyGlowStrength: applyGlowStrength,
         applyThemeEffects: applyThemeEffects,
         applyCatSurface: applyCatSurface,
+        applyCatHead: applyCatHead,
+        resolveCatHead: resolveCatHead,
         applyWidgetSurface: applyWidgetSurface,
         applyWidgetOpacity: applyWidgetOpacity,
         applySurfacesForTheme: applySurfacesForTheme,
