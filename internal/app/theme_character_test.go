@@ -571,7 +571,8 @@ func TestVelvetAuroraThemesShipGlass(t *testing.T) {
 	}
 }
 
-// Lacquer themes ship on glass, with glass depth, at 35% opacity.
+// Lacquer themes ship on glass, with glass depth, at 35% opacity. The Looks
+// that use the character keep the 20% every Look has.
 func TestLacquerThemesShipGlassAt35(t *testing.T) {
 	seen := 0
 	for id, tc := range getDefaultBuiltInThemes() {
@@ -579,8 +580,12 @@ func TestLacquerThemesShipGlassAt35(t *testing.T) {
 			continue
 		}
 		seen++
-		if tc.Depth != "glass" || tc.Surface != "glass" || tc.SurfaceAlpha != 0.35 {
-			t.Errorf("%s: depth=%q surface=%q alpha=%v, want glass / glass / 0.35", id, tc.Depth, tc.Surface, tc.SurfaceAlpha)
+		want := 0.35
+		if tc.Collection == "looks" {
+			want = 0.2
+		}
+		if tc.Depth != "glass" || tc.Surface != "glass" || tc.SurfaceAlpha != want {
+			t.Errorf("%s: depth=%q surface=%q alpha=%v, want glass / glass / %v", id, tc.Depth, tc.Surface, tc.SurfaceAlpha, want)
 		}
 	}
 	if seen == 0 {
