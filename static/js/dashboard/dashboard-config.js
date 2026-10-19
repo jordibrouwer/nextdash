@@ -2312,11 +2312,16 @@ class DashboardConfig {
         const widgetsTour = this.section === 'widgets'
             ? `<button type="button" class="lvs-action" data-widgets-tour title="${this.dash.escapeHtml(this.t('config.widgetsTourHint', 'A tour of widgets'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
             : '';
+        // Containers has one too: the tour of the Containers view, a click away
+        // from the settings that feed it.
+        const containersTour = this.section === 'containers'
+            ? `<button type="button" class="lvs-action" data-containers-tour title="${this.dash.escapeHtml(this.t('config.containersTourHint', 'A tour of the Containers view'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
+            : '';
         const markup = (context
             ? this.renderChangedFilterBar(context.section, context.tab)
             : (this.section === 'bookmarks'
                 ? `${healthButton}<span class="config-bm-header-badge">${this.dash.escapeHtml(String(this.configBookmarkPool().length))}</span>`
-                : '')) + widgetsTour;
+                : '')) + widgetsTour + containersTour;
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
         }
@@ -2335,6 +2340,7 @@ class DashboardConfig {
             actions.dataset.bmHealthWired = '1';
             actions.addEventListener('click', (e) => {
                 if (e.target.closest('[data-widgets-tour]')) void this.openWidgetsTour?.();
+                else if (e.target.closest('[data-containers-tour]')) void this.playViewTour('containersTutorialV3');
                 else if (e.target.closest('[data-bm-open-health-modal]')) this.openBmHealthModal?.();
                 else if (e.target.closest('[data-bm-open-structure]')) this.openStructureModal?.('pages');
                 else this.handleLibraryHeaderClick?.(e);
