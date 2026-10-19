@@ -91,7 +91,9 @@ test.describe('view layout survives a window resize', () => {
             // list is a legitimate state.
             if (before.role) expect(narrow.role).toBe('feed');
             // The view fills its container rather than sitting in a grid column.
-            expect(narrow.headerWidth).toBe(narrow.containerWidth);
+            // (inside the pane's own padding, which is a few rem at most, not a grid column).
+            expect(narrow.containerWidth - narrow.headerWidth).toBeGreaterThanOrEqual(0);
+            expect(narrow.containerWidth - narrow.headerWidth).toBeLessThanOrEqual(64);
 
             await dragResize(client, page, [700, 1000, 1400]);
             const after = await layoutState(page);

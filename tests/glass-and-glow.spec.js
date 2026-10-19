@@ -40,13 +40,18 @@ async function setDepth(page, depth) {
 }
 
 test('the glow follows the theme out of the box, and both layers read the dial', async ({ page }) => {
+    // Slate is a glass theme: it asks for a soft glow of its own. The specs start on a solid
+    // terminal theme, so this one chooses it.
+    await page.request.post('/api/settings', {
+        data: { theme: 'slate-dark' },
+        headers: { 'X-NextDash-Token': WRITE_TOKEN },
+    });
     await openDashboard(page);
     // The ambient ring is only defined on the depths that draw one, and rich
     // is one of them.
     await setDepth(page, 'rich');
 
-    // Slate, the fresh-install theme, is a glass theme: it asks for a soft
-    // glow of its own.
+    // Slate is a glass theme: it asks for a soft glow of its own.
     expect(await page.evaluate(() => document.body.getAttribute('data-glow'))).toBe('soft');
     expect(await token(page, '--glow-strength')).toBe('0.6');
 
@@ -89,7 +94,7 @@ test('a fresh install follows the theme, and the theme decides the surfaces', as
     // back to the word a fresh install stores, so what is checked is the theme
     // and not what an earlier test left behind.
     await page.request.post('/api/settings', {
-        data: { themeDepth: 'follow', glowStrength: 'follow', themeEffects: 'follow' },
+        data: { theme: 'slate-dark', themeDepth: 'follow', glowStrength: 'follow', themeEffects: 'follow' },
         headers: { 'X-NextDash-Token': WRITE_TOKEN },
     });
     await openDashboard(page);

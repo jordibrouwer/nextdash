@@ -44,7 +44,8 @@ test.describe('About in the rail', () => {
         await expect(page.locator('[data-help-tab]').first()).toBeVisible();
         const tabs = await page.locator('[data-help-tab]').evaluateAll((els) =>
             els.map((e) => e.getAttribute('data-help-tab')));
-        expect(tabs.length).toBeGreaterThan(4);
+        // The first group is on the row; the rest stands under More topics.
+        expect(tabs.length).toBeGreaterThanOrEqual(4);
         expect(tabs).not.toContain('about');
     });
 

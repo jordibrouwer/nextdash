@@ -140,7 +140,8 @@ test.describe('theme glow', () => {
         await expect.poll(() => page.evaluate(() => document.body.getAttribute('data-depth'))).toBe('flat');
 
         // A reader who asked for flat asked for no layers, glow included.
-        await expect.poll(() => panelShadow(page)).toBe('none');
+        // The pane keeps the one-pixel inset edge every pane has; flat draws no ring or bloom.
+        await expect.poll(() => panelShadow(page)).toMatch(/^(none|[^,]*0px 0px 0px 1px inset)$/);
 
         await depth.selectOption(previous);
         await expect.poll(() => page.evaluate(

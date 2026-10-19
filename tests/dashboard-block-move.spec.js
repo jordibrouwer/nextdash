@@ -322,8 +322,8 @@ test.describe('moving blocks on the dashboard', () => {
         await expect.poll(() => page.getAttribute('body', 'data-cat-head')).toBe('underlined');
         try {
             await openDashboard(page);
-            // The icon sits right after the grip: with the grip zero wide it covered it.
-            await expect(page.locator(`${blockSel} .category-title-icon`).first()).toBeVisible();
+            // The name sits right after the grip: with the grip zero wide it covered it.
+            await expect(page.locator(`${blockSel} .category-title-name`).first()).toBeVisible();
             const from = await handleBox(page, 0);
             expect(from.width).toBeGreaterThan(8);
             const to = await page.locator(blockSel).nth(2).boundingBox();

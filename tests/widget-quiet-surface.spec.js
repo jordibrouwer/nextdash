@@ -14,6 +14,11 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  */
 const read = (page, depth, ground, dir) => page.evaluate(([value, bg, inkDir]) => {
     document.body.setAttribute('data-depth', value);
+    // In a grid with no layout class: there the widget draws its own surface, which is what
+    // this measures. In Default, Compact, Masonry, Cards and Widgets the category's surface
+    // stands behind it and the widget draws none.
+    const grid = document.createElement('div');
+    grid.className = 'dashboard-grid';
     const widget = document.createElement('div');
     widget.className = 'dashboard-widget';
     if (bg) widget.style.setProperty('--background-primary', bg);
@@ -24,7 +29,11 @@ const read = (page, depth, ground, dir) => page.evaluate(([value, bg, inkDir]) =
     cell.className = 'dashboard-widget-stat';
     body.appendChild(cell);
     widget.appendChild(body);
-    document.getElementById('dashboard-layout').appendChild(widget);
+    // Painted at once: an entrance or a transition would hand back its first frame, which is clear.
+    for (const el of [grid, widget, body, cell]) { el.style.animation = 'none'; el.style.transition = 'none'; }
+    grid.appendChild(widget);
+    // Outside #dashboard-layout, whose own layout class would reach the probe by descent.
+    document.body.appendChild(grid);
     // The page colour resolved through a painted property, so it comes back
     // as numbers in the same form as the tile's.
     const pageProbe = document.createElement('div');
@@ -38,7 +47,7 @@ const read = (page, depth, ground, dir) => page.evaluate(([value, bg, inkDir]) =
         page: window.getComputedStyle(pageProbe).backgroundColor,
         shadow: style.boxShadow,
     };
-    widget.remove();
+    grid.remove();
     return out;
 }, [depth, ground, dir]);
 

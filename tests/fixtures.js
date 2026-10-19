@@ -36,6 +36,24 @@ const { startWorkerServer } = require('./worker-server');
 const workersRequested = Number(process.env.PW_WORKERS || 4);
 const perWorkerServer = workersRequested > 1;
 
+/**
+ * The look the specs were written against. A fresh install now opens on
+ * Confetti (glass panes at 20% opacity), masonry columns, auto density, Inter,
+ * large type and small category headers; the specs measure solid surfaces,
+ * the default layout and type size m, so each file starts on those instead.
+ * The specs that test the fresh-install defaults reset the store themselves.
+ */
+const E2E_BASELINE = {
+    theme: 'matrix-bluepill-dark',
+    layoutPreset: 'default',
+    densityMode: 'compact',
+    fontPreset: 'source-code-pro',
+    fontSize: 'm',
+    categoryHeaderSize: 'm',
+    // The corner card that offers Confetti would sit over every spec on another theme.
+    seenSettingPromos: ['confetti-theme-try-v1'],
+};
+
 /** Last spec file each worker ran, so the reset fires once per file. */
 const lastFileByWorker = new Map();
 
@@ -64,7 +82,11 @@ async function resetStore(request) {
     const answered = await request.post('/api/settings', {
         // The apps card, the template card's stand-in when containers have
         // web apps, is answered the same way; app-discovery.spec.js clears it.
-        data: { quickStart: { baselineBookmarks: -1, baselineTagged: -1, templatePicked: 'keep' }, discoveryCardDone: true },
+        data: {
+            quickStart: { baselineBookmarks: -1, baselineTagged: -1, templatePicked: 'keep' },
+            discoveryCardDone: true,
+            ...E2E_BASELINE,
+        },
         headers: { 'X-NextDash-Token': WRITE_TOKEN },
     });
     if (!answered.ok()) {

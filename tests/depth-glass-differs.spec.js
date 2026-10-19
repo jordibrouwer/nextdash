@@ -30,6 +30,9 @@ async function dashboard(page) {
 /** A raised card's ground and the blur behind it, at a given depth. */
 const surfaceAt = (page, depth) => page.evaluate((value) => {
     document.body.setAttribute('data-depth', value);
+    // A category and a widget stand on their own surface now, whatever the depth: the
+    // glass answer for glass, a solid card for every other depth.
+    document.body.setAttribute('data-cat-surface', value === 'glass' ? 'glass' : 'card');
     const widget = document.createElement('div');
     widget.className = 'dashboard-grid layout-cards';
     const body = document.createElement('div');

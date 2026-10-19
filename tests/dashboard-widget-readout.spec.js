@@ -143,6 +143,8 @@ test.describe('a widget reads as an instrument', () => {
              * so this test isn't measuring glass's intentional transparency.
              */
             document.body.setAttribute('data-depth', 'flat');
+            // Without a layout class there is no pane round a category, so the widget draws its own card.
+            document.querySelector('.dashboard-grid').className = 'dashboard-grid';
             const tile = document.querySelector('.dashboard-widget[data-widget-type="archive"]');
             const card = tile.querySelector('.dashboard-widget-body');
             const cell = tile.querySelector('.dashboard-widget-stat');

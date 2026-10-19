@@ -438,6 +438,8 @@ test.describe('widget appearance', () => {
 
     test('its body is a card, at the grid\u2019s own text size', async ({ page }) => {
         const body = await page.evaluate(() => {
+            // Without a layout class; in the layouts the category's pane stands behind the widget.
+            document.querySelector('.dashboard-grid').className = 'dashboard-grid';
             const el = document.querySelector('.dashboard-widget .dashboard-widget-body');
             const grid = document.querySelector('.category:not(.dashboard-widget)');
             if (!el) return null;

@@ -609,9 +609,10 @@ test.describe('the look studio', () => {
         await page.selectOption(layout, 'cards');
         await expect.poll(surface).toBe('none');
 
-        // No pane round the category: the widget is the only surface there.
+        // Default draws the category on its own surface (glass, card or open, Category surface),
+        // and the widget stands on that: no card of its own there either.
         await page.selectOption(layout, 'default');
-        await expect.poll(surface, { message: 'a widget lost its card where nothing else draws one' }).toBe('card');
+        await expect.poll(surface, { message: 'a widget drew a card inside the category\'s surface' }).toBe('none');
 
         // Own card glass gives the category a pane, so the widget steps back.
         await page.locator('[data-studio-tab="surface"]').click();
