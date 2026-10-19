@@ -69,7 +69,7 @@ test.describe('titles of categories and widgets', () => {
         expect(category.name).toBe(widget.name);
     });
 
-    test('on a glass pane the // stands inside it, at one place for a category and a widget', async ({ page }) => {
+    test('on a glass pane the handle stands inside it; a widget\'s sits on its header strip, a little further in', async ({ page }) => {
         await openDashboard(page);
         await page.evaluate(() => window.ThemeLoader.applyCatSurface('glass'));
         const category = await measure(page, false);
@@ -78,24 +78,31 @@ test.describe('titles of categories and widgets', () => {
         expect(widget).not.toBeNull();
         // Inside the pane, not over its edge.
         expect(category.glyph).toBeGreaterThan(0);
-        expect(widget.glyph).toBe(category.glyph);
+        // The strip is what tells the two apart, and its text has its own padding.
+        expect(widget.glyph).toBeGreaterThan(category.glyph);
     });
 
-    test('a widget has no head strip: the title is not on a surface of its own', async ({ page }) => {
+    test('a widget has a head strip by default, and with None its title is not on a surface of its own', async ({ page }) => {
         await openDashboard(page);
-        const gap = await page.evaluate(() => {
+        const read = () => page.evaluate(() => {
             const w = document.querySelector('#dashboard-layout .category.dashboard-widget');
             const title = w.querySelector('.category-title');
             const body = w.querySelector('.dashboard-widget-body');
             return {
                 bg: getComputedStyle(title).backgroundColor,
-                border: getComputedStyle(title).borderTopWidth,
+                border: getComputedStyle(title).borderBottomWidth,
                 gap: body.getBoundingClientRect().top - title.getBoundingClientRect().bottom,
             };
         });
-        expect(gap.bg).toBe('rgba(0, 0, 0, 0)');
-        expect(gap.border).toBe('0px');
-        expect(gap.gap).toBeGreaterThan(4);
+        // The default: the title sits on a strip, with a line under it.
+        const strip = await read();
+        expect(strip.bg).not.toBe('rgba(0, 0, 0, 0)');
+        expect(strip.border).toBe('1px');
+        // None draws it like a category.
+        await page.evaluate(() => window.ThemeLoader.applyWidgetSurface('none'));
+        const plain = await read();
+        expect(plain.bg).toBe('rgba(0, 0, 0, 0)');
+        expect(plain.gap).toBeGreaterThan(4);
     });
 
     test('pointing at a title tints the whole header and does not move its text', async ({ page }) => {

@@ -123,6 +123,11 @@ html[data-theme] body[data-widget-bg="background"] .dashboard-grid:is(.layout-de
     margin: 0 calc(-1 * var(--category-inline-pad, 0.5rem));
 }
 
+/* Een ingeklapte widget sluit tot niets: de opvulling van het lichaam gaat mee. */
+html[data-theme] body[data-widget-bg="background"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .category[data-collapsed="true"] .dashboard-widget-body {
+    padding-block: 0;
+}
+
 /* Wie eigen kaartglas koos (Appearance → Surface → Card glass) krijgt precies
    die doorzichtigheid en blur, ook als dat minder is dan de ruit die een theme
    zonder glas krijgt. */

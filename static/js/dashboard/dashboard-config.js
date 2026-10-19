@@ -12651,8 +12651,8 @@ class DashboardConfig {
         settings.glowStrength = 'follow';
         settings.themeEffects = 'follow';
         settings.categorySurface = 'follow';
-        settings.widgetSurface = 'auto';
-        window.ThemeLoader?.applyWidgetSurface?.('auto');
+        settings.widgetSurface = 'background';
+        window.ThemeLoader?.applyWidgetSurface?.('background');
         settings.widgetOpacity = 80;
         window.ThemeLoader?.applyWidgetOpacity?.(80);
 

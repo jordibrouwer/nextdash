@@ -373,10 +373,10 @@
                     <div class="config-field">
                         <span class="config-field-label">${e(t('config.widgetSurfaceLabel', 'Widget background'))}</span>
                         <select class="config-select" data-appearance-select="widgetSurface">
-                            ${[['auto', 'Automatic'], ['background', 'Background'], ['none', 'None']].map(([option, text]) => `<option value="${option}"${(this.dash.settings?.widgetSurface || 'auto') === option ? ' selected' : ''}>${e(t('config.widgetSurface' + option.charAt(0).toUpperCase() + option.slice(1), text))}</option>`).join('')}
+                            ${[['background', 'Background'], ['none', 'None']].map(([option, text]) => `<option value="${option}"${(this.dash.settings?.widgetSurface === 'none' ? 'none' : 'background') === option ? ' selected' : ''}>${e(t('config.widgetSurface' + option.charAt(0).toUpperCase() + option.slice(1), text))}</option>`).join('')}
                         </select>
                         ${this.infoAff('widgetSurface')}
-                        <p class="config-panel-note">${e(t('config.widgetSurfaceNote', 'Whether a widget draws a background of its own. Automatic gives it one where nothing else frames it, on an open surface; on glass and card the pane does.'))}</p>
+                        <p class="config-panel-note">${e(t('config.widgetSurfaceNote', 'What tells a widget from a category: a header strip on its title, on every surface, and a card round it where nothing else is one. None draws it like a category.'))}</p>
                     </div>
                     <div class="config-field">
                         <span class="config-field-label">${e(t('config.widgetOpacityLabel', 'Widget opacity'))}</span>

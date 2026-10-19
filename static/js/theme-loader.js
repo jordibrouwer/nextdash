@@ -561,25 +561,17 @@
         applyWidgetBg();
     }
 
-    // The reader's word for Widget background: auto, background or none.
+    // The reader's word for Widget background: background or none. An install
+    // from before it was settled may still say auto, which means background.
     let widgetSurfaceWord = 'auto';
 
-    /**
-     * What a widget is drawn with, background or none, from the reader's word
-     * and the surface a category is on: auto gives it a background where
-     * nothing else frames it, on open. Mirrors resolveWidgetBackground in Go.
-     */
-    function resolveWidgetBg(word, catSurface, ownGlass) {
-        if (word === 'background') return 'background';
-        if (word === 'none') return 'none';
-        return catSurface === 'open' && !ownGlass ? 'background' : 'none';
+    /** What a widget is drawn with, background or none. Mirrors resolveWidgetBackground in Go. */
+    function resolveWidgetBg(word) {
+        return word === 'none' ? 'none' : 'background';
     }
 
     function applyWidgetBg() {
-        const cat = (document.body && document.body.getAttribute('data-cat-surface')) || 'glass';
-        // A pane the reader asked for with their own card glass frames the widget.
-        const ownGlass = Boolean(document.body && document.body.getAttribute('data-card-glass') === 'own');
-        const bg = resolveWidgetBg(widgetSurfaceWord, cat, ownGlass);
+        const bg = resolveWidgetBg(widgetSurfaceWord);
         document.documentElement.setAttribute('data-widget-bg', bg);
         if (document.body) document.body.setAttribute('data-widget-bg', bg);
         return bg;

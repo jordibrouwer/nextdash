@@ -2764,11 +2764,10 @@ class SearchCommandsComponent {
             prefix: 'widgetbg',
             shortcut: ':WIDGETBG',
             options: [
-                { value: 'auto', label: t('config.widgetSurfaceAuto', 'Automatic') },
                 { value: 'background', label: t('config.widgetSurfaceBackground', 'Background') },
                 { value: 'none', label: t('config.widgetSurfaceNone', 'None') },
             ],
-            current: (d) => d.settings.widgetSurface || 'auto',
+            current: (d) => (d.settings.widgetSurface === 'none' ? 'none' : 'background'),
             apply: (value) => this._applyAppearance(window.dashboardInstance, 'widgetSurface', value,
                 (v) => window.ThemeLoader?.applyWidgetSurface?.(v), `widgetbg:${value}`),
         }, args);

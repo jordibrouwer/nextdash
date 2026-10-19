@@ -5,19 +5,18 @@ import "strings"
 /*
 Whether a widget draws a background of its own.
 
-A widget is drawn on whatever a category is drawn on: on glass and card the
-pane is its frame, on open there is none, and a widget then looks like a
-category with a different title. So a widget can have a background of its own,
-and it is a choice:
+A widget is drawn on whatever a category is drawn on, and on glass a widget
+and a category were the same pane under a different title. So a widget has a
+background of its own: a header strip on its title, with a line under it, on
+every surface, and on open a card round it as well (nothing else frames it
+there). It is a choice:
 
-	auto        a background where nothing else frames it: on open. The default.
-	background  always, also on glass and card
+	background  a strip on the title, and a card where nothing else is one.
+	            The default.
 	none        never
 
-Automatic follows the surface the page is drawn with, resolved the way the
-category surface is, and not a list of themes: whatever sends a theme to open --
-its own answer, its archetype, flat depth, a reader's choice for one theme or
-for all of them -- gives its widgets the frame.
+"auto" is the word an install from before this was settled has stored, and it
+means the same as background.
 */
 
 var widgetSurfaces = []string{"auto", "background", "none"}
@@ -36,19 +35,11 @@ func normalizeWidgetSurface(value string) string {
 }
 
 // resolveWidgetBackground is what the page is drawn with: background or none.
-// ownGlass is a category pane the reader asked for with their own card glass:
-// it frames the widget, so automatic steps back.
-func resolveWidgetBackground(setting, catSurface string, ownGlass bool) string {
-	switch normalizeWidgetSurface(setting) {
-	case "background":
-		return "background"
-	case "none":
+func resolveWidgetBackground(setting string) string {
+	if normalizeWidgetSurface(setting) == "none" {
 		return "none"
 	}
-	if catSurface == "open" && !ownGlass {
-		return "background"
-	}
-	return "none"
+	return "background"
 }
 
 // defaultWidgetOpacity is how solid a widget's card is, in percent of the
