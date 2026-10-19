@@ -10162,7 +10162,7 @@ class DashboardConfig {
         }
 
         return shell(`
-            <div class="config-panel">
+            <div class="config-panel config-panel--theme-controls">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceThemeTitle', 'Theme'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.appearanceThemeNote', 'Pick a built-in theme or follow your system. Edit the colours of any theme, or build your own, in the theme editor.'))}</p>
                 <div class="config-field">
@@ -10181,6 +10181,7 @@ class DashboardConfig {
                         <button type="button" class="config-choice${theme === 'light' ? ' is-active' : ''}" data-appearance-theme="light" aria-pressed="${theme === 'light'}">${esc(this.t('config.themeLight', 'Light'))}</button>
                         <button type="button" class="config-choice${theme === 'dark' ? ' is-active' : ''}" data-appearance-theme="dark" aria-pressed="${theme === 'dark'}">${esc(this.t('config.themeDark', 'Dark'))}</button>
                     </div>
+                    ${this.infoAff('quickMode')}
                 </div>
                 <div class="config-field-row">
                     <label class="config-toggle">

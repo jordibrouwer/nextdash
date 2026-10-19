@@ -506,9 +506,12 @@
     }
 
     /* The theme field is the one control that has to show a whole name of up to
-       25 characters on one line: 300px clipped most of them. */
-    #config-appearance-body .config-field:has(.config-theme-picker) {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 24rem) auto;
+       25 characters on one line, next to the button that opens the studio: 300px
+       clipped most of the names. The whole Theme panel takes that width, so the
+       picker, the choices and the toggle end on the same edge. */
+    #config-appearance-body .config-panel--theme-controls .config-field,
+    #config-appearance-body .config-panel--theme-controls .config-field-row:has(> .config-toggle) {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 28rem) auto;
     }
 
     #config-appearance-body .config-field > .config-field-label {
@@ -607,4 +610,24 @@
     #config-appearance-body .config-field > .config-field-affordances {
         justify-self: start;
     }
+}
+
+/* A slider and its readout in one control column, so the slider starts and
+   ends where the selects above and below it do. */
+.config-range-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.config-range-group .config-range {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: auto;
+}
+
+.config-range-group .config-range-value {
+    flex: 0 0 3.2em;
+    text-align: right;
 }
