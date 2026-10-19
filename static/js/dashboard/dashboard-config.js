@@ -3821,6 +3821,7 @@ class DashboardConfig {
         categorySpreadResetScope: ['spread', 'reset', 'columns', 'category'],
         densityMode: ['density', 'spacing', 'compact'],
         categorySpacing: ['spacing', 'gap', 'density'],
+        columnSpacing: ['spacing', 'gap', 'columns', 'space between columns'],
         sideMargin: ['margin', 'padding', 'width'],
         layoutPreset: ['preset', 'layout', 'theme'],
         categoryItemLimit: ['limit', 'items', 'truncate'],
@@ -13205,6 +13206,7 @@ class DashboardConfig {
         columnsPerRow: { info: ['columnsInfoTitle', 'columnsInfoMessage'], def: 3 },
         densityMode: { info: ['densityModeInfoTitle', 'densityModeInfoMessage'], def: 'auto' },
         categorySpacing: { info: ['categorySpacingInfoTitle', 'categorySpacingInfoMessage'], def: 'balanced' },
+        columnSpacing: { info: ['columnSpacingInfoTitle', 'columnSpacingInfoMessage', 'Space between columns', 'How much room sits between one column and the next, across the page. Space between categories sets the room down the page.'], def: 'balanced' },
         sideMargin: { info: ['sideMarginInfoTitle', 'sideMarginInfoMessage'], def: 'balanced' },
         packedColumns: { info: ['packedColumnsInfoTitle', 'packedColumnsInfoMessage'], def: true },
         defaultCategorySpread: { info: ['defaultCategorySpreadInfoTitle', 'defaultCategorySpreadInfoMessage'], hint: 'defaultCategorySpreadHint', def: true },
@@ -14359,6 +14361,11 @@ class DashboardConfig {
                         { value: 'snug', label: t('config.categorySpacingSnug', 'Snug'), body: t('config.categorySpacingSnugBody', 'Rows sit close together.') },
                         { value: 'balanced', label: t('config.categorySpacingBalanced', 'Balanced'), body: t('config.categorySpacingBalancedBody', 'The default.') },
                         { value: 'airy', label: t('config.categorySpacingAiry', 'Airy'), body: t('config.categorySpacingAiryBody', 'Extra room between rows.') },
+                    ] },
+                    { field: 'columnSpacing', type: 'cards', label: t('config.columnSpacingLabel', 'Space between columns'), special: 'chromeRender', art: 'columnGap', options: [
+                        { value: 'snug', label: t('config.columnSpacingSnug', 'Snug'), body: t('config.columnSpacingSnugBody', 'Columns sit close together.') },
+                        { value: 'balanced', label: t('config.columnSpacingBalanced', 'Balanced'), body: t('config.columnSpacingBalancedBody', 'The default.') },
+                        { value: 'airy', label: t('config.columnSpacingAiry', 'Airy'), body: t('config.columnSpacingAiryBody', 'Extra room between columns.') },
                     ] },
                     { field: 'sideMargin', type: 'cards', label: t('config.sideMarginLabel', 'Page margins'), special: 'chromeRender', art: 'margins', options: [
                         { value: 'snug', label: t('config.sideMarginSnug', 'Snug'), body: t('config.sideMarginSnugBody', 'Narrow edges — more room for columns.') },

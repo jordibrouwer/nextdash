@@ -28,7 +28,7 @@
 
     /** The Layout tab: type first, then how the grid and its rows are laid out. */
     const TEXT_FIELDS = ['fontPreset', 'fontWeight', 'fontSize', 'inkGap', 'themeIconStyling'];
-    const GRID_FIELDS = ['layoutPreset', 'columnsPerRow', 'densityMode', 'categorySpacing', 'sideMargin',
+    const GRID_FIELDS = ['layoutPreset', 'columnsPerRow', 'densityMode', 'categorySpacing', 'columnSpacing', 'sideMargin',
         'launcherIconSize', 'rowHighlight', 'showIcons', 'colorizeStatus'];
 
     /*
@@ -36,7 +36,7 @@
      * Compare, Cancel or Reset) needs the grid drawn again; the chrome pass
      * alone leaves the old columns and rows standing.
      */
-    const RENDER_FIELDS = ['layoutPreset', 'columnsPerRow', 'densityMode', 'categorySpacing', 'sideMargin',
+    const RENDER_FIELDS = ['layoutPreset', 'columnsPerRow', 'densityMode', 'categorySpacing', 'columnSpacing', 'sideMargin',
         'showIcons', 'colorizeStatus'];
 
     /** Every setting the studio previews. Only these are gated and put back. */

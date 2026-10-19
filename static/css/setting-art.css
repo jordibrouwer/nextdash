@@ -79,6 +79,21 @@
     background: color-mix(in srgb, var(--accent-primary) 28%, var(--border-primary));
 }
 
+/* Column spacing: three columns, moved apart. */
+.setting-art-cols {
+    display: flex;
+    width: 3.6rem;
+}
+
+.setting-art-cols .setting-art-col {
+    flex: 1 1 0;
+    width: auto;
+}
+
+.setting-art-cols.is-snug { gap: var(--space-hairline, 0.14rem); }
+.setting-art-cols.is-balanced { gap: var(--space-1, 0.3rem); }
+.setting-art-cols.is-airy { gap: var(--space-2, 0.55rem); }
+
 /* Margins: the page, with the edges the setting leaves empty. */
 .setting-art-page {
     display: flex;

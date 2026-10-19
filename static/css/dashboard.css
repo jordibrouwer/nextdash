@@ -2452,6 +2452,36 @@ body[data-category-spacing="airy"] {
     --category-row-gap: var(--space-7, 3rem);
 }
 
+/*
+ * The room between columns, across the page: the counterpart of the row gap
+ * above, which only ever spoke for the room down it. Until now the column gap
+ * was whatever the layout preset said (a masonry page: 1rem), and the setting
+ * for spacing did nothing sideways.
+ *
+ * A wide category adds the gap back between its own inner columns, so it is
+ * written to the variable the grids already read rather than to column-gap.
+ */
+body[data-column-spacing="snug"] {
+    --column-space: var(--space-3, 0.75rem);
+}
+body[data-column-spacing="balanced"] {
+    --column-space: var(--space-5, 1.5rem);
+}
+body[data-column-spacing="airy"] {
+    --column-space: 2.5rem;
+}
+body[data-column-spacing] .dashboard-grid.packed-columns {
+    --gap: var(--column-space);
+}
+body[data-column-spacing] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry):not(.packed-columns) {
+    --dashboard-column-gap: var(--column-space);
+}
+/* Masonry draws its own column gap further up, a plain 1rem, and wins over the
+   packed grid's: written again here, for both. */
+body[data-column-spacing] .dashboard-grid.layout-masonry {
+    column-gap: var(--column-space);
+}
+
 /* Keep terminal rows single-line in dense layouts (e.g. 6 columns). */
 .dashboard-grid.layout-terminal .status-text {
     display: none !important;

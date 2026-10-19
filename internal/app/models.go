@@ -732,6 +732,7 @@ type Settings struct {
 	FavoriteThemes              []string                   `json:"favoriteThemes,omitempty"`
 	DensityMode                 string                     `json:"densityMode"`                       // Dashboard density mode: comfortable, compact, dense
 	CategorySpacing             string                     `json:"categorySpacing"`                   // Vertical space between category rows: snug, balanced, airy
+	ColumnSpacing               string                     `json:"columnSpacing"`                     // Horizontal space between columns on the dashboard: snug, balanced, airy
 	SideMargin                  string                     `json:"sideMargin"`                        // Left/right page margin on the dashboard: snug, balanced, airy
 	PackedColumns               bool                       `json:"packedColumns"`                     // Stack categories in vertical columns (round-robin) to reduce empty space
 	DefaultCategorySpread       bool                       `json:"defaultCategorySpread"`             // New categories may run across columns
@@ -4473,6 +4474,7 @@ func (fs *FileStore) GetSettings() Settings {
 			BackgroundPattern:               "auto",
 			DensityMode:                     "auto",
 			CategorySpacing:                 "balanced",
+			ColumnSpacing:                   "balanced",
 			SideMargin:                      "balanced",
 			PackedColumns:                   true,
 			DefaultCategorySpread:           true,
@@ -5197,6 +5199,10 @@ func (fs *FileStore) GetSettings() Settings {
 		// old fixed 3rem, which left a visible band of nothing on wide pages.
 		if _, ok := rawSettings["categorySpacing"]; !ok || (settings.CategorySpacing != "snug" && settings.CategorySpacing != "balanced" && settings.CategorySpacing != "airy") {
 			settings.CategorySpacing = "balanced"
+		}
+		// The room between columns, the horizontal counterpart of the one above.
+		if _, ok := rawSettings["columnSpacing"]; !ok || (settings.ColumnSpacing != "snug" && settings.ColumnSpacing != "balanced" && settings.ColumnSpacing != "airy") {
+			settings.ColumnSpacing = "balanced"
 		}
 		// The left/right band beside the grid. "balanced" is the margin the
 		// dashboard has always had, so an existing install sees no change.
