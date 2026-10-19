@@ -9876,17 +9876,17 @@ class DashboardConfig {
         // unprompted card (see dashboard-quickstart.js shouldStart).
         if (this.dash.settings.quickStart && typeof this.dash.settings.quickStart === 'object') {
             this.dash.settings.quickStart.dismissed = false;
+            // The start guide starts over too: its steps and the quiet period
+            // after it. Empty values, not deleted keys: the server keeps a
+            // field the save leaves out.
+            this.dash.settings.quickStart.stepsDone = [];
+            this.dash.settings.quickStart.completedAt = 0;
         }
         // The dialog promises the tour and the tips, and only the quick-start
         // card came back: the tip and tour ids live in discoverabilityState,
         // which onboardingCompleted does not touch. Persisted by the save
         // below rather than on its own timer, so one click is one write.
         window.DiscoverabilityState?.clearSeenTips?.({ persist: false });
-            // The start guide starts over too: its steps and the quiet period
-            // after it. Empty values, not deleted keys: the server keeps a
-            // field the save leaves out.
-            this.dash.settings.quickStart.stepsDone = [];
-            this.dash.settings.quickStart.completedAt = 0;
         try {
             // saveSettings resolves false on a failed save rather than rejecting.
             if ((await this.dash.saveSettings?.()) === false) throw new Error('not saved');
