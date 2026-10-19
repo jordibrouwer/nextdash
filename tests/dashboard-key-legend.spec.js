@@ -5,7 +5,7 @@ const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } 
 /**
  * The key legend under the dashboard grid.
  *
- * Three lines -- the cursor, finding things, adding and pages -- on for a fresh
+ * Four lines -- the cursor, finding things, adding and pages, and bookmark keys -- on for a fresh
  * install. The rows that presume the keyboard is in use stay hidden until the
  * first cursor move. Shift+Z switches the whole legend off and on, and it only
  * shows while the dashboard view itself is open: the grid's container outlives
@@ -46,13 +46,13 @@ test.describe('the dashboard key legend on touch screens', () => {
 });
 
 test.describe('the dashboard key legend', () => {
-    test('a fresh install shows three lines, with the keyboard rows held back', async ({ page }) => {
+    test('a fresh install shows four lines, with the keyboard rows held back', async ({ page }) => {
         await dashboard(page);
         await expect(legend(page)).toBeVisible();
-        await expect(legend(page).locator('.dashboard-legend-line')).toHaveCount(3);
+        await expect(legend(page).locator('.dashboard-legend-line')).toHaveCount(4);
         // Every group names the keys a first visit needs, without a keystroke.
         const text = await legend(page).innerText();
-        for (const key of ['!', '>', '/', '*', '?', ':', '1–9', 'Shift+B', 'Shift+N', 'Shift+Z', 'Shift+K']) {
+        for (const key of ['!', '>', '/', '*', '?', ':', '1–9', '+ add bookmark', 'Shift+N', 'Shift+Z', 'Shift+K']) {
             expect(text).toContain(key);
         }
         // The rows that act on a row wait until the keyboard is in use.

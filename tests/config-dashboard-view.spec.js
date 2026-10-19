@@ -278,7 +278,7 @@ test.describe('config dashboard view (scaffold)', () => {
         expect(await page.evaluate(() => window.dashboardInstance.config.instance.bmHealthFilter)).toBe('broken');
     });
 
-    test('the data & backups section renders tiles and the stored list', async ({ page }) => {
+    test('the data & backups section renders the status and the stored list', async ({ page }) => {
         await page.route('**/api/auto-backups', async (route) => {
             if (route.request().method() !== 'GET') return route.fallback();
             await route.fulfill({
@@ -296,7 +296,7 @@ test.describe('config dashboard view (scaffold)', () => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('data-backups'));
 
-        await expect(page.locator('.config-tile-label', { hasText: /last backup/i })).toBeVisible();
+        await expect(page.locator('#config-db-body [data-db-status]')).toBeVisible();
         await expect(page.locator('.config-backup-row')).toHaveCount(2);
         await expect(page.locator('[data-backup-action="download"]')).toBeVisible();
         // Reset moved to its own sub-tab — see config-data-reset.spec.js.

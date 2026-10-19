@@ -42,7 +42,9 @@ test.describe('notice cards on the config panel', () => {
         });
         const clock = page.locator('[data-notice-card="clock-weather"]');
         await expect(clock).toBeEnabled({ timeout: 10_000 });
-        await expect(page.locator('[data-notice-card="theme-browser"]')).toBeDisabled();
+        // The theme browser's card is answered on a fresh install, the start guide
+        // covers it; tag suggestions is one nobody has answered.
+        await expect(page.locator('[data-notice-card="tag-suggestions"]')).toBeDisabled();
         await clock.click();
         await expect.poll(() => page.evaluate(
             () => window.DiscoverabilityState.hasSeenSettingPromo('clock-weather-v1')), { timeout: 10_000 }).toBe(false);

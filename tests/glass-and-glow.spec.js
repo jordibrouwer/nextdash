@@ -85,8 +85,8 @@ test('the glow follows the theme out of the box, and both layers read the dial',
  * An install used to carry one answer for all of them; each theme states the
  * surfaces it was drawn for instead, and the setting says "follow". So what a
  * fresh install stores is the word follow, and what it draws is whatever the
- * theme it opens on asks for — Slate is a glass theme, drawn for glass
- * with a soft glow.
+ * theme it opens on asks for — Slate is a rich theme, drawn for rich
+ * depth with a soft glow.
  */
 test('a fresh install follows the theme, and the theme decides the surfaces', async ({ page }) => {
     // The test above sets a depth on the page, and a settings save from the page
@@ -115,7 +115,7 @@ test('a fresh install follows the theme, and the theme decides the surfaces', as
     // "follow" — which would match no rule in the stylesheet at all.
     // The theme's answers land when its stylesheet has loaded, a moment after the
     // first bookmark is on screen; read them once they are there.
-    await page.waitForFunction(() => document.body.getAttribute('data-depth') === 'glass', null, { timeout: 5_000 })
+    await page.waitForFunction(() => document.body.getAttribute('data-depth') === 'rich', null, { timeout: 5_000 })
         .catch(() => {});
     const drawn = await page.evaluate(() => ({
         depth: document.body.getAttribute('data-depth'),
@@ -124,7 +124,7 @@ test('a fresh install follows the theme, and the theme decides the surfaces', as
         backdrop: document.body.getAttribute('data-theme-backdrop'),
     }));
     expect(drawn.depth, 'the page was drawn with a word the stylesheet does not define')
-        .toBe('glass');
+        .toBe('rich');
     expect(drawn.glow).toBe('soft');
     expect(drawn.effects).toBe('full');
     expect(drawn.backdrop).toBe('on');
