@@ -113,6 +113,8 @@ test.describe('a popover that has only just opened', () => {
         await openDashboard(page);
         await selectTwoRows(page);
         await page.click('.multi-select-tags-btn');
+        // Checks that something does NOT happen: the opening click must not
+        // close the popover a moment later.
         await page.waitForTimeout(200);
         await expect(page.locator('#multi-select-tags-popover')).toHaveCount(1);
     });

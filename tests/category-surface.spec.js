@@ -123,10 +123,12 @@ test.describe('category surface', () => {
 
 // Effects is how loudly a theme's character is drawn -- its shine, its grain. A
 // pane has to carry that character or the setting changes nothing you can see.
+// The lacquer theme ships at the glass depth, which draws no gloss, so the test
+// asks for a richer one: it is the shine that Effects turns down.
 test('the panes draw the theme\'s shine, and Effects turns it down', async ({ page, request }) => {
     const headers = { 'X-NextDash-Token': WRITE_TOKEN };
     const before = await (await request.get('/api/settings')).json();
-    expect((await request.post('/api/settings', { headers, data: { theme: 'gloss-liquid-chrome-dark', themeSurfacePrefs: {}, themeEffects: 'follow' } })).ok()).toBe(true);
+    expect((await request.post('/api/settings', { headers, data: { theme: 'gloss-liquid-chrome-dark', themeSurfacePrefs: { 'gloss-liquid-chrome-dark': { depth: 'rich' } }, themeEffects: 'follow' } })).ok()).toBe(true);
     try {
         await openDashboard(page);
         await setSurface(page, 'glass');

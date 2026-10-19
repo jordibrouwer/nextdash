@@ -349,8 +349,8 @@ test.describe('dashboard grid — adding a category', () => {
             const r = el.getBoundingClientRect();
             return { top: r.top, bottom: r.bottom, h: window.innerHeight };
         });
-        expect(box.top).toBeGreaterThanOrEqual(0);
-        expect(box.bottom).toBeLessThanOrEqual(box.h);
+        expect(box.top).toBeGreaterThanOrEqual(-1); // sub-pixel rounding
+        expect(box.bottom).toBeLessThanOrEqual(box.h + 1);
     });
 
     test('cancel restores the placeholder', async ({ page }) => {
