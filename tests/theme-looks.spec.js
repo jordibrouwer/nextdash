@@ -44,7 +44,8 @@ async function restore(page, before) {
 }
 
 const LOOKS = [
-    { id: 'look-magma-dark', surface: 'card' },
+    { id: 'look-film-dark', surface: 'card' },
+    { id: 'look-polar-dark', surface: 'open' },
     { id: 'look-ocean-dark', surface: 'glass' },
 ];
 

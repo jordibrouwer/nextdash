@@ -31,7 +31,7 @@ func TestLooksCollection(t *testing.T) {
 		t.Fatalf("%d families in Looks, want 24", len(families))
 	}
 
-	wantSurface := map[string]string{"look-magma": "card", "look-film": "card", "look-opal": "card"}
+	wantSurface := map[string]string{"look-polar": "open", "look-film": "card", "look-opal": "card"}
 	recipes := map[string]int{}
 	for family, pair := range families {
 		dark, light := pair[0], pair[1]
