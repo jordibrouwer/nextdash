@@ -147,11 +147,11 @@ body:has(.quickstart-card.notice-card.show) .quickstart-card.start-guide-bar {
    every reload (start-guide.js counts them). Landing: once, when the modal
    folds back into the bar, so the eye knows where it went. */
 .start-guide-bar.is-pulsing .sg-bar-dot {
-    animation: sg-pulse 2.4s ease-in-out 3;
+    animation: sg-pulse 2.4s ease-in-out 8;
 }
 
 .quickstart-card.start-guide-bar.show.is-pulsing {
-    animation: sg-in 0.5s cubic-bezier(0.2, 0.9, 0.25, 1) both, sg-ring 2.4s ease-in-out 0.5s 3;
+    animation: sg-in 0.5s cubic-bezier(0.2, 0.9, 0.25, 1) both, sg-ring 2.4s ease-in-out 0.5s 8;
 }
 
 .quickstart-card.start-guide-bar.show.is-landed {
@@ -534,6 +534,25 @@ body.no-animations .start-guide-modal {
 
 .start-guide-modal .sg-more:hover {
     color: var(--text-primary);
+}
+
+.start-guide-modal .sg-back {
+    margin: 0.8rem 0 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-controls, 0.82rem);
+}
+
+.start-guide-modal kbd {
+    display: inline-block;
+    min-width: 1.3rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: var(--radius-2, 5px);
+    border: 1px solid var(--border-primary);
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.85em;
+    text-align: center;
 }
 
 .start-guide-modal .sg-foot {

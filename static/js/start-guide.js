@@ -25,10 +25,11 @@
     const BAR_DELAY_MS = 1100;
     const PLACE_MS = 500;
     const DOCS_URL = 'https://nextdash.cc/docs/';
-    // How many times, in this tab, the bar has been shown pulsing. After a few
-    // it stops pulsing on a reload: it is for finding the bar, not for nagging.
-    const PULSE_KEY = 'nextdash:start-guide-pulses';
-    const MAX_PULSED_LOADS = 4;
+    // Set once the modal has been opened in this browser: the bar pulses on
+    // every load until then, because it is for finding the bar, and stops
+    // when it has been found. (A count of loads stopped it after a few
+    // reloads, before anyone had looked.)
+    const FOUND_KEY = 'nextdash:start-guide-found';
     const VISIBLE_STEPS = 3;
     const LANGUAGES = [
         ['en', 'English'], ['nl', 'Nederlands'], ['de', 'Deutsch'],
@@ -92,8 +93,8 @@
             {
                 id: 'containers',
                 label: tq('stepContainers', 'Connect your containers'),
-                hint: tq('stepContainersHint', 'Opens Config → Containers'),
-                run: go('#config/containers'),
+                hint: tq('stepContainersHint', 'Opens the Containers view'),
+                run: () => guide.openView(),
             },
             {
                 id: 'checks',
@@ -219,13 +220,18 @@
             if (!visible && this.overlay) this.close({ land: false });
         }
 
-        /** A few soft pulses so the eye finds the bar; fewer on every reload. */
+        /** Soft pulses so the eye finds the bar, until it has been opened once. */
         pulse() {
-            let count = 0;
-            try { count = Number(sessionStorage.getItem(PULSE_KEY) || 0); } catch { /* none */ }
-            if (count >= MAX_PULSED_LOADS) return;
-            try { sessionStorage.setItem(PULSE_KEY, String(count + 1)); } catch { /* none */ }
+            let found = false;
+            try { found = localStorage.getItem(FOUND_KEY) === '1'; } catch { /* none */ }
+            if (found) return;
             this.bar?.classList.add('is-pulsing');
+        }
+
+        /** Remembered per browser: the bar has been found, so it stops pulsing. */
+        markFound() {
+            try { localStorage.setItem(FOUND_KEY, '1'); } catch { /* none */ }
+            this.bar?.classList.remove('is-pulsing');
         }
 
         // ---- The bar -----------------------------------------------------------
@@ -304,6 +310,7 @@
 
         open() {
             if (this.overlay) return;
+            this.markFound();
             const overlay = document.createElement('div');
             overlay.className = 'start-guide-overlay';
             overlay.setAttribute('data-start-guide-overlay', '');
@@ -459,6 +466,7 @@
                 <p class="sg-label">${esc(tq('guideNextSteps', 'Next steps'))}</p>
                 <ul class="sg-steps">${steps.map((s) => this.renderStep(s, done.has(s.id), !shown.has(s.id))).join('')}</ul>
                 ${hiddenCount > 0 && !this.showAll ? `<button type="button" class="sg-more" data-sg-more>${esc(tq('guideShowMore', 'Show {n} more', { n: hiddenCount }))} ▾</button>` : ''}
+                <p class="sg-back" data-sg-back-hint><kbd>Esc</kbd> ${esc(tq('guideOr', 'or'))} <kbd>1</kbd> ${esc(tq('guideBackHint', 'brings you back to the dashboard from anywhere'))}</p>
                 <div class="sg-foot">
                     <span class="sg-foot-progress" data-sg-progress>${esc(tq('progress', '{done} of {total} done', { done: this.progress().count, total: steps.length }))}</span>
                     ${this.progress().count >= steps.length
@@ -596,6 +604,15 @@
         goTo(hash) {
             this.close({ land: false });
             global.location.hash = hash;
+        }
+
+        /** The Containers view, where the tour is too; Esc or 1 comes back. */
+        async openView() {
+            this.close({ land: false });
+            const d = this.dash;
+            let opened;
+            try { opened = await d.docker?.openDockerView?.(); } catch { opened = false; }
+            if (opened === false || !d.docker?.openDockerView) global.location.hash = '#docker';
         }
 
         async runTour() {

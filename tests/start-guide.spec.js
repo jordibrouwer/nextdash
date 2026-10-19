@@ -1,6 +1,7 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
 const { WRITE_TOKEN, markWhatsNewSeen } = require('./e2e-helpers');
+const { mockDocker } = require('./helpers/docker-mock');
 
 /**
  * The start guide: what a fresh install opens on.
@@ -214,12 +215,12 @@ test.describe('inside the modal', () => {
         await freshInstall(page, request);
         await openModal(page);
         await modal(page).locator('[data-sg-more]').click();
-        await modal(page).locator('[data-sg-step="containers"] button').click();
+        await modal(page).locator('[data-sg-step="widget"] button').click();
         await expect(modal(page)).toHaveCount(0);
-        await expect(page).toHaveURL(/#config\/containers/);
+        await expect(page).toHaveURL(/#config\/widgets/);
         await page.evaluate(() => { location.hash = '#1'; });
         await expect(bar(page)).toBeVisible({ timeout: 10_000 });
-        await expect.poll(async () => (await stored(page)).quickStart.stepsDone).toContain('containers');
+        await expect.poll(async () => (await stored(page)).quickStart.stepsDone).toContain('widget');
     });
 
     test('the weather: a city and a unit are saved as the weather settings', async ({ page, request }) => {
@@ -262,11 +263,18 @@ test.describe('finding the bar again', () => {
         await expect(bar(page)).toHaveClass(/is-landed/);
     });
 
-    test('the bar pulses on a load, and stops pulsing after a few reloads', async ({ page, request }) => {
+    test('the bar pulses on every load until it has been opened once', async ({ page, request }) => {
         await freshInstall(page, request);
         await expect(bar(page)).toBeVisible({ timeout: 10_000 });
         await expect(bar(page)).toHaveClass(/is-pulsing/);
-        await page.evaluate(() => sessionStorage.setItem('nextdash:start-guide-pulses', '4'));
+        // Reloading does not stop it: nobody has looked yet.
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+        await expect(bar(page)).toBeVisible({ timeout: 10_000 });
+        await expect(bar(page)).toHaveClass(/is-pulsing/);
+        await openModal(page);
+        await page.keyboard.press('Escape');
+        await expect(bar(page)).not.toHaveClass(/is-pulsing/);
         await page.reload();
         await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
         await expect(bar(page)).toBeVisible({ timeout: 10_000 });
@@ -390,5 +398,38 @@ test.describe('review findings', () => {
         const now = Math.floor(Date.now() / 1000);
         expect(await quiet(now - 60)).toBe(true);
         expect(await quiet(now - 16 * 60)).toBe(false);
+    });
+});
+
+test.describe('the way back', () => {
+    test('Connect your containers opens the Containers view, and Esc comes back to the dashboard', async ({ page, request }) => {
+        await mockDocker(page);
+        await freshInstall(page, request);
+        await openModal(page);
+        await modal(page).locator('[data-sg-more]').click();
+        await modal(page).locator('[data-sg-step="containers"] button').click();
+        await expect(modal(page)).toHaveCount(0);
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView), { timeout: 15_000 }).toBe('docker');
+        await expect(bar(page)).toBeHidden();
+        await page.keyboard.press('Escape');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView), { timeout: 15_000 }).toBe('bookmarks');
+        await expect(bar(page)).toBeVisible({ timeout: 10_000 });
+        await expect.poll(async () => (await stored(page)).quickStart.stepsDone).toContain('containers');
+    });
+
+    test('the key 1 brings you back from config, and the modal says so from the start', async ({ page, request }) => {
+        await freshInstall(page, request);
+        await openModal(page);
+        const hint = modal(page).locator('[data-sg-back-hint]');
+        await expect(hint).toBeVisible();
+        await expect(hint.locator('kbd')).toHaveText(['Esc', '1']);
+        await modal(page).locator('[data-sg-more]').click();
+        await modal(page).locator('[data-sg-step="overview"] button').click();
+        await expect(page).toHaveURL(/#config\/overview/);
+        await page.waitForFunction(() => window.dashboardInstance?.activeView === 'config', null, { timeout: 15_000 });
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press('1');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView), { timeout: 15_000 }).toBe('bookmarks');
+        await expect(bar(page)).toBeVisible({ timeout: 10_000 });
     });
 });
