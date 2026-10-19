@@ -80,6 +80,51 @@ html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"], 
     -webkit-backdrop-filter: none;
 }
 
+/* Een widget met een eigen achtergrond (Widget background).
+
+   Bij open stond er niets om een widget heen, en een vak onder een gewone titel
+   leest als een tabel. Met data-widget-bg="background" is een widget een kaart
+   met een kopstrook: de titel staat op een eigen strook met een lijn eronder,
+   en de kaart eromheen heeft een lichte vulling, een fijne rand en een schaduw,
+   in de kleur van de tekst zodat het op elke achtergrond werkt. Bij glass en
+   card is de ruit de kaart al, en komt alleen de kopstrook erbij. */
+html[data-theme] body[data-widget-bg="background"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .category.dashboard-widget {
+    background-color: color-mix(in srgb, var(--text-primary) 6%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 12%, transparent), 0 6px 18px rgba(0, 0, 0, 0.18);
+    border-radius: var(--radius-6, 12px);
+}
+
+html[data-theme] body[data-widget-bg="background"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget .category-title {
+    background-color: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 10%, transparent);
+    border-radius: var(--radius-6, 12px) var(--radius-6, 12px) 0 0;
+    padding: 0.5rem 0.85rem;
+    margin: 0;
+}
+
+html[data-theme] body[data-widget-bg="background"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget .dashboard-widget-body {
+    padding: 0.5rem 0.85rem 0.7rem;
+}
+
+/* De // hangt in de goot, buiten een kolom. Een widget met een kaart heeft een
+   rand: de // staat dan in de kopstrook, zoals bij een ruit. */
+@media (min-width: 601px) {
+    html[data-theme] body[data-widget-bg="background"][data-cat-surface="open"][data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .dashboard-widget .category-title-label {
+        padding-left: 0;
+        margin-left: 0;
+    }
+
+    html[data-theme] body[data-widget-bg="background"][data-cat-surface="open"][data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .dashboard-widget .category-reorder-handle {
+        width: auto;
+        margin-left: 0;
+        padding: 0 0.45em 0 0;
+    }
+
+    html[data-theme] body[data-widget-bg="background"][data-cat-surface="open"][data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .dashboard-widget .category-title-label .category-reorder-handle + .category-title-name {
+        margin-left: 0;
+    }
+}
+
 /* Wie eigen kaartglas koos (Appearance → Surface → Card glass) krijgt precies
    die doorzichtigheid en blur, ook als dat minder is dan de ruit die een theme
    zonder glas krijgt. */

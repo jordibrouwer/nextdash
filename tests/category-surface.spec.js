@@ -180,8 +180,10 @@ test('the panes draw the theme\'s shine, and Effects turns it down', async ({ pa
 
 // Open is open for the widget too: no card behind it, so what a widget shows
 // sits on the page like the lists beside it.
-test('under open a widget has no card of its own', async ({ page }) => {
+test('under open a widget has no card of its own when Widget background is none', async ({ page }) => {
     await openDashboard(page);
+    // Automatic gives a widget a frame of its own on open (widget-background.spec.js).
+    await page.evaluate(() => window.ThemeLoader.applyWidgetSurface('none'));
     await setSurface(page, 'open');
     const body = await page.evaluate(() => {
         const el = document.querySelector('.dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget .dashboard-widget-body');

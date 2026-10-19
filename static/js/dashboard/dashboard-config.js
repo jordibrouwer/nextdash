@@ -3728,6 +3728,7 @@ class DashboardConfig {
         { field: 'glowStrength', labelKey: 'glowStrengthLabel', fallback: 'Glow', section: 'appearance', subTab: 'surface' },
         { field: 'themeEffects', labelKey: 'themeEffectsLabel', fallback: 'Effects', section: 'appearance', subTab: 'surface' },
         { field: 'categorySurface', labelKey: 'categorySurfaceLabel', fallback: 'Category surface', section: 'appearance', subTab: 'surface' },
+        { field: 'widgetSurface', labelKey: 'widgetSurfaceLabel', fallback: 'Widget background', section: 'appearance', subTab: 'surface' },
         { field: 'themeSurfacesForceAll', labelKey: 'themeSurfacesForceAllLabel', fallback: 'Use these for every theme', section: 'appearance', subTab: 'surface' },
         { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
         { field: 'colorizeStatus', labelKey: 'colorizeStatus', fallback: 'Colour status on bookmark rows', section: 'appearance', subTab: 'display' },
@@ -12596,6 +12597,8 @@ class DashboardConfig {
         settings.glowStrength = 'follow';
         settings.themeEffects = 'follow';
         settings.categorySurface = 'follow';
+        settings.widgetSurface = 'auto';
+        window.ThemeLoader?.applyWidgetSurface?.('auto');
 
         void this.applyResolvedSurfaces();
         this.persistAppearance();
@@ -12925,6 +12928,20 @@ class DashboardConfig {
         if (surfaces[name]) {
             this.setSurface(name, surfaces[name].includes(value) ? value : 'follow');
         }
+        if (name === 'widgetSurface') this.setWidgetSurface(value);
+    }
+
+    /**
+     * Widget background: whether a widget draws a background of its own. An
+     * install-wide word (auto, background, none), painted at once and saved
+     * with the rest of the appearance.
+     */
+    setWidgetSurface(value) {
+        const word = ['auto', 'background', 'none'].includes(value) ? value : 'auto';
+        if (!this.dash.settings) return;
+        this.dash.settings.widgetSurface = word;
+        window.ThemeLoader?.applyWidgetSurface?.(word);
+        this.persistAppearance();
     }
 
     /**

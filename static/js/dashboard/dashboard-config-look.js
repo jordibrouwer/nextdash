@@ -370,6 +370,13 @@
                     ${select('categorySurface', 'config.categorySurfaceLabel', 'Category surface',
                         [['glass', 'Glass'], ['card', 'Card'], ['open', 'Open']], 'config.categorySurface',
                         'config.categorySurfaceNote', 'What a category and a widget sit on: a see-through pane, a solid card, or nothing at all. Follow the theme lets each theme bring its own.')}
+                    <div class="config-field">
+                        <span class="config-field-label">${e(t('config.widgetSurfaceLabel', 'Widget background'))}</span>
+                        <select class="config-select" data-appearance-select="widgetSurface">
+                            ${[['auto', 'Automatic'], ['background', 'Background'], ['none', 'None']].map(([option, text]) => `<option value="${option}"${(this.dash.settings?.widgetSurface || 'auto') === option ? ' selected' : ''}>${e(t('config.widgetSurface' + option.charAt(0).toUpperCase() + option.slice(1), text))}</option>`).join('')}
+                        </select>
+                        <p class="config-panel-note">${e(t('config.widgetSurfaceNote', 'Whether a widget draws a background of its own. Automatic gives it one where nothing else frames it, on an open surface; on glass and card the pane does.'))}</p>
+                    </div>
                     ${select('glowStrength', 'config.glowStrengthLabel', 'Glow',
                         [['soft', 'Soft'], ['full', 'Full'], ['off', 'Off']], 'config.glowStrength',
                         'config.glowStrengthNote', 'How far the theme’s own colour carries around a surface and around what you are acting on. Follow the theme lets each theme bring its own.')}

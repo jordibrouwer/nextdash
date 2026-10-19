@@ -47,7 +47,9 @@ test.describe('titles of categories and widgets', () => {
     test('the // hangs at the same place for a category and a widget', async ({ page }) => {
         await openDashboard(page);
         // Open: no pane, so the // hangs in the gutter left of the column.
-        await page.evaluate(() => window.ThemeLoader.applyCatSurface('open'));
+        // A widget with a card of its own (Widget background) has its // inside the
+        // card; these two are about a widget without one.
+        await page.evaluate(() => { window.ThemeLoader.applyWidgetSurface('none'); window.ThemeLoader.applyCatSurface('open'); });
         const category = await measure(page, false);
         const widget = await measure(page, true);
         expect(category).not.toBeNull();
@@ -58,7 +60,9 @@ test.describe('titles of categories and widgets', () => {
 
     test('on open, the name starts at one place for a category and a widget', async ({ page }) => {
         await openDashboard(page);
-        await page.evaluate(() => window.ThemeLoader.applyCatSurface('open'));
+        // A widget with a card of its own (Widget background) has its // inside the
+        // card; these two are about a widget without one.
+        await page.evaluate(() => { window.ThemeLoader.applyWidgetSurface('none'); window.ThemeLoader.applyCatSurface('open'); });
         const category = await measure(page, false);
         const widget = await measure(page, true);
         expect(category.name).toBe(widget.name);

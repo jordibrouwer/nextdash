@@ -558,6 +558,37 @@
             const own = typeof g.alpha === 'number' || typeof g.blur === 'number';
             document.body.setAttribute('data-card-glass', own ? 'own' : '');
         }
+        applyWidgetBg();
+    }
+
+    // The reader's word for Widget background: auto, background or none.
+    let widgetSurfaceWord = 'auto';
+
+    /**
+     * What a widget is drawn with, background or none, from the reader's word
+     * and the surface a category is on: auto gives it a background where
+     * nothing else frames it, on open. Mirrors resolveWidgetBackground in Go.
+     */
+    function resolveWidgetBg(word, catSurface, ownGlass) {
+        if (word === 'background') return 'background';
+        if (word === 'none') return 'none';
+        return catSurface === 'open' && !ownGlass ? 'background' : 'none';
+    }
+
+    function applyWidgetBg() {
+        const cat = (document.body && document.body.getAttribute('data-cat-surface')) || 'glass';
+        // A pane the reader asked for with their own card glass frames the widget.
+        const ownGlass = Boolean(document.body && document.body.getAttribute('data-card-glass') === 'own');
+        const bg = resolveWidgetBg(widgetSurfaceWord, cat, ownGlass);
+        document.documentElement.setAttribute('data-widget-bg', bg);
+        if (document.body) document.body.setAttribute('data-widget-bg', bg);
+        return bg;
+    }
+
+    /** The reader's Widget background word, and the attribute that follows it. */
+    function applyWidgetSurface(value) {
+        widgetSurfaceWord = ['auto', 'background', 'none'].includes(value) ? value : 'auto';
+        return applyWidgetBg();
     }
 
     /** Mirrors how a category is drawn (glass, card or open) onto <html> and <body>. */
@@ -565,6 +596,8 @@
         const word = ['glass', 'card', 'open'].includes(value) ? value : 'glass';
         document.documentElement.setAttribute('data-cat-surface', word);
         if (document.body) document.body.setAttribute('data-cat-surface', word);
+        // A widget's background follows the surface under automatic.
+        applyWidgetBg();
         return word;
     }
 
@@ -575,6 +608,7 @@
             applyThemeDepth(resolved.depth);
             applyGlowStrength(resolved.glow);
             applyThemeEffects(resolved.effects);
+            widgetSurfaceWord = ['auto', 'background', 'none'].includes(settings && settings.widgetSurface) ? settings.widgetSurface : 'auto';
             applyCatSurface(resolved.catSurface);
             applyThemeBackdrop(resolved.backdrop === 'off' ? 'off' : (resolved.backdropRecipe || 'follow'));
             applyCardGlass(resolved.glass);
@@ -770,6 +804,7 @@
         applyGlowStrength: applyGlowStrength,
         applyThemeEffects: applyThemeEffects,
         applyCatSurface: applyCatSurface,
+        applyWidgetSurface: applyWidgetSurface,
         applySurfacesForTheme: applySurfacesForTheme,
         resolveSurfacesFor: resolveSurfacesFor,
         refreshSurfaceMeta: refreshSurfaceMeta,
