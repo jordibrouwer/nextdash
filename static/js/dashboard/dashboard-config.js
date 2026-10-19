@@ -3729,6 +3729,7 @@ class DashboardConfig {
         { field: 'themeEffects', labelKey: 'themeEffectsLabel', fallback: 'Effects', section: 'appearance', subTab: 'surface' },
         { field: 'categorySurface', labelKey: 'categorySurfaceLabel', fallback: 'Category surface', section: 'appearance', subTab: 'surface' },
         { field: 'widgetSurface', labelKey: 'widgetSurfaceLabel', fallback: 'Widget background', section: 'appearance', subTab: 'surface' },
+        { field: 'widgetOpacity', labelKey: 'widgetOpacityLabel', fallback: 'Widget opacity', section: 'appearance', subTab: 'surface' },
         { field: 'themeSurfacesForceAll', labelKey: 'themeSurfacesForceAllLabel', fallback: 'Use these for every theme', section: 'appearance', subTab: 'surface' },
         { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
         { field: 'colorizeStatus', labelKey: 'colorizeStatus', fallback: 'Colour status on bookmark rows', section: 'appearance', subTab: 'display' },
@@ -10894,6 +10895,7 @@ class DashboardConfig {
         // `select` only: the theme picker shares the data-appearance-select hook
         // so search and the changed-filter still find it, but it is a button with
         // its own listbox and no change event to listen for.
+        this.bindWidgetOpacity(container);
         container.querySelectorAll('select[data-appearance-select]').forEach((select) => {
             select.addEventListener('change', () => this.setAppearanceSelect(select.getAttribute('data-appearance-select'), select.value));
         });
@@ -12599,6 +12601,8 @@ class DashboardConfig {
         settings.categorySurface = 'follow';
         settings.widgetSurface = 'auto';
         window.ThemeLoader?.applyWidgetSurface?.('auto');
+        settings.widgetOpacity = 80;
+        window.ThemeLoader?.applyWidgetOpacity?.(80);
 
         void this.applyResolvedSurfaces();
         this.persistAppearance();
@@ -12929,6 +12933,23 @@ class DashboardConfig {
             this.setSurface(name, surfaces[name].includes(value) ? value : 'follow');
         }
         if (name === 'widgetSurface') this.setWidgetSurface(value);
+    }
+
+    /**
+     * Widget opacity: how solid a widget's card is, 0 to 40 percent. Painted
+     * while the slider moves, saved when it is let go.
+     */
+    bindWidgetOpacity(container) {
+        const range = container.querySelector('[data-appearance-range="widgetOpacity"]');
+        if (!range || range.dataset.wired === '1') return;
+        range.dataset.wired = '1';
+        range.addEventListener('input', () => {
+            const percent = window.ThemeLoader?.applyWidgetOpacity?.(range.value) ?? Number(range.value);
+            this.dash.settings.widgetOpacity = percent;
+            const out = range.parentElement?.querySelector('.config-range-value');
+            if (out) out.textContent = `${percent}%`;
+        });
+        range.addEventListener('change', () => this.persistAppearance());
     }
 
     /**

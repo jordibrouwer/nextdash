@@ -585,6 +585,14 @@
         return bg;
     }
 
+    /** Widget opacity: how solid a widget's card is, in percent (0 to 100), as a variable on <html>. */
+    function applyWidgetOpacity(value) {
+        const n = Number(value);
+        const percent = Number.isFinite(n) ? Math.min(100, Math.max(0, Math.round(n))) : 70;
+        document.documentElement.style.setProperty('--widget-bg', String(percent));
+        return percent;
+    }
+
     /** The reader's Widget background word, and the attribute that follows it. */
     function applyWidgetSurface(value) {
         widgetSurfaceWord = ['auto', 'background', 'none'].includes(value) ? value : 'auto';
@@ -609,6 +617,7 @@
             applyGlowStrength(resolved.glow);
             applyThemeEffects(resolved.effects);
             widgetSurfaceWord = ['auto', 'background', 'none'].includes(settings && settings.widgetSurface) ? settings.widgetSurface : 'auto';
+            if (settings && typeof settings.widgetOpacity === 'number') applyWidgetOpacity(settings.widgetOpacity);
             applyCatSurface(resolved.catSurface);
             applyThemeBackdrop(resolved.backdrop === 'off' ? 'off' : (resolved.backdropRecipe || 'follow'));
             applyCardGlass(resolved.glass);
@@ -805,6 +814,7 @@
         applyThemeEffects: applyThemeEffects,
         applyCatSurface: applyCatSurface,
         applyWidgetSurface: applyWidgetSurface,
+        applyWidgetOpacity: applyWidgetOpacity,
         applySurfacesForTheme: applySurfacesForTheme,
         resolveSurfacesFor: resolveSurfacesFor,
         refreshSurfaceMeta: refreshSurfaceMeta,

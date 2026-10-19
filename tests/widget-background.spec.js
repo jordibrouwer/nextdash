@@ -60,14 +60,14 @@ test.describe('widget background', () => {
         await setSurface(page, 'open');
         const open = await body(page);
         expect(open.attr).toBe('background');
-        // The widget is one card: its own fill and hairline, round corners...
-        expect(open.alpha).toBeGreaterThan(0);
-        expect(open.alpha).toBeLessThanOrEqual(0.15);
+        // The widget is one card, mostly solid by default (70%), not a see-through
+        // wash: its own fill and hairline, round corners...
+        expect(open.alpha).toBeGreaterThanOrEqual(0.7);
+        expect(open.alpha).toBeLessThanOrEqual(0.9);
         expect(open.hairline).toBe(true);
         expect(open.radius).toBeGreaterThanOrEqual(10);
         // ...a strip for the title, with a line under it...
-        expect(open.stripAlpha).toBeGreaterThan(0);
-        expect(open.stripAlpha).toBeLessThanOrEqual(0.2);
+        expect(open.stripAlpha).toBeGreaterThan(open.alpha);
         expect(open.stripLine).toBe('1px');
         // ...the // inside the card, not hanging off it, and a body with no frame of its own.
         expect(open.glyphInside).toBe(true);
@@ -146,5 +146,77 @@ test.describe('widget background', () => {
         await expect.poll(async () => (await (await request.get('/api/settings')).json()).widgetSurface).toBe('background');
         await select.selectOption('auto');
         await expect(page.locator('body')).toHaveAttribute('data-widget-bg', 'none');
+    });
+
+    test('Widget opacity: a slider from 0 to 100, 70 by default, paints the card and saves', async ({ page, request }) => {
+        await openDashboard(page);
+        await setWidget(page, 'background');
+        await setSurface(page, 'open');
+        await page.evaluate(() => { window.dashboardInstance.config.openConfigView('appearance'); });
+        await page.evaluate(() => { window.dashboardInstance.config.appearanceTab = 'surface'; window.dashboardInstance.config.render?.(); });
+        const range = page.locator('[data-appearance-range="widgetOpacity"]');
+        await expect(range).toBeVisible({ timeout: 15_000 });
+        await expect(range).toHaveAttribute('min', '0');
+        await expect(range).toHaveAttribute('max', '100');
+        await expect(range).toHaveValue('70');
+        await expect(range.locator('xpath=..').locator('.config-range-value')).toHaveText('70%');
+        const css = () => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--widget-bg').trim());
+        expect(await css()).toBe('70');
+
+        await range.fill('20');
+        await expect(range.locator('xpath=..').locator('.config-range-value')).toHaveText('20%');
+        await expect.poll(css).toBe('20');
+        await expect.poll(async () => (await (await request.get('/api/settings')).json()).widgetOpacity).toBe(20);
+        // The card follows; its title strip is a little more solid.
+        await page.evaluate(() => window.dashboardInstance.config.closeConfigView?.());
+        await page.waitForSelector('.dashboard-grid .dashboard-widget');
+        const alphas = await page.evaluate(() => {
+            const widget = document.querySelector('.dashboard-grid .dashboard-widget');
+            const a = (el) => {
+                const m = getComputedStyle(el).backgroundColor.match(/\/\s*([\d.]+)\s*\)/);
+                const c = getComputedStyle(el).backgroundColor.match(/rgba\(([^)]+)\)/);
+                return m ? parseFloat(m[1]) : c ? parseFloat(c[1].split(',')[3]) : 1;
+            };
+            return { card: a(widget), strip: a(widget.querySelector('.category-title')) };
+        });
+        expect(alphas.card).toBeCloseTo(0.2, 1);
+        expect(alphas.strip).toBeGreaterThan(alphas.card);
+        await request.post('/api/settings', { headers: { 'X-NextDash-Token': WRITE_TOKEN }, data: { widgetOpacity: 70 } });
+    });
+
+    test('Widget opacity 0 is kept, and the first paint carries the value', async ({ page, request }) => {
+        const headers = { 'X-NextDash-Token': WRITE_TOKEN };
+        const before = await (await request.get('/api/settings')).json();
+        try {
+            expect((await request.post('/api/settings', { headers, data: { widgetOpacity: 0 } })).ok()).toBe(true);
+            expect((await (await request.get('/api/settings')).json()).widgetOpacity).toBe(0);
+            expect(await (await request.get('/')).text()).toMatch(/--widget-bg:\s*0;/);
+            expect((await request.post('/api/settings', { headers, data: { widgetOpacity: 33 } })).ok()).toBe(true);
+            expect(await (await request.get('/')).text()).toMatch(/--widget-bg:\s*33;/);
+        } finally {
+            await request.post('/api/settings', { headers, data: { widgetOpacity: before.widgetOpacity ?? 70 } });
+        }
+    });
+
+    test('the theme studio has the select and the slider, and Cancel puts them back', async ({ page }) => {
+        await openDashboard(page);
+        const readVar = () => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--widget-bg').trim());
+        const baseline = await readVar();
+        const surfaceBefore = await page.evaluate(() => window.dashboardInstance.settings.widgetSurface || 'auto');
+        await page.evaluate(() => window.dashboardInstance.config.openThemeBrowser());
+        await expect(page.locator('[data-look-studio]')).toBeVisible({ timeout: 15_000 });
+        await page.locator('[data-studio-tab="surface"]').click();
+        const select = page.locator('[data-look-studio] [data-appearance-select="widgetSurface"]');
+        const range = page.locator('[data-look-studio] [data-appearance-range="widgetOpacity"]');
+        await expect(select).toBeVisible();
+        await expect(range).toBeVisible();
+        await range.fill('30');
+        await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--widget-bg').trim())).toBe('30');
+        await select.selectOption('none');
+        await expect(page.locator('body')).toHaveAttribute('data-widget-bg', 'none');
+        // Cancel: the page goes back to what it was.
+        await page.locator('[data-look-studio]').getByRole('button', { name: 'Cancel' }).click();
+        await expect.poll(readVar).toBe(baseline);
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.settings.widgetSurface || 'auto')).toBe(surfaceBefore);
     });
 });

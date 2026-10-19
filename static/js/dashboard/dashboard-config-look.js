@@ -377,6 +377,12 @@
                         </select>
                         <p class="config-panel-note">${e(t('config.widgetSurfaceNote', 'Whether a widget draws a background of its own. Automatic gives it one where nothing else frames it, on an open surface; on glass and card the pane does.'))}</p>
                     </div>
+                    <div class="config-field config-field--slider">
+                        <span class="config-field-label">${e(t('config.widgetOpacityLabel', 'Widget opacity'))}</span>
+                        <input type="range" class="config-range" data-appearance-range="widgetOpacity" min="0" max="100" step="5" value="${typeof this.dash.settings?.widgetOpacity === 'number' ? this.dash.settings.widgetOpacity : 70}">
+                        <span class="config-range-value">${typeof this.dash.settings?.widgetOpacity === 'number' ? this.dash.settings.widgetOpacity : 70}%</span>
+                        <p class="config-panel-note">${e(t('config.widgetOpacityNote', 'How solid the card of a widget is. At 0 you see through it to the page; the title strip keeps a faint tint.'))}</p>
+                    </div>
                     ${select('glowStrength', 'config.glowStrengthLabel', 'Glow',
                         [['soft', 'Soft'], ['full', 'Full'], ['off', 'Off']], 'config.glowStrength',
                         'config.glowStrengthNote', 'How far the theme’s own colour carries around a surface and around what you are acting on. Follow the theme lets each theme bring its own.')}
