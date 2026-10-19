@@ -1358,6 +1358,9 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	settings.GlowStrength = surfaces.Glow
 	settings.ThemeEffects = surfaces.Effects
 	settings.CategorySurface = surfaces.CatSurface
+	// The first paint needs the answer, not the word: the template writes it
+	// as data-widget-bg, and a script keeps it in step with the surface after.
+	settings.WidgetSurface = resolveWidgetBackground(settings.WidgetSurface, surfaces.CatSurface, surfaces.GlassAlpha != "" || surfaces.GlassBlur != "")
 	settings.ThemeBackdrop = surfaces.Backdrop
 	return htmlPageData{
 		Settings:               settings,

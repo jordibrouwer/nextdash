@@ -602,6 +602,14 @@ type Settings struct {
 	CategorySurface string `json:"categorySurface,omitempty"`
 
 	/*
+	 * WidgetSurface is whether a widget draws a background of its own:
+	 * auto | background | none. Auto gives it one where nothing else frames
+	 * it, on an open category surface; on glass and card the pane does. See
+	 * widget_surface.go.
+	 */
+	WidgetSurface string `json:"widgetSurface,omitempty"`
+
+	/*
 	 * ThemeSurfacePrefs is what the reader changed, per theme.
 	 *
 	 * With the three settings above on "follow", a theme brings its own
@@ -1801,6 +1809,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			GlowStrength:                    surfaceFollow,
 			ThemeEffects:                    surfaceFollow,
 			CategorySurface:                 surfaceFollow,
+			WidgetSurface:                   "auto",
 			SurfaceFollowMigrated:           true,
 			SurfaceDefaultsMigrated:         true,
 			DepthDefaultFlatMigrated:        true,
@@ -4428,6 +4437,7 @@ func (fs *FileStore) GetSettings() Settings {
 			GlowStrength:                    surfaceFollow,
 			ThemeEffects:                    surfaceFollow,
 			CategorySurface:                 surfaceFollow,
+			WidgetSurface:                   "auto",
 			SurfaceFollowMigrated:           true,
 			SurfaceDefaultsMigrated:         true,
 			DepthDefaultFlatMigrated:        true,
@@ -4961,6 +4971,7 @@ func (fs *FileStore) GetSettings() Settings {
 			settings.ThemeEffects = surfaceFollow
 		}
 		settings.CategorySurface = normalizeCategorySurface(settings.CategorySurface)
+		settings.WidgetSurface = normalizeWidgetSurface(settings.WidgetSurface)
 		// Written by the client, read on every render: only words the
 		// stylesheet knows may reach an attribute. Themes are not checked here
 		// -- the store knows which exist, this does not -- so the map is
