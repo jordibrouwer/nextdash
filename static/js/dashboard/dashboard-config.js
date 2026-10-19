@@ -1294,7 +1294,6 @@ class DashboardConfig {
         d.pageNav?.updatePageTitle?.();
         await this.loadAndRender();
         this.restoreConfigHash();
-        requestAnimationFrame(() => window.DashboardKeyboardTip?.showConfigIntro?.());
         return true;
     }
 

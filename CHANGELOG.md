@@ -132,6 +132,7 @@ A new default look, and a lot of ways to change it. A fresh install starts on Co
 - **new — the dashboard tour starts with the action bar.** A new first slide shows the nine buttons with their keys (`+`, `>`, `:`, `?`, `/`, `*`, `,`, `.`, `!`), the bar docked at the edge of the page, where it stands and slides away by default, and how it comes back (`'` or Shift+O). The tour is eight steps now; the tip id is unchanged, so a reader who has seen it is not shown it again, and it plays from Config → Help or Shift+K (`dashboard-tutorial.js`).
 - **new — the start card has two more buttons:** *Show me the manual first* opens nextdash.cc/docs in a new window and *Open the theme studio* opens the theme browser. Neither answers the card, which stays until a choice is made.
 - **fix — the mobile info banners are gone** from the dashboard and from config (`mobile-experience.js`, its CSS and five locale strings in each language).
+- **fix — config no longer greets a fresh install with a keyboard tip.** The *In config: j/k…* tip that popped up the first time config opened is gone; the same tip stays in Help → Tips.
 
 ### Themes and looks
 
