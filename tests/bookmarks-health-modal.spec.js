@@ -1,5 +1,10 @@
 const { test, expect } = require('./fixtures');
+const { useClassicType } = require('./e2e-helpers');
 const { openBookmarksWithHealth } = require('./helpers/bookmarks-health');
+
+test.beforeEach(async ({ page }) => {
+    await useClassicType(page);
+});
 
 /**
  * The collection health modal: one page reading of how the whole collection
@@ -266,7 +271,7 @@ test('Monitors & trend: the course in any series, every monitor together, rememb
  * Smaller still: the Monitors card leaves the overview (it is whole on its own
  * tab), and in the narrow columns every figure stays inside its card.
  */
-test('at 1000x620 the Monitors card gives way, and nothing spills out of a card', async ({ page }) => {
+test('at 1000x520 the Monitors card gives way, and nothing spills out of a card', async ({ page }) => {
   await page.addInitScript(() => { try { localStorage.removeItem('nextdash.bm.healthModalTab'); } catch {} });
   await openBookmarksWithHealth(
     page,
@@ -288,7 +293,7 @@ test('at 1000x620 the Monitors card gives way, and nothing spills out of a card'
       }),
     },
   );
-  await page.setViewportSize({ width: 1000, height: 620 });
+  await page.setViewportSize({ width: 1000, height: 520 });
   await page.evaluate(() => window.dashboardInstance.config.openBmHealthModal());
   const body = page.locator('#app-modal.show .modal-body');
   await expect.poll(() => body.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1);

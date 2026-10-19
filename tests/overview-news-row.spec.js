@@ -1,6 +1,10 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, useClassicType } = require('./e2e-helpers');
+
+test.beforeEach(async ({ page }) => {
+    await useClassicType(page);
+});
 
 /**
  * A news row is three short lines at most.

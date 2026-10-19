@@ -1,5 +1,10 @@
 const { test, expect } = require('./fixtures');
+const { useClassicType } = require('./e2e-helpers');
 const { openBookmarksWithHealth } = require('./helpers/bookmarks-health');
+
+test.beforeEach(async ({ page }) => {
+    await useClassicType(page);
+});
 
 /**
  * The bookmark panel's tabs: Details, Health and Usage under a head that

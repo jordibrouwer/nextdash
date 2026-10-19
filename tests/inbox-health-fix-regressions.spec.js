@@ -1,6 +1,10 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, useClassicType } = require('./e2e-helpers');
+
+test.beforeEach(async ({ page }) => {
+    await useClassicType(page);
+});
 
 /**
  * Four corrections that share a shape: state kept for one purpose being read as

@@ -1,6 +1,10 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, useClassicType } = require('./e2e-helpers');
+
+test.beforeEach(async ({ page }) => {
+    await useClassicType(page, { theme: 'slate-dark' });
+});
 
 /**
  * The plate belongs to the buttons, and goes when they do.

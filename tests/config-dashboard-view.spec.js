@@ -806,7 +806,9 @@ test.describe('config dashboard view (scaffold)', () => {
         await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
         await openConfigPanel(page, 'Type');
 
-        await page.locator('[data-appearance-font="xl"]').click();
+        // A click event, not a pointer move: pointing at a size previews it and resizes the panel,
+        // and at the default size (lg) that shifts the buttons from under the pointer.
+        await page.locator('[data-appearance-font="xl"]').dispatchEvent('click');
 
         await expect(page.locator('body')).toHaveClass(/font-size-xl/);
         await expect.poll(() => saved && saved.fontSize).toBe('xl');

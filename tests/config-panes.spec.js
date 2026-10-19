@@ -28,12 +28,15 @@ const paint = (page, selector) => page.evaluate((sel) => {
     const el = document.querySelector(sel);
     if (!el) return null;
     const cs = getComputedStyle(el);
+    // The bookmarks view blurs through a layer behind its content, so that it is not the
+    // containing block of the fixed sheets and modals inside it.
+    const layer = sel.includes('config-view--library') ? getComputedStyle(el, '::before') : cs;
     const slash = cs.backgroundColor.match(/\/\s*([\d.]+)\s*\)/);
     const comma = cs.backgroundColor.match(/rgba\(([^)]+)\)/);
     const alpha = slash ? parseFloat(slash[1]) : comma ? parseFloat(comma[1].split(',')[3]) : 1;
     return {
         alpha,
-        blur: cs.backdropFilter && cs.backdropFilter !== 'none' ? 'blur' : 'none',
+        blur: layer.backdropFilter && layer.backdropFilter !== 'none' ? 'blur' : 'none',
         radius: cs.borderTopLeftRadius,
         border: cs.borderTopWidth,
         hairline: /inset 0px 0px 0px 1px|0px 0px 0px 1px inset/.test(cs.boxShadow),

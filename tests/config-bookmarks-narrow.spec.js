@@ -1,6 +1,11 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
+const { useClassicType } = require('./e2e-helpers');
 const { openBookmarks } = require('./config-bookmarks-helpers');
+
+test.beforeEach(async ({ page }) => {
+    await useClassicType(page);
+});
 
 const locked = (page) => page.evaluate(() => window.ScrollLock.holders.size);
 

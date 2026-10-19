@@ -1,6 +1,11 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
 const { openBookmarksWithRows } = require('./config-bookmarks-helpers');
+const { useClassicType } = require('./e2e-helpers');
+
+test.beforeEach(async ({ page }) => {
+    await useClassicType(page);
+});
 
 const ICON_32 = `data:image/svg+xml,${encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" fill="red"/></svg>')}`;

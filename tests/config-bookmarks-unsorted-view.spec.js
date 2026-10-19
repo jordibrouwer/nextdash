@@ -1,7 +1,11 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays, useClassicType } = require('./e2e-helpers');
 const { sidePanel } = require('./config-bookmarks-helpers');
+
+test.beforeEach(async ({ page }) => {
+    await useClassicType(page);
+});
 
 /**
  * The Unsorted view in Config → Bookmarks.

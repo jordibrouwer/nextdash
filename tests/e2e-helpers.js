@@ -110,6 +110,22 @@ async function suppressStatusEmptyHint(page) {
     });
 }
 
+/**
+ * Type size m, the Default layout and compact rows: the defaults before a fresh install
+ * opened on large type and masonry. A few specs measure how much fits in a window and were
+ * written against those sizes; they ask for them here, before the page loads. The settings
+ * are the store's, so the next spec file starts fresh again.
+ * @param {import('@playwright/test').Page} page
+ * @param {Record<string, unknown>} [extra]
+ */
+async function useClassicType(page, extra = {}) {
+    const response = await page.request.post('/api/settings', {
+        data: { fontSize: 'm', layoutPreset: 'default', densityMode: 'compact', ...extra },
+        headers: { 'X-NextDash-Token': WRITE_TOKEN },
+    });
+    if (!response.ok()) throw new Error(`useClassicType failed: HTTP ${response.status()}`);
+}
+
 /** @param {import('@playwright/test').Page} page */
 async function dismissWhatsNewIfPresent(page) {
     // Mark the running release as seen first. Closing the modal does not record
@@ -698,6 +714,7 @@ module.exports = {
     RAINDROP_STUB_PORT,
     resetDashboardData,
     WRITE_TOKEN,
+    useClassicType,
     DASHBOARD_WHATS_NEW_RELEASE,
     DEFAULT_DISCOVERABILITY_KEYS,
     E2E_WEB_SERVER_ENV,
