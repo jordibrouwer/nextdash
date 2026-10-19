@@ -10170,7 +10170,7 @@ class DashboardConfig {
                     <div class="config-theme-row">
                         ${this.renderThemePicker()}
                         <button type="button" class="config-btn config-theme-browse"
-                                data-appearance-action="browse-themes">${esc(this.t('config.openThemeBrowser', 'Browse…'))}</button>
+                                data-appearance-action="browse-themes">${esc(this.t('config.openThemeBrowser', 'Open theme studio'))}</button>
                     </div>
                     ${this.appearanceAff('theme')}
                 </div>

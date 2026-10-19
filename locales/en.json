@@ -6416,7 +6416,7 @@
     "backgroundPatternHatch": "Hatch",
     "backgroundPatternNone": "None",
     "backgroundPatternNote": "A texture drawn over the backdrop. Left to the theme, there is none while a backdrop is shown; with the backdrop off, most themes ask for dots and a few for something that suits them. Pick one to draw it over anything. Lines and hatch cover more of the page than dots do.",
-    "openThemeBrowser": "Browse…",
+    "openThemeBrowser": "Open theme studio",
     "widgetsTitleLabel": "Widget title",
     "sourceTokenRequired": "Paste a token first — this source cannot read anything without one.",
     "on": "On",
