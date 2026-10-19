@@ -351,7 +351,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 - [The colours look wrong after the system switched to dark](#the-colours-look-wrong-after-the-system-switched-to-dark)
 - [A new release does not seem to have arrived](#a-new-release-does-not-seem-to-have-arrived)
 - [The update check fails](#the-update-check-fails)
-- [The quick-start card does not appear](#the-quick-start-card-does-not-appear)
+- [The Quick start bar does not appear](#the-quick-start-bar-does-not-appear)
 - [The weather does not show](#the-weather-does-not-show)
 - [The Calendar widget shows nothing](#the-calendar-widget-shows-nothing)
 - [The RSS widget shows nothing](#the-rss-widget-shows-nothing)
@@ -736,19 +736,26 @@ Data is stored in `./data` next to the binary. `NEXTDASH_DATA_DIR` points it els
 
 ### 🚦 First launch
 
-1. **What do you want?** A card at the top of the first page asks how to start. **Keep these example links** leaves the starter pages as they are, to look around; remove the links any time. **Start with an empty page** clears the example links and their categories off the first page — its widgets stay — and removes the example news page too, as long as you have not changed it. Two more buttons on the card are not answers: **Show me the manual first** opens nextdash.cc/docs in a new window and **Open the theme studio** opens the theme browser; the card stays until you choose. The card only appears while the first page is still the starter page; **×** or `Escape` keeps the links. **Show quick-start card again** (Behavior → Privacy & sync → Onboarding) brings the card back. The page templates (Homelab, Media server, Developer) are in the import dialog ([§9.8](#98-page-templates)).
-2. **Quick-start card.** After that, a small checklist in the bottom-left corner with three first tasks: **Add your first bookmark** (`+` or paste a URL), **Open Config → Behavior** (language, theme and layout) and **See the keyboard shortcuts** (`!` or `F1`). Each ticks itself off as you do it, and the card closes itself when all three are done. Skip it with its × whenever you like; it asks nothing, and every setting is in config.
-   With the Docker socket mounted, a card in the middle of the screen then offers the apps running on this server as bookmarks — once the checklist, the tour and any corner card are out of the way ([§14.10](#1410-apps-it-finds-on-its-own)).
-3. **Example bookmarks.** Kept the example links? A new install starts with 98 links on two pages, so there is something to try search, tags and the keys on. **main** has Development, Docker, Unraid, Self-hosted, Tools and Daily, with a Health, a Health trend and a Notes widget and the **Today** collection; **news** has Tech news, Dev & blogs, Security, Communities, Videos and News.
-4. **Your own bookmarks.** Import your browser's bookmark file under **Config → Data & backups** ([§19](#19-data-backups-and-import)), or add them with **+** and **&** ([§5](#5-adding-bookmarks)).
-5. **Config.** Press **`Shift + S`** or click the gear. Config is a view inside the dashboard; **`Escape`** takes you back.
+1. **The dashboard comes first.** A new install opens on the dashboard with its example links. After a moment a **Quick start** bar slides in at the bottom of the screen and pulses until you have found it. It opens a guide in the middle of the page; the guide never opens by itself.
+2. **The guide.** At the top, **What do you want?** **Keep these example links** leaves the starter pages as they are, to look around; remove the links any time. **Start with an empty page** asks first (*Remove the example links from this page?*), then clears the example links and their categories off the first page — its widgets stay — and removes the example news page and the ten example links waiting in the inbox, as long as you have not changed them (an inbox link you have read or put to sleep stays). Two more buttons are not answers: **Show me the manual first** opens nextdash.cc/docs in a new window and **Open the theme studio** opens the theme studio. Under that, **Language** (the dashboard and the guide change at once) and **Weather** (a city and Celsius or Fahrenheit, the same settings as Appearance → Date & weather), then nine **Next steps** in the order a reader would take them: take the 1-minute tour, import your bookmarks, get the browser extension, open the Bookmarks view, open the Inbox view, add a widget, turn on status checks, set up notifications and open the Config settings. Three show at a time; **Show … more** lists the rest, and each ticks itself off when you do it.
+3. **The bar.** **Close for now** (the ×, a click outside the guide, or `Escape`) folds the guide back into the bar. The bar stays on the dashboard of page 1 — not in Config, the other views or on other pages — until every step is done, then says **All set**; **Close for good** closes it for ever, after asking. **Show quick start again** (Behavior → Privacy & sync → Onboarding) brings it back. While the bar is up no other corner card shows, and the others wait ten seconds after it is closed; an *Undo* for something you have just done still appears. The page templates (Homelab, Media server, Developer) are in the import dialog ([§9.8](#98-page-templates)).
+4. **Example bookmarks.** Kept the example links? A new install starts with 98 links on two pages, so there is something to try search, tags and the keys on. **main** has Development, Docker, Unraid, Self-hosted, Tools and Daily, the **Today** collection and three widgets: Notes at the top right, and Health and Health trend at the bottom; **news** has Tech news, Dev & blogs, Security, Communities, Videos and News. With the Docker socket mounted, a card in the middle of the screen then offers the apps running on this server as bookmarks — once the guide, the tour and any corner card are out of the way ([§14.10](#1410-apps-it-finds-on-its-own)). The inbox starts with ten example links, none of them on the pages, to read, keep, promote or throw away ([§13](#13-inbox)).
+5. **Your own bookmarks.** Import your browser's bookmark file under **Config → Data & backups** ([§19](#19-data-backups-and-import)), or add them with **+** and **&** ([§5](#5-adding-bookmarks)).
+6. **Config.** Press **`Shift + S`** or click the gear. Config is a view inside the dashboard; **`Escape`** takes you back.
 
 **The first hour.** Split your bookmarks across a few pages, give the ten you open daily a shortcut, and switch on link checking under Config → Monitoring → Checks. Everything else can wait until you know what you want.
 
 <details>
 <summary>📷 Screenshot — a new install on its first launch, full page</summary>
 
-<p align="center"><img src="screenshots/manual.md/02-first-launch.jpg" alt="A new install on its first launch: the card at the top of main asks whether to keep the example links or start with an empty page; below it Today, the Health and Health trend widgets, and the Development, Docker and Unraid example links" width="860"></p>
+<p align="center"><img src="screenshots/manual.md/02-first-launch.jpg" alt="A new install on its first launch: the dashboard with the example links, Today, Development, Notes at the top right, and the Quick start bar at the bottom of the screen" width="860"></p>
+
+</details>
+
+<details>
+<summary>📷 Screenshot — the Quick start guide, open</summary>
+
+<p align="center"><img src="screenshots/manual.md/02-start-guide.jpg" alt="The Quick start guide open over the dashboard: the choice about the example links, the language and the weather, and the first of the next steps" width="860"></p>
 
 </details>
 
@@ -797,7 +804,7 @@ nextDash also records when a bookmark was added and last changed, how often it w
 
 ### 3.4 The inbox
 
-The **inbox** holds links you want to keep before you know where they belong. It is a list of its own, not a page. **Keep** sends a link to **Bookmarks → Unsorted** rather than filing it, for a link worth holding on to with no page yet. See [§13](#13-inbox).
+The **inbox** holds links you want to keep before you know where they belong. It is a list of its own, not a page. A new install starts with ten example links in it, so there is something to triage. **Keep** sends a link to **Bookmarks → Unsorted** rather than filing it, for a link worth holding on to with no page yet. See [§13](#13-inbox).
 
 <a id="35-views"></a>
 
@@ -916,7 +923,7 @@ The **★** button in the bottom-right corner opens the release notes. It is lef
 
 <img src="screenshots/manual.md/04-category-header.jpg" alt="A category header: the // mark, an icon and the name, then the ⋯ sort menu, the count of 3 bookmarks, the fold arrow and a + for a new category" width="364" align="left">
 
-Categories and widgets stand in columns — as many as **Columns per row** allows and the window has room for, and one on a phone held upright. Each category header shows `//`, its name with an icon if you gave it one, a count, and chips for sorting (manual, **A–Z**, **Recent**), a **+** to add a category and a **⋯** menu. Click the header to fold the category. A spread category shows **↔ N** with the number of columns it takes. Smart collections (*Today*, *Recently opened*, …) and custom collections appear as groups among your categories.
+Categories and widgets stand in columns — as many as **Columns per row** allows and the window has room for, and one on a phone held upright. Each category header shows `//`, its name with an icon if you gave it one, a count, and chips for sorting (manual, **A–Z**, **Recent**), a **+** to add a category and a **⋯** menu. Click the header to fold the category. A spread category shows **↔ N** with the number of columns it takes. Smart collections (*Today*, *Recently opened*, …) and custom collections appear as groups among your categories. A widget's header is told apart from a category's: its title sits on a lighter strip with a line under it, and its handle is a small panel where a category has `//` ([§15.3](#153-on-the-dashboard)).
 
 <img src="screenshots/manual.md/04-bookmark-row.jpg" alt="A bookmark row: the site icon, the name Encyclopedia and its shortcut WIKI on a chip" width="360" align="right">
 
@@ -1435,8 +1442,8 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 | `:favicons fetch` · `:favicons on\|off` | Download every icon again · show icons |
 | `:metadata` | Bookmarks without a preview |
 | `:theme <name>` · `:dark` | Theme · flip light and dark |
-| `:depth` · `:glow` · `:contrast` · `:backdrop` · `:pattern` · `:harmonize` | Surfaces ([§16](#16-appearance)) |
-| `:layout <preset>` · `:density` · `:columns <1-6>` · `:width on\|off\|all` · `:rows` · `:packed` · `:fontsize` | Grid |
+| `:depth` · `:surface` · `:effects` · `:widgetbg` · `:widgetopacity` · `:glow` · `:contrast` · `:backdrop` · `:pattern` · `:harmonize` | Surfaces ([§16](#16-appearance)) |
+| `:layout <preset>` · `:density` · `:columns <1-6>` · `:spacing` · `:columngap` · `:margins` · `:width on\|off\|all` · `:rows` · `:packed` · `:fontsize` | Grid |
 | `:switcher` · `:buttonstyle` · `:maxtabs` · `:maxactions` · `:buttons` · `:header` | Header and action buttons |
 | `:preview` · `:title` · `:opacity` · `:animations` · `:status` · `:shortcuts` · `:lang` | Display toggles |
 | `:locklayout` | Lock or unlock drag and drop |
@@ -2207,7 +2214,7 @@ Everything saves as you go.
 > [!NOTE]
 > **In short:** the inbox holds links you saved but have not filed. Triage them one key at a time, or keep them in Unsorted until they earn a category.
 
-The inbox holds links you want to keep before you decide where they go. Items live in `data/inbox.json`.
+The inbox holds links you want to keep before you decide where they go. Items live in `data/inbox.json`. A new install starts with ten example links in it — Caddy, Healthchecks, restic, Syncthing, Paperless-ngx, Immich, the Twelve-Factor App, SQLite, systemd and Julia Evans — none of them on the starter pages. *Start with an empty page* in the Quick start guide removes the ones you have not touched; *Reset all data* puts them back.
 
 A link comes in from several places and leaves in one of three ways:
 
@@ -2604,7 +2611,7 @@ With the Docker socket mounted, nextDash notices which containers are web apps a
 
 Nothing outside nextDash is asked: only the Docker socket and its own checks, never a proxy's or another container's API. Databases, message brokers, socket proxies, updaters and nextDash itself are never proposed, and neither is a container that already has a bookmark — matched the same way the Containers view links one ([§14.2](#142-the-list)).
 
-**The first time.** Once the first-start card, the checklist, the tour and any corner card are out of the way, a card in the middle of the screen says how many apps are running here, grouped by kind — Media, Media management, Downloads, Monitoring, Network, Home, Documents & photos, Development, Tools — and all ticked. **Add** puts the ticked ones on the page: one category per kind, at the top, each bookmark with its icon, a status check and a link to its container. While the page still holds the links nextDash starts with, **Replace the starter links on this page** clears them as well. A notice afterwards offers **Show**, **Undo** and **Done**. **Not now** adds nothing; the apps stay in the Containers view.
+**The first time.** Once the Quick start guide, the tour and any corner card are out of the way, a card in the middle of the screen says how many apps are running here, grouped by kind — Media, Media management, Downloads, Monitoring, Network, Home, Documents & photos, Development, Tools — and all ticked. **Add** puts the ticked ones on the page: one category per kind, at the top, each bookmark with its icon, a status check and a link to its container. While the page still holds the links nextDash starts with, **Replace the starter links on this page** clears them as well. A notice afterwards offers **Show**, **Undo** and **Done**. **Not now** adds nothing; the apps stay in the Containers view.
 
 <p align="center"><img src="screenshots/manual.md/14-discovery-card.jpg" alt="The apps card in the middle of the screen: Found on this server, 4 apps are running here, with Plex under Media, Jellyseerr under Media management, Grafana under Monitoring and Home Assistant under Home, all ticked, and the buttons Add 4 apps and Not now" width="460"></p>
 <p align="center"><sub>The first card: what is running, grouped by kind.</sub></p>
@@ -2787,6 +2794,7 @@ Widgets share one order with the categories and are moved on the dashboard: drag
 
 ### 15.3 On the dashboard
 
+- A widget's title sits on a lighter strip with a line under it, and its handle is a small panel where a category has `//`; it is dragged the same way. **Widget background** and **Widget opacity** under Appearance → Surfaces set how it looks ([§16.3](#163-surfaces)).
 - Click the title, or `Enter` on the header, to fold a widget. `.` folds everything. The state is kept per page.
 - Right-click the title to rename, change the width, fold, open the settings, **move it to another page** (**Move to page…**, the same move as in Config → Widgets, keeping its sign-in and folded state) or **close** it. Closing hides it and keeps its settings; Config → Widgets switches it back on.
 - The arrow keys walk through a widget's rows; `Enter` does what a click does. See [§7.4](#74-acting-on-a-category-or-widget).
@@ -3203,7 +3211,7 @@ nextDash ships **188 theme families**, each with a light and a dark half — 376
 
 **Theme** on the Theme & type tab lists every theme by name. Beside it:
 
-- **The theme browser** — **Browse…**, or **`Shift + A`** on the dashboard. It opens as a panel beside the dashboard, with tabs of its own ([see below](#the-theme-browser)); the first, **Themes**, has one card per family, with a light/dark switch and the line that says what the theme is like to sit in front of. At the top: a search box, the segments *All*, *Favourites*, *New*, *Light* and *Dark*, and **More filters**, which unfolds the **character chips** ([§16.2](#162-character)) and the **collection** chips. While it is folded, the filters that are on show as chips you can remove, and the button counts them. *Light* and *Dark* turn every card to that half; a card can still be switched by hand. Search matches a family's name, its character and the words of its line. The 62 newest families wear a **new** badge, and the **New** segment and searching `new` show only them. Themes of your own come first, under **Your themes**, with a **yours** badge (and **look** when they bring one along); a segment **Yours** shows only them, and searching `yours` finds them. A packaged theme you recoloured wears **recoloured**. A star keeps up to 24 families under *Favourites*. Pointing at a card previews that theme on the real dashboard; clicking one puts it on the page. A line above the grid names the theme in use — or, once you have picked another, which one is chosen and which stays until **Apply** — and **Show** brings its card into view.
+- **The theme browser** — **Open theme studio** beside the theme picker, or **`Shift + A`** on the dashboard. It opens as a panel beside the dashboard, with tabs of its own ([see below](#the-theme-browser)); the first, **Themes**, has one card per family, with a light/dark switch and the line that says what the theme is like to sit in front of. At the top: a search box, the segments *All*, *Favourites*, *New*, *Light* and *Dark*, and **More filters**, which unfolds the **character chips** ([§16.2](#162-character)) and the **collection** chips. While it is folded, the filters that are on show as chips you can remove, and the button counts them. *Light* and *Dark* turn every card to that half; a card can still be switched by hand. Search matches a family's name, its character and the words of its line. The 62 newest families wear a **new** badge, and the **New** segment and searching `new` show only them. Themes of your own come first, under **Your themes**, with a **yours** badge (and **look** when they bring one along); a segment **Yours** shows only them, and searching `yours` finds them. A packaged theme you recoloured wears **recoloured**. A star keeps up to 24 families under *Favourites*. Pointing at a card previews that theme on the real dashboard; clicking one puts it on the page. A line above the grid names the theme in use — or, once you have picked another, which one is chosen and which stays until **Apply** — and **Show** brings its card into view.
 - **Collections** — the **Neutrals** collection holds five calm grey palettes — Slate, Zinc, Gray, Stone and Neutral — drawn under glass, each with a backdrop of its own. The **Looks** collection holds twenty-four colour-burst families, from Ember and Supernova to Holo, built around the burst, splash and leak backdrops ([§16.4](#164-type-and-background)).
 - **For Unraid users** — four themes after the Unraid webGUI, each in light and dark: **Unraid Black** (flat black panels, small uppercase labels, the orange of the logo), **Unraid Azure** (cool grey panels, steel-blue accent), **Unraid Ember** (that orange glowing out of black glass) and **Unraid Blaze** (the red end, hard-edged lacquer on deep crimson).
 - **Quick mode** — switches between the light and dark half of the family you are on.
@@ -3312,7 +3320,7 @@ roundness, and the surfaces the theme asks to be drawn at.
 
 ### 16.3 Surfaces
 
-These change how any theme is drawn. Depth, Glow, Effects, Category surface and Card glass are on
+These change how any theme is drawn. Depth, Glow, Effects, Category surface, Widget background, Widget opacity and Card glass are on
 the **Surfaces** tab; Text contrast and animations on **Theme & type**, favicon
 harmonization in the **Favicons** panel on **Rows**. The first four start on **Follow the theme**: each theme states what
 it was drawn for, and picking a theme brings its answer with it.
@@ -3323,6 +3331,8 @@ it was drawn for, and picking a theme brings its answer with it.
 | **Glow** | **Follow the theme** (default) · Off · Soft · Full — how far the theme's colour carries around a surface. Flat has no glow. |
 | **Effects** | **Follow the theme** (default) · Off · Held back · Full — how loudly the character is drawn: the shine, the glow, the grain, and how round the corners are. Off leaves the palette and nothing else. |
 | **Category surface** | **Follow the theme** (default) · Glass · Card · Open — what a category and a widget sit on: a see-through pane, a solid card, or nothing at all. Flat depth asks for Open. |
+| **Widget background** | **Background** (default) · None — what tells a widget from a category: a title strip with a line under it, on every surface, and a card round the widget where nothing else is one (*Open*). None draws a widget like a category. A stored *Automatic* from an earlier version reads as Background. |
+| **Widget opacity** | 0–100 % (default 50) — how solid the card and its strip are, as a share of the theme's surface colour. At 0 you see through to the page; the strip keeps a faint tint. |
 | **Enable animations** | On · Off — off stills the motion across the app |
 | **Animations in views and modals** | On (default) · Off — the Bookmarks, Inbox, Containers and tag views, and the modals, rise in as they open. **Enable animations** off still wins. |
 | **Animation speed** | Slow · **Normal** (default) · Fast — how quickly those views and modals come in. |
@@ -3332,6 +3342,9 @@ it was drawn for, and picking a theme brings its answer with it.
 | **Text contrast** | Soft · Normal · High · Maximum — how far the fainter text sits from its surface |
 | **Favicon harmonization** | Off · On, with **Muted**, **Tinted** or **Overlay** and an intensity. Stored per theme, so the light and dark halves are set separately. |
 
+<p align="center"><img src="screenshots/manual.md/16-surfaces.jpg" alt="Appearance, Surfaces: Depth, Category surface, Widget background, Widget opacity, Glow and Effects, each in one column with its ℹ" width="720"></p>
+<p align="center"><sub>Appearance → Surfaces: every row ends on the same edge; Widget background and Widget opacity sit between Category surface and Glow.</sub></p>
+
 <p align="center"><img src="screenshots/manual.md/17-animation-speed.jpg" alt="Appearance, Text and motion: Enable animations, Animations in views and modals and the Animation speed choice set to Normal" width="560"></p>
 <p align="center"><sub>Appearance → Text and motion: the two switches and the speed.</sub></p>
 
@@ -3339,7 +3352,7 @@ While Depth, Glow, Effects and Category surface say *Follow the theme*, changing
 the theme on screen: switch away and back and it is still there, and every
 other theme keeps its own. The backdrop and the card glass work the same way.
 
-`:depth`, `:glow`, `:contrast`, `:backdrop`, `:pattern` and `:harmonize` change these from the command palette.
+`:depth`, `:surface`, `:effects`, `:widgetbg`, `:widgetopacity`, `:glow`, `:contrast`, `:backdrop`, `:pattern` and `:harmonize` change these from the command palette.
 
 <a id="164-type-and-background"></a>
 
@@ -3402,7 +3415,8 @@ Type is in the **Type** panel on the **Theme & type** tab; everything behind the
 | **Columns per row** | 1–6 — the most the grid uses. A narrower window takes as many as fit, and one only when two no longer fit; a phone held upright always shows one |
 | **Layout preset** | Default, Compact, Cards, Terminal-ish, Masonry (default on a fresh install), List, Widgets and Launcher (large icon tiles) |
 | **Density** | Comfortable, Compact, Dense or Auto (default on a fresh install) — one setting for the dashboard, the inbox and the Containers view; the Bookmarks view has its own row height ([§17.4](#174-config--bookmarks)) |
-| **Category spacing** | Snug · Balanced (default) · Airy — the gap between rows of categories |
+| **Space between categories** | Snug · Balanced (default) · Airy — the gap down the page, between rows of categories |
+| **Space between columns** | Snug (12 px) · Balanced (24 px, default) · Airy (40 px) — the gap across the page, between one column and the next. `:columngap` sets it from the palette, and the theme studio has it on its Layout tab |
 | **Page margins** | Snug · Balanced (default) · Airy — the empty band left and right |
 | **Pack columns tightly** | Categories fill the columns without waiting for a full row |
 | **Hide empty categories** | |
@@ -3413,6 +3427,9 @@ Type is in the **Type** panel on the **Theme & type** tab; everything behind the
 | **Turning spreading off covers** | The current page or every page — what **Turn off** acts on; it puts every category back to one column |
 
 Small drawings beside the shape settings show what a value looks like.
+
+<p align="center"><img src="screenshots/manual.md/16-layout-spacing.jpg" alt="Appearance, Layout: the cards for Space between categories and Space between columns, Snug, Balanced and Airy, each with a small drawing" width="720"></p>
+<p align="center"><sub>Appearance → Layout: the room down the page and the room across it are two settings.</sub></p>
 
 **Rows** tab — panels **Favicons**, **Category header** and **Bookmark display**. The first two lines are the Favicons panel; **Favicon harmonization** (Muted, Tinted or Overlay, with an intensity, stored per theme) is in it too.
 
@@ -3593,7 +3610,7 @@ The other tabs:
 | **General** | Language; remember where you were on a page; **Lock layout**; open links in a new tab; allow localhost and private-network bookmarks; **Hypr mode**; **Notes widget → Notes are processed**, *On the server* (the default) or *In the browser*, which needs no requests while you type ([§15](#15-widgets)) |
 | **Keyboard & search** | Typing a bookmark shortcut, switch search mode, include finders, search unsorted bookmarks, fuzzy suggestions, prefer matches that start with the query, keep search open when empty, the search hint; **Web search** (engine, SearXNG address, Brave key, Test connection); and the keys: global shortcuts, shortcut hints on header links, the key legend under the grid |
 | **Fresh** | Show what is new since you last looked, mark rows that publish, find feeds now ([§12.6](#126-fresh)) |
-| **Privacy & sync** | **Count this install** (on by default, [§23.8](#238-analytics)), analytics, **Check GitHub for new releases**, posts from nextdash.cc; **Keep settings on this device only**; **Onboarding**: keyboard tips, the two review offers, every tour (replay it with its button), *Show quick-start card again*, and the list of corner cards — each **Answered** or **Not shown yet**, with **Show again** ([§4](#corner-cards)) |
+| **Privacy & sync** | **Count this install** (on by default, [§23.8](#238-analytics)), analytics, **Check GitHub for new releases**, posts from nextdash.cc; **Keep settings on this device only**; **Onboarding**: keyboard tips, the two review offers, every tour (replay it with its button), *Show quick start again*, and the list of corner cards — each **Answered** or **Not shown yet**, with **Show again** ([§4](#corner-cards)) |
 
 Paste-to-quick-add, the inbox and how a kept link is filed moved to **Config → Inbox** ([§17.6](#176-config-inbox)).
 
@@ -3631,7 +3648,7 @@ The inbox is always on; these tabs set how links reach it and how it looks.
 
 ### 17.7 Config → Containers
 
-Four tabs, with the same strip, keys and memory as Config → Inbox. It opens on the one you looked at last, `#config/containers/<tab>` opens a tab by address, and a setting found with search opens the tab it is on.
+Four tabs, with the same strip, keys and memory as Config → Inbox. A **Tour** button beside the title plays the same walkthrough as in the Containers view ([§14.1](#141-opening-it)). It opens on the one you looked at last, `#config/containers/<tab>` opens a tab by address, and a setting found with search opens the tab it is on.
 
 | Tab | Panels |
 |---|---|
@@ -3666,7 +3683,7 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 
 **Guided tours.** Seven tours run over the real page rather than a picture of it: *What has changed*, *First steps*, *The dashboard*, *Inbox*, *Bookmarks view*, *Containers* and *Widgets*. Each is short, four to seven steps, and covers the main things; the rest is in Help. Replay any of them from **Behavior → Privacy & sync → Onboarding**, or by name from the command palette — `:changes` opens the first. *What has changed* is the one offered by a card in the corner after an upgrade that moved things: its steps say where things now are, and where a default changed the step hands the old arrangement back in one click. The release notes stay separate — see *What's new* below.
 
-**The dashboard tour.** Seven steps with moving drawings, offered once after the quick-start card: pages, categories and bookmarks; typing to search; two keys to open and Shift to act; adding by paste, `+` or the extension; the tag cloud and a view per tag; the Bookmarks, Inbox and Containers views; and making it yours, with the cheat sheet and Help. Replay it from the same Onboarding list or with `:tour`.
+**The dashboard tour.** Eight steps with moving drawings, offered once when the guide and any other first-run card are out of the way, and the first of the guide's next steps: the action bar (its nine buttons and keys, where it docks and how it comes back); pages, categories and bookmarks; typing to search; two keys to open and Shift to act; adding by paste, `+` or the extension; the tag cloud and a view per tag; the Bookmarks, Inbox and Containers views; and making it yours, with the cheat sheet and Help. Replay it from the same Onboarding list or with `:tour`.
 
 
 <details>
@@ -3784,17 +3801,17 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 
 ### 19.1 Backups & data
 
-**Last backup**, **Next** and **Stored backups** tiles sit at the top. The last-backup tile turns red when a scheduled run failed.
+**Backups & data** reads top to bottom. At the top a status says *Your data is backed up*, *No backup yet*, or that the last automatic run failed (it then turns red), with **Back up now** and **Download** beside it and four figures under it: how many backups are stored, the size of the newest, what they take on disk and the bookmarks in it. Under that come three groups — **Protect**, **Restore** and **Move** — and nothing is folded away. An **ℹ** beside a control explains it.
 
-- **Download backup** — a ZIP of everything, to your computer.
-- **Make a backup now** — stores one on the server.
-- **Create a backup automatically** and **How often** — every day, week (default), two weeks or month. A run happens whenever the newest backup is older than that, so frequent restarts do not skip it. The newest **three** are kept; `NEXTDASH_AUTO_BACKUP_KEEP` (1–50) changes that and `NEXTDASH_AUTO_BACKUP_DIR` (an absolute path) stores them elsewhere. The default place is `data/auto-backups/`, which is left out of backups. **The panel names the directory it is actually using**, and warns when that is inside the data directory — backups kept there are lost with the thing they back up.
-- **What a backup carries** — a backup holds the whole data directory: bookmarks, pages, categories, finders, the inbox, settings, custom themes, check history, icons and uploads, and the images held or skipped in the Containers view. Two switches decide the rest:
+- **Download** — a ZIP of everything, to your computer.
+- **Back up now** — stores one on the server.
+- **Protect → Create a backup automatically** and **How often** — every day, week (default), two weeks or month. A run happens whenever the newest backup is older than that, so frequent restarts do not skip it. The newest **three** are kept; `NEXTDASH_AUTO_BACKUP_KEEP` (1–50) changes that and `NEXTDASH_AUTO_BACKUP_DIR` (an absolute path) stores them elsewhere. The default place is `data/auto-backups/`, which is left out of backups. **The panel names the directory it is actually using**, and warns when that is inside the data directory — backups kept there are lost with the thing they back up.
+- **What a backup carries** (two switches under **Protect**) — a backup holds the whole data directory: bookmarks, pages, categories, finders, the inbox, settings, custom themes, check history, icons and uploads, and the images held or skipped in the Containers view. Two switches decide the rest:
   - **Local copies of pages** — the largest part of a backup.
   - **Tokens and passwords** — source tokens, stored sign-ins, webhook keys, the Containers view's GitHub token, the Unraid and Brave keys, and the secrets in the alert settings (the alert address with its bot token, Pushover's keys, the archive keys and the iCal address). Without them, those settings go into the backup blanked, and restoring it keeps the ones in use. With them in, a restore needs nothing typed again, and the ZIP itself becomes a secret. They are written back with owner-only permissions.
 - Left out on purpose: cached previews and pictures, the health cache, and browser push subscriptions — all rebuilt or re-registered after a restore. The Containers view's timeline, update history, disk sizes and logs stay out too: they belong to the Docker host, not to the data.
-- **Stored backups** — each with its age, size and contents (*1.7 MB · 412 bookmarks on 5 pages*), and **Download**, **Restore** and **Delete**. **Download all** saves them all.
-- **Full backup (zip)** → **Import backup…** — restores a ZIP.
+- **Restore → Stored backups** — each with its age, size and contents (*1.7 MB · 412 bookmarks on 5 pages*), and **Download**, **Restore** and **Delete**. **Download all** saves them all.
+- **Restore → From a file** → **Import backup…** — restores a ZIP.
 
 **Restoring** replaces all current data. First, nextDash checks the archive and writes a backup of the current data, so a restore can be undone. An archive without any bookmark page is refused. The import is atomic. A ZIP without `finders.json` or `health-history.json` leaves your current ones in place. Bookmarks with an invalid address are skipped and counted; the imported `settings.json` decides whether local addresses are allowed.
 
@@ -3802,7 +3819,7 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 
 <a id="import-and-export-bookmarks"></a>
 
-**Import & export bookmarks:**
+**Move → Bookmarks** (import and export):
 
 | Button | What it does |
 |---|---|
@@ -3811,7 +3828,7 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 | **Export bookmarks (CSV)** | Name, URL, category, page, shortcut, tags and notes, with translated headers |
 | **Import bookmarks (CSV)** | Reads that file back, onto the current page or into the inbox — the same question as above. Columns are matched by name; rows without a URL and existing URLs are skipped. |
 
-**Settings** exports or imports `settings.json` alone. The Unraid server is left out of an import: it is set only under Config → Unraid, so an imported file can never point the saved key at another address.
+**Move → Settings** exports or imports `settings.json` alone. The Unraid server is left out of an import: it is set only under Config → Unraid, so an imported file can never point the saved key at another address.
 
 | Situation | Use |
 |---|---|
@@ -3824,7 +3841,7 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 <details>
 <summary>📷 Screenshot — Backups &amp; data</summary>
 
-<p align="center"><img src="screenshots/manual.md/19-backups.jpg" alt="Config, Data and backups, Backups and data tab: last backup and stored backups, and the backup card with what a backup carries" width="860"></p>
+<p align="center"><img src="screenshots/manual.md/19-backups.jpg" alt="Config, Data and backups, Backups and data tab: the status with its four figures and the Back up now and Download buttons, then the Protect, Restore and Move groups" width="860"></p>
 
 </details>
 
@@ -4110,7 +4127,7 @@ nextDash adapts to touch screens (a touch device without a hover pointer) rather
 | **Config** | All sections; the section list scrolls sideways | Rail and content side by side |
 | **Bookmarks view** | Rail as a drawer, side panel as a sheet | Rail, list and panel |
 | **Theme editor** | Read-only | Full |
-| **Quick-start card** | Skipped | Shown on first visit |
+| **Quick start bar** | Skipped | Shown on first visit |
 
 
 <a id="touch-gestures"></a>
@@ -4437,11 +4454,11 @@ The **Version** panel on Config → Overview and the bar in the What's new windo
 - **Could not reach GitHub** — the server cannot reach `api.github.com`. Check its DNS, proxy or firewall.
 - **GitHub did not answer as expected** — followed by what GitHub said; try again later.
 
-<a id="the-quick-start-card-does-not-appear"></a>
+<a id="the-quick-start-bar-does-not-appear"></a>
 
-### The quick-start card does not appear
+### The Quick start bar does not appear
 
-It shows once per install, and not on phones. After finishing or dismissing it, **Show quick-start card again** (Behavior → Privacy & sync → Onboarding) brings it back.
+It slides in a moment after a fresh install's dashboard loads, on page 1 only and not on phones, and stays until every step is done or you close it for good. It is out of the way in Config and the other views, and while a modal is open. **Show quick start again** (Behavior → Privacy & sync → Onboarding) brings it back.
 
 <a id="the-weather-does-not-show"></a>
 
@@ -4739,7 +4756,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 |---|---|---|
 | QR code | A bookmark's address drawn as a code to scan with a phone, from `Shift + J` or the row menu; drawn in the browser, so the address goes nowhere. | [§6](#qr-code) |
 | Quick add (`&`) | Press `&`, type a name, address and optional shortcut on one line, and press Enter. | [§5.1](#51-quick-add) |
-| Quick-start card | The small checklist on first launch — add your first bookmark, open Config → Behavior, see the keyboard shortcuts — that ticks itself off and closes when done. | [§2](#first-launch) |
+| Quick start | The bar at the bottom of a new install's dashboard, and the guide it opens: what to do with the example links, the language, the weather and nine next steps. | [§2](#first-launch) |
 | Quiet hours | A window in which alerts are held and then summed up in one message when it ends; the downtime still counts. | [§12.5](#quiet-hours) |
 
 <a id="glossary-r"></a>
