@@ -82,20 +82,51 @@ test.describe('category surface', () => {
         expect(body.shadow).toBe('none');
     });
 
-    test('the cells in a widget are light glass chips, not solid dark blocks', async ({ page }) => {
+    test('the rows of a widget list are not filled: a hairline between them, a light wash when pointed at', async ({ page }) => {
+        await openDashboard(page);
+        await setSurface(page, 'glass');
+        const got = await page.evaluate(() => {
+            const alphaOf = (cs) => {
+                const m = cs.backgroundColor.match(/\/\s*([\d.]+)\s*\)/);
+                const c = cs.backgroundColor.match(/rgba\(([^)]+)\)/);
+                return m ? parseFloat(m[1]) : c ? parseFloat(c[1].split(',')[3]) : 1;
+            };
+            const scope = '.dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget';
+            const row = document.querySelector(`${scope} :is(.dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row)`);
+            if (!row) return null;
+            const list = row.parentElement;
+            const rs = getComputedStyle(row);
+            const hover = getComputedStyle(document.documentElement).getPropertyValue('--dashboard-widget-cell-hover');
+            return {
+                row: alphaOf(rs),
+                list: alphaOf(getComputedStyle(list)),
+                gap: getComputedStyle(list).rowGap,
+                line: rs.borderBottomWidth,
+                hover,
+                bodyHover: getComputedStyle(row.closest('.dashboard-widget')).getPropertyValue('--dashboard-widget-cell-hover'),
+            };
+        });
+        expect(got, 'the starter page has a widget with a list of rows').not.toBeNull();
+        expect(got.row).toBe(0);
+        expect(got.list).toBe(0);
+        expect(got.gap).toBe('0px');
+        expect(got.line).toBe('1px');
+        expect(got.bodyHover.trim()).not.toBe('');
+    });
+
+    test('the figures of a stats widget are a faint chip', async ({ page }) => {
         await openDashboard(page);
         await setSurface(page, 'glass');
         const alpha = await page.evaluate(() => {
-            const cell = document.querySelector('.dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget :is(.dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-stat, .dashboard-widget-weather-row)');
+            const cell = document.querySelector('.dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget .dashboard-widget-stat');
             if (!cell) return null;
             const m = getComputedStyle(cell).backgroundColor.match(/\/\s*([\d.]+)\s*\)/);
             const comma = getComputedStyle(cell).backgroundColor.match(/rgba\(([^)]+)\)/);
             return m ? parseFloat(m[1]) : comma ? parseFloat(comma[1].split(',')[3]) : 1;
         });
-        expect(alpha, 'the starter page has a widget with cells').not.toBeNull();
-        // Light and see-through: the backdrop shows through, it is not a dark block.
+        test.skip(alpha === null, 'the starter page has no stats widget');
         expect(alpha).toBeGreaterThan(0);
-        expect(alpha).toBeLessThanOrEqual(0.15);
+        expect(alpha).toBeLessThanOrEqual(0.06);
     });
 
     test('the terminal and launcher layouts keep their own design', async ({ page }) => {

@@ -119,9 +119,35 @@ html[data-theme] body[data-cat-surface="glass"][data-card-glass="own"] {
    is het een doorzichtige lichte laag: de kleur van de backdrop schijnt erdoor,
    en de scheiding tussen cellen is een fijne lichtere lijn. */
 html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"], [data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget {
-    --dashboard-widget-cell: color-mix(in srgb, var(--text-primary) 9%, transparent);
-    --dashboard-widget-cell-hover: color-mix(in srgb, var(--text-primary) 15%, transparent);
+    --dashboard-widget-cell: transparent;
+    --dashboard-widget-cell-hover: color-mix(in srgb, var(--text-primary) 8%, transparent);
     --dashboard-widget-rule: color-mix(in srgb, var(--text-primary) 10%, transparent);
+}
+
+/* The rows of a widget's list -- health, its trend, the forecast -- are not
+   filled: a fill read as a lighter band on the pane, and a few lines of text
+   looked to sit on another background. A hairline between them says "row", and
+   a light wash says "this one" when pointed at. The container drew the hairline
+   as the gap between filled cells; it is the cells' own border now. */
+html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"], [data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget :is(.dashboard-widget-health, .dashboard-widget-trend, .dashboard-widget-weather-forecast) {
+    gap: 0;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"], [data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget :is(.dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row) {
+    border-bottom: 1px solid var(--dashboard-widget-rule);
+}
+
+html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"], [data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget :is(.dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row):last-child {
+    border-bottom: 0;
+}
+
+/* The figures of a stats widget are cells in a grid, not rows in a list: they
+   keep a chip, a faint one. */
+html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"], [data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget .dashboard-widget-stat {
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
 }
 
 /* De start-kaart ("what do you want?").

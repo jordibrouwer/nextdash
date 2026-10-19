@@ -152,6 +152,7 @@ A new default look, and a lot of ways to change it. A fresh install starts on Co
 - **new — Help tabs in labelled groups, one row.** The fifteen tabs sat on one scrolling line, hiding most of them. The row keeps *Basics*; *Dashboard*, *Status & checks* and *Data* are a menu under **More topics**.
 - **fix — room under field notes.** The gap between a control and the sentence under it is one token, `--config-note-gap` (it had been a −4px margin against a 4px row gap, which left nothing).
 - **fix — *Share this page* and *Import a page* are themed buttons** in the page-template modal.
+- **fix — the rows of a widget list no longer sit on a lighter band.** The rows of Health, its trend and the forecast were filled 9% lighter than the pane, so a few lines of text looked to have another background. They are unfilled now, with a hairline between them and a light wash when pointed at; the figures of a stats widget keep a faint chip (4%) (`category-surface.css`).
 
 ### Statistics
 
