@@ -50,3 +50,22 @@ func resolveWidgetBackground(setting, catSurface string, ownGlass bool) string {
 	}
 	return "none"
 }
+
+// defaultWidgetOpacity is how solid a widget's card is, in percent of the
+// surface colour: mostly solid, so a widget reads as a card on any backdrop.
+// maxWidgetOpacity is the most it can be.
+const (
+	defaultWidgetOpacity = 70
+	maxWidgetOpacity     = 100
+)
+
+// normalizeWidgetOpacity keeps the answer between 0 and the most there is.
+func normalizeWidgetOpacity(percent int) int {
+	if percent < 0 {
+		return 0
+	}
+	if percent > maxWidgetOpacity {
+		return maxWidgetOpacity
+	}
+	return percent
+}

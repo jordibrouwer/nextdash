@@ -83,3 +83,31 @@ func TestAutomaticStepsBackForOwnGlass(t *testing.T) {
 		t.Errorf("background on open with own glass = %q, want background", got)
 	}
 }
+
+func TestNormalizeWidgetOpacity(t *testing.T) {
+	for in, want := range map[int]int{-5: 0, 0: 0, 6: 6, 80: 80, 100: 100, 101: 100, 500: 100} {
+		if got := normalizeWidgetOpacity(in); got != want {
+			t.Errorf("normalizeWidgetOpacity(%d) = %d, want %d", in, got, want)
+		}
+	}
+}
+
+// The default is 70 percent, a card that is mostly solid, for a fresh install
+// and for one from before the setting; and 0 is an answer, not a missing one.
+func TestWidgetOpacityDefaultAndZero(t *testing.T) {
+	if got := gridSettings(t, nil); got.WidgetOpacity != 70 {
+		t.Errorf("fresh install: %d, want 70", got.WidgetOpacity)
+	}
+	if got := gridSettings(t, gridFile(map[string]any{"theme": "slate-dark"})); got.WidgetOpacity != 70 {
+		t.Errorf("an install from before the setting: %d, want 70", got.WidgetOpacity)
+	}
+	if got := gridSettings(t, gridFile(map[string]any{"widgetOpacity": 0})); got.WidgetOpacity != 0 {
+		t.Errorf("a reader's 0 became %d", got.WidgetOpacity)
+	}
+	if got := gridSettings(t, gridFile(map[string]any{"widgetOpacity": 25})); got.WidgetOpacity != 25 {
+		t.Errorf("a reader's 25 became %d", got.WidgetOpacity)
+	}
+	if got := gridSettings(t, gridFile(map[string]any{"widgetOpacity": 250})); got.WidgetOpacity != 100 {
+		t.Errorf("250 was kept as %d, want 100", got.WidgetOpacity)
+	}
+}

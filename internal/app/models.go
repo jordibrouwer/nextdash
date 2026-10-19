@@ -609,6 +609,11 @@ type Settings struct {
 	 */
 	WidgetSurface string `json:"widgetSurface,omitempty"`
 
+	// WidgetOpacity is how solid the card of a widget is, in percent: 0 to 100,
+	// 70 by default. 0 is an answer, so a settings file without the key is the
+	// default and one with it keeps what it says.
+	WidgetOpacity int `json:"widgetOpacity"`
+
 	/*
 	 * ThemeSurfacePrefs is what the reader changed, per theme.
 	 *
@@ -1810,6 +1815,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ThemeEffects:                    surfaceFollow,
 			CategorySurface:                 surfaceFollow,
 			WidgetSurface:                   "auto",
+			WidgetOpacity:                   defaultWidgetOpacity,
 			SurfaceFollowMigrated:           true,
 			SurfaceDefaultsMigrated:         true,
 			DepthDefaultFlatMigrated:        true,
@@ -4438,6 +4444,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ThemeEffects:                    surfaceFollow,
 			CategorySurface:                 surfaceFollow,
 			WidgetSurface:                   "auto",
+			WidgetOpacity:                   defaultWidgetOpacity,
 			SurfaceFollowMigrated:           true,
 			SurfaceDefaultsMigrated:         true,
 			DepthDefaultFlatMigrated:        true,
@@ -4972,6 +4979,10 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		settings.CategorySurface = normalizeCategorySurface(settings.CategorySurface)
 		settings.WidgetSurface = normalizeWidgetSurface(settings.WidgetSurface)
+		if _, ok := rawSettings["widgetOpacity"]; !ok {
+			settings.WidgetOpacity = defaultWidgetOpacity
+		}
+		settings.WidgetOpacity = normalizeWidgetOpacity(settings.WidgetOpacity)
 		// Written by the client, read on every render: only words the
 		// stylesheet knows may reach an attribute. Themes are not checked here
 		// -- the store knows which exist, this does not -- so the map is
