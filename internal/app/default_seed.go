@@ -85,8 +85,10 @@ func defaultMainPage() PageWithBookmarks {
 		 * no history, counting what the header badge has already fetched.
 		 * Trend beside it starts empty and fills in as the checks run, which
 		 * is the point of it. Both sit below the links, which are what a
-		 * dashboard is opened for; notes comes before them, with the example
-		 * note: it shows what the widget does and is one Edit away from
+		 * dashboard is opened for. Notes takes the top right, with the example
+		 * note: columns fill round-robin and Today, which is not in this
+		 * order, leads, so the second block here is the first row's last
+		 * column. It shows what the widget does and is one Edit away from
 		 * yours. Empty configs mean every default.
 		 */
 		Widgets: []Widget{
@@ -95,8 +97,9 @@ func defaultMainPage() PageWithBookmarks {
 			{ID: defaultNotesWidgetID, Type: WidgetTypeNotes, Config: notesStarterConfig()},
 		},
 		BlockOrder: []string{
-			"development", "docker", "unraid", "selfhosted", "tools", "daily",
+			"development",
 			defaultNotesWidgetID,
+			"docker", "unraid", "selfhosted", "tools", "daily",
 			defaultHealthWidgetID,
 			defaultTrendWidgetID,
 		},
