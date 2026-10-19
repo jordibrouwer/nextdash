@@ -25,18 +25,9 @@ async function openBackups(page) {
         window.dashboardInstance.config._backupData != null), { timeout: 15_000 }).toBe(true);
 }
 
-/**
- * Open the Stored backups fold.
- *
- * The panels on this tab are <details> and shut by default; their contents stay
- * in the DOM, so a test asserting on what a person can see has to open the one
- * it is asking about.
- */
+/** Wait for the stored backups list: it is on the page, under Restore. */
 async function openStoredBackups(page) {
-    await page.waitForSelector('.config-source-panel', { timeout: 15_000 });
-    await page.evaluate(() => {
-        document.querySelectorAll('.config-source-panel').forEach((panel) => panel.setAttribute('open', ''));
-    });
+    await page.waitForSelector('#config-backup-list', { timeout: 15_000 });
 }
 
 test.describe('a relative time that can face forwards', () => {
@@ -67,17 +58,16 @@ test.describe('a relative time that can face forwards', () => {
         expect(said.ago).toMatch(/ago/i);
     });
 
-    test('the tile names when the next backup is due', async ({ page }) => {
+    test('the status names when the next backup is due', async ({ page }) => {
         await openBackups(page);
         const detail = await page.evaluate(() => {
             const c = window.dashboardInstance.config;
-            const tile = document.querySelector('#config-db-body .config-tile .config-tile-detail');
-            return { text: tile?.textContent?.trim() || '', enabled: c._backupData?.enabled };
+            const note = document.querySelector('#config-db-body [data-db-status] .config-db-status-text .config-panel-note');
+            return { text: note?.textContent?.trim() || '', enabled: c._backupData?.enabled };
         });
         test.skip(!detail.enabled, 'automatic backups are off on this install');
         // It used to render the label and stop.
-        expect(detail.text).not.toBe('Next');
-        expect(detail.text).toMatch(/\d/);
+        expect(detail.text).toMatch(/Next one .*\d/);
     });
 });
 
@@ -150,5 +140,26 @@ test.describe('the tab holds what belongs to it', () => {
         // Behaviour panels stamp their controls with data-behavior-field.
         await expect(page.locator('[data-behavior-field="healthAutoRecheckEnabled"]').first())
             .toBeVisible({ timeout: 10_000 });
+    });
+});
+
+test.describe('Backups & data is read top to bottom', () => {
+    test('a status, then Protect, Restore and Move, with the actions in view', async ({ page }) => {
+        await openBackups(page);
+        const body = page.locator('#config-db-body');
+        await expect(body.locator('[data-db-status]')).toBeVisible();
+        await expect(body.locator('.config-db-group')).toHaveText(['Protect', 'Restore', 'Move']);
+        // Nothing is folded away: the buttons are on the page.
+        for (const action of ['run', 'download', 'import', 'html-export', 'csv-export', 'csv-import', 'browser-import', 'settings-export', 'settings-import']) {
+            await expect(body.locator(`[data-backup-action="${action}"]`)).toBeVisible();
+        }
+    });
+
+    test('an ℹ opens its explanation in a dialog', async ({ page }) => {
+        await openBackups(page);
+        await page.locator('#config-db-body [data-db-info="secrets"]').click();
+        await expect(page.locator('#app-modal.show')).toContainText('the backup file itself is a secret');
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#app-modal.show')).toHaveCount(0);
     });
 });

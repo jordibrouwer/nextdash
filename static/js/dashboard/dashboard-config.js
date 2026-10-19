@@ -6765,6 +6765,102 @@ class DashboardConfig {
     }
 
     /** Everything except the destructive actions, which live on their own tab. */
+    /**
+     * The ℹ beside a backup control: the explanation lives in a dialog and not
+     * under every row, so the page reads as a list of things to do.
+     */
+    static DB_INFO = {
+        status: ['dbInfoStatusTitle', 'dbInfoStatusMessage', 'Backups',
+            'A backup is one zip with your bookmarks, pages, widgets and settings. Back up now saves it on this machine; Download gives you the file as well. Keep a copy somewhere other than this machine: a backup next to the data it protects does not survive losing the disk.'],
+        auto: ['dbInfoAutoTitle', 'dbInfoAutoMessage', 'Automatic backups',
+            'nextDash writes a backup on this machine at the interval you choose and keeps the newest ones. Making another one, or restoring, removes the oldest.'],
+        archives: ['dbInfoArchivesTitle', 'dbInfoArchivesMessage', 'Local copies of pages',
+            'A saved page may be the only copy left, and these are by far the largest thing in a backup.'],
+        secrets: ['dbInfoSecretsTitle', 'dbInfoSecretsMessage', 'Tokens and passwords',
+            'Import tokens and the keys a health check signs in with. Including them means a restore needs nothing typed in again, and that the backup file itself is a secret.'],
+        restoreFile: ['dbInfoRestoreFileTitle', 'dbInfoRestoreFileMessage', 'Restore from a file',
+            'Puts an earlier backup back. What it contains replaces what is here. The current data is copied first, so you can go back.'],
+        restoreStored: ['dbInfoRestoreStoredTitle', 'dbInfoRestoreStoredMessage', 'Stored backups',
+            'The copies already on this machine, newest first. Restore puts one back, Download gives you the file, Delete removes it.'],
+        bookmarks: ['dbInfoBookmarksTitle', 'dbInfoBookmarksMessage', 'Bookmarks',
+            'HTML is the format browsers import and export. CSV opens in a spreadsheet and moves bookmarks between nextDash installs.'],
+        settings: ['dbInfoSettingsTitle', 'dbInfoSettingsMessage', 'Settings',
+            'Your settings (looks, layout and options) as a JSON file, without bookmarks. Import it on another nextDash to get the same setup.'],
+    };
+
+    dbInfoButton(key) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const label = this.t('config.settingInfoAria', 'More info');
+        return `<button type="button" class="config-info-btn" data-db-info="${esc(key)}" aria-haspopup="dialog" aria-label="${esc(label)}" title="${esc(label)}">ℹ</button>`;
+    }
+
+    openDbInfo(key) {
+        const info = DashboardConfig.DB_INFO[key];
+        if (!info || !window.AppModal?.alert) return;
+        const [titleKey, msgKey, titleFallback, msgFallback] = info;
+        window.AppModal.alert({
+            title: this.t(`config.${titleKey}`, titleFallback),
+            htmlMessage: this.dash.escapeHtml(this.t(`config.${msgKey}`, msgFallback)),
+            confirmText: this.t('config.gotIt', 'Got it'),
+        });
+    }
+
+    /** The top of Backups & data: is my data safe, and the two buttons that make it so. */
+    renderBackupStatus() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const data = this._backupData;
+        if (data == null) {
+            return `<div class="config-panel config-db-status"><p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p></div>`;
+        }
+        const backups = Array.isArray(data.backups) ? data.backups : [];
+        const newest = backups[0];
+        const lastError = String(data.lastRunError || '').trim();
+        let tone = 'good';
+        let headline = this.t('config.dbStatusGood', 'Your data is backed up');
+        let detail;
+        if (lastError) {
+            tone = 'bad';
+            headline = this.t('config.dbStatusFailed', 'The last automatic backup failed');
+            detail = lastError;
+        } else if (!newest) {
+            tone = 'warn';
+            headline = this.t('config.dbStatusNone', 'No backup yet');
+            detail = this.t('config.dbStatusNoneDetail', 'Make one now, or turn on automatic backups below.');
+        } else {
+            const last = this.t('config.dbStatusLast', 'Last backup {when}.').replace('{when}', this.formatRelative(newest.createdAt));
+            const next = data.enabled
+                ? (Date.parse(data.nextBackupAt || '')
+                    ? this.t('config.dbStatusNext', 'Next one {when}.').replace('{when}', this.formatRelative(data.nextBackupAt))
+                    : this.t('config.backupAutoOn', 'Auto-backup on'))
+                : this.t('config.dbStatusAutoOff', 'Automatic backups are off.');
+            detail = `${last} ${next}`;
+        }
+        const total = backups.reduce((sum, b) => sum + (Number(b.size) || 0), 0);
+        const stat = (label, value) => `<div class="config-db-stat"><span>${esc(label)}</span><b>${esc(value)}</b></div>`;
+        const stats = [
+            stat(this.t('config.dbStatStored', 'Stored'), String(backups.length)),
+            stat(this.t('config.dbStatSize', 'Size of the newest'), newest ? this.formatBytes(newest.size) : '-'),
+            stat(this.t('config.dbStatDisk', 'On disk'), backups.length ? this.formatBytes(total) : '-'),
+            stat(this.t('config.dbStatBookmarks', 'Bookmarks in it'), newest && Number(newest.bookmarks) ? this.statsNumber(Number(newest.bookmarks)) : '-'),
+        ].join('');
+        const mark = tone === 'good' ? '✓' : '!';
+        return `
+            <div class="config-panel config-db-status config-db-status--${tone}" data-db-status="${tone}">
+                <div class="config-db-status-head">
+                    <span class="config-db-status-mark" aria-hidden="true">${mark}</span>
+                    <div class="config-db-status-text">
+                        <h3 class="config-panel-title">${esc(headline)} ${this.dbInfoButton('status')}</h3>
+                        <p class="config-panel-note">${esc(detail)}</p>
+                    </div>
+                    <div class="config-db-status-actions">
+                        <button type="button" class="config-btn config-btn--primary" data-backup-action="run">${esc(this.t('config.backupRunNowShort', 'Back up now'))}</button>
+                        <button type="button" class="config-btn" data-backup-action="download">${esc(this.t('config.backupDownloadShort', 'Download'))}</button>
+                    </div>
+                </div>
+                <div class="config-db-stats">${stats}</div>
+            </div>`;
+    }
+
     renderDataBackupsMain() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
@@ -6781,116 +6877,64 @@ class DashboardConfig {
                 return `<option value="${days}" ${selected ? 'selected' : ''}>${esc(label)}</option>`;
             }).join('');
 
-        const loading = this._backupData == null;
-        const tiles = loading
-            ? `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`
-            : `<div class="config-tiles" role="list">${this.dataBackupsTiles().map((t) => this.renderTile(t)).join('')}</div>`;
-
+        const toggle = (name, checked, label, infoKey, extra = '') => `
+            <div class="config-db-toggle">
+                <label class="config-toggle">
+                    <input type="checkbox" data-backup-toggle="${name}" ${checked ? 'checked' : ''}>
+                    <span>${esc(label)}</span>
+                </label>
+                ${this.dbInfoButton(infoKey)}
+                ${extra}
+            </div>`;
+        const row = (title, infoKey, note, actions) => `
+            <div class="config-db-row">
+                <div class="config-db-row-text">
+                    <b>${esc(title)}${infoKey ? ` ${this.dbInfoButton(infoKey)}` : ''}</b>
+                    <span>${esc(note)}</span>
+                </div>
+                <div class="config-db-row-actions">${actions}</div>
+            </div>`;
+        const btn = (action, label) => `<button type="button" class="config-btn" data-backup-action="${action}">${esc(label)}</button>`;
 
         return `
-            ${tiles}
+            ${this.renderBackupStatus()}
 
-            <details class="config-panel config-source-panel"
-                data-fold="backup:create" ${this.foldIsOpen('backup:create', true) ? 'open' : ''}>
-                <summary class="config-source-summary">
-                    <span class="config-source-summary-text">
-                        <span class="config-panel-title">${esc(this.t('config.backupCreateTitle', 'Backup'))}</span>
-                        <span class="config-source-summary-note">${esc(this.t('config.backupCreateSummary',
-                            'Make one now, or have one made on a schedule — and choose what it carries.'))}</span>
-                    </span>
-                </summary>
-                <div class="config-actions">
-                    <button type="button" class="config-btn" data-backup-action="download">${esc(this.t('config.backupDownload', 'Download backup'))}</button>
-                    <button type="button" class="config-btn" data-backup-action="run">${esc(this.t('config.backupRunNow', 'Make a backup now'))}</button>
-                </div>
-                <label class="config-toggle">
-                    <input type="checkbox" data-backup-toggle="autoBackupEnabled" ${s.autoBackupEnabled ? 'checked' : ''}>
-                    <span>${esc(this.t('config.autoBackupEnabledLabel', 'Create a backup automatically'))}</span>
-                </label>
-                <div class="config-field" style="margin-top:12px">
-                    <span class="config-field-label">${esc(this.t('config.autoBackupIntervalLabel', 'How often'))}</span>
-                    <select class="config-select" data-backup-select="autoBackupIntervalDays" ${s.autoBackupEnabled ? '' : 'disabled'}>${backupIntervalOptions}</select>
-                </div>
+            <h3 class="config-db-group">${esc(this.t('config.dbGroupProtect', 'Protect'))}</h3>
+            <div class="config-panel">
+                ${toggle('autoBackupEnabled', s.autoBackupEnabled, this.t('config.autoBackupEnabledLabel', 'Create a backup automatically'), 'auto',
+                    `<select class="config-select config-db-interval" aria-label="${esc(this.t('config.autoBackupIntervalLabel', 'How often'))}" data-backup-select="autoBackupIntervalDays" ${s.autoBackupEnabled ? '' : 'disabled'}>${backupIntervalOptions}</select>`)}
+                ${toggle('backupIncludeArchives', !s.backupExcludeArchives, this.t('config.backupIncludeArchivesLabel', 'Local copies of pages'), 'archives')}
+                ${toggle('backupIncludeSecrets', !s.backupExcludeSecrets, this.t('config.backupIncludeSecretsLabel', 'Tokens and passwords'), 'secrets')}
+            </div>
 
-                <p class="config-panel-note" style="margin-top:16px">${esc(this.t('config.backupContentsTitle',
-                    'What a backup carries'))}</p>
-                <label class="config-toggle">
-                    <input type="checkbox" data-backup-toggle="backupIncludeArchives"
-                        ${s.backupExcludeArchives ? '' : 'checked'}>
-                    <span>${esc(this.t('config.backupIncludeArchivesLabel', 'Local copies of pages'))}</span>
-                </label>
-                <p class="config-field-note">${esc(this.t('config.backupIncludeArchivesNote',
-                    'A saved page may be the only copy left, and these are by far the largest thing in a backup.'))}</p>
-                <label class="config-toggle" style="margin-top:10px">
-                    <input type="checkbox" data-backup-toggle="backupIncludeSecrets"
-                        ${s.backupExcludeSecrets ? '' : 'checked'}>
-                    <span>${esc(this.t('config.backupIncludeSecretsLabel', 'Tokens and passwords'))}</span>
-                </label>
-                <p class="config-field-note">${esc(this.t('config.backupIncludeSecretsNote',
-                    'Import tokens and the keys a health check signs in with. Including them means a restore needs nothing typed in again — and that the backup file itself is a secret.'))}</p>
-            </details>
-
-            <details class="config-panel config-source-panel"
-                data-fold="backup:stored" ${this.foldIsOpen('backup:stored', false) ? 'open' : ''}>
-                <summary class="config-source-summary">
-                    <span class="config-source-summary-text">
-                        <span class="config-panel-title">${esc(this.t('config.backupStoredTitle', 'Stored backups'))}</span>
-                        <span class="config-source-summary-note">${esc(this.t('config.backupStoredSummary',
-                            'The copies already on this machine, newest first.'))}</span>
-                    </span>
-                </summary>
-                <div id="config-backup-list">${this.renderBackupList()}</div>
-            </details>
-
-            <details class="config-panel config-source-panel"
-                data-fold="backup:zip" ${this.foldIsOpen('backup:zip', false) ? 'open' : ''}>
-                <summary class="config-source-summary">
-                    <span class="config-source-summary-text">
-                        <span class="config-panel-title">${esc(this.t('config.backupsZipSectionTitle', 'Full backup (zip)'))}</span>
-                        <span class="config-source-summary-note">${esc(this.t('config.backupsZipSummary',
-                            'Put an earlier backup back. What it contains replaces what is here.'))}</span>
-                    </span>
-                </summary>
-                <div class="config-actions">
-                    <button type="button" class="config-btn" data-backup-action="import">${esc(this.t('config.backupImport', 'Import backup…'))}</button>
+            <h3 class="config-db-group">${esc(this.t('config.dbGroupRestore', 'Restore'))}</h3>
+            <div class="config-panel">
+                ${row(this.t('config.dbRestoreFile', 'From a file'), 'restoreFile',
+                    this.t('config.backupsZipSummary', 'Put an earlier backup back. What it contains replaces what is here.'),
+                    btn('import', this.t('config.backupImport', 'Import backup…')))}
+                <div class="config-db-stored">
+                    <p class="config-db-stored-title">${esc(this.t('config.backupStoredTitle', 'Stored backups'))} ${this.dbInfoButton('restoreStored')}</p>
+                    <div id="config-backup-list">${this.renderBackupList()}</div>
                 </div>
                 <input type="file" id="config-import-input" accept=".zip" hidden>
-            </details>
+            </div>
 
-            <details class="config-panel config-source-panel"
-                data-fold="backup:bookmarks" ${this.foldIsOpen('backup:bookmarks', false) ? 'open' : ''}>
-                <summary class="config-source-summary">
-                    <span class="config-source-summary-text">
-                        <span class="config-panel-title">${esc(this.t('config.backupsImportExportSectionTitle', 'Import & export bookmarks'))}</span>
-                        <span class="config-source-summary-note">${esc(this.t('config.csvExportDescription', 'Export every bookmark as a CSV file, or import bookmarks exported from a browser.'))}</span>
-                    </span>
-                </summary>
-                <div class="config-actions">
-                    <button type="button" class="config-btn" data-backup-action="html-export">${esc(this.t('config.htmlExportBtn', 'Export bookmarks (HTML)'))}</button>
-                    <button type="button" class="config-btn" data-backup-action="csv-export">${esc(this.t('config.csvExportBtn', 'Export bookmarks (CSV)'))}</button>
-                    <button type="button" class="config-btn" data-backup-action="csv-import">${esc(this.t('config.csvImportBtn', 'Import bookmarks (CSV)'))}</button>
-                    <button type="button" class="config-btn" data-backup-action="browser-import">${esc(this.t('config.browserImportBtn', 'Import browser bookmarks…'))}</button>
-                </div>
+            <h3 class="config-db-group">${esc(this.t('config.dbGroupMove', 'Move'))}</h3>
+            <div class="config-panel">
+                ${row(this.t('config.dbMoveBookmarks', 'Bookmarks'), 'bookmarks',
+                    this.t('config.dbMoveBookmarksNote', 'To or from a browser, or a spreadsheet.'),
+                    btn('html-export', this.t('config.htmlExportBtn', 'Export bookmarks (HTML)'))
+                    + btn('csv-export', this.t('config.csvExportBtn', 'Export bookmarks (CSV)'))
+                    + btn('csv-import', this.t('config.csvImportBtn', 'Import bookmarks (CSV)'))
+                    + btn('browser-import', this.t('config.browserImportBtn', 'Import browser bookmarks…')))}
+                ${row(this.t('config.settingsSection', 'Settings'), 'settings',
+                    this.t('config.settingsExportDescription', 'Move just your settings between instances as a JSON file.'),
+                    btn('settings-export', this.t('config.settingsExportBtn', 'Export settings (JSON)'))
+                    + btn('settings-import', this.t('config.settingsImportBtn', 'Import settings…')))}
                 <input type="file" id="config-browser-import-input" accept=".html,.htm" hidden>
                 <input type="file" id="config-csv-import-input" accept=".csv,text/csv" hidden>
-            </details>
-
-            <details class="config-panel config-source-panel"
-                data-fold="backup:settings" ${this.foldIsOpen('backup:settings', false) ? 'open' : ''}>
-                <summary class="config-source-summary">
-                    <span class="config-source-summary-text">
-                        <span class="config-panel-title">${esc(this.t('config.settingsSection', 'Settings'))}</span>
-                        <span class="config-source-summary-note">${esc(this.t('config.settingsExportDescription', 'Move just your settings between instances as a JSON file.'))}</span>
-                    </span>
-                </summary>
-                <div class="config-actions">
-                    <button type="button" class="config-btn" data-backup-action="settings-export">${esc(this.t('config.settingsExportBtn', 'Export settings (JSON)'))}</button>
-                    <button type="button" class="config-btn" data-backup-action="settings-import">${esc(this.t('config.settingsImportBtn', 'Import settings…'))}</button>
-                </div>
                 <input type="file" id="config-settings-import-input" accept=".json" hidden>
-            </details>
-
-
+            </div>
         `;
     }
 
@@ -8107,6 +8151,12 @@ class DashboardConfig {
         });
         container.querySelectorAll('[data-backup-action]').forEach((btn) => {
             btn.addEventListener('click', () => this.handleBackupAction(btn.getAttribute('data-backup-action')));
+        });
+        container.querySelectorAll('[data-db-info]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.openDbInfo(btn.getAttribute('data-db-info'));
+            });
         });
         container.querySelectorAll('[data-backup-item]').forEach((btn) => {
             btn.addEventListener('click', () => {

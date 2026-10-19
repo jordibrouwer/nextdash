@@ -1612,6 +1612,147 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
     flex-wrap: wrap;
 }
 
+/* ── Backups & data: status, then Protect, Restore, Move ────────────────── */
+
+.config-db-status-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.config-db-status-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 2.2em;
+    height: 2.2em;
+    border-radius: 50%;
+    font-weight: 700;
+    color: var(--background-primary, #111);
+    background: var(--accent-success);
+}
+
+.config-db-status--warn .config-db-status-mark { background: var(--accent-warning); }
+.config-db-status--bad .config-db-status-mark { background: var(--accent-error); }
+
+.config-db-status-text {
+    flex: 1 1 14rem;
+    min-width: 0;
+}
+
+.config-db-status-text .config-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.config-db-status-text .config-panel-note { margin: 2px 0 0; }
+
+.config-db-status-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.config-db-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.config-db-stat {
+    padding: 8px 12px;
+    border-radius: var(--radius-6, 10px);
+    background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+
+.config-db-stat span {
+    display: block;
+    font-size: calc(var(--font-size-text) * 0.8);
+    color: var(--text-muted, #888);
+}
+
+.config-db-stat b {
+    font-size: calc(var(--font-size-text) * 1.15);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.config-db-group {
+    margin: 22px 2px 8px;
+    font-size: calc(var(--font-size-text) * 0.8);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted, #888);
+}
+
+.config-db-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-top: 1px solid var(--border-primary);
+}
+
+.config-db-toggle:first-child { border-top: 0; padding-top: 0; }
+.config-db-toggle:last-child { padding-bottom: 0; }
+.config-db-toggle .config-toggle { margin: 0; }
+.config-db-interval { margin-left: auto; width: auto; min-width: 9rem; }
+
+.config-db-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 11px 0;
+    border-top: 1px solid var(--border-primary);
+}
+
+.config-db-row:first-child { border-top: 0; padding-top: 0; }
+
+.config-db-row-text {
+    flex: 1 1 14rem;
+    min-width: 0;
+}
+
+.config-db-row-text b {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.config-db-row-text span {
+    display: block;
+    color: var(--text-secondary);
+    font-size: calc(var(--font-size-text) * 0.9);
+}
+
+.config-db-row-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.config-db-stored {
+    padding-top: 12px;
+    border-top: 1px solid var(--border-primary);
+}
+
+.config-db-stored-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 8px;
+    font-weight: 600;
+}
+
 /* ── Appearance controls (fields, choices, toggles) ─────────────────────── */
 
 /*
