@@ -24,17 +24,8 @@ async function loadWithTourPending(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
 }
 
-/** The quick-start card, if the store is fresh: dismissed the way a reader does. */
-async function dismissQuickStart(page) {
-    const card = page.locator('.quickstart-checklist');
-    if (await card.count()) {
-        await card.locator('[data-qs-action="dismiss"]').click();
-        await card.waitFor({ state: 'hidden', timeout: 5000 });
-    }
-}
-
 test.describe('dashboard tour', () => {
-    test('waits for the quick-start card, then opens by itself', async ({ page }) => {
+    test('on a fresh install it waits for its step in the start guide', async ({ page }) => {
         await loadWithTourPending(page);
         await page.evaluate(() => {
             const d = window.dashboardInstance;
@@ -43,16 +34,21 @@ test.describe('dashboard tour', () => {
             d.onboardingStartedInSession = true;
             d.quickStart?.start?.();
         });
-        await expect(page.locator('.quickstart-checklist')).toBeVisible();
+        await expect(page.locator('[data-start-guide-bar]')).toBeVisible({ timeout: 10_000 });
         // Two introductions at once is one too many. A fixed wait: the tour,
-        // if it were going to start, starts a moment after the card shows, and
+        // if it were going to start, starts a moment after the bar shows, and
         // "it did not" has nothing to poll for.
         await page.waitForTimeout(2000);
         await expect(modal(page)).toHaveCount(0);
 
-        await dismissQuickStart(page);
+        // It is the first step of the guide, and starts when that is clicked.
+        await page.locator('[data-start-guide-open]').click();
+        await page.locator('[data-sg-step="tour"] button').click();
         await expect(modal(page)).toBeVisible({ timeout: 10_000 });
         await expect(page.locator('.dashboard-tutorial-progress')).toHaveText(`Step 1 of ${STEPS}`);
+
+        // Leave the store the way an install past its first run has it.
+        await page.evaluate(() => window.dashboardInstance.quickStart?.guide?.complete?.());
     });
 
     test('an install past its first run gets it on the next load', async ({ page }) => {

@@ -1,32 +1,24 @@
 /**
- * Quick-start: a lightweight, non-blocking onboarding replacement.
+ * Quick-start: when a fresh install gets its first-run guide, and when that is
+ * finished.
  *
- * Replaces the old step-by-step Onboarding wizard (onboarding.js), and the
- * compact setup card that stood between it and this: a first run that opens on
- * a window of questions asks for answers before the reader has seen what they
- * are about. What is left is one small dismissible checklist of first tasks,
- * auto-checked from dashboard state (no per-action event hooks — state is
- * re-derived on focus/interval); the settings it used to ask for all live in
- * config, where they can be found again.
+ * What is drawn is the start guide (start-guide.js): a bar at the bottom of the
+ * dashboard that opens a modal with the choices, the language, the weather and
+ * the first steps. This decides whether to start it (first runs only), keeps
+ * the flags in settings.quickStart, and answers the other parts of the app
+ * that ask whether the onboarding is still going on.
  *
- * Completion (finishing the checklist or dismissing it) sets
+ * Completion (every step done, or closed for good) sets
  * settings.onboardingCompleted = true, the same flag the old wizard persisted.
  */
 (function () {
     'use strict';
 
-    const POLL_MS = 4000;
-
-    const CHECK_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-
     class QuickStart {
         constructor(dashboard) {
             this.dash = dashboard;
             this.language = dashboard?.language || null;
-            this.el = null;
-            this.pollTimer = null;
-            this.focusHandler = null;
-            this.completed = new Set();
+            this.guide = null;
         }
 
         t(key, fallback) {
@@ -94,13 +86,23 @@
             // it is asked for here whatever comes first.
             this.offerDiscovery();
             if (!this.shouldStart()) return;
-            // The first-start card comes first: what the page holds decides
-            // what the checklist can point at.
-            if (!this.state().templatePicked) {
-                this.showTemplateCard();
+            this.showGuide();
+        }
+
+        /**
+         * The start guide: a bar and a modal, in place of the first-start card
+         * and the checklist that used to follow it one after the other.
+         */
+        async showGuide() {
+            try {
+                await window.LazyScript.loadScriptOnce('js/start-guide.js', 'startGuide',
+                    () => typeof window.StartGuide === 'function');
+            } catch {
                 return;
             }
-            this.renderChecklist();
+            if (this.guide) return;
+            this.guide = new window.StartGuide(this.dash, { onDone: () => { this.guide = null; } });
+            await this.guide.show();
         }
 
         async discoveryInfo() {
@@ -133,77 +135,6 @@
             if (!(await this.loadDiscoveryCard()) || !window.AppDiscoveryCard.wanted(info)) return;
             this.discoveryCard = new window.AppDiscoveryCard(this.dash, { onDone: () => { this.discoveryCard = null; } });
             this.discoveryCard.show(info);
-        }
-
-        async showTemplateCard() {
-            try {
-                await window.LazyScript.loadScriptOnce('js/first-start-templates.js', 'firstStartTemplates',
-                    () => typeof window.FirstStartTemplates === 'function');
-            } catch {
-                this.renderChecklist();
-                return;
-            }
-            this.templateCard = new window.FirstStartTemplates(this.dash, { onDone: () => {
-                this.templateCard = null;
-                this.renderChecklist();
-            } });
-            this.templateCard.show();
-        }
-
-        // ---- Checklist ---------------------------------------------------------
-
-        /**
-         * After a bundled template, the first task is opening one of the
-         * reader's own services by its shortcut rather than adding a link: the
-         * page already holds them. The first link with a shortcut, in the
-         * template's order; the project's own link does not count.
-         */
-        templateService() {
-            const picked = this.state().templatePicked;
-            if (!picked || picked === 'keep') return null;
-            const d = this.dash;
-            // Main's links, wherever the reader is: the task should not change
-            // under them when they switch page.
-            const onMain = (d?.allBookmarks || []).filter((b) => Number(b?.pageId) === 1);
-            const rows = onMain.length ? onMain : (Array.isArray(d?.bookmarks) ? d.bookmarks : []);
-            return rows.find((b) => b?.shortcut && !/^https:\/\/nextdash\.cc\/?$/.test(String(b.url || ''))) || null;
-        }
-
-        buildItems() {
-            const service = this.templateService();
-            const first = service ? {
-                id: 'bookmark',
-                label: this.t('itemOpenService', 'Open {name} from the dashboard').replace('{name}', service.name),
-                hint: this.t('itemOpenServiceHint', 'Type {key}').replace('{key}', String(service.shortcut).toLowerCase()),
-                done: (d) => {
-                    const url = service.url;
-                    const all = [...(d?.allBookmarks || []), ...(d?.bookmarks || [])];
-                    return all.some((b) => b?.url === url && Number(b.openCount) > 0);
-                },
-            } : null;
-            return [
-                first || {
-                    id: 'bookmark',
-                    label: this.t('itemBookmark', 'Add your first bookmark'),
-                    hint: this.t('itemBookmarkHint', 'Press + or paste a URL anywhere'),
-                    done: (d) => this.bookmarkCount(d) > Math.max(this.baseline().bookmarks, 0),
-                },
-                {
-                    id: 'config',
-                    label: this.t('itemConfig', 'Open Config → General'),
-                    hint: this.t('itemConfigHint', 'Tune language, theme and layout'),
-                    done: () => this.state().visitedConfig === true,
-                },
-                {
-                    id: 'cheatsheet',
-                    label: this.t('itemCheatsheet', 'See the keyboard shortcuts'),
-                    hint: this.t('itemCheatsheetHint', 'Press ! or F1'),
-                    done: () => this.state().seenCheatsheet === true,
-                    // The toolbar's cheat-sheet button is opt-in (showCheatSheetButton),
-                    // so this row is the only guaranteed way in on a fresh install.
-                    action: () => this.dash.showKeyboardCheatSheet?.(),
-                },
-            ];
         }
 
         /**
@@ -261,165 +192,13 @@
             this.persistState();
         }
 
-        bookmarkCount(d) {
-            const all = Array.isArray(d?.allBookmarks) ? d.allBookmarks.length : 0;
-            const page = Array.isArray(d?.bookmarks) ? d.bookmarks.length : 0;
-            return Math.max(all, page);
-        }
-
-        /** Still recorded in the baseline so the data stays consistent, even though
-         *  the checklist no longer has a "tag a bookmark" step. */
-        taggedCount(d) {
-            const count = (list) => (Array.isArray(list)
-                ? list.filter((b) => Array.isArray(b?.tags) && b.tags.length > 0).length
-                : 0);
-            return Math.max(count(d?.allBookmarks), count(d?.bookmarks));
-        }
-
         /**
-         * Bookmark counts as they were when the checklist first appeared.
-         *
-         * A fresh install ships example bookmarks that already carry tags, so
-         * comparing against zero ticked "add a bookmark" and "tag a bookmark"
-         * before the user had done anything. Captured once; -1 until then, which
-         * older installs fall back to (they keep the old zero-based behaviour
-         * rather than having items un-tick under them).
+         * Kept for the callers that tell the quick start something changed (the
+         * cheat sheet records that it was opened): the guide redraws itself.
          */
-        baseline() {
-            const qs = this.state();
-            const bookmarks = Number.isFinite(qs.baselineBookmarks) ? qs.baselineBookmarks : -1;
-            const tagged = Number.isFinite(qs.baselineTagged) ? qs.baselineTagged : -1;
-            return { bookmarks, tagged };
-        }
-
-        /**
-         * Capture once, but only when the bookmarks have actually loaded.
-         *
-         * The checklist can render before the first page load resolves, and
-         * recording 0 then would be worse than not recording at all: every seeded
-         * bookmark would count as the user's own. So skip while nothing is loaded
-         * yet and let a later call (poll/refresh) capture the real numbers.
-         */
-        captureBaseline() {
-            const qs = this.state();
-            if (Number.isFinite(qs.baselineBookmarks) && qs.baselineBookmarks >= 0) return;
-            const d = this.dash;
-            const loaded = Array.isArray(d?.bookmarks) || Array.isArray(d?.allBookmarks);
-            if (!loaded) return;
-            qs.baselineBookmarks = this.bookmarkCount(d);
-            qs.baselineTagged = this.taggedCount(d);
-        }
-
-        renderChecklist() {
-            if (this.el) return;
-            const el = document.createElement('div');
-            el.className = 'quickstart-card quickstart-checklist';
-            el.setAttribute('role', 'complementary');
-            el.setAttribute('aria-label', this.t('title', 'Quick start'));
-            el.innerHTML = `
-                <div class="quickstart-stripe"></div>
-                <div class="quickstart-inner">
-                    <div class="quickstart-head">
-                        <p class="quickstart-title">${this.escape(this.t('title', 'Quick start'))}</p>
-                        <button type="button" class="quickstart-close" data-qs-action="dismiss" aria-label="${this.escape(this.t('dismiss', 'Dismiss'))}">×</button>
-                    </div>
-                    <p class="quickstart-progress" data-qs-progress></p>
-                    <ul class="quickstart-list" data-qs-list></ul>
-                </div>`;
-
-            el.querySelector('[data-qs-action="dismiss"]').addEventListener('click', () => this.dismiss());
-            document.body.appendChild(el);
-            this.el = el;
-            requestAnimationFrame(() => el.classList.add('show'));
-
-            this.markConfigVisitOnNavigation();
-            this.refresh();
-            this.startPolling();
-        }
-
         refresh() {
-            // Before the card check, not after: the card belongs to the dashboard
-            // and config is a different view, so `this.el` may well be gone at the
-            // exact moment there is something to record.
             this.latchConfigVisit();
-            if (!this.el) return;
-            const d = this.dash;
-            // Capture here rather than at render time: this runs once the page's
-            // bookmarks have loaded, so the baseline reflects what is really there.
-            this.captureBaseline();
-            const items = this.buildItems();
-            const list = this.el.querySelector('[data-qs-list]');
-            const progressEl = this.el.querySelector('[data-qs-progress]');
-            if (!list) return;
-
-            let doneCount = 0;
-            list.innerHTML = items.map((item) => {
-                let done = false;
-                try { done = item.done(d) === true; } catch { done = false; }
-                if (done) { doneCount += 1; this.completed.add(item.id); }
-                const text = `
-                    <span class="quickstart-check">${done ? CHECK_ICON : ''}</span>
-                    <span class="quickstart-item-text">
-                        <span class="quickstart-item-label">${this.escape(item.label)}</span>
-                        ${item.hint ? `<span class="quickstart-item-hint">${this.escape(item.hint)}</span>` : ''}
-                    </span>`;
-                // Actionable rows stay reachable once done: re-opening is harmless and
-                // the row is the discovery path for anyone without the toolbar button.
-                const body = item.action
-                    ? `<button type="button" class="quickstart-item-action" data-qs-item="${this.escape(item.id)}">${text}</button>`
-                    : text;
-                return `<li class="quickstart-item${done ? ' is-done' : ''}${item.action ? ' is-actionable' : ''}">${body}</li>`;
-            }).join('');
-
-            list.querySelectorAll('[data-qs-item]').forEach((btn) => {
-                const item = items.find((i) => i.id === btn.getAttribute('data-qs-item'));
-                if (!item?.action) return;
-                btn.addEventListener('click', () => {
-                    try { item.action(); } catch { /* ignore */ }
-                });
-            });
-
-            if (progressEl) {
-                progressEl.textContent = this.t('progress', '{done} of {total} done')
-                    .replace('{done}', String(doneCount))
-                    .replace('{total}', String(items.length));
-            }
-
-            if (doneCount >= items.length) {
-                this.complete();
-            }
-        }
-
-        startPolling() {
-            this.stopPolling();
-            this.pollTimer = setInterval(() => this.refresh(), POLL_MS);
-            this.focusHandler = () => this.refresh();
-            window.addEventListener('focus', this.focusHandler);
-            document.addEventListener('visibilitychange', this.focusHandler);
-        }
-
-        stopPolling() {
-            if (this.pollTimer) { clearInterval(this.pollTimer); this.pollTimer = null; }
-            if (this.focusHandler) {
-                window.removeEventListener('focus', this.focusHandler);
-                document.removeEventListener('visibilitychange', this.focusHandler);
-                this.focusHandler = null;
-            }
-        }
-
-        // Finished all items: briefly show a done state, then persist + close.
-        complete() {
-            this.stopPolling();
-            if (this.el) this.el.classList.add('is-complete');
-            this.persistCompleted();
-            setTimeout(() => this.teardownChecklist(), 1800);
-        }
-
-        // User dismissed early: still mark onboarding complete so it never returns.
-        dismiss() {
-            this.stopPolling();
-            this.persistCompleted();
-            this.teardownChecklist();
+            this.guide?.refresh?.();
         }
 
         persistCompleted() {
@@ -429,17 +208,6 @@
                 d.settings.onboardingCompleted = true;
             }
             this.persistState();
-            // The checklist is out of the way: the dashboard tour may come now,
-            // once the card has gone.
-            d?.promos?.scheduleDashboardTour?.({ afterQuickStart: true, delay: 2200 });
-        }
-
-        teardownChecklist() {
-            const el = this.el;
-            if (!el) return;
-            el.classList.remove('show');
-            setTimeout(() => { if (el.isConnected) el.remove(); }, 260);
-            this.el = null;
         }
 
         // Delegates to the shared helper so this cannot drift from it again: the

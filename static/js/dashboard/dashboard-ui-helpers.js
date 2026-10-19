@@ -86,6 +86,8 @@ class DashboardUiHelpers {
         if (document.querySelector('.feature-spotlight.show')) return true;
         // The "x apps found" card, over the dimmed dashboard.
         if (document.querySelector('[data-app-discovery-overlay]')) return true;
+        // The start guide's modal, in the middle of the dashboard.
+        if (document.querySelector('[data-start-guide-overlay]')) return true;
         // Config's confirm dialog — both the plain and the type-to-confirm
         // variant reuse this id. It is injected straight into the document
         // rather than reusing #app-modal, so without this the config Escape

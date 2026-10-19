@@ -554,6 +554,9 @@ async function dismissOnboardingIfPresent(page) {
             d.settings.onboardingCompleted = true;
         }
         d.onboardingStartedInSession = false;
+        // The start guide hides itself once onboarding is complete; take it down
+        // at once so it does not sit in the corner for the next half second.
+        d.quickStart?.guide?.teardown?.();
     });
 }
 

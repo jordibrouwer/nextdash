@@ -40,6 +40,8 @@
     // closing — wakes the queue directly.
     const POLL_WINDOW_MS = 40000;
     const TEARDOWN_MS = 260;
+    // How long after the start guide is finished no card is shown: fifteen minutes.
+    const QUIET_AFTER_GUIDE_S = 15 * 60;
 
     function dash() {
         return global.dashboardInstance || null;
@@ -68,6 +70,11 @@
             if (global.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
             if (d.onboardingStartedInSession) return false;
             if (d.settings.onboardingCompleted === false) return false;
+            // The start guide was only just finished: the corner stays quiet
+            // for a while, so the cards that were waiting for it do not arrive
+            // together the moment it is closed.
+            const finishedAt = Number(d.settings.quickStart?.completedAt) || 0;
+            if (finishedAt > 0 && Date.now() / 1000 - finishedAt < QUIET_AFTER_GUIDE_S) return false;
         }
         // Config, health and the inbox are hash routes on this same page, so
         // without this a card drops on top of whatever the user opened — including,

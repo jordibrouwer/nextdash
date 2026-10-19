@@ -9876,6 +9876,11 @@ class DashboardConfig {
         // which onboardingCompleted does not touch. Persisted by the save
         // below rather than on its own timer, so one click is one write.
         window.DiscoverabilityState?.clearSeenTips?.({ persist: false });
+            // The start guide starts over too: its steps and the quiet period
+            // after it. Empty values, not deleted keys: the server keeps a
+            // field the save leaves out.
+            this.dash.settings.quickStart.stepsDone = [];
+            this.dash.settings.quickStart.completedAt = 0;
         try {
             // saveSettings resolves false on a failed save rather than rejecting.
             if ((await this.dash.saveSettings?.()) === false) throw new Error('not saved');

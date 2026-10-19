@@ -217,13 +217,13 @@ test('a page that already has "Media management" gets no second one', async ({ p
     expect(s?.category).toBe('tv-stuff');
 });
 
-test('no apps found: the template card shows', async ({ page, request, workerServer }) => {
+test('no apps found: the start guide shows', async ({ page, request, workerServer }) => {
     writeContainers(workerServer, []);
     await install(request, { fresh: true });
     await runDiscovery(request);
     await open(page);
 
-    await expect(templateCard(page)).toBeVisible();
+    await expect(page.locator('[data-start-guide-bar]')).toBeVisible({ timeout: 10_000 });
     await expect(card(page)).toHaveCount(0);
 });
 
@@ -424,8 +424,7 @@ test('a direct add during the quick start still shows its notice with Undo', asy
     expect((await request.post('/api/settings', { data: { discoveryNewApps: 'add' }, headers })).ok()).toBe(true);
     await runDiscovery(request);
     await open(page);
-    await templateCard(page).getByRole('button', { name: /Keep these example links/ }).click();
-    await expect(page.locator('.quickstart-checklist')).toBeVisible();
+    await expect(page.locator('[data-start-guide-bar]')).toBeVisible({ timeout: 10_000 });
     await expect(card(page)).toHaveCount(0);
 
     const sonarr = await startApp('Sonarr');
@@ -437,7 +436,7 @@ test('a direct add during the quick start still shows its notice with Undo', asy
     await page.reload();
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
 
-    await expect(page.locator('.quickstart-checklist')).toBeVisible();
+    await expect(page.locator('[data-start-guide-bar]')).toHaveCount(1);
     await expect(notice(page)).toContainText('sonarr added to', { timeout: 15_000 });
     await expect(notice(page).getByRole('button', { name: 'Undo' })).toBeVisible();
     await expect(card(page)).toHaveCount(0);
@@ -539,48 +538,27 @@ test('Replace the starter links leaves only the apps on main, and Undo brings th
     await expect.poll(async () => (await bookmarks(request)).length).toBe(starter);
 });
 
-test('on a new install the apps card comes last: after the starting page, the checklist and the tour', async ({ page, request, workerServer }) => {
+test('on a new install the apps card comes last: after the start guide', async ({ page, request, workerServer }) => {
     const sonarr = await startApp('Sonarr');
     writeContainers(workerServer, [container('sonarr', 'linuxserver/sonarr', sonarr)]);
     await install(request, { fresh: true });
     await runDiscovery(request);
     await open(page);
 
-    // First the starting-page card, as on an install without Docker.
-    await expect(templateCard(page)).toBeVisible();
-    // A check that the apps card does NOT show beside the first-start card: give it the time it would take.
+    // First the start guide's bar, as on an install without Docker.
+    const bar = page.locator('[data-start-guide-bar]');
+    await expect(bar).toBeVisible({ timeout: 10_000 });
+    // A check that the apps card does NOT show beside the guide: give it the time it would take.
     await page.waitForTimeout(1500);
     await expect(card(page)).toHaveCount(0);
-    await templateCard(page).getByRole('button', { name: /Keep these example links/ }).click();
 
-    // Then the checklist; still no apps card.
-    const checklist = page.locator('.quickstart-checklist');
-    await expect(checklist).toBeVisible();
-    // A check that the apps card does NOT show beside the checklist: give it the time it would take.
-    await page.waitForTimeout(1500);
-    await expect(card(page)).toHaveCount(0);
-    await checklist.locator('.quickstart-close').click();
-    await expect(checklist).toHaveCount(0);
+    // Closing the guide for good ends the onboarding; the apps card is next.
+    await bar.locator('[data-start-guide-close]').click();
+    await bar.locator('[data-sg-confirm-close]').click();
+    await expect(bar).toHaveCount(0);
 
-    // Then the dashboard tour, where it has not been seen (the test helpers
-    // mark it seen); the card waits for it as well.
-    const tour = page.locator('#app-modal.show');
-    if (await tour.waitFor({ state: 'visible', timeout: 5000 }).then(() => true, () => false)) {
-        await expect(card(page)).toHaveCount(0);
-        await page.keyboard.press('Escape');
-        await expect(tour).toHaveCount(0);
-    }
-
-    // Then the corner cards a new install gets; the card waits for each.
-    for (let i = 0; i < 6; i += 1) {
-        const corner = page.locator('.notice-card:not(.app-discovery-notice-card)');
-        if (!(await corner.first().waitFor({ state: 'visible', timeout: 8000 }).then(() => true, () => false))) break;
-        await expect(card(page)).toHaveCount(0);
-        await corner.first().locator('[data-notice-dismiss]').click();
-        await expect(corner).toHaveCount(0);
-    }
-
-    // And then, with nothing else waiting, the apps card.
+    // No tour by itself and no other corner card for a while after the guide
+    // (the quiet period), so the apps card does not wait for anything else.
     await expect(card(page)).toBeVisible({ timeout: 20_000 });
     await expect(card(page)).toContainText('1 app is running here');
 });
