@@ -150,7 +150,7 @@ class DashboardUiHelpers {
             return;
         }
         window.nextdashTrack?.('modal:cheatsheet');
-        // Record for the first-run quick-start checklist (server-side, per-user).
+        // Record for the first-run start guide bar (server-side, per-user).
         // Only while onboarding is still in progress, so we don't write on every open.
         if (d.settings && d.settings.onboardingCompleted !== true) {
             const qs = d.settings.quickStart || (d.settings.quickStart = {});

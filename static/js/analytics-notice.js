@@ -156,7 +156,7 @@
         // interrupt the bookmarks view. ("bookmarks" is also the value before the
         // first view is assigned, which is the dashboard.)
         if (d.activeView && d.activeView !== 'bookmarks') return false;
-        // Any quick-start card — the setup wizard *or* the checklist that follows
+        // Any start guide bar — the setup wizard *or* the checklist that follows
         // it — owns the same bottom-left corner, so wait until it is gone rather
         // than stacking a second card on top of it.
         if (document.querySelector('.quickstart-card:not(.analytics-notice-card)')) return false;
@@ -347,7 +347,7 @@
         if (pending) clearTimeout(pending);
         pending = setTimeout(() => {
             pending = null;
-            // A quick-start card may still be up; keep retrying rather than
+            // A start guide bar may still be up; keep retrying rather than
             // burning the single chance to disclose this.
             if (!render()) waitForClearCorner();
         }, SHOW_DELAY_MS);

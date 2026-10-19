@@ -98,7 +98,7 @@ type TemplateVariable struct {
 	Label string `json:"label"`
 	// Default is the address a bundled template proposes, such as
 	// "http://{server}:8096", where {server} is the one address the
-	// first-start card asks for. An export never writes it.
+	// start guide asks for. An export never writes it.
 	Default string `json:"default,omitempty"`
 }
 

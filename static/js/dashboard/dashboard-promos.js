@@ -29,7 +29,7 @@ class DashboardPromos {
      * genuinely different questions.
      *
      * `options.ignoreQuickstart` exists for the what's-new prompt: it and the
-     * quick-start card can legitimately share a first run, where a tip cannot.
+     * start guide bar can legitimately share a first run, where a tip cannot.
      */
     canShowUnpromptedUi(options = {}) {
         const d = this.dash;
@@ -44,7 +44,7 @@ class DashboardPromos {
 
 
     canShowPostOnboardingPrompts() {
-        // The what's-new prompt predates the quick-start card check and has
+        // The what's-new prompt predates the start guide bar check and has
         // always been allowed to run alongside it; keeping that exemption here
         // rather than in the shared primitive.
         return this.canShowUnpromptedUi({ ignoreQuickstart: true });
@@ -125,7 +125,7 @@ class DashboardPromos {
     /**
      * The one-time dashboard tour, once the dashboard is quiet.
      *
-     * A first run opens on the quick-start checklist, and two introductions at
+     * A first run opens on the start guide bar, and two introductions at
      * once is one too many: the tour waits until the checklist is finished or
      * dismissed (QuickStart calls this with afterQuickStart), until What's new
      * has been read, and until no modal, inline edit or other view is in the

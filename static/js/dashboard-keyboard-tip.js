@@ -75,7 +75,7 @@
 
         // Whether unprompted UI may take the screen is one shared question,
         // answered by dashboard-promos.js for every module that asks it. A tip
-        // does compete with the quick-start card, so it does not take the
+        // does compete with the start guide bar, so it does not take the
         // what's-new prompt's exemption.
         if (typeof d.promos?.canShowUnpromptedUi === 'function') {
             if (!d.promos.canShowUnpromptedUi()) return false;

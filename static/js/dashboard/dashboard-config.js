@@ -14218,7 +14218,7 @@ class DashboardConfig {
                 demoLocked: true,
                 kind: 'privacy',
                 title: t('config.generalGroupOnboarding', 'Onboarding'),
-                note: t('config.generalGroupOnboardingNote', 'The quick-start card, the occasional keyboard tip, the release summary, and the two review offers.'),
+                note: t('config.generalGroupOnboardingNote', 'The Quick start bar and guide, the occasional keyboard tip, the release summary, and the two review offers.'),
                 controls: [
                     bool('enableSessionTips', 'config.sessionTipsLabel', 'Show occasional keyboard tips'),
                     // The two cards that offer a review on their own. Here
@@ -17406,9 +17406,9 @@ class DashboardConfig {
     renderOnboardingActions() {
         const esc = (v) => this.dash.escapeHtml(v);
         const body = `
-                <p class="config-panel-note">${esc(this.t('config.resetOnboardingHint', 'Show the quick-start card again on the dashboard.'))}</p>
+                <p class="config-panel-note">${esc(this.t('config.resetOnboardingHint', 'Show the Quick start bar and guide again on the dashboard.'))}</p>
                 <div class="config-actions">
-                    <button type="button" class="config-btn" data-behavior-action="reset-onboarding">${esc(this.t('config.resetOnboardingButton', 'Show quick-start card again'))}</button>
+                    <button type="button" class="config-btn" data-behavior-action="reset-onboarding">${esc(this.t('config.resetOnboardingButton', 'Show quick start again'))}</button>
                     <button type="button" class="config-btn" data-behavior-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>
                 </div>
                 ${this.renderTourReplayRow()}
@@ -17659,7 +17659,7 @@ class DashboardConfig {
             // over.
             if (this.dash.settings?.quickStart && typeof this.dash.settings.quickStart === 'object') {
                 this.dash.settings.quickStart.dismissed = false;
-                // And the first-start card before it. An empty string, not a
+                // And the start guide before it. An empty string, not a
                 // deleted key: the server keeps a field the save leaves out.
                 this.dash.settings.quickStart.templatePicked = '';
             }

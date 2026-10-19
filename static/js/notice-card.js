@@ -365,7 +365,7 @@ canShow every time.
             document.body.appendChild(el);
             cardEl = el;
             if (spec.essential === true) {
-                // Above the quick-start checklist when it holds the corner.
+                // Above the start guide bar when it holds the corner.
                 const checklist = document.querySelector('.quickstart-card:not(.notice-card)');
                 const top = checklist?.getBoundingClientRect?.().top;
                 if (Number.isFinite(top) && top > 0) el.style.bottom = `${Math.round(window.innerHeight - top + 12)}px`;

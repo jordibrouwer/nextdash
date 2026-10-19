@@ -1247,7 +1247,7 @@ type QuickStartState struct {
 	// count card waits a couple of days after this so the two do not arrive
 	// together. Zero means never asked.
 	AnalyticsAskedAt int64 `json:"analyticsAskedAt,omitempty"`
-	// TemplatePicked is the first-start card's answer: a bundled template's
+	// TemplatePicked is the start guide's answer: a bundled template's
 	// id, or "keep" for the starter links. Empty means the card has not been
 	// answered and comes before the checklist.
 	TemplatePicked string `json:"templatePicked,omitempty"`

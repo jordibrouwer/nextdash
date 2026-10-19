@@ -227,7 +227,7 @@ func (h *Handlers) BundledTemplateFile(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(raw)
 }
 
-// OnboardingTemplateRequest is what the first-start card sends.
+// OnboardingTemplateRequest is what the start guide sends.
 type OnboardingTemplateRequest struct {
 	ID     string            `json:"id"`
 	Server string            `json:"server"`

@@ -1,6 +1,6 @@
 /**
  * One-time dashboard tour — the first thing a new reader is walked through,
- * once the quick-start checklist is out of the way. Built like the Bookmarks,
+ * once the start guide bar is out of the way. Built like the Bookmarks,
  * Inbox and Containers tours and sharing their guards.
  *
  * Those three each explain one view the first time it opens. This one is the
