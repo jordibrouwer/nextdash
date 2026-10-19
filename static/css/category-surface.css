@@ -273,11 +273,34 @@ html[data-theme] body #dashboard-layout.library-layout > .config-view--library,
 html[data-theme] body[data-config-panes="one"] #dashboard-layout.config-layout > .config-view {
     background-color: var(--cfg-pane-bg);
     background-image: var(--cfg-pane-sheen, none);
-    backdrop-filter: var(--cfg-pane-filter, none);
-    -webkit-backdrop-filter: var(--cfg-pane-filter, none);
     border-radius: var(--cfg-pane-radius);
     box-shadow: var(--cfg-pane-shadow);
     padding: var(--space-4, 1rem) var(--space-5, 1.5rem);
+}
+
+html[data-theme] body #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout) > .lvs,
+html[data-theme] body[data-config-panes="one"] #dashboard-layout.config-layout > .config-view {
+    backdrop-filter: var(--cfg-pane-filter, none);
+    -webkit-backdrop-filter: var(--cfg-pane-filter, none);
+}
+
+/* The bookmarks view holds fixed overlays (the filter sheet and its scrim, the health
+   modal). A backdrop-filter on the view itself makes it their containing block, which
+   shut them inside the pane. The blur is drawn by a layer behind the content instead. */
+html[data-theme] body #dashboard-layout.library-layout > .config-view--library {
+    position: relative;
+    isolation: isolate;
+}
+
+html[data-theme] body #dashboard-layout.library-layout > .config-view--library::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    backdrop-filter: var(--cfg-pane-filter, none);
+    -webkit-backdrop-filter: var(--cfg-pane-filter, none);
 }
 
 /* The header of a list view is the top of the pane, not a second one -- at rest.
