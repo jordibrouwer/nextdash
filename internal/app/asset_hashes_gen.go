@@ -290,7 +290,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/shared/icon-set-picker.js":                           "073841e169ea",
 	"js/shared/inline-create-row.js":                         "d610d93ab25f",
 	"js/shared/keyboard-cheat-sheet-registry.js":             "84ff012b58c0",
-	"js/shared/keyboard-view-legends.js":                     "15e4a8de3d2a",
+	"js/shared/keyboard-view-legends.js":                     "fdfd7f2e9b15",
 	"js/shared/last-opened-format.js":                        "a968982d0c81",
 	"js/shared/list-density.js":                              "5099acd8ba98",
 	"js/shared/list-view-drawer.js":                          "be3234924d27",

@@ -71,12 +71,12 @@
         { line: 3, more: true, keys: 'Shift+\u2190/\u2192', legendKey: 'dashboardKeyPrevNextPage', cheatKey: 'dvPrevNextPage', fallback: 'prev / next page' },
         { line: 3, more: true, keys: 'Shift+F', legendKey: 'dashboardKeyFilter', cheatKey: 'dvFilter', fallback: 'filter' },
         { line: 3, more: true, keys: '.', legendKey: 'dashboardKeyFoldAll', cheatKey: 'dvFoldAll', fallback: 'fold all' },
-        { line: 4, more: true, keys: 'Shift+E', legendKey: 'dashboardKeyEdit', cheatKey: 'dvEdit', fallback: 'edit' },
-        { line: 4, more: true, keys: 'Shift+M', legendKey: 'dashboardKeyMoveBookmark', cheatKey: 'dvMoveBookmark', fallback: 'move to' },
-        { line: 4, more: true, keys: 'Shift+T', legendKey: 'dashboardKeyTag', cheatKey: 'dvTag', fallback: 'tag' },
-        { line: 4, more: true, keys: 'Shift+P', legendKey: 'dashboardKeyPin', cheatKey: 'dvPin', fallback: 'pin' },
-        { line: 4, more: true, keys: '\u2318/Ctrl+Enter', legendKey: 'dashboardKeyNewTab', cheatKey: 'dvNewTab', fallback: 'new tab' },
-        { line: 4, more: true, keys: 'Shift+D', legendKey: 'dashboardKeyDelete', cheatKey: 'dvDelete', fallback: 'delete' },
+        { line: 4, keys: 'Shift+E', legendKey: 'dashboardKeyEdit', cheatKey: 'dvEdit', fallback: 'edit' },
+        { line: 4, keys: 'Shift+M', legendKey: 'dashboardKeyMoveBookmark', cheatKey: 'dvMoveBookmark', fallback: 'move to' },
+        { line: 4, keys: 'Shift+T', legendKey: 'dashboardKeyTag', cheatKey: 'dvTag', fallback: 'tag' },
+        { line: 4, keys: 'Shift+P', legendKey: 'dashboardKeyPin', cheatKey: 'dvPin', fallback: 'pin' },
+        { line: 4, keys: '\u2318/Ctrl+Enter', legendKey: 'dashboardKeyNewTab', cheatKey: 'dvNewTab', fallback: 'new tab' },
+        { line: 4, keys: 'Shift+D', legendKey: 'dashboardKeyDelete', cheatKey: 'dvDelete', fallback: 'delete' },
     ];
 
     /** @type {LegendRow[]} */
