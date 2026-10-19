@@ -28,29 +28,44 @@ async function openDashboard(page) {
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
 }
 
+/*
+ * These wait for the animation's own events, not for a stretch of time. They
+ * used to sleep 200ms and then read how many `animationstart` events had come,
+ * which a busy machine (CI runs four workers on two cores) answered with zero:
+ * the animation had not started yet, not failed to. Under a CPU load that
+ * failed one run in a hundred, in both tests.
+ */
+const WAIT_MS = 5000;
+
 test.describe('the shared row animation helper', () => {
     test('adds the class and takes it off again', async ({ page }) => {
         await openDashboard(page);
 
-        const result = await page.evaluate(async () => {
+        const result = await page.evaluate(async (waitMs) => {
             const d = window.dashboardInstance;
             const row = document.querySelector('#dashboard-layout .bookmark-link');
-            let starts = 0;
-            row.addEventListener('animationstart', () => { starts += 1; });
+            const once = (type) => new Promise((resolve) => {
+                const timer = setTimeout(() => resolve(false), waitMs);
+                row.addEventListener(type, () => { clearTimeout(timer); resolve(true); }, { once: true });
+            });
 
+            const started = once('animationstart');
+            const ended = once('animationend');
             d.bookmarkRows.restartRowAnimation(row, 'bookmark-copy-flash');
             const onImmediately = row.classList.contains('bookmark-copy-flash');
-            await new Promise((resolve) => setTimeout(resolve, 200));
-            const started = starts;
-
-            await new Promise((resolve) => setTimeout(resolve, 900));
-            return { onImmediately, started, stillOn: row.classList.contains('bookmark-copy-flash') };
-        });
+            const didStart = await started;
+            const didEnd = await ended;
+            // The class comes off in the animationend listener the helper added,
+            // which runs before this one is awaited.
+            await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+            return { onImmediately, didStart, didEnd, stillOn: row.classList.contains('bookmark-copy-flash') };
+        }, WAIT_MS);
 
         expect(result.onImmediately).toBe(true);
-        expect(result.started).toBeGreaterThan(0);
+        expect(result.didStart).toBe(true);
+        expect(result.didEnd).toBe(true);
         // The animationend listener took it off again, which is what stops the
-        // class accumulating on the row — and why reduced motion has to collapse
+        // class accumulating on the row -- and why reduced motion has to collapse
         // these animations to 0.01ms rather than `none`, or the event never comes.
         expect(result.stillOn).toBe(false);
     });
@@ -58,33 +73,37 @@ test.describe('the shared row animation helper', () => {
     test('restarts an animation that is already running', async ({ page }) => {
         await openDashboard(page);
 
-        const result = await page.evaluate(async () => {
+        const result = await page.evaluate(async (waitMs) => {
             const d = window.dashboardInstance;
             const row = document.querySelector('#dashboard-layout .bookmark-link');
             row.classList.remove('bookmark-copy-flash');
-            await new Promise((resolve) => setTimeout(resolve, 800));
 
             let starts = 0;
-            const onStart = () => { starts += 1; };
-            row.addEventListener('animationstart', onStart);
+            const nextStart = () => new Promise((resolve) => {
+                const timer = setTimeout(() => resolve(false), waitMs);
+                row.addEventListener('animationstart', () => { starts += 1; clearTimeout(timer); resolve(true); }, { once: true });
+            });
 
-            d.bookmarkRows.restartRowAnimation(row, 'bookmark-copy-flash');
-            // Waited out, so the animation is genuinely running before the
-            // second call. Firing both in one task proves nothing: the first
+            // The first animation has to be genuinely running before the second
+            // call: firing both in one task proves nothing, because the first
             // has not started yet, so there is nothing to restart and the count
             // is 1 either way.
-            await new Promise((resolve) => setTimeout(resolve, 120));
+            const first = nextStart();
+            d.bookmarkRows.restartRowAnimation(row, 'bookmark-copy-flash');
+            const firstStarted = await first;
             const afterFirst = starts;
 
+            const second = nextStart();
             d.bookmarkRows.restartRowAnimation(row, 'bookmark-copy-flash');
-            await new Promise((resolve) => setTimeout(resolve, 200));
-            row.removeEventListener('animationstart', onStart);
+            const secondStarted = await second;
 
-            return { afterFirst, total: starts };
-        });
+            return { firstStarted, secondStarted, afterFirst, total: starts };
+        }, WAIT_MS);
 
+        expect(result.firstStarted).toBe(true);
         expect(result.afterFirst).toBe(1);
-        // The forced reflow is what makes this 2 rather than 1.
+        // The forced reflow is what makes the second start come at all.
+        expect(result.secondStarted).toBe(true);
         expect(result.total).toBe(2);
     });
 
