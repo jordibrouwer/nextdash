@@ -27,8 +27,8 @@ test.describe('the Bookmarks view on a narrow screen', () => {
         await page.click('[data-bm-open-sheet]');
         await expect(page.locator('#config-bm-rail')).toBeVisible();
         expect(await locked(page)).toBeGreaterThan(0);
-        // Right of the sheet, which covers the scrim's left edge.
-        await page.click('[data-bm-scrim]', { position: { x: 680, y: 400 } });
+        // Right of the sheet, which covers the scrim's left edge, and clear of the action bar's edge handle.
+        await page.click('[data-bm-scrim]', { position: { x: 500, y: 400 } });
         await expect(page.locator('#config-bm-rail')).toBeHidden();
         expect(await locked(page)).toBe(0);
     });
