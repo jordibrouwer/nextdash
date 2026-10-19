@@ -148,15 +148,15 @@ test.describe('where the guide stands', () => {
         await expect(bar(page)).toHaveCount(0);
     });
 
-    test('the corner cards wait thirty seconds after the guide is finished', async ({ page, request }) => {
+    test('the corner cards wait ten seconds after the guide is finished', async ({ page, request }) => {
         await freshInstall(page, request, { settings: { onboardingCompleted: true } });
         const free = (completedAt) => page.evaluate((at) => {
             window.dashboardInstance.settings.quickStart = { ...(window.dashboardInstance.settings.quickStart || {}), completedAt: at };
             return window.NoticeCard.cornerIsFree('x-card');
         }, completedAt);
         const now = Math.floor(Date.now() / 1000);
-        expect(await free(now - 10)).toBe(false);
-        expect(await free(now - 40)).toBe(true);
+        expect(await free(now - 3)).toBe(false);
+        expect(await free(now - 20)).toBe(true);
         expect(await free(0)).toBe(true);
     });
 });

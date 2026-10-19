@@ -40,8 +40,8 @@
     // closing — wakes the queue directly.
     const POLL_WINDOW_MS = 40000;
     const TEARDOWN_MS = 260;
-    // How long after the start guide is finished no card is shown: thirty seconds.
-    const QUIET_AFTER_GUIDE_S = 30;
+    // How long after the start guide is finished no card is shown: ten seconds.
+    const QUIET_AFTER_GUIDE_S = 10;
 
     function dash() {
         return global.dashboardInstance || null;
@@ -191,6 +191,22 @@ canShow every time.
             if (freed) wakeQueue();
         });
         bodyObserver.observe(document.body, { childList: true, subtree: true });
+        // Two more things free the corner without removing a node. Coming back
+        // from config, health or the inbox changes the hash, and the app modal
+        // closes by losing its `show` class. Without these a card that waited
+        // out its forty seconds while the reader was elsewhere stayed queued
+        // until the next load. wakeQueue is cheap and a card still asks its own
+        // canShow, so waking on any of them is safe.
+        global.addEventListener('hashchange', wakeQueue);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') wakeQueue();
+        });
+        const appModal = document.getElementById('app-modal');
+        if (appModal && typeof MutationObserver === 'function') {
+            new MutationObserver(() => {
+                if (!appModal.classList.contains('show')) wakeQueue();
+            }).observe(appModal, { attributes: true, attributeFilter: ['class'] });
+        }
     }
 
     function enqueue(entry) {
