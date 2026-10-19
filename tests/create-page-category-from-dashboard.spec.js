@@ -334,6 +334,25 @@ test.describe('dashboard grid — adding a category', () => {
         await expect(page.locator('#category-add-placeholder-btn')).toBeHidden();
     });
 
+    test('the name row is brought into view, however far down the page you are', async ({ page }) => {
+        // A short window and the button scrolled to the top of it: the row is
+        // mounted at the end of the grid, below the screen, and the input took
+        // focus without scrolling, so the + vanished and nothing appeared.
+        await page.setViewportSize({ width: 1200, height: 420 });
+        await loadDashboard(page);
+        await page.locator('#category-add-placeholder-btn').evaluate((el) => {
+            el.scrollIntoView({ block: 'start' });
+            el.click();
+        });
+        await expect(gridRow(page)).toBeVisible();
+        const box = await gridRow(page).evaluate((el) => {
+            const r = el.getBoundingClientRect();
+            return { top: r.top, bottom: r.bottom, h: window.innerHeight };
+        });
+        expect(box.top).toBeGreaterThanOrEqual(0);
+        expect(box.bottom).toBeLessThanOrEqual(box.h);
+    });
+
     test('cancel restores the placeholder', async ({ page }) => {
         await loadDashboard(page);
         await page.locator('#category-add-placeholder-btn').click();
