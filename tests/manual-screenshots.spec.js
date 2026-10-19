@@ -428,6 +428,15 @@ test('14 logs window', async ({ page }) => {
 
 test('15 widgets', async ({ page }) => {
     await prepare(page);
+    // Home Assistant answers, so its tile shows entities and not an error.
+    const haNow = NOW.getTime();
+    await page.route('**/api/widgets/homeassistant?**', (route) => route.fulfill({ json: {
+        fetchedAt: haNow, controls: true, libraries: [{ id: 'Living room', name: 'Living room' }],
+        items: [
+            { id: 'light.ceiling', title: 'Ceiling light', kind: 'entity', library: 'Living room', libraryId: 'Living room', addedAt: haNow - 5 * 60_000, value: 'on', control: 'toggle', on: true, icon: 'light', openUrl: 'http://homeassistant.local:8123/history' },
+            { id: 'sensor.temperature', title: 'Temperature', kind: 'entity', library: 'Living room', libraryId: 'Living room', addedAt: haNow - 2 * 60_000, value: '21.4 °C', icon: 'temperature', openUrl: 'http://homeassistant.local:8123/history' },
+        ],
+    } }));
     await openDashboard(page, '#2');
     // Down the Homelab page to where the machine's own widgets stand.
     await scrollToTop(page, page.locator('[data-widget-type="cpu"]').first(), 120);
@@ -565,7 +574,10 @@ test('19 backups', async ({ page }) => {
     await prepare(page);
     await openConfig(page, 'data-backups');
     await subtab(page, 'Backups').click();
+    await page.locator('[data-db-status]').waitFor();
     await page.waitForTimeout(1_200);
+    await page.setViewportSize({ width: 1440, height: 1250 });
+    await page.waitForTimeout(600);
     await shot(page, '19-backups.jpg');
 });
 
@@ -1173,17 +1185,27 @@ test.describe('phone bookmarks', () => {
  */
 
 test.describe('first launch', () => {
-    // A new install as it really starts: the example links, and the card
-    // that asks whether to keep them.
+    // A new install as it really starts: the example links on the dashboard,
+    // and after a moment the Quick start bar at the bottom of the screen.
     test.use({ dataPatch: 'empty' });
-    test('full 02 first launch', async ({ page }) => {
+    /** The bar is the subject; settle() would close it. */
+    async function firstLaunch(page) {
         await prepare(page);
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 30_000 });
-        // The first-start card is the subject; settle() would close it.
-        await page.locator('.first-start-card').waitFor({ state: 'visible' });
+        await page.locator('[data-start-guide-bar]').waitFor({ state: 'visible', timeout: 30_000 });
         await page.waitForTimeout(1_500);
+    }
+    test('full 02 first launch', async ({ page }) => {
+        await firstLaunch(page);
         await shot(page, '02-first-launch.jpg');
+    });
+    test('full 02 start guide', async ({ page }) => {
+        await firstLaunch(page);
+        await page.locator('[data-start-guide-open]').click();
+        await page.locator('[data-start-guide-modal]').waitFor({ state: 'visible' });
+        await page.waitForTimeout(900);
+        await shot(page, '02-start-guide.jpg');
     });
 });
 
@@ -1471,6 +1493,33 @@ test('16 appearance rows', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1290 });
     await page.waitForTimeout(600);
     await shot(page, '16-appearance-rows.jpg');
+});
+
+test('16 appearance surfaces', async ({ page }) => {
+    await prepare(page);
+    await openConfig(page, 'appearance');
+    await subtab(page, 'Surfaces').click();
+    const panel = page.locator('#config-appearance-body .config-panel', { has: page.locator('[data-appearance-select="widgetSurface"]') }).first();
+    await panel.waitFor();
+    await page.setViewportSize({ width: 1440, height: 1250 });
+    await page.waitForTimeout(600);
+    await snap(page, panel, '16-surfaces.jpg', { pad: 14 });
+});
+
+test('16 appearance layout spacing', async ({ page }) => {
+    await prepare(page);
+    await openConfig(page, 'appearance');
+    await subtab(page, 'Layout').click();
+    const rows = page.locator('[data-behavior-field="categorySpacing"]').first();
+    const columns = page.locator('[data-behavior-field="columnSpacing"]').last();
+    await rows.waitFor();
+    await columns.scrollIntoViewIfNeeded();
+    await page.setViewportSize({ width: 1440, height: 1250 });
+    await page.waitForTimeout(600);
+    const view = page.locator('[data-behavior-field="columnSpacing"]').first();
+    await page.mouse.move(5, 1240);
+    await page.waitForTimeout(300);
+    await crop(page, [rows, columns, view], '16-layout-spacing.jpg', 56);
 });
 
 test('16 appearance action bar', async ({ page }) => {

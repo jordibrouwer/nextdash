@@ -39,7 +39,7 @@ const DEMO_THEME = 'matrix-bluepill-dark';
  * Every manual screenshot is taken in this theme, whatever the demo data
  * says, so the pictures sit quietly on nextdash.cc and its docs.
  */
-const SHOT_THEME = 'look-confetti-dark';
+const SHOT_THEME = 'gloss-liquid-chrome-dark';
 
 /** A port nothing else is on (never 8080: the OS hands out a free one). */
 function freePort() {
