@@ -79,22 +79,28 @@
                 run: go('#config/data-backups'),
             },
             {
-                id: 'widget',
-                label: tq('stepWidget', 'Add a widget'),
-                hint: tq('stepWidgetHint', 'Media, Home Assistant, notes'),
-                run: go('#config/widgets'),
-            },
-            {
                 id: 'extension',
                 label: tq('stepExtension', 'Get the browser extension'),
                 hint: tq('stepExtensionHint', 'Save a page without leaving it'),
                 run: () => { global.open(DOCS_URL, '_blank', 'noopener'); },
             },
             {
-                id: 'containers',
-                label: tq('stepContainers', 'Connect your containers'),
-                hint: tq('stepContainersHint', 'Opens the Containers view'),
-                run: () => guide.openView(),
+                id: 'bookmarks',
+                label: tq('stepBookmarks', 'Open the Bookmarks view'),
+                hint: tq('stepBookmarksHint', 'Every bookmark, searchable'),
+                run: go('#bookmarks'),
+            },
+            {
+                id: 'inbox',
+                label: tq('stepInbox', 'Open the Inbox view'),
+                hint: tq('stepInboxHint', 'Where saved links wait to be filed'),
+                run: go('#inbox'),
+            },
+            {
+                id: 'widget',
+                label: tq('stepWidget', 'Add a widget'),
+                hint: tq('stepWidgetHint', 'Media, Home Assistant, notes'),
+                run: go('#config/widgets'),
             },
             {
                 id: 'checks',
@@ -110,8 +116,8 @@
             },
             {
                 id: 'overview',
-                label: tq('stepOverview', 'Open Config → Overview'),
-                hint: tq('stepOverviewHint', 'What is on your install'),
+                label: tq('stepOverview', 'Open the Config settings'),
+                hint: tq('stepOverviewHint', 'An overview of your install'),
                 run: go('#config/overview'),
             },
         ];
@@ -604,15 +610,6 @@
         goTo(hash) {
             this.close({ land: false });
             global.location.hash = hash;
-        }
-
-        /** The Containers view, where the tour is too; Esc or 1 comes back. */
-        async openView() {
-            this.close({ land: false });
-            const d = this.dash;
-            let opened;
-            try { opened = await d.docker?.openDockerView?.(); } catch { opened = false; }
-            if (opened === false || !d.docker?.openDockerView) global.location.hash = '#docker';
         }
 
         async runTour() {

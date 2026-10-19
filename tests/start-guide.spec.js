@@ -1,7 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
 const { WRITE_TOKEN, markWhatsNewSeen } = require('./e2e-helpers');
-const { mockDocker } = require('./helpers/docker-mock');
 
 /**
  * The start guide: what a fresh install opens on.
@@ -402,19 +401,28 @@ test.describe('review findings', () => {
 });
 
 test.describe('the way back', () => {
-    test('Connect your containers opens the Containers view, and Esc comes back to the dashboard', async ({ page, request }) => {
-        await mockDocker(page);
+    test('Open the Bookmarks view opens it, and Esc comes back to the dashboard', async ({ page, request }) => {
         await freshInstall(page, request);
         await openModal(page);
         await modal(page).locator('[data-sg-more]').click();
-        await modal(page).locator('[data-sg-step="containers"] button').click();
+        await modal(page).locator('[data-sg-step="bookmarks"] button').click();
         await expect(modal(page)).toHaveCount(0);
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView), { timeout: 15_000 }).toBe('docker');
+        await expect(page).toHaveURL(/#bookmarks/);
+        await expect(page.locator('#dashboard-layout.library-layout')).toBeVisible({ timeout: 15_000 });
         await expect(bar(page)).toBeHidden();
         await page.keyboard.press('Escape');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView), { timeout: 15_000 }).toBe('bookmarks');
+        await expect(page.locator('#dashboard-layout.library-layout')).toHaveCount(0);
         await expect(bar(page)).toBeVisible({ timeout: 10_000 });
-        await expect.poll(async () => (await stored(page)).quickStart.stepsDone).toContain('containers');
+        await expect.poll(async () => (await stored(page)).quickStart.stepsDone).toContain('bookmarks');
+    });
+
+    test('there is no Containers step any more', async ({ page, request }) => {
+        await freshInstall(page, request);
+        await openModal(page);
+        await modal(page).locator('[data-sg-more]').click();
+        await expect(modal(page).locator('[data-sg-step="containers"]')).toHaveCount(0);
+        expect(await modal(page).locator('[data-sg-step]').count()).toBe(9);
     });
 
     test('the key 1 brings you back from config, and the modal says so from the start', async ({ page, request }) => {
@@ -431,5 +439,36 @@ test.describe('the way back', () => {
         await page.keyboard.press('1');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView), { timeout: 15_000 }).toBe('bookmarks');
         await expect(bar(page)).toBeVisible({ timeout: 10_000 });
+    });
+});
+
+test.describe('the steps', () => {
+    test('come in the order a reader would take them', async ({ page, request }) => {
+        await freshInstall(page, request);
+        await openModal(page);
+        const ids = await modal(page).evaluate((el) => [...el.querySelectorAll('[data-sg-step]')].map((s) => s.getAttribute('data-sg-step')));
+        // Find your way, bring your links in, look at them, add to the page, watch it, then the settings.
+        expect(ids).toEqual(['tour', 'import', 'extension', 'bookmarks', 'inbox', 'widget', 'checks', 'notifications', 'overview']);
+    });
+
+    test('Open the Inbox view opens it, and Esc comes back to the dashboard', async ({ page, request }) => {
+        await freshInstall(page, request);
+        await openModal(page);
+        await modal(page).locator('[data-sg-more]').click();
+        await modal(page).locator('[data-sg-step="inbox"] button').click();
+        await expect(modal(page)).toHaveCount(0);
+        await expect(page).toHaveURL(/#inbox/);
+        await expect(page.locator('#dashboard-layout.inbox-layout')).toBeVisible({ timeout: 15_000 });
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView), { timeout: 15_000 }).toBe('inbox');
+        // The first visit to the Inbox shows its tour: the first Esc closes that,
+        // the next one leaves the view.
+        if (await page.locator('#app-modal.show').count()) {
+            await page.keyboard.press('Escape');
+            await expect(page.locator('#app-modal.show')).toHaveCount(0);
+        }
+        await page.keyboard.press('Escape');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView), { timeout: 15_000 }).toBe('bookmarks');
+        await expect(bar(page)).toBeVisible({ timeout: 10_000 });
+        await expect.poll(async () => (await stored(page)).quickStart.stepsDone).toContain('inbox');
     });
 });
