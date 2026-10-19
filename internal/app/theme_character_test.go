@@ -572,8 +572,13 @@ func TestVelvetAuroraThemesShipGlass(t *testing.T) {
 }
 
 // Lacquer themes ship on glass, with glass depth, at 35% opacity. The Looks
-// that use the character keep the 20% every Look has.
+// that use the character keep the 20% every Look has. Gloss Chrome and Gloss
+// Amber are the exception on the surface: they ship open, with glow off.
 func TestLacquerThemesShipGlassAt35(t *testing.T) {
+	open := map[string]bool{
+		"gloss-liquid-chrome-dark": true, "gloss-liquid-chrome-light": true,
+		"gloss-amber-resin-dark": true, "gloss-amber-resin-light": true,
+	}
 	seen := 0
 	for id, tc := range getDefaultBuiltInThemes() {
 		if tc.Character != "lacquer" {
@@ -584,8 +589,15 @@ func TestLacquerThemesShipGlassAt35(t *testing.T) {
 		if tc.Collection == "looks" {
 			want = 0.2
 		}
-		if tc.Depth != "glass" || tc.Surface != "glass" || tc.SurfaceAlpha != want {
-			t.Errorf("%s: depth=%q surface=%q alpha=%v, want glass / glass / %v", id, tc.Depth, tc.Surface, tc.SurfaceAlpha, want)
+		surface := "glass"
+		if open[id] {
+			surface = "open"
+			if tc.Glow != "off" {
+				t.Errorf("%s: glow=%q, want off", id, tc.Glow)
+			}
+		}
+		if tc.Depth != "glass" || tc.Surface != surface || tc.SurfaceAlpha != want {
+			t.Errorf("%s: depth=%q surface=%q alpha=%v, want glass / %s / %v", id, tc.Depth, tc.Surface, tc.SurfaceAlpha, surface, want)
 		}
 	}
 	if seen == 0 {
