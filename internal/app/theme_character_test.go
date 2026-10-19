@@ -570,3 +570,20 @@ func TestVelvetAuroraThemesShipGlass(t *testing.T) {
 		t.Fatal("no velvet or aurora theme found")
 	}
 }
+
+// Lacquer themes ship on glass, with glass depth, at 35% opacity.
+func TestLacquerThemesShipGlassAt35(t *testing.T) {
+	seen := 0
+	for id, tc := range getDefaultBuiltInThemes() {
+		if tc.Character != "lacquer" {
+			continue
+		}
+		seen++
+		if tc.Depth != "glass" || tc.Surface != "glass" || tc.SurfaceAlpha != 0.35 {
+			t.Errorf("%s: depth=%q surface=%q alpha=%v, want glass / glass / 0.35", id, tc.Depth, tc.Surface, tc.SurfaceAlpha)
+		}
+	}
+	if seen == 0 {
+		t.Fatal("no lacquer theme found")
+	}
+}
