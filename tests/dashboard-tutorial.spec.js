@@ -11,7 +11,7 @@ const { markWhatsNewSeen } = require('./e2e-helpers');
  * the one that decides whether it opens.
  */
 
-const STEPS = 7;
+const STEPS = 8;
 const TIP = 'dashboardTutorialV3';
 const modal = (page) => page.locator('#app-modal.show .dashboard-tutorial-modal');
 const next = (page) => page.locator('.modal-actions .modal-button').first();
@@ -61,7 +61,22 @@ test.describe('dashboard tour', () => {
         await loadWithTourPending(page);
         expect(await page.evaluate(() => window.DiscoverabilityState.hasSeenTip('dashboardTutorialV2'))).toBe(true);
         await expect(modal(page)).toBeVisible({ timeout: 10_000 });
-        await expect(page.locator('.dashboard-tutorial-step-title')).toHaveText('Pages, categories, bookmarks');
+        await expect(page.locator('.dashboard-tutorial-step-title')).toHaveText('The action bar');
+    });
+
+    test('the first slide is the action bar: its nine keys, where it stands, and how it comes back', async ({ page }) => {
+        await loadWithTourPending(page);
+        await expect(modal(page)).toBeVisible({ timeout: 10_000 });
+        await expect(page.locator('.dashboard-tutorial-step-title')).toHaveText('The action bar');
+        // The nine buttons, each with the key that does the same.
+        const keys = await page.locator('.dashboard-tutorial-scene svg .dtv-key-text').allTextContents();
+        for (const key of ['+', '>', ':', '?', '/', '*', ',', '.', '!']) expect(keys).toContain(key);
+        const body = page.locator('.dashboard-tutorial-step-body');
+        await expect(body).toContainText(/action bar/i);
+        await expect(body).toContainText(/slides? into the edge/i);
+        await expect(body).toContainText(/Config → Appearance → Action bar/);
+        // The scene has a drawing of the docked bar, not only a list of keys.
+        await expect(page.locator('.dashboard-tutorial-scene svg .dtv-dock')).toHaveCount(1);
     });
 
     test('Next walks every step, and finishing marks it seen', async ({ page }) => {
@@ -76,6 +91,7 @@ test.describe('dashboard tour', () => {
             }
         }
         expect(titles).toEqual([
+            'The action bar',
             'Pages, categories, bookmarks',
             'Start typing',
             'Two keys to open, Shift to act',
