@@ -99,37 +99,56 @@
         return t('notice.bodyMany', '{list}. Each is on the dashboard now, with a status check.', { list });
     }
 
+    let undoing = false;
+
     async function undo(card) {
-        const list = adds.slice();
-        let failed = false;
-        for (const a of list) {
-            try {
-                const res = await post('/api/discovery/undo', { name: a.name });
-                if (!res.ok) failed = true;
-            } catch {
-                failed = true;
+        if (undoing) return;
+        undoing = true;
+        try {
+            const list = adds.slice();
+            const done = [];
+            let failed = false;
+            for (const a of list) {
+                try {
+                    const res = await post('/api/discovery/undo', { name: a.name });
+                    // 404: taken back already, by an earlier click or another tab.
+                    if (res.ok || res.status === 404) done.push(a);
+                    else failed = true;
+                } catch {
+                    failed = true;
+                }
             }
+            if (failed) {
+                // A second Undo only tries what is still on a page.
+                adds = adds.filter((a) => !done.includes(a));
+                card.showError(t('notice.undoFailed', 'Could not take it back'));
+                return;
+            }
+            global.nextdashTrack?.('discovery:undo', { count: list.length });
+            adds = [];
+            card.close();
+            await refreshDashboard().catch(() => {});
+        } finally {
+            undoing = false;
         }
-        if (failed) {
-            card.showError(t('notice.undoFailed', 'Could not take it back'));
-            return;
-        }
-        global.nextdashTrack?.('discovery:undo', { count: list.length });
-        adds = [];
-        card.close();
-        await refreshDashboard();
     }
 
-    function move(card) {
+    async function move(card) {
         const d = dash();
         const first = adds[0];
+        if (!first || !d) return;
+        const find = () => (d.allBookmarks || []).find((b) => `${b.pageId}::${b.url}` === first.key);
+        let bookmark = find();
+        if (!bookmark) {
+            await Promise.resolve(d.data?.loadAllBookmarks?.()).catch(() => {});
+            bookmark = find();
+        }
+        // Not found: the notice stays, so the adds are not acknowledged unseen.
+        if (!bookmark) return;
         const list = adds.slice();
         adds = [];
         card.close();
         void acknowledge(list);
-        if (!first || !d) return;
-        const bookmark = (d.allBookmarks || []).find((b) => `${b.pageId}::${b.url}` === first.key);
-        if (!bookmark) return;
         global.nextdashTrack?.('discovery:move');
         d.openBookmarkFormModal?.({ mode: 'edit', bookmark, pageId: bookmark.pageId, source: 'discovery' });
     }
@@ -150,10 +169,13 @@
             adds = list;
             const key = list.map((a) => a.key).join('|');
             if (key !== shownKey) {
-                shownKey = key;
                 // The new tiles are on the server already; bring them on
-                // screen before the notice names them.
-                await refreshDashboard();
+                // screen before the notice names them. A failed refresh is
+                // tried again on the next check.
+                try {
+                    await refreshDashboard();
+                    shownKey = key;
+                } catch { /* the notice still comes */ }
             }
             return true;
         },
@@ -164,7 +186,7 @@
         },
         actions: [
             { name: 'undo', label: () => (adds.length > 1 ? t('notice.undoAll', 'Undo all') : t('notice.undo', 'Undo')), primary: true, onClick: (c) => void undo(c) },
-            { name: 'move', label: () => t('notice.move', 'Move'), onClick: (c) => move(c) },
+            { name: 'move', label: () => t('notice.move', 'Move'), onClick: (c) => void move(c) },
             {
                 name: 'done',
                 label: () => t('notice.done', 'Done'),

@@ -285,6 +285,34 @@ test('a new container is added to the dashboard with a notice, and Undo takes it
     expect((await (await request.get('/api/discovery')).json()).recentAdds).toEqual([]);
 });
 
+test('Undo all on the notice tries again only what a failed Undo left', async ({ page, request, workerServer }) => {
+    const { radarr, sonarr } = await afterFirstRun(request, workerServer, { newApps: 'add' });
+    const lidarr = await startApp('Lidarr');
+    writeContainers(workerServer, [
+        container('radarr', 'linuxserver/radarr', radarr),
+        container('sonarr', 'linuxserver/sonarr', sonarr),
+        container('lidarr', 'linuxserver/lidarr', lidarr),
+    ]);
+    expect((await runDiscovery(request)).added).toHaveLength(2);
+    await open(page);
+    await expect(notice(page)).toContainText('2 apps added', { timeout: 15_000 });
+
+    // The first undo goes through, the second fails.
+    let calls = 0;
+    await page.route('**/api/discovery/undo', (route) => {
+        calls += 1;
+        return calls === 2 ? route.fulfill({ status: 500, body: 'down' }) : route.continue();
+    });
+    await notice(page).getByRole('button', { name: 'Undo all' }).click();
+    await expect(notice(page)).toContainText('Could not take it back');
+
+    await page.unroute('**/api/discovery/undo');
+    await notice(page).getByRole('button', { name: /^Undo/ }).click();
+    await expect(notice(page)).toHaveCount(0);
+    const left = (await bookmarks(request)).filter((b) => b.name === 'sonarr' || b.name === 'lidarr');
+    expect(left).toEqual([]);
+});
+
 test('Move on the notice opens the bookmark form for the new app', async ({ page, request, workerServer }) => {
     const { sonarr } = await afterFirstRun(request, workerServer, { newApps: 'add' });
     await runDiscovery(request);

@@ -211,6 +211,7 @@ A new default look, and a lot of ways to change it. A fresh install starts on Co
 ### App discovery
 
 - **fix — Remove on the ignored list sticks when a run is going.** A discovery run copies what it knows before it probes and saved that copy back afterwards, so a Remove made in those seconds was undone and the app was never offered again. The run now leaves out names taken away while it probed (`discovery.go`).
+- **fix — Undo all on the notice can be tried again.** When one of several undos failed, a second click hit the ones already taken back and stayed on *Could not take it back*. Undo now counts those as done, retries only the rest and ignores a second click while it runs; *Move* keeps the notice when it cannot find the new bookmark, and a failed refresh is tried again on the next check (`app-discovery-notice.js`).
 
 ### Docs
 
