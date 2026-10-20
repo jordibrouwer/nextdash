@@ -131,6 +131,7 @@ test.describe('a fresh install', () => {
         await page.reload();
         await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
         await expect(bar(page)).toBeVisible({ timeout: 10_000 });
+        // Negative check: a late auto-open must not come, so give the three seconds time to pass.
         await page.waitForTimeout(4_000);
         await expect(modal(page)).toHaveCount(0);
     });
