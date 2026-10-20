@@ -636,6 +636,18 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 		// that is gone.
 		return res, nil
 	}
+	// A name taken out while this run was probing (Remove on the ignored
+	// list) stays out: the run's maps were built from the copy before it.
+	for name := range prevKnown {
+		if _, still := st.Known[name]; !still {
+			delete(newKnown, name)
+		}
+	}
+	for name := range prevProbed {
+		if _, still := st.Probed[name]; !still {
+			delete(newProbed, name)
+		}
+	}
 
 	handled := map[string]bool{}
 	var runErr error

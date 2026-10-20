@@ -208,6 +208,10 @@ A new default look, and a lot of ways to change it. A fresh install starts on Co
 - **new — a widget's name starts on its card's content.** The card's border and padding in (1px + `--space-3`), where the first line of the card starts; a category's name starts in the same place, so a page of both keeps one left edge for titles.
 - **fix — a title jumped when pointed at.** The general hover grew the title 4px to the left (padding and a negative margin) and painted it with the `background` shorthand, which also took the accent tab off the rule under it. Pointing at a title now tints it where it is, with a background colour, and the tab stays. The old tint was never drawn on the dashboard at all: it read `--hover-bg`, which only exists inside Config. It is `--text-primary` at 7% now.
 
+### App discovery
+
+- **fix — Remove on the ignored list sticks when a run is going.** A discovery run copies what it knows before it probes and saved that copy back afterwards, so a Remove made in those seconds was undone and the app was never offered again. The run now leaves out names taken away while it probed (`discovery.go`).
+
 ### Docs
 
 - **docs — 147 interface strings that only existed as English fallbacks in the code are now in all six locale files** (the Confetti card, the category menu, Statistics → Server, Notifications and Widgets, the Help tab groups, the category surface), translated into nl, de, fr, zh and es; `validate:locale-parity` could not see them because the keys were missing everywhere, not in one file.

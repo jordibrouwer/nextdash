@@ -74,3 +74,32 @@ func TestDiscoveryUnignoreLetsItReturn(t *testing.T) {
 		t.Fatalf("after Remove the app is new again: %+v", res)
 	}
 }
+
+// A Remove on the ignored list while a run is probing is not undone by that
+// run's save: the run copied Known and Probed before the Remove.
+func TestDiscoveryUnignoreDuringRunSticks(t *testing.T) {
+	r := newDiscoveryRig(t)
+	r.ensurePage1()
+	p1, _ := htmlPort(t)
+	p2, _ := htmlPort(t)
+	old := r.now.Add(-time.Hour)
+	r.containers(fxContainer("sonarr", "id1", p1, old))
+	r.run()
+	r.containers(fxContainer("sonarr", "id1", p1, old), fxContainer("radarr", "id2", p2, old))
+	r.run()
+	if rec := r.call("POST", "/api/discovery/undo", map[string]string{"name": "radarr"}); rec.Code != 200 {
+		t.Fatalf("undo: %d %s", rec.Code, rec.Body.String())
+	}
+	r.run()
+	discoveryBeforeSaveHook = func() {
+		if rec := r.call("POST", "/api/discovery/unignore", map[string]string{"name": "radarr"}); rec.Code != 200 {
+			t.Errorf("unignore: %d", rec.Code)
+		}
+	}
+	t.Cleanup(func() { discoveryBeforeSaveHook = nil })
+	r.run()
+	discoveryBeforeSaveHook = nil
+	if res := r.run(); len(res.Added) != 1 || res.Added[0] != "radarr" {
+		t.Fatalf("the run's save brought the Remove back: %+v", res)
+	}
+}
