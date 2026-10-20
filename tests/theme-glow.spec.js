@@ -54,13 +54,10 @@ const glowTokens = (page) => page.evaluate(() => {
  * config view gets exactly the theme's rule and nothing a tab adds.
  */
 const panelShadow = (page) => page.evaluate(() => {
-    const host = document.querySelector('#config-view-body') || document.body;
-    const probe = document.createElement('div');
-    probe.className = 'config-panel';
-    host.appendChild(probe);
-    const shadow = getComputedStyle(probe).boxShadow;
-    probe.remove();
-    return shadow;
+    // Config is one pane now and its panels only carry a hairline, so the
+    // surface the theme's glow reaches is the pane itself.
+    const pane = document.querySelector('#dashboard-layout.config-layout > .config-view');
+    return getComputedStyle(pane).boxShadow;
 });
 
 test.describe('theme glow', () => {

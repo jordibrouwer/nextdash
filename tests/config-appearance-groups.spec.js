@@ -79,7 +79,9 @@ test.describe('the grouped strip', () => {
     });
 
     test('on a wide window the strip is one line', async ({ page }) => {
-        await page.setViewportSize({ width: 1440, height: 900 });
+        // About 1440 px on a Mac; the runner's fonts are a little wider, so the
+        // test stands further from the edge.
+        await page.setViewportSize({ width: 1600, height: 900 });
         await open(page, '#config/appearance');
         const rows = await page.evaluate(() => new Set([...document.querySelectorAll(
             '.config-subtabs--grouped [data-appearance-tab], .config-subtabs--grouped .config-subtab-group-label')]

@@ -212,8 +212,15 @@ test.describe('the widgets tab', () => {
         const fills = await page.evaluate(() => ({
             page: getComputedStyle(document.body).backgroundColor,
         }));
-        const row = await page.evaluate(() =>
-            getComputedStyle(document.querySelector('.config-widget-row')).backgroundColor);
+        // A row inside a panel is not tinted twice: the fill is the first one
+        // between the row and config's pane.
+        const row = await page.evaluate(() => {
+            for (let el = document.querySelector('.config-widget-row'); el && el !== document.body; el = el.parentElement) {
+                const fill = getComputedStyle(el).backgroundColor;
+                if (fill !== 'rgba(0, 0, 0, 0)') return fill;
+            }
+            return 'rgba(0, 0, 0, 0)';
+        });
         // And it is a fill, not the page showing through.
         expect(row).not.toBe('rgba(0, 0, 0, 0)');
         expect(row).not.toBe(fills.page);

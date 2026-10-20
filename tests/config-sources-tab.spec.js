@@ -185,16 +185,16 @@ test.describe('the Sources tab', () => {
             return {
                 hintColumn: hint.gridColumn,
                 hintSize: parseFloat(hint.fontSize),
-                labelColor: label.color,
-                bodyColor: body.color,
+                labelInField: !!document.querySelector('label[for="config-stars-token"]')?.closest('.config-field'),
                 bodySize: parseFloat(body.fontSize),
             };
         });
         expect(placement.hintColumn).toBe('1 / -1');
         // Muted prose: smaller than body text rather than the same size.
         expect(placement.hintSize).toBeLessThan(placement.bodySize);
-        // The label is styled, not inheriting the page's text colour.
-        expect(placement.labelColor).not.toBe(placement.bodyColor);
+        // The label stands in a .config-field, so the grid places it. Its colour is
+        // not the test: config's pane paints a label in the text colour on purpose.
+        expect(placement.labelInField).toBe(true);
     });
 
     test('the token goes in and never comes back', async ({ page }) => {
