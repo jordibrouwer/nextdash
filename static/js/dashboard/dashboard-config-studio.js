@@ -418,7 +418,7 @@
                 case 'heads': {
                     const panels = this.panelsFor('appearance', 'display')
                         .filter((p) => p.controls?.some((c) => c.field === 'categoryHeaderStyle'));
-                    return this.renderControlPanels([...panels, ...this.studioPanels('header', BAR_FIELDS)], 'behavior');
+                    return this.renderControlPanels([...panels, ...this.studioPanels('header', BAR_FIELDS)], 'behavior', { keepInfo: true });
                 }
                 case 'layout':
                     return `
@@ -435,7 +435,7 @@
                         ${this.renderControlPanels([
                             ...this.studioPanels('layout', GRID_FIELDS),
                             ...this.studioPanels('display', GRID_FIELDS),
-                        ], 'behavior')}
+                        ], 'behavior', { keepInfo: true })}
                         <div class="config-panel">
                             <h3 class="config-panel-title">${e(t('config.appearanceDisplayQuickTitle', 'Quick display options'))}</h3>
                             ${this.renderRowToggles()}

@@ -15205,8 +15205,9 @@ class DashboardConfig {
         };
     }
 
-    /** ℹ + ↺ affordances shown after a control, based on the field's metadata. */
-    renderFieldAffordances(field, val) {
+    /** ℹ + ↺ affordances shown after a control, based on the field's metadata.
+     *  `hintShown`: the line under the control is drawn, so an ℹ that only repeats it is left out. */
+    renderFieldAffordances(field, val, { hintShown = false } = {}) {
         const esc = (v) => this.dash.escapeHtml(v);
         const meta = this.fieldMeta(field);
         let out = '';
@@ -15218,7 +15219,7 @@ class DashboardConfig {
         // presence of an info *reference*, and ten of those pointed at locale
         // keys nobody had written — so the ℹ opened a dialog with an empty
         // title, an empty body and a Got it button.
-        if (meta?.info && this.hasInfoText(meta.info)) {
+        if (meta?.info && this.hasInfoText(meta.info) && !(hintShown && this.infoRepeatsHint(field))) {
             out += `<button type="button" class="config-info-btn" data-info-field="${esc(field)}" aria-label="${esc(this.t('config.settingInfoAria', 'More info'))}" title="${esc(this.t('config.settingInfoAria', 'More info'))}">ℹ</button>`;
         }
         const showReset = meta && meta.def !== undefined && !this.isFieldDefault(field, val);
@@ -15241,6 +15242,22 @@ class DashboardConfig {
      * ⓘ text, which every setting with an explanation already has -- so the
      * line and the dialog cannot disagree, and no second copy is kept.
      */
+    /**
+     * Whether the ℹ of a field would only say what the line under it says.
+     * The line is the first sentence of the info when a field has no note of
+     * its own, so a one-sentence info opened a dialog that repeated it. Not in
+     * Appearance, where that line is cut to one row and the dialog is the way
+     * to read all of it.
+     */
+    infoRepeatsHint(field) {
+        if (this.section === 'appearance') return false;
+        const info = this.fieldMeta(field)?.info;
+        if (!Array.isArray(info)) return false;
+        const message = String(this.t(`config.${info[1]}`, info[3] || '')).replace(/\s+/g, ' ').trim();
+        const summary = String(this.fieldSummary(field) || '').replace(/\s+/g, ' ').trim();
+        return Boolean(message) && Boolean(summary) && summary.includes(message);
+    }
+
     fieldSummary(field) {
         const meta = this.fieldMeta(field);
         if (!meta) return '';
@@ -15273,7 +15290,7 @@ class DashboardConfig {
     }
 
     /** Render a schema of panels into HTML, keyed by a data-<prefix>-field. */
-    renderControlPanels(schema, prefix) {
+    renderControlPanels(schema, prefix, { keepInfo = false } = {}) {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
         const renderControl = (c, changedFields = []) => {
@@ -15415,8 +15432,8 @@ class DashboardConfig {
                 ? window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true
                 : s[c.field];
             const dataAttrs = `data-${prefix}-field="${esc(c.field)}" data-${prefix}-special="${esc(c.special || '')}"`;
-            const aff = this.renderFieldAffordances(c.field, val);
             const summary = this.fieldSummary(c.field);
+            const aff = this.renderFieldAffordances(c.field, val, { hintShown: Boolean(summary) && !keepInfo });
             // In Appearance the hint sits inside its row, under the label and
             // beside the control; one line, cut with an ellipsis, the whole
             // sentence in the title. Elsewhere it stays a paragraph below.

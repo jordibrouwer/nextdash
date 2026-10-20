@@ -1780,7 +1780,7 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
  */
 .config-field {
     display: grid;
-    grid-template-columns: minmax(140px, 200px) minmax(0, max-content) auto;
+    grid-template-columns: minmax(120px, 170px) minmax(0, max-content) auto;
     align-items: center;
     gap: 14px;
     margin-bottom: 14px;
@@ -1827,7 +1827,7 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
  * presence is what identifies the row.
  */
 .config-field:has(> .config-range-value) {
-    grid-template-columns: minmax(140px, 200px) minmax(0, max-content) auto auto;
+    grid-template-columns: minmax(120px, 170px) minmax(0, max-content) auto auto;
 }
 
 /* A slider row that also carries a preview and an ℹ has two more children than
@@ -1837,7 +1837,7 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
    caught the opacity slider, which has a readout and an ℹ and no preview, and
    gave it a fifth column with nothing to put in it. */
 .config-field:has(> .config-range-value):has(> .config-icon-preview) {
-    grid-template-columns: minmax(140px, 200px) minmax(0, max-content) auto auto auto;
+    grid-template-columns: minmax(120px, 170px) minmax(0, max-content) auto auto auto;
 }
 
 .config-field-label {

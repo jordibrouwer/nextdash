@@ -40,9 +40,26 @@
     margin-top: 0;
 }
 
-/* The short line under a setting sits close to it, not half-way to the next. */
+/* The short line under a setting sits close to it, not half-way to the next:
+   the row above hands its bottom margin to the line, so the space comes after
+   the line, and the next setting is clearly a different one. */
 .config-tabpage .config-field-hint {
-    margin: 2px 0 12px;
+    margin: 2px 0 18px;
+}
+
+.config-tabpage :is(.config-field, .config-field-row):has(+ .config-field-hint) {
+    margin-bottom: 0;
+}
+
+.config-tabpage .config-panel-body > .config-field-hint:last-child,
+.config-tabpage .config-panel > .config-field-hint:last-child {
+    margin-bottom: 0;
+}
+
+/* A checkbox in a row with its info button: the stacked-setting top margin
+   pushed it down, and the button floated above its label. */
+.config-field-row > .config-toggle {
+    margin-top: 0;
 }
 
 /* ← Look, above the Custom themes page. */
