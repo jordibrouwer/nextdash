@@ -7031,6 +7031,20 @@ body.no-animations .config-new-features-panel-star {
     background: transparent;
     font-weight: 600;
     padding-inline: 4px;
+    /* Shrinks with the row instead of running under the type chip: a text
+       input will not go below its own width unless told it may. */
+    width: 100%;
+    min-width: 0;
+    /* The name is what the row is looked up by: full strength, not the
+       muted ink an input gets by default. */
+    color: var(--text-primary);
+}
+
+/* A widget without a title of its own shows its type as the name, as a
+   placeholder: dimmed like one, it was the faintest text in the row. */
+.config-widget-row-title::placeholder {
+    color: var(--text-primary);
+    opacity: 0.9;
 }
 
 .config-widget-row-title:hover,
