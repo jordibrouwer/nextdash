@@ -3,13 +3,15 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
- * Config's panels and tables are the same pane as the dashboard's.
+ * Config is one pane, like the views beside it.
  *
- * Config drew its own flat rectangles (a 1px border over 55% of the page
- * colour) and left its tables bare. They read as another application. Now a
- * panel, an overview card and a table take the pane the dashboard draws, in the
- * same glass, card or open, and open still keeps a light frame so a form is
- * not a pile of loose fields.
+ * Config drew every panel, overview card and table as a pane of its own on the
+ * page, with its header a separate block above them, while the containers
+ * view, the inbox, the tag view and the bookmarks view are each one pane round
+ * everything in them. Config read as a different application. Now it is one
+ * pane too -- glass, card or a light frame, like the dashboard's categories --
+ * and the blocks inside keep a faint tint and a hairline, so a long settings
+ * page still shows where a block starts and ends.
  */
 async function open(page, hash) {
     await markWhatsNewSeen(page);
@@ -43,86 +45,40 @@ const paint = (page, selector) => page.evaluate((sel) => {
     };
 }, selector);
 
-test.describe('config in loose panes (the default)', () => {
-    test('a panel is glass, card or a light frame, like a category on the dashboard', async ({ page }) => {
-        await open(page, '#config/appearance');
-        await page.waitForSelector('.config-panel', { timeout: 20_000 });
-
-        await setSurface(page, 'glass');
-        const glass = await paint(page, '.config-view .config-panel');
-        expect(glass.blur).toBe('blur');
-        expect(glass.alpha).toBeGreaterThan(0);
-        expect(glass.alpha).toBeLessThan(1);
-        expect(glass.hairline).toBe(true);
-        expect(glass.border).toBe('0px');
-        expect(parseFloat(glass.radius)).toBeGreaterThanOrEqual(8);
-
-        await setSurface(page, 'card');
-        const card = await paint(page, '.config-view .config-panel');
-        expect(card.blur).toBe('none');
-        expect(card.alpha).toBe(1);
-
-        await setSurface(page, 'open');
-        const frame = await paint(page, '.config-view .config-panel');
-        expect(frame.blur).toBe('none');
-        expect(frame.alpha).toBeGreaterThan(0);
-        expect(frame.alpha).toBeLessThan(0.12);
-        expect(frame.hairline).toBe(true);
-    });
-
-    test('a table sits in the same pane instead of on the bare page, and the view itself is not one', async ({ page }) => {
-        await open(page, '#config/structure');
-        await page.waitForSelector('[data-structure-table]', { timeout: 20_000 });
-        await setSurface(page, 'glass');
-        const table = await paint(page, '[data-structure-table]');
-        expect(table.blur).toBe('blur');
-        expect(table.alpha).toBeGreaterThan(0);
-        expect(table.alpha).toBeLessThan(1);
-        expect(table.hairline).toBe(true);
-        const view = await paint(page, '#dashboard-layout.config-layout > .config-view');
-        expect(view.blur).toBe('none');
-        expect(view.hairline).toBe(false);
-    });
-});
-
-test.describe('the opening text of a tab is a pane too', () => {
-    const routes = [
-        ['#config/structure/categories', '.config-panel-note'],
-        ['#config/structure/finders', '.config-panel-note'],
-        ['#config/structure/pages', '.config-panel-note'],
-        ['#config/stats', '.config-tab-note'],
-        ['#config/widgets', '.config-tab-note'],
-        ['#config/containers', '.config-tab-note'],
-        ['#config/logs', '.config-view-intro'],
-    ];
-    for (const [hash, sel] of routes) {
-        test(`${hash}: the first paragraph sits in a pane`, async ({ page }) => {
-            await open(page, hash);
-            await page.waitForSelector('.config-view-body', { timeout: 20_000 });
-            await setSurface(page, 'glass');
-            const note = await page.evaluate((s) => {
-                const p = [...document.querySelectorAll(`.config-view-body ${s}`)]
-                    .find((el) => !el.closest('.config-panel, .config-widget'));
-                if (!p) return null;
-                const cs = getComputedStyle(p);
-                return { blur: cs.backdropFilter !== 'none', pad: parseFloat(cs.paddingLeft), radius: parseFloat(cs.borderTopLeftRadius) };
-            }, sel);
-            expect(note).not.toBeNull();
-            expect(note.blur).toBe(true);
-            expect(note.pad).toBeGreaterThan(8);
-            expect(note.radius).toBeGreaterThanOrEqual(8);
-        });
-    }
-});
-
-test.describe('config as one pane (data-config-panes="one")', () => {
+test.describe('config reads on its pane', () => {
     const view = '#dashboard-layout.config-layout > .config-view';
-    const one = (page) => page.evaluate(() => document.body.setAttribute('data-config-panes', 'one'));
+
+    test('what you set is white, help is a step lighter and as large as a note', async ({ page }) => {
+        await open(page, '#config/behavior');
+        await page.waitForSelector(`${view} .config-field-hint`, { timeout: 20_000 });
+        const read = await page.evaluate((v) => {
+            const primary = getComputedStyle(document.querySelector(v)).getPropertyValue('--text-primary').trim();
+            const probe = document.createElement('span');
+            probe.style.color = primary;
+            document.body.appendChild(probe);
+            const white = getComputedStyle(probe).color;
+            probe.remove();
+            const style = (sel) => {
+                const cs = getComputedStyle(document.querySelector(`${v} ${sel}`));
+                return { color: cs.color, size: parseFloat(cs.fontSize) };
+            };
+            return { white, label: style('.config-field-label'), nav: style('.config-nav-item:not(.is-active)'),
+                hint: style('.config-field-hint'), note: style('.config-panel-note'), kbd: style('kbd') };
+        }, view);
+        expect(read.label.color).toBe(read.white);
+        expect(read.nav.color).toBe(read.white);
+        expect(read.hint.color).not.toBe(read.white);
+        expect(read.hint.size).toBe(read.note.size);
+        expect(read.kbd.size).toBeGreaterThanOrEqual(12);
+    });
+});
+
+test.describe('config is one pane', () => {
+    const view = '#dashboard-layout.config-layout > .config-view';
 
     test('the whole config view is a single pane: glass, card, or a light frame under open', async ({ page }) => {
         await open(page, '#config/appearance');
         await page.waitForSelector(view, { timeout: 20_000 });
-        await one(page);
 
         await setSurface(page, 'glass');
         const glass = await paint(page, view);
@@ -130,6 +86,7 @@ test.describe('config as one pane (data-config-panes="one")', () => {
         expect(glass.alpha).toBeGreaterThan(0);
         expect(glass.alpha).toBeLessThan(1);
         expect(glass.hairline).toBe(true);
+        expect(parseFloat(glass.radius)).toBeGreaterThanOrEqual(8);
 
         await setSurface(page, 'card');
         const card = await paint(page, view);
@@ -143,24 +100,56 @@ test.describe('config as one pane (data-config-panes="one")', () => {
         expect(frame.hairline).toBe(true);
     });
 
-    test('the header is the top of the pane and the panels inside are not panes of their own', async ({ page }) => {
+    test('the header is the top of the pane at rest', async ({ page }) => {
         await open(page, '#config/structure');
         await page.waitForSelector('[data-structure-table]', { timeout: 20_000 });
-        await one(page);
         await setSurface(page, 'glass');
-        const head = await paint(page, '#dashboard-layout.config-layout > .config-view > .config-view-head');
+        const head = await paint(page, `${view} > .config-view-head`);
         expect(head.alpha).toBe(0);
+        expect(head.blur).toBe('none');
         expect(head.hairline).toBe(false);
-        const framed = await page.evaluate(() => [...document.querySelectorAll('#dashboard-layout.config-layout > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table):not(.config-panel--attention, .config-panel--danger)')]
-            .filter((el) => {
-                const cs = getComputedStyle(el);
-                const filtered = cs.backdropFilter && cs.backdropFilter !== 'none';
-                const slash = cs.backgroundColor.match(/\/\s*([\d.]+)\s*\)/);
-                const comma = cs.backgroundColor.match(/rgba\(([^)]+)\)/);
-                const alpha = slash ? parseFloat(slash[1]) : comma ? parseFloat(comma[1].split(',')[3]) : 1;
-                return filtered || alpha > 0 || /0px 0px 0px 1px inset|inset 0px 0px 0px 1px/.test(cs.boxShadow);
-            }).length);
-        expect(framed).toBe(0);
+    });
+
+    test('a block inside is tinted with a hairline, never a pane of its own', async ({ page }) => {
+        for (const hash of ['#config/overview', '#config/behavior', '#config/structure']) {
+            await open(page, hash);
+            await page.waitForSelector(`${view} :is(.config-panel, .config-widget, .config-crud-list--table)`, { timeout: 20_000 });
+            for (const surface of ['glass', 'card', 'open']) {
+                await setSurface(page, surface);
+                const blocks = await page.evaluate((v) => [...document.querySelectorAll(`${v} :is(.config-panel, .config-widget, .config-crud-list--table):not(.config-panel--attention, .config-panel--danger)`)]
+                    .filter((el) => !el.parentElement.closest('.config-panel, .config-widget, .config-crud-list--table'))
+                    .map((el) => {
+                        const cs = getComputedStyle(el);
+                        const slash = cs.backgroundColor.match(/\/\s*([\d.]+)\s*\)/);
+                        const comma = cs.backgroundColor.match(/rgba\(([^)]+)\)/);
+                        const alpha = slash ? parseFloat(slash[1]) : comma ? parseFloat(comma[1].split(',')[3]) : 1;
+                        return {
+                            alpha,
+                            blur: Boolean(cs.backdropFilter && cs.backdropFilter !== 'none'),
+                            hairline: /inset 0px 0px 0px 1px|0px 0px 0px 1px inset/.test(cs.boxShadow),
+                        };
+                    }), view);
+                expect(blocks.length, `${hash} ${surface}`).toBeGreaterThan(0);
+                for (const block of blocks) {
+                    expect(block.blur, `${hash} ${surface}`).toBe(false);
+                    expect(block.alpha, `${hash} ${surface}`).toBeGreaterThan(0);
+                    // A tint, not a pane: at most the 35% darkening on glass and open.
+                    expect(block.alpha, `${hash} ${surface}`).toBeLessThanOrEqual(0.36);
+                    expect(block.hairline, `${hash} ${surface}`).toBe(true);
+                }
+            }
+        }
+    });
+
+    test('scrolled, the header fills like the other views\' headers', async ({ page }) => {
+        await open(page, '#config/behavior');
+        await page.waitForSelector(`${view} .config-panel`, { timeout: 20_000 });
+        await setSurface(page, 'glass');
+        await page.mouse.wheel(0, 700);
+        await expect.poll(() => page.evaluate(() => document.body.dataset.scrolled)).toBe('true');
+        // Polled: the fill eases in over 0.18 s after data-scrolled flips.
+        await expect.poll(async () => (await paint(page, `${view} > .config-view-head`)).alpha)
+            .toBeGreaterThanOrEqual(0.85);
     });
 });
 
