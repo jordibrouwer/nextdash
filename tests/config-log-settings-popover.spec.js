@@ -161,11 +161,11 @@ test('the popover keeps clear of the sticky header when it can', async ({ page }
  * The height is tied to how tall the popover is, so it needs checking when the
  * panel grows a control: at 440 the popover fits under the header again and
  * this test then passes its assertion while proving nothing, which is what the
- * setup check below is for. Measured: it starts crossing at about 360 and
- * overlaps the header by roughly 40px here.
+ * setup check below is for. Measured on medium type, the default: 280 crosses
+ * the header by more than the 4px the setup check asks for.
  */
 test('a popover crossing the sticky header draws above it', async ({ page }) => {
-    await page.setViewportSize({ width: 1200, height: 320 });
+    await page.setViewportSize({ width: 1200, height: 280 });
     await openLogsWithGlass(page);
     const gearBtn = page.locator('[data-log-settings-toggle]');
     await gearBtn.scrollIntoViewIfNeeded();
