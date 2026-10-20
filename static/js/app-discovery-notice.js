@@ -208,28 +208,26 @@
     async function checkPending() {
         const d = dash();
         if (askedThisLoad || asking || !d?.settings || d.settings.discoverApps === false) return;
-        let data;
-        try {
-            const res = await fetch('/api/discovery', { cache: 'no-store' });
-            if (!res.ok) return;
-            data = await res.json();
-        } catch {
-            return;
-        }
-        if (!data.enabled || !data.cardDone || !(data.pending || []).length) return;
+        // Taken before the fetch: the start timer and a visibility check can
+        // both get this far, and only one of them may ask.
         asking = true;
         try {
+            const res = await fetch('/api/discovery', { cache: 'no-store' });
+            const data = res.ok ? await res.json() : null;
+            if (!data?.enabled || !data.cardDone || !(data.pending || []).length) {
+                asking = false;
+                return;
+            }
             await global.LazyScript.loadScriptOnce('js/app-discovery-card.js', 'appDiscoveryCardScript',
                 () => typeof global.AppDiscoveryCard === 'function');
+            const question = new global.AppDiscoveryCard(d, { mode: 'ask', onDone: (result) => {
+                asking = false;
+                if (result !== 'none') askedThisLoad = true;
+            } });
+            question.show(data);
         } catch {
             asking = false;
-            return;
         }
-        const question = new global.AppDiscoveryCard(d, { mode: 'ask', onDone: (result) => {
-            asking = false;
-            if (result !== 'none') askedThisLoad = true;
-        } });
-        question.show(data);
     }
 
     function check() {
