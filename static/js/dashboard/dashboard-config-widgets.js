@@ -2582,11 +2582,14 @@
             }
             // checkset: an absent list means all, which is the default for the
             // health widget's figures and reads better than every box ticked.
-            const chosen = Array.isArray(config[field.key]) ? config[field.key] : null;
+            // A field may name its own starting selection (`defaults`) when
+            // "everything" is not what the tile draws until it is told.
+            const chosen = Array.isArray(config[field.key]) ? config[field.key] : (field.defaults || null);
             const boxes = (field.options || []).map(([value, text]) => `
                 <label class="config-toggle config-toggle--inline">
                     <input type="checkbox" data-widget-setting="${esc(field.key)}"
                         data-widget-index="${index}" data-widget-kind="checkset"
+                        ${(field.defaults || []).includes(value) ? 'data-widget-default' : ''}
                         value="${esc(value)}" ${!chosen || chosen.includes(value) ? 'checked' : ''}>
                     <span>${esc(this.t(text[0], text[1]))}</span>
                 </label>`).join('');
@@ -3011,6 +3014,10 @@
             qbittorrent: 'Torrents in qBittorrent — progress, speed and time left — with the speeds on top.',
             homeassistant: 'Entities from Home Assistant per room — values, and lights, switches and scenes to switch.',
             sabnzbd: 'Downloads in SABnzbd — the queue and what finished last — with the speed on top.',
+            beszel: 'Every system in Beszel at a glance: whether it is up, how busy it is and how full its disks are.',
+            'beszel-system': 'One Beszel system in full: processor, memory and disk, with the last hour of load beside them.',
+            'beszel-attention': 'Only the Beszel systems that need a look — down, or running hot or full — or a line saying none do.',
+            'beszel-storage': 'The disks of every Beszel system, fullest first.',
             unraid: 'The Unraid server at a glance: array, parity, disks, alerts, VMs and the UPS, a line each.',
             unraidArray: 'Every disk of the Unraid array: how full, how warm, and which one is in trouble.',
             unraidParity: 'The last parity check, or the one running now, with its history when wide.',
@@ -3966,7 +3973,13 @@
             const boxes = [...container.querySelectorAll(
                 `[data-widget-setting="${CSS.escape(key)}"][data-widget-kind="checkset"]`)];
             const chosen = boxes.filter((box) => box.checked).map((box) => box.value);
-            value = chosen.length === boxes.length ? undefined : chosen;
+            // The starting selection is the same as saying nothing, too.
+            const starting = boxes.filter((box) => box.hasAttribute('data-widget-default')).map((box) => box.value);
+            const isStart = starting.length > 0 && chosen.length === starting.length
+                && chosen.every((v) => starting.includes(v));
+            // With a starting selection, "all ticked" is a choice of its own.
+            value = starting.length ? (isStart ? undefined : chosen)
+                : (chosen.length === boxes.length ? undefined : chosen);
         }
 
         if (value === undefined) delete draft.config[key];

@@ -215,7 +215,8 @@ test.describe('new widget kinds', () => {
         }, tag);
     }
 
-    const MEDIA = ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant'];
+    // In catalogue order: the System group (Beszel) comes before Media.
+    const MEDIA = ['beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant'];
 
     test('the media kinds lead the picker with a New badge', async ({ page }) => {
         await openWidgets(page);

@@ -1,0 +1,102 @@
+{
+  "items": [
+    {
+      "collectionId": "pbc_systems0001",
+      "collectionName": "systems",
+      "created": "2025-06-07 18:27:26.046Z",
+      "host": "10.0.0.10",
+      "id": "sys000000000001",
+      "info": {
+        "bb": 43540,
+        "cpu": 10.66,
+        "ct": 1,
+        "dp": 40.63,
+        "dt": 65.85,
+        "efs": {
+          "nvme1n1p1": 12.16
+        },
+        "jl": false,
+        "la": [
+          1.89,
+          2.05,
+          1.79
+        ],
+        "mp": 26.88,
+        "os": 0,
+        "p": false,
+        "t": 12,
+        "u": 1673687,
+        "v": "0.21.0"
+      },
+      "name": "nas",
+      "port": "45876",
+      "status": "down",
+      "updated": "2026-10-19 20:26:12.662Z",
+      "users": [
+        "usr000000000001"
+      ]
+    },
+    {
+      "collectionId": "pbc_systems0001",
+      "collectionName": "systems",
+      "created": "2026-10-08 16:51:56.925Z",
+      "host": "10.0.0.11",
+      "id": "sys000000000002",
+      "info": {
+        "bb": 5219,
+        "cpu": 0.85,
+        "ct": 1,
+        "dp": 12.67,
+        "la": [
+          0,
+          0,
+          0
+        ],
+        "mp": 52.65,
+        "t": 2,
+        "u": 617005,
+        "v": "0.21.0"
+      },
+      "name": "htpc",
+      "port": "45876",
+      "status": "up",
+      "updated": "2026-10-20 16:26:35.151Z",
+      "users": [
+        "usr000000000001"
+      ]
+    },
+    {
+      "collectionId": "pbc_systems0001",
+      "collectionName": "systems",
+      "created": "2026-09-21 15:24:22.669Z",
+      "host": "10.0.0.12",
+      "id": "sys000000000003",
+      "info": {
+        "bb": 210,
+        "cpu": 0.11,
+        "ct": 2,
+        "dp": 49.83,
+        "la": [
+          1,
+          1,
+          1
+        ],
+        "mp": 7.73,
+        "t": 4,
+        "u": 18561,
+        "v": "0.20.0"
+      },
+      "name": "pihole",
+      "port": "45876",
+      "status": "up",
+      "updated": "2026-10-20 16:26:54.221Z",
+      "users": [
+        "usr000000000001"
+      ]
+    }
+  ],
+  "page": 1,
+  "perPage": 200,
+  "totalItems": 3,
+  "totalPages": 1
+}

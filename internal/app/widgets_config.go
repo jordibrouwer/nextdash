@@ -293,10 +293,14 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "ttl", Kind: "int", Min: customWidgetMinTTL, Max: customWidgetMaxTTL},
 		{Key: "itemsPath", Kind: "string", MaxLen: widgetMaxPathLen},
 	},
-	WidgetTypeSonarr:      arrWidgetFields(),
-	WidgetTypeRadarr:      arrWidgetFields(),
-	WidgetTypeQBittorrent: downloadWidgetFields(),
-	WidgetTypeSABnzbd:     downloadWidgetFields(),
+	WidgetTypeSonarr:          arrWidgetFields(),
+	WidgetTypeRadarr:          arrWidgetFields(),
+	WidgetTypeQBittorrent:     downloadWidgetFields(),
+	WidgetTypeSABnzbd:         downloadWidgetFields(),
+	WidgetTypeBeszel:          beszelFieldsFor(WidgetTypeBeszel),
+	WidgetTypeBeszelSystem:    beszelFieldsFor(WidgetTypeBeszelSystem),
+	WidgetTypeBeszelAttention: beszelFieldsFor(WidgetTypeBeszelAttention),
+	WidgetTypeBeszelStorage:   beszelFieldsFor(WidgetTypeBeszelStorage),
 	WidgetTypeHomeAssistant: {
 		{Key: "server", Kind: "url"},
 		{Key: "credentialId", Kind: "string"},
@@ -681,6 +685,7 @@ func widgetTypeNames() []string {
 		WidgetTypeUnraidVMs, WidgetTypeUnraidUPS, WidgetTypeUnraidNotifications,
 		WidgetTypeJellyfin, WidgetTypeJellyfinPlaying, WidgetTypeEmby, WidgetTypeEmbyPlaying, WidgetTypePlex, WidgetTypePlexPlaying, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr,
 		WidgetTypeQBittorrent, WidgetTypeSABnzbd, WidgetTypeHomeAssistant,
+		WidgetTypeBeszel, WidgetTypeBeszelSystem, WidgetTypeBeszelAttention, WidgetTypeBeszelStorage,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone
 		// to build by hand what is two entries above it.

@@ -153,6 +153,12 @@ const (
 	// is busy with: progress, speed and time left, with totals on top.
 	WidgetTypeQBittorrent WidgetType = "qbittorrent"
 	WidgetTypeSABnzbd     WidgetType = "sabnzbd"
+	// The Beszel types read one hub four ways: every system, one system, only
+	// what needs a look, and every disk.
+	WidgetTypeBeszel          WidgetType = "beszel"
+	WidgetTypeBeszelSystem    WidgetType = "beszel-system"
+	WidgetTypeBeszelAttention WidgetType = "beszel-attention"
+	WidgetTypeBeszelStorage   WidgetType = "beszel-storage"
 	// WidgetTypeHomeAssistant shows chosen entities per room and switches a
 	// safe few of them.
 	WidgetTypeHomeAssistant WidgetType = "homeassistant"
@@ -213,6 +219,10 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeEmbyPlaying:     {},
 	WidgetTypePlex:            {},
 	WidgetTypePlexPlaying:     {},
+	WidgetTypeBeszel:          {},
+	WidgetTypeBeszelSystem:    {},
+	WidgetTypeBeszelAttention: {},
+	WidgetTypeBeszelStorage:   {},
 
 	WidgetTypeUnraid:              {},
 	WidgetTypeUnraidArray:         {},

@@ -80,6 +80,8 @@
     };
 
     const ERROR_WORDS = {
+        'system gone': 'systemGone',
+        'no systems': 'noSystems',
         'not set up': 'notSetUp',
         'address not allowed': 'notAllowed',
         'key refused': 'refused',
@@ -97,6 +99,10 @@
      * A download client adds { art: false, keepOrder: true, minTtl, ttl }: no
      * pictures, the client's own order (its sort is a setting), and a faster
      * refresh than the minute a library needs.
+     *
+     * A service whose answer is not a list of titles (Beszel's meters) adds
+     * draw(wrap, dash, widget, items, result): it draws the answer itself,
+     * empty answers included, and the layouts above are not used.
      */
     function register(service) {
         services[service.id] = service;
@@ -287,6 +293,39 @@
         bar.className = 'media-progress';
         bar.style.setProperty('--p', String(share));
         bar.setAttribute('role', 'progressbar');
+        bar.setAttribute('aria-valuemin', '0');
+        bar.setAttribute('aria-valuemax', '100');
+        bar.setAttribute('aria-valuenow', String(Math.round(share * 100)));
+        return bar;
+    }
+
+    /*
+     * How full something is, for the tiles that read a machine rather than a
+     * library. Beszel was the first; anything else that reports a percentage
+     * (a disk, a load) draws through the same two helpers.
+     *
+     * The tone follows the number alone: below `warn` is quiet, from `warn` is
+     * a warning, from `bad` is an error. A missing value has no tone and no
+     * bar -- unknown is not zero, and a bar at nought would say "fine".
+     */
+    function meterTone(value, warn, bad) {
+        const n = Number(value);
+        if (value === null || value === undefined || value === '' || !Number.isFinite(n)) return '';
+        if (n >= bad) return 'bad';
+        if (n >= warn) return 'warn';
+        return 'good';
+    }
+
+    /** A bar for a percentage (0..100), toned by the thresholds; null when unknown. */
+    function meterBar(value, warn, bad) {
+        const tone = meterTone(value, warn, bad);
+        if (!tone) return null;
+        const share = Math.min(1, Math.max(0, Number(value) / 100));
+        const bar = document.createElement('span');
+        bar.className = 'media-meter';
+        bar.dataset.tone = tone;
+        bar.style.setProperty('--p', String(share));
+        bar.setAttribute('role', 'meter');
         bar.setAttribute('aria-valuemin', '0');
         bar.setAttribute('aria-valuemax', '100');
         bar.setAttribute('aria-valuenow', String(Math.round(share * 100)));
@@ -738,6 +777,18 @@
             sayIn(body, 'dashboard-widget-empty', errorText(dash, widget, result.error));
             return;
         }
+        if (typeof service.draw === 'function') {
+            const utils = window.DashboardWidgetUtils;
+            const wrap = utils?.panel ? utils.panel(body) : (body.replaceChildren(), body);
+            wrap.classList.add('media-panel');
+            service.draw(wrap, dash, widget, items, result);
+            if (focused) wrap.querySelector(focused)?.focus({ preventScroll: true });
+            if (result.stale) {
+                wrap.appendChild(textBlock('p', 'media-stale',
+                    `${errorText(dash, widget, result.error)} · ${agoText(dash, widget, result.fetchedAt)}`));
+            }
+            return;
+        }
         const chosen = widget?.config?.layout || service.defaultLayout;
         const layout = LAYOUTS[chosen] ? chosen : 'list';
         const totals = result.totals && widget?.config?.hideTotals !== true
@@ -767,6 +818,14 @@
         register,
         targetFor,
         formatBytes,
+        meterTone,
+        meterBar,
+        // For services that draw their own answer (see register's draw).
+        say,
+        agoText,
+        textBlock,
+        wideOnly,
+        itemButton,
         openDetail: (...args) => openDetail(...args),
     };
 })();

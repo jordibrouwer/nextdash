@@ -2,12 +2,14 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -106,5 +108,32 @@ func TestMediaRequestSignsInAgain(t *testing.T) {
 	}
 	if err := ask("wrong"); !errors.Is(err, errMediaRefused) {
 		t.Errorf("wrong password gave %v, want key refused", err)
+	}
+}
+
+// Meters and Counts are for Beszel only: every other media tile's JSON stays
+// exactly what it was, key for key, so no tile gains a field it never reads.
+func TestMediaJSONWithoutMetersOrCountsIsUnchanged(t *testing.T) {
+	raw, err := json.Marshal(MediaResult{
+		Items:     []MediaItem{{ID: "a", Title: "A", Kind: "movie", Library: "L", LibraryID: "l", AddedAt: 5, OpenURL: "http://x"}},
+		Libraries: []MediaGroup{{ID: "l", Name: "L"}},
+		FetchedAt: 9,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `{"items":[{"id":"a","title":"A","kind":"movie","library":"L","libraryId":"l","addedAt":5,"openUrl":"http://x"}],"libraries":[{"id":"l","name":"L"}],"fetchedAt":9}`
+	if string(raw) != want {
+		t.Errorf("json changed:\n got %s\nwant %s", raw, want)
+	}
+}
+
+// A reading of zero is a reading: a pointer, so omitempty drops only what is
+// unknown and never a quiet 0 % cpu.
+func TestMediaMetersKeepAZeroAndDropTheUnknown(t *testing.T) {
+	zero := 0.0
+	raw, _ := json.Marshal(MediaItem{Meters: &MediaMeters{Status: "up", CPU: &zero}})
+	if !strings.Contains(string(raw), `"meters":{"status":"up","cpu":0}`) {
+		t.Errorf("meters: %s", raw)
 	}
 }

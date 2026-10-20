@@ -299,6 +299,87 @@
         },
     };
 
+    /*
+     * Beszel: a hub (PocketBase) that signs in with an email and a password and
+     * answers with a token, sent as it is in Authorization. Connect lists the
+     * systems; four widgets read them and share this panel.
+     *
+     * The systems are plain widget settings like Jellyfin's libraries: ticked
+     * boxes, and all of them ticked is stored as nothing, which the server
+     * reads as "every system" -- so one added to the hub later shows up.
+     * The single-system widget picks one instead.
+     */
+    const beszelSystems = (setup) => (Array.isArray(setup.systems) ? setup.systems : []);
+
+    function beszelMany(panel, widget, index, setup, config, esc) {
+        const chosen = Array.isArray(config.systems) ? config.systems : null;
+        const boxes = beszelSystems(setup).map((system) => `
+            <label class="config-toggle config-toggle--inline">
+                <input type="checkbox" data-widget-setting="systems" data-widget-index="${index}"
+                    data-widget-kind="checkset" value="${esc(system.id)}"
+                    ${!chosen || chosen.includes(system.id) ? 'checked' : ''}>
+                <span>${esc(system.name)}</span>
+            </label>`).join('');
+        return `
+            <div class="config-widget-field">
+                <span class="config-widget-field-label">${esc(panel.t('config.widgetBeszelSystems', 'Systems'))}</span>
+                <div class="config-widget-checkset">${boxes}</div>
+            </div>`;
+    }
+
+    function beszelOne(panel, widget, index, setup, config, esc) {
+        const chosen = String(config.system || '');
+        const none = `<option value="" ${chosen ? '' : 'selected'}>${esc(panel.t(
+            'config.widgetBeszelChooseSystem', 'Choose a system'))}</option>`;
+        const options = none + beszelSystems(setup).map((system) => `<option value="${esc(system.id)}" ${
+            system.id === chosen ? 'selected' : ''}>${esc(system.name)}</option>`).join('');
+        return `
+            <div class="config-widget-field">
+                <label for="widget-${index}-media-system">${esc(panel.t('config.widgetBeszelSystem', 'System'))}</label>
+                <select id="widget-${index}-media-system" class="config-select" data-widget-setting="system"
+                    data-widget-index="${index}" data-widget-kind="text">${options}</select>
+            </div>`;
+    }
+
+    // A system the hub no longer has is dropped rather than kept as a choice
+    // nobody can see. Every one gone reads as "all", which is what is left.
+    function beszelManyConnected(draft, answer) {
+        if (!Array.isArray(draft.config.systems)) return;
+        const known = beszelSystems(answer).map((system) => system.id);
+        const kept = draft.config.systems.filter((id) => known.includes(id));
+        if (kept.length) draft.config.systems = kept; else delete draft.config.systems;
+    }
+
+    function beszelOneConnected(draft, answer) {
+        if (draft.config.system && !beszelSystems(answer).some((system) => system.id === draft.config.system)) {
+            delete draft.config.system;
+        }
+    }
+
+    Config.MEDIA_SERVICES.beszel = {
+        id: 'beszel',
+        name: 'Beszel',
+        placeholder: 'http://beszel.local:8090',
+        auth: { kind: 'session', session: {
+            loginPath: '/api/collections/users/auth-with-password', userField: 'identity', passField: 'password',
+            format: 'json', tokenPath: 'token', tokenHeader: 'Authorization', tokenPrefix: '' } },
+        words: {
+            user: ['config.widgetBeszelUser', 'Email'],
+            'key refused': ['config.widgetBeszelErrorSignIn', 'Beszel refused that sign-in.'],
+        },
+        choices: beszelMany,
+        connected: beszelManyConnected,
+    };
+    Config.MEDIA_SERVICES['beszel-attention'] = { ...Config.MEDIA_SERVICES.beszel, id: 'beszel-attention', setup: 'beszel' };
+    Config.MEDIA_SERVICES['beszel-storage'] = { ...Config.MEDIA_SERVICES.beszel, id: 'beszel-storage', setup: 'beszel' };
+    Config.MEDIA_SERVICES['beszel-system'] = {
+        ...Config.MEDIA_SERVICES.beszel,
+        id: 'beszel-system',
+        setup: 'beszel',
+        choices: beszelOne,
+        connected: beszelOneConnected,
+    };
+
     const SHARED_WORDS = {
         server: ['config.widgetMediaServer', 'Address'],
         key: ['config.widgetMediaKey', 'API key'],
@@ -563,7 +644,8 @@
         } else if (setup) {
             // The server's own name ("Home"), not the product's.
             status = this.mediaWord(service, 'connected', setup.serverName || service.name)
-                .replace('{version}', setup.version || '');
+                // Beszel has no version to give; it says how many systems it found.
+                .replace('{version}', setup.version || setup.connected || '');
         }
 
         let choices = '';

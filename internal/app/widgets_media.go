@@ -48,12 +48,13 @@ var (
 	errMediaUnreachable = errors.New("unreachable")
 	errMediaNoLibraries = errors.New("no libraries")
 	errMediaNoEntities  = errors.New("no entities")
+	errMediaSystemGone  = errors.New("system gone")
 )
 
 // mediaErrorCode is what the tile is told: a short code it can word, never
 // the wrapped detail, which may name an internal address.
 func mediaErrorCode(err error) string {
-	for _, known := range []error{errMediaNotSetUp, errMediaNotAllowed, errMediaRefused, errMediaNoLibraries, errMediaNoEntities} {
+	for _, known := range []error{errMediaNotSetUp, errMediaNotAllowed, errMediaRefused, errMediaNoLibraries, errMediaNoEntities, errMediaSystemGone} {
 		if errors.Is(err, known) {
 			return known.Error()
 		}
@@ -109,6 +110,47 @@ type MediaItem struct {
 	Method    string `json:"method,omitempty"`
 	Paused    bool   `json:"paused,omitempty"`
 	Remaining int64  `json:"remaining,omitempty"`
+	// Meters is what a machine reads: set only by the Beszel tiles.
+	Meters *MediaMeters `json:"meters,omitempty"`
+}
+
+/*
+MediaMeters is one machine as a monitoring tile draws it.
+
+Every figure is a pointer or a list so that a reading the agent did not send
+is absent rather than a quiet zero: an old agent has no temperature, and a
+tile that draws 0 degrees for it says something false. A system that is not up
+carries Status and nothing else -- Beszel keeps the last values on a system
+that went down, and showing them as current would be the one lie this tile
+exists to avoid.
+*/
+type MediaMeters struct {
+	// Status is up, down, paused or pending.
+	Status string `json:"status"`
+	// CPU, Mem and Disk (the root filesystem) and GPU are percentages; Temp is
+	// degrees Celsius.
+	CPU  *float64 `json:"cpu,omitempty"`
+	Mem  *float64 `json:"mem,omitempty"`
+	Disk *float64 `json:"disk,omitempty"`
+	Temp *float64 `json:"temp,omitempty"`
+	GPU  *float64 `json:"gpu,omitempty"`
+	// Load is the 1, 5 and 15 minute averages.
+	Load []float64 `json:"load,omitempty"`
+	// Net is bytes a second; Uptime seconds.
+	Net    *int64 `json:"net,omitempty"`
+	Uptime int64  `json:"uptime,omitempty"`
+	Agent  string `json:"agent,omitempty"`
+	// Fs is every filesystem the agent reports, the root first.
+	Fs []MediaFs `json:"fs,omitempty"`
+	// Spark is the last hour of cpu, a point a minute, oldest first. Set only
+	// for the single-system tile.
+	Spark []float64 `json:"spark,omitempty"`
+}
+
+// MediaFs is one filesystem and how full it is, in percent.
+type MediaFs struct {
+	Name string  `json:"name"`
+	Pct  float64 `json:"pct"`
 }
 
 // MediaTotals is the line on top of a download tile: the speeds of the
@@ -142,6 +184,9 @@ type MediaResult struct {
 	Partial bool `json:"partial,omitempty"`
 	// Totals is set by a download client only.
 	Totals *MediaTotals `json:"totals,omitempty"`
+	// Counts is how many systems are up, down, paused and pending, over every
+	// system the tile chose; set by the Beszel tiles only.
+	Counts map[string]int `json:"counts,omitempty"`
 	// Controls says this reader may switch things. Set per request, after
 	// the shared cache: never stored with the answer.
 	Controls bool `json:"controls,omitempty"`

@@ -280,3 +280,21 @@
     cursor: pointer;
 }
 .config-ha-chips .config-chip.is-active { border-color: var(--accent-primary, #3d8bd0); }
+
+/*
+ * A percentage meter, shared by the tiles that read a machine (Beszel). --p is
+ * the share, 0..1; data-tone picks the colour from how close it is to its
+ * limit, so the colour is never a second opinion about the number.
+ */
+.media-meter {
+    --meter-color: var(--accent-primary);
+    display: block;
+    flex: 1 1 auto;
+    min-width: 1.5rem;
+    height: 5px;
+    border-radius: var(--radius-pill, 999px);
+    background: linear-gradient(to right, var(--meter-color) calc(var(--p, 0) * 100%),
+        color-mix(in srgb, currentColor 15%, transparent) 0);
+}
+.media-meter[data-tone="warn"] { --meter-color: var(--accent-warning); }
+.media-meter[data-tone="bad"] { --meter-color: var(--accent-error); }

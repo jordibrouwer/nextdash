@@ -1,0 +1,347 @@
+{
+  "items": [
+    {
+      "collectionId": "pbc_stats000001",
+      "collectionName": "system_stats",
+      "created": "2026-07-06 10:47:11.019Z",
+      "id": "st0000000000001",
+      "stats": {
+        "b": [
+          26876,
+          48891
+        ],
+        "cpu": 14.75,
+        "cpub": [
+          9.78,
+          4.91,
+          0.43,
+          0,
+          84.82
+        ],
+        "cpus": [
+          2,
+          1,
+          2,
+          2,
+          27,
+          35,
+          24,
+          33,
+          14,
+          13,
+          10,
+          13
+        ],
+        "d": 225,
+        "dio": [
+          341,
+          262557
+        ],
+        "dios": [
+          0,
+          1.49,
+          0.16,
+          0,
+          0.91,
+          1.55
+        ],
+        "dp": 34.52,
+        "du": 76.06,
+        "dw": 0.25,
+        "efs": {
+          "nvme1n1p1": {
+            "d": 3726.03,
+            "dios": [
+              0,
+              27.84,
+              0.7,
+              1,
+              11.65,
+              28.14
+            ],
+            "du": 360.55,
+            "r": 0,
+            "rb": 273,
+            "w": 0.51,
+            "wb": 535014
+          }
+        },
+        "la": [
+          2.46,
+          2.08,
+          2.13
+        ],
+        "m": 62.56,
+        "mb": 40.13,
+        "mp": 21.91,
+        "mu": 13.71,
+        "ni": {
+          "br0": [
+            9279,
+            21513,
+            1527268281285,
+            1283532496146
+          ],
+          "eth0": [
+            9266,
+            20922,
+            1469918662250,
+            1236452792609
+          ]
+        },
+        "t": {
+          "acpitz": 27.8,
+          "coretemp_core_0": 55,
+          "coretemp_core_10": 56,
+          "coretemp_core_11": 56,
+          "coretemp_core_12": 53,
+          "coretemp_core_13": 53,
+          "coretemp_core_14": 53,
+          "coretemp_core_15": 53,
+          "coretemp_core_4": 54,
+          "coretemp_core_8": 56,
+          "coretemp_core_9": 56,
+          "coretemp_package_id_0": 67,
+          "eth0_mac_temperature": 60,
+          "eth0_phy_temperature": 60,
+          "eth1_mac_temperature": 59,
+          "eth1_phy_temperature": 59,
+          "nvme_composite": 47.85,
+          "nvme_composite_4": 48.85,
+          "nvme_sensor_1": 47.85,
+          "nvme_sensor_1_5": 69.85,
+          "nvme_sensor_2": 62.85,
+          "nvme_sensor_2_6": 45.85,
+          "nvme_sensor_8": 47.85
+        }
+      },
+      "system": "sys000000000001",
+      "type": "1m",
+      "updated": "2026-07-06 10:47:11.019Z"
+    },
+    {
+      "collectionId": "pbc_stats000001",
+      "collectionName": "system_stats",
+      "created": "2026-09-14 14:20:55.107Z",
+      "id": "st0000000000002",
+      "stats": {
+        "b": [
+          195288,
+          69445
+        ],
+        "cpu": 12.13,
+        "cpub": [
+          3.84,
+          8.19,
+          0.15,
+          0,
+          87.72
+        ],
+        "cpum": 0,
+        "cpus": [
+          11,
+          6,
+          12,
+          4,
+          18,
+          17,
+          15,
+          14,
+          13,
+          13,
+          12,
+          11
+        ],
+        "d": 225,
+        "dio": [
+          59051,
+          274368
+        ],
+        "dios": [
+          0.14,
+          1.86,
+          0.57,
+          0.95,
+          1,
+          2.49
+        ],
+        "diot": [
+          840032567296,
+          2192185991168
+        ],
+        "dp": 39.97,
+        "dr": 0.06,
+        "drm": 0,
+        "du": 88.49,
+        "dw": 0.26,
+        "dwm": 0,
+        "efs": {
+          "nvme0n1p1": {
+            "d": 3726.03,
+            "dios": [
+              0.03,
+              19.49,
+              1.13,
+              0.43,
+              3.44,
+              19.76
+            ],
+            "du": 378.22,
+            "r": 0.02,
+            "rb": 19046,
+            "rbm": 0,
+            "rm": 0,
+            "tr": 2957055194112,
+            "tw": 5158116941824,
+            "w": 1,
+            "wb": 1047842,
+            "wbm": 0,
+            "wm": 0
+          }
+        },
+        "la": [
+          2.17,
+          2.03,
+          3.56
+        ],
+        "m": 62.56,
+        "mb": 33.95,
+        "mm": 0,
+        "mp": 32.39,
+        "mu": 20.26,
+        "mz": 0,
+        "ni": {
+          "br0": [
+            62703,
+            7663,
+            1821870868384,
+            1571338376883
+          ],
+          "eth0": [
+            62964,
+            7059,
+            1755361586223,
+            1517713215986
+          ]
+        },
+        "nrm": 0,
+        "nsm": 0,
+        "s": 0,
+        "su": 0,
+        "t": {
+          "acpitz": 27.8,
+          "coretemp_core_0": 56,
+          "coretemp_core_10": 55,
+          "coretemp_core_11": 57,
+          "coretemp_core_12": 52,
+          "coretemp_core_13": 52,
+          "coretemp_core_14": 52,
+          "coretemp_core_15": 52,
+          "coretemp_core_4": 55,
+          "coretemp_core_8": 55,
+          "coretemp_core_9": 55,
+          "coretemp_package_id_0": 64,
+          "eth0_mac_temperature": 59,
+          "eth0_phy_temperature": 59,
+          "eth1_mac_temperature": 57,
+          "eth1_phy_temperature": 57,
+          "nvme_composite": 45.85,
+          "nvme_composite_4": 47.85,
+          "nvme_sensor_1": 45.85,
+          "nvme_sensor_1_5": 68.85,
+          "nvme_sensor_2": 61.85,
+          "nvme_sensor_2_6": 43.85,
+          "nvme_sensor_8": 46.85
+        }
+      },
+      "system": "sys000000000001",
+      "type": "1m",
+      "updated": "2026-09-14 14:20:55.107Z"
+    },
+    {
+      "collectionId": "pbc_stats000001",
+      "collectionName": "system_stats",
+      "created": "2026-09-24 10:06:59.490Z",
+      "id": "st0000000000003",
+      "stats": {
+        "b": [
+          367,
+          446
+        ],
+        "cpu": 0.48,
+        "cpub": [
+          0.3,
+          0.12,
+          0.04,
+          0.05,
+          99.47
+        ],
+        "cpum": 0,
+        "cpus": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "d": 18.01,
+        "dio": [
+          0,
+          7168
+        ],
+        "dios": [
+          0,
+          0.25,
+          0.16,
+          0,
+          1.55,
+          0.25
+        ],
+        "diot": [
+          2693131264,
+          42563035136
+        ],
+        "dp": 43.63,
+        "drm": 0,
+        "du": 7.45,
+        "dw": 0.01,
+        "dwm": 0,
+        "la": [
+          1,
+          1,
+          1
+        ],
+        "m": 7.25,
+        "mb": 5.87,
+        "mm": 0,
+        "mp": 13.27,
+        "mu": 0.96,
+        "mz": 0,
+        "ni": {
+          "br0": [
+            22,
+            12,
+            13723990,
+            10767962
+          ],
+          "eth0": [
+            345,
+            434,
+            174641082,
+            2185739838
+          ]
+        },
+        "nrm": 0,
+        "nsm": 0,
+        "s": 0,
+        "su": 0
+      },
+      "system": "sys000000000003",
+      "type": "1m",
+      "updated": "2026-09-24 10:06:59.490Z"
+    }
+  ],
+  "page": 1,
+  "perPage": 60,
+  "totalItems": 3,
+  "totalPages": 1
+}

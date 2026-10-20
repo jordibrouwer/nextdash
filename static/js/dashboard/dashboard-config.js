@@ -18700,7 +18700,7 @@ class DashboardConfig {
         ['links', ['health', 'uptime', 'certs', 'trend']],
         ['incoming', ['inbox', 'unsorted', 'feeds', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
-        ['system', ['cpu', 'memory', 'disks', 'docker', 'containers']],
+        ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'notes']],
         ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
@@ -20894,7 +20894,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -21015,6 +21015,53 @@ class DashboardConfig {
         ...DashboardConfig.ARR_SETTINGS.filter((field) => ['click', 'target', 'rows'].includes(field.key)),
         { key: 'ttl', kind: 'int', min: 15, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
     ];
+
+    /**
+     * The Beszel widgets, mirroring beszelWidgetFields in widgets_beszel.go.
+     * Which systems (or which one) is chosen after Connect, so the media panel
+     * draws that; what is left here is what the four share and what only some
+     * of them have. Each type gets the settings its tile reads and no others.
+     */
+    static BESZEL_METERS = {
+        key: 'meters', kind: 'checkset', label: ['config.widgetBeszelMeters', 'Figures to show'],
+        // Unticked at the start: the tile's own four, not every box.
+        defaults: ['cpu', 'mem', 'disk', 'temp'],
+        options: [
+            ['cpu', ['config.widgetBeszelMeterCpu', 'Processor']],
+            ['mem', ['config.widgetBeszelMeterMem', 'Memory']],
+            ['disk', ['config.widgetBeszelMeterDisk', 'Disk']],
+            ['temp', ['config.widgetBeszelMeterTemp', 'Temperature']],
+            ['gpu', ['config.widgetBeszelMeterGpu', 'Graphics card']],
+            ['net', ['config.widgetBeszelMeterNet', 'Network']],
+            ['load', ['config.widgetBeszelMeterLoad', 'Load']],
+        ],
+    };
+
+    static BESZEL_HIDE_PAUSED = {
+        key: 'hidePaused', kind: 'bool', label: ['config.widgetBeszelHidePaused', 'Leave out paused systems'],
+    };
+
+    static BESZEL_TAIL = [
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => ['click', 'target'].includes(field.key)),
+        { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetMediaRows', 'Items to show'] },
+        { key: 'ttl', kind: 'int', min: 30, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
+    ];
+
+    static BESZEL_SETTINGS = [
+        { key: 'sort', kind: 'choice', label: ['config.widgetBeszelSort', 'Order'],
+          options: [
+              ['name', ['config.widgetBeszelSortName', 'By name']],
+              ['heaviest', ['config.widgetBeszelSortHeaviest', 'Busiest first']],
+              ['status', ['config.widgetBeszelSortStatus', 'Trouble first']],
+          ] },
+        DashboardConfig.BESZEL_HIDE_PAUSED,
+        DashboardConfig.BESZEL_METERS,
+        ...DashboardConfig.BESZEL_TAIL,
+    ];
+
+    static BESZEL_SYSTEM_SETTINGS = [DashboardConfig.BESZEL_METERS, ...DashboardConfig.BESZEL_TAIL];
+    static BESZEL_ATTENTION_SETTINGS = [DashboardConfig.BESZEL_HIDE_PAUSED, ...DashboardConfig.BESZEL_TAIL];
+    static BESZEL_STORAGE_SETTINGS = [...DashboardConfig.BESZEL_TAIL];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -21277,6 +21324,10 @@ class DashboardConfig {
         'jellyfin-playing': DashboardConfig.JELLYFIN_PLAYING_SETTINGS,
         'emby-playing': DashboardConfig.JELLYFIN_PLAYING_SETTINGS,
         'plex-playing': DashboardConfig.JELLYFIN_PLAYING_SETTINGS,
+        beszel: DashboardConfig.BESZEL_SETTINGS,
+        'beszel-system': DashboardConfig.BESZEL_SYSTEM_SETTINGS,
+        'beszel-attention': DashboardConfig.BESZEL_ATTENTION_SETTINGS,
+        'beszel-storage': DashboardConfig.BESZEL_STORAGE_SETTINGS,
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
               label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },
