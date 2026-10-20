@@ -731,7 +731,7 @@ type Settings struct {
 	 */
 	FavoriteThemes              []string                   `json:"favoriteThemes,omitempty"`
 	DensityMode                 string                     `json:"densityMode"`                       // Dashboard density mode: comfortable, compact, dense
-	CategorySpacing             string                     `json:"categorySpacing"`                   // Vertical space between category rows: snug, balanced, airy
+	CategorySpacing             string                     `json:"categorySpacing"`                   // Vertical space between category rows: theme (follow the theme), snug, balanced, airy
 	ColumnSpacing               string                     `json:"columnSpacing"`                     // Horizontal space between columns on the dashboard: theme (follow the theme), snug, balanced, airy
 	SideMargin                  string                     `json:"sideMargin"`                        // Left/right page margin on the dashboard: snug, balanced, airy
 	PackedColumns               bool                       `json:"packedColumns"`                     // Stack categories in vertical columns (round-robin) to reduce empty space
@@ -4475,7 +4475,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowCategoryIcon:                true,
 			BackgroundPattern:               "auto",
 			DensityMode:                     "auto",
-			CategorySpacing:                 "balanced",
+			CategorySpacing:                 "theme",
 			ColumnSpacing:                   "theme",
 			SideMargin:                      "balanced",
 			PackedColumns:                   true,
@@ -5199,8 +5199,8 @@ func (fs *FileStore) GetSettings() Settings {
 		// Distinct from densityMode, which sizes bookmark rows: this is the gap
 		// between category rows. "balanced" is a deliberate reduction from the
 		// old fixed 3rem, which left a visible band of nothing on wide pages.
-		if _, ok := rawSettings["categorySpacing"]; !ok || (settings.CategorySpacing != "snug" && settings.CategorySpacing != "balanced" && settings.CategorySpacing != "airy") {
-			settings.CategorySpacing = "balanced"
+		if _, ok := rawSettings["categorySpacing"]; !ok || (settings.CategorySpacing != "theme" && settings.CategorySpacing != "snug" && settings.CategorySpacing != "balanced" && settings.CategorySpacing != "airy") {
+			settings.CategorySpacing = "theme"
 		}
 		// The room between columns, the horizontal counterpart of the one above.
 		if _, ok := rawSettings["columnSpacing"]; !ok || (settings.ColumnSpacing != "theme" && settings.ColumnSpacing != "snug" && settings.ColumnSpacing != "balanced" && settings.ColumnSpacing != "airy") {

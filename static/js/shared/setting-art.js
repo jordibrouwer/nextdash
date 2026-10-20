@@ -45,12 +45,14 @@
 
     /** Three category blocks with the gap the chosen spacing gives them. */
     function spacing(level) {
+        if (level === 'theme') level = 'balanced'; // what most themes ask for
         const rows = ['', '', ''].map(() => `<span class="setting-art-band"></span>`).join('');
         return frame(`<span class="setting-art-stack is-${level}">${rows}</span>`, 'setting-art-frame--stack');
     }
 
     /** Three columns with the room the chosen spacing leaves between them. */
     function columnGap(level) {
+        if (level === 'theme') level = 'balanced';
         return frame(
             `<span class="setting-art-cols is-${level}">${col(3)}${col(3)}${col(3)}</span>`,
             'setting-art-frame--cols'

@@ -120,7 +120,7 @@ class Dashboard {
             categorySortModesMigrated: true,
             layoutPreset: 'masonry',
             densityMode: 'auto',
-            categorySpacing: 'balanced',
+            categorySpacing: 'theme',
             columnSpacing: 'theme',
             sideMargin: 'balanced',
             packedColumns: true,

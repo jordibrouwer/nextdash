@@ -32,11 +32,27 @@ const rowGap = (page) => page.evaluate(() =>
     getComputedStyle(document.querySelector('.dashboard-grid')).rowGap);
 
 test.describe('category spacing', () => {
-    test('defaults to balanced, which is tighter than the old fixed gap', async ({ page }) => {
+    test('defaults to following the theme: balanced, tighter than the old fixed gap', async ({ page }) => {
         await loadDashboard(page);
-        expect(await page.evaluate(() => document.body.getAttribute('data-category-spacing'))).toBe('balanced');
+        const set = (theme) => page.evaluate(async (t) => {
+            const d = window.dashboardInstance;
+            d.settings.categorySpacing = 'theme';
+            await d.config.setTheme(t);
+            d.setupDOM();
+            await d.renderDashboard({ animate: false });
+        }, theme);
+        const word = () => page.evaluate(() => document.body.getAttribute('data-category-spacing'));
+        const start = await page.evaluate(() => window.dashboardInstance.settings.theme);
+        await set('slate-dark');
+        await expect.poll(word).toBe('balanced');
         // 32px, down from the 48px that was hard-coded before the setting existed.
         expect(await rowGap(page)).toBe('32px');
+        // Confetti states its own: airy.
+        await set('look-confetti-dark');
+        await expect.poll(word).toBe('airy');
+        expect(await rowGap(page)).toBe('48px');
+        await set(start);
+        await page.evaluate(() => window.dashboardInstance.config.saveSettingsWithFeedback());
     });
 
     test('each choice drives the gap', async ({ page }) => {
@@ -204,7 +220,7 @@ test.describe('page margins', () => {
         expect(await containerPad(page)).toBe('144px');
     });
 
-    test('both controls are three buttons, not a dropdown', async ({ page }) => {
+    test('both controls are buttons, not a dropdown', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(async () => {
             const cfg = window.dashboardInstance.config;
@@ -213,7 +229,7 @@ test.describe('page margins', () => {
         await page.locator('[data-appearance-tab="layout"]').click();
 
         for (const field of ['categorySpacing', 'sideMargin']) {
-            await expect(page.locator(`[data-behavior-field="${field}"][data-behavior-type="cards"]`)).toHaveCount(3);
+            await expect(page.locator(`[data-behavior-field="${field}"][data-behavior-type="cards"]`)).toHaveCount(field === 'sideMargin' ? 3 : 4);
             // A <select> would hide two of three spatial choices behind a click.
             await expect(page.locator(`select[data-behavior-field="${field}"]`)).toHaveCount(0);
             // The stored value is pre-selected, so the group shows where you are.

@@ -34,10 +34,12 @@ test.describe('a choice you can see before you make it', () => {
 
         for (const field of ['categorySpacing', 'sideMargin']) {
             const cards = page.locator(`.config-choice-card[data-behavior-field="${field}"]`);
-            await expect(cards).toHaveCount(3);
-            // Three cards, three drawings: a card with only a title and a
-            // sentence is the thing this replaces.
-            await expect(cards.locator('.setting-art')).toHaveCount(3);
+            // Follow the theme is a fourth choice for the spacing, drawn like Balanced.
+            const n = field === 'sideMargin' ? 3 : 4;
+            await expect(cards).toHaveCount(n);
+            // A card for every choice, each with a drawing: a card with only a
+            // title and a sentence is the thing this replaces.
+            await expect(cards.locator('.setting-art')).toHaveCount(n);
         }
 
         // The drawings differ per option, or they are decoration rather than an

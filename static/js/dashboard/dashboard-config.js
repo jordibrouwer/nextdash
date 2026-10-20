@@ -13204,7 +13204,7 @@ class DashboardConfig {
         // Layout
         columnsPerRow: { info: ['columnsInfoTitle', 'columnsInfoMessage'], def: 3 },
         densityMode: { info: ['densityModeInfoTitle', 'densityModeInfoMessage'], def: 'auto' },
-        categorySpacing: { info: ['categorySpacingInfoTitle', 'categorySpacingInfoMessage'], def: 'balanced' },
+        categorySpacing: { info: ['categorySpacingInfoTitle', 'categorySpacingInfoMessage'], def: 'theme' },
         columnSpacing: { info: ['columnSpacingInfoTitle', 'columnSpacingInfoMessage', 'Space between columns', 'How much room sits between one column and the next, across the page. Space between categories sets the room down the page.'], def: 'theme' },
         sideMargin: { info: ['sideMarginInfoTitle', 'sideMarginInfoMessage'], def: 'balanced' },
         packedColumns: { info: ['packedColumnsInfoTitle', 'packedColumnsInfoMessage'], def: true },
@@ -14357,8 +14357,9 @@ class DashboardConfig {
                     // is spatial, so seeing all three at once — and the sentence
                     // under each — beats hiding two of them behind a click.
                     { field: 'categorySpacing', type: 'cards', label: t('config.categorySpacingLabel', 'Space between categories'), special: 'chromeRender', art: 'spacing', options: [
+                        { value: 'theme', label: t('config.categorySpacingTheme', 'Follow the theme'), body: t('config.categorySpacingThemeBody', 'Balanced, and airy on Confetti.') },
                         { value: 'snug', label: t('config.categorySpacingSnug', 'Snug'), body: t('config.categorySpacingSnugBody', 'Rows sit close together.') },
-                        { value: 'balanced', label: t('config.categorySpacingBalanced', 'Balanced'), body: t('config.categorySpacingBalancedBody', 'The default.') },
+                        { value: 'balanced', label: t('config.categorySpacingBalanced', 'Balanced'), body: t('config.categorySpacingBalancedBody', 'A steady gap.') },
                         { value: 'airy', label: t('config.categorySpacingAiry', 'Airy'), body: t('config.categorySpacingAiryBody', 'Extra room between rows.') },
                     ] },
                     { field: 'columnSpacing', type: 'cards', label: t('config.columnSpacingLabel', 'Space between columns'), special: 'chromeRender', art: 'columnGap', options: [

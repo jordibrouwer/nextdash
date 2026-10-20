@@ -170,7 +170,10 @@ class DashboardSetup {
         window.ListDensity?.migrate?.();
         // Vertical gap between category rows. Separate from density, which sizes
         // the bookmark rows themselves — see dashboard.css.
-        document.body.setAttribute('data-category-spacing', d.settings.categorySpacing || 'balanced');
+        // On "Follow the theme" a theme may state its own (Confetti: airy).
+        document.body.setAttribute('data-category-spacing', window.ThemeLoader?.resolveCategorySpacing
+            ? window.ThemeLoader.resolveCategorySpacing(d.settings.categorySpacing, document.body.getAttribute('data-theme') || d.settings.theme)
+            : (d.settings.categorySpacing === 'theme' ? 'balanced' : (d.settings.categorySpacing || 'balanced')));
         // The horizontal counterpart: the space between columns.
         // On "Follow the theme" a theme may state its own (Confetti: airy).
         document.body.setAttribute('data-column-spacing', window.ThemeLoader?.resolveColumnSpacing
