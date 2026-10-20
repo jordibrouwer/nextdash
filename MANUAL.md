@@ -943,6 +943,7 @@ A bookmark row shows its icon, name, optional tags, the shortcut letters and, wh
 - **Clock and weather** — asks for a town, a clock and a unit when no location is set.
 - **Install count** — says once that the daily count of installs is on, what leaves the server, and offers **Turn it off** ([§23.7](#237-what-nextdash-contacts)). It waits two days after the analytics question, so the two privacy cards never arrive in one visit.
 - **Moving blocks** — once, a see-through copy of the first category glides to its next place to show that blocks can be moved, and a card under its `//` offers **Try it**. The first time you pick a block up, a card beside the landing box lists the keys until **Got it**.
+- **Theme studio** — *Not happy with how it looks?* names `Shift + A` and the *Surface* and *Layout* tabs, and **Open the studio** opens it. Asked once; a new install is asked after its first day.
 - **Others** — browser notifications, the theme browser and the tour of what moved.
 
 Each review card has a switch under Behavior → Privacy & sync → Onboarding. The same place lists every card with **Answered** or **Not shown yet**, and **Show again** brings an answered one back the next time its moment arrives.
