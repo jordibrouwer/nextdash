@@ -214,6 +214,7 @@ A new default look, and a lot of ways to change it. A fresh install starts on Co
 - **fix — Undo all on the notice can be tried again.** When one of several undos failed, a second click hit the ones already taken back and stayed on *Could not take it back*. Undo now counts those as done, retries only the rest and ignores a second click while it runs; *Move* keeps the notice when it cannot find the new bookmark, and a failed refresh is tried again on the next check (`app-discovery-notice.js`).
 - **fix — the question about new apps opens once.** The start timer and a return to the tab could both open it; the second now waits for the first (`app-discovery-notice.js`).
 - **fix — a double click on Promote makes one category.** Promoting an app proposal from the Inbox looks up its category first; a second click in that moment created it twice (`dashboard-inbox.js`).
+- **docs — two new tests guard these fixes.** `TestDiscoveryUnignoreDuringRunSticks` does a Remove in the middle of a run (through `discoveryBeforeSaveHook`), and *Undo all on the notice tries again only what a failed Undo left* in `tests/app-discovery.spec.js` fails the second of two undos; both fail without their fix. `go generate` refreshed `asset_hashes_gen.go`.
 
 ### Docs
 
