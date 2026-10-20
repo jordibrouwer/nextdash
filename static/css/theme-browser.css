@@ -331,12 +331,16 @@
    the field still reads as one control with a way out of it. */
 .config-theme-row {
     display: flex;
+    /* Wraps: the picker is at least 26ch, so in a control column narrower
+       than the picker plus the button the button drops under it instead of
+       being drawn over it. */
+    flex-wrap: wrap;
     gap: var(--space-2, 0.5rem);
     align-items: stretch;
 }
 
 .config-theme-row .config-theme-picker {
-    flex: 1 1 auto;
+    flex: 1 1 26ch;
     min-width: 0;
 }
 

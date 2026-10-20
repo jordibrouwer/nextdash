@@ -105,15 +105,18 @@
  * to the things it tells you.
  */
 .config-nav-column .lvs-group-title {
-    font-size: calc(var(--font-size-text) * 1.14);
-    letter-spacing: 0;
-    color: var(--text-primary);
+    /* Small and muted: the band above already carries the section's title,
+       and this only names the strip for those who look for a name. */
+    font-size: var(--font-size-small, 0.72rem);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-muted, var(--text-secondary));
     padding-bottom: var(--space-1-5, 0.35rem);
     margin-bottom: var(--space-1, 0.25rem);
     border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
 }
 
-.config-nav .config-nav-item[data-config-section="stats"] {
+.config-nav .config-nav-item:is([data-config-section="containers"], [data-config-section="stats"]) {
     margin-top: var(--space-2, 0.5rem);
     padding-top: calc(var(--space-1) + var(--space-2, 0.5rem));
     border-top: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
@@ -172,7 +175,7 @@
     /* In the strip the rule falls between two buttons side by side, so it is a
        left edge rather than a top one -- as a top border it pushed that button
        onto a second line. */
-    .config-nav .config-nav-item[data-config-section="stats"] {
+    .config-nav .config-nav-item:is([data-config-section="containers"], [data-config-section="stats"]) {
         margin-top: 0;
         padding-top: var(--space-1);
         border-top: 0;
@@ -1157,11 +1160,35 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
 /* The six figures a tab opens with. */
 .config-stats-kpis {
     display: grid;
-    /* Six across on a wide window, then as many as keep a figure like
-       "166 ms" whole: three, two. */
+    /* As many as keep a figure like "166 ms" whole. */
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 10px;
     margin-bottom: 14px;
+}
+
+/* Exactly six: three and three, or all six, never five and one left over. */
+*:has(> .config-stats-kpis) {
+    container: stats-kpis / inline-size;
+}
+
+.config-stats-kpis:has(> :nth-child(6):last-child) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@container stats-kpis (min-width: 56rem) {
+    .config-stats-kpis:has(> :nth-child(6):last-child) {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+}
+
+@container stats-kpis (max-width: 24rem) {
+    .config-stats-kpis:has(> :nth-child(6):last-child) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+#config-log-tiles:empty {
+    display: none;
 }
 
 .config-stats-kpis .stat-tile { min-width: 0; }
@@ -1500,8 +1527,10 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
 }
 
 .config-btn--danger {
-    color: #d1493f;
-    border-color: color-mix(in srgb, #d1493f 45%, transparent);
+    /* Pulled towards the text colour: the plain red sat on a red-tinted pane
+       and nearly vanished, and on a light theme the pull darkens it instead. */
+    color: color-mix(in srgb, #e5483d 70%, var(--text-primary));
+    border-color: color-mix(in srgb, #e5483d 55%, transparent);
 }
 
 /*
@@ -1780,7 +1809,7 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
  */
 .config-field {
     display: grid;
-    grid-template-columns: minmax(140px, 200px) minmax(0, max-content) auto;
+    grid-template-columns: minmax(120px, 170px) minmax(0, max-content) auto;
     align-items: center;
     gap: 14px;
     margin-bottom: 14px;
@@ -1827,7 +1856,7 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
  * presence is what identifies the row.
  */
 .config-field:has(> .config-range-value) {
-    grid-template-columns: minmax(140px, 200px) minmax(0, max-content) auto auto;
+    grid-template-columns: minmax(120px, 170px) minmax(0, max-content) auto auto;
 }
 
 /* A slider row that also carries a preview and an ℹ has two more children than
@@ -1837,7 +1866,7 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
    caught the opacity slider, which has a readout and an ℹ and no preview, and
    gave it a fifth column with nothing to put in it. */
 .config-field:has(> .config-range-value):has(> .config-icon-preview) {
-    grid-template-columns: minmax(140px, 200px) minmax(0, max-content) auto auto auto;
+    grid-template-columns: minmax(120px, 170px) minmax(0, max-content) auto auto auto;
 }
 
 .config-field-label {
@@ -2084,6 +2113,29 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
     margin-top: 12px;
     font-size: calc(var(--font-size-text) * 1.006);
     cursor: pointer;
+}
+
+/* The checkbox and its words are one target, a little taller than the text
+   and tinted under the pointer. Padding and a matching negative margin, so
+   nothing around it moves. */
+.config-view .config-toggle {
+    padding: 4px 8px;
+    margin-block: -4px;
+    margin-inline: -8px;
+    border-radius: var(--radius-4, 6px);
+    transition: background 0.12s ease;
+}
+
+.config-view .config-toggle:hover {
+    background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+}
+
+.config-view .config-toggle:has(input:disabled) {
+    cursor: default;
+}
+
+.config-view .config-toggle:has(input:disabled):hover {
+    background: none;
 }
 
 /* Checkbox-only toggles aligned in the config-field label/control grid. The
@@ -2361,21 +2413,21 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
 }
 
 /*
- * Appearance's strip: three labelled groups, each its label over its tabs.
+ * Appearance's strip: three labelled groups on one line.
  *
- * Nine tabs on one scrolling line hid half of them past the edge, which is the
- * opposite of finding your way. So this strip wraps -- but by whole groups: a
- * group that does not fit moves to the next line with its label, so a second
- * line still reads as a group of its own rather than a stray tab. Only a group
- * wider than the screen wraps inside itself. The label is small and muted so
- * the tab names stay what the eye reads. Presentation wrappers only -- the
- * buttons stay the tablist's own children as far as the keyboard is concerned.
+ * Each group's label sits in front of its tabs, small and muted, and a thin
+ * rule sets the groups apart. With the labels above the tabs the strip took
+ * two lines on a normal window for nine tabs that fit on one. It still wraps
+ * by whole groups when the window is too narrow: a group that does not fit
+ * moves to the next line with its label, and only a group wider than the
+ * screen wraps inside itself. Presentation wrappers only -- the buttons stay
+ * the tablist's own children as far as the keyboard is concerned.
  */
 .config-subtabs.config-subtabs--grouped {
     flex-wrap: wrap;
     overflow-x: visible;
-    align-items: flex-end;
-    gap: 10px 26px;
+    align-items: center;
+    gap: 6px 0;
 }
 
 .config-subtab-group {
@@ -2383,16 +2435,29 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
     flex: 0 1 auto;
     flex-wrap: wrap;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
     max-width: 100%;
+    padding-right: 8px;
+    margin-right: 8px;
+    border-right: 1px solid var(--border-primary);
+}
+
+.config-subtab-group > .config-subtab {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+.config-subtab-group:last-child {
+    padding-right: 0;
+    margin-right: 0;
+    border-right: 0;
 }
 
 .config-subtab-group-label {
-    flex-basis: 100%;
-    padding: 0 2px;
+    padding: 0 4px 0 2px;
     color: var(--text-muted, #888);
-    font-size: calc(var(--font-size-text) * 0.8);
-    letter-spacing: 0.06em;
+    font-size: calc(var(--font-size-text) * 0.7);
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     white-space: nowrap;
     opacity: 0.8;
@@ -5273,9 +5338,9 @@ body.no-animations .config-new-features-panel-star {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--space-2, 0.6rem);
-    margin: 16px 0 4px;
-    padding: 12px 14px;
+    gap: var(--space-3, 0.9rem);
+    margin: 20px 0 4px;
+    padding: 18px 14px 22px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
     border-radius: var(--radius-5, 9px);
     font-size: calc(var(--font-size-text) * 0.914);
@@ -7031,6 +7096,20 @@ body.no-animations .config-new-features-panel-star {
     background: transparent;
     font-weight: 600;
     padding-inline: 4px;
+    /* Shrinks with the row instead of running under the type chip: a text
+       input will not go below its own width unless told it may. */
+    width: 100%;
+    min-width: 0;
+    /* The name is what the row is looked up by: full strength, not the
+       muted ink an input gets by default. */
+    color: var(--text-primary);
+}
+
+/* A widget without a title of its own shows its type as the name, as a
+   placeholder: dimmed like one, it was the faintest text in the row. */
+.config-widget-row-title::placeholder {
+    color: var(--text-primary);
+    opacity: 0.9;
 }
 
 .config-widget-row-title:hover,
@@ -9129,6 +9208,14 @@ body.no-animations .config-new-features-panel-star {
     transition: opacity 0.12s ease;
 }
 
+/* Shown, they read as buttons: an edge and a faint fill, ink at full strength.
+   Without them "Duplicate" and "Delete" were two grey words beside a number. */
+.config-crud-list--table .config-crud-row-actions .config-btn:not(.config-btn--danger) {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--text-primary) 24%, transparent);
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+
 .config-crud-list--table .config-crud-row:hover .config-crud-row-actions,
 .config-crud-list--table .config-crud-row:focus-within .config-crud-row-actions,
 .config-crud-list--table .config-crud-row.keyboard-selected .config-crud-row-actions {
@@ -9588,32 +9675,24 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
 .config-link-btn:hover,
 .config-link-btn:focus-visible { color: var(--text-primary); }
 
-.unraid-minis {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
-    gap: var(--space-2, 0.5rem);
-    margin-top: var(--space-2, 0.5rem);
-}
-.unraid-mini {
+.unraid-chips {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-1-5, 0.4rem);
-    min-height: 6.2rem;
-    padding: var(--space-2, 0.55rem) var(--space-2, 0.6rem);
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+    margin: var(--space-3, 0.75rem) 0;
+    padding: 0;
+    list-style: none;
+}
+.unraid-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: 3px 4px 3px 12px;
     border: 1px solid var(--border-secondary, var(--border-primary));
-    border-radius: var(--layout-radius-xs, 6px);
+    border-radius: 999px;
     background: var(--background-secondary);
-    font-size: var(--text-xs, 0.72rem);
-    color: var(--text-secondary);
+    color: var(--text-primary);
 }
-.unraid-mini-title {
-    color: var(--text-tertiary);
-    font-size: 0.66rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-}
-.unraid-mini-title::before { content: '// '; color: var(--accent-primary); letter-spacing: 0; }
-.unraid-mini-body { display: flex; flex-direction: column; gap: var(--space-1, 0.3rem); }
 .unraid-mini-row { display: flex; justify-content: space-between; gap: var(--space-1, 0.3rem); }
 .unraid-mini-good { color: var(--accent-success); }
 .unraid-mini-warn { color: var(--accent-warning); }
@@ -9648,8 +9727,6 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
     0%, 100% { opacity: 0.35; transform: scale(0.85); }
     50% { opacity: 1; transform: scale(1.1); }
 }
-.unraid-mini-add { margin-top: auto; align-self: flex-start; }
-.unraid-preview-foot { margin: var(--space-3, 0.75rem) 0 0; }
 
 /* Config -> Status page: the link, its buttons and the QR symbol. */
 /* The section shows and hides by the hidden attribute; a display rule below
@@ -9952,4 +10029,18 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
 
 .config-suggestion-row[hidden] {
     display: none;
+}
+
+/* The Compose lines on Containers → Connection fold under one word. */
+.config-docker-snippet-fold {
+    margin: var(--space-2, 0.5rem) 0;
+}
+
+.config-docker-snippet-fold > summary {
+    cursor: pointer;
+    color: var(--accent-primary);
+}
+
+.config-docker-snippet-fold > .config-docker-snippet {
+    margin-top: var(--space-2, 0.5rem);
 }

@@ -676,15 +676,25 @@
 }
 
 /* Between the phone layout and a wide screen the table runs out of room:
-   Image goes first (the drawer names it), then CPU and RAM. */
-@media (min-width: 768px) and (max-width: 1099px) {
+   Image goes first (the drawer names it), then CPU, RAM, size and restarts.
+
+   Asked of the list's own width, not the window's: the rail, the pane's
+   padding and the page margin take a different share at every window size,
+   so a viewport breakpoint let the table run past the pane on a laptop.
+   The body is the container rather than the table, so the sticky column
+   heads keep the window as their scroller. */
+.docker-layout .lvs-body {
+    container: docker-list / inline-size;
+}
+
+@container docker-list (max-width: 860px) {
     .docker-head--image,
     .docker-cell--image {
         display: none;
     }
 }
 
-@media (min-width: 768px) and (max-width: 899px) {
+@container docker-list (max-width: 660px) {
     .docker-head--cpu,
     .docker-head--mem,
     .docker-head--size,

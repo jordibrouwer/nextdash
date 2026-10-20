@@ -1,0 +1,107 @@
+/*
+ * The Beszel tiles. Each type has a terse form and a fuller one; the fuller
+ * parts carry .dashboard-widget-wide-only and the terse ones
+ * .dashboard-widget-narrow-only, which the panel's container query shows and
+ * hides (dashboard.css). What is laid out here is the wide form, so it answers
+ * to the same breakpoint, 28rem.
+ */
+.media-row.beszel-row, .media-row.beszel-disk, .media-row.beszel-sys-head { align-items: center; }
+
+.beszel-dot {
+    flex: none;
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: var(--accent-success);
+}
+.beszel-dot[data-tone="warn"] { background: var(--accent-warning); }
+.beszel-dot[data-tone="bad"], .beszel-dot[data-state="down"] { background: var(--accent-error); }
+.beszel-dot[data-state="paused"], .beszel-dot[data-state="pending"] {
+    background: transparent;
+    box-shadow: inset 0 0 0 2px var(--text-tertiary);
+}
+
+[data-tone="warn"].beszel-value, [data-tone="warn"].beszel-cell { color: var(--accent-warning); }
+[data-tone="bad"].beszel-value, [data-tone="bad"].beszel-cell { color: var(--accent-error); }
+.beszel-value, .beszel-cell {
+    font-size: var(--font-size-small);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.beszel-value { min-width: 2.4em; text-align: right; }
+.beszel-state { color: var(--text-tertiary); }
+p.beszel-state { margin: 0; font-size: var(--font-size-small); }
+
+/* beszel: a line per system. Narrow is dot, name and the heaviest figure. */
+.beszel-list { display: flex; flex-direction: column; gap: 0.1rem; }
+.media-row.beszel-row, .beszel-head {
+    display: grid;
+    grid-template-columns: 0.55rem minmax(0, 1fr) auto;
+    column-gap: 0.6rem;
+}
+.beszel-name { min-width: 0; }
+.beszel-cell { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--text-secondary, inherit); }
+.beszel-cell--end { text-align: right; }
+.beszel-cell--bar { display: flex; align-items: center; gap: 0.4rem; }
+.beszel-head .beszel-cell { color: var(--text-tertiary); }
+
+/* beszel-attention */
+.beszel-counts { display: flex; flex-wrap: wrap; gap: 0.25rem 0.9rem; margin: 0; font-size: var(--font-size-small); }
+.beszel-count { color: var(--text-secondary, inherit); font-variant-numeric: tabular-nums; }
+.beszel-count[data-tone="bad"] { color: var(--accent-error); }
+.beszel-fine {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0;
+    color: var(--accent-success);
+}
+
+/* beszel-system */
+.beszel-sys-head { gap: 0.6rem; }
+.beszel-sys { display: flex; flex-direction: column; gap: 0.5rem; }
+.beszel-sys-meters, .beszel-sys-side { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+.beszel-line { display: flex; align-items: center; gap: 0.5rem; }
+.beszel-line--text { justify-content: space-between; }
+.beszel-label {
+    flex: none;
+    width: 2.6em;
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small);
+}
+.beszel-foot { color: var(--text-secondary, inherit); font-size: var(--font-size-small); }
+.beszel-spark { margin: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+.beszel-spark-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 1px;
+    height: 2.4rem;
+}
+.beszel-spark-bar {
+    flex: 1 1 0;
+    min-width: 1px;
+    border-radius: 1px 1px 0 0;
+    background: color-mix(in srgb, var(--accent-primary) 70%, transparent);
+}
+
+/* beszel-storage */
+.beszel-disks, .beszel-group { display: flex; flex-direction: column; gap: 0.15rem; }
+.media-row.beszel-disk {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(2rem, 4.5rem) auto;
+    column-gap: 0.6rem;
+}
+.beszel-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem 1.25rem; align-items: start; }
+.beszel-group-title { margin: 0; color: var(--text-tertiary); font-size: var(--font-size-small); }
+
+@container (min-width: 28rem) {
+    .beszel-head, .media-row.beszel-row {
+        grid-template-columns: 0.55rem minmax(6rem, 1.4fr) repeat(var(--beszel-cols, 4), minmax(3rem, 1fr));
+    }
+    /* Down: the state runs across the meter columns instead of a row of blanks. */
+    .beszel-cell--span { grid-column: 3 / -1; }
+    .media-row.beszel-row--attention {
+        grid-template-columns: 0.55rem minmax(6rem, 1.4fr) minmax(0, 1.4fr) minmax(2.5rem, auto);
+    }
+    .beszel-sys { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+}

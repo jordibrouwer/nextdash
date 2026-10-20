@@ -28,6 +28,7 @@
 
 .config-tabpage-main {
     min-width: 0;
+    container: config-main / inline-size;
 }
 
 /*
@@ -39,9 +40,26 @@
     margin-top: 0;
 }
 
-/* The short line under a setting sits close to it, not half-way to the next. */
+/* The short line under a setting sits close to it, not half-way to the next:
+   the row above hands its bottom margin to the line, so the space comes after
+   the line, and the next setting is clearly a different one. */
 .config-tabpage .config-field-hint {
-    margin: 2px 0 12px;
+    margin: 2px 0 18px;
+}
+
+.config-tabpage :is(.config-field, .config-field-row):has(+ .config-field-hint) {
+    margin-bottom: 0;
+}
+
+.config-tabpage .config-panel-body > .config-field-hint:last-child,
+.config-tabpage .config-panel > .config-field-hint:last-child {
+    margin-bottom: 0;
+}
+
+/* A checkbox in a row with its info button: the stacked-setting top margin
+   pushed it down, and the button floated above its label. */
+.config-field-row > .config-toggle {
+    margin-top: 0;
 }
 
 /* ← Look, above the Custom themes page. */
@@ -440,8 +458,10 @@
     display: none;
 }
 
-/* Narrow screens: the preview becomes a strip above the settings. */
-@media (max-width: 900px) {
+/* Narrow screens: the preview becomes a strip above the settings. Beside it
+   the settings keep about 480px at 1180px wide, the least a label, its
+   control and the hint under it need to sit on one row. */
+@media (max-width: 1180px) {
     .config-tabpage--preview {
         grid-template-columns: minmax(0, 1fr);
     }
@@ -490,19 +510,21 @@
  * moved to the far side with flex order, so the whole row toggles and no
  * positioned element sits above an input.
  */
+/* The label column keeps 10rem: with the control columns beside the preview it
+   shrank to a few pixels and the label wrapped letter by letter. */
 @media (min-width: 601px) {
     #config-appearance-body .config-field {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 300px) auto;
+        grid-template-columns: minmax(10rem, 1fr) minmax(0, 300px) auto;
         gap: 0 16px;
         align-items: center;
     }
 
     #config-appearance-body .config-field:has(> .config-range-value) {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 300px) auto auto;
+        grid-template-columns: minmax(10rem, 1fr) minmax(0, 300px) auto auto;
     }
 
     #config-appearance-body .config-field:has(> .config-range-value):has(> .config-icon-preview) {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 300px) auto auto auto;
+        grid-template-columns: minmax(10rem, 1fr) minmax(0, 300px) auto auto auto;
     }
 
     /* The theme field is the one control that has to show a whole name of up to
@@ -511,7 +533,7 @@
        picker, the choices and the toggle end on the same edge. */
     #config-appearance-body .config-panel--theme-controls .config-field,
     #config-appearance-body .config-panel--theme-controls .config-field-row:has(> .config-toggle) {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 28rem) auto;
+        grid-template-columns: minmax(10rem, 1fr) minmax(0, 28rem) auto;
     }
 
     #config-appearance-body .config-field > .config-field-label {
@@ -561,7 +583,7 @@
        far end of the control column, the pair beside it. */
     #config-appearance-body .config-field-row:has(> .config-toggle) {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 300px) auto;
+        grid-template-columns: minmax(10rem, 1fr) minmax(0, 300px) auto;
         gap: 0 16px;
         align-items: center;
     }
@@ -630,4 +652,27 @@
 .config-range-group .config-range-value {
     flex: 0 0 3.2em;
     text-align: right;
+}
+
+/* The label stacks above its control once the column itself is narrow, not
+   only once the window is: a column beside the preview can be half the pane. */
+@container config-main (max-width: 520px) {
+    .config-field,
+    .config-field:has(> .config-range-value) {
+        grid-template-columns: minmax(0, max-content) auto;
+        gap: 6px 10px;
+    }
+
+    .config-field > .config-field-label {
+        grid-column: 1 / -1;
+    }
+
+    .config-field > .config-field-affordances {
+        justify-self: start;
+    }
+
+    .config-field > .config-range {
+        grid-column: 1 / -1;
+        max-width: none;
+    }
 }

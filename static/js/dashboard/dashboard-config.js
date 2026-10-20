@@ -277,7 +277,7 @@ class DashboardConfig {
         // Status page sub-tab, remembered the same way.
         this._statusPageTab = DashboardConfig.readRememberedTab('status-page') || 'all';
         // Unraid sub-tab, remembered the same way.
-        this._unraidTab = DashboardConfig.readRememberedTab('unraid') || 'all';
+        this._unraidTab = DashboardConfig.readRememberedTab('unraid') || 'connection';
         /**
          * Whether a settings tab is filtered to what differs from the default.
          * Not persisted: it is a way of looking at the page for a minute, not a
@@ -2316,11 +2316,19 @@ class DashboardConfig {
         const containersTour = this.section === 'containers'
             ? `<button type="button" class="lvs-action" data-containers-tour title="${this.dash.escapeHtml(this.t('config.containersTourHint', 'A tour of the Containers view'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
             : '';
+        // Bookmarks and Inbox each have a view of their own: the way to it
+        // is the same place in both, at the band's right edge, not a button
+        // drawn into the body of one tab.
+        const viewLink = !this.standalone && (this.section === 'bookmarks' || this.section === 'inbox')
+            ? `<a class="lvs-action" href="#${this.section}" data-${this.section === 'inbox' ? 'inbox' : 'bm'}-open-view>${this.dash.escapeHtml(this.section === 'inbox'
+                ? this.t('config.inboxOpenView', 'Open the Inbox')
+                : this.t('config.bmViewOpen', 'Open the Bookmarks view'))} ↗</a>`
+            : '';
         const markup = (context
             ? this.renderChangedFilterBar(context.section, context.tab)
             : (this.section === 'bookmarks'
                 ? `${healthButton}<span class="config-bm-header-badge">${this.dash.escapeHtml(String(this.configBookmarkPool().length))}</span>`
-                : '')) + widgetsTour + containersTour;
+                : '')) + viewLink + widgetsTour + containersTour;
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
         }
@@ -2338,7 +2346,13 @@ class DashboardConfig {
         if (actions && actions.dataset.bmHealthWired !== '1') {
             actions.dataset.bmHealthWired = '1';
             actions.addEventListener('click', (e) => {
-                if (e.target.closest('[data-widgets-tour]')) void this.openWidgetsTour?.();
+                if (e.target.closest('[data-inbox-open-view]')) {
+                    const link = e.target.closest('[data-inbox-open-view]');
+                    if (!(e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)) {
+                        e.preventDefault();
+                        void this.dash.inbox?.openInboxView?.(link);
+                    }
+                } else if (e.target.closest('[data-widgets-tour]')) void this.openWidgetsTour?.();
                 else if (e.target.closest('[data-containers-tour]')) void this.playViewTour('containersTutorialV3');
                 else if (e.target.closest('[data-bm-open-health-modal]')) this.openBmHealthModal?.();
                 else if (e.target.closest('[data-bm-open-structure]')) this.openStructureModal?.('pages');
@@ -4654,10 +4668,10 @@ class DashboardConfig {
                     <div class="config-overview-panels">
                         ${this.renderOverviewBookmarksWidget()}
                         ${this.renderOverviewInboxWidget()}
-                        ${this.renderOverviewFeaturesBanner()}
                         ${this.renderOverviewContainersWidget()}
                         ${this.renderOverviewHealthWidget()}
                         ${this.renderOverviewStatsWidget()}
+                        ${this.renderOverviewFeaturesBanner()}
                     </div>
                 </div>
                 <div class="config-overview-aside">
@@ -11116,12 +11130,12 @@ class DashboardConfig {
 
     appearanceTabLabel(tab) {
         const map = {
-            general: ['config.appearanceTabLook', 'Theme & type'],
+            general: ['config.appearanceTabLook', 'Theme'],
             background: ['config.appearanceTabBackground', 'Background'],
             surface: ['config.appearanceTabSurface', 'Surfaces'],
             layout: ['config.appearanceTabGrid', 'Layout'],
             display: ['config.appearanceTabRows', 'Rows'],
-            previews: ['config.appearanceTabPreviews', 'Link previews'],
+            previews: ['config.appearanceTabPreviews', 'Previews'],
             header: ['config.appearanceTabHeader', 'Header'],
             buttonbar: ['config.appearanceTabActionBar', 'Action bar'],
             datetime: ['config.appearanceTabDateTime', 'Date & weather'],
@@ -15205,8 +15219,9 @@ class DashboardConfig {
         };
     }
 
-    /** ℹ + ↺ affordances shown after a control, based on the field's metadata. */
-    renderFieldAffordances(field, val) {
+    /** ℹ + ↺ affordances shown after a control, based on the field's metadata.
+     *  `hintShown`: the line under the control is drawn, so an ℹ that only repeats it is left out. */
+    renderFieldAffordances(field, val, { hintShown = false } = {}) {
         const esc = (v) => this.dash.escapeHtml(v);
         const meta = this.fieldMeta(field);
         let out = '';
@@ -15218,7 +15233,7 @@ class DashboardConfig {
         // presence of an info *reference*, and ten of those pointed at locale
         // keys nobody had written — so the ℹ opened a dialog with an empty
         // title, an empty body and a Got it button.
-        if (meta?.info && this.hasInfoText(meta.info)) {
+        if (meta?.info && this.hasInfoText(meta.info) && !(hintShown && this.infoRepeatsHint(field))) {
             out += `<button type="button" class="config-info-btn" data-info-field="${esc(field)}" aria-label="${esc(this.t('config.settingInfoAria', 'More info'))}" title="${esc(this.t('config.settingInfoAria', 'More info'))}">ℹ</button>`;
         }
         const showReset = meta && meta.def !== undefined && !this.isFieldDefault(field, val);
@@ -15241,6 +15256,22 @@ class DashboardConfig {
      * ⓘ text, which every setting with an explanation already has -- so the
      * line and the dialog cannot disagree, and no second copy is kept.
      */
+    /**
+     * Whether the ℹ of a field would only say what the line under it says.
+     * The line is the first sentence of the info when a field has no note of
+     * its own, so a one-sentence info opened a dialog that repeated it. Not in
+     * Appearance, where that line is cut to one row and the dialog is the way
+     * to read all of it.
+     */
+    infoRepeatsHint(field) {
+        if (this.section === 'appearance') return false;
+        const info = this.fieldMeta(field)?.info;
+        if (!Array.isArray(info)) return false;
+        const message = String(this.t(`config.${info[1]}`, info[3] || '')).replace(/\s+/g, ' ').trim();
+        const summary = String(this.fieldSummary(field) || '').replace(/\s+/g, ' ').trim();
+        return Boolean(message) && Boolean(summary) && summary.includes(message);
+    }
+
     fieldSummary(field) {
         const meta = this.fieldMeta(field);
         if (!meta) return '';
@@ -15273,7 +15304,7 @@ class DashboardConfig {
     }
 
     /** Render a schema of panels into HTML, keyed by a data-<prefix>-field. */
-    renderControlPanels(schema, prefix) {
+    renderControlPanels(schema, prefix, { keepInfo = false } = {}) {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
         const renderControl = (c, changedFields = []) => {
@@ -15415,8 +15446,8 @@ class DashboardConfig {
                 ? window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true
                 : s[c.field];
             const dataAttrs = `data-${prefix}-field="${esc(c.field)}" data-${prefix}-special="${esc(c.special || '')}"`;
-            const aff = this.renderFieldAffordances(c.field, val);
             const summary = this.fieldSummary(c.field);
+            const aff = this.renderFieldAffordances(c.field, val, { hintShown: Boolean(summary) && !keepInfo });
             // In Appearance the hint sits inside its row, under the label and
             // beside the control; one line, cut with an ellipsis, the whole
             // sentence in the title. Elsewhere it stays a paragraph below.
@@ -18700,7 +18731,7 @@ class DashboardConfig {
         ['links', ['health', 'uptime', 'certs', 'trend']],
         ['incoming', ['inbox', 'unsorted', 'feeds', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
-        ['system', ['cpu', 'memory', 'disks', 'docker', 'containers']],
+        ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'notes']],
         ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
@@ -20854,7 +20885,7 @@ class DashboardConfig {
     static STATUS_PAGE_TABS = ['all', 'link', 'top', 'groups', 'maintenance'];
 
     /** The Unraid section's sub-tabs; 'all' shows every card at once. */
-    static UNRAID_TABS = ['all', 'connection', 'how', 'widgets'];
+    static UNRAID_TABS = ['connection', 'how'];
 
     // Repeated from widgets-tutorial.js, which is checked before the script is
     // fetched at all. Both must agree.
@@ -20894,7 +20925,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -21015,6 +21046,53 @@ class DashboardConfig {
         ...DashboardConfig.ARR_SETTINGS.filter((field) => ['click', 'target', 'rows'].includes(field.key)),
         { key: 'ttl', kind: 'int', min: 15, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
     ];
+
+    /**
+     * The Beszel widgets, mirroring beszelWidgetFields in widgets_beszel.go.
+     * Which systems (or which one) is chosen after Connect, so the media panel
+     * draws that; what is left here is what the four share and what only some
+     * of them have. Each type gets the settings its tile reads and no others.
+     */
+    static BESZEL_METERS = {
+        key: 'meters', kind: 'checkset', label: ['config.widgetBeszelMeters', 'Figures to show'],
+        // Unticked at the start: the tile's own four, not every box.
+        defaults: ['cpu', 'mem', 'disk', 'temp'],
+        options: [
+            ['cpu', ['config.widgetBeszelMeterCpu', 'Processor']],
+            ['mem', ['config.widgetBeszelMeterMem', 'Memory']],
+            ['disk', ['config.widgetBeszelMeterDisk', 'Disk']],
+            ['temp', ['config.widgetBeszelMeterTemp', 'Temperature']],
+            ['gpu', ['config.widgetBeszelMeterGpu', 'Graphics card']],
+            ['net', ['config.widgetBeszelMeterNet', 'Network']],
+            ['load', ['config.widgetBeszelMeterLoad', 'Load']],
+        ],
+    };
+
+    static BESZEL_HIDE_PAUSED = {
+        key: 'hidePaused', kind: 'bool', label: ['config.widgetBeszelHidePaused', 'Leave out paused systems'],
+    };
+
+    static BESZEL_TAIL = [
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => ['click', 'target'].includes(field.key)),
+        { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetMediaRows', 'Items to show'] },
+        { key: 'ttl', kind: 'int', min: 30, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
+    ];
+
+    static BESZEL_SETTINGS = [
+        { key: 'sort', kind: 'choice', label: ['config.widgetBeszelSort', 'Order'],
+          options: [
+              ['name', ['config.widgetBeszelSortName', 'By name']],
+              ['heaviest', ['config.widgetBeszelSortHeaviest', 'Busiest first']],
+              ['status', ['config.widgetBeszelSortStatus', 'Trouble first']],
+          ] },
+        DashboardConfig.BESZEL_HIDE_PAUSED,
+        DashboardConfig.BESZEL_METERS,
+        ...DashboardConfig.BESZEL_TAIL,
+    ];
+
+    static BESZEL_SYSTEM_SETTINGS = [DashboardConfig.BESZEL_METERS, ...DashboardConfig.BESZEL_TAIL];
+    static BESZEL_ATTENTION_SETTINGS = [DashboardConfig.BESZEL_HIDE_PAUSED, ...DashboardConfig.BESZEL_TAIL];
+    static BESZEL_STORAGE_SETTINGS = [...DashboardConfig.BESZEL_TAIL];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -21277,6 +21355,10 @@ class DashboardConfig {
         'jellyfin-playing': DashboardConfig.JELLYFIN_PLAYING_SETTINGS,
         'emby-playing': DashboardConfig.JELLYFIN_PLAYING_SETTINGS,
         'plex-playing': DashboardConfig.JELLYFIN_PLAYING_SETTINGS,
+        beszel: DashboardConfig.BESZEL_SETTINGS,
+        'beszel-system': DashboardConfig.BESZEL_SYSTEM_SETTINGS,
+        'beszel-attention': DashboardConfig.BESZEL_ATTENTION_SETTINGS,
+        'beszel-storage': DashboardConfig.BESZEL_STORAGE_SETTINGS,
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
               label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },
@@ -22470,9 +22552,6 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         return `
             <div class="config-bm-view-tab">
-                <div class="config-bm-view-bar">
-                    <a class="config-btn config-btn--small" href="#bookmarks" data-bm-open-view>${esc(this.t('config.bmViewOpen', 'Open the Bookmarks view'))} ↗</a>
-                </div>
                 ${this.renderBookmarksViewPreview()}
                 ${this.renderControlPanels(this.panelsFor('bookmarks', 'view'), 'behavior')}
             </div>`;

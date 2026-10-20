@@ -62,6 +62,10 @@
         seerr: { rows: [['Shōgun', 'asked'], ['Wicked', 'arrived', 'good']] },
         qbittorrent: { rows: [['↓ 12.4 MB/s', '']], bars: [['ubuntu-24.10.iso', 0.81]] },
         sabnzbd: { rows: [['queue', '3 · 4.1 GB'], ['↓ 38 MB/s', '']] },
+        beszel: { rows: [['nas', 'disk 88%', 'warn'], ['htpc', 'cpu 23%'], ['pihole', 'down', 'bad']] },
+        'beszel-system': { rows: [['nas', ''], ['temp', '54°']], bars: [['cpu', 0.23], ['mem', 0.61], ['disk', 0.88, 'warn']] },
+        'beszel-attention': { rows: [['nas', 'disk 88%', 'warn'], ['pihole', 'down', 'bad']] },
+        'beszel-storage': { bars: [['nas /', 0.88, 'warn'], ['htpc /', 0.41]] },
         custom: { rows: [['queued', '7'], ['paused', '2']] },
     };
 
@@ -86,6 +90,10 @@
         qbittorrent: '1.20',
         sabnzbd: '1.20',
         homeassistant: '1.20',
+        beszel: '1.20',
+        'beszel-system': '1.20',
+        'beszel-attention': '1.20',
+        'beszel-storage': '1.20',
     };
 
     /** "v1.19.4" -> [1, 19]; anything else, an old date tag included, -> null. */

@@ -51,6 +51,15 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.20.0 (2026-10-20)
+- Appearance: Confetti is the default look for a new install, with 24 new colour-burst theme families and three new backdrops
+- Appearance: categories and widgets sit on glass, a card or nothing, per theme or for all; widgets get their own background and opacity
+- Dashboard: a category can show tiles, titles can carry an icon, and Space between columns is a setting of its own
+- Statistics: a Server tab, notifications on Health, and widgets by kind and per page
+- First start: a Quick start guide replaces the first-start card and checklist, and a new Inbox holds ten links to try
+- Config: Backups &amp; data reads top to bottom, and the keyboard shortcuts sheet has topic chips and a filter
+- Fixes: app discovery keeps a Remove on the ignored list, Undo on its notice can be retried, and its question opens once
+
 ### v1.19.11 (2026-10-18)
 - Dashboard: widget titles are plain titles over their card again, and the // is in one place for categories and widgets
 - Fixes: a title no longer jumps when you point at it
@@ -91,13 +100,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Tours: shorter tours, at most one tip a day, and settings for animation speed
 - Fixes: saves from two devices no longer overwrite each other's pages, categories or finders
 
-### v1.19.5 (2026-10-12)
-- Widgets: Sonarr and Radarr widgets show what is coming and what is in the queue, with posters
-- Widgets: a Seerr widget shows requests in Overseerr or Jellyseerr, who asked and whether they arrived
-- Widgets: qBittorrent and SABnzbd widgets show downloads with progress, speed and time left
-- Widgets: Add a widget opens a picker you can search, and new kinds carry a New badge in the Catalogue
-- Translations: the widget picker and a few Inbox messages no longer show English in the other languages
-
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -105,7 +107,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-10-18</Date>
+  <Date>2026-10-20</Date>
 
   <Config Name="WebUI Port"
           Target="8080"

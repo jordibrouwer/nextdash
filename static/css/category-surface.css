@@ -288,8 +288,13 @@ html[data-theme] body .first-start-tile:focus-visible {
    The tag view, the inbox, the containers view and the bookmarks view are one pane each, round
    everything in them, and nothing inside is framed again.
 
-   Config has two arrangements, to compare: loose panes (the default) and one
-   pane round the whole view, chosen by body[data-config-panes="one"]. */
+   Config is one pane too, round its header, its sections rail and its
+   content, so it no longer reads as a different application from the views
+   beside it. It had a second arrangement, every panel a pane of its own on
+   the page; that one is gone. Inside config's pane the blocks -- a panel, an
+   overview card, a table -- keep a faint tint and a hairline rather than a
+   pane of their own: a long settings page still shows where a block starts
+   and ends, without glass inside glass. */
 html[data-theme] body #dashboard-layout:is(.config-layout, .tag-view-layout, .inbox-layout, .docker-layout, .library-layout) {
     --cfg-pane-radius: var(--radius-6, 10px);
     --cfg-pane-bg: color-mix(in srgb, var(--text-primary) 4%, transparent);
@@ -316,11 +321,11 @@ html[data-theme] body[data-cat-surface="card"] #dashboard-layout:is(.config-layo
     --cfg-pane-bg: var(--surface-2, var(--background-secondary));
 }
 
-/* A whole view is one pane: the tag view, the inbox and the bookmarks view,
-   and config itself in its one-pane arrangement. */
+/* A whole view is one pane: the tag view, the inbox, the containers view,
+   the bookmarks view and config. */
 html[data-theme] body #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout) > .lvs,
 html[data-theme] body #dashboard-layout.library-layout > .config-view--library,
-html[data-theme] body[data-config-panes="one"] #dashboard-layout.config-layout > .config-view {
+html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view {
     background-color: var(--cfg-pane-bg);
     background-image: var(--cfg-pane-sheen, none);
     border-radius: var(--cfg-pane-radius);
@@ -329,7 +334,7 @@ html[data-theme] body[data-config-panes="one"] #dashboard-layout.config-layout >
 }
 
 html[data-theme] body #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout) > .lvs,
-html[data-theme] body[data-config-panes="one"] #dashboard-layout.config-layout > .config-view {
+html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view {
     backdrop-filter: var(--cfg-pane-filter, none);
     -webkit-backdrop-filter: var(--cfg-pane-filter, none);
 }
@@ -357,7 +362,8 @@ html[data-theme] body #dashboard-layout.library-layout > .config-view--library::
    Scrolled, rows pass behind it and it turns solid again so they do not show
    through the title (list-view-header-surface.spec.js). */
 html[data-theme] body:not([data-scrolled="true"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout) > .lvs .lvs-header,
-html[data-theme] body[data-config-panes="one"]:not([data-scrolled="true"]) #dashboard-layout.config-layout > .config-view > .config-view-head {
+html[data-theme] body:not([data-scrolled="true"]) #dashboard-layout.library-layout > .config-view--library > .config-view-head,
+html[data-theme] body:not([data-scrolled="true"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view > .config-view-head {
     background-color: transparent;
     background-image: none;
     backdrop-filter: none;
@@ -367,37 +373,10 @@ html[data-theme] body[data-config-panes="one"]:not([data-scrolled="true"]) #dash
     border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 12%, transparent);
 }
 
-/* Loose panes (config's default): each panel, overview card, row that is a
-   card and table is a pane of its own. */
-html[data-theme] body:not([data-config-panes="one"]) #dashboard-layout.config-layout:not(.library-layout) :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table) {
-    background-color: var(--cfg-pane-bg);
-    background-image: var(--cfg-pane-sheen, none);
-    backdrop-filter: var(--cfg-pane-filter, none);
-    -webkit-backdrop-filter: var(--cfg-pane-filter, none);
-    border-radius: var(--cfg-pane-radius);
-    box-shadow: var(--cfg-pane-shadow);
-}
-
-/* An accented or dangerous panel keeps the border that says so. */
-html[data-theme] body:not([data-config-panes="one"]) #dashboard-layout.config-layout:not(.library-layout) :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table):not(.config-panel--attention, .config-panel--danger) {
-    border: 0;
-}
-
-html[data-theme] body:not([data-config-panes="one"]) #dashboard-layout.config-layout:not(.library-layout) .config-crud-list--table {
-    overflow: hidden;
-}
-
-/* A pane inside a pane is not blurred twice. */
-html[data-theme] body:not([data-config-panes="one"]) #dashboard-layout.config-layout:not(.library-layout) :is(.config-panel, .config-widget, .config-crud-list--table) :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row) {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-}
-
-/* One pane round everything (the bookmarks view always, config on request):
-   what is inside is a section of it, with a heading and whitespace. A panel
-   that is an alert (attention, danger) keeps the border that says so. */
-html[data-theme] body #dashboard-layout.library-layout .config-view--library :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table):not(.config-panel--attention, .config-panel--danger),
-html[data-theme] body[data-config-panes="one"] #dashboard-layout.config-layout > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table):not(.config-panel--attention, .config-panel--danger) {
+/* The bookmarks view: what is inside its pane is a section of it, with a
+   heading and whitespace. A panel that is an alert (attention, danger) keeps
+   the border that says so. */
+html[data-theme] body #dashboard-layout.library-layout .config-view--library :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table):not(.config-panel--attention, .config-panel--danger) {
     background-color: transparent;
     background-image: none;
     backdrop-filter: none;
@@ -407,23 +386,62 @@ html[data-theme] body[data-config-panes="one"] #dashboard-layout.config-layout >
     border-radius: 0;
 }
 
-/* The opening text of a tab (the line under the strip, or a tab's first
-   paragraph) is a pane of its own in the loose arrangement. In the one-pane
-   arrangement it already sits inside the view's pane. */
-html[data-theme] body:not([data-config-panes="one"]) #dashboard-layout.config-layout:not(.library-layout) :is(
-    .config-view-body > .config-tab-note,
-    .config-view-body > .config-view-intro,
-    .config-view-body > div > .config-view-intro:first-child,
-    .config-view-body > div > .config-panel-note:first-child,
-    .config-view-body > .config-panel-note:first-child
-) {
-    background-color: var(--cfg-pane-bg);
-    background-image: var(--cfg-pane-sheen, none);
-    backdrop-filter: var(--cfg-pane-filter, none);
-    -webkit-backdrop-filter: var(--cfg-pane-filter, none);
+/* Config: the blocks inside its pane are tinted, not panes. The tint is a
+   darkening -- the theme's surface at 35% -- rather than a wash of white: a
+   white wash made the ground behind light text lighter, and the words duller
+   for it. The pane round the blocks carries the surface; a block only needs to
+   show its edges. One inside another (a row in a panel, a card in a list) is not
+   tinted twice. An alert keeps its own border. */
+html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table):not(.config-panel--attention, .config-panel--danger) {
+    background-color: color-mix(in srgb, var(--surface-2, var(--background-secondary)) 35%, transparent);
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 0;
     border-radius: var(--cfg-pane-radius);
-    box-shadow: var(--cfg-pane-shadow);
-    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
-    max-width: none;
-    margin-top: 0;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 8%, transparent);
 }
+
+html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-crud-list--table) :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row):not(.config-panel--attention, .config-panel--danger) {
+    background-color: transparent;
+    box-shadow: none;
+}
+
+html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-crud-list--table {
+    overflow: hidden;
+}
+
+/* On a card surface the pane already is the surface colour, so a darkening of
+   it would not show: there a block is told apart by a light tint. */
+html[data-theme] body[data-cat-surface="card"] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table):not(.config-panel--attention, .config-panel--danger) {
+    background-color: color-mix(in srgb, var(--text-primary) 4%, transparent);
+}
+
+/*
+ * Reading config on its pane.
+ *
+ * Measured on Behavior: about 85% of the words were muted grey at 12.8-13.6px,
+ * against a backdrop that shows through glass -- where the other views are
+ * mostly white titles on rows. So inside config's pane:
+ *   - what you set is white: field labels, the sections rail, the tabs;
+ *   - muted text is lighter, a step towards white, and only here;
+ *   - help under a field is as large as a panel's note, and nothing reads
+ *     smaller than 12px.
+ * The title of the active section and tab keep their accent.
+ */
+html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view {
+    --text-muted: color-mix(in srgb, var(--text-secondary) 60%, var(--text-primary));
+}
+
+html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-field-label, .config-nav-item:not(.is-active), .config-subtab:not(.is-active)) {
+    color: var(--text-primary);
+}
+
+html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-field-hint, .lvs-description) {
+    font-size: calc(var(--font-size-text) * 0.971);
+}
+
+html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(kbd, .config-field-badge) {
+    font-size: max(12px, 0.75rem);
+}
+

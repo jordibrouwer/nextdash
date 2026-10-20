@@ -115,6 +115,11 @@ var withheldWidgetKeys = map[WidgetType]map[string]bool{
 	WidgetTypeEmbyPlaying:     {"server": true, "credentialId": true},
 	WidgetTypePlex:            {"server": true, "credentialId": true},
 	WidgetTypePlexPlaying:     {"server": true, "credentialId": true},
+	// System ids say what a network is made of.
+	WidgetTypeBeszel:          {"server": true, "credentialId": true, "systems": true, "system": true},
+	WidgetTypeBeszelSystem:    {"server": true, "credentialId": true, "systems": true, "system": true},
+	WidgetTypeBeszelAttention: {"server": true, "credentialId": true, "systems": true, "system": true},
+	WidgetTypeBeszelStorage:   {"server": true, "credentialId": true, "systems": true, "system": true},
 }
 
 /*

@@ -122,7 +122,7 @@ class DashboardSetup {
         // The category header: five looks, a size, and what stands beside the
         // name. CSS reads them off <body> (category-header.css); "theme" is the
         // header as the theme and layout draw it.
-        // On "Follow the theme" a theme may state a header of its own (Confetti: clean).
+        // On "Follow the theme" a theme may state a header of its own (none does today).
         document.body.setAttribute('data-cat-head', window.ThemeLoader?.resolveCatHead
             ? window.ThemeLoader.resolveCatHead(d.settings.categoryHeaderStyle, document.body.getAttribute('data-theme') || d.settings.theme)
             : (d.settings.categoryHeaderStyle || 'theme'));
