@@ -5732,7 +5732,7 @@ class DashboardInbox {
         try {
             const res = await fetch(`/api/categories?page=${encodeURIComponent(pageId)}`, { cache: 'no-store' });
             const list = res.ok ? await res.json() : [];
-            const hit = (list || []).find((c) => String(c?.name || '').trim().toLowerCase() === name.toLowerCase());
+            const hit = (Array.isArray(list) ? list : []).find((c) => String(c?.name || '').trim().toLowerCase() === name.toLowerCase());
             if (hit) return String(hit.id);
         } catch { /* fall through to creating it */ }
         const created = await d.structureCreate?.createCategoryFromForm?.(Number(pageId), name);
@@ -6142,6 +6142,18 @@ class DashboardInbox {
     }
 
     async promoteItem(item) {
+        // A second click while the first still looks up the category made
+        // that category twice.
+        if (this._promoting) return;
+        this._promoting = true;
+        try {
+            await this.promoteItemNow(item);
+        } finally {
+            this._promoting = false;
+        }
+    }
+
+    async promoteItemNow(item) {
         const d = this.dash;
         // The inbox's main conversion: a captured link becoming a real bookmark.
         this._trackAction('promote');
