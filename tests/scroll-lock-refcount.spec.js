@@ -24,12 +24,24 @@ const lockHolders = () => JSON.stringify({
  * user-visible property, rather than a style string that only implies it.
  */
 async function wheelScrolls(page) {
+    // A page that fits its window has nothing to scroll whether or not it is
+    // locked, and Config's pages are about a window tall: Appearance is 106px
+    // over at 950px. The test is about the lock, so give the page height.
+    await page.evaluate(() => {
+        const spacer = document.createElement('div');
+        spacer.id = 'scroll-probe-spacer';
+        spacer.style.cssText = 'height:3000px;pointer-events:none';
+        document.body.appendChild(spacer);
+    });
     const before = await page.evaluate(() => window.scrollY);
     await page.mouse.move(500, 400);
     await page.mouse.wheel(0, 600);
     const moved = await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 2000 })
         .not.toBe(before).then(() => true, () => false);
-    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.evaluate(() => {
+        window.scrollTo(0, 0);
+        document.getElementById('scroll-probe-spacer')?.remove();
+    });
     return moved;
 }
 
