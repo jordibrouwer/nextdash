@@ -337,8 +337,56 @@
             this.refresh();
             requestAnimationFrame(() => {
                 overlay.classList.add('show');
+                this.flyFromBar(overlay, 'out');
                 overlay.querySelector('[data-sg-keep], [data-sg-step] button, button')?.focus({ preventScroll: true });
             });
+        }
+
+        /**
+         * The modal grows out of the bar and folds back into it. Both are one
+         * transform: the modal moved and scaled onto the bar's own box. Nothing
+         * moves when the bar is not on screen (a notice has the corner, the
+         * window is too small) or when motion is off. Answers the animation, or
+         * null when there is none.
+         */
+        flyFromBar(overlay, direction) {
+            const modal = overlay.querySelector('[data-start-guide-modal]');
+            const bar = this.bar;
+            if (!modal || !bar || typeof modal.animate !== 'function') return null;
+            if (document.body.classList.contains('no-animations')) return null;
+            if (global.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return null;
+            const from = bar.getBoundingClientRect();
+            if (!from.width || getComputedStyle(bar).visibility === 'hidden') return null;
+            // Layout size, not the rect: the rect still carries the entrance transform.
+            const width = modal.offsetWidth;
+            const height = modal.offsetHeight;
+            const box = overlay.getBoundingClientRect();
+            if (!width || !height) return null;
+            const scale = Math.min(1, Math.max(0.08, from.width / width));
+            const dx = from.left + from.width / 2 - (box.left + box.width / 2);
+            const dy = from.top + from.height / 2 - (box.top + box.height / 2);
+            const there = `translate(${dx}px, ${dy}px) scale(${scale})`;
+            const out = direction === 'out';
+            modal.style.transition = 'none';
+            overlay.style.transition = 'none';
+            const timing = { duration: out ? 380 : 260, easing: out ? 'cubic-bezier(0.2, 0.85, 0.25, 1)' : 'cubic-bezier(0.5, 0, 0.75, 0.4)', fill: 'both' };
+            const fade = overlay.animate([{ opacity: out ? 0 : 1 }, { opacity: out ? 1 : 0 }], timing);
+            const move = modal.animate(
+                out
+                    ? [{ transform: there, opacity: 0.35 }, { transform: 'none', opacity: 1 }]
+                    : [{ transform: 'none', opacity: 1 }, { transform: there, opacity: 0.2 }],
+                timing
+            );
+            if (out) {
+                // Arrived: the page's own styles say the same, so hand over to them.
+                move.addEventListener('finish', () => {
+                    move.cancel();
+                    fade.cancel();
+                    modal.style.transition = '';
+                    overlay.style.transition = '';
+                });
+            }
+            return move;
         }
 
         /** Fold the modal back into the bar; the bar says where it went. */
@@ -350,16 +398,30 @@
             document.removeEventListener('keydown', this.keyHandler, true);
             global.ScrollLock?.release?.(this.scrollLockToken);
             this.scrollLockToken = null;
-            overlay.classList.remove('show');
-            overlay.remove();
+            // Read the bar before refresh() redraws it; the fold ends on its box.
+            const fold = this.flyFromBar(overlay, 'in');
+            const finish = () => {
+                overlay.classList.remove('show');
+                overlay.remove();
+                if (land && this.bar) {
+                    this.bar.classList.remove('is-landed');
+                    // Restarts the one-off glow even when it was just running.
+                    void this.bar.offsetWidth;
+                    this.bar.classList.add('is-landed');
+                    this.bar.querySelector('[data-start-guide-open], [data-sg-all-set]')?.focus({ preventScroll: true });
+                }
+            };
             this.refresh();
-            if (land && this.bar) {
-                this.bar.classList.remove('is-landed');
-                // Restarts the one-off glow even when it was just running.
-                void this.bar.offsetWidth;
-                this.bar.classList.add('is-landed');
-                this.bar.querySelector('[data-start-guide-open], [data-sg-all-set]')?.focus({ preventScroll: true });
-            }
+            if (!fold) { finish(); return; }
+            // Out of the way of the page while it folds: clicks reach the bar, and
+            // what is folding is no longer the dialog, to a reader or to the page.
+            overlay.style.pointerEvents = 'none';
+            overlay.removeAttribute('data-start-guide-overlay');
+            const folding = overlay.firstElementChild;
+            folding?.removeAttribute('data-start-guide-modal');
+            folding?.setAttribute('aria-hidden', 'true');
+            fold.onfinish = finish;
+            fold.oncancel = finish;
         }
 
         onKey(event) {

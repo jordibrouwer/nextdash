@@ -37,7 +37,12 @@ async function openModal(page) {
     await expect(bar(page)).toBeVisible({ timeout: 10_000 });
     await bar(page).locator('[data-start-guide-open]').click();
     await expect(modal(page)).toBeVisible();
+    await settled(page);
 }
+
+/** The modal grows out of the bar; measure it once it has stopped. */
+const settled = (page) => page.waitForFunction(() =>
+    !document.querySelector('[data-start-guide-modal]')?.getAnimations().length);
 
 const stored = (page) => page.evaluate(async () => (await (await fetch('/api/settings')).json()));
 
@@ -74,6 +79,44 @@ test.describe('a fresh install', () => {
         await modal(page).locator('[data-sg-minimise]').click();
         await expect(modal(page)).toHaveCount(0);
         await expect(bar(page)).toBeVisible();
+    });
+
+    test('the modal grows out of the bar and folds back into it', async ({ page, request }) => {
+        await freshInstall(page, request);
+        await expect(bar(page)).toBeVisible({ timeout: 10_000 });
+        // The window's own centre and the bar's, to tell where the modal is drawn from.
+        const spots = await page.evaluate(() => {
+            const b = document.querySelector('[data-start-guide-bar]').getBoundingClientRect();
+            return { bar: { x: b.left + b.width / 2, y: b.top + b.height / 2 }, mid: { x: innerWidth / 2, y: innerHeight / 2 } };
+        });
+        const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+        // Sampled on every frame from the click: the first one is at the bar, the last in the middle.
+        const frames = await page.evaluate(async () => {
+            const seen = [];
+            const watch = () => {
+                const m = document.querySelector('[data-start-guide-modal]');
+                if (m) { const r = m.getBoundingClientRect(); seen.push({ x: r.left + r.width / 2, y: r.top + r.height / 2 }); }
+            };
+            document.querySelector('[data-start-guide-open]').click();
+            for (let i = 0; i < 40; i++) { await new Promise((r) => requestAnimationFrame(r)); watch(); }
+            return seen;
+        });
+        expect(frames.length).toBeGreaterThan(5);
+        expect(distance(frames[0], spots.bar)).toBeLessThan(distance(frames[0], spots.mid));
+        expect(distance(frames[frames.length - 1], spots.mid)).toBeLessThan(10);
+
+        // Folding: the overlay is still drawn, moving, after the dialog is gone from the page.
+        const folding = await page.evaluate(async () => {
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+            await new Promise((r) => requestAnimationFrame(r));
+            return {
+                drawn: Boolean(document.querySelector('.start-guide-overlay')),
+                dialog: document.querySelectorAll('[data-start-guide-modal]').length,
+            };
+        });
+        expect(folding.drawn).toBe(true);
+        expect(folding.dialog).toBe(0);
+        await expect(page.locator('.start-guide-overlay')).toHaveCount(0);
     });
 
     test('the modal never opens by itself, also after a reload', async ({ page, request }) => {
