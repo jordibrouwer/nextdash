@@ -274,7 +274,9 @@
 /* ── Row buttons: dim, full on hover or focus ───────────────────────────── */
 
 #config-pt-body .config-crud-row-actions {
-    opacity: 0.45;
+    /* Quiet at rest, but still words with an edge: at 0.45 and no border
+       "Delete" was red on a red-tinted row. */
+    opacity: 0.75;
     transition: opacity 0.12s;
     justify-self: end;
 }
@@ -287,7 +289,7 @@
 
 #config-pt-body .config-crud-row-actions .config-btn {
     background: transparent;
-    border-color: transparent;
+    border-color: color-mix(in srgb, currentColor 22%, transparent);
 }
 
 #config-pt-body .config-crud-row-actions .config-btn:hover,

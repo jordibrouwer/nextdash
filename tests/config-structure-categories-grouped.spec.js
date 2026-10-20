@@ -44,7 +44,7 @@ test.describe('Structure → Categories', () => {
         await expect(body.locator('.config-structure-grip')).toHaveCount(0);
         await expect(body.locator('.config-widget-category-name')).toHaveCount(0);
         await expect(body.locator('[data-pt-sort="categories"] option[value="manual"]')).toHaveCount(0);
-        await expect(body).toContainText('drag // on the dashboard');
+        await expect(body).toContainText('Reorder them with // on the dashboard');
         await expect(body.locator('[data-cat-add]')).toHaveCount(1);
         await expect(body.locator('[data-cat-delete]').first()).toBeAttached();
     });

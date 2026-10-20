@@ -48,7 +48,7 @@ for (const [tab, nameSel] of [['categories', '[data-cat="name"]'], ['pages', '[d
       await openStructure(page, tab);
       const row = page.locator('.config-crud-list--table .config-crud-row').first();
       const actions = row.locator('.config-crud-row-actions');
-      await expect.poll(() => actions.evaluate((el) => getComputedStyle(el).opacity)).toBe('0.45');
+      await expect.poll(() => actions.evaluate((el) => getComputedStyle(el).opacity)).toBe('0.75');
       await row.hover();
       await expect.poll(() => actions.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
     });

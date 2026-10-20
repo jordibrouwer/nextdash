@@ -105,9 +105,12 @@
  * to the things it tells you.
  */
 .config-nav-column .lvs-group-title {
-    font-size: calc(var(--font-size-text) * 1.14);
-    letter-spacing: 0;
-    color: var(--text-primary);
+    /* Small and muted: the band above already carries the section's title,
+       and this only names the strip for those who look for a name. */
+    font-size: var(--font-size-small, 0.72rem);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-muted, var(--text-secondary));
     padding-bottom: var(--space-1-5, 0.35rem);
     margin-bottom: var(--space-1, 0.25rem);
     border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
@@ -1524,8 +1527,10 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
 }
 
 .config-btn--danger {
-    color: #d1493f;
-    border-color: color-mix(in srgb, #d1493f 45%, transparent);
+    /* Pulled towards the text colour: the plain red sat on a red-tinted pane
+       and nearly vanished, and on a light theme the pull darkens it instead. */
+    color: color-mix(in srgb, #e5483d 70%, var(--text-primary));
+    border-color: color-mix(in srgb, #e5483d 55%, transparent);
 }
 
 /*
@@ -2108,6 +2113,29 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
     margin-top: 12px;
     font-size: calc(var(--font-size-text) * 1.006);
     cursor: pointer;
+}
+
+/* The checkbox and its words are one target, a little taller than the text
+   and tinted under the pointer. Padding and a matching negative margin, so
+   nothing around it moves. */
+.config-view .config-toggle {
+    padding: 4px 8px;
+    margin-block: -4px;
+    margin-inline: -8px;
+    border-radius: var(--radius-4, 6px);
+    transition: background 0.12s ease;
+}
+
+.config-view .config-toggle:hover {
+    background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+}
+
+.config-view .config-toggle:has(input:disabled) {
+    cursor: default;
+}
+
+.config-view .config-toggle:has(input:disabled):hover {
+    background: none;
 }
 
 /* Checkbox-only toggles aligned in the config-field label/control grid. The
@@ -9178,6 +9206,14 @@ body.no-animations .config-new-features-panel-star {
     flex-wrap: nowrap;
     opacity: 0;
     transition: opacity 0.12s ease;
+}
+
+/* Shown, they read as buttons: an edge and a faint fill, ink at full strength.
+   Without them "Duplicate" and "Delete" were two grey words beside a number. */
+.config-crud-list--table .config-crud-row-actions .config-btn:not(.config-btn--danger) {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--text-primary) 24%, transparent);
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
 }
 
 .config-crud-list--table .config-crud-row:hover .config-crud-row-actions,
