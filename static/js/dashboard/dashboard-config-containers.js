@@ -413,13 +413,20 @@
             ? t('config.dockerStatusDeniedHelp',
                 'The socket is mounted, but the nextdash user may not open it. Recreate the container with this version, which joins the socket\'s group, or set NEXTDASH_RUN_AS_ROOT=1.')
             : t('config.dockerStatusMissingHelp',
-                'Mount the Docker socket and set NEXTDASH_DOCKER_SOCKET. On Unraid: a Path row for /var/run/docker.sock and a Variable row for NEXTDASH_DOCKER_SOCKET.');
+                'Mount the Docker socket and set NEXTDASH_DOCKER_SOCKET. On Unraid, add a Path row and a Variable row.');
         help.appendChild(hint);
         if (!denied) {
+            // Folded: the lines are for the one time you set it up, and the
+            // status above is what you came to read.
+            const fold = document.createElement('details');
+            fold.className = 'config-docker-snippet-fold';
+            const summary = document.createElement('summary');
+            summary.textContent = t('config.dockerSnippetSummary', 'Compose lines');
             const pre = document.createElement('pre');
             pre.className = 'config-docker-snippet';
             pre.textContent = SOCKET_SNIPPET;
-            help.appendChild(pre);
+            fold.append(summary, pre);
+            help.appendChild(fold);
         }
         help.appendChild(this.dockerSetupHelpButton());
     },

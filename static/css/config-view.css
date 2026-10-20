@@ -9957,3 +9957,17 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
 .config-suggestion-row[hidden] {
     display: none;
 }
+
+/* The Compose lines on Containers → Connection fold under one word. */
+.config-docker-snippet-fold {
+    margin: var(--space-2, 0.5rem) 0;
+}
+
+.config-docker-snippet-fold > summary {
+    cursor: pointer;
+    color: var(--accent-primary);
+}
+
+.config-docker-snippet-fold > .config-docker-snippet {
+    margin-top: var(--space-2, 0.5rem);
+}
