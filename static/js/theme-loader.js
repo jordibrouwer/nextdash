@@ -603,8 +603,9 @@
 
     /** Resolve and write all three attributes for a theme. */
     // What "Follow the theme" means for a category header, for the themes that
-    // state one. Mirrors themeCategoryHeads in Go.
-    const THEME_CAT_HEADS = { 'look-confetti-dark': 'clean', 'look-confetti-light': 'clean' };
+    // state one. Mirrors themeCategoryHeads in Go. Empty: Confetti keeps the
+    // theme's own header, with its // grip and a widget's panel icon.
+    const THEME_CAT_HEADS = {};
 
     function resolveCatHead(style, theme) {
         const word = style || 'theme';

@@ -3442,7 +3442,7 @@ Small drawings beside the shape settings show what a value looks like.
 | **How a row lights up** | **Subtle** (default) or **Strong** — how far the accent carries across the row you are on |
 | **Row status** | Chips for the online/offline status colours, **a loading state while checking** and **ping times** |
 | **Show tags on bookmark rows** | And **Tags shown before "+N"** |
-| **Category header** | How a category's name reads above its bookmarks. **Style**: Follow the theme (default; Confetti's own is Clean), Clean, Underlined (optionally in the accent colour), Boxed, Label or Group card, which wraps the category and its bookmarks in one pane. **Size**: Small (default), Medium or Large; an install that was still on Medium moves to Small once. **Shown in the header** — chips for the category icon (chosen per category, from its menu), the count of bookmarks on the right, and the underline |
+| **Category header** | How a category's name reads above its bookmarks. **Style**: Follow the theme (default), Clean, Underlined (optionally in the accent colour), Boxed, Label or Group card, which wraps the category and its bookmarks in one pane. **Size**: Small (default), Medium or Large; an install that was still on Medium moves to Small once. **Shown in the header** — chips for the category icon (chosen per category, from its menu), the count of bookmarks on the right, and the underline |
 
 **Link previews** tab — one panel, **Link preview cards**: Off · On hover (default) · Keyboard only, a hover delay (Fast, Balanced, Calm) and **What the card shows**, as chips: image, site, author & date, video player, description, your note, tags, status & uptime, opens, Fresh count, shortcut & location ([§4](#4-the-dashboard)).
 

@@ -191,7 +191,7 @@ test.describe('the Background and Surface tabs', () => {
         await openTab(page, 'display');
         await page.locator('[data-behavior-field="categoryHeaderStyle"]').selectOption('theme');
         await setChip(page.locator('[data-behavior-field="showCategoryCount"]'), false);
-        // Follow the theme: its own header, which for Confetti is clean.
+        // Follow the theme: the header the theme states, if any.
         await expect.poll(() => page.evaluate(() => document.body.getAttribute('data-cat-head') === window.ThemeLoader.resolveCatHead('theme', document.body.getAttribute('data-theme')))).toBe(true);
         await expect.poll(() => page.getAttribute('body', 'data-cat-count')).toBe('off');
     });

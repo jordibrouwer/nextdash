@@ -2,19 +2,19 @@ package app
 
 import "testing"
 
-// On "Follow the theme" Confetti draws its headers clean; any other theme keeps
-// the theme's own, and a style the reader chose is never replaced.
+// On "Follow the theme" every theme keeps its own header, Confetti too (it keeps
+// the // grip and a widget's panel icon); a style the reader chose is never replaced.
 func TestResolveCategoryHeader(t *testing.T) {
 	cases := []struct{ style, theme, want string }{
-		{"theme", "look-confetti-dark", "clean"},
-		{"theme", "look-confetti-light", "clean"},
-		{"", "look-confetti-dark", "clean"},
+		{"theme", "look-confetti-dark", "theme"},
+		{"theme", "look-confetti-light", "theme"},
+		{"", "look-confetti-dark", "theme"},
 		{"theme", "slate-dark", "theme"},
 		{"theme", "gloss-liquid-chrome-dark", "theme"},
 		{"boxed", "look-confetti-dark", "boxed"},
 		{"underlined", "slate-dark", "underlined"},
 		{"clean", "slate-dark", "clean"},
-		{"nonsense", "look-confetti-dark", "clean"},
+		{"nonsense", "look-confetti-dark", "theme"},
 	}
 	for _, c := range cases {
 		if got := resolveCategoryHeader(c.style, c.theme); got != c.want {

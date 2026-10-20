@@ -337,7 +337,7 @@ test.describe('moving blocks on the dashboard', () => {
             await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
             await page.click('[data-appearance-tab="display"]');
             await style.selectOption('theme');
-            // Follow the theme: its own header, which for Confetti is clean.
+            // Follow the theme: the header the theme states, if any.
             await expect.poll(() => page.evaluate(() => document.body.getAttribute('data-cat-head') === window.ThemeLoader.resolveCatHead('theme', document.body.getAttribute('data-theme')))).toBe(true);
         }
     });
