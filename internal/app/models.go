@@ -465,6 +465,7 @@ type Settings struct {
 	ActionBarRightMigrated          bool   `json:"actionBarRightMigrated,omitempty"`          // one-time: action bar to the right column, sliding after 2s
 	HeaderClockClassicMigrated      bool   `json:"headerClockClassicMigrated,omitempty"`      // one-time: clock and weather onto a line of their own
 	FirstRunInstall                 bool   `json:"firstRunInstall,omitempty"`                 // this settings file was written fresh, not upgraded: the changes tour greets rather than explains what moved
+	FirstRunAt                      int64  `json:"firstRunAt,omitempty"`                      // unix ms the fresh settings file was written; corner cards that should not greet a newcomer on day one wait a day from it
 	HeaderActionsDefaultTwoMigrated bool   `json:"headerActionsDefaultTwoMigrated,omitempty"` // one-time: the header shows two actions before "+N", not four
 	ShowSearchFlowBanner            bool   `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton            bool   `json:"showCheatSheetButton"`
@@ -1831,6 +1832,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ActionBarRightMigrated:          true,
 			HeaderClockClassicMigrated:      true,
 			FirstRunInstall:                 true,
+			FirstRunAt:                      time.Now().UnixMilli(),
 			HeaderActionsDefaultTwoMigrated: true,
 			PageSwitcherTextMigrated:        true,
 			PageSwitcherClassicMigrated:     true,
@@ -4460,6 +4462,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ActionBarRightMigrated:          true,
 			HeaderClockClassicMigrated:      true,
 			FirstRunInstall:                 true,
+			FirstRunAt:                      time.Now().UnixMilli(),
 			HeaderActionsDefaultTwoMigrated: true,
 			PageSwitcherTextMigrated:        true,
 			PageSwitcherClassicMigrated:     true,
@@ -5481,6 +5484,9 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.ActionBarRightMigrated = settings.ActionBarRightMigrated || stored.ActionBarRightMigrated
 			settings.HeaderClockClassicMigrated = settings.HeaderClockClassicMigrated || stored.HeaderClockClassicMigrated
 			settings.FirstRunInstall = settings.FirstRunInstall || stored.FirstRunInstall
+			if settings.FirstRunAt == 0 {
+				settings.FirstRunAt = stored.FirstRunAt
+			}
 			settings.HeaderActionsDefaultTwoMigrated = settings.HeaderActionsDefaultTwoMigrated || stored.HeaderActionsDefaultTwoMigrated
 			settings.PageSwitcherTextMigrated = settings.PageSwitcherTextMigrated || stored.PageSwitcherTextMigrated
 			settings.PageSwitcherClassicMigrated = settings.PageSwitcherClassicMigrated || stored.PageSwitcherClassicMigrated
