@@ -9,7 +9,7 @@
       "items": [
         {
           "badge": "new",
-          "text": "<strong>A quick start for a new install.</strong> After a moment a Quick start bar slides in at the bottom of the dashboard and opens a guide: what to do with the example links, your language, the weather and nine next steps. A new install also has ten example links waiting in the Inbox.",
+          "text": "<strong>A quick start for a new install.</strong> After a moment a Quick start bar slides in at the bottom of the dashboard, and three seconds later the first time it opens a guide by itself, growing out of the bar: what to do with the example links, your language, the weather and nine next steps. A new install also has ten example links waiting in the Inbox.",
           "highlight": true,
           "title": "A quick start for a new install",
           "media": {
