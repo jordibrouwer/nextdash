@@ -961,7 +961,7 @@ Hovering a bookmark — or pressing **`Shift + V`** on the selected row — open
 
 <img src="screenshots/manual.md/04-preview-card.jpg" alt="The link preview card of a bookmark: picture, description, a tag, when it was last opened, its shortcut and where it lives" width="408" align="left">
 
-A row with nothing to say is left out. **Config → Appearance → Link previews** offers **Off**, **On hover** (default) and **Keyboard only**, a hover delay, and a checklist of rows — the player is the **Video player** row in that list. `Shift + V` works in every mode and keeps the card open with **Copy**, **Refresh** and **Edit**.
+A row with nothing to say is left out. **Config → Appearance → Previews** offers **Off**, **On hover** (default) and **Keyboard only**, a hover delay, and a checklist of rows — the player is the **Video player** row in that list. `Shift + V` works in every mode and keeps the card open with **Copy**, **Refresh** and **Edit**.
 
 **Playing a video.** Nothing reaches YouTube or Vimeo while you hover: the poster is the picture your own server already fetched, and the player is built when you press it. From the keyboard, `Shift + V` puts the cursor on the play button and `Enter` starts it. `Esc` closes the card and ends the video, and so do the **✕** over the player and a click anywhere else — a click inside the player hands the keyboard to the provider, so `Esc` only works again once your pointer leaves the card.
 
@@ -3193,7 +3193,7 @@ Seven widgets read an Unraid server through its API: **Unraid**, **Unraid array*
 <details>
 <summary>📷 Screenshot — Config → Unraid after Test connection</summary>
 
-<p align="center"><img src="screenshots/manual.md/17-unraid.jpg" alt="Config, Unraid: What you get, with the seven widgets in miniature, then the connection panel with the address, a saved API key, its three switches, and the answer to Test connection naming the server, its Unraid and API versions and yes for every area" width="860"></p>
+<p align="center"><img src="screenshots/manual.md/17-unraid.jpg" alt="Config, Unraid on its Connection tab: the connection panel with the address, a saved API key, its three switches and the answer to Test connection naming the server, its Unraid and API versions and yes for every area, then a Widgets panel with the seven kinds as chips, each with an Add button" width="860"></p>
 
 </details>
 
@@ -3207,15 +3207,15 @@ Seven widgets read an Unraid server through its API: **Unraid**, **Unraid array*
 > [!NOTE]
 > **In short:** Appearance changes how the dashboard looks: themes, background, surfaces, type, layout, rows, link previews, header and action bar. Pick, preview and apply, or build a theme of your own.
 
-**Config → Appearance** opens straight on its settings, on the tab you had open if that was in the last five minutes, and on **Theme & type** otherwise. Nine tabs in three labelled groups:
+**Config → Appearance** opens straight on its settings, on the tab you had open if that was in the last five minutes, and on **Theme** otherwise. Nine tabs in three labelled groups:
 
 | Group | Tabs |
 |---|---|
-| **Look** | **Theme & type**, **Background**, **Surfaces** |
-| **Bookmarks** | **Layout**, **Rows**, **Link previews** |
+| **Look** | **Theme**, **Background**, **Surfaces** |
+| **Bookmarks** | **Layout**, **Rows**, **Previews** |
 | **Header & bars** | **Header**, **Action bar**, **Date & weather** |
 
-The strip wraps instead of scrolling: a group that does not fit moves to the next line whole, so every tab is on screen down to phone width. Every setting is on one of them, with a short line under each saying what it does. The old names still open the right tab: a link to `/#config/appearance/grid` lands on Layout, `…/look` on Theme & type, and `…/surface` on Surfaces.
+Each group's label stands in front of its tabs. The strip is one line from about 1440 px wide; narrower, it wraps instead of scrolling: a group that does not fit moves to the next line whole, so every tab is on screen down to phone width. Every setting is on one of them, with a short line under each saying what it does. The old names still open the right tab: a link to `/#config/appearance/grid` lands on Layout, `…/look` on Theme, and `…/surface` on Surfaces. **Theme** was called *Theme & type* and **Previews** *Link previews*; their addresses did not change.
 
 **Panels fold.** On every tab the first panel is open and the others fold to a header with one line of their current values, changed values first. Open or fold a panel by hand and it stays that way, per tab, in this browser. The filter, **Only changed**, **Find settings** and a link such as `/#config/appearance/rows/category-header` open the panel they land in; **Reset panel** in a folded header resets it without opening it. A tab with more than three panels lists them above the preview — choosing one opens it and scrolls to it, and the panel in view is marked; under 900 px the list is left out.
 
@@ -3231,7 +3231,7 @@ The strip wraps instead of scrolling: a group that does not fit moves to the nex
 
 nextDash ships **188 theme families**, each with a light and a dark half — 376 themes in all. A fresh install starts on **Confetti**, a colour-burst theme on panes of glass, with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made. The same goes for the room between categories and between columns (both airy on Confetti) and for the category header (clean). An install that already has a theme keeps it; a one-time card in the corner offers Confetti, and *Try Confetti* can be undone with *Go back* on the same card.
 
-**Theme** on the Theme & type tab lists every theme by name. Beside it:
+**Theme** on the Theme tab lists every theme by name. Beside it:
 
 - **The theme browser** — **Open theme studio** beside the theme picker, or **`Shift + A`** on the dashboard. It opens as a panel beside the dashboard, with tabs of its own ([see below](#the-theme-browser)); the first, **Themes**, has one card per family, with a light/dark switch and the line that says what the theme is like to sit in front of. At the top: a search box, the segments *All*, *Favourites*, *New*, *Light* and *Dark*, and **More filters**, which unfolds the **character chips** ([§16.2](#162-character)) and the **collection** chips. While it is folded, the filters that are on show as chips you can remove, and the button counts them. *Light* and *Dark* turn every card to that half; a card can still be switched by hand. Search matches a family's name, its character and the words of its line. The 62 newest families wear a **new** badge, and the **New** segment and searching `new` show only them. Themes of your own come first, under **Your themes**, with a **yours** badge (and **look** when they bring one along); a segment **Yours** shows only them, and searching `yours` finds them. A packaged theme you recoloured wears **recoloured**. A star keeps up to 24 families under *Favourites*. Pointing at a card previews that theme on the real dashboard; clicking one puts it on the page. A line above the grid names the theme in use — or, once you have picked another, which one is chosen and which stays until **Apply** — and **Show** brings its card into view.
 - **Collections** — the **Neutrals** collection holds five calm grey palettes — Slate, Zinc, Gray, Stone and Neutral — drawn under glass, each with a backdrop of its own. The **Looks** collection holds twenty-four colour-burst families, from Ember and Supernova to Holo, built around the burst, splash and leak backdrops ([§16.4](#164-type-and-background)).
@@ -3343,7 +3343,7 @@ roundness, and the surfaces the theme asks to be drawn at.
 ### 16.3 Surfaces
 
 These change how any theme is drawn. Depth, Glow, Effects, Category surface, Widget background, Widget opacity and Card glass are on
-the **Surfaces** tab; Text contrast and animations on **Theme & type**, favicon
+the **Surfaces** tab; Text contrast and animations on **Theme**, favicon
 harmonization in the **Favicons** panel on **Rows**. The first four start on **Follow the theme**: each theme states what
 it was drawn for, and picking a theme brings its answer with it.
 
@@ -3383,7 +3383,7 @@ other theme keeps its own. The backdrop and the card glass work the same way.
 - **Typeface** — Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans or System UI — or **upload a font file**. A fresh install reads in Inter, at medium size (**M**) on a fresh install. An install that has a size keeps it; one still on the old default moves up once. Code, addresses and key chips are set in Source Code Pro, or in the monospaced typeface you pick; a proportional one leaves them on Source Code Pro.
 - **Weight** — Normal, Semi-bold or Bold. **Size** — seven steps from XS to XL, **M** by default; pointing at a size previews it.
 
-Type is in the **Type** panel on the **Theme & type** tab; everything behind the bookmarks is on the **Background** tab, drawn in three layers from the bottom up: the theme's backdrop, a pattern over it, and a background of your own on top.
+Type is in the **Type** panel on the **Theme** tab; everything behind the bookmarks is on the **Background** tab, drawn in three layers from the bottom up: the theme's backdrop, a pattern over it, and a background of your own on top.
 
 - **Source** — **Auto** (follows the theme), **None**, **Gradient** or **Image**. **Opacity** (65–100%) fades it so the bookmarks stay readable. A background of your own is drawn over the theme backdrop.
 - **Theme backdrop** — **Follow the theme** (default), **Choose one** or **Off**. Every theme draws a backdrop of its own, in its own colours; each light and dark half share one. *Follow the theme* names the one it draws, and *Choose one* opens a grid of all 29, previewed in your theme's colours:
@@ -3409,7 +3409,7 @@ Type is in the **Type** panel on the **Theme & type** tab; everything behind the
 
 ### 16.5 Custom themes
 
-**Open the theme editor…** on the Theme & type tab opens the editor as a page of its own; the back link above it returns to Theme & type. A link to `/#config/appearance/custom-themes` opens it directly.
+**Open the theme editor…** on the Theme tab opens the editor as a page of its own; the back link above it returns to Theme. A link to `/#config/appearance/custom-themes` opens it directly.
 
 - **Your themes** — **Add custom theme**, edit, reorder (↑ ↓), delete, **⤓** export to a JSON file, and **Import theme…**. A theme you make appears in the theme list beside the packaged ones.
 - A custom theme can set everything a packaged theme can: its colours, and under **Shape & character** its character, corner roundness, surface opacity, blur, glow, the **Gloss** slider (how much light a surface catches), the grain's direction and strength, the category titles, the backdrop — **Automatic** or any of the 26 patterns, shown as tiles in the theme's own colours — and the depth and effects it asks to be drawn at. It has a light and a dark half, like the built-in themes.
@@ -3465,7 +3465,7 @@ Small drawings beside the shape settings show what a value looks like.
 | **Show tags on bookmark rows** | And **Tags shown before "+N"** |
 | **Category header** | How a category's name reads above its bookmarks. **Style**: Follow the theme (default), Clean, Underlined (optionally in the accent colour), Boxed, Label or Group card, which wraps the category and its bookmarks in one pane. **Size**: Small (default), Medium or Large; an install that was still on Medium moves to Small once. **Shown in the header** — chips for the category icon (chosen per category, from its menu), the count of bookmarks on the right, and the underline |
 
-**Link previews** tab — one panel, **Link preview cards**: Off · On hover (default) · Keyboard only, a hover delay (Fast, Balanced, Calm) and **What the card shows**, as chips: image, site, author & date, video player, description, your note, tags, status & uptime, opens, Fresh count, shortcut & location ([§4](#4-the-dashboard)).
+**Previews** tab — one panel, **Link preview cards**: Off · On hover (default) · Keyboard only, a hover delay (Fast, Balanced, Calm) and **What the card shows**, as chips: image, site, author & date, video player, description, your note, tags, status & uptime, opens, Fresh count, shortcut & location ([§4](#4-the-dashboard)).
 
 <p align="center"><img src="screenshots/manual.md/16-appearance-rows.jpg" alt="Config, Appearance on its Rows tab: the open Favicons panel, the open Category header panel with its Style and Size choices and the Icon, Count and Underline chips, and the folded Bookmark display panel with a line of its values" width="860"></p>
 <p align="center"><sub>The Rows tab: two panels open, the third folded to its values; the header extras are chips.</sub></p>
@@ -3537,7 +3537,7 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | Section | What lives there |
 |---------|------------------|
 | **Overview** | One line of what needs you, then **Your install** — panels for bookmarks, the inbox, containers, health and statistics — beside **From nextDash**: the newest posts, the version you run, the newest features and a tip of the day ([§17.8](#178-overview-help-and-about)). |
-| **Appearance** | Look: Theme & type · Background · Surfaces — Bookmarks: Layout · Rows · Link previews — Header & bars: Header · Action bar · Date & weather ([§16](#16-appearance)) |
+| **Appearance** | Look: Theme · Background · Surfaces — Bookmarks: Layout · Rows · Previews — Header & bars: Header · Action bar · Date & weather ([§16](#16-appearance)) |
 | **Bookmarks** | View · Tags · Tag suggestions · Your rules · Settings · Local copies ([§17.4](#174-config-bookmarks)) |
 | **Structure** | Categories · Pages · Finders · Collections ([§9](#9-pages-categories-and-collections)) |
 | **Behavior** | General · Keyboard & search · Fresh · Privacy & sync ([§17.5](#175-behavior)) |
@@ -3546,9 +3546,9 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Data & backups** | Backups & data · Sources · Webhooks · Icons & previews · Trash · Reset ([§19](#19-data-backups-and-import)) |
 | **Widgets** | Your widgets · Catalogue · Custom widget ([§15.2](#152-adding-and-arranging)) |
 | **Containers** | Connection · View · Updates · Alerts ([§17.7](#177-config-containers)) |
-| **Unraid** | The one Unraid server the Unraid widgets read ([§15.6](#156-unraid-widgets)) |
+| **Unraid** | Connection · How it works — the one Unraid server the Unraid widgets read ([§15.6](#156-unraid-widgets)) |
 | **Status page** | The read-only page for the people who use your services: its link, its top, groups and services, and linked maintenance ([§12.8](#128-the-status-page)) |
-| **Statistics** | Overview · Usage · Collection · Inbox · Health · Server ([§18](#18-statistics)) |
+| **Statistics** | Summary · Usage · Collection · Inbox · Health · Server ([§18](#18-statistics)) |
 | **Help** | The in-app guide |
 | **Logs** | Server logs · Activity trail ([§20](#20-logs)) |
 | **About** | About nextDash · News & features |
@@ -3558,7 +3558,7 @@ Old addresses still land in the right place — for example `/#config/pages-tags
 <details>
 <summary>📷 Screenshot — Config → Appearance, full page</summary>
 
-<p align="center"><img src="screenshots/manual.md/17-appearance.jpg" alt="Config, Appearance on its Theme & type tab: the tabs in three groups (Look, Bookmarks, Header & bars), the open Theme panel with Browse, Quick mode, Follow system dark mode, Random theme and the theme editor, the folded Text and motion panel below it and a small preview on the right" width="860"></p>
+<p align="center"><img src="screenshots/manual.md/17-appearance.jpg" alt="Config, Appearance on its Theme tab: the tabs in three groups (Look, Bookmarks, Header & bars), the open Theme panel with Browse, Quick mode, Follow system dark mode, Random theme and the theme editor, the folded Text and motion panel below it and a small preview on the right" width="860"></p>
 <p align="center"><sub>Appearance: three groups of tabs, the first panel open and the rest folded to one line of values.</sub></p>
 
 </details>
@@ -3567,13 +3567,15 @@ Old addresses still land in the right place — for example `/#config/pages-tags
 
 ### 17.2 Tabs and saving
 
-Config draws its panels, overview cards and tables on the same surface as the dashboard — glass, card or open, following **Category surface** ([§16.3](#163-surfaces)) — and the Bookmarks, Inbox, Containers and tag views are one pane each. The tab's opening line sits in a pane too.
+Config is one pane — round its header, its list of sections and its content — on the same surface as the dashboard: glass, card or open, following **Category surface** ([§16.3](#163-surfaces)), like the Bookmarks, Inbox, Containers and tag views. Inside it a panel, an overview card or a table keeps a faint tint and a hairline instead of a pane of its own, so a long settings page still shows where a block starts and ends.
 
-**Appearance**, **Behavior** and **Monitoring** open straight on their settings, in tabs, on the tab you had open in the last five minutes, or on the first one. Appearance's tabs stand in three labelled groups that wrap onto the next line when they do not fit; Behavior's and Monitoring's stay on one line and scroll sideways on a narrow screen. Every setting of a tab is on it — the ones that change most first — with a short line under each saying what it does. Appearance keeps a live preview of the dashboard beside its tabs ([§16](#16-appearance)).
+**Appearance**, **Behavior** and **Monitoring** open straight on their settings, in tabs, on the tab you had open in the last five minutes, or on the first one. Appearance's tabs stand in three labelled groups, on one line from about 1440 px wide and wrapping by whole groups below that; Behavior's and Monitoring's stay on one line and scroll sideways on a narrow screen. Every setting of a tab is on it — the ones that change most first — with a short line under each saying what it does. Appearance keeps a live preview of the dashboard beside its tabs ([§16](#16-appearance)).
+
+Bookmarks and Inbox each have a view of their own, and the way to it is the same in both: **Open the Bookmarks view ↗** or **Open the Inbox ↗** at the right edge of the section's header.
 
 **Every change saves the moment you make it**, confirmed by a short message. The exceptions are forms with their own **Save** button — the bookmark form and a widget's settings. Config only writes what changed.
 
-- **ℹ** beside a setting explains it.
+- A short line under a setting says what it does. **ℹ** beside it opens the longer explanation where there is more to say, and is left out where it would only repeat that line.
 - **↺** puts one setting back to its default; **Reset panel** puts a whole group back (it asks first).
 - **Only changed** hides settings that are still on their default; the filter beside it narrows the tab by label, hint or option. Both name the other tabs of the section where they find something, and a click goes there.
 
@@ -3682,7 +3684,7 @@ Four tabs, with the same strip, keys and memory as Config → Inbox. A **Tour** 
 <p align="center"><img src="screenshots/manual.md/14-connection.jpg" alt="The Connection panel under Config, Containers: Docker socket Connected, Actions On, Write token Not set with a warning, and This container nextdash" width="860"></p>
 <p align="center"><sub>Config → Containers → Connection: what the environment set, read only.</sub></p>
 
-The Unraid server has a section of its own, **Config → Unraid**: the Containers view does not use it, only the Unraid widgets do ([§15.6](#156-unraid-widgets)). Their *Set up Unraid* row opens it. It opens with **How it works** — nextDash and the server drawn as two boxes with data running between them, and three steps (a Viewer key, the address and key tested and saved, a widget on a page) that are ticked off as they are done — and **What you get**: the seven widgets in miniature with example figures, each with an **Add…** that opens Widgets → Catalogue on that kind. **How it works** also says what a widget can do: refresh as often as you set, show as many rows as you choose, open that page in Unraid on a click, and show more when it is wide; with alerts switched on under **Connection**, a stopped array, disk or parity errors and Unraid's own notifications reach your alert channels.
+The Unraid server has a section of its own, **Config → Unraid**: the Containers view does not use it, only the Unraid widgets do ([§15.6](#156-unraid-widgets)). Their *Set up Unraid* row opens it. It has two tabs and opens on **Connection**: the address and key, then **Widgets** — the seven kinds as chips, each with an **Add** that opens Widgets → Catalogue on that kind. **How it works** draws nextDash and the server as two boxes with data running between them, with three steps (a Viewer key, the address and key tested and saved, a widget on a page) that are ticked off as they are done; it also says what a widget can do: refresh as often as you set, show as many rows as you choose, open that page in Unraid on a click, and show more when it is wide; with alerts switched on under **Connection**, a stopped array, disk or parity errors and Unraid's own notifications reach your alert channels.
 
 <details>
 <summary>📷 Screenshot — Config → Containers, full page</summary>
@@ -3763,7 +3765,7 @@ Keys do not fire while you type in a field, except where a list says so. A legen
 **Config → Statistics** counts what you have and what you use. Everything is worked out from the data on your server.
 
 <p align="center">
-  <img src="screenshots/manual.md/18-statistics.jpg" alt="Config, Statistics, Overview tab: six figures, what needs attention, the cleanup score and charts of use and health" width="860">
+  <img src="screenshots/manual.md/18-statistics.jpg" alt="Config, Statistics, Summary tab: six figures, what needs attention, the cleanup score and charts of use and health" width="860">
 </p>
 <p align="center"><sub>Statistics: six figures on every tab, then what needs attention and charts.</sub></p>
 
@@ -3771,7 +3773,7 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 
 | Tab | Six figures | Panels |
 |---|---|---|
-| **Overview** | Bookmarks, healthy share, used in the last 30 days, inbox unread, uptime over 30 days, cleanup score | **Needs attention** — only what is above zero, each line with its button: links not answering (the longest-broken named), a certificate close to expiry or expired, unread inbox items older than 30 days, bookmarks never opened or opened once, and — with Docker or Unraid connected — unhealthy containers, waiting updates, an Unraid disk with errors, disabled, missing, hot or full, and a late automatic backup. **Cleanup score** and what lowers it. **Bookmarks last used, 30 days** and **Healthy share**, each with a link to its own tab |
+| **Summary** | Bookmarks, healthy share, used in the last 30 days, inbox unread, uptime over 30 days, cleanup score | **Needs attention** — only what is above zero, each line with its button: links not answering (the longest-broken named), a certificate close to expiry or expired, unread inbox items older than 30 days, bookmarks never opened or opened once, and — with Docker or Unraid connected — unhealthy containers, waiting updates, an Unraid disk with errors, disabled, missing, hot or full, and a late automatic backup. **Cleanup score** and what lowers it. **Bookmarks last used, 30 days** and **Healthy share**, each with a link to its own tab |
 | **Usage** | Opens all time, used in 30 days, last 48 hours, top 10 share, never opened, opened once | **Bookmarks used over time** (7 days, 30 days, 90 days or 1 year; opens or last used), **When you open bookmarks** (shows from 20 opens), **How concentrated your use is**, **Last opened**, **Times opened**, **Most opened**, **Most used tags**, **Shortcuts**, **Opens by page**, **Finders** |
 | **Collection** | Bookmarks, pages, categories, distinct tags, unique hosts (and how many are self-hosted), without a preview | **Coverage** (with a shortcut, an icon, checking, tags, a note), **Categories: size and use**, **How the collection grew**, **Age of the collection**, **Top domains**, **Tags per bookmark**, **Bookmarks per page**, **Widgets by kind** and **Widgets per page**, **Beyond bookmarks** (widgets, feeds switched off, import sources, trash, backups), **Cleanup candidates** (untagged, opened once, without an icon, never opened, still on http — *Show* opens them in the Bookmarks view) |
 | **Inbox** | Inbox items, unread older than 30 days, oldest unread, backlog over 30 days, converted, time to triage | **Inbox flow per day** (7, 30 or 90 days: added, dealt with, the running backlog), **Where everything went**, **How long unread items have waited**, **Inbox by source**, **How complete the items are**. Lifetime counts live in `data/inbox-stats.json` |
@@ -3983,7 +3985,7 @@ A restore that cannot go ahead is refused and the entry stays: a bookmark or cat
 
 ### 20.1 Server logs
 
-What the server has been doing — background jobs, imports, checks and every request — without shell access. Tiles show the number of lines, warnings and errors, and how long lines are kept.
+What the server has been doing — background jobs, imports, checks and every request — without shell access. Tiles show the number of lines, warnings and errors, and how long lines are kept; they stay out of the way until the log has a line.
 
 <p align="center"><img src="screenshots/manual.md/20-server-logs.jpg" alt="The Server log panel: Show, a line filter, Follow, Record server log, refresh, Copy, Download, Clear and settings, a note on what is recorded, and numbered request lines with their times, one 404 in amber" width="860"></p>
 <p align="center"><sub>The server log while it records; a 404 stands out in amber.</sub></p>
@@ -4821,9 +4823,9 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 | Tag cloud and tag view | Every tag from every page in three sizes with counts; pick one to open its tag view — all its bookmarks from every page in a table, with related tags, bulk actions and rename, merge or remove for the tag. Shift to stack, type to find. | [§10.2](#102-filtering-by-tag) |
 | Tag collection | A group nextDash makes of every tag that enough bookmarks use. | [§9.7](#97-custom-and-tag-collections) |
 | Tag suggestions | Proposals for one tag for a whole group of bookmarks, from your own rules and other sources. | [§10.4](#104-tag-suggestions) |
-| Theme | A colour scheme; 188 families each come in a light and a dark half, picked on the Theme & type tab or in the theme browser. | [§16.1](#161-themes) |
+| Theme | A colour scheme; 188 families each come in a light and a dark half, picked on the Theme tab or in the theme browser. | [§16.1](#161-themes) |
 | Theme browser | The panel beside the dashboard, opened with `Shift + A`, for themes, backdrops, surfaces, headers, type and looks. | [§16.1](#the-theme-browser) |
-| Theme editor | The page for recolouring a packaged theme or building a theme of your own, opened from the Theme & type tab; not the theme browser. | [§16.5](#165-custom-themes) |
+| Theme editor | The page for recolouring a packaged theme or building a theme of your own, opened from the Theme tab; not the theme browser. | [§16.5](#165-custom-themes) |
 | Timeline | A container's history in its side panel: crashes with exit code, out-of-memory kills, health changes, updates and rollbacks. | [§14.3](#143-the-side-panel) |
 | Trash | Deleted bookmarks, pages and categories stay here for 30 days. | [§19.5](#195-trash) |
 | Triage | Takes you through unread inbox links one at a time, in the same shape as Work through. | [§13.4](#134-triage) |

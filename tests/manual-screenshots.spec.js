@@ -547,7 +547,7 @@ test('16 look studio', async ({ page }) => {
 test('16 theme editor', async ({ page }) => {
     await prepare(page);
     await openConfig(page, 'appearance');
-    await subtab(page, 'Theme & type').click();
+    await subtab(page, 'Theme').click();
     await page.getByRole('button', { name: /Open the theme editor/ }).first().click();
     // Recolour the theme on screen: its colours open below.
     await page.locator('[data-theme-base-select]').selectOption(SHOT_THEME);
@@ -1355,10 +1355,8 @@ test.describe('unraid config', () => {
         await page.waitForFunction(() => window.dashboardInstance?._configRefreshReady === true);
         await page.locator('[data-unraid-test]').click();
         await page.waitForTimeout(1_200);
-        // What you get, heading and all, and the connection with the test's
-        // answer below it.
-        const preview = page.locator('.config-panel', { has: page.locator('.config-panel-title', { hasText: 'What you get' }) }).first();
-        await scrollToTop(page, preview, 60);
+        // The connection with the test's answer, and the widgets under it.
+        await scrollToTop(page, page.locator('[data-unraid-section]').first(), 200);
         await shot(page, '17-unraid.jpg');
     });
 });
