@@ -6,10 +6,10 @@ func fontSizeFile(extra map[string]any) map[string]any {
 	return gridFile(extra)
 }
 
-// A fresh install opens on large type.
-func TestFontSizeDefaultIsLgOnAFreshInstall(t *testing.T) {
+// A fresh install opens on medium type.
+func TestFontSizeDefaultIsMOnAFreshInstall(t *testing.T) {
 	got := gridSettings(t, nil)
-	if got.FontSize != "lg" || !got.FontSizeLgMigrated {
+	if got.FontSize != "m" || !got.FontSizeLgMigrated {
 		t.Errorf("fresh install: size %q migrated %v", got.FontSize, got.FontSizeLgMigrated)
 	}
 }

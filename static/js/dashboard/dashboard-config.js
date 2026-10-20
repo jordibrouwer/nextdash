@@ -13389,7 +13389,7 @@ class DashboardConfig {
             'Accent underline', 'Draws the line under a category name in the theme\'s accent colour rather than a neutral one.'], def: false },
         backgroundPattern: { info: ['backgroundPatternInfoTitle', 'backgroundPatternInfoMessage'], def: 'auto' },
         fontSize: { info: ['fontSizeInfoTitle', 'fontSizeInfoMessage',
-            'Font size', 'The size of all text on the dashboard. Pointing at a size shows it before you choose one.'], def: 'lg' },
+            'Font size', 'The size of all text on the dashboard. Pointing at a size shows it before you choose one.'], def: 'm' },
         /*
          * Not settings fields of their own: the backdrop sliders are keys of
          * backdropTuning and the card glass rows are parts of one entry. They
