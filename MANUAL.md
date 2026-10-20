@@ -3207,7 +3207,7 @@ The strip wraps instead of scrolling: a group that does not fit moves to the nex
 
 ### 16.1 Themes
 
-nextDash ships **188 theme families**, each with a light and a dark half — 376 themes in all. A fresh install starts on **Confetti**, a colour-burst theme on panes of glass, with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made. An install that already has a theme keeps it; a one-time card in the corner offers Confetti, and *Try Confetti* can be undone with *Go back* on the same card.
+nextDash ships **188 theme families**, each with a light and a dark half — 376 themes in all. A fresh install starts on **Confetti**, a colour-burst theme on panes of glass, with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made. The same goes for the room between categories and between columns (both airy on Confetti) and for the category header (clean). An install that already has a theme keeps it; a one-time card in the corner offers Confetti, and *Try Confetti* can be undone with *Go back* on the same card.
 
 **Theme** on the Theme & type tab lists every theme by name. Beside it:
 
@@ -3358,8 +3358,8 @@ other theme keeps its own. The backdrop and the card glass work the same way.
 
 ### 16.4 Type and background
 
-- **Typeface** — Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans or System UI — or **upload a font file**. A fresh install reads in Inter, at a larger size than before (an install still on the old default size moves up once). Code, addresses and key chips are set in Source Code Pro, or in the monospaced typeface you pick; a proportional one leaves them on Source Code Pro.
-- **Weight** — Normal, Semi-bold or Bold. **Size** — seven steps from XS to XL; pointing at a size previews it.
+- **Typeface** — Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans or System UI — or **upload a font file**. A fresh install reads in Inter, at medium size (**M**) on a fresh install. An install that has a size keeps it; one still on the old default moves up once. Code, addresses and key chips are set in Source Code Pro, or in the monospaced typeface you pick; a proportional one leaves them on Source Code Pro.
+- **Weight** — Normal, Semi-bold or Bold. **Size** — seven steps from XS to XL, **M** by default; pointing at a size previews it.
 
 Type is in the **Type** panel on the **Theme & type** tab; everything behind the bookmarks is on the **Background** tab, drawn in three layers from the bottom up: the theme's backdrop, a pattern over it, and a background of your own on top.
 
@@ -3428,8 +3428,8 @@ Type is in the **Type** panel on the **Theme & type** tab; everything behind the
 
 Small drawings beside the shape settings show what a value looks like.
 
-<p align="center"><img src="screenshots/manual.md/16-layout-spacing.jpg" alt="Appearance, Layout: the cards for Space between categories and Space between columns, Snug, Balanced and Airy, each with a small drawing" width="720"></p>
-<p align="center"><sub>Appearance → Layout: the room down the page and the room across it are two settings.</sub></p>
+<p align="center"><img src="screenshots/manual.md/16-layout-spacing.jpg" alt="Appearance, Layout: the Bookmarks layout panel with a card for every choice of Category spacing, Space between columns and Page margins, each with a small drawing" width="520"></p>
+<p align="center"><sub>Appearance → Layout: the room down the page, the room across it and the band at the edges are three settings. *Follow the theme* is the first choice of the first two.</sub></p>
 
 **Rows** tab — panels **Favicons**, **Category header** and **Bookmark display**. The first two lines are the Favicons panel; **Favicon harmonization** (Muted, Tinted or Overlay, with an intensity, stored per theme) is in it too.
 

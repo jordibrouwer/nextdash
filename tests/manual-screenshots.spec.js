@@ -1510,16 +1510,14 @@ test('16 appearance layout spacing', async ({ page }) => {
     await prepare(page);
     await openConfig(page, 'appearance');
     await subtab(page, 'Layout').click();
-    const rows = page.locator('[data-behavior-field="categorySpacing"]').first();
-    const columns = page.locator('[data-behavior-field="columnSpacing"]').last();
-    await rows.waitFor();
-    await columns.scrollIntoViewIfNeeded();
-    await page.setViewportSize({ width: 1440, height: 1250 });
-    await page.waitForTimeout(600);
-    const view = page.locator('[data-behavior-field="columnSpacing"]').first();
-    await page.mouse.move(5, 1240);
-    await page.waitForTimeout(300);
-    await crop(page, [rows, columns, view], '16-layout-spacing.jpg', 56);
+    // The panel that holds the three spacing settings, with a card for each choice.
+    const panel = page.locator('#config-appearance-body .config-panel', { has: page.locator('[data-behavior-field="categorySpacing"]') }).first();
+    await panel.waitFor();
+    await page.setViewportSize({ width: 1440, height: 1500 });
+    await panel.scrollIntoViewIfNeeded();
+    await page.mouse.move(5, 1490);
+    await page.waitForTimeout(800);
+    await snap(page, panel, '16-layout-spacing.jpg', { pad: 14 });
 });
 
 test('16 appearance action bar', async ({ page }) => {
