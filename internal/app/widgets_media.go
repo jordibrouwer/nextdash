@@ -51,6 +51,23 @@ var (
 	errMediaSystemGone  = errors.New("system gone")
 )
 
+/*
+mediaSignInError says what a failed sign-in was.
+
+A sign-in that never reached the service -- no route, refused, timed out -- is
+"unreachable", not "key refused": telling someone their password is wrong
+when the address is the problem sends them to retype a password that was
+right. The HTTP client reports every such failure as a *url.Error; an answer
+that came back and said no is a plain error and stays a refusal.
+*/
+func mediaSignInError(err error) error {
+	var transport *url.Error
+	if errors.As(err, &transport) {
+		return fmt.Errorf("%w: sign-in: %v", errMediaUnreachable, err)
+	}
+	return fmt.Errorf("%w: sign-in: %v", errMediaRefused, err)
+}
+
 // mediaErrorCode is what the tile is told: a short code it can word, never
 // the wrapped detail, which may name an internal address.
 func mediaErrorCode(err error) string {
@@ -436,7 +453,7 @@ func (h *Handlers) mediaSend(ctx context.Context, method, server string, credent
 		cookie, ok := cachedCredentialSession(sessionKey)
 		if !ok {
 			if cookie, err = h.freshCredentialSession(ctx, req.URL, credential.Session, sessionKey, ""); err != nil {
-				return nil, fmt.Errorf("%w: sign-in: %v", errMediaRefused, err)
+				return nil, mediaSignInError(err)
 			}
 		}
 		sent = cookie
@@ -453,7 +470,7 @@ func (h *Handlers) mediaSend(ctx context.Context, method, server string, credent
 		drainAndCloseResponse(resp)
 		fresh, err := h.freshCredentialSession(ctx, req.URL, credential.Session, sessionKey, sent)
 		if err != nil {
-			return nil, fmt.Errorf("%w: sign-in: %v", errMediaRefused, err)
+			return nil, mediaSignInError(err)
 		}
 		retry := req.Clone(ctx)
 		if body != nil {

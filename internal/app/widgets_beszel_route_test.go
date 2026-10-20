@@ -117,6 +117,20 @@ func TestBeszelSetupNeedsTheTokenAndListsTheSystems(t *testing.T) {
 		t.Errorf("wrong password: %s", wrong.Body.String())
 	}
 
+	// A hub that cannot be reached is unreachable, not a wrong password: the
+	// first report of this feature was "refused that sign-in" over a host the
+	// server had no route to, with the password right all along.
+	gone := httptest.NewServer(http.NotFoundHandler())
+	goneURL := gone.URL
+	gone.Close()
+	raw, _ := json.Marshal(map[string]any{"server": goneURL, "draftCredential": map[string]any{"session": map[string]any{
+		"format": "json", "loginPath": "/api/collections/users/auth-with-password",
+		"userField": "identity", "passField": "password", "user": beszelTestUser, "password": beszelTestPassword,
+		"tokenPath": "token", "tokenHeader": "Authorization", "tokenPrefix": ""}}})
+	if away := post(string(raw)); !strings.Contains(away.Body.String(), `"error":"unreachable"`) {
+		t.Errorf("a hub that does not answer: %s", away.Body.String())
+	}
+
 	// A hub with one system says so in the singular.
 	fake.setSystems(t, func(items []map[string]any) []map[string]any { return items[:1] })
 	if one := post(body(beszelTestPassword)); !strings.Contains(one.Body.String(), `"connected":"1 system"`) {

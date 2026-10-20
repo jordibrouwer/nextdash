@@ -346,7 +346,7 @@ func (h *Handlers) beszelSignInAgain(ctx context.Context, server string, credent
 	key := credentialSessionKey(base.Host, credential.Session)
 	stale, _ := cachedCredentialSession(key)
 	if _, err := h.freshCredentialSession(ctx, base, credential.Session, key, stale); err != nil {
-		return fmt.Errorf("%w: sign-in: %v", errMediaRefused, err)
+		return mediaSignInError(err)
 	}
 	return nil
 }
