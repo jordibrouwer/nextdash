@@ -357,6 +357,7 @@ html[data-theme] body #dashboard-layout.library-layout > .config-view--library::
    Scrolled, rows pass behind it and it turns solid again so they do not show
    through the title (list-view-header-surface.spec.js). */
 html[data-theme] body:not([data-scrolled="true"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout) > .lvs .lvs-header,
+html[data-theme] body:not([data-scrolled="true"]) #dashboard-layout.library-layout > .config-view--library > .config-view-head,
 html[data-theme] body[data-config-panes="one"]:not([data-scrolled="true"]) #dashboard-layout.config-layout > .config-view > .config-view-head {
     background-color: transparent;
     background-image: none;

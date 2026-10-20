@@ -194,12 +194,20 @@ test.describe('a view is one pane', () => {
         });
     }
 
-    for (const [name, hash] of [['the tag view', '#tags'], ['the inbox', '#inbox'], ['the containers view', '#docker']]) {
+    const shellHeader = '#dashboard-layout > .lvs .lvs-header';
+    for (const [name, hash, headerSelector] of [
+        ['the tag view', '#tags', shellHeader],
+        ['the inbox', '#inbox', shellHeader],
+        ['the containers view', '#docker', shellHeader],
+        // Its band is config's head, not the shell's; it was left out and stood
+        // dark at the top of the page before anything had scrolled.
+        ['the bookmarks view', '#bookmarks', '#dashboard-layout.library-layout > .config-view--library > .config-view-head'],
+    ]) {
         test(`the header of ${name} is part of the pane, not a pane of its own`, async ({ page }) => {
             await open(page, hash);
-            await page.waitForSelector('#dashboard-layout > .lvs .lvs-header', { timeout: 20_000 });
+            await page.waitForSelector(headerSelector, { timeout: 20_000 });
             await setSurface(page, 'glass');
-            const header = await paint(page, '#dashboard-layout > .lvs .lvs-header');
+            const header = await paint(page, headerSelector);
             expect(header.alpha).toBe(0);
             expect(header.blur).toBe('none');
             expect(header.hairline).toBe(false);
