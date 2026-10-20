@@ -2316,11 +2316,19 @@ class DashboardConfig {
         const containersTour = this.section === 'containers'
             ? `<button type="button" class="lvs-action" data-containers-tour title="${this.dash.escapeHtml(this.t('config.containersTourHint', 'A tour of the Containers view'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
             : '';
+        // Bookmarks and Inbox each have a view of their own: the way to it
+        // is the same place in both, at the band's right edge, not a button
+        // drawn into the body of one tab.
+        const viewLink = !this.standalone && (this.section === 'bookmarks' || this.section === 'inbox')
+            ? `<a class="lvs-action" href="#${this.section}" data-${this.section === 'inbox' ? 'inbox' : 'bm'}-open-view>${this.dash.escapeHtml(this.section === 'inbox'
+                ? this.t('config.inboxOpenView', 'Open the Inbox')
+                : this.t('config.bmViewOpen', 'Open the Bookmarks view'))} ↗</a>`
+            : '';
         const markup = (context
             ? this.renderChangedFilterBar(context.section, context.tab)
             : (this.section === 'bookmarks'
                 ? `${healthButton}<span class="config-bm-header-badge">${this.dash.escapeHtml(String(this.configBookmarkPool().length))}</span>`
-                : '')) + widgetsTour + containersTour;
+                : '')) + viewLink + widgetsTour + containersTour;
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
         }
@@ -2338,7 +2346,13 @@ class DashboardConfig {
         if (actions && actions.dataset.bmHealthWired !== '1') {
             actions.dataset.bmHealthWired = '1';
             actions.addEventListener('click', (e) => {
-                if (e.target.closest('[data-widgets-tour]')) void this.openWidgetsTour?.();
+                if (e.target.closest('[data-inbox-open-view]')) {
+                    const link = e.target.closest('[data-inbox-open-view]');
+                    if (!(e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)) {
+                        e.preventDefault();
+                        void this.dash.inbox?.openInboxView?.(link);
+                    }
+                } else if (e.target.closest('[data-widgets-tour]')) void this.openWidgetsTour?.();
                 else if (e.target.closest('[data-containers-tour]')) void this.playViewTour('containersTutorialV3');
                 else if (e.target.closest('[data-bm-open-health-modal]')) this.openBmHealthModal?.();
                 else if (e.target.closest('[data-bm-open-structure]')) this.openStructureModal?.('pages');
@@ -22538,9 +22552,6 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         return `
             <div class="config-bm-view-tab">
-                <div class="config-bm-view-bar">
-                    <a class="config-btn config-btn--small" href="#bookmarks" data-bm-open-view>${esc(this.t('config.bmViewOpen', 'Open the Bookmarks view'))} ↗</a>
-                </div>
                 ${this.renderBookmarksViewPreview()}
                 ${this.renderControlPanels(this.panelsFor('bookmarks', 'view'), 'behavior')}
             </div>`;

@@ -189,7 +189,7 @@ test('a View setting changed in Config reaches the view', async ({ page }) => {
   const address = page.locator('.config-bm-view-tab select[data-behavior-field="bmViewAddress"]');
   await address.selectOption('hidden');
   try {
-    await page.locator('.config-bm-view-tab [data-bm-open-view]').click();
+    await page.locator('.lvs-header-actions [data-bm-open-view]').click();
     await page.waitForSelector('#config-bm-workbench #config-bm-list .config-bm-row', { timeout: 15_000 });
     await expect(page.locator('#config-bm-list .config-bm-domain')).toHaveCount(0);
   } finally {

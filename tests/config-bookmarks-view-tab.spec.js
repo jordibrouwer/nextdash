@@ -31,7 +31,7 @@ test.describe('Config → Bookmarks → View', () => {
     const missing = await page.evaluate((fields) => fields.filter((f) => !document.querySelector(`.config-bm-view-tab [data-behavior-field="${f}"]`)), FIELDS);
     expect(missing).toEqual([]);
     await expect(page.locator('.config-view-head .config-changed-count')).toContainText(/default/i);
-    await expect(page.locator('.config-bm-view-tab [data-bm-open-view]')).toHaveAttribute('href', '#bookmarks');
+    await expect(page.locator('.lvs-header-actions [data-bm-open-view]')).toHaveAttribute('href', '#bookmarks');
   });
 
   test('a change is saved, and marked as changed', async ({ page }) => {

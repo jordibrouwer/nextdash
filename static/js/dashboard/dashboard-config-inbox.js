@@ -76,9 +76,6 @@
         const withPreview = (tab === 'list' || tab === 'panel') && !this.changedOnly
             && !String(this.settingsFilter || '').trim();
         return `
-            <div class="config-bm-view-bar">
-                <a class="config-btn config-btn--small" href="#inbox" data-inbox-open-view>${esc(this.t('config.inboxOpenView', 'Open the Inbox'))} ↗</a>
-            </div>
             ${withPreview ? this.renderInboxViewPreview() : ''}
             ${this.renderControlPanels(this.panelsFor('inbox', tab), 'behavior')}`;
     },
@@ -126,11 +123,6 @@
             });
             this.bindFilterElsewhere?.(scope);
         }
-        scope.querySelector('[data-inbox-open-view]')?.addEventListener('click', (e) => {
-            if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-            e.preventDefault();
-            void this.dash.inbox?.openInboxView?.();
-        });
         void this.fillInboxViewPreview(scope);
     },
 

@@ -113,7 +113,7 @@
     border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
 }
 
-.config-nav .config-nav-item[data-config-section="stats"] {
+.config-nav .config-nav-item:is([data-config-section="containers"], [data-config-section="stats"]) {
     margin-top: var(--space-2, 0.5rem);
     padding-top: calc(var(--space-1) + var(--space-2, 0.5rem));
     border-top: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
@@ -172,7 +172,7 @@
     /* In the strip the rule falls between two buttons side by side, so it is a
        left edge rather than a top one -- as a top border it pushed that button
        onto a second line. */
-    .config-nav .config-nav-item[data-config-section="stats"] {
+    .config-nav .config-nav-item:is([data-config-section="containers"], [data-config-section="stats"]) {
         margin-top: 0;
         padding-top: var(--space-1);
         border-top: 0;

@@ -886,7 +886,7 @@ test.describe('statistics tabs', () => {
             return { nav: t('config.statsNavOverview'), tab: t('config.statsTabOverview') };
         });
         expect(labels.nav).toBe('overview');
-        expect(labels.tab).toBe('Overview');
+        expect(labels.tab).toBe('Summary');
     });
 });
 
