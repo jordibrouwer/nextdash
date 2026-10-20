@@ -405,7 +405,7 @@ This guide shows how the pieces fit together. Each part links to the chapter wit
 | *Will I hear about it?* | One set of alert channels and push notifications for sites going down, certificates running out and containers stopping, restarting, turning unhealthy or running hot ([§12.4](#124-alerts), [§14.9](#149-notices)) |
 | *Is it up to date?* | Image update checks with release notes, skip and hold, a history, a rollback, and optional nightly updates that roll themselves back on failure ([§14.5](#145-actions-and-updates)) |
 | *Where did my disk go?* | The **Disk** tab: images, volumes, build cache and bind mounts, biggest first, with clean-ups that say what they free ([§14.7](#147-disk)) |
-| *How is the machine?* | The **Processor**, **Memory**, **Disks**, **Containers** and **Container list** widgets on the dashboard ([§15.4](#154-system-widgets-and-what-they-need)) |
+| *How is the machine?* | The **Processor**, **Memory**, **Disks**, **Containers** and **Container list** widgets on the dashboard ([§15.4](#154-system-widgets-and-what-they-need)) — and, for your other machines, the four **Beszel** widgets ([§15.1](#151-the-kinds)) |
 
 The difference with separate tools is in the links between those rows. A container that keeps restarting is a red glow in the Containers view, a problem on its Container list row, a notice on your phone — and, because its web UI stops answering, a red mark on its bookmark, an outage in that bookmark's history and a downtime alert. Each place leads to the others with a click.
 
@@ -566,6 +566,7 @@ Give your services their own page — *Homelab*, *Server* — and put the bookma
 | **Certificates** | The ones that run out soon |
 | **Health** | Broken, down and changed bookmarks on this page; each figure opens its filter |
 | **Processor**, **Memory**, **Disks** | The machine itself — name `/mnt/user` and `/mnt/cache` on Unraid |
+| **Beszel systems**, **Beszel attention** | Your other machines, through a Beszel hub: whether each is up and how busy and full it is, or only the ones that need a look |
 | **Custom** | Figures from the services themselves — the queue in Sonarr, blocked queries in Pi-hole, a sensor in Home Assistant, CPU and memory in Proxmox — 41 services filled in ([§15.5](#155-the-custom-widget)) |
 
 <p align="center">
@@ -2719,6 +2720,24 @@ A page holds categories and, beside them, **widgets**: blocks that show somethin
 <p align="center"><img src="screenshots/manual.md/15-container-list.jpg" alt="The Container list tile: 7 of 7 running, immich-server unhealthy, sonarr with an update, and the rest with their uptime" width="380"></p>
 <p align="center"><sub>The Container list tile; a problem takes the place of the uptime.</sub></p>
 
+Those five report on the machine nextDash runs on. Four more read the other machines, through a [Beszel](https://beszel.dev) hub:
+
+| Kind | Shows |
+|---|---|
+| **Beszel systems** | Every system the hub watches, a dot for its state. Narrow, the name and the reading closest to its limit (*disk 88%*); wide, a table with processor, memory and disk as bars, the temperature and the uptime |
+| **Beszel system** | One system: processor, memory and disk as bars, with its temperature and uptime; wide, the processor's last hour beside them, with the load and the network |
+| **Beszel attention** | Only the systems that need a look — down, waiting or paused, or running hot or full — under a count of how many are up and down; wide, with the reason, and since when for a system that is not up. When none do, one line says all are fine |
+| **Beszel storage** | The disks of every system, the fullest first: the root disk and every extra disk the agent watches. Wide, grouped per system |
+
+A system that is down shows that it is down and since when, never a figure: the readings Beszel keeps for it are from before it went down. A reading turns amber at 80 % and red at 90 % (a temperature at 70 °C and 85 °C).
+
+<p align="center"><img src="screenshots/manual.md/15-beszel.jpg" alt="The Beszel systems tile, two columns wide: nas, htpc and pihole with bars for processor, memory and disk, their temperature and uptime, nas's disk amber at 88 % and htpc's processor red at 91 %, and vps-01 down for 14 minutes" width="760"></p>
+<p align="center"><sub>Beszel systems, two columns wide.</sub></p>
+<p align="center"><img src="screenshots/manual.md/15-beszel-system.jpg" alt="The Beszel system tile for nas, two columns wide: bars for processor, memory and disk with the temperature, and the processor's last hour beside them" width="760"></p>
+<p align="center"><sub>Beszel system, with the last hour beside the readings.</sub></p>
+<p align="center"><img src="screenshots/manual.md/15-beszel-narrow.jpg" alt="Beszel attention and Beszel storage, one column each: 3 up and 1 down with vps-01, htpc and nas listed, and the disks fullest first, nas disk3 at 93 %" width="560"></p>
+<p align="center"><sub>Beszel attention and Beszel storage, one column wide.</sub></p>
+
 *How is the Unraid server doing?*
 
 | Kind | Shows |
@@ -2821,6 +2840,8 @@ Widgets share one order with the categories and are moved on the dashboard: drag
 Then the settings of the kind. Sonarr and Radarr: **Show** (what is coming, what is downloading, or both) and **Look ahead** (1–30 days). Seerr: **Show** (every request, waiting for approval, approved and on its way, or arrived) and **Films or series**. qBittorrent and SABnzbd: **Show** (everything, downloading, paused or finished), **Order** (newest, furthest along or fastest first), **Leave out what has finished**, **Leave out the speeds on top**, and a layout of **One list** or **A tab per part**. All of them: **A click** (open the item in the service, or show its details here first), where it opens, **Items to show** and **Refresh every** — a minute at least for the first three, 15 seconds for the download clients, which change while you look. The keys stay on the server, as with Jellyfin. Seerr's posters come from TMDB, which your server fetches without any key. A failure keeps the last answer and says how old it is; a refused key or sign-in says so on the tile.
 
 **Home Assistant** — fill in the address of your Home Assistant (`http://homeassistant.local:8123`) and a **long-lived access token** (Home Assistant: your profile, under Security) and press **Connect**. The server lists your entities in a searchable list you can narrow by kind (lights, switches, sensors, scenes and so on); pick up to 60 and set their order with ↑ and ↓. Then the **Layout** (a **list** of loose items, or a **strip** with a tab per room), **Group by** (room, kind or nothing), **Show when it last changed**, what **A click** does, where it opens, **Items to show** and **Refresh every** (15 seconds at least, 30 by default). Lights, switches, fans and `input_boolean` entities switch with one click and a scene or a script has a **Start** button; switching needs the write token, like the other actions. A lock, a cover or a door is shown and never operated. The token stays on the server.
+
+**Beszel** — fill in the hub's address (`http://beszel.local:8090`), and the **Email** and **Password** of a Beszel user who can see the systems; a read-only user is enough. Press **Connect**: nextDash signs in itself and says *Connected to Beszel* with how many systems it found, then lists them. **Beszel systems**, **Beszel attention** and **Beszel storage** take **Systems** as boxes to tick — all ticked means every system, including one added to the hub later — and **Beszel system** takes one **System**. Then **Figures to show** (Processor, Memory, Disk and Temperature to start with, plus Graphics card, Network and Load; a figure the agent does not report is left out, never shown as zero), **Order** for Beszel systems (**By name**, **Busiest first** or **Trouble first**), **Leave out paused systems**, what **A click** does (open the system in Beszel, or show its details here first), where it opens, **Items to show** and **Refresh every** (30 seconds at least, a minute by default — Beszel measures once a minute). The four tiles on one page ask the hub once per refresh, not four times. The password stays on the server, and nextDash signs in again when the session runs out. A hub that does not answer says *could not be reached*; a refused password says so on the tile.
 
 <img src="screenshots/manual.md/15-notes.jpg" alt="The Notes tile: a short checklist with two items ticked and struck through, and Edit and Open large" width="380" align="left">
 

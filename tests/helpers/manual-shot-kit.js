@@ -305,6 +305,28 @@ function tidyDemoData(dir, patch) {
         });
     }
 
+    // One shot only: a page with the four Beszel tiles, the first two drawn
+    // wide (their answers are mocked).
+    if (patch === 'beszel') {
+        const pages = readJSON(path.join(dir, 'pages.json'));
+        pages.order = [...(pages.order || []), 4];
+        writeJSON(path.join(dir, 'pages.json'), pages);
+        const server = 'http://beszel.local:8090';
+        const widgets = [
+            { id: 'w_b00000000001', type: 'beszel', config: { server, columns: 2 } },
+            { id: 'w_b00000000002', type: 'beszel-system', config: { server, system: 's1', columns: 2 } },
+            { id: 'w_b00000000003', type: 'beszel-attention', config: { server } },
+            { id: 'w_b00000000004', type: 'beszel-storage', config: { server } },
+        ];
+        writeJSON(path.join(dir, 'bookmarks-4.json'), {
+            page: { id: 4, name: 'Servers' },
+            categories: [],
+            widgets,
+            blockOrder: widgets.map((w) => w.id),
+            bookmarks: [],
+        });
+    }
+
     // One shot only: a page with the Emby tile and the now playing tiles of
     // Jellyfin and Plex (their answers are mocked).
     if (patches.includes('media')) {
