@@ -1,0 +1,67 @@
+{
+  "tag": "v1.20.1",
+  "date": "20 October 2026",
+  "releasedAt": "2026-10-20",
+  "modalLead": "Four <strong>Beszel</strong> widgets show how your other machines are doing. <strong>Config</strong> is calmer: one pane, hints under their settings and the Appearance tabs on one line.",
+  "sections": [
+    {
+      "title": "Widgets",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Four Beszel widgets.</strong> They read your Beszel hub: every system with its processor, memory and disk, one system in full, only the systems that need a look, and every disk. Add the hub's address and a login, press Connect, and tick the systems you want. A system that is down says so, never the readings from before.",
+          "highlight": true,
+          "title": "Four Beszel widgets for your machines",
+          "link": "#config/widgets",
+          "linkLabel": "Add one",
+          "media": {
+            "image": "media/v1.20.1-beszel-widgets.jpg",
+            "alt": "A page with four Beszel widgets: every system with its processor, memory and disk, one system in full with its processor over the last hour, the systems that need a look, and the fullest disks"
+          }
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A service that could not be reached no longer says its sign-in was refused.</strong> Widgets that sign in now say the service could not be reached when it never answered, so you are not sent to retype a password that was right."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Config is calmer.</strong> It is one pane now, easier to read on glass. A short line under a setting says what it does, and an ℹ stays only where there is more to read. The way to the Bookmarks view and the Inbox stands in the same place in both, and Statistics opens on a Summary tab."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Appearance's tabs fit on one line.</strong> Theme and Previews have shorter names.",
+          "link": "#config/appearance",
+          "linkLabel": "Open Appearance"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Unraid opens on its connection.</strong> The address and key come first, with the widgets under them; How it works is a tab of its own.",
+          "link": "#config/unraid",
+          "linkLabel": "Open Unraid"
+        }
+      ]
+    },
+    {
+      "title": "Look and lists",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Confetti keeps the // and the widget icon in its headers.</strong>"
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The Containers table fits a laptop window.</strong> Its columns give way to the width of the list, not of the window."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The Bookmarks view fits a laptop window.</strong> Its header stays see-through until you scroll, and its toolbar wraps instead of covering the search box."
+        }
+      ]
+    }
+  ]
+}

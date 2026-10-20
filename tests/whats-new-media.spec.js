@@ -24,7 +24,7 @@
  *     dataPatch: '',                  // optional, see tidyDemoData in the kit
  *     setup: async (page, kit) => {}, // get to the starting point
  *     act: async (page, kit) => {},   // video only: the part that is recorded
- *     target: (page) => locator,      // optional: crop to this element
+ *     target: (page) => locator,      // optional: crop to this element (or an array of them)
  *   }
  *
  * The recording runs from the moment setup is done to the end of act, so
@@ -59,7 +59,9 @@ const kit = { prepare, settle, openDashboard, DEMO_THEME };
 /** The crop as whole pixels inside the viewport, or the whole viewport. */
 async function clipFor(page, shot, viewport) {
     if (!shot.target) return null;
-    const box = await boxAround([shot.target(page)]);
+    // One element, or several: the crop is the box around them all.
+    const target = shot.target(page);
+    const box = await boxAround(Array.isArray(target) ? target : [target]);
     if (!box) throw new Error(`${shot.slug}: nothing to crop`);
     const pad = 16;
     const x = Math.max(0, Math.floor(box.x - pad));
