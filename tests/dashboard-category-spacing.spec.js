@@ -172,6 +172,29 @@ test.describe('page margins', () => {
         expect(after).toBeGreaterThan(before);
     });
 
+    // The columns stop growing at a width and a wide window centres them, so the
+    // band beside the grid used to move only the header. It now moves the columns.
+    test('each choice moves the columns, not only the header', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            d.settings.layoutPreset = 'masonry';
+            d.settings.packedColumns = true;
+            await d.renderDashboard({ animate: false });
+        });
+        const widths = {};
+        for (const mode of ['snug', 'balanced', 'airy']) {
+            await page.evaluate((m) => {
+                window.dashboardInstance.settings.sideMargin = m;
+                document.body.setAttribute('data-side-margin', m);
+            }, mode);
+            widths[mode] = await page.evaluate(() =>
+                Math.round(document.querySelector('.dashboard-grid .category').getBoundingClientRect().width));
+        }
+        expect(widths.snug).toBeGreaterThan(widths.balanced);
+        expect(widths.balanced).toBeGreaterThan(widths.airy);
+    });
+
     test('airy widens the band', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => {

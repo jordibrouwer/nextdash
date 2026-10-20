@@ -99,6 +99,18 @@ body[data-side-margin="airy"] {
     --dashboard-side-margin: clamp(var(--space-7, 3rem), 9vw, 12rem);
 }
 
+/* The columns stop growing at a width, and a wide window centres what is left,
+ * so the band beside the grid only showed in the header and never moved a
+ * column. The margin now also sets how wide a column may grow: snug lets the
+ * columns take the room it gives back, airy pulls them together. Balanced is
+ * the 360px the grid always had. */
+body[data-side-margin="snug"] .dashboard-grid {
+    --dashboard-column-max: 460px;
+}
+body[data-side-margin="airy"] .dashboard-grid {
+    --dashboard-column-max: 300px;
+}
+
 /* Header Top - Contains date, tabs, and config button */
 .header-top {
     display: flex;
