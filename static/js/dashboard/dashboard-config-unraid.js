@@ -15,7 +15,7 @@
 
     renderUnraidSection() {
         const esc = (v) => this.dash.escapeHtml(v);
-        const active = this.unraidTab || 'all';
+        const active = this.unraidTab || 'connection';
         const tabs = global.DashboardConfig.UNRAID_TABS.map((tab) => {
             const on = tab === active;
             return `<button type="button" class="config-subtab${on ? ' is-active' : ''}" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="config-unraid-body" data-unraid-tab="${esc(tab)}">${esc(this.unraidTabLabel(tab))}</button>`;
@@ -27,9 +27,9 @@
             <div class="config-tabpage">
                 <div class="config-tabpage-main" id="config-unraid-body" role="tabpanel" tabindex="0">
                     ${window.DemoLock?.unraidNote?.() || ''}
-                    ${this.renderUnraidExplainer()}
-                    ${this.renderUnraidPreview()}
                     ${this.renderUnraidPanel()}
+                    ${this.renderUnraidPreview()}
+                    ${this.renderUnraidExplainer()}
                 </div>
             </div>
         `;
@@ -64,8 +64,6 @@
                 </div>
                 <p class="config-panel-note">${t('unraidHowNote',
                     'nextDash asks the server about once a minute and only reads: it never starts, stops or changes anything there.')}</p>
-                <p class="config-panel-note">${t('unraidHowWidgets',
-                    'With the Unraid widgets you can put the server on any page: one overview tile with a line each for the array, parity, disks, alerts, VMs and the UPS, or a tile per area. Each widget sets how often it refreshes, how many rows it shows and whether a click opens that page in Unraid; a wide tile shows more, such as every disk or the parity history. Switch on alerts under Connection and a stopped array, disk or parity errors and Unraid\'s own notifications reach you through your alert channels.')}</p>
                 <ol class="unraid-steps">
                     ${step('key', 1, `${t('unraidStepKey', 'In Unraid, make an API key with the role Viewer:')} <strong>Settings → Management Access → API Keys</strong>.`)}
                     ${step('connect', 2, t('unraidStepConnect', 'Fill in the address and the key below, test the connection and save.'))}
@@ -75,39 +73,25 @@
     },
 
     /*
-     * What you get: the seven tiles in miniature, with example figures, each
-     * a step from its own Add in the widget catalogue. Decorative drawings beside
-     * real buttons, so the drawings are hidden from assistive tech.
+     * Widgets: the seven kinds as chips, each a step from its own Add in the
+     * widget catalogue.
      */
     renderUnraidPreview() {
         const esc = (v) => this.dash.escapeHtml(v);
         const t = (key, fallback) => esc(this.t(`config.${key}`, fallback));
-        const bar = (pct, tone = '') => `<span class="unraid-mini-bar${tone ? ` unraid-mini-bar--${tone}` : ''}"><i style="--fill:${pct}"></i></span>`;
-        const row = (name, value, tone = '') => `<span class="unraid-mini-row"><span>${esc(name)}</span><span${tone ? ` class="unraid-mini-${tone}"` : ''}>${esc(value)}</span></span>`;
-        const tile = (type, body) => `
-            <div class="unraid-mini">
-                <span class="unraid-mini-title">${esc(this.widgetTypeName(type))}</span>
-                <span class="unraid-mini-body" aria-hidden="true">${body}</span>
-                <button type="button" class="config-btn config-btn--small unraid-mini-add" data-unraid-add="${esc(type)}"
-                        aria-label="${esc(this.t('config.widgetsAddNamed', 'Add {name}').replace('{name}', this.widgetTypeName(type)))}">${t('unraidMiniAdd', 'Add…')}</button>
-            </div>`;
+        const chip = (type) => `
+            <li class="unraid-chip">
+                <span>${esc(this.widgetTypeName(type))}</span>
+                <button type="button" class="config-btn config-btn--small" data-unraid-add="${esc(type)}"
+                        aria-label="${esc(this.t('config.widgetsAddNamed', 'Add {name}').replace('{name}', this.widgetTypeName(type)))}">${t('unraidMiniAdd', 'Add')}</button>
+            </li>`;
+        const types = ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
         return `
-            <div class="config-panel unraid-preview" data-unraid-preview data-unraid-panel="widgets"${this.unraidPanelHidden('widgets')}>
-                <h3 class="config-panel-title">${t('unraidPreviewTitle', 'What you get')}</h3>
-                <p class="config-panel-note">${t('unraidPreviewNote',
-                    'Seven widgets read this server, shown here with example figures. Add opens that kind in Widgets → Catalogue.')}</p>
-                <div class="unraid-minis">
-                    ${tile('unraid', `${row('array', 'started', 'good')}${row('alerts', '2 unread', 'warn')}`)}
-                    ${tile('unraidArray', `${bar(0.74)}${row('disk1', '74%')}`)}
-                    ${tile('unraidParity', `${bar(0.63)}${row('check', '63%')}`)}
-                    ${tile('unraidShares', `${row('array', '44%')}${row('cache', '13%')}`)}
-                    ${tile('unraidVms', `<span class="unraid-mini-row"><span><span class="unraid-mini-pulse"></span>home-assistant</span><span class="unraid-mini-good">on</span></span>`)}
-                    ${tile('unraidUps', `${bar(1, 'good')}${row('battery', '100%')}`)}
-                    ${tile('unraidNotifications', `${row('parity check', 'done')}${row('2 alerts', '', 'warn')}`)}
-                </div>
-                <p class="unraid-preview-foot">
-                    <button type="button" class="config-btn config-btn--primary" data-unraid-goto-widgets>${t('unraidAllTypes', 'All widget types →')}</button>
-                </p>
+            <div class="config-panel unraid-preview" data-unraid-preview data-unraid-panel="connection"${this.unraidPanelHidden('connection')}>
+                <h3 class="config-panel-title">${t('unraidPreviewTitle', 'Widgets')}</h3>
+                <p class="config-panel-note">${t('unraidPreviewNote', 'Put the server on a page with one of these.')}</p>
+                <ul class="unraid-chips">${types.map(chip).join('')}</ul>
+                <button type="button" class="config-link-btn" data-unraid-goto-widgets>${t('unraidAllTypes', 'All widget types →')}</button>
             </div>`;
     },
 
@@ -188,26 +172,24 @@
 
     unraidTabLabel(tab) {
         const map = {
-            all: ['config.unraidTabAll', 'All'],
             connection: ['config.unraidTabConnection', 'Connection'],
             how: ['config.unraidTabHow', 'How it works'],
-            widgets: ['config.unraidTabWidgets', 'What you get'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
         return this.t(key, fallback);
     },
 
-    /** ` hidden` for a card that is not on the chosen tab; All shows every card. */
+    /** ` hidden` for a card that is not on the chosen tab. */
     unraidPanelHidden(panel) {
-        const tab = this.unraidTab || 'all';
-        return tab === 'all' || tab === panel ? '' : ' hidden';
+        const tab = this.unraidTab || 'connection';
+        return tab === panel ? '' : ' hidden';
     },
 
     /** Show the cards of the chosen tab without redrawing them. */
     showUnraidTab(container) {
-        const tab = this.unraidTab || 'all';
+        const tab = this.unraidTab || 'connection';
         container.querySelectorAll('[data-unraid-panel]').forEach((panel) => {
-            panel.hidden = !(tab === 'all' || panel.getAttribute('data-unraid-panel') === tab);
+            panel.hidden = panel.getAttribute('data-unraid-panel') !== tab;
         });
     },
 
@@ -243,7 +225,7 @@
             <div class="config-panel" data-unraid-section data-unraid-panel="connection"${this.unraidPanelHidden('connection')}>
                 <h3 class="config-panel-title">${t('unraidTitle', 'Unraid')}</h3>
                 <p class="config-panel-note">${t('unraidIntro',
-                    'The Unraid widgets read this server through its API (Unraid 7.2, or the Unraid Connect plugin). Make a key under Settings → Management Access → API Keys with the role Viewer: nextDash only reads.')}</p>
+                    'Make an API key in Unraid with the role Viewer (Settings → Management Access → API Keys). nextDash only reads.')}</p>
                 <div class="config-field">
                     <label class="config-field-label" for="config-unraid-base-url">${t('unraidAddress', 'Address')}</label>
                     <input type="url" id="config-unraid-base-url" class="config-text" data-unraid-field="baseUrl"

@@ -9588,32 +9588,24 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
 .config-link-btn:hover,
 .config-link-btn:focus-visible { color: var(--text-primary); }
 
-.unraid-minis {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
-    gap: var(--space-2, 0.5rem);
-    margin-top: var(--space-2, 0.5rem);
-}
-.unraid-mini {
+.unraid-chips {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-1-5, 0.4rem);
-    min-height: 6.2rem;
-    padding: var(--space-2, 0.55rem) var(--space-2, 0.6rem);
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+    margin: var(--space-3, 0.75rem) 0;
+    padding: 0;
+    list-style: none;
+}
+.unraid-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: 3px 4px 3px 12px;
     border: 1px solid var(--border-secondary, var(--border-primary));
-    border-radius: var(--layout-radius-xs, 6px);
+    border-radius: 999px;
     background: var(--background-secondary);
-    font-size: var(--text-xs, 0.72rem);
-    color: var(--text-secondary);
+    color: var(--text-primary);
 }
-.unraid-mini-title {
-    color: var(--text-tertiary);
-    font-size: 0.66rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-}
-.unraid-mini-title::before { content: '// '; color: var(--accent-primary); letter-spacing: 0; }
-.unraid-mini-body { display: flex; flex-direction: column; gap: var(--space-1, 0.3rem); }
 .unraid-mini-row { display: flex; justify-content: space-between; gap: var(--space-1, 0.3rem); }
 .unraid-mini-good { color: var(--accent-success); }
 .unraid-mini-warn { color: var(--accent-warning); }
@@ -9648,8 +9640,6 @@ body.no-animations .config-crud-list--table .config-crud-row-actions {
     0%, 100% { opacity: 0.35; transform: scale(0.85); }
     50% { opacity: 1; transform: scale(1.1); }
 }
-.unraid-mini-add { margin-top: auto; align-self: flex-start; }
-.unraid-preview-foot { margin: var(--space-3, 0.75rem) 0 0; }
 
 /* Config -> Status page: the link, its buttons and the QR symbol. */
 /* The section shows and hides by the hidden attribute; a display rule below

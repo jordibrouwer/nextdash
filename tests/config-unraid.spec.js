@@ -175,11 +175,11 @@ test.describe('Config -> Unraid explains itself', () => {
         await expect(page.locator('.unraid-step.is-done')).toHaveCount(0);
     });
 
-    // What you get: each kind's Add opens the catalogue with that kind's
+    // Widgets: each kind's Add opens the catalogue with that kind's
     // card focused -- one Enter from a widget on the page.
     test('Add on a kind opens the catalogue on that kind', async ({ page }) => {
         await openSection(page, { server: SAVED, keySet: true, suggestedBaseUrl: '' });
-        await expect(page.locator('[data-unraid-preview] .unraid-mini')).toHaveCount(7);
+        await expect(page.locator('[data-unraid-preview] .unraid-chip')).toHaveCount(7);
         await page.locator('[data-unraid-add="unraidParity"]').click();
         await expect(page.locator('#config-section-widgets')).toHaveAttribute('aria-selected', 'true');
         await expect(page.locator('[data-widget-kind="unraidParity"] [data-widget-add]')).toBeFocused();
@@ -187,6 +187,7 @@ test.describe('Config -> Unraid explains itself', () => {
 
     test('Add an Unraid widget opens the Catalogue tab on the Unraid group', async ({ page }) => {
         await openSection(page, { server: null, keySet: false, suggestedBaseUrl: '' });
+        await page.locator('[data-unraid-tab="how"]').click();
         await page.locator('[data-unraid-explain] [data-unraid-goto-widgets]').click();
         await expect(page).toHaveURL(/#config\/widgets\/catalogue$/);
         await expect(page.locator('[data-widget-kind="unraid"] [data-widget-add]')).toBeFocused();
@@ -196,26 +197,23 @@ test.describe('Config -> Unraid explains itself', () => {
 });
 
 test.describe('Unraid tabs', () => {
-    test('tabs show one card each, All shows every card, and typed text survives a switch', async ({ page }) => {
+    test('Connection holds the form and the widgets, How it works its own tab, and typed text survives a switch', async ({ page }) => {
         await openSection(page, { server: SAVED, keySet: true });
-        const panels = ['connection', 'how', 'widgets'];
-        for (const p of panels) await expect(page.locator(`[data-unraid-panel="${p}"]`)).toBeVisible();
-
-        await page.locator('[data-unraid-tab="connection"]').click();
-        await expect(page).toHaveURL(/#config\/unraid\/connection$/);
-        await expect(page.locator('[data-unraid-panel="connection"]')).toBeVisible();
+        await expect(page.locator('[data-unraid-panel="connection"]')).toHaveCount(2);
+        await expect(page.locator('[data-unraid-section]')).toBeVisible();
+        await expect(page.locator('[data-unraid-preview]')).toBeVisible();
         await expect(page.locator('[data-unraid-panel="how"]')).toBeHidden();
-        await expect(page.locator('[data-unraid-panel="widgets"]')).toBeHidden();
+        await expect(page.locator('[data-unraid-tab]')).toHaveCount(2);
 
         // Cards are hidden, not redrawn: a typed key is still there.
         await page.locator('[data-unraid-field="key"]').fill('typed-key');
         await page.locator('[data-unraid-tab="how"]').click();
+        await expect(page).toHaveURL(/#config\/unraid\/how$/);
         await expect(page.locator('[data-unraid-panel="how"]')).toBeVisible();
-        await expect(page.locator('[data-unraid-panel="connection"]')).toBeHidden();
+        await expect(page.locator('[data-unraid-section]')).toBeHidden();
+        await expect(page.locator('[data-unraid-preview]')).toBeHidden();
         await page.locator('[data-unraid-tab="connection"]').click();
+        await expect(page).toHaveURL(/#config\/unraid\/connection$/);
         await expect(page.locator('[data-unraid-field="key"]')).toHaveValue('typed-key');
-
-        await page.locator('[data-unraid-tab="all"]').click();
-        for (const p of panels) await expect(page.locator(`[data-unraid-panel="${p}"]`)).toBeVisible();
     });
 });

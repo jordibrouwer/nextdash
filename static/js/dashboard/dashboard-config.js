@@ -277,7 +277,7 @@ class DashboardConfig {
         // Status page sub-tab, remembered the same way.
         this._statusPageTab = DashboardConfig.readRememberedTab('status-page') || 'all';
         // Unraid sub-tab, remembered the same way.
-        this._unraidTab = DashboardConfig.readRememberedTab('unraid') || 'all';
+        this._unraidTab = DashboardConfig.readRememberedTab('unraid') || 'connection';
         /**
          * Whether a settings tab is filtered to what differs from the default.
          * Not persisted: it is a way of looking at the page for a minute, not a
@@ -20854,7 +20854,7 @@ class DashboardConfig {
     static STATUS_PAGE_TABS = ['all', 'link', 'top', 'groups', 'maintenance'];
 
     /** The Unraid section's sub-tabs; 'all' shows every card at once. */
-    static UNRAID_TABS = ['all', 'connection', 'how', 'widgets'];
+    static UNRAID_TABS = ['connection', 'how'];
 
     // Repeated from widgets-tutorial.js, which is checked before the script is
     // fetched at all. Both must agree.
