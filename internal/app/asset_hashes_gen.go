@@ -313,7 +313,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/shared/unsorted-page.js":                             "b061fae38d9e",
 	"js/shortcut-format.js":                                  "dcd76e1e1a9d",
 	"js/skeleton-loading.js":                                 "72467856fc22",
-	"js/start-guide.js":                                      "7d6dbcfba37a",
+	"js/start-guide.js":                                      "ded086f2e908",
 	"js/status.js":                                           "68675f8c4367",
 	"js/swipe-navigation.js":                                 "1dde8e9140c1",
 	"js/tag-autocomplete.js":                                 "40de83a5104c",

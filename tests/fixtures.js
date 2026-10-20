@@ -132,6 +132,9 @@ const test = base.test.extend({
         // would bring it back. So every init() keeps those tips seen, unless the
         // page asks for one -- the tour specs themselves list theirs in
         // window.__e2eWantTours first.
+        // The start guide opens by itself three seconds after its bar is up; a spec
+        // that is not about that would find a modal over what it is clicking.
+        await page.addInitScript(() => { window.__e2eStartGuideAutoOpenMs = -1; });
         await page.addInitScript(() => {
             let state;
             Object.defineProperty(window, 'DiscoverabilityState', {

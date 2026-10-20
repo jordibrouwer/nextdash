@@ -119,12 +119,19 @@ test.describe('a fresh install', () => {
         await expect(page.locator('.start-guide-overlay')).toHaveCount(0);
     });
 
-    test('the modal never opens by itself, also after a reload', async ({ page, request }) => {
+    test('the modal opens by itself once, three seconds after the bar, and not again after a reload', async ({ page, request }) => {
+        await page.addInitScript(() => { window.__e2eStartGuideAutoOpenMs = 3000; });
         await freshInstall(page, request);
         await expect(bar(page)).toBeVisible({ timeout: 10_000 });
+        const shown = Date.now();
+        await expect(modal(page)).toBeVisible({ timeout: 8_000 });
+        expect(Date.now() - shown).toBeGreaterThan(1_500);
+        await page.keyboard.press('Escape');
+        await expect(modal(page)).toHaveCount(0);
         await page.reload();
         await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
         await expect(bar(page)).toBeVisible({ timeout: 10_000 });
+        await page.waitForTimeout(4_000);
         await expect(modal(page)).toHaveCount(0);
     });
 

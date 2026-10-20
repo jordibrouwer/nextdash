@@ -4,7 +4,8 @@
  * The reader sees the dashboard with its example links first. After a moment a
  * bar slides in at the bottom of the screen, "Quick start", and opens a modal
  * in the middle: what to do with the example links, the language, the weather
- * and the first steps. The modal never opens by itself. The bar stays on the
+ * and the first steps. The modal opens by itself once, three seconds after the
+ * bar is up, so a new reader meets it first; after that only the reader opens it. The bar stays on the
  * dashboard of page 1 until every step is done or the reader closes it for
  * good, and it holds the corner for as long as it is there, so no other card
  * competes with it (NoticeCard.cornerIsFree).
@@ -24,6 +25,9 @@
     // The dashboard is seen on its own first: the bar comes a moment later.
     const BAR_DELAY_MS = 1100;
     const PLACE_MS = 500;
+    // Three seconds after the bar is up, the first time in this browser: the modal
+    // opens by itself. A test turns it off with window.__e2eStartGuideAutoOpenMs = -1.
+    const AUTO_OPEN_MS = 3000;
     const DOCS_URL = 'https://nextdash.cc/docs/';
     // Set once the modal has been opened in this browser: the bar pulses on
     // every load until then, because it is for finding the bar, and stops
@@ -208,6 +212,28 @@
             this.revealed = true;
             this.place();
             this.pulse();
+            this.scheduleAutoOpen();
+        }
+
+        hasBeenFound() {
+            try { return localStorage.getItem(FOUND_KEY) === '1'; } catch { return false; }
+        }
+
+        /** The first time, the modal grows out of the bar on its own. */
+        scheduleAutoOpen(attempt = 0) {
+            if (this.hasBeenFound()) return;
+            const wanted = global.__e2eStartGuideAutoOpenMs;
+            const wait = Number.isFinite(wanted) ? wanted : AUTO_OPEN_MS;
+            if (wait < 0) return;
+            this.timers.push(setTimeout(() => {
+                if (this.overlay || !this.revealed || this.hasBeenFound() || !this.atHome()) return;
+                // Another modal (what's new, a form) has the page: try again shortly.
+                if (this.dash.isModalOpen?.()) {
+                    if (attempt < 20) this.scheduleAutoOpen(attempt + 1);
+                    return;
+                }
+                this.open();
+            }, attempt === 0 ? wait : 1000));
         }
 
         place() {
