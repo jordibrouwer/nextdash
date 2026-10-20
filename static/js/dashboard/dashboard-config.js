@@ -11130,12 +11130,12 @@ class DashboardConfig {
 
     appearanceTabLabel(tab) {
         const map = {
-            general: ['config.appearanceTabLook', 'Theme & type'],
+            general: ['config.appearanceTabLook', 'Theme'],
             background: ['config.appearanceTabBackground', 'Background'],
             surface: ['config.appearanceTabSurface', 'Surfaces'],
             layout: ['config.appearanceTabGrid', 'Layout'],
             display: ['config.appearanceTabRows', 'Rows'],
-            previews: ['config.appearanceTabPreviews', 'Link previews'],
+            previews: ['config.appearanceTabPreviews', 'Previews'],
             header: ['config.appearanceTabHeader', 'Header'],
             buttonbar: ['config.appearanceTabActionBar', 'Action bar'],
             datetime: ['config.appearanceTabDateTime', 'Date & weather'],

@@ -30,7 +30,7 @@ test.describe('the grouped strip', () => {
         // The labels are decoration: the tab names carry the meaning.
         await expect(page.locator('.config-subtab-group-label').first()).toHaveAttribute('aria-hidden', 'true');
         await expect(page.locator('[data-appearance-group="bookmarks"] [data-appearance-tab]'))
-            .toHaveText(['Layout', 'Rows', 'Link previews']);
+            .toHaveText(['Layout', 'Rows', 'Previews']);
     });
 
     test('arrow keys walk across the group boundary', async ({ page }) => {
@@ -64,16 +64,27 @@ test.describe('the grouped strip', () => {
                         const r = t.getBoundingClientRect();
                         return r.left < box.left - 1 || r.right > box.right + 1;
                     }).length,
-                    // Each group has its label above its tabs.
-                    labels: [...el.querySelectorAll('.config-subtab-group')].map((g) =>
-                        g.querySelector('.config-subtab-group-label').getBoundingClientRect().top
-                        < g.querySelector('[data-appearance-tab]').getBoundingClientRect().top),
+                    // Each group has its label in front of its first tab.
+                    labels: [...el.querySelectorAll('.config-subtab-group')].map((g) => {
+                        const label = g.querySelector('.config-subtab-group-label').getBoundingClientRect();
+                        const first = g.querySelector('[data-appearance-tab]').getBoundingClientRect();
+                        return label.right <= first.left + 1 && label.bottom > first.top && label.top < first.bottom;
+                    }),
                 };
             });
             expect(strip.scrolls, `at ${width}px`).toBe(false);
             expect(strip.outside, `at ${width}px`).toBe(0);
             expect(strip.labels).toEqual([true, true, true]);
         }
+    });
+
+    test('on a wide window the strip is one line', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 });
+        await open(page, '#config/appearance');
+        const rows = await page.evaluate(() => new Set([...document.querySelectorAll(
+            '.config-subtabs--grouped [data-appearance-tab], .config-subtabs--grouped .config-subtab-group-label')]
+            .map((el) => Math.round(el.getBoundingClientRect().top + el.getBoundingClientRect().height / 2))).size);
+        expect(rows).toBe(1);
     });
 
     test('Rows no longer holds the link preview panel', async ({ page }) => {

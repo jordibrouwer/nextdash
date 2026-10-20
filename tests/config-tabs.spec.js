@@ -27,7 +27,7 @@ const hash = (page) => page.evaluate(() => window.location.hash);
 test('Appearance opens on its first tab, with the settings already there', async ({ page }) => {
     await open(page, '#config/appearance');
     await expect(page.locator('[data-appearance-tab]')).toHaveText(
-        ['Theme & type', 'Background', 'Surfaces', 'Layout', 'Rows', 'Link previews', 'Header', 'Action bar', 'Date & weather']);
+        ['Theme', 'Background', 'Surfaces', 'Layout', 'Rows', 'Previews', 'Header', 'Action bar', 'Date & weather']);
     await expect(page.locator('[data-appearance-tab="general"]')).toHaveAttribute('aria-selected', 'true');
     // The first panel is open; the rest fold until their header is clicked.
     await expect(page.locator('[data-appearance-select="theme"], [data-theme-picker-button]').first()).toBeVisible();

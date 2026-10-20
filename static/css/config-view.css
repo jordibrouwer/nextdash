@@ -2385,21 +2385,21 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
 }
 
 /*
- * Appearance's strip: three labelled groups, each its label over its tabs.
+ * Appearance's strip: three labelled groups on one line.
  *
- * Nine tabs on one scrolling line hid half of them past the edge, which is the
- * opposite of finding your way. So this strip wraps -- but by whole groups: a
- * group that does not fit moves to the next line with its label, so a second
- * line still reads as a group of its own rather than a stray tab. Only a group
- * wider than the screen wraps inside itself. The label is small and muted so
- * the tab names stay what the eye reads. Presentation wrappers only -- the
- * buttons stay the tablist's own children as far as the keyboard is concerned.
+ * Each group's label sits in front of its tabs, small and muted, and a thin
+ * rule sets the groups apart. With the labels above the tabs the strip took
+ * two lines on a normal window for nine tabs that fit on one. It still wraps
+ * by whole groups when the window is too narrow: a group that does not fit
+ * moves to the next line with its label, and only a group wider than the
+ * screen wraps inside itself. Presentation wrappers only -- the buttons stay
+ * the tablist's own children as far as the keyboard is concerned.
  */
 .config-subtabs.config-subtabs--grouped {
     flex-wrap: wrap;
     overflow-x: visible;
-    align-items: flex-end;
-    gap: 10px 26px;
+    align-items: center;
+    gap: 6px 0;
 }
 
 .config-subtab-group {
@@ -2407,16 +2407,29 @@ body.no-animations .config-panel--fold.is-unfolding > .config-panel-body {
     flex: 0 1 auto;
     flex-wrap: wrap;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
     max-width: 100%;
+    padding-right: 8px;
+    margin-right: 8px;
+    border-right: 1px solid var(--border-primary);
+}
+
+.config-subtab-group > .config-subtab {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+.config-subtab-group:last-child {
+    padding-right: 0;
+    margin-right: 0;
+    border-right: 0;
 }
 
 .config-subtab-group-label {
-    flex-basis: 100%;
-    padding: 0 2px;
+    padding: 0 4px 0 2px;
     color: var(--text-muted, #888);
-    font-size: calc(var(--font-size-text) * 0.8);
-    letter-spacing: 0.06em;
+    font-size: calc(var(--font-size-text) * 0.7);
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     white-space: nowrap;
     opacity: 0.8;
