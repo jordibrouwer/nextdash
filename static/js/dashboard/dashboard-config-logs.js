@@ -274,6 +274,10 @@
         const dropped = this._logDropped || 0;
         const retention = Number(this.dash.settings?.serverLogRetentionHours) || 0;
 
+        // Three zeros say nothing a line of text below does not: the tiles
+        // come with the first line.
+        if (!stats.total && !stats.warn && !stats.error) return '';
+
         return [
             {
                 label: this.t('config.logTileLines', 'Lines'),

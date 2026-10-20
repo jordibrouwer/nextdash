@@ -4668,10 +4668,10 @@ class DashboardConfig {
                     <div class="config-overview-panels">
                         ${this.renderOverviewBookmarksWidget()}
                         ${this.renderOverviewInboxWidget()}
-                        ${this.renderOverviewFeaturesBanner()}
                         ${this.renderOverviewContainersWidget()}
                         ${this.renderOverviewHealthWidget()}
                         ${this.renderOverviewStatsWidget()}
+                        ${this.renderOverviewFeaturesBanner()}
                     </div>
                 </div>
                 <div class="config-overview-aside">

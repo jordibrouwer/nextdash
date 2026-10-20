@@ -3035,24 +3035,6 @@ html body .config-bm-more-menu .config-btn {
     }
 }
 
-/* With room, the side panel stands beside the rows as it does in the view,
-   and the preview is half as tall: the settings are what the tab is for. The
-   panel keeps its two widths, so Normal and Wide still differ. */
-.config-bm-view-preview {
-    container: bm-preview / inline-size;
-}
-
-@container bm-preview (min-width: 50rem) {
-    .config-bm-view-preview-body {
-        flex-direction: row;
-    }
-
-    .config-bm-view-preview-list {
-        flex: 1 1 0;
-        align-self: flex-start;
-    }
-}
-
 /* ── Config → Inbox: the preview ──────────────────────────────────────── */
 
 /* The Inbox's own rows (dashboard-inbox.css), as the settings make them. */
