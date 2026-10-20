@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.20.1 — 20 October 2026](#v1201--20-october-2026)
 - [v1.20.0 — 20 October 2026](#v1200--20-october-2026)
 - [v1.19.10 — 18 October 2026](#v11910--18-october-2026)
 - [v1.19.9 — 17 October 2026](#v1199--17-october-2026)
@@ -112,6 +113,16 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.20.1 — 20 October 2026
+
+The Containers and Bookmarks views fit a laptop window again, and the Bookmarks header waits for a scroll before it turns solid, as the other list views do.
+
+### List views
+
+- **fix — the Containers table ran past its pane on a laptop window.** Which columns give way was decided by the window's width (768–1099 px), but the rail, the pane's padding and the page margin take a different share at every size: at 1140 px the list had 664 px for a 781 px table. The columns now answer to the list's own width, a container query on `.lvs-body` (`docker-list`): Image goes under 860 px, CPU, RAM, Size and Restarts under 660 px. The body is the container rather than the table, so the sticky column heads keep the window as their scroller (`docker-view.css`).
 
 ---
 

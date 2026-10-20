@@ -65,3 +65,24 @@ test('sort by size and by restarts', async ({ page }) => {
     await page.locator('[data-docker-sort]').selectOption('restarts');
     await expect(names).toHaveText(['bravo', 'charlie', 'alpha', 'delta']);
 });
+
+// The columns give way to the list's own width, not the window's: beside the
+// rail and inside the pane a laptop window left the list ~660px, and a table
+// sized for a viewport over 1099px ran past the pane's right edge.
+test('on a laptop-sized window the table stays inside the list', async ({ page }) => {
+    await page.setViewportSize({ width: 1140, height: 850 });
+    await mockDocker(page);
+    await page.goto('/#docker');
+    await expect(page.locator('[data-docker-row="sonarr"]')).toBeVisible();
+    const overrun = await page.evaluate(() => {
+        const list = document.querySelector('.lvs-body').getBoundingClientRect();
+        const table = document.querySelector('.docker-table').getBoundingClientRect();
+        return Math.round(table.right - list.right);
+    });
+    expect(overrun).toBeLessThanOrEqual(0);
+    await expect(page.locator('.docker-head--image')).toBeHidden();
+
+    // With room to spare the image comes back.
+    await page.setViewportSize({ width: 1700, height: 900 });
+    await expect(page.locator('.docker-head--image')).toBeVisible();
+});
