@@ -77,6 +77,25 @@ test.describe('config bookmarks redesign: rail and toolbar', () => {
     await expect(page.locator('.config-bm-rail-item.is-on').first()).toBeVisible();
   });
 
+  // Beside the rail on a laptop window the toolbar ran out of room: the search
+  // box shrank to nothing and the count was drawn over it. It wraps instead.
+  test('on a laptop-sized window the toolbar wraps and nothing overlaps the search box', async ({ page }) => {
+    await openConfigBookmarks(page);
+    await page.setViewportSize({ width: 1140, height: 850 });
+    const layout = await page.evaluate(() => {
+      const bar = document.querySelector('.config-bm-toolbar').getBoundingClientRect();
+      const search = document.querySelector('.config-bm-search').getBoundingClientRect();
+      const count = document.querySelector('.config-bm-count').getBoundingClientRect();
+      const kids = [...document.querySelectorAll('.config-bm-toolbar > *')]
+        .filter((el) => el.getClientRects().length && !el.classList.contains('config-sr-only'))
+        .map((el) => el.getBoundingClientRect().right);
+      return { searchWidth: search.width, gap: count.left - search.right, overrun: Math.max(...kids) - bar.right };
+    });
+    expect(layout.searchWidth).toBeGreaterThanOrEqual(180);
+    expect(layout.gap).toBeGreaterThanOrEqual(0);
+    expect(layout.overrun).toBeLessThanOrEqual(0);
+  });
+
   test('the List tab has no intro sentence', async ({ page }) => {
     await openConfigBookmarks(page);
     await expect(page.getByText('Every bookmark you have, from every page')).toHaveCount(0);

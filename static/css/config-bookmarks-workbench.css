@@ -35,7 +35,10 @@
        search boxes: it takes the room the sort/count beside it do not
        claim, rather than an <input>'s intrinsic width. */
     flex: 1 1 14rem;
-    min-width: 0;
+    /* A floor, so a crowded toolbar wraps instead of squeezing the box to
+       nothing: beside the rail on a laptop window it went to 0px and the
+       count was drawn over the input. */
+    min-width: 12rem;
 }
 
 /* Copies .health-view-search-input (health-view.css:462) so the two views'
@@ -67,8 +70,9 @@
 
 .config-bm-toolbar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-3, 0.75rem);
+    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
     margin-bottom: var(--space-3, 0.75rem);
 }
 

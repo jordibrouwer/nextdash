@@ -124,6 +124,8 @@ The Containers and Bookmarks views fit a laptop window again, and the Bookmarks 
 
 - **fix — the Containers table ran past its pane on a laptop window.** Which columns give way was decided by the window's width (768–1099 px), but the rail, the pane's padding and the page margin take a different share at every size: at 1140 px the list had 664 px for a 781 px table. The columns now answer to the list's own width, a container query on `.lvs-body` (`docker-list`): Image goes under 860 px, CPU, RAM, Size and Restarts under 660 px. The body is the container rather than the table, so the sticky column heads keep the window as their scroller (`docker-view.css`).
 - **fix — the Bookmarks header was dark before anything scrolled.** The rule that leaves a list view's header see-through at rest named the Tags, Inbox and Containers views, whose band is the shell's `.lvs-header`; the Bookmarks view's band is config's `.config-view-head` and was left out, so it showed its scrolled, nearly solid fill from the first paint. It is in the rule now (`category-surface.css`).
+- **fix — the Bookmarks toolbar overlapped itself on a laptop window.** It never wrapped, so beside the rail the search box shrank to 0 px and the count was drawn over it, and *Add Bookmark* ran past the edge. The toolbar wraps at every width and the search box keeps at least 12rem (`config-bookmarks-workbench.css`).
+- **docs — three new tests guard these fixes.** *On a laptop-sized window the table stays inside the list* in `tests/docker-columns.spec.js`, the Bookmarks case of *the header of … is part of the pane* in `tests/config-panes.spec.js`, and *on a laptop-sized window the toolbar wraps* in `tests/config-bookmarks-redesign.spec.js`; each fails without its fix.
 
 ---
 
