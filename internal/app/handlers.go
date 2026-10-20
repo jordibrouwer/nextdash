@@ -1357,6 +1357,12 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	settings.ThemeDepth = surfaces.Depth
 	settings.GlowStrength = surfaces.Glow
 	settings.ThemeEffects = surfaces.Effects
+	settings.CategorySurface = surfaces.CatSurface
+	// The first paint needs the answer, not the word: the template writes it
+	// as data-widget-bg, and a script keeps it in step with the surface after.
+	settings.WidgetSurface = resolveWidgetBackground(settings.WidgetSurface)
+	// Likewise the header: on "Follow the theme" a theme may state its own.
+	settings.CategoryHeaderStyle = resolveCategoryHeader(settings.CategoryHeaderStyle, themeID)
 	settings.ThemeBackdrop = surfaces.Backdrop
 	return htmlPageData{
 		Settings:               settings,
@@ -3201,7 +3207,7 @@ func themeSurfaceAlpha(tc ThemeColors) string {
 		return "1"
 	}
 	if tc.SurfaceAlpha > 0 {
-		return formatFloat(clampFloat(tc.SurfaceAlpha, 0.3, 1, 1))
+		return formatFloat(clampFloat(tc.SurfaceAlpha, 0.2, 1, 1))
 	}
 	// The archetype scales what the palette earned rather than replacing it:
 	// glass on a pale slate and glass on a near-black terminal are both glass,
@@ -3543,7 +3549,24 @@ type backdropLayer struct{ image, size, pos string }
 // one entry per layer. They become --theme-backdrop, --theme-backdrop-size and
 // --theme-backdrop-position, so theme-backdrop.css can hand each layer its own
 // tile without knowing which recipe drew it.
-type backdropLook struct{ Image, Size, Position string }
+// Scrim is the floor of theme tint the recipe asks for, as a number between 0
+// and 1 written as text: the loud recipes cannot be drawn without something
+// laid over them, or the text on top of them loses its contrast.
+type backdropLook struct{ Image, Size, Position, Scrim string }
+
+// backdropScrimFloor is the least tint a recipe is drawn under. The reader's own
+// Theme tint (BackdropTuning.Tint) can go higher, never below it.
+func backdropScrimFloor(recipe string) string {
+	switch recipe {
+	case "burst":
+		return "0.24"
+	case "splash":
+		return "0.22"
+	case "leak":
+		return "0.2"
+	}
+	return "0"
+}
 
 func joinBackdropLayers(layers []backdropLayer) backdropLook {
 	images := make([]string, len(layers))
@@ -3662,6 +3685,9 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 
 	accent := "var(--accent-primary)"
 	second := "var(--accent-error)"
+	// The colour-burst recipes want more than two colours; the theme has them.
+	warm := "var(--accent-warning)"
+	cool := "var(--accent-success)"
 	if tc.AccentPrimary == "" {
 		accent = "var(--accent-success)"
 	}
@@ -3849,6 +3875,21 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 			"conic-gradient(from "+strconv.Itoa(angle)+"deg at "+pct(x1+20)+" "+pct(y1+20)+", "+
 				veil(accent, 18)+" 0deg 40deg, transparent 40deg 95deg, "+veil(second, 14)+" 95deg 130deg, transparent 130deg 210deg, "+
 				veil(accent, 10)+" 210deg 250deg, transparent 250deg)", base)
+	case "burst": // een kleurexplosie: de kleuren van het theme in een waaier rond één punt
+		layers = plain(
+			"conic-gradient(from "+strconv.Itoa(angle)+"deg at "+pct(46+pick(7, 28))+" "+pct(30+pick(11, 30))+", "+
+				veil(accent, 62)+", "+veil(warm, 56)+", "+veil(second, 58)+", "+veil(cool, 48)+", "+veil(accent, 62)+")",
+			"radial-gradient(130% 110% at 50% 50%, transparent 40%, "+veil(bg, 70)+" 100%)", base)
+	case "splash": // vier grote zachte vlekken in vier kleuren
+		layers = plain(
+			"radial-gradient(circle at "+pct(x1+10)+" "+pct(y1+18)+", "+veil(accent, 60)+" 0, "+veil(accent, 40)+" 14%, transparent 30%)",
+			"radial-gradient(circle at "+pct(x2)+" "+pct(y2+12)+", "+veil(second, 58)+" 0, "+veil(second, 38)+" 16%, transparent 34%)",
+			"radial-gradient(circle at "+pct(30+pick(5, 30))+" "+pct(66+pick(9, 20))+", "+veil(cool, 54)+" 0, "+veil(cool, 34)+" 15%, transparent 32%)",
+			"radial-gradient(circle at "+pct(86+pick(3, 10))+" "+pct(84+pick(15, 10))+", "+veil(warm, 52)+" 0, "+veil(warm, 30)+" 9%, transparent 22%)", base)
+	case "leak": // een lichtlek vanaf de rand, met een tweede bloem in de hoek
+		layers = plain(
+			"linear-gradient("+strconv.Itoa(96+pick(3, 14))+"deg, "+veil(warm, 60)+" 0%, "+veil(second, 50)+" 22%, transparent 56%)",
+			"radial-gradient(60% 60% at 100% 100%, "+veil(accent, 50)+", transparent 70%)", base)
 	case "chevron": // een zigzag van schuine vlakken
 		layers = []backdropLayer{
 			{"linear-gradient(135deg, " + veil(accent, 8) + " 25%, transparent 25%)", tile(36), ""},
@@ -3860,7 +3901,9 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 			"linear-gradient("+strconv.Itoa(178+pick(2, 6))+"deg, "+veil(accent, 16)+" 0%, transparent "+pct(34+pick(5, 16))+")",
 			"radial-gradient(140% 60% at "+pct(x2)+" 100%, "+veil(second, 18)+" 0%, transparent 58%)", base)
 	}
-	return joinBackdropLayers(layers)
+	look := joinBackdropLayers(layers)
+	look.Scrim = backdropScrimFloor(themeBackdropRecipes[recipe])
+	return look
 }
 
 // themeBackdropRecipes names the recipes above, in their switch order, so a
@@ -3871,7 +3914,14 @@ var themeBackdropRecipes = []string{
 	"blooms", "sweep", "wireframe", "glow", "band", "rings", "scanlines", "crosshatch", "horizon",
 	"mesh", "aurora", "bokeh", "nebula", "stars", "sunset", "dunes", "mountains", "waves", "topo",
 	"perspective", "blueprint", "pinstripe", "hexagons", "halftone", "prism", "chevron",
+	"burst", "splash", "leak",
 }
+
+// themeBackdropHashedRecipes is how many recipes a theme's id can hash to: the
+// ones that existed before the colour-burst three. The hash is taken modulo
+// this and not modulo the whole list, so adding a recipe does not move a theme
+// that never asked for one. Burst, splash and leak are reached by naming them.
+const themeBackdropHashedRecipes = 26
 
 // themeBackdropRecipeIndex is the recipe a name stands for, or -1.
 func themeBackdropRecipeIndex(name string) int {
@@ -3886,7 +3936,7 @@ func themeBackdropRecipeIndex(name string) int {
 
 // pick23 is the recipe an id hashes to: the same bits pick() reads for it.
 func pick23(h uint32) int {
-	return int((h >> 23) % uint32(len(themeBackdropRecipes)))
+	return int((h >> 23) % uint32(themeBackdropHashedRecipes))
 }
 
 // themeBackdropHashID maps a "-dark" theme id onto its "-light" counterpart so
@@ -4018,6 +4068,7 @@ func renderThemeCSSBlockSeeded(selector string, tc ThemeColors, seed int) string
     --ink-dir: ` + themeInkDirection(s.BackgroundPrimary) + `;
     --theme-backdrop: ` + backdrop.Image + `;
     --theme-backdrop-size: ` + backdrop.Size + `;
+    --theme-backdrop-scrim: ` + backdrop.Scrim + `;
     --theme-backdrop-position: ` + backdrop.Position + `;
     --theme-surface-alpha: ` + themeSurfaceAlpha(tc) + `;
     --theme-surface-blur: ` + themeSurfaceBlur(tc) + `px;
@@ -4189,6 +4240,7 @@ func themeBackdropOverrideCSS(seed int) string {
 		b.WriteString(`html body[data-backdrop-recipe="` + name + `"] {
     --theme-backdrop: ` + look.Image + `;
     --theme-backdrop-size: ` + look.Size + `;
+    --theme-backdrop-scrim: ` + look.Scrim + `;
     --theme-backdrop-position: ` + look.Position + `;
 }
 `)

@@ -1,6 +1,6 @@
 /**
  * One-time dashboard tour — the first thing a new reader is walked through,
- * once the quick-start checklist is out of the way. Built like the Bookmarks,
+ * once the start guide bar is out of the way. Built like the Bookmarks,
  * Inbox and Containers tours and sharing their guards.
  *
  * Those three each explain one view the first time it opens. This one is the
@@ -267,6 +267,34 @@
         const f = (key, fallback) => t(key, fallback);
         const example = exampleBookmark();
         return [
+            // 0 — the action bar: the buttons at the edge, and the keys that do the same
+            {
+                title: f('dashTourBarTitle', 'The action bar'),
+                visual: (() => {
+                    const keys = [['+', f('dashTourBarAdd', 'add')], ['>', f('dashTourKeySearch', 'search')],
+                        [':', f('dashTourKeyCommands', 'commands')], ['?', f('dashTourKeyFinders', 'finders')],
+                        ['/', f('dashTourKeyTagCloud', 'tag cloud')], ['*', f('dashTourBarRecent', 'recent')],
+                        [',', f('dashTourBarPages', 'pages')], ['.', f('dashTourBarFold', 'fold all')],
+                        ['!', f('dashTourKeyCheat', 'cheat sheet')]];
+                    return svg(`
+                        ${keys.map(([k, l], i) => {
+        const x = 12 + (i % 3) * 112;
+        const y = 12 + Math.floor(i / 3) * 32;
+        return `${keycap(x, y, k)}${label(x + keyWidth(k) + 6, y + 14, l)}`;
+    }).join('')}
+                        ${keycap(12, 114, "'")}${label(12 + keyWidth("'") + 6, 128, f('dashTourBarHide', 'slides it away and back'))}
+                        <rect x="360" y="8" width="110" height="134" rx="8" class="dtv-panel"/>
+                        ${row(368, 18, 62, '//')}${row(368, 46, 62, '//')}${row(368, 74, 62, '//')}
+                        <g class="dtv-dock dtv-anim dtv-a-panel">
+                            ${keys.map((_, i) => `<rect x="440" y="${14 + i * 13}" width="22" height="10" rx="3" class="dtv-icon-box"/>`).join('')}
+                        </g>
+                    `, f('dashTourBarAlt', 'The nine action buttons with their keys, and the bar docked at the edge of the page'));
+                })(),
+                body: `<p>${esc(f('dashTourBarBody1',
+                    'The action bar is the row of buttons at the edge of your dashboard: add, search, commands, finders, the tag cloud, recent bookmarks, pages, fold all and the cheat sheet. Every button has a key, so you can reach all of it without the mouse.'))}</p>
+                    <p>${esc(f('dashTourBarBody2',
+                    'By default it stands in a column on the right and slides into the edge after two seconds; the \' key, or Shift+O, brings it back. Choose the buttons and where the bar stands in Config → Appearance → Action bar. A hidden button keeps its key.'))}</p>`,
+            },
             // 1 — pages, categories, bookmarks, and moving them
             {
                 title: f('dashTour4PagesTitle', 'Pages, categories, bookmarks'),

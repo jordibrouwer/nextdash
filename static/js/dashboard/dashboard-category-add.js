@@ -179,6 +179,10 @@ class DashboardCategoryAdd {
         });
 
         ui.input.focus({ preventScroll: true });
+        // The row is mounted at the end of the grid, and the button that opened
+        // it hides: without this the click seemed to do nothing, because the
+        // row was out of sight. The key route (`c`) needs it just as much.
+        ui.box.scrollIntoView({ block: 'nearest', behavior: 'auto' });
     }
 }
 

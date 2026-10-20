@@ -35,6 +35,17 @@ class DashboardSetup {
     }
 
 
+    /** Lights the first visible bookmark row for a moment, in the strength just chosen. */
+    demoRowHighlight() {
+        const row = [...document.querySelectorAll('#dashboard-layout .bookmark-link')]
+            .find((el) => el.getClientRects().length > 0 && !el.classList.contains('bookmark-inline-editing'));
+        if (!row) return;
+        document.querySelectorAll('#dashboard-layout .row-highlight-demo').forEach((el) => el.classList.remove('row-highlight-demo'));
+        row.classList.add('row-highlight-demo');
+        clearTimeout(this._rowHighlightDemoTimer);
+        this._rowHighlightDemoTimer = setTimeout(() => row.classList.remove('row-highlight-demo'), 1600);
+    }
+
     setupDOM() {
         const d = this.dash;
         d.updateDateVisibility();
@@ -47,8 +58,13 @@ class DashboardSetup {
         // How far a row's accent carries when it lights up. Written here as
         // well as by the server, so changing it in config lands without a
         // reload; the CSS reads the attribute, see dashboard-bookmark-row.css.
-        document.body.setAttribute('data-row-highlight',
-            d.settings.rowHighlight === 'strong' ? 'strong' : 'subtle');
+        const rowHighlight = d.settings.rowHighlight === 'strong' ? 'strong' : 'subtle';
+        const previousHighlight = document.body.getAttribute('data-row-highlight');
+        document.body.setAttribute('data-row-highlight', rowHighlight);
+        // A row lights up under the pointer, and a reader choosing the strength has
+        // the pointer on the panel: light the first row for a moment so the choice
+        // is seen. Not on load, and not when nothing changed.
+        if (previousHighlight && previousHighlight !== rowHighlight) this.demoRowHighlight();
         document.body.setAttribute('data-show-date', d.settings.showDate);
         document.body.setAttribute('data-show-config-button', d.settings.showConfigButton !== false);
         document.body.setAttribute('data-show-pages-button', d.settings.showPagesButton !== false);
@@ -106,8 +122,11 @@ class DashboardSetup {
         // The category header: five looks, a size, and what stands beside the
         // name. CSS reads them off <body> (category-header.css); "theme" is the
         // header as the theme and layout draw it.
-        document.body.setAttribute('data-cat-head', d.settings.categoryHeaderStyle || 'theme');
-        document.body.setAttribute('data-cat-size', d.settings.categoryHeaderSize || 'm');
+        // On "Follow the theme" a theme may state a header of its own (Confetti: clean).
+        document.body.setAttribute('data-cat-head', window.ThemeLoader?.resolveCatHead
+            ? window.ThemeLoader.resolveCatHead(d.settings.categoryHeaderStyle, document.body.getAttribute('data-theme') || d.settings.theme)
+            : (d.settings.categoryHeaderStyle || 'theme'));
+        document.body.setAttribute('data-cat-size', d.settings.categoryHeaderSize || 's');
         document.body.setAttribute('data-cat-icon', d.settings.showCategoryIcon === false ? 'off' : 'on');
         document.body.setAttribute('data-cat-count', d.settings.showCategoryCount === true ? 'on' : 'off');
         document.body.setAttribute('data-cat-accent', d.settings.categoryHeaderAccentLine === true ? 'on' : 'off');
@@ -151,7 +170,15 @@ class DashboardSetup {
         window.ListDensity?.migrate?.();
         // Vertical gap between category rows. Separate from density, which sizes
         // the bookmark rows themselves — see dashboard.css.
-        document.body.setAttribute('data-category-spacing', d.settings.categorySpacing || 'balanced');
+        // On "Follow the theme" a theme may state its own (Confetti: airy).
+        document.body.setAttribute('data-category-spacing', window.ThemeLoader?.resolveCategorySpacing
+            ? window.ThemeLoader.resolveCategorySpacing(d.settings.categorySpacing, document.body.getAttribute('data-theme') || d.settings.theme)
+            : (d.settings.categorySpacing === 'theme' ? 'balanced' : (d.settings.categorySpacing || 'balanced')));
+        // The horizontal counterpart: the space between columns.
+        // On "Follow the theme" a theme may state its own (Confetti: airy).
+        document.body.setAttribute('data-column-spacing', window.ThemeLoader?.resolveColumnSpacing
+            ? window.ThemeLoader.resolveColumnSpacing(d.settings.columnSpacing, document.body.getAttribute('data-theme') || d.settings.theme)
+            : (d.settings.columnSpacing === 'theme' ? 'balanced' : (d.settings.columnSpacing || 'balanced')));
         // The left/right band beside the grid.
         document.body.setAttribute('data-side-margin', d.settings.sideMargin || 'balanced');
         // How loudly a monitored bookmark announces itself. CSS keys off this,

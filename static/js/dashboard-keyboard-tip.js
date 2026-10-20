@@ -75,7 +75,7 @@
 
         // Whether unprompted UI may take the screen is one shared question,
         // answered by dashboard-promos.js for every module that asks it. A tip
-        // does compete with the quick-start card, so it does not take the
+        // does compete with the start guide bar, so it does not take the
         // what's-new prompt's exemption.
         if (typeof d.promos?.canShowUnpromptedUi === 'function') {
             if (!d.promos.canShowUnpromptedUi()) return false;
@@ -162,45 +162,7 @@
         timer = setTimeout(attempt, SHOW_DELAY_MS);
     }
 
-    /**
-     * One-time hint the first time config opens — separate from the occasional
-     * dashboard tips so it never waits on tipsNotBefore.
-     */
-    function showConfigIntro() {
-        const TIP_ID = 'tipConfigKeyboard';
-        if (global.DiscoverabilityState?.hasSeenTip?.(TIP_ID)) return false;
-        const d = dash();
-        if (!d?.settings || d.settings.enableSessionTips === false) return false;
-        if (global.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
-        if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
-        if (d.searchComponent?.isActive?.()) return false;
-
-        const html = tipText(TIP_ID);
-        if (!html) return false;
-
-        const label = t('sessionTipLabel', 'Tip');
-        const message = `<strong class="app-notification-tip-label">${label}</strong> ${html}`;
-        const opts = {
-            duration: 14000,
-            actionLabel: t('sessionTipAction', 'Cheat sheet'),
-            onAction: () => {
-                if (typeof d.showKeyboardCheatSheet === 'function') {
-                    d.showKeyboardCheatSheet();
-                }
-            },
-            allowHtml: true,
-        };
-
-        // 'promo' for the same reason as the session tip above: unprompted, on a
-        // long timer, and it must yield to anything the user actually triggered.
-        if (!global.AppNotification?.show) return false;
-        global.AppNotification.show(message, 'promo', opts);
-        global.DiscoverabilityState?.markTipSeen?.(TIP_ID);
-        global.nextdashTrack?.('tip:shown', { tip: TIP_ID, context: 'config-intro' });
-        return true;
-    }
-
-    global.DashboardKeyboardTip = { autoStart, attempt, show, shouldShow, pickTip, showConfigIntro };
+    global.DashboardKeyboardTip = { autoStart, attempt, show, shouldShow, pickTip };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', autoStart, { once: true });

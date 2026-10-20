@@ -25,7 +25,7 @@ func lookDefaults() map[string]any {
 		"glowStrength":             surfaceFollow,
 		"themeEffects":             surfaceFollow,
 		"categoryHeaderStyle":      categoryHeaderThemeOwn,
-		"categoryHeaderSize":       "m",
+		"categoryHeaderSize":       "s",
 		"showCategoryIcon":         true,
 		"showCategoryCount":        false,
 		"categoryHeaderAccentLine": false,

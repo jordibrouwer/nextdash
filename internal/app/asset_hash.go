@@ -222,8 +222,10 @@ var lazyLoadedAssets = []string{
 	"js/bookmarks-tutorial.js",
 	"js/containers-tutorial.js",
 	"js/dashboard-tutorial.js",
-	// The first-start card, before the quick-start checklist on a fresh install.
+	// The start guide, before the start guide bar on a fresh install.
 	"js/first-start-templates.js",
+	// The start guide: the bar and the modal a fresh install opens on.
+	"js/start-guide.js",
 	// The "x apps found" card, in its place when containers have web apps.
 	"js/app-discovery-card.js",
 	"js/widgets-tutorial.js",

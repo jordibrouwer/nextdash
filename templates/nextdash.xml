@@ -51,6 +51,10 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.19.11 (2026-10-18)
+- Dashboard: widget titles are plain titles over their card again, and the // is in one place for categories and widgets
+- Fixes: a title no longer jumps when you point at it
+
 ### v1.19.10 (2026-10-18)
 - Dashboard: category and widget titles keep their size, line up with the bookmarks under them and stand out from them; a widget's title is the head of its card
 - Fixes: a short category name no longer shrinks below the bookmarks, and the Open button on Status page has no underline

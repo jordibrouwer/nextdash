@@ -26,12 +26,6 @@ body[data-cat-size="l"] .dashboard-grid .category-title {
     font-size: calc(var(--font-size-category) * var(--cat-head-scale, 1));
 }
 
-/* ---- icoon ---- */
-body[data-cat-icon="off"] .dashboard-grid .category-title-icon,
-body[data-cat-icon="off"] .dashboard-grid .category-title-label .bookmark-icon {
-    display: none;
-}
-
 /* ---- aantal bookmarks, rechts van de naam ---- */
 .category-title-count {
     display: none;
@@ -56,6 +50,11 @@ body:not([data-cat-head="theme"]) .dashboard-grid .category-reorder-handle {
     width: 0.9rem;
     font-size: 0;
     opacity: 1;
+}
+
+/* The terminal layout has no handle: it draws "$ " where the grip would be. */
+body:not([data-cat-head="theme"]) .dashboard-grid.layout-terminal .category-reorder-handle {
+    display: none;
 }
 
 body:not([data-cat-head="theme"]) .dashboard-grid .category-reorder-handle::before {

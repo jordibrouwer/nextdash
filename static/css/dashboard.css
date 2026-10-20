@@ -99,6 +99,18 @@ body[data-side-margin="airy"] {
     --dashboard-side-margin: clamp(var(--space-7, 3rem), 9vw, 12rem);
 }
 
+/* The columns stop growing at a width, and a wide window centres what is left,
+ * so the band beside the grid only showed in the header and never moved a
+ * column. The margin now also sets how wide a column may grow: snug lets the
+ * columns take the room it gives back, airy pulls them together. Balanced is
+ * the 360px the grid always had. */
+body[data-side-margin="snug"] .dashboard-grid {
+    --dashboard-column-max: 460px;
+}
+body[data-side-margin="airy"] .dashboard-grid {
+    --dashboard-column-max: 300px;
+}
+
 /* Header Top - Contains date, tabs, and config button */
 .header-top {
     display: flex;
@@ -1684,7 +1696,10 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
 .dashboard-grid.packed-columns .dashboard-column {
     display: flex;
     flex-direction: column;
-    gap: var(--space-7, 3rem);
+    /* Category spacing: the same gap the spread layout (packed-masonry) already
+       took from the setting. A fixed 3rem here is why choosing a spacing did
+       nothing on the layout a fresh install opens on. */
+    gap: var(--category-row-gap, var(--space-7, 3rem));
     flex: 0 0 var(--packed-column-width);
     width: var(--packed-column-width);
     max-width: var(--packed-column-width);
@@ -1758,7 +1773,7 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
 /* Layout presets */
 .dashboard-grid.layout-default {
     row-gap: var(--category-row-gap, 2rem);
-    column-gap: var(--space-5, 1.5rem);
+    column-gap: var(--dashboard-column-gap, var(--space-5, 1.5rem));
 }
 
 .dashboard-grid.layout-compact {
@@ -2029,7 +2044,11 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
 
 /* New layout presets: masonry, list, widgets */
 .dashboard-grid.layout-masonry {
-    gap: var(--space-4, 1rem);
+    /* The row gap is Category spacing, like the default layout's; only the column
+       gap is masonry's own. It was one fixed gap before, and the setting did
+       nothing in the layout a fresh install opens on. */
+    row-gap: var(--category-row-gap, 2rem);
+    column-gap: var(--space-4, 1rem);
 }
 .dashboard-grid.layout-masonry .category {
     /* allow variable-height cards and denser packing */
@@ -2445,6 +2464,36 @@ body[data-category-spacing="airy"] {
     --category-row-gap: var(--space-7, 3rem);
 }
 
+/*
+ * The room between columns, across the page: the counterpart of the row gap
+ * above, which only ever spoke for the room down it. Until now the column gap
+ * was whatever the layout preset said (a masonry page: 1rem), and the setting
+ * for spacing did nothing sideways.
+ *
+ * A wide category adds the gap back between its own inner columns, so it is
+ * written to the variable the grids already read rather than to column-gap.
+ */
+body[data-column-spacing="snug"] {
+    --column-space: var(--space-3, 0.75rem);
+}
+body[data-column-spacing="balanced"] {
+    --column-space: var(--space-5, 1.5rem);
+}
+body[data-column-spacing="airy"] {
+    --column-space: 2.5rem;
+}
+body[data-column-spacing] .dashboard-grid.packed-columns {
+    --gap: var(--column-space);
+}
+body[data-column-spacing] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry):not(.packed-columns) {
+    --dashboard-column-gap: var(--column-space);
+}
+/* Masonry draws its own column gap further up, a plain 1rem, and wins over the
+   packed grid's: written again here, for both. */
+body[data-column-spacing] .dashboard-grid.layout-masonry {
+    column-gap: var(--column-space);
+}
+
 /* Keep terminal rows single-line in dense layouts (e.g. 6 columns). */
 .dashboard-grid.layout-terminal .status-text {
     display: none !important;
@@ -2521,11 +2570,15 @@ body[data-category-spacing="airy"] {
     align-items: baseline;
 }
 
-/* A flex item loses the space at the end of its text; the one after the icon
-   is what keeps the name off it. */
-.category-title-label .category-title-icon,
-.category-title-label .bookmark-icon {
-    white-space: pre;
+/* An icon in a title (":file.svg: name"): the height of the text, kept off the
+   words after it. */
+.category-title-name .category-title-inline-icon {
+    height: 1.15em;
+    width: auto;
+    max-width: 1.8em;
+    object-fit: contain;
+    vertical-align: -0.2em;
+    margin-right: 0.35em;
 }
 
 /* The "//" prefix is now a real element that doubles as the drag-reorder handle. */
@@ -2567,69 +2620,29 @@ body[data-category-spacing="airy"] {
 }
 
 /*
- * A title that lines up with what is under it.
- *
- * A bookmark row is an icon slot and then its name, and the names all start
- * one lead column in (the slot and the gap after it). The title put the //
- * and its icon in front of its name in that same row, which pushed the name
- * about 27px past the bookmarks'. Now the // hangs in the gutter to the left
- * of the column, where it stays reachable as the drag handle without taking
- * any room, the icon sits in the icon column and the name starts on the
- * bookmarks' text, with or without an icon.
- *
- * A widget's title hangs its // in the same place, so a page of categories and
- * widgets keeps one column of them, and starts its name where the card's own
- * content starts: the card's border and padding in, the way its first line
- * does.
- *
- * The gutter is the 24px between columns and the 8px of padding either side
- * of them; below 600px the page edge is nearer than that, so the title keeps
- * the // in line there. Only the default and masonry layouts: the others draw
- * their rows and titles differently (terminal and launcher place the handle
- * themselves).
+ * A widget's handle is a small panel with a filled side, drawn in CSS so it is
+ * the same in every font, in the accent colour. A category keeps its two slashes.
  */
-@media (min-width: 601px) {
-    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-title-label {
-        --cat-title-lead: calc(var(--font-size-bookmark) * 1.15 + var(--space-2, 0.5rem));
-        --cat-title-hang: 2.2rem;
-        /* The // sits in the label's own padding, inside its overflow clip. */
-        padding-left: calc(0.2em + var(--cat-title-hang));
-        margin-left: calc(-0.2em - var(--cat-title-hang));
-    }
+.category-reorder-glyph--widget {
+    /* The two slashes stay in the box, hidden, so the handle is exactly as wide
+       as a category's whatever the font or letter spacing, and a name starts
+       where it does after "//"; the panel is drawn over them. */
+    position: relative;
+    color: transparent;
+}
 
-    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-reorder-handle {
-        /* A real box, so it can be pointed at and picked up, that takes no
-           room in the row: its own width is given back by the margin. */
-        display: flex;
-        justify-content: flex-end;
-        box-sizing: border-box;
-        flex: 0 0 auto;
-        width: 1.6em;
-        margin-left: -1.6em;
-        padding: 0 0.2em 0 0;
-        overflow: visible;
-    }
-
-    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category:not(.dashboard-widget) .category-title-label .category-title-icon,
-    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category:not(.dashboard-widget) .category-title-label .bookmark-icon {
-        /* At least the lead column; an icon that is wider, such as a short
-           text mark, keeps its own width rather than running into the name. */
-        flex: 0 0 auto;
-        min-width: var(--cat-title-lead);
-        /* The row's own start padding, so the icon lands on the bookmarks'
-           icons rather than on the edge of the column. It is a margin here and
-           not padding on the label, so the // hangs at the same place whether
-           the block is a category or a widget. */
-        margin-left: var(--bookmark-row-start-pad, 6px);
-    }
-
-    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category:not(.dashboard-widget) .category-title-label .category-reorder-handle + .category-title-name {
-        margin-left: calc(var(--cat-title-lead) + var(--bookmark-row-start-pad, 6px));
-    }
-
-    body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category.dashboard-widget .category-title-label .category-reorder-handle + .category-title-name {
-        margin-left: calc(1px + var(--space-3, 0.85rem));
-    }
+.category-reorder-glyph--widget::before {
+    content: '';
+    position: absolute;
+    left: 0.2em;
+    right: 0.2em;
+    top: 50%;
+    height: 0.8em;
+    transform: translateY(-50%);
+    box-sizing: border-box;
+    border: 1.5px solid var(--accent-primary);
+    border-radius: 0.18em;
+    background: linear-gradient(90deg, var(--accent-primary) 0 42%, transparent 42%);
 }
 
 /*
@@ -2661,14 +2674,23 @@ body:not([data-depth="flat"]) .dashboard-grid:is(.layout-default, .layout-masonr
  * The general hover grows the title 4px to the left (padding and a negative
  * margin) and paints it with the `background` shorthand, which took the accent
  * tab with it: the rule under the title jumped and lost its tab. Here the tint
- * is a background colour on the title's own box, and nothing moves.
+ * is a background colour on the title's own box, and nothing moves. It spans
+ * the whole header, from one edge of the block to the other.
  */
-body[data-cat-head="theme"] .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-title:hover {
+body:is([data-cat-head="theme"], [data-cat-head="clean"]) .dashboard-grid:is(.layout-default, .layout-masonry):not(.layout-terminal) .category .category-title:hover {
     /* --hover-bg is only defined inside Config, so the old tint was never drawn here. */
     background-color: color-mix(in srgb, var(--text-primary) 7%, transparent);
-    border-radius: var(--layout-radius-sm, 8px) var(--layout-radius-sm, 8px) 0 0;
-    padding-left: 0;
-    margin-left: 0;
+    border-radius: var(--category-block-radius, var(--layout-radius-sm, 8px)) var(--category-block-radius, var(--layout-radius-sm, 8px)) 0 0;
+    /* The whole header, edge to edge of the block: the category's side padding
+       (and, on a pane, the padding above the title) is taken into the title and
+       given back as its own padding, so the tint reaches the block's edges and
+       the text stays where it is. The accent tab moves in by the same amount,
+       or it would slide out to the edge. */
+    margin-inline: calc(-1 * var(--category-inline-pad, 0.5rem));
+    padding-inline: var(--category-inline-pad, 0.5rem);
+    margin-top: calc(-1 * var(--category-block-pad, 0px));
+    padding-top: var(--category-block-pad, 0px);
+    background-position: var(--category-inline-pad, 0.5rem) bottom;
 }
 
 /*
@@ -5890,6 +5912,14 @@ body[data-grid-keys="shown"] .dashboard-legend-more {
     display: inline;
 }
 
+.dashboard-legend-line-more {
+    display: none;
+}
+
+body[data-grid-keys="shown"] .dashboard-legend-line-more {
+    display: flex;
+}
+
 .dashboard-legend kbd {
     font-size: var(--text-xs, 0.7rem);
     padding: var(--space-hairline, 0.05rem) var(--space-1-5, 0.32rem);
@@ -6732,8 +6762,10 @@ button.dashboard-widget-row.keyboard-selected {
 /* The cursor has to read as "here" even without :focus-visible, which browsers
    withhold after a click — the same reason the show-more toggle carries a ring
    of its own. Inside a widget it also has to stand apart from the hover above,
-   since a reader arrowing through a tile is often hovering something else. */
-.dashboard-widget-body button.keyboard-selected {
+   since a reader arrowing through a tile is often hovering something else.
+   Not after a click: then the cursor is where the pointer was, and a ring round
+   the row only looks like a border that should not be there. */
+.dashboard-widget-body button.keyboard-selected:not(.keyboard-selected-pointer) {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 45%, transparent);
     outline: none;
 }

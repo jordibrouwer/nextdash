@@ -1154,19 +1154,27 @@ body.no-animations .wn-earlier-chevron { transition: none; }
     contain: inline-size;
 }
 .page-overview-modal-file {
-    padding: 2px 4px;
-    border: 0;
-    background: none;
+    padding: 6px 14px;
+    border: 1px solid var(--hairline, color-mix(in srgb, var(--text-primary) 16%, transparent));
+    border-radius: var(--radius-3, 4px);
+    background: color-mix(in srgb, var(--text-primary) 5%, transparent);
     color: var(--text-secondary);
     font: inherit;
     font-size: var(--font-size-controls);
     cursor: pointer;
-    text-decoration: underline;
-    text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
-    text-underline-offset: 3px;
+    text-decoration: none;
+    transition: background 0.1s ease, border-color 0.1s ease, color 0.1s ease;
 }
 .page-overview-modal-file:hover,
-.page-overview-modal-file:focus-visible { color: var(--text-primary); }
+.page-overview-modal-file:focus-visible {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    outline: none;
+}
+.page-overview-modal-file:focus-visible {
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-primary) calc(28% * var(--theme-depth, 1)), transparent);
+}
 
 .page-overview-modal-newhint {
     display: block;
@@ -1648,12 +1656,24 @@ body.no-animations .modal-button.danger.selected {
 }
 
 .cheat-sheet-groups {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2, 0.5rem);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
 }
 
+@media (max-width: 40rem) {
+    .cheat-sheet-groups {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Stays at the top while the groups scroll, so a search never scrolls away. */
 .cheat-sheet-filter {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--background-primary);
     width: 100%;
     box-sizing: border-box;
     background: transparent;
@@ -1673,6 +1693,45 @@ body.no-animations .modal-button.danger.selected {
 .cheat-sheet-filter::placeholder {
     color: var(--text-tertiary);
     opacity: 0.65;
+}
+
+/* Topics: a row of chips under the filter that narrows the sheet to one subject. */
+.cheat-sheet-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5, 0.4rem);
+    margin-bottom: var(--space-3, 0.75rem);
+}
+
+.cheat-sheet-tab {
+    background: transparent;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: var(--text-xs, 0.75rem);
+    padding: 0.2rem 0.7rem;
+}
+
+.cheat-sheet-tab:hover {
+    color: var(--text-primary);
+}
+
+.cheat-sheet-tab.is-active {
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.keyboard-cheat-sheet-modal .cheat-sheet-tab:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent-primary) 82%, #fff 18%);
+    outline-offset: 2px;
+}
+
+/* The view's own section spans the grid, so it leads instead of sharing a row. */
+.cheat-sheet-group--context {
+    grid-column: 1 / -1;
 }
 
 .cheat-sheet-no-results {
@@ -1716,11 +1775,9 @@ body.no-animations .modal-button.danger.selected {
     margin-bottom: var(--space-1, 0.25rem);
     padding: var(--space-1, 0.25rem) 0;
     border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
-    font-size: var(--text-xs, 0.7rem);
+    font-size: var(--text-sm, 0.82rem);
     font-weight: var(--font-weight-bold);
-    letter-spacing: 0.06em;
-    text-transform: lowercase;
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     display: flex;
     align-items: center;
     gap: var(--space-1-5, 0.4rem);
@@ -1745,7 +1802,17 @@ body.no-animations .modal-button.danger.selected {
 }
 
 .cheat-sheet-group-title:hover {
-    color: var(--text-secondary);
+    color: var(--text-primary);
+}
+
+.cheat-sheet-group-count {
+    margin-left: auto;
+    padding: 0 0.45rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    color: var(--text-tertiary);
+    font-size: var(--text-xs, 0.7rem);
+    font-weight: var(--font-weight-normal);
 }
 
 /* Keyboard clarity: always show where focus is inside cheat sheet modal. */
@@ -1769,9 +1836,9 @@ body.no-animations .modal-button.danger.selected {
 }
 
 .keyboard-cheat-sheet-table td {
-    padding: var(--space-1, 0.22rem) 0;
+    padding: var(--space-1-5, 0.35rem) 0;
     border-bottom: 1px solid var(--border-primary);
-    vertical-align: top;
+    vertical-align: middle;
     line-height: 1.35;
 }
 
@@ -1800,7 +1867,7 @@ body.no-animations .modal-button.danger.selected {
 
 .keyboard-cheat-sheet-description {
     color: var(--text-secondary);
-    font-size: var(--text-xs, 0.78rem);
+    font-size: var(--text-sm, 0.82rem);
     min-width: 0;
     overflow-wrap: anywhere;
     width: auto;

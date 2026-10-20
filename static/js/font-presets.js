@@ -16,7 +16,6 @@
     const GOOGLE_QUERY = {
         'jetbrains-mono': 'family=JetBrains+Mono:wght@400;600;700',
         'ibm-plex-mono': 'family=IBM+Plex+Mono:wght@400;600;700',
-        inter: 'family=Inter:wght@400;600;700',
         'ibm-plex-sans': 'family=IBM+Plex+Sans:wght@400;600;700',
         'dm-sans': 'family=DM+Sans:wght@400;600;700'
     };
@@ -40,9 +39,9 @@
     function normalizePresetId(id, customFontPath) {
         const k = String(id || '').toLowerCase().trim();
         if (k === 'custom') {
-            return customFontPath ? 'custom' : 'source-code-pro';
+            return customFontPath ? 'custom' : 'inter';
         }
-        return PRESET_IDS.includes(k) ? k : 'source-code-pro';
+        return PRESET_IDS.includes(k) ? k : 'inter';
     }
 
     /** Sync fontPreset + enableCustomFont from stored settings (legacy enableCustomFont supported). */
@@ -54,7 +53,7 @@
             if (path) {
                 settings.enableCustomFont = true;
             } else {
-                settings.fontPreset = 'source-code-pro';
+                settings.fontPreset = 'inter';
                 settings.enableCustomFont = false;
             }
             return;
@@ -75,7 +74,7 @@
 
     function resolveActiveFontPreset(settings) {
         normalizeFontSettings(settings);
-        return settings?.fontPreset || 'source-code-pro';
+        return settings?.fontPreset || 'inter';
     }
 
     function ensureGoogleStylesheet(queryPart) {
@@ -132,7 +131,7 @@
         if (googlePart) {
             ensureGoogleStylesheet(googlePart);
         }
-        const stack = CSS_STACK[preset] || CSS_STACK['source-code-pro'];
+        const stack = CSS_STACK[preset] || CSS_STACK.inter;
         document.documentElement.style.setProperty('--font-family-main', stack);
         // A sans preset keeps code and URLs on the default mono; a mono preset takes them along.
         if (MONO_PRESETS.has(preset)) {

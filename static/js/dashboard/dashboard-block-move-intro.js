@@ -88,10 +88,17 @@
         return null;
     }
 
+    /** The start guide was finished a few minutes ago: no tip yet, as with the corner cards. */
+    function isQuiet() {
+        const finishedAt = Number(dash()?.settings?.quickStart?.completedAt) || 0;
+        return finishedAt > 0 && Date.now() / 1000 - finishedAt < 15 * 60;
+    }
+
     /** Whether something else has the screen, or the reader does not want a tip. Not about this block. */
     function busy() {
         const d = dash();
         if (!d?.settings) return true;
+        if (isQuiet()) return true;
         if (d.activeView && d.activeView !== 'bookmarks') return true;
         if (typeof d.promos?.canShowUnpromptedUi === 'function' && !d.promos.canShowUnpromptedUi()) return true;
         if (d.searchComponent?.isActive?.()) return true;
@@ -474,7 +481,7 @@
         schedule(FIRST_CHECK_MS);
     }
 
-    global.DashboardBlockMoveIntro = { TIP_ID, autoStart, isRunning: () => Boolean(run), isPending };
+    global.DashboardBlockMoveIntro = { TIP_ID, autoStart, isRunning: () => Boolean(run), isPending, isQuiet };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', autoStart, { once: true });

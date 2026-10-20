@@ -81,12 +81,15 @@ func defaultMainPage() PageWithBookmarks {
 			{ID: "daily", Name: "Daily"},
 		},
 		/*
-		 * Health first: it is the one widget that reads correctly on an
-		 * install with no history, counting what the header badge has
-		 * already fetched. Trend beside it starts empty and fills in as the
-		 * checks run, which is the point of it. Notes goes last, with the
-		 * example note: it shows what the widget does and is one Edit away
-		 * from yours. Empty configs mean every default.
+		 * Health is the one widget that reads correctly on an install with
+		 * no history, counting what the header badge has already fetched.
+		 * Trend beside it starts empty and fills in as the checks run, which
+		 * is the point of it. Both sit below the links, which are what a
+		 * dashboard is opened for. Notes takes the top right, with the example
+		 * note: columns fill round-robin and Today, which is not in this
+		 * order, leads, so the second block here is the first row's last
+		 * column. It shows what the widget does and is one Edit away from
+		 * yours. Empty configs mean every default.
 		 */
 		Widgets: []Widget{
 			{ID: defaultHealthWidgetID, Type: WidgetTypeHealth, Config: map[string]any{}},
@@ -94,10 +97,11 @@ func defaultMainPage() PageWithBookmarks {
 			{ID: defaultNotesWidgetID, Type: WidgetTypeNotes, Config: notesStarterConfig()},
 		},
 		BlockOrder: []string{
+			"development",
+			defaultNotesWidgetID,
+			"docker", "unraid", "selfhosted", "tools", "daily",
 			defaultHealthWidgetID,
 			defaultTrendWidgetID,
-			"development", "docker", "unraid", "selfhosted", "tools", "daily",
-			defaultNotesWidgetID,
 		},
 		Bookmarks: []Bookmark{
 			// The project itself, twice: the site is where a new install

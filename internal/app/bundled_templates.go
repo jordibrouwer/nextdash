@@ -227,7 +227,7 @@ func (h *Handlers) BundledTemplateFile(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(raw)
 }
 
-// OnboardingTemplateRequest is what the first-start card sends.
+// OnboardingTemplateRequest is what the start guide sends.
 type OnboardingTemplateRequest struct {
 	ID     string            `json:"id"`
 	Server string            `json:"server"`
@@ -313,6 +313,11 @@ func (h *Handlers) clearStarterLinks() (bool, error) {
 		return false, err
 	}
 	if err := h.removeUntouchedNewsPage(); err != nil {
+		return false, err
+	}
+	// The starter Inbox is starter content too: an empty start with ten links
+	// waiting in the Inbox is not empty.
+	if err := h.clearStarterInbox(); err != nil {
 		return false, err
 	}
 	return true, nil

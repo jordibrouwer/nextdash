@@ -454,7 +454,10 @@ class DashboardMultiSelect {
                 d._multiSelectTagsCleanup = null;
             }
         };
+        const openedAt = performance.now();
         const onKey = (e) => {
+            // The key that opened it began before it did.
+            if (e.timeStamp < openedAt) return;
             if (e.key === 'Escape') {
                 e.preventDefault();
                 e.stopPropagation();
@@ -618,9 +621,7 @@ class DashboardMultiSelect {
         // rather than identity so an icon added to the button later cannot make
         // its own click close and reopen the popover.
         unbindOutside = d.bookmarkRows._bindActionPopoverOutsideClose(pop, close, { anchorEl });
-        setTimeout(() => {
-            document.addEventListener('keydown', onKey, true);
-        }, 0);
+        document.addEventListener('keydown', onKey, true);
         d._multiSelectTagsCleanup = close;
     }
 

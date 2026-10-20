@@ -41,7 +41,7 @@ html[data-theme] body > .theme-backdrop-layer {
     pointer-events: none;
 
     /* De themekleur die de gebruiker er met Tint overheen legt (BackdropTuning). */
-    --bd-tint-fill: color-mix(in srgb, var(--background-primary) calc(var(--bd-tint, 0) * 100%), transparent);
+    --bd-tint-fill: color-mix(in srgb, var(--background-primary) calc(max(var(--bd-tint, 0), var(--theme-backdrop-scrim, 0)) * 100%), transparent);
 
     /*
      * Van boven naar onder: tint, de theme-achtergrond, de twee accentwolken van

@@ -1,9 +1,10 @@
 /**
  * Config → Stats, loaded when that section is opened.
  *
- * Five tabs, each answering one question: Overview (how is it going, and what
+ * Six tabs, each answering one question: Overview (how is it going, and what
  * needs doing), Usage (what do I use, and when), Collection (what do I have),
- * Inbox (am I keeping up) and Health (does everything still work). Every tab
+ * Inbox (am I keeping up), Health (does everything still work) and Server (how
+ * is the machine behind it doing). Every tab
  * opens with six figures and lays its panels out two to a row, so the page
  * fits on a screen or two instead of four.
  *
@@ -523,8 +524,9 @@
 
         renderStatsBody() {
             const s = this.computeStats();
-            // Inbox is server-side and still meaningful on an empty dashboard.
-            if (!s.total && this.statsTab !== 'inbox') {
+            // Inbox and Server are server-side and still meaningful on an
+            // empty dashboard.
+            if (!s.total && this.statsTab !== 'inbox' && this.statsTab !== 'server') {
                 return this.renderStatsEmpty();
             }
             switch (this.statsTab) {
@@ -532,6 +534,7 @@
                 case 'collection': return this.renderStatsCollection(s);
                 case 'inbox': return this.renderStatsInbox();
                 case 'health': return this.renderStatsHealthTab(s);
+                case 'server': return this.renderStatsServer();
                 default: return this.renderStatsOverview(s);
             }
         },
@@ -698,6 +701,8 @@
                     button: `<button type="button" class="config-btn config-btn--small" data-stats-tab-goto="inbox">${esc(this.statsTabLabel('inbox'))}</button>`,
                 });
             }
+
+            lines.push(...this.statsServerAttention());
 
             const never = Number(s.neverOpened) || 0;
             const once = Number(s.openedOnce) || 0;
@@ -1173,6 +1178,8 @@
                 this.renderStatsDomains(domains),
                 this.renderStatsTagBands(all, domains),
                 this.renderStatsPerPage(s),
+                this.renderStatsWidgets(),
+                this.renderStatsWidgetPages(),
                 this.renderStatsLibrary(),
                 this.renderStatsCleanup(s),
             ]);
@@ -1374,12 +1381,6 @@
                 if (value === null || value === undefined) return;
                 rows.push([label, format ? this.statsNumber(value) : value, '', detail || '']);
             };
-            const types = lib.widgetTypes || [];
-            add(this.t('config.statsLibraryWidgets', 'Widgets on your pages'),
-                lib.widgets,
-                types.length
-                    ? types.slice(0, 4).map(([type, n]) => `${this.widgetTypeName(type)} ${this.statsNumber(n)}`).join(' · ')
-                    : '');
             add(this.t('config.statsLibraryFeeds', 'Feeds'), lib.feeds,
                 lib.feedsEnabled === false ? this.t('config.statsLibraryOff', 'switched off') : '');
             add(this.t('config.statsLibrarySources', 'Import sources'), lib.sources);
@@ -1768,6 +1769,7 @@
                 this.renderStatsCertificates(certs),
                 this.renderStatsIssues(h, s),
                 this.renderStatsArchive(),
+                this.renderStatsNotify(),
             ]);
         },
 
@@ -2102,6 +2104,612 @@
                         '{n} broken links have no copy. If their sites do not come back, they are gone.').replace('{n}', this.statsNumber(h.brokenWithoutCopy)))}</p>` : '')
                     + (h.newestCopyAt ? `<p class="config-panel-note">${esc(this.t('config.statsArchiveNewest', 'Newest copy: {name}, {when}.')
                         .replace('{name}', h.newestCopyName || '—').replace('{when}', this.statsRelativeTime(h.newestCopyAt)))}</p>` : ''),
+            });
+        },
+
+        /* ------------------------------------------------------------------
+         * Server
+         * ------------------------------------------------------------------ */
+
+        /**
+         * What the Server tab and the overview's attention list read, worked
+         * out once per paint from loadStatsServer's answers. Each part is null
+         * when it could not be read, so a panel says why instead of zero.
+         */
+        statsServerFigures() {
+            const srv = this._statsServer;
+            if (!srv) return null;
+            const now = Date.now();
+            const out = { containers: null, events: null, unraid: null, backups: null };
+
+            if (Array.isArray(srv.containers)) {
+                const list = srv.containers;
+                const running = list.filter((c) => c.state === 'running');
+                const unhealthy = list.filter((c) => c.health === 'unhealthy');
+                const updates = list.filter((c) => c.update?.status === 'available' && !c.update?.held);
+                const usage = srv.usageEnabled
+                    ? running.filter((c) => c.usage).map((c) => ({ name: c.name, cpu: Number(c.usage.cpu) || 0, mem: Number(c.usage.mem) || 0 }))
+                    : null;
+                out.containers = { list, running, unhealthy, updates, usage };
+            }
+
+            const hist = srv.history;
+            if (hist && Array.isArray(hist.events)) {
+                const days = Number(hist.days) || 30;
+                // A restart loop is one entry standing for several crashes.
+                const weight = (e) => (e.kind === 'restart-loop' ? Math.max(1, Number(e.count) || 1) : 1);
+                const problem = (e) => e.kind === 'crash' || e.kind === 'restart-loop' || e.kind === 'unhealthy';
+                const problems = hist.events.filter(problem);
+                const crashes = hist.events.filter((e) => e.kind === 'crash' || e.kind === 'restart-loop')
+                    .reduce((sum, e) => sum + weight(e), 0);
+                const per = new Map();
+                problems.forEach((e) => per.set(e.container, (per.get(e.container) || 0) + weight(e)));
+                const updates = (hist.updates || []).filter((u) => u.kind === 'update');
+                const rollbacks = (hist.updates || []).filter((u) => u.kind === 'rollback');
+                // One bucket a day, oldest first, ending today.
+                const start = new Date(); start.setHours(0, 0, 0, 0);
+                const first = start.getTime() - (days - 1) * DAY;
+                const problemDays = new Array(days).fill(0);
+                const updateDays = new Array(days).fill(0);
+                const bucket = (at) => Math.floor((Number(at) - first) / DAY);
+                problems.forEach((e) => { const i = bucket(e.at); if (i >= 0 && i < days) problemDays[i] += weight(e); });
+                updates.forEach((u) => { const i = bucket(u.at); if (i >= 0 && i < days) updateDays[i] += 1; });
+                const lang = this.dash.settings?.language || undefined;
+                const dates = problemDays.map((_, i) => {
+                    try {
+                        return new Date(first + i * DAY).toLocaleDateString(lang, { day: 'numeric', month: 'short' });
+                    } catch {
+                        return String(i);
+                    }
+                });
+                out.events = {
+                    days, crashes, problems, problemDays, updateDays, dates, updates, rollbacks,
+                    crashedContainers: new Set(hist.events.filter((e) => e.kind === 'crash' || e.kind === 'restart-loop').map((e) => e.container)).size,
+                    restless: [...per.entries()].sort((a, b) => b[1] - a[1]),
+                    perContainer: per,
+                    disk: hist.disk || null,
+                    diskAt: Number(hist.diskAt) || 0,
+                };
+            }
+
+            const u = srv.unraid;
+            if (u && u.status) {
+                const d = u.data || {};
+                const disks = Array.isArray(d.array?.disks) ? d.array.disks : [];
+                out.unraid = {
+                    status: u.status,
+                    array: d.array || null,
+                    parity: d.parity || null,
+                    vms: Array.isArray(d.vms) ? d.vms : null,
+                    ups: d.ups || null,
+                    notifications: d.notifications || null,
+                    problemDisks: disks.filter((k) => k.problem),
+                };
+            }
+
+            const b = srv.backups;
+            if (b && Array.isArray(b.backups)) {
+                const list = b.backups
+                    .map((x) => ({ ...x, at: Date.parse(x.createdAt) || 0 }))
+                    .sort((x, y) => y.at - x.at);
+                const interval = Number(b.intervalDays) || 0;
+                const newest = list[0] || null;
+                const age = newest ? now - newest.at : 0;
+                out.backups = {
+                    enabled: b.enabled === true,
+                    list,
+                    keep: Number(b.keep) || 0,
+                    interval,
+                    newest,
+                    oldest: list[list.length - 1] || null,
+                    bytes: list.reduce((sum, x) => sum + (Number(x.size) || 0), 0),
+                    age,
+                    // Late once two runs have been missed: one can slip by a
+                    // restart, two cannot.
+                    late: b.enabled === true && interval > 0 && (!newest || age > 2 * interval * DAY),
+                };
+            }
+            return out;
+        },
+
+        /** Sizes in the unit that fits: GB for an image store, not 37068 MB. */
+        statsBytes(n) {
+            const v = Number(n) || 0;
+            if (global.NextDashBytes) return global.NextDashBytes.formatBytes(v);
+            return typeof this.formatBytes === 'function' ? this.formatBytes(v) : `${this.statsNumber(Math.round(v / 1048576))} MB`;
+        },
+
+        /** A short age: "2 d", "5 h", "20 m". */
+        statsShortAge(ms) {
+            return typeof this.formatDurationShort === 'function' ? this.formatDurationShort(ms) : '';
+        },
+
+        /** The panel a part of the Server tab shows when it has nothing to draw from. */
+        statsServerEmpty(title, text, goto = '', gotoLabel = '') {
+            const esc = (v) => this.dash.escapeHtml(v);
+            return this.statsPanel({
+                title,
+                body: `<p class="config-panel-empty">${esc(text)}</p>${goto
+                    ? `<div class="config-actions"><button type="button" class="config-btn config-btn--small" data-stats-section-goto="${esc(goto)}">${esc(gotoLabel)}</button></div>`
+                    : ''}`,
+            });
+        },
+
+        renderStatsServer() {
+            const esc = (v) => this.dash.escapeHtml(v);
+            if (this._statsServer === undefined) {
+                return `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
+            }
+            const f = this.statsServerFigures() || {};
+            const c = f.containers;
+            const ev = f.events;
+            const ur = f.unraid;
+            const bk = f.backups;
+            const none = this.t('config.statsServerNotConnected', 'not connected');
+            const arrayOk = ur && ur.status === 'ok' && ur.array;
+
+            const kpis = this.statsKpis([
+                {
+                    label: this.t('config.statsContainersRunning', 'Containers running'),
+                    value: c ? this.statsNumber(c.running.length) : '—',
+                    detail: c
+                        ? this.t('config.statsContainersOf', 'of {n} · {stopped} stopped')
+                            .replace('{n}', this.statsNumber(c.list.length))
+                            .replace('{stopped}', this.statsNumber(c.list.length - c.running.length))
+                        : none,
+                    tone: c && c.list.length ? (c.running.length === c.list.length ? 'good' : undefined) : undefined,
+                },
+                {
+                    label: this.t('config.statsContainersUnhealthy', 'Unhealthy'),
+                    value: c ? this.statsNumber(c.unhealthy.length) : '—',
+                    detail: c && c.unhealthy.length ? c.unhealthy.slice(0, 2).map((x) => x.name).join(', ') : '',
+                    tone: c ? (c.unhealthy.length ? 'warn' : 'good') : undefined,
+                },
+                {
+                    label: this.t('config.statsUpdatesWaiting', 'Updates waiting'),
+                    value: c ? this.statsNumber(c.updates.length) : '—',
+                    detail: ev
+                        ? this.t('config.statsUpdatesApplied', '{n} applied in {days} days')
+                            .replace('{n}', this.statsNumber(ev.updates.length)).replace('{days}', String(ev.days))
+                        : '',
+                    tone: c && c.updates.length ? 'warn' : undefined,
+                },
+                {
+                    label: this.t('config.statsCrashes30', 'Crashes, 30 days'),
+                    value: ev ? this.statsNumber(ev.crashes) : '—',
+                    detail: ev && ev.crashes
+                        ? this.t('config.statsAcrossContainers', 'across {n} containers').replace('{n}', this.statsNumber(ev.crashedContainers))
+                        : '',
+                    tone: ev ? (ev.crashes ? 'bad' : 'good') : undefined,
+                },
+                {
+                    label: this.t('config.statsArrayUsed', 'Array used'),
+                    value: arrayOk ? `${this.statsNumber(Math.round(ur.array.usedPct))}%` : '—',
+                    detail: arrayOk
+                        ? this.t('config.statsArrayFree', '{free} free · {n} disks')
+                            .replace('{free}', this.statsBytes(ur.array.freeBytes)).replace('{n}', this.statsNumber(ur.array.diskCount))
+                        : this.t('config.statsNoUnraid', 'no Unraid'),
+                    tone: arrayOk ? (ur.array.usedPct >= 90 ? 'warn' : undefined) : undefined,
+                },
+                {
+                    label: this.t('config.statsLastBackup', 'Last backup'),
+                    value: bk && bk.newest ? this.statsShortAge(bk.age) : '—',
+                    detail: bk
+                        ? (bk.enabled
+                            ? this.t('config.statsBackupsKeptEvery', '{n} kept · every {days} days')
+                                .replace('{n}', this.statsNumber(bk.list.length)).replace('{days}', String(bk.interval))
+                            : this.t('config.statsLibraryOff', 'switched off'))
+                        : '',
+                    tone: bk ? (bk.late ? 'bad' : (bk.enabled && bk.newest ? 'good' : 'warn')) : undefined,
+                },
+            ]);
+
+            return this.statsScopeNote() + kpis + this.statsGrid([
+                this.renderStatsContainerEvents(c, ev),
+                this.renderStatsRestless(ev),
+                this.renderStatsResources(c),
+                this.renderStatsDockerDisk(c, ev),
+                this.renderStatsUnraidDisks(ur),
+                this.renderStatsUnraid(ur),
+                this.renderStatsBackups(bk),
+                this.renderStatsUpdatesApplied(c, ev),
+            ]);
+        },
+
+        renderStatsContainerEvents(c, ev) {
+            const title = this.t('config.statsContainerEventsTitle', 'Container trouble and updates, 30 days');
+            if (!ev) {
+                return this.statsServerEmpty(title, this.t('config.statsContainersNone', 'Containers are not connected, so there is nothing to count.'),
+                    'containers:connection', this.t('config.statsConnectContainers', 'Connect Docker'));
+            }
+            return this.statsPanel({
+                title,
+                info: this.t('config.statsContainerEventsInfo', 'Trouble is a crash, a restart loop or a container turning unhealthy. Kept for thirty days.'),
+                body: this.statsColumns({
+                    series: [
+                        { values: ev.problemDays, label: this.t('config.statsContainerTrouble', 'Trouble') },
+                        { values: ev.updateDays, label: this.t('config.statsContainerUpdates', 'Updates') },
+                    ],
+                    dates: ev.dates,
+                    axisY: this.t('config.statsAxisEvents', 'Events'),
+                    axisX: this.t('config.statsAxisDay', 'Day'),
+                    aria: title,
+                    height: 80,
+                }),
+            });
+        },
+
+        renderStatsRestless(ev) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            if (!ev) return '';
+            const rows = ev.restless.slice(0, 6).map(([name, n]) => [name, n, { tone: n >= 5 ? 'crit' : (n >= 2 ? 'warn' : '') }]);
+            return this.statsPanel({
+                title: this.t('config.statsRestlessTitle', 'Most restless'),
+                info: this.t('config.statsRestlessInfo', 'Crashes, restart loops and turns to unhealthy per container, over thirty days.'),
+                body: rows.length
+                    ? this.statsBars(rows, { axis: [this.t('config.statsAxisContainer', 'Container'), this.t('config.statsAxisEvents', 'Events')] })
+                    : `<p class="config-panel-empty">${esc(this.t('config.statsRestlessNone', 'No container crashed or turned unhealthy in thirty days.'))}</p>`,
+            });
+        },
+
+        renderStatsResources(c) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            if (!c) return '';
+            const title = this.t('config.statsResourcesTitle', 'Resources now');
+            if (!c.usage) {
+                return this.statsServerEmpty(title, this.t('config.statsResourcesOff', 'Resource readings are switched off for containers.'),
+                    'containers:view', this.t('config.statsOpenContainers', 'Open Containers'));
+            }
+            if (!c.usage.length) {
+                return this.statsServerEmpty(title, this.t('config.statsResourcesPending', 'No readings yet. They arrive within a minute of a container running.'));
+            }
+            const top = [...c.usage].sort((a, b) => b.mem - a.mem).slice(0, 6);
+            const mem = c.usage.reduce((sum, x) => sum + x.mem, 0);
+            const cpu = c.usage.reduce((sum, x) => sum + x.cpu, 0);
+            return this.statsPanel({
+                title,
+                info: this.t('config.statsResourcesInfo', 'Memory per running container at the last reading, largest first. CPU is in percent of one core, as on the Containers page.'),
+                body: this.statsBars(top.map((x) => [x.name, x.mem, { display: `${this.statsBytes(x.mem)} · ${this.statsNumber(Math.round(x.cpu))}%` }]),
+                    { axis: [this.t('config.statsAxisContainer', 'Container'), this.t('config.statsAxisMemoryCpu', 'Memory · CPU')] })
+                    + `<p class="config-panel-note">${esc(this.t('config.statsResourcesTotal', 'All running containers: {mem} memory, {cpu}% CPU.')
+                        .replace('{mem}', this.statsBytes(mem)).replace('{cpu}', this.statsNumber(Math.round(cpu))))}</p>`,
+            });
+        },
+
+        renderStatsDockerDisk(c, ev) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            if (!c || !ev) return '';
+            const title = this.t('config.statsDockerDiskTitle', 'Docker disk');
+            const d = ev.disk;
+            if (!d) {
+                return this.statsServerEmpty(title, this.t('config.statsDockerDiskPending', 'Not measured yet. A measurement has been started; refresh in a minute.'),
+                    'containers:view', this.t('config.statsOpenContainers', 'Open Containers'));
+            }
+            const rows = [
+                [this.t('config.statsDiskImages', 'Images'), d.images, { display: this.statsBytes(d.images) }],
+                [this.t('config.statsDiskVolumes', 'Volumes'), d.volumes, { display: this.statsBytes(d.volumes) }],
+                [this.t('config.statsDiskBuildCache', 'Build cache'), d.buildCache, { display: this.statsBytes(d.buildCache), tone: 'muted' }],
+                [this.t('config.statsDiskStopped', 'Stopped containers'), d.containersStopped, { display: this.statsBytes(d.containersStopped), tone: 'muted' }],
+            ];
+            return this.statsPanel({
+                title,
+                info: this.t('config.statsDockerDiskInfo', 'From the last disk measurement the Containers page keeps; a new one is taken every few hours.'),
+                body: this.statsBars(rows, { axis: [this.t('config.statsAxisKind', 'Kind'), this.t('config.statsAxisSize', 'Size')] })
+                    + `<p class="config-panel-note">${esc(this.t('config.statsDockerReclaimable', '{size} could be freed. Measured {when}.')
+                        .replace('{size}', this.statsBytes(d.reclaimable)).replace('{when}', this.statsRelativeTime(ev.diskAt)))}</p>`,
+            });
+        },
+
+        /** Why there is no Unraid panel, in the words of the overview's status. */
+        statsUnraidReason(status) {
+            switch (status) {
+                case 'not-configured': return this.t('config.statsUnraidNotConfigured', 'No Unraid server is connected.');
+                case 'unauthorized': return this.t('config.statsUnraidUnauthorized', 'The Unraid server refused the API key.');
+                case 'forbidden': return this.t('config.statsUnraidForbidden', 'The API key may not read these figures.');
+                case 'unsupported': return this.t('config.statsUnraidUnsupported', 'This Unraid version does not offer these figures.');
+                default: return this.t('config.statsUnraidUnreachable', 'The Unraid server could not be reached.');
+            }
+        },
+
+        renderStatsUnraidDisks(ur) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const title = this.t('config.statsUnraidDisksTitle', 'Unraid disks');
+            if (!ur || ur.status !== 'ok' || !ur.array) {
+                return this.statsServerEmpty(title, this.statsUnraidReason(ur?.status),
+                    'unraid:connection', this.t('config.statsOpenUnraidSettings', 'Unraid settings'));
+            }
+            const tone = (k) => (k.tone === 'bad' ? 'crit' : (k.tone === 'warn' ? 'warn' : (k.tone === 'off' ? 'muted' : '')));
+            const rows = (ur.array.disks || []).map((k) => {
+                const bits = [`${this.statsNumber(Math.round(Number(k.usedPct) || 0))}%`];
+                if (k.asleep) bits.push(this.t('config.statsDiskAsleep', 'asleep'));
+                else if (Number.isFinite(Number(k.tempC)) && k.tempC !== null && k.tempC !== undefined) bits.push(`${k.tempC}°`);
+                if (Number(k.errors)) bits.push(this.t('config.statsDiskErrors', '{n} errors').replace('{n}', this.statsNumber(k.errors)));
+                return [k.name, Number(k.usedPct) || 0, { display: bits.join(' · '), tone: tone(k) }];
+            });
+            return this.statsPanel({
+                title,
+                info: this.t('config.statsUnraidDisksInfo', 'How full each disk is, with its temperature and read errors. Parity disks hold no files and show 0%.'),
+                body: rows.length
+                    ? this.statsBars(rows, { max: 100, axis: [this.t('config.statsAxisDisk', 'Disk'), this.t('config.statsAxisUsedTemp', 'Used · temperature')] })
+                    : `<p class="config-panel-empty">${esc(this.t('config.statsNoData', 'No data yet'))}</p>`,
+            });
+        },
+
+        renderStatsUnraid(ur) {
+            if (!ur || ur.status !== 'ok') return '';
+            const rows = [];
+            const p = ur.parity;
+            if (p) {
+                if (p.running) {
+                    rows.push([this.t('config.statsParityRunning', 'Parity check running'), `${this.statsNumber(p.progress)}%`, '', p.speed || '']);
+                } else if (p.last) {
+                    const at = Date.parse(p.last.date) || 0;
+                    rows.push([
+                        this.t('config.statsParityLast', 'Last parity check'),
+                        at ? this.statsRelativeTime(at) : (p.last.date || '—'),
+                        Number(p.last.errors) ? 'bad' : '',
+                        this.t('config.statsParityErrors', '{n} errors').replace('{n}', this.statsNumber(p.last.errors || 0))
+                            + (p.last.durationSec ? ` · ${this.statsShortAge(p.last.durationSec * 1000)}` : '')
+                            + (p.last.speed ? ` · ${p.last.speed}` : ''),
+                    ]);
+                }
+            }
+            if (ur.vms) {
+                const running = ur.vms.filter((v) => v.state === 'running').length;
+                rows.push([this.t('config.statsVmsRunning', 'VMs running'),
+                    this.t('config.statsNofM', '{n} of {m}').replace('{n}', this.statsNumber(running)).replace('{m}', this.statsNumber(ur.vms.length))]);
+            }
+            const ups = ur.ups;
+            if (ups) {
+                rows.push([this.t('config.statsUps', 'UPS'), `${this.statsNumber(ups.charge)}%`, ups.onBattery ? 'warn' : '',
+                    [ups.onBattery ? this.t('config.statsUpsOnBattery', 'on battery') : '',
+                        ups.runtimeSec ? this.t('config.statsUpsRuntime', '{t} runtime').replace('{t}', this.statsShortAge(ups.runtimeSec * 1000)) : '',
+                        ups.watts ? `${this.statsNumber(ups.watts)} W` : ''].filter(Boolean).join(' · ')]);
+            }
+            const n = ur.notifications;
+            if (n) {
+                rows.push([this.t('config.statsUnraidNotices', 'Unraid notices'),
+                    this.t('config.statsAlertsWarnings', '{a} alerts · {w} warnings')
+                        .replace('{a}', this.statsNumber(n.alerts || 0)).replace('{w}', this.statsNumber(n.warnings || 0)),
+                    n.alerts ? 'bad' : (n.warnings ? 'warn' : '')]);
+            }
+            if (!rows.length) return '';
+            return this.statsPanel({
+                title: this.t('config.statsUnraidTitle', 'Unraid'),
+                body: this.statsFacts(rows),
+            });
+        },
+
+        renderStatsBackups(bk) {
+            const title = this.t('config.statsBackupsTitle', 'Automatic backups');
+            if (!bk) {
+                return this.statsServerEmpty(title, this.t('config.statsLibraryUnavailable', 'These figures could not be read.'));
+            }
+            if (!bk.list.length) {
+                return this.statsServerEmpty(title,
+                    bk.enabled
+                        ? this.t('config.statsBackupsNoneYet', 'No automatic backup has been made yet.')
+                        : this.t('config.statsBackupsOff', 'Automatic backups are switched off.'),
+                    'data-backups:backups', this.t('config.statsOpenBackups', 'Backups'));
+            }
+            const what = (b) => (b.bookmarks
+                ? this.t('config.statsBackupBookmarks', '{n} bookmarks').replace('{n}', this.statsNumber(b.bookmarks))
+                : '');
+            const rows = [
+                [this.t('config.statsBackupsKept', 'Kept'), bk.keep
+                    ? this.t('config.statsNofM', '{n} of {m}').replace('{n}', this.statsNumber(bk.list.length)).replace('{m}', this.statsNumber(bk.keep))
+                    : this.statsNumber(bk.list.length)],
+                [this.t('config.statsBackupsNewest', 'Newest'), this.statsRelativeTime(bk.newest.at), bk.late ? 'bad' : '', what(bk.newest)],
+                [this.t('config.statsBackupsOldest', 'Oldest'), this.statsRelativeTime(bk.oldest.at), '', what(bk.oldest)],
+                [this.t('config.statsBackupsOnDisk', 'On disk'), this.statsBytes(bk.bytes)],
+            ];
+            if (bk.enabled && bk.interval) {
+                const next = bk.newest.at + bk.interval * DAY;
+                rows.push([this.t('config.statsBackupsNext', 'Next'),
+                    next > Date.now() ? this.statsRelativeTime(next) : this.t('config.statsBackupsDue', 'due now')]);
+            } else if (!bk.enabled) {
+                rows.push([this.t('config.statsBackupsNext', 'Next'), this.t('config.statsLibraryOff', 'switched off'), 'warn']);
+            }
+            return this.statsPanel({
+                title,
+                right: `<button type="button" class="config-btn config-btn--small" data-stats-section-goto="data-backups:backups">${this.dash.escapeHtml(this.t('config.statsOpenBackups', 'Backups'))} →</button>`,
+                body: this.statsFacts(rows),
+            });
+        },
+
+        renderStatsUpdatesApplied(c, ev) {
+            if (!ev) return '';
+            const rows = [
+                [this.t('config.statsUpdatesInDays', 'In {days} days').replace('{days}', String(ev.days)),
+                    this.t('config.statsUpdatesRollbacks', '{n} updates · {r} rollbacks')
+                        .replace('{n}', this.statsNumber(ev.updates.length)).replace('{r}', this.statsNumber(ev.rollbacks.length)),
+                    ev.rollbacks.length ? 'warn' : ''],
+            ];
+            const last = [...ev.updates, ...ev.rollbacks].sort((a, b) => b.at - a.at)[0];
+            if (last) {
+                const from = last.fromVersion || '';
+                const to = last.toVersion || '';
+                rows.push([this.t('config.statsUpdatesLast', 'Last'), this.statsRelativeTime(last.at), '',
+                    `${last.container}${from || to ? ` ${from || '?'} → ${to || '?'}` : ''}`]);
+            }
+            if (c) {
+                rows.push([this.t('config.statsUpdatesWaiting', 'Updates waiting'), this.statsNumber(c.updates.length),
+                    c.updates.length ? 'warn' : '', c.updates.slice(0, 4).map((x) => x.name).join(', ')]);
+            }
+            return this.statsPanel({
+                title: this.t('config.statsUpdatesTitle', 'Container updates'),
+                right: `<button type="button" class="config-btn config-btn--small" data-stats-section-goto="containers:updates">${this.dash.escapeHtml(this.t('config.statsOpenContainers', 'Open Containers'))} →</button>`,
+                body: this.statsFacts(rows),
+            });
+        },
+
+        /**
+         * The server's lines for the overview's attention list: containers in
+         * trouble, updates waiting, Unraid disks with a problem, backups late.
+         */
+        statsServerAttention() {
+            const f = this.statsServerFigures();
+            if (!f) return [];
+            const esc = (v) => this.dash.escapeHtml(v);
+            const show = (goto, label) => `<button type="button" class="config-btn config-btn--small" data-stats-${goto.includes(':') ? 'section' : 'tab'}-goto="${esc(goto)}">${esc(label)}</button>`;
+            const serverLabel = this.statsTabLabel('server');
+            const lines = [];
+            const c = f.containers;
+            if (c && c.unhealthy.length) {
+                const first = c.unhealthy[0];
+                const crashes = f.events?.perContainer?.get(first.name) || 0;
+                lines.push({
+                    key: 'containers-unhealthy',
+                    tone: 'bad',
+                    text: (c.unhealthy.length === 1
+                        ? (crashes
+                            ? this.t('config.statsAttnUnhealthyCrashes', '{name} is unhealthy; it ran into trouble {n} times this month.').replace('{n}', this.statsNumber(crashes))
+                            : this.t('config.statsAttnUnhealthyOne', '{name} is unhealthy.'))
+                        : this.t('config.statsAttnUnhealthyMany', '{n} containers are unhealthy, among them {name}.').replace('{n}', this.statsNumber(c.unhealthy.length)))
+                        .replace('{name}', first.name),
+                    button: show('server', serverLabel),
+                });
+            }
+            if (c && c.updates.length) {
+                lines.push({
+                    key: 'containers-updates',
+                    tone: 'warn',
+                    text: (c.updates.length === 1
+                        ? this.t('config.statsAttnUpdatesOne', 'An update is waiting for {name}.').replace('{name}', c.updates[0].name)
+                        : this.t('config.statsAttnUpdates', '{n} container updates are waiting.').replace('{n}', this.statsNumber(c.updates.length))),
+                    button: show('containers:updates', this.t('config.statsOpenContainers', 'Open Containers')),
+                });
+            }
+            const ur = f.unraid;
+            if (ur && ur.status === 'ok' && ur.problemDisks.length) {
+                const k = ur.problemDisks[0];
+                const what = {
+                    errors: this.t('config.statsDiskProblemErrors', 'has read errors'),
+                    disabled: this.t('config.statsDiskProblemDisabled', 'is disabled'),
+                    missing: this.t('config.statsDiskProblemMissing', 'is missing'),
+                    hot: this.t('config.statsDiskProblemHot', 'is running hot'),
+                    full: this.t('config.statsDiskProblemFull', 'is {pct}% full').replace('{pct}', this.statsNumber(Math.round(Number(k.usedPct) || 0))),
+                }[k.problem] || k.problem;
+                lines.push({
+                    key: 'unraid-disk',
+                    tone: k.tone === 'bad' ? 'bad' : 'warn',
+                    text: this.t('config.statsAttnDisk', 'Unraid disk {name} {what}.').replace('{name}', k.name).replace('{what}', what)
+                        + (ur.problemDisks.length > 1
+                            ? ` ${this.t('config.statsAttnDiskMore', '{n} more disks need a look.').replace('{n}', this.statsNumber(ur.problemDisks.length - 1))}`
+                            : ''),
+                    button: show('server', serverLabel),
+                });
+            }
+            const bk = f.backups;
+            if (bk && bk.late) {
+                lines.push({
+                    key: 'backup-late',
+                    tone: 'warn',
+                    text: bk.newest
+                        ? this.t('config.statsAttnBackupLate', 'The last automatic backup is {age} old; one is made every {days} days.')
+                            .replace('{age}', this.statsShortAge(bk.age)).replace('{days}', String(bk.interval))
+                        : this.t('config.statsAttnBackupNone', 'Automatic backups are on, but none has been made yet.'),
+                    button: show('data-backups:backups', this.t('config.statsOpenBackups', 'Backups')),
+                });
+            }
+            return lines;
+        },
+
+        /* ------------------------------------------------------------------
+         * Health → Notifications, Collection → Widgets
+         * ------------------------------------------------------------------ */
+
+        renderStatsNotify() {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const n = this._statsNotify;
+            const title = this.t('config.statsNotifyTitle', 'Notifications');
+            if (n === undefined) {
+                return this.statsPanel({ title, body: `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>` });
+            }
+            const rows = [];
+            const q = n?.quiet;
+            if (q) {
+                rows.push([this.t('config.statsNotifyOpen', 'Open alerts'), this.statsNumber(q.open || 0), q.open ? 'warn' : '',
+                    this.t('config.statsNotifyOpenSub', 'still down since they were sent')]);
+                rows.push([this.t('config.statsNotifyHeld', 'Held in quiet hours'), q.enabled
+                    ? this.statsNumber(q.held || 0)
+                    : this.t('config.statsLibraryOff', 'switched off'), '', q.quiet ? this.t('config.statsNotifyQuietNow', 'quiet right now') : '']);
+            }
+            const push = n?.push;
+            if (push) {
+                const devices = Array.isArray(push.devices) ? push.devices.length : 0;
+                rows.push([this.t('config.statsNotifyPush', 'Push devices'), push.enabled
+                    ? this.statsNumber(devices)
+                    : this.t('config.statsLibraryOff', 'switched off')]);
+            }
+            const hooks = Array.isArray(n?.webhooks?.endpoints) ? n.webhooks.endpoints : null;
+            if (hooks) {
+                const on = hooks.filter((e) => e.enabled).length;
+                rows.push([this.t('config.statsNotifyWebhooks', 'Webhooks'), hooks.length
+                    ? this.t('config.statsNofMOn', '{n} of {m} on').replace('{n}', this.statsNumber(on)).replace('{m}', this.statsNumber(hooks.length))
+                    : this.t('config.statsNotifyNone', 'none')]);
+            }
+            const st = this.dash.settings || {};
+            const preset = String(st.monitorNotifyPreset || '').trim();
+            rows.push([this.t('config.statsNotifyAlertRoute', 'Alert service'),
+                st.monitorNotifyUrl || preset
+                    ? (preset ? preset.charAt(0).toUpperCase() + preset.slice(1) : this.t('config.statsNotifyWebhook', 'webhook'))
+                    : this.t('config.statsNotifyNone', 'none')]);
+            const d = n?.digest;
+            if (d && Number(d.generatedAt)) {
+                const bits = [];
+                if (d.health?.newlyBroken?.length) bits.push(this.t('config.statsDigestBroken', '{n} newly broken').replace('{n}', this.statsNumber(d.health.newlyBroken.length)));
+                if (d.health?.certsExpiring?.length) bits.push(this.t('config.statsDigestCerts', '{n} certificates').replace('{n}', this.statsNumber(d.health.certsExpiring.length)));
+                if (d.updates?.available?.length) bits.push(this.t('config.statsDigestUpdates', '{n} updates').replace('{n}', this.statsNumber(d.updates.available.length)));
+                if (d.usage?.stale) bits.push(this.t('config.statsDigestStale', '{n} unused lately').replace('{n}', this.statsNumber(d.usage.stale)));
+                rows.push([this.t('config.statsNotifyDigest', 'Last weekly digest'), this.statsRelativeTime(d.generatedAt), '', bits.join(' · ')]);
+            } else if (st.digestEnabled === false) {
+                rows.push([this.t('config.statsNotifyDigest', 'Last weekly digest'), this.t('config.statsLibraryOff', 'switched off')]);
+            }
+            return this.statsPanel({
+                title,
+                info: this.t('config.statsNotifyInfo', 'Where notices go, and what is waiting. How many were sent is not recorded.'),
+                right: `<button type="button" class="config-btn config-btn--small" data-stats-section-goto="monitoring:notifications">${esc(this.t('config.statsNotifySettings', 'Settings'))} →</button>`,
+                body: this.statsFacts(rows),
+            });
+        },
+
+        renderStatsWidgets() {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const lib = this._statsLibrary;
+            const title = this.t('config.statsWidgetsTitle', 'Widgets by kind');
+            if (lib === undefined) {
+                return this.statsPanel({ title, body: `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>` });
+            }
+            const types = lib?.widgetTypes || [];
+            if (!lib || lib.widgets === null) {
+                return this.statsPanel({ title, body: `<p class="config-panel-empty">${esc(this.t('config.statsLibraryUnavailable', 'These figures could not be read.'))}</p>` });
+            }
+            if (!types.length) {
+                return this.statsPanel({ title, body: `<p class="config-panel-empty">${esc(this.t('config.statsWidgetsNone', 'No widgets on any page yet.'))}</p>` });
+            }
+            const pages = lib.widgetPages || [];
+            const withWidgets = pages.filter(([, n]) => n > 0).length;
+            return this.statsPanel({
+                title,
+                body: this.statsBars(types.slice(0, DashboardConfig.STATS_LIST_LIMIT).map(([type, n]) => [this.widgetTypeName(type), n]),
+                    { axis: [this.t('config.statsAxisKind', 'Kind'), this.t('config.statsAxisWidgets', 'Widgets')] })
+                    + this.statsListTruncationNote(Math.min(types.length, DashboardConfig.STATS_LIST_LIMIT), types.length)
+                    + `<p class="config-panel-note">${esc(this.t('config.statsWidgetsSummary', '{n} widgets on {p} of {m} pages.')
+                        .replace('{n}', this.statsNumber(lib.widgets))
+                        .replace('{p}', this.statsNumber(withWidgets))
+                        .replace('{m}', this.statsNumber(pages.length)))}</p>`,
+            });
+        },
+
+        renderStatsWidgetPages() {
+            const lib = this._statsLibrary;
+            const pages = (lib?.widgetPages || []).filter(([, n]) => n > 0);
+            if (pages.length < 2) return '';
+            return this.statsPanel({
+                title: this.t('config.statsWidgetPagesTitle', 'Widgets per page'),
+                body: this.statsBars([...pages].sort((a, b) => b[1] - a[1]),
+                    { axis: [this.t('config.statsAxisPage', 'Page'), this.t('config.statsAxisWidgets', 'Widgets')] }),
             });
         },
     });

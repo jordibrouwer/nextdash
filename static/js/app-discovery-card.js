@@ -90,7 +90,7 @@
 
     /**
      * Whether it is the card's turn. It comes last: after the onboarding (the
-     * starting-page card and the quick-start checklist), after What's new and
+     * starting-page card and the start guide bar), after What's new and
      * the dashboard tour, and after every corner card that is up or still on
      * its way -- and never while a dialog or form is open.
      */

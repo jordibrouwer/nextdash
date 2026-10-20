@@ -1,0 +1,429 @@
+/* Wat een categorie en een widget op staan.
+
+   Een categorie was tekst op de pagina, in elk theme. data-cat-surface op <body>
+   zegt nu waar hij op ligt:
+
+     glass   een doorzichtige ruit, met blur, waar de achtergrond doorheen valt
+     card    een massief vlak
+     open    geen vlak: de lijst zoals hij was
+
+   Het theme kiest, de lezer overschrijft het (category_surface.go). Alles
+   hangt aan <body>, dus wisselen is een herschildering; er verandert niets
+   aan de DOM van .category, en de titel-fit rekent met de padding mee.
+
+   Terminal en launcher houden hun eigen ontwerp: daar is een ruit om een
+   categorie geen verbetering maar een ander ontwerp eroverheen. */
+
+html[data-theme] body[data-cat-surface="glass"] {
+    /* Een theme dat zelf glas draagt bepaalt hoe doorzichtig en hoe wazig; een
+       theme dat niets zegt (alpha 1, blur 0) krijgt een ruit die werkt. */
+    --cat-glass-alpha: min(var(--theme-surface-alpha, 1), 0.62);
+    --cat-glass-blur: max(var(--theme-surface-blur, 0px), 14px);
+}
+
+/* De rand is een inset-schaduw en geen border, en er komt alleen padding boven
+   en onder bij: de zij-padding (--category-inline-pad) staat al op .category en
+   een brede categorie rekent zijn binnenkolommen erop uit. Een border of meer
+   padding opzij schuift die kolommen uit het raster. */
+html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: var(--radius-6, 10px);
+    padding-block: var(--space-3, 0.75rem);
+    /* What a header takes back on hover, to light up to the pane's own edge. */
+    --category-block-pad: var(--space-3, 0.75rem);
+    --category-block-radius: var(--radius-6, 10px);
+    /* The theme's own shine and grain, scaled by Effects: without it a pane is
+       the same flat colour in every theme and the setting has nothing to turn. */
+    background-image: var(--surface-sheen, none);
+    box-shadow:
+        inset 0 0 0 1px var(--hairline, color-mix(in srgb, var(--text-primary) 14%, transparent)),
+        var(--edge-light, inset 0 1px 0 color-mix(in srgb, var(--text-primary) 12%, transparent)),
+        var(--surface-cast, 0 8px 24px rgba(0, 0, 0, 0.22));
+}
+
+html[data-theme] body[data-cat-surface="glass"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    background-color: color-mix(in srgb,
+        var(--surface-2, var(--background-secondary)) calc(var(--cat-glass-alpha) * 100%), transparent);
+    backdrop-filter: blur(var(--cat-glass-blur)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
+    -webkit-backdrop-filter: blur(var(--cat-glass-blur)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
+}
+
+html[data-theme] body[data-cat-surface="card"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    background-color: var(--surface-2, var(--background-secondary));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* Een ruit zonder doorzichtigheid is een kaart: wie dat vraagt krijgt de
+   massieve variant, en wie geen blur kan tekenen valt er ook op terug. */
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme] body[data-cat-surface="glass"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+        background-color: var(--surface-2, var(--background-secondary));
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}
+
+/* Eén vlak per widget.
+
+   Een widget tekent een eigen kaart. Onder een ruit of kaart van de categorie
+   zelf stond die kaart in de kaart. Het widgetlichaam laat dan zijn vlak, rand,
+   schaduw en blur vallen, zoals theme-character.css dat bij Cards en Widgets
+   al doet; de cellen erin blijven een stap boven de ruit. Bij open is er geen
+   vlak: ook de widget staat dan zonder kaart op de pagina, net als de lijsten
+   naast hem. Zo bepaalt één instelling (Category surface) wat achter een blok
+   staat, voor een categorie en een widget alike. */
+html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"], [data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget .dashboard-widget-body {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    outline: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* Een widget met een eigen achtergrond (Widget background).
+
+   Bij open stond er niets om een widget heen, en een vak onder een gewone titel
+   leest als een tabel. Met data-widget-bg="background" is een widget een kaart
+   met een kopstrook: de titel staat op een eigen strook met een lijn eronder,
+   en de kaart eromheen heeft een lichte vulling, een fijne rand en een schaduw,
+   in de kleur van de tekst zodat het op elke achtergrond werkt. Bij glass en
+   card is de ruit de kaart al, en komt alleen de kopstrook erbij. */
+html[data-theme] body[data-widget-bg="background"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .category.dashboard-widget {
+    background-color: color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--widget-bg, 50) * 1%), transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 12%, transparent), 0 6px 18px rgba(0, 0, 0, 0.18);
+    border-radius: var(--radius-6, 12px);
+}
+
+html[data-theme] body[data-widget-bg="background"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget .category-title {
+    background-color: color-mix(in srgb, var(--text-primary) 8%, color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--widget-bg, 50) * 1%), transparent));
+    border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 10%, transparent);
+    border-radius: var(--radius-6, 12px) var(--radius-6, 12px) 0 0;
+    padding: calc(0.5rem + var(--category-block-pad, 0px)) 0.85rem 0.5rem;
+    /* De categorie heeft zij-padding; de strook loopt er dwars doorheen, tot op
+       de rand van de kaart, en de rand ligt dan strak om hem heen. Bij een ruit
+       of kaart ook tot de bovenrand, waar de ruit padding heeft. */
+    margin: calc(-1 * var(--category-block-pad, 0px)) calc(-1 * var(--category-inline-pad, 0.5rem)) 0;
+}
+
+/* Pointing at the strip tints the strip, the whole of it, and nothing moves. */
+html[data-theme] body[data-widget-bg="background"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget .category-title:hover {
+    background-color: color-mix(in srgb, var(--text-primary) 15%, color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--widget-bg, 50) * 1%), transparent));
+    border-radius: var(--radius-6, 12px) var(--radius-6, 12px) 0 0;
+    padding: calc(0.5rem + var(--category-block-pad, 0px)) 0.85rem 0.5rem;
+    margin: calc(-1 * var(--category-block-pad, 0px)) calc(-1 * var(--category-inline-pad, 0.5rem)) 0;
+    background-position: left bottom;
+}
+
+html[data-theme] body[data-widget-bg="background"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget .dashboard-widget-body {
+    padding: 0.5rem 0.85rem 0.7rem;
+    /* Zelfde doorloop als de kopstrook, zodat tekst en kop op één lijn staan. */
+    margin: 0 calc(-1 * var(--category-inline-pad, 0.5rem));
+}
+
+/* Een ingeklapte widget sluit tot niets: de opvulling van het lichaam gaat mee. */
+html[data-theme] body[data-widget-bg="background"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .category[data-collapsed="true"] .dashboard-widget-body {
+    padding-block: 0;
+}
+
+/* Wie eigen kaartglas koos (Appearance → Surface → Card glass) krijgt precies
+   die doorzichtigheid en blur, ook als dat minder is dan de ruit die een theme
+   zonder glas krijgt. */
+html[data-theme] body[data-cat-surface="glass"][data-card-glass="own"] {
+    --cat-glass-alpha: var(--theme-surface-alpha, 1);
+    --cat-glass-blur: var(--theme-surface-blur, 0px);
+}
+
+/* De cellen in een widget: lichte glas-chips.
+
+   Een cel was een massieve kleur, 8% tekstkleur gemengd met de paginakleur,
+   en op een ruit las dat als een donker blok dat de backdrop niet meenam. Nu
+   is het een doorzichtige lichte laag: de kleur van de backdrop schijnt erdoor,
+   en de scheiding tussen cellen is een fijne lichtere lijn. */
+html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"], [data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget {
+    --dashboard-widget-cell: transparent;
+    --dashboard-widget-cell-hover: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    --dashboard-widget-rule: color-mix(in srgb, var(--text-primary) 10%, transparent);
+}
+
+/* The rows of a widget's list -- health, its trend, the forecast -- are not
+   filled: a fill read as a lighter band on the pane, and a few lines of text
+   looked to sit on another background. A hairline between them says "row", and
+   a light wash says "this one" when pointed at. The container drew the hairline
+   as the gap between filled cells; it is the cells' own border now. */
+html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"], [data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget :is(.dashboard-widget-health, .dashboard-widget-trend, .dashboard-widget-weather-forecast) {
+    gap: 0;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"], [data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget :is(.dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row) {
+    border-bottom: 1px solid var(--dashboard-widget-rule);
+}
+
+html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"], [data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget :is(.dashboard-widget-health-row, .dashboard-widget-trend-row, .dashboard-widget-weather-row):last-child {
+    border-bottom: 0;
+}
+
+/* The figures of a stats widget are cells in a grid, not rows in a list: they
+   keep a chip, a faint one. */
+html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"], [data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry) .dashboard-widget .dashboard-widget-stat {
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+}
+
+/* De start-kaart ("what do you want?").
+
+   Een eigen donker vlak met een balk over de volle breedte stond los van het
+   dashboard eronder. Nu ligt hij op hetzelfde vlak als de categorieën
+   (glass, card of open), de titel is gezet zoals een categorietitel -- uit de
+   label-instellingen van het theme -- en de accentbalk is het korte streepje
+   dat ook onder een titel staat. De twee antwoorden zijn lichte glas-chips. */
+html[data-theme] body .first-start-card {
+    border: 0;
+    border-radius: var(--radius-6, 10px);
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--hairline, color-mix(in srgb, var(--text-primary) 14%, transparent));
+}
+
+html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"]) .first-start-card {
+    box-shadow:
+        inset 0 0 0 1px var(--hairline, color-mix(in srgb, var(--text-primary) 14%, transparent)),
+        var(--edge-light, inset 0 1px 0 color-mix(in srgb, var(--text-primary) 12%, transparent)),
+        var(--surface-cast, 0 8px 24px rgba(0, 0, 0, 0.22));
+}
+
+html[data-theme] body[data-cat-surface="glass"] .first-start-card {
+    background-color: color-mix(in srgb,
+        var(--surface-2, var(--background-secondary)) calc(var(--cat-glass-alpha) * 100%), transparent);
+    backdrop-filter: blur(var(--cat-glass-blur)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
+    -webkit-backdrop-filter: blur(var(--cat-glass-blur)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
+}
+
+html[data-theme] body[data-cat-surface="card"] .first-start-card {
+    background-color: var(--surface-2, var(--background-secondary));
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme] body[data-cat-surface="glass"] .first-start-card {
+        background-color: var(--surface-2, var(--background-secondary));
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}
+
+/* Het accent: het streepje van een titel, onder de kop. De balk over de volle
+   breedte is weg; de kop draagt het streepje zelf, zoals .category-title. */
+html[data-theme] body .first-start-stripe {
+    display: none;
+}
+
+html[data-theme] body .first-start-head {
+    padding-bottom: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-1, 0.25rem);
+    background-image: linear-gradient(var(--accent-primary), var(--accent-primary));
+    background-size: 2.25rem 2px;
+    background-position: left bottom;
+    background-repeat: no-repeat;
+}
+
+/* De titel: de label-instellingen van het theme. */
+html[data-theme] body .first-start-title {
+    font-size: var(--font-size-category, var(--font-size-controls, 0.95rem));
+    font-weight: var(--theme-label-weight, 700);
+    letter-spacing: var(--theme-label-spacing, normal);
+    text-transform: var(--theme-label-transform, none);
+}
+
+html[data-theme] body .first-start-card .first-start-sub {
+    text-align: left;
+}
+
+/* Four answers in one row, centred on the card; on a narrow screen they wrap
+   and each row stays centred. The tiles share the width and keep their text on
+   as many lines as it needs, so nothing is cut off. */
+html[data-theme] body .first-start-tiles {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-3, 0.75rem);
+}
+
+html[data-theme] body .first-start-tiles .first-start-tile {
+    flex: 1 1 11rem;
+    max-width: 16rem;
+    align-items: flex-start;
+    text-align: left;
+}
+
+html[data-theme] body .first-start-tile-name,
+html[data-theme] body .first-start-tile-services {
+    overflow-wrap: break-word;
+    white-space: normal;
+}
+
+html[data-theme] body .first-start-tile {
+    background: color-mix(in srgb, var(--text-primary) 9%, transparent);
+    border: 0;
+    border-radius: var(--radius-5, 8px);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 10%, transparent);
+}
+
+html[data-theme] body .first-start-tile:hover,
+html[data-theme] body .first-start-tile:focus-visible {
+    background: color-mix(in srgb, var(--text-primary) 15%, transparent);
+    box-shadow: inset 0 0 0 1px var(--accent-primary);
+}
+
+/* Config: the same pane as the dashboard.
+
+   Config drew its own flat rectangles -- a 1px border over 55% of the page
+   colour -- and left its tables bare, so it read as another application. Its
+   panels, overview cards and tables now take the pane the dashboard draws, the
+   same glass, card or open. Open keeps a light frame: a faint fill and a
+   hairline. The controls themselves (selects, inputs) stay fields.
+
+   The tag view, the inbox, the containers view and the bookmarks view are one pane each, round
+   everything in them, and nothing inside is framed again.
+
+   Config has two arrangements, to compare: loose panes (the default) and one
+   pane round the whole view, chosen by body[data-config-panes="one"]. */
+html[data-theme] body #dashboard-layout:is(.config-layout, .tag-view-layout, .inbox-layout, .docker-layout, .library-layout) {
+    --cfg-pane-radius: var(--radius-6, 10px);
+    --cfg-pane-bg: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    --cfg-pane-filter: none;
+    --cfg-pane-sheen: none;
+    --cfg-pane-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 10%, transparent);
+}
+
+html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"]) #dashboard-layout:is(.config-layout, .tag-view-layout, .inbox-layout, .docker-layout, .library-layout) {
+    --cfg-pane-sheen: var(--surface-sheen, none);
+    --cfg-pane-shadow:
+        inset 0 0 0 1px var(--hairline, color-mix(in srgb, var(--text-primary) 14%, transparent)),
+        var(--edge-light, inset 0 1px 0 color-mix(in srgb, var(--text-primary) 12%, transparent)),
+        var(--surface-cast, 0 8px 24px rgba(0, 0, 0, 0.22));
+}
+
+html[data-theme] body[data-cat-surface="glass"] #dashboard-layout:is(.config-layout, .tag-view-layout, .inbox-layout, .docker-layout, .library-layout) {
+    --cfg-pane-bg: color-mix(in srgb,
+        var(--surface-2, var(--background-secondary)) calc(var(--cat-glass-alpha) * 100%), transparent);
+    --cfg-pane-filter: blur(var(--cat-glass-blur)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
+}
+
+html[data-theme] body[data-cat-surface="card"] #dashboard-layout:is(.config-layout, .tag-view-layout, .inbox-layout, .docker-layout, .library-layout) {
+    --cfg-pane-bg: var(--surface-2, var(--background-secondary));
+}
+
+/* A whole view is one pane: the tag view, the inbox and the bookmarks view,
+   and config itself in its one-pane arrangement. */
+html[data-theme] body #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout) > .lvs,
+html[data-theme] body #dashboard-layout.library-layout > .config-view--library,
+html[data-theme] body[data-config-panes="one"] #dashboard-layout.config-layout > .config-view {
+    background-color: var(--cfg-pane-bg);
+    background-image: var(--cfg-pane-sheen, none);
+    border-radius: var(--cfg-pane-radius);
+    box-shadow: var(--cfg-pane-shadow);
+    padding: var(--space-4, 1rem) var(--space-5, 1.5rem);
+}
+
+html[data-theme] body #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout) > .lvs,
+html[data-theme] body[data-config-panes="one"] #dashboard-layout.config-layout > .config-view {
+    backdrop-filter: var(--cfg-pane-filter, none);
+    -webkit-backdrop-filter: var(--cfg-pane-filter, none);
+}
+
+/* The bookmarks view holds fixed overlays (the filter sheet and its scrim, the health
+   modal). A backdrop-filter on the view itself makes it their containing block, which
+   shut them inside the pane. The blur is drawn by a layer behind the content instead. */
+html[data-theme] body #dashboard-layout.library-layout > .config-view--library {
+    position: relative;
+    isolation: isolate;
+}
+
+html[data-theme] body #dashboard-layout.library-layout > .config-view--library::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    backdrop-filter: var(--cfg-pane-filter, none);
+    -webkit-backdrop-filter: var(--cfg-pane-filter, none);
+}
+
+/* The header of a list view is the top of the pane, not a second one -- at rest.
+   Scrolled, rows pass behind it and it turns solid again so they do not show
+   through the title (list-view-header-surface.spec.js). */
+html[data-theme] body:not([data-scrolled="true"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout) > .lvs .lvs-header,
+html[data-theme] body[data-config-panes="one"]:not([data-scrolled="true"]) #dashboard-layout.config-layout > .config-view > .config-view-head {
+    background-color: transparent;
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+    border-radius: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+
+/* Loose panes (config's default): each panel, overview card, row that is a
+   card and table is a pane of its own. */
+html[data-theme] body:not([data-config-panes="one"]) #dashboard-layout.config-layout:not(.library-layout) :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table) {
+    background-color: var(--cfg-pane-bg);
+    background-image: var(--cfg-pane-sheen, none);
+    backdrop-filter: var(--cfg-pane-filter, none);
+    -webkit-backdrop-filter: var(--cfg-pane-filter, none);
+    border-radius: var(--cfg-pane-radius);
+    box-shadow: var(--cfg-pane-shadow);
+}
+
+/* An accented or dangerous panel keeps the border that says so. */
+html[data-theme] body:not([data-config-panes="one"]) #dashboard-layout.config-layout:not(.library-layout) :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table):not(.config-panel--attention, .config-panel--danger) {
+    border: 0;
+}
+
+html[data-theme] body:not([data-config-panes="one"]) #dashboard-layout.config-layout:not(.library-layout) .config-crud-list--table {
+    overflow: hidden;
+}
+
+/* A pane inside a pane is not blurred twice. */
+html[data-theme] body:not([data-config-panes="one"]) #dashboard-layout.config-layout:not(.library-layout) :is(.config-panel, .config-widget, .config-crud-list--table) :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row) {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* One pane round everything (the bookmarks view always, config on request):
+   what is inside is a section of it, with a heading and whitespace. A panel
+   that is an alert (attention, danger) keeps the border that says so. */
+html[data-theme] body #dashboard-layout.library-layout .config-view--library :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table):not(.config-panel--attention, .config-panel--danger),
+html[data-theme] body[data-config-panes="one"] #dashboard-layout.config-layout > .config-view :is(.config-panel, .config-widget, .config-widget-row, .config-widget-kind, .config-widget-custom-card, .config-backup-row, .config-attention-row, .config-crud-list--table):not(.config-panel--attention, .config-panel--danger) {
+    background-color: transparent;
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+    border-color: transparent;
+    border-radius: 0;
+}
+
+/* The opening text of a tab (the line under the strip, or a tab's first
+   paragraph) is a pane of its own in the loose arrangement. In the one-pane
+   arrangement it already sits inside the view's pane. */
+html[data-theme] body:not([data-config-panes="one"]) #dashboard-layout.config-layout:not(.library-layout) :is(
+    .config-view-body > .config-tab-note,
+    .config-view-body > .config-view-intro,
+    .config-view-body > div > .config-view-intro:first-child,
+    .config-view-body > div > .config-panel-note:first-child,
+    .config-view-body > .config-panel-note:first-child
+) {
+    background-color: var(--cfg-pane-bg);
+    background-image: var(--cfg-pane-sheen, none);
+    backdrop-filter: var(--cfg-pane-filter, none);
+    -webkit-backdrop-filter: var(--cfg-pane-filter, none);
+    border-radius: var(--cfg-pane-radius);
+    box-shadow: var(--cfg-pane-shadow);
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    max-width: none;
+    margin-top: 0;
+}

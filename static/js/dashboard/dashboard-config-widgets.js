@@ -3789,6 +3789,81 @@
         return -1;
     },
 
+    /*
+     * Open one widget's settings, from that widget on the dashboard.
+     *
+     * Its row opens and every other row is closed, because only one widget
+     * is ever chosen -- arriving on a list with someone else's settings
+     * still unfolded made it unclear which widget the fields belonged to.
+     * The search is cleared and the list moved to the widget's page, either
+     * of which could otherwise hide the row being opened.
+     */
+    async openWidgetSettings(widgetId) {
+        if (widgetId == null) return false;
+        const d = this.dash;
+        this.stopCustomProbeLive?.();
+        this.widgetsTab = 'widgets';
+        this.widgetQuery = '';
+        const pageId = d.currentPageId != null ? Number(d.currentPageId) : null;
+        const listed = (this._widgetBlocks || []).some((b) => String(b.id) === String(widgetId));
+        if (!listed || (!this.isAllPagesView() && pageId != null && pageId !== Number(this._widgetPageId))) {
+            if (!this.isAllPagesView() && pageId != null) this._widgetPageId = pageId;
+            this._widgetBlocks = null;
+            this._widgetLoadedFor = null;
+            this._widgetDrafts = {};
+        }
+        this._widgetOpenId = widgetId;
+        this._widgetJustSaved = null;
+
+        const opened = await this.openConfigView('widgets');
+        if (opened === false) return false;
+        if (!(await this.ensureSection('widgets')) || this.section !== 'widgets') return false;
+        // Already on screen from before the state above changed.
+        if (document.getElementById('config-widgets-body')) this.repaintWidgetsBody();
+
+        /*
+         * The section paints, then paints again once the page's widgets have
+         * loaded, which replaces the row. Reveal it once it has stayed put a
+         * few frames, so the focus lands on the row that stays.
+         */
+        let seen = null;
+        let steady = 0;
+        let tries = 0;
+        const tick = () => {
+            if (this.section !== 'widgets' || String(this._widgetOpenId) !== String(widgetId)) return;
+            const index = this.widgetIndexOfId(widgetId);
+            const row = index != null
+                ? document.querySelector(`#config-widgets-body .config-widget-row[data-widget-row="${index}"]`)
+                : null;
+            if (row && row === seen) steady += 1;
+            else { seen = row; steady = 0; }
+            if (row && steady >= 6) {
+                this.revealOpenedWidget(row);
+                return;
+            }
+            if ((tries += 1) < 240) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+        return true;
+    },
+
+    /*
+     * Put an opened row at the top, under the section's sticky head, so its
+     * settings unfold below it on screen. Scrolling the row and then its
+     * panel into view, as a new row does, were two smooth scrolls racing,
+     * and the panel was left half under the fold.
+     */
+    revealOpenedWidget(row) {
+        const head = document.querySelector('.config-view-head');
+        const headBottom = head && getComputedStyle(head).position !== 'static'
+            ? Math.max(0, head.getBoundingClientRect().bottom) : 0;
+        const top = window.scrollY + row.getBoundingClientRect().top - headBottom - 12;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+        row.classList.add('is-new');
+        row.querySelector('[data-widget="title"]')?.focus({ preventScroll: true });
+        window.setTimeout(() => row.classList.remove('is-new'), 1600);
+    },
+
     /** Bring the new row into view, mark it, and put the caret in its title. */
     revealNewWidget(index = -1) {
         // By index rather than by position: the list is grouped by default, so

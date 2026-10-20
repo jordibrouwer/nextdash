@@ -432,6 +432,7 @@ type themeMeta struct {
 	Depth       string `json:"depth"`
 	Glow        string `json:"glow"`
 	Effects     string `json:"effects"`
+	CatSurface  string `json:"catSurface"`
 	// New marks the latest collection, for the browser's badge and search.
 	New bool `json:"new,omitempty"`
 	// Collection is the set the theme belongs to, or empty for none.
@@ -456,11 +457,14 @@ func themeMetaFor(themeID string, tc ThemeColors) themeMeta {
 		character = ""
 	}
 	return themeMeta{
-		Character:    character,
-		Description:  themeDescription(themeID),
-		Depth:        themeIdealDepth(tc),
-		Glow:         themeIdealGlow(tc),
-		Effects:      themeIdealEffects(tc),
+		Character:   character,
+		Description: themeDescription(themeID),
+		Depth:       themeIdealDepth(tc),
+		Glow:        themeIdealGlow(tc),
+		Effects:     themeIdealEffects(tc),
+		// The theme's own word, without the depth rule: the page applies flat
+		// itself, from the depth that is actually resolved (theme-loader.js).
+		CatSurface:   themeIdealCatSurface(tc, ""),
 		New:          themeIsNew(themeID),
 		Collection:   strings.ToLower(strings.TrimSpace(tc.Collection)),
 		Backdrop:     themeBackdropRecipes[themeBackdropRecipeFor(themeBackdropHashID(themeID), tc)],

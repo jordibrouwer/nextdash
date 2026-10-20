@@ -367,6 +367,26 @@
                     ${select('themeDepth', 'config.themeDepthLabel', 'Depth',
                         [['flat', 'Flat'], ['soft', 'Soft'], ['rich', 'Rich'], ['vivid', 'Vivid'], ['glass', 'Glass']], 'config.themeDepth',
                         'config.themeDepthNote', 'How much of the theme is drawn behind the content: the tint in its greys, the raised surfaces, the wash behind the page. Follow the theme lets each theme bring its own.')}
+                    ${select('categorySurface', 'config.categorySurfaceLabel', 'Category surface',
+                        [['glass', 'Glass'], ['card', 'Card'], ['open', 'Open']], 'config.categorySurface',
+                        'config.categorySurfaceNote', 'What a category and a widget sit on: a see-through pane, a solid card, or nothing at all. Follow the theme lets each theme bring its own.')}
+                    <div class="config-field">
+                        <span class="config-field-label">${e(t('config.widgetSurfaceLabel', 'Widget background'))}</span>
+                        <select class="config-select" data-appearance-select="widgetSurface">
+                            ${[['background', 'Background'], ['none', 'None']].map(([option, text]) => `<option value="${option}"${(this.dash.settings?.widgetSurface === 'none' ? 'none' : 'background') === option ? ' selected' : ''}>${e(t('config.widgetSurface' + option.charAt(0).toUpperCase() + option.slice(1), text))}</option>`).join('')}
+                        </select>
+                        ${this.infoAff('widgetSurface')}
+                        <p class="config-panel-note">${e(t('config.widgetSurfaceNote', 'What tells a widget from a category: a header strip on its title, on every surface, and a card round it where nothing else is one. None draws it like a category.'))}</p>
+                    </div>
+                    <div class="config-field">
+                        <span class="config-field-label">${e(t('config.widgetOpacityLabel', 'Widget opacity'))}</span>
+                        <span class="config-range-group">
+                            <input type="range" class="config-range" data-appearance-range="widgetOpacity" min="0" max="100" step="5" value="${typeof this.dash.settings?.widgetOpacity === 'number' ? this.dash.settings.widgetOpacity : 50}">
+                        <span class="config-range-value">${typeof this.dash.settings?.widgetOpacity === 'number' ? this.dash.settings.widgetOpacity : 50}%</span>
+                        </span>
+                        ${this.infoAff('widgetOpacity')}
+                        <p class="config-panel-note">${e(t('config.widgetOpacityNote', 'How solid the card of a widget is. At 0 you see through it to the page; the title strip keeps a faint tint.'))}</p>
+                    </div>
                     ${select('glowStrength', 'config.glowStrengthLabel', 'Glow',
                         [['soft', 'Soft'], ['full', 'Full'], ['off', 'Off']], 'config.glowStrength',
                         'config.glowStrengthNote', 'How far the theme’s own colour carries around a surface and around what you are acting on. Follow the theme lets each theme bring its own.')}

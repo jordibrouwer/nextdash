@@ -170,7 +170,7 @@ func sanitizeThemeColors(tc ThemeColors) ThemeColors {
 		// colors.json. Kept now, each held to what its renderer accepts, with
 		// zero still meaning "derive it".
 		SurfaceStep:    keepInRange(tc.SurfaceStep, 0.6, 1.8),
-		SurfaceAlpha:   keepSignedInRange(tc.SurfaceAlpha, 0.3, 1),
+		SurfaceAlpha:   keepSignedInRange(tc.SurfaceAlpha, 0.2, 1),
 		SurfaceBlur:    keepInRange(tc.SurfaceBlur, 0, 32),
 		SurfaceGlow:    keepSignedInRange(tc.SurfaceGlow, 0, 1),
 		RadiusScale:    keepInRange(tc.RadiusScale, 0.05, 1.6),
@@ -185,9 +185,9 @@ func sanitizeThemeColors(tc ThemeColors) ThemeColors {
 		// as a filter chip, and a theme file from elsewhere does not get to
 		// invent either.
 		Character: keepArchetype(tc.Character),
-		// The collection a built-in belongs to ("neutrals"): dropped here, one
-		// colours save emptied the Neutrals chip for good.
-		Collection: keepWord(strings.ToLower(tc.Collection), "neutrals"),
+		// The collection a built-in belongs to ("neutrals", "looks"): dropped
+		// here, one colours save emptied the Neutrals chip for good.
+		Collection: keepWord(strings.ToLower(tc.Collection), "neutrals", "looks"),
 		GrainAngle: keepInRange(tc.GrainAngle, 0, 360),
 		GrainScale: keepInRange(tc.GrainScale, 0, 1),
 
@@ -196,6 +196,11 @@ func sanitizeThemeColors(tc ThemeColors) ThemeColors {
 		Depth:   keepWord(tc.Depth, "flat", "soft", "rich", "vivid", "glass"),
 		Glow:    keepWord(tc.Glow, "off", "soft", "full"),
 		Effects: keepWord(tc.Effects, "off", "held", "full"),
+
+		// How a category sits on the page. Same rule: a word the stylesheet
+		// defines, or nothing -- and one colours save must not turn the card
+		// looks to glass.
+		Surface: keepWord(tc.Surface, "glass", "card", "open"),
 
 		Look: sanitizeThemeLook(tc.Look),
 	}

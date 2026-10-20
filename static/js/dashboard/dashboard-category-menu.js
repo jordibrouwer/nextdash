@@ -365,6 +365,14 @@ class DashboardCategoryMenu {
             return;
         }
         if (action === 'settings') {
+            // This widget's own settings, open and focused, the rest closed.
+            // The widgets code loads on demand, so it is asked for first.
+            const config = d.config;
+            if (typeof config?.ensureSection === 'function' && await config.ensureSection('widgets')
+                && typeof config.openWidgetSettings === 'function') {
+                await config.openWidgetSettings(widget.id);
+                return;
+            }
             window.DashboardWidgetUtils?.openConfigTab?.(d, 'widgets');
             return;
         }
@@ -442,7 +450,7 @@ class DashboardCategoryMenu {
                 widget.title = title;
                 if (!await d.renderCore?.saveWidgetPatch?.(widget.id, { title })) {
                     widget.title = previous;
-                    nameSpan.textContent = this.widgetName(widget).toLowerCase();
+                    window.DashboardTitleIcons.set(nameSpan, this.widgetName(widget), d);
                 }
             },
         });
@@ -521,8 +529,20 @@ class DashboardCategoryMenu {
         const blockedReason = span?.spreadUnavailableReason(this.dash) || null;
         const canSpread = blockedReason === null;
         const isSpread = span?.isCategorySpread(this.dash, category) === true;
+        // Tiles belong to a stored category: a smart collection and the list of
+        // what is not filed anywhere are views over bookmarks and have no field to keep it in.
+        const stored = category.isSmartCollection !== true && category.isVirtualCategory !== true
+            && (this.dash.categories || []).some((cat) => String(cat.id) === String(category.id));
+        const asTiles = category.view === 'tiles';
         const actions = [
             { id: 'rename', label: this.t('categoryMenuRename', 'Rename'), icon: '✎', key: 'F2' },
+            ...(stored ? [{
+                id: 'view',
+                label: asTiles
+                    ? this.t('categoryMenuViewRows', 'Show as rows')
+                    : this.t('categoryMenuViewTiles', 'Show as tiles'),
+                icon: asTiles ? '☰' : '▦',
+            }] : []),
             {
                 // A switch, not a size: how many columns a spread category
                 // takes follows from the items-per-category limit and how many
@@ -551,7 +571,7 @@ class DashboardCategoryMenu {
             // the inline rename edits the name. The locale strings for this
             // control were still sitting in all four files with no caller: it
             // fell out at some point and left eight identical headers behind.
-            { id: 'icon', label: this.t('categoryMenuIcon', 'Icon…'), icon: '☺' },
+            { id: 'icon', label: this.t('categoryMenuInsertIcon', 'Insert icon…'), icon: '☺' },
             ...this.movePageEntries(category.id),
             { id: 'add', label: this.t('categoryMenuAdd', 'Add category'), icon: '+', key: 'c' },
             { id: 'delete', label: this.t('categoryMenuDelete', 'Delete'), icon: '✕', danger: true, key: 'Delete' },
@@ -568,122 +588,59 @@ class DashboardCategoryMenu {
                     this.toggleSpread(category);
                     return;
                 }
+                if (action === 'view') {
+                    this.toggleView(category);
+                    return;
+                }
                 void this.runAction(action, titleEl, category);
             },
         });
     }
 
     /**
-     * A one-field popover for the category's icon.
+     * Put an app icon at the front of the title.
      *
-     * Modelled on the page-tab popover rather than a modal: this is one short
-     * string, it belongs beside the header it changes, and Enter/Escape are the
-     * whole interaction. Emoji or a couple of characters — the renderer already
-     * accepts an uploaded image path here too, but choosing a file is the
-     * config's job, and typing an emoji is what people actually do.
-     *
-     * Saved through the same categories payload the drag reorder and rename
-     * already use, so there is one write path rather than a second one that
-     * could disagree about what a category is.
+     * The icon is part of the title, not a field of its own: the shared app-icon
+     * picker adopts the icon into data/icons/, and the name becomes
+     * ":file.svg: name". Saved through the same categories payload the rename
+     * uses, so there is one write path. A title that already starts with an icon
+     * has it replaced rather than stacked.
      */
-    openIconEditor(titleEl, category) {
+    async insertIcon(titleEl, category) {
         const d = this.dash;
         if (!titleEl || !category) return;
-        document.querySelector('.category-icon-popover')?.remove();
-
-        const popover = document.createElement('div');
-        popover.className = 'category-icon-popover';
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'category-icon-input';
-        input.value = String(category.icon || '');
-        input.maxLength = 4;
-        input.setAttribute('aria-label', this.t('categoryIconLabel', 'Category icon'));
-        input.placeholder = this.t('categoryIconPlaceholder', 'icon');
-
-        const clear = document.createElement('button');
-        clear.type = 'button';
-        clear.className = 'category-icon-clear';
-        clear.textContent = this.t('categoryIconClear', 'Clear');
-
-        popover.append(input, clear);
-        document.body.appendChild(popover);
-
-        const rect = titleEl.getBoundingClientRect();
-        popover.style.top = `${Math.round(rect.bottom + window.scrollY + 4)}px`;
-        popover.style.left = `${Math.round(rect.left + window.scrollX)}px`;
-
-        // Live preview: the header shows what you are typing, so the choice is
-        // made against the thing itself rather than against a field. Written
-        // straight into the icon span — a full re-render per keystroke would
-        // rebuild the grid to change one character.
-        const previewEl = () => document.querySelector(
-            `.category[data-category-id="${CSS.escape(String(category.id))}"] .category-title-icon`
-        );
-        const original = String(category.icon || '');
-        const preview = (value) => {
-            const el = previewEl();
-            if (el) el.textContent = `${String(value || '').trim() || '▣'} `;
-        };
-
-        let done = false;
-        const close = ({ restore = false } = {}) => {
-            if (done) return;
-            done = true;
-            document.removeEventListener('mousedown', onOutside, true);
-            popover.remove();
-            // Leaving without choosing puts back what was there: browsing is not
-            // choosing, the same rule the type-size preview follows.
-            if (restore) preview(original);
-        };
-        const commit = async (value) => {
-            const next = String(value ?? input.value).trim().slice(0, 4);
-            const previous = String(category.icon || '');
-            close();
-            if (next === previous) return;
-            category.icon = next;
-            // Mirror it onto the array the save reads: the object handed to the
-            // menu can be a copy of the row rather than the stored category.
-            const stored = (d.categories || []).find((c) => String(c.id) === String(category.id));
-            if (stored) stored.icon = next;
-            d.renderDashboard?.({ animate: false });
-            let saved = false;
-            try {
-                saved = (await d.renderCore?.saveCategoryOrder?.({ pageId: Number(d.currentPageId) })) !== false;
-            } catch (_error) {
-                saved = false;
-            }
-            if (!saved) {
-                if (stored) stored.icon = previous;
-                category.icon = previous;
+        const picker = await window.IconSetAuto?.loadPicker?.();
+        if (!picker) {
+            d.showErrorNotification?.(this.t('categoryIconFailed', 'Could not load the icons'));
+            return;
+        }
+        const lead = new RegExp(`^\\s*${window.DashboardTitleIcons.TOKEN.source}\\s*`);
+        picker.open(titleEl, {
+            t: (key, fallback, vars) => this.t(key, fallback, vars),
+            notify: (message) => d.showNotification?.(message, 'info'),
+            onPick: async (file) => {
+                const stored = (d.categories || []).find((c) => String(c.id) === String(category.id));
+                if (!stored) return;
+                const previous = String(stored.name || '');
+                const next = `:${file}: ${previous.replace(lead, '')}`.trim();
+                if (next === previous) return;
+                stored.name = next;
+                category.name = next;
                 d.renderDashboard?.({ animate: false });
-                preview(previous);
-                d.showErrorNotification?.(this.t('categoryIconFailed', 'Could not save the icon'));
-            }
-        };
-        const onOutside = (e) => {
-            if (!popover.contains(e.target)) close({ restore: true });
-        };
-
-        input.addEventListener('input', () => preview(input.value));
-        input.addEventListener('keydown', (e) => {
-            e.stopPropagation();
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                void commit(input.value);
-            } else if (e.key === 'Escape') {
-                e.preventDefault();
-                close({ restore: true });
-            }
+                let saved = false;
+                try {
+                    saved = (await d.renderCore?.saveCategoryOrder?.({ pageId: Number(d.currentPageId) })) !== false;
+                } catch (_error) {
+                    saved = false;
+                }
+                if (!saved) {
+                    stored.name = previous;
+                    category.name = previous;
+                    d.renderDashboard?.({ animate: false });
+                    d.showErrorNotification?.(this.t('categoryIconFailed', 'Could not save the icon'));
+                }
+            },
         });
-        clear.addEventListener('click', () => {
-            preview('');
-            void commit('');
-        });
-        setTimeout(() => document.addEventListener('mousedown', onOutside, true), 0);
-        input.focus();
-        input.select();
     }
 
     /**
@@ -707,6 +664,33 @@ class DashboardCategoryMenu {
         window.nextdashTrack?.('category:spread', { on: next });
         span.refreshCategorySpreadUi(d, category.id);
         return next;
+    }
+
+    /**
+     * Rows or tiles for one stored category.
+     *
+     * Saved through the categories payload like the width and the icon, so
+     * there is one write path. The attribute is written on the block at once;
+     * the redraw that follows keeps the reader's place.
+     */
+    toggleView(category) {
+        const d = this.dash;
+        const stored = (d.categories || []).find((cat) => String(cat.id) === String(category.id));
+        if (!stored) return;
+        if (stored.view === 'tiles') {
+            delete stored.view;
+        } else {
+            stored.view = 'tiles';
+        }
+        category.view = stored.view;
+        const block = document.querySelector(`#dashboard-layout .category[data-category-id="${CSS.escape(String(stored.id))}"]`);
+        if (block) {
+            if (stored.view === 'tiles') block.setAttribute('data-view', 'tiles');
+            else block.removeAttribute('data-view');
+        }
+        d.renderCore?.scheduleCategoryOrderSave?.();
+        d.renderCore?.redrawKeepingPlace?.(stored.id);
+        window.nextdashTrack?.('category:view', { tiles: stored.view === 'tiles' });
     }
 
     /**
@@ -973,7 +957,7 @@ class DashboardCategoryMenu {
         }
 
         if (action === 'icon') {
-            this.openIconEditor(titleEl, category);
+            await this.insertIcon(titleEl, category);
             return;
         }
 

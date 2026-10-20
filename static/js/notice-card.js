@@ -40,6 +40,8 @@
     // closing — wakes the queue directly.
     const POLL_WINDOW_MS = 40000;
     const TEARDOWN_MS = 260;
+    // How long after the start guide is finished no card is shown: ten seconds.
+    const QUIET_AFTER_GUIDE_S = 10;
 
     function dash() {
         return global.dashboardInstance || null;
@@ -68,6 +70,11 @@
             if (global.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
             if (d.onboardingStartedInSession) return false;
             if (d.settings.onboardingCompleted === false) return false;
+            // The start guide was only just finished: the corner stays quiet
+            // for a while, so the cards that were waiting for it do not arrive
+            // together the moment it is closed.
+            const finishedAt = Number(d.settings.quickStart?.completedAt) || 0;
+            if (finishedAt > 0 && Date.now() / 1000 - finishedAt < QUIET_AFTER_GUIDE_S) return false;
         }
         // Config, health and the inbox are hash routes on this same page, so
         // without this a card drops on top of whatever the user opened — including,
@@ -145,6 +152,25 @@ canShow every time.
         if (queue.length && Date.now() < queueDeadline && !queueTimer) {
             queueTimer = setTimeout(runQueue, RETRY_MS);
         }
+        wakeAfterQuiet();
+    }
+
+    /**
+     * The quiet after the start guide ends without any event, so the poll
+     * window (forty seconds) is long over by then and nothing would ask again:
+     * the cards stayed queued until the next load. One timer, set for the end
+     * of the quiet, wakes the queue then.
+     */
+    let quietTimer = null;
+    function wakeAfterQuiet() {
+        if (quietTimer || !queue.length) return;
+        const finishedAt = Number(dash()?.settings?.quickStart?.completedAt) || 0;
+        const leftMs = finishedAt > 0 ? (finishedAt + QUIET_AFTER_GUIDE_S) * 1000 - Date.now() : 0;
+        if (leftMs <= 0) return;
+        quietTimer = setTimeout(() => {
+            quietTimer = null;
+            wakeQueue();
+        }, leftMs + 500);
     }
 
     /** Ask the queue to try again, and give it a fresh window to poll in. */
@@ -165,6 +191,22 @@ canShow every time.
             if (freed) wakeQueue();
         });
         bodyObserver.observe(document.body, { childList: true, subtree: true });
+        // Two more things free the corner without removing a node. Coming back
+        // from config, health or the inbox changes the hash, and the app modal
+        // closes by losing its `show` class. Without these a card that waited
+        // out its forty seconds while the reader was elsewhere stayed queued
+        // until the next load. wakeQueue is cheap and a card still asks its own
+        // canShow, so waking on any of them is safe.
+        global.addEventListener('hashchange', wakeQueue);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') wakeQueue();
+        });
+        const appModal = document.getElementById('app-modal');
+        if (appModal && typeof MutationObserver === 'function') {
+            new MutationObserver(() => {
+                if (!appModal.classList.contains('show')) wakeQueue();
+            }).observe(appModal, { attributes: true, attributeFilter: ['class'] });
+        }
     }
 
     function enqueue(entry) {
@@ -195,7 +237,15 @@ canShow every time.
     async function busy() {
         for (const card of registry) {
             if (card.spec.essential === true) continue;
-            if (card.element() || card.waiting()) return true;
+            if (card.element()) return true;
+            // Waiting out its delay, but a card that would not show anyway (answered, or nothing
+            // to offer) is not part of the line-up: nothing should wait the length of its delay.
+            if (card.waiting()) {
+                try {
+                    if ((await card.spec.canShow?.()) === false) continue;
+                } catch { /* a card that cannot answer may still come */ }
+                return true;
+            }
             // Queued and able to show now. A card the corner holds back for
             // the rest of this session (the first one, during onboarding)
             // comes on a later load; nothing should wait for it until then.
@@ -315,7 +365,7 @@ canShow every time.
             document.body.appendChild(el);
             cardEl = el;
             if (spec.essential === true) {
-                // Above the quick-start checklist when it holds the corner.
+                // Above the start guide bar when it holds the corner.
                 const checklist = document.querySelector('.quickstart-card:not(.notice-card)');
                 const top = checklist?.getBoundingClientRect?.().top;
                 if (Number.isFinite(top) && top > 0) el.style.bottom = `${Math.round(window.innerHeight - top + 12)}px`;

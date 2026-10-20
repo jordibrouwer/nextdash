@@ -321,6 +321,10 @@ class DashboardConfig {
         // Same contract for the counts that are not bookmarks — widgets, feeds,
         // sources, trash, backups.
         this._statsLibrary = undefined;
+        // Same contract for the Server tab (containers, Unraid, backups) and
+        // the notification routes Health lists.
+        this._statsServer = undefined;
+        this._statsNotify = undefined;
         // How far back the activity chart looks, in days. Restored from the last
         // visit, falling back to 30.
         this.statsRange = DashboardConfig.readStoredStatsRange();
@@ -1054,11 +1058,16 @@ class DashboardConfig {
             finders: all || tab === 'usage',
             health: all || tab === 'health' || tab === 'overview' || tab === 'collection',
             library: all || tab === 'collection',
+            // Overview reads it for the server lines in its attention list.
+            server: all || tab === 'server' || tab === 'overview',
+            notify: all || tab === 'health',
         };
         if (wants.inbox && this._statsInboxItems === undefined) once('inbox', () => this.loadStatsInbox());
         if (wants.finders && this._statsFinders === undefined) once('finders', () => this.loadStatsFinders());
         if (wants.health && this._statsHealth === undefined) once('health', () => this.loadStatsHealth());
         if (wants.library && this._statsLibrary === undefined) once('library', () => this.loadStatsLibrary());
+        if (wants.server && this._statsServer === undefined) once('server', () => this.loadStatsServer());
+        if (wants.notify && this._statsNotify === undefined) once('notify', () => this.loadStatsNotify());
     }
 
     /**
@@ -1285,7 +1294,6 @@ class DashboardConfig {
         d.pageNav?.updatePageTitle?.();
         await this.loadAndRender();
         this.restoreConfigHash();
-        requestAnimationFrame(() => window.DashboardKeyboardTip?.showConfigIntro?.());
         return true;
     }
 
@@ -1551,6 +1559,13 @@ class DashboardConfig {
                 this._logSettingsPopoverClose();
                 return;
             }
+            // Help's More topics menu, the same way.
+            if (this._helpMoreClose) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this._helpMoreClose();
+                return;
+            }
             e.preventDefault();
             // Stop here rather than letting the event bubble on. The tag-filter
             // shortcut listens on document too and registers first, so without
@@ -1579,6 +1594,7 @@ class DashboardConfig {
             b.setAttribute('aria-selected', on ? 'true' : 'false');
             b.setAttribute('tabindex', on ? '0' : '-1');
         });
+        if (attr === 'data-help-tab') this.repaintHelpStripIfNeeded();
     }
 
     /**
@@ -2295,11 +2311,16 @@ class DashboardConfig {
         const widgetsTour = this.section === 'widgets'
             ? `<button type="button" class="lvs-action" data-widgets-tour title="${this.dash.escapeHtml(this.t('config.widgetsTourHint', 'A tour of widgets'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
             : '';
+        // Containers has one too: the tour of the Containers view, a click away
+        // from the settings that feed it.
+        const containersTour = this.section === 'containers'
+            ? `<button type="button" class="lvs-action" data-containers-tour title="${this.dash.escapeHtml(this.t('config.containersTourHint', 'A tour of the Containers view'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
+            : '';
         const markup = (context
             ? this.renderChangedFilterBar(context.section, context.tab)
             : (this.section === 'bookmarks'
                 ? `${healthButton}<span class="config-bm-header-badge">${this.dash.escapeHtml(String(this.configBookmarkPool().length))}</span>`
-                : '')) + widgetsTour;
+                : '')) + widgetsTour + containersTour;
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
         }
@@ -2318,6 +2339,7 @@ class DashboardConfig {
             actions.dataset.bmHealthWired = '1';
             actions.addEventListener('click', (e) => {
                 if (e.target.closest('[data-widgets-tour]')) void this.openWidgetsTour?.();
+                else if (e.target.closest('[data-containers-tour]')) void this.playViewTour('containersTutorialV3');
                 else if (e.target.closest('[data-bm-open-health-modal]')) this.openBmHealthModal?.();
                 else if (e.target.closest('[data-bm-open-structure]')) this.openStructureModal?.('pages');
                 else this.handleLibraryHeaderClick?.(e);
@@ -3704,6 +3726,9 @@ class DashboardConfig {
         { field: 'themeDepth', labelKey: 'themeDepthLabel', fallback: 'Depth', section: 'appearance', subTab: 'surface' },
         { field: 'glowStrength', labelKey: 'glowStrengthLabel', fallback: 'Glow', section: 'appearance', subTab: 'surface' },
         { field: 'themeEffects', labelKey: 'themeEffectsLabel', fallback: 'Effects', section: 'appearance', subTab: 'surface' },
+        { field: 'categorySurface', labelKey: 'categorySurfaceLabel', fallback: 'Category surface', section: 'appearance', subTab: 'surface' },
+        { field: 'widgetSurface', labelKey: 'widgetSurfaceLabel', fallback: 'Widget background', section: 'appearance', subTab: 'surface' },
+        { field: 'widgetOpacity', labelKey: 'widgetOpacityLabel', fallback: 'Widget opacity', section: 'appearance', subTab: 'surface' },
         { field: 'themeSurfacesForceAll', labelKey: 'themeSurfacesForceAllLabel', fallback: 'Use these for every theme', section: 'appearance', subTab: 'surface' },
         { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
         { field: 'colorizeStatus', labelKey: 'colorizeStatus', fallback: 'Colour status on bookmark rows', section: 'appearance', subTab: 'display' },
@@ -3795,6 +3820,7 @@ class DashboardConfig {
         categorySpreadResetScope: ['spread', 'reset', 'columns', 'category'],
         densityMode: ['density', 'spacing', 'compact'],
         categorySpacing: ['spacing', 'gap', 'density'],
+        columnSpacing: ['spacing', 'gap', 'columns', 'space between columns'],
         sideMargin: ['margin', 'padding', 'width'],
         layoutPreset: ['preset', 'layout', 'theme'],
         categoryItemLimit: ['limit', 'items', 'truncate'],
@@ -3813,7 +3839,6 @@ class DashboardConfig {
         categoryHeaderStyle: ['category', 'header', 'heading', 'title', 'underline', 'boxed', 'label', 'group', 'clean'],
         categoryHeaderSize: ['category', 'header', 'heading', 'title', 'size', 'small', 'large'],
         actionBarSize: ['action', 'bar', 'button', 'size', 'small', 'large', 'bigger'],
-        showCategoryIcon: ['category', 'header', 'icon', 'emoji'],
         showCategoryCount: ['category', 'header', 'count', 'number', 'bookmarks'],
         categoryHeaderAccentLine: ['category', 'header', 'underline', 'accent', 'line', 'colour', 'color'],
         showIcons: ['favicon', 'icon', 'image'],
@@ -6740,6 +6765,102 @@ class DashboardConfig {
     }
 
     /** Everything except the destructive actions, which live on their own tab. */
+    /**
+     * The ℹ beside a backup control: the explanation lives in a dialog and not
+     * under every row, so the page reads as a list of things to do.
+     */
+    static DB_INFO = {
+        status: ['dbInfoStatusTitle', 'dbInfoStatusMessage', 'Backups',
+            'A backup is one zip with your bookmarks, pages, widgets and settings. Back up now saves it on this machine; Download gives you the file as well. Keep a copy somewhere other than this machine: a backup next to the data it protects does not survive losing the disk.'],
+        auto: ['dbInfoAutoTitle', 'dbInfoAutoMessage', 'Automatic backups',
+            'nextDash writes a backup on this machine at the interval you choose and keeps the newest ones. Making another one, or restoring, removes the oldest.'],
+        archives: ['dbInfoArchivesTitle', 'dbInfoArchivesMessage', 'Local copies of pages',
+            'A saved page may be the only copy left, and these are by far the largest thing in a backup.'],
+        secrets: ['dbInfoSecretsTitle', 'dbInfoSecretsMessage', 'Tokens and passwords',
+            'Import tokens and the keys a health check signs in with. Including them means a restore needs nothing typed in again, and that the backup file itself is a secret.'],
+        restoreFile: ['dbInfoRestoreFileTitle', 'dbInfoRestoreFileMessage', 'Restore from a file',
+            'Puts an earlier backup back. What it contains replaces what is here. The current data is copied first, so you can go back.'],
+        restoreStored: ['dbInfoRestoreStoredTitle', 'dbInfoRestoreStoredMessage', 'Stored backups',
+            'The copies already on this machine, newest first. Restore puts one back, Download gives you the file, Delete removes it.'],
+        bookmarks: ['dbInfoBookmarksTitle', 'dbInfoBookmarksMessage', 'Bookmarks',
+            'HTML is the format browsers import and export. CSV opens in a spreadsheet and moves bookmarks between nextDash installs.'],
+        settings: ['dbInfoSettingsTitle', 'dbInfoSettingsMessage', 'Settings',
+            'Your settings (looks, layout and options) as a JSON file, without bookmarks. Import it on another nextDash to get the same setup.'],
+    };
+
+    dbInfoButton(key) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const label = this.t('config.settingInfoAria', 'More info');
+        return `<button type="button" class="config-info-btn" data-db-info="${esc(key)}" aria-haspopup="dialog" aria-label="${esc(label)}" title="${esc(label)}">ℹ</button>`;
+    }
+
+    openDbInfo(key) {
+        const info = DashboardConfig.DB_INFO[key];
+        if (!info || !window.AppModal?.alert) return;
+        const [titleKey, msgKey, titleFallback, msgFallback] = info;
+        window.AppModal.alert({
+            title: this.t(`config.${titleKey}`, titleFallback),
+            htmlMessage: this.dash.escapeHtml(this.t(`config.${msgKey}`, msgFallback)),
+            confirmText: this.t('config.gotIt', 'Got it'),
+        });
+    }
+
+    /** The top of Backups & data: is my data safe, and the two buttons that make it so. */
+    renderBackupStatus() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const data = this._backupData;
+        if (data == null) {
+            return `<div class="config-panel config-db-status"><p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p></div>`;
+        }
+        const backups = Array.isArray(data.backups) ? data.backups : [];
+        const newest = backups[0];
+        const lastError = String(data.lastRunError || '').trim();
+        let tone = 'good';
+        let headline = this.t('config.dbStatusGood', 'Your data is backed up');
+        let detail;
+        if (lastError) {
+            tone = 'bad';
+            headline = this.t('config.dbStatusFailed', 'The last automatic backup failed');
+            detail = lastError;
+        } else if (!newest) {
+            tone = 'warn';
+            headline = this.t('config.dbStatusNone', 'No backup yet');
+            detail = this.t('config.dbStatusNoneDetail', 'Make one now, or turn on automatic backups below.');
+        } else {
+            const last = this.t('config.dbStatusLast', 'Last backup {when}.').replace('{when}', this.formatRelative(newest.createdAt));
+            const next = data.enabled
+                ? (Date.parse(data.nextBackupAt || '')
+                    ? this.t('config.dbStatusNext', 'Next one {when}.').replace('{when}', this.formatRelative(data.nextBackupAt))
+                    : this.t('config.backupAutoOn', 'Auto-backup on'))
+                : this.t('config.dbStatusAutoOff', 'Automatic backups are off.');
+            detail = `${last} ${next}`;
+        }
+        const total = backups.reduce((sum, b) => sum + (Number(b.size) || 0), 0);
+        const stat = (label, value) => `<div class="config-db-stat"><span>${esc(label)}</span><b>${esc(value)}</b></div>`;
+        const stats = [
+            stat(this.t('config.dbStatStored', 'Stored'), String(backups.length)),
+            stat(this.t('config.dbStatSize', 'Size of the newest'), newest ? this.formatBytes(newest.size) : '-'),
+            stat(this.t('config.dbStatDisk', 'On disk'), backups.length ? this.formatBytes(total) : '-'),
+            stat(this.t('config.dbStatBookmarks', 'Bookmarks in it'), newest && Number(newest.bookmarks) ? this.statsNumber(Number(newest.bookmarks)) : '-'),
+        ].join('');
+        const mark = tone === 'good' ? '✓' : '!';
+        return `
+            <div class="config-panel config-db-status config-db-status--${tone}" data-db-status="${tone}">
+                <div class="config-db-status-head">
+                    <span class="config-db-status-mark" aria-hidden="true">${mark}</span>
+                    <div class="config-db-status-text">
+                        <h3 class="config-panel-title">${esc(headline)} ${this.dbInfoButton('status')}</h3>
+                        <p class="config-panel-note">${esc(detail)}</p>
+                    </div>
+                    <div class="config-db-status-actions">
+                        <button type="button" class="config-btn config-btn--primary" data-backup-action="run">${esc(this.t('config.backupRunNowShort', 'Back up now'))}</button>
+                        <button type="button" class="config-btn" data-backup-action="download">${esc(this.t('config.backupDownloadShort', 'Download'))}</button>
+                    </div>
+                </div>
+                <div class="config-db-stats">${stats}</div>
+            </div>`;
+    }
+
     renderDataBackupsMain() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
@@ -6756,116 +6877,64 @@ class DashboardConfig {
                 return `<option value="${days}" ${selected ? 'selected' : ''}>${esc(label)}</option>`;
             }).join('');
 
-        const loading = this._backupData == null;
-        const tiles = loading
-            ? `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`
-            : `<div class="config-tiles" role="list">${this.dataBackupsTiles().map((t) => this.renderTile(t)).join('')}</div>`;
-
+        const toggle = (name, checked, label, infoKey, extra = '') => `
+            <div class="config-db-toggle">
+                <label class="config-toggle">
+                    <input type="checkbox" data-backup-toggle="${name}" ${checked ? 'checked' : ''}>
+                    <span>${esc(label)}</span>
+                </label>
+                ${this.dbInfoButton(infoKey)}
+                ${extra}
+            </div>`;
+        const row = (title, infoKey, note, actions) => `
+            <div class="config-db-row">
+                <div class="config-db-row-text">
+                    <b>${esc(title)}${infoKey ? ` ${this.dbInfoButton(infoKey)}` : ''}</b>
+                    <span>${esc(note)}</span>
+                </div>
+                <div class="config-db-row-actions">${actions}</div>
+            </div>`;
+        const btn = (action, label) => `<button type="button" class="config-btn" data-backup-action="${action}">${esc(label)}</button>`;
 
         return `
-            ${tiles}
+            ${this.renderBackupStatus()}
 
-            <details class="config-panel config-source-panel"
-                data-fold="backup:create" ${this.foldIsOpen('backup:create', true) ? 'open' : ''}>
-                <summary class="config-source-summary">
-                    <span class="config-source-summary-text">
-                        <span class="config-panel-title">${esc(this.t('config.backupCreateTitle', 'Backup'))}</span>
-                        <span class="config-source-summary-note">${esc(this.t('config.backupCreateSummary',
-                            'Make one now, or have one made on a schedule — and choose what it carries.'))}</span>
-                    </span>
-                </summary>
-                <div class="config-actions">
-                    <button type="button" class="config-btn" data-backup-action="download">${esc(this.t('config.backupDownload', 'Download backup'))}</button>
-                    <button type="button" class="config-btn" data-backup-action="run">${esc(this.t('config.backupRunNow', 'Make a backup now'))}</button>
-                </div>
-                <label class="config-toggle">
-                    <input type="checkbox" data-backup-toggle="autoBackupEnabled" ${s.autoBackupEnabled ? 'checked' : ''}>
-                    <span>${esc(this.t('config.autoBackupEnabledLabel', 'Create a backup automatically'))}</span>
-                </label>
-                <div class="config-field" style="margin-top:12px">
-                    <span class="config-field-label">${esc(this.t('config.autoBackupIntervalLabel', 'How often'))}</span>
-                    <select class="config-select" data-backup-select="autoBackupIntervalDays" ${s.autoBackupEnabled ? '' : 'disabled'}>${backupIntervalOptions}</select>
-                </div>
+            <h3 class="config-db-group">${esc(this.t('config.dbGroupProtect', 'Protect'))}</h3>
+            <div class="config-panel">
+                ${toggle('autoBackupEnabled', s.autoBackupEnabled, this.t('config.autoBackupEnabledLabel', 'Create a backup automatically'), 'auto',
+                    `<select class="config-select config-db-interval" aria-label="${esc(this.t('config.autoBackupIntervalLabel', 'How often'))}" data-backup-select="autoBackupIntervalDays" ${s.autoBackupEnabled ? '' : 'disabled'}>${backupIntervalOptions}</select>`)}
+                ${toggle('backupIncludeArchives', !s.backupExcludeArchives, this.t('config.backupIncludeArchivesLabel', 'Local copies of pages'), 'archives')}
+                ${toggle('backupIncludeSecrets', !s.backupExcludeSecrets, this.t('config.backupIncludeSecretsLabel', 'Tokens and passwords'), 'secrets')}
+            </div>
 
-                <p class="config-panel-note" style="margin-top:16px">${esc(this.t('config.backupContentsTitle',
-                    'What a backup carries'))}</p>
-                <label class="config-toggle">
-                    <input type="checkbox" data-backup-toggle="backupIncludeArchives"
-                        ${s.backupExcludeArchives ? '' : 'checked'}>
-                    <span>${esc(this.t('config.backupIncludeArchivesLabel', 'Local copies of pages'))}</span>
-                </label>
-                <p class="config-field-note">${esc(this.t('config.backupIncludeArchivesNote',
-                    'A saved page may be the only copy left, and these are by far the largest thing in a backup.'))}</p>
-                <label class="config-toggle" style="margin-top:10px">
-                    <input type="checkbox" data-backup-toggle="backupIncludeSecrets"
-                        ${s.backupExcludeSecrets ? '' : 'checked'}>
-                    <span>${esc(this.t('config.backupIncludeSecretsLabel', 'Tokens and passwords'))}</span>
-                </label>
-                <p class="config-field-note">${esc(this.t('config.backupIncludeSecretsNote',
-                    'Import tokens and the keys a health check signs in with. Including them means a restore needs nothing typed in again — and that the backup file itself is a secret.'))}</p>
-            </details>
-
-            <details class="config-panel config-source-panel"
-                data-fold="backup:stored" ${this.foldIsOpen('backup:stored', false) ? 'open' : ''}>
-                <summary class="config-source-summary">
-                    <span class="config-source-summary-text">
-                        <span class="config-panel-title">${esc(this.t('config.backupStoredTitle', 'Stored backups'))}</span>
-                        <span class="config-source-summary-note">${esc(this.t('config.backupStoredSummary',
-                            'The copies already on this machine, newest first.'))}</span>
-                    </span>
-                </summary>
-                <div id="config-backup-list">${this.renderBackupList()}</div>
-            </details>
-
-            <details class="config-panel config-source-panel"
-                data-fold="backup:zip" ${this.foldIsOpen('backup:zip', false) ? 'open' : ''}>
-                <summary class="config-source-summary">
-                    <span class="config-source-summary-text">
-                        <span class="config-panel-title">${esc(this.t('config.backupsZipSectionTitle', 'Full backup (zip)'))}</span>
-                        <span class="config-source-summary-note">${esc(this.t('config.backupsZipSummary',
-                            'Put an earlier backup back. What it contains replaces what is here.'))}</span>
-                    </span>
-                </summary>
-                <div class="config-actions">
-                    <button type="button" class="config-btn" data-backup-action="import">${esc(this.t('config.backupImport', 'Import backup…'))}</button>
+            <h3 class="config-db-group">${esc(this.t('config.dbGroupRestore', 'Restore'))}</h3>
+            <div class="config-panel">
+                ${row(this.t('config.dbRestoreFile', 'From a file'), 'restoreFile',
+                    this.t('config.backupsZipSummary', 'Put an earlier backup back. What it contains replaces what is here.'),
+                    btn('import', this.t('config.backupImport', 'Import backup…')))}
+                <div class="config-db-stored">
+                    <p class="config-db-stored-title">${esc(this.t('config.backupStoredTitle', 'Stored backups'))} ${this.dbInfoButton('restoreStored')}</p>
+                    <div id="config-backup-list">${this.renderBackupList()}</div>
                 </div>
                 <input type="file" id="config-import-input" accept=".zip" hidden>
-            </details>
+            </div>
 
-            <details class="config-panel config-source-panel"
-                data-fold="backup:bookmarks" ${this.foldIsOpen('backup:bookmarks', false) ? 'open' : ''}>
-                <summary class="config-source-summary">
-                    <span class="config-source-summary-text">
-                        <span class="config-panel-title">${esc(this.t('config.backupsImportExportSectionTitle', 'Import & export bookmarks'))}</span>
-                        <span class="config-source-summary-note">${esc(this.t('config.csvExportDescription', 'Export every bookmark as a CSV file, or import bookmarks exported from a browser.'))}</span>
-                    </span>
-                </summary>
-                <div class="config-actions">
-                    <button type="button" class="config-btn" data-backup-action="html-export">${esc(this.t('config.htmlExportBtn', 'Export bookmarks (HTML)'))}</button>
-                    <button type="button" class="config-btn" data-backup-action="csv-export">${esc(this.t('config.csvExportBtn', 'Export bookmarks (CSV)'))}</button>
-                    <button type="button" class="config-btn" data-backup-action="csv-import">${esc(this.t('config.csvImportBtn', 'Import bookmarks (CSV)'))}</button>
-                    <button type="button" class="config-btn" data-backup-action="browser-import">${esc(this.t('config.browserImportBtn', 'Import browser bookmarks…'))}</button>
-                </div>
+            <h3 class="config-db-group">${esc(this.t('config.dbGroupMove', 'Move'))}</h3>
+            <div class="config-panel">
+                ${row(this.t('config.dbMoveBookmarks', 'Bookmarks'), 'bookmarks',
+                    this.t('config.dbMoveBookmarksNote', 'To or from a browser, or a spreadsheet.'),
+                    btn('html-export', this.t('config.htmlExportBtn', 'Export bookmarks (HTML)'))
+                    + btn('csv-export', this.t('config.csvExportBtn', 'Export bookmarks (CSV)'))
+                    + btn('csv-import', this.t('config.csvImportBtn', 'Import bookmarks (CSV)'))
+                    + btn('browser-import', this.t('config.browserImportBtn', 'Import browser bookmarks…')))}
+                ${row(this.t('config.settingsSection', 'Settings'), 'settings',
+                    this.t('config.settingsExportDescription', 'Move just your settings between instances as a JSON file.'),
+                    btn('settings-export', this.t('config.settingsExportBtn', 'Export settings (JSON)'))
+                    + btn('settings-import', this.t('config.settingsImportBtn', 'Import settings…')))}
                 <input type="file" id="config-browser-import-input" accept=".html,.htm" hidden>
                 <input type="file" id="config-csv-import-input" accept=".csv,text/csv" hidden>
-            </details>
-
-            <details class="config-panel config-source-panel"
-                data-fold="backup:settings" ${this.foldIsOpen('backup:settings', false) ? 'open' : ''}>
-                <summary class="config-source-summary">
-                    <span class="config-source-summary-text">
-                        <span class="config-panel-title">${esc(this.t('config.settingsSection', 'Settings'))}</span>
-                        <span class="config-source-summary-note">${esc(this.t('config.settingsExportDescription', 'Move just your settings between instances as a JSON file.'))}</span>
-                    </span>
-                </summary>
-                <div class="config-actions">
-                    <button type="button" class="config-btn" data-backup-action="settings-export">${esc(this.t('config.settingsExportBtn', 'Export settings (JSON)'))}</button>
-                    <button type="button" class="config-btn" data-backup-action="settings-import">${esc(this.t('config.settingsImportBtn', 'Import settings…'))}</button>
-                </div>
                 <input type="file" id="config-settings-import-input" accept=".json" hidden>
-            </details>
-
-
+            </div>
         `;
     }
 
@@ -8082,6 +8151,12 @@ class DashboardConfig {
         });
         container.querySelectorAll('[data-backup-action]').forEach((btn) => {
             btn.addEventListener('click', () => this.handleBackupAction(btn.getAttribute('data-backup-action')));
+        });
+        container.querySelectorAll('[data-db-info]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.openDbInfo(btn.getAttribute('data-db-info'));
+            });
         });
         container.querySelectorAll('[data-backup-item]').forEach((btn) => {
             btn.addEventListener('click', () => {
@@ -9853,6 +9928,11 @@ class DashboardConfig {
         // unprompted card (see dashboard-quickstart.js shouldStart).
         if (this.dash.settings.quickStart && typeof this.dash.settings.quickStart === 'object') {
             this.dash.settings.quickStart.dismissed = false;
+            // The start guide starts over too: its steps and the quiet period
+            // after it. Empty values, not deleted keys: the server keeps a
+            // field the save leaves out.
+            this.dash.settings.quickStart.stepsDone = [];
+            this.dash.settings.quickStart.completedAt = 0;
         }
         // The dialog promises the tour and the tips, and only the quick-start
         // card came back: the tip and tour ids live in discoverabilityState,
@@ -9948,7 +10028,7 @@ class DashboardConfig {
         }).join('');
 
         const presets = (window.DashboardFont?.PRESET_IDS) || ['source-code-pro', 'jetbrains-mono', 'ibm-plex-mono', 'inter', 'ibm-plex-sans', 'dm-sans', 'system'];
-        const activePreset = window.DashboardFont?.resolveActiveFontPreset?.(s) || s.fontPreset || 'source-code-pro';
+        const activePreset = window.DashboardFont?.resolveActiveFontPreset?.(s) || s.fontPreset || 'inter';
         const fontPresetOptions = presets.map((p) =>
             `<option value="${esc(p)}" ${p === activePreset ? 'selected' : ''}>${esc(this.fontPresetLabel(p))}</option>`
         ).join('');
@@ -10082,7 +10162,7 @@ class DashboardConfig {
         }
 
         return shell(`
-            <div class="config-panel">
+            <div class="config-panel config-panel--theme-controls">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceThemeTitle', 'Theme'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.appearanceThemeNote', 'Pick a built-in theme or follow your system. Edit the colours of any theme, or build your own, in the theme editor.'))}</p>
                 <div class="config-field">
@@ -10090,7 +10170,7 @@ class DashboardConfig {
                     <div class="config-theme-row">
                         ${this.renderThemePicker()}
                         <button type="button" class="config-btn config-theme-browse"
-                                data-appearance-action="browse-themes">${esc(this.t('config.openThemeBrowser', 'Browse…'))}</button>
+                                data-appearance-action="browse-themes">${esc(this.t('config.openThemeBrowser', 'Open theme studio'))}</button>
                     </div>
                     ${this.appearanceAff('theme')}
                 </div>
@@ -10101,6 +10181,7 @@ class DashboardConfig {
                         <button type="button" class="config-choice${theme === 'light' ? ' is-active' : ''}" data-appearance-theme="light" aria-pressed="${theme === 'light'}">${esc(this.t('config.themeLight', 'Light'))}</button>
                         <button type="button" class="config-choice${theme === 'dark' ? ' is-active' : ''}" data-appearance-theme="dark" aria-pressed="${theme === 'dark'}">${esc(this.t('config.themeDark', 'Dark'))}</button>
                     </div>
+                    ${this.infoAff('quickMode')}
                 </div>
                 <div class="config-field-row">
                     <label class="config-toggle">
@@ -10865,6 +10946,7 @@ class DashboardConfig {
         // `select` only: the theme picker shares the data-appearance-select hook
         // so search and the changed-filter still find it, but it is a button with
         // its own listbox and no change event to listen for.
+        this.bindWidgetOpacity(container);
         container.querySelectorAll('select[data-appearance-select]').forEach((select) => {
             select.addEventListener('change', () => this.setAppearanceSelect(select.getAttribute('data-appearance-select'), select.value));
         });
@@ -11764,7 +11846,7 @@ class DashboardConfig {
         const storedGone = this.dash.settings?.theme === id;
         const wasActive = storedGone || shownBefore === id;
         if (storedGone) {
-            this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'slate-dark';
+            this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'look-confetti-dark';
         }
         if (storedGone || rowsLeft) void this.saveSettingsWithFeedback();
         this.repaintAppearanceBody();
@@ -12318,7 +12400,7 @@ class DashboardConfig {
     }
 
     /** Hand-written Appearance fields that already explain themselves in a note. */
-    static APPEARANCE_OWN_NOTES = new Set(['themeEditor', 'themeDepth', 'glowStrength', 'themeEffects',
+    static APPEARANCE_OWN_NOTES = new Set(['themeEditor', 'themeDepth', 'glowStrength', 'themeEffects', 'categorySurface',
         'themeSurfacesForceAll', 'inkGap', 'themeBackdrop', 'backgroundPattern',
         'iconStylingStyle', 'iconStylingIntensity']);
 
@@ -12465,6 +12547,7 @@ class DashboardConfig {
             case 'themeDepth': this.setSurface('themeDepth', value); break;
             case 'glowStrength': this.setSurface('glowStrength', value); break;
             case 'themeEffects': this.setSurface('themeEffects', value); break;
+            case 'categorySurface': this.setSurface('categorySurface', value); break;
             case 'animationSpeed':
                 this.dash.settings.animationSpeed = 'normal';
                 window.VisualSettings?.applyAnimationSpeed?.('normal');
@@ -12521,7 +12604,7 @@ class DashboardConfig {
         const settings = this.dash.settings;
         if (!settings) return;
         const themeId = this.currentThemeId();
-        const key = { themeDepth: 'depth', glowStrength: 'glow', themeEffects: 'effects' }[field];
+        const key = { themeDepth: 'depth', glowStrength: 'glow', themeEffects: 'effects', categorySurface: 'catSurface' }[field];
 
         if (this.surfaceScope() === 'global') {
             settings[field] = value;
@@ -12566,6 +12649,11 @@ class DashboardConfig {
         settings.themeDepth = 'follow';
         settings.glowStrength = 'follow';
         settings.themeEffects = 'follow';
+        settings.categorySurface = 'follow';
+        settings.widgetSurface = 'background';
+        window.ThemeLoader?.applyWidgetSurface?.('background');
+        settings.widgetOpacity = 50;
+        window.ThemeLoader?.applyWidgetOpacity?.(50);
 
         void this.applyResolvedSurfaces();
         this.persistAppearance();
@@ -12591,7 +12679,7 @@ class DashboardConfig {
     surfaceSelectValue(field) {
         const settings = this.dash.settings || {};
         if (this.surfaceScope() === 'global') return settings[field] || 'follow';
-        const key = { themeDepth: 'depth', glowStrength: 'glow', themeEffects: 'effects' }[field];
+        const key = { themeDepth: 'depth', glowStrength: 'glow', themeEffects: 'effects', categorySurface: 'catSurface' }[field];
         return settings.themeSurfacePrefs?.[this.currentThemeId()]?.[key] || 'follow';
     }
 
@@ -12714,10 +12802,12 @@ class DashboardConfig {
                     d.settings.themeDepth = body?.getAttribute('data-depth') || 'soft';
                     d.settings.glowStrength = body?.getAttribute('data-glow') || 'off';
                     d.settings.themeEffects = body?.getAttribute('data-effects') || 'held';
+                    d.settings.categorySurface = body?.getAttribute('data-cat-surface') || 'glass';
                 } else {
                     d.settings.themeDepth = 'follow';
                     d.settings.glowStrength = 'follow';
                     d.settings.themeEffects = 'follow';
+                    d.settings.categorySurface = 'follow';
                 }
                 void this.applyResolvedSurfaces();
                 this.repaintAppearanceBody();
@@ -12888,10 +12978,42 @@ class DashboardConfig {
             glowStrength: ['follow', 'off', 'soft', 'full'],
             themeDepth: ['follow', 'flat', 'soft', 'rich', 'vivid', 'glass'],
             themeEffects: ['follow', 'off', 'held', 'full'],
+            categorySurface: ['follow', 'glass', 'card', 'open'],
         };
         if (surfaces[name]) {
             this.setSurface(name, surfaces[name].includes(value) ? value : 'follow');
         }
+        if (name === 'widgetSurface') this.setWidgetSurface(value);
+    }
+
+    /**
+     * Widget opacity: how solid a widget's card is, 0 to 40 percent. Painted
+     * while the slider moves, saved when it is let go.
+     */
+    bindWidgetOpacity(container) {
+        const range = container.querySelector('[data-appearance-range="widgetOpacity"]');
+        if (!range || range.dataset.wired === '1') return;
+        range.dataset.wired = '1';
+        range.addEventListener('input', () => {
+            const percent = window.ThemeLoader?.applyWidgetOpacity?.(range.value) ?? Number(range.value);
+            this.dash.settings.widgetOpacity = percent;
+            const out = range.parentElement?.querySelector('.config-range-value');
+            if (out) out.textContent = `${percent}%`;
+        });
+        range.addEventListener('change', () => this.persistAppearance());
+    }
+
+    /**
+     * Widget background: whether a widget draws a background of its own. An
+     * install-wide word (auto, background, none), painted at once and saved
+     * with the rest of the appearance.
+     */
+    setWidgetSurface(value) {
+        const word = ['auto', 'background', 'none'].includes(value) ? value : 'auto';
+        if (!this.dash.settings) return;
+        this.dash.settings.widgetSurface = word;
+        window.ThemeLoader?.applyWidgetSurface?.(word);
+        this.persistAppearance();
     }
 
     /**
@@ -13081,8 +13203,9 @@ class DashboardConfig {
         weatherLocation: { info: ['weatherLocationInfoTitle', 'weatherLocationInfoMessage'], def: '' },
         // Layout
         columnsPerRow: { info: ['columnsInfoTitle', 'columnsInfoMessage'], def: 3 },
-        densityMode: { info: ['densityModeInfoTitle', 'densityModeInfoMessage'], def: 'compact' },
-        categorySpacing: { info: ['categorySpacingInfoTitle', 'categorySpacingInfoMessage'], def: 'balanced' },
+        densityMode: { info: ['densityModeInfoTitle', 'densityModeInfoMessage'], def: 'auto' },
+        categorySpacing: { info: ['categorySpacingInfoTitle', 'categorySpacingInfoMessage'], def: 'theme' },
+        columnSpacing: { info: ['columnSpacingInfoTitle', 'columnSpacingInfoMessage', 'Space between columns', 'How much room sits between one column and the next, across the page. Space between categories sets the room down the page.'], def: 'theme' },
         sideMargin: { info: ['sideMarginInfoTitle', 'sideMarginInfoMessage'], def: 'balanced' },
         packedColumns: { info: ['packedColumnsInfoTitle', 'packedColumnsInfoMessage'], def: true },
         defaultCategorySpread: { info: ['defaultCategorySpreadInfoTitle', 'defaultCategorySpreadInfoMessage'], hint: 'defaultCategorySpreadHint', def: true },
@@ -13090,7 +13213,7 @@ class DashboardConfig {
         interleaveMode: { info: ['interleaveModeInfoTitle', 'interleaveModeInfoMessage'], def: false },
         hideEmptyCategories: { info: ['hideEmptyCategoriesInfoTitle', 'hideEmptyCategoriesInfoMessage'], def: true },
         alwaysCollapseCategories: { info: ['alwaysCollapseCategoriesInfoTitle', 'alwaysCollapseCategoriesInfoMessage'], def: false },
-        layoutPreset: { info: ['layoutPresetInfoTitle', 'layoutPresetInfoMessage'], def: 'default' },
+        layoutPreset: { info: ['layoutPresetInfoTitle', 'layoutPresetInfoMessage'], def: 'masonry' },
         categoryItemLimit: { info: ['categoryItemLimitInfoTitle', 'categoryItemLimitInfoMessage'], hint: 'categoryItemLimitHint', def: 15 },
         launcherIconSize: { info: ['launcherIconSizeInfoTitle', 'launcherIconSizeInfoMessage'], def: 'normal' },
         // Bookmark display
@@ -13233,7 +13356,7 @@ class DashboardConfig {
         bookmarkArchiveUrl: { info: ['bookmarkArchiveUrlInfoTitle', 'bookmarkArchiveUrlInfoMessage'], def: 'https://web.archive.org/web/*/{url}' },
         pasteDestination: { hint: 'pasteDestinationHint', def: 'ask' },
         monitorEmphasis: { hint: 'monitorEmphasisHint', def: 'problems' },
-        theme: { def: 'slate-dark' },
+        theme: { def: 'look-confetti-dark' },
         // Appearance → Theme: the three Surfaces answers and the two Backdrop
         // ones. Without a `def` renderFieldAffordances draws no ↺ at all, which
         // is why these five were the only controls on the page without one.
@@ -13252,15 +13375,14 @@ class DashboardConfig {
         themeDepth: { info: ['themeDepthInfoTitle', 'themeDepthInfoMessage'], def: 'follow' },
         glowStrength: { info: ['glowStrengthInfoTitle', 'glowStrengthInfoMessage'], def: 'follow' },
         themeEffects: { info: ['themeEffectsInfoTitle', 'themeEffectsInfoMessage'], def: 'follow' },
+        categorySurface: { info: ['categorySurfaceInfoTitle', 'categorySurfaceInfoMessage'], def: 'follow' },
         themeSurfacesForceAll: { info: ['themeSurfacesForceAllInfoTitle', 'themeSurfacesForceAllInfoMessage'], def: false },
         inkGap: { info: ['inkGapInfoTitle', 'inkGapInfoMessage'], def: 0.47 },
         themeBackdrop: { info: ['themeBackdropInfoTitle', 'themeBackdropInfoMessage'], def: 'follow' },
         categoryHeaderStyle: { info: ['categoryHeaderStyleInfoTitle', 'categoryHeaderStyleInfoMessage',
             'Category header style', 'How the name above each category is drawn: clean, underlined, in a box, as a small label, or as the head of a card round the whole group. Follow the theme leaves it as the theme and the layout draw it.'], def: 'theme' },
         categoryHeaderSize: { info: ['categoryHeaderSizeInfoTitle', 'categoryHeaderSizeInfoMessage',
-            'Header size', 'How large the category names are drawn, from a small label to a heading.'], def: 'm' },
-        showCategoryIcon: { info: ['showCategoryIconInfoTitle', 'showCategoryIconInfoMessage',
-            'Category icon', 'Shows the icon a category was given in front of its name. The icon is chosen per category, from its menu.'], def: true },
+            'Header size', 'How large the category names are drawn, from a small label to a heading.'], def: 's' },
         showCategoryCount: { info: ['showCategoryCountInfoTitle', 'showCategoryCountInfoMessage',
             'Bookmark count', 'Shows how many bookmarks a category holds beside its name.'], def: false },
         categoryHeaderAccentLine: { info: ['categoryHeaderAccentLineInfoTitle', 'categoryHeaderAccentLineInfoMessage',
@@ -13336,7 +13458,7 @@ class DashboardConfig {
         animationsEnabled: { info: ['enableAnimationsInfoTitle', 'enableAnimationsInfoMessage'], def: true },
         viewAnimationsEnabled: { info: ['viewAnimationsInfoTitle', 'viewAnimationsInfoMessage'], def: true },
         animationSpeed: { info: ['animationSpeedInfoTitle', 'animationSpeedInfoMessage'], def: 'normal' },
-        fontPreset: { info: ['fontPresetInfoTitle', 'fontPresetInfoMessage'], def: 'source-code-pro' },
+        fontPreset: { info: ['fontPresetInfoTitle', 'fontPresetInfoMessage'], def: 'inter' },
         fontWeight: { info: ['fontWeightInfoTitle', 'fontWeightInfoMessage'], def: 'normal' },
         backgroundType: { info: ['backgroundPickerInfoTitle', 'backgroundPickerInfoMessage'], def: 'none' },
         backgroundOpacity: { info: ['backgroundOpacityInfoTitle', 'backgroundOpacityInfoMessage'], def: 1 },
@@ -14095,7 +14217,7 @@ class DashboardConfig {
                 demoLocked: true,
                 kind: 'privacy',
                 title: t('config.generalGroupOnboarding', 'Onboarding'),
-                note: t('config.generalGroupOnboardingNote', 'The quick-start card, the occasional keyboard tip, the release summary, and the two review offers.'),
+                note: t('config.generalGroupOnboardingNote', 'The Quick start bar and guide, the occasional keyboard tip, the release summary, and the two review offers.'),
                 controls: [
                     bool('enableSessionTips', 'config.sessionTipsLabel', 'Show occasional keyboard tips'),
                     // The two cards that offer a review on their own. Here
@@ -14235,9 +14357,16 @@ class DashboardConfig {
                     // is spatial, so seeing all three at once — and the sentence
                     // under each — beats hiding two of them behind a click.
                     { field: 'categorySpacing', type: 'cards', label: t('config.categorySpacingLabel', 'Space between categories'), special: 'chromeRender', art: 'spacing', options: [
+                        { value: 'theme', label: t('config.categorySpacingTheme', 'Follow the theme'), body: t('config.categorySpacingThemeBody', 'Balanced, and airy on Confetti.') },
                         { value: 'snug', label: t('config.categorySpacingSnug', 'Snug'), body: t('config.categorySpacingSnugBody', 'Rows sit close together.') },
-                        { value: 'balanced', label: t('config.categorySpacingBalanced', 'Balanced'), body: t('config.categorySpacingBalancedBody', 'The default.') },
+                        { value: 'balanced', label: t('config.categorySpacingBalanced', 'Balanced'), body: t('config.categorySpacingBalancedBody', 'A steady gap.') },
                         { value: 'airy', label: t('config.categorySpacingAiry', 'Airy'), body: t('config.categorySpacingAiryBody', 'Extra room between rows.') },
+                    ] },
+                    { field: 'columnSpacing', type: 'cards', label: t('config.columnSpacingLabel', 'Space between columns'), special: 'chromeRender', art: 'columnGap', options: [
+                        { value: 'theme', label: t('config.columnSpacingTheme', 'Follow the theme'), body: t('config.columnSpacingThemeBody', 'Balanced, and airy on Confetti.') },
+                        { value: 'snug', label: t('config.columnSpacingSnug', 'Snug'), body: t('config.columnSpacingSnugBody', 'Columns sit close together.') },
+                        { value: 'balanced', label: t('config.columnSpacingBalanced', 'Balanced'), body: t('config.columnSpacingBalancedBody', 'A steady gap.') },
+                        { value: 'airy', label: t('config.columnSpacingAiry', 'Airy'), body: t('config.columnSpacingAiryBody', 'Extra room between columns.') },
                     ] },
                     { field: 'sideMargin', type: 'cards', label: t('config.sideMarginLabel', 'Page margins'), special: 'chromeRender', art: 'margins', options: [
                         { value: 'snug', label: t('config.sideMarginSnug', 'Snug'), body: t('config.sideMarginSnugBody', 'Narrow edges — more room for columns.') },
@@ -14375,7 +14504,7 @@ class DashboardConfig {
                 tab: 'display',
                 order: -10,
                 title: t('config.categoryHeaderGroup', 'Category header'),
-                note: t('config.categoryHeaderNote', 'What a category is called above its bookmarks. Follow the theme leaves it as the theme and layout draw it. The icon is chosen per category, from its menu.'),
+                note: t('config.categoryHeaderNote', 'What a category is called above its bookmarks. Follow the theme leaves it as the theme and layout draw it. An icon goes in the name: an emoji, or one from the category menu (Insert icon…).'),
                 controls: [
                     { field: 'categoryHeaderStyle', type: 'select', special: 'chrome',
                         label: t('config.categoryHeaderStyleLabel', 'Style'),
@@ -14395,7 +14524,6 @@ class DashboardConfig {
                             opt('l', t('config.categoryHeaderLarge', 'Large')),
                         ] },
                     { type: 'chips', label: t('config.categoryHeaderExtrasLabel', 'Shown in the header'), items: [
-                        chip('showCategoryIcon', 'chrome', 'config.chipCategoryIcon', 'Icon', 'config.showCategoryIconLabel', 'Show the category icon'),
                         chip('showCategoryCount', 'chrome', 'config.chipCategoryCount', 'Count', 'config.showCategoryCountLabel', 'Show how many bookmarks it holds'),
                         chip('categoryHeaderAccentLine', 'chrome', 'config.chipCategoryUnderline', 'Underline', 'config.categoryHeaderAccentLabel', 'Underline in the accent colour'),
                     ] },
@@ -17279,9 +17407,9 @@ class DashboardConfig {
     renderOnboardingActions() {
         const esc = (v) => this.dash.escapeHtml(v);
         const body = `
-                <p class="config-panel-note">${esc(this.t('config.resetOnboardingHint', 'Show the quick-start card again on the dashboard.'))}</p>
+                <p class="config-panel-note">${esc(this.t('config.resetOnboardingHint', 'Show the Quick start bar and guide again on the dashboard.'))}</p>
                 <div class="config-actions">
-                    <button type="button" class="config-btn" data-behavior-action="reset-onboarding">${esc(this.t('config.resetOnboardingButton', 'Show quick-start card again'))}</button>
+                    <button type="button" class="config-btn" data-behavior-action="reset-onboarding">${esc(this.t('config.resetOnboardingButton', 'Show quick start again'))}</button>
                     <button type="button" class="config-btn" data-behavior-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>
                 </div>
                 ${this.renderTourReplayRow()}
@@ -17312,6 +17440,7 @@ class DashboardConfig {
         { id: 'kept-pile', promo: 'kept-pile-v1', labelKey: 'config.noticeKeptPile', label: 'Kept links piling up' },
         { id: 'clock-weather', promo: 'clock-weather-v1', labelKey: 'config.noticeClockWeather', label: 'Clock and weather' },
         { id: 'theme-browser', promo: 'theme-browser-try-v1', labelKey: 'config.noticeThemeBrowser', label: 'Theme browser' },
+        { id: 'theme-studio', promo: 'theme-studio-hint-v1', labelKey: 'config.noticeThemeStudio', label: 'Theme studio shortcut' },
         { id: 'tag-suggestions', keys: ['tagSuggestionNoticeDoneOn', 'tagSuggestionNoticeSnoozeUntil', 'tagSuggestionNoticeSeenCount'],
           labelKey: 'config.noticeTagSuggestions', label: 'Tag suggestions' },
         { id: 'health-review', keys: ['nextdashHealthReviewDoneOn', 'nextdashHealthReviewSnoozeUntil'],
@@ -17532,7 +17661,7 @@ class DashboardConfig {
             // over.
             if (this.dash.settings?.quickStart && typeof this.dash.settings.quickStart === 'object') {
                 this.dash.settings.quickStart.dismissed = false;
-                // And the first-start card before it. An empty string, not a
+                // And the start guide before it. An empty string, not a
                 // deleted key: the server keeps a field the save leaves out.
                 this.dash.settings.quickStart.templatePicked = '';
             }
@@ -17922,6 +18051,7 @@ class DashboardConfig {
             'collection': ['config.statsNoteCollection', 'What the collection holds and how it is built up: categories, domains, tags and age.'],
             'inbox': ['config.statsNoteInbox', 'What arrived, what you filed, and how long things wait before you get to them.'],
             'health': ['config.statsNoteHealth', 'Whether everything still answers, how reliably, and what is wearing out.'],
+            'server': ['config.statsNoteServer', 'The machine behind the dashboard: containers, Unraid and backups.'],
         },
         containers: {
             'connection': ['config.containersNoteConnection', 'How nextDash reaches Docker, and whether that connection works right now.'],
@@ -18003,19 +18133,22 @@ class DashboardConfig {
             const label = this.subTabLabel(section, tab);
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}${isNew ? ' config-subtab--animated' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-${section}-body" ${attr}="${esc(tab)}">${esc(label)}${stars}</button>`;
         };
-        if (isAppearance) {
+        if (section === 'help') {
+            // One row: Basics, the open tab when it lives in the menu, and the
+            // menu's button. The menu itself is built when it opens.
+            const more = this.t('config.helpMoreTopics', 'More topics');
+            return `<div class="config-subtabs config-subtabs--more" role="tablist">${this.helpStripTabs().map(button).join('')}<span class="config-subtab-more-sep" aria-hidden="true"></span><button type="button" class="config-subtab config-subtab-more" data-label="${esc(more)}" aria-haspopup="menu" aria-expanded="false" aria-controls="config-help-more-menu" data-help-more-toggle>${esc(more)}<span class="config-subtab-more-caret" aria-hidden="true">▾</span></button></div>`;
+        }
+        const grouped = DashboardConfig.SUB_TAB_GROUPS[section];
+        if (grouped) {
             // One tablist, grouped by presentation wrappers: the labels are
             // aria-hidden because the tab names carry the meaning, and the
             // arrow keys walk the buttons as one list across the groups.
-            const labels = {
-                look: this.t('config.appearanceGroupLook', 'Look'),
-                bookmarks: this.t('config.appearanceGroupBookmarks', 'Bookmarks'),
-                chrome: this.t('config.appearanceGroupChrome', 'Header & bars'),
-            };
-            const groups = DashboardConfig.APPEARANCE_TAB_GROUPS.map((group) => {
+            const groups = grouped.map((group) => {
                 const inGroup = group.tabs.filter((tab) => tabs.includes(tab));
                 if (!inGroup.length) return '';
-                return `<div class="config-subtab-group" role="presentation" data-appearance-group="${esc(group.key)}"><span class="config-subtab-group-label" aria-hidden="true">${esc(labels[group.key])}</span>${inGroup.map(button).join('')}</div>`;
+                const label = this.t(group.label[0], group.label[1]);
+                return `<div class="config-subtab-group" role="presentation" data-${section}-group="${esc(group.key)}"><span class="config-subtab-group-label" aria-hidden="true">${esc(label)}</span>${inGroup.map(button).join('')}</div>`;
             }).join('');
             return `<div class="config-subtabs config-subtabs--grouped" role="tablist">${groups}</div>`;
         }
@@ -18497,9 +18630,9 @@ class DashboardConfig {
      * missing here would simply not be drawn.
      */
     static APPEARANCE_TAB_GROUPS = [
-        { key: 'look', tabs: ['general', 'background', 'surface'] },
-        { key: 'bookmarks', tabs: ['layout', 'display', 'previews'] },
-        { key: 'chrome', tabs: ['header', 'buttonbar', 'datetime'] },
+        { key: 'look', label: ['config.appearanceGroupLook', 'Look'], tabs: ['general', 'background', 'surface'] },
+        { key: 'bookmarks', label: ['config.appearanceGroupBookmarks', 'Bookmarks'], tabs: ['layout', 'display', 'previews'] },
+        { key: 'chrome', label: ['config.appearanceGroupChrome', 'Header & bars'], tabs: ['header', 'buttonbar', 'datetime'] },
     ];
 
     /** Tabs a section keeps addressable but does not draw on its strip. */
@@ -18533,7 +18666,7 @@ class DashboardConfig {
         'bookmarks-layout': 'layout',
     };
 
-    static STATS_TABS = ['overview', 'usage', 'collection', 'inbox', 'health'];
+    static STATS_TABS = ['overview', 'usage', 'collection', 'inbox', 'health', 'server'];
 
     // The tabs' names until September 2026, kept so an old link still lands.
     static STATS_TAB_ALIASES = { activity: 'usage', content: 'collection' };
@@ -27124,6 +27257,7 @@ class DashboardConfig {
             collection: ['config.statsTabCollection', 'Collection'],
             inbox: ['config.statsTabInbox', 'Inbox'],
             health: ['config.statsTabHealth', 'Health'],
+            server: ['config.statsTabServer', 'Server'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
         return this.t(key, fallback);
@@ -27367,10 +27501,13 @@ class DashboardConfig {
         ]);
 
         const widgetTypes = new Map();
+        const widgetPages = [];
         let widgetCount = null;
         if (blocks.some(Boolean)) {
             widgetCount = 0;
-            blocks.forEach((b) => {
+            blocks.forEach((b, i) => {
+                const n = (b?.widgets || []).length;
+                if (b) widgetPages.push([pages[i]?.name || `#${pages[i]?.id}`, n]);
                 (b?.widgets || []).forEach((w) => {
                     widgetCount += 1;
                     const type = String(w?.type || '').trim() || 'unknown';
@@ -27383,6 +27520,7 @@ class DashboardConfig {
         this._statsLibrary = {
             widgets: widgetCount,
             widgetTypes: [...widgetTypes.entries()].sort((a, b) => b[1] - a[1]),
+            widgetPages,
             feedsEnabled: feeds ? feeds.enabled === true : null,
             feeds: feedMap ? Object.keys(feedMap).length : null,
             sources: Array.isArray(sources) ? sources.length : null,
@@ -27393,9 +27531,67 @@ class DashboardConfig {
                 ? backups.backups[0]?.createdAt || null
                 : null,
         };
+        // The widget panels are drawn from it too, so the body is repainted
+        // rather than only the library list.
         if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'collection') {
-            const host = document.getElementById('config-stats-library');
-            if (host) host.innerHTML = this.renderStatsLibraryBody();
+            this.repaintStatsBody();
+        }
+    }
+
+    /**
+     * What the Server tab draws: the containers and their last thirty days,
+     * Unraid, and the automatic backups. Each part that cannot be read is
+     * null, so a panel can say why instead of showing zeroes.
+     */
+    async loadStatsServer() {
+        const get = async (url, { token = false } = {}) => {
+            try {
+                const res = token ? await this.writeFetch(url) : await fetch(url, { cache: 'no-store' });
+                return res && res.ok ? await res.json() : null;
+            } catch {
+                return null;
+            }
+        };
+        const [status, list, history, unraid, backups] = await Promise.all([
+            get('/api/docker/status'),
+            get('/api/docker/containers'),
+            get('/api/docker/history'),
+            get('/api/unraid/area/overview'),
+            get('/api/auto-backups', { token: true }),
+        ]);
+        this._statsServer = {
+            docker: status ? { socket: status.socket === true, reason: status.reason || '' } : null,
+            containers: list && list.available ? (Array.isArray(list.containers) ? list.containers : []) : null,
+            usageEnabled: list ? list.usageEnabled === true : false,
+            history: history || null,
+            unraid: unraid || null,
+            backups: backups || null,
+        };
+        if (this.isActiveView() && this.section === 'stats' && (this.statsTab === 'server' || this.statsTab === 'overview')) {
+            this.repaintStatsBody();
+        }
+    }
+
+    /** The ways a notice can leave this install, for Health's Notifications panel. */
+    async loadStatsNotify() {
+        const get = async (url, { token = false } = {}) => {
+            try {
+                const res = token ? await this.writeFetch(url) : await fetch(url, { cache: 'no-store' });
+                if (res && res.status === 204) return {};
+                return res && res.ok ? await res.json() : null;
+            } catch {
+                return null;
+            }
+        };
+        const [quiet, push, webhooks, digest] = await Promise.all([
+            get('/api/notify/quiet'),
+            get('/api/push/devices'),
+            get('/api/webhooks', { token: true }),
+            get('/api/digest/latest'),
+        ]);
+        this._statsNotify = { quiet, push, webhooks, digest };
+        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'health') {
+            this.repaintStatsBody();
         }
     }
 
@@ -28246,6 +28442,8 @@ class DashboardConfig {
                     this._statsInboxAgg = undefined;
                     this._statsFinders = undefined;
                     this._statsLibrary = undefined;
+                    this._statsServer = undefined;
+                    this._statsNotify = undefined;
                     // Refresh means "work them out again", so the memo goes too
                     // — otherwise the button would only re-fetch the two
                     // server-side tabs and hand back the same cached arithmetic
@@ -28354,6 +28552,15 @@ class DashboardConfig {
                 this.loadStatsTabData(tab);
                 this.repaintStatsBody();
                 this.syncSubTabStrip('data-stats-tab', this.statsTab);
+            });
+        });
+        // "containers:updates" opens that section on that tab.
+        container.querySelectorAll('[data-stats-section-goto]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const [section, tab] = String(btn.getAttribute('data-stats-section-goto') || '').split(':');
+                const state = DashboardConfig.SUB_TAB_STATE[section];
+                if (tab && state && DashboardConfig.SUB_TABS[section]?.includes(tab)) this[state] = tab;
+                this.selectSection(section);
             });
         });
         container.querySelectorAll('[data-stats-opens-mode]').forEach((btn) => {
@@ -28512,7 +28719,24 @@ class DashboardConfig {
      * rendered nowhere in this config, while the Start tab showed eleven of
      * them under "Everyday keys" and the prose promised the rest were here.
      */
-    static HELP_TABS = ['start', 'tips', 'config', 'appearance', 'organizing', 'bookmarks', 'widgets', 'containers', 'search', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs'];
+    static HELP_TABS = ['start', 'tips', 'config', 'search', 'appearance', 'organizing', 'bookmarks', 'widgets', 'containers', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs'];
+
+    /*
+     * Fifteen tabs on one scrolling line hid most of them past the edge, and
+     * fifteen in labelled rows took four lines. The row keeps Basics; the
+     * other groups are a menu under "More topics", with these labels.
+     */
+    static HELP_TAB_GROUPS = [
+        { key: 'basics', label: ['config.helpGroupBasics', 'Basics'], tabs: ['start', 'tips', 'config', 'search'] },
+        { key: 'dashboard', label: ['config.helpGroupDashboard', 'Dashboard'], tabs: ['appearance', 'organizing', 'bookmarks', 'widgets'] },
+        { key: 'status', label: ['config.helpGroupStatus', 'Status & checks'], tabs: ['containers', 'health', 'monitoring'] },
+        { key: 'data', label: ['config.helpGroupData', 'Data'], tabs: ['inbox', 'stats', 'data', 'logs'] },
+    ];
+
+    /** Sections whose strip is drawn in labelled groups. */
+    static get SUB_TAB_GROUPS() {
+        return { appearance: DashboardConfig.APPEARANCE_TAB_GROUPS };
+    }
 
     helpTabLabel(tab) {
         const map = {
@@ -28574,12 +28798,10 @@ class DashboardConfig {
     }
 
     renderHelp() {
+        // A full repaint replaces the menu's button; the menu goes with it.
+        this._helpMoreClose?.({ refocus: false });
         this.ensureHelpProse();
         const esc = (v) => this.dash.escapeHtml(v);
-        const tabs = DashboardConfig.HELP_TABS.map((tab) => {
-            const active = tab === this.helpTab;
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-help-body" data-help-tab="${esc(tab)}">${esc(this.helpTabLabel(tab))}</button>`;
-        }).join('');
         return `
             <!--
                 The opening line is a direct child of the body so the shell
@@ -28589,7 +28811,7 @@ class DashboardConfig {
                 text stood above the tab strip instead of under it.
             -->
             <p class="config-view-intro">${esc(this.t('config.helpIntro', 'How nextDash works, what each part of config does, and where to go next.'))}</p>
-            <div class="config-subtabs" role="tablist">${tabs}</div>
+            ${this.renderSectionTabStrip('help')}
             <!--
                 The sheet and the search share the tab note's row rather than
                 standing above the strip: a block above it put Help's tabs
@@ -30337,28 +30559,137 @@ class DashboardConfig {
 
     bindHelp(container) {
         this.bindCapturePanel(container);
-        this.bindSubTabStrip(container, 'data-help-tab', (tab) => {
-            {
-                if (tab === this.helpTab) return;
-                this.helpTab = tab;
-                // Switching tabs by hand means the reader has stopped searching;
-                // leaving the query on would show results instead of the tab
-                // they just clicked.
-                this.helpQuery = '';
-                const field = document.getElementById('config-help-search');
-                if (field) field.value = '';
-                this.restoreConfigHash();
-                const body = document.getElementById('config-help-body');
-                if (!body) { this.render(); return; }
-                body.innerHTML = this.renderHelpBody();
-                this.syncSubTabStrip('data-help-tab', this.helpTab);
-                this.syncSectionTabNote('help', this.helpTab, body.parentElement?.querySelector(':scope > .config-help-header'));
-                // The new body carries its own action buttons.
-                this.bindHelpActions(body);
-            }
-        });
+        this.bindHelpTabStrip(container);
         this.bindHelpSearch(container);
         this.bindHelpActions(container);
+    }
+
+    bindHelpTabStrip(container) {
+        this.bindSubTabStrip(container, 'data-help-tab', (tab) => this.switchHelpTab(tab));
+        const toggle = container.querySelector('[data-help-more-toggle]');
+        if (toggle && toggle.dataset.helpMoreBound !== '1') {
+            toggle.dataset.helpMoreBound = '1';
+            toggle.addEventListener('click', () => {
+                if (this._helpMoreClose) this._helpMoreClose();
+                else this.openHelpMoreMenu(toggle);
+            });
+        }
+    }
+
+    switchHelpTab(tab) {
+        if (tab === this.helpTab) return;
+        this.helpTab = tab;
+        // Switching tabs by hand means the reader has stopped searching;
+        // leaving the query on would show results instead of the tab
+        // they just clicked.
+        this.helpQuery = '';
+        const field = document.getElementById('config-help-search');
+        if (field) field.value = '';
+        this.restoreConfigHash();
+        const body = document.getElementById('config-help-body');
+        if (!body) { this.render(); return; }
+        body.innerHTML = this.renderHelpBody();
+        this.syncSubTabStrip('data-help-tab', this.helpTab);
+        this.syncSectionTabNote('help', this.helpTab, body.parentElement?.querySelector(':scope > .config-help-header'));
+        // The new body carries its own action buttons.
+        this.bindHelpActions(body);
+    }
+
+    /**
+     * The topics past Basics, as a menu under "More topics".
+     *
+     * Built on open and dropped on close, and hung on the body rather than in
+     * the strip: the strip scrolls sideways and clips what overflows it, and a
+     * panel under Glass would make a fixed menu's coordinates its own.
+     */
+    openHelpMoreMenu(toggle) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const [, ...rest] = DashboardConfig.HELP_TAB_GROUPS;
+        const menu = document.createElement('div');
+        menu.className = 'move-popover config-help-more-menu';
+        menu.id = 'config-help-more-menu';
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-label', this.t('config.helpMoreTopics', 'More topics'));
+        menu.innerHTML = rest.map((group) => `
+            <div class="move-popover-section-label" role="presentation">${esc(this.t(group.label[0], group.label[1]))}</div>
+            ${group.tabs.map((tab) => `<button type="button" class="move-popover-item${tab === this.helpTab ? ' is-current' : ''}" role="menuitem" tabindex="-1" data-help-more="${esc(tab)}">${esc(this.helpTabLabel(tab))}</button>`).join('')}
+        `).join('');
+        document.body.appendChild(menu);
+        const items = [...menu.querySelectorAll('[data-help-more]')];
+
+        const MARGIN = 8;
+        const position = () => {
+            const rect = toggle.getBoundingClientRect();
+            const width = menu.offsetWidth;
+            const left = Math.min(Math.max(MARGIN, rect.left), window.innerWidth - width - MARGIN);
+            menu.style.left = `${Math.round(left)}px`;
+            menu.style.top = `${Math.round(rect.bottom + 4)}px`;
+        };
+        let onOutside = null;
+        const close = ({ refocus = true } = {}) => {
+            if (this._helpMoreClose !== close) return;
+            this._helpMoreClose = null;
+            menu.remove();
+            toggle.setAttribute('aria-expanded', 'false');
+            document.removeEventListener('click', onOutside, true);
+            window.removeEventListener('resize', position);
+            window.removeEventListener('scroll', position, true);
+            if (refocus && toggle.isConnected) toggle.focus({ preventScroll: true });
+        };
+        onOutside = (e) => {
+            if (menu.contains(e.target) || toggle.contains(e.target)) return;
+            close({ refocus: false });
+        };
+        items.forEach((item, i) => {
+            item.addEventListener('click', () => {
+                close({ refocus: false });
+                this.switchHelpTab(item.getAttribute('data-help-more'));
+                document.querySelector(`[data-help-tab="${CSS.escape(this.helpTab)}"]`)?.focus();
+            });
+            item.addEventListener('keydown', (e) => {
+                const last = items.length - 1;
+                const next = { ArrowDown: i === last ? 0 : i + 1, ArrowUp: i === 0 ? last : i - 1, Home: 0, End: last }[e.key];
+                if (next != null) {
+                    e.preventDefault();
+                    items[next].focus();
+                } else if (e.key === 'Tab') {
+                    close({ refocus: false });
+                }
+            });
+        });
+
+        toggle.setAttribute('aria-expanded', 'true');
+        position();
+        // Bound on the next tick, or the click that opened the menu closes it.
+        setTimeout(() => document.addEventListener('click', onOutside, true), 0);
+        window.addEventListener('resize', position);
+        window.addEventListener('scroll', position, true);
+        this._helpMoreClose = close;
+        (items.find((item) => item.classList.contains('is-current')) || items[0])?.focus();
+    }
+
+    /**
+     * Draw the Help strip again when the tab it should show has changed.
+     *
+     * The row holds Basics plus the open tab when that one lives in the menu,
+     * so a switch to or from a menu topic changes which buttons the row has --
+     * marking a different button active is not enough.
+     */
+    repaintHelpStripIfNeeded() {
+        const strip = document.querySelector('.config-subtabs--more');
+        if (!strip) return;
+        const have = [...strip.querySelectorAll('[data-help-tab]')].map((b) => b.getAttribute('data-help-tab')).join(',');
+        if (have === this.helpStripTabs().join(',')) return;
+        const host = strip.parentElement;
+        strip.outerHTML = this.renderSectionTabStrip('help');
+        this.bindHelpTabStrip(host);
+    }
+
+    /** The tabs on Help's row: Basics, and the open tab if it is past them. */
+    helpStripTabs() {
+        const shown = [...DashboardConfig.HELP_TAB_GROUPS[0].tabs];
+        if (!shown.includes(this.helpTab)) shown.push(this.helpTab);
+        return shown;
     }
 
     /**

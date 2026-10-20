@@ -79,7 +79,7 @@ class Dashboard {
         this.pinnedEmptyCategoryId = null;
         this.settings = {
             currentPage: 'default',
-            theme: 'slate-dark',
+            theme: 'look-confetti-dark',
             openInNewTab: true,
             showGridKeyLegend: true,
             columnsPerRow: 3,
@@ -118,9 +118,10 @@ class Dashboard {
             linkPreviewHoverDelayMs: 250,
             showSiteNews: true,
             categorySortModesMigrated: true,
-            layoutPreset: 'default',
-            densityMode: 'compact',
-            categorySpacing: 'balanced',
+            layoutPreset: 'masonry',
+            densityMode: 'auto',
+            categorySpacing: 'theme',
+            columnSpacing: 'theme',
             sideMargin: 'balanced',
             packedColumns: true,
             defaultCategorySpread: false,
@@ -128,7 +129,7 @@ class Dashboard {
             backgroundType: 'none',
             backgroundOpacity: 1,
             fontWeight: 'normal',
-            fontPreset: 'source-code-pro',
+            fontPreset: 'inter',
             autoDarkMode: true,
             showSmartRecentCollection: false,
             showSmartTodayCollection: true,
@@ -318,13 +319,12 @@ class Dashboard {
             this.visual.setupThemeIconStylingListener?.();
             this.loadCollapsedStates();
             await this.language.init(this.settings.language);
-            // Expose instance before mobile banner / i18n helpers (refresh runs before status monitor).
+            // Expose instance before mobile / i18n helpers (refresh runs before status monitor).
             window.dashboardInstance = this;
             window.MobileExperience?.initDashboard?.();
             this.setupDOM();
             this.initializeSearchComponent();
             this.initializeStatusMonitor();
-            window.MobileExperience?.refreshBannerTranslations?.();
             this.initializeKeyboardNavigation();
             this.initializeSwipeNavigation();
             this.initializeHyprMode();
@@ -2158,10 +2158,6 @@ class Dashboard {
 
     createCategoryElement(category, bookmarks) {
         return this.renderCore.createCategoryElement(...arguments);
-    }
-
-    isUploadedCategoryIcon(iconValue) {
-        return this.renderCore.isUploadedCategoryIcon(...arguments);
     }
 }
 

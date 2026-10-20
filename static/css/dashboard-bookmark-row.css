@@ -98,6 +98,7 @@ body.no-animations .bookmark-link:not(.bookmark-inline-editing) {
     border-radius: var(--layout-radius-sm, 8px);
 }
 
+.bookmark-link.row-highlight-demo:not(.bookmark-inline-editing),
 .bookmark-link:is(:hover, .keyboard-selected, :focus-within):not(.bookmark-inline-editing) {
     color: var(--text-primary);
     background: var(--bookmark-row-hover-bg);

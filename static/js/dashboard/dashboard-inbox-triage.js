@@ -441,7 +441,7 @@ class DashboardInboxTriage {
             return;
         }
         // Tab is trapped before every other check: the overlay is aria-modal, so
-        // focus must not leave it even while a notification or quickstart card is
+        // focus must not leave it even while a notification or start guide bar is
         // on screen, and even when the caret sits in the note input below.
         if (e.key === 'Tab' && this.overlay) {
             if (window.FocusTrapUtils?.trapTabKey(e, this.overlay)) {

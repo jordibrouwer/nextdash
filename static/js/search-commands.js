@@ -61,11 +61,11 @@ class SearchCommandsComponent {
                 label: 'Look & layout',
                 labelKey: 'commands.groupLookAndFeel',
                 commands: [
-                    'theme', 'depth', 'contrast', 'backdrop', 'pattern', 'harmonize',
+                    'theme', 'depth', 'surface', 'widgetbg', 'widgetopacity', 'effects', 'contrast', 'backdrop', 'pattern', 'harmonize',
                     'layout', 'density', 'columns', 'width', 'fontsize', 'packed',
                     'preview', 'favicons', 'rows', 'title', 'opacity', 'animations', 'status', 'dark', 'lang',
                     'buttons', 'action', 'header', 'glow', 'buttonstyle', 'switcher', 'maxtabs', 'maxactions',
-                    'clock', 'time', 'unit', 'weather', 'spacing', 'margins', 'highlight', 'items',
+                    'clock', 'time', 'unit', 'weather', 'spacing', 'columngap', 'margins', 'highlight', 'items',
                     'collapse', 'empty', 'tags', 'shortcuts', 'locklayout',
                 ],
             },
@@ -96,6 +96,10 @@ class SearchCommandsComponent {
             'remove': this.handleRemoveCommand.bind(this),
             'theme': this.handleThemeCommand.bind(this),
             'depth': this.handleDepthCommand.bind(this),
+            'surface': this.handleSurfaceCommand.bind(this),
+            'widgetbg': this.handleWidgetBackgroundCommand.bind(this),
+            'widgetopacity': this.handleWidgetOpacityCommand.bind(this),
+            'effects': this.handleEffectsCommand.bind(this),
             'contrast': this.handleContrastCommand.bind(this),
             'backdrop': this.handleBackdropCommand.bind(this),
             'pattern': this.handlePatternCommand.bind(this),
@@ -118,6 +122,7 @@ class SearchCommandsComponent {
             'unit': this.handleWeatherUnitCommand.bind(this),
             'weather': this.handleWeatherCommand.bind(this),
             'spacing': this.handleSpacingCommand.bind(this),
+            'columngap': this.handleColumnGapCommand.bind(this),
             'margins': this.handleMarginsCommand.bind(this),
             'highlight': this.handleRowHighlightCommand.bind(this),
             'items': this.handleItemsCommand.bind(this),
@@ -2715,6 +2720,80 @@ class SearchCommandsComponent {
     }
 
     /** How much of the theme's own colour carries around a surface. */
+    /** What a category and a widget sit on: Config's Category surface, by name. */
+    handleSurfaceCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._appearanceCommand({
+            prefix: 'surface',
+            shortcut: ':SURFACE',
+            options: [
+                { value: 'follow', label: t('config.themeSurfacesFollow', 'Follow the theme') },
+                { value: 'glass', label: t('config.categorySurfaceGlass', 'Glass') },
+                { value: 'card', label: t('config.categorySurfaceCard', 'Card') },
+                { value: 'open', label: t('config.categorySurfaceOpen', 'Open') },
+            ],
+            current: (d) => d.settings.categorySurface || 'follow',
+            apply: (value) => this._applyAppearance(window.dashboardInstance, 'categorySurface', value,
+                (v) => window.dashboardInstance?.config?.setSurface?.('categorySurface', v)
+                    ?? window.ThemeLoader?.applyCatSurface?.(v), `surface:${value}`),
+        }, args);
+    }
+
+    /** How loudly a theme's character is drawn: Config's Effects. */
+    handleEffectsCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._appearanceCommand({
+            prefix: 'effects',
+            shortcut: ':EFFECTS',
+            options: [
+                { value: 'follow', label: t('config.themeSurfacesFollow', 'Follow the theme') },
+                { value: 'full', label: t('config.themeEffectsFull', 'Full') },
+                { value: 'held', label: t('config.themeEffectsHeld', 'Held back') },
+                { value: 'off', label: t('config.themeEffectsOff', 'Off') },
+            ],
+            current: (d) => d.settings.themeEffects || 'follow',
+            apply: (value) => this._applyAppearance(window.dashboardInstance, 'themeEffects', value,
+                (v) => window.dashboardInstance?.config?.setSurface?.('themeEffects', v), `effects:${value}`),
+        }, args);
+    }
+
+    /** Whether a widget draws a background of its own: Config's Widget background. */
+    handleWidgetBackgroundCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._appearanceCommand({
+            prefix: 'widgetbg',
+            shortcut: ':WIDGETBG',
+            options: [
+                { value: 'background', label: t('config.widgetSurfaceBackground', 'Background') },
+                { value: 'none', label: t('config.widgetSurfaceNone', 'None') },
+            ],
+            current: (d) => (d.settings.widgetSurface === 'none' ? 'none' : 'background'),
+            apply: (value) => this._applyAppearance(window.dashboardInstance, 'widgetSurface', value,
+                (v) => window.ThemeLoader?.applyWidgetSurface?.(v), `widgetbg:${value}`),
+        }, args);
+    }
+
+    /** How solid the card of a widget is: Config's Widget opacity, in steps. */
+    handleWidgetOpacityCommand(args) {
+        const typed = String(args[0] || '').replace('%', '');
+        const steps = [0, 25, 50, 70, 85, 100];
+        const parsed = parseInt(typed, 10);
+        const values = typed && Number.isFinite(parsed) && parsed >= 0 && parsed <= 100
+            ? [parsed]
+            : steps.filter((n) => !typed || String(n).startsWith(typed));
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const current = Number.isFinite(dashboard.settings.widgetOpacity) ? dashboard.settings.widgetOpacity : 50;
+        return values.map((n) => ({
+            ...this._markCurrentRow(`${n}%`, n === current),
+            shortcut: ':WIDGETOPACITY',
+            type: 'command',
+            stateId: `widgetopacity:${n}`,
+            action: () => this._applyAppearance(dashboard, 'widgetOpacity', n,
+                (v) => window.ThemeLoader?.applyWidgetOpacity?.(v), `widgetopacity:${n}`),
+        }));
+    }
+
     handleGlowCommand(args) {
         const t = (key, fb) => this._t(key, fb);
         return this._appearanceCommand({
@@ -3063,6 +3142,23 @@ class SearchCommandsComponent {
             shortcut: ':SPACING',
             apply: 'chromeRender',
             options: [
+                { value: 'theme', label: t('config.categorySpacingTheme', 'Follow the theme') },
+                { value: 'snug', label: t('config.spacingSnug', 'Snug') },
+                { value: 'balanced', label: t('config.spacingBalanced', 'Balanced') },
+                { value: 'airy', label: t('config.spacingAiry', 'Airy') },
+            ],
+        }, args);
+    }
+
+    /** The room between columns, across the page; :spacing is the room down it. */
+    handleColumnGapCommand(args) {
+        const t = (key, fb) => this._t(key, fb);
+        return this._settingCommand({
+            field: 'columnSpacing',
+            shortcut: ':COLUMNGAP',
+            apply: 'chromeRender',
+            options: [
+                { value: 'theme', label: t('config.columnSpacingTheme', 'Follow the theme') },
                 { value: 'snug', label: t('config.spacingSnug', 'Snug') },
                 { value: 'balanced', label: t('config.spacingBalanced', 'Balanced') },
                 { value: 'airy', label: t('config.spacingAiry', 'Airy') },

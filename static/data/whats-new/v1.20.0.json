@@ -1,0 +1,104 @@
+{
+  "tag": "v1.20.0",
+  "date": "20 October 2026",
+  "releasedAt": "2026-10-20",
+  "modalLead": "<strong>Confetti</strong> is the new default look, with twenty-four colour-burst themes to go with it. <strong>Statistics</strong> gets a Server tab, a category can show <strong>tiles</strong>, and the keyboard shortcuts sheet is easier to search. A new install opens with a <strong>Quick start</strong> guide.",
+  "sections": [
+    {
+      "title": "Getting started",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A quick start for a new install.</strong> After a moment a Quick start bar slides in at the bottom of the dashboard, and three seconds later the first time it opens a guide by itself, growing out of the bar: what to do with the example links, your language, the weather and nine next steps. A new install also has ten example links waiting in the Inbox.",
+          "highlight": true,
+          "title": "A quick start for a new install",
+          "media": {
+            "image": "media/v1.20.0-quick-start.jpg",
+            "alt": "The Quick start guide open over the dashboard of a new install: what to do with the example links, the language, the weather and the first of the next steps"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Look",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Confetti is the new default look.</strong> A fresh install starts on glass panes over a colour-burst backdrop, with masonry columns, Inter and larger type. Twenty-four new Looks join it, on three new backdrops: burst, splash and leak. Your dashboard keeps the theme it has; a one-time card lets you try Confetti and go back with one click.",
+          "highlight": true,
+          "title": "Confetti and 24 new Looks",
+          "link": "#config/appearance/general",
+          "linkLabel": "Browse themes",
+          "media": {
+            "image": "media/v1.20.0-confetti-looks.jpg",
+            "alt": "The dashboard in Confetti: categories and widgets on glass over a colour-burst backdrop"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Categories and widgets sit on glass, a card or nothing.</strong> Pick it under Surfaces, or let each theme bring its own.",
+          "link": "#config/appearance/surface",
+          "linkLabel": "Open Surfaces"
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Config and the list views are panes,</strong> drawn like the dashboard: the same glass, card or open."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Category headers start small.</strong> An install still on Medium moves to Small once; you can set it back under Rows."
+        }
+      ]
+    },
+    {
+      "title": "Statistics",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Your server in Statistics.</strong> A new Server tab counts containers, updates, crashes, Docker disk use, Unraid disks, parity and VMs, and your automatic backups. Panels without a connection say what is missing.",
+          "highlight": true,
+          "title": "Your server in Statistics",
+          "link": "#config/stats/server",
+          "linkLabel": "Open Server",
+          "media": {
+            "image": "media/v1.20.0-server-stats.jpg",
+            "alt": "Config, Statistics, Server tab: containers running, unhealthy and updates waiting, the Unraid array, resources now and the Unraid disks"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Notifications on Health,</strong> and widgets by kind and per page on Collection."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A category can show tiles.</strong> Right-click its header and pick Show as tiles for a grid of large icons; Show as rows goes back."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Icons are part of a title.</strong> Type an emoji in a category or widget name, or use Insert icon… in the category menu."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The shortcuts sheet is easier to scan.</strong> Two columns, topic chips, and a filter that finds a key such as Shift+Y. Press / to jump to it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Settings in a widget's menu</strong> opens just that widget's settings."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Space between columns</strong> is a setting of its own next to Space between categories: Snug, Balanced or Airy, under Appearance → Layout."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Surfaces from the palette.</strong> <code>:surface</code>, <code>:effects</code>, <code>:widgetbg</code>, <code>:widgetopacity</code> and <code>:columngap</code> change how it is drawn without opening config."
+        }
+      ]
+    }
+  ]
+}

@@ -98,7 +98,7 @@ type TemplateVariable struct {
 	Label string `json:"label"`
 	// Default is the address a bundled template proposes, such as
 	// "http://{server}:8096", where {server} is the one address the
-	// first-start card asks for. An export never writes it.
+	// start guide asks for. An export never writes it.
 	Default string `json:"default,omitempty"`
 }
 
@@ -349,9 +349,9 @@ func buildPageTemplate(page PageWithBookmarks, options TemplateExportOptions, ic
 		tpl.Categories = append(tpl.Categories, Category{
 			ID:       category.ID,
 			Name:     category.Name,
-			Icon:     category.Icon,
 			SortMode: category.SortMode,
 			Spread:   category.Spread,
+			View:     normalizeCategoryView(category.View),
 		})
 	}
 
@@ -629,10 +629,13 @@ func (h *Handlers) planPageTemplateReplacing(tpl PageTemplate, rawValues map[str
 		if strings.ContainsAny(icon, "/\\") || len(icon) > 64 {
 			icon = ""
 		}
-		plan.categories = append(plan.categories, Category{
+		// An icon in an older template goes to the front of the name, as it does
+		// everywhere else; the field is not kept.
+		plan.categories = append(plan.categories, foldCategoryIcon(Category{
 			ID: id, Name: clampEntityName(category.Name), Icon: icon,
 			SortMode: category.SortMode, Spread: category.Spread,
-		})
+			View: normalizeCategoryView(category.View),
+		}))
 	}
 
 	// Variables, with how many links wait on each -- counted before the

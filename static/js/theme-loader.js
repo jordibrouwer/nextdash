@@ -16,7 +16,7 @@
      * missing: a device with device-specific settings on and no theme in them,
      * or a shell served without the data-theme attribute filled in.
      */
-    const DEFAULT_THEME = 'slate-dark';
+    const DEFAULT_THEME = 'look-confetti-dark';
 
     const LEGACY_THEME_MAP = {
         aurora: 'midnight-neon-dark',
@@ -529,6 +529,11 @@
             depth: pick(s.themeDepth, prefs.depth, ideal.depth || 'soft'),
             glow: pick(s.glowStrength, prefs.glow, ideal.glow || 'off'),
             effects: pick(s.themeEffects, prefs.effects, ideal.effects || 'held'),
+            catSurface: (function () {
+                const depth = pick(s.themeDepth, prefs.depth, ideal.depth || 'soft');
+                // A reader who asked for flat did not ask to see through things.
+                return pick(s.categorySurface, prefs.catSurface, depth === 'flat' ? 'open' : (ideal.catSurface || 'glass'));
+            })(),
             backdrop: backdrop === 'off' ? 'off' : 'on',
             backdropRecipe: backdrop === 'off' || backdrop === 'follow' ? '' : backdrop,
         };
@@ -553,15 +558,104 @@
             const own = typeof g.alpha === 'number' || typeof g.blur === 'number';
             document.body.setAttribute('data-card-glass', own ? 'own' : '');
         }
+        applyWidgetBg();
+    }
+
+    // The reader's word for Widget background: background or none. An install
+    // from before it was settled may still say auto, which means background.
+    let widgetSurfaceWord = 'auto';
+
+    /** What a widget is drawn with, background or none. Mirrors resolveWidgetBackground in Go. */
+    function resolveWidgetBg(word) {
+        return word === 'none' ? 'none' : 'background';
+    }
+
+    function applyWidgetBg() {
+        const bg = resolveWidgetBg(widgetSurfaceWord);
+        document.documentElement.setAttribute('data-widget-bg', bg);
+        if (document.body) document.body.setAttribute('data-widget-bg', bg);
+        return bg;
+    }
+
+    /** Widget opacity: how solid a widget's card is, in percent (0 to 100), as a variable on <html>. */
+    function applyWidgetOpacity(value) {
+        const n = Number(value);
+        const percent = Number.isFinite(n) ? Math.min(100, Math.max(0, Math.round(n))) : 50;
+        document.documentElement.style.setProperty('--widget-bg', String(percent));
+        return percent;
+    }
+
+    /** The reader's Widget background word, and the attribute that follows it. */
+    function applyWidgetSurface(value) {
+        widgetSurfaceWord = ['auto', 'background', 'none'].includes(value) ? value : 'auto';
+        return applyWidgetBg();
+    }
+
+    /** Mirrors how a category is drawn (glass, card or open) onto <html> and <body>. */
+    function applyCatSurface(value) {
+        const word = ['glass', 'card', 'open'].includes(value) ? value : 'glass';
+        document.documentElement.setAttribute('data-cat-surface', word);
+        if (document.body) document.body.setAttribute('data-cat-surface', word);
+        // A widget's background follows the surface under automatic.
+        applyWidgetBg();
+        return word;
     }
 
     /** Resolve and write all three attributes for a theme. */
+    // What "Follow the theme" means for a category header, for the themes that
+    // state one. Mirrors themeCategoryHeads in Go.
+    const THEME_CAT_HEADS = { 'look-confetti-dark': 'clean', 'look-confetti-light': 'clean' };
+
+    function resolveCatHead(style, theme) {
+        const word = style || 'theme';
+        return word === 'theme' && THEME_CAT_HEADS[theme] ? THEME_CAT_HEADS[theme] : word;
+    }
+
+    function applyCatHead(style, theme) {
+        const word = resolveCatHead(style, theme);
+        if (document.body) document.body.setAttribute('data-cat-head', word);
+        return word;
+    }
+
+    // What "Follow the theme" means for the room between columns: balanced, except
+    // for the themes that state their own. Confetti is airy.
+    const THEME_COLUMN_SPACING = { 'look-confetti-dark': 'airy', 'look-confetti-light': 'airy' };
+    const THEME_CATEGORY_SPACING = { 'look-confetti-dark': 'airy', 'look-confetti-light': 'airy' };
+
+    function resolveCategorySpacing(value, theme) {
+        const word = value || 'theme';
+        return word === 'theme' ? (THEME_CATEGORY_SPACING[theme] || 'balanced') : word;
+    }
+
+    function applyCategorySpacing(value, theme) {
+        const word = resolveCategorySpacing(value, theme);
+        if (document.body) document.body.setAttribute('data-category-spacing', word);
+        return word;
+    }
+
+    function resolveColumnSpacing(value, theme) {
+        const word = value || 'theme';
+        return word === 'theme' ? (THEME_COLUMN_SPACING[theme] || 'balanced') : word;
+    }
+
+    function applyColumnSpacing(value, theme) {
+        const word = resolveColumnSpacing(value, theme);
+        if (document.body) document.body.setAttribute('data-column-spacing', word);
+        return word;
+    }
+
     function applySurfacesForTheme(theme, settings, prefsId) {
         return loadSurfaceMeta().then(() => {
             const resolved = resolveSurfacesFor(theme, settings, prefsId);
             applyThemeDepth(resolved.depth);
             applyGlowStrength(resolved.glow);
             applyThemeEffects(resolved.effects);
+            widgetSurfaceWord = ['auto', 'background', 'none'].includes(settings && settings.widgetSurface) ? settings.widgetSurface : 'auto';
+            if (settings && typeof settings.widgetOpacity === 'number') applyWidgetOpacity(settings.widgetOpacity);
+            applyCatSurface(resolved.catSurface);
+            applyCatHead(settings && settings.categoryHeaderStyle, theme);
+            applyColumnSpacing(settings && settings.columnSpacing, theme);
+            applyCategorySpacing(settings && settings.categorySpacing, theme);
             applyThemeBackdrop(resolved.backdrop === 'off' ? 'off' : (resolved.backdropRecipe || 'follow'));
             applyCardGlass(resolved.glass);
             return resolved;
@@ -727,7 +821,7 @@
         window.DashboardFont.applyMainFont({
             enableCustomFont: root.getAttribute('data-enable-custom-font') === 'true',
             customFontPath: root.getAttribute('data-custom-font-path') || '',
-            fontPreset: root.getAttribute('data-font-preset') || 'source-code-pro'
+            fontPreset: root.getAttribute('data-font-preset') || 'inter'
         });
     });
     
@@ -755,6 +849,15 @@
         applyThemeDepth: applyThemeDepth,
         applyGlowStrength: applyGlowStrength,
         applyThemeEffects: applyThemeEffects,
+        applyCatSurface: applyCatSurface,
+        applyCatHead: applyCatHead,
+        applyColumnSpacing: applyColumnSpacing,
+        applyCategorySpacing: applyCategorySpacing,
+        resolveCategorySpacing: resolveCategorySpacing,
+        resolveColumnSpacing: resolveColumnSpacing,
+        resolveCatHead: resolveCatHead,
+        applyWidgetSurface: applyWidgetSurface,
+        applyWidgetOpacity: applyWidgetOpacity,
         applySurfacesForTheme: applySurfacesForTheme,
         resolveSurfacesFor: resolveSurfacesFor,
         refreshSurfaceMeta: refreshSurfaceMeta,
