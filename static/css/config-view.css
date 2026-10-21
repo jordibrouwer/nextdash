@@ -10044,3 +10044,112 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
 .config-docker-snippet-fold > .config-docker-snippet {
     margin-top: var(--space-2, 0.5rem);
 }
+
+/* ── About → Project tab ─────────────────────────────────────────────────
+   Hero (wordmark, tagline, link buttons) over a two-column card grid.
+   The button row is -linkrow: .config-about-links is Overview's column list. */
+.config-about-hero {
+    margin-top: 20px;
+    padding: 18px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: var(--radius-7, 12px);
+    background: var(--card-bg, rgba(128, 128, 128, 0.04));
+    text-align: center;
+}
+.config-about-hero .help-about-mark { margin-bottom: 12px; }
+.config-about-tagline {
+    margin: 0 0 14px;
+    color: var(--text-secondary);
+}
+.config-about-linkrow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+}
+.config-about-hero .config-about-linkrow { justify-content: center; }
+.config-about-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+.config-about-card { margin-top: 0; }
+.config-about-card p { margin: 0 0 12px; line-height: 1.5; }
+.config-about-card p:last-child { margin-bottom: 0; }
+.config-about-card .config-about-linkrow a { color: inherit; }
+.config-about-card .help-support-block { margin: 0; }
+.config-about-credits {
+    margin-top: 16px;
+    padding: 12px 18px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: var(--radius-7, 12px);
+}
+.config-about-credits > summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+@media (max-width: 720px) {
+    .config-about-cards { grid-template-columns: minmax(0, 1fr); }
+}
+.config-about-card p a { color: var(--accent-primary); text-underline-offset: 2px; }
+
+/* ── About → Install tab ─────────────────────────────────────────────────
+   A version line with its update status, then the facts as small tiles. */
+.config-about-version {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px 16px;
+}
+.config-about-version-main { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.config-about-version-label { color: var(--text-secondary); }
+.config-about-version-tag { font-size: 1.6rem; line-height: 1.2; }
+.config-about-version-build { color: var(--text-secondary); font-size: 0.85rem; }
+.config-about-version-status { margin: 0; color: var(--text-secondary); }
+.config-about-version-status.is-good { color: var(--success-color, #3fb97f); }
+.config-about-version-status.is-warn { color: var(--warning-color, #e0a030); }
+.config-about-version-status a { color: inherit; text-underline-offset: 2px; }
+.config-about-facts {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+.config-about-fact {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 14px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: var(--radius-7, 12px);
+    background: var(--card-bg, rgba(128, 128, 128, 0.04));
+}
+.config-about-fact-label { color: var(--text-secondary); font-size: 0.8rem; }
+.config-about-fact-value { font-size: 1.15rem; font-weight: 600; overflow-wrap: anywhere; }
+@media (max-width: 720px) {
+    .config-about-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ── About → News tab ────────────────────────────────────────────────────
+   The same card language as Project and Install: one gap between the panels. */
+.config-about-news {
+    display: grid;
+    gap: 16px;
+    margin-top: 20px;
+}
+.config-about-news > .config-panel { margin-top: 0; }
+
+/* ── About → credits and licences ────────────────────────────────────── */
+.config-about-licence-group { margin: 14px 0 6px; font-size: 0.9rem; }
+.config-about-licence-list { list-style: none; margin: 0; padding: 0; }
+.config-about-licence-list li {
+    display: flex;
+    gap: 8px;
+    padding: 4px 0;
+    border-top: 1px solid var(--border-color, rgba(128, 128, 128, 0.15));
+}
+.config-about-licence-list a { color: inherit; text-underline-offset: 2px; }
+.config-about-licence-version { color: var(--text-secondary); }
+.config-about-licence-id { margin-left: auto; color: var(--text-secondary); white-space: nowrap; }

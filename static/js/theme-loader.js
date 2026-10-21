@@ -822,7 +822,7 @@
         window.DashboardFont.applyMainFont({
             enableCustomFont: root.getAttribute('data-enable-custom-font') === 'true',
             customFontPath: root.getAttribute('data-custom-font-path') || '',
-            fontPreset: root.getAttribute('data-font-preset') || 'inter'
+            fontPreset: root.getAttribute('data-font-preset') || 'source-code-pro'
         });
     });
     

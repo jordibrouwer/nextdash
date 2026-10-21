@@ -1,0 +1,25 @@
+{
+  "tag": "v1.20.3",
+  "date": "21 October 2026",
+  "releasedAt": "2026-10-21",
+  "modalLead": "The dashboard keeps <strong>Source Code Pro</strong>, every other screen reads in <strong>Inter</strong>, and <strong>About</strong> has a new look.",
+  "sections": [
+    {
+      "title": "Look",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Two fonts:</strong> the dashboard is set in your font preset, Source Code Pro by default, and Config, the views and the modals read in Inter.",
+          "link": "#config/appearance",
+          "linkLabel": "Open Appearance"
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A new About page</strong> with Project, Install and News & features tabs. Install shows your counts, the version and uptime, and copies diagnostics for a bug report.",
+          "link": "#config/about",
+          "linkLabel": "Open About"
+        }
+      ]
+    }
+  ]
+}

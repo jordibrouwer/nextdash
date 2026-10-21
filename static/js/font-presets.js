@@ -1,6 +1,7 @@
 /**
  * Preset UI fonts + optional custom upload (via fontPreset "custom" + customFontPath).
- * Sets --font-family-main; loads Google Fonts when needed.
+ * Sets --font-family-dashboard (the font of the dashboard page; every other screen
+ * is Inter, see font-size.css); loads Google Fonts when needed.
  */
 (function (global) {
     const PRESET_IDS = [
@@ -39,9 +40,9 @@
     function normalizePresetId(id, customFontPath) {
         const k = String(id || '').toLowerCase().trim();
         if (k === 'custom') {
-            return customFontPath ? 'custom' : 'inter';
+            return customFontPath ? 'custom' : 'source-code-pro';
         }
-        return PRESET_IDS.includes(k) ? k : 'inter';
+        return PRESET_IDS.includes(k) ? k : 'source-code-pro';
     }
 
     /** Sync fontPreset + enableCustomFont from stored settings (legacy enableCustomFont supported). */
@@ -53,7 +54,7 @@
             if (path) {
                 settings.enableCustomFont = true;
             } else {
-                settings.fontPreset = 'inter';
+                settings.fontPreset = 'source-code-pro';
                 settings.enableCustomFont = false;
             }
             return;
@@ -74,7 +75,7 @@
 
     function resolveActiveFontPreset(settings) {
         normalizeFontSettings(settings);
-        return settings?.fontPreset || 'inter';
+        return settings?.fontPreset || 'source-code-pro';
     }
 
     function ensureGoogleStylesheet(queryPart) {
@@ -101,7 +102,7 @@
             .load()
             .then((loadedFace) => {
                 document.fonts.add(loadedFace);
-                document.documentElement.style.setProperty('--font-family-main', `'${fontName}', monospace`);
+                document.documentElement.style.setProperty('--font-family-dashboard', `'${fontName}', monospace`);
                 document.documentElement.setAttribute('data-font-preset', 'custom');
             })
             .catch((err) => {
@@ -132,7 +133,7 @@
             ensureGoogleStylesheet(googlePart);
         }
         const stack = CSS_STACK[preset] || CSS_STACK.inter;
-        document.documentElement.style.setProperty('--font-family-main', stack);
+        document.documentElement.style.setProperty('--font-family-dashboard', stack);
         // A sans preset keeps code and URLs on the default mono; a mono preset takes them along.
         if (MONO_PRESETS.has(preset)) {
             document.documentElement.style.setProperty('--font-family-mono', stack.replace(/, monospace$/, '') + ', ui-monospace, monospace');

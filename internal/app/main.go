@@ -194,6 +194,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/static/bundle/search.js.map", handlers.ServeAssetBundle).Methods("GET")
 	r.HandleFunc("/api/app-version", handlers.AppVersion).Methods("GET")
 	r.HandleFunc("/api/update-status", handlers.GetUpdateStatus).Methods("GET")
+	r.HandleFunc("/api/about-info", handlers.GetAboutInfo).Methods("GET")
 	r.HandleFunc("/api/pages/{id:[0-9]+}", handlers.DeletePage).Methods("DELETE")
 	r.HandleFunc("/api/reset", handlers.ResetAllData).Methods("POST")
 	r.HandleFunc("/api/settings", handlers.GetSettings).Methods("GET")

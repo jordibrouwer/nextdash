@@ -3380,7 +3380,7 @@ other theme keeps its own. The backdrop and the card glass work the same way.
 
 ### 16.4 Type and background
 
-- **Typeface** — Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans or System UI — or **upload a font file**. A fresh install reads in Inter, at medium size (**M**) on a fresh install. An install that has a size keeps it; one still on the old default moves up once. Code, addresses and key chips are set in Source Code Pro, or in the monospaced typeface you pick; a proportional one leaves them on Source Code Pro.
+- **Typeface** — Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans or System UI — or **upload a font file**. The typeface you pick sets the dashboard: the header bar, the bookmark grid and the search panel. A fresh install reads in Source Code Pro there, and Inter stays one pick away. Config, the Inbox, Tags, Containers, the modals and the other views read in Inter, whatever you pick. The size is medium (**M**) on a fresh install. An install that has a size keeps it; one still on the old default moves up once. Code, addresses and key chips are set in Source Code Pro, or in the monospaced typeface you pick; a proportional one leaves them on Source Code Pro.
 - **Weight** — Normal, Semi-bold or Bold. **Size** — seven steps from XS to XL, **M** by default; pointing at a size previews it.
 
 Type is in the **Type** panel on the **Theme** tab; everything behind the bookmarks is on the **Background** tab, drawn in three layers from the bottom up: the theme's backdrop, a pattern over it, and a background of your own on top.
@@ -3721,7 +3721,21 @@ The Unraid server has a section of its own, **Config → Unraid**: the Container
 
 **The view tours.** The Bookmarks view, Containers, the Inbox and Config → Widgets each have a tour of their own, drawn in a window and offered once, the first time you visit. A **Tour** button beside the **ℹ** at the top of the view plays it again whenever you want. The Bookmarks view tour has five steps: the list and its rail, the three ways to check a link, charts and collection health, alerts, and clearing the backlog. The Containers tour has six: the list, acting on containers, the side panel, updates with a way back, Disk, and settings and alerts. The Inbox tour has four and the Widgets tour four: what a widget shows, the catalogue, the Custom widget, and how a widget behaves on the page. **Behavior → Privacy & sync → Onboarding** replays each of them.
 
-**About** has two tabs: **About nextDash** (what the project is, and links to nextdash.cc, GitHub, jordibrw.nl and Ko-fi) and **News & features** (every post from nextdash.cc, every release and every setting worth switching on, with source filters, and a button that bookmarks nextdash.cc so Fresh counts its posts).
+**About** has three tabs. **Project** says what nextDash is and why it exists, links to the docs, the issues, the changelog, the manual and the maker's site, has a Ko-fi card for those who want to chip in, and ends in a collapsed **Credits and licences** block. **Install** shows the release you run and whether a newer one is out, tiles for pages, categories, bookmarks, widgets, tags, data size, uptime and platform, and **Copy diagnostics**, which puts the facts a bug report asks for on the clipboard. **News & features** lists every post from nextdash.cc, every release and every setting worth switching on, with source filters, and a button that bookmarks nextdash.cc so Fresh counts its posts.
+
+<details>
+<summary>📷 Screenshot — Config → About, Project tab</summary>
+
+<p align="center"><img src="screenshots/manual.md/17-about.jpg" alt="Config, About on the Project tab: the nextDash mark with its tagline and links to GitHub, nextdash.cc, Docs, Issues, Changelog and Manual, and the cards Why it exists and Support nextDash with a Ko-fi button" width="860"></p>
+
+</details>
+
+<details>
+<summary>📷 Screenshot — Config → About, Install tab</summary>
+
+<p align="center"><img src="screenshots/manual.md/17-about-install.jpg" alt="Config, About on the Install tab: the release this install runs and that it is the newest, tiles for pages, categories, bookmarks, widgets, tags, data size, uptime and platform, and Diagnostics with a Copy diagnostics button" width="860"></p>
+
+</details>
 
 <a id="whats-new"></a>
 

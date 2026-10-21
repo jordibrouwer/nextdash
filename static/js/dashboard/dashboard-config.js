@@ -241,7 +241,7 @@ class DashboardConfig {
         this.section = 'overview';
         // True while this instance is drawing the Bookmarks view rather than Config.
         this.standalone = false;
-        this.aboutTab = 'colophon';
+        this.aboutTab = 'project';
         this.loading = false;
         this._loadPromise = null;
         // Pages & tags sub-tab (finders/tags/collections native; pages/categories embedded).
@@ -531,7 +531,8 @@ class DashboardConfig {
         const tabs = DashboardConfig.SUB_TABS[match[1]];
         const aliases = match[1] === 'appearance' ? DashboardConfig.APPEARANCE_TAB_ALIASES
             : match[1] === 'behavior' ? DashboardConfig.BEHAVIOR_TAB_ALIASES
-                : match[1] === 'stats' ? DashboardConfig.STATS_TAB_ALIASES : {};
+                : match[1] === 'stats' ? DashboardConfig.STATS_TAB_ALIASES
+                    : match[1] === 'about' ? { colophon: 'project' } : {};
         const tab = aliases[match[2]] || match[2];
         return tabs && tabs.includes(tab) ? tab : null;
     }
@@ -614,7 +615,16 @@ class DashboardConfig {
      */
     static NEWS_STREAM_MAX_AGE_MS = 30 * 60 * 1000;
 
-    static ABOUT_TABS = ['colophon', 'news'];
+    static ABOUT_TABS = ['project', 'install', 'news'];
+
+    /**
+     * Any about tab id, old or unknown, as one that exists. The first tab used
+     * to be called colophon, and a link, a stored location or a jump may still
+     * carry that name.
+     */
+    static normalizeAboutTab(tab) {
+        return DashboardConfig.ABOUT_TABS.includes(tab) ? tab : 'project';
+    }
 
     /**
      * The tab each remembering section last showed, kept in this browser.
@@ -5764,7 +5774,7 @@ class DashboardConfig {
             // Same rule as Help: set the tab before the section renders, since
             // the strip reads the field rather than being told.
             if (target.aboutTab && target.section === 'about') {
-                this.aboutTab = target.aboutTab;
+                this.aboutTab = DashboardConfig.normalizeAboutTab(target.aboutTab);
             }
             if (target.appearanceTab && target.section === 'appearance') {
                 if (this.section !== 'appearance') {
@@ -10042,7 +10052,7 @@ class DashboardConfig {
         }).join('');
 
         const presets = (window.DashboardFont?.PRESET_IDS) || ['source-code-pro', 'jetbrains-mono', 'ibm-plex-mono', 'inter', 'ibm-plex-sans', 'dm-sans', 'system'];
-        const activePreset = window.DashboardFont?.resolveActiveFontPreset?.(s) || s.fontPreset || 'inter';
+        const activePreset = window.DashboardFont?.resolveActiveFontPreset?.(s) || s.fontPreset || 'source-code-pro';
         const fontPresetOptions = presets.map((p) =>
             `<option value="${esc(p)}" ${p === activePreset ? 'selected' : ''}>${esc(this.fontPresetLabel(p))}</option>`
         ).join('');
@@ -13472,7 +13482,7 @@ class DashboardConfig {
         animationsEnabled: { info: ['enableAnimationsInfoTitle', 'enableAnimationsInfoMessage'], def: true },
         viewAnimationsEnabled: { info: ['viewAnimationsInfoTitle', 'viewAnimationsInfoMessage'], def: true },
         animationSpeed: { info: ['animationSpeedInfoTitle', 'animationSpeedInfoMessage'], def: 'normal' },
-        fontPreset: { info: ['fontPresetInfoTitle', 'fontPresetInfoMessage'], def: 'inter' },
+        fontPreset: { info: ['fontPresetInfoTitle', 'fontPresetInfoMessage'], def: 'source-code-pro' },
         fontWeight: { info: ['fontWeightInfoTitle', 'fontWeightInfoMessage'], def: 'normal' },
         backgroundType: { info: ['backgroundPickerInfoTitle', 'backgroundPickerInfoMessage'], def: 'none' },
         backgroundOpacity: { info: ['backgroundOpacityInfoTitle', 'backgroundOpacityInfoMessage'], def: 1 },
@@ -17974,6 +17984,11 @@ class DashboardConfig {
      * the next visit opens where the reader usually works rather than on the
      * first tab every time.
      */
+    /** Every write goes through normalizeAboutTab, so no caller can park on a dead id. */
+    get aboutTab() { return DashboardConfig.normalizeAboutTab(this._aboutTab); }
+
+    set aboutTab(tab) { this._aboutTab = DashboardConfig.normalizeAboutTab(tab); }
+
     get appearanceTab() { return this._appearanceTab; }
 
     set appearanceTab(tab) {
@@ -30372,11 +30387,15 @@ class DashboardConfig {
         const body = container.querySelector('#config-view-body') || container;
         if (body.dataset.aboutBound === '1') return;
         body.dataset.aboutBound = '1';
+        // `toggle` does not bubble, so it is caught on the way down.
+        body.addEventListener('toggle', (e) => {
+            if (this.section === 'about' && e.target.matches?.('[data-about-credits]') && e.target.open) void this.loadLicences();
+        }, true);
         body.addEventListener('click', (e) => {
             if (this.section !== 'about') return;
             const tab = e.target.closest('[data-about-tab]');
             if (tab) {
-                this.aboutTab = tab.getAttribute('data-about-tab');
+                this.aboutTab = DashboardConfig.normalizeAboutTab(tab.getAttribute('data-about-tab'));
                 this._trackAction('subtab', { section: 'about', tab: this.aboutTab, via: 'click' });
                 this.render();
                 this.restoreConfigHash();
@@ -30389,6 +30408,10 @@ class DashboardConfig {
                     : 'all';
                 this.newsFilter = this.newsFilter === next ? 'all' : next;
                 this.render();
+                return;
+            }
+            if (e.target.closest('[data-about-action="copy-diagnostics"]')) {
+                void this.copyDiagnostics();
                 return;
             }
             if (e.target.closest('[data-about-action="track-fresh"]')) {
@@ -30439,13 +30462,279 @@ class DashboardConfig {
     }
 
     aboutTabLabel(tab) {
-        return tab === 'news'
-            ? this.t('config.aboutTabNews', 'News & features')
-            : this.t('config.aboutTabColophon', 'About nextDash');
+        if (tab === 'news') return this.t('config.aboutTabNews', 'News & features');
+        if (tab === 'install') return this.t('config.aboutTabInstall', 'Install');
+        return this.t('config.aboutTabProject', 'Project');
     }
 
     renderAboutBody() {
-        return this.aboutTab === 'news' ? this.renderAboutNews() : this.renderAboutPanels();
+        const tab = DashboardConfig.normalizeAboutTab(this.aboutTab);
+        if (tab === 'news') return this.renderAboutNews();
+        if (tab === 'install') return this.renderAboutInstall();
+        return this.renderAboutProject();
+    }
+
+    renderAboutProject() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const btn = (href, text) => `<a class="config-btn" href="${href}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`;
+        // No version line: the nextdash-app-version meta is an asset fingerprint
+        // for cache-busting, not a release number; the Install tab shows the
+        // real one.
+        return `
+            <div class="config-about-hero">
+                <!-- The wordmark on its own dark plate: it is bright green on
+                     transparent, which a light theme would leave barely legible. -->
+                <div class="help-about-mark">
+                    <img src="/static/nextdash-wordmark.png" alt="nextDash"
+                        width="680" height="185" loading="lazy" decoding="async">
+                </div>
+                <p class="config-about-tagline">${esc(this.t('config.aboutTagline', 'A self-hosted, keyboard-first bookmark dashboard.'))}</p>
+                <div class="config-about-linkrow">
+                    ${btn('https://github.com/jordibrouwer/nextDash', this.t('config.helpGithub', 'Project on GitHub'))}
+                    ${btn('https://nextdash.cc', this.t('config.helpSiteProject', 'nextdash.cc'))}
+                    ${btn('https://nextdash.cc/docs/', this.t('config.aboutLinkDocs', 'Docs'))}
+                    ${btn('https://github.com/jordibrouwer/nextDash/issues', this.t('config.aboutLinkIssues', 'Issues'))}
+                    ${btn('https://github.com/jordibrouwer/nextdash/blob/main/CHANGELOG.md', this.t('config.aboutLinkChangelog', 'Changelog'))}
+                    ${btn('https://github.com/jordibrouwer/nextdash/blob/main/MANUAL.md', this.t('config.aboutLinkManual', 'Manual'))}
+                </div>
+            </div>
+            <div class="config-about-cards">
+                <section class="config-panel config-about-card" data-about-card="why">
+                    <h3 class="config-panel-title">${esc(this.t('config.aboutWhyTitle', 'Why it exists'))}</h3>
+                    <!-- DRAFT copy for Jordi to review -->
+                    <p>${esc(this.t('config.aboutWhyBody', 'nextDash is a bookmark dashboard that is fast to search, quick to organise and yours to host. There are no accounts, no tracking and no database: your bookmarks live in plain files on your own server.'))}</p>
+                </section>
+                <section class="config-panel config-about-card" data-about-card="kofi">
+                    <h3 class="config-panel-title">${esc(this.t('config.aboutKofiTitle', 'Support nextDash'))}</h3>
+                    <!-- DRAFT copy for Jordi to review -->
+                    <p>${esc(this.t('config.aboutKofiBody', 'nextDash has no ads, no accounts and no paid tier, and it will stay that way. It is made in spare hours by one person. If it saves you time every day, a coffee on Ko-fi helps keep those hours coming: new features, fixes and replies to your issues. Even a small one means a lot.'))}</p>
+                    ${this.renderKofiSupport()}
+                </section>
+                <section class="config-panel config-about-card" data-about-card="maker">
+                    <h3 class="config-panel-title">${esc(this.t('config.aboutMakerTitle', 'About the maker'))}</h3>
+                    <!-- DRAFT copy for Jordi to review -->
+                    <p>${esc(this.t('config.aboutMakerBody', 'nextDash is built by Jordi Brouwer, who writes about it and other projects on his own site.'))}</p>
+                    <div class="config-about-linkrow">
+                        ${btn('https://jordibrw.nl', this.t('config.helpSiteAuthor', 'jordibrw.nl'))}
+                    </div>
+                </section>
+                <section class="config-panel config-about-card" data-about-card="roadmap">
+                    <h3 class="config-panel-title">${esc(this.t('config.aboutRoadmapTitle', 'Roadmap'))}</h3>
+                    <!-- There is no public roadmap page yet, so this points at the
+                         open issues. Point it at a roadmap page once one exists. -->
+                    <p><a href="https://github.com/jordibrouwer/nextDash/issues" target="_blank" rel="noopener noreferrer">${esc(this.t('config.aboutRoadmapLink', 'See what is being worked on and suggest ideas'))}</a></p>
+                </section>
+            </div>
+            ${this.renderAboutCredits()}`;
+    }
+
+    /**
+     * The collapsed credits and licences block at the foot of the Project tab.
+     * The icon and chart credit lines stay in it until the full licence list
+     * replaces them.
+     */
+    renderAboutCredits() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `<details class="config-about-credits" data-about-credits>
+            <summary>${esc(this.t('config.aboutCreditsTitle', 'Credits and licences'))}</summary>
+            <div class="config-about-licences" data-about-licences>${this.renderLicenceList()}</div>
+            ${this.renderIconCredits()}
+        </details>`;
+    }
+
+    /** The generated licence list; empty until the section is first opened. */
+    renderLicenceList() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const data = this._licences;
+        if (data === undefined) return '';
+        if (!data || !Array.isArray(data.groups)) {
+            return `<p class="config-panel-note">${esc(this.t('config.aboutLicencesFailed', 'The licence list could not be loaded.'))}</p>`;
+        }
+        return data.groups.map((group) => `
+            <h4 class="config-about-licence-group">${esc(group.name)}</h4>
+            <ul class="config-about-licence-list">${(group.items || []).map((item) => {
+                const name = item.url
+                    ? `<a href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${esc(item.name)}</a>`
+                    : esc(item.name);
+                return `<li>${name}${item.version ? ` <span class="config-about-licence-version">${esc(item.version)}</span>` : ''}<span class="config-about-licence-id">${esc(item.license || '')}</span></li>`;
+            }).join('')}</ul>`).join('');
+    }
+
+    /** Fetch the licence list the first time the credits are opened. */
+    async loadLicences() {
+        if (this._licences !== undefined) return;
+        try {
+            const res = await fetch('/static/data/licenses.json');
+            this._licences = res.ok ? await res.json() : null;
+        } catch {
+            this._licences = null;
+        }
+        const target = document.querySelector('[data-about-licences]');
+        if (target) target.innerHTML = this.renderLicenceList();
+    }
+
+    /**
+     * About → Install: which release this is, whether it is the newest, and the
+     * facts a bug report needs. The release comes from the update status the
+     * overview already uses; platform, uptime and data size from
+     * /api/about-info; widget count from the statistics' library fetch.
+     */
+    renderAboutInstall() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        if (this._aboutInfo === undefined) void this.loadAboutInfo();
+        if (this._updateStatus === undefined) void this.loadUpdateStatus().then(() => this.repaintAboutInstall());
+        if (this._statsLibrary === undefined) void this.loadStatsLibrary().then(() => this.repaintAboutInstall());
+
+        const info = this._aboutInfo;
+        const status = this._updateStatus;
+        const lib = this._statsLibrary;
+        const s = this.computeStats();
+        const unavailable = this.t('config.aboutUnavailable', 'Unavailable');
+        const num = (v) => (v === null || v === undefined ? unavailable : String(v));
+        const release = status?.current || info?.release || '';
+
+        const desc = status ? (window.nextdashDescribeUpdateStatus?.(status, false) || {}) : {};
+        const behind = status && !status.error && status.updateAvailable && status.latest;
+        const newest = status && !status.error && !behind && status.latest;
+        const chipText = behind
+            ? this.t('config.updateCheckModalAvailable', '{latest} is available on GitHub.').replace('{latest}', status.latest)
+            : newest
+                ? this.t('config.aboutUpToDate', 'You are on the newest release.')
+                : (desc.message || '');
+        const chipTone = behind ? 'warn' : newest ? 'good' : '';
+        const build = info ? [info.buildDate, info.buildCommit && info.buildCommit !== 'unknown' ? info.buildCommit : ''].filter(Boolean).join(' · ') : '';
+
+        const tile = (id, label, value) => `
+            <div class="config-about-fact" data-about-fact="${id}">
+                <span class="config-about-fact-label">${esc(label)}</span>
+                <span class="config-about-fact-value">${esc(value)}</span>
+            </div>`;
+        const platform = info ? `${info.os}/${info.arch}` : unavailable;
+        const tiles = [
+            tile('pages', this.t('config.aboutFactPages', 'Pages'), num((this.dash.pages || []).length)),
+            tile('categories', this.t('config.aboutFactCategories', 'Categories'), num(s.categories)),
+            tile('bookmarks', this.t('config.aboutFactBookmarks', 'Bookmarks'), num((this.dash.allBookmarks || []).length)),
+            tile('widgets', this.t('config.aboutFactWidgets', 'Widgets'), num(lib ? lib.widgets : null)),
+            tile('tags', this.t('config.aboutFactTags', 'Tags'), num(s.tagCount)),
+            tile('data', this.t('config.aboutFactData', 'Data size'), info && info.dataBytes ? this.formatBytes(info.dataBytes) : unavailable),
+            tile('uptime', this.t('config.aboutFactUptime', 'Uptime'), info ? DashboardConfig.formatUptime(info.uptimeSeconds) : unavailable),
+            tile('platform', this.t('config.aboutFactPlatform', 'Platform'), platform),
+        ].join('');
+
+        return `
+            <div class="config-panel config-about-version">
+                <div class="config-about-version-main">
+                    <span class="config-about-version-label">${esc(this.t('config.aboutRunning', 'Running'))}</span>
+                    <strong class="config-about-version-tag" data-about-release>${esc(release || unavailable)}</strong>
+                    ${build ? `<span class="config-about-version-build">${esc(build)}</span>` : ''}
+                </div>
+                ${chipText ? `<p class="config-about-version-status${chipTone ? ` is-${chipTone}` : ''}" data-about-update-status>${esc(chipText)}${behind && status.releaseUrl ? ` <a href="${esc(status.releaseUrl)}" target="_blank" rel="noopener noreferrer">${esc(this.t('config.overviewUpdateAvailableCta', 'View release on GitHub →'))}</a>` : ''}</p>` : ''}
+            </div>
+            <div class="config-about-facts">${tiles}</div>
+            <div class="config-panel config-panel--plain">
+                <h3 class="config-panel-title">${esc(this.t('config.aboutDiagTitle', 'Diagnostics'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.aboutDiagNote',
+                    'Copies the version, platform, counts and which features are on, as Markdown for a GitHub issue. No bookmark names or addresses, no paths and no settings values.'))}</p>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-about-action="copy-diagnostics">${esc(this.t('config.aboutDiagCopy', 'Copy diagnostics'))}</button>
+                </div>
+            </div>`;
+    }
+
+    /** 93784 → "1d 2h", 3700 → "1h 1m", 40 → "40s". */
+    static formatUptime(seconds) {
+        const t = Math.max(0, Math.floor(Number(seconds) || 0));
+        const d = Math.floor(t / 86400);
+        const h = Math.floor((t % 86400) / 3600);
+        const m = Math.floor((t % 3600) / 60);
+        if (d) return `${d}d ${h}h`;
+        if (h) return `${h}h ${m}m`;
+        if (m) return `${m}m`;
+        return `${t}s`;
+    }
+
+    /** Server-side facts for About → Install; null when the call fails. */
+    async loadAboutInfo() {
+        try {
+            const res = await fetch('/api/about-info', { cache: 'no-store' });
+            this._aboutInfo = res.ok ? await res.json() : null;
+        } catch {
+            this._aboutInfo = null;
+        }
+        this.repaintAboutInstall();
+    }
+
+    repaintAboutInstall() {
+        if (!this.isActiveView() || this.section !== 'about' || this.aboutTab !== 'install') return;
+        const body = document.getElementById('config-about-body');
+        if (body) body.innerHTML = this.renderAboutInstall();
+    }
+
+    /**
+     * The Markdown a bug report needs. Counts and on/off names only: never a
+     * bookmark name or address, the data path, a token or a setting's value.
+     */
+    buildDiagnostics() {
+        const info = this._aboutInfo || {};
+        const status = this._updateStatus || {};
+        const s = this.computeStats();
+        const settings = this.dash.settings || {};
+        const features = Object.entries(DashboardConfig.HELP_PANEL_FEATURES)
+            .filter(([, f]) => f.isOn(settings))
+            .map(([key]) => this.t(key, key));
+        const unknown = 'unknown';
+        const lines = [
+            '### nextDash',
+            `- Release: ${status.current || info.release || unknown}`,
+            `- Build: ${[info.buildVersion, info.buildCommit].filter((v) => v && v !== 'unknown').join(' ') || unknown}${info.buildDate ? ` (${info.buildDate})` : ''}`,
+            status.latest ? `- Latest on GitHub: ${status.latest}` : '',
+            '',
+            '### Environment',
+            `- Platform: ${info.os ? `${info.os}/${info.arch}` : unknown}`,
+            `- Go: ${info.goVersion || unknown}`,
+            `- Uptime: ${info.uptimeSeconds !== undefined ? DashboardConfig.formatUptime(info.uptimeSeconds) : unknown}`,
+            `- Data size: ${info.dataBytes ? this.formatBytes(info.dataBytes) : unknown}`,
+            '',
+            '### Counts',
+            `- Pages: ${(this.dash.pages || []).length}`,
+            `- Categories: ${s.categories}`,
+            `- Bookmarks: ${(this.dash.allBookmarks || []).length}`,
+            `- Widgets: ${this._statsLibrary && this._statsLibrary.widgets !== null ? this._statsLibrary.widgets : unknown}`,
+            `- Tags: ${s.tagCount}`,
+            '',
+            '### Features on',
+            features.length ? features.map((f) => `- ${f}`).join('\n') : '- none of the optional ones',
+            '',
+            '### Browser',
+            `- ${navigator.userAgent}`,
+            `- Language: ${navigator.language || unknown}`,
+            `- Screen: ${window.innerWidth}x${window.innerHeight}`,
+            `- Theme: ${settings.theme || unknown}`,
+        ];
+        return lines.filter((l, i) => l !== '' || lines[i - 1] !== '').join('\n');
+    }
+
+    async copyDiagnostics() {
+        const text = this.buildDiagnostics();
+        let copied = false;
+        try {
+            await navigator.clipboard.writeText(text);
+            copied = true;
+        } catch {
+            // Plain-HTTP LAN installs have no Clipboard API.
+            const area = document.createElement('textarea');
+            area.value = text;
+            area.setAttribute('readonly', '');
+            area.style.position = 'fixed';
+            area.style.opacity = '0';
+            document.body.appendChild(area);
+            area.select();
+            try { copied = document.execCommand('copy'); } catch { copied = false; }
+            area.remove();
+        }
+        this.notify(copied
+            ? this.t('config.aboutDiagCopied', 'Diagnostics copied.')
+            : this.t('config.aboutDiagFailed', 'Could not copy. Select the text and copy it by hand.'), copied ? 'success' : 'error');
     }
 
     /**
@@ -30480,7 +30769,9 @@ class DashboardConfig {
         this.markNewsRead();
 
         return `
-            <div class="config-panel config-panel--plain config-news-panel">
+            <div class="config-about-news">
+            <div class="config-panel config-news-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.aboutNewsTitle', 'Releases, posts and features'))}</h3>
                 ${this.renderNewsChips()}
                 ${shown.length
                     ? `<ul class="config-news-stream">${shown.map((item) => this.renderNewsItem(item)).join('')}</ul>`
@@ -30488,7 +30779,7 @@ class DashboardConfig {
                 ${this.renderNewsFoot(shown.length, stream.length)}
             </div>
             ${(filter === 'all' || filter === 'feature') && catalogue.length ? `
-            <div class="config-panel config-panel--plain">
+            <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.aboutFeatureCatalogue', 'Everything else you can switch on'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.aboutFeatureCatalogueNote',
                     'Settings from earlier releases, in the order they were written down.'))}</p>
@@ -30504,7 +30795,8 @@ class DashboardConfig {
                     at: 0,
                 })).join('')}</ul>
             </div>` : ''}
-            ${this.renderTrackInFresh()}`;
+            ${this.renderTrackInFresh()}
+            </div>`;
     }
 
     /**
@@ -30519,7 +30811,7 @@ class DashboardConfig {
         const already = (this.dash.allBookmarks || [])
             .some((b) => String(b?.url || '').includes('nextdash.cc'));
         return `
-            <div class="config-panel config-panel--plain">
+            <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.aboutTrackTitle', 'Follow it from your own dashboard'))}</h3>
                 <p class="config-panel-note">${esc(already
                     ? this.t('config.aboutTrackDone', 'nextdash.cc is already one of your bookmarks — Fresh will count new posts on it like any other page.')
@@ -30527,41 +30819,6 @@ class DashboardConfig {
                 ${already ? '' : `<div class="config-actions">
                     <button type="button" class="config-btn config-btn--small" data-about-action="track-fresh">${esc(this.t('config.aboutTrackCta', 'Add nextdash.cc to my bookmarks'))}</button>
                 </div>`}
-            </div>`;
-    }
-
-    renderAboutPanels() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        // No version line: the nextdash-app-version meta is an asset fingerprint
-        // for cache-busting (see appVersionToken in html_etag.go), not a release
-        // number, so printing it as "Version" showed people a meaningless hash.
-        // The real one is served by /api/version if this is ever wanted here.
-        // No what's-new panel: the release notes are already one button away in
-        // Help → Getting started and again beside the onboarding switches in
-        // Behavior, and a third copy on the colophon added a panel rather than a
-        // way in.
-        return `
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.helpAboutTitle', 'About nextDash'))}</h3>
-                <!-- The wordmark on its own dark plate rather than on the panel:
-                     it is bright green on transparent, which a light theme
-                     would leave barely legible. The plate is the same near-black
-                     the printable cheat sheet uses, so the two pieces of
-                     nextDash that carry the logo look like each other. -->
-                <div class="help-about-mark">
-                    <!-- 680px wide for a mark shown at most 340: the 2065px
-                         original was 104 KB of a 340px panel. -->
-                    <img src="/static/nextdash-wordmark.png" alt="nextDash"
-                        width="680" height="185" loading="lazy" decoding="async">
-                </div>
-                <div class="config-help-prose">${this.t('config.helpAboutBody', '')}</div>
-                <div class="config-actions">
-                    <a class="config-btn" href="https://github.com/jordibrouwer/nextDash" target="_blank" rel="noopener noreferrer">${esc(this.t('config.helpGithub', 'Project on GitHub'))}</a>
-                    <a class="config-btn" href="https://nextdash.cc" target="_blank" rel="noopener noreferrer">${esc(this.t('config.helpSiteProject', 'nextdash.cc'))}</a>
-                    <a class="config-btn" href="https://jordibrw.nl" target="_blank" rel="noopener noreferrer">${esc(this.t('config.helpSiteAuthor', 'jordibrw.nl'))}</a>
-                </div>
-                ${this.renderIconCredits()}
-                ${this.renderKofiSupport()}
             </div>`;
     }
 

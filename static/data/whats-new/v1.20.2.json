@@ -1,0 +1,19 @@
+{
+  "tag": "v1.20.2",
+  "date": "21 October 2026",
+  "releasedAt": "2026-10-21",
+  "modalLead": "The text of the whole app is set in <strong>Source Code Pro</strong> again.",
+  "sections": [
+    {
+      "title": "Look",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Source Code Pro is the text font again,</strong> on a fresh install and for an install that was on Inter. Inter is still one pick away under Appearance.",
+          "link": "#config/appearance",
+          "linkLabel": "Open Appearance"
+        }
+      ]
+    }
+  ]
+}

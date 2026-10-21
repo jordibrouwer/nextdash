@@ -51,6 +51,11 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.20.1 (2026-10-20)
+- Widgets: four Beszel widgets read a Beszel hub: every system, one system in full, only the systems that need a look, and every disk
+- Config: one pane instead of a pane per panel, hints under their settings, Appearance tabs on one line, and Unraid opens on its connection
+- Fixes: a service that could not be reached no longer says its sign-in was refused, the Containers table and the Bookmarks view fit a laptop window, and Confetti keeps the // and the widget icon
+
 ### v1.20.0 (2026-10-20)
 - Appearance: Confetti is the default look for a new install, with 24 new colour-burst theme families and three new backdrops
 - Appearance: categories and widgets sit on glass, a card or nothing, per theme or for all; widgets get their own background and opacity
@@ -91,14 +96,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Action bar: five button sizes, from extra small to extra large; the header destinations grow with them
 - Tags: subjects in a tree, and new links are looked up on Wikidata quietly, offered as a chip and never written
 - Fixes: a docked action bar no longer slides into place on a load, and a tab reached through Find settings stays put
-
-### v1.19.6 (2026-10-14)
-- Tags: a quieter tag cloud with counts and type-to-find; picking a tag opens a table of every bookmark with it, from all pages
-- Tag suggestions: a catalogue of some 51,000 sites, a Wikidata lookup for unknown ones, and suggestions right in the Bookmarks, tag and Inbox rows
-- Widgets: a Home Assistant widget for up to 60 entities of your choice
-- Dashboard: a three-line key legend under the grid (Shift + Z), and Shift + K replays the tour
-- Tours: shorter tours, at most one tip a day, and settings for animation speed
-- Fixes: saves from two devices no longer overwrite each other's pages, categories or finders
 
   </Changes>
 

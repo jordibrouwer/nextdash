@@ -1,0 +1,62 @@
+{
+  "generatedAt": "2026-10-21T14:15:51.076Z",
+  "groups": [
+    {
+      "name": "Go modules",
+      "items": [
+        {
+          "name": "nextDash",
+          "version": "",
+          "license": "MIT",
+          "url": "https://github.com/jordibrouwer/nextDash"
+        },
+        {
+          "name": "github.com/gorilla/mux",
+          "version": "v1.8.0",
+          "license": "BSD-3-Clause",
+          "url": "https://pkg.go.dev/github.com/gorilla/mux@v1.8.0"
+        },
+        {
+          "name": "golang.org/x/net",
+          "version": "v0.61.0",
+          "license": "BSD-3-Clause",
+          "url": "https://pkg.go.dev/golang.org/x/net@v0.61.0"
+        }
+      ]
+    },
+    {
+      "name": "Bundled in the browser",
+      "items": [
+        {
+          "name": "QRCode Generator",
+          "version": "1.4.4",
+          "license": "MIT",
+          "url": "https://github.com/kazuhikoarase/qrcode-generator"
+        },
+        {
+          "name": "uPlot",
+          "version": "1.6.32",
+          "license": "MIT",
+          "url": "https://github.com/leeoniya/uPlot"
+        }
+      ]
+    },
+    {
+      "name": "Icons",
+      "items": [
+        {
+          "name": "dashboard-icons",
+          "version": "",
+          "license": "Apache-2.0",
+          "url": "https://github.com/homarr-labs/dashboard-icons"
+        },
+        {
+          "name": "selfh.st/icons",
+          "version": "",
+          "license": "CC BY 4.0",
+          "url": "https://github.com/selfhst/icons"
+        }
+      ]
+    }
+  ]
+}
