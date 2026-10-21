@@ -241,7 +241,7 @@ class DashboardConfig {
         this.section = 'overview';
         // True while this instance is drawing the Bookmarks view rather than Config.
         this.standalone = false;
-        this.aboutTab = 'colophon';
+        this.aboutTab = 'project';
         this.loading = false;
         this._loadPromise = null;
         // Pages & tags sub-tab (finders/tags/collections native; pages/categories embedded).
@@ -531,7 +531,8 @@ class DashboardConfig {
         const tabs = DashboardConfig.SUB_TABS[match[1]];
         const aliases = match[1] === 'appearance' ? DashboardConfig.APPEARANCE_TAB_ALIASES
             : match[1] === 'behavior' ? DashboardConfig.BEHAVIOR_TAB_ALIASES
-                : match[1] === 'stats' ? DashboardConfig.STATS_TAB_ALIASES : {};
+                : match[1] === 'stats' ? DashboardConfig.STATS_TAB_ALIASES
+                    : match[1] === 'about' ? { colophon: 'project' } : {};
         const tab = aliases[match[2]] || match[2];
         return tabs && tabs.includes(tab) ? tab : null;
     }
@@ -614,7 +615,16 @@ class DashboardConfig {
      */
     static NEWS_STREAM_MAX_AGE_MS = 30 * 60 * 1000;
 
-    static ABOUT_TABS = ['colophon', 'news'];
+    static ABOUT_TABS = ['project', 'install', 'news'];
+
+    /**
+     * Any about tab id, old or unknown, as one that exists. The first tab used
+     * to be called colophon, and a link, a stored location or a jump may still
+     * carry that name.
+     */
+    static normalizeAboutTab(tab) {
+        return DashboardConfig.ABOUT_TABS.includes(tab) ? tab : 'project';
+    }
 
     /**
      * The tab each remembering section last showed, kept in this browser.
@@ -5764,7 +5774,7 @@ class DashboardConfig {
             // Same rule as Help: set the tab before the section renders, since
             // the strip reads the field rather than being told.
             if (target.aboutTab && target.section === 'about') {
-                this.aboutTab = target.aboutTab;
+                this.aboutTab = DashboardConfig.normalizeAboutTab(target.aboutTab);
             }
             if (target.appearanceTab && target.section === 'appearance') {
                 if (this.section !== 'appearance') {
@@ -17974,6 +17984,11 @@ class DashboardConfig {
      * the next visit opens where the reader usually works rather than on the
      * first tab every time.
      */
+    /** Every write goes through normalizeAboutTab, so no caller can park on a dead id. */
+    get aboutTab() { return DashboardConfig.normalizeAboutTab(this._aboutTab); }
+
+    set aboutTab(tab) { this._aboutTab = DashboardConfig.normalizeAboutTab(tab); }
+
     get appearanceTab() { return this._appearanceTab; }
 
     set appearanceTab(tab) {
@@ -30376,7 +30391,7 @@ class DashboardConfig {
             if (this.section !== 'about') return;
             const tab = e.target.closest('[data-about-tab]');
             if (tab) {
-                this.aboutTab = tab.getAttribute('data-about-tab');
+                this.aboutTab = DashboardConfig.normalizeAboutTab(tab.getAttribute('data-about-tab'));
                 this._trackAction('subtab', { section: 'about', tab: this.aboutTab, via: 'click' });
                 this.render();
                 this.restoreConfigHash();
@@ -30439,13 +30454,24 @@ class DashboardConfig {
     }
 
     aboutTabLabel(tab) {
-        return tab === 'news'
-            ? this.t('config.aboutTabNews', 'News & features')
-            : this.t('config.aboutTabColophon', 'About nextDash');
+        if (tab === 'news') return this.t('config.aboutTabNews', 'News & features');
+        if (tab === 'install') return this.t('config.aboutTabInstall', 'Install');
+        return this.t('config.aboutTabProject', 'Project');
     }
 
     renderAboutBody() {
-        return this.aboutTab === 'news' ? this.renderAboutNews() : this.renderAboutPanels();
+        const tab = DashboardConfig.normalizeAboutTab(this.aboutTab);
+        if (tab === 'news') return this.renderAboutNews();
+        if (tab === 'install') return this.renderAboutInstall();
+        return this.renderAboutProject();
+    }
+
+    renderAboutProject() {
+        return this.renderAboutPanels();
+    }
+
+    renderAboutInstall() {
+        return '<div class="config-panel config-panel--plain"></div>';
     }
 
     /**

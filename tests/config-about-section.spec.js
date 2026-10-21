@@ -106,3 +106,39 @@ test.describe('a section is more than a panel', () => {
         expect(entries.map((e) => e.title).join(' ')).toMatch(/About nextDash/);
     });
 });
+
+test.describe('About tabs: Project, Install, News', () => {
+    async function gotoHash(page, hash) {
+        await markWhatsNewSeen(page);
+        await page.goto(hash);
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+    }
+    const selected = (page) => page.locator('[data-about-tab][aria-selected="true"]');
+
+    test('about opens Project by default', async ({ page }) => {
+        await openConfig(page, 'about');
+        await expect(selected(page)).toHaveAttribute('data-about-tab', 'project');
+        const ids = await page.locator('[data-about-tab]').evaluateAll((els) => els.map((e) => e.getAttribute('data-about-tab')));
+        expect(ids).toEqual(['project', 'install', 'news']);
+    });
+
+    test('#config/about/colophon opens Project', async ({ page }) => {
+        await gotoHash(page, '/#config/about/colophon');
+        await expect(selected(page)).toHaveAttribute('data-about-tab', 'project');
+    });
+
+    test('#config/about/install selects the Install tab and writes the hash back', async ({ page }) => {
+        await gotoHash(page, '/#config/about/install');
+        await expect(selected(page)).toHaveAttribute('data-about-tab', 'install');
+        expect(await page.evaluate(() => location.hash)).toBe('#config/about/install');
+    });
+
+    test("a stored aboutTab of 'colophon' is read as project", async ({ page }) => {
+        await openConfig(page, 'about');
+        await page.evaluate(() => { window.dashboardInstance.config.aboutTab = 'colophon'; window.dashboardInstance.config.render(); });
+        await expect(selected(page)).toHaveAttribute('data-about-tab', 'project');
+        expect(await page.evaluate(() => window.dashboardInstance.config.aboutTab)).toBe('project');
+    });
+});

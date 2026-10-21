@@ -230,12 +230,12 @@ test.describe('the news stream', () => {
         await dismissBlockingOverlays(page);
 
         // It was in the sub-tab state map but not in the addressable list, so
-        // the link opened the colophon and the hash was rewritten behind it.
+        // the link opened the first tab and the hash was rewritten behind it.
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.aboutTab), { timeout: 15_000 })
             .toBe('news');
         expect(await page.evaluate(() => location.hash)).toBe('#config/about/news');
 
-        await page.locator('[data-about-tab="colophon"]').click();
+        await page.locator('[data-about-tab="project"]').click();
         await expect.poll(() => page.evaluate(() => location.hash)).toBe('#config/about');
     });
 });
