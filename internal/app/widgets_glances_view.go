@@ -3,6 +3,8 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
 	"sort"
@@ -62,6 +64,9 @@ var glancesHistoryPlugins = map[string]bool{
 	"cpu": true, "mem": true, "memswap": true, "load": true,
 	"network": true, "diskio": true, "quicklook": true, "fs": true,
 }
+
+// errGlancesRateLimited is a read that would have gone out over the budget.
+var errGlancesRateLimited = errors.New("rate limited")
 
 var (
 	glancesHistoryRe = regexp.MustCompile(`^([a-z]+)/history/([1-9][0-9]{0,3})$`)
@@ -151,14 +156,26 @@ func glancesCached(key string, ttl time.Duration, fetch func() ([]byte, error)) 
 	}
 	glancesViewCache.Unlock()
 
-	data, err := fetch()
-	glancesViewCache.Lock()
-	entry.data, entry.err = data, err
-	if err == nil || err == errGlancesNotFound {
-		entry.expires = time.Now().Add(ttl)
-	}
-	glancesViewCache.Unlock()
-	close(entry.done)
+	// Whatever fetch does, the answer is stored and the waiters released: a
+	// panic is a failure that is not kept, never a key that hangs for good.
+	var data []byte
+	var err error
+	func() {
+		defer func() {
+			if p := recover(); p != nil {
+				data, err = nil, fmt.Errorf("glances view: panic: %v", p)
+				logWarn(logComponentWidgets, "Glances view %s", err)
+			}
+			glancesViewCache.Lock()
+			entry.data, entry.err = data, err
+			if err == nil || errors.Is(err, errGlancesNotFound) {
+				entry.expires = time.Now().Add(ttl)
+			}
+			glancesViewCache.Unlock()
+			close(entry.done)
+		}()
+		data, err = fetch()
+	}()
 	return data, err
 }
 
@@ -240,7 +257,8 @@ glancesViewHandler answers one allowed path for one Glances widget.
 The path is read from the escaped URL, not the decoded one, so an encoded
 slash or dot never becomes a separator. Unknown paths and unknown widgets are
 404. A plugin that is off is {"available":false}, and every other failure is
-{"error":"<code>"}, both 200, as the tile is told.
+{"error":"<code>"}, both 200, as the tile is told. Only a read that goes out
+to Glances is charged to the outbound rate limit; over it, the answer is 429.
 */
 func (h *Handlers) glancesViewHandler(w http.ResponseWriter, r *http.Request) {
 	h.setCORSHeaders(w, r)
@@ -253,10 +271,6 @@ func (h *Handlers) glancesViewHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	if !h.requireSSRFAPIRateLimit(w, r) {
-		return
-	}
-
 	rest, ok := strings.CutPrefix(r.URL.EscapedPath(), "/api/glances/")
 	if !ok || strings.Contains(rest, "%") {
 		http.NotFound(w, r)
@@ -286,7 +300,7 @@ func (h *Handlers) glancesViewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	fail := func(err error) {
-		if err == errGlancesNotFound {
+		if errors.Is(err, errGlancesNotFound) {
 			_ = json.NewEncoder(w).Encode(map[string]bool{"available": false})
 			return
 		}
@@ -321,12 +335,25 @@ func (h *Handlers) glancesViewHandler(w http.ResponseWriter, r *http.Request) {
 		// Not the asker's context: the answer is shared with whoever waits.
 		ctx, stop := context.WithTimeout(context.WithoutCancel(r.Context()), mediaRequestTimeout)
 		defer stop()
+		// Only a read that goes out to Glances is charged: a cached answer,
+		// a refused path or one process from the cached list costs nothing,
+		// so an open view does not use up the budget the tiles share.
+		if h.ssrfAPILimiter != nil && !h.ssrfAPILimiter.allow(clientIP(r)) {
+			return nil, errGlancesRateLimited
+		}
 		var raw json.RawMessage
 		if err := h.glancesGet(ctx, spec.Server, credential, "/"+asked, nil, &raw); err != nil {
 			return nil, err
 		}
 		return raw, nil
 	})
+	if errors.Is(err, errGlancesRateLimited) {
+		logRateLimitHit(r, r.URL.Path)
+		w.Header().Del("Content-Type")
+		w.Header().Set("Retry-After", "60")
+		http.Error(w, "Too many requests", http.StatusTooManyRequests)
+		return
+	}
 	if err != nil {
 		fail(err)
 		return

@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -131,12 +132,12 @@ func TestGlancesViewAllowlist(t *testing.T) {
 	}
 
 	// The browser cannot name another server, and its query is never forwarded.
-	elsewhere := 0
-	other := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { elsewhere++ }))
+	var elsewhere atomic.Int32
+	other := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { elsewhere.Add(1) }))
 	defer other.Close()
 	glancesViewDo(h, http.MethodGet, base+"load?pageId=1&server="+other.URL+"&credentialId=c1")
-	if elsewhere != 0 || fake.hitsFor("load") != 1 {
-		t.Errorf("server from the request: elsewhere=%d load=%d", elsewhere, fake.hitsFor("load"))
+	if elsewhere.Load() != 0 || fake.hitsFor("load") != 1 {
+		t.Errorf("server from the request: elsewhere=%d load=%d", elsewhere.Load(), fake.hitsFor("load"))
 	}
 	fake.mu.Lock()
 	for i, q := range fake.queries {
@@ -193,6 +194,66 @@ func TestGlancesViewCoalesces(t *testing.T) {
 	glancesViewDo(h, http.MethodGet, "/api/glances/"+widget.ID+"/fs?pageId=1")
 	if got := fake.hitsFor("fs"); got != 1 {
 		t.Errorf("a cached path was asked again: %d", got)
+	}
+}
+
+func TestGlancesViewRateLimitOnMissOnly(t *testing.T) {
+	h, fake, widget := glancesViewSetup(t)
+	h.ssrfAPILimiter = newSlidingWindowLimiter(2, time.Minute)
+	base := "/api/glances/" + widget.ID + "/"
+	// Refused paths cost nothing: if they did, the budget of two would be gone.
+	for _, path := range []string{"events/clear/all", "all", "status", "processes/abc"} {
+		if rec := glancesViewDo(h, http.MethodGet, base+path+"?pageId=1"); rec.Code != http.StatusNotFound {
+			t.Errorf("%s: %d", path, rec.Code)
+		}
+	}
+	for _, path := range []string{"fs", "processlist"} {
+		if rec := glancesViewDo(h, http.MethodGet, base+path+"?pageId=1"); rec.Code != http.StatusOK {
+			t.Fatalf("%s within the budget: %d", path, rec.Code)
+		}
+	}
+	// The budget is used up: cached answers and one process from the cached
+	// list still answer, a path that would go out is 429.
+	for _, path := range []string{"fs?pageId=1", "processlist?sort=name&q=d&pageId=1", "processes/1037?pageId=1"} {
+		if rec := glancesViewDo(h, http.MethodGet, base+path); rec.Code != http.StatusOK {
+			t.Errorf("cached %s: %d %s", path, rec.Code, rec.Body.String())
+		}
+	}
+	rec := glancesViewDo(h, http.MethodGet, base+"load?pageId=1")
+	if rec.Code != http.StatusTooManyRequests || rec.Header().Get("Retry-After") == "" {
+		t.Errorf("uncached over the budget: %d", rec.Code)
+	}
+	if fake.hitsFor("load") != 0 {
+		t.Errorf("a refused read still reached Glances")
+	}
+	// A refusal is not kept: with budget again, the path is asked.
+	h.ssrfAPILimiter = newSlidingWindowLimiter(1, time.Minute)
+	if rec := glancesViewDo(h, http.MethodGet, base+"load?pageId=1"); rec.Code != http.StatusOK || fake.hitsFor("load") != 1 {
+		t.Errorf("after the budget is back: %d, hits %d", rec.Code, fake.hitsFor("load"))
+	}
+}
+
+func TestGlancesCachedSurvivesPanic(t *testing.T) {
+	glancesViewForgetAll()
+	key := "glances-panic-test"
+	_, err := glancesCached(key, time.Minute, func() ([]byte, error) { panic("boom") })
+	if err == nil {
+		t.Fatal("a panicking fetch answered without an error")
+	}
+	done := make(chan struct{})
+	calls := 0
+	var data []byte
+	go func() {
+		defer close(done)
+		data, err = glancesCached(key, time.Minute, func() ([]byte, error) { calls++; return []byte(`{}`), nil })
+	}()
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("the second read hangs after a panic")
+	}
+	if err != nil || calls != 1 || string(data) != `{}` {
+		t.Errorf("second read: %q %v, fetched %d times", data, err, calls)
 	}
 }
 

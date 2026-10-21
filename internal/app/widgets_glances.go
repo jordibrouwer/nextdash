@@ -37,6 +37,9 @@ const (
 	glancesMinTTL      = 10
 	// glancesAPI is the prefix every path is asked under.
 	glancesAPI = "/api/4"
+	// glancesLargeBody caps the two answers that grow with the machine: every
+	// process, every container. Other paths keep the media cap.
+	glancesLargeBody = 16 << 20
 
 	glancesWarnPercent = 80
 	glancesBadPercent  = 90
@@ -322,7 +325,11 @@ func (h *Handlers) glancesGet(ctx context.Context, server string, credential Hea
 		return err
 	}
 	defer resp.Body.Close()
-	if err := json.NewDecoder(io.LimitReader(resp.Body, jellyfinMaxBody)).Decode(out); err != nil {
+	limit := int64(jellyfinMaxBody)
+	if path == "/processlist" || path == "/containers" {
+		limit = glancesLargeBody
+	}
+	if err := json.NewDecoder(io.LimitReader(resp.Body, limit)).Decode(out); err != nil {
 		return fmt.Errorf("%w: %v", errMediaUnreachable, err)
 	}
 	return nil
