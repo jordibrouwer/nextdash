@@ -159,6 +159,8 @@ const (
 	WidgetTypeBeszelSystem    WidgetType = "beszel-system"
 	WidgetTypeBeszelAttention WidgetType = "beszel-attention"
 	WidgetTypeBeszelStorage   WidgetType = "beszel-storage"
+	// WidgetTypeGlances shows one machine through its Glances server.
+	WidgetTypeGlances WidgetType = "glances"
 	// WidgetTypeHomeAssistant shows chosen entities per room and switches a
 	// safe few of them.
 	WidgetTypeHomeAssistant WidgetType = "homeassistant"
@@ -223,6 +225,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeBeszelSystem:    {},
 	WidgetTypeBeszelAttention: {},
 	WidgetTypeBeszelStorage:   {},
+	WidgetTypeGlances:         {},
 
 	WidgetTypeUnraid:              {},
 	WidgetTypeUnraidArray:         {},

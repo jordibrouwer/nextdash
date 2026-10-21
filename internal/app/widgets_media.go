@@ -49,7 +49,16 @@ var (
 	errMediaNoLibraries = errors.New("no libraries")
 	errMediaNoEntities  = errors.New("no entities")
 	errMediaSystemGone  = errors.New("system gone")
+	// errMediaLogin is a login a service refused; only Glances says so apart
+	// from a key (see glancesGet).
+	errMediaLogin = errors.New("login refused")
 )
+
+// mediaHTTPError is the status of an answer that was not a 200, kept so a
+// service can tell a 404 from a 500. It reads as before: "HTTP 404".
+type mediaHTTPError struct{ Status int }
+
+func (e *mediaHTTPError) Error() string { return fmt.Sprintf("HTTP %d", e.Status) }
 
 /*
 mediaSignInError says what a failed sign-in was.
@@ -71,7 +80,7 @@ func mediaSignInError(err error) error {
 // mediaErrorCode is what the tile is told: a short code it can word, never
 // the wrapped detail, which may name an internal address.
 func mediaErrorCode(err error) string {
-	for _, known := range []error{errMediaNotSetUp, errMediaNotAllowed, errMediaRefused, errMediaNoLibraries, errMediaNoEntities, errMediaSystemGone} {
+	for _, known := range []error{errMediaNotSetUp, errMediaNotAllowed, errMediaRefused, errMediaNoLibraries, errMediaNoEntities, errMediaSystemGone, errMediaLogin, errGlancesNotFound, errGlancesNeedsV4} {
 		if errors.Is(err, known) {
 			return known.Error()
 		}
@@ -127,7 +136,7 @@ type MediaItem struct {
 	Method    string `json:"method,omitempty"`
 	Paused    bool   `json:"paused,omitempty"`
 	Remaining int64  `json:"remaining,omitempty"`
-	// Meters is what a machine reads: set only by the Beszel tiles.
+	// Meters is what a machine reads: set only by the Beszel and Glances tiles.
 	Meters *MediaMeters `json:"meters,omitempty"`
 }
 
@@ -153,15 +162,32 @@ type MediaMeters struct {
 	GPU  *float64 `json:"gpu,omitempty"`
 	// Load is the 1, 5 and 15 minute averages.
 	Load []float64 `json:"load,omitempty"`
-	// Net is bytes a second; Uptime seconds.
+	// Swap is a percentage; Temps every temperature sensor, hottest first.
+	Swap  *float64    `json:"swap,omitempty"`
+	Temps []MediaTemp `json:"temps,omitempty"`
+	// Net is bytes a second received, NetUp sent; Uptime seconds.
 	Net    *int64 `json:"net,omitempty"`
+	NetUp  *int64 `json:"netUp,omitempty"`
 	Uptime int64  `json:"uptime,omitempty"`
 	Agent  string `json:"agent,omitempty"`
+	// Host and OS name the machine; Alerts is how many alerts are open.
+	Host   string `json:"host,omitempty"`
+	OS     string `json:"os,omitempty"`
+	Alerts int    `json:"alerts,omitempty"`
 	// Fs is every filesystem the agent reports, the root first.
 	Fs []MediaFs `json:"fs,omitempty"`
 	// Spark is the last hour of cpu, a point a minute, oldest first. Set only
 	// for the single-system tile.
 	Spark []float64 `json:"spark,omitempty"`
+}
+
+// MediaTemp is one temperature sensor, in degrees Celsius, with the lines
+// the machine itself draws for it when it has them.
+type MediaTemp struct {
+	Name  string   `json:"name"`
+	Value float64  `json:"value"`
+	Warn  *float64 `json:"warn,omitempty"`
+	Crit  *float64 `json:"crit,omitempty"`
 }
 
 // MediaFs is one filesystem and how full it is, in percent.
@@ -492,7 +518,7 @@ func (h *Handlers) mediaSend(ctx context.Context, method, server string, credent
 		return nil, fmt.Errorf("%w: HTTP %d from %s", errMediaRefused, resp.StatusCode, path)
 	case resp.StatusCode != http.StatusOK:
 		resp.Body.Close()
-		return nil, fmt.Errorf("%w: HTTP %d", errMediaUnreachable, resp.StatusCode)
+		return nil, fmt.Errorf("%w: %w", errMediaUnreachable, &mediaHTTPError{Status: resp.StatusCode})
 	}
 	return resp, nil
 }
