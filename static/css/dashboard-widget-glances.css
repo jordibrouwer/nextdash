@@ -1,0 +1,53 @@
+/*
+ * The Glances tile. The terse parts carry .dashboard-widget-narrow-only and
+ * the fuller ones .dashboard-widget-wide-only, which the panel's container
+ * query shows and hides (dashboard.css). What is laid out here is the wide
+ * form, so it answers to the same breakpoint, 28rem.
+ */
+.glances-head { align-items: center; }
+.glances-body { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.4rem; }
+.glances-meters, .glances-side, .glances-fss, .glances-temps { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+.glances-fss, .glances-temps { gap: 0.2rem; }
+
+.glances-bar, .glances-fs { display: flex; align-items: center; gap: 0.5rem; }
+.glances-label {
+    flex: none;
+    width: 2.6em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small);
+}
+.glances-fs .glances-label { width: 6em; }
+.glances-nobar { flex: 1 1 auto; min-width: 1.5rem; }
+.glances-value, .glances-line, .glances-net, .glances-state {
+    font-size: var(--font-size-small);
+    font-variant-numeric: tabular-nums;
+}
+.glances-value { min-width: 2.4em; text-align: right; }
+.glances-line, .glances-state, .glances-net { margin: 0; color: var(--text-secondary, inherit); }
+[data-tone="warn"].glances-value, [data-tone="warn"].glances-temp .glances-value { color: var(--accent-warning); }
+[data-tone="bad"].glances-value, [data-tone="bad"].glances-temp .glances-value { color: var(--accent-error); }
+
+.glances-temp { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.glances-temp .glances-label { width: auto; flex: 1 1 auto; min-width: 0; }
+
+.glances-spark { margin: 0.5rem 0 0; }
+.glances-spark-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 1px;
+    height: 2.4rem;
+}
+.glances-spark-bar {
+    flex: 1 1 0;
+    min-width: 1px;
+    border-radius: 1px;
+    background: var(--accent-primary);
+    opacity: 0.55;
+}
+
+@container (min-width: 28rem) {
+    .glances-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+}
