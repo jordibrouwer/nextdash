@@ -343,3 +343,217 @@ func TestGlancesSamplerRecordsEveryCore(t *testing.T) {
 		t.Error("a core the host does not have")
 	}
 }
+
+func TestGlancesRecordIntervalChoices(t *testing.T) {
+	for _, seconds := range []int{2, 30, 60, 300, 900, 1800, 3600} {
+		if got := normalizeGlancesRecord(seconds); got != seconds {
+			t.Errorf("%d became %d", seconds, got)
+		}
+	}
+	for _, seconds := range []int{0, -1, 5, 61, 99999} {
+		if got := normalizeGlancesRecord(seconds); got != glancesDefaultRecord {
+			t.Errorf("%d should read as the default, got %d", seconds, got)
+		}
+	}
+	if d := (GlancesConfig{RecordEvery: 900}).recordInterval(); d != 15*time.Minute {
+		t.Errorf("interval %v", d)
+	}
+	if d := (GlancesConfig{}).recordInterval(); d != 30*time.Second {
+		t.Errorf("unset interval %v", d)
+	}
+}
+
+func TestGlancesRecordEveryIsSavedAndReported(t *testing.T) {
+	h := newTestHandlers(t)
+	t.Setenv("NEXTDASH_WRITE_TOKEN", "tok")
+	put := func(body string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPut, "/api/glances/config", strings.NewReader(body))
+		req.Header.Set("X-NextDash-Token", "tok")
+		rec := httptest.NewRecorder()
+		h.glancesConfigHandler(rec, req)
+		return rec
+	}
+	if rec := put(`{"enabled":true,"server":"http://nas:61208","recordEvery":300}`); rec.Code != http.StatusOK {
+		t.Fatalf("save: %d", rec.Code)
+	}
+	if got := loadGlancesConfig().RecordEvery; got != 300 {
+		t.Errorf("stored %d", got)
+	}
+	// A value that is not offered reads as the default; a save of something else keeps it.
+	put(`{"recordEvery":7}`)
+	if got := loadGlancesConfig().RecordEvery; got != glancesDefaultRecord {
+		t.Errorf("odd value stored as %d", got)
+	}
+	put(`{"recordEvery":900}`)
+	put(`{"refresh":5}`)
+	if got := loadGlancesConfig().RecordEvery; got != 900 {
+		t.Errorf("a save that did not mention it changed it to %d", got)
+	}
+	status := httptest.NewRecorder()
+	h.glancesStatusHandler(status, httptest.NewRequest(http.MethodGet, "/api/glances/status", nil))
+	var got struct {
+		RecordEvery int `json:"recordEvery"`
+	}
+	_ = json.Unmarshal(status.Body.Bytes(), &got)
+	if got.RecordEvery != 900 {
+		t.Errorf("status says %d", got.RecordEvery)
+	}
+}
+
+// The sampler reads once at start, and a change of pace ends its wait: from an
+// hour to thirty seconds does not take an hour to be noticed.
+func TestGlancesSamplerReadsAtOnceAndWakesOnAChange(t *testing.T) {
+	h, _, cfg := glancesViewSetup(t)
+	// A sampler left over from an earlier test may be finishing its last beat.
+	time.Sleep(200 * time.Millisecond)
+	select { // and a wake left by an earlier save
+	case <-glancesRecordWake:
+	default:
+	}
+	glancesWipe()
+	cfg.RecordEvery = 3600
+	if _, err := saveGlancesConfig(cfg, nil); err != nil {
+		t.Fatal(err)
+	}
+	stop := make(chan struct{})
+	done := h.StartGlancesSampler(stop)
+	defer func() { close(stop); <-done }()
+
+	waitFor := func(points int) bool {
+		deadline := time.Now().Add(3 * time.Second)
+		for time.Now().Before(deadline) {
+			if finePoints("cpu") >= points {
+				return true
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
+		return false
+	}
+	if !waitFor(1) {
+		t.Fatal("nothing was read at start with an hour between readings")
+	}
+	time.Sleep(300 * time.Millisecond)
+	if finePoints("cpu") != 1 {
+		t.Fatalf("a second reading came within an hour: %d points", finePoints("cpu"))
+	}
+	cfg.RecordEvery = 30
+	if _, err := saveGlancesConfig(cfg, nil); err != nil {
+		t.Fatal(err)
+	}
+	glancesWakeSampler()
+	if !waitFor(2) {
+		t.Error("changing the pace did not end the wait")
+	}
+}
+
+// At five minutes a beat or more, one beat over the line is an incident and one
+// under it ends it; at a quick pace it takes two and three.
+func TestGlancesIncidentTimingFollowsThePace(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	glancesWipe()
+	defer setGlancesBeat(glancesDefaultBeat)
+	bad := []glancesObservation{{Kind: "cpu", Value: 95, Bad: true}}
+	good := []glancesObservation{{Kind: "cpu", Value: 10}}
+	now := time.Now().UnixMilli()
+
+	setGlancesBeat(5 * time.Second)
+	glancesObserve(now, bad)
+	if ongoing, _ := glancesIncidentList(); len(ongoing) != 0 {
+		t.Fatalf("one noisy beat opened an incident at a quick pace: %v", ongoing)
+	}
+	glancesWipe()
+
+	setGlancesBeat(15 * time.Minute)
+	glancesObserve(now, bad)
+	if ongoing, _ := glancesIncidentList(); len(ongoing) != 1 {
+		t.Fatalf("at fifteen minutes a beat the one beat should open it: %v", ongoing)
+	}
+	glancesObserve(now+15*60*1000, good)
+	if ongoing, past := glancesIncidentList(); len(ongoing) != 0 || len(past) != 1 {
+		t.Errorf("one good beat should end it: ongoing=%v past=%v", ongoing, past)
+	}
+}
+
+// A point stands for as long as the record's own gap: recorded every half hour,
+// a day of a steady 1000 B/s is still about 86 MB, not an eighth of it.
+func TestGlancesNetworkVolumeFollowsTheRecordingPace(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	glancesWipe()
+	now := time.Now()
+	for at := now.Add(-4 * 24 * time.Hour); at.Before(now); at = at.Add(30 * time.Minute) {
+		glancesRecord(at.UnixMilli(), map[string]float64{"net:eth0:rx": 1000, "net:eth0:tx": 0})
+	}
+	// Each half-hour point is alone in its quarter-hour slot, so it is filed as a long point of its own.
+	// Close the pending buckets the way the next reading would.
+	glancesRecord(now.Add(2*time.Hour).UnixMilli(), map[string]float64{"net:eth0:rx": 1000, "net:eth0:tx": 0})
+	out := glancesComputeInsights(defaultGlancesConfig(), "7d", "cpu", time.UTC, now)
+	var full float64
+	for _, d := range out.Network.Days {
+		if d.RX > full {
+			full = d.RX
+		}
+	}
+	if full < 0.9*86_400_000 || full > 1.1*86_400_000 {
+		t.Errorf("a day at 1000 B/s came out as %.0f bytes", full)
+	}
+}
+
+// Reset puts Glances back to a fresh install: settings, login and record gone.
+func TestGlancesResetRemovesSettingsLoginAndRecord(t *testing.T) {
+	h := newTestHandlers(t)
+	t.Setenv("NEXTDASH_WRITE_TOKEN", "tok")
+	glancesWipe()
+	pwSecret := "pw"
+	if _, err := saveGlancesConfig(GlancesConfig{Enabled: true, Server: "http://nas:61208", User: "me", RecordEvery: 900, TrackedHistory: []string{"ct:app"}}, &pwSecret); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UnixMilli()
+	glancesRecord(now, map[string]float64{"cpu": 10, "ct:app:cpu": 3})
+	do := func(token string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodDelete, "/api/glances/config", nil)
+		if token != "" {
+			req.Header.Set("X-NextDash-Token", token)
+		}
+		rec := httptest.NewRecorder()
+		h.glancesConfigHandler(rec, req)
+		return rec
+	}
+	if rec := do(""); rec.Code != http.StatusUnauthorized {
+		t.Fatalf("reset without the token: %d", rec.Code)
+	}
+	if !loadGlancesConfig().Enabled || !glancesHasPassword() {
+		t.Fatal("a refused reset changed something")
+	}
+	rec := do("tok")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("reset: %d", rec.Code)
+	}
+	cfg := loadGlancesConfig()
+	if cfg.Enabled || cfg.Server != "" || cfg.User != "" || cfg.RecordEvery != 0 || len(cfg.TrackedHistory) != 0 || cfg.Refresh != glancesDefaultRefresh {
+		t.Errorf("settings after the reset: %+v", cfg)
+	}
+	if glancesHasPassword() {
+		t.Error("the password survived the reset")
+	}
+	if series, points, _ := glancesCollected(); series != 0 || points != 0 {
+		t.Errorf("the record survived: %d series, %d points", series, points)
+	}
+	var answer glancesConfigAnswer
+	_ = json.Unmarshal(rec.Body.Bytes(), &answer)
+	if answer.Enabled || answer.HasPassword || answer.Collected.Points != 0 {
+		t.Errorf("the answer: %+v", answer)
+	}
+}
+
+func TestGlancesPageRefreshChoices(t *testing.T) {
+	for _, seconds := range []int{1, 2, 5, 10, 30, 60, 300, 900} {
+		if got := normalizeGlancesConfig(GlancesConfig{Refresh: seconds}).Refresh; got != seconds {
+			t.Errorf("%d became %d", seconds, got)
+		}
+	}
+	for _, seconds := range []int{0, 3, 120, 3600} {
+		if got := normalizeGlancesConfig(GlancesConfig{Refresh: seconds}).Refresh; got != glancesDefaultRefresh {
+			t.Errorf("%d should read as the default, got %d", seconds, got)
+		}
+	}
+}

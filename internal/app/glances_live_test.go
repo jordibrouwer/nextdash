@@ -446,8 +446,9 @@ func TestGlancesSamplerRunsOnItsOwn(t *testing.T) {
 	t.Cleanup(func() { glancesSampleEvery = previous })
 
 	stop := make(chan struct{})
-	h.StartGlancesSampler(stop)
-	defer close(stop)
+	done := h.StartGlancesSampler(stop)
+	// Its last save must be over before the test's folder goes.
+	defer func() { close(stop); <-done }()
 
 	deadline := time.Now().Add(3 * time.Second)
 	for time.Now().Before(deadline) {

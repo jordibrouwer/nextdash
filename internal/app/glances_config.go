@@ -8,13 +8,14 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 )
 
 /*
 The Glances feature: one host, and the page that shows it.
 
 Not a widget. Config → Glances holds the address, the optional login and what
-the page draws; once it is switched on and has an address, page 0 exists.
+the page draws; once it is switched on and has an address, the Glances page exists.
 Everything the browser may not hold stays here: the password lives apart in
 glances-secrets.json at 0600, the way unraid-secrets.json keeps its key, and
 is never sent back.
@@ -31,8 +32,15 @@ var glancesBlocks = []string{
 	"disks", "smart", "processes", "containers", "alerts",
 }
 
+// glancesRecordChoices are the seconds between two recordings of the host: what
+// the history is made of, whether or not a page is open. A longer interval asks
+// the host less and fills the record more slowly.
+var glancesRecordChoices = []int{2, 30, 60, 300, 900, 1800, 3600}
+
+const glancesDefaultRecord = 30
+
 // glancesRefreshChoices are the seconds between two reads the page may use.
-var glancesRefreshChoices = []int{1, 2, 5, 10}
+var glancesRefreshChoices = []int{1, 2, 5, 10, 30, 60, 300, 900}
 
 const (
 	glancesDefaultRefresh = 2
@@ -67,9 +75,11 @@ type GlancesConfig struct {
 	Enabled bool `json:"enabled"`
 	// Paused is the connection switched off: the page and its record stay, but
 	// nothing is read from the host until it is switched on again.
-	Paused bool   `json:"paused,omitempty"`
-	Server string `json:"server"`
-	User   string `json:"user,omitempty"`
+	Paused bool `json:"paused,omitempty"`
+	// RecordEvery is the seconds between two recordings; 0 reads as the default.
+	RecordEvery int    `json:"recordEvery,omitempty"`
+	Server      string `json:"server"`
+	User        string `json:"user,omitempty"`
 	// Refresh is the seconds between two reads while the page is open.
 	Refresh int `json:"refresh"`
 	// HiddenBlocks are Overview parts the reader switched off.
@@ -96,6 +106,25 @@ func (c GlancesConfig) tracked() map[string]bool {
 		out[key] = true
 	}
 	return out
+}
+
+// normalizeGlancesRecord keeps one of the offered intervals; anything else is the default.
+func normalizeGlancesRecord(seconds int) int {
+	for _, choice := range glancesRecordChoices {
+		if seconds == choice {
+			return seconds
+		}
+	}
+	return glancesDefaultRecord
+}
+
+// recordInterval is how long the sampler waits between two recordings. A test
+// shortens glancesSampleEvery to get a beat quickly; that wins over the setting.
+func (c GlancesConfig) recordInterval() time.Duration {
+	if glancesSampleEvery != 5*time.Second {
+		return glancesSampleEvery
+	}
+	return time.Duration(normalizeGlancesRecord(c.RecordEvery)) * time.Second
 }
 
 func defaultGlancesConfig() GlancesConfig {
@@ -130,6 +159,7 @@ func normalizeGlancesConfig(c GlancesConfig) GlancesConfig {
 	if !valid {
 		c.Refresh = glancesDefaultRefresh
 	}
+	c.RecordEvery = normalizeGlancesRecord(c.RecordEvery)
 
 	known := map[string]bool{}
 	for _, id := range glancesBlocks {
@@ -297,6 +327,25 @@ func glancesConfigView(cfg GlancesConfig) glancesConfigAnswer {
 	return glancesConfigAnswer{GlancesConfig: cfg, HasPassword: glancesHasPassword(), Blocks: glancesBlocks, Collected: glancesCollectedView()}
 }
 
+// glancesResetAll puts Glances back to how it is on a fresh install: the address,
+// the login, the thresholds and every choice, and everything recorded. The page
+// and its icon go until it is set up again.
+func glancesResetAll() {
+	for _, path := range []string{glancesConfigPath(), glancesSecretsPath()} {
+		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+			logWarn(logComponentWidgets, "Glances reset could not remove %s: %v", filepath.Base(path), err)
+		}
+	}
+	glancesWipe()
+	glancesSetTracked(map[string]bool{})
+	glancesViewForgetAll()
+	glancesInsightsCache.Lock()
+	glancesInsightsCache.entries = map[string]glancesInsightsEntry{}
+	glancesInsightsCache.Unlock()
+	setGlancesState(0, false, "unknown", "")
+	glancesWakeSampler()
+}
+
 // glancesConfigHandler reads and writes the settings. Behind the write token
 // both ways: it holds the address of a machine on the reader's network.
 func (h *Handlers) glancesConfigHandler(w http.ResponseWriter, r *http.Request) {
@@ -310,6 +359,11 @@ func (h *Handlers) glancesConfigHandler(w http.ResponseWriter, r *http.Request) 
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method == http.MethodGet {
+		_ = json.NewEncoder(w).Encode(glancesConfigView(loadGlancesConfig()))
+		return
+	}
+	if r.Method == http.MethodDelete {
+		glancesResetAll()
 		_ = json.NewEncoder(w).Encode(glancesConfigView(loadGlancesConfig()))
 		return
 	}
@@ -346,5 +400,6 @@ func (h *Handlers) glancesConfigHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	glancesViewForgetAll()
+	glancesWakeSampler()
 	_ = json.NewEncoder(w).Encode(glancesConfigView(saved))
 }

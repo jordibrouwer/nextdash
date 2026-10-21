@@ -361,7 +361,7 @@ func (h *Handlers) glancesRead(ctx context.Context, cfg GlancesConfig, path stri
 // them. GET only on the reads: the router answers 405 to every other method
 // before a handler is reached.
 func registerGlancesViewRoutes(r *mux.Router, h *Handlers) {
-	r.HandleFunc("/api/glances/config", h.glancesConfigHandler).Methods("GET", "PUT", "OPTIONS")
+	r.HandleFunc("/api/glances/config", h.glancesConfigHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
 	r.HandleFunc("/api/glances/connect", h.glancesConnectHandler).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/glances/status", h.glancesStatusHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/glances/history", h.glancesHistoryHandler).Methods("GET", "OPTIONS")

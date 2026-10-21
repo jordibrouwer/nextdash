@@ -51,6 +51,36 @@ type glancesWatch struct {
 	kind, sub string
 }
 
+// glancesBeat is the pace the readings arrive at. At five minutes or more a
+// beat stands for a long time, so one beat over the line opens an incident and
+// one under it closes it; a quicker pace asks two and three, so one noisy
+// reading is not an event.
+var glancesBeat = struct {
+	sync.Mutex
+	every time.Duration
+}{every: glancesDefaultBeat}
+
+const glancesDefaultBeat = 5 * time.Second
+
+func setGlancesBeat(d time.Duration) {
+	glancesBeat.Lock()
+	glancesBeat.every = d
+	glancesBeat.Unlock()
+}
+
+func glancesBeatRules() (openAfter, closeAfter int, lostAfter time.Duration) {
+	glancesBeat.Lock()
+	every := glancesBeat.every
+	glancesBeat.Unlock()
+	openAfter, closeAfter = glancesIncidentOpenAfter, glancesIncidentCloseAfter
+	if every >= 5*time.Minute {
+		openAfter, closeAfter = 1, 1
+	}
+	// A reading is lost when three beats pass without it, or a minute, whichever is longer.
+	lostAfter = max(glancesIncidentLostAfter, 3*every)
+	return openAfter, closeAfter, lostAfter
+}
+
 var glancesIncidents = struct {
 	sync.Mutex
 	log   []GlancesIncident
@@ -112,6 +142,7 @@ glancesObserve takes one beat's readings. A reading that was not made this beat
 is left as it was: a sensor that is not read does not clear an incident.
 */
 func glancesObserve(now int64, observations []glancesObservation) {
+	openAfter, closeAfter, lostAfter := glancesBeatRules()
 	glancesIncidents.Lock()
 	defer glancesIncidents.Unlock()
 	changed := false
@@ -137,7 +168,7 @@ func glancesObserve(now int64, observations []glancesObservation) {
 			if o.Value > w.peak {
 				w.peak = o.Value
 			}
-			if !w.open && w.bad >= glancesIncidentOpenAfter {
+			if !w.open && w.bad >= openAfter {
 				w.open = true
 				glancesIncidents.log = append(glancesIncidents.log, GlancesIncident{Kind: o.Kind, Subject: o.Subject, Start: w.firstBad, Peak: w.peak})
 				glancesIncidents.index[key] = len(glancesIncidents.log) - 1
@@ -152,7 +183,7 @@ func glancesObserve(now int64, observations []glancesObservation) {
 		}
 		w.bad = 0
 		w.ok++
-		if w.open && w.ok >= glancesIncidentCloseAfter {
+		if w.open && w.ok >= closeAfter {
 			if i, ok := glancesIncidents.index[key]; ok && i < len(glancesIncidents.log) {
 				glancesIncidents.log[i].End = w.lastBad
 				if glancesIncidents.log[i].End <= glancesIncidents.log[i].Start {
@@ -167,7 +198,7 @@ func glancesObserve(now int64, observations []glancesObservation) {
 	// A reading that is no longer made (Glances off, a disk hidden or gone, a
 	// sensor that left) does not keep an incident open: it ends where it was
 	// last seen.
-	lost := glancesIncidentLostAfter.Milliseconds()
+	lost := lostAfter.Milliseconds()
 	for key, w := range glancesIncidents.watch {
 		if now-w.lastSeen <= lost {
 			continue

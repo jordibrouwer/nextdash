@@ -32,6 +32,26 @@ func glancesSnapshot() map[string]glancesSnap {
 	return out
 }
 
+// glancesSpacing is the time one point of a series stands for: the usual gap
+// between its points, as recorded. The rings are laid out on a clock, but when
+// the host is recorded every half hour a point stands for half an hour, and
+// whatever adds up readings over time has to know that.
+func glancesSpacing(points []glancesPoint, fallback time.Duration) time.Duration {
+	if len(points) < 3 {
+		return fallback
+	}
+	gaps := make([]float64, 0, len(points)-1)
+	for i := 1; i < len(points); i++ {
+		gaps = append(gaps, points[i][0]-points[i-1][0])
+	}
+	sort.Float64s(gaps)
+	median := time.Duration(gaps[len(gaps)/2]) * time.Millisecond
+	if median <= 0 {
+		return fallback
+	}
+	return median
+}
+
 // window is the points of the finest ring that reaches back to since, and the
 // time one of its points stands for.
 func (s glancesSnap) window(since, until int64, now time.Time) ([]glancesPoint, time.Duration) {
@@ -48,7 +68,7 @@ func (s glancesSnap) window(since, until int64, now time.Time) ([]glancesPoint, 
 			out = append(out, p)
 		}
 	}
-	return out, spacing
+	return out, glancesSpacing(out, spacing)
 }
 
 func glancesValues(points []glancesPoint) []float64 {
@@ -614,6 +634,8 @@ func glancesComputeNetwork(snaps map[string]glancesSnap, rangeID string, now tim
 			continue
 		}
 		iface, dir := strings.Join(parts[:len(parts)-1], ":"), parts[len(parts)-1]
+		stand := time.Duration(spacing * float64(time.Second))
+		longSpacing := glancesSpacing(snap.Long, stand).Seconds()
 		for _, p := range snap.Long {
 			if int64(p[0]) < since {
 				continue
@@ -622,7 +644,7 @@ func glancesComputeNetwork(snaps map[string]glancesSnap, rangeID string, now tim
 			if day == nil {
 				continue
 			}
-			bytes := p[1] * spacing
+			bytes := p[1] * longSpacing
 			if dir == "rx" {
 				day.RX += bytes
 			} else {

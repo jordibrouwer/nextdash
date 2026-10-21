@@ -509,9 +509,11 @@ func glancesLevel(cfg GlancesConfig, quick glancesQuicklook, fs []glancesFS, sen
 // on every beat: switched off, without an address, or in the public demo it does
 // nothing, and not one request goes out. A panic in one beat is logged and the
 // next one goes on: this runs for the life of the process.
-func (h *Handlers) StartGlancesSampler(stop <-chan struct{}) {
+func (h *Handlers) StartGlancesSampler(stop <-chan struct{}) <-chan struct{} {
+	finished := make(chan struct{})
 	if demoMode() {
-		return
+		close(finished)
+		return finished
 	}
 	loadGlancesHistory()
 	loadGlancesIncidents()
@@ -521,15 +523,23 @@ func (h *Handlers) StartGlancesSampler(stop <-chan struct{}) {
 		cancel()
 	}()
 	go func() {
-		ticker := time.NewTicker(glancesSampleEvery)
-		defer ticker.Stop()
+		defer close(finished)
 		lastSave := time.Now()
+		// A first reading at once: at an hour a beat nobody waits an hour to see data.
+		h.glancesSampleBeat(ctx)
 		for {
+			// The pace is read from Config before every wait, and a change of it
+			// (glancesRecordWake) ends the wait: from an hour to thirty seconds
+			// does not take an hour to notice.
+			timer := time.NewTimer(loadGlancesConfig().recordInterval())
 			select {
 			case <-ctx.Done():
+				timer.Stop()
 				saveGlancesHistory()
 				return
-			case <-ticker.C:
+			case <-glancesRecordWake:
+				timer.Stop()
+			case <-timer.C:
 			}
 			h.glancesSampleBeat(ctx)
 			if time.Since(lastSave) >= glancesSaveEvery {
@@ -538,6 +548,7 @@ func (h *Handlers) StartGlancesSampler(stop <-chan struct{}) {
 			}
 		}
 	}()
+	return finished
 }
 
 func (h *Handlers) glancesSampleBeat(ctx context.Context) {
@@ -561,6 +572,7 @@ func (h *Handlers) glancesAsk(ctx context.Context, cfg GlancesConfig, path strin
 // glancesSampleOnce takes one reading and files it.
 func (h *Handlers) glancesSampleOnce(ctx context.Context) {
 	cfg := loadGlancesConfig()
+	setGlancesBeat(cfg.recordInterval())
 	if !cfg.connected() {
 		setGlancesState(0, false, "unknown", "")
 		// Nothing is read now, so an incident that was open ends where it was seen.
@@ -851,6 +863,7 @@ func (h *Handlers) glancesStatusHandler(w http.ResponseWriter, r *http.Request) 
 		"enabled":      cfg.Enabled,
 		"configured":   cfg.configured(),
 		"paused":       cfg.Paused,
+		"recordEvery":  normalizeGlancesRecord(cfg.RecordEvery),
 		"refresh":      cfg.Refresh,
 		"hiddenBlocks": cfg.HiddenBlocks,
 		"thresholds":   cfg.Thresholds,
@@ -975,9 +988,21 @@ func (h *Handlers) glancesConnectHandler(w http.ResponseWriter, r *http.Request)
 	reply(nil)
 }
 
-// glancesSampleEvery is how often the sampler reads the host. A variable so a
-// test does not wait ten seconds for a beat.
+// glancesSampleEvery is the pace the rings are laid out for: the fine ring holds
+// glancesFineKeep of these. It is not the pace the host is read at (that is
+// Config's recordEvery, from two seconds to an hour); it is a variable so a test
+// does not wait for a beat.
 var glancesSampleEvery = 5 * time.Second
+
+// glancesRecordWake tells the sampler its pace changed.
+var glancesRecordWake = make(chan struct{}, 1)
+
+func glancesWakeSampler() {
+	select {
+	case glancesRecordWake <- struct{}{}:
+	default:
+	}
+}
 
 func sortedKeys(m map[string]*glancesRing) []string {
 	keys := make([]string, 0, len(m))
