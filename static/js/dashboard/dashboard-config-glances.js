@@ -166,9 +166,6 @@
                         <p class="config-field-hint" data-glances-reset-result aria-live="polite"></p>
                     </div>
 
-                    <div class="config-actions">
-                        <button type="button" class="config-btn config-btn--primary" data-glances-save disabled>${t('glancesSave', 'Save')}</button>
-                    </div>
                     <p class="config-field-hint" data-glances-saved aria-live="polite"></p>
                 </div>
             </div>`;
@@ -181,7 +178,6 @@
         const field = (name) => root.querySelector(`[data-glances-field="${name}"]`);
         const result = root.querySelector('[data-glances-result]');
         const saved = root.querySelector('[data-glances-saved]');
-        const saveBtn = root.querySelector('[data-glances-save]');
         const connectBtn = root.querySelector('[data-glances-connect]');
         const clearBtn = root.querySelector('[data-glances-clear-login]');
         const send = (url, method, body) => window.nextDashFetch(url, {
@@ -194,7 +190,6 @@
         let clearLogin = false;
         let busy = false;
         const paintButtons = () => {
-            saveBtn.disabled = !current || busy;
             connectBtn.disabled = !current || busy;
         };
 
@@ -223,13 +218,17 @@
             box.checked = shown && !paused;
         };
 
-        const paint = (cfg) => {
+        // `keepFocus`: the answer to a save comes back while someone may be typing in
+        // another field; what they are typing in is left as it is.
+        const paint = (cfg, { keepFocus = false } = {}) => {
             current = cfg;
+            const focused = keepFocus ? document.activeElement : null;
+            const put = (el, value) => { if (el !== focused) el.value = value; };
             field('enabled').checked = cfg.enabled === true;
             syncConnection(cfg.enabled === true, cfg.paused === true);
-            field('server').value = cfg.server || '';
-            field('user').value = cfg.user || '';
-            field('password').value = '';
+            put(field('server'), cfg.server || '');
+            put(field('user'), cfg.user || '');
+            put(field('password'), '');
             field('password').placeholder = cfg.hasPassword ? t('glancesPasswordSet', 'Set. Type to replace.') : '';
             clearBtn.hidden = !(cfg.user || cfg.hasPassword);
             clearLogin = false;
@@ -240,10 +239,10 @@
             });
             const th = cfg.thresholds || {};
             root.querySelectorAll('[data-glances-line]').forEach((input) => {
-                input.value = th[input.getAttribute('data-glances-line')] ?? '';
+                put(input, th[input.getAttribute('data-glances-line')] ?? '');
             });
-            field('diskStrip').value = cfg.diskStrip ?? '';
-            field('diskHide').value = (cfg.diskHide || []).join('\n');
+            put(field('diskStrip'), cfg.diskStrip ?? '');
+            put(field('diskHide'), (cfg.diskHide || []).join('\n'));
             paintCollected(cfg.collected);
         };
 
@@ -367,7 +366,7 @@
             field('user').value = '';
             field('password').value = '';
             clearBtn.hidden = true;
-            saved.textContent = t('glancesLoginWillGo', 'The login is removed when you save.');
+            schedule(0);
         });
 
         connectBtn.addEventListener('click', () => run(async () => {
@@ -398,22 +397,70 @@
             }
         }));
 
-        saveBtn.addEventListener('click', () => run(async () => {
-            saved.textContent = '';
+        /*
+         * Every change is kept as it is made, as the other settings are: a choice or
+         * a checkbox at once, a text field when it is left. Saves go one at a time,
+         * and what was changed while one was running goes after it.
+         */
+        let saveTimer = null;
+        let fadeTimer = null;
+        let saving = false;
+        let again = false;
+        const say = (text, stay = false) => {
+            saved.textContent = text;
+            clearTimeout(fadeTimer);
+            if (text && !stay) fadeTimer = setTimeout(() => { if (saved.textContent === text) saved.textContent = ''; }, 2500);
+        };
+        const saveNow = async () => {
+            if (!current) return;
+            if (saving) {
+                again = true;
+                return;
+            }
+            const body = payload();
+            // Glances cannot be shown without somewhere to look.
+            if (body.enabled && !body.server) {
+                field('enabled').checked = false;
+                syncConnection(false, current.paused === true);
+                body.enabled = false;
+                say(ERRORS['not set up'], true);
+            }
+            saving = true;
             try {
-                const res = await send('/api/glances/config', 'PUT', payload());
+                const res = await send('/api/glances/config', 'PUT', body);
                 if (!res.ok) {
-                    saved.textContent = `${t('glancesSaveFailed', 'Could not save')} (${await failure(res)})`;
+                    say(`${t('glancesSaveFailed', 'Could not save')} (${await failure(res)})`, true);
                     return;
                 }
-                paint(await res.json());
-                saved.textContent = t('glancesSaved', 'Saved.');
+                const cfg = await res.json();
+                if (root.isConnected) {
+                    paint(cfg, { keepFocus: true });
+                    if (!saved.textContent || saved.textContent === t('glancesSaved', 'Saved.')) say(t('glancesSaved', 'Saved.'));
+                }
                 // The Glances icon and its dot follow the new settings now.
                 void this.dash.glancesStatus?.refresh?.({ force: true });
+                this.dash.pageNav?.renderPageNavigation?.();
             } catch {
-                saved.textContent = `${t('glancesSaveFailed', 'Could not save')}.`;
+                say(`${t('glancesSaveFailed', 'Could not save')}.`, true);
+            } finally {
+                saving = false;
+                if (again) {
+                    again = false;
+                    schedule(0);
+                }
             }
-        }));
+        };
+        const schedule = (delay = 400) => {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => { void saveNow(); }, delay);
+        };
+        // `change` fires at once for a checkbox or a choice and on leaving a text field.
+        root.addEventListener('change', (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLElement)) return;
+            if (target.matches('[data-glances-field="connected"]')) return; // its own switch
+            if (target.matches('[data-glances-field], [data-glances-block], [data-glances-line]')) schedule();
+        });
 
         try {
             const res = await send('/api/glances/config', 'GET');

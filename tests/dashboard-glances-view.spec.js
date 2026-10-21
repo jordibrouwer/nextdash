@@ -568,7 +568,9 @@ test.describe('Config → Glances', () => {
         await page.locator('[data-glances-field="password"]').fill('s3cret');
         await page.locator('[data-glances-line="cpuWarn"]').fill('70');
         await page.locator('[data-glances-field="diskHide"]').fill('/mnt/cache\n/mnt/user');
-        await page.locator('[data-glances-save]').click();
+        // No Save button: leaving the last field keeps everything.
+        await expect(page.locator('[data-glances-save]')).toHaveCount(0);
+        await page.locator('[data-glances-field="diskHide"]').blur();
         await expect(page.locator('[data-glances-saved]')).toContainText('Saved');
 
         expect(state.saved).toMatchObject({
@@ -1042,7 +1044,6 @@ test.describe('Config → Glances: how often an open page reads', () => {
         const refresh = page.locator('[data-glances-field="refresh"]');
         await expect(refresh.locator('option')).toHaveText(['Every 1 s', 'Every 2 s', 'Every 5 s', 'Every 10 s', 'Every 30 s', 'Every 1 min', 'Every 5 min', 'Every 15 min']);
         await refresh.selectOption('900');
-        await page.locator('[data-glances-save]').click();
         await expect(page.locator('[data-glances-saved]')).toContainText('Saved');
         expect(state.saved.refresh).toBe(900);
     });
@@ -1058,5 +1059,48 @@ test.describe('Config navigation: Glances', () => {
         await expect(item).toHaveAttribute('data-config-new', /new/i);
         // Its own name stays the section's name, for readers and searches.
         await expect(item).toHaveAttribute('title', 'Glances');
+    });
+});
+
+test.describe('Config → Glances: every change is kept', () => {
+    test('a checkbox or a choice is saved at once, and the field being typed in is left alone', async ({ page }) => {
+        const state = await mockGlances(page);
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances');
+        await expect(page.locator('[data-glances-field="server"]')).toHaveValue(CONFIG.server);
+
+        await page.locator('[data-glances-block="containers"]').uncheck();
+        await expect.poll(() => state.saved && state.saved.hiddenBlocks && state.saved.hiddenBlocks.includes('containers')).toBe(true);
+        await expect(page.locator('[data-glances-saved]')).toContainText('Saved');
+
+        // Typing in a field while an earlier save answers does not lose what is typed.
+        const user = page.locator('[data-glances-field="user"]');
+        await page.locator('[data-glances-block="smart"]').uncheck();
+        await user.focus();
+        await user.pressSequentially('mar');
+        await expect.poll(() => state.saved && state.saved.hiddenBlocks && state.saved.hiddenBlocks.includes('smart')).toBe(true);
+        await expect(user).toHaveValue('mar');
+        await user.blur();
+        await expect.poll(() => state.saved.user).toBe('mar');
+    });
+
+    test('Show Glances without an address says so and stays off', async ({ page }) => {
+        const state = await mockGlances(page, { status: { ...STATUS, enabled: false, configured: false } });
+        await page.route('**/api/glances/config', async (route) => {
+            if (route.request().method() === 'GET') {
+                await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ...CONFIG, enabled: false, server: '' }) });
+            } else {
+                await route.fallback();
+            }
+        });
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances');
+        const shown = page.locator('[data-glances-field="enabled"]');
+        await expect(page.locator('[data-glances-field="server"]')).toHaveValue('');
+        await shown.check();
+        await expect(page.locator('[data-glances-saved]')).toContainText('Fill in the address first');
+        await expect(shown).not.toBeChecked();
+        // What was asked of the server never switched it on.
+        await expect.poll(() => state.saved && state.saved.enabled).toBe(false);
     });
 });
