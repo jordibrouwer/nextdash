@@ -98,26 +98,19 @@ test.describe('the Glances view', () => {
         const plugins = fixture('pluginslist');
         const state = await mockGlances(page, { pluginslist: plugins.filter((p) => p !== 'processlist') });
         await openView(page);
-        await expect.poll(() => menuIds(page)).toEqual(['overview']);
+        await expect.poll(() => menuIds(page)).toEqual(['overview', 'containers', 'disks', 'network', 'history', 'alerts']);
 
-        // A section registered later (as Task 8's are) joins the menu in its
-        // order -- and only while the host runs its plugin.
-        await page.evaluate(() => {
-            window.DashboardGlancesSections.register({
-                id: 'containers', label: 'Containers', order: 30, plugin: 'containers',
-                Section: class { endpoints() { return ['containers']; } render(el) { el.textContent = 'stub'; } },
-            });
-        });
+        // A section joins the menu in its order, and only while the host runs its plugin.
         state.overrides.pluginslist = plugins;
         await page.keyboard.press('Escape');
         await expect(page.locator('#dashboard-layout.glances-layout')).toHaveCount(0);
         await page.evaluate((h) => { window.location.hash = h; }, HASH);
-        await expect.poll(() => menuIds(page)).toEqual(['overview', 'processes', 'containers']);
+        await expect.poll(() => menuIds(page)).toEqual(['overview', 'processes', 'containers', 'disks', 'network', 'history', 'alerts']);
 
         await page.keyboard.press('Escape');
-        state.overrides.pluginslist = plugins.filter((p) => p !== 'containers');
+        state.overrides.pluginslist = plugins.filter((p) => p !== 'containers' && p !== 'alert');
         await page.evaluate((h) => { window.location.hash = h; }, HASH);
-        await expect.poll(() => menuIds(page)).toEqual(['overview', 'processes']);
+        await expect.poll(() => menuIds(page)).toEqual(['overview', 'processes', 'disks', 'network', 'history']);
 
         // One probe per opening, not one per section switch.
         const before = count(state, 'pluginslist');
@@ -247,7 +240,7 @@ test.describe('the Glances view', () => {
     });
 
     test('a host with none of the sections says so', async ({ page }) => {
-        await mockGlances(page, { pluginslist: ['alert'] });
+        await mockGlances(page, { pluginslist: ['system'] });
         await openView(page);
         await expect(page.locator('[data-glances-body]')).toContainText('Not available on this host.');
     });
@@ -369,5 +362,233 @@ test.describe('the Glances view', () => {
         await expect.poll(view).toBe('bookmarks');
         await expect(page.locator('#dashboard-layout.glances-layout')).toHaveCount(0);
         expect(await timerOff()).toBe(true);
+    });
+});
+
+/** A history answer: one series per key, `n` points 30 s apart from 10:00. */
+function history(keys, n = 20, base = 10) {
+    const out = {};
+    keys.forEach((k, ki) => {
+        out[k] = Array.from({ length: n }, (_, i) => {
+            const sec = i * 30;
+            const ts = `2026-10-21T10:${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+            return [ts, base + ki + (i % 5)];
+        });
+    });
+    return out;
+}
+
+const sectionHash = (id) => `#glances/${id}?w=w_gl&p=1`;
+
+test.describe('the Glances view: containers, disks, network, history, alerts', () => {
+    test('containers: a read only table that sorts in the browser', async ({ page }) => {
+        const longCommand = `/usr/bin/run ${'--flag=value '.repeat(60)}`;
+        const rows = fixture('containers');
+        rows[0].command = longCommand;
+        await mockGlances(page, { containers: rows });
+        await openView(page, sectionHash('containers'));
+        const names = () => page.locator('[data-glances-container] .glances-ct-cell--name').allTextContents();
+        await expect(page.locator('[data-glances-container]')).toHaveCount(3);
+        const first = page.locator('[data-glances-container="jellyfin"]');
+        await expect(first.locator('.glances-ct-cell--status')).toHaveText('running');
+        await expect(first.locator('.glances-ct-cell--uptime')).toHaveText('3 days');
+        await expect(first.locator('.glances-ct-cell--cpu')).toHaveText('4.2%');
+        await expect(first.locator('.glances-ct-cell--mem')).toHaveText('774.4 MB');
+        await expect(first.locator('.glances-ct-cell--io')).toContainText('1.2 MB');
+        await expect(first.locator('.glances-ct-cell--net')).toContainText('2.2 MB');
+        await expect(first.locator('.glances-ct-cell--image')).toHaveText('jellyfin/jellyfin:latest');
+
+        // Read only: nothing in the rows to press, and no action anywhere in the body.
+        await expect(page.locator('[data-glances-container] button')).toHaveCount(0);
+        await expect(page.locator('[data-glances-open="containers"] [data-glances-action]')).toHaveCount(0);
+
+        // A long command is cut to the cell and kept whole in its title.
+        const cmd = first.locator('.glances-ct-cell--command');
+        await expect(cmd).toHaveAttribute('title', longCommand);
+        const fits = await cmd.evaluate((c) => c.getBoundingClientRect().width < 400
+            && document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+        expect(fits).toBe(true);
+
+        // Sorting is the browser's: the same rows, reordered.
+        expect(await names()).toEqual(['jellyfin', 'old-job', 'postgres']);
+        await page.locator('[data-glances-ct-sort="cpu"]').click();
+        expect(await names()).toEqual(['jellyfin', 'postgres', 'old-job']);
+        await expect(page.locator('[data-glances-ct-sort="cpu"]')).toHaveAttribute('aria-sort', 'descending');
+        await page.locator('[data-glances-ct-sort="cpu"]').click();
+        expect(await names()).toEqual(['old-job', 'postgres', 'jellyfin']);
+        await expect(page.locator('[data-glances-ct-sort="cpu"]')).toHaveAttribute('aria-sort', 'ascending');
+    });
+
+    test('containers: no plugin on the host, and a missing field is a dash', async ({ page }) => {
+        const state = await mockGlances(page, { containers: [{ name: 'bare' }] });
+        await openView(page, sectionHash('containers'));
+        const row = page.locator('[data-glances-container="bare"]');
+        await expect(row.locator('.glances-ct-cell--cpu')).toHaveText('–');
+        await expect(row.locator('.glances-ct-cell--mem')).toHaveText('–');
+        await expect(row.locator('.glances-ct-cell--image')).toHaveText('–');
+        state.overrides.containers = { available: false };
+        await page.locator('[data-glances-section="overview"]').click();
+        await page.locator('[data-glances-section="containers"]').click();
+        await expect(page.locator('[data-glances-open="containers"]')).toContainText('Glances has no container plugin on this host.');
+        await expect(page.locator('[data-glances-container]')).toHaveCount(0);
+    });
+
+    test('disks: usage bars without pseudo filesystems, I/O rates, SMART and RAID only when answered', async ({ page }) => {
+        const state = await mockGlances(page);
+        await openView(page, sectionHash('disks'));
+        const mounts = () => page.locator('[data-glances-fs]').evaluateAll((els) => els.map((e) => e.getAttribute('data-glances-fs')));
+        await expect.poll(mounts).toEqual(['/', '/mnt/data']);
+        await expect(page.locator('[data-glances-fs="/mnt/data"] .glances-bar-value')).toHaveText('82%');
+        await expect(page.locator('[data-glances-fs="/mnt/data"] .glances-bar')).toHaveAttribute('data-tone', 'warn');
+        await expect(page.locator('[data-glances-fs="/"] .glances-bar')).not.toHaveAttribute('data-tone', /.+/);
+
+        const io = page.locator('[data-glances-diskio="sdb"]');
+        await expect(io.locator('.glances-io-read')).toHaveText('1.0 MB/s');
+        await expect(page.locator('[data-glances-diskio="sda"] .glances-io-write')).toHaveText('20.0 KB/s');
+
+        // SMART came with data; RAID answered {} so there is no heading.
+        await expect(page.locator('[data-glances-block="smart"]')).toContainText('/dev/sda');
+        await expect(page.locator('[data-glances-block="smart"]')).toContainText('EXAMPLE 250GB');
+        await expect(page.locator('[data-glances-block="raid"]')).toHaveCount(0);
+
+        state.overrides.raid = { md0: { status: 'active', type: 'raid1', components: { sda1: 0, sdb1: 1 }, available: 2, used: 2 } };
+        state.overrides.smart = { available: false };
+        await page.locator('[data-glances-section="overview"]').click();
+        await page.locator('[data-glances-section="disks"]').click();
+        await expect(page.locator('[data-glances-block="raid"]')).toContainText('md0');
+        await expect(page.locator('[data-glances-block="raid"]')).toContainText('raid1');
+        await expect(page.locator('[data-glances-block="smart"]')).toHaveCount(0);
+
+        state.overrides.smart = [];
+        await page.locator('[data-glances-section="overview"]').click();
+        await page.locator('[data-glances-section="disks"]').click();
+        await expect(page.locator('[data-glances-block="smart"]')).toHaveCount(0);
+        await expect(page.locator('[data-glances-fs]')).toHaveCount(2);
+    });
+
+    test('disks stay in the menu without SMART, and are not read for it', async ({ page }) => {
+        const plugins = fixture('pluginslist').filter((p) => p !== 'smart' && p !== 'raid');
+        const state = await mockGlances(page, { pluginslist: plugins });
+        await openView(page, sectionHash('disks'));
+        await expect.poll(() => menuIds(page)).toContain('disks');
+        await expect(page.locator('[data-glances-fs]')).toHaveCount(2);
+        await expect(page.locator('[data-glances-block="smart"], [data-glances-block="raid"]')).toHaveCount(0);
+        expect(count(state, 'smart')).toBe(0);
+        expect(count(state, 'raid')).toBe(0);
+    });
+
+    test('network: rates per interface, a dash when missing, connections and wifi when answered', async ({ page }) => {
+        const state = await mockGlances(page);
+        await openView(page, sectionHash('network'));
+        const eth = page.locator('[data-glances-iface="eth0"]');
+        await expect(eth.locator('.glances-net-cell--rx')).toHaveText('122.1 KB/s');
+        await expect(eth.locator('.glances-net-cell--tx')).toHaveText('41.0 KB/s');
+        await expect(eth.locator('.glances-net-cell--speed')).toHaveText('1 Gbit/s');
+        await expect(eth.locator('.glances-net-cell--state')).toHaveText('up');
+        await expect(page.locator('[data-glances-iface="wlan0"] .glances-net-cell--state')).toHaveText('down');
+        await expect(page.locator('[data-glances-block="connections"]')).toContainText('34');
+        await expect(page.locator('[data-glances-block="wifi"]')).toHaveCount(0);
+
+        state.overrides.network = fixture('network_norate');
+        state.overrides.connections = { available: false };
+        state.overrides.wifi = [{ interface_name: 'wlan0', ssid: 'HomeNet', signal: -52 }];
+        await page.locator('[data-glances-section="overview"]').click();
+        await page.locator('[data-glances-section="network"]').click();
+        await expect(eth.locator('.glances-net-cell--rx')).toHaveText('–');
+        await expect(eth.locator('.glances-net-cell--tx')).toHaveText('–');
+        await expect(page.locator('[data-glances-block="connections"]')).toHaveCount(0);
+        await expect(page.locator('[data-glances-block="wifi"]')).toContainText('HomeNet');
+        await expect(page.locator('[data-glances-block="wifi"]')).toContainText('-52');
+    });
+
+    test('history: one chart per plugin, span from the timestamps, short series left out', async ({ page }) => {
+        await mockGlances(page, {
+            'cpu/history/60': history(['total']),
+            'mem/history/60': history(['percent'], 40),
+            'memswap/history/60': history(['percent'], 1),
+            'load/history/60': history(['min1', 'min5', 'min15']),
+            'network/history/60': history(['eth0.bytes_recv_rate_per_sec', 'eth0.bytes_sent_rate_per_sec'], 20, 1000),
+            'diskio/history/60': { available: false },
+        });
+        await openView(page, sectionHash('history'));
+        const charts = () => page.locator('[data-glances-chart]').evaluateAll((els) => els.map((e) => e.getAttribute('data-glances-chart')));
+        await expect.poll(charts).toEqual(['cpu', 'mem', 'load', 'network']);
+        // 20 points 30 s apart span 9.5 minutes, 40 points 19.5: read from the answer.
+        await expect(page.locator('[data-glances-chart="cpu"] figcaption')).toContainText('last 10 min');
+        await expect(page.locator('[data-glances-chart="mem"] figcaption')).toContainText('last 20 min');
+        await expect(page.locator('[data-glances-chart="cpu"] svg polyline')).toHaveCount(1);
+        await expect(page.locator('[data-glances-chart="load"] svg polyline')).toHaveCount(3);
+        await expect(page.locator('[data-glances-history-empty]')).toHaveCount(0);
+    });
+
+    test('history: nothing yet says so', async ({ page }) => {
+        await mockGlances(page, {
+            'cpu/history/60': { total: [] }, 'mem/history/60': { available: false },
+            'load/history/60': history(['min1'], 1),
+        });
+        await openView(page, sectionHash('history'));
+        await expect(page.locator('[data-glances-history-empty]')).toHaveText('Glances has no history yet.');
+        await expect(page.locator('[data-glances-chart]')).toHaveCount(0);
+    });
+
+    test('alerts: newest first, ongoing marked, limits beside the meters, count in the menu', async ({ page }) => {
+        const alerts = [
+            { begin: 1792500000, end: 1792503600, state: 'CRITICAL', type: 'CPU', max: 97.2 },
+            ...fixture('alert'),
+            { begin: 1792560000, end: 1792561000, state: 'WARNING', type: 'LOAD', max: null },
+        ];
+        await mockGlances(page, { alert: alerts });
+        await openView(page, sectionHash('alerts'));
+        const rows = page.locator('[data-glances-alert]');
+        await expect(rows).toHaveCount(3);
+        await expect(rows.nth(0).locator('.glances-al-cell--type')).toHaveText('MEM');
+        await expect(rows.nth(0).locator('.glances-al-cell--end')).toHaveText('Ongoing');
+        await expect(rows.nth(0).locator('.glances-al-cell--state')).toHaveText('WARNING');
+        await expect(rows.nth(0).locator('.glances-al-cell--max')).toHaveText('88.1');
+        await expect(rows.nth(1).locator('.glances-al-cell--type')).toHaveText('LOAD');
+        await expect(rows.nth(1).locator('.glances-al-cell--max')).toHaveText('–');
+        await expect(rows.nth(2).locator('.glances-al-cell--end')).not.toHaveText('Ongoing');
+        await expect(page.locator('[data-glances-limit="mem_careful"]')).toContainText('50');
+        await expect(page.locator('[data-glances-limits]')).toContainText('90');
+        // One alert is ongoing, and that is what the menu counts.
+        await expect(page.locator('[data-glances-section="alerts"] .lvs-filter-count')).toHaveText('1');
+    });
+
+    test('alerts: none says so, and limits that did not answer are left out', async ({ page }) => {
+        await mockGlances(page, { alert: [], 'all/limits': { available: false } });
+        await openView(page, sectionHash('alerts'));
+        await expect(page.locator('[data-glances-open="alerts"]')).toContainText('No alerts.');
+        await expect(page.locator('[data-glances-limits]')).toHaveCount(0);
+        await expect(page.locator('[data-glances-section="alerts"] .lvs-filter-count')).toHaveText('');
+    });
+
+    test('every new section reads {available:false} as words, not a crash', async ({ page }) => {
+        const none = { available: false };
+        await mockGlances(page, {
+            containers: none, fs: none, diskio: none, smart: none, raid: none, network: none, connections: none,
+            wifi: none, alert: none, 'all/limits': none, 'cpu/history/60': none,
+        });
+        await openView(page, sectionHash('disks'));
+        await expect(page.locator('[data-glances-open="disks"]')).toContainText('Not available on this host.');
+        await page.locator('[data-glances-section="network"]').click();
+        await expect(page.locator('[data-glances-open="network"]')).toContainText('Not available on this host.');
+        await page.locator('[data-glances-section="alerts"]').click();
+        await expect(page.locator('[data-glances-open="alerts"]')).toContainText('Not available on this host.');
+        await page.locator('[data-glances-section="history"]').click();
+        await expect(page.locator('[data-glances-open="history"]')).toContainText('Glances has no history yet.');
+    });
+
+    test('only the open section is polled', async ({ page }) => {
+        await page.clock.install();
+        const state = await mockGlances(page);
+        await openView(page, sectionHash('containers'));
+        await expect(page.locator('[data-glances-container]')).toHaveCount(3);
+        const mark = state.calls.length;
+        await page.clock.runFor(11_000);
+        await expect.poll(() => count(state, 'containers')).toBeGreaterThan(1);
+        const since = state.calls.slice(mark).map((c) => c.path);
+        for (const other of ['diskio', 'smart', 'raid', 'network', 'connections', 'wifi', 'processlist', 'all/limits']) {
+            expect(since, other).not.toContain(other);
+        }
     });
 });

@@ -17,6 +17,11 @@ class DashboardGlancesLoader {
     static SECTION_SCRIPTS = [
         ['js/dashboard/dashboard-glances-overview.js', 'dashboardGlancesOverview', 'overview'],
         ['js/dashboard/dashboard-glances-processes.js', 'dashboardGlancesProcesses', 'processes'],
+        ['js/dashboard/dashboard-glances-containers.js', 'dashboardGlancesContainers', 'containers'],
+        ['js/dashboard/dashboard-glances-disks.js', 'dashboardGlancesDisks', 'disks'],
+        ['js/dashboard/dashboard-glances-network.js', 'dashboardGlancesNetwork', 'network'],
+        ['js/dashboard/dashboard-glances-history.js', 'dashboardGlancesHistory', 'history'],
+        ['js/dashboard/dashboard-glances-alerts.js', 'dashboardGlancesAlerts', 'alerts'],
     ];
 
     constructor(dashboard) {
