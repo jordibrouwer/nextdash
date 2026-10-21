@@ -31249,4 +31249,8 @@ class DashboardConfig {
     }
 }
 
+// Glances is not part of the demo: the section is not there to open or to jump to.
+if (document.querySelector('meta[name="nextdash-demo"]')) {
+    DashboardConfig.SECTIONS = DashboardConfig.SECTIONS.filter((section) => section !== 'glances');
+}
 window.DashboardConfig = DashboardConfig;

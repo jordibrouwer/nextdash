@@ -36,6 +36,13 @@ const CONFIG = {
     trackedHistory: [],
 };
 
+/** What /api/glances/docker-link answers: one machine, with one container matched by id. */
+const LINK = {
+    mode: 'auto', same: true, reason: 'same-name', glancesHost: 'nas', dockerHost: 'nas',
+    matches: [{ glances: 'app-1', docker: 'app-1-docker', dockerId: 'abc123', by: 'id' }],
+    onlyGlances: ['glances-only'], onlyDocker: ['idle-one'], byId: 1, byName: 0,
+};
+
 /** What /api/glances/insights answers: a host whose disk is filling and whose CPU is busy at night. */
 const INSIGHTS = {
     at: Date.now(), range: '24h', since: Date.now() - 86400000,
@@ -72,7 +79,7 @@ function historyAnswer(url) {
     const asked = (url.searchParams.get('series') || '').split(',').filter(Boolean);
     const since = Number(url.searchParams.get('since')) || Date.now() - 3600 * 1000;
     const series = {};
-    asked.filter((n) => names.includes(n)).forEach((name, k) => {
+    asked.filter((n) => names.includes(n) || n.startsWith('ct:')).forEach((name, k) => {
         series[name] = Array.from({ length: 30 }, (_, i) => [since + i * 120000, 10 + ((i * 7 + k * 13) % 60)]);
     });
     // One processor incident inside the window, one outage (drawn on every graph).
@@ -80,7 +87,8 @@ function historyAnswer(url) {
         { kind: 'cpu', start: since + 10 * 120000, end: since + 14 * 120000, peak: 95 },
         { kind: 'down', start: since + 20 * 120000, end: since + 22 * 120000 },
     ];
-    return { names, series, step: 120, now: Date.now(), incidents };
+    const restarts = url.searchParams.get('restarts') ? [since + 12 * 120000] : [];
+    return { names, series, step: 120, now: Date.now(), incidents, restarts };
 }
 
 /**
@@ -88,7 +96,7 @@ function historyAnswer(url) {
  * value, a function of the URL, or { __status } for a bare HTTP status.
  */
 async function mockGlances(page, overrides = {}) {
-    const state = { calls: [], overrides, saved: null, tracked: [], wiped: false, paused: false, recordEvery: 30, reset: false };
+    const state = { calls: [], overrides, saved: null, tracked: [], wiped: false, paused: false, recordEvery: 30, reset: false, link: JSON.parse(JSON.stringify(LINK)) };
     await page.route('**/api/glances/**', async (route) => {
         const request = route.request();
         const url = new URL(request.url());
@@ -123,6 +131,8 @@ async function mockGlances(page, overrides = {}) {
             body = { ...CONFIG, ...(state.reset ? { enabled: false, server: '', user: '', hiddenBlocks: [], hasPassword: false } : {}), trackedHistory: state.tracked, paused: state.paused, ...(state.wiped ? { collected: { series: 0, points: 0, incidents: 0, keepDays: 30 } } : {}) };
         } else if (rest === 'insights') {
             body = INSIGHTS;
+        } else if (rest === 'docker-link') {
+            body = state.link;
         } else if (rest === 'history') {
             body = historyAnswer(url);
         } else if (rest === 'processlist') {
@@ -474,7 +484,8 @@ test.describe('Glances page: the sections', () => {
         await openView(page, '#glances/containers');
         await expect(page.locator('.glances-ct-row').first()).toBeVisible();
         await expect(page.locator('.glances-ct-row')).toHaveCount(fixture('containers').length);
-        await expect(page.locator('[data-glances-open="containers"] button:not(.glances-proc-sort)')).toHaveCount(0);
+        // The only control in a row is the ↗ to its twin in the Containers view, when there is one.
+        await expect(page.locator('[data-glances-open="containers"] button:not(.glances-proc-sort):not(.glances-ct-link)')).toHaveCount(0);
     });
 
     test('alerts: an ongoing alert from the real log', async ({ page }) => {
@@ -900,7 +911,7 @@ test.describe('how often the host is recorded', () => {
         await openView(page);
         const pick = page.locator('[data-glances-record]');
         await expect(pick).toBeVisible();
-        await expect(pick.locator('option')).toHaveText(['2 seconds', '30 seconds', '1 minute', '5 minutes', '15 minutes', '30 minutes', '1 hour']);
+        await expect(pick.locator('option')).toHaveText(['2 seconds', '5 seconds', '10 seconds', '30 seconds', '1 minute', '5 minutes', '15 minutes', '30 minutes', '1 hour']);
         await expect(pick).toHaveValue('30');
         await pick.selectOption('900');
         await expect.poll(() => state.recordEvery).toBe(900);
@@ -1102,5 +1113,106 @@ test.describe('Config → Glances: every change is kept', () => {
         await expect(shown).not.toBeChecked();
         // What was asked of the server never switched it on.
         await expect.poll(() => state.saved && state.saved.enabled).toBe(false);
+    });
+});
+
+test.describe('the public demo has no Glances', () => {
+    // The server writes <meta name="nextdash-demo"> in demo mode; here it is put into the page.
+    async function asDemo(page) {
+        await page.route('**/', async (route) => {
+            if (route.request().resourceType() !== 'document') return route.fallback();
+            const response = await route.fetch();
+            const body = (await response.text()).replace('<head>', '<head><meta name="nextdash-demo" content="1">');
+            return route.fulfill({ response, body });
+        });
+    }
+
+    test('no icon, Shift+G and #glances open nothing, and Config has no Glances section', async ({ page }) => {
+        // Even a server that says it is set up changes nothing in the demo.
+        await mockGlances(page, { status: { ...STATUS, level: 'ok' } });
+        await asDemo(page);
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await expect(page.locator('meta[name="nextdash-demo"]')).toHaveCount(1);
+        await expect(page.locator('#page-nav-glances-link')).toHaveCount(0);
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press('Shift+G');
+        await page.waitForTimeout(400);
+        expect(await page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
+
+        await page.goto('/#glances');
+        await page.waitForTimeout(800);
+        await expect(page.locator('#dashboard-layout.glances-layout')).toHaveCount(0);
+
+        await page.goto('/#config/glances');
+        await page.waitForFunction(() => window.dashboardInstance?.activeView === 'config', null, { timeout: 15_000 });
+        await expect(page.locator('[data-config-section="glances"]')).toHaveCount(0);
+        await expect(page.locator('[data-glances-field="server"]')).toHaveCount(0);
+    });
+});
+
+test.describe('Glances and the Containers view: the same machine', () => {
+    test('a container links to its twin by the server\'s map, with the Docker name', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page, '#glances/containers');
+        const link = page.locator('[data-glances-ct-link]');
+        await expect(link).toHaveCount(1);
+        await expect(link).toHaveAttribute('data-glances-ct-link', 'app-1-docker');
+        await link.click();
+        await expect(page).toHaveURL(/#docker\/app-1-docker/);
+    });
+
+    test('the side panel names the twin, and its history marks the restarts', async ({ page }) => {
+        const state = await mockGlances(page);
+        state.tracked = ['ct:app-1'];
+        await openView(page, '#glances/containers');
+        await page.locator('[data-glances-container="app-1"]').click();
+        const drawer = page.locator('[data-glances-drawer="container"]');
+        await expect(drawer).toContainText('Containers: app-1-docker');
+        await drawer.getByRole('tab', { name: 'History' }).click();
+        await expect(drawer.locator('[data-glances-restart]').first()).toBeAttached();
+        // The restarts of this container were asked with its history.
+        expect(state.calls.some((c) => c.path === 'history' && /ct:app-1:/.test(c.series || ''))).toBe(true);
+    });
+
+    test('not one machine: no ↗ and no twin in the panel', async ({ page }) => {
+        const state = await mockGlances(page);
+        state.link = { ...state.link, same: false, reason: 'different-name', matches: [] };
+        await openView(page, '#glances/containers');
+        await expect(page.locator('[data-glances-container]').first()).toBeVisible();
+        await expect(page.locator('[data-glances-ct-link]')).toHaveCount(0);
+        await page.locator('[data-glances-container="app-1"]').click();
+        await expect(page.locator('[data-glances-drawer="container"]')).not.toContainText('Containers: ');
+    });
+
+    test('the ranking of who used the most links a container too', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page, '#glances/insights');
+        // The sample ranking has a container named app-1.
+        await expect(page.locator('[data-glances-insight="consumers"] [data-glances-consumer-link="app-1-docker"]')).toBeVisible();
+    });
+
+    test('Config → Glances: Auto, Yes or No, with what was detected and what matched', async ({ page }) => {
+        const state = await mockGlances(page);
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances');
+        const select = page.locator('[data-glances-field="dockerLink"]');
+        await expect(select).toHaveValue('auto');
+        await expect(select.locator('option')).toHaveText(['Auto', 'Yes', 'No']);
+        const info = page.locator('[data-glances-link-state]');
+        await expect(info).toContainText('Detected: the same machine (nas)');
+        await expect(info).toContainText('1 containers matched: 1 by id');
+        await expect(page.locator('[data-glances-link-lists]')).toBeVisible();
+        await page.locator('[data-glances-link-lists] summary').click();
+        await expect(page.locator('[data-glances-link-only]')).toContainText('glances-only');
+        await expect(page.locator('[data-glances-link-only]')).toContainText('idle-one');
+
+        // Different machines: said so, with both names, and a way out.
+        state.link = { ...state.link, same: false, reason: 'different-name', dockerHost: 'tower', matches: [] };
+        await select.selectOption('no');
+        await expect.poll(() => state.saved && state.saved.dockerLink).toBe('no');
+        await expect(info).toContainText('Different machines: Glances says nas, Docker says tower');
+        await expect(page.locator('[data-glances-link-lists]')).toBeHidden();
     });
 });

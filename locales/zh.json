@@ -3546,7 +3546,14 @@
     "glancesHelpData": "Collected data, a CSV download and a button to delete it are in Config → Glances. Nothing leaves your server.",
     "glancesHelpTitle": "How the Glances page works",
     "glancesInfoAria": "About {name}",
-    "glancesInfoMore": "How this page works"
+    "glancesInfoMore": "How this page works",
+    "glancesEmbedTitle": "From Glances",
+    "glancesEmbedOpen": "Open in Glances ↗",
+    "glancesEmbedNone": "Glances has not recorded this container yet. Recording reads the containers every few seconds, so it is switched on per container.",
+    "glancesEmbedStarted": "Recording started. The graphs fill as it runs.",
+    "glancesRestartedAt": "Restarted {time}",
+    "glancesRecord5s": "5 seconds",
+    "glancesRecord10s": "10 seconds"
   },
   "health": {
     "reloadPage": "重新加载页面",
@@ -9390,7 +9397,23 @@
     "glancesResetOk": "Reset",
     "glancesResetFailed": "Could not reset",
     "glancesResetDone": "Glances is reset.",
-    "glancesEveryMinutes": "Every {n} min"
+    "glancesEveryMinutes": "Every {n} min",
+    "glancesLinkTitle": "Containers",
+    "glancesLinkNote": "When this Glances host is the machine whose Docker you manage in the Containers view, its containers are the same ones: each links to the other view, and the Containers view shows what Glances recorded about a container.",
+    "glancesLinkField": "Same machine as the Containers view",
+    "glancesLinkAuto": "Auto",
+    "glancesLinkYes": "Yes",
+    "glancesLinkNo": "No",
+    "glancesLinkWhat": "What matched",
+    "glancesLinkSame": "Detected: the same machine ({name}).",
+    "glancesLinkChosen": "Set by you: the same machine.",
+    "glancesLinkDifferent": "Different machines: Glances says {glances}, Docker says {docker}. Nothing is linked. If they are one machine after all, choose Yes.",
+    "glancesLinkUnknown": "Could not tell which machine each is. Choose Yes or No.",
+    "glancesLinkNoDocker": "The Containers view has no Docker socket here, so there is nothing to link.",
+    "glancesLinkOff": "Not linked.",
+    "glancesLinkCounts": "{n} containers matched: {id} by id, {name} by name or port.",
+    "glancesLinkOnlyGlances": "Only in Glances",
+    "glancesLinkOnlyDocker": "Only in the Containers view"
   },
   "colors": {
     "title": "主题自定义",

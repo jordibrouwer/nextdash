@@ -119,6 +119,25 @@
                         <div class="config-checkset" data-glances-blocks>${blocks}</div>
                     </div>
 
+                    <div class="config-panel" data-glances-section data-glances-link-panel>
+                        <h3 class="config-panel-title">${t('glancesLinkTitle', 'Containers')}</h3>
+                        <p class="config-panel-note">${t('glancesLinkNote',
+                            'When this Glances host is the machine whose Docker you manage in the Containers view, its containers are the same ones: each links to the other view, and the Containers view shows what Glances recorded about a container.')}</p>
+                        <div class="config-field">
+                            <label class="config-field-label" for="config-glances-dockerlink">${t('glancesLinkField', 'Same machine as the Containers view')}</label>
+                            <select id="config-glances-dockerlink" class="config-select" data-glances-field="dockerLink">
+                                <option value="auto">${t('glancesLinkAuto', 'Auto')}</option>
+                                <option value="yes">${t('glancesLinkYes', 'Yes')}</option>
+                                <option value="no">${t('glancesLinkNo', 'No')}</option>
+                            </select>
+                        </div>
+                        <p class="config-field-hint" data-glances-link-state aria-live="polite"></p>
+                        <details class="glances-link-lists" data-glances-link-lists hidden>
+                            <summary>${t('glancesLinkWhat', 'What matched')}</summary>
+                            <p class="config-field-hint" data-glances-link-only></p>
+                        </details>
+                    </div>
+
                     <div class="config-panel" data-glances-section>
                         <h3 class="config-panel-title">${t('glancesColoursTitle', 'Yellow and red')}</h3>
                         <p class="config-panel-note">${t('glancesColoursNote',
@@ -233,6 +252,7 @@
             clearBtn.hidden = !(cfg.user || cfg.hasPassword);
             clearLogin = false;
             field('refresh').value = String(cfg.refresh || 2);
+            field('dockerLink').value = cfg.dockerLink || 'auto';
             const hidden = new Set(cfg.hiddenBlocks || []);
             root.querySelectorAll('[data-glances-block]').forEach((box) => {
                 box.checked = !hidden.has(box.getAttribute('data-glances-block'));
@@ -244,6 +264,48 @@
             put(field('diskStrip'), cfg.diskStrip ?? '');
             put(field('diskHide'), (cfg.diskHide || []).join('\n'));
             paintCollected(cfg.collected);
+        };
+
+        // Whether the Glances host and the Docker host are one machine, and what matched.
+        const linkState = root.querySelector('[data-glances-link-state]');
+        const linkLists = root.querySelector('[data-glances-link-lists]');
+        const linkOnly = root.querySelector('[data-glances-link-only]');
+        const paintLink = (a) => {
+            if (!linkState) return;
+            linkLists.hidden = true;
+            if (!a) {
+                linkState.textContent = '';
+                return;
+            }
+            const host = a.glancesHost || a.dockerHost || '';
+            const parts = {
+                'same-name': t('glancesLinkSame', 'Detected: the same machine ({name}).').replace('{name}', host),
+                chosen: t('glancesLinkChosen', 'Set by you: the same machine.'),
+                'different-name': t('glancesLinkDifferent', 'Different machines: Glances says {glances}, Docker says {docker}. Nothing is linked. If they are one machine after all, choose Yes.')
+                    .replace('{glances}', a.glancesHost || '?').replace('{docker}', a.dockerHost || '?'),
+                unknown: t('glancesLinkUnknown', 'Could not tell which machine each is. Choose Yes or No.'),
+                'no-docker': t('glancesLinkNoDocker', 'The Containers view has no Docker socket here, so there is nothing to link.'),
+                off: t('glancesLinkOff', 'Not linked.'),
+            };
+            let text = parts[a.reason] || '';
+            if (a.same && Array.isArray(a.matches)) {
+                text += ` ${t('glancesLinkCounts', '{n} containers matched: {id} by id, {name} by name or port.')
+                    .replace('{n}', String(a.matches.length)).replace('{id}', String(a.byId || 0)).replace('{name}', String(a.byName || 0))}`;
+                linkLists.hidden = false;
+                const g = (a.onlyGlances || []).join(', ') || '—';
+                const d = (a.onlyDocker || []).join(', ') || '—';
+                linkOnly.textContent = `${t('glancesLinkOnlyGlances', 'Only in Glances')}: ${g}. ${t('glancesLinkOnlyDocker', 'Only in the Containers view')}: ${d}.`;
+            }
+            linkState.textContent = text;
+        };
+        const refreshLink = async () => {
+            if (!linkState) return;
+            try {
+                const res = await fetch('/api/glances/docker-link', { credentials: 'same-origin', cache: 'no-store' });
+                paintLink(res.ok ? await res.json() : null);
+            } catch {
+                paintLink(null);
+            }
         };
 
         const collectedEl = root.querySelector('[data-glances-collected]');
@@ -274,6 +336,7 @@
                 server: field('server').value.trim(),
                 user: clearLogin ? '' : field('user').value.trim(),
                 refresh: Number(field('refresh').value) || 2,
+                dockerLink: field('dockerLink').value || 'auto',
                 hiddenBlocks,
                 thresholds,
                 diskStrip: field('diskStrip').value.trim(),
@@ -440,6 +503,7 @@
                 // The Glances icon and its dot follow the new settings now.
                 void this.dash.glancesStatus?.refresh?.({ force: true });
                 this.dash.pageNav?.renderPageNavigation?.();
+                void refreshLink();
             } catch {
                 say(`${t('glancesSaveFailed', 'Could not save')}.`, true);
             } finally {
@@ -468,6 +532,7 @@
             const cfg = await res.json();
             if (!cfg || typeof cfg !== 'object' || !root.isConnected) return;
             paint(cfg);
+            void refreshLink();
         } catch {
             // Saving now would overwrite what is stored with blanks: stay shut.
             if (root.isConnected) result.textContent = t('glancesLoadFailed', 'Could not read the Glances settings. Reload to try again.');

@@ -27,12 +27,14 @@
 
     /**
      * Which container of the Containers view is this Glances container?
-     * Matched by name first (compose adds a project prefix and an index, so
-     * "stack-app-1" also meets "app"), then by a published host port. Only a
-     * container nextDash can see counts; without the Docker view nothing links.
+     *
+     * The server answers it (/api/glances/docker-link): whether the Glances host
+     * and the Docker host are one machine (Config → Glances: Auto, Yes or No) and,
+     * when they are, which container is which, by id before name. Nothing links
+     * across two machines.
      */
     const Link = {
-        list: [],
+        answer: null,
         at: 0,
         loading: null,
         stale() {
@@ -40,52 +42,22 @@
         },
         load() {
             if (this.loading) return this.loading;
-            this.loading = fetch('/api/docker/containers', { credentials: 'same-origin' })
+            this.loading = fetch('/api/glances/docker-link', { credentials: 'same-origin' })
                 .then((r) => (r.ok ? r.json() : null))
-                .then((body) => { this.list = body && body.available && Array.isArray(body.containers) ? body.containers : []; })
-                .catch(() => { this.list = []; })
+                .then((body) => { this.answer = body && typeof body === 'object' ? body : null; })
+                .catch(() => { this.answer = null; })
                 .finally(() => { this.at = Date.now(); this.loading = null; });
             return this.loading;
         },
-        norm(name) {
-            return String(name || '').trim().replace(/^\//, '').toLowerCase();
+        same() {
+            return Boolean(this.answer && this.answer.same);
         },
-        /** The bare names a container may go by: with and without a compose project and index. */
-        names(name) {
-            const n = this.norm(name);
-            const out = new Set([n]);
-            const bare = n.replace(/[-_]\d+$/, '');
-            out.add(bare);
-            return out;
-        },
-        /** Host ports a Glances container publishes, from strings ("0.0.0.0:8080->80/tcp") or objects. */
-        ports(row) {
-            const out = new Set();
-            const list = Array.isArray(row?.ports) ? row.ports : [];
-            list.forEach((p) => {
-                if (p && typeof p === 'object') {
-                    [p.PublicPort, p.public, p.host_port, p.HostPort].forEach((v) => { if (Number(v) > 0) out.add(Number(v)); });
-                } else {
-                    const m = /(?:^|:)(\d{1,5})->/.exec(String(p));
-                    if (m) out.add(Number(m[1]));
-                }
-            });
-            return out;
-        },
-        /** { container, by } for a Glances container row, or null. */
+        /** { container: { name, id }, by } for a Glances container row, or null. */
         find(row) {
-            const name = this.norm(row?.name);
-            if (!name || !this.list.length) return null;
-            const own = this.names(name);
-            const byName = this.list.find((c) => this.norm(c.name) === name)
-                || this.list.find((c) => [...this.names(c.name)].some((n) => own.has(n)));
-            if (byName) return { container: byName, by: 'name' };
-            const ports = this.ports(row);
-            if (ports.size) {
-                const byPort = this.list.find((c) => (c.ports || []).some((p) => p && ports.has(Number(p.public))));
-                if (byPort) return { container: byPort, by: 'port' };
-            }
-            return null;
+            if (!this.same()) return null;
+            const name = String(row?.name || '');
+            const match = (this.answer.matches || []).find((m) => m.glances === name);
+            return match ? { container: { name: match.docker, id: match.dockerId }, by: match.by } : null;
         },
     };
 
@@ -322,7 +294,8 @@
             const results = await Promise.all(kinds.map(async (k) => {
                 const names = (k.suffixes || [k.suffix]).map((s) => `${prefix}:${item.name}:${s}`);
                 const since = Chart.sinceFor(`${k.id}`);
-                const res = await this.view.fetchPath(`history?series=${names.map(encodeURIComponent).join(',')}&since=${since}`);
+                const restarts = item.kind === 'container' ? `&restarts=${encodeURIComponent(item.name)}` : '';
+                const res = await this.view.fetchPath(`history?series=${names.map(encodeURIComponent).join(',')}&since=${since}${restarts}`);
                 return { k, names, answer: res.kind === 'ok' ? res.body : null };
             }));
             if (seq !== this._seq || this.item !== item || !this.base.panel) return;

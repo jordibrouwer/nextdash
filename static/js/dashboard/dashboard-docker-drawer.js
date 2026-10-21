@@ -972,13 +972,33 @@ class DockerDrawer {
         charts.className = 'docker-charts';
         charts.setAttribute('data-docker-charts', '');
 
-        body.append(cpu, mem, size, net, disk, charts);
+        // What Glances recorded about it, when Config → Glances says it is the same machine.
+        const glances = document.createElement('div');
+        glances.className = 'docker-glances';
+        glances.hidden = true;
+        body.append(cpu, mem, size, net, disk, charts, glances);
+        void this._mountGlances(glances);
         els.netEl = netVal;
         els.diskIoEl = diskVal;
         els.cpuEl = cpuVal;
         els.memEl = memVal;
         els.sizeEl = sizeVal;
         els.chartsEl = charts;
+    }
+
+    /** Glances' own record of this container, drawn under the figures; nothing when the two are not one machine. */
+    async _mountGlances(host) {
+        const dash = this.view.dash;
+        if (!dash?.glancesStatus?.configured || !this._name) return;
+        try {
+            await window.LazyScript.loadScriptOnce('js/dashboard/dashboard-glances-embed.js', 'dashboardGlancesEmbed',
+                () => typeof window.DashboardGlancesEmbed !== 'undefined');
+            await window.DashboardGlancesEmbed.mount(host, {
+                dash, dockerName: this._name, t: (key, fallback, params) => this.view.t(key, fallback, params),
+            });
+        } catch {
+            /* the figures above stand on their own */
+        }
     }
 
     _startResourcePolling() {

@@ -240,6 +240,13 @@
                 return tr;
             });
             this.tbody.replaceChildren(...trs);
+            // Asked for from the Containers view ("Open in Glances"): its side panel opens.
+            const ask = window.__glancesOpenContainer;
+            if (ask && this.rows.length) {
+                window.__glancesOpenContainer = null;
+                const row = this.rows.find((r) => r.name === ask);
+                if (row) this.view.detail?.open('container', row.raw);
+            }
         }
     }
 

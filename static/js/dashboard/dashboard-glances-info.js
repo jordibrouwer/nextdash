@@ -94,8 +94,11 @@
         pop.className = 'glances-info-pop';
         pop.setAttribute('role', 'dialog');
         pop.setAttribute('data-glances-info-pop', id);
+        pop.tabIndex = -1;
         const title = document.createElement('strong');
         title.className = 'glances-info-pop-title';
+        title.id = `glances-info-title-${id}`;
+        pop.setAttribute('aria-labelledby', title.id);
         title.textContent = view.t(`dashboard.glancesInfoTitle_${id.replace(/-/g, '_')}`, titleFallback);
         const body = document.createElement('p');
         body.className = 'glances-info-pop-body';
@@ -122,14 +125,29 @@
                 closePopover();
             },
             keys: (e) => {
-                if (e.key !== 'Escape') return;
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    state.focus = true;
+                    closePopover();
+                    return;
+                }
+                if (e.key !== 'Tab') return;
+                // The popover holds the focus: Tab walks its one control, and leaving it
+                // closes it and goes on from the button that opened it.
+                const inside = pop.contains(document.activeElement);
+                if (!inside) return;
+                const last = e.shiftKey ? document.activeElement === pop : document.activeElement === more;
+                if (!last) return;
                 e.preventDefault();
-                e.stopImmediatePropagation();
                 state.focus = true;
                 closePopover();
             },
         };
         open = state;
+        // Keyboard and pointer alike: the popover takes the focus, so reading it and
+        // reaching its link does not mean tabbing through the rest of the page.
+        pop.focus({ preventScroll: true });
         document.addEventListener('pointerdown', state.outside, true);
         window.addEventListener('keydown', state.keys, true);
         window.addEventListener('resize', state.close);

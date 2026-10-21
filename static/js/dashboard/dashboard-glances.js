@@ -405,6 +405,8 @@
         _buildRecordPick() {
             const CHOICES = [
                 [2, 'dashboard.glancesRecord2s', '2 seconds'],
+                [5, 'dashboard.glancesRecord5s', '5 seconds'],
+                [10, 'dashboard.glancesRecord10s', '10 seconds'],
                 [30, 'dashboard.glancesRecord30s', '30 seconds'],
                 [60, 'dashboard.glancesRecord60s', '1 minute'],
                 [300, 'dashboard.glancesRecord5m', '5 minutes'],

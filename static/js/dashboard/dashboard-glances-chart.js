@@ -433,6 +433,15 @@
             band.title = `${what}${i.subject ? ` · ${i.subject}` : ''} · ${new Date(i.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}${i.end ? '' : ` · ${t('dashboard.glancesInsOngoing', 'ongoing')}`}`;
             bands.appendChild(band);
         });
+        // Moments a container started again, from the Containers view's timeline.
+        (answer && Array.isArray(answer.restarts) ? answer.restarts : []).forEach((at) => {
+            if (!(at >= drawn.from && at <= drawn.to)) return;
+            const mark = el('i', 'glances-chart-restart');
+            mark.setAttribute('data-glances-restart', String(at));
+            mark.style.left = `${(((at - drawn.from) / (drawn.to - drawn.from)) * 100).toFixed(2)}%`;
+            mark.title = t('dashboard.glancesRestartedAt', 'Restarted {time}', { time: new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
+            bands.appendChild(mark);
+        });
         plot.insertBefore(bands, drawn.svg);
         const range = RANGES.find((r) => r.id === currentRange(def.id)) || RANGES[1];
         // y axis: the value at the top, the middle and the bottom of the plot.

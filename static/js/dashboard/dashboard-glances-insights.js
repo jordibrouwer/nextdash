@@ -402,6 +402,25 @@
             return block;
         }
 
+        /** A container's name, with a ↗ to the Containers view when the two views are one machine. */
+        consumerName(r) {
+            if (r.kind !== 'container') return r.name;
+            const Link = window.DashboardGlancesDetail?.link;
+            if (Link && Link.stale()) void Link.load().then(() => this._redraw());
+            const link = Link?.find({ name: r.name });
+            if (!link) return r.name;
+            const wrap = el('span', 'glances-consumer-name');
+            const open = el('button', 'glances-ct-link', '↗');
+            open.type = 'button';
+            open.setAttribute('data-glances-consumer-link', link.container.name);
+            const label = this.t('dashboard.glancesActOpenDocker', 'Open in Containers');
+            open.title = `${label}: ${link.container.name}`;
+            open.setAttribute('aria-label', open.title);
+            open.addEventListener('click', () => { window.location.hash = `#docker/${encodeURIComponent(link.container.name)}`; });
+            wrap.append(document.createTextNode(r.name), open);
+            return wrap;
+        }
+
         consumers(a) {
             const rows = a.consumers || [];
             const block = this.block('consumers', 'dashboard.glancesInsConsumers', 'Who used the most', true);
@@ -412,7 +431,7 @@
             }
             const G = window.DashboardGlances;
             block.appendChild(this.table('ins-consumers', [
-                { key: 'name', label: ['dashboard.glancesCtName', 'Name'], value: (r) => r.name, cell: (r) => r.name, numeric: false },
+                { key: 'name', label: ['dashboard.glancesCtName', 'Name'], value: (r) => r.name, cell: (r) => this.consumerName(r), numeric: false },
                 { key: 'kind', label: ['dashboard.glancesInsKind', 'Kind'], value: (r) => r.kind,
                     cell: (r) => (r.kind === 'container' ? this.t('dashboard.glancesInsContainer', 'Container') : this.t('dashboard.glancesInsProcess', 'Process')), numeric: false },
                 { key: 'avgCpu', label: ['dashboard.glancesInsAvgCpu', 'CPU average'], value: (r) => r.avgCpu, cell: (r) => `${r.avgCpu}%` },

@@ -14,6 +14,9 @@
 (function () {
     'use strict';
 
+    // The public demo has no Glances: nothing here asks, and nothing shows.
+    const DEMO = Boolean(document.querySelector('meta[name="nextdash-demo"]'));
+
     class DashboardGlancesStatus {
         static POLL_MS = 30000;
 
@@ -27,9 +30,9 @@
             this._visibility = null;
         }
 
-        /** Page 0 exists: switched on, and told where to look. */
+        /** The Glances page exists: switched on, and told where to look. Never in the demo. */
         get configured() {
-            return this.state.configured === true;
+            return !DEMO && this.state.configured === true;
         }
 
         /** The connection is switched off: the page and its record stay, nothing is read. */
@@ -42,6 +45,7 @@
         }
 
         async refresh() {
+            if (DEMO) return false;
             let next = null;
             try {
                 const res = await fetch('/api/glances/status', { cache: 'no-store' });
@@ -60,6 +64,8 @@
 
         start() {
             this.stop();
+            // Not part of the demo: nothing to ask, and nothing ever shows.
+            if (DEMO) return;
             void this.refresh();
             this._timer = setInterval(() => {
                 if (document.visibilityState !== 'hidden') void this.refresh();

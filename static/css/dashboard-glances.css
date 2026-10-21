@@ -1051,6 +1051,16 @@
 
 .glances-incident-layer { position: absolute; inset: 0; pointer-events: none; }
 
+/* A moment a container started again: a thin dashed line, with its time as the title. */
+.glances-chart-restart {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    border-left: 1px dashed var(--accent-warning);
+    pointer-events: auto;
+}
+
 .glances-chart-incident {
     position: absolute;
     top: 0;
@@ -1306,7 +1316,7 @@
     padding: var(--space-3, 0.8rem) var(--space-4, 1rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
-    background: var(--background-elevated, var(--background-secondary, #1d1b22));
+    background: var(--background-modal, var(--background-primary, #1d1b22));
     color: var(--text-primary);
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
     font-size: var(--font-size-small, 0.85rem);
@@ -1353,3 +1363,11 @@
     .glances-layout .lvs-header-actions { flex: 1 1 100%; justify-content: flex-start; gap: var(--space-2, 0.5rem) var(--space-3, 0.9rem); }
     .glances-layout .glances-record-select { min-width: 0; }
 }
+
+/* ── Glances inside the Containers view's side panel ── */
+
+.glances-embed { margin-top: var(--space-4, 1.25rem); padding-top: var(--space-3, 0.9rem); border-top: 1px solid var(--border-primary); }
+.glances-embed-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3, 0.9rem); margin-bottom: var(--space-3, 0.9rem); }
+.glances-embed-title { margin: 0; font-size: var(--font-size-small); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary); }
+.glances-embed-body { display: flex; flex-direction: column; gap: var(--space-3, 0.9rem); }
+.glances-embed-empty { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2, 0.5rem); }
