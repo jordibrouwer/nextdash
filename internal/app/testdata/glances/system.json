@@ -1,0 +1,8 @@
+{
+  "hostname": "nas",
+  "os_name": "Linux",
+  "os_version": "6.1.0-25-amd64",
+  "platform": "64bit",
+  "linux_distro": "Debian GNU/Linux 12",
+  "hr_name": "Debian GNU/Linux 12 64bit / Linux 6.1.0-25-amd64"
+}

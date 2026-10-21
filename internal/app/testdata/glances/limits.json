@@ -1,0 +1,26 @@
+{
+  "cpu": {
+    "cpu_user_careful": 50,
+    "cpu_user_warning": 70,
+    "cpu_user_critical": 90
+  },
+  "mem": {
+    "mem_careful": 50,
+    "mem_warning": 70,
+    "mem_critical": 90
+  },
+  "load": {
+    "load_careful": 0.7,
+    "load_warning": 1.0,
+    "load_critical": 5.0
+  },
+  "fs": {
+    "fs_careful": 50,
+    "fs_warning": 70,
+    "fs_critical": 90
+  },
+  "sensors": {
+    "sensors_temperature_core_warning": 80,
+    "sensors_temperature_core_critical": 100
+  }
+}

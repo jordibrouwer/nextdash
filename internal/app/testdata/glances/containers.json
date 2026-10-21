@@ -1,0 +1,53 @@
+[
+  {
+    "name": "jellyfin",
+    "id": "a1b2c3d4e5f6",
+    "status": "running",
+    "uptime": "3 days",
+    "cpu_percent": 4.2,
+    "memory_usage": 812000000,
+    "io_rx": 1234567,
+    "io_wx": 765432,
+    "network_rx": 2345678,
+    "network_tx": 1234567,
+    "image": [
+      "jellyfin/jellyfin:latest"
+    ],
+    "command": "scrubbed",
+    "key": "name"
+  },
+  {
+    "name": "postgres",
+    "id": "a1b2c3d4e5f6",
+    "status": "running",
+    "uptime": "3 days",
+    "cpu_percent": 1.1,
+    "memory_usage": 256000000,
+    "io_rx": 1234567,
+    "io_wx": 765432,
+    "network_rx": 2345678,
+    "network_tx": 1234567,
+    "image": [
+      "postgres:16"
+    ],
+    "command": "scrubbed",
+    "key": "name"
+  },
+  {
+    "name": "old-job",
+    "id": "a1b2c3d4e5f6",
+    "status": "exited",
+    "uptime": "3 days",
+    "cpu_percent": 0.0,
+    "memory_usage": 0,
+    "io_rx": 1234567,
+    "io_wx": 765432,
+    "network_rx": 2345678,
+    "network_tx": 1234567,
+    "image": [
+      "alpine:3.20"
+    ],
+    "command": "scrubbed",
+    "key": "name"
+  }
+]

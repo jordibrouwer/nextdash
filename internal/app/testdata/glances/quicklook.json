@@ -1,0 +1,53 @@
+{
+  "cpu": 23.1,
+  "cpu_name": "Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz",
+  "cpu_hz_current": 3000000000.0,
+  "cpu_hz": 3000000000.0,
+  "mem": 61.4,
+  "swap": 3.2,
+  "load": 14.5,
+  "percpu": [
+    {
+      "cpu_number": 0,
+      "total": 20.1,
+      "user": 12.1,
+      "system": 6.0,
+      "idle": 79.9
+    },
+    {
+      "cpu_number": 1,
+      "total": 25.3,
+      "user": 15.2,
+      "system": 7.6,
+      "idle": 74.7
+    },
+    {
+      "cpu_number": 2,
+      "total": 22.0,
+      "user": 13.2,
+      "system": 6.6,
+      "idle": 78.0
+    },
+    {
+      "cpu_number": 3,
+      "total": 24.8,
+      "user": 14.9,
+      "system": 7.4,
+      "idle": 75.2
+    },
+    {
+      "cpu_number": 4,
+      "total": 26.5,
+      "user": 15.9,
+      "system": 7.9,
+      "idle": 73.5
+    },
+    {
+      "cpu_number": 5,
+      "total": 19.9,
+      "user": 11.9,
+      "system": 6.0,
+      "idle": 80.1
+    }
+  ]
+}

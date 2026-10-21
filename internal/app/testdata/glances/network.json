@@ -1,0 +1,41 @@
+[
+  {
+    "interface_name": "eth0",
+    "bytes_recv": 91234567890,
+    "bytes_sent": 12345678901,
+    "bytes_all": 103580246791,
+    "speed": 1000000000,
+    "is_up": true,
+    "time_since_update": 2.0,
+    "key": "interface_name",
+    "bytes_recv_rate_per_sec": 125000.0,
+    "bytes_sent_rate_per_sec": 42000.0,
+    "bytes_all_rate_per_sec": 167000.0
+  },
+  {
+    "interface_name": "docker0",
+    "bytes_recv": 1234567,
+    "bytes_sent": 2345678,
+    "bytes_all": 3580245,
+    "speed": 1000000000,
+    "is_up": true,
+    "time_since_update": 2.0,
+    "key": "interface_name",
+    "bytes_recv_rate_per_sec": 125000.0,
+    "bytes_sent_rate_per_sec": 42000.0,
+    "bytes_all_rate_per_sec": 167000.0
+  },
+  {
+    "interface_name": "wlan0",
+    "bytes_recv": 0,
+    "bytes_sent": 0,
+    "bytes_all": 0,
+    "speed": 1000000000,
+    "is_up": false,
+    "time_since_update": 2.0,
+    "key": "interface_name",
+    "bytes_recv_rate_per_sec": 0.0,
+    "bytes_sent_rate_per_sec": 0.0,
+    "bytes_all_rate_per_sec": 0.0
+  }
+]

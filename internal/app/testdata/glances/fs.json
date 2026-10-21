@@ -1,0 +1,52 @@
+[
+  {
+    "device_name": "/dev/sda1",
+    "fs_type": "ext4",
+    "mnt_point": "/",
+    "size": 250000000000,
+    "used": 100000000000,
+    "free": 150000000000,
+    "percent": 40.0,
+    "key": "mnt_point"
+  },
+  {
+    "device_name": "/dev/sdb1",
+    "fs_type": "ext4",
+    "mnt_point": "/mnt/data",
+    "size": 4000000000000,
+    "used": 3280000000000,
+    "free": 720000000000,
+    "percent": 82.0,
+    "key": "mnt_point"
+  },
+  {
+    "device_name": "tmpfs",
+    "fs_type": "tmpfs",
+    "mnt_point": "/run",
+    "size": 3000000000,
+    "used": 50000000,
+    "free": 2950000000,
+    "percent": 1.7,
+    "key": "mnt_point"
+  },
+  {
+    "device_name": "overlay",
+    "fs_type": "overlay",
+    "mnt_point": "/var/lib/docker/overlay2/abc/merged",
+    "size": 250000000000,
+    "used": 100000000000,
+    "free": 150000000000,
+    "percent": 40.0,
+    "key": "mnt_point"
+  },
+  {
+    "device_name": "/dev/loop0",
+    "fs_type": "squashfs",
+    "mnt_point": "/snap/core/1234",
+    "size": 60000000,
+    "used": 60000000,
+    "free": 0,
+    "percent": 100.0,
+    "key": "mnt_point"
+  }
+]

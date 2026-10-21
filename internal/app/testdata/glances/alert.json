@@ -1,0 +1,19 @@
+[
+  {
+    "begin": 1792576800,
+    "end": -1,
+    "state": "WARNING",
+    "type": "MEM",
+    "max": 88.1,
+    "avg": 85.3,
+    "min": 82.0,
+    "sum": 512.0,
+    "count": 6,
+    "top": [
+      "plex",
+      "jellyfin"
+    ],
+    "desc": "",
+    "sort": "memory_percent"
+  }
+]

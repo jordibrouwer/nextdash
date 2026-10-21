@@ -1,0 +1,158 @@
+[
+  {
+    "pid": 1000,
+    "name": "dockerd",
+    "username": "root",
+    "cpu_percent": 12.5,
+    "memory_percent": 8.0,
+    "status": "R",
+    "num_threads": 4,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "key": "pid"
+  },
+  {
+    "pid": 1037,
+    "name": "containerd",
+    "username": "svc",
+    "cpu_percent": 11.5,
+    "memory_percent": 7.5,
+    "status": "S",
+    "num_threads": 5,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "key": "pid"
+  },
+  {
+    "pid": 1074,
+    "name": "smbd",
+    "username": "svc",
+    "cpu_percent": 10.5,
+    "memory_percent": 7.0,
+    "status": "S",
+    "num_threads": 6,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "key": "pid"
+  },
+  {
+    "pid": 1111,
+    "name": "plex",
+    "username": "root",
+    "cpu_percent": 9.5,
+    "memory_percent": 6.5,
+    "status": "S",
+    "num_threads": 7,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "key": "pid"
+  },
+  {
+    "pid": 1148,
+    "name": "jellyfin",
+    "username": "svc",
+    "cpu_percent": 8.5,
+    "memory_percent": 6.0,
+    "status": "R",
+    "num_threads": 8,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "key": "pid"
+  },
+  {
+    "pid": 1185,
+    "name": "sshd",
+    "username": "svc",
+    "cpu_percent": 7.5,
+    "memory_percent": 5.5,
+    "status": "S",
+    "num_threads": 9,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "key": "pid"
+  },
+  {
+    "pid": 1222,
+    "name": "glances",
+    "username": "root",
+    "cpu_percent": 6.5,
+    "memory_percent": 5.0,
+    "status": "I",
+    "num_threads": 10,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "key": "pid"
+  },
+  {
+    "pid": 1259,
+    "name": "nginx",
+    "username": "svc",
+    "cpu_percent": 5.5,
+    "memory_percent": 4.5,
+    "status": "S",
+    "num_threads": 11,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "key": "pid"
+  },
+  {
+    "pid": 1296,
+    "name": "postgres",
+    "username": "svc",
+    "cpu_percent": 4.5,
+    "memory_percent": 4.0,
+    "status": "S",
+    "num_threads": 12,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "key": "pid"
+  },
+  {
+    "pid": 1333,
+    "name": "python3",
+    "username": "root",
+    "cpu_percent": 3.5,
+    "memory_percent": 3.5,
+    "status": "S",
+    "num_threads": 13,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "key": "pid"
+  },
+  {
+    "pid": 1370,
+    "name": "cron",
+    "username": "svc",
+    "cpu_percent": 2.5,
+    "memory_percent": 3.0,
+    "status": "S",
+    "num_threads": 14,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "key": "pid"
+  },
+  {
+    "pid": 1407,
+    "name": "systemd",
+    "username": "svc",
+    "cpu_percent": 1.5,
+    "memory_percent": 2.5,
+    "status": "S",
+    "num_threads": 15,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "key": "pid"
+  }
+]

@@ -1,0 +1,47 @@
+[
+  {
+    "label": "Package id 0",
+    "type": "temperature_core",
+    "value": 58,
+    "unit": "C",
+    "warning": 80,
+    "critical": 100,
+    "key": "label"
+  },
+  {
+    "label": "Core 0",
+    "type": "temperature_core",
+    "value": 54,
+    "unit": "C",
+    "warning": 80,
+    "critical": 100,
+    "key": "label"
+  },
+  {
+    "label": "Core 1",
+    "type": "temperature_core",
+    "value": 97,
+    "unit": "C",
+    "warning": 80,
+    "critical": 100,
+    "key": "label"
+  },
+  {
+    "label": "nvme0n1 Composite",
+    "type": "temperature_core",
+    "value": 41,
+    "unit": "C",
+    "warning": 75,
+    "critical": 85,
+    "key": "label"
+  },
+  {
+    "label": "fan1",
+    "type": "fan_speed",
+    "value": 1180,
+    "unit": "RPM",
+    "warning": null,
+    "critical": null,
+    "key": "label"
+  }
+]
