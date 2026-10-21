@@ -95,8 +95,15 @@ for (const view of VIEWS) {
         }
         await view.open(page);
 
-        await expect.poll(() => risingCount(page, view.row), { timeout: 3000, intervals: [20] }).toBeGreaterThan(1);
-        expect(await risingCount(page, view.header)).toBeGreaterThan(0);
+        // The header rises first and for less time than the rows take to come
+        // in, so on a slow runner it is over by the time the second row shows.
+        // Watch for it while waiting for the rows instead of after.
+        let headerRose = false;
+        await expect.poll(async () => {
+            if (!headerRose && (await risingCount(page, view.header)) > 0) headerRose = true;
+            return risingCount(page, view.row);
+        }, { timeout: 3000, intervals: [20] }).toBeGreaterThan(1);
+        expect(headerRose || (await risingCount(page, view.header)) > 0).toBe(true);
         // It is an arrival, not a state: the rows settle and stay put.
         await expect.poll(() => risingCount(page, `${view.header}, ${view.row}`), { timeout: 3000 }).toBe(0);
         await expect(page.locator('body')).not.toHaveAttribute('data-view-entering', /.+/);
