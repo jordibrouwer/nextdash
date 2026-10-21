@@ -19,6 +19,12 @@ IMAGE="nextdash:preflight"
 TRIVY_FINDING=10
 TRIVY_IMAGE="aquasec/trivy:0.75.0"
 
+# The licence list the About page shows is generated from go.mod/go.sum.
+if [[ go.mod -nt static/data/licenses.json || go.sum -nt static/data/licenses.json ]]; then
+  echo "Preflight: static/data/licenses.json is older than go.mod/go.sum. Run node scripts/gen-licenses.mjs and commit it." >&2
+  exit 1
+fi
+
 trap 'docker image rm "$IMAGE" >/dev/null 2>&1 || true' EXIT
 
 echo "Preflight 1/2: govulncheck..."
