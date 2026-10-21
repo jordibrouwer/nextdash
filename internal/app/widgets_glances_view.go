@@ -27,19 +27,23 @@ one of its paths, and /all carries every command line on the machine. Only the
 plugins the view draws are reachable, only by GET, and nothing of the request
 but the path is forwarded.
 
-Answers are shared and short-lived (half the tile's beat, at least 2 s), so
+Answers are shared and short-lived (half the tile's beat, between 2 and 4 s), so
 the tile, an open view and a second tab do not each ask Glances; readers that
 arrive while a path is being asked wait for that one answer. The plugin list
 decides which sections exist and hardly changes, so it lives five minutes.
 
 Process lists can carry secrets in their arguments. The server sorts, searches
 and cuts the list, strips every command line, and hands one out only when the
-reader asks for that one process.
+reader asks for that one process, and only to a reader with the write token
+(as the docker logs are).
 */
 
 const (
 	// glancesViewMinTTL is the shortest an answer lives.
 	glancesViewMinTTL = 2 * time.Second
+	// glancesViewMaxTTL is the longest: under the view's 5 s poll, so every
+	// poll of an open view gets a fresh answer.
+	glancesViewMaxTTL = 4 * time.Second
 	// glancesPluginsTTL is how long the plugin list lives.
 	glancesPluginsTTL = 5 * time.Minute
 	// glancesProcessLimit is how many processes the browser gets.
@@ -92,7 +96,11 @@ func glancesViewTTL(path string, spec glancesSpec) time.Duration {
 	if path == "pluginslist" {
 		return glancesPluginsTTL
 	}
-	return max(glancesViewMinTTL, spec.TTL/2)
+	ttl := spec.TTL / 2
+	if ttl > glancesViewMaxTTL {
+		ttl = glancesViewMaxTTL
+	}
+	return max(glancesViewMinTTL, ttl)
 }
 
 // ---- the shared answers ----
@@ -279,6 +287,10 @@ func (h *Handlers) glancesViewHandler(w http.ResponseWriter, r *http.Request) {
 	widgetID, path, _ := strings.Cut(rest, "/")
 	if widgetID == "" || !glancesViewAllowed(path) {
 		http.NotFound(w, r)
+		return
+	}
+	// A command line can carry a password or a key: behind the write token.
+	if glancesProcessRe.MatchString(path) && !h.requireWriteAccess(w, r) {
 		return
 	}
 	pageID, err := strconv.Atoi(strings.TrimSpace(r.URL.Query().Get("pageId")))

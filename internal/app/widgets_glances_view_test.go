@@ -261,11 +261,17 @@ func TestGlancesViewTTL(t *testing.T) {
 	if got := glancesViewTTL("pluginslist", glancesSpec{TTL: 30 * time.Second}); got != 5*time.Minute {
 		t.Errorf("pluginslist: %v", got)
 	}
-	if got := glancesViewTTL("fs", glancesSpec{TTL: 30 * time.Second}); got != 15*time.Second {
-		t.Errorf("fs at 30 s: %v", got)
-	}
-	if got := glancesViewTTL("fs", glancesSpec{TTL: 3 * time.Second}); got != 2*time.Second {
-		t.Errorf("the floor: %v", got)
+	// Half the tile's beat, but never more than 4 s, so a view polling every
+	// 5 s gets a fresh answer each time; and never under 2 s.
+	for ttl, want := range map[time.Duration]time.Duration{
+		30 * time.Second: 4 * time.Second,
+		6 * time.Second:  3 * time.Second,
+		8 * time.Second:  4 * time.Second,
+		3 * time.Second:  2 * time.Second,
+	} {
+		if got := glancesViewTTL("fs", glancesSpec{TTL: ttl}); got != want {
+			t.Errorf("fs at %v: %v, want %v", ttl, got, want)
+		}
 	}
 }
 
@@ -373,5 +379,34 @@ func TestGlancesViewPluginMissing(t *testing.T) {
 	rec = glancesViewDo(h, http.MethodGet, "/api/glances/"+widget.ID+"/smart?pageId=1")
 	if rec.Code != http.StatusOK || strings.TrimSpace(rec.Body.String()) != `{"error":"unreachable"}` {
 		t.Errorf("server gone: %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+// A command line can carry a secret, so it is behind the write token, as the
+// docker logs are; the list without command lines is not.
+func TestGlancesProcessCmdlineNeedsWriteAccess(t *testing.T) {
+	h, _, widget := glancesViewSetup(t)
+	t.Setenv("NEXTDASH_WRITE_TOKEN", "tok")
+	target := "/api/glances/" + widget.ID + "/processes/1037?pageId=1"
+	rec := glancesViewDo(h, http.MethodGet, target)
+	if rec.Code != http.StatusUnauthorized || strings.Contains(rec.Body.String(), "cmdline") {
+		t.Errorf("without the token: %d %s", rec.Code, rec.Body.String())
+	}
+	req := httptest.NewRequest(http.MethodGet, target, nil)
+	req.Header.Set("X-NextDash-Token", "wrong")
+	rec = httptest.NewRecorder()
+	h.glancesViewHandler(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("with a wrong token: %d", rec.Code)
+	}
+	req = httptest.NewRequest(http.MethodGet, target, nil)
+	req.Header.Set("X-NextDash-Token", "tok")
+	rec = httptest.NewRecorder()
+	h.glancesViewHandler(rec, req)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"cmdline"`) {
+		t.Errorf("with the token: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := glancesViewDo(h, http.MethodGet, "/api/glances/"+widget.ID+"/processlist?pageId=1"); rec.Code != http.StatusOK {
+		t.Errorf("the list without the token: %d", rec.Code)
 	}
 }
