@@ -1,11 +1,30 @@
 /* Font Size System - CSS Variables */
 
-/* Global font for the entire app */
+/* Two fonts, one per role. The dashboard (header bar, bookmark grid, search) is
+   set in --font-family-dashboard, which the font preset under Appearance writes
+   (font-presets.js); every other screen (Config, views, modals, Help, status)
+   is --font-family-ui. Most rules ask for --font-family-main, so the dashboard
+   surfaces below swap what that name means for their subtree. */
 :root {
-    --font-family-main: 'Source Code Pro', monospace;
+    --font-family-ui: 'Inter', system-ui, sans-serif;
+    --font-family-dashboard: 'Source Code Pro', monospace;
+    --font-family-main: var(--font-family-ui);
     /* Code, URLs and shortcuts. Follows the main font when that is a mono preset (font-presets.js). */
     --font-family-mono: 'Source Code Pro', ui-monospace, monospace;
     --font-mono: var(--font-family-mono);
+    font-family: var(--font-family-main);
+}
+
+/* The header bar and the search panel are the dashboard's on every screen. The
+   grid is the dashboard's only while it shows bookmarks: Config, Inbox, Health,
+   Containers and Tags render inside the same grid and read in Inter. Before the
+   script sets data-active-view the page is the bookmarks view. */
+.dashboard-section.section-controls,
+.dashboard-section.section-title,
+#shortcut-search,
+body:not([data-active-view]) .dashboard-section.section-content,
+body[data-active-view="bookmarks"] .dashboard-section.section-content {
+    --font-family-main: var(--font-family-dashboard);
     font-family: var(--font-family-main);
 }
 

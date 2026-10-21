@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.20.3 — 21 October 2026](#v1203--21-october-2026)
 - [v1.20.2 — 21 October 2026](#v1202--21-october-2026)
 - [v1.20.1 — 20 October 2026](#v1201--20-october-2026)
 - [v1.20.0 — 20 October 2026](#v1200--20-october-2026)
@@ -114,6 +115,18 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.20.3 — 21 October 2026
+
+The dashboard is set in **Source Code Pro** and every other screen in **Inter**.
+
+### Look
+
+- **new — two fonts, one for the dashboard and one for the rest.** The header bar, the bookmark grid and the search panel are set in the font preset under Appearance, Source Code Pro by default. Config, Inbox, Tags, Containers, the modals and the other views read in Inter, which is served from `/static/fonts` like the mono. The font you pick, or the look you apply, still decides the dashboard only; code, addresses and key chips stay on the mono everywhere. The tag cloud panel is Inter. `--font-family-ui` and `--font-family-dashboard` are the two roles, and the dashboard surfaces swap what `--font-family-main` means for their subtree, so the rules that ask for it need no change (`font-size.css`, `font-presets.js`); the grid follows `data-active-view="bookmarks"`.
+- **fix — the +N on a tag offer takes the page font.** `.tag-offer-more` was a button with no font of its own and drew in the browser's default, Arial (`tag-offer.css`).
+- **docs — a test for the split.** `tests/font-default.spec.js` asks for Source Code Pro on the header bar and the grid, Inter on the body and in Config, and Inter loaded from `/static/fonts`.
 
 ---
 

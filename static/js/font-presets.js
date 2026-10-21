@@ -1,6 +1,7 @@
 /**
  * Preset UI fonts + optional custom upload (via fontPreset "custom" + customFontPath).
- * Sets --font-family-main; loads Google Fonts when needed.
+ * Sets --font-family-dashboard (the font of the dashboard page; every other screen
+ * is Inter, see font-size.css); loads Google Fonts when needed.
  */
 (function (global) {
     const PRESET_IDS = [
@@ -101,7 +102,7 @@
             .load()
             .then((loadedFace) => {
                 document.fonts.add(loadedFace);
-                document.documentElement.style.setProperty('--font-family-main', `'${fontName}', monospace`);
+                document.documentElement.style.setProperty('--font-family-dashboard', `'${fontName}', monospace`);
                 document.documentElement.setAttribute('data-font-preset', 'custom');
             })
             .catch((err) => {
@@ -132,7 +133,7 @@
             ensureGoogleStylesheet(googlePart);
         }
         const stack = CSS_STACK[preset] || CSS_STACK.inter;
-        document.documentElement.style.setProperty('--font-family-main', stack);
+        document.documentElement.style.setProperty('--font-family-dashboard', stack);
         // A sans preset keeps code and URLs on the default mono; a mono preset takes them along.
         if (MONO_PRESETS.has(preset)) {
             document.documentElement.style.setProperty('--font-family-mono', stack.replace(/, monospace$/, '') + ', ui-monospace, monospace');

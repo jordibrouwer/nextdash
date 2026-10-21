@@ -107,6 +107,7 @@
     padding: 0 6px;
     background: transparent;
     color: var(--accent-primary);
+    font: inherit;
     font-size: var(--font-size-small);
     cursor: pointer;
 }
