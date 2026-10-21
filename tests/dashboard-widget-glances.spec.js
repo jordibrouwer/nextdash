@@ -115,6 +115,41 @@ test.describe('the Glances tile', () => {
         await expect(tile.locator('.glances-bar[data-meter="cpu"]')).toHaveCount(1);
     });
 
+    test('narrow with every meter ticked draws no swap bar, the three bars and the line', async ({ page }) => {
+        await open(page);
+        const all = ['cpu', 'mem', 'swap', 'disk', 'temp', 'load', 'net'];
+        const tile = await draw(page, { result: answer(), config: { meters: all }, width: 320 });
+        await expect(tile.locator('.glances-bar:visible')).toHaveCount(3);
+        await expect(tile.locator('.glances-bar[data-meter="swap"]:visible')).toHaveCount(0);
+        const line = tile.locator('.glances-line:visible');
+        await expect(line).toContainText('54');
+        await expect(line).toContainText('1.2');
+        await expect(line).toContainText('MB/s');
+    });
+
+    test('narrow with two meters draws two bars and no line', async ({ page }) => {
+        await open(page);
+        const tile = await draw(page, { result: answer(), config: { meters: ['cpu', 'disk'] }, width: 320 });
+        await expect(tile.locator('.glances-bar:visible')).toHaveCount(2);
+        await expect(tile.locator('.glances-line')).toHaveCount(0);
+    });
+
+    test('narrow line drops an unticked part without stray separators', async ({ page }) => {
+        await open(page);
+        const tile = await draw(page, { result: answer(), config: { meters: ['cpu', 'mem', 'disk', 'temp', 'load'] }, width: 320 });
+        const text = (await tile.locator('.glances-line:visible').textContent()) || '';
+        expect(text).not.toContain('MB/s');
+        expect(text.trim()).not.toMatch(/·\s*$/);
+        expect(text).toContain('·');
+    });
+
+    test('wide with a list without swap draws no swap bar', async ({ page }) => {
+        await open(page);
+        const tile = await draw(page, { result: answer(), config: { meters: ['cpu', 'mem', 'load', 'disk', 'temp'] }, width: 680 });
+        await expect(tile.locator('.glances-bar[data-meter="swap"]')).toHaveCount(0);
+        await expect(tile.locator('.glances-bar[data-meter="cpu"]:visible')).toHaveCount(1);
+    });
+
     test('missing readings draw a dash', async ({ page }) => {
         await open(page);
         const sparse = { status: 'up', cpu: 10, mem: 20, host: 'pi' };

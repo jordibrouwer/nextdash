@@ -26,7 +26,7 @@
 
     // The same limits the server uses for its own tones.
     const LIMITS = { cpu: [80, 90], mem: [80, 90], swap: [80, 90], disk: [80, 90], temp: [70, 85] };
-    // What each shape draws while the widget has no `meters` choice of its own.
+    // What each shape draws while the widget has no `meters` choice of its own (an empty list is no choice).
     const NARROW_DEFAULT = ['cpu', 'mem', 'disk', 'temp', 'load', 'net'];
     const WIDE_DEFAULT = ['cpu', 'mem', 'swap', 'load', 'disk', 'net', 'temp'];
     const KNOWN = ['cpu', 'mem', 'swap', 'load', 'disk', 'net', 'temp'];
@@ -68,7 +68,11 @@
     /** Whether a shape draws a figure: the widget's own choice, else that shape's usual set. */
     function shows(widget, key, wide) {
         const list = widget?.config?.meters;
-        if (Array.isArray(list)) return list.filter((k) => KNOWN.includes(k)).includes(key);
+        // A stored list is honoured in both shapes, but the terse one has a fixed
+        // set of parts: swap is only ever drawn wide.
+        if (Array.isArray(list) && list.length) {
+            return list.includes(key) && (wide || NARROW_DEFAULT.includes(key));
+        }
         return (wide ? WIDE_DEFAULT : NARROW_DEFAULT).includes(key);
     }
 

@@ -21134,8 +21134,10 @@ class DashboardConfig {
     /**
      * The Glances widget, mirroring glancesWidgetFields in widgets_glances.go.
      * Which filesystems is chosen after Connect, so the media panel draws that.
-     * The figures start all ticked, which is also what the tile does with no
-     * choice of its own, so nothing is stored until one is unticked.
+     * The figures start all ticked, which is what the tile draws with no choice
+     * of its own: everything each shape is built for. Once a list is stored it
+     * is honoured in both shapes, except that the narrow one has a fixed set
+     * (bars cpu, mem, disk; a line of temp, load, net) and never draws swap.
      */
     static GLANCES_SETTINGS = [
         { key: 'meters', kind: 'checkset', label: ['config.widgetGlancesMeters', 'Figures to show'],
