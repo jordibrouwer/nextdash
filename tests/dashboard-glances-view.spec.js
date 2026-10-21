@@ -438,9 +438,20 @@ test.describe('the Glances view: containers, disks, network, history, alerts', (
         await openView(page, sectionHash('disks'));
         const mounts = () => page.locator('[data-glances-fs]').evaluateAll((els) => els.map((e) => e.getAttribute('data-glances-fs')));
         await expect.poll(mounts).toEqual(['/', '/mnt/data']);
-        await expect(page.locator('[data-glances-fs="/mnt/data"] .glances-bar-value')).toHaveText('82%');
-        await expect(page.locator('[data-glances-fs="/mnt/data"] .glances-bar')).toHaveAttribute('data-tone', 'warn');
-        await expect(page.locator('[data-glances-fs="/"] .glances-bar')).not.toHaveAttribute('data-tone', /.+/);
+        await expect(page.locator('[data-glances-fs="/mnt/data"] .glances-disk-value')).toHaveText('82%');
+        await expect(page.locator('[data-glances-fs="/mnt/data"] .glances-disk-bar')).toHaveAttribute('data-tone', 'warn');
+        await expect(page.locator('[data-glances-fs="/"] .glances-disk-bar')).not.toHaveAttribute('data-tone', /.+/);
+        // The bar is a track with a fill that has width, and the tile's
+        // stylesheet (loaded on the same page) does not turn it into a row.
+        const fill = await page.locator('[data-glances-fs="/mnt/data"] .glances-disk-fill').evaluate((e) => e.getBoundingClientRect().width);
+        const track = await page.locator('[data-glances-fs="/mnt/data"] .glances-disk-bar').evaluate((e) => {
+            const r = e.getBoundingClientRect();
+            return { width: r.width, height: r.height, display: getComputedStyle(e).display };
+        });
+        expect(fill).toBeGreaterThan(0);
+        expect(Math.abs(fill / track.width - 0.82)).toBeLessThan(0.02);
+        expect(track.height).toBeLessThan(12);
+        expect(track.display).toBe('block');
 
         const io = page.locator('[data-glances-diskio="sdb"]');
         await expect(io.locator('.glances-io-read')).toHaveText('1.0 MB/s');
@@ -464,6 +475,41 @@ test.describe('the Glances view: containers, disks, network, history, alerts', (
         await page.locator('[data-glances-section="disks"]').click();
         await expect(page.locator('[data-glances-block="smart"]')).toHaveCount(0);
         await expect(page.locator('[data-glances-fs]')).toHaveCount(2);
+    });
+
+    test('disks: the menu dot follows the fullest real filesystem', async ({ page }) => {
+        const disk = (mnt, percent, type = 'ext4') => ({ device_name: '/dev/x', fs_type: type, mnt_point: mnt, size: 100, used: percent, percent });
+        // The fixture: /mnt/data at 82% (warning); the 100% squashfs under /snap is not a disk.
+        const state = await mockGlances(page);
+        await openView(page, sectionHash('overview'));
+        const btn = page.locator('[data-glances-section="disks"]');
+        await expect(btn).toHaveAttribute('data-glances-warn', 'warn');
+        await expect(btn).toHaveClass(/has-warn/);
+
+        // At 90% the dot turns to the error colour.
+        state.overrides.fs = [disk('/', 40), disk('/mnt/data', 91)];
+        await page.keyboard.press('Escape');
+        await page.evaluate((h) => { window.location.hash = h; }, sectionHash('overview'));
+        await expect(btn).toHaveAttribute('data-glances-warn', 'bad');
+
+        // Pseudo filesystems, by type or by mount point, and broken rows never dot it.
+        state.overrides.fs = [disk('/', 40), null, 'x', disk('/run/user/1000', 99), disk('/dev/shm', 95, 'ext4'),
+            disk('/var/lib/docker/overlay2/a/merged', 99, 'overlay'), disk('/snap/core/1', 100, 'squashfs')];
+        await page.keyboard.press('Escape');
+        await page.evaluate((h) => { window.location.hash = h; }, sectionHash('disks'));
+        await expect(page.locator('[data-glances-fs]')).toHaveCount(1);
+        await expect(page.locator('[data-glances-fs="/"]')).toBeVisible();
+        await expect(btn).not.toHaveAttribute('data-glances-warn', /.*/);
+        await expect(btn).not.toHaveClass(/has-warn/);
+    });
+
+    test('processes: the command line needs write access', async ({ page }) => {
+        await mockGlances(page, { 'processes/1111': { __status: 401 } });
+        await openView(page, '#glances/processes?w=w_gl&p=1');
+        const row = page.locator('[data-glances-pid="1111"]');
+        await row.locator('[data-glances-expand]').click();
+        await expect(page.locator('.glances-proc-cmd')).toContainText('Needs write access to show the command line.');
+        await expect(page.locator('[data-glances-cmdline]')).toHaveCount(0);
     });
 
     test('disks stay in the menu without SMART, and are not read for it', async ({ page }) => {
@@ -551,6 +597,28 @@ test.describe('the Glances view: containers, disks, network, history, alerts', (
         await expect(page.locator('[data-glances-limit="mem_careful"]')).toContainText('50');
         await expect(page.locator('[data-glances-limits]')).toContainText('90');
         // One alert is ongoing, and that is what the menu counts.
+        await expect(page.locator('[data-glances-section="alerts"] .lvs-filter-count')).toHaveText('1');
+    });
+
+    test('alerts: an end that is missing or not a number is not ongoing', async ({ page }) => {
+        const alerts = [
+            { begin: 1792570000, state: 'WARNING', type: 'CPU', max: 81 },
+            { begin: 1792560000, end: 'soon', state: 'WARNING', type: 'LOAD', max: 2 },
+            { begin: 'yesterday', end: 1e20, state: 'CRITICAL', type: 'MEM', max: 95 },
+            { begin: 1792550000, end: -1, state: 'CRITICAL', type: 'FS', max: 96 },
+        ];
+        await mockGlances(page, { alert: alerts });
+        await openView(page, sectionHash('alerts'));
+        const row = (type) => page.locator('[data-glances-alert]').filter({ has: page.locator('.glances-al-cell--type', { hasText: type }) });
+        await expect(page.locator('[data-glances-alert]')).toHaveCount(4);
+        await expect(row('CPU').locator('.glances-al-cell--end')).toHaveText('–');
+        await expect(row('CPU')).not.toHaveAttribute('data-ongoing', '');
+        await expect(row('LOAD').locator('.glances-al-cell--end')).toHaveText('–');
+        // A begin that is no time, and an end past what a date can hold: dashes, never "Invalid Date".
+        await expect(row('MEM').locator('.glances-al-cell--begin')).toHaveText('–');
+        await expect(row('MEM').locator('.glances-al-cell--end')).toHaveText('–');
+        await expect(row('FS').locator('.glances-al-cell--end')).toHaveText('Ongoing');
+        await expect(page.locator('[data-glances-alerts]')).not.toContainText('Invalid');
         await expect(page.locator('[data-glances-section="alerts"] .lvs-filter-count')).toHaveText('1');
     });
 

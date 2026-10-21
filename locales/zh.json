@@ -2996,6 +2996,7 @@
     "glancesProcExpand": "Show command line",
     "glancesProcCollapse": "Hide command line",
     "glancesProcCmdNone": "No command line for this process.",
+    "glancesProcNeedsWrite": "Needs write access to show the command line.",
     "glancesSectionContainers": "Containers",
     "glancesSectionDisks": "Disks",
     "glancesSectionNetwork": "Network",

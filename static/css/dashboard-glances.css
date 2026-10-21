@@ -32,6 +32,8 @@
     background: var(--accent-warning);
 }
 
+.glances-menu-item.has-warn[data-glances-warn="bad"] .lvs-filter-label::after { background: var(--accent-error); }
+
 .glances-section {
     display: flex;
     flex-direction: column;
@@ -327,29 +329,29 @@
     font-weight: 600;
 }
 
-.glances-fs { margin-bottom: var(--space-3, 0.75rem); }
+.glances-disk { margin-bottom: var(--space-3, 0.75rem); }
 
-.glances-fs-head {
+.glances-disk-head {
     display: flex;
     align-items: baseline;
     gap: var(--space-2, 0.5rem);
     min-width: 0;
 }
 
-.glances-fs-mount {
+.glances-disk-mount {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.glances-fs-meta,
-.glances-fs-sizes {
+.glances-disk-meta,
+.glances-disk-sizes {
     color: var(--text-tertiary, var(--text-secondary));
     font-size: var(--font-size-small);
 }
 
-.glances-fs-meta {
+.glances-disk-meta {
     flex: 1;
     min-width: 0;
     overflow: hidden;
@@ -357,12 +359,12 @@
     white-space: nowrap;
 }
 
-.glances-bar-value {
+.glances-disk-value {
     margin-left: auto;
     font-variant-numeric: tabular-nums;
 }
 
-.glances-bar {
+.glances-disk-bar {
     height: 0.5rem;
     margin: 0.25rem 0;
     border-radius: 999px;
@@ -370,14 +372,14 @@
     overflow: hidden;
 }
 
-.glances-bar-fill {
+.glances-disk-fill {
     display: block;
     height: 100%;
     background: var(--accent-primary);
 }
 
-.glances-bar[data-tone="warn"] .glances-bar-fill { background: var(--accent-warning); }
-.glances-bar[data-tone="bad"] .glances-bar-fill { background: var(--accent-error); }
+.glances-disk-bar[data-tone="warn"] .glances-disk-fill { background: var(--accent-warning); }
+.glances-disk-bar[data-tone="bad"] .glances-disk-fill { background: var(--accent-error); }
 
 .glances-smart > summary { cursor: pointer; padding: var(--space-1, 0.3rem) 0; }
 .glances-raid { margin: 0 0 var(--space-1, 0.3rem); }

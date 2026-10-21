@@ -7,8 +7,13 @@
 (function () {
     'use strict';
 
-    /** Filesystems that are not a disk someone would want a bar for. */
+    /**
+     * Filesystems that are not a disk someone would want a bar for: the same
+     * types and mount points the tile's answer leaves out (glancesIsPseudo in
+     * widgets_glances.go), plus a few more types Go never sees as rows.
+     */
     const PSEUDO_FS = new Set(['tmpfs', 'devtmpfs', 'overlay', 'squashfs', 'proc', 'sysfs', 'cgroup', 'cgroup2', 'devpts', 'ramfs']);
+    const PSEUDO_MOUNTS = ['/snap', '/run', '/sys', '/proc', '/dev'];
 
     function el(tag, className, content) {
         const node = document.createElement(tag);
@@ -19,6 +24,18 @@
 
     function str(value) {
         return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
+    }
+
+    function isPseudo(row) {
+        if (PSEUDO_FS.has(str(row.fs_type).toLowerCase())) return true;
+        const mount = str(row.mnt_point);
+        return PSEUDO_MOUNTS.some((prefix) => mount === prefix || mount.startsWith(`${prefix}/`));
+    }
+
+    /** The real filesystems in an fs answer; rows that are not objects are dropped first. */
+    function realFilesystems(body) {
+        const rows = window.DashboardGlances.usable(body);
+        return Array.isArray(rows) ? rows.filter((r) => r && typeof r === 'object' && !Array.isArray(r) && !isPseudo(r)) : [];
     }
 
     class GlancesDisks {
@@ -40,8 +57,8 @@
             const G = window.DashboardGlances;
             const v = this.view;
             const parts = [];
-            const fsRows = (Array.isArray(G.usable(data.fs)) ? data.fs : []).filter((r) => !PSEUDO_FS.has(str(r?.fs_type).toLowerCase()));
-            const ioRows = Array.isArray(G.usable(data.diskio)) ? data.diskio : [];
+            const fsRows = realFilesystems(data.fs);
+            const ioRows = Array.isArray(G.usable(data.diskio)) ? data.diskio.filter((r) => r && typeof r === 'object') : [];
 
             if (fsRows.length) parts.push(this.usage(fsRows));
             if (ioRows.length) parts.push(this.io(ioRows));
@@ -71,20 +88,20 @@
                 const pct = G.num(r.percent);
                 const used = G.num(r.used);
                 const size = G.num(r.size);
-                const row = el('div', 'glances-fs');
+                const row = el('div', 'glances-disk');
                 row.setAttribute('data-glances-fs', mount);
-                const head = el('div', 'glances-fs-head');
+                const head = el('div', 'glances-disk-head');
                 const meta = [str(r.device_name), str(r.fs_type)].filter(Boolean).join(' · ');
                 head.append(
-                    el('span', 'glances-fs-mount', mount || G.DASH),
-                    el('span', 'glances-fs-meta', meta),
-                    el('span', 'glances-bar-value', pct === null ? G.DASH : `${Math.round(pct)}%`),
+                    el('span', 'glances-disk-mount', mount || G.DASH),
+                    el('span', 'glances-disk-meta', meta),
+                    el('span', 'glances-disk-value', pct === null ? G.DASH : `${Math.round(pct)}%`),
                 );
-                const bar = el('div', 'glances-bar');
+                const bar = el('div', 'glances-disk-bar');
                 bar.setAttribute('role', 'meter');
                 bar.setAttribute('aria-valuemin', '0');
                 bar.setAttribute('aria-valuemax', '100');
-                const fill = el('span', 'glances-bar-fill');
+                const fill = el('span', 'glances-disk-fill');
                 if (pct !== null) {
                     bar.setAttribute('aria-valuenow', String(Math.round(pct)));
                     fill.style.width = `${Math.max(0, Math.min(100, pct))}%`;
@@ -93,7 +110,7 @@
                 }
                 bar.appendChild(fill);
                 const sizes = used !== null && size !== null ? `${G.formatBytes(used)} / ${G.formatBytes(size)}` : '';
-                row.append(head, bar, el('span', 'glances-fs-sizes', sizes));
+                row.append(head, bar, el('span', 'glances-disk-sizes', sizes));
                 section.appendChild(row);
             });
             return section;
@@ -203,5 +220,15 @@
         order: 40,
         plugin: 'fs',
         Section: GlancesDisks,
+        /** The dot: a real filesystem at 80% or fuller; 'bad' from 90%. */
+        badge(feed) {
+            const G = window.DashboardGlances;
+            const fullest = realFilesystems(feed.fs).reduce((max, r) => {
+                const pct = G.num(r.percent);
+                return pct !== null && (max === null || pct > max) ? pct : max;
+            }, null);
+            const tone = G.tone(fullest);
+            return { warn: Boolean(tone), tone };
+        },
     });
 }());

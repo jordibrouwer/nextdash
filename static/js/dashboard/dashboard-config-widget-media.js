@@ -765,6 +765,9 @@
             // Optional: with no password typed, the stored one (if any) is used.
             const user = String(auth.basicUser || '').trim();
             if (secret && user) payload.draftCredential = { basicUser: user, basicPassword: secret };
+            // An optional sign-in with both boxes empty is no sign-in, as Save
+            // reads it: Connect asks with no credential at all.
+            else if (service.authOptional && !user && !secret) { /* no credential */ }
             else payload.credentialId = block.config?.credentialId || this.widgetCredentialId(block);
         } else if (secret && auth.kind === 'query') {
             payload.draftCredential = { query: { [auth.queryName]: secret } };

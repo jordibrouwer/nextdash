@@ -296,7 +296,8 @@
             }
             this.expanded.set(pid, null);
             this.drawRows();
-            const res = await this.view.fetchPath(`processes/${encodeURIComponent(pid)}`);
+            // A command line can carry a secret: the server hands it out only with the write token.
+            const res = await this.view.fetchPath(`processes/${encodeURIComponent(pid)}`, { auth: true });
             if (!this.expanded.has(pid)) return;
             let value;
             if (res.kind === 'ok') {
@@ -306,6 +307,8 @@
             } else if (res.kind === 'unavailable') {
                 // The server no longer has this pid: the process ended.
                 value = '';
+            } else if (res.kind === 'denied') {
+                value = { message: this.view.t('dashboard.glancesProcNeedsWrite', 'Needs write access to show the command line.') };
             } else {
                 value = { message: this.view.failureText(res) };
             }

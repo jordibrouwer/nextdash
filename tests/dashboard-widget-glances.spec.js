@@ -99,6 +99,40 @@ test.describe('the Glances tile', () => {
         await expect(without.locator('.glances-spark')).toHaveCount(0);
     });
 
+    // The view's stylesheet loads on the same page; none of its rules may
+    // reach the tile's rows (it once had its own .glances-bar, an 8 px track).
+    test('tile rows keep their height beside the view stylesheet', async ({ page }) => {
+        await open(page);
+        // The views' sheets are fetched when a view opens; fetch them now.
+        await page.evaluate(() => window.ViewStyles?.ensureViewStyles?.());
+        expect(await page.evaluate(() => [...document.styleSheets].some((s) => {
+            try { return [...s.cssRules].some((r) => r.selectorText === '.glances-disk-bar'); } catch { return false; }
+        }))).toBe(true);
+        for (const width of [320, 680]) {
+            const tile = await draw(page, { result: answer(), width });
+            const rows = tile.locator('.glances-bar:visible');
+            await expect(rows.first()).toBeVisible();
+            const heights = await rows.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height));
+            expect(heights.length, `rows at ${width}`).toBeGreaterThan(0);
+            // A row is a line of text (about 14 px); the view's track was 8.
+            for (const h of heights) expect(h, `row height at ${width}`).toBeGreaterThanOrEqual(12);
+            const label = await rows.first().locator('.glances-label').evaluate((e) => e.getBoundingClientRect().height);
+            expect(label).toBeGreaterThanOrEqual(12);
+        }
+        const wide = await draw(page, { result: answer(), width: 680 });
+        const fsHeights = await wide.locator('.glances-fs:visible').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height));
+        expect(fsHeights.length).toBe(2);
+        for (const h of fsHeights) expect(h).toBeGreaterThanOrEqual(12);
+    });
+
+    test('the tile and the view keep their own globals', async ({ page }) => {
+        await open(page);
+        expect(await page.evaluate(() => typeof window.DashboardGlancesTile?.draw)).toBe('function');
+        expect(await page.evaluate(() => typeof window.DashboardGlancesTile?.LIMITS?.cpu)).toBe('object');
+        // DashboardGlances is the view's class (loaded with the view), never the tile's drawing.
+        expect(await page.evaluate(() => window.DashboardGlances === undefined || typeof window.DashboardGlances === 'function')).toBe(true);
+    });
+
     test('a sensor with its own lines is toned by them', async ({ page }) => {
         await open(page);
         const meters = { ...METERS, temps: [{ name: 'nvme0', value: 60, warn: 55, crit: 80 }, { name: 'cpu', value: 72 }] };
@@ -258,6 +292,36 @@ test.describe('the Glances settings panel', () => {
         const boxes = panel.locator('[data-widget-setting="filesystems"]');
         await expect(boxes).toHaveCount(3);
         await expect(boxes.nth(1)).toBeChecked();
+    });
+
+    // Save reads both boxes empty as "not signed in"; Connect must ask the same way.
+    test('Connect with both boxes cleared sends no credential', async ({ page }) => {
+        const sent = [];
+        await page.route('**/api/widgets/glances/setup', async (route) => {
+            sent.push(route.request().postDataJSON());
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SETUP) });
+        });
+        const panel = await addInConfig(page);
+        await panel.locator('[data-widget-setting="server"]').fill('http://glances.lan:61208');
+        await panel.locator('[data-widget-auth="basicUser"]').fill('glances');
+        await panel.locator('[data-widget-auth="secret"]').fill('glances-pass-0123');
+        await panel.locator('[data-widget-save]').click();
+        await expect.poll(async () => (await savedConfig(page))?.credentialId ?? null, { timeout: 15_000 }).not.toBeNull();
+        // The panel has drawn itself again after the save, with the user filed.
+        await expect(panel.locator('[data-widget-save]')).toBeDisabled();
+        await expect(panel.locator('[data-widget-auth="basicUser"]')).toHaveValue('glances');
+
+        // Both boxes emptied: Connect asks with no credential at all.
+        await panel.locator('[data-widget-auth="basicUser"]').fill('');
+        await panel.locator('[data-widget-auth="secret"]').fill('');
+        await panel.locator('[data-widget-auth="secret"]').blur();
+        await expect(panel.locator('[data-widget-save]')).toBeEnabled();
+        await panel.locator('[data-media-connect]').click();
+        await expect(panel.locator('[data-media-status]')).toContainText('Glances 4.x');
+        const last = sent.at(-1);
+        expect(last?.server).toBe('http://glances.lan:61208');
+        expect(last?.credentialId).toBeUndefined();
+        expect(last?.draftCredential).toBeUndefined();
     });
 
     test('panel connects with basic auth', async ({ page }) => {

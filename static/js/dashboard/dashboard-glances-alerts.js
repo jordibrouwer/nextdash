@@ -21,10 +21,23 @@
         return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
     }
 
-    /** Still going: no end time yet (-1 in Glances, or nothing at all). */
+    /**
+     * Still going: Glances writes an end of -1 until the alert is over. Only a
+     * negative number counts, as on the server; an end that is missing or not
+     * a number is unknown, not ongoing.
+     */
     function ongoing(event) {
-        const end = window.DashboardGlances.num(event?.end);
-        return end === null || end < 0;
+        const end = event?.end;
+        return typeof end === 'number' && Number.isFinite(end) && end < 0;
+    }
+
+    /** A time from Glances' seconds, or a dash when there is none or it is not a date. */
+    function when(secs) {
+        const G = window.DashboardGlances;
+        const n = G.num(secs);
+        if (n === null || n < 0) return G.DASH;
+        const date = new Date(n * 1000);
+        return Number.isNaN(date.getTime()) ? G.DASH : date.toLocaleString();
     }
 
     class GlancesAlerts {
@@ -54,10 +67,6 @@
         table(events) {
             const G = window.DashboardGlances;
             const v = this.view;
-            const when = (secs) => {
-                const n = G.num(secs);
-                return n === null || n < 0 ? G.DASH : new Date(n * 1000).toLocaleString();
-            };
             const rows = events.filter((e) => e && typeof e === 'object')
                 .slice().sort((a, b) => (G.num(b.begin) ?? 0) - (G.num(a.begin) ?? 0));
             const table = el('table', 'glances-table glances-al-table');

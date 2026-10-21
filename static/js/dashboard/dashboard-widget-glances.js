@@ -317,5 +317,5 @@
     if (render) window.DashboardWidgets.glances = render;
 
     // The drawing on its own, for a test that hands it an answer and a width.
-    window.DashboardGlances = { draw, LIMITS };
+    window.DashboardGlancesTile = { draw, LIMITS };
 })();

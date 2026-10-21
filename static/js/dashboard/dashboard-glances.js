@@ -508,14 +508,18 @@
 
         /**
          * One path under the widget. Never throws; answers
-         * { kind: 'ok'|'unavailable'|'error'|'limited'|'failed', body?, code? }.
+         * { kind: 'ok'|'unavailable'|'error'|'limited'|'denied'|'failed', body?, code? }.
+         * `auth` sends the write token (nextDashFetch), for a path behind it:
+         * one process's command line. A refusal then answers 'denied'.
          */
-        async fetchPath(path) {
+        async fetchPath(path, { auth = false } = {}) {
             const sep = String(path).includes('?') ? '&' : '?';
             const url = `/api/glances/${encodeURIComponent(this.widgetId || '')}/${path}${sep}pageId=${encodeURIComponent(this.pageId ?? '')}`;
             try {
-                const res = await fetch(url, { cache: 'no-store' });
+                const fetcher = auth && typeof window.nextDashFetch === 'function' ? window.nextDashFetch : fetch;
+                const res = await fetcher(url, { cache: 'no-store' });
                 if (res.status === 429) return { kind: 'limited' };
+                if (res.status === 401 || res.status === 403) return { kind: 'denied' };
                 // No such widget on that page, or no page at all.
                 if (res.status === 404 || res.status === 400) return { kind: 'gone' };
                 if (!res.ok) return { kind: 'failed' };
@@ -659,8 +663,9 @@
          * The menu's counts and warning dots. One cheap round of the tile's
          * reads plus /alert, handed to every section that has a badge():
          * feed = { quicklook, fs, sensors, alert }, each the answer or null.
-         * badge() answers { count?, warn? }: count goes beside the label
-         * (Alerts), warn puts the dot on it.
+         * badge() answers { count?, warn?, tone? }: count goes beside the
+         * label (Alerts), warn puts the dot on it, tone 'bad' turns the dot
+         * from the warning colour to the error colour.
          */
         async refreshBadges() {
             if (!this.shell || !this.isActiveView()) return;
@@ -688,7 +693,8 @@
                 if (!btn) return;
                 const warn = Boolean(mark?.warn);
                 btn.classList.toggle('has-warn', warn);
-                btn.toggleAttribute('data-glances-warn', warn);
+                if (warn) btn.setAttribute('data-glances-warn', mark?.tone === 'bad' ? 'bad' : 'warn');
+                else btn.removeAttribute('data-glances-warn');
                 if (warn) btn.title = this.t('dashboard.glancesWarnDot', 'Something here is in warning');
                 else btn.removeAttribute('title');
             });
