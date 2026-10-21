@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 )
 
@@ -172,5 +174,91 @@ func TestGlancesAnswer(t *testing.T) {
 	got := h.glancesAnswer(context.Background(), 1, bad, true)
 	if got.Error != "needs Glances 4" || len(got.Items) != 0 {
 		t.Fatalf("v3 answer = %+v", got)
+	}
+}
+
+// glancesHistoryServer serves the fixtures, and /cpu/history/60 as `history`
+// says: the recorded series, a 404, or a broken body.
+func glancesHistoryServer(t *testing.T, history string) *httptest.Server {
+	t.Helper()
+	files := glancesFixtureServer(t, nil)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/4/cpu/history/60" {
+			resp, err := http.Get(files.URL + r.URL.Path)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadGateway)
+				return
+			}
+			defer resp.Body.Close()
+			w.WriteHeader(resp.StatusCode)
+			_, _ = io.Copy(w, resp.Body)
+			return
+		}
+		switch history {
+		case "fixture":
+			raw, err := os.ReadFile(filepath.Join("testdata", "glances", "history_cpu.json"))
+			if err != nil {
+				t.Error(err)
+			}
+			_, _ = w.Write(raw)
+		case "empty":
+			_, _ = w.Write([]byte(`{"total":[]}`))
+		case "broken":
+			_, _ = w.Write([]byte(`{"total":`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	return srv
+}
+
+func TestGlancesAnswerSpark(t *testing.T) {
+	h := newTestHandlers(t)
+	allowLocalForTest(t, h, true)
+	mediaForgetAll()
+	srv := glancesHistoryServer(t, "fixture")
+	widget := Widget{ID: "w_glances0003", Type: WidgetTypeGlances, Config: map[string]any{"server": srv.URL}}
+	result := h.glancesAnswer(context.Background(), 1, widget, true)
+	if result.Error != "" || len(result.Items) != 1 || result.Items[0].Meters == nil {
+		t.Fatalf("answer = %+v", result)
+	}
+	want := readGlances[struct {
+		Total [][]any `json:"total"`
+	}](t, "history_cpu").Total
+	spark := result.Items[0].Meters.Spark
+	if len(spark) != len(want) || len(spark) < 2 {
+		t.Fatalf("spark = %v, want %d points", spark, len(want))
+	}
+	// Oldest first, the values as Glances sent them.
+	if spark[0] != want[0][1].(float64) || spark[len(spark)-1] != want[len(want)-1][1].(float64) {
+		t.Fatalf("spark = %v", spark)
+	}
+	if result.Partial {
+		t.Error("a full answer is not partial")
+	}
+}
+
+func TestGlancesAnswerSparkAbsent(t *testing.T) {
+	h := newTestHandlers(t)
+	allowLocalForTest(t, h, true)
+	for i, history := range []string{"404", "empty", "broken"} {
+		mediaForgetAll()
+		srv := glancesHistoryServer(t, history)
+		widget := Widget{ID: "w_glances001" + strconv.Itoa(i), Type: WidgetTypeGlances, Config: map[string]any{"server": srv.URL}}
+		result := h.glancesAnswer(context.Background(), 1, widget, true)
+		if result.Error != "" || len(result.Items) != 1 || result.Items[0].Meters == nil {
+			t.Fatalf("%s: answer = %+v", history, result)
+		}
+		m := result.Items[0].Meters
+		if m.Spark != nil {
+			t.Errorf("%s: spark = %v, want none", history, m.Spark)
+		}
+		if result.Partial {
+			t.Errorf("%s: the history alone does not make the answer partial", history)
+		}
+		if m.CPU == nil || len(m.Fs) != 2 {
+			t.Errorf("%s: meters = %+v", history, m)
+		}
 	}
 }

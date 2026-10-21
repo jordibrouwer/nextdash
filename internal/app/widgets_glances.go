@@ -158,6 +158,31 @@ type glancesAlert struct {
 	End float64 `json:"end"`
 }
 
+// glancesHistory is /cpu/history/<n>: [timestamp, value] pairs, oldest first.
+type glancesHistory struct {
+	Total [][]json.RawMessage `json:"total"`
+}
+
+// spark is the total series as numbers; a pair without a number is skipped,
+// and fewer than two points is no line at all.
+func (hist glancesHistory) spark() []float64 {
+	var out []float64
+	for _, pair := range hist.Total {
+		if len(pair) < 2 {
+			continue
+		}
+		var v *float64
+		if json.Unmarshal(pair[1], &v) != nil || v == nil || math.IsNaN(*v) || math.IsInf(*v, 0) {
+			continue
+		}
+		out = append(out, beszelRound(*v, 1))
+	}
+	if len(out) < 2 {
+		return nil
+	}
+	return out
+}
+
 // glancesTone says how far over its line a percentage is: 0 fine, 1 warn, 2 bad.
 func glancesTone(value *float64) int {
 	return beszelTone(value, glancesWarnPercent, glancesBadPercent)
@@ -369,6 +394,7 @@ func (h *Handlers) fetchGlances(ctx context.Context, spec glancesSpec) (MediaRes
 		system  glancesSystem
 		uptime  string
 		alerts  []glancesAlert
+		history glancesHistory
 	)
 	// Every part is asked at once; each is its own request with its own timeout.
 	parts := []struct {
@@ -377,7 +403,9 @@ func (h *Handlers) fetchGlances(ctx context.Context, spec glancesSpec) (MediaRes
 	}{
 		{"/quicklook", &quick}, {"/load", &load}, {"/fs", &fs}, {"/network", &net},
 		{"/sensors", &sensors}, {"/system", &system}, {"/uptime", &uptime}, {"/alert", &alerts},
+		{"/cpu/history/60", &history},
 	}
+	const historyPart = 8
 	errs := make([]error, len(parts))
 	var wg sync.WaitGroup
 	for i, part := range parts {
@@ -399,7 +427,14 @@ func (h *Handlers) fetchGlances(ctx context.Context, spec glancesSpec) (MediaRes
 		}
 		return result, err
 	}
-	for _, err := range errs[1:] {
+	for i, err := range errs[1:] {
+		// The CPU stretch is the nice-to-have: without it the tile has its meters.
+		if i+1 == historyPart {
+			if err != nil && !errors.Is(err, errGlancesNotFound) {
+				logWarn(logComponentWidgets, "glances widget history for %s: %v", hostOf(spec.Server), err)
+			}
+			continue
+		}
 		if err != nil && !errors.Is(err, errGlancesNotFound) {
 			result.Partial = true
 		}
@@ -408,6 +443,9 @@ func (h *Handlers) fetchGlances(ctx context.Context, spec glancesSpec) (MediaRes
 	m := glancesMeters(quick, fs, net, sensors, load, spec)
 	m.Host, m.OS = system.Hostname, system.HrName
 	m.Uptime = glancesUptime(uptime)
+	if errs[historyPart] == nil {
+		m.Spark = history.spark()
+	}
 	for _, a := range alerts {
 		if a.End < 0 {
 			m.Alerts++
