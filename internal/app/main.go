@@ -336,6 +336,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/widgets/beszel/setup", handlers.beszelSetupHandler).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/widgets/glances", handlers.glancesWidgetHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/widgets/glances/setup", handlers.glancesSetupHandler).Methods("POST", "OPTIONS")
+	registerGlancesViewRoutes(r, handlers)
 	r.HandleFunc("/api/widgets/homeassistant", handlers.homeAssistantWidgetHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/widgets/homeassistant/setup", handlers.homeAssistantSetupHandler).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/widgets/homeassistant/action", handlers.homeAssistantActionHandler).Methods("POST", "OPTIONS")
