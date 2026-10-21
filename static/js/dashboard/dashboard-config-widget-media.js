@@ -380,6 +380,62 @@
         connected: beszelOneConnected,
     };
 
+    /*
+     * Glances: the machine's own web server, open unless it was started with a
+     * password. So the sign-in is basic auth and both boxes may stay empty;
+     * Connect then asks with no credential. Connect lists the filesystems that
+     * are really mounted, ticked as plain widget settings: all of them ticked
+     * is stored as nothing, which the server reads as "every filesystem".
+     */
+    const glancesFilesystems = (setup) => (Array.isArray(setup.filesystems) ? setup.filesystems : []);
+
+    function glancesChoices(panel, widget, index, setup, config, esc) {
+        const chosen = Array.isArray(config.filesystems) ? config.filesystems : null;
+        const boxes = glancesFilesystems(setup).map((fs) => `
+            <label class="config-toggle config-toggle--inline">
+                <input type="checkbox" data-widget-setting="filesystems" data-widget-index="${index}"
+                    data-widget-kind="checkset" value="${esc(fs.name)}"
+                    ${!chosen || chosen.includes(fs.name) ? 'checked' : ''}>
+                <span>${esc(fs.name)}</span>
+            </label>`).join('');
+        if (!boxes) return '';
+        return `
+            <div class="config-widget-field">
+                <span class="config-widget-field-label">${esc(panel.t('config.widgetGlancesFilesystems', 'Filesystems'))}</span>
+                <div class="config-widget-checkset">${boxes}</div>
+            </div>`;
+    }
+
+    // A mount point the server no longer reports is dropped rather than kept
+    // as a choice nobody can see. Every one gone reads as "all".
+    function glancesConnected(draft, answer) {
+        if (!Array.isArray(draft.config.filesystems)) return;
+        const known = glancesFilesystems(answer).map((fs) => fs.name);
+        const kept = draft.config.filesystems.filter((name) => known.includes(name));
+        if (kept.length) draft.config.filesystems = kept; else delete draft.config.filesystems;
+    }
+
+    Config.MEDIA_SERVICES.glances = {
+        id: 'glances',
+        name: 'Glances',
+        placeholder: 'http://glances.local:61208',
+        auth: { kind: 'basic' },
+        // Not asked for unless the server has a password.
+        authOptional: true,
+        hint: ['config.widgetGlancesHint', 'Leave the username and password empty unless Glances was started with a password.'],
+        words: {
+            connected: ['config.widgetGlancesConnected', 'Connected: {version}.'],
+            'login refused': ['config.widgetGlancesLoginRefused', 'Glances refused that login.'],
+            'needs Glances 4': ['config.widgetGlancesNeedsV4', 'Glances 4 is needed; this server runs an older one.'],
+            unreachable: ['config.widgetGlancesUnreachable', 'Glances could not be reached.'],
+            'address not allowed': ['config.widgetGlancesAddress',
+                'That address is on your local network; allow local addresses first.'],
+            'not set up': ['config.widgetGlancesNotSetUp', 'Fill in the address first.'],
+        },
+        choices: glancesChoices,
+        connected: glancesConnected,
+    };
+
     const SHARED_WORDS = {
         server: ['config.widgetMediaServer', 'Address'],
         key: ['config.widgetMediaKey', 'API key'],
@@ -604,7 +660,7 @@
                     </select>
                 </div>`;
         }
-        if (auth.kind === 'session') {
+        if (auth.kind === 'session' || auth.kind === 'basic') {
             return `${mode}
                 <div class="config-widget-field">
                     <label for="${id('user')}">${esc(this.mediaWord(service, 'user'))}</label>
@@ -705,6 +761,11 @@
         if (secret && auth.kind === 'session') {
             payload.draftCredential = { session: {
                 ...(auth.session || {}), user: String(auth.basicUser || '').trim(), password: secret } };
+        } else if (auth.kind === 'basic') {
+            // Optional: with no password typed, the stored one (if any) is used.
+            const user = String(auth.basicUser || '').trim();
+            if (secret && user) payload.draftCredential = { basicUser: user, basicPassword: secret };
+            else payload.credentialId = block.config?.credentialId || this.widgetCredentialId(block);
         } else if (secret && auth.kind === 'query') {
             payload.draftCredential = { query: { [auth.queryName]: secret } };
         } else if (secret) {

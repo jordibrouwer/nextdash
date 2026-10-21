@@ -3019,6 +3019,7 @@
             'beszel-system': 'One Beszel system in full: processor, memory and disk, with the last hour of load beside them.',
             'beszel-attention': 'Only the Beszel systems that need a look — down, or running hot or full — or a line saying none do.',
             'beszel-storage': 'The disks of every Beszel system, fullest first.',
+            glances: 'One machine from its Glances server: processor, memory, swap, load, disks, network and temperature.',
             unraid: 'The Unraid server at a glance: array, parity, disks, alerts, VMs and the UPS, a line each.',
             unraidArray: 'Every disk of the Unraid array: how full, how warm, and which one is in trouble.',
             unraidParity: 'The last parity check, or the one running now, with its history when wide.',
@@ -4317,8 +4318,13 @@
         else delete config.enabled;
         let dropOwnKey = false;
 
-        if (auth.kind === 'header' || auth.kind === 'basic' || auth.kind === 'query'
-            || auth.kind === 'session') {
+        // A service whose sign-in is optional (Glances) with both boxes empty
+        // and nothing filed is simply not signed in to, not half filled in.
+        const optionalBlank = auth.kind === 'basic'
+            && DashboardConfig.MEDIA_SERVICES?.[block.type]?.authOptional
+            && !String(auth.basicUser || '').trim() && !secret;
+        if (!optionalBlank && (auth.kind === 'header' || auth.kind === 'basic' || auth.kind === 'query'
+            || auth.kind === 'session')) {
             const payload = { id: own, label: block.title || block.type || own };
             if (auth.kind === 'session') {
                 const user = String(auth.basicUser || '').trim();

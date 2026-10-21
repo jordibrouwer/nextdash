@@ -18765,7 +18765,7 @@ class DashboardConfig {
         ['links', ['health', 'uptime', 'certs', 'trend']],
         ['incoming', ['inbox', 'unsorted', 'feeds', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
-        ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage']],
+        ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'glances']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'notes']],
         ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
@@ -20962,7 +20962,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'glances', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -21130,6 +21130,33 @@ class DashboardConfig {
     static BESZEL_SYSTEM_SETTINGS = [DashboardConfig.BESZEL_METERS, ...DashboardConfig.BESZEL_TAIL];
     static BESZEL_ATTENTION_SETTINGS = [DashboardConfig.BESZEL_HIDE_PAUSED, ...DashboardConfig.BESZEL_TAIL];
     static BESZEL_STORAGE_SETTINGS = [...DashboardConfig.BESZEL_TAIL];
+
+    /**
+     * The Glances widget, mirroring glancesWidgetFields in widgets_glances.go.
+     * Which filesystems is chosen after Connect, so the media panel draws that.
+     * The figures start all ticked, which is also what the tile does with no
+     * choice of its own, so nothing is stored until one is unticked.
+     */
+    static GLANCES_SETTINGS = [
+        { key: 'meters', kind: 'checkset', label: ['config.widgetGlancesMeters', 'Figures to show'],
+          options: [
+              ['cpu', ['config.widgetGlancesMeterCpu', 'Processor']],
+              ['mem', ['config.widgetGlancesMeterMem', 'Memory']],
+              ['swap', ['config.widgetGlancesMeterSwap', 'Swap']],
+              ['load', ['config.widgetGlancesMeterLoad', 'Load']],
+              ['disk', ['config.widgetGlancesMeterDisk', 'Disk']],
+              ['net', ['config.widgetGlancesMeterNet', 'Network']],
+              ['temp', ['config.widgetGlancesMeterTemp', 'Temperature']],
+          ] },
+        { key: 'click', kind: 'choice', label: ['config.widgetMediaClick', 'A click'],
+          options: [
+              ['detail', ['config.widgetMediaClickDetail', 'Shows details here first']],
+              ['open', ['config.widgetMediaClickOpen', 'Opens it in the service']],
+          ] },
+        ...DashboardConfig.ARR_SETTINGS.filter((field) => field.key === 'target'),
+        { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetMediaRows', 'Items to show'] },
+        { key: 'ttl', kind: 'int', min: 10, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
+    ];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -21396,6 +21423,7 @@ class DashboardConfig {
         'beszel-system': DashboardConfig.BESZEL_SYSTEM_SETTINGS,
         'beszel-attention': DashboardConfig.BESZEL_ATTENTION_SETTINGS,
         'beszel-storage': DashboardConfig.BESZEL_STORAGE_SETTINGS,
+        glances: DashboardConfig.GLANCES_SETTINGS,
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
               label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },

@@ -165,3 +165,114 @@ test.describe('the Glances tile', () => {
         expect(await page.evaluate(() => window.__opened)).toBe('http://glances.example:61208');
     });
 });
+
+/** Opens a fresh Glances widget in Config → Widgets and returns its panel. */
+async function addInConfig(page) {
+    await open(page);
+    await page.waitForFunction(() => !!window.dashboardInstance?.config, null, { timeout: 15_000 });
+    // Quickstart sweeps favicons on a fresh store and reopens Overview when it finishes.
+    await page.waitForTimeout(6000);
+    await page.evaluate(async () => {
+        const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const headers = {
+            'Content-Type': 'application/json',
+            ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}),
+        };
+        await f('/api/pages/1/blocks', { method: 'PUT', headers, body: JSON.stringify({ widgets: [] }) });
+        await window.dashboardInstance.config.openConfigView('widgets');
+    });
+    await page.locator('[data-widget-catalogue]').click();
+    await page.locator('.modal--widget-catalogue [data-widget-option="glances"]').first().click();
+    await page.locator('.modal--widget-catalogue [data-widget-add="glances"]').click();
+    await expect(page.locator('.config-widget-row').last().locator('[data-widget="title"]')).toBeFocused({ timeout: 10_000 });
+    const toggle = page.locator('[data-widget-settings]').last();
+    const index = await toggle.getAttribute('data-widget-settings');
+    if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
+    const panel = page.locator(`[data-widget-detail="${index}"]`);
+    await expect(panel).toBeVisible();
+    return panel;
+}
+
+async function savedConfig(page) {
+    return page.evaluate(async () => {
+        const send = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const blocks = await (await send('/api/pages/1/blocks')).json();
+        return (blocks.widgets || []).find((w) => w.type === 'glances')?.config ?? null;
+    });
+}
+
+const SETUP = {
+    connected: 'Glances 4.x',
+    plugins: ['cpu', 'mem', 'fs'],
+    filesystems: [{ name: '/' }, { name: '/mnt/disk3' }, { name: '/mnt/disk4' }],
+};
+
+test.describe('the Glances settings panel', () => {
+    test('panel connects without a password and lists filesystems', async ({ page }) => {
+        let sent = null;
+        await page.route('**/api/widgets/glances/setup', async (route) => {
+            sent = route.request().postDataJSON();
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SETUP) });
+        });
+        const panel = await addInConfig(page);
+        await panel.locator('[data-widget-setting="server"]').fill('http://glances.lan:61208');
+        await panel.locator('[data-media-connect]').click();
+        await expect(panel.locator('[data-media-status]')).toContainText('Glances 4.x');
+        expect(sent?.server).toBe('http://glances.lan:61208');
+        expect(sent?.draftCredential).toBeUndefined();
+        const boxes = panel.locator('[data-widget-setting="filesystems"]');
+        await expect(boxes).toHaveCount(3);
+        await expect(boxes.nth(1)).toBeChecked();
+    });
+
+    test('panel connects with basic auth', async ({ page }) => {
+        let sent = null;
+        await page.route('**/api/widgets/glances/setup', async (route) => {
+            sent = route.request().postDataJSON();
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SETUP) });
+        });
+        const panel = await addInConfig(page);
+        await panel.locator('[data-widget-setting="server"]').fill('http://glances.lan:61208');
+        await panel.locator('[data-widget-auth="basicUser"]').fill('glances');
+        await panel.locator('[data-widget-auth="secret"]').fill('glances-pass-0123');
+        await panel.locator('[data-media-connect]').click();
+        await expect(panel.locator('[data-media-status]')).toContainText('Glances 4.x');
+        expect(sent?.draftCredential).toMatchObject({ basicUser: 'glances', basicPassword: 'glances-pass-0123' });
+    });
+
+    test('panel shows "Glances 4 is needed" for a v3 host', async ({ page }) => {
+        await page.route('**/api/widgets/glances/setup', async (route) => {
+            await route.fulfill({ status: 200, contentType: 'application/json',
+                body: JSON.stringify({ error: 'needs Glances 4' }) });
+        });
+        const panel = await addInConfig(page);
+        await panel.locator('[data-widget-setting="server"]').fill('http://glances.lan:61208');
+        await panel.locator('[data-media-connect]').click();
+        await expect(panel.locator('[data-media-status]')).toContainText('Glances 4 is needed');
+        await expect(panel.locator('[data-widget-setting="filesystems"]')).toHaveCount(0);
+    });
+
+    test('saved widget keeps meters and filesystems', async ({ page }) => {
+        await page.route('**/api/widgets/glances/setup', async (route) => {
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SETUP) });
+        });
+        const panel = await addInConfig(page);
+        await panel.locator('[data-widget-setting="server"]').fill('http://glances.lan:61208');
+        await panel.locator('[data-media-connect]').click();
+        await expect(panel.locator('[data-media-status]')).toContainText('Glances 4.x');
+        await panel.locator('[data-widget-setting="filesystems"][value="/mnt/disk4"]').uncheck();
+        await panel.locator('[data-widget-setting="filesystems"][value="/"]').uncheck();
+        await panel.locator('[data-widget-setting="meters"][value="swap"]').uncheck();
+        await panel.locator('[data-widget-setting="meters"][value="net"]').uncheck();
+        await panel.locator('[data-widget-save]').click();
+        await expect.poll(async () => (await savedConfig(page))?.filesystems ?? null, { timeout: 15_000 })
+            .toEqual(['/mnt/disk3']);
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        const config = await savedConfig(page);
+        expect(config.server).toBe('http://glances.lan:61208');
+        expect(config.filesystems).toEqual(['/mnt/disk3']);
+        expect(config.meters).toEqual(['cpu', 'mem', 'load', 'disk', 'temp']);
+        expect(config.credentialId).toBeUndefined();
+    });
+});
