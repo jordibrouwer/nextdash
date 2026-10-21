@@ -63,6 +63,7 @@ class DashboardConfig {
         'widgets',
         'containers',
         'unraid',
+        'glances',
         'monitoring',
         'status-page',
         'stats',
@@ -95,6 +96,11 @@ class DashboardConfig {
             file: 'js/dashboard/dashboard-config-unraid.js',
             datasetKey: 'dashboardConfigUnraid',
             ready: () => window.DashboardConfigUnraidReady === true,
+        },
+        glances: {
+            file: 'js/dashboard/dashboard-config-glances.js',
+            datasetKey: 'dashboardConfigGlances',
+            ready: () => window.DashboardConfigGlancesReady === true,
         },
         'status-page': {
             file: 'js/dashboard/dashboard-config-status-page.js',
@@ -1930,7 +1936,7 @@ class DashboardConfig {
     }
 
     /**
-     * Page tabs (1–9, and 0 for the tenth) work from config too — same as on the
+     * Page tabs (1–9) and page 0 (Glances) work from config too — same as on the
      * bookmark grid — so you can leave without Esc first. These remember where
      * you were, the same as every other way out.
      */
@@ -1940,14 +1946,12 @@ class DashboardConfig {
         if (d.keyboardNavigation?.isGChordActive?.()) return false;
 
         const key = e.key;
-        // 0 is the tenth page's key; the Inbox is on Shift+I.
+        // 0 is page 0 (Glances), or the place to set it up; the Inbox is Shift+I.
         if (key === '0') {
-            const tenth = d.pages[9];
-            if (!tenth) return false;
             e.preventDefault();
             e.stopImmediatePropagation();
             this.saveLastConfigLocation();
-            void d.requestPageNavigation(tenth.id);
+            void d.glancesStatus?.openPageZero?.();
             return true;
         }
 
@@ -2211,6 +2215,7 @@ class DashboardConfig {
             widgets: ['config.sectionWidgets', 'Widgets'],
             containers: ['config.sectionContainers', 'Containers'],
             unraid: ['config.sectionUnraid', 'Unraid'],
+            glances: ['config.sectionGlances', 'Glances'],
             'status-page': ['config.sectionStatusPage', 'Status page'],
             stats: ['config.sectionStats', 'Statistics'],
             help: ['config.sectionHelp', 'Help'],
@@ -2591,6 +2596,8 @@ class DashboardConfig {
             this.bindContainersSection(container);
         } else if (this.section === 'unraid') {
             void this.bindUnraidSection?.(container);
+        } else if (this.section === 'glances') {
+            void this.bindGlancesSection?.(container);
         } else if (this.section === 'status-page') {
             void this.bindStatusPageSection?.(container);
         } else if (this.section === 'inbox') {
@@ -4575,6 +4582,9 @@ class DashboardConfig {
         }
         if (this.section === 'unraid') {
             return this.renderUnraidSection();
+        }
+        if (this.section === 'glances') {
+            return this.renderGlancesSection();
         }
         if (this.section === 'status-page') {
             return this.renderStatusPageSection();
@@ -18765,7 +18775,7 @@ class DashboardConfig {
         ['links', ['health', 'uptime', 'certs', 'trend']],
         ['incoming', ['inbox', 'unsorted', 'feeds', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
-        ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'glances']],
+        ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'notes']],
         ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
@@ -20962,7 +20972,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'glances', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -21130,35 +21140,6 @@ class DashboardConfig {
     static BESZEL_SYSTEM_SETTINGS = [DashboardConfig.BESZEL_METERS, ...DashboardConfig.BESZEL_TAIL];
     static BESZEL_ATTENTION_SETTINGS = [DashboardConfig.BESZEL_HIDE_PAUSED, ...DashboardConfig.BESZEL_TAIL];
     static BESZEL_STORAGE_SETTINGS = [...DashboardConfig.BESZEL_TAIL];
-
-    /**
-     * The Glances widget, mirroring glancesWidgetFields in widgets_glances.go.
-     * Which filesystems is chosen after Connect, so the media panel draws that.
-     * The figures start all ticked, which is what the tile draws with no choice
-     * of its own: everything each shape is built for. Once a list is stored it
-     * is honoured in both shapes, except that the narrow one has a fixed set
-     * (bars cpu, mem, disk; a line of temp, load, net) and never draws swap.
-     */
-    static GLANCES_SETTINGS = [
-        { key: 'meters', kind: 'checkset', label: ['config.widgetGlancesMeters', 'Figures to show'],
-          options: [
-              ['cpu', ['config.widgetGlancesMeterCpu', 'Processor']],
-              ['mem', ['config.widgetGlancesMeterMem', 'Memory']],
-              ['swap', ['config.widgetGlancesMeterSwap', 'Swap']],
-              ['load', ['config.widgetGlancesMeterLoad', 'Load']],
-              ['disk', ['config.widgetGlancesMeterDisk', 'Disk']],
-              ['net', ['config.widgetGlancesMeterNet', 'Network']],
-              ['temp', ['config.widgetGlancesMeterTemp', 'Temperature']],
-          ] },
-        { key: 'click', kind: 'choice', label: ['config.widgetMediaClick', 'A click'],
-          options: [
-              ['detail', ['config.widgetMediaClickDetail', 'Shows details here first']],
-              ['open', ['config.widgetMediaClickOpen', 'Opens it in the service']],
-          ] },
-        ...DashboardConfig.ARR_SETTINGS.filter((field) => field.key === 'target'),
-        { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetMediaRows', 'Items to show'] },
-        { key: 'ttl', kind: 'int', min: 10, max: 3600, label: ['config.widgetMediaTtl', 'Refresh every (seconds)'] },
-    ];
 
     /*
      * What each type may be told, mirroring widgetFields in widgets_config.go.
@@ -21425,7 +21406,6 @@ class DashboardConfig {
         'beszel-system': DashboardConfig.BESZEL_SYSTEM_SETTINGS,
         'beszel-attention': DashboardConfig.BESZEL_ATTENTION_SETTINGS,
         'beszel-storage': DashboardConfig.BESZEL_STORAGE_SETTINGS,
-        glances: DashboardConfig.GLANCES_SETTINGS,
         calendar: [
             { key: 'daysAhead', kind: 'int', min: 1, max: 90,
               label: ['config.widgetCalendarDaysAhead', 'Look ahead (days)'] },

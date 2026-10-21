@@ -318,13 +318,28 @@
             ],
         },
         {
+            id: 'sectionGlancesView',
+            titleKey: 'sectionGlancesView',
+            titleFallback: 'Glances view',
+            contextId: 'glances',
+            when: (ctx) => ctx.glancesEnabled,
+            rows: [
+                { keys: 'o / p / c / d / n / i / h / a', cheatKey: 'glSection', fallback: 'Open Overview, Processes, Containers, Disks, Network, Insights, History or Alerts' },
+                { keys: '[ / ]', cheatKey: 'glStep', fallback: 'The previous or next section' },
+                { keys: ', / .', cheatKey: 'glRange', fallback: 'On a graph under the pointer: a shorter or longer range' },
+                { keys: 'r', cheatKey: 'glRefresh', fallback: 'Read the host now' },
+                { keys: '/', cheatKey: 'glSearch', fallback: 'Search the processes' },
+                { keys: 'Esc', cheatKey: 'glEsc', fallback: 'Close the side panel, then leave the view' },
+            ],
+        },
+        {
             id: 'sectionConfigView',
             titleKey: 'sectionConfigView',
             titleFallback: 'Config view',
             contextId: 'config',
             when: (ctx) => ctx.configEnabled,
             rows: [
-                { keys: '0–9', cheatKey: 'cvSectionJump', fallback: 'Switch to a bookmark page (1–9, 0 for the tenth)' },
+                { keys: '0–9', cheatKey: 'cvSectionJump', fallback: 'Switch to Glances (0) or a bookmark page (1–9)' },
                 { keys: 'j / k', cheatKey: 'cvSectionJk', fallback: 'Previous / next section in the left rail', print: true, printFallback: 'Previous / next section' },
                 { keys: 'g / G', cheatKey: 'cvSectionFirstLast', fallback: 'Jump to the first / last section' },
                 { keys: '← / → (section rail)', cheatKey: 'cvSectionRail', fallback: 'Move between sections when the section rail is focused (↑ / ↓ on desktop)' },
@@ -522,6 +537,7 @@
             inboxInPageTabs: d.settings?.inboxShowInPageTabs !== false,
             healthEnabled: Boolean(d.health?.isEnabled?.()),
             dockerEnabled: Boolean(d.docker?.isEnabled?.()),
+            glancesEnabled: Boolean(d.glances?.isEnabled?.()),
             configEnabled: Boolean(d.config?.isEnabled?.()),
             webSearchOn: ['searxng', 'brave'].includes(d.settings?.webSearchEngine),
             tagCloudShortcutVisible: Boolean(d.isTagCloudDesktopShortcutVisible?.()),
@@ -536,6 +552,7 @@
         if (ctx.activeView === 'library') return 'library';
         if (ctx.activeView === 'tags') return 'tag-view';
         if (ctx.activeView === 'docker') return 'docker';
+        if (ctx.activeView === 'glances') return 'glances';
         if (ctx.activeView === 'config') return 'config';
         return 'bookmarks';
     }

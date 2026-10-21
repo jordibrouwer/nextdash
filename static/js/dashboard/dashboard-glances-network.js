@@ -48,7 +48,12 @@
             return list;
         }
 
+        redraw() {
+            if (this._last) this.render(this._last.container, this._last.data);
+        }
+
         render(container, data) {
+            this._last = { container, data };
             const G = window.DashboardGlances;
             const parts = [];
             const ifaces = G.usable(data.network);
@@ -60,7 +65,7 @@
             if (!parts.length) {
                 parts.push(el('p', 'glances-note', this.view.t('dashboard.glancesNotAvailable', 'Not available on this host.')));
             }
-            container.replaceChildren(...parts);
+            window.DashboardGlancesTable.keepSortFocus(container, () => container.replaceChildren(...parts));
         }
 
         block(kind, title) {
@@ -75,46 +80,45 @@
             const v = this.view;
             const rate = (n) => (n === null ? G.DASH : `${G.formatBytes(n)}/s`);
             const section = this.block('interfaces', v.t('dashboard.glancesNetInterfaces', 'Interfaces'));
-            const table = el('table', 'glances-table');
-            const tbody = el('tbody');
-            rows.forEach((r) => {
-                const name = str(r?.interface_name);
-                const speed = G.num(r?.speed);
-                const up = r?.is_up;
-                const tr = el('tr');
-                tr.setAttribute('data-glances-iface', name);
-                tr.append(
-                    el('td', 'glances-net-cell--name', name || G.DASH),
-                    el('td', 'glances-net-cell glances-net-cell--rx', rate(G.num(r?.bytes_recv_rate_per_sec))),
-                    el('td', 'glances-net-cell glances-net-cell--tx', rate(G.num(r?.bytes_sent_rate_per_sec))),
-                    // Glances reports the link speed in bits per second; 0 means it does not know.
-                    el('td', 'glances-net-cell glances-net-cell--speed', speed ? this.speedText(speed) : G.DASH),
-                    el('td', 'glances-net-cell glances-net-cell--state', up === true
-                        ? v.t('dashboard.glancesNetUp', 'up')
-                        : (up === false ? v.t('dashboard.glancesNetDown', 'down') : G.DASH)),
-                );
-                tbody.appendChild(tr);
-            });
-            table.append(headRow([
-                v.t('dashboard.glancesNetName', 'Interface'),
-                v.t('dashboard.glancesNetRx', 'Download'),
-                v.t('dashboard.glancesNetTx', 'Upload'),
-                v.t('dashboard.glancesNetSpeed', 'Speed'),
-                v.t('dashboard.glancesNetState', 'State'),
-            ]), tbody);
-            section.appendChild(table);
+            const list = rows.filter((r) => r && typeof r === 'object');
+            const Tip = window.DashboardGlancesTip;
+            const spec = window.DashboardGlancesSpecs?.iface || [];
+            section.appendChild(window.DashboardGlancesTable.build({
+                id: 'network-interfaces',
+                t: (k, f, p) => v.t(k, f, p),
+                rerender: () => this.redraw?.(),
+                initial: { key: 'rx', dir: 'desc' },
+                rows: list,
+                columns: [
+                    { key: 'name', label: ['dashboard.glancesNetName', 'Interface'], numeric: false, cellClass: 'glances-net-cell--name', value: (r) => str(r.interface_name) },
+                    { key: 'rx', label: ['dashboard.glancesNetRx', 'Download'], cellClass: 'glances-net-cell glances-net-cell--rx',
+                        value: (r) => G.num(r.bytes_recv_rate_per_sec), cell: (r) => rate(G.num(r.bytes_recv_rate_per_sec)) },
+                    { key: 'tx', label: ['dashboard.glancesNetTx', 'Upload'], cellClass: 'glances-net-cell glances-net-cell--tx',
+                        value: (r) => G.num(r.bytes_sent_rate_per_sec), cell: (r) => rate(G.num(r.bytes_sent_rate_per_sec)) },
+                    // Glances reports the link speed as Mbit/s times 1,048,576; 0 means it does not know.
+                    { key: 'speed', label: ['dashboard.glancesNetSpeed', 'Speed'], cellClass: 'glances-net-cell glances-net-cell--speed',
+                        value: (r) => G.num(r.speed), cell: (r) => (G.num(r.speed) ? this.speedText(G.num(r.speed)) : G.DASH) },
+                    { key: 'state', label: ['dashboard.glancesNetState', 'State'], numeric: false, cellClass: 'glances-net-cell glances-net-cell--state',
+                        value: (r) => (r.is_up === true ? 'up' : (r.is_up === false ? 'down' : null)),
+                        cell: (r) => (r.is_up === true ? v.t('dashboard.glancesNetUp', 'up')
+                            : (r.is_up === false ? v.t('dashboard.glancesNetDown', 'down') : G.DASH)) },
+                ],
+                rowHook: (tr, r) => {
+                    const name = str(r.interface_name);
+                    tr.setAttribute('data-glances-iface', name);
+                    if (typeof v.tip === 'function' && Tip) {
+                        v.tip(tr, `net:${name}`, () => Tip.describe(v, name, r, spec));
+                    }
+                },
+            }));
             return section;
         }
 
-        speedText(bps) {
-            const units = ['bit/s', 'Kbit/s', 'Mbit/s', 'Gbit/s', 'Tbit/s'];
-            let n = bps;
-            let i = 0;
-            while (n >= 1000 && i < units.length - 1) {
-                n /= 1000;
-                i += 1;
-            }
-            return `${Number.isInteger(n) ? n : n.toFixed(1)} ${units[i]}`;
+        /** The speed Glances reports is Mbit/s times 1,048,576. */
+        speedText(raw) {
+            const mbit = raw / 1048576;
+            if (mbit >= 1000) return `${Number((mbit / 1000).toFixed(1))} Gbit/s`;
+            return `${Math.round(mbit)} Mbit/s`;
         }
 
         /** Counts per state; null when the plugin sent no number at all. */

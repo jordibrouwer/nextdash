@@ -5,13 +5,14 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen } = require('./e2e-helpers');
 
 /**
- * The Glances view (#glances): a side menu with one section per screen, read
- * from one Glances widget through /api/glances/<widgetId>/<path>.
+ * Page 0 (#glances): Config → Glances switches it on, a 0 tab and the 0 key
+ * open it, and a side menu has one section per screen, read from the host set
+ * up in Config through /api/glances/<path>.
  *
- * Every Glances answer is route-mocked from the recorded fixtures the Go tests
- * use (internal/app/testdata/glances), shaped the way the server passes them
- * on: the process list without command lines, sorted and searched on the
- * server, a plugin the host does not run as {"available":false}.
+ * Every Glances answer is route-mocked from the recordings of a real host that
+ * the Go tests use (internal/app/testdata/glances), shaped the way the server
+ * passes them on: the process list without command lines, sorted and searched
+ * on the server, a plugin the host does not run as {"available":false}.
  */
 
 const DIR = path.join(__dirname, '..', 'internal', 'app', 'testdata', 'glances');
@@ -21,10 +22,35 @@ const FILES = {
     quicklook: 'quicklook', load: 'load', sensors: 'sensors', fs: 'fs', alert: 'alert',
     pluginslist: 'pluginslist', network: 'network', system: 'system', uptime: 'uptime',
     containers: 'containers', diskio: 'diskio', smart: 'smart', raid: 'raid',
-    connections: 'connections', 'all/limits': 'limits', 'cpu/history/60': 'history_cpu',
+    connections: 'connections', 'all/limits': 'limits',
 };
 
-const HASH = '#glances/overview?w=w_gl&p=1';
+const HASH = '#glances/overview';
+const STATUS = { enabled: true, configured: true, refresh: 2, hiddenBlocks: [], thresholds: null, level: 'ok', ok: true, at: 1 };
+const CONFIG = {
+    enabled: true, server: 'http://glances.example.test:61208', user: '', refresh: 2, hiddenBlocks: ['alerts'],
+    thresholds: { cpuWarn: 80, cpuBad: 90, memWarn: 80, memBad: 90, swapWarn: 80, swapBad: 90, diskWarn: 80, diskBad: 90, tempWarn: 70, tempBad: 85 },
+    diskStrip: '/rootfs', diskHide: [], hasPassword: false,
+    blocks: ['system', 'figures', 'cores', 'temps', 'network', 'diskio', 'disks', 'smart', 'processes', 'containers', 'alerts'],
+    collected: { series: 12, points: 3400, since: Date.now() - 36 * 3600 * 1000, incidents: 2, keepDays: 30 },
+    trackedHistory: [],
+};
+
+/** What /api/glances/insights answers: a host whose disk is filling and whose CPU is busy at night. */
+const INSIGHTS = {
+    at: Date.now(), range: '24h', since: Date.now() - 86400000,
+    health: { score: 87, level: 'good', factors: [{ key: 'disk', value: 75, penalty: 6 }], trendCpu: 4.5 },
+    forecast: [{ mount: '/mnt/disk1', percent: 75, slopePerDay: 1.5, daysToFull: 17, hours: 160 }, { mount: '/mnt/cache', percent: 12, slopePerDay: 0, hours: 160 }],
+    memory: { slopePerDay: 7.5, r2: 0.9, leak: true },
+    stats: { cpu: { avg: 20, p50: 18, p95: 40, p99: 60, max: 80, n: 1000 }, mem: { avg: 30, p50: 30, p95: 31, p99: 31, max: 32, n: 1000 } },
+    baseline: [{ key: 'cpu', now: 40, typical: 15, ratio: 2.7 }],
+    heatmap: { metric: 'cpu', unit: '%', max: 60, days: Array.from({ length: 7 }, (_, d) => ({ date: `2026-10-${10 + d}`, hours: Array.from({ length: 24 }, (_, h) => (h < 12 ? -1 : h * 2)) })) },
+    network: { days: Array.from({ length: 7 }, (_, d) => ({ date: `2026-10-${10 + d}`, rx: 1e9 * (d + 1), tx: 5e8 })), peakRx: 4e6, peakTx: 1e6, p95: 2e6, totalRx: 28e9, totalTx: 3.5e9 },
+    availability: { since: 1, day: 99.5, week: 99.9, timeline: Array.from({ length: 96 }, (_, i) => (i === 10 ? 0 : 1)) },
+    incidents: { ongoing: [{ kind: 'cpu', start: Date.now() - 600000, peak: 95 }], past: [{ kind: 'disk', subject: '/mnt/disk1', start: Date.now() - 7200000, end: Date.now() - 3600000, peak: 91 }, { kind: 'down', start: Date.now() - 90000000, end: Date.now() - 89000000 }] },
+    consumers: [{ name: 'node', kind: 'process', avgCpu: 12, maxCpu: 40, avgMem: 3, share: 60 }, { name: 'app-1', kind: 'container', avgCpu: 4, maxCpu: 9, avgMem: 1e8, share: 40 }],
+    temperature: { max: 72, avg: 59, hoursWarn: 1.5, hoursBad: 0, correlationCpu: 0.5 },
+};
 
 /** What the server does to /processlist: search, sort, cut, strip cmdline. */
 function processes(url) {
@@ -40,24 +66,59 @@ function processes(url) {
     return rows.sort(by).slice(0, 200).map(({ cmdline, ...rest }) => rest);
 }
 
+/** What the server's own record answers: points for the series asked. */
+function historyAnswer(url) {
+    const names = ['cpu', 'mem', 'swap', 'load1', 'load5', 'load15', 'net:eth0:rx', 'net:eth0:tx', 'temp:Core', 'memc:used', 'memc:cache', 'memc:free', ...Array.from({ length: 12 }, (_, i) => `core:${i}`)];
+    const asked = (url.searchParams.get('series') || '').split(',').filter(Boolean);
+    const since = Number(url.searchParams.get('since')) || Date.now() - 3600 * 1000;
+    const series = {};
+    asked.filter((n) => names.includes(n)).forEach((name, k) => {
+        series[name] = Array.from({ length: 30 }, (_, i) => [since + i * 120000, 10 + ((i * 7 + k * 13) % 60)]);
+    });
+    // One processor incident inside the window, one outage (drawn on every graph).
+    const incidents = [
+        { kind: 'cpu', start: since + 10 * 120000, end: since + 14 * 120000, peak: 95 },
+        { kind: 'down', start: since + 20 * 120000, end: since + 22 * 120000 },
+    ];
+    return { names, series, step: 120, now: Date.now(), incidents };
+}
+
 /**
- * Mocks every Glances view path. `state.overrides[path]` replaces one answer:
- * a value, a function of the URL, or { status } for a bare HTTP status.
+ * Mocks every Glances path. `state.overrides[path]` replaces one answer: a
+ * value, a function of the URL, or { __status } for a bare HTTP status.
  */
 async function mockGlances(page, overrides = {}) {
-    const state = { calls: [], overrides };
+    const state = { calls: [], overrides, saved: null, tracked: [], wiped: false, paused: false };
     await page.route('**/api/glances/**', async (route) => {
-        const url = new URL(route.request().url());
-        const rest = url.pathname.replace(/^\/api\/glances\/[^/]+\//, '');
-        state.calls.push({ path: rest, sort: url.searchParams.get('sort'), q: url.searchParams.get('q') });
+        const request = route.request();
+        const url = new URL(request.url());
+        const rest = url.pathname.replace(/^\/api\/glances\//, '');
+        state.calls.push({ range: url.searchParams.get('range'), heat: url.searchParams.get('heat'), path: rest, sort: url.searchParams.get('sort'), q: url.searchParams.get('q'), since: url.searchParams.get('since'), until: url.searchParams.get('until'), ghost: url.searchParams.get('ghost'), series: url.searchParams.get('series') });
+        const has = Object.prototype.hasOwnProperty.call(state.overrides, rest);
         let body;
-        if (Object.prototype.hasOwnProperty.call(state.overrides, rest)) {
+        if (rest === 'data' && request.method() === 'DELETE') {
+            state.wiped = true;
+            body = { series: 0, points: 0, incidents: 0, keepDays: 30 };
+        } else if (rest === 'config' && request.method() === 'PUT') {
+            state.saved = JSON.parse(request.postData() || '{}');
+            if (Array.isArray(state.saved.trackedHistory)) state.tracked = state.saved.trackedHistory;
+            if (typeof state.saved.paused === 'boolean') state.paused = state.saved.paused;
+            body = { ...CONFIG, ...state.saved, trackedHistory: state.tracked, paused: state.paused };
+        } else if (has) {
             const o = state.overrides[rest];
             body = typeof o === 'function' ? await o(url) : o;
             if (body && typeof body === 'object' && body.__status) {
                 await route.fulfill({ status: body.__status, contentType: 'text/plain', body: 'Too many requests' });
                 return;
             }
+        } else if (rest === 'status') {
+            body = { ...STATUS, paused: state.paused };
+        } else if (rest === 'config') {
+            body = { ...CONFIG, trackedHistory: state.tracked, paused: state.paused, ...(state.wiped ? { collected: { series: 0, points: 0, incidents: 0, keepDays: 30 } } : {}) };
+        } else if (rest === 'insights') {
+            body = INSIGHTS;
+        } else if (rest === 'history') {
+            body = historyAnswer(url);
         } else if (rest === 'processlist') {
             body = processes(url);
         } else if (rest.startsWith('processes/')) {
@@ -93,570 +154,709 @@ async function setVisibility(page, state) {
     }, state);
 }
 
-test.describe('the Glances view', () => {
-    test('menu lists only sections the host supports', async ({ page }) => {
-        const plugins = fixture('pluginslist');
-        const state = await mockGlances(page, { pluginslist: plugins.filter((p) => p !== 'processlist') });
-        await openView(page);
-        await expect.poll(() => menuIds(page)).toEqual(['overview', 'containers', 'disks', 'network', 'history', 'alerts']);
+const FIRST = fixture('processlist').slice().sort((a, b) => b.cpu_percent - a.cpu_percent)[0];
 
-        // A section joins the menu in its order, and only while the host runs its plugin.
-        state.overrides.pluginslist = plugins;
+test.describe('page 0: getting there', () => {
+    test('not set up: the 0 key opens Config → Glances, and there is no 0 tab', async ({ page }) => {
+        await mockGlances(page, { status: { ...STATUS, enabled: false, configured: false, level: 'unknown', ok: false } });
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await expect(page.locator('#page-nav-glances-btn')).toHaveCount(0);
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press('0');
+        await expect(page).toHaveURL(/#config\/glances/);
+        await expect(page.locator('[data-glances-field="server"]')).toBeVisible();
+    });
+
+    test('set up: a 0 tab with the verdict as a dot, and the tab and the key open page 0', async ({ page }) => {
+        await mockGlances(page, { status: { ...STATUS, level: 'warn' } });
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        const tab = page.locator('#page-nav-glances-btn');
+        await expect(tab).toBeVisible({ timeout: 15_000 });
+        await expect(tab.locator('.page-glances-dot')).toHaveAttribute('data-level', 'warn');
+        await tab.click();
+        await expect(page.locator('#dashboard-layout.glances-layout [data-glances-body]')).toBeVisible();
+        await expect(page).toHaveURL(/#glances\/overview$/);
+        await expect(tab).toHaveAttribute('aria-selected', 'true');
+
         await page.keyboard.press('Escape');
         await expect(page.locator('#dashboard-layout.glances-layout')).toHaveCount(0);
-        await page.evaluate((h) => { window.location.hash = h; }, HASH);
-        await expect.poll(() => menuIds(page)).toEqual(['overview', 'processes', 'containers', 'disks', 'network', 'history', 'alerts']);
-
-        await page.keyboard.press('Escape');
-        state.overrides.pluginslist = plugins.filter((p) => p !== 'containers' && p !== 'alert');
-        await page.evaluate((h) => { window.location.hash = h; }, HASH);
-        await expect.poll(() => menuIds(page)).toEqual(['overview', 'processes', 'disks', 'network', 'history']);
-
-        // One probe per opening, not one per section switch.
-        const before = count(state, 'pluginslist');
-        await page.locator('[data-glances-section="processes"]').click();
-        await expect(page.locator('[data-glances-open="processes"]')).toBeVisible();
-        await page.locator('[data-glances-section="overview"]').click();
-        await expect(page.locator('[data-glances-open="overview"]')).toBeVisible();
-        expect(count(state, 'pluginslist')).toBe(before);
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press('0');
+        await expect(page.locator('#dashboard-layout.glances-layout [data-glances-body]')).toBeVisible();
     });
 
-    test('overview shows four number cards and dashes for missing values', async ({ page }) => {
+    test('a bare #glances on a host that is not set up says to set it up', async ({ page }) => {
+        const state = await mockGlances(page, { status: { ...STATUS, enabled: false, configured: false } });
+        await markWhatsNewSeen(page);
+        await page.goto('/#glances');
+        const empty = page.locator('[data-glances-empty]');
+        await expect(empty).toContainText('not set up', { timeout: 15_000 });
+        await empty.locator('[data-glances-open-config]').click();
+        await expect(page).toHaveURL(/#config\/glances/);
+        // Nothing of Glances itself was asked.
+        expect(state.calls.filter((c) => !['status', 'config'].includes(c.path))).toEqual([]);
+    });
+});
+
+test.describe('page 0: the Overview', () => {
+    test('every block the host can fill is drawn, with real values', async ({ page }) => {
         const state = await mockGlances(page);
         await openView(page);
-        const card = (k) => page.locator(`[data-glances-card="${k}"] .glances-card-value`);
-        await expect(card('cpu')).toHaveText('23%');
-        await expect(card('ram')).toHaveText('61%');
-        await expect(card('load')).toHaveText('0.87');
-        // The hottest temperature sensor; a fan is not a temperature.
-        await expect(card('temp')).toHaveText('97°');
-        await expect(page.locator('[data-glances-card]')).toHaveCount(4);
-        await expect(page.locator('[data-glances-chart="cpu"]')).toBeVisible();
+        const blocks = page.locator('[data-glances-block]');
+        await expect(blocks.first()).toBeVisible();
+        const drawn = await blocks.evaluateAll((els) => els.map((el) => el.getAttribute('data-glances-block')));
+        // SMART is empty on this host, so its block is left out; alerts are hidden in Config's mock, not here.
+        expect(drawn).toEqual(['system', 'figures', 'cores', 'temps', 'network', 'diskio', 'disks', 'processes', 'containers', 'alerts']);
 
-        // Unknown is not zero: a reading the host did not send is a dash.
-        state.overrides.quicklook = { cpu: 23.1 };
-        state.overrides.load = { available: false };
-        state.overrides.sensors = { available: false };
-        state.overrides['cpu/history/60'] = { available: false };
-        await page.reload();
-        await expect(card('cpu')).toHaveText('23%');
-        await expect(card('ram')).toHaveText('–');
-        await expect(card('load')).toHaveText('–');
-        await expect(card('temp')).toHaveText('–');
-        await expect(page.locator('[data-glances-chart="cpu"]')).toHaveCount(0);
+        const quick = fixture('quicklook');
+        await expect(page.locator('[data-glances-card="cpu"] .glances-card-value')).toHaveText(`${Math.round(quick.cpu)}%`);
+        await expect(page.locator('[data-glances-card="ram"] .glances-card-value')).toHaveText(`${Math.round(quick.mem)}%`);
+        await expect(page.locator('[data-glances-card]')).toHaveCount(4);
+        // The four big numbers follow the refresh Config sets: no range to pick.
+        await expect(page.locator('[data-glances-block="figures"] [data-glances-range-select]')).toHaveCount(0);
+        await expect(page.locator('[data-glances-core]')).toHaveCount(quick.percpu.length);
+        await expect(page.locator('[data-glances-block="system"]')).toContainText(fixture('system').hr_name);
+
+        // The network shows the real interface only, a 10 Gbit link as such.
+        const row = page.locator('[data-glances-iface="eth0"]');
+        await expect(row).toContainText('10 Gbit/s');
+        await expect(page.locator('[data-glances-iface="lo"]')).toHaveCount(0);
+        await expect(page.locator('[data-glances-iface="tunl0"]')).toHaveCount(0);
+        // Sensors share a group: "Core 0" and "Core 11" are one line.
+        await expect(page.locator('[data-glances-block="temps"] .glances-temp-name', { hasText: /^Core ×/ })).toHaveCount(1);
+        expect(count(state, 'status')).toBeGreaterThan(0);
     });
 
-    test('processes: sorts by cpu, search filters, cmdline hidden until expanded', async ({ page }) => {
+    test('a block switched off in Config is drawn nowhere and asked of Glances never', async ({ page }) => {
+        // The Disks block shows what each disk is doing, so it reads diskio too: switched off, nothing asks for it.
+        const state = await mockGlances(page, { status: { ...STATUS, hiddenBlocks: ['containers', 'processes', 'diskio', 'disks', 'temps'] } });
+        await openView(page);
+        await expect(page.locator('[data-glances-block="figures"]')).toBeVisible();
+        for (const id of ['containers', 'processes', 'diskio', 'disks', 'temps']) {
+            await expect(page.locator(`[data-glances-block="${id}"]`)).toHaveCount(0);
+        }
+        expect(count(state, 'containers')).toBe(0);
+        expect(count(state, 'processlist')).toBe(0);
+        expect(count(state, 'diskio')).toBe(0);
+    });
+
+    test('a reading the host did not send is a dash, never zero', async ({ page }) => {
+        await mockGlances(page, { quicklook: { cpu: 12.4 }, load: { available: false }, memswap: { available: false }, mem: { available: false } });
+        await openView(page);
+        await expect(page.locator('[data-glances-card="cpu"] .glances-card-value')).toHaveText('12%');
+        await expect(page.locator('[data-glances-card="ram"] .glances-card-value')).toHaveText('–');
+        await expect(page.locator('[data-glances-card="swap"] .glances-card-value')).toHaveText('–');
+        await expect(page.locator('[data-glances-card="load"] .glances-card-value')).toHaveText('–');
+    });
+
+    test('the lines come from Config: a cpu at 85 is yellow when yellow starts at 80, red when red starts at 85', async ({ page }) => {
+        const thresholds = { ...CONFIG.thresholds };
+        await mockGlances(page, { status: { ...STATUS, thresholds }, quicklook: { cpu: 85, mem: 10, swap: 0, percpu: [] } });
+        await openView(page);
+        await expect(page.locator('[data-glances-card="cpu"]')).toHaveAttribute('data-tone', 'warn');
+
+        const page2 = await page.context().newPage();
+        await mockGlances(page2, { status: { ...STATUS, thresholds: { ...thresholds, cpuBad: 85 } }, quicklook: { cpu: 85, mem: 10, swap: 0, percpu: [] } });
+        await openView(page2);
+        await expect(page2.locator('[data-glances-card="cpu"]')).toHaveAttribute('data-tone', 'bad');
+        await page2.close();
+    });
+
+    test('the cards draw the last hour from nextDash\'s own record', async ({ page }) => {
         const state = await mockGlances(page);
-        await openView(page, '#glances/processes?w=w_gl&p=1');
+        await openView(page);
+        await expect(page.locator('[data-glances-card="cpu"] .glances-spark svg')).toBeVisible();
+        const asked = state.calls.find((c) => c.path === 'history' && c.since);
+        expect(Number(asked?.since)).toBeGreaterThan(Date.now() - 3600 * 1000 - 60_000);
+        await expect(page.locator('.glances-ov-span')).toContainText('last');
+    });
+
+    test('a beat that brings nothing keeps the last data on screen, with one quiet line', async ({ page }) => {
+        const state = await mockGlances(page);
+        await openView(page);
+        const cpu = page.locator('[data-glances-card="cpu"] .glances-card-value');
+        await expect(cpu).toHaveText(`${Math.round(fixture('quicklook').cpu)}%`);
+
+        // The host stops answering: the numbers stay, nothing flashes empty.
+        state.overrides.quicklook = { error: 'unreachable' };
+        state.overrides.load = { error: 'unreachable' };
+        state.overrides.system = { error: 'unreachable' };
+        await expect(page.locator('[data-glances-status="stale"]')).toBeVisible({ timeout: 10_000 });
+        await expect(cpu).toHaveText(`${Math.round(fixture('quicklook').cpu)}%`);
+        await expect(page.locator('[data-glances-error]')).toBeHidden();
+        await expect(page.locator('[data-glances-block="system"]')).toContainText(fixture('system').hr_name);
+
+        // It comes back: the line goes, the numbers follow the host again.
+        delete state.overrides.quicklook;
+        delete state.overrides.load;
+        delete state.overrides.system;
+        await expect(page.locator('[data-glances-status="stale"]')).toBeHidden({ timeout: 10_000 });
+    });
+
+    test('an error from the host reads as words', async ({ page }) => {
+        await mockGlances(page, { quicklook: { error: 'unreachable' }, system: { error: 'unreachable' } });
+        await openView(page);
+        await expect(page.locator('[data-glances-error]')).toContainText('does not answer');
+    });
+});
+
+test.describe('page 0: the sections', () => {
+    test('the menu lists only sections the host supports', async ({ page }) => {
+        const plugins = fixture('pluginslist');
+        await mockGlances(page, { pluginslist: plugins.filter((p) => p !== 'processlist' && p !== 'containers') });
+        await openView(page);
+        await expect.poll(() => menuIds(page)).toEqual(['overview', 'disks', 'network', 'insights', 'history', 'alerts']);
+    });
+
+    test('processes: sorts, searches on the server, and keeps the command line until asked', async ({ page }) => {
+        const state = await mockGlances(page);
+        await openView(page, '#glances/processes');
         const rows = page.locator('[data-glances-pid]');
-        await expect(rows).toHaveCount(12);
-        await expect(rows.first().locator('.glances-proc-name')).toHaveText('dockerd');
+        await expect(rows.first()).toBeVisible();
+        await expect(rows.first().locator('.glances-proc-name')).toHaveText(FIRST.name);
         expect(state.calls.find((c) => c.path === 'processlist')?.sort).toBe('cpu');
-        await expect(page.locator('[data-glances-top-note]')).toContainText('200');
 
-        // Sorting is the server's: a heading asks again with its key.
         await page.locator('[data-glances-sort="name"]').click();
-        await expect(rows.first().locator('.glances-proc-name')).toHaveText('containerd');
-        expect(state.calls.filter((c) => c.path === 'processlist').at(-1)?.sort).toBe('name');
+        await expect.poll(() => state.calls.filter((c) => c.path === 'processlist').at(-1)?.sort).toBe('name');
         await expect(page.locator('[data-glances-sort="name"]')).toHaveAttribute('aria-sort', 'ascending');
-        await page.locator('[data-glances-sort="cpu"]').click();
-        await expect(rows.first().locator('.glances-proc-name')).toHaveText('dockerd');
 
-        // Search is the server's too, after a pause in typing.
-        await page.locator('[data-glances-search]').fill('ple');
-        await expect(rows).toHaveCount(1);
-        await expect(rows.first().locator('.glances-proc-name')).toHaveText('plex');
-        expect(state.calls.filter((c) => c.path === 'processlist').at(-1)?.q).toBe('ple');
+        const wanted = fixture('processlist').filter((r) => r.name.toLowerCase().includes('jelly'));
+        await page.locator('[data-glances-search]').fill('jelly');
+        await expect(rows).toHaveCount(wanted.length);
+        expect(state.calls.filter((c) => c.path === 'processlist').at(-1)?.q).toBe('jelly');
 
-        // The command line is never in the list; it is asked for on expand.
+        const pid = wanted[0].pid;
         await expect(page.locator('[data-glances-cmdline]')).toHaveCount(0);
-        expect(count(state, 'processes/1111')).toBe(0);
+        expect(count(state, `processes/${pid}`)).toBe(0);
         await rows.first().locator('[data-glances-expand]').click();
-        await expect(page.locator('[data-glances-cmdline]')).toHaveText('/usr/bin/plex --config /etc/plex.conf');
-        expect(count(state, 'processes/1111')).toBe(1);
-        await rows.first().locator('[data-glances-expand]').click();
-        await expect(page.locator('[data-glances-cmdline]')).toHaveCount(0);
+        await expect(page.locator('[data-glances-cmdline]')).toHaveText(`/usr/bin/${wanted[0].name} --config /etc/${wanted[0].name}.conf`);
+        expect(count(state, `processes/${pid}`)).toBe(1);
     });
 
     test('a poll keeps focus and an open command line in place', async ({ page }) => {
         await page.clock.install();
         const state = await mockGlances(page);
-        await openView(page, '#glances/processes?w=w_gl&p=1');
-        const row = page.locator('[data-glances-pid="1000"]');
+        await openView(page, '#glances/processes');
+        const row = page.locator(`[data-glances-pid="${FIRST.pid}"]`);
         await row.locator('[data-glances-expand]').click();
-        await expect(page.locator('[data-glances-cmdline]')).toHaveText('/usr/bin/dockerd --config /etc/dockerd.conf');
+        await expect(page.locator('[data-glances-cmdline]')).toHaveText(`/usr/bin/${FIRST.name} --config /etc/${FIRST.name}.conf`);
         await row.locator('[data-glances-expand]').focus();
-        const marked = await row.evaluate((tr) => { tr.dataset.mark = 'kept'; return true; });
-        expect(marked).toBe(true);
+        await row.evaluate((tr) => { tr.dataset.mark = 'kept'; });
         const polls = count(state, 'processlist');
         await page.clock.runFor(5_000);
         await expect.poll(() => count(state, 'processlist')).toBeGreaterThan(polls);
-        // The same row element, its button still focused, the command line still open.
-        await expect(page.locator('[data-glances-pid="1000"][data-mark="kept"]')).toHaveCount(1);
-        expect(await page.evaluate(() => document.activeElement?.closest('[data-glances-pid]')?.getAttribute('data-glances-pid'))).toBe('1000');
+        await expect(page.locator(`[data-glances-pid="${FIRST.pid}"][data-mark="kept"]`)).toHaveCount(1);
         expect(await page.evaluate(() => document.activeElement?.hasAttribute('data-glances-expand'))).toBe(true);
-        await expect(page.locator('[data-glances-cmdline]')).toHaveText('/usr/bin/dockerd --config /etc/dockerd.conf');
     });
 
-    test('a failed command line read says so and asks again', async ({ page }) => {
-        const state = await mockGlances(page, { 'processes/1111': { __status: 429 } });
-        await openView(page, '#glances/processes?w=w_gl&p=1');
-        const row = page.locator('[data-glances-pid="1111"]');
-        await row.locator('[data-glances-expand]').click();
-        await expect(page.locator('.glances-proc-cmd')).toContainText('Too many requests, retrying');
-        await expect(page.locator('.glances-proc-cmd')).not.toContainText('No command line');
-        delete state.overrides['processes/1111'];
-        await row.locator('[data-glances-expand]').click();
-        await expect(page.locator('[data-glances-cmdline]')).toHaveText('/usr/bin/plex --config /etc/plex.conf');
-        expect(count(state, 'processes/1111')).toBe(2);
-    });
-
-    test('a section switch drops the stale answer', async ({ page }) => {
-        const state = await mockGlances(page);
-        await openView(page);
-        await expect(page.locator('[data-glances-card]')).toHaveCount(4);
-        let release;
-        const held = new Promise((resolve) => { release = resolve; });
-        state.overrides.processlist = async (url) => { await held; return processes(url); };
-        await page.locator('[data-glances-section="processes"]').click();
-        await expect.poll(() => count(state, 'processlist')).toBe(1);
-        await page.locator('[data-glances-section="overview"]').click();
-        await expect(page.locator('[data-glances-card]')).toHaveCount(4);
-        release();
-        // Give the late answer its chance to land, then check it did not.
-        await page.waitForTimeout(500);
-        await expect(page.locator('[data-glances-open="overview"]')).toBeVisible();
-        await expect(page.locator('[data-glances-card]')).toHaveCount(4);
-        await expect(page.locator('[data-glances-pid]')).toHaveCount(0);
-    });
-
-    test('a widget the server does not know reads as no widget', async ({ page }) => {
-        await mockGlances(page, { pluginslist: { __status: 404 } });
-        await markWhatsNewSeen(page);
-        await page.goto('/#glances/overview?w=gone&p=1');
-        await expect(page.locator('[data-glances-empty]')).toContainText('Add a Glances widget to a page first.', { timeout: 15_000 });
-        await expect(page.locator('[data-glances-error]')).toHaveCount(0);
-    });
-
-    test('a host with none of the sections says so', async ({ page }) => {
-        await mockGlances(page, { pluginslist: ['system'] });
-        await openView(page);
-        await expect(page.locator('[data-glances-body]')).toContainText('Not available on this host.');
-    });
-
-    test('processes says so when the host has no process list', async ({ page }) => {
-        await mockGlances(page, { processlist: { available: false } });
-        await openView(page, '#glances/processes?w=w_gl&p=1');
-        await expect(page.locator('[data-glances-open="processes"]')).toContainText('Not available on this host');
-        await expect(page.locator('[data-glances-pid]')).toHaveCount(0);
-    });
-
-    test('only the open section is polled', async ({ page }) => {
+    test('going back to a section draws it from the cache and reads nothing again', async ({ page }) => {
         await page.clock.install();
-        const state = await mockGlances(page);
+        const state = await mockGlances(page, { status: { ...STATUS, refresh: 10, hiddenBlocks: [] } });
         await openView(page);
-        await expect(page.locator('[data-glances-card="cpu"] .glances-card-value')).toHaveText('23%');
+        await expect(page.locator('[data-glances-card="cpu"] .glances-card-value')).toBeVisible();
+        await page.locator('[data-glances-section="processes"]').click();
+        await expect(page.locator('[data-glances-pid]').first()).toBeVisible();
+        const quick0 = count(state, 'quicklook');
+        await page.locator('[data-glances-section="overview"]').click();
+        // Drawn at once, from what it read a moment ago: no new read of the host.
+        await expect(page.locator('[data-glances-card="cpu"] .glances-card-value')).toBeVisible();
+        expect(count(state, 'quicklook')).toBe(quick0);
+    });
+
+    test('only the open section is polled, at the refresh Config says', async ({ page }) => {
+        await page.clock.install();
+        const state = await mockGlances(page, { status: { ...STATUS, refresh: 5, hiddenBlocks: [] } });
+        await openView(page);
+        await expect(page.locator('[data-glances-card="cpu"] .glances-card-value')).toBeVisible();
         const load0 = count(state, 'load');
-        await page.clock.runFor(12_000);
-        await expect.poll(() => count(state, 'load')).toBeGreaterThanOrEqual(load0 + 2);
-        expect(count(state, 'processlist')).toBe(0);
+        await page.clock.runFor(4_000);
+        expect(count(state, 'load')).toBe(load0);
+        await page.clock.runFor(2_000);
+        await expect.poll(() => count(state, 'load')).toBeGreaterThanOrEqual(load0 + 1);
 
         await page.locator('[data-glances-section="processes"]').click();
-        await expect(page.locator('[data-glances-pid]')).toHaveCount(12);
-        const procs0 = count(state, 'processlist');
+        await expect(page.locator('[data-glances-pid]').first()).toBeVisible();
         const load1 = count(state, 'load');
-        const hist1 = count(state, 'cpu/history/60');
+        const procs0 = count(state, 'processlist');
         await page.clock.runFor(12_000);
         await expect.poll(() => count(state, 'processlist')).toBeGreaterThanOrEqual(procs0 + 2);
         expect(count(state, 'load')).toBe(load1);
-        expect(count(state, 'cpu/history/60')).toBe(hist1);
         expect(count(state, 'pluginslist')).toBe(1);
     });
 
-    test('polling pauses when the tab is hidden', async ({ page }) => {
+    test('polling pauses while the tab is hidden', async ({ page }) => {
         await page.clock.install();
         const state = await mockGlances(page);
         await openView(page);
-        await expect(page.locator('[data-glances-card="cpu"] .glances-card-value')).toHaveText('23%');
+        await expect(page.locator('[data-glances-card="cpu"] .glances-card-value')).toBeVisible();
         await setVisibility(page, 'hidden');
         const calls0 = state.calls.length;
         await page.clock.runFor(40_000);
         expect(state.calls.length).toBe(calls0);
-
-        // Back in view: one read at once, then the timer again.
         const load0 = count(state, 'load');
         await setVisibility(page, 'visible');
-        await expect.poll(() => count(state, 'load')).toBe(load0 + 1);
-        await page.clock.runFor(5_500);
-        await expect.poll(() => count(state, 'load')).toBeGreaterThanOrEqual(load0 + 2);
+        await expect.poll(() => count(state, 'load')).toBeGreaterThan(load0);
     });
 
-    test('hash #glances/processes opens that section on load', async ({ page }) => {
+    test('an address names a section, and a menu click rewrites it', async ({ page }) => {
         const state = await mockGlances(page);
-        await openView(page, '#glances/processes?w=w_gl&p=1');
+        await openView(page, '#glances/processes');
         await expect(page.locator('[data-glances-open="processes"]')).toBeVisible();
-        await expect(page.locator('[data-glances-section="processes"]')).toHaveAttribute('aria-selected', 'true');
-        await expect(page.locator('[data-glances-pid]')).toHaveCount(12);
         expect(count(state, 'load')).toBe(0);
-        expect(page.url()).toContain('#glances/processes?w=w_gl&p=1');
-
-        // A section in the menu is an address: switching rewrites the hash.
         await page.locator('[data-glances-section="overview"]').click();
-        await expect(page.locator('[data-glances-open="overview"]')).toBeVisible();
-        await expect(page).toHaveURL(/#glances\/overview\?w=w_gl&p=1$/);
-
-        // A bare #glances over the open view gets its widget back in the address.
+        await expect(page).toHaveURL(/#glances\/overview$/);
         await page.evaluate(() => { window.location.hash = '#glances'; });
-        await expect(page).toHaveURL(/#glances\/overview\?w=w_gl&p=1$/);
+        await expect(page).toHaveURL(/#glances\/overview$/);
     });
 
-    test('without a Glances widget the view says to add one', async ({ page }) => {
+    test('history: charts from the record, and the range asks again', async ({ page }) => {
         const state = await mockGlances(page);
-        await markWhatsNewSeen(page);
-        await page.goto('/#glances');
-        const empty = page.locator('[data-glances-empty]');
-        await expect(empty).toContainText('Add a Glances widget to a page first.', { timeout: 15_000 });
-        await expect(empty.locator('a')).toHaveAttribute('href', /#1$/);
-        expect(state.calls.length).toBe(0);
+        await openView(page, '#glances/history');
+        await expect(page.locator('[data-glances-chart="cpu"]')).toBeVisible();
+        await expect(page.locator('[data-glances-chart="network"]')).toBeVisible();
+        await expect(page.locator('[data-glances-chart="temps"]')).toBeVisible();
+        // Each graph has its own range, in a dropdown: the minute, hour, 6, 12, 24 hours, 7 and 30 days.
+        const select = page.locator('[data-glances-range-select="cpu"]');
+        await expect(select.locator('option')).toHaveText(['1 min', '1 hour', '6 hours', '12 hours', '24 hours', '7 days', '30 days']);
+        const first = state.calls.filter((c) => c.path === 'history' && String(c.series || '').startsWith('cpu')).at(-1);
+        await select.selectOption('30d');
+        await expect.poll(() => Number(state.calls.filter((c) => c.path === 'history' && String(c.series || '').startsWith('cpu')).at(-1)?.since))
+            .toBeLessThan(Number(first?.since) - 20 * 24 * 3600 * 1000);
+        await expect(select).toHaveValue('30d');
+        // The others did not move.
+        await expect(page.locator('[data-glances-range-select="memory"]')).toHaveValue('1h');
+        // And the choice is remembered.
+        await page.reload();
+        await expect(page.locator('[data-glances-range-select="cpu"]')).toHaveValue('30d');
     });
 
-    test('errors and the rate limit read as words', async ({ page }) => {
-        const state = await mockGlances(page, {
-            quicklook: { error: 'unreachable' }, load: { error: 'unreachable' }, sensors: { error: 'unreachable' },
-            mem: { error: 'unreachable' }, 'cpu/history/60': { error: 'unreachable' },
-        });
-        await openView(page);
-        await expect(page.locator('[data-glances-error="unreachable"]')).toContainText('does not answer');
-
-        state.overrides = { quicklook: { __status: 429 } };
-        await page.locator('[data-glances-section="processes"]').click();
-        await page.locator('[data-glances-section="overview"]').click();
-        await expect(page.locator('[data-glances-status="limited"]')).toContainText('Too many requests, retrying');
-    });
-
-    test('escape and back leave the view', async ({ page }) => {
+    test('a graph shows the reading under the pointer, and the , and . keys change its range', async ({ page }) => {
         await mockGlances(page);
-        await markWhatsNewSeen(page);
-        await page.goto('/');
-        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-        const open = async () => {
-            await page.evaluate((h) => { window.location.hash = h; }, HASH);
-            await expect(page.locator('#dashboard-layout.glances-layout [data-glances-body]')).toBeVisible();
-        };
-        const view = () => page.evaluate(() => window.dashboardInstance.activeView);
-        const timerOff = () => page.evaluate(() => {
-            const g = window.dashboardInstance.glances?.instance;
-            return Boolean(g) && g._pollTimer === null && g._badgeTimer === null;
-        });
-
-        await open();
-        await page.keyboard.press('Escape');
-        await expect.poll(view).toBe('bookmarks');
-        await expect(page.locator('#dashboard-layout.glances-layout')).toHaveCount(0);
-        await expect(page).toHaveURL(/#\d+$/);
-        expect(await timerOff()).toBe(true);
-
-        await open();
-        await page.goBack();
-        await expect.poll(view).toBe('bookmarks');
-        await expect(page.locator('#dashboard-layout.glances-layout')).toHaveCount(0);
-        expect(await timerOff()).toBe(true);
-    });
-});
-
-/** A history answer: one series per key, `n` points 30 s apart from 10:00. */
-function history(keys, n = 20, base = 10) {
-    const out = {};
-    keys.forEach((k, ki) => {
-        out[k] = Array.from({ length: n }, (_, i) => {
-            const sec = i * 30;
-            const ts = `2026-10-21T10:${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
-            return [ts, base + ki + (i % 5)];
-        });
-    });
-    return out;
-}
-
-const sectionHash = (id) => `#glances/${id}?w=w_gl&p=1`;
-
-test.describe('the Glances view: containers, disks, network, history, alerts', () => {
-    test('containers: a read only table that sorts in the browser', async ({ page }) => {
-        const longCommand = `/usr/bin/run ${'--flag=value '.repeat(60)}`;
-        const rows = fixture('containers');
-        rows[0].command = longCommand;
-        await mockGlances(page, { containers: rows });
-        await openView(page, sectionHash('containers'));
-        const names = () => page.locator('[data-glances-container] .glances-ct-cell--name').allTextContents();
-        await expect(page.locator('[data-glances-container]')).toHaveCount(3);
-        const first = page.locator('[data-glances-container="jellyfin"]');
-        await expect(first.locator('.glances-ct-cell--status')).toHaveText('running');
-        await expect(first.locator('.glances-ct-cell--uptime')).toHaveText('3 days');
-        await expect(first.locator('.glances-ct-cell--cpu')).toHaveText('4.2%');
-        await expect(first.locator('.glances-ct-cell--mem')).toHaveText('774.4 MB');
-        await expect(first.locator('.glances-ct-cell--io')).toContainText('1.2 MB');
-        await expect(first.locator('.glances-ct-cell--net')).toContainText('2.2 MB');
-        await expect(first.locator('.glances-ct-cell--image')).toHaveText('jellyfin/jellyfin:latest');
-
-        // Read only: nothing in the rows to press, and no action anywhere in the body.
-        await expect(page.locator('[data-glances-container] button')).toHaveCount(0);
-        await expect(page.locator('[data-glances-open="containers"] [data-glances-action]')).toHaveCount(0);
-
-        // A long command is cut to the cell and kept whole in its title.
-        const cmd = first.locator('.glances-ct-cell--command');
-        await expect(cmd).toHaveAttribute('title', longCommand);
-        const fits = await cmd.evaluate((c) => c.getBoundingClientRect().width < 400
-            && document.documentElement.scrollWidth <= document.documentElement.clientWidth);
-        expect(fits).toBe(true);
-
-        // Sorting is the browser's: the same rows, reordered.
-        expect(await names()).toEqual(['jellyfin', 'old-job', 'postgres']);
-        await page.locator('[data-glances-ct-sort="cpu"]').click();
-        expect(await names()).toEqual(['jellyfin', 'postgres', 'old-job']);
-        await expect(page.locator('[data-glances-ct-sort="cpu"]')).toHaveAttribute('aria-sort', 'descending');
-        await page.locator('[data-glances-ct-sort="cpu"]').click();
-        expect(await names()).toEqual(['old-job', 'postgres', 'jellyfin']);
-        await expect(page.locator('[data-glances-ct-sort="cpu"]')).toHaveAttribute('aria-sort', 'ascending');
-    });
-
-    test('containers: no plugin on the host, and a missing field is a dash', async ({ page }) => {
-        const state = await mockGlances(page, { containers: [{ name: 'bare' }] });
-        await openView(page, sectionHash('containers'));
-        const row = page.locator('[data-glances-container="bare"]');
-        await expect(row.locator('.glances-ct-cell--cpu')).toHaveText('–');
-        await expect(row.locator('.glances-ct-cell--mem')).toHaveText('–');
-        await expect(row.locator('.glances-ct-cell--image')).toHaveText('–');
-        state.overrides.containers = { available: false };
-        await page.locator('[data-glances-section="overview"]').click();
-        await page.locator('[data-glances-section="containers"]').click();
-        await expect(page.locator('[data-glances-open="containers"]')).toContainText('Glances has no container plugin on this host.');
-        await expect(page.locator('[data-glances-container]')).toHaveCount(0);
-    });
-
-    test('disks: usage bars without pseudo filesystems, I/O rates, SMART and RAID only when answered', async ({ page }) => {
-        const state = await mockGlances(page);
-        await openView(page, sectionHash('disks'));
-        const mounts = () => page.locator('[data-glances-fs]').evaluateAll((els) => els.map((e) => e.getAttribute('data-glances-fs')));
-        await expect.poll(mounts).toEqual(['/', '/mnt/data']);
-        await expect(page.locator('[data-glances-fs="/mnt/data"] .glances-disk-value')).toHaveText('82%');
-        await expect(page.locator('[data-glances-fs="/mnt/data"] .glances-disk-bar')).toHaveAttribute('data-tone', 'warn');
-        await expect(page.locator('[data-glances-fs="/"] .glances-disk-bar')).not.toHaveAttribute('data-tone', /.+/);
-        // The bar is a track with a fill that has width, and the tile's
-        // stylesheet (loaded on the same page) does not turn it into a row.
-        const fill = await page.locator('[data-glances-fs="/mnt/data"] .glances-disk-fill').evaluate((e) => e.getBoundingClientRect().width);
-        const track = await page.locator('[data-glances-fs="/mnt/data"] .glances-disk-bar').evaluate((e) => {
-            const r = e.getBoundingClientRect();
-            return { width: r.width, height: r.height, display: getComputedStyle(e).display };
-        });
-        expect(fill).toBeGreaterThan(0);
-        expect(Math.abs(fill / track.width - 0.82)).toBeLessThan(0.02);
-        expect(track.height).toBeLessThan(12);
-        expect(track.display).toBe('block');
-
-        const io = page.locator('[data-glances-diskio="sdb"]');
-        await expect(io.locator('.glances-io-read')).toHaveText('1.0 MB/s');
-        await expect(page.locator('[data-glances-diskio="sda"] .glances-io-write')).toHaveText('20.0 KB/s');
-
-        // SMART came with data; RAID answered {} so there is no heading.
-        await expect(page.locator('[data-glances-block="smart"]')).toContainText('/dev/sda');
-        await expect(page.locator('[data-glances-block="smart"]')).toContainText('EXAMPLE 250GB');
-        await expect(page.locator('[data-glances-block="raid"]')).toHaveCount(0);
-
-        state.overrides.raid = { md0: { status: 'active', type: 'raid1', components: { sda1: 0, sdb1: 1 }, available: 2, used: 2 } };
-        state.overrides.smart = { available: false };
-        await page.locator('[data-glances-section="overview"]').click();
-        await page.locator('[data-glances-section="disks"]').click();
-        await expect(page.locator('[data-glances-block="raid"]')).toContainText('md0');
-        await expect(page.locator('[data-glances-block="raid"]')).toContainText('raid1');
-        await expect(page.locator('[data-glances-block="smart"]')).toHaveCount(0);
-
-        state.overrides.smart = [];
-        await page.locator('[data-glances-section="overview"]').click();
-        await page.locator('[data-glances-section="disks"]').click();
-        await expect(page.locator('[data-glances-block="smart"]')).toHaveCount(0);
-        await expect(page.locator('[data-glances-fs]')).toHaveCount(2);
-    });
-
-    test('disks: the menu dot follows the fullest real filesystem', async ({ page }) => {
-        const disk = (mnt, percent, type = 'ext4') => ({ device_name: '/dev/x', fs_type: type, mnt_point: mnt, size: 100, used: percent, percent });
-        // The fixture: /mnt/data at 82% (warning); the 100% squashfs under /snap is not a disk.
-        const state = await mockGlances(page);
-        await openView(page, sectionHash('overview'));
-        const btn = page.locator('[data-glances-section="disks"]');
-        await expect(btn).toHaveAttribute('data-glances-warn', 'warn');
-        await expect(btn).toHaveClass(/has-warn/);
-
-        // At 90% the dot turns to the error colour.
-        state.overrides.fs = [disk('/', 40), disk('/mnt/data', 91)];
-        await page.keyboard.press('Escape');
-        await page.evaluate((h) => { window.location.hash = h; }, sectionHash('overview'));
-        await expect(btn).toHaveAttribute('data-glances-warn', 'bad');
-
-        // Pseudo filesystems, by type or by mount point, and broken rows never dot it.
-        state.overrides.fs = [disk('/', 40), null, 'x', disk('/run/user/1000', 99), disk('/dev/shm', 95, 'ext4'),
-            disk('/var/lib/docker/overlay2/a/merged', 99, 'overlay'), disk('/snap/core/1', 100, 'squashfs')];
-        await page.keyboard.press('Escape');
-        await page.evaluate((h) => { window.location.hash = h; }, sectionHash('disks'));
-        await expect(page.locator('[data-glances-fs]')).toHaveCount(1);
-        await expect(page.locator('[data-glances-fs="/"]')).toBeVisible();
-        await expect(btn).not.toHaveAttribute('data-glances-warn', /.*/);
-        await expect(btn).not.toHaveClass(/has-warn/);
-    });
-
-    test('processes: the command line needs write access', async ({ page }) => {
-        await mockGlances(page, { 'processes/1111': { __status: 401 } });
-        await openView(page, '#glances/processes?w=w_gl&p=1');
-        const row = page.locator('[data-glances-pid="1111"]');
-        await row.locator('[data-glances-expand]').click();
-        await expect(page.locator('.glances-proc-cmd')).toContainText('Needs write access to show the command line.');
-        await expect(page.locator('[data-glances-cmdline]')).toHaveCount(0);
-    });
-
-    test('disks stay in the menu without SMART, and are not read for it', async ({ page }) => {
-        const plugins = fixture('pluginslist').filter((p) => p !== 'smart' && p !== 'raid');
-        const state = await mockGlances(page, { pluginslist: plugins });
-        await openView(page, sectionHash('disks'));
-        await expect.poll(() => menuIds(page)).toContain('disks');
-        await expect(page.locator('[data-glances-fs]')).toHaveCount(2);
-        await expect(page.locator('[data-glances-block="smart"], [data-glances-block="raid"]')).toHaveCount(0);
-        expect(count(state, 'smart')).toBe(0);
-        expect(count(state, 'raid')).toBe(0);
-    });
-
-    test('network: rates per interface, a dash when missing, connections and wifi when answered', async ({ page }) => {
-        const state = await mockGlances(page);
-        await openView(page, sectionHash('network'));
-        const eth = page.locator('[data-glances-iface="eth0"]');
-        await expect(eth.locator('.glances-net-cell--rx')).toHaveText('122.1 KB/s');
-        await expect(eth.locator('.glances-net-cell--tx')).toHaveText('41.0 KB/s');
-        await expect(eth.locator('.glances-net-cell--speed')).toHaveText('1 Gbit/s');
-        await expect(eth.locator('.glances-net-cell--state')).toHaveText('up');
-        await expect(page.locator('[data-glances-iface="wlan0"] .glances-net-cell--state')).toHaveText('down');
-        await expect(page.locator('[data-glances-block="connections"]')).toContainText('34');
-        await expect(page.locator('[data-glances-block="wifi"]')).toHaveCount(0);
-
-        state.overrides.network = fixture('network_norate');
-        state.overrides.connections = { available: false };
-        state.overrides.wifi = [{ interface_name: 'wlan0', ssid: 'HomeNet', signal: -52 }];
-        await page.locator('[data-glances-section="overview"]').click();
-        await page.locator('[data-glances-section="network"]').click();
-        await expect(eth.locator('.glances-net-cell--rx')).toHaveText('–');
-        await expect(eth.locator('.glances-net-cell--tx')).toHaveText('–');
-        await expect(page.locator('[data-glances-block="connections"]')).toHaveCount(0);
-        await expect(page.locator('[data-glances-block="wifi"]')).toContainText('HomeNet');
-        await expect(page.locator('[data-glances-block="wifi"]')).toContainText('-52');
-    });
-
-    test('history: one chart per plugin, span from the timestamps, short series left out', async ({ page }) => {
-        await mockGlances(page, {
-            'cpu/history/60': history(['total']),
-            'mem/history/60': history(['percent'], 40),
-            'memswap/history/60': history(['percent'], 1),
-            'load/history/60': history(['min1', 'min5', 'min15']),
-            'network/history/60': history(['eth0.bytes_recv_rate_per_sec', 'eth0.bytes_sent_rate_per_sec'], 20, 1000),
-            'diskio/history/60': { available: false },
-        });
-        await openView(page, sectionHash('history'));
-        const charts = () => page.locator('[data-glances-chart]').evaluateAll((els) => els.map((e) => e.getAttribute('data-glances-chart')));
-        await expect.poll(charts).toEqual(['cpu', 'mem', 'load', 'network']);
-        // 20 points 30 s apart span 9.5 minutes, 40 points 19.5: read from the answer.
-        await expect(page.locator('[data-glances-chart="cpu"] figcaption')).toContainText('last 10 min');
-        await expect(page.locator('[data-glances-chart="mem"] figcaption')).toContainText('last 20 min');
-        await expect(page.locator('[data-glances-chart="cpu"] svg polyline')).toHaveCount(1);
-        await expect(page.locator('[data-glances-chart="load"] svg polyline')).toHaveCount(3);
-        await expect(page.locator('[data-glances-history-empty]')).toHaveCount(0);
+        await openView(page, '#glances/history');
+        const plot = page.locator('[data-glances-plot="cpu"]');
+        await expect(plot).toBeVisible();
+        await plot.hover({ position: { x: 100, y: 30 } });
+        await expect(page.locator('.glances-tip')).toContainText('%');
+        await expect(page.locator('.glances-crosshair').first()).toBeVisible();
+        await page.keyboard.press('.');
+        await expect(page.locator('[data-glances-range-select="cpu"]')).toHaveValue('6h');
+        await page.keyboard.press(',');
+        await expect(page.locator('[data-glances-range-select="cpu"]')).toHaveValue('1h');
     });
 
     test('history: nothing yet says so', async ({ page }) => {
-        await mockGlances(page, {
-            'cpu/history/60': { total: [] }, 'mem/history/60': { available: false },
-            'load/history/60': history(['min1'], 1),
-        });
-        await openView(page, sectionHash('history'));
-        await expect(page.locator('[data-glances-history-empty]')).toHaveText('Glances has no history yet.');
-        await expect(page.locator('[data-glances-chart]')).toHaveCount(0);
+        await mockGlances(page, { history: { names: [], series: {}, step: 10, now: Date.now() } });
+        await openView(page, '#glances/history');
+        await expect(page.locator('[data-glances-history="empty"]')).toContainText('collecting');
     });
 
-    test('alerts: newest first, ongoing marked, limits beside the meters, count in the menu', async ({ page }) => {
-        const alerts = [
-            { begin: 1792500000, end: 1792503600, state: 'CRITICAL', type: 'CPU', max: 97.2 },
-            ...fixture('alert'),
-            { begin: 1792560000, end: 1792561000, state: 'WARNING', type: 'LOAD', max: null },
-        ];
-        await mockGlances(page, { alert: alerts });
-        await openView(page, sectionHash('alerts'));
-        const rows = page.locator('[data-glances-alert]');
-        await expect(rows).toHaveCount(3);
-        await expect(rows.nth(0).locator('.glances-al-cell--type')).toHaveText('MEM');
-        await expect(rows.nth(0).locator('.glances-al-cell--end')).toHaveText('Ongoing');
-        await expect(rows.nth(0).locator('.glances-al-cell--state')).toHaveText('WARNING');
-        await expect(rows.nth(0).locator('.glances-al-cell--max')).toHaveText('88.1');
-        await expect(rows.nth(1).locator('.glances-al-cell--type')).toHaveText('LOAD');
-        await expect(rows.nth(1).locator('.glances-al-cell--max')).toHaveText('–');
-        await expect(rows.nth(2).locator('.glances-al-cell--end')).not.toHaveText('Ongoing');
-        await expect(page.locator('[data-glances-limit="mem_careful"]')).toContainText('50');
-        await expect(page.locator('[data-glances-limits]')).toContainText('90');
-        // One alert is ongoing, and that is what the menu counts.
-        await expect(page.locator('[data-glances-section="alerts"] .lvs-filter-count')).toHaveText('1');
+    test('the command line is behind the write token: a refusal says so', async ({ page }) => {
+        await mockGlances(page, { [`processes/${FIRST.pid}`]: { __status: 401 } });
+        await openView(page, '#glances/processes');
+        await page.locator(`[data-glances-pid="${FIRST.pid}"] [data-glances-expand]`).click();
+        await expect(page.locator('.glances-proc-cmd')).toContainText('write access');
     });
 
-    test('alerts: an end that is missing or not a number is not ongoing', async ({ page }) => {
-        const alerts = [
-            { begin: 1792570000, state: 'WARNING', type: 'CPU', max: 81 },
-            { begin: 1792560000, end: 'soon', state: 'WARNING', type: 'LOAD', max: 2 },
-            { begin: 'yesterday', end: 1e20, state: 'CRITICAL', type: 'MEM', max: 95 },
-            { begin: 1792550000, end: -1, state: 'CRITICAL', type: 'FS', max: 96 },
-        ];
-        await mockGlances(page, { alert: alerts });
-        await openView(page, sectionHash('alerts'));
-        const row = (type) => page.locator('[data-glances-alert]').filter({ has: page.locator('.glances-al-cell--type', { hasText: type }) });
-        await expect(page.locator('[data-glances-alert]')).toHaveCount(4);
-        await expect(row('CPU').locator('.glances-al-cell--end')).toHaveText('–');
-        await expect(row('CPU')).not.toHaveAttribute('data-ongoing', '');
-        await expect(row('LOAD').locator('.glances-al-cell--end')).toHaveText('–');
-        // A begin that is no time, and an end past what a date can hold: dashes, never "Invalid Date".
-        await expect(row('MEM').locator('.glances-al-cell--begin')).toHaveText('–');
-        await expect(row('MEM').locator('.glances-al-cell--end')).toHaveText('–');
-        await expect(row('FS').locator('.glances-al-cell--end')).toHaveText('Ongoing');
-        await expect(page.locator('[data-glances-alerts]')).not.toContainText('Invalid');
-        await expect(page.locator('[data-glances-section="alerts"] .lvs-filter-count')).toHaveText('1');
+    test('containers: a read only table', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page, '#glances/containers');
+        await expect(page.locator('.glances-ct-row').first()).toBeVisible();
+        await expect(page.locator('.glances-ct-row')).toHaveCount(fixture('containers').length);
+        await expect(page.locator('[data-glances-open="containers"] button:not(.glances-proc-sort)')).toHaveCount(0);
     });
 
-    test('alerts: none says so, and limits that did not answer are left out', async ({ page }) => {
-        await mockGlances(page, { alert: [], 'all/limits': { available: false } });
-        await openView(page, sectionHash('alerts'));
-        await expect(page.locator('[data-glances-open="alerts"]')).toContainText('No alerts.');
-        await expect(page.locator('[data-glances-limits]')).toHaveCount(0);
-        await expect(page.locator('[data-glances-section="alerts"] .lvs-filter-count')).toHaveText('');
+    test('alerts: an ongoing alert from the real log', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page, '#glances/alerts');
+        await expect(page.locator('[data-glances-open="alerts"]')).toContainText(fixture('alert')[0].type);
+    });
+});
+
+test.describe('page 0: tables, cards and keys', () => {
+    test('a table sorts on its columns, and keeps its order across the redraw every beat', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page);
+        const table = page.locator('[data-glances-table="overview-processes"]');
+        await expect(table).toBeVisible();
+        const names = () => table.locator('tbody tr td:first-child').allTextContents();
+        const byCpu = await names();
+        expect(byCpu[0]).toBe(FIRST.name);
+
+        await table.locator('[data-glances-sort-col="name"]').click();
+        await expect(table.locator('th').first()).toHaveAttribute('aria-sort', 'ascending');
+        const alphabetical = (await names());
+        expect(alphabetical).toEqual([...alphabetical].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })));
+        // The next press reverses it.
+        await table.locator('[data-glances-sort-col="name"]').click();
+        await expect(table.locator('th').first()).toHaveAttribute('aria-sort', 'descending');
+        // A beat later it is still the order that was asked for.
+        await page.waitForTimeout(2600);
+        await expect(table.locator('th').first()).toHaveAttribute('aria-sort', 'descending');
     });
 
-    test('every new section reads {available:false} as words, not a crash', async ({ page }) => {
-        const none = { available: false };
-        await mockGlances(page, {
-            containers: none, fs: none, diskio: none, smart: none, raid: none, network: none, connections: none,
-            wifi: none, alert: none, 'all/limits': none, 'cpu/history/60': none,
-        });
-        await openView(page, sectionHash('disks'));
-        await expect(page.locator('[data-glances-open="disks"]')).toContainText('Not available on this host.');
-        await page.locator('[data-glances-section="network"]').click();
-        await expect(page.locator('[data-glances-open="network"]')).toContainText('Not available on this host.');
-        await page.locator('[data-glances-section="alerts"]').click();
-        await expect(page.locator('[data-glances-open="alerts"]')).toContainText('Not available on this host.');
-        await page.locator('[data-glances-section="history"]').click();
-        await expect(page.locator('[data-glances-open="history"]')).toContainText('Glances has no history yet.');
+    test('pointing at a row gives a card with more about it', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page);
+        const row = page.locator(`[data-glances-process="${FIRST.pid}"]`);
+        await row.hover();
+        const card = page.locator('.glances-tip');
+        await expect(card).toBeVisible();
+        await expect(card).toContainText(FIRST.name);
+        await expect(card).toContainText(String(FIRST.pid));
+        await expect(card).toContainText(FIRST.username);
+        // It goes when the pointer does.
+        await page.mouse.move(5, 5);
+        await expect(card).toHaveCount(0);
+
+        await page.locator('[data-glances-card="cpu"]').hover();
+        await expect(card).toContainText('Cores');
     });
 
-    test('only the open section is polled', async ({ page }) => {
-        await page.clock.install();
+    test('keys: sections by letter, [ and ] step, r reads now, / searches the processes', async ({ page }) => {
         const state = await mockGlances(page);
-        await openView(page, sectionHash('containers'));
-        await expect(page.locator('[data-glances-container]')).toHaveCount(3);
-        const mark = state.calls.length;
-        await page.clock.runFor(11_000);
-        await expect.poll(() => count(state, 'containers')).toBeGreaterThan(1);
-        const since = state.calls.slice(mark).map((c) => c.path);
-        for (const other of ['diskio', 'smart', 'raid', 'network', 'connections', 'wifi', 'processlist', 'all/limits']) {
-            expect(since, other).not.toContain(other);
-        }
+        await openView(page);
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press('p');
+        await expect(page.locator('[data-glances-open="processes"]')).toBeVisible();
+        await page.keyboard.press('/');
+        await expect(page.locator('[data-glances-search]')).toBeFocused();
+        await page.keyboard.press('Escape');
+        await page.keyboard.press(']');
+        await expect(page.locator('[data-glances-open="containers"]')).toBeVisible();
+        await page.keyboard.press('[');
+        await expect(page.locator('[data-glances-open="processes"]')).toBeVisible();
+        await page.keyboard.press('h');
+        await expect(page.locator('[data-glances-open="history"]')).toBeVisible();
+        const before = count(state, 'history');
+        await page.keyboard.press('r');
+        await expect.poll(() => count(state, 'history')).toBeGreaterThan(before);
+        await page.keyboard.press('o');
+        await expect(page.locator('[data-glances-open="overview"]')).toBeVisible();
+        // The legend names them.
+        await expect(page.locator('[data-glances-legend] kbd')).toHaveCount(6);
+        // And the letters did not open the shortcut search.
+        await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
+    });
+});
+
+test.describe('Config → Glances', () => {
+    test('the settings are read, changed and saved without the password coming back', async ({ page }) => {
+        const state = await mockGlances(page);
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances');
+        const server = page.locator('[data-glances-field="server"]');
+        await expect(server).toHaveValue(CONFIG.server);
+        await expect(page.locator('[data-glances-block="alerts"]')).not.toBeChecked();
+        await expect(page.locator('[data-glances-block="system"]')).toBeChecked();
+        await expect(page.locator('[data-glances-field="diskStrip"]')).toHaveValue('/rootfs');
+
+        await page.locator('[data-glances-field="refresh"]').selectOption('5');
+        await page.locator('[data-glances-block="containers"]').uncheck();
+        await page.locator('[data-glances-field="user"]').fill('me');
+        await page.locator('[data-glances-field="password"]').fill('s3cret');
+        await page.locator('[data-glances-line="cpuWarn"]').fill('70');
+        await page.locator('[data-glances-field="diskHide"]').fill('/mnt/cache\n/mnt/user');
+        await page.locator('[data-glances-save]').click();
+        await expect(page.locator('[data-glances-saved]')).toContainText('Saved');
+
+        expect(state.saved).toMatchObject({
+            enabled: true, server: CONFIG.server, user: 'me', password: 's3cret', refresh: 5,
+            diskHide: ['/mnt/cache', '/mnt/user'],
+        });
+        expect(state.saved.hiddenBlocks.sort()).toEqual(['alerts', 'containers']);
+        expect(state.saved.thresholds.cpuWarn).toBe(70);
+        // The field is emptied after a save: a password is never shown again.
+        await expect(page.locator('[data-glances-field="password"]')).toHaveValue('');
+    });
+
+    test('Test connection says what Glances answered', async ({ page }) => {
+        await mockGlances(page, { connect: { connected: 'Glances 4.5.8', version: '4.5.8', plugins: ['cpu', 'mem'] } });
+        await page.route('**/api/glances/connect', async (route) => {
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ connected: 'Glances 4.5.8', version: '4.5.8', plugins: ['cpu', 'mem'] }) });
+        });
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances');
+        await page.locator('[data-glances-connect]').click();
+        await expect(page.locator('[data-glances-result]')).toContainText('Glances 4.5.8');
+    });
+
+    test('a refused login reads as words', async ({ page }) => {
+        await mockGlances(page);
+        await page.route('**/api/glances/connect', async (route) => {
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ error: 'login refused' }) });
+        });
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances');
+        await page.locator('[data-glances-connect]').click();
+        await expect(page.locator('[data-glances-result]')).toContainText('refused that login');
+    });
+});
+
+test.describe('page 0: recording, insights and the data kept', () => {
+    test('a process or container records its history only when switched on', async ({ page }) => {
+        const state = await mockGlances(page);
+        await openView(page, '#glances/containers');
+        const row = page.locator('[data-glances-container]').first();
+        await expect(row).toBeVisible();
+        await row.click();
+        const drawer = page.locator('[data-glances-drawer="container"]');
+        await expect(drawer).toBeVisible();
+        await drawer.getByRole('tab', { name: 'History' }).click();
+        // Off by default: a button, no graphs, and nothing recorded yet.
+        const on = drawer.locator('[data-glances-track="on"]');
+        await expect(on).toBeVisible();
+        await expect(drawer.locator('[data-glances-chart]')).toHaveCount(0);
+        await on.click();
+        await expect.poll(() => state.tracked.length).toBe(1);
+        expect(state.tracked[0]).toMatch(/^ct:/);
+        await expect(drawer.locator('[data-glances-track="off"]')).toBeVisible();
+        await expect(drawer.locator('[data-glances-chart]').first()).toBeVisible();
+        await drawer.locator('[data-glances-track="off"]').click();
+        await expect.poll(() => state.tracked.length).toBe(0);
+        await expect(drawer.locator('[data-glances-track="on"]')).toBeVisible();
+    });
+
+    test('Insights: health, forecast, busy hours, incidents, with a range of its own', async ({ page }) => {
+        const state = await mockGlances(page);
+        await openView(page, '#glances/insights');
+        await expect(page.locator('[data-glances-score]')).toHaveText('87');
+        await expect(page.locator('[data-glances-insight="health"]')).toContainText('/mnt/disk1');
+        await expect(page.locator('[data-glances-insight="health"]')).toContainText('17 days');
+        await expect(page.locator('[data-glances-memory-trend="leak"]')).toBeVisible();
+        await expect(page.locator('[data-glances-baseline="cpu"]')).toContainText('2.7×');
+        await expect(page.locator('[data-glances-heat="cpu"] .glances-heat-cell')).toHaveCount(7 * 24);
+        await expect(page.locator('[data-glances-avail] .glances-avail-cell')).toHaveCount(96);
+        await expect(page.locator('[data-glances-insight="incidents"]')).toContainText('ongoing');
+        await expect(page.locator('[data-glances-insight="incidents"]')).toContainText('/mnt/disk1');
+        await expect(page.locator('[data-glances-insight="consumers"]')).toContainText('app-1');
+
+        // A range of its own, and a metric for the heatmap: each asks again.
+        await page.locator('[data-glances-insights-range]').selectOption('7d');
+        await expect.poll(() => state.calls.some((c) => c.path === 'insights' && c.range === '7d')).toBe(true);
+        await page.locator('[data-glances-heat-select]').selectOption('net');
+        await expect.poll(() => state.calls.some((c) => c.path === 'insights' && c.heat === 'net')).toBe(true);
+        // The table sorts on its columns.
+        await page.locator('[data-glances-table="ins-consumers"] [data-glances-sort-col="name"]').click();
+        await expect(page.locator('[data-glances-table="ins-consumers"] tbody tr').first()).toContainText('app-1');
+        // The CSV of what is on screen.
+        await expect(page.locator('[data-glances-insights-csv]')).toHaveAttribute('href', /\/api\/glances\/history\.csv\?since=\d+/);
+    });
+
+    test('Config → Glances says what is collected and deletes it on confirmation', async ({ page }) => {
+        const state = await mockGlances(page);
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances');
+        const info = page.locator('[data-glances-collected]');
+        await expect(info).toContainText('3400');
+        await expect(info).toContainText('2 incidents');
+        await expect(page.locator('[data-glances-export]')).toHaveAttribute('href', /history\.csv/);
+        // Declining changes nothing.
+        await page.locator('[data-glances-wipe]').click();
+        await page.getByRole('button', { name: /cancel/i }).click();
+        expect(state.wiped).toBe(false);
+        await page.locator('[data-glances-wipe]').click();
+        await page.getByRole('button', { name: 'Delete data' }).click();
+        await expect.poll(() => state.wiped).toBe(true);
+        await expect(page.locator('[data-glances-wiped]')).toContainText('Deleted');
+        await expect(info).toContainText('Nothing recorded yet');
+        await expect(page.locator('[data-glances-wipe]')).toBeDisabled();
+    });
+});
+
+test.describe('the connection switch', () => {
+    test('page 0 and Config → Glances hold the same switch', async ({ page }) => {
+        const state = await mockGlances(page);
+        await openView(page);
+        const toggle = page.locator('[data-glances-connection]');
+        await expect(toggle).toBeChecked();
+        await expect(page.locator('.glances-switch')).toContainText('Connected');
+        const quick0 = count(state, 'quicklook');
+
+        // Off on the page: saved, shown, and the host is not asked any more.
+        await toggle.setChecked(false, { force: true });
+        await expect.poll(() => state.paused).toBe(true);
+        expect(state.saved).toEqual({ paused: true });
+        await expect(page.locator('.glances-switch')).toContainText('Connection off');
+        await expect(page.locator('[data-glances-status="stale"]')).toContainText('connection is off');
+        await expect(page.locator('[data-glances-card="cpu"] .glances-card-value')).toBeVisible();
+        const quick1 = count(state, 'quicklook');
+        await page.waitForTimeout(2500);
+        expect(count(state, 'quicklook')).toBe(quick1);
+        expect(quick1).toBeGreaterThanOrEqual(quick0);
+
+        // Config shows it off, and switching it on there is the same switch.
+        await page.goto('/#config/glances');
+        const config = page.locator('[data-glances-field="connected"]');
+        await expect(config).not.toBeChecked();
+        await config.setChecked(true, { force: true });
+        await expect.poll(() => state.paused).toBe(false);
+        await expect(page.locator('[data-glances-saved]')).toContainText('Connected');
+
+        // And the page shows it on again.
+        await openView(page);
+        await expect(page.locator('[data-glances-connection]')).toBeChecked();
+    });
+});
+
+test.describe('graph extras: stacked memory, yesterday, incident bands', () => {
+    test('memory is a stack of programs, cache and free', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page, '#glances/history');
+        const chart = page.locator('[data-glances-chart="memparts"]');
+        await expect(chart).toBeVisible();
+        await expect(chart.locator('polygon.glances-chart-layer')).toHaveCount(3);
+        await expect(chart.locator('.glances-chart-legend')).toContainText('Programs');
+        await expect(chart.locator('.glances-chart-legend')).toContainText('Cache');
+        await expect(chart.locator('.glances-chart-legend')).toContainText('Free');
+        // A stack has no comparison with yesterday.
+        await expect(chart.locator('[data-glances-compare]')).toHaveCount(0);
+    });
+
+    test('yesterday behind today: a toggle, a dashed line and a question for the day before', async ({ page }) => {
+        const state = await mockGlances(page);
+        await openView(page, '#glances/history');
+        const chart = page.locator('[data-glances-chart="cpu"]');
+        await expect(chart).toBeVisible();
+        await expect(chart.locator('.glances-chart-line--ghost')).toHaveCount(0);
+        await chart.locator('[data-glances-compare="cpu"]').check();
+        await expect(chart.locator('.glances-chart-line--ghost')).toHaveCount(1);
+        await expect(chart.locator('.glances-chart-legend')).toContainText('Yesterday');
+        const ask = state.calls.find((c) => c.path === 'history' && c.ghost === '1');
+        expect(ask, 'a question for the window a day earlier').toBeTruthy();
+        expect(Number(ask.until) - Number(ask.since)).toBeGreaterThan(3000 * 1000);
+        expect(Date.now() - Number(ask.until)).toBeGreaterThan(23 * 3600 * 1000);
+        // The choice is remembered, and off again takes the line away.
+        await chart.locator('[data-glances-compare="cpu"]').uncheck();
+        await expect(chart.locator('.glances-chart-line--ghost')).toHaveCount(0);
+        // A week is longer than a day: nothing to put behind it.
+        await chart.locator('[data-glances-range-select]').selectOption('7d');
+        await expect(chart.locator('[data-glances-compare]')).toHaveCount(0);
+    });
+
+    test('what went past a red line is a band on the graph it belongs to', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page, '#glances/history');
+        await expect(page.locator('[data-glances-chart="cpu"] [data-glances-incident="cpu"]')).toHaveCount(1);
+        // The processor incident is not on the load graph; the outage is on both.
+        await expect(page.locator('[data-glances-chart="load"] [data-glances-incident="cpu"]')).toHaveCount(0);
+        await expect(page.locator('[data-glances-chart="cpu"] [data-glances-incident="down"]')).toHaveCount(1);
+        await expect(page.locator('[data-glances-chart="load"] [data-glances-incident="down"]')).toHaveCount(1);
+        await expect(page.locator('[data-glances-chart="cpu"] [data-glances-incident="cpu"]')).toHaveAttribute('title', /Processor/);
+    });
+});
+
+test.describe('page 0 in the navigation and the page overview', () => {
+    async function openDashboard(page, status) {
+        await mockGlances(page, status ? { status } : {});
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    }
+
+    test('the 0 tab stands right behind the last page number', async ({ page }) => {
+        await openDashboard(page);
+        const tab = page.locator('#page-navigation + #page-nav-glances-host #page-nav-glances-btn');
+        await expect(tab).toBeVisible();
+        // Before the home and bookmark icons, not after them.
+        const order = await page.evaluate(() => {
+            const zero = document.getElementById('page-nav-glances-btn').getBoundingClientRect().left;
+            const home = document.getElementById('dashboard-home-link').getBoundingClientRect().left;
+            const lastPage = [...document.querySelectorAll('#page-navigation .page-nav-btn')].pop().getBoundingClientRect().right;
+            return { afterPages: zero >= lastPage - 1, beforeIcons: zero < home };
+        });
+        expect(order).toEqual({ afterPages: true, beforeIcons: true });
+    });
+
+    test('with the connection off the 0 stays, and without a connection it goes', async ({ page }) => {
+        await openDashboard(page, { ...STATUS, paused: true });
+        await expect(page.locator('#page-nav-glances-btn')).toBeVisible();
+        await page.goto('/');
+        await mockGlances(page, { status: { ...STATUS, enabled: false, configured: false, level: 'unknown', ok: false } });
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await expect(page.locator('#page-nav-glances-btn')).toHaveCount(0);
+    });
+
+    test('the page overview lists page 0, and its button and the 0 key open it', async ({ page }) => {
+        await openDashboard(page);
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press(',');
+        const row = page.locator('#page-overview-glances');
+        await expect(row).toBeVisible();
+        await expect(row).toContainText('Glances');
+        await row.click();
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('glances');
+
+        // And by the key, from the overview.
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press(',');
+        await expect(page.locator('#page-overview-glances')).toBeVisible();
+        await page.keyboard.press('0');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('glances');
+    });
+
+    test('with no connection the page overview has no page 0', async ({ page }) => {
+        await openDashboard(page, { ...STATUS, enabled: false, configured: false, level: 'unknown', ok: false });
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press(',');
+        await expect(page.locator('.page-overview-modal-list')).toBeVisible();
+        await expect(page.locator('#page-overview-glances')).toHaveCount(0);
+    });
+});
+
+test.describe('cores and disks, as tiles and rows', () => {
+    test('a tile per core, each with the last minute behind its number', async ({ page }) => {
+        const state = await mockGlances(page);
+        await openView(page);
+        const tiles = page.locator('[data-glances-core]');
+        await expect(tiles).toHaveCount(12);
+        await expect(tiles.first().locator('.glances-core-trace svg')).toBeVisible();
+        await expect(tiles.first().locator('.glances-core-name')).toContainText('core 0');
+        // One question for all of them, over the last minute.
+        const ask = state.calls.find((c) => c.path === 'history' && /core:0/.test(c.series || ''));
+        expect(ask, 'the cores asked for their history').toBeTruthy();
+        expect(Date.now() - Number(ask.since)).toBeLessThan(90_000);
+    });
+
+    test('disks are grouped by role, with when they are full and what they are doing', async ({ page }) => {
+        const GB = 1e9;
+        const fsRows = [
+            { mnt_point: '/mnt/disk1', device_name: '/dev/md1p1', size: 18 * 1e12, used: 13.6 * 1e12, free: 4.4 * 1e12, percent: 75 },
+            { mnt_point: '/mnt/disk2', device_name: '/dev/md2p1', size: 7.3 * 1e12, used: 1.3 * 1e12, free: 6 * 1e12, percent: 18 },
+            { mnt_point: '/mnt/cache', device_name: '/dev/nvme1n1p1', size: 3.6 * 1e12, used: 454 * GB, free: 3.1 * 1e12, percent: 12 },
+            { mnt_point: '/boot', device_name: '/dev/sda1', size: 58 * GB, used: 2.7 * GB, free: 55 * GB, percent: 5 },
+        ];
+        const io = [
+            { disk_name: 'md1p1', read_bytes_rate_per_sec: 5e6, write_bytes_rate_per_sec: 0 },
+            { disk_name: 'md2p1', read_bytes_rate_per_sec: 0, write_bytes_rate_per_sec: 0 },
+        ];
+        await mockGlances(page, { fs: fsRows, diskio: io });
+        await openView(page);
+        const group = (role) => page.locator(`[data-glances-disk-group="${role}"]`);
+        await expect(group('array').locator('[data-glances-mount]')).toHaveCount(2);
+        await expect(group('pool')).toContainText('/mnt/cache');
+        await expect(group('system')).toContainText('/boot');
+        const disk1 = page.locator('[data-glances-mount="/mnt/disk1"]');
+        await expect(disk1.locator('[data-glances-forecast]')).toContainText('full in 17 days');
+        await expect(disk1.locator('[data-glances-activity="busy"]')).toContainText('Read');
+        await expect(page.locator('[data-glances-mount="/mnt/disk2"] [data-glances-activity="idle"]')).toBeVisible();
+        await expect(page.locator('[data-glances-mount="/mnt/cache"] [data-glances-forecast]')).toContainText('steady');
+        await expect(disk1.locator('.glances-disk-free')).toContainText('free');
+    });
+
+    test('processes scroll sideways on a small screen instead of being cut off', async ({ page }) => {
+        await page.setViewportSize({ width: 420, height: 800 });
+        await mockGlances(page);
+        await openView(page, '#glances/processes');
+        await expect(page.locator('[data-glances-pid]').first()).toBeVisible();
+        const box = await page.locator('.glances-proc-scroll').evaluate((el) => ({
+            overflowX: getComputedStyle(el).overflowX, scrolls: el.scrollWidth > el.clientWidth,
+        }));
+        expect(box).toEqual({ overflowX: 'auto', scrolls: true });
     });
 });

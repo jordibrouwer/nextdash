@@ -267,6 +267,10 @@ class Dashboard {
         this.docker = typeof window.createDashboardDockerLoader === 'function'
             ? window.createDashboardDockerLoader(this)
             : null;
+        // Whether page 0 exists and how the machine is: small, always there.
+        this.glancesStatus = typeof window.DashboardGlancesStatus === 'function'
+            ? new window.DashboardGlancesStatus(this)
+            : null;
         this.glances = typeof window.createDashboardGlancesLoader === 'function'
             ? window.createDashboardGlancesLoader(this)
             : null;
@@ -356,6 +360,7 @@ class Dashboard {
             this.inbox.setupEscapeShortcut();
             this.docker?.setupEscapeShortcut();
             this.glances?.setupEscapeShortcut();
+            this.glancesStatus?.start();
             this.config?.setupEscapeShortcut();
             void this.docker?.renderNavButton?.();
             if (typeof QuickAddWidget === 'function') {

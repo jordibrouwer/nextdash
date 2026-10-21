@@ -295,6 +295,14 @@ class DashboardPageNav {
         // strip showing the first few and no sign of where you actually were.
         this.fitPageTabs();
 
+        const glancesBtn = document.getElementById('page-nav-glances-btn');
+        if (glancesBtn) {
+            const glancesSelected = d.activeView === 'glances';
+            glancesBtn.classList.toggle('active', glancesSelected);
+            glancesBtn.setAttribute('aria-selected', glancesSelected ? 'true' : 'false');
+            glancesBtn.tabIndex = glancesSelected ? 0 : -1;
+        }
+
         const inboxBtn = document.getElementById('page-nav-inbox-btn');
         if (inboxBtn) {
             const inboxSelected = d.activeView === 'inbox';
@@ -869,6 +877,10 @@ class DashboardPageNav {
         if (inboxHost) {
             inboxHost.innerHTML = '';
         }
+        const glancesHost = document.getElementById('page-nav-glances-host');
+        if (glancesHost) {
+            glancesHost.innerHTML = '';
+        }
 
         container.innerHTML = '';
         container.setAttribute('role', 'tablist');
@@ -927,6 +939,40 @@ class DashboardPageNav {
             });
             container.appendChild(pageBtn);
         });
+
+        // Page 0: the Glances page, once Config has it switched on. A tab like
+        // the Inbox one, in the same place, with the sampler's verdict as a dot.
+        if (d.glancesStatus?.configured) {
+            const glancesBtn = document.createElement('button');
+            glancesBtn.type = 'button';
+            glancesBtn.className = 'page-nav-btn page-nav-btn--glances';
+            glancesBtn.id = 'page-nav-glances-btn';
+            glancesBtn.setAttribute('role', 'tab');
+            glancesBtn.setAttribute('data-view-tab', 'glances');
+            const glancesActive = d.activeView === 'glances';
+            glancesBtn.setAttribute('aria-selected', glancesActive ? 'true' : 'false');
+            glancesBtn.tabIndex = glancesActive ? 0 : -1;
+            if (glancesActive) {
+                glancesBtn.classList.add('active');
+                activeBtn = glancesBtn;
+            }
+            const glancesName = this.t('dashboard.glancesTab', 'Glances');
+            glancesBtn.setAttribute('aria-label', glancesName);
+            glancesBtn.setAttribute('aria-keyshortcuts', '0');
+            glancesBtn.title = `${glancesName} (0)`;
+            glancesBtn.innerHTML = `
+                <span class="page-glances-zero" aria-hidden="true">0</span>
+                <span class="page-glances-dot" data-level="${d.glancesStatus.level}" aria-hidden="true"></span>
+            `;
+            glancesBtn.addEventListener('click', () => { void d.glancesStatus?.openPageZero?.(); });
+            glancesBtn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    glancesBtn.click();
+                }
+            });
+            (glancesHost || inboxHost || container).appendChild(glancesBtn);
+        }
 
         if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
             const inboxBtn = document.createElement('button');

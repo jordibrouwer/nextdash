@@ -6,7 +6,7 @@ const { prepareDashboardInteraction } = require('./e2e-helpers');
  * The views are Shift+letter, so bare letters stay free for the shortcut search.
  */
 test.describe('Shift+letter views', () => {
-    test('Shift+I opens the inbox, and 0 does not', async ({ page }) => {
+    test('Shift+I opens the inbox; 0 belongs to Glances now', async ({ page }) => {
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await prepareDashboardInteraction(page);
@@ -17,10 +17,11 @@ test.describe('Shift+letter views', () => {
         await page.keyboard.press('Escape');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
 
-        // '0' is the tenth page's key now; it must not open the inbox again.
+        // '0' is page 0, the Glances page: not set up here, so it opens Config
+        // at Glances. It no longer opens the inbox.
         await page.keyboard.press('0');
-        await page.waitForTimeout(400);
-        expect(await page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
+        expect(await page.evaluate(() => window.location.hash)).toContain('glances');
     });
 
     test('bare h and i still open the shortcut search', async ({ page }) => {
@@ -56,6 +57,8 @@ test.describe('Shift+letter views', () => {
         await expect(sheet).toContainText('Shift+I');
         await expect(sheet).toContainText('Shift+H');
         await expect(sheet).toContainText('1–9');
+        // '0' still works but is on the way out; documenting it would teach a
+        // shortcut that is going away.
         await expect(sheet).not.toContainText('0 = Inbox');
 
         // The Health view went; its section went with it.

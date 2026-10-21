@@ -135,7 +135,6 @@
     <link rel="stylesheet" href="{{asset "css/dashboard-inline-edit-surface.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-media-tile.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-widget-beszel.css"}}">
-    <link rel="stylesheet" href="{{asset "css/dashboard-widget-glances.css"}}">
     <!-- Last: overrides the !important animation rules the sheets above declare. -->
     <link rel="stylesheet" href="{{asset "css/reduced-motion.css"}}">
     <link rel="stylesheet" href="{{asset "css/fonts.css"}}">
@@ -244,6 +243,8 @@
                     <div id="page-navigation" class="page-navigation">
                         <!-- Pages will be loaded here -->
                     </div>
+                    <!-- Page 0 (Glances) sits right behind the last page number; JS fills it. -->
+                    <div id="page-nav-glances-host" class="page-nav-glances-host"></div>
                     <span id="page-swipe-hint" class="page-swipe-hint" aria-hidden="true" hidden>&#8592;&nbsp;&#8594;</span>
                     <button type="button" class="page-walk-hint" data-page-walk="next" data-i18n-aria="dashboard.pageWalkNext" aria-label="Next page">&#8679;&#8594;</button>
                 </div>
@@ -672,7 +673,6 @@
     <script src="{{asset "js/dashboard/dashboard-widget-downloads.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-homeassistant.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-beszel.js"}}" defer></script>
-    <script src="{{asset "js/dashboard/dashboard-widget-glances.js"}}" defer></script>
     <script src="{{asset "js/pwa-install-hint.js"}}" defer></script>
     <!-- Registers the push service worker and keeps this device's subscription current. -->
     <script src="{{asset "js/push-notifications.js"}}" defer></script>
@@ -697,6 +697,7 @@
     <script src="{{asset "js/dashboard/dashboard-config-loader.js"}}" defer></script>
     <script src="{{asset "js/dashboard/docker-search-index.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-docker-loader.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-glances-status.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-glances-loader.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-tag-view-loader.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-paste-choice.js"}}" defer></script>

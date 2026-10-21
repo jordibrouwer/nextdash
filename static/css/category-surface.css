@@ -295,7 +295,7 @@ html[data-theme] body .first-start-tile:focus-visible {
    overview card, a table -- keep a faint tint and a hairline rather than a
    pane of their own: a long settings page still shows where a block starts
    and ends, without glass inside glass. */
-html[data-theme] body #dashboard-layout:is(.config-layout, .tag-view-layout, .inbox-layout, .docker-layout, .library-layout) {
+html[data-theme] body #dashboard-layout:is(.config-layout, .tag-view-layout, .inbox-layout, .docker-layout, .glances-layout, .library-layout) {
     --cfg-pane-radius: var(--radius-6, 10px);
     --cfg-pane-bg: color-mix(in srgb, var(--text-primary) 4%, transparent);
     --cfg-pane-filter: none;
@@ -303,7 +303,7 @@ html[data-theme] body #dashboard-layout:is(.config-layout, .tag-view-layout, .in
     --cfg-pane-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 10%, transparent);
 }
 
-html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"]) #dashboard-layout:is(.config-layout, .tag-view-layout, .inbox-layout, .docker-layout, .library-layout) {
+html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"]) #dashboard-layout:is(.config-layout, .tag-view-layout, .inbox-layout, .docker-layout, .glances-layout, .library-layout) {
     --cfg-pane-sheen: var(--surface-sheen, none);
     --cfg-pane-shadow:
         inset 0 0 0 1px var(--hairline, color-mix(in srgb, var(--text-primary) 14%, transparent)),
@@ -311,19 +311,19 @@ html[data-theme] body:is([data-cat-surface="glass"], [data-cat-surface="card"]) 
         var(--surface-cast, 0 8px 24px rgba(0, 0, 0, 0.22));
 }
 
-html[data-theme] body[data-cat-surface="glass"] #dashboard-layout:is(.config-layout, .tag-view-layout, .inbox-layout, .docker-layout, .library-layout) {
+html[data-theme] body[data-cat-surface="glass"] #dashboard-layout:is(.config-layout, .tag-view-layout, .inbox-layout, .docker-layout, .glances-layout, .library-layout) {
     --cfg-pane-bg: color-mix(in srgb,
         var(--surface-2, var(--background-secondary)) calc(var(--cat-glass-alpha) * 100%), transparent);
     --cfg-pane-filter: blur(var(--cat-glass-blur)) saturate(var(--glass-saturate, 1.4)) brightness(var(--glass-brightness, 1.02));
 }
 
-html[data-theme] body[data-cat-surface="card"] #dashboard-layout:is(.config-layout, .tag-view-layout, .inbox-layout, .docker-layout, .library-layout) {
+html[data-theme] body[data-cat-surface="card"] #dashboard-layout:is(.config-layout, .tag-view-layout, .inbox-layout, .docker-layout, .glances-layout, .library-layout) {
     --cfg-pane-bg: var(--surface-2, var(--background-secondary));
 }
 
 /* A whole view is one pane: the tag view, the inbox, the containers view,
    the bookmarks view and config. */
-html[data-theme] body #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout) > .lvs,
+html[data-theme] body #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
 html[data-theme] body #dashboard-layout.library-layout > .config-view--library,
 html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view {
     background-color: var(--cfg-pane-bg);
@@ -333,7 +333,7 @@ html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .co
     padding: var(--space-4, 1rem) var(--space-5, 1.5rem);
 }
 
-html[data-theme] body #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout) > .lvs,
+html[data-theme] body #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs,
 html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view {
     backdrop-filter: var(--cfg-pane-filter, none);
     -webkit-backdrop-filter: var(--cfg-pane-filter, none);
@@ -361,7 +361,7 @@ html[data-theme] body #dashboard-layout.library-layout > .config-view--library::
 /* The header of a list view is the top of the pane, not a second one -- at rest.
    Scrolled, rows pass behind it and it turns solid again so they do not show
    through the title (list-view-header-surface.spec.js). */
-html[data-theme] body:not([data-scrolled="true"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout) > .lvs .lvs-header,
+html[data-theme] body:not([data-scrolled="true"]) #dashboard-layout:is(.tag-view-layout, .inbox-layout, .docker-layout, .glances-layout) > .lvs .lvs-header,
 html[data-theme] body:not([data-scrolled="true"]) #dashboard-layout.library-layout > .config-view--library > .config-view-head,
 html[data-theme] body:not([data-scrolled="true"]) #dashboard-layout.config-layout:not(.library-layout) > .config-view > .config-view-head {
     background-color: transparent;

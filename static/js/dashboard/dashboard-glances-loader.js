@@ -1,7 +1,7 @@
 /**
  * Lazy loader for the Glances view, modelled on dashboard-docker-loader.js.
  *
- * The view only matters to someone with a Glances widget who opens it; every
+ * Page 0 only matters to someone who has set Glances up in Config; every
  * other session should not pay to parse it. This stub owns the small surface
  * the shell touches before the view is ever opened and fetches the real
  * module, and its section files, on first use.
@@ -20,6 +20,7 @@ class DashboardGlancesLoader {
         ['js/dashboard/dashboard-glances-containers.js', 'dashboardGlancesContainers', 'containers'],
         ['js/dashboard/dashboard-glances-disks.js', 'dashboardGlancesDisks', 'disks'],
         ['js/dashboard/dashboard-glances-network.js', 'dashboardGlancesNetwork', 'network'],
+        ['js/dashboard/dashboard-glances-insights.js', 'dashboardGlancesInsights', 'insights'],
         ['js/dashboard/dashboard-glances-history.js', 'dashboardGlancesHistory', 'history'],
         ['js/dashboard/dashboard-glances-alerts.js', 'dashboardGlancesAlerts', 'alerts'],
     ];
@@ -31,9 +32,9 @@ class DashboardGlancesLoader {
         this._escapeHandler = null;
     }
 
-    /** No setting switches the view off: a Glances widget is the way in. */
+    /** Page 0 exists once Config has Glances switched on and set up. */
     isEnabled() {
-        return true;
+        return this.dash.glancesStatus?.configured === true;
     }
 
     isActiveView() {
@@ -54,6 +55,26 @@ class DashboardGlancesLoader {
         if (typeof window.DashboardGlances !== 'function') {
             await load('js/dashboard/dashboard-glances.js', 'dashboardGlancesModule',
                 () => typeof window.DashboardGlances === 'function');
+        }
+        // The charts the Overview and History share.
+        if (typeof window.DashboardGlancesChart === 'undefined') {
+            await load('js/dashboard/dashboard-glances-chart.js', 'dashboardGlancesChart',
+                () => typeof window.DashboardGlancesChart !== 'undefined');
+        }
+        // Sortable tables.
+        if (typeof window.DashboardGlancesTable === 'undefined') {
+            await load('js/dashboard/dashboard-glances-table.js', 'dashboardGlancesTable',
+                () => typeof window.DashboardGlancesTable !== 'undefined');
+        }
+        // The side panel behind a process or a container (the shared drawer lives in the page).
+        if (typeof window.DashboardGlancesDetail !== 'function') {
+            await load('js/dashboard/dashboard-glances-detail.js', 'dashboardGlancesDetail',
+                () => typeof window.DashboardGlancesDetail === 'function');
+        }
+        // The hover card.
+        if (typeof window.DashboardGlancesTip !== 'function') {
+            await load('js/dashboard/dashboard-glances-tip.js', 'dashboardGlancesTip',
+                () => typeof window.DashboardGlancesTip === 'function');
         }
         for (const [rel, key, id] of DashboardGlancesLoader.SECTION_SCRIPTS) {
             await load(rel, key, () => Boolean(window.DashboardGlancesSections?.get?.(id)));

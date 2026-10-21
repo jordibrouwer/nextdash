@@ -49,7 +49,12 @@
             return ['alert', 'all/limits'];
         }
 
+        redraw() {
+            if (this._last) this.render(this._last.container, this._last.data);
+        }
+
         render(container, data) {
+            this._last = { container, data };
             const G = window.DashboardGlances;
             const v = this.view;
             const parts = [];
@@ -61,43 +66,47 @@
             parts.push(events.length ? this.table(events) : el('p', 'glances-note', v.t('dashboard.glancesAlertsNone', 'No alerts.')));
             const limits = this.limits(G.usable(data['all/limits']));
             if (limits) parts.push(limits);
-            container.replaceChildren(...parts);
+            window.DashboardGlancesTable.keepSortFocus(container, () => container.replaceChildren(...parts));
         }
 
         table(events) {
             const G = window.DashboardGlances;
             const v = this.view;
-            const rows = events.filter((e) => e && typeof e === 'object')
-                .slice().sort((a, b) => (G.num(b.begin) ?? 0) - (G.num(a.begin) ?? 0));
-            const table = el('table', 'glances-table glances-al-table');
+            const rows = events.filter((e) => e && typeof e === 'object');
+            const Tip = window.DashboardGlancesTip;
+            const spec = window.DashboardGlancesSpecs?.alert || [];
+            const table = window.DashboardGlancesTable.build({
+                id: 'alerts',
+                t: (k, f, p) => v.t(k, f, p),
+                rerender: () => this.redraw?.(),
+                initial: { key: 'begin', dir: 'desc' },
+                className: 'glances-table glances-al-table',
+                rows,
+                columns: [
+                    { key: 'begin', label: ['dashboard.glancesAlBegin', 'Began'], cellClass: 'glances-al-cell glances-al-cell--begin',
+                        value: (e) => G.num(e.begin), cell: (e) => when(e.begin) },
+                    { key: 'end', label: ['dashboard.glancesAlEnd', 'Ended'], cellClass: 'glances-al-cell glances-al-cell--end',
+                        value: (e) => (ongoing(e) ? Number.MAX_SAFE_INTEGER : G.num(e.end)),
+                        cell: (e) => (ongoing(e) ? v.t('dashboard.glancesAlOngoing', 'Ongoing') : when(e.end)) },
+                    { key: 'state', label: ['dashboard.glancesAlState', 'State'], numeric: false, cellClass: 'glances-al-cell glances-al-cell--state',
+                        value: (e) => str(e.state) },
+                    { key: 'type', label: ['dashboard.glancesAlType', 'Type'], numeric: false, cellClass: 'glances-al-cell glances-al-cell--type',
+                        value: (e) => str(e.type) },
+                    { key: 'max', label: ['dashboard.glancesAlMax', 'Peak'], cellClass: 'glances-al-cell glances-al-cell--max',
+                        value: (e) => G.num(e.max), cell: (e) => (G.num(e.max) === null ? G.DASH : G.num(e.max).toFixed(1)) },
+                ],
+                rowHook: (tr, e) => {
+                    tr.classList.add('glances-al-row');
+                    tr.setAttribute('data-glances-alert', '');
+                    if (ongoing(e)) tr.setAttribute('data-ongoing', '');
+                    const state = str(e.state);
+                    if (state) tr.setAttribute('data-state', state.toLowerCase());
+                    if (typeof v.tip === 'function' && Tip) {
+                        v.tip(tr, `alert:${str(e.type)}:${str(e.begin)}`, () => Tip.describe(v, str(e.type), e, spec, str(e.global_msg)));
+                    }
+                },
+            });
             table.setAttribute('data-glances-alerts', '');
-            const head = el('tr');
-            [['dashboard.glancesAlBegin', 'Began'], ['dashboard.glancesAlEnd', 'Ended'], ['dashboard.glancesAlState', 'State'],
-                ['dashboard.glancesAlType', 'Type'], ['dashboard.glancesAlMax', 'Peak']].forEach(([key, fallback]) => {
-                const th = el('th', '', v.t(key, fallback));
-                th.scope = 'col';
-                head.appendChild(th);
-            });
-            const thead = el('thead');
-            thead.appendChild(head);
-            const tbody = el('tbody');
-            rows.forEach((e) => {
-                const max = G.num(e.max);
-                const state = str(e.state);
-                const tr = el('tr', 'glances-al-row');
-                tr.setAttribute('data-glances-alert', '');
-                if (ongoing(e)) tr.setAttribute('data-ongoing', '');
-                tr.append(
-                    el('td', 'glances-al-cell glances-al-cell--begin', when(e.begin)),
-                    el('td', 'glances-al-cell glances-al-cell--end', ongoing(e) ? v.t('dashboard.glancesAlOngoing', 'Ongoing') : when(e.end)),
-                    el('td', 'glances-al-cell glances-al-cell--state', state || G.DASH),
-                    el('td', 'glances-al-cell glances-al-cell--type', str(e.type) || G.DASH),
-                    el('td', 'glances-al-cell glances-al-cell--max', max === null ? G.DASH : max.toFixed(1)),
-                );
-                if (state) tr.setAttribute('data-state', state.toLowerCase());
-                tbody.appendChild(tr);
-            });
-            table.append(thead, tbody);
             return table;
         }
 

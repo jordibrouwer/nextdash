@@ -532,21 +532,18 @@ class DashboardSetup {
             }
 
             // Check if a number key (1-9) was pressed
-            // 0 is the tenth page's key, after 1-9. It used to open the Inbox;
-            // that moved to Shift+I, which leaves 0 free for the page it
-            // belongs to. Swallowed when there is no tenth page, for the same
-            // reason as the digits below.
+            // 0 is page 0: the Glances page once it is set up, else the place
+            // to set it up. It used to open the Inbox, which is Shift+I now.
+            // Swallowed either way, or it reached the shortcut palette -- see
+            // the digit branch below.
             if (key === '0') {
                 if (d.keyboardNavigation?.isGChordActive?.()) {
                     return;
                 }
                 e.preventDefault();
                 e.stopPropagation();
-                const tenth = d.pages[9];
-                if (tenth) {
-                    window.nextdashRecordKey?.('0');
-                    void d.requestPageNavigation(tenth.id);
-                }
+                window.nextdashRecordKey?.('0');
+                void d.glancesStatus?.openPageZero?.();
                 return;
             }
 

@@ -1,0 +1,379 @@
+/**
+ * Config -> Glances.
+ *
+ * The one Glances host nextDash shows as page 0: its address and optional
+ * login, how often the page reads it, which parts of the Overview it draws,
+ * when a reading turns yellow or red, and which mounts count as disks. Switched
+ * on and with an address, page 0 exists (a 0 tab and the 0 key); otherwise
+ * nothing about Glances is on screen. The password is kept on the server and
+ * never sent back.
+ */
+(function (global) {
+    'use strict';
+
+    if (typeof global.DashboardConfig !== 'function') return;
+
+    /** The Overview parts a reader can switch off, in the order the page draws them. */
+    const BLOCKS = [
+        ['system', 'config.glancesBlockSystem', 'Machine and uptime'],
+        ['figures', 'config.glancesBlockFigures', 'Processor, memory, swap and load'],
+        ['cores', 'config.glancesBlockCores', 'Processor per core'],
+        ['temps', 'config.glancesBlockTemps', 'Temperatures'],
+        ['network', 'config.glancesBlockNetwork', 'Network'],
+        ['diskio', 'config.glancesBlockDiskio', 'Disk activity'],
+        ['disks', 'config.glancesBlockDisks', 'Disks'],
+        ['smart', 'config.glancesBlockSmart', 'Disk health (SMART)'],
+        ['processes', 'config.glancesBlockProcesses', 'Top processes'],
+        ['containers', 'config.glancesBlockContainers', 'Containers'],
+        ['alerts', 'config.glancesBlockAlerts', 'Alerts'],
+    ];
+
+    /** [key, label key, fallback, unit] -- each has a Warn and a Bad value. */
+    const LINES = [
+        ['cpu', 'config.glancesLineCpu', 'Processor', '%'],
+        ['mem', 'config.glancesLineMem', 'Memory', '%'],
+        ['swap', 'config.glancesLineSwap', 'Swap', '%'],
+        ['disk', 'config.glancesLineDisk', 'Disks', '%'],
+        ['temp', 'config.glancesLineTemp', 'Temperature', '°C'],
+    ];
+
+    const REFRESH = [1, 2, 5, 10];
+
+    Object.assign(global.DashboardConfig.prototype, {
+
+    renderGlancesSection() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const t = (key, fallback) => esc(this.t(`config.${key}`, fallback));
+        const blocks = BLOCKS.map(([id, key, fallback]) => `
+            <label class="config-toggle">
+                <input type="checkbox" data-glances-block="${esc(id)}" checked>
+                <span>${esc(this.t(key, fallback))}</span>
+            </label>`).join('');
+        const lines = LINES.map(([id, key, fallback, unit]) => `
+            <div class="config-field config-field--inline">
+                <span class="config-field-label">${esc(this.t(key, fallback))}</span>
+                <label class="config-inline-field">${t('glancesWarn', 'Yellow from')}
+                    <input type="number" class="config-text config-text--short" min="1" max="${unit === '%' ? 100 : 150}" step="1"
+                           data-glances-line="${esc(id)}Warn"> ${esc(unit)}</label>
+                <label class="config-inline-field">${t('glancesBad', 'Red from')}
+                    <input type="number" class="config-text config-text--short" min="1" max="${unit === '%' ? 100 : 150}" step="1"
+                           data-glances-line="${esc(id)}Bad"> ${esc(unit)}</label>
+            </div>`).join('');
+        const refresh = REFRESH.map((s) => `<option value="${s}">${esc(this.t('config.glancesEverySeconds', 'Every {n} s').replace('{n}', String(s)))}</option>`).join('');
+        return `
+            <p class="config-view-intro">${t('glancesIntro',
+                'Show one Glances host as page 0: live statistics, graphs and processes. Glances 4 only; nextDash reads, it never changes anything there.')}</p>
+            <div class="config-tabpage">
+                <div class="config-tabpage-main" id="config-glances-body">
+                    ${window.DemoLock?.unraidNote?.() || ''}
+                    <div class="config-panel" data-glances-section>
+                        <h3 class="config-panel-title">${t('glancesTitle', 'Glances')}</h3>
+                        <label class="config-toggle">
+                            <input type="checkbox" data-glances-field="enabled">
+                            <span>${t('glancesEnabled', 'Show page 0')}</span>
+                        </label>
+                        <p class="config-panel-note">${t('glancesEnabledNote',
+                            'Adds a 0 tab beside your pages, and the 0 key opens it. Off, nothing about Glances runs or shows.')}</p>
+                        <label class="config-toggle">
+                            <input type="checkbox" role="switch" data-glances-field="connected">
+                            <span>${t('glancesConnected', 'Connection to Glances')}</span>
+                        </label>
+                        <p class="config-panel-note" data-glances-connected-note>${t('glancesConnectedNote',
+                            'On: nextDash reads the host. Off: the page and what was recorded stay, but nothing is read until you switch it on. The same switch is at the top of page 0.')}</p>
+                        <div class="config-field">
+                            <label class="config-field-label" for="config-glances-server">${t('glancesAddress', 'Address')}</label>
+                            <input type="url" id="config-glances-server" class="config-text" data-glances-field="server"
+                                   autocomplete="off" spellcheck="false" placeholder="http://192.168.1.10:61208">
+                        </div>
+                        <div class="config-field">
+                            <label class="config-field-label" for="config-glances-user">${t('glancesUser', 'Username (only if Glances has a password)')}</label>
+                            <input type="text" id="config-glances-user" class="config-text" data-glances-field="user"
+                                   autocomplete="off" spellcheck="false">
+                        </div>
+                        <div class="config-field">
+                            <label class="config-field-label" for="config-glances-password">${t('glancesPassword', 'Password')}</label>
+                            <input type="password" id="config-glances-password" class="config-text" data-glances-field="password"
+                                   autocomplete="off" spellcheck="false">
+                        </div>
+                        <p class="config-field-hint">${t('glancesLoginHint',
+                            'Leave both empty when Glances is open. The password is kept on the server and never shown again.')}</p>
+                        <div class="config-actions">
+                            <button type="button" class="config-btn" data-glances-connect>${t('glancesConnect', 'Test connection')}</button>
+                            <button type="button" class="config-btn" data-glances-clear-login hidden>${t('glancesClearLogin', 'Remove the login')}</button>
+                        </div>
+                        <p class="config-field-hint" data-glances-result aria-live="polite" style="white-space: pre-line"></p>
+                    </div>
+
+                    <div class="config-panel" data-glances-section>
+                        <h3 class="config-panel-title">${t('glancesPageTitle', 'The page')}</h3>
+                        <div class="config-field">
+                            <label class="config-field-label" for="config-glances-refresh">${t('glancesRefresh', 'Read the host')}</label>
+                            <select id="config-glances-refresh" class="config-select" data-glances-field="refresh">${refresh}</select>
+                        </div>
+                        <p class="config-field-hint">${t('glancesRefreshHint',
+                            'How often an open page asks. The history is recorded every 5 seconds either way.')}</p>
+                        <h4 class="config-panel-subtitle">${t('glancesBlocksTitle', 'Overview shows')}</h4>
+                        <div class="config-checkset" data-glances-blocks>${blocks}</div>
+                    </div>
+
+                    <div class="config-panel" data-glances-section>
+                        <h3 class="config-panel-title">${t('glancesColoursTitle', 'Yellow and red')}</h3>
+                        <p class="config-panel-note">${t('glancesColoursNote',
+                            'When a reading changes colour, and the dot on the 0 tab. A temperature sensor that reports limits of its own uses those.')}</p>
+                        ${lines}
+                    </div>
+
+                    <div class="config-panel" data-glances-section>
+                        <h3 class="config-panel-title">${t('glancesDisksTitle', 'Which disks count')}</h3>
+                        <div class="config-field">
+                            <label class="config-field-label" for="config-glances-strip">${t('glancesStrip', 'Remove this from every mount point')}</label>
+                            <input type="text" id="config-glances-strip" class="config-text" data-glances-field="diskStrip"
+                                   autocomplete="off" spellcheck="false" placeholder="/rootfs">
+                        </div>
+                        <p class="config-field-hint">${t('glancesStripHint',
+                            'Glances in a container sees the host under a prefix such as /rootfs. Mounts outside it are the container\'s own and are hidden. Empty: no prefix.')}</p>
+                        <div class="config-field">
+                            <label class="config-field-label" for="config-glances-hide">${t('glancesHide', 'Hide mounts containing (one per line)')}</label>
+                            <textarea id="config-glances-hide" class="config-text" rows="3" data-glances-field="diskHide"
+                                      spellcheck="false" placeholder="/mnt/user"></textarea>
+                        </div>
+                        <p class="config-field-hint">${t('glancesHideHint',
+                            'Docker storage, squashfs, tmpfs and similar are always hidden.')}</p>
+                    </div>
+
+                    <div class="config-panel" data-glances-section data-glances-collected-panel>
+                        <h3 class="config-panel-title">${t('glancesCollectedTitle', 'Collected data')}</h3>
+                        <p class="config-panel-note">${t('glancesCollectedNote',
+                            'nextDash records the host every 5 seconds and keeps 30 days: processor, memory, disks, network, temperatures, incidents and, for the processes and containers you switch on, their own history. Nothing leaves this server.')}</p>
+                        <p class="config-field-hint" data-glances-collected aria-live="polite"></p>
+                        <div class="config-actions">
+                            <a class="config-btn" data-glances-export href="/api/glances/history.csv?since=0" download="glances-history.csv">${t('glancesExport', 'Download as CSV')}</a>
+                            <button type="button" class="config-btn config-btn--danger" data-glances-wipe disabled>${t('glancesWipe', 'Delete collected data')}</button>
+                        </div>
+                        <p class="config-field-hint" data-glances-wiped aria-live="polite"></p>
+                    </div>
+
+                    <div class="config-actions">
+                        <button type="button" class="config-btn config-btn--primary" data-glances-save disabled>${t('glancesSave', 'Save')}</button>
+                    </div>
+                    <p class="config-field-hint" data-glances-saved aria-live="polite"></p>
+                </div>
+            </div>`;
+    },
+
+    async bindGlancesSection(container) {
+        const root = container.querySelector('#config-glances-body');
+        if (!root) return;
+        const t = (key, fallback) => this.t(`config.${key}`, fallback);
+        const field = (name) => root.querySelector(`[data-glances-field="${name}"]`);
+        const result = root.querySelector('[data-glances-result]');
+        const saved = root.querySelector('[data-glances-saved]');
+        const saveBtn = root.querySelector('[data-glances-save]');
+        const connectBtn = root.querySelector('[data-glances-connect]');
+        const clearBtn = root.querySelector('[data-glances-clear-login]');
+        const send = (url, method, body) => window.nextDashFetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: body === undefined ? undefined : JSON.stringify(body),
+        });
+
+        let current = null;
+        let clearLogin = false;
+        let busy = false;
+        const paintButtons = () => {
+            saveBtn.disabled = !current || busy;
+            connectBtn.disabled = !current || busy;
+        };
+
+        const failure = async (res) => {
+            if (res.status === 401 || res.status === 403) {
+                return t('glancesNotAllowed', 'Not allowed: the write token is missing or wrong.');
+            }
+            const text = String(await res.text().catch(() => '')).trim();
+            return text && text.length <= 200 && !text.startsWith('<') ? text : String(res.status);
+        };
+
+        const ERRORS = {
+            'not set up': t('glancesErrNotSetUp', 'Fill in the address first.'),
+            'address not allowed': t('glancesErrAddress', 'That address is not allowed here. Check the local-network setting.'),
+            'login refused': t('glancesErrLogin', 'Glances refused that login.'),
+            'needs Glances 4': t('glancesErrV4', 'Glances 4 is needed; this server answers like version 3.'),
+            unreachable: t('glancesErrUnreachable', 'Glances could not be reached at that address.'),
+        };
+
+        const paint = (cfg) => {
+            current = cfg;
+            field('enabled').checked = cfg.enabled === true;
+            field('connected').checked = cfg.paused !== true;
+            field('server').value = cfg.server || '';
+            field('user').value = cfg.user || '';
+            field('password').value = '';
+            field('password').placeholder = cfg.hasPassword ? t('glancesPasswordSet', 'Set. Type to replace.') : '';
+            clearBtn.hidden = !(cfg.user || cfg.hasPassword);
+            clearLogin = false;
+            field('refresh').value = String(cfg.refresh || 2);
+            const hidden = new Set(cfg.hiddenBlocks || []);
+            root.querySelectorAll('[data-glances-block]').forEach((box) => {
+                box.checked = !hidden.has(box.getAttribute('data-glances-block'));
+            });
+            const th = cfg.thresholds || {};
+            root.querySelectorAll('[data-glances-line]').forEach((input) => {
+                input.value = th[input.getAttribute('data-glances-line')] ?? '';
+            });
+            field('diskStrip').value = cfg.diskStrip ?? '';
+            field('diskHide').value = (cfg.diskHide || []).join('\n');
+            paintCollected(cfg.collected);
+        };
+
+        const collectedEl = root.querySelector('[data-glances-collected]');
+        const wipeBtn = root.querySelector('[data-glances-wipe]');
+        const wipedEl = root.querySelector('[data-glances-wiped]');
+        const paintCollected = (c) => {
+            if (!collectedEl) return;
+            const has = c && c.points > 0;
+            wipeBtn.disabled = !has;
+            if (!has) {
+                collectedEl.textContent = t('glancesCollectedNone', 'Nothing recorded yet.');
+                return;
+            }
+            const since = c.since ? new Date(c.since).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+            collectedEl.textContent = `${c.series} ${t('glancesCollectedSeries', 'series')} · ${c.points} ${t('glancesCollectedPoints', 'points')} · ${c.incidents || 0} ${t('glancesCollectedIncidents', 'incidents')}${since ? ` · ${t('glancesCollectedSince', 'since')} ${since}` : ''}`;
+        };
+
+        const payload = () => {
+            const hiddenBlocks = [...root.querySelectorAll('[data-glances-block]')]
+                .filter((box) => !box.checked).map((box) => box.getAttribute('data-glances-block'));
+            const thresholds = {};
+            root.querySelectorAll('[data-glances-line]').forEach((input) => {
+                thresholds[input.getAttribute('data-glances-line')] = Number(input.value) || 0;
+            });
+            const body = {
+                enabled: field('enabled').checked,
+                paused: !field('connected').checked,
+                server: field('server').value.trim(),
+                user: clearLogin ? '' : field('user').value.trim(),
+                refresh: Number(field('refresh').value) || 2,
+                hiddenBlocks,
+                thresholds,
+                diskStrip: field('diskStrip').value.trim(),
+                diskHide: field('diskHide').value.split('\n').map((s) => s.trim()).filter(Boolean),
+            };
+            if (clearLogin) body.clearLogin = true;
+            const password = field('password').value;
+            if (password) body.password = password;
+            return body;
+        };
+
+        const run = async (work) => {
+            if (busy) return;
+            busy = true;
+            paintButtons();
+            try { await work(); } finally { busy = false; paintButtons(); }
+        };
+
+        wipeBtn?.addEventListener('click', async () => {
+            const ok = await this.confirmAction(
+                t('glancesWipeConfirm', 'Delete everything nextDash recorded about this host: all graphs, incidents and the history of processes and containers? This cannot be undone. Recording starts again at once.'),
+                { confirmLabel: t('glancesWipeOk', 'Delete data') },
+            );
+            if (!ok) return;
+            wipedEl.textContent = '';
+            try {
+                const res = await send('/api/glances/data', 'DELETE');
+                if (!res.ok) {
+                    wipedEl.textContent = `${t('glancesWipeFailed', 'Could not delete')} (${await failure(res)})`;
+                    return;
+                }
+                paintCollected(await res.json());
+                wipedEl.textContent = t('glancesWiped', 'Deleted.');
+            } catch {
+                wipedEl.textContent = `${t('glancesWipeFailed', 'Could not delete')}.`;
+            }
+        });
+
+        // The connection switch applies at once, like the one on page 0.
+        field('connected').addEventListener('change', async () => {
+            const on = field('connected').checked;
+            try {
+                const res = await send('/api/glances/config', 'PUT', { paused: !on });
+                if (!res.ok) throw new Error(await failure(res));
+                const cfg = await res.json();
+                if (current) current.paused = cfg.paused === true;
+                saved.textContent = on ? t('glancesConnectedOn', 'Connected.') : t('glancesConnectedOff', 'Connection off.');
+                void this.dash.glancesStatus?.refresh?.({ force: true });
+            } catch (err) {
+                field('connected').checked = !on;
+                saved.textContent = `${t('glancesSaveFailed', 'Could not save')} (${err.message})`;
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            clearLogin = true;
+            field('user').value = '';
+            field('password').value = '';
+            clearBtn.hidden = true;
+            saved.textContent = t('glancesLoginWillGo', 'The login is removed when you save.');
+        });
+
+        connectBtn.addEventListener('click', () => run(async () => {
+            result.textContent = t('glancesTesting', 'Asking…');
+            try {
+                const res = await send('/api/glances/connect', 'POST', {
+                    server: field('server').value.trim(),
+                    user: clearLogin ? '' : field('user').value.trim(),
+                    password: field('password').value,
+                });
+                if (res.status === 401 || res.status === 403) {
+                    result.textContent = await failure(res);
+                    return;
+                }
+                const body = await res.json().catch(() => null);
+                if (!body) {
+                    result.textContent = ERRORS.unreachable;
+                    return;
+                }
+                if (body.error) {
+                    result.textContent = ERRORS[body.error] || ERRORS.unreachable;
+                    return;
+                }
+                const count = Array.isArray(body.plugins) ? body.plugins.length : 0;
+                result.textContent = `${body.connected || 'Glances'}${count ? ` · ${count} ${t('glancesPlugins', 'plugins')}` : ''}`;
+            } catch {
+                result.textContent = ERRORS.unreachable;
+            }
+        }));
+
+        saveBtn.addEventListener('click', () => run(async () => {
+            saved.textContent = '';
+            try {
+                const res = await send('/api/glances/config', 'PUT', payload());
+                if (!res.ok) {
+                    saved.textContent = `${t('glancesSaveFailed', 'Could not save')} (${await failure(res)})`;
+                    return;
+                }
+                paint(await res.json());
+                saved.textContent = t('glancesSaved', 'Saved.');
+                // The 0 tab and its dot follow the new settings now.
+                void this.dash.glancesStatus?.refresh?.({ force: true });
+            } catch {
+                saved.textContent = `${t('glancesSaveFailed', 'Could not save')}.`;
+            }
+        }));
+
+        try {
+            const res = await send('/api/glances/config', 'GET');
+            if (!res.ok) throw new Error(String(res.status));
+            const cfg = await res.json();
+            if (!cfg || typeof cfg !== 'object' || !root.isConnected) return;
+            paint(cfg);
+        } catch {
+            // Saving now would overwrite what is stored with blanks: stay shut.
+            if (root.isConnected) result.textContent = t('glancesLoadFailed', 'Could not read the Glances settings. Reload to try again.');
+        }
+        paintButtons();
+    },
+
+    });
+
+    global.DashboardConfigGlancesReady = true;
+}(typeof window !== 'undefined' ? window : globalThis));

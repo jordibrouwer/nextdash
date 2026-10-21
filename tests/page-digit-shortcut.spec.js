@@ -104,7 +104,7 @@ test('the guard claims a digit only when it names a page', async ({ page }) => {
  * Left to fall through, 5 on a two-page install opened the shortcut palette
  * while 2 switched pages — the same key doing two unrelated things depending on
  * how many pages you happen to have, and changing meaning the moment you add
- * one. 1-9 switch or do nothing; 0 is the tenth page's key, or does nothing. Digits are
+ * one. 1-9 switch or do nothing; 0 opens the inbox or does nothing. Digits are
  * still typed *into* a query once it is open, which is the second test here.
  */
 test('a digit with no page behind it does nothing at all', async ({ page }) => {
@@ -112,7 +112,8 @@ test('a digit with no page behind it does nothing at all', async ({ page }) => {
     await ensureTwoPages(page);
     await page.evaluate(async () => {
         const d = window.dashboardInstance;
-        // Inbox off, so the keys below are about digits with nothing behind them.
+        // 0 is the inbox's legacy key while the inbox is on; switch it off so
+        // this is about the digits with nothing behind them.
         d.settings.inboxEnabled = false;
         await d.saveSettings?.();
     });
@@ -151,32 +152,21 @@ test('a digit still types into a query that is already open', async ({ page }) =
     )).toBe('5');
 });
 
-test('0 is the tenth page and no longer opens the inbox', async ({ page }) => {
+test('0 is the Glances page, not the inbox, while the inbox is on', async ({ page }) => {
     await openDashboard(page);
     await page.evaluate(async () => {
         const d = window.dashboardInstance;
         d.settings.inboxEnabled = true;
         d.settings.inboxShowInPageTabs = true;
         await d.saveSettings?.();
-        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        const base = Math.max(...d.pages.map((p) => Number(p.id) || 0));
-        const next = [...d.pages];
-        while (next.length < 10) next.push({ id: base + next.length, name: `Page ${next.length + 1}` });
-        await api('/api/pages', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(next),
-        });
+        d.pageNav?.renderPageNavigation?.();
     });
-    await openDashboard(page);
-    expect(await page.evaluate(() => window.dashboardInstance.pages.length)).toBeGreaterThanOrEqual(10);
-    const tenth = await page.evaluate(() => String(window.dashboardInstance.pages[9].id));
+    await expect(page.locator('#page-nav-inbox-btn')).toBeVisible();
 
-    await page.locator('body').click({ position: { x: 5, y: 5 } });
     await page.keyboard.press('0');
-    await expect.poll(() => page.evaluate(() => String(window.dashboardInstance.currentPageId))).toBe(tenth);
-    expect(await page.evaluate(() => window.dashboardInstance?.activeView), '0 opened a view instead of the page').toBe('bookmarks');
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
+    expect(await page.evaluate(() => window.location.hash)).toContain('glances');
     expect(await page.evaluate(
         () => document.getElementById('shortcut-search')?.classList.contains('show') === true,
-    ), 'the palette opened on 0').toBe(false);
+    ), 'the palette opened over Config').toBe(false);
 });

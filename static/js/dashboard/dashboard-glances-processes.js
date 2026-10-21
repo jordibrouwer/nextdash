@@ -116,7 +116,10 @@
             this.tbody = el('tbody');
             this.table.append(head, this.tbody);
             this.syncHeads();
-            container.replaceChildren(bar, this.message, this.table);
+            // A small screen scrolls the columns sideways instead of squeezing or cutting them.
+            const scroll = el('div', 'glances-proc-scroll');
+            scroll.appendChild(this.table);
+            container.replaceChildren(bar, this.message, scroll);
         }
 
         sortBy(key) {
@@ -149,6 +152,7 @@
                 return;
             }
             this.rows = answer;
+            this.view.detail?.update('process', answer);
             this.table.hidden = false;
             if (!answer.length) {
                 this.message.textContent = this.view.t('dashboard.glancesProcNone', 'No process matches.');
@@ -221,8 +225,13 @@
         rowFor(pid) {
             const held = this.rowNodes.get(pid);
             if (held) return held;
-            const tr = el('tr', 'glances-proc-row');
+            const tr = el('tr', 'glances-proc-row glances-row-link');
             tr.setAttribute('data-glances-pid', String(pid));
+            tr.addEventListener('click', (e) => {
+                if (e.target.closest('button, a, input')) return;
+                const row = this.rows.find((r) => r && r.pid === pid);
+                if (row) this.view.detail?.open('process', row);
+            });
             const nameCell = el('td', 'glances-proc-cell--name');
             const toggle = el('button', 'glances-proc-expand');
             toggle.type = 'button';

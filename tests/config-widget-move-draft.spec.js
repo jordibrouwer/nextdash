@@ -79,7 +79,7 @@ test.describe('moving a widget from its settings', () => {
         test.skip(!snap, 'a second page could not be created here');
         try {
             const types = await page.evaluate(() => Object.keys(DashboardConfig.MEDIA_SERVICES || {}));
-            expect(types).toContain('glances');
+            expect(types).toContain('jellyfin');
             const dirty = [];
             for (const type of types) {
                 const { index } = await addAndOpen(page, type, snap.from);
@@ -101,12 +101,12 @@ test.describe('moving a widget from its settings', () => {
         }
     });
 
-    test('a Glances widget with nothing typed moves without asking', async ({ page }) => {
+    test('a widget with nothing typed moves without asking', async ({ page }) => {
         await openWidgets(page);
         const snap = await twoPagesSnapshot(page);
         test.skip(!snap, 'a second page could not be created here');
         try {
-            const { index, id } = await addAndOpen(page, 'glances', snap.from);
+            const { index, id } = await addAndOpen(page, 'custom', snap.from);
             await page.click(`[data-widget-settings="${index}"]`);
             await page.locator(`[data-widget-move-page="${index}"]`).selectOption(String(snap.to));
 
@@ -126,11 +126,11 @@ test.describe('moving a widget from its settings', () => {
         const snap = await twoPagesSnapshot(page);
         test.skip(!snap, 'a second page could not be created here');
         try {
-            const { index, id } = await addAndOpen(page, 'glances', snap.from);
+            const { index, id } = await addAndOpen(page, 'custom', snap.from);
             await page.click(`[data-widget-settings="${index}"]`);
             await page.evaluate((i) => {
                 const cfg = window.dashboardInstance.config._module;
-                cfg.widgetDraft(i).config.server = 'http://glances.example.test:61208';
+                cfg.widgetDraft(i).config.url = 'http://192.168.0.10:8096';
             }, index);
             await page.locator(`[data-widget-move-page="${index}"]`).selectOption(String(snap.to));
 
@@ -141,9 +141,9 @@ test.describe('moving a widget from its settings', () => {
                 const read = async (p) => ((await (await cfg.writeFetch(`/api/pages/${p}/blocks`)).json()).widgets || []);
                 const moved = (await read(to)).find((w) => w.id === wid);
                 const left = (await read(from)).some((w) => w.id === wid);
-                return { onTarget: Boolean(moved), server: moved?.config?.server || '', left };
+                return { onTarget: Boolean(moved), server: moved?.config?.url || '', left };
             }, { to: snap.to, from: snap.from, wid: id }), { timeout: 10_000 })
-                .toEqual({ onTarget: true, server: 'http://glances.example.test:61208', left: false });
+                .toEqual({ onTarget: true, server: 'http://192.168.0.10:8096', left: false });
         } finally {
             await restore(page, snap);
         }
@@ -154,11 +154,11 @@ test.describe('moving a widget from its settings', () => {
         const snap = await twoPagesSnapshot(page);
         test.skip(!snap, 'a second page could not be created here');
         try {
-            const { index, id } = await addAndOpen(page, 'glances', snap.from);
+            const { index, id } = await addAndOpen(page, 'custom', snap.from);
             await page.click(`[data-widget-settings="${index}"]`);
             await page.evaluate((i) => {
                 const cfg = window.dashboardInstance.config._module;
-                cfg.widgetDraft(i).config.server = 'http://glances.example.test:61208';
+                cfg.widgetDraft(i).config.url = 'http://192.168.0.10:8096';
             }, index);
             const select = page.locator(`[data-widget-move-page="${index}"]`);
             await select.selectOption(String(snap.to));
@@ -169,9 +169,9 @@ test.describe('moving a widget from its settings', () => {
             await expect(select).toHaveValue(String(snap.from));
             const kept = await page.evaluate((wid) => {
                 const cfg = window.dashboardInstance.config._module;
-                return cfg._widgetDrafts?.[wid]?.config?.server || '';
+                return cfg._widgetDrafts?.[wid]?.config?.url || '';
             }, id);
-            expect(kept).toBe('http://glances.example.test:61208');
+            expect(kept).toBe('http://192.168.0.10:8096');
         } finally {
             await restore(page, snap);
         }

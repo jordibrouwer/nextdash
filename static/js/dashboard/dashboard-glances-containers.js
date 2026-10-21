@@ -143,7 +143,8 @@
                     : this.view.t('dashboard.glancesNotAvailable', 'Not available on this host.'));
                 return;
             }
-            this.rows = body.map(GlancesContainers.read);
+            this.rows = body.map((c) => ({ ...GlancesContainers.read(c), raw: c }));
+            this.view.detail?.update('container', body);
             if (!this.rows.length) {
                 this.show(this.view.t('dashboard.glancesCtEmpty', 'No containers.'));
                 return;
@@ -175,12 +176,24 @@
                 if (x > y) return dir;
                 return a.name.localeCompare(b.name);
             });
+            // Containers nextDash also manages get a link into the Containers view.
+            const dockerLink = this.view.dash.docker?.isEnabled?.() ? window.DashboardGlancesDetail?.link : null;
+            if (dockerLink && dockerLink.stale() && !this._linking) {
+                this._linking = true;
+                void dockerLink.load().then(() => { this._linking = false; if (this.tbody?.isConnected) this.drawRows(); });
+            }
             const dash = G.DASH;
             const bytes = (n) => (n === null ? dash : G.formatBytes(n));
             const pair = (a, b) => (a === null && b === null ? dash : `${bytes(a)} / ${bytes(b)}`);
             const trs = rows.map((r) => {
                 const tr = el('tr', 'glances-ct-row');
                 tr.setAttribute('data-glances-container', r.name);
+                tr.classList.add('glances-row-link');
+                tr.addEventListener('click', (e) => {
+                    if (!e.target.closest('button, a, input')) this.view.detail?.open('container', r.raw);
+                });
+                this.view.tip(tr, `ct:${r.name}`, () => window.DashboardGlancesTip.describe(this.view, r.name, r.raw, window.DashboardGlancesSpecs?.container || []));
+                const link = dockerLink && r.raw ? dockerLink.find(r.raw) : null;
                 const cells = {
                     name: r.name || dash,
                     status: r.status || dash,
@@ -193,12 +206,37 @@
                     command: r.command || dash,
                 };
                 COLUMNS.forEach((c) => {
-                    const td = el('td', `glances-ct-cell glances-ct-cell--${c.key}`, cells[c.key]);
+                    const td = el('td', `glances-ct-cell glances-ct-cell--${c.key}`, c.key === 'status' ? undefined : cells[c.key]);
+                    if (c.key === 'status') {
+                        // A word in a pill, as the Bookmarks view shows a state.
+                        const word = String(r.status || '').toLowerCase();
+                        const tone = /^(running|healthy|up)$/.test(word) ? 'good'
+                            : (/(unhealthy|dead|error|oom)/.test(word) ? 'bad'
+                                : (/(paus|restart|start)/.test(word) ? 'warn' : 'muted'));
+                        const pill = el('span', 'config-bm-score slp-badge glances-status-pill', cells.status);
+                        pill.setAttribute('data-tone', r.status ? tone : 'muted');
+                        td.appendChild(pill);
+                    }
                     // The whole value stays reachable where the cell cuts it short.
                     if (c.key === 'name' || c.key === 'image' || c.key === 'command') td.title = cells[c.key];
+                    if (c.key === 'name' && link) {
+                        const open = el('button', 'glances-ct-link', '↗');
+                        open.type = 'button';
+                        open.setAttribute('data-glances-ct-link', link.container.name);
+                        const label = this.view.t('dashboard.glancesActOpenDocker', 'Open in Containers');
+                        open.title = link.by === 'port'
+                            ? `${label}: ${link.container.name} (${this.view.t('dashboard.glancesLinkSamePort', 'same port')})`
+                            : `${label}: ${link.container.name}`;
+                        open.setAttribute('aria-label', open.title);
+                        open.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            window.location.hash = `#docker/${encodeURIComponent(link.container.name)}`;
+                        });
+                        td.appendChild(open);
+                    }
                     tr.appendChild(td);
                 });
-                if (r.status && r.status !== 'running') tr.setAttribute('data-state', 'stopped');
+                if (r.status && !/^(running|healthy|unhealthy|starting)$/i.test(r.status)) tr.setAttribute('data-state', 'stopped');
                 return tr;
             });
             this.tbody.replaceChildren(...trs);

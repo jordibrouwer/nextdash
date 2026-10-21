@@ -1,12 +1,12 @@
 /**
- * Glances view (#glances) -- one machine, read through one Glances widget.
+ * Glances page (#glances, the 0 tab) -- one machine, read through the host set up in Config.
  *
  * A side menu with one section per screen, on the shared list-view shell the
  * Containers view uses. This file owns the shell, the address, the menu and
  * the polling; what a section shows lives in its own file, which registers on
  * window.DashboardGlancesSections (see the registry below for the contract).
  *
- * Every read goes through the server (/api/glances/<widgetId>/<path>), which
+ * Every read goes through the server (/api/glances/<path>), which
  * holds the address and the login; Glances itself is never asked from here.
  */
 (function () {
@@ -55,17 +55,19 @@
 
     /** The words for each {"error":code} answer. */
     const ERRORS = {
-        'not set up': ['dashboard.glancesErrNotSetUp', 'This Glances widget has no server address yet. Add one in its settings.'],
-        'address not allowed': ['dashboard.glancesErrNotAllowed', 'That address is not allowed. Check the server address in the widget settings.'],
-        'login refused': ['dashboard.glancesErrLogin', 'Glances refused that login. Check the credential in the widget settings.'],
-        'key refused': ['dashboard.glancesErrLogin', 'Glances refused that login. Check the credential in the widget settings.'],
+        'not set up': ['dashboard.glancesErrNotSetUp', 'Glances has no server address yet. Add one in Config.'],
+        'address not allowed': ['dashboard.glancesErrNotAllowed', 'That address is not allowed. Check the address in Config → Glances.'],
+        'login refused': ['dashboard.glancesErrLogin', 'Glances refused that login. Check the login in Config → Glances.'],
+        'key refused': ['dashboard.glancesErrLogin', 'Glances refused that login. Check the login in Config → Glances.'],
         'needs Glances 4': ['dashboard.glancesErrNeedsV4', 'This view needs Glances 4.'],
         unreachable: ['dashboard.glancesErrUnreachable', 'Glances does not answer at that address.'],
+        paused: ['dashboard.glancesErrPaused', 'The connection is off. Switch it on to read the host again.'],
     };
+    /** Paths nextDash answers from its own record: they work with the connection off. */
+    const LOCAL_PATH = /^(history|insights)(\?|$)/;
 
     class DashboardGlances {
         static VIEW = 'glances';
-        static REFRESH_MS = 5000;
         static BADGE_MS = 30000;
         /** The tile's own reads plus the alert log: cheap, and enough for the dots. */
         static BADGE_PATHS = ['quicklook', 'fs', 'sensors', 'alert'];
@@ -73,11 +75,11 @@
 
         constructor(dashboard) {
             this.dash = dashboard;
-            this.widgetId = null;
-            this.pageId = null;
             this.section = null;
             /** Plugin names from /pluginslist, or null when unknown (then every section shows). */
             this.plugins = null;
+            /** The series nextDash has recorded: the graphs ask for these. */
+            this.seriesNames = [];
             this.shell = null;
             this.sectionInstance = null;
             this.bodyEl = null;
@@ -91,6 +93,10 @@
             this._openSeq = 0;
             this._escapeHandler = null;
             this._visibilityHandler = null;
+            this._keyHandler = null;
+            this._hoverChart = null;
+            this.tipCard = null;
+            this.detail = null;
         }
 
         /* ── Helpers sections share ─────────────────────────────────────── */
@@ -137,11 +143,23 @@
             return null;
         }
 
-        /** accent, warn at 80, bad at 90 -- the tile's thresholds. */
-        static tone(pct, warn = 80, bad = 90) {
-            if (pct === null) return '';
-            if (pct >= bad) return 'bad';
-            if (pct >= warn) return 'warn';
+        /** The yellow and red lines from Config, set each time the page opens. */
+        static limits = null;
+
+        /**
+         * How far over its line a reading is: '' fine, 'warn' or 'bad'. The lines
+         * are the reader's, per kind (cpu, mem, swap, disk in percent; temp in
+         * degrees), and 80/90 and 70/85 until the page has been told.
+         */
+        static tone(value, kind = 'disk') {
+            if (value === null || value === undefined) return '';
+            const defaults = { cpu: [80, 90], mem: [80, 90], swap: [80, 90], disk: [80, 90], temp: [70, 85] };
+            const [dw, db] = defaults[kind] || [80, 90];
+            const limits = DashboardGlances.limits || {};
+            const warn = Number(limits[`${kind}Warn`]) || dw;
+            const bad = Number(limits[`${kind}Bad`]) || db;
+            if (value >= bad) return 'bad';
+            if (value >= warn) return 'warn';
             return '';
         }
 
@@ -158,33 +176,42 @@
             return unit === 0 ? `${Math.round(n)} B` : `${n.toFixed(1)} ${units[unit]}`;
         }
 
-        /** #glances, #glances/<section>, #glances?w=..&p=.. -> its parts; null for any other hash. */
+        /** #glances, #glances/<section> -> its parts; null for any other hash. Anything after a ? is ignored. */
         static parseHash(hash) {
             const raw = String(hash || '').replace(/^#/, '');
             if (!(raw === 'glances' || raw.startsWith('glances/') || raw.startsWith('glances?'))) return null;
             let rest = raw.slice('glances'.length);
-            let query = '';
             const qi = rest.indexOf('?');
-            if (qi >= 0) {
-                query = rest.slice(qi + 1);
-                rest = rest.slice(0, qi);
-            }
+            if (qi >= 0) rest = rest.slice(0, qi);
             let section = rest.startsWith('/') ? rest.slice(1) : '';
             try { section = decodeURIComponent(section); } catch { /* keep it raw */ }
-            const params = new URLSearchParams(query);
-            return { section: section || null, widgetId: params.get('w') || null, pageId: params.get('p') || null };
+            return { section: section || null };
         }
 
         isActiveView() {
             return this.dash.activeView === DashboardGlances.VIEW;
         }
 
+        /** The settings the page runs by: refresh, hidden parts, the yellow and red lines. */
+        get status() {
+            return this.dash.glancesStatus?.state || {};
+        }
+
+        /** Milliseconds between two reads of an open page. */
+        refreshMs() {
+            const seconds = Number(this.status.refresh);
+            return (Number.isFinite(seconds) && seconds >= 1 ? seconds : 2) * 1000;
+        }
+
+        /** A part of the Overview the reader left switched on. */
+        blockShown(id) {
+            return !(this.status.hiddenBlocks || []).includes(id);
+        }
+
         /* ── Address ────────────────────────────────────────────────────── */
 
         hashFor(section) {
-            const w = encodeURIComponent(this.widgetId || '');
-            const p = encodeURIComponent(this.pageId ?? '');
-            return `#glances/${encodeURIComponent(section || 'overview')}?w=${w}&p=${p}`;
+            return `#glances/${encodeURIComponent(section || 'overview')}`;
         }
 
         /**
@@ -192,7 +219,7 @@
          * switch rewrites the address in place, as the Containers view does.
          */
         writeHash({ push = false } = {}) {
-            if (!this.isActiveView() || !this.widgetId) return;
+            if (!this.isActiveView()) return;
             const target = this.hashFor(this.section);
             if (window.location.hash === target) return;
             const next = `${window.location.pathname}${window.location.search}${target}`;
@@ -203,9 +230,8 @@
         /* ── View lifecycle ─────────────────────────────────────────────── */
 
         /**
-         * Open the view, or -- when it is already open -- follow the address:
-         * another widget reopens, another section switches.
-         * Accepts { hash } or { section, widgetId, pageId }.
+         * Open page 0, or -- when it is already open -- follow the address:
+         * another section switches. Accepts { hash } or { section }.
          */
         async openGlancesView(options = {}) {
             const route = options.hash !== undefined
@@ -213,14 +239,10 @@
                 : options;
             const d = this.dash;
             if (this.isActiveView() && this.shell) {
-                const sameWidget = !route.widgetId
-                    || (route.widgetId === this.widgetId && String(route.pageId ?? '') === String(this.pageId ?? ''));
-                if (sameWidget) {
-                    if (route.section && route.section !== this.section) this.openSection(route.section);
-                    // A bare #glances typed over the open view gets its w and p back.
-                    else this.writeHash();
-                    return true;
-                }
+                if (route.section && route.section !== this.section) this.openSection(route.section);
+                // A bare #glances typed over the open page gets its section back.
+                else this.writeHash();
+                return true;
             } else if (!this.isActiveView()) {
                 if (d.isInlineEditActive?.() && !(await d.confirmInlineEditBeforeNavigation?.())) {
                     return false;
@@ -229,6 +251,8 @@
                 d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
                 d.inbox?.clearKeyboardSelection?.();
                 d.setActiveView(DashboardGlances.VIEW);
+                // The 0 tab, like the Inbox one, marks the view you are in.
+                d.pageNav?.setActivePageNavButton?.(d.currentPageId);
                 window.nextdashTrack?.('view:glances');
             }
             const cameFromElsewhere = !DashboardGlances.parseHash(window.location.hash);
@@ -236,62 +260,34 @@
             this.sectionInstance?.destroy?.();
             this.sectionInstance = null;
             this.plugins = null;
-            this.widgetId = route.widgetId || null;
-            this.pageId = route.pageId ?? null;
+            this._last = new Map();
             const seq = ++this._openSeq;
             this._prepareContainer();
 
-            if (!this.widgetId) {
-                const found = await this.findWidget();
-                if (seq !== this._openSeq || !this.isActiveView()) return false;
-                if (!found) {
-                    this.renderEmpty();
-                    return true;
-                }
-                this.widgetId = found.widgetId;
-                this.pageId = found.pageId;
+            // Whether Glances is set up, and the settings the page runs by.
+            await this.dash.glancesStatus?.refresh?.();
+            if (seq !== this._openSeq || !this.isActiveView()) return false;
+            if (!this.dash.glancesStatus?.configured) {
+                this.renderEmpty();
+                return true;
             }
+            DashboardGlances.limits = this.status.thresholds || null;
 
             // Which sections this host has: asked once per opening.
             const probe = await this.fetchPath('pluginslist');
             if (seq !== this._openSeq || !this.isActiveView()) return false;
-            if (probe.kind === 'gone') {
-                await this.handleGone();
-                return true;
-            }
             this.plugins = probe.kind === 'ok' && Array.isArray(probe.body) ? new Set(probe.body.map(String)) : null;
+            // What has been recorded, so a graph can ask for its series from the first beat.
+            const recorded = await this.fetchPath('history');
+            if (seq !== this._openSeq || !this.isActiveView()) return false;
+            this.seriesNames = recorded.kind === 'ok' && Array.isArray(recorded.body?.names) ? recorded.body.names.map(String) : [];
 
             this.mountShell(route.section);
             this.openSection(route.section, { push: cameFromElsewhere, force: true });
             this._bindVisibility();
+            this._bindKeys();
             this.startBadges();
             return true;
-        }
-
-        /**
-         * The first Glances widget, page by page from the first: the address
-         * did not name one (a bare #glances).
-         */
-        async findWidget() {
-            const d = this.dash;
-            const pages = Array.isArray(d.pages) ? d.pages : [];
-            for (const page of pages) {
-                let widgets = null;
-                if (d._blocksPageId != null && Number(d._blocksPageId) === Number(page.id) && Array.isArray(d.widgets)) {
-                    widgets = d.widgets;
-                } else {
-                    try {
-                        const res = await fetch(`/api/pages/${encodeURIComponent(page.id)}/blocks`, { cache: 'no-store' });
-                        const body = res.ok ? await res.json() : null;
-                        widgets = Array.isArray(body?.widgets) ? body.widgets : [];
-                    } catch {
-                        widgets = [];
-                    }
-                }
-                const hit = widgets.find((w) => w?.type === 'glances' && w.id);
-                if (hit) return { widgetId: String(hit.id), pageId: String(page.id) };
-            }
-            return null;
         }
 
         /** The layout is ours from the first moment, so a background page load leaves it alone. */
@@ -311,37 +307,7 @@
             return container;
         }
 
-        /**
-         * The server does not know this widget (404: deleted, or on another
-         * page; 400: no page in the address). That is "no widget", not an
-         * unreachable Glances: take the first one there is, or say to add one.
-         */
-        async handleGone() {
-            if (this._goneBusy) return;
-            this._goneBusy = true;
-            const stale = { widgetId: this.widgetId, pageId: String(this.pageId ?? '') };
-            const section = this.section;
-            this._stopTimers();
-            this._unbindVisibility();
-            this.sectionInstance?.destroy?.();
-            this.sectionInstance = null;
-            const seq = ++this._openSeq;
-            try {
-                const found = await this.findWidget();
-                if (seq !== this._openSeq || !this.isActiveView()) return;
-                this._destroyShell();
-                if (found && !(found.widgetId === stale.widgetId && found.pageId === stale.pageId)) {
-                    this._goneBusy = false;
-                    await this.openGlancesView({ section, widgetId: found.widgetId, pageId: found.pageId });
-                    return;
-                }
-                this.widgetId = null;
-                this.renderEmpty();
-            } finally {
-                this._goneBusy = false;
-            }
-        }
-
+        /** Not set up: say so, and give the way to set it up. */
         renderEmpty() {
             const container = document.getElementById('dashboard-layout');
             if (!container) return;
@@ -350,19 +316,15 @@
             box.className = 'glances-empty';
             box.setAttribute('data-glances-empty', '');
             const text = document.createElement('p');
-            text.textContent = this.t('dashboard.glancesNoWidget', 'Add a Glances widget to a page first.');
+            text.textContent = this.t('dashboard.glancesNotSetUp', 'Glances is not set up yet. Add the address of a Glances host in Config.');
             box.appendChild(text);
-            const d = this.dash;
-            const pages = Array.isArray(d.pages) ? d.pages : [];
-            const index = Math.max(0, pages.findIndex((p) => Number(p.id) === Number(d.currentPageId)));
-            const page = pages[index];
-            if (page) {
-                const link = document.createElement('a');
-                link.href = `#${index + 1}`;
-                link.className = 'glances-empty-link';
-                link.textContent = this.t('dashboard.glancesBackToPage', 'Back to {page}', { page: page.name || String(index + 1) });
-                box.appendChild(link);
-            }
+            const link = document.createElement('button');
+            link.type = 'button';
+            link.className = 'config-btn config-btn--primary';
+            link.setAttribute('data-glances-open-config', '');
+            link.textContent = this.t('dashboard.glancesOpenConfig', 'Set up Glances');
+            link.addEventListener('click', () => { void this.dash.config?.openConfigView?.('glances'); });
+            box.appendChild(link);
             container.appendChild(box);
         }
 
@@ -400,6 +362,7 @@
                 summary: [],
             });
             this.shell.toolbarRow.hidden = true;
+            this.shell.headerActions?.appendChild(this._buildConnectionSwitch());
             this.bodyEl = document.createElement('div');
             this.bodyEl.className = 'glances-section';
             this.bodyEl.setAttribute('data-glances-body', '');
@@ -413,12 +376,74 @@
             this.errorEl.hidden = true;
             this.hostEl = document.createElement('div');
             this.hostEl.className = 'glances-section-host';
-            this.bodyEl.append(this.statusEl, this.errorEl, this.hostEl);
+            this.bodyEl.append(this.statusEl, this.errorEl, this.hostEl, this.buildLegend());
             this.shell.body.appendChild(this.bodyEl);
+            // The hover card follows what is under the pointer; the chart under it is the one , and . change.
+            this.tipCard?.unbind();
+            this.tipCard = typeof window.DashboardGlancesTip === 'function' ? new window.DashboardGlancesTip(this) : null;
+            this.tipCard?.bind(this.bodyEl);
+            // The side panel behind a process or a container.
+            this.detail?.destroy();
+            this.detail = typeof window.DashboardGlancesDetail === 'function' ? new window.DashboardGlancesDetail(this) : null;
+            this.bodyEl.addEventListener('pointerover', (e) => {
+                this._hoverChart = e.target?.closest?.('[data-glances-chart]')?.getAttribute('data-glances-chart') || null;
+            });
+            this.bodyEl.addEventListener('pointerleave', () => { this._hoverChart = null; });
             return this.shell;
         }
 
+        /** The connection switch in the page's header; Config → Glances holds the same one. */
+        _buildConnectionSwitch() {
+            const label = document.createElement('label');
+            label.className = 'glances-switch';
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.setAttribute('role', 'switch');
+            input.setAttribute('data-glances-connection', '');
+            const track = document.createElement('span');
+            track.className = 'glances-switch-track';
+            track.setAttribute('aria-hidden', 'true');
+            const text = document.createElement('span');
+            text.className = 'glances-switch-text';
+            label.append(input, track, text);
+            const paint = () => {
+                const on = this.dash.glancesStatus?.paused !== true;
+                input.checked = on;
+                text.textContent = on ? this.t('dashboard.glancesConnectionOn', 'Connected') : this.t('dashboard.glancesConnectionOff', 'Connection off');
+                label.setAttribute('data-state', on ? 'on' : 'off');
+            };
+            paint();
+            this._paintConnection = paint;
+            input.addEventListener('change', async () => {
+                const on = input.checked;
+                input.disabled = true;
+                try {
+                    const res = await window.nextDashFetch('/api/glances/config', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ paused: !on }),
+                    });
+                    if (!res.ok) throw new Error(String(res.status));
+                    await this.dash.glancesStatus?.refresh?.({ force: true });
+                    if (this.dash.glancesStatus) this.dash.glancesStatus.state.paused = !on;
+                    this._last = new Map(this._last || []);
+                    void this.refresh({ force: true });
+                } catch {
+                    this.dash.showNotification?.(this.t('dashboard.glancesConnectionFailed', 'Could not switch the connection'), 'error');
+                } finally {
+                    input.disabled = false;
+                    paint();
+                }
+            });
+            return label;
+        }
+
         _destroyShell() {
+            this._paintConnection = null;
+            this.detail?.destroy();
+            this.detail = null;
+            this.tipCard?.unbind();
+            this.tipCard = null;
             this.shell?.destroy?.();
             this.shell = null;
             this.bodyEl = null;
@@ -453,9 +478,41 @@
             this.writeHash({ push });
             window.nextdashTrack?.('glances:section', { section: def.id });
             this.stopPolling();
-            void this.refresh({ force: true });
+            // A section seen a moment ago is drawn from what it last read, at once;
+            // the host is asked again only when that is older than one beat.
+            const age = this._paintFromCache(this.sectionInstance);
+            if (age === null || age >= this.refreshMs()) void this.refresh({ force: true });
             this.startPolling();
             return true;
+        }
+
+        /**
+         * Draw a section from its last answers without a read. Returns how old
+         * the oldest of them is, or null when any is missing or too old.
+         */
+        _paintFromCache(inst) {
+            const last = this._last;
+            if (!last || !inst) return null;
+            const endpoints = (inst.endpoints?.() || []).map(String);
+            if (!endpoints.length) return null;
+            const now = Date.now();
+            const data = {};
+            let oldest = 0;
+            for (const ep of endpoints) {
+                const hit = last.get(this._stableKey(ep));
+                if (!hit || now - hit.at >= DashboardGlances.STALE_MS) return null;
+                data[ep] = hit.body;
+                oldest = Math.max(oldest, now - hit.at);
+            }
+            try {
+                this.tipCard?.reset();
+                inst.render(this.hostEl, data);
+                this.tipCard?.refresh();
+            } catch (err) {
+                console.error('Glances section failed to draw', err);
+                return null;
+            }
+            return oldest;
         }
 
         /** Another view took the layout: every timer and listener goes with it. */
@@ -463,6 +520,7 @@
             this._openSeq += 1;
             this._stopTimers();
             this._unbindVisibility();
+            this._unbindKeys();
             this.sectionInstance?.destroy?.();
             this.sectionInstance = null;
             this._destroyShell();
@@ -513,15 +571,12 @@
          * one process's command line. A refusal then answers 'denied'.
          */
         async fetchPath(path, { auth = false } = {}) {
-            const sep = String(path).includes('?') ? '&' : '?';
-            const url = `/api/glances/${encodeURIComponent(this.widgetId || '')}/${path}${sep}pageId=${encodeURIComponent(this.pageId ?? '')}`;
+            const url = `/api/glances/${path}`;
             try {
                 const fetcher = auth && typeof window.nextDashFetch === 'function' ? window.nextDashFetch : fetch;
                 const res = await fetcher(url, { cache: 'no-store' });
                 if (res.status === 429) return { kind: 'limited' };
                 if (res.status === 401 || res.status === 403) return { kind: 'denied' };
-                // No such widget on that page, or no page at all.
-                if (res.status === 404 || res.status === 400) return { kind: 'gone' };
                 if (!res.ok) return { kind: 'failed' };
                 const body = await res.json();
                 if (body && typeof body === 'object' && !Array.isArray(body) && typeof body.error === 'string') {
@@ -546,10 +601,38 @@
             const seq = ++this._seq;
             this._inflight = seq;
             const endpoints = (inst.endpoints?.() || []).map(String);
-            const results = await Promise.all(endpoints.map((ep) => this.fetchPath(ep)));
+            // With the connection off nothing goes to the host; the record still answers.
+            const off = this.dash.glancesStatus?.paused === true;
+            const results = await Promise.all(endpoints.map((ep) => (off && !LOCAL_PATH.test(ep)
+                ? Promise.resolve({ kind: 'error', code: 'paused' })
+                : this.fetchPath(ep))));
             if (this._inflight === seq) this._inflight = 0;
             if (seq !== this._seq || inst !== this.sectionInstance || !this.isActiveView() || !this.hostEl) return;
             this.applyResults(inst, endpoints, results);
+        }
+
+        /*
+         * What a beat that brought nothing shows: the last answer, not a blank.
+         *
+         * A host that misses one beat, or one path, must not turn the page into
+         * a light that flashes between data and an empty screen. Every read that
+         * answered is kept under its path (without the moving `since` of a
+         * history query); a read that did not answer is replaced by that last
+         * answer for up to ten minutes, and the page says so in one quiet line.
+         * Only a path that has never answered, or has been silent that long, is
+         * an error on screen.
+         */
+        static STALE_MS = 10 * 60 * 1000;
+
+        _stableKey(path) {
+            const text = String(path);
+            const at = text.indexOf('?');
+            if (at < 0) return text;
+            const query = new URLSearchParams(text.slice(at + 1));
+            query.delete('since');
+            query.delete('until');
+            const rest = query.toString();
+            return rest ? `${text.slice(0, at)}?${rest}` : text.slice(0, at);
         }
 
         applyResults(inst, endpoints, results) {
@@ -558,24 +641,49 @@
                 this._showStatus('limited', this.t('dashboard.glancesLimited', 'Too many requests, retrying'));
                 return;
             }
-            this._clearStatus();
-            if (results.some((r) => r.kind === 'gone')) {
-                void this.handleGone();
-                return;
-            }
-            const first = results[0];
-            if (first && (first.kind === 'error' || first.kind === 'failed')) {
-                this._showError(first.kind === 'error' ? first.code : 'unreachable');
+            const now = Date.now();
+            const last = this._last || (this._last = new Map());
+            const data = {};
+            let staleSince = 0;
+            let missing = null;
+            endpoints.forEach((ep, i) => {
+                const r = results[i];
+                const key = this._stableKey(ep);
+                if (r.kind === 'ok' || r.kind === 'unavailable') {
+                    last.set(key, { body: r.body, at: now });
+                    data[ep] = r.body;
+                    if (ep.startsWith('history') && Array.isArray(r.body?.names)) this.seriesNames = r.body.names.map(String);
+                    return;
+                }
+                const prev = last.get(key);
+                if (prev && (now - prev.at < DashboardGlances.STALE_MS || r.code === 'paused')) {
+                    data[ep] = prev.body;
+                    staleSince = staleSince ? Math.min(staleSince, prev.at) : prev.at;
+                } else {
+                    data[ep] = null;
+                    if (i === 0) missing = r;
+                }
+            });
+            // The section's first read has nothing to fall back on: say why.
+            if (missing && (missing.kind === 'error' || missing.kind === 'failed')) {
+                this._clearStatus();
+                this._showError(missing.kind === 'error' ? missing.code : 'unreachable');
                 return;
             }
             this._clearError();
-            const data = {};
-            endpoints.forEach((ep, i) => {
-                const r = results[i];
-                data[ep] = r.kind === 'ok' || r.kind === 'unavailable' ? r.body : null;
-            });
+            if (staleSince) {
+                const when = new Date(staleSince).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                const off = results.some((r) => r.kind === 'error' && r.code === 'paused');
+                this._showStatus('stale', off
+                    ? this.t('dashboard.glancesPausedStale', 'The connection is off. Showing the last data, from {time}.', { time: when })
+                    : this.t('dashboard.glancesStale', 'No answer from Glances just now. Showing the last data, from {time}.', { time: when }));
+            } else {
+                this._clearStatus();
+            }
             try {
+                this.tipCard?.reset();
                 inst.render(this.hostEl, data);
+                this.tipCard?.refresh();
             } catch (err) {
                 console.error('Glances section failed to draw', err);
             }
@@ -619,6 +727,96 @@
             this.hostEl.hidden = false;
         }
 
+        /* ── The hover card, the keys and their legend ──────────────────── */
+
+        /** Give an element a hover card: build() is called when it shows, and on every redraw while it is up. */
+        tip(el, key, build) {
+            if (el && this.tipCard) this.tipCard.attach(el, key, build);
+            return el;
+        }
+
+        /** The keys of the page, as <kbd> chips: the keys stay as they are, the labels are translated. */
+        buildLegend() {
+            const wrap = document.createElement('div');
+            wrap.className = 'glances-legend';
+            wrap.setAttribute('data-glances-legend', '');
+            [
+                ['o p c d n h a', this.t('dashboard.glancesLegendSections', 'section')],
+                ['[ / ]', this.t('dashboard.glancesLegendStep', 'previous / next')],
+                [', / .', this.t('dashboard.glancesLegendRange', 'shorter / longer range')],
+                ['r', this.t('dashboard.glancesLegendRefresh', 'read now')],
+                ['/', this.t('dashboard.glancesLegendSearch', 'search processes')],
+                ['Esc', this.t('dashboard.glancesLegendLeave', 'leave')],
+            ].forEach(([key, label]) => {
+                const item = document.createElement('span');
+                item.className = 'glances-legend-key';
+                const kbd = document.createElement('kbd');
+                kbd.textContent = key;
+                const text = document.createElement('span');
+                text.textContent = label;
+                item.append(kbd, text);
+                wrap.appendChild(item);
+            });
+            return wrap;
+        }
+
+        /** Section letters, [ and ] to step, , and . for a graph's range, r to read now, / to search. */
+        _bindKeys() {
+            this._unbindKeys();
+            const LETTERS = { o: 'overview', p: 'processes', c: 'containers', d: 'disks', n: 'network', h: 'history', a: 'alerts', i: 'insights' };
+            this._keyHandler = (e) => {
+                if (!this.isActiveView() || !this.shell) return;
+                if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+                const d = this.dash;
+                if (document.querySelector('dialog[open]') || d.isModalOpen?.() || d.searchComponent?.isActive?.()) return;
+                const active = document.activeElement;
+                const tag = active?.tagName;
+                if (tag === 'TEXTAREA' || tag === 'SELECT' || active?.isContentEditable
+                    || (tag === 'INPUT' && active?.type !== 'checkbox')) return;
+                if (d.keyboardNavigation?.isGChordActive?.()) return;
+
+                const defs = this.availableSections();
+                const step = (dir) => {
+                    const at = defs.findIndex((def) => def.id === this.section);
+                    const next = defs[(at + dir + defs.length) % defs.length];
+                    if (next) this.openSection(next.id);
+                };
+                const key = e.key;
+                if (LETTERS[key]) {
+                    if (!defs.some((def) => def.id === LETTERS[key])) return;
+                    this.openSection(LETTERS[key]);
+                } else if (key === '[') {
+                    step(-1);
+                } else if (key === ']') {
+                    step(1);
+                } else if (key === ',' || key === '.') {
+                    const Chart = window.DashboardGlancesChart;
+                    const id = this._hoverChart || this.hostEl?.querySelector('[data-glances-chart]')?.getAttribute('data-glances-chart');
+                    if (!id || !Chart?.stepRange) return;
+                    if (!Chart.stepRange(id, key === '.' ? 1 : -1)) return;
+                    void this.refresh({ force: true });
+                } else if (key === 'r') {
+                    void this.refresh({ force: true });
+                } else if (key === '/') {
+                    const field = this.hostEl?.querySelector('[data-glances-search]');
+                    if (!field) return;
+                    field.focus();
+                } else {
+                    return;
+                }
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            };
+            document.addEventListener('keydown', this._keyHandler, true);
+        }
+
+        _unbindKeys() {
+            if (this._keyHandler) {
+                document.removeEventListener('keydown', this._keyHandler, true);
+                this._keyHandler = null;
+            }
+        }
+
         /* ── Timers ─────────────────────────────────────────────────────── */
 
         startPolling() {
@@ -627,7 +825,7 @@
             this._pollTimer = setInterval(() => {
                 if (document.visibilityState === 'hidden' || !this.isActiveView()) return;
                 void this.refresh();
-            }, DashboardGlances.REFRESH_MS);
+            }, this.refreshMs());
         }
 
         stopPolling() {

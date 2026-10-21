@@ -1056,6 +1056,16 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     display: none;
 }
 
+/* Page 0 (Glances): a tab right behind the last page number. */
+.page-nav-glances-host {
+    display: flex;
+    align-items: center;
+}
+
+.page-nav-glances-host:empty {
+    display: none;
+}
+
 /*
  * Docker's nav icon renders into this host from JS (renderNavButton in
  * dashboard-docker-loader.js) only once a socket is known, so its styling
@@ -1468,7 +1478,7 @@ body.no-animations .library-link.is-health-alert .library-link-anchor {
    is usually drawn within a frame, and 200 ms of fade and slide on top of that
    was most of what made Bookmarks feel slow to open. Half the time, no
    movement; page switches on the dashboard keep the slide. */
-#dashboard-layout.page-transition:is(.config-layout, .library-layout, .inbox-layout, .docker-layout) {
+#dashboard-layout.page-transition:is(.config-layout, .library-layout, .inbox-layout, .docker-layout, .glances-layout) {
     animation: dashboardViewFade 100ms ease-out;
 }
 
