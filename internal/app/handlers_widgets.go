@@ -120,6 +120,7 @@ var withheldWidgetKeys = map[WidgetType]map[string]bool{
 	WidgetTypeBeszelSystem:    {"server": true, "credentialId": true, "systems": true, "system": true},
 	WidgetTypeBeszelAttention: {"server": true, "credentialId": true, "systems": true, "system": true},
 	WidgetTypeBeszelStorage:   {"server": true, "credentialId": true, "systems": true, "system": true},
+	WidgetTypeGlances:         {"server": true, "credentialId": true},
 }
 
 /*

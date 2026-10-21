@@ -223,7 +223,10 @@ func glancesTemps(sensors []glancesSensor) []MediaTemp {
 // glancesVirtualNIC is an interface that only carries traffic between things on
 // this machine, which would count the same bytes twice.
 func glancesVirtualNIC(name string) bool {
-	for _, prefix := range []string{"lo", "docker", "veth", "br-", "virbr"} {
+	if name == "lo" {
+		return true
+	}
+	for _, prefix := range []string{"docker", "veth", "br-", "virbr"} {
 		if strings.HasPrefix(name, prefix) {
 			return true
 		}
