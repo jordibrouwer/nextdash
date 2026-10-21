@@ -267,6 +267,9 @@ class Dashboard {
         this.docker = typeof window.createDashboardDockerLoader === 'function'
             ? window.createDashboardDockerLoader(this)
             : null;
+        this.glances = typeof window.createDashboardGlancesLoader === 'function'
+            ? window.createDashboardGlancesLoader(this)
+            : null;
         this.tagView = typeof window.createDashboardTagViewLoader === 'function'
             ? window.createDashboardTagViewLoader(this)
             : null;
@@ -352,6 +355,7 @@ class Dashboard {
             this.setupPasteToQuickAdd();
             this.inbox.setupEscapeShortcut();
             this.docker?.setupEscapeShortcut();
+            this.glances?.setupEscapeShortcut();
             this.config?.setupEscapeShortcut();
             void this.docker?.renderNavButton?.();
             if (typeof QuickAddWidget === 'function') {
@@ -505,6 +509,9 @@ class Dashboard {
                     ? new URLSearchParams(bootHash.slice('docker?'.length)).get('filter')
                     : null;
                 await this.docker?.openDockerView?.({ select, filter });
+            } else if ((bootHash === 'glances' || bootHash.startsWith('glances/') || bootHash.startsWith('glances?'))
+                && this.activeView !== 'glances') {
+                await this.glances?.openGlancesView?.({ hash: `#${bootHash}` });
             } else if ((bootHash === 'bookmarks' || bootHash.startsWith('bookmarks/') || bootHash.startsWith('bookmarks?'))
                 && this.activeView !== 'library' && this.config?.isEnabled?.()) {
                 await this.config.openLibraryView();
@@ -1129,6 +1136,11 @@ class Dashboard {
                 if (filter) this.docker?.applyFilter?.(filter);
                 return;
             }
+            // The Glances view: a new section or widget while it is open is
+            // followed in place; the view parses its own address.
+            if (hash === 'glances' || hash.startsWith('glances/') || hash.startsWith('glances?')) {
+                return this.glances?.openGlancesView?.({ hash: `#${hash}` });
+            }
             // The Bookmarks view: its filters ride in the query, so a change
             // while it is open is a change of filters, not a new view.
             if (hash === 'bookmarks' || hash.startsWith('bookmarks/') || hash.startsWith('bookmarks?')) {
@@ -1239,6 +1251,10 @@ class Dashboard {
         // view repaints, so leaving has to take it down explicitly.
         if (previous === 'docker' && view !== 'docker') {
             this.docker?.instance?.onLeave?.();
+        }
+        // Its polling timers stop with it, whichever route took the layout.
+        if (previous === 'glances' && view !== 'glances') {
+            this.glances?.instance?.onLeave?.();
         }
         // The preview card belongs to the grid row under the pointer. A view
         // that replaces the grid takes that row away without a mouseleave, and

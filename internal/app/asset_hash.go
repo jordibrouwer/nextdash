@@ -213,6 +213,10 @@ var lazyLoadedAssets = []string{
 	"js/dashboard/dashboard-docker-logs.js",
 	"js/dashboard/dashboard-docker-disk.js",
 	"js/dashboard/dashboard-docker-actions.js",
+	// The Glances view and its sections, behind dashboard-glances-loader.js.
+	"js/dashboard/dashboard-glances.js",
+	"js/dashboard/dashboard-glances-overview.js",
+	"js/dashboard/dashboard-glances-processes.js",
 	"js/dashboard/dashboard-inbox-triage.js",
 	"js/dashboard/dashboard-inbox-drawer.js",
 	"js/dashboard/dashboard-inbox.js",

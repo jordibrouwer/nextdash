@@ -886,6 +886,13 @@ class DashboardData {
             isEnabled: () => true,
         },
         {
+            // One machine through a Glances widget: #glances/<section>?w=&p=.
+            view: 'glances',
+            layoutClass: 'glances-layout',
+            matchesHash: (hash) => hash === '#glances' || hash.startsWith('#glances/') || hash.startsWith('#glances?'),
+            isEnabled: () => true,
+        },
+        {
             view: 'tags',
             layoutClass: 'tag-view-layout',
             // #tag/a+b: a tag's view, opened from the hash once the grid is up;

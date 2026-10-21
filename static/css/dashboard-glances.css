@@ -1,0 +1,257 @@
+/* ─── Glances view (#glances) ─────────────────────────────────────────────
+   Mounts on the shared shell (list-view-shell.css) like the Containers view;
+   the rail's filter list is the section menu. Only what the sections draw
+   lives here: the number cards, the cpu chart, the process table, the
+   status and error lines and the menu's warning dot.
+   ------------------------------------------------------------------------- */
+
+.glances-layout {
+    outline: none;
+}
+
+.glances-wait,
+.glances-empty {
+    margin: var(--space-4, 1.5rem) auto;
+    max-width: 32rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.glances-empty p { margin: 0 0 var(--space-2, 0.5rem); }
+.glances-empty-link { color: var(--accent-primary); }
+
+/* The menu: a dot beside a section in warning, before its count. */
+.glances-menu-item.has-warn .lvs-filter-label::after {
+    content: '';
+    display: inline-block;
+    width: 0.45em;
+    height: 0.45em;
+    margin-left: 0.45em;
+    vertical-align: middle;
+    border-radius: 50%;
+    background: var(--accent-warning);
+}
+
+.glances-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 1rem);
+    container: glances-section / inline-size;
+}
+
+.glances-section-host[hidden],
+.glances-status[hidden],
+.glances-error[hidden] {
+    display: none;
+}
+
+.glances-status,
+.glances-error {
+    margin: 0;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border-radius: var(--layout-radius-sm, 6px);
+    background: var(--background-secondary);
+    font-size: var(--font-size-small);
+}
+
+.glances-status { color: var(--text-secondary); }
+.glances-error { color: var(--accent-error); }
+
+/* ── Overview ── */
+
+.glances-cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-3, 0.75rem);
+}
+
+@container glances-section (max-width: 560px) {
+    .glances-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.glances-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+    padding: var(--space-3, 0.75rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 6px);
+}
+
+.glances-card-label,
+.glances-card-sub {
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.glances-card-value {
+    font-size: 1.6em;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+.glances-card[data-tone="warn"] .glances-card-value { color: var(--accent-warning); }
+.glances-card[data-tone="bad"] .glances-card-value { color: var(--accent-error); }
+
+.glances-chart {
+    margin: 0;
+    padding: var(--space-3, 0.75rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 6px);
+}
+
+.glances-chart-caption {
+    margin-bottom: var(--space-2, 0.5rem);
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+}
+
+.glances-chart svg {
+    display: block;
+    width: 100%;
+    height: 6rem;
+}
+
+.glances-chart-line {
+    fill: none;
+    stroke: var(--accent-primary);
+    stroke-width: 1.5;
+}
+
+.glances-chart-area {
+    fill: var(--accent-primary);
+    opacity: 0.12;
+}
+
+/* ── Processes ── */
+
+.glances-proc-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.glances-proc-search {
+    flex: 0 1 18rem;
+    min-width: 10rem;
+    padding: var(--space-1, 0.3rem) var(--space-2, 0.5rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 6px);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-controls, inherit);
+}
+
+.glances-proc-note,
+.glances-proc-message {
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+}
+
+.glances-proc-message { margin: 0 0 var(--space-2, 0.5rem); }
+.glances-proc-message[hidden],
+.glances-proc-table[hidden] { display: none; }
+
+.glances-proc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+
+.glances-proc-table th,
+.glances-proc-table td {
+    padding: var(--space-1, 0.3rem) var(--space-2, 0.5rem);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.glances-proc-table th {
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: var(--font-size-small);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.glances-proc-head--cpu,
+.glances-proc-head--mem,
+.glances-proc-head--pid,
+.glances-proc-head--threads,
+.glances-proc-cell--cpu,
+.glances-proc-cell--mem,
+.glances-proc-cell--pid,
+.glances-proc-cell--threads {
+    text-align: right;
+}
+
+.glances-proc-table th[data-glances-sort] { cursor: pointer; }
+
+.glances-proc-sort {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.glances-proc-table th[aria-sort] { color: var(--accent-primary); }
+.glances-proc-table th[aria-sort="ascending"] .glances-proc-sort::after { content: ' ▲'; }
+.glances-proc-table th[aria-sort="descending"] .glances-proc-sort::after { content: ' ▼'; }
+
+.glances-proc-row { border-bottom: 1px solid var(--border-primary); }
+.glances-proc-row:hover { background: var(--background-secondary); }
+
+.glances-proc-cell--name {
+    max-width: 20rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.glances-proc-expand {
+    width: 1.4em;
+    margin-right: 0.3em;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.glances-proc-cmd td {
+    padding-top: 0;
+    white-space: normal;
+}
+
+.glances-proc-cmdline {
+    display: block;
+    padding: var(--space-2, 0.5rem);
+    border-radius: var(--layout-radius-sm, 6px);
+    background: var(--background-secondary);
+    font-size: var(--font-size-small);
+    overflow-wrap: anywhere;
+}
+
+.glances-proc-wait {
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+}
+
+@container glances-section (max-width: 640px) {
+    .glances-proc-head--user,
+    .glances-proc-cell--user,
+    .glances-proc-head--status,
+    .glances-proc-cell--status,
+    .glances-proc-head--threads,
+    .glances-proc-cell--threads {
+        display: none;
+    }
+}
