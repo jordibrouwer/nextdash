@@ -31,7 +31,8 @@
      * widget, query allowed: 'processlist?sort=cpu') and render(container,
      * data), where data maps each of those strings to the parsed answer, to
      * {available:false} when the host does not run that plugin, or to null when
-     * the read failed. render() is called on every refresh with the same
+     * the read failed. A section that builds a path from a server string (a
+     * container name, a disk) must encodeURIComponent that segment itself. render() is called on every refresh with the same
      * container, so a section may build once and update in place. destroy() is
      * optional and runs when the section is closed.
      */
@@ -216,6 +217,8 @@
                     || (route.widgetId === this.widgetId && String(route.pageId ?? '') === String(this.pageId ?? ''));
                 if (sameWidget) {
                     if (route.section && route.section !== this.section) this.openSection(route.section);
+                    // A bare #glances typed over the open view gets its w and p back.
+                    else this.writeHash();
                     return true;
                 }
             } else if (!this.isActiveView()) {
@@ -252,6 +255,10 @@
             // Which sections this host has: asked once per opening.
             const probe = await this.fetchPath('pluginslist');
             if (seq !== this._openSeq || !this.isActiveView()) return false;
+            if (probe.kind === 'gone') {
+                await this.handleGone();
+                return true;
+            }
             this.plugins = probe.kind === 'ok' && Array.isArray(probe.body) ? new Set(probe.body.map(String)) : null;
 
             this.mountShell(route.section);
@@ -302,6 +309,37 @@
             wait.textContent = this.t('dashboard.glancesLoading', 'Loading…');
             container.appendChild(wait);
             return container;
+        }
+
+        /**
+         * The server does not know this widget (404: deleted, or on another
+         * page; 400: no page in the address). That is "no widget", not an
+         * unreachable Glances: take the first one there is, or say to add one.
+         */
+        async handleGone() {
+            if (this._goneBusy) return;
+            this._goneBusy = true;
+            const stale = { widgetId: this.widgetId, pageId: String(this.pageId ?? '') };
+            const section = this.section;
+            this._stopTimers();
+            this._unbindVisibility();
+            this.sectionInstance?.destroy?.();
+            this.sectionInstance = null;
+            const seq = ++this._openSeq;
+            try {
+                const found = await this.findWidget();
+                if (seq !== this._openSeq || !this.isActiveView()) return;
+                this._destroyShell();
+                if (found && !(found.widgetId === stale.widgetId && found.pageId === stale.pageId)) {
+                    this._goneBusy = false;
+                    await this.openGlancesView({ section, widgetId: found.widgetId, pageId: found.pageId });
+                    return;
+                }
+                this.widgetId = null;
+                this.renderEmpty();
+            } finally {
+                this._goneBusy = false;
+            }
         }
 
         renderEmpty() {
@@ -394,7 +432,15 @@
             if (!this.shell || !this.isActiveView()) return false;
             const defs = this.availableSections();
             const def = defs.find((entry) => entry.id === name) || defs[0];
-            if (!def) return false;
+            if (!def) {
+                // The host runs none of the plugins a section needs.
+                this.stopPolling();
+                this.hostEl.replaceChildren(Object.assign(document.createElement('p'), {
+                    className: 'glances-proc-message',
+                    textContent: this.t('dashboard.glancesNotAvailable', 'Not available on this host.'),
+                }));
+                return false;
+            }
             if (!force && def.id === this.section && this.sectionInstance) return true;
             this.sectionInstance?.destroy?.();
             this.section = def.id;
@@ -470,6 +516,8 @@
             try {
                 const res = await fetch(url, { cache: 'no-store' });
                 if (res.status === 429) return { kind: 'limited' };
+                // No such widget on that page, or no page at all.
+                if (res.status === 404 || res.status === 400) return { kind: 'gone' };
                 if (!res.ok) return { kind: 'failed' };
                 const body = await res.json();
                 if (body && typeof body === 'object' && !Array.isArray(body) && typeof body.error === 'string') {
@@ -507,6 +555,10 @@
                 return;
             }
             this._clearStatus();
+            if (results.some((r) => r.kind === 'gone')) {
+                void this.handleGone();
+                return;
+            }
             const first = results[0];
             if (first && (first.kind === 'error' || first.kind === 'failed')) {
                 this._showError(first.kind === 'error' ? first.code : 'unreachable');
@@ -523,6 +575,13 @@
             } catch (err) {
                 console.error('Glances section failed to draw', err);
             }
+        }
+
+        /** Words for a fetchPath() answer that brought no data, for a section's own reads. */
+        failureText(res) {
+            if (res?.kind === 'limited') return this.t('dashboard.glancesLimited', 'Too many requests, retrying');
+            const [key, fallback] = (res?.kind === 'error' && ERRORS[res.code]) || ERRORS.unreachable;
+            return this.t(key, fallback);
         }
 
         _showStatus(kind, text) {

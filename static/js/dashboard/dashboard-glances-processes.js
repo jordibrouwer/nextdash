@@ -34,8 +34,13 @@
             this.view = view;
             this.sort = 'cpu';
             this.query = '';
-            /** pid -> command line text, or null while it is being asked for. */
+            /**
+             * pid -> command line text ('' when the process has none or ended),
+             * null while it is being asked for, or { message } after a failed read.
+             */
             this.expanded = new Map();
+            /** pid -> { tr, toggle, cells, detail }, reused across polls. */
+            this.rowNodes = new Map();
             this.rows = [];
             this.container = null;
             this._searchTimer = null;
@@ -58,6 +63,7 @@
         build(container) {
             const v = this.view;
             this.container = container;
+            this.rowNodes = new Map();
             const bar = el('div', 'glances-proc-bar');
             const search = el('input', 'glances-proc-search');
             search.type = 'search';
@@ -153,83 +159,157 @@
             this.drawRows();
         }
 
+        /**
+         * Rows are kept per pid and updated in place: a poll every 5 s must not
+         * take away keyboard focus, a screen reader's place or a click on its
+         * way. Only rows that came, went or changed place are moved.
+         */
         drawRows() {
             const G = window.DashboardGlances;
-            const v = this.view;
             const pct = (n) => (n === null ? G.DASH : `${n.toFixed(1)}%`);
             const text = (s) => (typeof s === 'string' && s ? s : G.DASH);
+            const focused = document.activeElement;
+            const focusedPid = this.tbody.contains(focused)
+                ? focused.closest('[data-glances-pid]')?.getAttribute('data-glances-pid') : null;
             const seen = new Set();
-            const out = [];
+            const wanted = [];
             this.rows.forEach((row) => {
                 const pid = G.num(row?.pid);
-                if (pid === null) return;
+                if (pid === null || seen.has(pid)) return;
                 seen.add(pid);
-                const open = this.expanded.has(pid);
-                const tr = el('tr', 'glances-proc-row');
-                tr.setAttribute('data-glances-pid', String(pid));
-
-                const nameCell = el('td', 'glances-proc-cell--name');
-                const toggle = el('button', 'glances-proc-expand');
-                toggle.type = 'button';
-                toggle.setAttribute('data-glances-expand', '');
-                toggle.setAttribute('aria-expanded', String(open));
-                toggle.setAttribute('aria-label', open
-                    ? v.t('dashboard.glancesProcCollapse', 'Hide command line')
-                    : v.t('dashboard.glancesProcExpand', 'Show command line'));
-                toggle.textContent = open ? '▾' : '▸';
-                toggle.addEventListener('click', () => this.toggle(pid));
-                nameCell.append(toggle, el('span', 'glances-proc-name', text(row.name)));
-
+                const entry = this.rowFor(pid);
                 const threads = G.num(row.num_threads);
-                tr.append(
-                    nameCell,
-                    el('td', 'glances-proc-cell--pid', String(pid)),
-                    el('td', 'glances-proc-cell--user', text(row.username)),
-                    el('td', 'glances-proc-cell--cpu', pct(G.num(row.cpu_percent))),
-                    el('td', 'glances-proc-cell--mem', pct(G.num(row.memory_percent))),
-                    el('td', 'glances-proc-cell--status', text(row.status)),
-                    el('td', 'glances-proc-cell--threads', threads === null ? G.DASH : String(threads)),
-                );
-                out.push(tr);
-
-                if (open) {
-                    const more = el('tr', 'glances-proc-cmd');
-                    const cell = el('td');
-                    cell.colSpan = COLUMNS.length;
-                    const cmd = this.expanded.get(pid);
-                    if (cmd === null) {
-                        cell.appendChild(el('span', 'glances-proc-wait', v.t('dashboard.glancesLoading', 'Loading…')));
-                    } else if (cmd) {
-                        const code = el('code', 'glances-proc-cmdline', cmd);
-                        code.setAttribute('data-glances-cmdline', '');
-                        cell.appendChild(code);
-                    } else {
-                        cell.appendChild(el('span', 'glances-proc-wait',
-                            v.t('dashboard.glancesProcCmdNone', 'No command line for this process.')));
-                    }
-                    more.appendChild(cell);
-                    out.push(more);
+                const set = (key, value) => {
+                    if (entry.cells[key].textContent !== value) entry.cells[key].textContent = value;
+                };
+                set('name', text(row.name));
+                set('user', text(row.username));
+                set('cpu', pct(G.num(row.cpu_percent)));
+                set('mem', pct(G.num(row.memory_percent)));
+                set('status', text(row.status));
+                set('threads', threads === null ? G.DASH : String(threads));
+                this.syncDetail(pid, entry);
+                wanted.push(entry.tr);
+                if (entry.detail) wanted.push(entry.detail);
+            });
+            // A process that left the list forgets its row and command line.
+            [...this.rowNodes.keys()].forEach((pid) => {
+                if (seen.has(pid)) return;
+                this.rowNodes.delete(pid);
+                this.expanded.delete(pid);
+            });
+            let ref = this.tbody.firstChild;
+            wanted.forEach((node) => {
+                if (node === ref) {
+                    ref = ref.nextSibling;
+                } else {
+                    this.tbody.insertBefore(node, ref);
                 }
             });
-            // A process that left the list forgets its command line.
-            [...this.expanded.keys()].forEach((pid) => { if (!seen.has(pid)) this.expanded.delete(pid); });
-            this.tbody.replaceChildren(...out);
+            while (ref) {
+                const next = ref.nextSibling;
+                ref.remove();
+                ref = next;
+            }
+            // A row that had to move takes its focus with it.
+            if (focusedPid && !this.tbody.contains(document.activeElement)) {
+                this.rowNodes.get(Number(focusedPid))?.toggle.focus({ preventScroll: true });
+            }
         }
 
+        /** The row for one pid, built the first time it is seen. */
+        rowFor(pid) {
+            const held = this.rowNodes.get(pid);
+            if (held) return held;
+            const tr = el('tr', 'glances-proc-row');
+            tr.setAttribute('data-glances-pid', String(pid));
+            const nameCell = el('td', 'glances-proc-cell--name');
+            const toggle = el('button', 'glances-proc-expand');
+            toggle.type = 'button';
+            toggle.setAttribute('data-glances-expand', '');
+            toggle.addEventListener('click', () => { void this.toggle(pid); });
+            const cells = {
+                name: el('span', 'glances-proc-name'),
+                user: el('td', 'glances-proc-cell--user'),
+                cpu: el('td', 'glances-proc-cell--cpu'),
+                mem: el('td', 'glances-proc-cell--mem'),
+                status: el('td', 'glances-proc-cell--status'),
+                threads: el('td', 'glances-proc-cell--threads'),
+            };
+            nameCell.append(toggle, cells.name);
+            tr.append(nameCell, el('td', 'glances-proc-cell--pid', String(pid)),
+                cells.user, cells.cpu, cells.mem, cells.status, cells.threads);
+            const entry = { tr, toggle, cells, detail: null, shown: undefined };
+            this.rowNodes.set(pid, entry);
+            return entry;
+        }
+
+        /** The expand button and the command-line row under it, from this.expanded. */
+        syncDetail(pid, entry) {
+            const v = this.view;
+            const open = this.expanded.has(pid);
+            const state = open ? this.expanded.get(pid) : undefined;
+            if (entry.toggle.getAttribute('aria-expanded') !== String(open)) {
+                entry.toggle.setAttribute('aria-expanded', String(open));
+                entry.toggle.setAttribute('aria-label', open
+                    ? v.t('dashboard.glancesProcCollapse', 'Hide command line')
+                    : v.t('dashboard.glancesProcExpand', 'Show command line'));
+                entry.toggle.textContent = open ? '▾' : '▸';
+            }
+            if (!open) {
+                entry.detail = null;
+                entry.shown = undefined;
+                return;
+            }
+            if (entry.detail && entry.shown === state) return;
+            const more = entry.detail || el('tr', 'glances-proc-cmd');
+            const cell = el('td');
+            cell.colSpan = COLUMNS.length;
+            if (state === null) {
+                cell.appendChild(el('span', 'glances-proc-wait', v.t('dashboard.glancesLoading', 'Loading…')));
+            } else if (typeof state === 'object') {
+                // A read that failed says so; it is not a process without a command line.
+                cell.appendChild(el('span', 'glances-proc-wait glances-proc-fail', state.message));
+            } else if (state) {
+                const code = el('code', 'glances-proc-cmdline', state);
+                code.setAttribute('data-glances-cmdline', '');
+                cell.appendChild(code);
+            } else {
+                cell.appendChild(el('span', 'glances-proc-wait',
+                    v.t('dashboard.glancesProcCmdNone', 'No command line for this process.')));
+            }
+            more.replaceChildren(cell);
+            entry.detail = more;
+            entry.shown = state;
+        }
+
+        /**
+         * Expand asks the server for this one command line; a second press
+         * hides it. After a failed read the press asks again instead.
+         */
         async toggle(pid) {
-            if (this.expanded.has(pid)) {
+            const held = this.expanded.get(pid);
+            if (this.expanded.has(pid) && !(held && typeof held === 'object')) {
                 this.expanded.delete(pid);
                 this.drawRows();
                 return;
             }
             this.expanded.set(pid, null);
             this.drawRows();
-            const res = await this.view.fetchPath(`processes/${pid}`);
+            const res = await this.view.fetchPath(`processes/${encodeURIComponent(pid)}`);
             if (!this.expanded.has(pid)) return;
-            const cmd = res.kind === 'ok' ? res.body?.cmdline : null;
-            const textValue = Array.isArray(cmd) ? cmd.map(String).join(' ').trim()
-                : (typeof cmd === 'string' ? cmd.trim() : '');
-            this.expanded.set(pid, textValue);
+            let value;
+            if (res.kind === 'ok') {
+                const cmd = res.body?.cmdline;
+                value = Array.isArray(cmd) ? cmd.map(String).join(' ').trim()
+                    : (typeof cmd === 'string' ? cmd.trim() : '');
+            } else if (res.kind === 'unavailable') {
+                // The server no longer has this pid: the process ended.
+                value = '';
+            } else {
+                value = { message: this.view.failureText(res) };
+            }
+            this.expanded.set(pid, value);
             if (this.tbody?.isConnected) this.drawRows();
         }
     }

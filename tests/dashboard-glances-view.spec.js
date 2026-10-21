@@ -53,7 +53,7 @@ async function mockGlances(page, overrides = {}) {
         let body;
         if (Object.prototype.hasOwnProperty.call(state.overrides, rest)) {
             const o = state.overrides[rest];
-            body = typeof o === 'function' ? o(url) : o;
+            body = typeof o === 'function' ? await o(url) : o;
             if (body && typeof body === 'object' && body.__status) {
                 await route.fulfill({ status: body.__status, contentType: 'text/plain', body: 'Too many requests' });
                 return;
@@ -186,6 +186,72 @@ test.describe('the Glances view', () => {
         await expect(page.locator('[data-glances-cmdline]')).toHaveCount(0);
     });
 
+    test('a poll keeps focus and an open command line in place', async ({ page }) => {
+        await page.clock.install();
+        const state = await mockGlances(page);
+        await openView(page, '#glances/processes?w=w_gl&p=1');
+        const row = page.locator('[data-glances-pid="1000"]');
+        await row.locator('[data-glances-expand]').click();
+        await expect(page.locator('[data-glances-cmdline]')).toHaveText('/usr/bin/dockerd --config /etc/dockerd.conf');
+        await row.locator('[data-glances-expand]').focus();
+        const marked = await row.evaluate((tr) => { tr.dataset.mark = 'kept'; return true; });
+        expect(marked).toBe(true);
+        const polls = count(state, 'processlist');
+        await page.clock.runFor(5_000);
+        await expect.poll(() => count(state, 'processlist')).toBeGreaterThan(polls);
+        // The same row element, its button still focused, the command line still open.
+        await expect(page.locator('[data-glances-pid="1000"][data-mark="kept"]')).toHaveCount(1);
+        expect(await page.evaluate(() => document.activeElement?.closest('[data-glances-pid]')?.getAttribute('data-glances-pid'))).toBe('1000');
+        expect(await page.evaluate(() => document.activeElement?.hasAttribute('data-glances-expand'))).toBe(true);
+        await expect(page.locator('[data-glances-cmdline]')).toHaveText('/usr/bin/dockerd --config /etc/dockerd.conf');
+    });
+
+    test('a failed command line read says so and asks again', async ({ page }) => {
+        const state = await mockGlances(page, { 'processes/1111': { __status: 429 } });
+        await openView(page, '#glances/processes?w=w_gl&p=1');
+        const row = page.locator('[data-glances-pid="1111"]');
+        await row.locator('[data-glances-expand]').click();
+        await expect(page.locator('.glances-proc-cmd')).toContainText('Too many requests, retrying');
+        await expect(page.locator('.glances-proc-cmd')).not.toContainText('No command line');
+        delete state.overrides['processes/1111'];
+        await row.locator('[data-glances-expand]').click();
+        await expect(page.locator('[data-glances-cmdline]')).toHaveText('/usr/bin/plex --config /etc/plex.conf');
+        expect(count(state, 'processes/1111')).toBe(2);
+    });
+
+    test('a section switch drops the stale answer', async ({ page }) => {
+        const state = await mockGlances(page);
+        await openView(page);
+        await expect(page.locator('[data-glances-card]')).toHaveCount(4);
+        let release;
+        const held = new Promise((resolve) => { release = resolve; });
+        state.overrides.processlist = async (url) => { await held; return processes(url); };
+        await page.locator('[data-glances-section="processes"]').click();
+        await expect.poll(() => count(state, 'processlist')).toBe(1);
+        await page.locator('[data-glances-section="overview"]').click();
+        await expect(page.locator('[data-glances-card]')).toHaveCount(4);
+        release();
+        // Give the late answer its chance to land, then check it did not.
+        await page.waitForTimeout(500);
+        await expect(page.locator('[data-glances-open="overview"]')).toBeVisible();
+        await expect(page.locator('[data-glances-card]')).toHaveCount(4);
+        await expect(page.locator('[data-glances-pid]')).toHaveCount(0);
+    });
+
+    test('a widget the server does not know reads as no widget', async ({ page }) => {
+        await mockGlances(page, { pluginslist: { __status: 404 } });
+        await markWhatsNewSeen(page);
+        await page.goto('/#glances/overview?w=gone&p=1');
+        await expect(page.locator('[data-glances-empty]')).toContainText('Add a Glances widget to a page first.', { timeout: 15_000 });
+        await expect(page.locator('[data-glances-error]')).toHaveCount(0);
+    });
+
+    test('a host with none of the sections says so', async ({ page }) => {
+        await mockGlances(page, { pluginslist: ['alert'] });
+        await openView(page);
+        await expect(page.locator('[data-glances-body]')).toContainText('Not available on this host.');
+    });
+
     test('processes says so when the host has no process list', async ({ page }) => {
         await mockGlances(page, { processlist: { available: false } });
         await openView(page, '#glances/processes?w=w_gl&p=1');
@@ -245,6 +311,10 @@ test.describe('the Glances view', () => {
         // A section in the menu is an address: switching rewrites the hash.
         await page.locator('[data-glances-section="overview"]').click();
         await expect(page.locator('[data-glances-open="overview"]')).toBeVisible();
+        await expect(page).toHaveURL(/#glances\/overview\?w=w_gl&p=1$/);
+
+        // A bare #glances over the open view gets its widget back in the address.
+        await page.evaluate(() => { window.location.hash = '#glances'; });
         await expect(page).toHaveURL(/#glances\/overview\?w=w_gl&p=1$/);
     });
 
