@@ -142,3 +142,63 @@ test.describe('About tabs: Project, Install, News', () => {
         expect(await page.evaluate(() => window.dashboardInstance.config.aboutTab)).toBe('project');
     });
 });
+
+test.describe('About → Install', () => {
+    async function openInstall(page, aboutInfo) {
+        await page.route('**/api/about-info', (route) => aboutInfo === 500
+            ? route.fulfill({ status: 500, body: '{}' })
+            : route.fulfill({ json: aboutInfo }));
+        await openConfig(page, 'about');
+        await page.evaluate(() => { const c = window.dashboardInstance.config; c.aboutTab = 'install'; c.render(); });
+        await expect(page.locator('[data-about-fact="pages"]')).toBeVisible();
+    }
+    const info = {
+        release: 'v9.9.9', buildVersion: 'dev', buildCommit: 'abc1234', goVersion: 'go1.25',
+        os: 'linux', arch: 'arm64', startedAt: 1, uptimeSeconds: 93784, dataBytes: 2048,
+    };
+
+    test('shows the running release, the facts and server figures', async ({ page }) => {
+        await openInstall(page, info);
+        await expect(page.locator('[data-about-fact="platform"]')).toContainText('linux/arm64');
+        await expect(page.locator('[data-about-fact="uptime"]')).toContainText('1d 2h');
+        await expect(page.locator('[data-about-fact="data"]')).toContainText('2');
+        for (const id of ['pages', 'categories', 'bookmarks', 'widgets', 'tags']) {
+            await expect(page.locator(`[data-about-fact="${id}"]`)).toBeVisible();
+        }
+    });
+
+    test('says a newer release is out and links it', async ({ page }) => {
+        await page.route('**/api/update-status*', (route) => route.fulfill({ json: {
+            enabled: true, current: 'v1.0.0', latest: 'v9.9.9', updateAvailable: true,
+            releaseUrl: 'https://github.com/jordibrouwer/nextdash/releases/tag/v9.9.9',
+        } }));
+        await openInstall(page, info);
+        await expect(page.locator('[data-about-release]')).toHaveText('v1.0.0');
+        await expect(page.locator('[data-about-update-status] a')).toHaveAttribute('href', /releases\/tag\/v9\.9\.9/);
+    });
+
+    test('keeps the release and counts when about-info fails', async ({ page }) => {
+        await openInstall(page, 500);
+        await expect(page.locator('[data-about-fact="platform"]')).toContainText('Unavailable');
+        await expect(page.locator('[data-about-fact="bookmarks"]')).toBeVisible();
+    });
+
+    test('diagnostics are Markdown and carry no addresses, names or paths', async ({ page }) => {
+        await openInstall(page, info);
+        const text = await page.evaluate(() => window.dashboardInstance.config.buildDiagnostics());
+        expect(text.startsWith('### nextDash')).toBe(true);
+        for (const h of ['### Environment', '### Counts', '### Features on', '### Browser']) expect(text).toContain(h);
+        expect(text).toContain('linux/arm64');
+        const names = await page.evaluate(() => (window.dashboardInstance.allBookmarks || []).flatMap((b) => [b.name, b.url]).filter(Boolean));
+        // A bookmark may legitimately be called "nextDash"; the fixed headings say so too.
+        for (const n of names.filter((v) => v.length > 8).slice(0, 50)) expect(text).not.toContain(n);
+        expect(text).not.toMatch(/\/data\b|localhost|127\.0\.0\.1/);
+    });
+
+    test('Copy diagnostics puts the Markdown on the clipboard', async ({ page, context }) => {
+        await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+        await openInstall(page, info);
+        await page.locator('[data-about-action="copy-diagnostics"]').click();
+        await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain('### nextDash');
+    });
+});

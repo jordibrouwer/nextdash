@@ -30406,6 +30406,10 @@ class DashboardConfig {
                 this.render();
                 return;
             }
+            if (e.target.closest('[data-about-action="copy-diagnostics"]')) {
+                void this.copyDiagnostics();
+                return;
+            }
             if (e.target.closest('[data-about-action="track-fresh"]')) {
                 void this.trackSiteInFresh();
                 return;
@@ -30532,8 +30536,168 @@ class DashboardConfig {
         </details>`;
     }
 
+    /**
+     * About → Install: which release this is, whether it is the newest, and the
+     * facts a bug report needs. The release comes from the update status the
+     * overview already uses; platform, uptime and data size from
+     * /api/about-info; widget count from the statistics' library fetch.
+     */
     renderAboutInstall() {
-        return '<div class="config-panel config-panel--plain"></div>';
+        const esc = (v) => this.dash.escapeHtml(v);
+        if (this._aboutInfo === undefined) void this.loadAboutInfo();
+        if (this._updateStatus === undefined) void this.loadUpdateStatus().then(() => this.repaintAboutInstall());
+        if (this._statsLibrary === undefined) void this.loadStatsLibrary().then(() => this.repaintAboutInstall());
+
+        const info = this._aboutInfo;
+        const status = this._updateStatus;
+        const lib = this._statsLibrary;
+        const s = this.computeStats();
+        const unavailable = this.t('config.aboutUnavailable', 'Unavailable');
+        const num = (v) => (v === null || v === undefined ? unavailable : String(v));
+        const release = status?.current || info?.release || '';
+
+        const desc = status ? (window.nextdashDescribeUpdateStatus?.(status, false) || {}) : {};
+        const behind = status && !status.error && status.updateAvailable && status.latest;
+        const newest = status && !status.error && !behind && status.latest;
+        const chipText = behind
+            ? this.t('config.updateCheckModalAvailable', '{latest} is available on GitHub.').replace('{latest}', status.latest)
+            : newest
+                ? this.t('config.aboutUpToDate', 'You are on the newest release.')
+                : (desc.message || '');
+        const chipTone = behind ? 'warn' : newest ? 'good' : '';
+        const build = info ? [info.buildDate, info.buildCommit && info.buildCommit !== 'unknown' ? info.buildCommit : ''].filter(Boolean).join(' · ') : '';
+
+        const tile = (id, label, value) => `
+            <div class="config-about-fact" data-about-fact="${id}">
+                <span class="config-about-fact-label">${esc(label)}</span>
+                <span class="config-about-fact-value">${esc(value)}</span>
+            </div>`;
+        const platform = info ? `${info.os}/${info.arch}` : unavailable;
+        const tiles = [
+            tile('pages', this.t('config.aboutFactPages', 'Pages'), num((this.dash.pages || []).length)),
+            tile('categories', this.t('config.aboutFactCategories', 'Categories'), num(s.categories)),
+            tile('bookmarks', this.t('config.aboutFactBookmarks', 'Bookmarks'), num((this.dash.allBookmarks || []).length)),
+            tile('widgets', this.t('config.aboutFactWidgets', 'Widgets'), num(lib ? lib.widgets : null)),
+            tile('tags', this.t('config.aboutFactTags', 'Tags'), num(s.tagCount)),
+            tile('data', this.t('config.aboutFactData', 'Data size'), info && info.dataBytes ? this.formatBytes(info.dataBytes) : unavailable),
+            tile('uptime', this.t('config.aboutFactUptime', 'Uptime'), info ? DashboardConfig.formatUptime(info.uptimeSeconds) : unavailable),
+            tile('platform', this.t('config.aboutFactPlatform', 'Platform'), platform),
+        ].join('');
+
+        return `
+            <div class="config-panel config-about-version">
+                <div class="config-about-version-main">
+                    <span class="config-about-version-label">${esc(this.t('config.aboutRunning', 'Running'))}</span>
+                    <strong class="config-about-version-tag" data-about-release>${esc(release || unavailable)}</strong>
+                    ${build ? `<span class="config-about-version-build">${esc(build)}</span>` : ''}
+                </div>
+                ${chipText ? `<p class="config-about-version-status${chipTone ? ` is-${chipTone}` : ''}" data-about-update-status>${esc(chipText)}${behind && status.releaseUrl ? ` <a href="${esc(status.releaseUrl)}" target="_blank" rel="noopener noreferrer">${esc(this.t('config.overviewUpdateAvailableCta', 'View release on GitHub →'))}</a>` : ''}</p>` : ''}
+            </div>
+            <div class="config-about-facts">${tiles}</div>
+            <div class="config-panel config-panel--plain">
+                <h3 class="config-panel-title">${esc(this.t('config.aboutDiagTitle', 'Diagnostics'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.aboutDiagNote',
+                    'Copies the version, platform, counts and which features are on, as Markdown for a GitHub issue. No bookmark names or addresses, no paths and no settings values.'))}</p>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-about-action="copy-diagnostics">${esc(this.t('config.aboutDiagCopy', 'Copy diagnostics'))}</button>
+                </div>
+            </div>`;
+    }
+
+    /** 93784 → "1d 2h", 3700 → "1h 1m", 40 → "40s". */
+    static formatUptime(seconds) {
+        const t = Math.max(0, Math.floor(Number(seconds) || 0));
+        const d = Math.floor(t / 86400);
+        const h = Math.floor((t % 86400) / 3600);
+        const m = Math.floor((t % 3600) / 60);
+        if (d) return `${d}d ${h}h`;
+        if (h) return `${h}h ${m}m`;
+        if (m) return `${m}m`;
+        return `${t}s`;
+    }
+
+    /** Server-side facts for About → Install; null when the call fails. */
+    async loadAboutInfo() {
+        try {
+            const res = await fetch('/api/about-info', { cache: 'no-store' });
+            this._aboutInfo = res.ok ? await res.json() : null;
+        } catch {
+            this._aboutInfo = null;
+        }
+        this.repaintAboutInstall();
+    }
+
+    repaintAboutInstall() {
+        if (!this.isActiveView() || this.section !== 'about' || this.aboutTab !== 'install') return;
+        const body = document.getElementById('config-about-body');
+        if (body) body.innerHTML = this.renderAboutInstall();
+    }
+
+    /**
+     * The Markdown a bug report needs. Counts and on/off names only: never a
+     * bookmark name or address, the data path, a token or a setting's value.
+     */
+    buildDiagnostics() {
+        const info = this._aboutInfo || {};
+        const status = this._updateStatus || {};
+        const s = this.computeStats();
+        const settings = this.dash.settings || {};
+        const features = Object.entries(DashboardConfig.HELP_PANEL_FEATURES)
+            .filter(([, f]) => f.isOn(settings))
+            .map(([key]) => this.t(key, key));
+        const unknown = 'unknown';
+        const lines = [
+            '### nextDash',
+            `- Release: ${status.current || info.release || unknown}`,
+            `- Build: ${[info.buildVersion, info.buildCommit].filter((v) => v && v !== 'unknown').join(' ') || unknown}${info.buildDate ? ` (${info.buildDate})` : ''}`,
+            status.latest ? `- Latest on GitHub: ${status.latest}` : '',
+            '',
+            '### Environment',
+            `- Platform: ${info.os ? `${info.os}/${info.arch}` : unknown}`,
+            `- Go: ${info.goVersion || unknown}`,
+            `- Uptime: ${info.uptimeSeconds !== undefined ? DashboardConfig.formatUptime(info.uptimeSeconds) : unknown}`,
+            `- Data size: ${info.dataBytes ? this.formatBytes(info.dataBytes) : unknown}`,
+            '',
+            '### Counts',
+            `- Pages: ${(this.dash.pages || []).length}`,
+            `- Categories: ${s.categories}`,
+            `- Bookmarks: ${(this.dash.allBookmarks || []).length}`,
+            `- Widgets: ${this._statsLibrary && this._statsLibrary.widgets !== null ? this._statsLibrary.widgets : unknown}`,
+            `- Tags: ${s.tagCount}`,
+            '',
+            '### Features on',
+            features.length ? features.map((f) => `- ${f}`).join('\n') : '- none of the optional ones',
+            '',
+            '### Browser',
+            `- ${navigator.userAgent}`,
+            `- Language: ${navigator.language || unknown}`,
+            `- Screen: ${window.innerWidth}x${window.innerHeight}`,
+            `- Theme: ${settings.theme || unknown}`,
+        ];
+        return lines.filter((l, i) => l !== '' || lines[i - 1] !== '').join('\n');
+    }
+
+    async copyDiagnostics() {
+        const text = this.buildDiagnostics();
+        let copied = false;
+        try {
+            await navigator.clipboard.writeText(text);
+            copied = true;
+        } catch {
+            // Plain-HTTP LAN installs have no Clipboard API.
+            const area = document.createElement('textarea');
+            area.value = text;
+            area.setAttribute('readonly', '');
+            area.style.position = 'fixed';
+            area.style.opacity = '0';
+            document.body.appendChild(area);
+            area.select();
+            try { copied = document.execCommand('copy'); } catch { copied = false; }
+            area.remove();
+        }
+        this.notify(copied
+            ? this.t('config.aboutDiagCopied', 'Diagnostics copied.')
+            : this.t('config.aboutDiagFailed', 'Could not copy. Select the text and copy it by hand.'), copied ? 'success' : 'error');
     }
 
     /**
