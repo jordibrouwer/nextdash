@@ -51,6 +51,11 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.20.3 (2026-10-21)
+- Appearance: the dashboard is set in your font preset, Source Code Pro by default, and Config and the other views read in Inter
+- Config: About has Project, Install and News &amp; features tabs, with the version, counts, uptime and a Copy diagnostics button for bug reports
+- Fixes: the text font is Source Code Pro again after v1.20.0 moved it to Inter, and the +N on a tag offer takes the page font
+
 ### v1.20.1 (2026-10-20)
 - Widgets: four Beszel widgets read a Beszel hub: every system, one system in full, only the systems that need a look, and every disk
 - Config: one pane instead of a pane per panel, hints under their settings, Appearance tabs on one line, and Unraid opens on its connection
@@ -104,7 +109,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-10-20</Date>
+  <Date>2026-10-21</Date>
 
   <Config Name="WebUI Port"
           Target="8080"

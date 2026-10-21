@@ -1,8 +1,0 @@
-node_modules/
-# Generated from MANUAL.md by scripts/split-manual.mjs
-src/
-.vitepress/cache/
-.vitepress/dist/
-# Feature pictures and recordings (tens of MB, retaken with scripts/feature-shots);
-# they travel in the theme zip, not in git.
-wordpress-theme/*/assets/img/features/
