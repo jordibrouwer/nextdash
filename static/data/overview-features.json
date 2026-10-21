@@ -2,6 +2,23 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureAboutInstallTitle",
+      "titleFallback": "Facts about your install, ready for a bug report",
+      "whatKey": "config.overviewNewFeatureAboutInstallWhat",
+      "whatFallback": "When something went wrong you had to dig up the version, the platform and what was switched on before anyone could help.",
+      "howKey": "config.overviewNewFeatureAboutInstallHow",
+      "howFallback": "Config → About has an Install tab with the release you run and whether a newer one is out, your counts, the size of your data, the uptime and the platform. Copy diagnostics puts the same facts on the clipboard as Markdown for a GitHub issue, with no bookmark names, addresses, paths or setting values.",
+      "enableKey": "config.overviewNewFeatureAboutInstallEnable",
+      "enableFallback": "Open Config → About → Install.",
+      "ctaKey": "config.overviewNewFeatureAboutInstallCta",
+      "ctaFallback": "Open Install →",
+      "go": {
+        "section": "about",
+        "aboutTab": "install"
+      },
+      "since": "v1.20.3"
+    },
+    {
       "titleKey": "config.overviewNewFeatureMediaPlayingTitle",
       "titleFallback": "Who is watching, on your dashboard",
       "whatKey": "config.overviewNewFeatureMediaPlayingWhat",
