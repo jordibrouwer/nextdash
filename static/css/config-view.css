@@ -10131,3 +10131,25 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
 @media (max-width: 720px) {
     .config-about-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* ── About → News tab ────────────────────────────────────────────────────
+   The same card language as Project and Install: one gap between the panels. */
+.config-about-news {
+    display: grid;
+    gap: 16px;
+    margin-top: 20px;
+}
+.config-about-news > .config-panel { margin-top: 0; }
+
+/* ── About → credits and licences ────────────────────────────────────── */
+.config-about-licence-group { margin: 14px 0 6px; font-size: 0.9rem; }
+.config-about-licence-list { list-style: none; margin: 0; padding: 0; }
+.config-about-licence-list li {
+    display: flex;
+    gap: 8px;
+    padding: 4px 0;
+    border-top: 1px solid var(--border-color, rgba(128, 128, 128, 0.15));
+}
+.config-about-licence-list a { color: inherit; text-underline-offset: 2px; }
+.config-about-licence-version { color: var(--text-secondary); }
+.config-about-licence-id { margin-left: auto; color: var(--text-secondary); white-space: nowrap; }

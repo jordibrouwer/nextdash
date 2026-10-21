@@ -30387,6 +30387,10 @@ class DashboardConfig {
         const body = container.querySelector('#config-view-body') || container;
         if (body.dataset.aboutBound === '1') return;
         body.dataset.aboutBound = '1';
+        // `toggle` does not bubble, so it is caught on the way down.
+        body.addEventListener('toggle', (e) => {
+            if (this.section === 'about' && e.target.matches?.('[data-about-credits]') && e.target.open) void this.loadLicences();
+        }, true);
         body.addEventListener('click', (e) => {
             if (this.section !== 'about') return;
             const tab = e.target.closest('[data-about-tab]');
@@ -30529,11 +30533,42 @@ class DashboardConfig {
      */
     renderAboutCredits() {
         const esc = (v) => this.dash.escapeHtml(v);
-        // TODO(task 7): fill with the generated licence list.
         return `<details class="config-about-credits" data-about-credits>
             <summary>${esc(this.t('config.aboutCreditsTitle', 'Credits and licences'))}</summary>
+            <div class="config-about-licences" data-about-licences>${this.renderLicenceList()}</div>
             ${this.renderIconCredits()}
         </details>`;
+    }
+
+    /** The generated licence list; empty until the section is first opened. */
+    renderLicenceList() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const data = this._licences;
+        if (data === undefined) return '';
+        if (!data || !Array.isArray(data.groups)) {
+            return `<p class="config-panel-note">${esc(this.t('config.aboutLicencesFailed', 'The licence list could not be loaded.'))}</p>`;
+        }
+        return data.groups.map((group) => `
+            <h4 class="config-about-licence-group">${esc(group.name)}</h4>
+            <ul class="config-about-licence-list">${(group.items || []).map((item) => {
+                const name = item.url
+                    ? `<a href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${esc(item.name)}</a>`
+                    : esc(item.name);
+                return `<li>${name}${item.version ? ` <span class="config-about-licence-version">${esc(item.version)}</span>` : ''}<span class="config-about-licence-id">${esc(item.license || '')}</span></li>`;
+            }).join('')}</ul>`).join('');
+    }
+
+    /** Fetch the licence list the first time the credits are opened. */
+    async loadLicences() {
+        if (this._licences !== undefined) return;
+        try {
+            const res = await fetch('/static/data/licenses.json');
+            this._licences = res.ok ? await res.json() : null;
+        } catch {
+            this._licences = null;
+        }
+        const target = document.querySelector('[data-about-licences]');
+        if (target) target.innerHTML = this.renderLicenceList();
     }
 
     /**
@@ -30732,7 +30767,9 @@ class DashboardConfig {
         this.markNewsRead();
 
         return `
-            <div class="config-panel config-panel--plain config-news-panel">
+            <div class="config-about-news">
+            <div class="config-panel config-news-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.aboutNewsTitle', 'Releases, posts and features'))}</h3>
                 ${this.renderNewsChips()}
                 ${shown.length
                     ? `<ul class="config-news-stream">${shown.map((item) => this.renderNewsItem(item)).join('')}</ul>`
@@ -30740,7 +30777,7 @@ class DashboardConfig {
                 ${this.renderNewsFoot(shown.length, stream.length)}
             </div>
             ${(filter === 'all' || filter === 'feature') && catalogue.length ? `
-            <div class="config-panel config-panel--plain">
+            <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.aboutFeatureCatalogue', 'Everything else you can switch on'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.aboutFeatureCatalogueNote',
                     'Settings from earlier releases, in the order they were written down.'))}</p>
@@ -30756,7 +30793,8 @@ class DashboardConfig {
                     at: 0,
                 })).join('')}</ul>
             </div>` : ''}
-            ${this.renderTrackInFresh()}`;
+            ${this.renderTrackInFresh()}
+            </div>`;
     }
 
     /**
@@ -30771,7 +30809,7 @@ class DashboardConfig {
         const already = (this.dash.allBookmarks || [])
             .some((b) => String(b?.url || '').includes('nextdash.cc'));
         return `
-            <div class="config-panel config-panel--plain">
+            <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.aboutTrackTitle', 'Follow it from your own dashboard'))}</h3>
                 <p class="config-panel-note">${esc(already
                     ? this.t('config.aboutTrackDone', 'nextdash.cc is already one of your bookmarks — Fresh will count new posts on it like any other page.')

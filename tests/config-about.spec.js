@@ -124,3 +124,39 @@ test.describe('config about', () => {
         await expect(credits).toContainText('MIT');
     });
 });
+
+test.describe('config about credits and licences', () => {
+    test('the licence list loads once, on first open', async ({ page }) => {
+        let hits = 0;
+        page.on('request', (r) => { if (r.url().includes('/static/data/licenses.json')) hits += 1; });
+        await openAbout(page);
+        expect(hits).toBe(0);
+        const credits = page.locator('details[data-about-credits]');
+        await credits.locator('summary').click();
+        await expect(credits.locator('.config-about-licence-list li').first()).toBeVisible();
+        await expect(credits).toContainText('nextDash');
+        await expect(credits).toContainText('uPlot');
+        await expect(credits.locator('li').filter({ hasText: /MIT|Apache|BSD/ }).first()).toBeVisible();
+        await credits.locator('summary').click();
+        await credits.locator('summary').click();
+        expect(hits).toBe(1);
+    });
+
+    test('a missing list says so and leaves the rest of Project alone', async ({ page }) => {
+        await page.route('**/static/data/licenses.json', (route) => route.fulfill({ status: 404, body: '' }));
+        await openAbout(page);
+        await page.locator('details[data-about-credits] summary').click();
+        await expect(page.locator('[data-about-licences]')).toContainText('could not be loaded');
+        await expect(page.locator('[data-about-card="why"]')).toBeVisible();
+        await expect(page.locator('[data-about-icon-credits]')).toBeVisible();
+    });
+});
+
+test.describe('config about news tab', () => {
+    test('News keeps its stream and filters inside the new wrapper', async ({ page }) => {
+        await openAbout(page);
+        await page.evaluate(() => { const c = window.dashboardInstance.config; c.aboutTab = 'news'; c.render(); });
+        await expect(page.locator('.config-about-news .config-news-chips')).toBeVisible();
+        await expect(page.locator('.config-about-news .config-news-stream').first()).toBeVisible();
+    });
+});
