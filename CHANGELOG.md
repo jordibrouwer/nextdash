@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.20.2 — 21 October 2026](#v1202--21-october-2026)
 - [v1.20.1 — 20 October 2026](#v1201--20-october-2026)
 - [v1.20.0 — 20 October 2026](#v1200--20-october-2026)
 - [v1.19.10 — 18 October 2026](#v11910--18-october-2026)
@@ -113,6 +114,23 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.20.2 — 21 October 2026
+
+The text of the whole app is set in **Source Code Pro** again, the mono the app is named for. A fresh install starts on it, an install still on Inter moves to it once, and Inter stays one pick away under Appearance.
+
+### Look
+
+- **fix — the text font is Source Code Pro by default, and was Inter.** Inter had been the default since the text in a mono cut long names short in narrow columns, and the code-like parts (the // , addresses, figures, key chips) stayed on the mono. The default is the mono for the text as well now: `FontPreset` is `source-code-pro` on a fresh install, for a value that is not a preset and for a custom font whose file is gone (`models.go`), and the same fallback stands in the browser (`font-presets.js`, `dashboard.js`, `dashboard-data.js`, `theme-loader.js`, `dashboard-config.js`, `umami-analytics.js`) and in `--font-family-main` (`font-size.css`), so nothing paints in Inter before the settings arrive. The preload of Inter left `templates/dashboard.html`; the mono was preloaded already, and a reader who picks Inter loads it as before.
+- **fix — an install on Inter moves once.** `fontDefaultMonoMigrated` is the mirror of the move to Inter in v1.20.0: an install still on Inter goes to Source Code Pro, one on another preset or an uploaded font stays, and a reader who goes back to Inter after the pass keeps it. The server cannot tell a reader who chose Inter from one who was given it, so the first group moves with the second. An install from before the move to Inter passes both and ends on the mono.
+- **fix — the two looks that set Inter set the mono.** *Glass* and *Glass boxed* in the look studio named Inter for their text; they name Source Code Pro now, like the default they sit beside. The looks that name DM Sans or IBM Plex keep them (`dashboard-config-studio.js`).
+- **docs — tests for the default.** `TestFontDefaultIsSourceCodeProOnAFreshInstall` and `TestFontDefaultMovesEveryoneOnInterOnce` in `font_default_test.go` pin the fresh install, the move, the presets that stay, an uploaded font, a reader who goes back and a file without the key; `TestNormalizeFontPreset` follows the fallback; `tests/font-default.spec.js` asks for Source Code Pro on the page, loaded from `/static/fonts` with no request to a font CDN.
+
+### Docs
+
+- **docs — the manual.** §16's Typeface line says a fresh install reads in Source Code Pro, that an install on Inter moved once and that Inter stays a pick. Help and the translations follow in the next docs round; `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 

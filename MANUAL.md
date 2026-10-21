@@ -3380,7 +3380,7 @@ other theme keeps its own. The backdrop and the card glass work the same way.
 
 ### 16.4 Type and background
 
-- **Typeface** — Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans or System UI — or **upload a font file**. A fresh install reads in Inter, at medium size (**M**) on a fresh install. An install that has a size keeps it; one still on the old default moves up once. Code, addresses and key chips are set in Source Code Pro, or in the monospaced typeface you pick; a proportional one leaves them on Source Code Pro.
+- **Typeface** — Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans or System UI — or **upload a font file**. A fresh install reads in Source Code Pro, and an install that was on Inter moved to it once; Inter stays one pick away. The size is medium (**M**) on a fresh install. An install that has a size keeps it; one still on the old default moves up once. Code, addresses and key chips are set in Source Code Pro, or in the monospaced typeface you pick; a proportional one leaves them on Source Code Pro.
 - **Weight** — Normal, Semi-bold or Bold. **Size** — seven steps from XS to XL, **M** by default; pointing at a size previews it.
 
 Type is in the **Type** panel on the **Theme** tab; everything behind the bookmarks is on the **Background** tab, drawn in three layers from the bottom up: the theme's backdrop, a pattern over it, and a background of your own on top.
