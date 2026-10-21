@@ -612,7 +612,7 @@ test('Shift+U opens the Bookmarks view on Unsorted, with no header icon of its o
  * The places, in the order they are used: home, then the Bookmarks view,
  * the Inbox and Containers, and Config last.
  */
-test('the destinations run Bookmarks, Inbox, Containers', async ({ page }) => {
+test('the destinations run Bookmarks, Inbox, Containers, Glances, Config', async ({ page }) => {
     await openDashboard(page);
     const order = await page.evaluate(() => [...document.querySelectorAll('.header-destinations > *')]
         .map((el) => el.className.split(' ')[0]));

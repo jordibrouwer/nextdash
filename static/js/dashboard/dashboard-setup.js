@@ -532,18 +532,15 @@ class DashboardSetup {
             }
 
             // Check if a number key (1-9) was pressed
-            // 0 is page 0: the Glances page once it is set up, else the place
-            // to set it up. It used to open the Inbox, which is Shift+I now.
-            // Swallowed either way, or it reached the shortcut palette -- see
-            // the digit branch below.
+            // 0 is no page's key. It used to open the Inbox (Shift+I now) and
+            // is swallowed so it does not reach the shortcut palette -- see the
+            // digit branch below.
             if (key === '0') {
                 if (d.keyboardNavigation?.isGChordActive?.()) {
                     return;
                 }
                 e.preventDefault();
                 e.stopPropagation();
-                window.nextdashRecordKey?.('0');
-                void d.glancesStatus?.openPageZero?.();
                 return;
             }
 
@@ -586,6 +583,22 @@ class DashboardSetup {
                 e.stopPropagation();
                 window.nextdashRecordKey?.('Shift + Z');
                 void d.toggleGridKeyLegend?.();
+                return;
+            }
+
+            // Shift+G opens Glances, when Config → Glances has it on. Inside the
+            // Inbox, Config and the Bookmarks view G is "last item" (End does the
+            // same), so it stays that there.
+            if (e.shiftKey && e.code === 'KeyG' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                if (['inbox', 'config', 'library'].includes(d.activeView)) {
+                    return;
+                }
+                if (d.glancesStatus?.configured) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + G');
+                    void d.glancesStatus.openGlancesPage();
+                }
                 return;
             }
 

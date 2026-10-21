@@ -640,24 +640,9 @@ class DashboardUiHelpers {
          * options, and this is a button, so a screen reader must not count it
          * as one more page to choose.
          */
-        /*
-         * Page 0, once Config has Glances set up. A button beside the list, not a
-         * row in it: the digits 1-9 are the list's, and 0 is this one's. Paused
-         * or not, it is there; the page holds the switch that turns the reading back on.
-         */
-        const glances = d.glancesStatus;
-        const glancesRow = glances?.configured
-            ? `<button type="button" class="page-overview-modal-glances" id="page-overview-glances"
-                    aria-keyshortcuts="0" aria-label="${d.escapeHtml(this.formatDashboardLabel('glancesTab', {}, 'Glances'))} (0)">
-                    <span class="page-overview-modal-num" aria-hidden="true">0</span>
-                    <span class="page-glances-dot" data-level="${d.escapeHtml(String(glances.level || 'unknown'))}" aria-hidden="true"></span>
-                    <span class="page-overview-modal-name">${d.escapeHtml(this.formatDashboardLabel('glancesTab', {}, 'Glances'))}</span>
-                    ${glances.paused ? `<span class="page-overview-modal-count">${d.escapeHtml(this.formatDashboardLabel('glancesConnectionOff', {}, 'Connection off'))}</span>` : ''}
-                </button>`
-            : '';
         return `${filterHtml}<div class="page-overview-modal-slab">`
             + `<ul class="page-overview-modal-list" role="listbox" aria-label="${d.escapeHtml(listLabel)}">${items}</ul>`
-            + `${glancesRow}${newRow}</div>${filesHtml}${footHtml}`;
+            + `${newRow}</div>${filesHtml}${footHtml}`;
     }
 
 
@@ -942,12 +927,6 @@ class DashboardUiHelpers {
 
         const remove = this._setupPageOverviewDelete(pages, listRoot);
 
-        // Page 0 (Glances): its own button below the list, and the 0 key.
-        const openGlances = async () => {
-            window.AppModal?.hide?.();
-            await d.glancesStatus?.openPageZero?.();
-        };
-        document.getElementById('page-overview-glances')?.addEventListener('click', () => { void openGlances(); });
 
         /*
          * Filtering hides rows; it does not renumber them.
@@ -999,8 +978,7 @@ class DashboardUiHelpers {
             // A digit is a page's key wherever it is pressed: "3" means the
             // third page, filtered or not, typed into or not. Every other
             // character belongs to whatever is being typed.
-            const hasGlances = Boolean(document.getElementById('page-overview-glances'));
-            const isPageDigit = (e.key >= '1' && e.key <= '9') || (hasGlances && e.key === '0');
+            const isPageDigit = e.key >= '1' && e.key <= '9';
             if (typing && e.key.length === 1 && !isPageDigit) {
                 return;
             }
@@ -1013,7 +991,7 @@ class DashboardUiHelpers {
              * filter reads the same whether it had the focus or not.
              */
             if (!typing && filterInput && e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey
-                && e.key !== ',' && e.key !== 'n' && e.key !== 'N' && !(e.key >= '1' && e.key <= '9') && !(hasGlances && e.key === '0')) {
+                && e.key !== ',' && e.key !== 'n' && e.key !== 'N' && !(e.key >= '1' && e.key <= '9')) {
                 e.preventDefault();
                 e.stopPropagation();
                 filterInput.focus({ preventScroll: true });
@@ -1072,10 +1050,6 @@ class DashboardUiHelpers {
                         void navigateTo(pages[focusedIndex]);
                     }
                 }
-            } else if (e.key === '0' && hasGlances) {
-                e.preventDefault();
-                e.stopPropagation();
-                void openGlances();
             } else if (e.key >= '1' && e.key <= '9') {
                 const idx = parseInt(e.key, 10) - 1;
                 if (idx < pages.length) {

@@ -1,5 +1,5 @@
 /**
- * Page 0, Overview: everything about the machine on one screen.
+ * Glances page, Overview: everything about the machine on one screen.
  *
  * Blocks, each one a card the reader can switch off in Config → Glances (a
  * block that is off is not even asked of Glances): the machine and its uptime;
@@ -269,7 +269,10 @@
         card(className, id, titleKey, titleFallback) {
             const section = el('section', `glances-ov-block ${className}`);
             section.setAttribute('data-glances-block', id);
-            section.appendChild(el('h3', 'glances-block-title', this.view.t(titleKey, titleFallback)));
+            const title = el('h3', 'glances-block-title', this.view.t(titleKey, titleFallback));
+            const info = window.DashboardGlancesInfo?.button(this.view, id);
+            if (info) title.appendChild(info);
+            section.appendChild(title);
             return section;
         }
 

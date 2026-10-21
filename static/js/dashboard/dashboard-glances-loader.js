@@ -66,6 +66,11 @@ class DashboardGlancesLoader {
             await load('js/dashboard/dashboard-glances-table.js', 'dashboardGlancesTable',
                 () => typeof window.DashboardGlancesTable !== 'undefined');
         }
+        // The ℹ buttons and the page's explainer.
+        if (typeof window.DashboardGlancesInfo === 'undefined') {
+            await load('js/dashboard/dashboard-glances-info.js', 'dashboardGlancesInfo',
+                () => typeof window.DashboardGlancesInfo !== 'undefined');
+        }
         // The side panel behind a process or a container (the shared drawer lives in the page).
         if (typeof window.DashboardGlancesDetail !== 'function') {
             await load('js/dashboard/dashboard-glances-detail.js', 'dashboardGlancesDetail',

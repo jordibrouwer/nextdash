@@ -1,10 +1,10 @@
 /**
  * Config -> Glances.
  *
- * The one Glances host nextDash shows as page 0: its address and optional
+ * The one Glances host nextDash shows as its Glances page: its address and optional
  * login, how often the page reads it, which parts of the Overview it draws,
  * when a reading turns yellow or red, and which mounts count as disks. Switched
- * on and with an address, page 0 exists (a 0 tab and the 0 key); otherwise
+ * on and with an address, the Glances page exists (an icon in the navigation and Shift+G); otherwise
  * nothing about Glances is on screen. The password is kept on the server and
  * never sent back.
  */
@@ -37,7 +37,7 @@
         ['temp', 'config.glancesLineTemp', 'Temperature', '°C'],
     ];
 
-    const REFRESH = [1, 2, 5, 10];
+    const REFRESH = [1, 2, 5, 10, 30, 60, 300, 900];
 
     Object.assign(global.DashboardConfig.prototype, {
 
@@ -59,10 +59,13 @@
                     <input type="number" class="config-text config-text--short" min="1" max="${unit === '%' ? 100 : 150}" step="1"
                            data-glances-line="${esc(id)}Bad"> ${esc(unit)}</label>
             </div>`).join('');
-        const refresh = REFRESH.map((s) => `<option value="${s}">${esc(this.t('config.glancesEverySeconds', 'Every {n} s').replace('{n}', String(s)))}</option>`).join('');
+        const everyLabel = (s) => (s >= 60
+            ? this.t('config.glancesEveryMinutes', 'Every {n} min').replace('{n}', String(s / 60))
+            : this.t('config.glancesEverySeconds', 'Every {n} s').replace('{n}', String(s)));
+        const refresh = REFRESH.map((s) => `<option value="${s}">${esc(everyLabel(s))}</option>`).join('');
         return `
             <p class="config-view-intro">${t('glancesIntro',
-                'Show one Glances host as page 0: live statistics, graphs and processes. Glances 4 only; nextDash reads, it never changes anything there.')}</p>
+                'Show one Glances host as a page of its own: live statistics, graphs and processes. Glances 4 only; nextDash reads, it never changes anything there.')}</p>
             <div class="config-tabpage">
                 <div class="config-tabpage-main" id="config-glances-body">
                     ${window.DemoLock?.unraidNote?.() || ''}
@@ -70,16 +73,16 @@
                         <h3 class="config-panel-title">${t('glancesTitle', 'Glances')}</h3>
                         <label class="config-toggle">
                             <input type="checkbox" data-glances-field="enabled">
-                            <span>${t('glancesEnabled', 'Show page 0')}</span>
+                            <span>${t('glancesEnabled', 'Show Glances in the navigation')}</span>
                         </label>
                         <p class="config-panel-note">${t('glancesEnabledNote',
-                            'Adds a 0 tab beside your pages, and the 0 key opens it. Off, nothing about Glances runs or shows.')}</p>
+                            'Adds a Glances icon to the main navigation, before Config; Shift+G opens it. Off, nothing about Glances runs or shows.')}</p>
                         <label class="config-toggle">
                             <input type="checkbox" role="switch" data-glances-field="connected">
                             <span>${t('glancesConnected', 'Connection to Glances')}</span>
                         </label>
                         <p class="config-panel-note" data-glances-connected-note>${t('glancesConnectedNote',
-                            'On: nextDash reads the host. Off: the page and what was recorded stay, but nothing is read until you switch it on. The same switch is at the top of page 0.')}</p>
+                            'On: nextDash reads the host. Off: the page and what was recorded stay, but nothing is read until you switch it on. The same switch is at the top of the Glances page.')}</p>
                         <div class="config-field">
                             <label class="config-field-label" for="config-glances-server">${t('glancesAddress', 'Address')}</label>
                             <input type="url" id="config-glances-server" class="config-text" data-glances-field="server"
@@ -107,11 +110,11 @@
                     <div class="config-panel" data-glances-section>
                         <h3 class="config-panel-title">${t('glancesPageTitle', 'The page')}</h3>
                         <div class="config-field">
-                            <label class="config-field-label" for="config-glances-refresh">${t('glancesRefresh', 'Read the host')}</label>
+                            <label class="config-field-label" for="config-glances-refresh">${t('glancesRefresh', 'Refresh while the page is open')}</label>
                             <select id="config-glances-refresh" class="config-select" data-glances-field="refresh">${refresh}</select>
                         </div>
                         <p class="config-field-hint">${t('glancesRefreshHint',
-                            'How often an open page asks. The history is recorded every 5 seconds either way.')}</p>
+                            'How often an open Glances page reads the host for the numbers you see. It is not how often the history is recorded: that is Record every, at the top of the Glances page, and it runs whether or not the page is open.')}</p>
                         <h4 class="config-panel-subtitle">${t('glancesBlocksTitle', 'Overview shows')}</h4>
                         <div class="config-checkset" data-glances-blocks>${blocks}</div>
                     </div>
@@ -119,7 +122,7 @@
                     <div class="config-panel" data-glances-section>
                         <h3 class="config-panel-title">${t('glancesColoursTitle', 'Yellow and red')}</h3>
                         <p class="config-panel-note">${t('glancesColoursNote',
-                            'When a reading changes colour, and the dot on the 0 tab. A temperature sensor that reports limits of its own uses those.')}</p>
+                            'When a reading changes colour, and the dot on the Glances icon. A temperature sensor that reports limits of its own uses those.')}</p>
                         ${lines}
                     </div>
 
@@ -144,13 +147,23 @@
                     <div class="config-panel" data-glances-section data-glances-collected-panel>
                         <h3 class="config-panel-title">${t('glancesCollectedTitle', 'Collected data')}</h3>
                         <p class="config-panel-note">${t('glancesCollectedNote',
-                            'nextDash records the host every 5 seconds and keeps 30 days: processor, memory, disks, network, temperatures, incidents and, for the processes and containers you switch on, their own history. Nothing leaves this server.')}</p>
+                            'nextDash records the host at the pace you set on the Glances page (30 seconds to start with) and keeps 30 days: processor, memory, disks, network, temperatures, incidents and, for the processes and containers you switch on, their own history. Nothing leaves this server.')}</p>
                         <p class="config-field-hint" data-glances-collected aria-live="polite"></p>
                         <div class="config-actions">
                             <a class="config-btn" data-glances-export href="/api/glances/history.csv?since=0" download="glances-history.csv">${t('glancesExport', 'Download as CSV')}</a>
                             <button type="button" class="config-btn config-btn--danger" data-glances-wipe disabled>${t('glancesWipe', 'Delete collected data')}</button>
                         </div>
                         <p class="config-field-hint" data-glances-wiped aria-live="polite"></p>
+                    </div>
+
+                    <div class="config-panel" data-glances-section data-glances-reset-panel>
+                        <h3 class="config-panel-title">${t('glancesResetTitle', 'Reset Glances')}</h3>
+                        <p class="config-panel-note">${t('glancesResetNote',
+                            'Removes the address, the login, the thresholds and every choice, together with everything recorded. Show Glances and the connection go off, and the Glances icon leaves the navigation until you set it up again.')}</p>
+                        <div class="config-actions">
+                            <button type="button" class="config-btn config-btn--danger" data-glances-reset>${t('glancesReset', 'Reset Glances…')}</button>
+                        </div>
+                        <p class="config-field-hint" data-glances-reset-result aria-live="polite"></p>
                     </div>
 
                     <div class="config-actions">
@@ -201,10 +214,19 @@
             unreachable: t('glancesErrUnreachable', 'Glances could not be reached at that address.'),
         };
 
+        // The connection is something a shown Glances has: with Show Glances off it
+        // reads off and cannot be switched; switching Show Glances on brings back
+        // the state it had.
+        const syncConnection = (shown, paused) => {
+            const box = field('connected');
+            box.disabled = !shown;
+            box.checked = shown && !paused;
+        };
+
         const paint = (cfg) => {
             current = cfg;
             field('enabled').checked = cfg.enabled === true;
-            field('connected').checked = cfg.paused !== true;
+            syncConnection(cfg.enabled === true, cfg.paused === true);
             field('server').value = cfg.server || '';
             field('user').value = cfg.user || '';
             field('password').value = '';
@@ -249,7 +271,7 @@
             });
             const body = {
                 enabled: field('enabled').checked,
-                paused: !field('connected').checked,
+                paused: field('connected').disabled ? current?.paused === true : !field('connected').checked,
                 server: field('server').value.trim(),
                 user: clearLogin ? '' : field('user').value.trim(),
                 refresh: Number(field('refresh').value) || 2,
@@ -291,7 +313,40 @@
             }
         });
 
-        // The connection switch applies at once, like the one on page 0.
+        field('enabled').addEventListener('change', () => {
+            syncConnection(field('enabled').checked, current?.paused === true);
+        });
+
+        // Reset: the settings, the login and everything recorded, after a question.
+        const resetBtn = root.querySelector('[data-glances-reset]');
+        const resetResult = root.querySelector('[data-glances-reset-result]');
+        resetBtn?.addEventListener('click', async () => {
+            const ok = await this.confirmAction(
+                t('glancesResetConfirm', 'Reset Glances? The address, the login, the thresholds, every choice and everything recorded are removed, and Glances goes off. This cannot be undone.'),
+                { confirmLabel: t('glancesResetOk', 'Reset') },
+            );
+            if (!ok) return;
+            resetResult.textContent = '';
+            try {
+                const res = await send('/api/glances/config', 'DELETE');
+                if (!res.ok) {
+                    resetResult.textContent = `${t('glancesResetFailed', 'Could not reset')} (${await failure(res)})`;
+                    return;
+                }
+                paint(await res.json());
+                clearLogin = false;
+                saved.textContent = '';
+                result.textContent = '';
+                wipedEl.textContent = '';
+                resetResult.textContent = t('glancesResetDone', 'Glances is reset.');
+                void this.dash.glancesStatus?.refresh?.({ force: true });
+                this.dash.pageNav?.renderPageNavigation?.();
+            } catch {
+                resetResult.textContent = `${t('glancesResetFailed', 'Could not reset')}.`;
+            }
+        });
+
+        // The connection switch applies at once, like the one on the Glances page.
         field('connected').addEventListener('change', async () => {
             const on = field('connected').checked;
             try {
@@ -353,7 +408,7 @@
                 }
                 paint(await res.json());
                 saved.textContent = t('glancesSaved', 'Saved.');
-                // The 0 tab and its dot follow the new settings now.
+                // The Glances icon and its dot follow the new settings now.
                 void this.dash.glancesStatus?.refresh?.({ force: true });
             } catch {
                 saved.textContent = `${t('glancesSaveFailed', 'Could not save')}.`;

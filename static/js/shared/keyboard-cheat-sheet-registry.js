@@ -34,8 +34,6 @@
             contextId: 'bookmarks',
             rows: [
                 { keys: '1–9', cheatKey: 'navPageTab', fallback: 'Switch to bookmark page', print: true, printKeys: '1–9' },
-                // '0' still opens the Inbox but is deliberately undocumented: Shift+I
-                // replaces it, and listing both would teach a shortcut that is going away.
                 {
                     keys: 'Shift + I',
                     cheatKey: 'navInboxView',
@@ -43,6 +41,14 @@
                     when: (ctx) => ctx.inboxEnabled && ctx.inboxInPageTabs,
                     print: true,
                     printFallback: 'Open Inbox',
+                },
+                {
+                    keys: 'Shift + G',
+                    cheatKey: 'navGlancesView',
+                    fallback: 'Open Glances — the host\'s live statistics and history',
+                    when: (ctx) => ctx.glancesEnabled,
+                    print: true,
+                    printFallback: 'Open Glances',
                 },
                 {
                     keys: 'Shift + H',
@@ -339,7 +345,7 @@
             contextId: 'config',
             when: (ctx) => ctx.configEnabled,
             rows: [
-                { keys: '0–9', cheatKey: 'cvSectionJump', fallback: 'Switch to Glances (0) or a bookmark page (1–9)' },
+                { keys: '1–9', cheatKey: 'cvSectionJump', fallback: 'Switch to a bookmark page (1–9)' },
                 { keys: 'j / k', cheatKey: 'cvSectionJk', fallback: 'Previous / next section in the left rail', print: true, printFallback: 'Previous / next section' },
                 { keys: 'g / G', cheatKey: 'cvSectionFirstLast', fallback: 'Jump to the first / last section' },
                 { keys: '← / → (section rail)', cheatKey: 'cvSectionRail', fallback: 'Move between sections when the section rail is focused (↑ / ↓ on desktop)' },

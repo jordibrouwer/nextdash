@@ -295,12 +295,12 @@ class DashboardPageNav {
         // strip showing the first few and no sign of where you actually were.
         this.fitPageTabs();
 
-        const glancesBtn = document.getElementById('page-nav-glances-btn');
-        if (glancesBtn) {
+        const glancesLink = document.getElementById('page-nav-glances-link');
+        if (glancesLink) {
             const glancesSelected = d.activeView === 'glances';
-            glancesBtn.classList.toggle('active', glancesSelected);
-            glancesBtn.setAttribute('aria-selected', glancesSelected ? 'true' : 'false');
-            glancesBtn.tabIndex = glancesSelected ? 0 : -1;
+            glancesLink.classList.toggle('active', glancesSelected);
+            if (glancesSelected) glancesLink.setAttribute('aria-current', 'page');
+            else glancesLink.removeAttribute('aria-current');
         }
 
         const inboxBtn = document.getElementById('page-nav-inbox-btn');
@@ -940,38 +940,31 @@ class DashboardPageNav {
             container.appendChild(pageBtn);
         });
 
-        // Page 0: the Glances page, once Config has it switched on. A tab like
-        // the Inbox one, in the same place, with the sampler's verdict as a dot.
-        if (d.glancesStatus?.configured) {
-            const glancesBtn = document.createElement('button');
-            glancesBtn.type = 'button';
-            glancesBtn.className = 'page-nav-btn page-nav-btn--glances';
-            glancesBtn.id = 'page-nav-glances-btn';
-            glancesBtn.setAttribute('role', 'tab');
-            glancesBtn.setAttribute('data-view-tab', 'glances');
-            const glancesActive = d.activeView === 'glances';
-            glancesBtn.setAttribute('aria-selected', glancesActive ? 'true' : 'false');
-            glancesBtn.tabIndex = glancesActive ? 0 : -1;
-            if (glancesActive) {
-                glancesBtn.classList.add('active');
-                activeBtn = glancesBtn;
-            }
+        // Glances: an icon in the main navigation, before Config, once Config →
+        // Glances has it on. The sampler's verdict is a dot on its corner.
+        if (glancesHost && d.glancesStatus?.configured) {
             const glancesName = this.t('dashboard.glancesTab', 'Glances');
-            glancesBtn.setAttribute('aria-label', glancesName);
-            glancesBtn.setAttribute('aria-keyshortcuts', '0');
-            glancesBtn.title = `${glancesName} (0)`;
-            glancesBtn.innerHTML = `
-                <span class="page-glances-zero" aria-hidden="true">0</span>
-                <span class="page-glances-dot" data-level="${d.glancesStatus.level}" aria-hidden="true"></span>
-            `;
-            glancesBtn.addEventListener('click', () => { void d.glancesStatus?.openPageZero?.(); });
-            glancesBtn.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    glancesBtn.click();
-                }
+            const link = document.createElement('a');
+            link.href = '/#glances';
+            link.id = 'page-nav-glances-link';
+            link.className = 'glances-link-anchor';
+            link.setAttribute('aria-label', glancesName);
+            link.setAttribute('aria-keyshortcuts', 'Shift+G');
+            link.title = `${glancesName} (Shift+G)`;
+            if (d.activeView === 'glances') {
+                link.classList.add('active');
+                link.setAttribute('aria-current', 'page');
+            }
+            // A pulse line: the thing a monitor shows. Drawn like the other header icons.
+            link.innerHTML = `
+                <svg class="glances-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                <span class="glances-link-dot" data-level="${d.escapeHtml(String(d.glancesStatus.level || 'unknown'))}" aria-hidden="true"></span>`;
+            link.addEventListener('click', (e) => {
+                if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                e.preventDefault();
+                void d.glancesStatus?.openGlancesPage?.();
             });
-            (glancesHost || inboxHost || container).appendChild(glancesBtn);
+            glancesHost.appendChild(link);
         }
 
         if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {

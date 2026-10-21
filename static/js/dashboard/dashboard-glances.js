@@ -198,6 +198,11 @@
         }
 
         /** Milliseconds between two reads of an open page. */
+        /** How long a last answer stands in for a missing one: ten minutes, or three beats when they are far apart. */
+        staleMs() {
+            return Math.max(DashboardGlances.STALE_MS, 3 * this.refreshMs());
+        }
+
         refreshMs() {
             const seconds = Number(this.status.refresh);
             return (Number.isFinite(seconds) && seconds >= 1 ? seconds : 2) * 1000;
@@ -362,7 +367,8 @@
                 summary: [],
             });
             this.shell.toolbarRow.hidden = true;
-            this.shell.headerActions?.appendChild(this._buildConnectionSwitch());
+            const Info = window.DashboardGlancesInfo;
+            this.shell.headerActions?.append(...[Info?.helpButton(this), this._buildRecordPick(), this._buildConnectionSwitch()].filter(Boolean));
             this.bodyEl = document.createElement('div');
             this.bodyEl.className = 'glances-section';
             this.bodyEl.setAttribute('data-glances-body', '');
@@ -390,6 +396,74 @@
             });
             this.bodyEl.addEventListener('pointerleave', () => { this._hoverChart = null; });
             return this.shell;
+        }
+
+        /**
+         * How often nextDash records the host, for the history: a choice on the page,
+         * kept on the server. Longer asks the host less and fills the record more slowly.
+         */
+        _buildRecordPick() {
+            const CHOICES = [
+                [2, 'dashboard.glancesRecord2s', '2 seconds'],
+                [30, 'dashboard.glancesRecord30s', '30 seconds'],
+                [60, 'dashboard.glancesRecord60s', '1 minute'],
+                [300, 'dashboard.glancesRecord5m', '5 minutes'],
+                [900, 'dashboard.glancesRecord15m', '15 minutes'],
+                [1800, 'dashboard.glancesRecord30m', '30 minutes'],
+                [3600, 'dashboard.glancesRecord60m', '1 hour'],
+            ];
+            const label = document.createElement('label');
+            label.className = 'glances-record';
+            const text = document.createElement('span');
+            text.className = 'glances-record-label';
+            text.textContent = this.t('dashboard.glancesRecordEvery', 'Record every');
+            const select = document.createElement('select');
+            select.className = 'config-select glances-record-select';
+            select.setAttribute('data-glances-record', '');
+            CHOICES.forEach(([seconds, key, fallback]) => {
+                const option = document.createElement('option');
+                option.value = String(seconds);
+                option.textContent = this.t(key, fallback);
+                select.appendChild(option);
+            });
+            const paint = () => {
+                const now = Number(this.dash.glancesStatus?.state?.recordEvery) || 30;
+                select.value = String(CHOICES.some(([s]) => s === now) ? now : 30);
+                const perHour = Math.round(3600 / Number(select.value));
+                select.title = this.t('dashboard.glancesRecordHint',
+                    '{n} readings an hour. Longer means less load on the host and a slower filling record; very long means short graphs stay empty.', { n: perHour });
+            };
+            paint();
+            this._paintRecord = paint;
+            select.addEventListener('change', async () => {
+                const seconds = Number(select.value);
+                select.disabled = true;
+                try {
+                    const res = await window.nextDashFetch('/api/glances/config', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ recordEvery: seconds }),
+                    });
+                    if (!res.ok) throw new Error(String(res.status));
+                    await this.dash.glancesStatus?.refresh?.({ force: true });
+                    if (this.dash.glancesStatus) this.dash.glancesStatus.state.recordEvery = seconds;
+                } catch {
+                    this.dash.showNotification?.(this.t('dashboard.glancesRecordFailed', 'Could not change how often the host is recorded'), 'error');
+                } finally {
+                    select.disabled = false;
+                    paint();
+                }
+            });
+            label.append(text, select);
+            const info = window.DashboardGlancesInfo?.button(this, 'record');
+            if (info) {
+                // Outside the label, so pressing it does not open the menu.
+                const wrap = document.createElement('span');
+                wrap.className = 'glances-record-wrap';
+                wrap.append(label, info);
+                return wrap;
+            }
+            return label;
         }
 
         /** The connection switch in the page's header; Config → Glances holds the same one. */
@@ -435,11 +509,20 @@
                     paint();
                 }
             });
+            const info = window.DashboardGlancesInfo?.button(this, 'connection');
+            if (info) {
+                const wrap = document.createElement('span');
+                wrap.className = 'glances-switch-wrap';
+                wrap.append(label, info);
+                return wrap;
+            }
             return label;
         }
 
         _destroyShell() {
+            window.DashboardGlancesInfo?.close();
             this._paintConnection = null;
+            this._paintRecord = null;
             this.detail?.destroy();
             this.detail = null;
             this.tipCard?.unbind();
@@ -500,7 +583,7 @@
             let oldest = 0;
             for (const ep of endpoints) {
                 const hit = last.get(this._stableKey(ep));
-                if (!hit || now - hit.at >= DashboardGlances.STALE_MS) return null;
+                if (!hit || now - hit.at >= this.staleMs()) return null;
                 data[ep] = hit.body;
                 oldest = Math.max(oldest, now - hit.at);
             }
@@ -656,7 +739,7 @@
                     return;
                 }
                 const prev = last.get(key);
-                if (prev && (now - prev.at < DashboardGlances.STALE_MS || r.code === 'paused')) {
+                if (prev && (now - prev.at < this.staleMs() || r.code === 'paused')) {
                     data[ep] = prev.body;
                     staleSince = staleSince ? Math.min(staleSince, prev.at) : prev.at;
                 } else {

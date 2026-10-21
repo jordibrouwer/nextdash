@@ -1,5 +1,5 @@
 /**
- * Page 0, Insights: what nextDash works out from its own record of the host.
+ * Glances page, Insights: what nextDash works out from its own record of the host.
  *
  * None of it is something Glances says. A health score, when a disk will be
  * full, whether memory is climbing, how this hour compares with the same hour
@@ -105,7 +105,10 @@
         block(id, titleKey, title, wide = false) {
             const block = el('section', `glances-ov-block${wide ? ' glances-ov-block--wide' : ''}`);
             block.setAttribute('data-glances-insight', id);
-            block.appendChild(el('h3', 'glances-block-title', this.t(titleKey, title)));
+            const heading = el('h3', 'glances-block-title', this.t(titleKey, title));
+            const info = window.DashboardGlancesInfo?.button(this.view, id);
+            if (info) heading.appendChild(info);
+            block.appendChild(heading);
             return block;
         }
 
@@ -195,7 +198,10 @@
             score.setAttribute('data-tone', h.level === 'good' ? '' : (h.level === 'fair' ? 'warn' : 'bad'));
             score.setAttribute('data-glances-score', '');
             const side = el('div', 'glances-ins-score-side');
-            side.appendChild(el('strong', '', this.t(`dashboard.glancesInsLevel_${h.level || 'good'}`, { good: 'Good', fair: 'Fair', poor: 'Poor' }[h.level] || 'Good')));
+            const verdict = el('strong', '', this.t(`dashboard.glancesInsLevel_${h.level || 'good'}`, { good: 'Good', fair: 'Fair', poor: 'Poor' }[h.level] || 'Good'));
+            const scoreInfo = window.DashboardGlancesInfo?.button(this.view, 'score');
+            if (scoreInfo) verdict.appendChild(scoreInfo);
+            side.appendChild(verdict);
             side.appendChild(this.note(this.t('dashboard.glancesInsScoreNote', 'Out of 100, from how close each reading is to its red line, ongoing incidents and availability.')));
             if (typeof h.trendCpu === 'number') {
                 const up = h.trendCpu > 0;
@@ -220,7 +226,10 @@
 
             const forecast = a.forecast || [];
             if (forecast.length) {
-                block.appendChild(el('h4', 'glances-ins-sub', this.t('dashboard.glancesInsForecast', 'Disks: when full')));
+                const sub = el('h4', 'glances-ins-sub', this.t('dashboard.glancesInsForecast', 'Disks: when full'));
+                const forecastInfo = window.DashboardGlancesInfo?.button(this.view, 'forecast');
+                if (forecastInfo) sub.appendChild(forecastInfo);
+                block.appendChild(sub);
                 block.appendChild(this.table('ins-forecast', [
                     { key: 'mount', label: ['dashboard.glancesDiskMount', 'Mount'], value: (r) => r.mount, cell: (r) => r.mount, numeric: false },
                     { key: 'percent', label: ['dashboard.glancesInsUsed', 'Used'], value: (r) => r.percent, cell: (r) => `${r.percent}%` },

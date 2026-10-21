@@ -529,26 +529,23 @@
 
 /* ── The 0 tab ── */
 
-.page-nav-btn--glances {
-    position: relative;
-}
+.glances-link-anchor { position: relative; }
 
-.page-glances-zero { font-variant-numeric: tabular-nums; }
-
-.page-glances-dot {
+.glances-link-dot {
     position: absolute;
     top: 0.2rem;
     right: 0.2rem;
-    width: 0.4rem;
-    height: 0.4rem;
+    width: 0.45rem;
+    height: 0.45rem;
     border-radius: 50%;
-    background: transparent;
+    background: var(--text-tertiary, var(--text-secondary));
+    opacity: 0.55;
+    pointer-events: none;
 }
 
-.page-glances-dot[data-level="ok"] { background: var(--accent-success, #4caf50); }
-.page-glances-dot[data-level="warn"] { background: var(--accent-warning); }
-.page-glances-dot[data-level="bad"] { background: var(--accent-error); }
-.page-glances-dot[data-level="unknown"] { background: var(--text-tertiary, var(--text-secondary)); opacity: 0.5; }
+.glances-link-dot[data-level="ok"] { background: var(--accent-success, #4caf50); opacity: 1; }
+.glances-link-dot[data-level="warn"] { background: var(--accent-warning); opacity: 1; }
+.glances-link-dot[data-level="bad"] { background: var(--accent-error); opacity: 1; }
 
 /* ── Panels ──
    The page is one pane (category-surface.css), and inside it each block keeps
@@ -1067,31 +1064,6 @@
     background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--accent-error) 18%, transparent) 0 4px, transparent 4px 8px);
 }
 
-/* ── Page 0 in the page overview: its own row under the list ── */
-
-.page-overview-modal-glances {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    width: 100%;
-    padding: 0.7rem 1rem;
-    border: 0;
-    border-top: 1px solid color-mix(in srgb, var(--text-primary) 12%, transparent);
-    background: transparent;
-    color: var(--text-primary);
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-}
-
-.page-overview-modal-glances .page-overview-modal-name { flex: 1 1 auto; }
-.page-overview-modal-glances .page-overview-modal-count { color: var(--text-secondary); font-size: var(--font-size-small); }
-
-.page-overview-modal-glances:hover,
-.page-overview-modal-glances:focus-visible {
-    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
-}
-
 /* ── Tables as the Bookmarks view draws them ──
    Rows touch with a hairline between them and no slab of their own; the heading
    is a caption in small capitals; a row is as tall as a bookmark's, lights on
@@ -1253,3 +1225,131 @@
 .glances-pill[data-tone="warn"] { color: var(--accent-warning); border-color: color-mix(in srgb, var(--accent-warning) 45%, transparent); }
 .glances-pill[data-tone="bad"] { color: var(--accent-error); border-color: color-mix(in srgb, var(--accent-error) 45%, transparent); }
 .glances-pill[data-glances-activity="busy"] { color: var(--text-primary); }
+
+/* ── A graph stays inside its panel, whatever the width ── */
+
+.glances-chart {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    container-type: inline-size;
+}
+
+.glances-chart-frame { grid-template-columns: auto minmax(0, 1fr); }
+.glances-chart-frame > * { min-width: 0; }
+.glances-axis-x { overflow: hidden; gap: 0.5rem; }
+.glances-axis-tick { overflow: hidden; text-overflow: clip; }
+.glances-chart-legend, .glances-chart-span, .glances-chart-stats { min-width: 0; }
+.glances-chart-stat dd { overflow-wrap: anywhere; }
+
+/* Narrow: every other time label goes, so none runs into its neighbour. */
+@container (max-width: 30rem) {
+    .glances-axis-tick--minor { display: none; }
+    .glances-chart-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ── How often the host is recorded: in the page's header, beside the connection switch ── */
+
+.lvs-header-actions:has(.glances-record) { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3, 0.9rem); }
+
+.glances-record {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
+.glances-record-select { min-width: 7.5rem; }
+
+/* ── ℹ buttons and their popover ── */
+
+.glances-info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-left: 0.4rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-muted, var(--text-secondary));
+    font-size: 0.85rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    line-height: 1;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+.glances-info-btn:hover,
+.glances-info-btn[aria-expanded="true"] {
+    background: var(--accent-soft, color-mix(in srgb, var(--text-primary) 14%, transparent));
+    color: var(--accent-color, var(--text-primary));
+}
+
+.glances-info-btn:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 1px; }
+
+.glances-ins-sub .glances-info-btn,
+.glances-ins-score-side .glances-info-btn { margin-left: 0.3rem; }
+
+.glances-record-wrap,
+.glances-switch-wrap { display: inline-flex; align-items: center; }
+
+.glances-info-pop {
+    position: fixed;
+    z-index: 1200;
+    width: min(20rem, calc(100vw - 1rem));
+    padding: var(--space-3, 0.8rem) var(--space-4, 1rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--background-elevated, var(--background-secondary, #1d1b22));
+    color: var(--text-primary);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+    font-size: var(--font-size-small, 0.85rem);
+    line-height: 1.5;
+}
+
+.glances-info-pop-title { display: block; margin-bottom: 0.25rem; font-weight: 600; }
+.glances-info-pop-body { margin: 0; color: var(--text-secondary); }
+
+.glances-info-pop-more {
+    margin: 0.6rem 0 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-primary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.glances-info-pop-more:hover { text-decoration: underline; }
+
+/* The ℹ sits right beside its title, ringed so it reads as a button. */
+.glances-block-title { display: flex; align-items: center; gap: 0.45rem; }
+.glances-block-title .glances-info-btn,
+.glances-chart-title .glances-info-btn { margin-left: 0; }
+.glances-chart-title { display: inline-flex; align-items: center; gap: 0.45rem; }
+
+.glances-info-btn {
+    border: 1px solid color-mix(in srgb, var(--text-primary) 28%, transparent);
+    width: 1.1rem;
+    height: 1.1rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-family: var(--font-family-mono, ui-monospace, monospace);
+}
+
+/* ── Narrow screens: the header's controls wrap under the title instead of leaving the screen ── */
+
+.glances-layout .lvs-header { flex-wrap: wrap; row-gap: var(--space-2, 0.5rem); }
+.glances-layout .lvs-header-text { flex: 1 1 11rem; min-width: 0; }
+.glances-layout .lvs-header-actions { flex: 0 1 auto; flex-shrink: 1; flex-wrap: wrap; justify-content: flex-end; min-width: 0; max-width: 100%; }
+
+@media (max-width: 640px) {
+    .glances-layout .lvs-header-actions { flex: 1 1 100%; justify-content: flex-start; gap: var(--space-2, 0.5rem) var(--space-3, 0.9rem); }
+    .glances-layout .glances-record-select { min-width: 0; }
+}

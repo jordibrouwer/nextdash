@@ -1,5 +1,5 @@
 /**
- * Page 0: the graphs the Overview and History share.
+ * Glances page: the graphs the Overview and History share.
  *
  * Inline SVG, no library. A chart is one or more series of [unix ms, value]
  * points from nextDash's own record of the host; the x axis is time, so a gap
@@ -374,7 +374,10 @@
         const figure = el('figure', 'glances-chart');
         figure.setAttribute('data-glances-chart', def.id);
         const head = el('figcaption', 'glances-chart-caption');
-        head.appendChild(el('span', 'glances-chart-title', t(def.label[0], def.label[1])));
+        const titleRow = el('span', 'glances-chart-title', t(def.label[0], def.label[1]));
+        const titleInfo = window.DashboardGlancesInfo?.button(view, `chart-${def.id}`);
+        if (titleInfo) titleRow.appendChild(titleInfo);
+        head.appendChild(titleRow);
         const controls = el('span', 'glances-chart-controls');
         if (compareAllowed(def)) {
             const label = el('label', 'glances-compare');
@@ -388,6 +391,8 @@
             });
             label.append(box, el('span', '', t('dashboard.glancesCompareYesterday', 'Yesterday')));
             controls.appendChild(label);
+            const yesterdayInfo = window.DashboardGlancesInfo?.button(view, 'yesterday');
+            if (yesterdayInfo) controls.appendChild(yesterdayInfo);
         }
         controls.appendChild(rangeBar(def.id, t, onRange || (() => {})));
         head.appendChild(controls);
@@ -442,7 +447,8 @@
         const shortFormat = range.ms <= 3600 * 1000 ? { hour: '2-digit', minute: '2-digit', second: '2-digit' } : { hour: '2-digit', minute: '2-digit' };
         for (let i = 0; i < 5; i += 1) {
             const at = drawn.from + ((drawn.to - drawn.from) * i) / 4;
-            xAxis.appendChild(el('span', 'glances-axis-tick', new Date(at).toLocaleString([], longRange ? longFormat : shortFormat)));
+            // The ones between the ends give way first when the graph is narrow.
+            xAxis.appendChild(el('span', `glances-axis-tick${i % 2 ? ' glances-axis-tick--minor' : ''}`, new Date(at).toLocaleString([], longRange ? longFormat : shortFormat)));
         }
         const frame = el('div', 'glances-chart-frame');
         frame.append(yAxis, plot, el('span', 'glances-axis-corner'), xAxis);

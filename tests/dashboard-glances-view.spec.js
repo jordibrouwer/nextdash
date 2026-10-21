@@ -5,7 +5,7 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen } = require('./e2e-helpers');
 
 /**
- * Page 0 (#glances): Config → Glances switches it on, a 0 tab and the 0 key
+ * The Glances page (#glances): Config → Glances switches it on, an icon in the navigation and Shift+G
  * open it, and a side menu has one section per screen, read from the host set
  * up in Config through /api/glances/<path>.
  *
@@ -88,7 +88,7 @@ function historyAnswer(url) {
  * value, a function of the URL, or { __status } for a bare HTTP status.
  */
 async function mockGlances(page, overrides = {}) {
-    const state = { calls: [], overrides, saved: null, tracked: [], wiped: false, paused: false };
+    const state = { calls: [], overrides, saved: null, tracked: [], wiped: false, paused: false, recordEvery: 30, reset: false };
     await page.route('**/api/glances/**', async (route) => {
         const request = route.request();
         const url = new URL(request.url());
@@ -96,13 +96,19 @@ async function mockGlances(page, overrides = {}) {
         state.calls.push({ range: url.searchParams.get('range'), heat: url.searchParams.get('heat'), path: rest, sort: url.searchParams.get('sort'), q: url.searchParams.get('q'), since: url.searchParams.get('since'), until: url.searchParams.get('until'), ghost: url.searchParams.get('ghost'), series: url.searchParams.get('series') });
         const has = Object.prototype.hasOwnProperty.call(state.overrides, rest);
         let body;
-        if (rest === 'data' && request.method() === 'DELETE') {
+        if (rest === 'config' && request.method() === 'DELETE') {
+            state.reset = true;
+            state.tracked = [];
+            state.paused = false;
+            body = { ...CONFIG, enabled: false, server: '', user: '', hiddenBlocks: [], hasPassword: false, diskHide: [], collected: { series: 0, points: 0, incidents: 0, keepDays: 30 } };
+        } else if (rest === 'data' && request.method() === 'DELETE') {
             state.wiped = true;
             body = { series: 0, points: 0, incidents: 0, keepDays: 30 };
         } else if (rest === 'config' && request.method() === 'PUT') {
             state.saved = JSON.parse(request.postData() || '{}');
             if (Array.isArray(state.saved.trackedHistory)) state.tracked = state.saved.trackedHistory;
             if (typeof state.saved.paused === 'boolean') state.paused = state.saved.paused;
+            if (typeof state.saved.recordEvery === 'number') state.recordEvery = state.saved.recordEvery;
             body = { ...CONFIG, ...state.saved, trackedHistory: state.tracked, paused: state.paused };
         } else if (has) {
             const o = state.overrides[rest];
@@ -112,9 +118,9 @@ async function mockGlances(page, overrides = {}) {
                 return;
             }
         } else if (rest === 'status') {
-            body = { ...STATUS, paused: state.paused };
+            body = { ...STATUS, paused: state.paused, recordEvery: state.recordEvery };
         } else if (rest === 'config') {
-            body = { ...CONFIG, trackedHistory: state.tracked, paused: state.paused, ...(state.wiped ? { collected: { series: 0, points: 0, incidents: 0, keepDays: 30 } } : {}) };
+            body = { ...CONFIG, ...(state.reset ? { enabled: false, server: '', user: '', hiddenBlocks: [], hasPassword: false } : {}), trackedHistory: state.tracked, paused: state.paused, ...(state.wiped ? { collected: { series: 0, points: 0, incidents: 0, keepDays: 30 } } : {}) };
         } else if (rest === 'insights') {
             body = INSIGHTS;
         } else if (rest === 'history') {
@@ -156,35 +162,38 @@ async function setVisibility(page, state) {
 
 const FIRST = fixture('processlist').slice().sort((a, b) => b.cpu_percent - a.cpu_percent)[0];
 
-test.describe('page 0: getting there', () => {
-    test('not set up: the 0 key opens Config → Glances, and there is no 0 tab', async ({ page }) => {
+test.describe('Glances page: getting there', () => {
+    test('not set up: no Glances icon, and neither Shift+G nor 0 open anything', async ({ page }) => {
         await mockGlances(page, { status: { ...STATUS, enabled: false, configured: false, level: 'unknown', ok: false } });
         await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-        await expect(page.locator('#page-nav-glances-btn')).toHaveCount(0);
+        await expect(page.locator('#page-nav-glances-link')).toHaveCount(0);
         await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press('Shift+G');
         await page.keyboard.press('0');
-        await expect(page).toHaveURL(/#config\/glances/);
-        await expect(page.locator('[data-glances-field="server"]')).toBeVisible();
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
+        await expect(page).not.toHaveURL(/#config\/glances|#glances/);
     });
 
-    test('set up: a 0 tab with the verdict as a dot, and the tab and the key open page 0', async ({ page }) => {
+    test('set up: an icon in the navigation with the verdict as a dot; the icon and Shift+G open the page', async ({ page }) => {
         await mockGlances(page, { status: { ...STATUS, level: 'warn' } });
         await markWhatsNewSeen(page);
         await page.goto('/');
-        const tab = page.locator('#page-nav-glances-btn');
-        await expect(tab).toBeVisible({ timeout: 15_000 });
-        await expect(tab.locator('.page-glances-dot')).toHaveAttribute('data-level', 'warn');
-        await tab.click();
+        const link = page.locator('#page-nav-glances-link');
+        await expect(link).toBeVisible({ timeout: 15_000 });
+        await expect(link).toHaveAttribute('aria-keyshortcuts', 'Shift+G');
+        await expect(link).toHaveAttribute('title', /Shift\+G/);
+        await expect(link.locator('.glances-link-dot')).toHaveAttribute('data-level', 'warn');
+        await link.click();
         await expect(page.locator('#dashboard-layout.glances-layout [data-glances-body]')).toBeVisible();
         await expect(page).toHaveURL(/#glances\/overview$/);
-        await expect(tab).toHaveAttribute('aria-selected', 'true');
+        await expect(link).toHaveClass(/active/);
 
         await page.keyboard.press('Escape');
         await expect(page.locator('#dashboard-layout.glances-layout')).toHaveCount(0);
         await page.locator('body').click({ position: { x: 5, y: 5 } });
-        await page.keyboard.press('0');
+        await page.keyboard.press('Shift+G');
         await expect(page.locator('#dashboard-layout.glances-layout [data-glances-body]')).toBeVisible();
     });
 
@@ -201,7 +210,7 @@ test.describe('page 0: getting there', () => {
     });
 });
 
-test.describe('page 0: the Overview', () => {
+test.describe('Glances page: the Overview', () => {
     test('every block the host can fill is drawn, with real values', async ({ page }) => {
         const state = await mockGlances(page);
         await openView(page);
@@ -303,7 +312,7 @@ test.describe('page 0: the Overview', () => {
     });
 });
 
-test.describe('page 0: the sections', () => {
+test.describe('Glances page: the sections', () => {
     test('the menu lists only sections the host supports', async ({ page }) => {
         const plugins = fixture('pluginslist');
         await mockGlances(page, { pluginslist: plugins.filter((p) => p !== 'processlist' && p !== 'containers') });
@@ -475,7 +484,7 @@ test.describe('page 0: the sections', () => {
     });
 });
 
-test.describe('page 0: tables, cards and keys', () => {
+test.describe('Glances page: tables, cards and keys', () => {
     test('a table sorts on its columns, and keeps its order across the redraw every beat', async ({ page }) => {
         await mockGlances(page);
         await openView(page);
@@ -595,7 +604,7 @@ test.describe('Config → Glances', () => {
     });
 });
 
-test.describe('page 0: recording, insights and the data kept', () => {
+test.describe('Glances page: recording, insights and the data kept', () => {
     test('a process or container records its history only when switched on', async ({ page }) => {
         const state = await mockGlances(page);
         await openView(page, '#glances/containers');
@@ -748,7 +757,7 @@ test.describe('graph extras: stacked memory, yesterday, incident bands', () => {
     });
 });
 
-test.describe('page 0 in the navigation and the page overview', () => {
+test.describe('Glances in the navigation and the page overview', () => {
     async function openDashboard(page, status) {
         await mockGlances(page, status ? { status } : {});
         await markWhatsNewSeen(page);
@@ -756,56 +765,56 @@ test.describe('page 0 in the navigation and the page overview', () => {
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     }
 
-    test('the 0 tab stands right behind the last page number', async ({ page }) => {
+    test('the icon stands where Config stood, and Config is one place to the right', async ({ page }) => {
         await openDashboard(page);
-        const tab = page.locator('#page-navigation + #page-nav-glances-host #page-nav-glances-btn');
-        await expect(tab).toBeVisible();
-        // Before the home and bookmark icons, not after them.
-        const order = await page.evaluate(() => {
-            const zero = document.getElementById('page-nav-glances-btn').getBoundingClientRect().left;
-            const home = document.getElementById('dashboard-home-link').getBoundingClientRect().left;
-            const lastPage = [...document.querySelectorAll('#page-navigation .page-nav-btn')].pop().getBoundingClientRect().right;
-            return { afterPages: zero >= lastPage - 1, beforeIcons: zero < home };
-        });
-        expect(order).toEqual({ afterPages: true, beforeIcons: true });
+        await expect(page.locator('#page-nav-glances-host #page-nav-glances-link')).toBeVisible();
+        const order = await page.evaluate(() => [...document.querySelectorAll('.header-destinations > *')]
+            .map((el) => el.id || el.className.split(' ')[0]));
+        const at = (name) => order.indexOf(name);
+        expect(at('page-nav-glances-host')).toBeGreaterThan(-1);
+        expect(at('page-nav-docker-host')).toBeLessThan(at('page-nav-glances-host'));
+        expect(at('page-nav-glances-host')).toBeLessThan(at('config-link'));
+        // Not beside the page numbers any more.
+        await expect(page.locator('#page-navigation #page-nav-glances-link')).toHaveCount(0);
+        const left = await page.evaluate(() => ({
+            glances: document.getElementById('page-nav-glances-link').getBoundingClientRect().left,
+            config: document.querySelector('.config-link-anchor').getBoundingClientRect().left,
+        }));
+        expect(left.glances).toBeLessThan(left.config);
     });
 
-    test('with the connection off the 0 stays, and without a connection it goes', async ({ page }) => {
+    test('with the connection off the icon stays, and without a connection it goes', async ({ page }) => {
         await openDashboard(page, { ...STATUS, paused: true });
-        await expect(page.locator('#page-nav-glances-btn')).toBeVisible();
+        await expect(page.locator('#page-nav-glances-link')).toBeVisible();
         await page.goto('/');
         await mockGlances(page, { status: { ...STATUS, enabled: false, configured: false, level: 'unknown', ok: false } });
         await page.reload();
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-        await expect(page.locator('#page-nav-glances-btn')).toHaveCount(0);
+        await expect(page.locator('#page-nav-glances-link')).toHaveCount(0);
     });
 
-    test('the page overview lists page 0, and its button and the 0 key open it', async ({ page }) => {
+    test('the page overview no longer lists Glances, and 0 does nothing there', async ({ page }) => {
         await openDashboard(page);
-        await page.locator('body').click({ position: { x: 5, y: 5 } });
-        await page.keyboard.press(',');
-        const row = page.locator('#page-overview-glances');
-        await expect(row).toBeVisible();
-        await expect(row).toContainText('Glances');
-        await row.click();
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('glances');
-
-        // And by the key, from the overview.
-        await page.goto('/');
-        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-        await page.locator('body').click({ position: { x: 5, y: 5 } });
-        await page.keyboard.press(',');
-        await expect(page.locator('#page-overview-glances')).toBeVisible();
-        await page.keyboard.press('0');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('glances');
-    });
-
-    test('with no connection the page overview has no page 0', async ({ page }) => {
-        await openDashboard(page, { ...STATUS, enabled: false, configured: false, level: 'unknown', ok: false });
         await page.locator('body').click({ position: { x: 5, y: 5 } });
         await page.keyboard.press(',');
         await expect(page.locator('.page-overview-modal-list')).toBeVisible();
         await expect(page.locator('#page-overview-glances')).toHaveCount(0);
+        await expect(page.locator('.page-overview-modal-glances')).toHaveCount(0);
+        await page.keyboard.press('0');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).not.toBe('glances');
+    });
+
+    test('Shift+G is Glances from the dashboard, and stays "last item" inside the Inbox, Config and Bookmarks views', async ({ page }) => {
+        await openDashboard(page);
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.evaluate(() => { window.__lastKey = null; });
+        await page.keyboard.press('Shift+G');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('glances');
+        // From Config, G keeps its own meaning (jump to the last section).
+        await page.goto('/#config/appearance');
+        await page.waitForFunction(() => window.dashboardInstance?.activeView === 'config', null, { timeout: 15_000 });
+        await page.keyboard.press('Shift+G');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
     });
 });
 
@@ -858,5 +867,196 @@ test.describe('cores and disks, as tiles and rows', () => {
             overflowX: getComputedStyle(el).overflowX, scrolls: el.scrollWidth > el.clientWidth,
         }));
         expect(box).toEqual({ overflowX: 'auto', scrolls: true });
+    });
+});
+
+test.describe('graphs on a small screen', () => {
+    test('no graph runs past its panel, and the time labels do not collide', async ({ page }) => {
+        await page.setViewportSize({ width: 420, height: 900 });
+        await mockGlances(page);
+        await openView(page);
+        await expect(page.locator('[data-glances-chart]').first()).toBeVisible();
+        const result = await page.evaluate(() => {
+            const wide = [...document.querySelectorAll('.glances-chart')].filter((c) => {
+                const parent = c.closest('.glances-ov-block');
+                return parent && (c.getBoundingClientRect().right > parent.getBoundingClientRect().right + 1 || c.scrollWidth > c.clientWidth + 1);
+            }).length;
+            const overlapping = [...document.querySelectorAll('.glances-axis-x')].filter((axis) => {
+                const ticks = [...axis.querySelectorAll('.glances-axis-tick')].filter((t) => getComputedStyle(t).display !== 'none')
+                    .map((t) => t.getBoundingClientRect());
+                return ticks.some((r, i) => i > 0 && r.left < ticks[i - 1].right - 1);
+            }).length;
+            return { wide, overlapping };
+        });
+        expect(result).toEqual({ wide: 0, overlapping: 0 });
+    });
+});
+
+test.describe('how often the host is recorded', () => {
+    test('a choice on the page, from two seconds to an hour, kept on the server', async ({ page }) => {
+        const state = await mockGlances(page);
+        await openView(page);
+        const pick = page.locator('[data-glances-record]');
+        await expect(pick).toBeVisible();
+        await expect(pick.locator('option')).toHaveText(['2 seconds', '30 seconds', '1 minute', '5 minutes', '15 minutes', '30 minutes', '1 hour']);
+        await expect(pick).toHaveValue('30');
+        await pick.selectOption('900');
+        await expect.poll(() => state.recordEvery).toBe(900);
+        expect(state.saved).toEqual({ recordEvery: 900 });
+        // The reading is described: how many an hour that is.
+        await expect(pick).toHaveAttribute('title', /4 readings an hour/);
+        // It is on the page and in the server's status, not in Config.
+        await page.goto('/#config/glances');
+        await expect(page.locator('[data-glances-field="refresh"]')).toBeVisible();
+        await expect(page.locator('[data-glances-record]')).toHaveCount(0);
+        await openView(page);
+        await expect(page.locator('[data-glances-record]')).toHaveValue('900');
+    });
+});
+
+test.describe('the ℹ buttons', () => {
+    test('the header ℹ opens the page explainer', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page);
+        await page.locator('[data-glances-help]').click();
+        const modal = page.locator('#app-modal .view-explain-modal');
+        await expect(modal).toBeVisible();
+        await expect(modal).toContainText('How the Glances page works');
+        await expect(modal).toContainText('Record every');
+        await page.keyboard.press('Escape');
+        await expect(modal).toHaveCount(0);
+    });
+
+    test('a block ℹ opens a short popover that closes on Escape, outside and on the next one', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page);
+        const cores = page.locator('[data-glances-info="cores"]');
+        await cores.click();
+        const pop = page.locator('[data-glances-info-pop]');
+        await expect(pop).toHaveAttribute('data-glances-info-pop', 'cores');
+        await expect(pop).toContainText('single-threaded');
+        await expect(cores).toHaveAttribute('aria-expanded', 'true');
+        // Inside the window.
+        const box = await pop.boundingBox();
+        const vp = page.viewportSize();
+        expect(box.x).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width).toBeLessThanOrEqual(vp.width);
+        await page.keyboard.press('Escape');
+        await expect(pop).toHaveCount(0);
+        // Still on the page: Escape closed the popover, not the view.
+        await expect(page.locator('[data-glances-body]')).toBeVisible();
+        await expect(cores).toBeFocused();
+
+        // Another ℹ replaces it; a click elsewhere closes it.
+        await cores.click();
+        await page.locator('[data-glances-info="temps"]').click();
+        await expect(pop).toHaveAttribute('data-glances-info-pop', 'temps');
+        await page.locator('.glances-switch').first().hover();
+        await page.mouse.click(5, 5);
+        await expect(pop).toHaveCount(0);
+
+        // Its link goes to the explainer.
+        await cores.click();
+        await pop.locator('.glances-info-pop-more').click();
+        await expect(page.locator('#app-modal .view-explain-modal')).toBeVisible();
+    });
+
+    test('the settings, the graphs and the cryptic terms have theirs', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page, '#glances/history');
+        await expect(page.locator('[data-glances-info="record"]')).toBeVisible();
+        await expect(page.locator('[data-glances-info="connection"]')).toBeVisible();
+        await expect(page.locator('[data-glances-chart="cpu"] [data-glances-info="chart-cpu"]')).toBeVisible();
+        await expect(page.locator('[data-glances-chart="cpu"] [data-glances-info="yesterday"]')).toBeVisible();
+        // A stack has no Yesterday, and so no ℹ for it.
+        await expect(page.locator('[data-glances-chart="memparts"] [data-glances-info="yesterday"]')).toHaveCount(0);
+        await page.locator('[data-glances-chart="cpu"] [data-glances-info="chart-cpu"]').click();
+        await expect(page.locator('[data-glances-info-pop]')).toContainText('Red bands');
+
+        await page.locator('[data-glances-section="insights"]').click();
+        await expect(page.locator('[data-glances-insight="health"] [data-glances-info="score"]')).toBeVisible();
+        await expect(page.locator('[data-glances-insight="health"] [data-glances-info="forecast"]')).toBeVisible();
+        await expect(page.locator('[data-glances-insight="heatmap"] [data-glances-info="heatmap"]')).toBeVisible();
+        // The popover goes when the page does.
+        await page.locator('[data-glances-info="score"]').click();
+        await expect(page.locator('[data-glances-info-pop]')).toHaveCount(1);
+        await page.locator('[data-glances-section="history"]').click();
+        await page.locator('[data-glances-info="record"]').click();
+        await expect(page.locator('[data-glances-info-pop]')).toHaveCount(1);
+    });
+
+    test('every ℹ has a name for a screen reader and text behind it', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page);
+        const buttons = await page.locator('[data-glances-info]').evaluateAll((els) => els.map((el) => ({
+            id: el.getAttribute('data-glances-info'), label: el.getAttribute('aria-label') || '',
+        })));
+        expect(buttons.length).toBeGreaterThan(8);
+        buttons.forEach((b) => expect(b.label, b.id).toMatch(/^About /));
+        const known = await page.evaluate(() => Object.keys(window.DashboardGlancesInfo.TEXTS));
+        buttons.forEach((b) => expect(known, b.id).toContain(b.id));
+    });
+});
+
+test.describe('Config → Glances: reset', () => {
+    test('Show Glances and the connection go off together, and the connection follows Show Glances', async ({ page }) => {
+        const state = await mockGlances(page);
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances');
+        const shown = page.locator('[data-glances-field="enabled"]');
+        const connected = page.locator('[data-glances-field="connected"]');
+        await expect(shown).toBeChecked();
+        await expect(connected).toBeChecked();
+        // Off with Show Glances: the connection reads off and cannot be switched.
+        await shown.uncheck();
+        await expect(connected).not.toBeChecked();
+        await expect(connected).toBeDisabled();
+        await shown.check();
+        await expect(connected).toBeEnabled();
+        await expect(connected).toBeChecked();
+
+        // Reset asks first, then clears the settings and the record.
+        await page.locator('[data-glances-reset]').click();
+        await page.getByRole('button', { name: /cancel/i }).click();
+        expect(state.reset).toBe(false);
+        await page.locator('[data-glances-reset]').click();
+        await page.getByRole('button', { name: 'Reset', exact: true }).click();
+        await expect.poll(() => state.reset).toBe(true);
+        await expect(page.locator('[data-glances-reset-result]')).toContainText('reset');
+        await expect(page.locator('[data-glances-field="server"]')).toHaveValue('');
+        await expect(shown).not.toBeChecked();
+        await expect(connected).not.toBeChecked();
+        await expect(connected).toBeDisabled();
+        await expect(page.locator('[data-glances-collected]')).toContainText('Nothing recorded yet');
+    });
+});
+
+test.describe('Config → Glances: how often an open page reads', () => {
+    test('from a second to a quarter of an hour, saved as seconds', async ({ page }) => {
+        const state = await mockGlances(page);
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances');
+        // Named apart from Record every, on the Glances page: the two are different things.
+        await expect(page.locator('label[for="config-glances-refresh"]')).toHaveText('Refresh while the page is open');
+        await expect(page.locator('#config-glances-body')).not.toContainText('Read the host');
+        const refresh = page.locator('[data-glances-field="refresh"]');
+        await expect(refresh.locator('option')).toHaveText(['Every 1 s', 'Every 2 s', 'Every 5 s', 'Every 10 s', 'Every 30 s', 'Every 1 min', 'Every 5 min', 'Every 15 min']);
+        await refresh.selectOption('900');
+        await page.locator('[data-glances-save]').click();
+        await expect(page.locator('[data-glances-saved]')).toContainText('Saved');
+        expect(state.saved.refresh).toBe(900);
+    });
+});
+
+test.describe('Config navigation: Glances', () => {
+    test('the Glances section carries the "new" badge in the rail', async ({ page }) => {
+        await mockGlances(page);
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances');
+        const item = page.locator('[data-config-section="glances"]');
+        await expect(item).toBeVisible();
+        await expect(item).toHaveAttribute('data-config-new', /new/i);
+        // Its own name stays the section's name, for readers and searches.
+        await expect(item).toHaveAttribute('title', 'Glances');
     });
 });

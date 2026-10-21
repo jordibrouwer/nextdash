@@ -1056,7 +1056,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     display: none;
 }
 
-/* Page 0 (Glances): a tab right behind the last page number. */
+/* Glances: an icon in the main navigation, before Config. */
 .page-nav-glances-host {
     display: flex;
     align-items: center;
@@ -1064,6 +1064,12 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 
 .page-nav-glances-host:empty {
     display: none;
+}
+
+.page-nav-glances-host .glances-link-icon {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex-shrink: 0;
 }
 
 /*
@@ -8641,6 +8647,7 @@ body[data-action-bar-size="xl"] { --action-button-size: 44px; --action-glyph-siz
  */
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
 .dashboard-section.section-controls .header-actions .docker-link-anchor,
+.dashboard-section.section-controls .header-actions .glances-link-anchor,
 .dashboard-section.section-controls .header-actions .library-link-anchor,
 .dashboard-section.section-controls .header-actions .config-link-anchor,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
@@ -8661,6 +8668,7 @@ body[data-action-bar-size="xl"] { --action-button-size: 44px; --action-glyph-siz
 
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .docker-link-anchor:hover,
+.dashboard-section.section-controls .header-actions .glances-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .library-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .config-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox:hover {
@@ -8777,6 +8785,7 @@ body[data-action-bar-size="xl"] { --action-button-size: 44px; --action-glyph-siz
 .header-track .page-nav-overflow,
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
 .dashboard-section.section-controls .header-actions .docker-link-anchor,
+.dashboard-section.section-controls .header-actions .glances-link-anchor,
 .dashboard-section.section-controls .header-actions .library-link-anchor,
 .dashboard-section.section-controls .header-actions .config-link-anchor,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
@@ -8802,6 +8811,7 @@ body[data-action-bar-size="xl"] { --action-button-size: 44px; --action-glyph-siz
 .header-track .page-nav-overflow:active,
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor:active,
 .dashboard-section.section-controls .header-actions .docker-link-anchor:active,
+.dashboard-section.section-controls .header-actions .glances-link-anchor:active,
 .dashboard-section.section-controls .header-actions .library-link-anchor:active,
 .dashboard-section.section-controls .header-actions .config-link-anchor:active {
     box-shadow:
@@ -8970,6 +8980,7 @@ body[data-show-tag-cloud-button="true"] .header-shortcuts #tag-cloud-toggle-btn:
  */
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor.active,
 .dashboard-section.section-controls .header-actions .docker-link-anchor.active,
+.dashboard-section.section-controls .header-actions .glances-link-anchor.active,
 .dashboard-section.section-controls .header-actions .library-link-anchor.active,
 .dashboard-section.section-controls .header-actions .config-link-anchor.active,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox.active {
@@ -9073,6 +9084,7 @@ body[data-header-buttons="plain"] .header-track .page-nav-overflow,
 body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .docker-link-anchor,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .glances-link-anchor,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .library-link-anchor,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
@@ -9091,6 +9103,7 @@ body[data-header-buttons="plain"] .header-track .page-nav-overflow:hover,
 body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .docker-link-anchor:hover,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .glances-link-anchor:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .library-link-anchor:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox:hover {
@@ -9104,6 +9117,7 @@ body[data-header-buttons="plain"] .dashboard-section.section-controls .header-ac
 body[data-header-buttons="plain"] .header-track .page-nav-btn.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .docker-link-anchor.active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .glances-link-anchor.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .library-link-anchor.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox.active {
@@ -9117,6 +9131,7 @@ body[data-header-buttons="plain"] .dashboard-section.section-controls .header-ac
 body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button:active,
 body[data-header-buttons="plain"] .header-track .page-nav-btn:active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .docker-link-anchor:active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .glances-link-anchor:active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .library-link-anchor:active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor:active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor:active {

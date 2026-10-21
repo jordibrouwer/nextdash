@@ -104,7 +104,7 @@ test('the guard claims a digit only when it names a page', async ({ page }) => {
  * Left to fall through, 5 on a two-page install opened the shortcut palette
  * while 2 switched pages — the same key doing two unrelated things depending on
  * how many pages you happen to have, and changing meaning the moment you add
- * one. 1-9 switch or do nothing; 0 opens the inbox or does nothing. Digits are
+ * one. 1-9 switch or do nothing; 0 does nothing. Digits are
  * still typed *into* a query once it is open, which is the second test here.
  */
 test('a digit with no page behind it does nothing at all', async ({ page }) => {
@@ -152,7 +152,7 @@ test('a digit still types into a query that is already open', async ({ page }) =
     )).toBe('5');
 });
 
-test('0 is the Glances page, not the inbox, while the inbox is on', async ({ page }) => {
+test('0 opens nothing, not even the inbox, while the inbox is on', async ({ page }) => {
     await openDashboard(page);
     await page.evaluate(async () => {
         const d = window.dashboardInstance;
@@ -164,9 +164,8 @@ test('0 is the Glances page, not the inbox, while the inbox is on', async ({ pag
     await expect(page.locator('#page-nav-inbox-btn')).toBeVisible();
 
     await page.keyboard.press('0');
-    await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
-    expect(await page.evaluate(() => window.location.hash)).toContain('glances');
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
     expect(await page.evaluate(
         () => document.getElementById('shortcut-search')?.classList.contains('show') === true,
-    ), 'the palette opened over Config').toBe(false);
+    ), 'the palette opened over the dashboard').toBe(false);
 });

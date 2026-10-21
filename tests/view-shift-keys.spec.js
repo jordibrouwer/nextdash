@@ -6,7 +6,7 @@ const { prepareDashboardInteraction } = require('./e2e-helpers');
  * The views are Shift+letter, so bare letters stay free for the shortcut search.
  */
 test.describe('Shift+letter views', () => {
-    test('Shift+I opens the inbox; 0 belongs to Glances now', async ({ page }) => {
+    test('Shift+I opens the inbox; 0 opens nothing', async ({ page }) => {
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await prepareDashboardInteraction(page);
@@ -17,11 +17,9 @@ test.describe('Shift+letter views', () => {
         await page.keyboard.press('Escape');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
 
-        // '0' is page 0, the Glances page: not set up here, so it opens Config
-        // at Glances. It no longer opens the inbox.
+        // '0' opens nothing: it no longer opens the inbox, and no view is its.
         await page.keyboard.press('0');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
-        expect(await page.evaluate(() => window.location.hash)).toContain('glances');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
     });
 
     test('bare h and i still open the shortcut search', async ({ page }) => {

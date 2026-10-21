@@ -207,7 +207,7 @@ class DashboardConfig {
      * be worth a second look. Cleared when the release is no longer recent,
      * for the same reason as the twinkle above.
      */
-    static NEW_SECTIONS = ['widgets', 'monitoring', 'status-page'];
+    static NEW_SECTIONS = ['widgets', 'status-page', 'glances'];
 
     /** The sections that open a named group in the rail. */
     static NAV_GROUP_LABELS = {
@@ -1946,15 +1946,6 @@ class DashboardConfig {
         if (d.keyboardNavigation?.isGChordActive?.()) return false;
 
         const key = e.key;
-        // 0 is page 0 (Glances), or the place to set it up; the Inbox is Shift+I.
-        if (key === '0') {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            this.saveLastConfigLocation();
-            void d.glancesStatus?.openPageZero?.();
-            return true;
-        }
-
         if (key >= '1' && key <= '9') {
             const pageIndex = parseInt(key, 10) - 1;
             if (pageIndex >= d.pages.length) return false;

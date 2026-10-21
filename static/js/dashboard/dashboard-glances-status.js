@@ -77,11 +77,8 @@
             this._visibility = null;
         }
 
-        /**
-         * The 0 key and the 0 tab: the page when Glances is set up, else the
-         * place to set it up.
-         */
-        async openPageZero() {
+        /** The Glances page when it is set up, else the place to set it up. */
+        async openGlancesPage() {
             const d = this.dash;
             if (this.configured) {
                 return d.glances?.openGlancesView?.({});
