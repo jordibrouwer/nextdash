@@ -30504,6 +30504,12 @@ class DashboardConfig {
                     <!-- DRAFT copy for Jordi to review -->
                     <p>${esc(this.t('config.aboutWhyBody', 'nextDash is a bookmark dashboard that is fast to search, quick to organise and yours to host. There are no accounts, no tracking and no database: your bookmarks live in plain files on your own server.'))}</p>
                 </section>
+                <section class="config-panel config-about-card" data-about-card="kofi">
+                    <h3 class="config-panel-title">${esc(this.t('config.aboutKofiTitle', 'Support nextDash'))}</h3>
+                    <!-- DRAFT copy for Jordi to review -->
+                    <p>${esc(this.t('config.aboutKofiBody', 'nextDash has no ads, no accounts and no paid tier, and it will stay that way. It is made in spare hours by one person. If it saves you time every day, a coffee on Ko-fi helps keep those hours coming: new features, fixes and replies to your issues. Even a small one means a lot.'))}</p>
+                    ${this.renderKofiSupport()}
+                </section>
                 <section class="config-panel config-about-card" data-about-card="maker">
                     <h3 class="config-panel-title">${esc(this.t('config.aboutMakerTitle', 'About the maker'))}</h3>
                     <!-- DRAFT copy for Jordi to review -->
@@ -30517,10 +30523,6 @@ class DashboardConfig {
                     <!-- There is no public roadmap page yet, so this points at the
                          open issues. Point it at a roadmap page once one exists. -->
                     <p><a href="https://github.com/jordibrouwer/nextDash/issues" target="_blank" rel="noopener noreferrer">${esc(this.t('config.aboutRoadmapLink', 'See what is being worked on and suggest ideas'))}</a></p>
-                </section>
-                <section class="config-panel config-about-card" data-about-card="kofi">
-                    <h3 class="config-panel-title">${esc(this.t('config.aboutKofiTitle', 'Support nextDash'))}</h3>
-                    ${this.renderKofiSupport()}
                 </section>
             </div>
             ${this.renderAboutCredits()}`;

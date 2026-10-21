@@ -72,11 +72,11 @@ test.describe('config about', () => {
         }
     });
 
-    test('four cards: why, maker, roadmap and Ko-fi', async ({ page }) => {
+    test('four cards: why, Ko-fi, maker and roadmap', async ({ page }) => {
         await openAbout(page);
         const ids = await page.locator('.config-about-cards [data-about-card]').evaluateAll((els) =>
             els.map((e) => e.getAttribute('data-about-card')));
-        expect(ids).toEqual(['why', 'maker', 'roadmap', 'kofi']);
+        expect(ids).toEqual(['why', 'kofi', 'maker', 'roadmap']);
 
         await expect(page.locator('[data-about-card="kofi"] a[href="https://ko-fi.com/jordibrw"]')).toHaveCount(1);
         await expect(page.locator('[data-about-card="roadmap"] a[href^="http"]')).toHaveCount(1);
