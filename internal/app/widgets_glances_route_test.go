@@ -122,3 +122,56 @@ func TestGlancesLoopbackIsOnlyLo(t *testing.T) {
 		t.Error("only the interface named lo is loopback; lowpan0 is a real link")
 	}
 }
+
+// In the demo no dial leaves the server (ssrfSafeDialContext), so a tile and
+// a view answer with an error, as every other service tile does, and the
+// Glances host is never reached, even when the settings allow local hosts.
+func TestGlancesDemoMakesNoRequest(t *testing.T) {
+	t.Setenv("NEXTDASH_DEMO", "1")
+	h := newTestHandlers(t)
+	allowLocalForTest(t, h, true)
+	mediaForgetAll()
+	glancesViewForgetAll()
+	hit := false
+	srv := glancesFixtureServer(t, func(*http.Request) { hit = true })
+	widget := Widget{ID: "w_glances0020", Type: WidgetTypeGlances, Config: map[string]any{"server": srv.URL}}
+	if err := h.store.SavePageBlocks(1, []Widget{widget}, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	rec := httptest.NewRecorder()
+	h.glancesWidgetHandler(rec, httptest.NewRequest(http.MethodGet, "/api/widgets/glances?pageId=1&id="+widget.ID, nil))
+	var result MediaResult
+	if err := json.Unmarshal(rec.Body.Bytes(), &result); err != nil {
+		t.Fatal(err)
+	}
+	if rec.Code != http.StatusOK || result.Error == "" || len(result.Items) != 0 {
+		t.Errorf("tile in the demo: %d %s", rec.Code, rec.Body.String())
+	}
+
+	rec = httptest.NewRecorder()
+	h.glancesViewHandler(rec, httptest.NewRequest(http.MethodGet, "/api/glances/"+widget.ID+"/processlist?pageId=1", nil))
+	var view map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &view); err != nil {
+		t.Fatal(err)
+	}
+	if rec.Code != http.StatusOK || view["error"] == nil {
+		t.Errorf("view in the demo: %d %s", rec.Code, rec.Body.String())
+	}
+
+	if hit {
+		t.Error("the demo reached a Glances host")
+	}
+	if !demoDeniedWrite("/api/widgets/glances/setup") {
+		t.Error("the demo lets a visitor make the server sign in anywhere")
+	}
+}
+
+func demoDeniedWrite(route string) bool {
+	for _, denied := range demoDeniedWrites {
+		if denied == route {
+			return true
+		}
+	}
+	return false
+}
