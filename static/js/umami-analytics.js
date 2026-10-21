@@ -194,7 +194,7 @@
         ['densityMode', pick('densityMode', 'compact')],
         ['categorySpacing', pick('categorySpacing', 'balanced')],
         ['sideMargin', pick('sideMargin', 'balanced')],
-        ['fontPreset', pick('fontPreset', 'inter')],
+        ['fontPreset', pick('fontPreset', 'source-code-pro')],
         ['fontSize', pick('fontSize', 'm')],
         ['backgroundType', pick('backgroundType', 'none')],
         ['launcherIconSize', pick('launcherIconSize', 'normal')],

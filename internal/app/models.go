@@ -458,6 +458,7 @@ type Settings struct {
 	CategoryHeaderSmallMigrated     bool   `json:"categoryHeaderSmallMigrated,omitempty"`     // one-time: the category header size moved from m to s, for an install still on the old default
 	FontSizeLgMigrated              bool   `json:"fontSizeLgMigrated,omitempty"`              // one-time: the type size moved from m to lg, for an install still on the old default
 	FontDefaultInterMigrated        bool   `json:"fontDefaultInterMigrated,omitempty"`        // one-time: the UI font moved from Source Code Pro to Inter
+	FontDefaultMonoMigrated         bool   `json:"fontDefaultMonoMigrated,omitempty"`         // one-time: the UI font moved back from Inter to Source Code Pro
 	SurfaceFollowMigrated           bool   `json:"surfaceFollowMigrated,omitempty"`           // one-time: depth, glow and effects moved to follow-the-theme
 	LauncherDefaultsMigrated        bool   `json:"launcherDefaultsMigrated,omitempty"`        // one-time: tags, recents, the cheat sheet and pages left the action bar for the search panel
 	ActionButtonsAllOnMigrated      bool   `json:"actionButtonsAllOnMigrated,omitempty"`      // one-time: every action button back on
@@ -1292,7 +1293,7 @@ func normalizeFontPreset(s string) string {
 	if isValidFontPreset(s) {
 		return s
 	}
-	return "inter"
+	return "source-code-pro"
 }
 
 // Shortcut label visibility. "hover" means the label is on screen only while
@@ -1826,6 +1827,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			GridDefaultsMigrated:            true,
 			FontSizeLgMigrated:              true,
 			FontDefaultInterMigrated:        true,
+			FontDefaultMonoMigrated:         true,
 			LauncherDefaultsMigrated:        true,
 			ActionButtonsAllOnMigrated:      true,
 			ActionKeysOffMigrated:           true,
@@ -1849,7 +1851,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			BackgroundPattern:               "auto",
 			BackgroundOpacity:               1,
 			FontWeight:                      "normal",
-			FontPreset:                      "inter",
+			FontPreset:                      "source-code-pro",
 			AutoDarkMode:                    false,
 			ShowSmartRecentCollection:       false,
 			ShowSmartTodayCollection:        true,
@@ -4409,7 +4411,7 @@ func (fs *FileStore) GetSettings() Settings {
 			IncludeFindersInSearch:          true,
 			BackgroundOpacity:               1,
 			FontWeight:                      "normal",
-			FontPreset:                      "inter",
+			FontPreset:                      "source-code-pro",
 			AutoDarkMode:                    false,
 			ShowSmartRecentCollection:       false,
 			ShowSmartTodayCollection:        true,
@@ -4456,6 +4458,7 @@ func (fs *FileStore) GetSettings() Settings {
 			GridDefaultsMigrated:            true,
 			FontSizeLgMigrated:              true,
 			FontDefaultInterMigrated:        true,
+			FontDefaultMonoMigrated:         true,
 			LauncherDefaultsMigrated:        true,
 			ActionButtonsAllOnMigrated:      true,
 			ActionKeysOffMigrated:           true,
@@ -5257,9 +5260,9 @@ func (fs *FileStore) GetSettings() Settings {
 		if settings.EnableCustomFont && settings.CustomFontPath != "" {
 			settings.FontPreset = "custom"
 		} else if settings.FontPreset == "custom" && settings.CustomFontPath == "" {
-			settings.FontPreset = "inter"
+			settings.FontPreset = "source-code-pro"
 		} else if _, ok := rawSettings["fontPreset"]; !ok || !isValidFontPreset(settings.FontPreset) {
-			settings.FontPreset = "inter"
+			settings.FontPreset = "source-code-pro"
 		}
 		/*
 		 * Inter for the text, once.
@@ -5275,6 +5278,21 @@ func (fs *FileStore) GetSettings() Settings {
 				settings.FontPreset = "inter"
 			}
 			settings.FontDefaultInterMigrated = true
+		}
+		/*
+		 * Source Code Pro for the text again, once.
+		 *
+		 * The UI font is the mono again, the one the app is named for. Everyone
+		 * still on Inter moves to it; another preset, or an uploaded font, stays.
+		 * The server cannot tell a reader who picked Inter from one who was
+		 * given it, so after this pass going back to Inter is the reader's own
+		 * choice, and it stays.
+		 */
+		if !settings.FontDefaultMonoMigrated {
+			if settings.FontPreset == "inter" {
+				settings.FontPreset = "source-code-pro"
+			}
+			settings.FontDefaultMonoMigrated = true
 		}
 		/*
 		 * Large type, once. An install still on the old default size, m, moves
@@ -5477,6 +5495,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.FontSizeLgMigrated = settings.FontSizeLgMigrated || stored.FontSizeLgMigrated
 			settings.CategoryHeaderSmallMigrated = settings.CategoryHeaderSmallMigrated || stored.CategoryHeaderSmallMigrated
 			settings.FontDefaultInterMigrated = settings.FontDefaultInterMigrated || stored.FontDefaultInterMigrated
+			settings.FontDefaultMonoMigrated = settings.FontDefaultMonoMigrated || stored.FontDefaultMonoMigrated
 			settings.SurfaceFollowMigrated = settings.SurfaceFollowMigrated || stored.SurfaceFollowMigrated
 			settings.LauncherDefaultsMigrated = settings.LauncherDefaultsMigrated || stored.LauncherDefaultsMigrated
 			settings.ActionButtonsAllOnMigrated = settings.ActionButtonsAllOnMigrated || stored.ActionButtonsAllOnMigrated

@@ -39,9 +39,9 @@
     function normalizePresetId(id, customFontPath) {
         const k = String(id || '').toLowerCase().trim();
         if (k === 'custom') {
-            return customFontPath ? 'custom' : 'inter';
+            return customFontPath ? 'custom' : 'source-code-pro';
         }
-        return PRESET_IDS.includes(k) ? k : 'inter';
+        return PRESET_IDS.includes(k) ? k : 'source-code-pro';
     }
 
     /** Sync fontPreset + enableCustomFont from stored settings (legacy enableCustomFont supported). */
@@ -53,7 +53,7 @@
             if (path) {
                 settings.enableCustomFont = true;
             } else {
-                settings.fontPreset = 'inter';
+                settings.fontPreset = 'source-code-pro';
                 settings.enableCustomFont = false;
             }
             return;
@@ -74,7 +74,7 @@
 
     function resolveActiveFontPreset(settings) {
         normalizeFontSettings(settings);
-        return settings?.fontPreset || 'inter';
+        return settings?.fontPreset || 'source-code-pro';
     }
 
     function ensureGoogleStylesheet(queryPart) {

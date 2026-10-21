@@ -2,7 +2,7 @@
 
 /* Global font for the entire app */
 :root {
-    --font-family-main: 'Inter', system-ui, sans-serif;
+    --font-family-main: 'Source Code Pro', monospace;
     /* Code, URLs and shortcuts. Follows the main font when that is a mono preset (font-presets.js). */
     --font-family-mono: 'Source Code Pro', ui-monospace, monospace;
     --font-mono: var(--font-family-mono);

@@ -3,13 +3,13 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
- * The text is Inter, stored on the server; the // and the figures stay on the mono.
+ * The text is Source Code Pro, stored on the server, as are the // and the figures.
  *
- * Source Code Pro as the text font cut long names short in narrow columns. Inter
- * is the default now, loaded from /static/fonts like the mono, with no request
- * to a font CDN, and the code-like parts keep the mono.
+ * It was Inter for a while, because a mono cut long names short in narrow
+ * columns; Source Code Pro is the default again, loaded from /static/fonts with
+ * no request to a font CDN. Inter is still a choice under Appearance.
  */
-test('the text is Inter, from our own files, and the // and the figures are mono', async ({ page }) => {
+test('the text is Source Code Pro, from our own files, like the // and the figures', async ({ page }) => {
     const outside = [];
     page.on('request', (request) => {
         if (/fonts\.(googleapis|gstatic)\.com/.test(request.url())) outside.push(request.url());
@@ -34,15 +34,15 @@ test('the text is Inter, from our own files, and the // and the figures are mono
             preset: document.documentElement.getAttribute('data-font-preset'),
             name: family('#dashboard-layout .bookmark-text'),
             glyph: family('#dashboard-layout .category-reorder-glyph'),
-            interLoaded: [...document.fonts].some((f) => f.family.replace(/["']/g, '') === 'Inter' && f.status === 'loaded'),
+            monoLoaded: [...document.fonts].some((f) => f.family.replace(/["']/g, '') === 'Source Code Pro' && f.status === 'loaded'),
         };
     });
 
-    expect(read.preset).toBe('inter');
-    expect(read.body).toMatch(/Inter/);
-    expect(read.name).toMatch(/Inter/);
-    expect(read.glyph, 'the // stays on the mono').toMatch(/Source Code Pro/);
-    expect(read.interLoaded, 'Inter is loaded from /static/fonts').toBe(true);
+    expect(read.preset).toBe('source-code-pro');
+    expect(read.body).toMatch(/Source Code Pro/);
+    expect(read.name).toMatch(/Source Code Pro/);
+    expect(read.glyph, 'the // is on the mono').toMatch(/Source Code Pro/);
+    expect(read.monoLoaded, 'Source Code Pro is loaded from /static/fonts').toBe(true);
     expect(outside, 'no request to a font CDN').toEqual([]);
 });
 

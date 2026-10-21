@@ -129,7 +129,7 @@ class Dashboard {
             backgroundType: 'none',
             backgroundOpacity: 1,
             fontWeight: 'normal',
-            fontPreset: 'inter',
+            fontPreset: 'source-code-pro',
             autoDarkMode: true,
             showSmartRecentCollection: false,
             showSmartTodayCollection: true,
