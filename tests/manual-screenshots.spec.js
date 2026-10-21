@@ -1328,7 +1328,8 @@ test('full 14 side panel', async ({ page }) => {
 });
 
 for (const [section, name] of [['appearance', '17-appearance.jpg'], ['bookmarks', '17-bookmarks.jpg'],
-    ['inbox', '17-inbox.jpg'], ['containers', '17-containers.jpg'], ['help', '17-help.jpg']]) {
+    ['inbox', '17-inbox.jpg'], ['containers', '17-containers.jpg'], ['help', '17-help.jpg'],
+    ['about', '17-about.jpg']]) {
     test(`full 17 ${section}`, async ({ page }) => {
         await prepare(page);
         await openConfig(page, section);
@@ -1336,6 +1337,15 @@ for (const [section, name] of [['appearance', '17-appearance.jpg'], ['bookmarks'
         await shot(page, name);
     });
 }
+
+test('full 17 about install', async ({ page }) => {
+    await prepare(page);
+    await openConfig(page, 'about');
+    await page.locator('[data-about-tab="install"]').click();
+    await page.locator('[data-about-action="copy-diagnostics"]').waitFor();
+    await page.waitForTimeout(1_000);
+    await shot(page, '17-about-install.jpg');
+});
 
 test.describe('unraid config', () => {
     test.use({ dataPatch: 'unraid' });
