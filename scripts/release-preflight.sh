@@ -19,9 +19,8 @@ IMAGE="nextdash:preflight"
 TRIVY_FINDING=10
 TRIVY_IMAGE="aquasec/trivy:0.75.0"
 
-# The licence list the About page shows is generated from go.mod/go.sum.
-if [[ go.mod -nt static/data/licenses.json || go.sum -nt static/data/licenses.json ]]; then
-  echo "Preflight: static/data/licenses.json is older than go.mod/go.sum. Run node scripts/gen-licenses.mjs and commit it." >&2
+# The licence list the About page shows is generated from go.mod and static/vendor.
+if ! node scripts/gen-licenses.mjs --check; then
   exit 1
 fi
 

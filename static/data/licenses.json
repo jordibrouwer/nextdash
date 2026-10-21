@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-21T14:12:09.095Z",
+  "generatedAt": "2026-10-21T14:15:51.076Z",
   "groups": [
     {
       "name": "Go modules",
@@ -28,13 +28,13 @@
       "name": "Bundled in the browser",
       "items": [
         {
-          "name": "qrcode-generator",
+          "name": "QRCode Generator",
           "version": "1.4.4",
           "license": "MIT",
           "url": "https://github.com/kazuhikoarase/qrcode-generator"
         },
         {
-          "name": "uplot",
+          "name": "uPlot",
           "version": "1.6.32",
           "license": "MIT",
           "url": "https://github.com/leeoniya/uPlot"

@@ -65,8 +65,9 @@ function goModules() {
                 mods = listModules();
             } catch { /* offline: those stay Unknown */ }
         }
-    } catch {
-        return [];
+    } catch (e) {
+        console.error(`gen-licenses: could not list the Go modules (${e.message.split('\n')[0]}); not touching the file.`);
+        process.exit(1);
     }
     return mods
         .map((m) => ({
@@ -83,6 +84,11 @@ const VENDOR_URLS = {
     'qrcode-generator': 'https://github.com/kazuhikoarase/qrcode-generator',
     uplot: 'https://github.com/leeoniya/uPlot',
 };
+// Display names where the directory name is not the library's own spelling.
+const VENDOR_NAMES = {
+    'qrcode-generator': 'QRCode Generator',
+    uplot: 'uPlot',
+};
 
 function vendorLibs() {
     const base = join(ROOT, 'static', 'vendor');
@@ -93,7 +99,7 @@ function vendorLibs() {
         const version = versions[versions.length - 1] || '';
         const dir = version ? join(base, lib.name, version) : join(base, lib.name);
         items.push({
-            name: lib.name,
+            name: VENDOR_NAMES[lib.name] || lib.name,
             version,
             license: readLicenseIn(dir),
             url: VENDOR_URLS[lib.name] || '',
@@ -123,6 +129,22 @@ const out = {
         { name: 'Icons', items: icons },
     ],
 };
+
+let previous = null;
+try { previous = JSON.parse(readFileSync(OUT, 'utf8')); } catch { /* no file yet */ }
+const sameContent = previous && JSON.stringify(previous.groups) === JSON.stringify(out.groups);
+
+if (process.argv.includes('--check')) {
+    if (sameContent) {
+        console.log('gen-licenses: static/data/licenses.json is up to date.');
+        process.exit(0);
+    }
+    console.error('gen-licenses: static/data/licenses.json is out of date. Run node scripts/gen-licenses.mjs and commit it.');
+    process.exit(1);
+}
+
+// Identical content keeps the old timestamp, so a rerun leaves no diff.
+if (sameContent && previous.generatedAt) out.generatedAt = previous.generatedAt;
 
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, JSON.stringify(out, null, 2) + '\n');
