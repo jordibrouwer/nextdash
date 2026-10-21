@@ -49,6 +49,13 @@ test.describe('dashboard tour', () => {
 
         // Leave the store the way an install past its first run has it.
         await page.evaluate(() => window.dashboardInstance.quickStart?.guide?.complete?.());
+        // complete() saves without being awaited. Closing the page on a slow
+        // runner cancelled that request, the next test found a first run
+        // still open and the tour never started (five failures in CI).
+        await expect.poll(async () => {
+            const response = await page.request.get('/api/settings');
+            return (await response.json()).onboardingCompleted;
+        }, { timeout: 10_000 }).toBe(true);
     });
 
     test('an install past its first run gets it on the next load', async ({ page }) => {
