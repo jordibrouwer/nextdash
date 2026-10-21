@@ -324,7 +324,7 @@
       "itDelete": "Den aktuellen Eintrag entfernen",
       "itEsc": "Triage schließen",
       "sectionConfigView": "Config-Ansicht",
-      "cvSectionJump": "Zum Posteingang (0) oder zu einer Lesezeichen-Seite (1–9)",
+      "cvSectionJump": "Zu einer Lesezeichen-Seite wechseln (1–9, 0 für die zehnte)",
       "cvSectionJk": "Vorherige / nächste Sektion in der linken Leiste",
       "cvSectionFirstLast": "Zur ersten / letzten Sektion springen",
       "cvSectionRail": "Zwischen Sektionen wechseln, wenn die Sektionsleiste Fokus hat (↑ / ↓ auf Desktop)",

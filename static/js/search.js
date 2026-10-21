@@ -1293,18 +1293,9 @@ class SearchComponent {
             return;
         }
 
-        // 0 opens Inbox when enabled (never feeds into search)
+        // 0 is the tenth page's key (dashboard-setup.js); it never feeds into search.
         if (e.key === '0' && !this.searchActive) {
-            const dash = window.dashboardInstance;
-            if (dash?.inbox?.isEnabled?.() && dash.settings?.inboxShowInPageTabs !== false) {
-                if (dash.keyboardNavigation?.isGChordActive?.()) {
-                    return;
-                }
-                e.preventDefault();
-                e.stopPropagation();
-                void dash.inbox.openInboxView();
-                return;
-            }
+            return;
         }
 
         // Handle space key for commands, finders, global search, and normal-search filters
@@ -1339,7 +1330,7 @@ class SearchComponent {
          * Which characters may start a query, and which may join one.
          *
          * A digit never starts one. 0-9 belong to the pages: 1-9 switch to the
-         * page they number and 0 opens the inbox, and the ones with no page
+         * page they number and 0 to the tenth, and the ones with no page
          * behind them stay reserved rather than falling through to this palette
          * -- a key that switches pages on one install and opens a search box on
          * the next is a key you cannot learn. They are still typed *into* a

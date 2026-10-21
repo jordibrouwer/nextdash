@@ -64,12 +64,12 @@ test.describe('dashboard inbox phase 1', () => {
         await expect(page.locator('#inbox-triage-overlay')).toHaveCount(0);
     });
 
-    test('opens inbox via 0 key', async ({ page }) => {
+    test('opens inbox via Shift+I', async ({ page }) => {
         await page.evaluate(() => {
             window.dashboardInstance.settings.inboxEnabled = true;
         });
 
-        await page.keyboard.press('0');
+        await page.keyboard.press('Shift+I');
         await expect(page.locator('.inbox-layout')).toBeVisible();
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('inbox');
     });

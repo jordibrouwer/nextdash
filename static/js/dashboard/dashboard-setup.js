@@ -532,20 +532,20 @@ class DashboardSetup {
             }
 
             // Check if a number key (1-9) was pressed
-            // Legacy inbox shortcut. Superseded by Shift+I and no longer documented
-            // in the cheat sheet, but kept working so it does not break the habit of
-            // anyone already using it.
+            // 0 is the tenth page's key, after 1-9. It used to open the Inbox;
+            // that moved to Shift+I, which leaves 0 free for the page it
+            // belongs to. Swallowed when there is no tenth page, for the same
+            // reason as the digits below.
             if (key === '0') {
                 if (d.keyboardNavigation?.isGChordActive?.()) {
                     return;
                 }
-                // Swallowed either way: with the inbox off there is nothing for
-                // 0 to open, and letting it through put the shortcut palette on
-                // screen instead -- see the digit branch below.
                 e.preventDefault();
                 e.stopPropagation();
-                if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
-                    void d.inbox.openInboxView();
+                const tenth = d.pages[9];
+                if (tenth) {
+                    window.nextdashRecordKey?.('0');
+                    void d.requestPageNavigation(tenth.id);
                 }
                 return;
             }

@@ -324,7 +324,7 @@
       "itDelete": "Quitar el elemento actual",
       "itEsc": "Cerrar la revisión",
       "sectionConfigView": "Vista de configuración",
-      "cvSectionJump": "Cambiar a la bandeja (0) o a una página de marcadores (1–9)",
+      "cvSectionJump": "Cambiar a una página de marcadores (1–9, 0 para la décima)",
       "cvSectionJk": "Sección anterior / siguiente en la barra izquierda",
       "cvSectionFirstLast": "Ir a la primera / última sección",
       "cvSectionRail": "Moverse entre secciones cuando la barra de secciones tiene el foco (↑ / ↓ en escritorio)",

@@ -1930,7 +1930,7 @@ class DashboardConfig {
     }
 
     /**
-     * Page tabs (1–9) and Inbox (0) work from config too — same as on the
+     * Page tabs (1–9, and 0 for the tenth) work from config too — same as on the
      * bookmark grid — so you can leave without Esc first. These remember where
      * you were, the same as every other way out.
      */
@@ -1940,15 +1940,15 @@ class DashboardConfig {
         if (d.keyboardNavigation?.isGChordActive?.()) return false;
 
         const key = e.key;
+        // 0 is the tenth page's key; the Inbox is on Shift+I.
         if (key === '0') {
-            if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                this.saveLastConfigLocation();
-                void d.inbox.openInboxView();
-                return true;
-            }
-            return false;
+            const tenth = d.pages[9];
+            if (!tenth) return false;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.saveLastConfigLocation();
+            void d.requestPageNavigation(tenth.id);
+            return true;
         }
 
         if (key >= '1' && key <= '9') {

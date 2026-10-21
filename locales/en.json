@@ -355,7 +355,7 @@
       "itDelete": "Remove the current item",
       "itEsc": "Close triage",
       "sectionConfigView": "Config view",
-      "cvSectionJump": "Switch to Inbox (0) or a bookmark page (1–9)",
+      "cvSectionJump": "Switch to a bookmark page (1–9, 0 for the tenth)",
       "cvSectionJk": "Previous / next section in the left rail",
       "cvSectionFirstLast": "Jump to the first / last section",
       "cvSectionRail": "Move between sections when the section rail is focused (↑ / ↓ on desktop)",

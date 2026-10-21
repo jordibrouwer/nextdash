@@ -324,7 +324,7 @@
       "itDelete": "移除当前条目",
       "itEsc": "关闭分拣",
       "sectionConfigView": "配置视图",
-      "cvSectionJump": "切换到收件箱（0）或某个书签页面（1–9）",
+      "cvSectionJump": "切换到某个书签页面（1–9，0 为第十页）",
       "cvSectionJk": "左侧栏中的上一个 / 下一个分区",
       "cvSectionFirstLast": "跳到第一个 / 最后一个分区",
       "cvSectionRail": "分区栏获得焦点时在分区之间移动（桌面端为 ↑ / ↓）",

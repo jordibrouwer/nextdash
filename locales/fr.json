@@ -324,7 +324,7 @@
       "itDelete": "Retirer l'élément actuel",
       "itEsc": "Fermer le tri",
       "sectionConfigView": "Vue Config",
-      "cvSectionJump": "Aller à la boîte de réception (0) ou à une page de favoris (1–9)",
+      "cvSectionJump": "Aller à une page de favoris (1–9, 0 pour la dixième)",
       "cvSectionJk": "Section précédente / suivante dans la colonne de gauche",
       "cvSectionFirstLast": "Aller à la première / dernière section",
       "cvSectionRail": "Changer de section quand le rail de sections a le focus (↑ / ↓ sur bureau)",
