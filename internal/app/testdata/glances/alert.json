@@ -1,19 +1,17 @@
 [
   {
-    "begin": 1792576800,
-    "end": -1,
+    "begin": 1792587051,
     "state": "WARNING",
-    "type": "MEM",
-    "max": 88.1,
-    "avg": 85.3,
-    "min": 82.0,
-    "sum": 512.0,
-    "count": 6,
-    "top": [
-      "plex",
-      "jellyfin"
-    ],
+    "type": "LOAD",
+    "min": 1.001953125,
+    "max": 2.3115234375,
+    "sum": 113.3046875,
+    "count": 87,
+    "avg": 1.3023527298850575,
+    "top": [],
     "desc": "",
-    "sort": "memory_percent"
+    "sort": "cpu_percent",
+    "global_msg": "System overloaded in the last 5 minutes",
+    "end": -1
   }
 ]

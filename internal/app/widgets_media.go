@@ -136,7 +136,7 @@ type MediaItem struct {
 	Method    string `json:"method,omitempty"`
 	Paused    bool   `json:"paused,omitempty"`
 	Remaining int64  `json:"remaining,omitempty"`
-	// Meters is what a machine reads: set only by the Beszel and Glances tiles.
+	// Meters is what a machine reads: set only by the Beszel tiles.
 	Meters *MediaMeters `json:"meters,omitempty"`
 }
 
@@ -162,32 +162,15 @@ type MediaMeters struct {
 	GPU  *float64 `json:"gpu,omitempty"`
 	// Load is the 1, 5 and 15 minute averages.
 	Load []float64 `json:"load,omitempty"`
-	// Swap is a percentage; Temps every temperature sensor, hottest first.
-	Swap  *float64    `json:"swap,omitempty"`
-	Temps []MediaTemp `json:"temps,omitempty"`
-	// Net is bytes a second received, NetUp sent; Uptime seconds.
+	// Net is bytes a second; Uptime seconds.
 	Net    *int64 `json:"net,omitempty"`
-	NetUp  *int64 `json:"netUp,omitempty"`
 	Uptime int64  `json:"uptime,omitempty"`
 	Agent  string `json:"agent,omitempty"`
-	// Host and OS name the machine; Alerts is how many alerts are open.
-	Host   string `json:"host,omitempty"`
-	OS     string `json:"os,omitempty"`
-	Alerts int    `json:"alerts,omitempty"`
 	// Fs is every filesystem the agent reports, the root first.
 	Fs []MediaFs `json:"fs,omitempty"`
 	// Spark is the last hour of cpu, a point a minute, oldest first. Set only
 	// for the single-system tile.
 	Spark []float64 `json:"spark,omitempty"`
-}
-
-// MediaTemp is one temperature sensor, in degrees Celsius, with the lines
-// the machine itself draws for it when it has them.
-type MediaTemp struct {
-	Name  string   `json:"name"`
-	Value float64  `json:"value"`
-	Warn  *float64 `json:"warn,omitempty"`
-	Crit  *float64 `json:"crit,omitempty"`
 }
 
 // MediaFs is one filesystem and how full it is, in percent.
@@ -490,7 +473,7 @@ func (h *Handlers) mediaSend(ctx context.Context, method, server string, credent
 		sent = cookie
 		req.Header.Set(sessionHeaderName(credential.Session), cookie)
 	}
-	client := h.outboundHTTPClient(mediaRequestTimeout, 3)
+	client := newOutboundHTTPClientLimited(h.allowLocalBookmarks(), mediaRequestTimeout, 3, outboundLimiterFrom(ctx))
 	// A key stored for this host does not follow a redirect to another.
 	client.CheckRedirect = credentialRedirectCheck(credential, client.CheckRedirect)
 	resp, err := client.Do(req)
@@ -521,4 +504,19 @@ func (h *Handlers) mediaSend(ctx context.Context, method, server string, credent
 		return nil, fmt.Errorf("%w: %w", errMediaUnreachable, &mediaHTTPError{Status: resp.StatusCode})
 	}
 	return resp, nil
+}
+
+type outboundLimiterKey struct{}
+
+// withOutboundLimiter makes the requests made under ctx count against limiter
+// instead of the shared outbound limit.
+func withOutboundLimiter(ctx context.Context, limiter *slidingWindowLimiter) context.Context {
+	return context.WithValue(ctx, outboundLimiterKey{}, limiter)
+}
+
+func outboundLimiterFrom(ctx context.Context) *slidingWindowLimiter {
+	if limiter, ok := ctx.Value(outboundLimiterKey{}).(*slidingWindowLimiter); ok && limiter != nil {
+		return limiter
+	}
+	return globalOutboundLimiter
 }

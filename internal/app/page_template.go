@@ -251,7 +251,7 @@ func templateWidgetURLs(widget Widget) []string {
 			out = append(out, raw)
 		}
 	case WidgetTypeJellyfin, WidgetTypeEmby, WidgetTypeJellyfinPlaying, WidgetTypeEmbyPlaying, WidgetTypePlex, WidgetTypePlexPlaying, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr, WidgetTypeQBittorrent, WidgetTypeSABnzbd, WidgetTypeHomeAssistant,
-		WidgetTypeBeszel, WidgetTypeBeszelSystem, WidgetTypeBeszelAttention, WidgetTypeBeszelStorage, WidgetTypeGlances:
+		WidgetTypeBeszel, WidgetTypeBeszelSystem, WidgetTypeBeszelAttention, WidgetTypeBeszelStorage:
 		if raw, ok := widget.Config["server"].(string); ok && raw != "" {
 			out = append(out, raw)
 		}
@@ -392,7 +392,7 @@ func buildPageTemplate(page PageWithBookmarks, options TemplateExportOptions, ic
 			// A category is a name on one client, an entity an id in one house.
 			delete(config, "category")
 			delete(config, "entities")
-		case WidgetTypeBeszel, WidgetTypeBeszelSystem, WidgetTypeBeszelAttention, WidgetTypeBeszelStorage, WidgetTypeGlances:
+		case WidgetTypeBeszel, WidgetTypeBeszelSystem, WidgetTypeBeszelAttention, WidgetTypeBeszelStorage:
 			if raw, ok := config["server"].(string); ok {
 				config["server"] = templatizeURL(raw, variables)
 			}
@@ -688,7 +688,7 @@ func (h *Handlers) planPageTemplateReplacing(tpl PageTemplate, rawValues map[str
 				widget.Config["url"] = filled
 			}
 		case WidgetTypeJellyfin, WidgetTypeEmby, WidgetTypeJellyfinPlaying, WidgetTypeEmbyPlaying, WidgetTypePlex, WidgetTypePlexPlaying, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr, WidgetTypeQBittorrent, WidgetTypeSABnzbd, WidgetTypeHomeAssistant,
-			WidgetTypeBeszel, WidgetTypeBeszelSystem, WidgetTypeBeszelAttention, WidgetTypeBeszelStorage, WidgetTypeGlances:
+			WidgetTypeBeszel, WidgetTypeBeszelSystem, WidgetTypeBeszelAttention, WidgetTypeBeszelStorage:
 			if raw, ok := widget.Config["server"].(string); ok {
 				filled, _ := fillTemplateURL(raw, values)
 				widget.Config["server"] = filled

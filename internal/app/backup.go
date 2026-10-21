@@ -175,8 +175,13 @@ var dataFiles = map[string]dataFilePolicy{
 	"notify-held.json": dataKeep,
 	"notify-open.json": dataKeep,
 	// Which images are held, and which update was skipped.
-	"docker-updates.json": dataKeep,
-	"status-page.json":    dataKeep,
+	// Glances: the settings travel with a restore; the recorded history and the
+	// incident log are of this install and take a month to earn back.
+	"glances.json":           dataReplace,
+	"glances-history.json":   dataKeep,
+	"glances-incidents.json": dataKeep,
+	"docker-updates.json":    dataKeep,
+	"status-page.json":       dataKeep,
 
 	/*
 	 * Credentials, at the owner's explicit instruction.
@@ -193,6 +198,7 @@ var dataFiles = map[string]dataFilePolicy{
 	"docker-secrets.json":     dataSecret,
 	"web-search-secrets.json": dataSecret,
 	"unraid-secrets.json":     dataSecret,
+	"glances-secrets.json":    dataSecret,
 
 	"preview-cache.json":    dataCache,
 	"health-cache.json":     dataCache,

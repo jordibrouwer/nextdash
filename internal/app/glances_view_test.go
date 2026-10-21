@@ -73,19 +73,18 @@ func (f *glancesViewFake) hitsFor(name string) int {
 	return f.hits[name]
 }
 
-// glancesViewSetup saves one Glances widget on page 1 pointed at a fake.
-func glancesViewSetup(t *testing.T) (*Handlers, *glancesViewFake, Widget) {
+// glancesViewSetup saves the Glances settings pointed at a fake.
+func glancesViewSetup(t *testing.T) (*Handlers, *glancesViewFake, GlancesConfig) {
 	t.Helper()
 	h := newTestHandlers(t)
 	allowLocalForTest(t, h, true)
 	glancesViewForgetAll()
 	fake := newGlancesViewFake(t)
-	widget := Widget{ID: "w_glancesview", Type: WidgetTypeGlances, Config: map[string]any{"server": fake.URL}}
-	other := Widget{ID: "w_beszelview0", Type: WidgetTypeBeszel, Config: map[string]any{"server": fake.URL}}
-	if err := h.store.SavePageBlocks(1, []Widget{widget, other}, nil); err != nil {
+	cfg, err := saveGlancesConfig(GlancesConfig{Enabled: true, Server: fake.URL, Refresh: 2}, nil)
+	if err != nil {
 		t.Fatal(err)
 	}
-	return h, fake, widget
+	return h, fake, cfg
 }
 
 func glancesViewDo(h *Handlers, method, target string) *httptest.ResponseRecorder {
@@ -95,47 +94,49 @@ func glancesViewDo(h *Handlers, method, target string) *httptest.ResponseRecorde
 }
 
 func TestGlancesViewAllowlist(t *testing.T) {
-	h, fake, widget := glancesViewSetup(t)
-	base := "/api/glances/" + widget.ID + "/"
+	h, fake, _ := glancesViewSetup(t)
+	base := "/api/glances/"
 	for _, path := range []string{
 		"quicklook", "cpu", "mem", "memswap", "load", "fs", "diskio", "network", "connections",
 		"sensors", "system", "uptime", "processlist", "containers", "alert", "smart", "raid",
-		"pluginslist", "all/limits", "cpu/history/10", "cpu/history/1200", "processes/1000",
+		"pluginslist", "all/limits", "processes/1000",
 	} {
-		rec := glancesViewDo(h, http.MethodGet, base+path+"?pageId=1")
+		rec := glancesViewDo(h, http.MethodGet, base+path+"")
 		if rec.Code != http.StatusOK {
 			t.Errorf("%s: %d %s", path, rec.Code, rec.Body.String())
 		}
 	}
 	for _, path := range []string{
 		"events/clear/all", "../status", "processes/abc", "cpu/history/../all", "all", "status",
-		"cpu/history/0", "cpu/history/1201", "cpu/history/5x", "cpu/history/", "cpu/history",
+		"cpu/history/10", "cpu/history/", "cpu/history", "history", "config", "connect",
 		"processlist/history/10", "sensors/history/10", "quicklook/", "/quicklook", "quicklook//",
 		"processes/", "processes/1/2", "processes/-1", "cpu%2Fhistory%2F10", "q%75icklook", "QUICKLOOK", "",
 	} {
-		rec := glancesViewDo(h, http.MethodGet, base+path+"?pageId=1")
+		rec := glancesViewDo(h, http.MethodGet, base+path+"")
 		if rec.Code != http.StatusNotFound {
 			t.Errorf("%q: %d, want 404", path, rec.Code)
 		}
 	}
-	if rec := glancesViewDo(h, http.MethodPost, base+"quicklook?pageId=1"); rec.Code != http.StatusMethodNotAllowed {
+	if rec := glancesViewDo(h, http.MethodPost, base+"quicklook"); rec.Code != http.StatusMethodNotAllowed {
 		t.Errorf("POST: %d", rec.Code)
 	}
-	if rec := glancesViewDo(h, http.MethodGet, "/api/glances/w_nothere0000/quicklook?pageId=1"); rec.Code != http.StatusNotFound {
-		t.Errorf("unknown widget: %d", rec.Code)
+	// Not switched on: nothing is asked, and the page is told.
+	asked := fake.hitsFor("load")
+	if _, err := saveGlancesConfig(GlancesConfig{Enabled: false, Server: fake.URL}, nil); err != nil {
+		t.Fatal(err)
 	}
-	if rec := glancesViewDo(h, http.MethodGet, "/api/glances/w_beszelview0/quicklook?pageId=1"); rec.Code != http.StatusNotFound {
-		t.Errorf("a widget of another type: %d", rec.Code)
+	if rec := glancesViewDo(h, http.MethodGet, base+"load"); strings.TrimSpace(rec.Body.String()) != `{"error":"not set up"}` || fake.hitsFor("load") != asked {
+		t.Errorf("switched off: %s, hits %d, was %d", rec.Body.String(), fake.hitsFor("load"), asked)
 	}
-	if rec := glancesViewDo(h, http.MethodGet, base+"quicklook?pageId=x"); rec.Code != http.StatusBadRequest {
-		t.Errorf("bad page id: %d", rec.Code)
+	if _, err := saveGlancesConfig(GlancesConfig{Enabled: true, Server: fake.URL}, nil); err != nil {
+		t.Fatal(err)
 	}
 
 	// The browser cannot name another server, and its query is never forwarded.
 	var elsewhere atomic.Int32
 	other := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { elsewhere.Add(1) }))
 	defer other.Close()
-	glancesViewDo(h, http.MethodGet, base+"load?pageId=1&server="+other.URL+"&credentialId=c1")
+	glancesViewDo(h, http.MethodGet, base+"load?server="+other.URL+"&")
 	if elsewhere.Load() != 0 || fake.hitsFor("load") != 1 {
 		t.Errorf("server from the request: elsewhere=%d load=%d", elsewhere.Load(), fake.hitsFor("load"))
 	}
@@ -152,25 +153,20 @@ func TestGlancesViewAllowlist(t *testing.T) {
 	registerGlancesViewRoutes(r, h)
 	for _, method := range []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch} {
 		rec := httptest.NewRecorder()
-		r.ServeHTTP(rec, httptest.NewRequest(method, base+"quicklook?pageId=1", nil))
+		r.ServeHTTP(rec, httptest.NewRequest(method, base+"quicklook", nil))
 		if rec.Code != http.StatusMethodNotAllowed {
 			t.Errorf("router %s: %d", method, rec.Code)
 		}
 	}
 	rec := httptest.NewRecorder()
-	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, base+"cpu/history/10?pageId=1", nil))
-	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "total") {
-		t.Errorf("router GET history: %d %s", rec.Code, rec.Body.String())
-	}
-	rec = httptest.NewRecorder()
-	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, base+"events/clear/all?pageId=1", nil))
+	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, base+"events/clear/all", nil))
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("router events/clear/all: %d", rec.Code)
 	}
 }
 
 func TestGlancesViewCoalesces(t *testing.T) {
-	h, fake, widget := glancesViewSetup(t)
+	h, fake, _ := glancesViewSetup(t)
 	fake.delay = 100 * time.Millisecond
 	var wg sync.WaitGroup
 	codes := make([]int, 3)
@@ -178,7 +174,7 @@ func TestGlancesViewCoalesces(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			codes[i] = glancesViewDo(h, http.MethodGet, "/api/glances/"+widget.ID+"/fs?pageId=1").Code
+			codes[i] = glancesViewDo(h, http.MethodGet, "/api/glances/fs").Code
 		}()
 	}
 	wg.Wait()
@@ -191,45 +187,23 @@ func TestGlancesViewCoalesces(t *testing.T) {
 		}
 	}
 	// And a fourth, just after, reads the cached answer.
-	glancesViewDo(h, http.MethodGet, "/api/glances/"+widget.ID+"/fs?pageId=1")
+	glancesViewDo(h, http.MethodGet, "/api/glances/fs")
 	if got := fake.hitsFor("fs"); got != 1 {
 		t.Errorf("a cached path was asked again: %d", got)
 	}
 }
 
-func TestGlancesViewRateLimitOnMissOnly(t *testing.T) {
-	h, fake, widget := glancesViewSetup(t)
-	h.ssrfAPILimiter = newSlidingWindowLimiter(2, time.Minute)
-	base := "/api/glances/" + widget.ID + "/"
-	// Refused paths cost nothing: if they did, the budget of two would be gone.
-	for _, path := range []string{"events/clear/all", "all", "status", "processes/abc"} {
-		if rec := glancesViewDo(h, http.MethodGet, base+path+"?pageId=1"); rec.Code != http.StatusNotFound {
-			t.Errorf("%s: %d", path, rec.Code)
-		}
-	}
-	for _, path := range []string{"fs", "processlist"} {
-		if rec := glancesViewDo(h, http.MethodGet, base+path+"?pageId=1"); rec.Code != http.StatusOK {
-			t.Fatalf("%s within the budget: %d", path, rec.Code)
-		}
-	}
-	// The budget is used up: cached answers and one process from the cached
-	// list still answer, a path that would go out is 429.
-	for _, path := range []string{"fs?pageId=1", "processlist?sort=name&q=d&pageId=1", "processes/1037?pageId=1"} {
-		if rec := glancesViewDo(h, http.MethodGet, base+path); rec.Code != http.StatusOK {
-			t.Errorf("cached %s: %d %s", path, rec.Code, rec.Body.String())
-		}
-	}
-	rec := glancesViewDo(h, http.MethodGet, base+"load?pageId=1")
-	if rec.Code != http.StatusTooManyRequests || rec.Header().Get("Retry-After") == "" {
-		t.Errorf("uncached over the budget: %d", rec.Code)
-	}
-	if fake.hitsFor("load") != 0 {
-		t.Errorf("a refused read still reached Glances")
-	}
-	// A refusal is not kept: with budget again, the path is asked.
+func TestGlancesViewIgnoresTheOutboundLimit(t *testing.T) {
+	h, fake, _ := glancesViewSetup(t)
 	h.ssrfAPILimiter = newSlidingWindowLimiter(1, time.Minute)
-	if rec := glancesViewDo(h, http.MethodGet, base+"load?pageId=1"); rec.Code != http.StatusOK || fake.hitsFor("load") != 1 {
-		t.Errorf("after the budget is back: %d, hits %d", rec.Code, fake.hitsFor("load"))
+	for i := 0; i < 5; i++ {
+		glancesViewForgetAll()
+		if rec := glancesViewDo(h, http.MethodGet, "/api/glances/load"); rec.Code != http.StatusOK {
+			t.Fatalf("read %d: %d", i, rec.Code)
+		}
+	}
+	if fake.hitsFor("load") != 5 {
+		t.Errorf("load asked %d times", fake.hitsFor("load"))
 	}
 }
 
@@ -258,19 +232,19 @@ func TestGlancesCachedSurvivesPanic(t *testing.T) {
 }
 
 func TestGlancesViewTTL(t *testing.T) {
-	if got := glancesViewTTL("pluginslist", glancesSpec{TTL: 30 * time.Second}); got != 5*time.Minute {
+	if got := glancesViewTTL("pluginslist", GlancesConfig{Refresh: 1}); got != 5*time.Minute {
 		t.Errorf("pluginslist: %v", got)
 	}
-	// Half the tile's beat, but never more than 4 s, so a view polling every
-	// 5 s gets a fresh answer each time; and never under 2 s.
-	for ttl, want := range map[time.Duration]time.Duration{
-		30 * time.Second: 4 * time.Second,
-		6 * time.Second:  3 * time.Second,
-		8 * time.Second:  4 * time.Second,
-		3 * time.Second:  2 * time.Second,
+	// Three quarters of the refresh: an open page polling every beat gets a
+	// fresh answer each time, and a second tab still shares one.
+	for refresh, want := range map[int]time.Duration{
+		1:  750 * time.Millisecond,
+		2:  1500 * time.Millisecond,
+		5:  3750 * time.Millisecond,
+		10: 7500 * time.Millisecond,
 	} {
-		if got := glancesViewTTL("fs", glancesSpec{TTL: ttl}); got != want {
-			t.Errorf("fs at %v: %v, want %v", ttl, got, want)
+		if got := glancesViewTTL("fs", GlancesConfig{Refresh: refresh}); got != want {
+			t.Errorf("fs at %ds: %v, want %v", refresh, got, want)
 		}
 	}
 }
@@ -326,9 +300,9 @@ func TestGlancesProcessesCutAndStrip(t *testing.T) {
 	}
 
 	// Through the route: 500 rows in, 200 out, no command line anywhere.
-	h, fake, widget := glancesViewSetup(t)
+	h, fake, _ := glancesViewSetup(t)
 	fake.override["processlist"] = glancesManyProcesses(500)
-	rec := glancesViewDo(h, http.MethodGet, "/api/glances/"+widget.ID+"/processlist?pageId=1")
+	rec := glancesViewDo(h, http.MethodGet, "/api/glances/processlist")
 	var rows []map[string]any
 	if err := json.Unmarshal(rec.Body.Bytes(), &rows); err != nil {
 		t.Fatal(err, rec.Body.String())
@@ -336,7 +310,7 @@ func TestGlancesProcessesCutAndStrip(t *testing.T) {
 	if len(rows) != 200 || strings.Contains(rec.Body.String(), "cmdline") || strings.Contains(rec.Body.String(), "secret") {
 		t.Errorf("route: %d rows, cmdline=%v", len(rows), strings.Contains(rec.Body.String(), "cmdline"))
 	}
-	rec = glancesViewDo(h, http.MethodGet, "/api/glances/"+widget.ID+"/processlist?pageId=1&q=jelly&sort=pid")
+	rec = glancesViewDo(h, http.MethodGet, "/api/glances/processlist?q=jelly&sort=pid")
 	rows = nil
 	_ = json.Unmarshal(rec.Body.Bytes(), &rows)
 	if len(rows) != 5 {
@@ -353,30 +327,30 @@ func TestGlancesProcessesCutAndStrip(t *testing.T) {
 }
 
 func TestGlancesProcessCmdlineOnDemand(t *testing.T) {
-	h, _, widget := glancesViewSetup(t)
-	rec := glancesViewDo(h, http.MethodGet, "/api/glances/"+widget.ID+"/processes/1037?pageId=1")
+	h, _, _ := glancesViewSetup(t)
+	rec := glancesViewDo(h, http.MethodGet, "/api/glances/processes/25314")
 	var answer map[string]any
 	if err := json.Unmarshal(rec.Body.Bytes(), &answer); err != nil {
 		t.Fatal(err, rec.Body.String())
 	}
 	cmdline, _ := answer["cmdline"].([]any)
-	if len(answer) != 2 || answer["pid"].(float64) != 1037 || len(cmdline) != 1 || cmdline[0] != "scrubbed" {
+	if len(answer) != 2 || answer["pid"].(float64) != 25314 || len(cmdline) != 1 || cmdline[0] != "scrubbed" {
 		t.Errorf("per pid: %s", rec.Body.String())
 	}
-	rec = glancesViewDo(h, http.MethodGet, "/api/glances/"+widget.ID+"/processes/4242?pageId=1")
+	rec = glancesViewDo(h, http.MethodGet, "/api/glances/processes/4242")
 	if strings.TrimSpace(rec.Body.String()) != `{"available":false}` {
 		t.Errorf("a process that is gone: %s", rec.Body.String())
 	}
 }
 
 func TestGlancesViewPluginMissing(t *testing.T) {
-	h, fake, widget := glancesViewSetup(t)
-	rec := glancesViewDo(h, http.MethodGet, "/api/glances/"+widget.ID+"/wifi?pageId=1")
+	h, fake, _ := glancesViewSetup(t)
+	rec := glancesViewDo(h, http.MethodGet, "/api/glances/wifi")
 	if rec.Code != http.StatusOK || strings.TrimSpace(rec.Body.String()) != `{"available":false}` {
 		t.Errorf("404 plugin: %d %s", rec.Code, rec.Body.String())
 	}
 	fake.Close()
-	rec = glancesViewDo(h, http.MethodGet, "/api/glances/"+widget.ID+"/smart?pageId=1")
+	rec = glancesViewDo(h, http.MethodGet, "/api/glances/smart")
 	if rec.Code != http.StatusOK || strings.TrimSpace(rec.Body.String()) != `{"error":"unreachable"}` {
 		t.Errorf("server gone: %d %s", rec.Code, rec.Body.String())
 	}
@@ -385,9 +359,9 @@ func TestGlancesViewPluginMissing(t *testing.T) {
 // A command line can carry a secret, so it is behind the write token, as the
 // docker logs are; the list without command lines is not.
 func TestGlancesProcessCmdlineNeedsWriteAccess(t *testing.T) {
-	h, _, widget := glancesViewSetup(t)
+	h, _, _ := glancesViewSetup(t)
 	t.Setenv("NEXTDASH_WRITE_TOKEN", "tok")
-	target := "/api/glances/" + widget.ID + "/processes/1037?pageId=1"
+	target := "/api/glances/processes/25314"
 	rec := glancesViewDo(h, http.MethodGet, target)
 	if rec.Code != http.StatusUnauthorized || strings.Contains(rec.Body.String(), "cmdline") {
 		t.Errorf("without the token: %d %s", rec.Code, rec.Body.String())
@@ -406,7 +380,7 @@ func TestGlancesProcessCmdlineNeedsWriteAccess(t *testing.T) {
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"cmdline"`) {
 		t.Errorf("with the token: %d %s", rec.Code, rec.Body.String())
 	}
-	if rec := glancesViewDo(h, http.MethodGet, "/api/glances/"+widget.ID+"/processlist?pageId=1"); rec.Code != http.StatusOK {
+	if rec := glancesViewDo(h, http.MethodGet, "/api/glances/processlist"); rec.Code != http.StatusOK {
 		t.Errorf("the list without the token: %d", rec.Code)
 	}
 }

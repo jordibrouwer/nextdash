@@ -1,158 +1,1762 @@
 [
   {
-    "pid": 1000,
+    "username": "root",
+    "memory_info": {
+      "rss": 190242816,
+      "vms": 9168183296,
+      "shared": 36327424,
+      "text": 41730048,
+      "lib": 0,
+      "data": 1535795200,
+      "dirty": 0
+    },
+    "cpu_num": 5,
+    "pid": 25314,
+    "num_threads": 108,
+    "cpu_percent": 23.4,
     "name": "dockerd",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.28323382706857014,
+    "cpu_times": {
+      "user": 5065.28,
+      "system": 2496.01,
+      "children_user": 43.53,
+      "children_system": 116.36,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
     "username": "root",
-    "cpu_percent": 12.5,
-    "memory_percent": 8.0,
-    "status": "R",
-    "num_threads": 4,
-    "cmdline": [
-      "scrubbed"
-    ],
-    "key": "pid"
-  },
-  {
-    "pid": 1037,
-    "name": "containerd",
-    "username": "svc",
-    "cpu_percent": 11.5,
-    "memory_percent": 7.5,
-    "status": "S",
-    "num_threads": 5,
-    "cmdline": [
-      "scrubbed"
-    ],
-    "key": "pid"
-  },
-  {
-    "pid": 1074,
-    "name": "smbd",
-    "username": "svc",
-    "cpu_percent": 10.5,
-    "memory_percent": 7.0,
-    "status": "S",
-    "num_threads": 6,
-    "cmdline": [
-      "scrubbed"
-    ],
-    "key": "pid"
-  },
-  {
-    "pid": 1111,
-    "name": "plex",
-    "username": "root",
-    "cpu_percent": 9.5,
-    "memory_percent": 6.5,
-    "status": "S",
-    "num_threads": 7,
-    "cmdline": [
-      "scrubbed"
-    ],
-    "key": "pid"
-  },
-  {
-    "pid": 1148,
-    "name": "jellyfin",
-    "username": "svc",
-    "cpu_percent": 8.5,
-    "memory_percent": 6.0,
-    "status": "R",
-    "num_threads": 8,
-    "cmdline": [
-      "scrubbed"
-    ],
-    "key": "pid"
-  },
-  {
-    "pid": 1185,
-    "name": "sshd",
-    "username": "svc",
-    "cpu_percent": 7.5,
-    "memory_percent": 5.5,
-    "status": "S",
-    "num_threads": 9,
-    "cmdline": [
-      "scrubbed"
-    ],
-    "key": "pid"
-  },
-  {
-    "pid": 1222,
-    "name": "glances",
-    "username": "root",
-    "cpu_percent": 6.5,
-    "memory_percent": 5.0,
-    "status": "I",
-    "num_threads": 10,
-    "cmdline": [
-      "scrubbed"
-    ],
-    "key": "pid"
-  },
-  {
-    "pid": 1259,
-    "name": "nginx",
-    "username": "svc",
-    "cpu_percent": 5.5,
-    "memory_percent": 4.5,
-    "status": "S",
-    "num_threads": 11,
-    "cmdline": [
-      "scrubbed"
-    ],
-    "key": "pid"
-  },
-  {
-    "pid": 1296,
-    "name": "postgres",
-    "username": "svc",
-    "cpu_percent": 4.5,
-    "memory_percent": 4.0,
-    "status": "S",
+    "memory_info": {
+      "rss": 59760640,
+      "vms": 818548736,
+      "shared": 1667072,
+      "text": 53248,
+      "lib": 0,
+      "data": 92893184,
+      "dirty": 0
+    },
+    "cpu_num": 9,
+    "pid": 22229,
     "num_threads": 12,
+    "cpu_percent": 7.1,
+    "name": "shfs",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
     "cmdline": [
       "scrubbed"
     ],
-    "key": "pid"
+    "memory_percent": 0.08897174217220942,
+    "cpu_times": {
+      "user": 3963.12,
+      "system": 11529.34,
+      "children_user": 0.0,
+      "children_system": 0.0,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
   },
   {
-    "pid": 1333,
-    "name": "python3",
     "username": "root",
-    "cpu_percent": 3.5,
-    "memory_percent": 3.5,
+    "memory_info": {
+      "rss": 44408832,
+      "vms": 1336803328,
+      "shared": 15515648,
+      "text": 17596416,
+      "lib": 0,
+      "data": 106852352,
+      "dirty": 0
+    },
+    "cpu_num": 0,
+    "pid": 25345,
+    "num_threads": 19,
+    "cpu_percent": 6.8,
+    "name": "containerd",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
     "status": "S",
-    "num_threads": 13,
+    "nice": 0,
     "cmdline": [
       "scrubbed"
     ],
-    "key": "pid"
+    "memory_percent": 0.06611594438869735,
+    "cpu_times": {
+      "user": 1740.9,
+      "system": 706.57,
+      "children_user": 0.86,
+      "children_system": 1.54,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
   },
   {
-    "pid": 1370,
-    "name": "cron",
-    "username": "svc",
-    "cpu_percent": 2.5,
-    "memory_percent": 3.0,
+    "username": "99",
+    "memory_info": {
+      "rss": 4297838592,
+      "vms": 26375806976,
+      "shared": 3989803008,
+      "text": 2695168,
+      "lib": 0,
+      "data": 347029504,
+      "dirty": 0
+    },
+    "cpu_num": 9,
+    "pid": 3364197,
+    "num_threads": 10,
+    "cpu_percent": 5.2,
+    "name": "qbittorrent-nox",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
     "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 6.3986293839087995,
+    "cpu_times": {
+      "user": 1781.19,
+      "system": 1018.43,
+      "children_user": 0.0,
+      "children_system": 0.0,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 100,
+      "effective": 100,
+      "saved": 100
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 491782144,
+      "vms": 138417487872,
+      "shared": 227811328,
+      "text": 49152,
+      "lib": 0,
+      "data": 671535104,
+      "dirty": 0
+    },
+    "cpu_num": 6,
+    "pid": 3356423,
+    "num_threads": 20,
+    "cpu_percent": 4.3,
+    "name": "jellyfin",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.7321660899358569,
+    "cpu_times": {
+      "user": 748.19,
+      "system": 232.21,
+      "children_user": 487.94,
+      "children_system": 347.53,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 158404608,
+      "vms": 1458724864,
+      "shared": 28401664,
+      "text": 13590528,
+      "lib": 0,
+      "data": 258256896,
+      "dirty": 0
+    },
+    "cpu_num": 0,
+    "pid": 21997,
+    "num_threads": 19,
+    "cpu_percent": 3.2,
+    "name": "tailscaled",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.2358330490079407,
+    "cpu_times": {
+      "user": 831.12,
+      "system": 2042.03,
+      "children_user": 0.02,
+      "children_system": 0.06,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 131276800,
+      "vms": 239849472,
+      "shared": 22085632,
+      "text": 4096,
+      "lib": 0,
+      "data": 205660160,
+      "dirty": 0
+    },
+    "cpu_num": 11,
+    "pid": 4010011,
+    "num_threads": 33,
+    "cpu_percent": 2.7,
+    "name": "python3.14",
+    "io_counters": [
+      64073728,
+      1794048,
+      64073728,
+      1794048,
+      1
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.19544512245505907,
+    "cpu_times": {
+      "user": 312.59,
+      "system": 73.3,
+      "children_user": 3.0,
+      "children_system": 15.27,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 226709504,
+      "vms": 22928814080,
+      "shared": 75882496,
+      "text": 37715968,
+      "lib": 0,
+      "data": 215339008,
+      "dirty": 0
+    },
+    "cpu_num": 0,
+    "pid": 21520,
+    "num_threads": 11,
+    "cpu_percent": 2.4,
+    "name": "node /usr/local",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.3375254940020301,
+    "cpu_times": {
+      "user": 1990.99,
+      "system": 321.84,
+      "children_user": 0.84,
+      "children_system": 2.87,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 2568785920,
+      "vms": 9268932608,
+      "shared": 18993152,
+      "text": 6963200,
+      "lib": 0,
+      "data": 9190449152,
+      "dirty": 0
+    },
+    "cpu_num": 0,
+    "pid": 41250,
+    "num_threads": 12,
+    "cpu_percent": 1.7,
+    "name": "qemu-system-x86_64",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 3.8244128337621843,
+    "cpu_times": {
+      "user": 1374.21,
+      "system": 498.84,
+      "children_user": 0.32,
+      "children_system": 0.13,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 100,
+      "effective": 100,
+      "saved": 100
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 9715712,
+      "vms": 293658624,
+      "shared": 8273920,
+      "text": 163840,
+      "lib": 0,
+      "data": 14929920,
+      "dirty": 0
+    },
+    "cpu_num": 2,
+    "pid": 18423,
+    "num_threads": 5,
+    "cpu_percent": 1.4,
+    "name": "emhttpd",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.014464768501198131,
+    "cpu_times": {
+      "user": 557.34,
+      "system": 922.87,
+      "children_user": 2176.14,
+      "children_system": 3511.07,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 62488576,
+      "vms": 1388113920,
+      "shared": 18345984,
+      "text": 13586432,
+      "lib": 0,
+      "data": 145707008,
+      "dirty": 0
+    },
+    "cpu_num": 0,
+    "pid": 3285012,
+    "num_threads": 10,
+    "cpu_percent": 0.9,
+    "name": "tailscaled",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.09303309791495729,
+    "cpu_times": {
+      "user": 18.25,
+      "system": 427.12,
+      "children_user": 0.0,
+      "children_system": 0.0,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 62193664,
+      "vms": 1388380160,
+      "shared": 17543168,
+      "text": 13590528,
+      "lib": 0,
+      "data": 150163456,
+      "dirty": 0
+    },
+    "cpu_num": 2,
+    "pid": 3367973,
+    "num_threads": 10,
+    "cpu_percent": 0.9,
+    "name": "tailscaled",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.0925940324292548,
+    "cpu_times": {
+      "user": 15.1,
+      "system": 369.92,
+      "children_user": 0.0,
+      "children_system": 0.0,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 0,
+      "vms": 0,
+      "shared": 0,
+      "text": 0,
+      "lib": 0,
+      "data": 0,
+      "dirty": 0
+    },
+    "cpu_num": 2,
+    "pid": 3363985,
+    "num_threads": 1,
+    "cpu_percent": 0.8,
+    "name": "napi/wg0-0",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.0,
+    "cpu_times": {
+      "user": 0.0,
+      "system": 593.28,
+      "children_user": 0.0,
+      "children_system": 0.0,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 0,
+      "vms": 0,
+      "shared": 0,
+      "text": 0,
+      "lib": 0,
+      "data": 0,
+      "dirty": 0
+    },
+    "cpu_num": 2,
+    "pid": 22198,
+    "num_threads": 1,
+    "cpu_percent": 0.6,
+    "name": "btrfs-transaction",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.0,
+    "cpu_times": {
+      "user": 0.0,
+      "system": 423.32,
+      "children_user": 0.0,
+      "children_system": 0.0,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 90484736,
+      "vms": 1463668736,
+      "shared": 15712256,
+      "text": 7188480,
+      "lib": 0,
+      "data": 158236672,
+      "dirty": 0
+    },
+    "cpu_num": 0,
+    "pid": 3412947,
     "num_threads": 14,
+    "cpu_percent": 0.5,
+    "name": "main",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
     "cmdline": [
       "scrubbed"
     ],
-    "key": "pid"
+    "memory_percent": 0.13471382839796286,
+    "cpu_times": {
+      "user": 123.66,
+      "system": 25.32,
+      "children_user": 0.16,
+      "children_system": 0.21,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
   },
   {
-    "pid": 1407,
-    "name": "systemd",
-    "username": "svc",
-    "cpu_percent": 1.5,
-    "memory_percent": 2.5,
+    "username": "root",
+    "memory_info": {
+      "rss": 273240064,
+      "vms": 1614229504,
+      "shared": 13930496,
+      "text": 12001280,
+      "lib": 0,
+      "data": 332140544,
+      "dirty": 0
+    },
+    "cpu_num": 3,
+    "pid": 3367932,
+    "num_threads": 16,
+    "cpu_percent": 0.3,
+    "name": "AdGuardHome",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
     "status": "S",
-    "num_threads": 15,
+    "nice": 0,
     "cmdline": [
       "scrubbed"
     ],
-    "key": "pid"
+    "memory_percent": 0.4068002706350869,
+    "cpu_times": {
+      "user": 96.81,
+      "system": 20.66,
+      "children_user": 0.15,
+      "children_system": 0.17,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "99",
+    "memory_info": {
+      "rss": 97959936,
+      "vms": 409874432,
+      "shared": 6586368,
+      "text": 4096,
+      "lib": 0,
+      "data": 102420480,
+      "dirty": 0
+    },
+    "cpu_num": 5,
+    "pid": 3412162,
+    "num_threads": 5,
+    "cpu_percent": 0.3,
+    "name": "python",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.1458429188341714,
+    "cpu_times": {
+      "user": 123.36,
+      "system": 13.55,
+      "children_user": 0.21,
+      "children_system": 0.27,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 100,
+      "effective": 100,
+      "saved": 100
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "99",
+    "memory_info": {
+      "rss": 60182528,
+      "vms": 265334784,
+      "shared": 6004736,
+      "text": 4096,
+      "lib": 0,
+      "data": 89513984,
+      "dirty": 0
+    },
+    "cpu_num": 8,
+    "pid": 3412525,
+    "num_threads": 6,
+    "cpu_percent": 0.3,
+    "name": "python",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.08959984974203378,
+    "cpu_times": {
+      "user": 101.98,
+      "system": 13.52,
+      "children_user": 0.0,
+      "children_system": 0.01,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 100,
+      "effective": 100,
+      "saved": 100
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 16039936,
+      "vms": 1298976768,
+      "shared": 5885952,
+      "text": 3735552,
+      "lib": 0,
+      "data": 81715200,
+      "dirty": 0
+    },
+    "cpu_num": 4,
+    "pid": 3286086,
+    "num_threads": 13,
+    "cpu_percent": 0.3,
+    "name": "containerd-shim-runc-v2",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.02388028391681782,
+    "cpu_times": {
+      "user": 20.34,
+      "system": 14.26,
+      "children_user": 35.41,
+      "children_system": 15.63,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 15630336,
+      "vms": 1298976768,
+      "shared": 5685248,
+      "text": 3735552,
+      "lib": 0,
+      "data": 81715200,
+      "dirty": 0
+    },
+    "cpu_num": 8,
+    "pid": 3412139,
+    "num_threads": 12,
+    "cpu_percent": 0.3,
+    "name": "containerd-shim-runc-v2",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.023270470742231056,
+    "cpu_times": {
+      "user": 25.99,
+      "system": 18.14,
+      "children_user": 504.21,
+      "children_system": 104.04,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 14745600,
+      "vms": 1298976768,
+      "shared": 5570560,
+      "text": 3735552,
+      "lib": 0,
+      "data": 85909504,
+      "dirty": 0
+    },
+    "cpu_num": 11,
+    "pid": 3383427,
+    "num_threads": 12,
+    "cpu_percent": 0.3,
+    "name": "containerd-shim-runc-v2",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.02195327428512364,
+    "cpu_times": {
+      "user": 26.97,
+      "system": 18.9,
+      "children_user": 220.95,
+      "children_system": 101.44,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 14516224,
+      "vms": 1298976768,
+      "shared": 5943296,
+      "text": 3735552,
+      "lib": 0,
+      "data": 81715200,
+      "dirty": 0
+    },
+    "cpu_num": 10,
+    "pid": 3412922,
+    "num_threads": 12,
+    "cpu_percent": 0.3,
+    "name": "containerd-shim-runc-v2",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.021611778907355047,
+    "cpu_times": {
+      "user": 26.58,
+      "system": 18.63,
+      "children_user": 111.25,
+      "children_system": 54.8,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 14188544,
+      "vms": 1298976768,
+      "shared": 5918720,
+      "text": 3735552,
+      "lib": 0,
+      "data": 85909504,
+      "dirty": 0
+    },
+    "cpu_num": 4,
+    "pid": 3368316,
+    "num_threads": 12,
+    "cpu_percent": 0.3,
+    "name": "containerd-shim-runc-v2",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.021123928367685636,
+    "cpu_times": {
+      "user": 19.58,
+      "system": 14.58,
+      "children_user": 69.14,
+      "children_system": 29.39,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 14102528,
+      "vms": 1298714624,
+      "shared": 5591040,
+      "text": 3735552,
+      "lib": 0,
+      "data": 81453056,
+      "dirty": 0
+    },
+    "cpu_num": 7,
+    "pid": 3284590,
+    "num_threads": 12,
+    "cpu_percent": 0.3,
+    "name": "containerd-shim-runc-v2",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.02099586760102241,
+    "cpu_times": {
+      "user": 28.51,
+      "system": 19.7,
+      "children_user": 125.89,
+      "children_system": 61.52,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 13938688,
+      "vms": 1298976768,
+      "shared": 5656576,
+      "text": 3735552,
+      "lib": 0,
+      "data": 81715200,
+      "dirty": 0
+    },
+    "cpu_num": 8,
+    "pid": 3356400,
+    "num_threads": 12,
+    "cpu_percent": 0.3,
+    "name": "containerd-shim-runc-v2",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.020751942331187705,
+    "cpu_times": {
+      "user": 27.32,
+      "system": 19.3,
+      "children_user": 227.81,
+      "children_system": 97.16,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 13746176,
+      "vms": 1298976768,
+      "shared": 5890048,
+      "text": 3735552,
+      "lib": 0,
+      "data": 81715200,
+      "dirty": 0
+    },
+    "cpu_num": 7,
+    "pid": 3291293,
+    "num_threads": 12,
+    "cpu_percent": 0.3,
+    "name": "containerd-shim-runc-v2",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.020465330139131925,
+    "cpu_times": {
+      "user": 20.45,
+      "system": 14.28,
+      "children_user": 39.45,
+      "children_system": 20.05,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 13545472,
+      "vms": 1298714624,
+      "shared": 5640192,
+      "text": 3735552,
+      "lib": 0,
+      "data": 81453056,
+      "dirty": 0
+    },
+    "cpu_num": 3,
+    "pid": 3284919,
+    "num_threads": 12,
+    "cpu_percent": 0.3,
+    "name": "containerd-shim-runc-v2",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.020166521683584408,
+    "cpu_times": {
+      "user": 28.61,
+      "system": 20.27,
+      "children_user": 128.45,
+      "children_system": 61.47,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 13434880,
+      "vms": 1298976768,
+      "shared": 5861376,
+      "text": 3735552,
+      "lib": 0,
+      "data": 81715200,
+      "dirty": 0
+    },
+    "cpu_num": 2,
+    "pid": 3377252,
+    "num_threads": 13,
+    "cpu_percent": 0.3,
+    "name": "containerd-shim-runc-v2",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.02000187212644598,
+    "cpu_times": {
+      "user": 20.02,
+      "system": 14.18,
+      "children_user": 69.19,
+      "children_system": 28.3,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 13111296,
+      "vms": 1298714624,
+      "shared": 5865472,
+      "text": 3735552,
+      "lib": 0,
+      "data": 81453056,
+      "dirty": 0
+    },
+    "cpu_num": 0,
+    "pid": 3357168,
+    "num_threads": 12,
+    "cpu_percent": 0.3,
+    "name": "containerd-shim-runc-v2",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.019520119718522435,
+    "cpu_times": {
+      "user": 20.22,
+      "system": 14.08,
+      "children_user": 69.55,
+      "children_system": 28.8,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 12615680,
+      "vms": 1298976768,
+      "shared": 5599232,
+      "text": 3735552,
+      "lib": 0,
+      "data": 81715200,
+      "dirty": 0
+    },
+    "cpu_num": 6,
+    "pid": 3282234,
+    "num_threads": 12,
+    "cpu_percent": 0.3,
+    "name": "containerd-shim-runc-v2",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.018782245777272447,
+    "cpu_times": {
+      "user": 28.66,
+      "system": 20.19,
+      "children_user": 135.83,
+      "children_system": 67.91,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 12353536,
+      "vms": 1298714624,
+      "shared": 5799936,
+      "text": 3735552,
+      "lib": 0,
+      "data": 81453056,
+      "dirty": 0
+    },
+    "cpu_num": 5,
+    "pid": 3367909,
+    "num_threads": 13,
+    "cpu_percent": 0.3,
+    "name": "containerd-shim-runc-v2",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.018391965345536915,
+    "cpu_times": {
+      "user": 19.89,
+      "system": 13.94,
+      "children_user": 38.99,
+      "children_system": 19.31,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 0,
+      "vms": 0,
+      "shared": 0,
+      "text": 0,
+      "lib": 0,
+      "data": 0,
+      "dirty": 0
+    },
+    "cpu_num": 4,
+    "pid": 15,
+    "num_threads": 1,
+    "cpu_percent": 0.3,
+    "name": "rcu_preempt",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "I",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.0,
+    "cpu_times": {
+      "user": 0.5,
+      "system": 238.47,
+      "children_user": 0.0,
+      "children_system": 0.0,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "99",
+    "memory_info": {
+      "rss": 241000448,
+      "vms": 23587758080,
+      "shared": 23347200,
+      "text": 43872256,
+      "lib": 0,
+      "data": 1336860672,
+      "dirty": 0
+    },
+    "cpu_num": 0,
+    "pid": 3283588,
+    "num_threads": 13,
+    "cpu_percent": 0.2,
+    "name": "node",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.3588018756633624,
+    "cpu_times": {
+      "user": 66.99,
+      "system": 12.02,
+      "children_user": 0.0,
+      "children_system": 0.0,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 100,
+      "effective": 100,
+      "saved": 100
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 230146048,
+      "vms": 1228746752,
+      "shared": 22835200,
+      "text": 4096,
+      "lib": 0,
+      "data": 278081536,
+      "dirty": 0
+    },
+    "cpu_num": 1,
+    "pid": 3413782,
+    "num_threads": 12,
+    "cpu_percent": 0.2,
+    "name": "granian",
+    "io_counters": [
+      225067008,
+      119728249,
+      206172160,
+      89993750,
+      1
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.342641826536813,
+    "cpu_times": {
+      "user": 82.69,
+      "system": 9.65,
+      "children_user": 544.17,
+      "children_system": 51.75,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 44654592,
+      "vms": 1321295872,
+      "shared": 20652032,
+      "text": 13770752,
+      "lib": 0,
+      "data": 99766272,
+      "dirty": 0
+    },
+    "cpu_num": 0,
+    "pid": 3413017,
+    "num_threads": 10,
+    "cpu_percent": 0.2,
+    "name": "tailscaled",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.06648183229344942,
+    "cpu_times": {
+      "user": 27.17,
+      "system": 47.35,
+      "children_user": 0.0,
+      "children_system": 0.0,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 43159552,
+      "vms": 1321562112,
+      "shared": 19636224,
+      "text": 13766656,
+      "lib": 0,
+      "data": 95850496,
+      "dirty": 0
+    },
+    "cpu_num": 7,
+    "pid": 3356544,
+    "num_threads": 11,
+    "cpu_percent": 0.2,
+    "name": "tailscaled",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.06425601420620772,
+    "cpu_times": {
+      "user": 25.06,
+      "system": 63.63,
+      "children_user": 0.0,
+      "children_system": 0.0,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "1000",
+    "memory_info": {
+      "rss": 41721856,
+      "vms": 75546628096,
+      "shared": 8036352,
+      "text": 52076544,
+      "lib": 0,
+      "data": 75305193472,
+      "dirty": 0
+    },
+    "cpu_num": 1,
+    "pid": 3284942,
+    "num_threads": 5,
+    "cpu_percent": 0.2,
+    "name": "bun",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.06211556996340817,
+    "cpu_times": {
+      "user": 86.52,
+      "system": 20.4,
+      "children_user": 0.15,
+      "children_system": 0.25,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 1000,
+      "effective": 1000,
+      "saved": 1000
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 40886272,
+      "vms": 1388494848,
+      "shared": 18849792,
+      "text": 13770752,
+      "lib": 0,
+      "data": 95662080,
+      "dirty": 0
+    },
+    "cpu_num": 7,
+    "pid": 3412236,
+    "num_threads": 12,
+    "cpu_percent": 0.2,
+    "name": "tailscaled",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.060871551087251154,
+    "cpu_times": {
+      "user": 23.28,
+      "system": 60.74,
+      "children_user": 0.0,
+      "children_system": 0.0,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 39718912,
+      "vms": 1321312256,
+      "shared": 20713472,
+      "text": 13770752,
+      "lib": 0,
+      "data": 99782656,
+      "dirty": 0
+    },
+    "cpu_num": 9,
+    "pid": 3368422,
+    "num_threads": 12,
+    "cpu_percent": 0.2,
+    "name": "tailscaled",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.05913358353967887,
+    "cpu_times": {
+      "user": 25.51,
+      "system": 68.31,
+      "children_user": 0.01,
+      "children_system": 0.02,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
+  },
+  {
+    "username": "root",
+    "memory_info": {
+      "rss": 37924864,
+      "vms": 1321037824,
+      "shared": 16932864,
+      "text": 13766656,
+      "lib": 0,
+      "data": 95326208,
+      "dirty": 0
+    },
+    "cpu_num": 11,
+    "pid": 3357271,
+    "num_threads": 12,
+    "cpu_percent": 0.2,
+    "name": "tailscaled",
+    "io_counters": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "status": "S",
+    "nice": 0,
+    "cmdline": [
+      "scrubbed"
+    ],
+    "memory_percent": 0.05646260183498883,
+    "cpu_times": {
+      "user": 21.3,
+      "system": 61.99,
+      "children_user": 0.0,
+      "children_system": 0.0,
+      "iowait": 0.0
+    },
+    "gids": {
+      "real": 0,
+      "effective": 0,
+      "saved": 0
+    },
+    "key": "pid",
+    "time_since_update": 9074.727148294449
   }
 ]

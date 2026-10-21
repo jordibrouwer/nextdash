@@ -1,15 +1,1 @@
-[
-  {
-    "DeviceName": "/dev/sda",
-    "Model Family": "Example SSD",
-    "Device Model": "EXAMPLE 250GB",
-    "1": {
-      "name": "Raw_Read_Error_Rate",
-      "value": 100,
-      "worst": 100,
-      "threshold": 0,
-      "raw": "0"
-    },
-    "key": "DeviceName"
-  }
-]
+[]

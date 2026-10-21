@@ -1,53 +1,284 @@
 [
   {
-    "name": "jellyfin",
-    "id": "a1b2c3d4e5f6",
+    "key": "name",
+    "name": "app-1",
+    "id": "000000000000",
     "status": "running",
-    "uptime": "3 days",
-    "cpu_percent": 4.2,
-    "memory_usage": 812000000,
-    "io_rx": 1234567,
-    "io_wx": 765432,
-    "network_rx": 2345678,
-    "network_tx": 1234567,
-    "image": [
-      "jellyfin/jellyfin:latest"
-    ],
+    "created": "2026-10-21T12:50:42.917018347Z",
     "command": "scrubbed",
-    "key": "name"
+    "io": {
+      "cumulative_ior": 4198400,
+      "cumulative_iow": 0,
+      "time_since_update": 9076,
+      "ior": 0,
+      "iow": 0
+    },
+    "cpu": {
+      "total": 84.98157099697885,
+      "limit": 12.0
+    },
+    "memory": {
+      "usage": 166354944,
+      "limit": 67168112640,
+      "inactive_file": 26046464
+    },
+    "network": {
+      "cumulative_rx": 599705,
+      "cumulative_tx": 6234975,
+      "time_since_update": 9076,
+      "rx": 373057,
+      "tx": 95498
+    },
+    "io_rx": 0,
+    "io_wx": 0,
+    "cpu_percent": 84.98157099697885,
+    "memory_percent": null,
+    "network_rx": 41,
+    "network_tx": 10,
+    "ports": [],
+    "uptime": "2 hours",
+    "image": [
+      "example/app-1:latest"
+    ],
+    "cpu_limit": 12.0,
+    "memory_usage": 166354944,
+    "memory_inactive_file": 26046464,
+    "memory_limit": 67168112640,
+    "engine": "docker"
   },
   {
-    "name": "postgres",
-    "id": "a1b2c3d4e5f6",
-    "status": "running",
-    "uptime": "3 days",
-    "cpu_percent": 1.1,
-    "memory_usage": 256000000,
-    "io_rx": 1234567,
-    "io_wx": 765432,
-    "network_rx": 2345678,
-    "network_tx": 1234567,
-    "image": [
-      "postgres:16"
-    ],
+    "key": "name",
+    "name": "app-2",
+    "id": "000000000001",
+    "status": "healthy",
+    "created": "2026-10-20T13:55:23.2700616Z",
     "command": "scrubbed",
-    "key": "name"
+    "io": {
+      "cumulative_ior": 966938624,
+      "cumulative_iow": 43143168,
+      "time_since_update": 9076,
+      "ior": 18800640,
+      "iow": 0
+    },
+    "cpu": {
+      "total": 25.25337367624811,
+      "limit": 12.0
+    },
+    "memory": {
+      "usage": 3128680448,
+      "limit": 67168112640,
+      "inactive_file": 1258385408
+    },
+    "network": {
+      "cumulative_rx": 78832129,
+      "cumulative_tx": 2902134154,
+      "time_since_update": 9076,
+      "rx": 17056597,
+      "tx": 19970932
+    },
+    "io_rx": 2071,
+    "io_wx": 0,
+    "cpu_percent": 25.25337367624811,
+    "memory_percent": null,
+    "network_rx": 1879,
+    "network_tx": 2200,
+    "ports": [],
+    "uptime": "12 hours",
+    "image": [
+      "example/app-2:latest"
+    ],
+    "cpu_limit": 12.0,
+    "memory_usage": 3128680448,
+    "memory_inactive_file": 1258385408,
+    "memory_limit": 67168112640,
+    "engine": "docker"
   },
   {
-    "name": "old-job",
-    "id": "a1b2c3d4e5f6",
-    "status": "exited",
-    "uptime": "3 days",
-    "cpu_percent": 0.0,
-    "memory_usage": 0,
-    "io_rx": 1234567,
-    "io_wx": 765432,
-    "network_rx": 2345678,
-    "network_tx": 1234567,
-    "image": [
-      "alpine:3.20"
-    ],
+    "key": "name",
+    "name": "app-3",
+    "id": "000000000002",
+    "status": "running",
+    "created": "2026-09-19T14:20:06.024323484Z",
     "command": "scrubbed",
-    "key": "name"
+    "io": {
+      "cumulative_ior": 175513600,
+      "cumulative_iow": 0,
+      "time_since_update": 9076,
+      "ior": 9392128,
+      "iow": 0
+    },
+    "cpu": {
+      "total": 15.392223903177005,
+      "limit": 12.0
+    },
+    "memory": {
+      "usage": 468017152,
+      "limit": 67168112640,
+      "inactive_file": 53829632
+    },
+    "network": {
+      "cumulative_rx": 57286212,
+      "cumulative_tx": 22401385,
+      "time_since_update": 9076,
+      "rx": 19653456,
+      "tx": 7157905
+    },
+    "io_rx": 1034,
+    "io_wx": 0,
+    "cpu_percent": 15.392223903177005,
+    "memory_percent": null,
+    "network_rx": 2165,
+    "network_tx": 788,
+    "ports": [],
+    "uptime": "11 hours",
+    "image": [
+      "example/app-3:latest"
+    ],
+    "cpu_limit": 12.0,
+    "memory_usage": 468017152,
+    "memory_inactive_file": 53829632,
+    "memory_limit": 67168112640,
+    "engine": "docker"
+  },
+  {
+    "key": "name",
+    "name": "app-4",
+    "id": "000000000003",
+    "status": "running",
+    "created": "2026-04-18T18:25:06.740306583Z",
+    "command": "scrubbed",
+    "io": {
+      "cumulative_ior": 208158720,
+      "cumulative_iow": 0,
+      "time_since_update": 9076,
+      "ior": 5206016,
+      "iow": 0
+    },
+    "cpu": {
+      "total": 2.1854490566037734,
+      "limit": 12.0
+    },
+    "memory": {
+      "usage": 5109731328,
+      "limit": 67168112640,
+      "inactive_file": 3326033920
+    },
+    "network": {
+      "cumulative_rx": 26653890118,
+      "cumulative_tx": 31311933420,
+      "time_since_update": 9076,
+      "rx": 205085703,
+      "tx": 1834703612
+    },
+    "io_rx": 573,
+    "io_wx": 0,
+    "cpu_percent": 2.1854490566037734,
+    "memory_percent": null,
+    "network_rx": 22596,
+    "network_tx": 202148,
+    "ports": [],
+    "uptime": "12 hours",
+    "image": [
+      "example/app-4:latest"
+    ],
+    "cpu_limit": 12.0,
+    "memory_usage": 5109731328,
+    "memory_inactive_file": 3326033920,
+    "memory_limit": 67168112640,
+    "engine": "docker"
+  },
+  {
+    "key": "name",
+    "name": "app-5",
+    "id": "000000000004",
+    "status": "healthy",
+    "created": "2026-08-29T17:39:29.182972642Z",
+    "command": "scrubbed",
+    "io": {
+      "cumulative_ior": 53248,
+      "cumulative_iow": 0,
+      "time_since_update": 9076,
+      "ior": 0,
+      "iow": 0
+    },
+    "cpu": {
+      "total": 0.8287867370007536,
+      "limit": 12.0
+    },
+    "memory": {
+      "usage": 187891712,
+      "limit": 67168112640,
+      "inactive_file": 46678016
+    },
+    "network": {
+      "cumulative_rx": 2125615,
+      "cumulative_tx": 528898,
+      "time_since_update": 9076,
+      "rx": 459976,
+      "tx": 101071
+    },
+    "io_rx": 0,
+    "io_wx": 0,
+    "cpu_percent": 0.8287867370007536,
+    "memory_percent": null,
+    "network_rx": 50,
+    "network_tx": 11,
+    "ports": [],
+    "uptime": "13 hours",
+    "image": [
+      "example/app-5:latest"
+    ],
+    "cpu_limit": 12.0,
+    "memory_usage": 187891712,
+    "memory_inactive_file": 46678016,
+    "memory_limit": 67168112640,
+    "engine": "docker"
+  },
+  {
+    "key": "name",
+    "name": "app-6",
+    "id": "000000000005",
+    "status": "healthy",
+    "created": "2026-10-20T19:56:01.125083662Z",
+    "command": "scrubbed",
+    "io": {
+      "cumulative_ior": 105177088,
+      "cumulative_iow": 0,
+      "time_since_update": 9076,
+      "ior": 3338240,
+      "iow": 0
+    },
+    "cpu": {
+      "total": 0.4168754716981132,
+      "limit": 12.0
+    },
+    "memory": {
+      "usage": 202403840,
+      "limit": 67168112640,
+      "inactive_file": 36487168
+    },
+    "network": {
+      "cumulative_rx": 1784233,
+      "cumulative_tx": 567609,
+      "time_since_update": 9076,
+      "rx": 495161,
+      "tx": 184487
+    },
+    "io_rx": 367,
+    "io_wx": 0,
+    "cpu_percent": 0.4168754716981132,
+    "memory_percent": null,
+    "network_rx": 54,
+    "network_tx": 20,
+    "ports": [],
+    "uptime": "11 hours",
+    "image": [
+      "example/app-6:latest"
+    ],
+    "cpu_limit": 12.0,
+    "memory_usage": 202403840,
+    "memory_inactive_file": 36487168,
+    "memory_limit": 67168112640,
+    "engine": "docker"
   }
 ]

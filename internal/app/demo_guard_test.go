@@ -16,13 +16,13 @@ import (
 	"time"
 )
 
-// writeRoutesInSource lists every route main.go and handlers_unraid.go
+// writeRoutesInSource lists every route main.go, glances_view.go and handlers_unraid.go
 // and handlers_discovery.go register for a method that writes, as they are written there.
 func writeRoutesInSource(t *testing.T) []string {
 	t.Helper()
 	routeRE := regexp.MustCompile(`(?:HandleFunc|PathPrefix)\("([^"]+)"[^\n]*\.Methods\(([^)]*)\)`)
 	seen := map[string]bool{}
-	for _, file := range []string{"main.go", "handlers_unraid.go", "handlers_discovery.go"} {
+	for _, file := range []string{"main.go", "handlers_unraid.go", "handlers_discovery.go", "glances_view.go"} {
 		src, err := os.ReadFile(file)
 		if err != nil {
 			t.Fatal(err)
