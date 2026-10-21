@@ -858,6 +858,10 @@ func (h *Handlers) glancesStatusHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	cfg := loadGlancesConfig()
+	if demoMode() {
+		// Glances is not part of the demo: nothing is set up, whatever a data folder holds.
+		cfg = defaultGlancesConfig()
+	}
 	glancesState.Lock()
 	answer := map[string]any{
 		"enabled":      cfg.Enabled,
@@ -921,6 +925,7 @@ func (h *Handlers) glancesHistoryHandler(w http.ResponseWriter, r *http.Request)
 		"now":    now.UnixMilli(),
 		// What went past a red line in this window, for the bands over a graph.
 		"incidents": glancesIncidentsBetween(since, end),
+		"restarts":  h.glancesRestartsAsked(r, since),
 	})
 }
 

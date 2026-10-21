@@ -361,14 +361,28 @@ func (h *Handlers) glancesRead(ctx context.Context, cfg GlancesConfig, path stri
 // them. GET only on the reads: the router answers 405 to every other method
 // before a handler is reached.
 func registerGlancesViewRoutes(r *mux.Router, h *Handlers) {
-	r.HandleFunc("/api/glances/config", h.glancesConfigHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
-	r.HandleFunc("/api/glances/connect", h.glancesConnectHandler).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/glances/config", glancesNotInDemo(h.glancesConfigHandler)).Methods("GET", "PUT", "DELETE", "OPTIONS")
+	r.HandleFunc("/api/glances/connect", glancesNotInDemo(h.glancesConnectHandler)).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/glances/status", h.glancesStatusHandler).Methods("GET", "OPTIONS")
-	r.HandleFunc("/api/glances/history", h.glancesHistoryHandler).Methods("GET", "OPTIONS")
-	r.HandleFunc("/api/glances/history.csv", glancesHistoryCSV).Methods("GET")
-	r.HandleFunc("/api/glances/insights", glancesInsightsHandler).Methods("GET")
-	r.HandleFunc("/api/glances/data", h.glancesWipeHandler).Methods("DELETE", "OPTIONS")
-	r.HandleFunc("/api/glances/{path:.*}", h.glancesViewHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/glances/history", glancesNotInDemo(h.glancesHistoryHandler)).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/glances/docker-link", glancesNotInDemo(h.glancesDockerLinkHandler)).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/glances/history.csv", glancesNotInDemo(glancesHistoryCSV)).Methods("GET")
+	r.HandleFunc("/api/glances/insights", glancesNotInDemo(glancesInsightsHandler)).Methods("GET")
+	r.HandleFunc("/api/glances/data", glancesNotInDemo(h.glancesWipeHandler)).Methods("DELETE", "OPTIONS")
+	r.HandleFunc("/api/glances/{path:.*}", glancesNotInDemo(h.glancesViewHandler)).Methods("GET", "OPTIONS")
+}
+
+// glancesNotInDemo makes a route not exist in the public demo: Glances reads an
+// address on a visitor's behalf, and the demo reads none. The status route still
+// answers, with "not set up", so a page that asks does not see an error.
+func glancesNotInDemo(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if demoMode() {
+			http.NotFound(w, r)
+			return
+		}
+		next(w, r)
+	}
 }
 
 /*

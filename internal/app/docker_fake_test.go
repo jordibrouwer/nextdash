@@ -65,6 +65,8 @@ type fakeDocker struct {
 	// an old daemon might); versions records the prefix each request used.
 	minAPI   string
 	versions map[string]int
+	// hostName is what GET /info reports as Name: the machine's own name.
+	hostName string
 }
 
 type fakeContainer struct {
@@ -227,6 +229,10 @@ func (f *fakeDocker) handle(w http.ResponseWriter, r *http.Request) {
 	case r.Method == "GET" && path == "/_ping":
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("OK"))
+		return
+
+	case r.Method == "GET" && path == "/info":
+		writeJSONFake(w, http.StatusOK, map[string]any{"Name": f.hostName, "Containers": len(f.containers)})
 		return
 
 	case r.Method == "GET" && path == "/containers/json":

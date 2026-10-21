@@ -35,7 +35,7 @@ var glancesBlocks = []string{
 // glancesRecordChoices are the seconds between two recordings of the host: what
 // the history is made of, whether or not a page is open. A longer interval asks
 // the host less and fills the record more slowly.
-var glancesRecordChoices = []int{2, 30, 60, 300, 900, 1800, 3600}
+var glancesRecordChoices = []int{2, 5, 10, 30, 60, 300, 900, 1800, 3600}
 
 const glancesDefaultRecord = 30
 
@@ -77,9 +77,12 @@ type GlancesConfig struct {
 	// nothing is read from the host until it is switched on again.
 	Paused bool `json:"paused,omitempty"`
 	// RecordEvery is the seconds between two recordings; 0 reads as the default.
-	RecordEvery int    `json:"recordEvery,omitempty"`
-	Server      string `json:"server"`
-	User        string `json:"user,omitempty"`
+	RecordEvery int `json:"recordEvery,omitempty"`
+	// DockerLink says whether this Glances host is the machine whose Docker the
+	// Containers view manages: auto, yes or no (glances_docker.go).
+	DockerLink string `json:"dockerLink,omitempty"`
+	Server     string `json:"server"`
+	User       string `json:"user,omitempty"`
 	// Refresh is the seconds between two reads while the page is open.
 	Refresh int `json:"refresh"`
 	// HiddenBlocks are Overview parts the reader switched off.
@@ -160,6 +163,7 @@ func normalizeGlancesConfig(c GlancesConfig) GlancesConfig {
 		c.Refresh = glancesDefaultRefresh
 	}
 	c.RecordEvery = normalizeGlancesRecord(c.RecordEvery)
+	c.DockerLink = normalizeGlancesLink(c.DockerLink)
 
 	known := map[string]bool{}
 	for _, id := range glancesBlocks {
@@ -400,6 +404,7 @@ func (h *Handlers) glancesConfigHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	glancesViewForgetAll()
+	glancesLinkForget()
 	glancesWakeSampler()
 	_ = json.NewEncoder(w).Encode(glancesConfigView(saved))
 }

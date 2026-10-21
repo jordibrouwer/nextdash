@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"github.com/gorilla/mux"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -345,12 +346,12 @@ func TestGlancesSamplerRecordsEveryCore(t *testing.T) {
 }
 
 func TestGlancesRecordIntervalChoices(t *testing.T) {
-	for _, seconds := range []int{2, 30, 60, 300, 900, 1800, 3600} {
+	for _, seconds := range []int{2, 5, 10, 30, 60, 300, 900, 1800, 3600} {
 		if got := normalizeGlancesRecord(seconds); got != seconds {
 			t.Errorf("%d became %d", seconds, got)
 		}
 	}
-	for _, seconds := range []int{0, -1, 5, 61, 99999} {
+	for _, seconds := range []int{0, -1, 3, 61, 99999} {
 		if got := normalizeGlancesRecord(seconds); got != glancesDefaultRecord {
 			t.Errorf("%d should read as the default, got %d", seconds, got)
 		}
@@ -555,5 +556,41 @@ func TestGlancesPageRefreshChoices(t *testing.T) {
 		if got := normalizeGlancesConfig(GlancesConfig{Refresh: seconds}).Refresh; got != glancesDefaultRefresh {
 			t.Errorf("%d should read as the default, got %d", seconds, got)
 		}
+	}
+}
+
+// The public demo has no Glances: no route answers but the status, and that says not set up.
+func TestGlancesIsNotPartOfTheDemo(t *testing.T) {
+	h, _, _ := glancesViewSetup(t)
+	r := mux.NewRouter()
+	registerGlancesViewRoutes(r, h)
+	do := func(method, path string) *httptest.ResponseRecorder {
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, httptest.NewRequest(method, path, nil))
+		return rec
+	}
+	// Set up and reachable outside the demo, so the demo's answer is the demo's doing.
+	if rec := do(http.MethodGet, "/api/glances/quicklook"); rec.Code != http.StatusOK {
+		t.Fatalf("outside the demo: %d", rec.Code)
+	}
+	t.Setenv("NEXTDASH_DEMO", "1")
+	for _, route := range [][2]string{
+		{http.MethodGet, "/api/glances/config"}, {http.MethodGet, "/api/glances/quicklook"}, {http.MethodGet, "/api/glances/history"},
+		{http.MethodGet, "/api/glances/history.csv"}, {http.MethodGet, "/api/glances/insights"}, {http.MethodDelete, "/api/glances/data"},
+		{http.MethodPost, "/api/glances/connect"}, {http.MethodDelete, "/api/glances/config"},
+	} {
+		if rec := do(route[0], route[1]); rec.Code != http.StatusNotFound {
+			t.Errorf("%s %s in the demo: %d", route[0], route[1], rec.Code)
+		}
+	}
+	rec := do(http.MethodGet, "/api/glances/status")
+	var status struct {
+		Enabled, Configured bool
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &status); err != nil {
+		t.Fatal(err)
+	}
+	if rec.Code != http.StatusOK || status.Enabled || status.Configured {
+		t.Errorf("status in the demo: %d %+v", rec.Code, status)
 	}
 }
