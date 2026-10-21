@@ -18,7 +18,7 @@ async function openAbout(page) {
     await prepareDashboardInteraction(page);
     // Its own section since it stopped being a tab of Help.
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('about'));
-    await page.waitForSelector('#config-section-panel .config-panel', { timeout: 15_000 });
+    await page.waitForSelector('#config-section-panel .config-about-hero', { timeout: 15_000 });
 }
 
 test.describe('config about', () => {
@@ -40,40 +40,74 @@ test.describe('config about', () => {
         expect(state.width).toBeGreaterThan(100);
     });
 
-    test('offers both addresses, and each only once', async ({ page }) => {
+    test('the hero offers the six links, each once, and the maker address once', async ({ page }) => {
         await openAbout(page);
 
-        const body = page.locator('#config-section-panel');
-        const hrefs = await body.locator('a[href]').evaluateAll((links) =>
+        const hero = page.locator('.config-about-hero');
+        const hrefs = await hero.locator('a[href]').evaluateAll((links) =>
             links.map((a) => a.getAttribute('href') || ''));
+        const expected = [
+            'https://github.com/jordibrouwer/nextDash',
+            'https://nextdash.cc',
+            'https://nextdash.cc/docs/',
+            'https://github.com/jordibrouwer/nextDash/issues',
+            'https://github.com/jordibrouwer/nextdash/blob/main/CHANGELOG.md',
+            'https://github.com/jordibrouwer/nextdash/blob/main/MANUAL.md',
+        ];
+        for (const href of expected) expect(hrefs.filter((h) => h === href), href).toHaveLength(1);
+        expect(hrefs.some((h) => h.includes('discussions'))).toBe(false);
 
-        expect(hrefs.filter((h) => h.includes('nextdash.cc'))).toHaveLength(1);
-        expect(hrefs.filter((h) => h.includes('jordibrw.nl'))).toHaveLength(1);
-        expect(hrefs.some((h) => h.includes('github.com/jordibrouwer/nextDash'))).toBe(true);
+        // jordibrw.nl is the maker card's, once in the whole pane.
+        const pane = page.locator('#config-section-panel');
+        await expect(pane.locator('a[href*="jordibrw.nl"]')).toHaveCount(1);
+        await expect(page.locator('[data-about-card="maker"] a[href*="jordibrw.nl"]')).toHaveCount(1);
 
         // Opening someone else's site in this tab would take the dashboard with
         // it, and rel is what keeps the new tab from reaching back.
-        for (const site of ['nextdash.cc', 'jordibrw.nl']) {
-            const link = body.locator(`a[href*="${site}"]`);
-            await expect(link).toHaveAttribute('target', '_blank');
-            await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+        const rels = await pane.locator('a[href^="http"]').evaluateAll((links) =>
+            links.map((a) => [a.getAttribute('target'), a.getAttribute('rel')]));
+        for (const [target, rel] of rels) {
+            expect(target).toBe('_blank');
+            expect(rel).toBe('noopener noreferrer');
         }
     });
 
-    test('the prose names both sites, in whichever language is loaded', async ({ page }) => {
+    test('four cards: why, maker, roadmap and Ko-fi', async ({ page }) => {
         await openAbout(page);
+        const ids = await page.locator('.config-about-cards [data-about-card]').evaluateAll((els) =>
+            els.map((e) => e.getAttribute('data-about-card')));
+        expect(ids).toEqual(['why', 'maker', 'roadmap', 'kofi']);
 
-        const prose = page.locator('#config-section-panel .config-help-prose').first();
-        await expect(prose).toContainText('nextdash.cc');
-        await expect(prose).toContainText('jordibrw.nl');
-        // A missing locale key renders as its own name; the tab would still look
-        // populated.
-        await expect(prose).not.toContainText('config.helpAboutBody');
+        await expect(page.locator('[data-about-card="kofi"] a[href="https://ko-fi.com/jordibrw"]')).toHaveCount(1);
+        await expect(page.locator('[data-about-card="roadmap"] a[href^="http"]')).toHaveCount(1);
+        // A missing locale key would render as its own name.
+        await expect(page.locator('.config-about-cards')).not.toContainText('config.about');
+        await expect(page.locator('.config-about-hero')).not.toContainText('config.about');
+    });
+
+    test('credits start collapsed at the bottom', async ({ page }) => {
+        await openAbout(page);
+        const credits = page.locator('details[data-about-credits]');
+        await expect(credits).toHaveCount(1);
+        expect(await credits.evaluate((d) => d.open)).toBe(false);
+    });
+
+    test('a saved location of about/colophon opens the Project tab', async ({ page }) => {
+        await page.addInitScript(() => {
+            localStorage.setItem('nextdash:config-last-location-v1',
+                JSON.stringify({ section: 'about', subTab: 'colophon', savedAt: Date.now() }));
+        });
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView());
+        await expect(page.locator('[data-about-tab][aria-selected="true"]')).toHaveAttribute('data-about-tab', 'project');
     });
 
     test('credits the app icon sets, with a link to each and to the CC BY licence', async ({ page }) => {
         await openAbout(page);
 
+        await page.locator('[data-about-credits] > summary').click();
         const credits = page.locator('[data-about-icon-credits]');
         await expect(credits).toContainText('dashboard-icons');
         await expect(credits).toContainText('selfh.st/icons');
@@ -84,6 +118,7 @@ test.describe('config about', () => {
 
     test('credits uPlot, the charts\' library, with its licence', async ({ page }) => {
         await openAbout(page);
+        await page.locator('[data-about-credits] > summary').click();
         const credits = page.locator('[data-about-chart-credits]');
         await expect(credits.locator('a[href="https://github.com/leeoniya/uPlot"]')).toHaveText('uPlot');
         await expect(credits).toContainText('MIT');

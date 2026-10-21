@@ -30467,7 +30467,69 @@ class DashboardConfig {
     }
 
     renderAboutProject() {
-        return this.renderAboutPanels();
+        const esc = (v) => this.dash.escapeHtml(v);
+        const btn = (href, text) => `<a class="config-btn" href="${href}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`;
+        // No version line: the nextdash-app-version meta is an asset fingerprint
+        // for cache-busting, not a release number; the Install tab shows the
+        // real one.
+        return `
+            <div class="config-about-hero">
+                <!-- The wordmark on its own dark plate: it is bright green on
+                     transparent, which a light theme would leave barely legible. -->
+                <div class="help-about-mark">
+                    <img src="/static/nextdash-wordmark.png" alt="nextDash"
+                        width="680" height="185" loading="lazy" decoding="async">
+                </div>
+                <p class="config-about-tagline">${esc(this.t('config.aboutTagline', 'A self-hosted, keyboard-first bookmark dashboard.'))}</p>
+                <div class="config-about-linkrow">
+                    ${btn('https://github.com/jordibrouwer/nextDash', this.t('config.helpGithub', 'Project on GitHub'))}
+                    ${btn('https://nextdash.cc', this.t('config.helpSiteProject', 'nextdash.cc'))}
+                    ${btn('https://nextdash.cc/docs/', this.t('config.aboutLinkDocs', 'Docs'))}
+                    ${btn('https://github.com/jordibrouwer/nextDash/issues', this.t('config.aboutLinkIssues', 'Issues'))}
+                    ${btn('https://github.com/jordibrouwer/nextdash/blob/main/CHANGELOG.md', this.t('config.aboutLinkChangelog', 'Changelog'))}
+                    ${btn('https://github.com/jordibrouwer/nextdash/blob/main/MANUAL.md', this.t('config.aboutLinkManual', 'Manual'))}
+                </div>
+            </div>
+            <div class="config-about-cards">
+                <section class="config-panel config-about-card" data-about-card="why">
+                    <h3 class="config-panel-title">${esc(this.t('config.aboutWhyTitle', 'Why it exists'))}</h3>
+                    <!-- DRAFT copy for Jordi to review -->
+                    <p>${esc(this.t('config.aboutWhyBody', 'nextDash is a bookmark dashboard that is fast to search, quick to organise and yours to host. There are no accounts, no tracking and no database: your bookmarks live in plain files on your own server.'))}</p>
+                </section>
+                <section class="config-panel config-about-card" data-about-card="maker">
+                    <h3 class="config-panel-title">${esc(this.t('config.aboutMakerTitle', 'About the maker'))}</h3>
+                    <!-- DRAFT copy for Jordi to review -->
+                    <p>${esc(this.t('config.aboutMakerBody', 'nextDash is built by Jordi Brouwer, who writes about it and other projects on his own site.'))}</p>
+                    <div class="config-about-linkrow">
+                        ${btn('https://jordibrw.nl', this.t('config.helpSiteAuthor', 'jordibrw.nl'))}
+                    </div>
+                </section>
+                <section class="config-panel config-about-card" data-about-card="roadmap">
+                    <h3 class="config-panel-title">${esc(this.t('config.aboutRoadmapTitle', 'Roadmap'))}</h3>
+                    <!-- There is no public roadmap page yet, so this points at the
+                         open issues. Point it at a roadmap page once one exists. -->
+                    <p><a href="https://github.com/jordibrouwer/nextDash/issues" target="_blank" rel="noopener noreferrer">${esc(this.t('config.aboutRoadmapLink', 'See what is being worked on and suggest ideas'))}</a></p>
+                </section>
+                <section class="config-panel config-about-card" data-about-card="kofi">
+                    <h3 class="config-panel-title">${esc(this.t('config.aboutKofiTitle', 'Support nextDash'))}</h3>
+                    ${this.renderKofiSupport()}
+                </section>
+            </div>
+            ${this.renderAboutCredits()}`;
+    }
+
+    /**
+     * The collapsed credits and licences block at the foot of the Project tab.
+     * The icon and chart credit lines stay in it until the full licence list
+     * replaces them.
+     */
+    renderAboutCredits() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        // TODO(task 7): fill with the generated licence list.
+        return `<details class="config-about-credits" data-about-credits>
+            <summary>${esc(this.t('config.aboutCreditsTitle', 'Credits and licences'))}</summary>
+            ${this.renderIconCredits()}
+        </details>`;
     }
 
     renderAboutInstall() {
@@ -30553,41 +30615,6 @@ class DashboardConfig {
                 ${already ? '' : `<div class="config-actions">
                     <button type="button" class="config-btn config-btn--small" data-about-action="track-fresh">${esc(this.t('config.aboutTrackCta', 'Add nextdash.cc to my bookmarks'))}</button>
                 </div>`}
-            </div>`;
-    }
-
-    renderAboutPanels() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        // No version line: the nextdash-app-version meta is an asset fingerprint
-        // for cache-busting (see appVersionToken in html_etag.go), not a release
-        // number, so printing it as "Version" showed people a meaningless hash.
-        // The real one is served by /api/version if this is ever wanted here.
-        // No what's-new panel: the release notes are already one button away in
-        // Help → Getting started and again beside the onboarding switches in
-        // Behavior, and a third copy on the colophon added a panel rather than a
-        // way in.
-        return `
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.helpAboutTitle', 'About nextDash'))}</h3>
-                <!-- The wordmark on its own dark plate rather than on the panel:
-                     it is bright green on transparent, which a light theme
-                     would leave barely legible. The plate is the same near-black
-                     the printable cheat sheet uses, so the two pieces of
-                     nextDash that carry the logo look like each other. -->
-                <div class="help-about-mark">
-                    <!-- 680px wide for a mark shown at most 340: the 2065px
-                         original was 104 KB of a 340px panel. -->
-                    <img src="/static/nextdash-wordmark.png" alt="nextDash"
-                        width="680" height="185" loading="lazy" decoding="async">
-                </div>
-                <div class="config-help-prose">${this.t('config.helpAboutBody', '')}</div>
-                <div class="config-actions">
-                    <a class="config-btn" href="https://github.com/jordibrouwer/nextDash" target="_blank" rel="noopener noreferrer">${esc(this.t('config.helpGithub', 'Project on GitHub'))}</a>
-                    <a class="config-btn" href="https://nextdash.cc" target="_blank" rel="noopener noreferrer">${esc(this.t('config.helpSiteProject', 'nextdash.cc'))}</a>
-                    <a class="config-btn" href="https://jordibrw.nl" target="_blank" rel="noopener noreferrer">${esc(this.t('config.helpSiteAuthor', 'jordibrw.nl'))}</a>
-                </div>
-                ${this.renderIconCredits()}
-                ${this.renderKofiSupport()}
             </div>`;
     }
 

@@ -52,9 +52,9 @@ test.describe('About in the rail', () => {
     test('holds the wordmark and all three addresses', async ({ page }) => {
         await openConfig(page, 'about');
         await expect(page.locator('.help-about-mark img')).toBeVisible();
-        for (const site of ['nextdash.cc', 'jordibrw.nl', 'github.com/jordibrouwer/nextDash']) {
-            await expect(page.locator(`#config-section-panel a[href*="${site}"]`)).toHaveCount(1);
-        }
+        await expect(page.locator('.config-about-hero a[href="https://nextdash.cc"]')).toHaveCount(1);
+        await expect(page.locator('.config-about-hero a[href="https://github.com/jordibrouwer/nextDash"]')).toHaveCount(1);
+        await expect(page.locator('#config-section-panel a[href*="jordibrw.nl"]')).toHaveCount(1);
     });
 });
 

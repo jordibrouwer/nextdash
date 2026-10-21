@@ -10044,3 +10044,51 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
 .config-docker-snippet-fold > .config-docker-snippet {
     margin-top: var(--space-2, 0.5rem);
 }
+
+/* ── About → Project tab ─────────────────────────────────────────────────
+   Hero (wordmark, tagline, link buttons) over a two-column card grid.
+   The button row is -linkrow: .config-about-links is Overview's column list. */
+.config-about-hero {
+    margin-top: 20px;
+    padding: 18px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: var(--radius-7, 12px);
+    background: var(--card-bg, rgba(128, 128, 128, 0.04));
+    text-align: center;
+}
+.config-about-hero .help-about-mark { margin-bottom: 12px; }
+.config-about-tagline {
+    margin: 0 0 14px;
+    color: var(--text-secondary);
+}
+.config-about-linkrow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+}
+.config-about-hero .config-about-linkrow { justify-content: center; }
+.config-about-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+.config-about-card { margin-top: 0; }
+.config-about-card p { margin: 0 0 12px; line-height: 1.5; }
+.config-about-card p:last-child { margin-bottom: 0; }
+.config-about-card .config-about-linkrow a { color: inherit; }
+.config-about-card .help-support-block { margin: 0; }
+.config-about-credits {
+    margin-top: 16px;
+    padding: 12px 18px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: var(--radius-7, 12px);
+}
+.config-about-credits > summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+@media (max-width: 720px) {
+    .config-about-cards { grid-template-columns: minmax(0, 1fr); }
+}
+.config-about-card p a { color: var(--accent-primary); text-underline-offset: 2px; }
