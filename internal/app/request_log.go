@@ -44,6 +44,29 @@ func newRequestID() string {
 	return hex.EncodeToString(buf)
 }
 
+// maxRequestIDLen is as long as an id a client may bring: a UUID with room to
+// spare. What it sends is echoed in a header and written into the log.
+const maxRequestIDLen = 64
+
+// cleanRequestID returns the id a client supplied when it is a plausible one --
+// letters, digits, '-', '_' and '.', up to maxRequestIDLen -- and "" otherwise,
+// so the caller makes its own instead of passing on whatever arrived.
+func cleanRequestID(raw string) string {
+	id := strings.TrimSpace(raw)
+	if id == "" || len(id) > maxRequestIDLen {
+		return ""
+	}
+	for _, c := range id {
+		switch {
+		case c >= 'a' && c <= 'z', c >= 'A' && c <= 'Z', c >= '0' && c <= '9':
+		case c == '-', c == '_', c == '.':
+		default:
+			return ""
+		}
+	}
+	return id
+}
+
 func shouldSkipRequestLog(path string) bool {
 	return strings.HasPrefix(path, "/static/") || strings.HasPrefix(path, "/locales/")
 }
@@ -55,11 +78,14 @@ func requestLogging(next http.Handler) http.Handler {
 			return
 		}
 
-		reqID := strings.TrimSpace(r.Header.Get(requestIDHeader))
+		reqID := cleanRequestID(r.Header.Get(requestIDHeader))
 		if reqID == "" {
 			reqID = newRequestID()
 		}
 		w.Header().Set(requestIDHeader, reqID)
+		// Handlers that record the id (the activity log) read it from the
+		// request, so it has to be the cleaned one rather than what arrived.
+		r.Header.Set(requestIDHeader, reqID)
 
 		start := time.Now()
 		rec := &responseRecorder{ResponseWriter: w}
