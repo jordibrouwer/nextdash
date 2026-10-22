@@ -87,6 +87,7 @@
         'pushNotifyMonitor',
         'pushNotifyBackup',
         'pushNotifyContainers',
+        'pushNotifyGlances',
         'pushNotifyRelease',
         'dockerHiddenContainers',
         'dockerWebUIs',

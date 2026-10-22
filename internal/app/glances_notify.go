@@ -175,7 +175,7 @@ func (h *Handlers) dispatchGlancesNotices(ctx context.Context, notices []monitor
 		return
 	}
 	settings := h.store.GetSettings()
-	if settings.PushNotifyEnabled {
+	if settings.PushNotifyEnabled && settings.PushNotifyGlances {
 		for _, n := range notices {
 			h.sendWebPushNotification(ctx, webPushMessage{
 				Title: n.Title, Body: n.Error, Kind: "glances",

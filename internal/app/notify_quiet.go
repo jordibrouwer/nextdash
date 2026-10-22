@@ -337,8 +337,10 @@ func sinkFlags(source string, s Settings) (push, webhook bool) {
 		push = s.PushNotifyEnabled && s.PushNotifyMonitor
 	case noticeSourceContainer:
 		push = s.PushNotifyEnabled && s.PushNotifyContainers
-	case noticeSourceUnraid, noticeSourceGlances:
+	case noticeSourceUnraid:
 		push = s.PushNotifyEnabled
+	case noticeSourceGlances:
+		push = s.PushNotifyEnabled && s.PushNotifyGlances
 	case noticeSourceBackup:
 		push = s.PushNotifyEnabled && s.PushNotifyBackup
 	}

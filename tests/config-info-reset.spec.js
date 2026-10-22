@@ -94,7 +94,7 @@ test.describe('config info + reset affordances', () => {
         // one of them carries an ℹ now and none of them is listed below.
         const allowed = new Set([
             'showSmartTodayCollection', 'showSmartRecentCollection', 'showSmartStaleCollection',
-            'showSmartMostUsedCollection', 'showSmartAddedCollection', 'pushNotifyMonitor', 'pushNotifyBackup', 'pushNotifyContainers',
+            'showSmartMostUsedCollection', 'showSmartAddedCollection', 'pushNotifyMonitor', 'pushNotifyBackup', 'pushNotifyContainers', 'pushNotifyGlances',
             'pushNotifyRelease', 'pushNotifySubject',
             // Listed in FIELD_META for the ↺ button and the changed-settings
             // count, with a comment saying they carry no ℹ of their own: a
