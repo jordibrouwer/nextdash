@@ -219,7 +219,7 @@ function pic(name, theme, scene, { patch = '', tweak = null, viewport = null } =
     });
 }
 
-pic('dashboard', 'aurora-glass-dark', async (page) => {
+pic('dashboard', 'look-berry-dark', async (page) => {
     await setup(page);
     await openDashboard(page);
     await full(page, 'nextdash-dashboard.jpg');

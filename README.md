@@ -12,6 +12,10 @@ My bookmark bar had become a graveyard, so I built a self-hosted dashboard that 
 
 Run it on any machine or container, open it in your browser, organise bookmarks across pages, and reach everything from the keyboard. Beside your bookmarks, **widgets** show what is going on: uptime of the services you watch, what waits in the inbox, which certificate runs out, the weather, your calendar, your feeds, your machines — and any self-hosted service that answers with JSON.
 
+<p align="center">
+  <img src="screenshots/nextdash-dashboard.jpg" alt="The nextDash dashboard in Berry: categories in columns with live response times, and widgets for health, uptime, weather, the inbox and notes" width="100%" />
+</p>
+
 🎨 **376 themes and a look studio.** 188 theme families, each with a light and a dark half, in twelve characters — lacquer, glass, frost, aurora, neon, velvet, enamel, brushed, carbon, paper, terminal and ink — that decide how the surfaces are drawn, not only their colours. **`Shift + A`** opens the look studio beside your dashboard and changes the real page as you go: the theme, 29 backdrops drawn in its colours, depth, glow and card glass, the category headers, the type and the contrast — or one of twelve ready-made looks that set them all at once. **Compare** shows what you had, 🎲 tries something at random, and nothing is saved until **Apply**. Search by name or character, keep up to 24 favourites, follow your system's light and dark mode, or recolour any theme and build your own in the theme editor. *[Manual: Appearance](MANUAL.md#16-appearance)*
 
 Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by MatiasDesuu.
@@ -71,7 +75,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-dashboard.jpg" alt="Dashboard" width="100%" />
       <br />
-      <sub><b>Dashboard</b> <i>(Aurora Glass)</i> — Categories in columns with a live response time on every checked link, and widgets between them: health, uptime with a heartbeat per site, the weather with its forecast, the inbox and a note. The header is one row: clock and weather, page numbers, and the views with their badges.</sub>
+      <sub><b>Dashboard</b> <i>(Berry)</i> — Categories in columns with a live response time on every checked link, and widgets between them: health, uptime with a heartbeat per site, the weather with its forecast, the inbox and a note. The header is one row: clock and weather, page numbers, and the views with their badges.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-bookmarks-view.jpg" alt="Bookmarks view" width="100%" />
