@@ -51,12 +51,12 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-containers-health.jpg" alt="Containers view with health" width="100%" />
       <br />
-      <sub><b>Containers and health</b> <i>(Deep Lagoon)</i> — Grouped by compose project, each container with its app icon and each web UI with its bookmark's mark: green where the monitor finds it up, red for Immich. The side panel says why — three failed healthchecks, an out-of-memory crash and a restart loop since this afternoon's update.</sub>
+      <sub><b>Containers and health</b> <i>(Deep Lagoon)</i> — Grouped by compose project, each container with a status glow and its health in the status column; Immich is the red row. The side panel says why: the failing healthcheck and the output of its last checks, three in a row.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-containers-updates.jpg" alt="Automatic update rolled back" width="100%" />
       <br />
-      <sub><b>Updates with a way back</b> <i>(Smoked Plum)</i> — Paperless updates itself between 03:00 and 05:00. Last night's version turned unhealthy within two minutes, so it was rolled back and that version skipped; History and Timeline say what happened, and a notice reached your phone.</sub>
+      <sub><b>Updates with a way back</b> <i>(Smoked Plum)</i> — Paperless updates itself between 03:00 and 05:00. Last night's version turned unhealthy within two minutes, so it was rolled back and that version skipped; History and Timeline say what happened.</sub>
     </td>
   </tr>
 </table>
@@ -71,7 +71,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-dashboard.jpg" alt="Dashboard" width="100%" />
       <br />
-      <sub><b>Dashboard</b> <i>(Aurora Glass)</i> — Categories in columns with a live response time on every checked link, and widgets between them: health, uptime with a heartbeat per site, the weather across two columns, the inbox and an RSS feed. The header is one row: clock and weather, page numbers, and the views with their badges.</sub>
+      <sub><b>Dashboard</b> <i>(Aurora Glass)</i> — Categories in columns with a live response time on every checked link, and widgets between them: health, uptime with a heartbeat per site, the weather with its forecast, the inbox and a note. The header is one row: clock and weather, page numbers, and the views with their badges.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-bookmarks-view.jpg" alt="Bookmarks view" width="100%" />
@@ -83,7 +83,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-search.jpg" alt="Search" width="100%" />
       <br />
-      <sub><b>Search</b> <i>(Porcelain Blue, light)</i> — One panel for bookmarks, commands, finders, tags and containers. <kbd>/</kbd> turns a word into a name search: a tag to filter on, the best match, what matched in a tag, note or address, and the container by that name. <kbd>Tab</kbd> switches between the modes on the left.</sub>
+      <sub><b>Search</b> <i>(Porcelain Blue, light)</i> — One panel for bookmarks, commands, finders, tags and containers. <kbd>/</kbd> turns a word into a name search: the bookmark by that name and the container that carries it. <kbd>Tab</kbd> switches between the modes on the left.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-inbox.jpg" alt="Inbox view" width="100%" />
@@ -94,7 +94,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
 </table>
 
 <details>
-<summary><b>More screenshots</b> — twelve more views, in other themes</summary>
+<summary><b>More screenshots</b> — fourteen more views, in other themes</summary>
 <br />
 
 <table border="0" width="100%">
@@ -102,7 +102,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-dashboard-homelab.jpg" alt="Homelab dashboard" width="100%" />
       <br />
-      <sub><b>A second page</b> <i>(Terminal Amber)</i> — A homelab page: the container count, the Container list two columns wide with the failing one first, uptime for this page, certificates close to expiry and the health trend over 30 days, beside the self-hosted services with their own icons.</sub>
+      <sub><b>A second page</b> <i>(Terminal Amber)</i> — A homelab page: the container count, the Container list with the failing one first, the processor, memory and disks of the host and the inbox, beside the homelab bookmarks with their own icons and response times.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-triage.jpg" alt="Inbox triage" width="100%" />
@@ -138,12 +138,24 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-containers.jpg" alt="Containers view" width="100%" />
       <br />
-      <sub><b>Containers</b> <i>(Harbour Fog)</i> — Every container on the host with its app icon, a status glow, CPU, memory and a web UI column. The side panel draws CPU, memory, network and disk over the last hour, and a web UI's bookmark carries its health. Start, stop and update are one key away once control is on.</sub>
+      <sub><b>Containers</b> <i>(Harbour Fog)</i> — Every container on the host with its app icon, a status glow, CPU and memory. The side panel draws CPU, memory, network and disk over the last hour. Start, stop and update are one key away once control is on, as the legend under the list shows.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-themes.jpg" alt="Look studio" width="100%" />
       <br />
       <sub><b>The look studio</b> <i>(Mulberry Silk)</i> — <kbd>Shift</kbd>+<kbd>A</kbd> opens it beside the dashboard: 188 theme families with a light and a dark half, filtered by character, and tabs for the backdrop, card surface, headers, layout and ready-made looks. Every change shows on your own page, and nothing is saved until Apply.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-glances.jpg" alt="Glances" width="100%" />
+      <br />
+      <sub><b>Glances</b> <i>(Deep Lagoon)</i> — One machine, as Glances sees it: its status and fullest figures in the rail, every connected host a click away, and the Overview with the load right now, every core and the temperatures. Processes, Containers, Disks, Network, Insights, History, Alerts and Hosts sit under the same rail.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-glances-widgets.jpg" alt="Glances widgets on a page" width="100%" />
+      <br />
+      <sub><b>Glances on the dashboard</b> <i>(Deep Lagoon)</i> — Two Glances widgets beside Processor and Memory: one as meters for CPU, RAM and the fullest disk with a status word, one as a graph of the last hour. Each links to the Glances page.</sub>
     </td>
   </tr>
   <tr>
@@ -155,7 +167,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-config-statistics.jpg" alt="Config: Statistics" width="100%" />
       <br />
-      <sub><b>Config → Statistics</b> <i>(Copper Circuit)</i> — Six figures per tab, what needs attention with a button for each, the cleanup score, and charts you can point at — across Overview, Usage, Collection, Inbox and Health.</sub>
+      <sub><b>Config → Statistics</b> <i>(Copper Circuit)</i> — Six figures per tab, what needs attention with a button for each, the cleanup score, and charts you can point at — across Summary, Usage, Collection, Inbox, Health and Server.</sub>
     </td>
   </tr>
 </table>
@@ -165,7 +177,7 @@ nextDash is a bookmark dashboard that also knows your Docker host. The link to S
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-unraid-black.jpg" alt="Unraid widgets in the Unraid Black theme" width="100%" />
       <br />
-      <sub><b>Unraid Black</b> <i>(dark)</i> — A theme for Unraid users: flat black panels, small uppercase labels and the orange of the Unraid logo, with the Unraid widgets beside the homelab bookmarks.</sub>
+      <sub><b>Unraid Black</b> <i>(dark)</i> — A theme for Unraid users: flat black panels and the orange of the Unraid logo, with the Unraid widgets beside the homelab bookmarks.</sub>
     </td>
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-unraid-azure.jpg" alt="Unraid widgets in the Unraid Azure theme" width="100%" />
@@ -287,7 +299,7 @@ More is on the way: deeper Unraid integration is being worked on for future vers
     <td width="50%" align="center" valign="top">
       <img src="screenshots/nextdash-unraid-config.jpg" alt="Config: Unraid" width="100%" />
       <br />
-      <sub><b>One connection</b> <i>(Nordic Frost)</i> — Config → Unraid explains itself: nextDash and the server with data running between them, three steps ticked off as they are done, and the seven widgets in miniature, each with an Add that opens it in Widgets → Catalogue.</sub>
+      <sub><b>One connection</b> <i>(Nordic Frost)</i> — Config → Unraid: the server's address and a read-only API key, a connection test that reports which of the six areas answers, and the seven widgets under it, each with an Add that opens it in Widgets → Catalogue.</sub>
     </td>
   </tr>
 </table>

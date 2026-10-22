@@ -481,7 +481,7 @@ const test = base.test.extend({
     dataPatch: ['', { option: true }],
     /** A theme id for this test's server, instead of SHOT_THEME (null: the default). */
     shotTheme: [null, { option: true }],
-    /** A function(dir) that changes this test's copy of the data after tidyDemoData (null: none). */
+    /** { run(dir) } that changes this test's copy of the data after tidyDemoData (null: none). */
     dataTweak: [null, { option: true }],
     /** This test's own server over its own copy of the demo data. */
     server: async ({ dataPatch, shotTheme, dataTweak }, use) => {
@@ -494,7 +494,7 @@ const test = base.test.extend({
         if (dataPatch !== 'empty') {
             fs.cpSync(source, dir, { recursive: true });
             tidyDemoData(dir, dataPatch);
-            if (typeof dataTweak === 'function') dataTweak(dir);
+            if (typeof dataTweak?.run === 'function') dataTweak.run(dir);
             const settingsFile = path.join(dir, 'settings.json');
             writeJSON(settingsFile, { ...readJSON(settingsFile), theme: shotTheme || SHOT_THEME });
         }
