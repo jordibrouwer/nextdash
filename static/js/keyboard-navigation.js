@@ -1313,6 +1313,29 @@ class KeyboardNavigation {
     static GRID_RESERVED_LETTERS = new Set(['j', 'k', 'x', 'g']);
 
     /**
+     * j or k, spent as a cursor step a moment ago.
+     *
+     * With the cursor in the grid those two letters walk the rows, so a word
+     * that starts with one -- "jellyfin", "kubernetes" -- lost its first letter
+     * and the search opened on "ellyfin". The step stays, but the letter is
+     * remembered for a moment: when the next key starts a search it is
+     * put back at the front (see takeReservedLetter).
+     */
+    _noteReservedLetter(letter) {
+        // The arrows share these cases and are not part of a word.
+        if (letter !== 'j' && letter !== 'k') return;
+        this._reservedLetter = { letter, at: performance.now() };
+    }
+
+    /** The j or k that walked a row just before this key, once; null otherwise. */
+    takeReservedLetter(withinMs = 400) {
+        const held = this._reservedLetter;
+        this._reservedLetter = null;
+        if (!held || performance.now() - held.at > withinMs) return null;
+        return held.letter;
+    }
+
+    /**
      * A bookmark's own key, pressed while the cursor is on the grid.
      *
      * Shortcuts have always been search's: you open the panel, type the letter
@@ -1493,6 +1516,7 @@ class KeyboardNavigation {
                 // types the letter, which clears the selection again: j moved
                 // the cursor and undid itself in the same keystroke.
                 e.stopImmediatePropagation();
+                this._noteReservedLetter(key);
                 if (this.stepDownFromTitle()) break;
                 this.navigateDown();
                 break;
@@ -1507,6 +1531,7 @@ class KeyboardNavigation {
                 }
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                this._noteReservedLetter(key);
                 if (this.stepUpToTitle()) break;
                 this.navigateUp();
                 break;

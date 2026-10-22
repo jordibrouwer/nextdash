@@ -1353,6 +1353,19 @@ class SearchComponent {
         }
 
         e.preventDefault();
+        // The first letter goes in as typed. `key` is the upper-case reading the
+        // checks above want, and appended as is it made every search open on a
+        // capital -- "Immich", "Elly" -- while the letters after it stayed as typed.
+        if (this.currentQuery === '' && /^[A-Z]$/.test(key) && e.key.length === 1) {
+            // A j or k that had just walked a row in the grid is the start of
+            // the word, not a cursor step that swallowed it.
+            const held = !this.searchActive
+                ? window.dashboardInstance?.keyboardNavigation?.takeReservedLetter?.()
+                : null;
+            if (held) this.addToQuery(held);
+            this.addToQuery(e.key);
+            return;
+        }
         this.addToQuery(key);
     }
 

@@ -152,6 +152,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **fix — 24 px targets and a 12 px text floor.** Layer tokens replace loose z-index values, and the tip waits for a modal to close.
 - **fix — Mobile.** Overlays use `dvh`, tap targets are bigger and the Config tabs fade at the edge.
 - **fix — touch drag lock, a category race, Escape in modals and status and weather glitches.**
+- **fix — a search opens on the letter you typed.** The first letter went into the search line in the upper-case reading the key checks use, so *immich* showed as *Immich*; and with the cursor already in the grid, a first **j** or **k** walked a row and the word lost it (*jelly* opened on *elly*, *kube* on *ube*). The letter now goes in as typed, and a **j** or **k** that stepped a row just before the first letter of a search is put back at the front of the word. A **j** or **k** on its own still walks the grid (`search.js`, `keyboard-navigation.js`; `tests/search-first-letter.spec.js`). A **g** or **x** at the start of a word is still read as the jump chord or a tick while the cursor is in the grid.
 - **fix — the date popover stays on screen,** the place picker uses valid ARIA and the dismiss label is translated.
 - **fix — rejected saves and commands are caught,** the finder shortcut is escaped and search picks are flushed.
 - **fix — moving a widget saves what was typed first,** and `0` is the tenth page, not the Inbox.
