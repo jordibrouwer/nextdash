@@ -751,6 +751,15 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 	}
 
 	before := h.store.GetSettings()
+	// Deferred so the early returns below run it too: a commit that failed
+	// halfway has still replaced some files, and the caches derived from them
+	// (health report, runtime settings, Unraid answers) would otherwise keep
+	// describing the old data. Each step is a harmless reset when nothing changed.
+	defer func() {
+		h.invalidateHealthReportCache()
+		applyRuntimeSettings(h.store.GetSettings())
+		h.forgetUnraidAfterRestore(before, preparedHasRelPath(prepared, "unraid-secrets.json"))
+	}()
 	// Under the store lock, so no bookmark write lands between the files.
 	if err := h.store.ReplaceDataFiles(func() error { return commitPreparedImport(dataDir, prepared) }); err != nil {
 		return 0, &importError{msg: fmt.Sprintf("commit failed: %v", err), code: http.StatusInternalServerError}
@@ -769,9 +778,6 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 		}
 	}
 
-	h.invalidateHealthReportCache()
-	applyRuntimeSettings(h.store.GetSettings())
-	h.forgetUnraidAfterRestore(before, preparedHasRelPath(prepared, "unraid-secrets.json"))
 	return skippedBookmarks, nil
 }
 
