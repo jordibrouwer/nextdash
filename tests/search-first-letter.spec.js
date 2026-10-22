@@ -5,10 +5,9 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
 /**
  * Typing on the dashboard opens the search with what was typed.
  *
- * Two things went wrong with the first letter: it was put into the line as the
- * upper-case reading the key checks use ("Immich", not "immich"), and with the
- * cursor already in the grid a first j or k walked a row instead and the word
- * lost it ("ellyfin", "ube").
+ * The first letter was put into the line as the upper-case reading the key
+ * checks use ("Immich", not "immich"). With the cursor in the grid, j and k walk
+ * the rows and nothing else; the letter that starts a search is only that letter.
  */
 
 async function open(page) {
@@ -37,14 +36,20 @@ test.describe('the first letter of a search', () => {
         await expect(query(page)).toHaveText('Immich');
     });
 
-    for (const word of ['jelly', 'kube']) {
-        test(`${word}: a j or k right after the cursor entered the grid is not lost`, async ({ page }) => {
-            await open(page);
-            await page.keyboard.press('ArrowDown');
-            await page.keyboard.type(word, { delay: 60 });
-            await expect(query(page)).toHaveText(word);
-        });
-    }
+    test('outside the grid a j starts the search like any letter', async ({ page }) => {
+        await open(page);
+        await page.keyboard.type('jelly', { delay: 60 });
+        await expect(query(page)).toHaveText('jelly');
+    });
+
+    test('after a j walked the grid, the letter that starts a search is not preceded by it', async ({ page }) => {
+        await open(page);
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('j');
+        await page.waitForTimeout(120);
+        await page.keyboard.type('immich', { delay: 60 });
+        await expect(query(page)).toHaveText('immich');
+    });
 
     test('a j on its own still walks the grid', async ({ page }) => {
         await open(page);

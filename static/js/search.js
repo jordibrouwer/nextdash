@@ -1355,14 +1355,8 @@ class SearchComponent {
         e.preventDefault();
         // The first letter goes in as typed. `key` is the upper-case reading the
         // checks above want, and appended as is it made every search open on a
-        // capital -- "Immich", "Elly" -- while the letters after it stayed as typed.
+        // capital -- "Immich" -- while the letters after it stayed as typed.
         if (this.currentQuery === '' && /^[A-Z]$/.test(key) && e.key.length === 1) {
-            // A j or k that had just walked a row in the grid is the start of
-            // the word, not a cursor step that swallowed it.
-            const held = !this.searchActive
-                ? window.dashboardInstance?.keyboardNavigation?.takeReservedLetter?.()
-                : null;
-            if (held) this.addToQuery(held);
             this.addToQuery(e.key);
             return;
         }
@@ -3268,6 +3262,22 @@ class SearchComponent {
          */
         const cursor = this._gridCursorBeforeSearch;
         this._gridCursorBeforeSearch = -1;
+        /*
+         * A search typed from nowhere gives nothing back.
+         *
+         * With no row picked and no control that opened the panel -- the reader
+         * just started typing -- there is no focus to restore. Putting the cursor
+         * on the first row after Escape marked a row the reader never chose and
+         * turned j and k into steps through the grid again. Focus stays off the
+         * grid, as it was.
+         */
+        if (cursor < 0 && (!opener || opener === document.body)) {
+            const active = document.activeElement;
+            if (active && active !== document.body && active.closest?.('#shortcut-search')) {
+                active.blur();
+            }
+            return;
+        }
         const nav = window.dashboardInstance?.keyboardNavigation;
         if (
             window.dashboardInstance?.isBookmarksView?.() === true
