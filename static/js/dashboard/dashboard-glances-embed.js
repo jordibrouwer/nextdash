@@ -47,6 +47,9 @@
         }
         if (!link || !link.same) return;
         const match = (link.matches || []).find((m) => m.docker === dockerName);
+        // The Docker host's own record, whichever host the page was last looking at.
+        const Host = window.DashboardGlancesHost;
+        const hostUrl = (address) => Host.url(address, link.hostId || '');
         if (!match || !host.isConnected) return;
         if (!(await ensureModules()) || !host.isConnected) return;
 
@@ -65,7 +68,7 @@
         open.setAttribute('data-glances-embed-open', '');
         open.addEventListener('click', () => {
             window.__glancesOpenContainer = glancesName;
-            void dash.glances?.openGlancesView?.({ hash: '#glances/containers' });
+            void dash.glances?.openGlancesView?.({ hash: `#glances/containers${link.hostId ? `?host=${encodeURIComponent(link.hostId)}` : ''}` });
         });
         head.appendChild(open);
         const body = el('div', 'glances-embed-body');
@@ -86,7 +89,7 @@
                 const results = await Promise.all(DEFS.map(async (def) => {
                     const names = def.suffixes.map((s) => `${key}:${s}`);
                     const since = Chart.sinceFor(def.id);
-                    const res = await fetch(`/api/glances/history?series=${names.map(encodeURIComponent).join(',')}&since=${since}&restarts=${encodeURIComponent(dockerName)}`, { credentials: 'same-origin' });
+                    const res = await fetch(hostUrl(`/api/glances/history?series=${names.map(encodeURIComponent).join(',')}&since=${since}&restarts=${encodeURIComponent(dockerName)}`), { credentials: 'same-origin' });
                     return { def, answer: res.ok ? await res.json() : null };
                 }));
                 if (!host.isConnected) return;
@@ -124,11 +127,11 @@
             start.addEventListener('click', async () => {
                 start.disabled = true;
                 try {
-                    const current = await window.nextDashFetch('/api/glances/config');
+                    const current = await window.nextDashFetch(hostUrl('/api/glances/config'));
                     if (!current.ok) throw new Error(String(current.status));
                     const list = (await current.json()).trackedHistory || [];
                     const next = list.includes(key) ? list : [...list, key];
-                    const saved = await window.nextDashFetch('/api/glances/config', {
+                    const saved = await window.nextDashFetch(hostUrl('/api/glances/config'), {
                         method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trackedHistory: next }),
                     });
                     if (!saved.ok) throw new Error(String(saved.status));

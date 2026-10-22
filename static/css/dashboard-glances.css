@@ -766,6 +766,18 @@
 .glances-row-link:hover { background: color-mix(in srgb, var(--text-primary) 7%, transparent); }
 .glances-row-link:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: -2px; }
 
+/* A name that is a button (an incident in Insights): reads as text, underlined as a link. */
+button.glances-row-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    text-decoration: underline dotted;
+    text-underline-offset: 3px;
+}
+
 /* ── Range dropdown ── */
 
 .glances-range-pick { display: inline-flex; margin: 0; }
@@ -1049,6 +1061,8 @@
 .glances-chart-layer--1 { fill: color-mix(in srgb, var(--accent-warning) 55%, transparent); }
 .glances-chart-layer--2 { fill: color-mix(in srgb, var(--text-primary) 14%, transparent); }
 
+[data-glances-host-new][hidden] { display: none; }
+
 .glances-incident-layer { position: absolute; inset: 0; pointer-events: none; }
 
 /* A moment a container started again: a thin dashed line, with its time as the title. */
@@ -1065,9 +1079,20 @@
     position: absolute;
     top: 0;
     bottom: 0;
+    padding: 0;
+    border: 0;
     background: color-mix(in srgb, var(--accent-error) 22%, transparent);
     border-left: 1px solid color-mix(in srgb, var(--accent-error) 60%, transparent);
     pointer-events: auto;
+}
+
+button.glances-chart-incident { cursor: pointer; }
+
+button.glances-chart-incident:hover,
+button.glances-chart-incident:focus-visible {
+    background: color-mix(in srgb, var(--accent-error) 38%, transparent);
+    outline: 2px solid var(--accent-primary);
+    outline-offset: -2px;
 }
 
 .glances-chart-incident[data-glances-incident="down"] {

@@ -39,6 +39,15 @@
 
     const REFRESH = [1, 2, 5, 10, 30, 60, 300, 900];
 
+    /** The incidents that can send a notice when they open and close. */
+    const NOTIFY = [
+        ['down', 'config.glancesNotifyDown', 'The host stops answering'],
+        ['cpu', 'config.glancesNotifyCpu', 'Processor goes past its red line'],
+        ['mem', 'config.glancesNotifyMem', 'Memory or swap goes past its red line'],
+        ['disk', 'config.glancesNotifyDisk', 'A disk goes past its red line'],
+        ['temp', 'config.glancesNotifyTemp', 'A temperature goes past its red line'],
+    ];
+
     Object.assign(global.DashboardConfig.prototype, {
 
     renderGlancesSection() {
@@ -47,6 +56,11 @@
         const blocks = BLOCKS.map(([id, key, fallback]) => `
             <label class="config-toggle">
                 <input type="checkbox" data-glances-block="${esc(id)}" checked>
+                <span>${esc(this.t(key, fallback))}</span>
+            </label>`).join('');
+        const notify = NOTIFY.map(([id, key, fallback]) => `
+            <label class="config-toggle">
+                <input type="checkbox" data-glances-notify="${esc(id)}">
                 <span>${esc(this.t(key, fallback))}</span>
             </label>`).join('');
         const lines = LINES.map(([id, key, fallback, unit]) => `
@@ -69,6 +83,23 @@
             <div class="config-tabpage">
                 <div class="config-tabpage-main" id="config-glances-body">
                     ${window.DemoLock?.unraidNote?.() || ''}
+                    <div class="config-panel" data-glances-section data-glances-hosts-panel>
+                        <h3 class="config-panel-title">${t('glancesHostsTitle', 'Hosts')}</h3>
+                        <p class="config-panel-note">${t('glancesHostsNote',
+                            'nextDash can watch up to five machines. Each has its own address, login, record, incidents and notices; how the page looks and the yellow and red lines are shared.')}</p>
+                        <div class="config-actions" data-glances-host-tabs role="group" aria-label="${t('glancesHostsTitle', 'Hosts')}"></div>
+                        <div class="config-actions" data-glances-host-actions>
+                            <button type="button" class="config-btn" data-glances-host-add>${t('glancesHostAdd', 'Add a host')}</button>
+                            <button type="button" class="config-btn config-btn--danger" data-glances-host-remove hidden>${t('glancesHostRemove', 'Remove this host…')}</button>
+                        </div>
+                        <div class="config-field config-field--inline" data-glances-host-new hidden>
+                            <label class="config-field-label" for="config-glances-host-new-name">${t('glancesHostName', 'Name')}</label>
+                            <input type="text" id="config-glances-host-new-name" class="config-text" maxlength="40" autocomplete="off" data-glances-host-new-name>
+                            <button type="button" class="config-btn config-btn--primary" data-glances-host-new-ok>${t('glancesHostCreate', 'Add')}</button>
+                            <button type="button" class="config-btn" data-glances-host-new-cancel>${t('glancesHostCancel', 'Cancel')}</button>
+                        </div>
+                    </div>
+
                     <div class="config-panel" data-glances-section>
                         <h3 class="config-panel-title">${t('glancesTitle', 'Glances')}</h3>
                         <label class="config-toggle">
@@ -83,6 +114,11 @@
                         </label>
                         <p class="config-panel-note" data-glances-connected-note>${t('glancesConnectedNote',
                             'On: nextDash reads the host. Off: the page and what was recorded stay, but nothing is read until you switch it on. The same switch is at the top of the Glances page.')}</p>
+                        <div class="config-field">
+                            <label class="config-field-label" for="config-glances-name">${t('glancesHostName', 'Name')}</label>
+                            <input type="text" id="config-glances-name" class="config-text" data-glances-field="name" maxlength="40"
+                                   autocomplete="off" placeholder="Glances">
+                        </div>
                         <div class="config-field">
                             <label class="config-field-label" for="config-glances-server">${t('glancesAddress', 'Address')}</label>
                             <input type="url" id="config-glances-server" class="config-text" data-glances-field="server"
@@ -102,6 +138,7 @@
                             'Leave both empty when Glances is open. The password is kept on the server and never shown again.')}</p>
                         <div class="config-actions">
                             <button type="button" class="config-btn" data-glances-connect>${t('glancesConnect', 'Test connection')}</button>
+                            <button type="button" class="config-btn config-btn--primary" data-glances-open-page hidden>${t('glancesOpenPage', 'Open the Glances page')}</button>
                             <button type="button" class="config-btn" data-glances-clear-login hidden>${t('glancesClearLogin', 'Remove the login')}</button>
                         </div>
                         <p class="config-field-hint" data-glances-result aria-live="polite" style="white-space: pre-line"></p>
@@ -143,6 +180,13 @@
                         <p class="config-panel-note">${t('glancesColoursNote',
                             'When a reading changes colour, and the dot on the Glances icon. A temperature sensor that reports limits of its own uses those.')}</p>
                         ${lines}
+                    </div>
+
+                    <div class="config-panel" data-glances-section data-glances-notify-panel>
+                        <h3 class="config-panel-title">${t('glancesNotifyTitle', 'Notices')}</h3>
+                        <p class="config-panel-note">${t('glancesNotifyNote',
+                            'A notice goes out when such an incident has lasted a few readings, and another when it is over, not on every reading. They use your alert channel and browser notifications, and wait for the quiet hours. All are off until you switch them on.')}</p>
+                        <div class="config-checkset" data-glances-notifies>${notify}</div>
                     </div>
 
                     <div class="config-panel" data-glances-section>
@@ -199,7 +243,10 @@
         const saved = root.querySelector('[data-glances-saved]');
         const connectBtn = root.querySelector('[data-glances-connect]');
         const clearBtn = root.querySelector('[data-glances-clear-login]');
-        const send = (url, method, body) => window.nextDashFetch(url, {
+        // The host being edited: '' until its settings have been read, then its id.
+        const Host = window.DashboardGlancesHost;
+        let hostId = '';
+        const send = (url, method, body, host = hostId) => window.nextDashFetch(Host.url(url, host), {
             method,
             headers: { 'Content-Type': 'application/json' },
             body: body === undefined ? undefined : JSON.stringify(body),
@@ -237,6 +284,30 @@
             box.checked = shown && !paused;
         };
 
+        // The hosts as buttons; the one being edited is pressed.
+        const tabs = root.querySelector('[data-glances-host-tabs]');
+        const removeBtn = root.querySelector('[data-glances-host-remove]');
+        const addBtn = root.querySelector('[data-glances-host-add]');
+        const newRow = root.querySelector('[data-glances-host-new]');
+        const newName = root.querySelector('[data-glances-host-new-name]');
+        let loadHost = async () => {};
+        let settle = async () => {};
+        const paintHosts = (hosts) => {
+            tabs.replaceChildren(...hosts.map((h) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'config-btn';
+                btn.textContent = h.name;
+                btn.setAttribute('data-glances-host-tab', h.id);
+                btn.setAttribute('aria-pressed', h.id === hostId ? 'true' : 'false');
+                if (h.id === hostId) btn.classList.add('config-btn--primary');
+                btn.addEventListener('click', () => { if (h.id !== hostId) void loadHost(h.id); });
+                return btn;
+            }));
+            removeBtn.hidden = hosts.length < 2;
+            addBtn.hidden = hosts.length >= 5;
+        };
+
         // `keepFocus`: the answer to a save comes back while someone may be typing in
         // another field; what they are typing in is left as it is.
         const paint = (cfg, { keepFocus = false } = {}) => {
@@ -245,6 +316,11 @@
             const put = (el, value) => { if (el !== focused) el.value = value; };
             field('enabled').checked = cfg.enabled === true;
             syncConnection(cfg.enabled === true, cfg.paused === true);
+            hostId = cfg.id || hostId;
+            const exportLink = root.querySelector('[data-glances-export]');
+            if (exportLink) exportLink.href = Host.url('/api/glances/history.csv?since=0', hostId);
+            put(field('name'), cfg.name || '');
+            paintHosts(cfg.hosts || []);
             put(field('server'), cfg.server || '');
             put(field('user'), cfg.user || '');
             put(field('password'), '');
@@ -256,6 +332,10 @@
             const hidden = new Set(cfg.hiddenBlocks || []);
             root.querySelectorAll('[data-glances-block]').forEach((box) => {
                 box.checked = !hidden.has(box.getAttribute('data-glances-block'));
+            });
+            const notifying = new Set(cfg.notify || []);
+            root.querySelectorAll('[data-glances-notify]').forEach((box) => {
+                box.checked = notifying.has(box.getAttribute('data-glances-notify'));
             });
             const th = cfg.thresholds || {};
             root.querySelectorAll('[data-glances-line]').forEach((input) => {
@@ -301,7 +381,7 @@
         const refreshLink = async () => {
             if (!linkState) return;
             try {
-                const res = await fetch('/api/glances/docker-link', { credentials: 'same-origin', cache: 'no-store' });
+                const res = await fetch(Host.url('/api/glances/docker-link', hostId || ''), { credentials: 'same-origin', cache: 'no-store' });
                 paintLink(res.ok ? await res.json() : null);
             } catch {
                 paintLink(null);
@@ -324,13 +404,17 @@
         };
 
         const payload = () => {
+            const name = field('name').value.trim();
             const hiddenBlocks = [...root.querySelectorAll('[data-glances-block]')]
                 .filter((box) => !box.checked).map((box) => box.getAttribute('data-glances-block'));
+            const notify = [...root.querySelectorAll('[data-glances-notify]')]
+                .filter((box) => box.checked).map((box) => box.getAttribute('data-glances-notify'));
             const thresholds = {};
             root.querySelectorAll('[data-glances-line]').forEach((input) => {
                 thresholds[input.getAttribute('data-glances-line')] = Number(input.value) || 0;
             });
             const body = {
+                name,
                 enabled: field('enabled').checked,
                 paused: field('connected').disabled ? current?.paused === true : !field('connected').checked,
                 server: field('server').value.trim(),
@@ -338,6 +422,7 @@
                 refresh: Number(field('refresh').value) || 2,
                 dockerLink: field('dockerLink').value || 'auto',
                 hiddenBlocks,
+                notify,
                 thresholds,
                 diskStrip: field('diskStrip').value.trim(),
                 diskHide: field('diskHide').value.split('\n').map((s) => s.trim()).filter(Boolean),
@@ -384,13 +469,13 @@
         const resetResult = root.querySelector('[data-glances-reset-result]');
         resetBtn?.addEventListener('click', async () => {
             const ok = await this.confirmAction(
-                t('glancesResetConfirm', 'Reset Glances? The address, the login, the thresholds, every choice and everything recorded are removed, and Glances goes off. This cannot be undone.'),
+                t('glancesResetConfirm', 'Reset Glances? Every host, its address and login, the thresholds, every choice and everything recorded are removed, and Glances goes off. This cannot be undone.'),
                 { confirmLabel: t('glancesResetOk', 'Reset') },
             );
             if (!ok) return;
             resetResult.textContent = '';
             try {
-                const res = await send('/api/glances/config', 'DELETE');
+                const res = await send('/api/glances/config', 'DELETE', undefined, '');
                 if (!res.ok) {
                     resetResult.textContent = `${t('glancesResetFailed', 'Could not reset')} (${await failure(res)})`;
                     return;
@@ -432,7 +517,14 @@
             schedule(0);
         });
 
-        connectBtn.addEventListener('click', () => run(async () => {
+        const openBtn = root.querySelector('[data-glances-open-page]');
+        // The page opens from here once it is on and has an address.
+        const paintOpen = () => {
+            if (openBtn) openBtn.hidden = !(current && current.enabled === true && current.server);
+        };
+        openBtn?.addEventListener('click', () => { void this.dash.glancesStatus?.openGlancesPage?.(); });
+
+        const testConnection = () => run(async () => {
             result.textContent = t('glancesTesting', 'Asking…');
             try {
                 const res = await send('/api/glances/connect', 'POST', {
@@ -458,7 +550,8 @@
             } catch {
                 result.textContent = ERRORS.unreachable;
             }
-        }));
+        });
+        connectBtn.addEventListener('click', () => { void testConnection(); });
 
         /*
          * Every change is kept as it is made, as the other settings are: a choice or
@@ -466,6 +559,7 @@
          * and what was changed while one was running goes after it.
          */
         let saveTimer = null;
+        let pending = false;
         let fadeTimer = null;
         let saving = false;
         let again = false;
@@ -481,8 +575,9 @@
                 return;
             }
             const body = payload();
-            // Glances cannot be shown without somewhere to look.
-            if (body.enabled && !body.server) {
+            // Glances cannot be shown without somewhere to look: at least one host needs an address.
+            const elsewhere = (current.hosts || []).some((h) => h.id !== hostId && h.configured);
+            if (body.enabled && !body.server && !elsewhere) {
                 field('enabled').checked = false;
                 syncConnection(false, current.paused === true);
                 body.enabled = false;
@@ -498,6 +593,7 @@
                 const cfg = await res.json();
                 if (root.isConnected) {
                     paint(cfg, { keepFocus: true });
+                    paintOpen();
                     if (!saved.textContent || saved.textContent === t('glancesSaved', 'Saved.')) say(t('glancesSaved', 'Saved.'));
                 }
                 // The Glances icon and its dot follow the new settings now.
@@ -516,27 +612,106 @@
         };
         const schedule = (delay = 400) => {
             clearTimeout(saveTimer);
-            saveTimer = setTimeout(() => { void saveNow(); }, delay);
+            pending = true;
+            saveTimer = setTimeout(() => { pending = false; void saveNow(); }, delay);
+        };
+        // What was just typed is saved, for the host it was typed for, before another is loaded.
+        settle = async () => {
+            if (pending) {
+                clearTimeout(saveTimer);
+                pending = false;
+                await saveNow();
+            }
+            while (saving) await new Promise((resolve) => setTimeout(resolve, 40));
         };
         // `change` fires at once for a checkbox or a choice and on leaving a text field.
         root.addEventListener('change', (event) => {
             const target = event.target;
             if (!(target instanceof HTMLElement)) return;
             if (target.matches('[data-glances-field="connected"]')) return; // its own switch
-            if (target.matches('[data-glances-field], [data-glances-block], [data-glances-line]')) schedule();
+            if (target.matches('[data-glances-field], [data-glances-block], [data-glances-line], [data-glances-notify]')) schedule();
+            // The address or the login was just changed: try it, so a wrong one is said so at once.
+            if (target.matches('[data-glances-field="server"], [data-glances-field="user"], [data-glances-field="password"]')
+                && field('server').value.trim()) {
+                void testConnection();
+            }
         });
 
-        try {
-            const res = await send('/api/glances/config', 'GET');
-            if (!res.ok) throw new Error(String(res.status));
-            const cfg = await res.json();
-            if (!cfg || typeof cfg !== 'object' || !root.isConnected) return;
-            paint(cfg);
-            void refreshLink();
-        } catch {
-            // Saving now would overwrite what is stored with blanks: stay shut.
-            if (root.isConnected) result.textContent = t('glancesLoadFailed', 'Could not read the Glances settings. Reload to try again.');
-        }
+        // Read one host's settings into the form; '' is the first host.
+        loadHost = async (id) => {
+            await settle();
+            try {
+                const res = await send('/api/glances/config', 'GET', undefined, id);
+                if (!res.ok) throw new Error(String(res.status));
+                const cfg = await res.json();
+                if (!cfg || typeof cfg !== 'object' || !root.isConnected) return;
+                hostId = '';
+                result.textContent = '';
+                saved.textContent = '';
+                wipedEl.textContent = '';
+                paint(cfg);
+                paintOpen();
+                void refreshLink();
+            } catch {
+                // Saving now would overwrite what is stored with blanks: stay shut.
+                if (root.isConnected) result.textContent = t('glancesLoadFailed', 'Could not read the Glances settings. Reload to try again.');
+            }
+        };
+
+        addBtn.addEventListener('click', () => {
+            newRow.hidden = false;
+            newName.value = '';
+            newName.focus();
+        });
+        root.querySelector('[data-glances-host-new-cancel]').addEventListener('click', () => { newRow.hidden = true; });
+        const createHost = async () => {
+            const name = newName.value.trim();
+            if (!name) { newName.focus(); return; }
+            await settle();
+            try {
+                const res = await send('/api/glances/config', 'PUT', { name }, 'new');
+                if (!res.ok) throw new Error(await failure(res));
+                const cfg = await res.json();
+                newRow.hidden = true;
+                hostId = '';
+                paint(cfg);
+                paintOpen();
+                void refreshLink();
+                say(t('glancesHostAdded', 'Host added. Fill in its address.'));
+                void this.dash.glancesStatus?.refresh?.({ force: true });
+                field('server').focus();
+            } catch (err) {
+                say(`${t('glancesSaveFailed', 'Could not save')} (${err.message})`, true);
+            }
+        };
+        root.querySelector('[data-glances-host-new-ok]').addEventListener('click', () => { void createHost(); });
+        newName.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') { event.preventDefault(); void createHost(); }
+            if (event.key === 'Escape') { event.stopPropagation(); newRow.hidden = true; }
+        });
+        removeBtn.addEventListener('click', async () => {
+            const ok = await this.confirmAction(
+                t('glancesHostRemoveConfirm', 'Remove this host? Its address, login and everything recorded about it are deleted. This cannot be undone.'),
+                { confirmLabel: t('glancesHostRemoveOk', 'Remove') },
+            );
+            if (!ok) return;
+            try {
+                const res = await window.nextDashFetch(`${Host.url('/api/glances/config', hostId)}&remove=1`, { method: 'DELETE' });
+                if (!res.ok) throw new Error(await failure(res));
+                if (Host.id === hostId) Host.set('');
+                const cfg = await res.json();
+                hostId = '';
+                paint(cfg);
+                paintOpen();
+                void refreshLink();
+                void this.dash.glancesStatus?.refresh?.({ force: true });
+                say(t('glancesHostRemoved', 'Host removed.'));
+            } catch (err) {
+                say(`${t('glancesSaveFailed', 'Could not save')} (${err.message})`, true);
+            }
+        });
+
+        await loadHost('');
         paintButtons();
     },
 

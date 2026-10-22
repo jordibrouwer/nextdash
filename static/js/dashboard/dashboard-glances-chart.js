@@ -26,7 +26,21 @@
         { id: '24h', ms: 24 * 3600 * 1000, label: ['dashboard.glancesRange24h', '24 hours'] },
         { id: '7d', ms: 7 * 24 * 3600 * 1000, label: ['dashboard.glancesRange7d', '7 days'] },
         { id: '30d', ms: 30 * 24 * 3600 * 1000, label: ['dashboard.glancesRange30d', '30 days'] },
+        { id: '90d', ms: 90 * 24 * 3600 * 1000, label: ['dashboard.glancesRange90d', '90 days'] },
     ];
+
+    /** Days of history kept (Config → Glances: 7, 30 or 90); no range reaches further back than that. */
+    let keepDays = 30;
+
+    function setKeep(days) {
+        const n = Number(days);
+        if ([7, 30, 90].includes(n)) keepDays = n;
+    }
+
+    /** The ranges the record can fill. */
+    function available() {
+        return RANGES.filter((r) => r.ms <= Math.max(keepDays, 1) * 86400000);
+    }
 
     /**
      * What each graph is made of: which recorded series it draws, how a value
@@ -214,11 +228,11 @@
 
     function rangeFor(chartId, fallback = '1h') {
         const id = readRanges()[chartId];
-        return RANGES.some((r) => r.id === id) ? id : fallback;
+        return available().some((r) => r.id === id) ? id : fallback;
     }
 
     function setRange(chartId, rangeId) {
-        if (!RANGES.some((r) => r.id === rangeId)) return;
+        if (!available().some((r) => r.id === rangeId)) return;
         try {
             localStorage.setItem(STORE, JSON.stringify({ ...readRanges(), [chartId]: rangeId }));
         } catch { /* a private window: the range lasts until the page is left */ }
@@ -270,8 +284,9 @@
 
     /** One range longer (+1) or shorter (-1) for a graph; false at either end. */
     function stepRange(chartId, direction) {
-        const at = RANGES.findIndex((r) => r.id === currentRange(chartId));
-        const next = RANGES[at + direction];
+        const list = available();
+        const at = list.findIndex((r) => r.id === currentRange(chartId));
+        const next = list[at + direction];
         if (!next) return false;
         setRange(chartId, next.id);
         return true;
@@ -289,7 +304,7 @@
         const select = el('select', 'config-select glances-range-select');
         select.setAttribute('data-glances-range-select', chartId);
         select.setAttribute('aria-label', t('dashboard.glancesRangeLabel', 'Range'));
-        RANGES.forEach((r) => {
+        available().forEach((r) => {
             const option = el('option', '', t(r.label[0], r.label[1]));
             option.value = r.id;
             select.appendChild(option);
@@ -360,8 +375,9 @@
      * four figures from the points drawn. `answer` is the history reply for this
      * group's question; a group with nothing to draw gives null.
      */
-    function panel(view, def, answer, { onRange, height = 70, ghost = null } = {}) {
+    function panel(view, def, answer, { onRange, height = 70, ghost = null, fixed = null } = {}) {
         const t = (k, f, p) => view.t(k, f, p);
+        setKeep(view.dash?.glancesStatus?.state?.retentionDays);
         const series = answer && answer.series && typeof answer.series === 'object' ? answer.series : {};
         const found = Object.keys(series).filter(def.match)
             .map((name) => ({ name, label: def.name ? def.name(name, t) : name, points: clean(series[name]) }))
@@ -379,7 +395,7 @@
         if (titleInfo) titleRow.appendChild(titleInfo);
         head.appendChild(titleRow);
         const controls = el('span', 'glances-chart-controls');
-        if (compareAllowed(def)) {
+        if (!fixed && compareAllowed(def)) {
             const label = el('label', 'glances-compare');
             const box = el('input');
             box.type = 'checkbox';
@@ -394,7 +410,7 @@
             const yesterdayInfo = window.DashboardGlancesInfo?.button(view, 'yesterday');
             if (yesterdayInfo) controls.appendChild(yesterdayInfo);
         }
-        controls.appendChild(rangeBar(def.id, t, onRange || (() => {})));
+        if (!fixed) controls.appendChild(rangeBar(def.id, t, onRange || (() => {})));
         head.appendChild(controls);
         figure.appendChild(head);
 
@@ -420,17 +436,24 @@
         // What went past a red line in this window, as bands behind the lines.
         const kinds = ['down', ...(def.incidents || [])];
         const bands = el('div', 'glances-incident-layer');
-        bands.setAttribute('aria-hidden', 'true');
+        // A band opens the incident in the side panel where there is one; otherwise it is only drawn.
+        const opens = typeof view.detail?.openIncident === 'function';
+        if (!opens) bands.setAttribute('aria-hidden', 'true');
         (answer && Array.isArray(answer.incidents) ? answer.incidents : []).filter((i) => kinds.includes(i.kind)).forEach((i) => {
             const begin = Math.max(i.start, drawn.from);
             const finish = Math.min(i.end || Date.now(), drawn.to);
             if (finish <= begin) return;
-            const band = el('i', 'glances-chart-incident');
+            const band = el(opens ? 'button' : 'i', 'glances-chart-incident');
             band.setAttribute('data-glances-incident', i.kind);
             band.style.left = `${(((begin - drawn.from) / (drawn.to - drawn.from)) * 100).toFixed(2)}%`;
             band.style.width = `${Math.max(0.6, ((finish - begin) / (drawn.to - drawn.from)) * 100).toFixed(2)}%`;
             const what = INCIDENT_LABELS[i.kind] ? t(INCIDENT_LABELS[i.kind][0], INCIDENT_LABELS[i.kind][1]) : i.kind;
             band.title = `${what}${i.subject ? ` · ${i.subject}` : ''} · ${new Date(i.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}${i.end ? '' : ` · ${t('dashboard.glancesInsOngoing', 'ongoing')}`}`;
+            if (opens) {
+                band.type = 'button';
+                band.setAttribute('aria-label', `${band.title} · ${t('dashboard.glancesIncidentOpen', 'show what happened')}`);
+                band.addEventListener('click', () => view.detail.openIncident(i));
+            }
             bands.appendChild(band);
         });
         // Moments a container started again, from the Containers view's timeline.
@@ -443,7 +466,9 @@
             bands.appendChild(mark);
         });
         plot.insertBefore(bands, drawn.svg);
-        const range = RANGES.find((r) => r.id === currentRange(def.id)) || RANGES[1];
+        const range = fixed
+            ? { ms: fixed.to - fixed.from, label: ['dashboard.glancesAroundIncident', 'Around the incident'] }
+            : RANGES.find((r) => r.id === currentRange(def.id)) || RANGES[1];
         // y axis: the value at the top, the middle and the bottom of the plot.
         const yAxis = el('div', 'glances-axis-y');
         yAxis.setAttribute('data-glances-axis', 'y');
@@ -542,7 +567,7 @@
 
     const Chart = {
         draw, spanLabel, clean, el, svgEl, keepFocus,
-        RANGES, GROUPS, group, namesFor, pathFor, ghostPathFor, compareActive, panel, rangeBar, rangeFor, setRange, currentRange, stepRange, sinceFor, format, stats,
+        RANGES, available, setKeep, GROUPS, group, namesFor, pathFor, ghostPathFor, compareActive, panel, rangeBar, rangeFor, setRange, currentRange, stepRange, sinceFor, format, stats,
     };
     window.DashboardGlancesChart = Chart;
 }());

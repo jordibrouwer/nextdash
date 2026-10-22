@@ -176,16 +176,23 @@
             return unit === 0 ? `${Math.round(n)} B` : `${n.toFixed(1)} ${units[unit]}`;
         }
 
-        /** #glances, #glances/<section> -> its parts; null for any other hash. Anything after a ? is ignored. */
+        /**
+         * #glances, #glances/<section>, #glances/<section>?host=<id> -> its parts;
+         * null for any other hash. `host` is null when the address names none.
+         */
         static parseHash(hash) {
             const raw = String(hash || '').replace(/^#/, '');
             if (!(raw === 'glances' || raw.startsWith('glances/') || raw.startsWith('glances?'))) return null;
             let rest = raw.slice('glances'.length);
+            let host = null;
             const qi = rest.indexOf('?');
-            if (qi >= 0) rest = rest.slice(0, qi);
+            if (qi >= 0) {
+                host = new URLSearchParams(rest.slice(qi + 1)).get('host');
+                rest = rest.slice(0, qi);
+            }
             let section = rest.startsWith('/') ? rest.slice(1) : '';
             try { section = decodeURIComponent(section); } catch { /* keep it raw */ }
-            return { section: section || null };
+            return { section: section || null, host: host && /^[a-z0-9-]{1,24}$/.test(host) ? host : null };
         }
 
         isActiveView() {
@@ -216,7 +223,10 @@
         /* ── Address ────────────────────────────────────────────────────── */
 
         hashFor(section) {
-            return `#glances/${encodeURIComponent(section || 'overview')}`;
+            const host = this.dash.glancesStatus?.hostId;
+            const first = this.dash.glancesStatus?.hosts?.[0]?.id;
+            const suffix = host && host !== first ? `?host=${encodeURIComponent(host)}` : '';
+            return `#glances/${encodeURIComponent(section || 'overview')}${suffix}`;
         }
 
         /**
@@ -243,7 +253,14 @@
                 ? (DashboardGlances.parseHash(options.hash) || {})
                 : options;
             const d = this.dash;
-            if (this.isActiveView() && this.shell) {
+            // An address that names a host moves the page there.
+            const Host = window.DashboardGlancesHost;
+            let moved = false;
+            if (route.host && Host && route.host !== Host.id) {
+                Host.set(route.host);
+                moved = this.isActiveView();
+            }
+            if (this.isActiveView() && this.shell && !moved && !options.reload) {
                 if (route.section && route.section !== this.section) this.openSection(route.section);
                 // A bare #glances typed over the open page gets its section back.
                 else this.writeHash();
@@ -274,6 +291,11 @@
             if (seq !== this._openSeq || !this.isActiveView()) return false;
             if (!this.dash.glancesStatus?.configured) {
                 this.renderEmpty();
+                return true;
+            }
+            // Glances is set up, but this host has no address yet: say so, and let the reader go to another.
+            if (this.dash.glancesStatus.state.hostConfigured === false) {
+                this.renderHostEmpty();
                 return true;
             }
             DashboardGlances.limits = this.status.thresholds || null;
@@ -333,6 +355,37 @@
             container.appendChild(box);
         }
 
+        /** This host has no address: the way to give one, and the other hosts to look at instead. */
+        renderHostEmpty() {
+            const container = document.getElementById('dashboard-layout');
+            if (!container) return;
+            container.innerHTML = '';
+            const box = document.createElement('div');
+            box.className = 'glances-empty';
+            box.setAttribute('data-glances-empty', 'host');
+            const text = document.createElement('p');
+            text.textContent = this.t('dashboard.glancesHostNoAddress', 'This host has no address yet. Add it in Config → Glances.');
+            box.appendChild(text);
+            const config = document.createElement('button');
+            config.type = 'button';
+            config.className = 'config-btn config-btn--primary';
+            config.setAttribute('data-glances-open-config', '');
+            config.textContent = this.t('dashboard.glancesOpenConfig', 'Set up Glances');
+            config.addEventListener('click', () => { void this.dash.config?.openConfigView?.('glances'); });
+            box.appendChild(config);
+            const here = this.dash.glancesStatus.hostId;
+            (this.dash.glancesStatus.hosts || []).filter((h) => h.id !== here && h.configured).forEach((host) => {
+                const other = document.createElement('button');
+                other.type = 'button';
+                other.className = 'config-btn';
+                other.setAttribute('data-glances-host-switch', host.id);
+                other.textContent = this.t('dashboard.glancesHostLook', 'Look at {name}', { name: host.name });
+                other.addEventListener('click', () => { void this.switchHost(host.id); });
+                box.appendChild(other);
+            });
+            container.appendChild(box);
+        }
+
         /** Sections the host runs, in menu order. Unknown plugins (no probe) leave all in. */
         availableSections() {
             return Sections.list().filter((def) => !def.plugin || !this.plugins || this.plugins.has(def.plugin));
@@ -368,7 +421,7 @@
             });
             this.shell.toolbarRow.hidden = true;
             const Info = window.DashboardGlancesInfo;
-            this.shell.headerActions?.append(...[Info?.helpButton(this), this._buildRecordPick(), this._buildConnectionSwitch()].filter(Boolean));
+            this.shell.headerActions?.append(...[Info?.helpButton(this), this._buildHostPick(), this._buildRecordPick(), this._buildConnectionSwitch()].filter(Boolean));
             this.bodyEl = document.createElement('div');
             this.bodyEl.className = 'glances-section';
             this.bodyEl.setAttribute('data-glances-body', '');
@@ -396,6 +449,42 @@
             });
             this.bodyEl.addEventListener('pointerleave', () => { this._hoverChart = null; });
             return this.shell;
+        }
+
+        /** The host menu: only when there is more than one to pick from. */
+        _buildHostPick() {
+            const hosts = this.dash.glancesStatus?.hosts || [];
+            if (hosts.length < 2) return null;
+            const label = document.createElement('label');
+            label.className = 'glances-record glances-host-pick';
+            const text = document.createElement('span');
+            text.className = 'glances-record-label';
+            text.textContent = this.t('dashboard.glancesHost', 'Host');
+            const select = document.createElement('select');
+            select.className = 'config-select glances-record-select';
+            select.setAttribute('data-glances-host', '');
+            hosts.forEach((host) => {
+                const option = document.createElement('option');
+                option.value = host.id;
+                option.textContent = host.name;
+                select.appendChild(option);
+            });
+            select.value = this.dash.glancesStatus.hostId;
+            select.addEventListener('change', () => { void this.switchHost(select.value); });
+            label.append(text, select);
+            return label;
+        }
+
+        /** Look at another host: its record, its settings, its sections. */
+        async switchHost(id) {
+            const Host = window.DashboardGlancesHost;
+            if (!Host) return;
+            const first = this.dash.glancesStatus?.hosts?.[0]?.id;
+            Host.set(id === first ? '' : id);
+            this.detail?.close?.();
+            this.seriesNames = [];
+            await this.openGlancesView({ section: this.section, reload: true });
+            this.writeHash();
         }
 
         /**
@@ -441,7 +530,7 @@
                 const seconds = Number(select.value);
                 select.disabled = true;
                 try {
-                    const res = await window.nextDashFetch('/api/glances/config', {
+                    const res = await window.nextDashFetch(window.DashboardGlancesHost.url('/api/glances/config'), {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ recordEvery: seconds }),
@@ -457,14 +546,65 @@
                 }
             });
             label.append(text, select);
+            const keep = this._buildRetentionPick();
             const info = window.DashboardGlancesInfo?.button(this, 'record');
-            if (info) {
-                // Outside the label, so pressing it does not open the menu.
-                const wrap = document.createElement('span');
-                wrap.className = 'glances-record-wrap';
-                wrap.append(label, info);
-                return wrap;
-            }
+            // Outside the label, so pressing the info button does not open the menu.
+            const wrap = document.createElement('span');
+            wrap.className = 'glances-record-wrap';
+            wrap.append(label);
+            if (info) wrap.append(info);
+            wrap.append(keep);
+            return wrap;
+        }
+
+        /** How long the history is kept: 7, 30 or 90 days. */
+        _buildRetentionPick() {
+            const CHOICES = [
+                [7, 'dashboard.glancesKeep7', '7 days'],
+                [30, 'dashboard.glancesKeep30', '30 days'],
+                [90, 'dashboard.glancesKeep90', '90 days'],
+            ];
+            const label = document.createElement('label');
+            label.className = 'glances-record';
+            const text = document.createElement('span');
+            text.className = 'glances-record-label';
+            text.textContent = this.t('dashboard.glancesKeepFor', 'Keep');
+            const select = document.createElement('select');
+            select.className = 'config-select glances-record-select';
+            select.setAttribute('data-glances-retention', '');
+            select.title = this.t('dashboard.glancesKeepHint', 'How long the history is kept. A longer time takes more room in the data folder. Shortening it removes the older part.');
+            CHOICES.forEach(([days, key, fallback]) => {
+                const option = document.createElement('option');
+                option.value = String(days);
+                option.textContent = this.t(key, fallback);
+                select.appendChild(option);
+            });
+            const paint = () => {
+                const now = Number(this.dash.glancesStatus?.state?.retentionDays) || 30;
+                select.value = String(CHOICES.some(([d]) => d === now) ? now : 30);
+            };
+            paint();
+            select.addEventListener('change', async () => {
+                const days = Number(select.value);
+                select.disabled = true;
+                try {
+                    const res = await window.nextDashFetch(window.DashboardGlancesHost.url('/api/glances/config'), {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ retentionDays: days }),
+                    });
+                    if (!res.ok) throw new Error(String(res.status));
+                    if (this.dash.glancesStatus) this.dash.glancesStatus.state.retentionDays = days;
+                    window.DashboardGlancesChart?.setKeep?.(days);
+                    await this.dash.glancesStatus?.refresh?.({ force: true });
+                } catch {
+                    this.dash.showNotification?.(this.t('dashboard.glancesKeepFailed', 'Could not change how long the history is kept'), 'error');
+                } finally {
+                    select.disabled = false;
+                    paint();
+                }
+            });
+            label.append(text, select);
             return label;
         }
 
@@ -494,7 +634,7 @@
                 const on = input.checked;
                 input.disabled = true;
                 try {
-                    const res = await window.nextDashFetch('/api/glances/config', {
+                    const res = await window.nextDashFetch(window.DashboardGlancesHost.url('/api/glances/config'), {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ paused: !on }),
@@ -656,7 +796,7 @@
          * one process's command line. A refusal then answers 'denied'.
          */
         async fetchPath(path, { auth = false } = {}) {
-            const url = `/api/glances/${path}`;
+            const url = window.DashboardGlancesHost.url(`/api/glances/${path}`);
             try {
                 const fetcher = auth && typeof window.nextDashFetch === 'function' ? window.nextDashFetch : fetch;
                 const res = await fetcher(url, { cache: 'no-store' });

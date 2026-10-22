@@ -171,7 +171,7 @@
                 void this.view.refresh({ force: true });
             }, 'data-glances-insights-range'));
             const csv = el('a', 'config-btn glances-ins-csv', this.t('dashboard.glancesInsCsv', 'Download CSV'));
-            csv.href = `/api/glances/history.csv?since=${Date.now() - ({ '24h': 1, '7d': 7, '30d': 30 }[this.choice.range]) * 86400000}`;
+            csv.href = window.DashboardGlancesHost.url(`/api/glances/history.csv?since=${Date.now() - ({ '24h': 1, '7d': 7, '30d': 30 }[this.choice.range]) * 86400000}`);
             csv.setAttribute('download', 'glances-history.csv');
             csv.setAttribute('data-glances-insights-csv', '');
             bar.appendChild(csv);
@@ -392,7 +392,7 @@
             const rows = [...ongoing.map((i) => ({ ...i, live: true })), ...past];
             const label = (r) => `${this.tl(KIND_LABELS[r.kind] || [`dashboard.glancesInsKind_${r.kind}`, r.kind])}${r.subject ? ` · ${r.subject}` : ''}`;
             block.appendChild(this.table('ins-incidents', [
-                { key: 'what', label: ['dashboard.glancesInsWhat', 'What'], value: (r) => label(r), cell: (r) => label(r), numeric: false },
+                { key: 'what', label: ['dashboard.glancesInsWhat', 'What'], value: (r) => label(r), cell: (r) => this.incidentLink(r, label(r)), numeric: false },
                 { key: 'start', label: ['dashboard.glancesInsStart', 'Started'], value: (r) => r.start, cell: (r) => this.when(r.start) },
                 { key: 'length', label: ['dashboard.glancesInsLength', 'Lasted'], value: (r) => (r.live ? Date.now() - r.start : r.end - r.start),
                     cell: (r) => (r.live ? this.t('dashboard.glancesInsOngoing', 'ongoing') : this.duration(r.end - r.start)) },
@@ -400,6 +400,17 @@
                     cell: (r) => (r.kind === 'down' || r.peak === undefined ? '–' : String(Math.round(r.peak))) },
             ], rows, { key: 'start', dir: 'desc' }));
             return block;
+        }
+
+        /** The incident's name as a button that opens it in the side panel. */
+        incidentLink(r, text) {
+            if (typeof this.view.detail?.openIncident !== 'function') return text;
+            const button = el('button', 'glances-row-link', text);
+            button.type = 'button';
+            button.setAttribute('data-glances-incident-open', r.kind);
+            const { live, ...incident } = r;
+            button.addEventListener('click', () => this.view.detail.openIncident(incident));
+            return button;
         }
 
         /** A container's name, with a ↗ to the Containers view when the two views are one machine. */

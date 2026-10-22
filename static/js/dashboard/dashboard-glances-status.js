@@ -17,6 +17,33 @@
     // The public demo has no Glances: nothing here asks, and nothing shows.
     const DEMO = Boolean(document.querySelector('meta[name="nextdash-demo"]'));
 
+    /**
+     * Which Glances host the page is looking at. nextDash can watch several; an
+     * empty id is the first. The choice is remembered in this browser, and the
+     * address of the page carries it (#glances/overview?host=nas).
+     */
+    const STORE = 'nextdash:glances-host';
+    const Host = {
+        id: '',
+        load() {
+            try { this.id = localStorage.getItem(STORE) || ''; } catch { this.id = ''; }
+        },
+        set(id) {
+            this.id = id || '';
+            try {
+                if (this.id) localStorage.setItem(STORE, this.id);
+                else localStorage.removeItem(STORE);
+            } catch { /* a private window: the choice lasts until the page is left */ }
+        },
+        /** An API address with the host asked for appended. */
+        url(address, id = this.id) {
+            if (!id) return address;
+            return `${address}${address.includes('?') ? '&' : '?'}host=${encodeURIComponent(id)}`;
+        },
+    };
+    Host.load();
+    window.DashboardGlancesHost = Host;
+
     class DashboardGlancesStatus {
         static POLL_MS = 30000;
 
@@ -40,23 +67,41 @@
             return this.state.paused === true;
         }
 
+        /** Every host, by name: [{ id, name, configured, paused, level, ok }]. */
+        get hosts() {
+            return Array.isArray(this.state.hosts) ? this.state.hosts : [];
+        }
+
+        /** The id of the host being looked at: the one chosen, or the first. */
+        get hostId() {
+            const known = this.hosts.some((h) => h.id === Host.id);
+            return known ? Host.id : (this.hosts[0]?.id || this.state.id || '');
+        }
+
+        /** The worst verdict of any host that is being read: the dot on the icon. */
         get level() {
-            return this.configured ? this.state.level : 'unknown';
+            if (!this.configured) return 'unknown';
+            const rank = { bad: 2, warn: 1 };
+            const live = this.hosts.filter((h) => h.configured && !h.paused);
+            if (!live.length) return this.state.level;
+            return live.reduce((worst, h) => ((rank[h.level] || 0) > (rank[worst] || 0) ? h.level : worst), live[0].level);
         }
 
         async refresh() {
             if (DEMO) return false;
             let next = null;
             try {
-                const res = await fetch('/api/glances/status', { cache: 'no-store' });
+                const res = await fetch(Host.url('/api/glances/status'), { cache: 'no-store' });
                 if (res.ok) next = await res.json();
             } catch {
                 next = null;
             }
             if (!next || typeof next !== 'object') return false;
-            const was = `${this.configured}|${this.state.level}|${this.paused}`;
+            const was = `${this.configured}|${this.level}|${this.paused}`;
             this.state = { ...this.state, ...next };
-            if (was !== `${this.configured}|${this.state.level}|${this.paused}`) {
+            // A host that no longer exists is not the one being looked at.
+            if (Host.id && this.hosts.length && !this.hosts.some((h) => h.id === Host.id)) Host.set('');
+            if (was !== `${this.configured}|${this.level}|${this.paused}`) {
                 this.dash.pageNav?.renderPageNavigation?.();
             }
             return true;

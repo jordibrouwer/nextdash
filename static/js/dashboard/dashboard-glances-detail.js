@@ -49,8 +49,12 @@
                 .finally(() => { this.at = Date.now(); this.loading = null; });
             return this.loading;
         },
+        /** The link is of the Docker host: only that one's containers are the Containers view's. */
         same() {
-            return Boolean(this.answer && this.answer.same);
+            if (!this.answer || !this.answer.same) return false;
+            const status = window.dashboardInstance?.glancesStatus;
+            const here = status?.hostId;
+            return !this.answer.hostId || !here || this.answer.hostId === here;
         },
         /** { container: { name, id }, by } for a Glances container row, or null. */
         find(row) {
@@ -197,6 +201,119 @@
                     && panel?.querySelector('[data-slp-pane="history"]:not([hidden])')) void this._loadHistory();
             }, Math.max(5000, view.refreshMs()));
             if (!isContainer && L.activeTab(GROUP, tabs) !== 'history') { /* the command line is read on request */ }
+        }
+
+        /**
+         * The side panel for one incident: the graphs around that moment, the
+         * recorded containers and processes beside them, and the restarts the
+         * Containers view knows of. Opened by a click on the incident's band in a
+         * graph, or on its row in Insights.
+         */
+        openIncident(incident) {
+            if (!incident || typeof incident !== 'object') return;
+            const L = window.SidePanelLayout;
+            const view = this.view;
+            const esc = (v) => view.dash.escapeHtml(String(v ?? ''));
+            const labels = {
+                down: ['dashboard.glancesInsKindDown', 'Host not answering'],
+                cpu: ['dashboard.glancesInsKindCpu', 'Processor'],
+                mem: ['dashboard.glancesInsKindMem', 'Memory'],
+                swap: ['dashboard.glancesInsKindSwap', 'Swap'],
+                disk: ['dashboard.glancesInsKindDisk', 'Disk'],
+                temp: ['dashboard.glancesInsKindTemp', 'Temperature'],
+            };
+            const what = labels[incident.kind] ? this.t(labels[incident.kind][0], labels[incident.kind][1]) : String(incident.kind);
+            const key = `incident:${incident.kind}:${incident.subject || ''}:${incident.start}`;
+            const ongoing = !incident.end;
+            const when = (ms) => new Date(ms).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+            const lasted = Math.max(0, (incident.end || Date.now()) - incident.start);
+            const minutes = Math.max(1, Math.round(lasted / 60000));
+            const length = minutes >= 120 ? `${Math.round(minutes / 60)} h` : `${minutes} min`;
+            const where = [when(incident.start), ongoing ? this.t('dashboard.glancesInsOngoing', 'ongoing') : length,
+                incident.kind !== 'down' && incident.peak !== undefined ? `${this.t('dashboard.glancesInsPeak', 'Peak')} ${Math.round(incident.peak)}` : '']
+                .filter(Boolean).join(' · ');
+            this.item = { kind: 'incident', incident, name: key };
+            L.moreLabel = this.t('dashboard.glancesMoreActions', 'More actions');
+            const head = L.head(esc, {
+                icon: '<span class="glances-drawer-icon" aria-hidden="true">!</span>',
+                title: `${what}${incident.subject ? ` · ${incident.subject}` : ''}`,
+                badge: { text: ongoing ? this.t('dashboard.glancesInsOngoing', 'ongoing') : this.t('dashboard.glancesIncidentEnded', 'ended'), tone: ongoing ? 'bad' : 'muted' },
+                more: [], where, actions: [],
+            });
+            this.base.open(key, {
+                title: what,
+                build: (panel, ctx) => {
+                    panel.setAttribute('data-glances-drawer', 'incident');
+                    panel.classList.add('glances-drawer', 'config-bm-drawer');
+                    ctx.heading.hidden = true;
+                    panel.insertAdjacentHTML('beforeend', `${head}<div class="glances-drawer-body" data-glances-drawer-body="incident"></div>`);
+                    L.bind(panel, { group: GROUP, onAction: () => {} });
+                },
+            });
+            clearInterval(this._timer);
+            void this._loadIncident();
+            if (ongoing) {
+                this._timer = setInterval(() => {
+                    if (document.visibilityState !== 'hidden' && this.isOpen()) void this._loadIncident();
+                }, Math.max(5000, view.refreshMs()));
+            }
+        }
+
+        async _loadIncident() {
+            const item = this.item;
+            const host = this.base.panel?.querySelector('[data-glances-drawer-body="incident"]');
+            if (!item || item.kind !== 'incident' || !host) return;
+            const Chart = window.DashboardGlancesChart;
+            const incident = item.incident;
+            const seq = ++this._seq;
+            const now = Date.now();
+            const end = incident.end || now;
+            // Room before and after, in proportion to the incident, between ten minutes and three hours.
+            const pad = Math.min(3 * 3600000, Math.max(600000, end - incident.start));
+            const from = incident.start - pad;
+            const to = Math.min(now, end + pad);
+            if (!this.view.seriesNames.length) {
+                const names = await this.view.fetchPath('history');
+                if (names.kind === 'ok' && Array.isArray(names.body?.names)) this.view.seriesNames = names.body.names.map(String);
+            }
+            const all = this.view.seriesNames;
+            const first = { cpu: ['cpu', 'load'], mem: ['memory', 'memparts'], swap: ['memory', 'memparts'], disk: ['disks', 'diskio'], temp: ['temps', 'cpu'], down: ['cpu', 'memory'] }[incident.kind] || [];
+            const ids = [...new Set([...first, 'cpu', 'memory', 'network'])];
+            const groups = ids.map((id) => Chart.group(id)).filter((g) => g && Chart.namesFor(g, all).length);
+            // The recorded containers and processes, whose lines can show what was busy.
+            const tracked = all.filter((n) => /^(ct|proc):.+:cpu$/.test(n));
+            const containers = tracked.filter((n) => n.startsWith('ct:')).map((n) => n.slice(3, -4)).slice(0, 15);
+            const asks = groups.map((g) => ({
+                def: g,
+                path: `history?series=${Chart.namesFor(g, all).map(encodeURIComponent).join(',')}&since=${from}&until=${to}${containers.length ? `&restarts=${containers.map(encodeURIComponent).join(',')}` : ''}`,
+            }));
+            if (tracked.length) {
+                asks.push({
+                    def: {
+                        id: 'incident-consumers', label: ['dashboard.glancesIncidentConsumers', 'Recorded containers and processes (CPU)'], percent: false,
+                        unit: '%', match: (n) => /^(ct|proc):.+:cpu$/.test(n), name: (n) => n.replace(/:cpu$/, '').replace(/^ct:/, '').replace(/^proc:/, ''),
+                    },
+                    path: `history?series=${tracked.map(encodeURIComponent).join(',')}&since=${from}&until=${to}`,
+                });
+            }
+            const results = await Promise.all(asks.map(async (a) => {
+                const res = await this.view.fetchPath(a.path);
+                return { def: a.def, answer: res.kind === 'ok' ? res.body : null };
+            }));
+            if (seq !== this._seq || this.item !== item || !this.base.panel) return;
+            // An incident that was going on when the panel opened may have ended since: the record knows.
+            if (!incident.end) {
+                const now = results.flatMap(({ answer }) => (answer && Array.isArray(answer.incidents) ? answer.incidents : []))
+                    .find((i) => i.kind === incident.kind && (i.subject || '') === (incident.subject || '') && i.start === incident.start);
+                if (now && now.end) {
+                    this.openIncident(now);
+                    return;
+                }
+            }
+            const figures = results.map(({ def, answer }) => Chart.panel(this.view, def, answer, { fixed: { from, to } }));
+            const note = el('p', 'glances-note', this.t('dashboard.glancesIncidentNote',
+                'The recording from before to after the incident. The red band is the incident itself; a dashed line is a moment a container started again.'));
+            Chart.keepFocus(host, () => host.replaceChildren(note, ...figures));
         }
 
         /** Live numbers: the section hands the row of the latest beat, so the panel follows. */
@@ -352,7 +469,7 @@
             const state = await this._trackedState();
             const list = state.list.filter((k) => k !== key);
             if (on) list.push(key);
-            const res = await window.nextDashFetch('/api/glances/config', {
+            const res = await window.nextDashFetch(window.DashboardGlancesHost.url('/api/glances/config'), {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trackedHistory: list }),
             }).catch(() => null);
             if (!res || !res.ok) {
