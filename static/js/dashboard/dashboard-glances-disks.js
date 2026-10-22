@@ -12,26 +12,14 @@
      * types and mount points the tile's answer leaves out (glancesIsPseudo in
      * widgets_glances.go), plus a few more types Go never sees as rows.
      */
-    const PSEUDO_FS = new Set(['tmpfs', 'devtmpfs', 'overlay', 'squashfs', 'proc', 'sysfs', 'cgroup', 'cgroup2', 'devpts', 'ramfs']);
-    const PSEUDO_MOUNTS = ['/snap', '/run', '/sys', '/proc', '/dev'];
-
     const { el } = window.DashboardGlancesDom;
 
     function str(value) {
         return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
     }
 
-    function isPseudo(row) {
-        if (PSEUDO_FS.has(str(row.fs_type).toLowerCase())) return true;
-        const mount = str(row.mnt_point);
-        return PSEUDO_MOUNTS.some((prefix) => mount === prefix || mount.startsWith(`${prefix}/`));
-    }
-
-    /** The real filesystems in an fs answer; rows that are not objects are dropped first. */
-    function realFilesystems(body) {
-        const rows = window.DashboardGlances.usable(body);
-        return Array.isArray(rows) ? rows.filter((r) => r && typeof r === 'object' && !Array.isArray(r) && !isPseudo(r)) : [];
-    }
+    /** The real filesystems in an fs answer, without the kernel's own. */
+    const realFilesystems = (body) => window.DashboardGlances.realFilesystems(body);
 
     class GlancesDisks {
         constructor(view) {

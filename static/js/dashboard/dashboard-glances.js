@@ -82,6 +82,12 @@
             this.plugins = null;
             /** The series nextDash has recorded: the graphs ask for these. */
             this.seriesNames = [];
+            /** What the page held when it was left: drawn again at once on a quick return. */
+            this._keep = null;
+            this._warmAt = false;
+            this._enterPending = false;
+            this._feed = null;
+            this._alertCount = 0;
             this.shell = null;
             this.sectionInstance = null;
             this.bodyEl = null;
@@ -143,6 +149,21 @@
                 return Number.isFinite(n) ? n : null;
             }
             return null;
+        }
+
+        /** The real filesystems in an fs answer: rows that are objects, without tmpfs, /run, /sys and the like. */
+        static realFilesystems(body) {
+            const pseudoFs = ['tmpfs', 'devtmpfs', 'overlay', 'squashfs', 'proc', 'sysfs', 'cgroup', 'cgroup2', 'devpts', 'ramfs'];
+            const pseudoMounts = ['/snap', '/run', '/sys', '/proc', '/dev'];
+            const str = (v) => (typeof v === 'string' || typeof v === 'number' ? String(v) : '');
+            const rows = DashboardGlances.usable(body);
+            if (!Array.isArray(rows)) return [];
+            return rows.filter((r) => {
+                if (!r || typeof r !== 'object' || Array.isArray(r)) return false;
+                if (pseudoFs.includes(str(r.fs_type).toLowerCase())) return false;
+                const mount = str(r.mnt_point);
+                return !pseudoMounts.some((prefix) => mount === prefix || mount.startsWith(`${prefix}/`));
+            });
         }
 
         /** The yellow and red lines from Config, set each time the page opens. */
@@ -275,6 +296,9 @@
                 d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
                 d.inbox?.clearKeyboardSelection?.();
                 d.setActiveView(DashboardGlances.VIEW);
+                // The heading and the tab name the view, not the page or view before it.
+                d.pageNav?.updatePageTitle?.();
+                d.pageNav?.updateDocumentTitle?.();
                 // The 0 tab, like the Inbox one, marks the view you are in.
                 d.pageNav?.setActivePageNavButton?.(d.currentPageId);
                 window.nextdashTrack?.('view:glances');
@@ -283,10 +307,35 @@
             this._stopTimers();
             this.sectionInstance?.destroy?.();
             this.sectionInstance = null;
-            this.plugins = null;
-            this._last = new Map();
+            // Coming back to a page seen a moment ago starts from what it held; a new
+            // host, a reload on purpose or an answer that is too old starts clean.
+            const held = this._keep;
+            this._keep = null;
+            const warm = !options.reload && held && held.host === (window.DashboardGlancesHost?.id || '')
+                && Date.now() - held.at < this.staleMs()
+                && this.dash.glancesStatus?.configured && this.dash.glancesStatus.state.hostConfigured !== false
+                ? held : null;
+            this.plugins = warm ? warm.plugins : null;
+            this._last = warm ? warm.last : new Map();
+            this._feed = warm ? warm.feed : null;
+            this._alertCount = warm ? warm.alertCount : 0;
             const seq = ++this._openSeq;
             this._prepareContainer();
+            if (warm) {
+                // At once, from what was read last; the host is asked again behind it.
+                DashboardGlances.limits = this.status.thresholds || null;
+                this.seriesNames = warm.seriesNames;
+                this._warmAt = true;
+                this.mountShell(route.section);
+                this.openSection(route.section, { push: cameFromElsewhere, force: true });
+                this._warmAt = false;
+                this._bindVisibility();
+                this._bindKeys();
+                this.startBadges();
+                void this._revalidate(seq);
+                void this.maybeShowTutorial();
+                return true;
+            }
 
             // Whether Glances is set up, and the settings the page runs by.
             await this.dash.glancesStatus?.refresh?.();
@@ -423,7 +472,7 @@
                     dataAttrs: { 'data-glances-section': def.id },
                 })),
                 onFilter: (key) => this.openSection(key),
-                summary: [],
+                summary: this._summary(this._feed || {}),
             });
             this.shell.toolbarRow.hidden = true;
             const Info = window.DashboardGlancesInfo;
@@ -742,6 +791,8 @@
                 return false;
             }
             if (!force && def.id === this.section && this.sectionInstance) return true;
+            // Another section of the page rises in as the view did, once its first draw comes.
+            this._enterPending = !force;
             this.sectionInstance?.destroy?.();
             this.section = def.id;
             this.shell.setActive(def.id);
@@ -756,9 +807,21 @@
             // A section seen a moment ago is drawn from what it last read, at once;
             // the host is asked again only when that is older than one beat.
             const age = this._paintFromCache(this.sectionInstance);
+            // A page drawn from what was read before says so until the new read arrives.
+            if (age !== null && age >= 10000 && this._warmAt) {
+                const when = new Date(Date.now() - age).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                this._showStatus('cached', this.t('dashboard.glancesCachedFrom', 'Showing what was read at {time}. Updating…', { time: when }));
+            }
             if (age === null || age >= this.refreshMs()) void this.refresh({ force: true });
             this.startPolling();
             return true;
+        }
+
+        /** The arrival animation of the view, for the first draw of a section the reader moved to. */
+        _playEnter() {
+            if (!this._enterPending) return;
+            this._enterPending = false;
+            this.dash.playViewEntrance?.(DashboardGlances.VIEW);
         }
 
         /**
@@ -781,6 +844,7 @@
             }
             try {
                 this.tipCard?.reset();
+                this._playEnter();
                 inst.render(this.hostEl, data);
                 this.tipCard?.refresh();
             } catch (err) {
@@ -790,8 +854,44 @@
             return oldest;
         }
 
+        /**
+         * Behind a page drawn from the last read: the settings, which sections the
+         * host has and what is recorded are asked again, and the page is rebuilt
+         * only when the host no longer matches what was shown.
+         */
+        async _revalidate(seq) {
+            await this.dash.glancesStatus?.refresh?.();
+            if (seq !== this._openSeq || !this.isActiveView()) return;
+            const status = this.dash.glancesStatus;
+            if (!status?.configured || status.state.hostConfigured === false) {
+                void this.openGlancesView({ reload: true });
+                return;
+            }
+            DashboardGlances.limits = this.status.thresholds || null;
+            const probe = await this.fetchPath('pluginslist');
+            if (seq !== this._openSeq || !this.isActiveView()) return;
+            const plugins = probe.kind === 'ok' && Array.isArray(probe.body) ? new Set(probe.body.map(String)) : null;
+            const recorded = await this.fetchPath('history');
+            if (seq !== this._openSeq || !this.isActiveView()) return;
+            if (recorded.kind === 'ok' && Array.isArray(recorded.body?.names)) this.seriesNames = recorded.body.names.map(String);
+            const before = this.plugins;
+            const same = (!before && !plugins) || (before && plugins && before.size === plugins.size && [...before].every((p) => plugins.has(p)));
+            if (same) return;
+            this.plugins = plugins;
+            const section = this.section;
+            this.mountShell(section);
+            this.openSection(section, { push: false, force: true });
+        }
+
         /** Another view took the layout: every timer and listener goes with it. */
         onLeave() {
+            if (this.shell && this._last) {
+                this._keep = {
+                    host: window.DashboardGlancesHost?.id || '', at: Date.now(),
+                    plugins: this.plugins, seriesNames: this.seriesNames, last: this._last,
+                    feed: this._feed, alertCount: this._alertCount,
+                };
+            }
             this._openSeq += 1;
             this._stopTimers();
             this._unbindVisibility();
@@ -963,6 +1063,7 @@
             }
             try {
                 this.tipCard?.reset();
+                this._playEnter();
                 inst.render(this.hostEl, data);
                 this.tipCard?.refresh();
             } catch (err) {
@@ -1178,6 +1279,46 @@
                 else btn.removeAttribute('title');
             });
             shell.setCounts(counts);
+            this._feed = feed;
+            this._alertCount = Number(counts.alerts) || 0;
+            shell.setSummary(this._summary(feed));
+        }
+
+        /**
+         * The figures at the top of the rail, the way Health and the Containers view
+         * give theirs: how the machine is right now, whatever section is open. From
+         * the same cheap round of reads the menu's dots come from.
+         */
+        _summary(feed) {
+            const G = DashboardGlances;
+            const quick = G.usable(feed.quicklook);
+            if (!quick) return [];
+            const entries = [];
+            const level = this.status.level;
+            const words = { ok: ['dashboard.glancesHostStatusOk', 'Healthy', 'good'], warn: ['dashboard.glancesHostStatusWarn', 'Warning', 'warn'], bad: ['dashboard.glancesHostStatusBad', 'Critical', 'bad'] }[level];
+            if (words) entries.push({ key: 'status', label: this.t('dashboard.glancesSummaryStatus', 'Status'), value: this.t(words[0], words[1]), tone: words[2] });
+            const reading = (key, label, value, kind) => {
+                const n = G.num(value);
+                if (n === null) return;
+                entries.push({ key, label, value: `${Math.round(n)}%`, tone: G.tone(n, kind) });
+            };
+            reading('cpu', this.t('dashboard.glancesChartCpu', 'Processor'), quick.cpu, 'cpu');
+            reading('mem', this.t('dashboard.glancesChartMem', 'Memory'), quick.mem, 'mem');
+            const disks = G.realFilesystems(feed.fs).map((r) => ({ pct: G.num(r.percent), mount: String(r.mnt_point || '') })).filter((r) => r.pct !== null);
+            if (disks.length) {
+                const fullest = disks.reduce((a, b) => (b.pct > a.pct ? b : a));
+                reading('disk', this.t('dashboard.glancesHostsDisk', 'Fullest disk'), fullest.pct, 'disk');
+            }
+            const sensors = G.usable(feed.sensors);
+            const temps = Array.isArray(sensors)
+                ? sensors.filter((s) => String(s?.type || '').startsWith('temperature')).map((s) => G.num(s.value)).filter((n) => n !== null) : [];
+            if (temps.length) {
+                const hottest = Math.max(...temps);
+                entries.push({ key: 'temp', label: this.t('dashboard.glancesSummaryTemp', 'Hottest sensor'), value: `${Math.round(hottest)} °C`, tone: G.tone(hottest, 'temp') });
+            }
+            const alerts = this._alertCount || 0;
+            entries.push({ key: 'alerts', label: this.t('dashboard.glancesSectionAlerts', 'Alerts'), value: String(alerts), tone: alerts ? 'bad' : 'good' });
+            return entries;
         }
 
         /** Hidden tab: nothing runs. Back in view: one read at once, then the timers. */

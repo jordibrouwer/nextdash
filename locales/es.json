@@ -3639,7 +3639,10 @@
     "glancesCtCount": "Contenedores: {count}",
     "glancesCtShown": "Mostrando {shown} de {total}",
     "glancesCtNoMatch": "Ningún contenedor coincide.",
-    "glancesProcMatches": "Coincidencias: {count}"
+    "glancesProcMatches": "Coincidencias: {count}",
+    "glancesCachedFrom": "Mostrando lo leído a las {time}. Actualizando…",
+    "glancesSummaryStatus": "Estado",
+    "glancesSummaryTemp": "Sensor más caliente"
   },
   "health": {
     "reloadPage": "Recargar la página",

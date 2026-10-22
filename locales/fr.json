@@ -3639,7 +3639,10 @@
     "glancesCtCount": "Conteneurs : {count}",
     "glancesCtShown": "{shown} affichés sur {total}",
     "glancesCtNoMatch": "Aucun conteneur ne correspond.",
-    "glancesProcMatches": "Correspondances : {count}"
+    "glancesProcMatches": "Correspondances : {count}",
+    "glancesCachedFrom": "Affiche ce qui a été lu à {time}. Mise à jour…",
+    "glancesSummaryStatus": "État",
+    "glancesSummaryTemp": "Capteur le plus chaud"
   },
   "health": {
     "reloadPage": "Recharger la page",

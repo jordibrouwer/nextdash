@@ -3639,7 +3639,10 @@
     "glancesCtCount": "容器：{count}",
     "glancesCtShown": "显示 {shown} / {total}",
     "glancesCtNoMatch": "没有匹配的容器。",
-    "glancesProcMatches": "匹配：{count}"
+    "glancesProcMatches": "匹配：{count}",
+    "glancesCachedFrom": "显示 {time} 读取的内容。正在更新…",
+    "glancesSummaryStatus": "状态",
+    "glancesSummaryTemp": "最热传感器"
   },
   "health": {
     "reloadPage": "重新加载页面",

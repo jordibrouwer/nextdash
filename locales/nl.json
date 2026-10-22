@@ -3639,7 +3639,10 @@
     "glancesCtCount": "Containers: {count}",
     "glancesCtShown": "{shown} van {total} getoond",
     "glancesCtNoMatch": "Geen container komt overeen.",
-    "glancesProcMatches": "Treffers: {count}"
+    "glancesProcMatches": "Treffers: {count}",
+    "glancesCachedFrom": "Toont wat om {time} is gelezen. Wordt bijgewerkt…",
+    "glancesSummaryStatus": "Status",
+    "glancesSummaryTemp": "Heetste sensor"
   },
   "health": {
     "reloadPage": "Pagina herladen",

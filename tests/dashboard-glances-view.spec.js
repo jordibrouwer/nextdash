@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
 
 /**
  * The Glances page (#glances): Config → Glances switches it on, an icon in the navigation and Shift+G
@@ -575,6 +575,106 @@ test.describe('Glances page: tables, cards and keys', () => {
 
         await page.locator('[data-glances-card="cpu"]').hover();
         await expect(card).toContainText('Cores');
+    });
+
+    test('the Glances view rises in like the other list views, then holds still', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page);
+        const rising = (sel) => page.evaluate((q) => document.getAnimations()
+            .filter((x) => x.animationName === 'lvsRise' && x.effect?.target?.matches?.(q)).length, sel);
+        await expect.poll(() => rising('.lvs-header'), { timeout: 3000, intervals: [20] }).toBeGreaterThan(0);
+        await expect.poll(() => rising('.glances-ov-block, .glances-card'), { timeout: 3000, intervals: [20] }).toBeGreaterThan(1);
+        await expect.poll(() => rising('.lvs-header, .glances-ov-block, .glances-card'), { timeout: 3000 }).toBe(0);
+        await expect(page.locator('body')).not.toHaveAttribute('data-view-entering', /.+/);
+    });
+
+    test('back on the page, what was read last is there at once and the host is asked again behind it', async ({ page }) => {
+        const state = await mockGlances(page);
+        await openView(page);
+        await expect(page.locator('[data-glances-card="cpu"]')).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(page.locator('[data-glances-open="overview"]')).toHaveCount(0);
+
+        // From here every answer of the host waits until it is let go.
+        let release = () => {};
+        const gate = new Promise((resolve) => { release = resolve; });
+        await page.route('**/api/glances/**', async (route) => {
+            if (route.request().method() === 'GET' && !/\/api\/glances\/status/.test(route.request().url())) await gate;
+            await route.fallback();
+        });
+        state.calls.length = 0;
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press('Shift+G');
+        // The rows stand while nothing has been answered, with no loading line.
+        await expect(page.locator('[data-glances-card="cpu"]')).toBeVisible();
+        await expect(page.locator('.glances-wait')).toHaveCount(0);
+        await expect(page.locator('[data-glances-status="cached"]')).toHaveCount(0);
+        release();
+        await expect.poll(() => state.calls.some((c) => c.path === 'pluginslist')).toBe(true);
+        await expect(page.locator('[data-glances-card="cpu"]')).toBeVisible();
+    });
+
+    test('another host does not start from the last host\'s page', async ({ page }) => {
+        const state = await mockGlances(page);
+        state.hosts = [{ id: 'main', name: 'Home' }, { id: 'nas', name: 'NAS' }];
+        await openView(page);
+        await expect(page.locator('[data-glances-card="cpu"]')).toBeVisible();
+        await page.keyboard.press('Escape');
+        await page.evaluate(() => window.DashboardGlancesHost.set('nas'));
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press('Shift+G');
+        await expect(page.locator('.glances-wait')).toHaveCount(1);
+    });
+
+    test('the heading and the tab name Glances, also when it is reached from the Inbox, and the page name comes back', async ({ page }) => {
+        await mockGlances(page);
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        const page0 = (await page.locator('.title').first().textContent()).trim();
+        await page.locator('#page-nav-inbox-btn').click();
+        await expect(page.locator('.title').first()).toHaveText('inbox');
+        await page.locator('#page-nav-glances-link').click();
+        await expect(page.locator('[data-glances-open="overview"]')).toBeVisible();
+        await expect(page.locator('.title').first()).toHaveText('glances');
+        await expect.poll(() => page.title()).toMatch(/^Glances — /);
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press('Escape');
+        await expect(page.locator('.title').first()).toHaveText(page0);
+    });
+
+    test('moving to another section of the page rises in as the view did', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page);
+        await expect(page.locator('body')).not.toHaveAttribute('data-view-entering', /.+/, { timeout: 3000 });
+        await page.locator('[data-glances-section="processes"]').click();
+        await expect(page.locator(`[data-glances-pid="${FIRST.pid}"]`)).toBeVisible();
+        const rising = (sel) => page.evaluate((q) => document.getAnimations()
+            .filter((x) => x.animationName === 'lvsRise' && x.effect?.target?.matches?.(q)).length, sel);
+        await expect.poll(() => rising('.glances-search-bar, .glances-proc-row, .glances-proc-scroll'), { timeout: 2000, intervals: [20] }).toBeGreaterThan(0);
+        // It is an arrival: a beat later nothing moves.
+        await expect.poll(() => rising('.glances-search-bar, .glances-proc-row, .glances-proc-scroll'), { timeout: 3000 }).toBe(0);
+        // A poll redraws in place without it.
+        await page.waitForTimeout(2600);
+        expect(await rising('.glances-proc-row')).toBe(0);
+    });
+
+    test('the rail has a summary: how the machine is, whatever section is open', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page, '#glances/processes');
+        const row = (key) => page.locator(`.lvs-summary-row[data-lvs-summary-key="${key}"]`);
+        for (const key of ['status', 'cpu', 'mem', 'disk', 'alerts']) await expect(row(key)).toBeVisible();
+        await expect(row('cpu').locator('.lvs-summary-value')).toHaveText(/^\d+%$/);
+        await expect(row('mem').locator('.lvs-summary-value')).toHaveText(/^\d+%$/);
+        await expect(row('disk').locator('.lvs-summary-value')).toHaveText(/^\d+%$/);
+        // Alerts: the same count as the menu's.
+        const menu = (await page.locator('[data-glances-section="alerts"] .lvs-filter-count').textContent()).trim();
+        await expect(row('alerts').locator('.lvs-summary-value')).toHaveText(menu || '0');
+        // It stays when another section opens.
+        await page.locator('[data-glances-section="disks"]').click();
+        await expect(row('cpu')).toBeVisible();
     });
 
     test('Escape closes the side panel and stays on the list; a second Escape leaves the view', async ({ page }) => {
@@ -1554,6 +1654,8 @@ test.describe('Glances page: names, focus and contrast', () => {
                 await openView(page, `#glances/${id}`);
                 if (theme) await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
                 await page.waitForTimeout(400);
+                // The view rises in on arrival; text is read once it has settled.
+                await expect(page.locator('body')).not.toHaveAttribute('data-view-entering', /.+/);
                 const result = await audit(page);
                 expect(result, `section ${id}`).toEqual({ unnamed: [], hiddenFocusable: [], weak: [] });
             }

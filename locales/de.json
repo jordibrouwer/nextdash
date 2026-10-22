@@ -3639,7 +3639,10 @@
     "glancesCtCount": "Container: {count}",
     "glancesCtShown": "{shown} von {total} angezeigt",
     "glancesCtNoMatch": "Kein Container passt.",
-    "glancesProcMatches": "Treffer: {count}"
+    "glancesProcMatches": "Treffer: {count}",
+    "glancesCachedFrom": "Zeigt, was um {time} gelesen wurde. Wird aktualisiert…",
+    "glancesSummaryStatus": "Status",
+    "glancesSummaryTemp": "Heißester Sensor"
   },
   "health": {
     "reloadPage": "Seite neu laden",
