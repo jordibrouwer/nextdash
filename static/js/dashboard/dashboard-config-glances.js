@@ -360,7 +360,12 @@
         // How the host being edited is, beside the hosts: the dot is the page's own verdict.
         const bar = root.querySelector('[data-glances-bar-status]');
         const paintBar = () => {
-            const row = (this.dash.glancesStatus?.hosts || []).find((h) => h.id === hostId);
+            const status = this.dash.glancesStatus;
+            // With one host the page's own state is the host's; with several, its row in the list.
+            const listed = (status?.hosts || []).find((h) => h.id === hostId);
+            const own = status?.state;
+            const row = listed || (own && (!status.hosts.length || status.hostId === hostId)
+                ? { configured: own.hostConfigured !== false && own.configured !== false, paused: own.paused === true, level: own.level } : null);
             if (!bar || !row) return;
             let key = ['glancesBarAway', 'Not answering'];
             let tone = 'bad';

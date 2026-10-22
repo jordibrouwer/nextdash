@@ -729,10 +729,11 @@ test.describe('Config → Glances', () => {
         await expect(page.locator('[data-glances-block="system"]')).toBeChecked();
         await expect(page.locator('[data-glances-field="diskStrip"]')).toHaveValue('/rootfs');
 
-        await page.locator('[data-glances-field="refresh"]').selectOption('5');
-        await page.locator('[data-glances-block="containers"]').uncheck();
         await page.locator('[data-glances-field="user"]').fill('me');
         await page.locator('[data-glances-field="password"]').fill('s3cret');
+        await page.locator('[data-glances-tab="page"]').click();
+        await page.locator('[data-glances-field="refresh"]').selectOption('5');
+        await page.locator('[data-glances-block="containers"]').uncheck();
         await page.locator('[data-glances-line="cpuWarn"]').fill('70');
         await page.locator('[data-glances-field="diskHide"]').fill('/mnt/cache\n/mnt/user');
         // No Save button: leaving the last field keeps everything.
@@ -823,10 +824,39 @@ test.describe('Glances page: recording, insights and the data kept', () => {
         await expect(page.locator('[data-glances-insights-csv]')).toHaveAttribute('href', /\/api\/glances\/history\.csv\?since=\d+/);
     });
 
+    test('Config → Glances has five tabs, each with its own panels, and says what is per host', async ({ page }) => {
+        await mockGlances(page);
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances');
+        const tabs = page.locator('[data-glances-tab]');
+        await expect(tabs).toHaveText(['Connection', 'Page', 'Recording', 'Notices', 'Advanced']);
+        const shown = () => page.locator('[data-glances-panel]:not([hidden])').evaluateAll((els) => els.map((e) => e.getAttribute('data-glances-panel')));
+        expect([...new Set(await shown())]).toEqual(['connection']);
+        const expected = { page: 3, recording: 2, notices: 1, advanced: 2 };
+        for (const [tab, count] of Object.entries(expected)) {
+            await page.locator(`[data-glances-tab="${tab}"]`).click();
+            expect(await shown()).toEqual(Array(count).fill(tab));
+            expect(page.url()).toContain(`#config/glances/${tab}`);
+        }
+        // A half-typed address survives a trip through the other tabs.
+        await page.locator('[data-glances-tab="connection"]').click();
+        const server = page.locator('[data-glances-field="server"]');
+        await server.fill('http://typed.example:61208');
+        await page.locator('[data-glances-tab="page"]').click();
+        await page.locator('[data-glances-tab="connection"]').click();
+        await expect(server).toHaveValue('http://typed.example:61208');
+        // What belongs to one host says so, and what is shared says that.
+        await expect(page.locator('[data-glances-panel="connection"] .glances-scope--host')).toHaveText('This host');
+        await page.locator('[data-glances-tab="page"]').click();
+        await expect(page.locator('[data-glances-panel="page"] .glances-scope--all')).toHaveCount(2);
+        // The host bar says how the host is.
+        await expect(page.locator('[data-glances-bar-status]')).toHaveText('Connected');
+    });
+
     test('Config → Glances says what is collected and deletes it on confirmation', async ({ page }) => {
         const state = await mockGlances(page);
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances');
+        await page.goto('/#config/glances/recording');
         const info = page.locator('[data-glances-collected]');
         await expect(info).toContainText('3400');
         await expect(info).toContainText('2 incidents');
@@ -1168,7 +1198,7 @@ test.describe('how often the host is recorded', () => {
         // The reading is described: how many an hour that is.
         await expect(pick).toHaveAttribute('title', /4 readings an hour/);
         // It is on the page and in the server's status, not in Config.
-        await page.goto('/#config/glances');
+        await page.goto('/#config/glances/page');
         await expect(page.locator('[data-glances-field="refresh"]')).toBeVisible();
         await expect(page.locator('[data-glances-record]')).toHaveCount(0);
         await openView(page);
@@ -1295,6 +1325,7 @@ test.describe('Config → Glances: reset', () => {
         await expect(connected).toBeChecked();
 
         // Reset asks first, then clears the settings and the record.
+        await page.locator('[data-glances-tab="advanced"]').click();
         await page.locator('[data-glances-reset]').click();
         await page.getByRole('button', { name: /cancel/i }).click();
         expect(state.reset).toBe(false);
@@ -1314,7 +1345,7 @@ test.describe('Config → Glances: how often an open page reads', () => {
     test('from a second to a quarter of an hour, saved as seconds', async ({ page }) => {
         const state = await mockGlances(page);
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances');
+        await page.goto('/#config/glances/page');
         // Named apart from Record every, on the Glances page: the two are different things.
         await expect(page.locator('label[for="config-glances-refresh"]')).toHaveText('Refresh while the page is open');
         await expect(page.locator('#config-glances-body')).not.toContainText('Read the host');
@@ -1346,6 +1377,7 @@ test.describe('Config → Glances: every change is kept', () => {
         await page.goto('/#config/glances');
         await expect(page.locator('[data-glances-field="server"]')).toHaveValue(CONFIG.server);
 
+        await page.locator('[data-glances-tab="page"]').click();
         await page.locator('[data-glances-block="containers"]').uncheck();
         await expect.poll(() => state.saved && state.saved.hiddenBlocks && state.saved.hiddenBlocks.includes('containers')).toBe(true);
         await expect(page.locator('[data-glances-saved]')).toContainText('Saved');
@@ -1353,6 +1385,7 @@ test.describe('Config → Glances: every change is kept', () => {
         // Typing in a field while an earlier save answers does not lose what is typed.
         const user = page.locator('[data-glances-field="user"]');
         await page.locator('[data-glances-block="smart"]').uncheck();
+        await page.locator('[data-glances-tab="connection"]').click();
         await user.focus();
         await user.pressSequentially('mar');
         await expect.poll(() => state.saved && state.saved.hiddenBlocks && state.saved.hiddenBlocks.includes('smart')).toBe(true);
@@ -1364,7 +1397,7 @@ test.describe('Config → Glances: every change is kept', () => {
     test('notices per kind of incident: all off at first, each saved at once', async ({ page }) => {
         const state = await mockGlances(page);
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances');
+        await page.goto('/#config/glances/notices');
         const boxes = page.locator('[data-glances-notify]');
         await expect(boxes).toHaveCount(6);
         for (let i = 0; i < 6; i += 1) await expect(boxes.nth(i)).not.toBeChecked();
@@ -1476,7 +1509,7 @@ test.describe('Glances and the Containers view: the same machine', () => {
     test('Config → Glances: Auto, Yes or No, with what was detected and what matched', async ({ page }) => {
         const state = await mockGlances(page);
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances');
+        await page.goto('/#config/glances/advanced');
         const select = page.locator('[data-glances-field="dockerLink"]');
         await expect(select).toHaveValue('auto');
         await expect(select.locator('option')).toHaveText(['Auto', 'Yes', 'No']);
@@ -1715,9 +1748,11 @@ test.describe('several hosts', () => {
         await expect(page.locator('[data-glances-field="name"]')).toHaveValue('NAS');
         await expect.poll(() => state.calls.some((c) => c.path === 'config' && c.host === 'nas')).toBe(true);
         // A change is saved for that host.
+        await page.locator('[data-glances-tab="advanced"]').click();
         await page.locator('[data-glances-field="dockerLink"]').selectOption('no');
         await expect.poll(() => state.calls.some((c) => c.path === 'config' && c.host === 'nas' && state.saved && state.saved.dockerLink === 'no')).toBe(true);
 
+        await page.locator('[data-glances-tab="connection"]').click();
         await page.locator('[data-glances-host-add]').click();
         await page.locator('[data-glances-host-new-name]').fill('Pi');
         await page.locator('[data-glances-host-new-ok]').click();
@@ -1747,7 +1782,7 @@ test.describe('several hosts', () => {
     test('Config: Glances readings for the Containers view are on, and keeping Docker\'s own is saved', async ({ page }) => {
         const state = await mockGlances(page);
         await markWhatsNewSeen(page);
-        await page.goto('/#config/glances');
+        await page.goto('/#config/glances/advanced');
         const box = page.locator('[data-glances-field="useForContainers"]');
         await expect(box).toBeChecked();
         await box.uncheck();
@@ -1822,11 +1857,13 @@ test.describe('several hosts', () => {
         await page.goto('/#config/glances');
         await page.locator('[data-glances-host-tab="pi"]').click();
         await expect(page.locator('[data-glances-field="name"]')).toHaveValue('Pi');
+        await page.locator('[data-glances-tab="notices"]').click();
         await page.locator('[data-glances-notify="cpu"]').check();
         await expect.poll(() => state.saved && state.saved.notify && state.saved.notify.join(',')).toBe('cpu');
         expect(state.saved.enabled).toBe(true);
         // Typed, not yet left: picking the other host still saves it, for the host it was typed for.
         const calls = state.calls.length;
+        await page.locator('[data-glances-tab="connection"]').click();
         await page.locator('[data-glances-field="user"]').fill('someone');
         await page.locator('[data-glances-host-tab="main"]').click();
         await expect.poll(() => state.calls.slice(calls).some((c) => c.path === 'config' && c.host === 'pi' && state.saved.user === 'someone')).toBe(true);
