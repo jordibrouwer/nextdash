@@ -293,12 +293,18 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "ttl", Kind: "int", Min: customWidgetMinTTL, Max: customWidgetMaxTTL},
 		{Key: "itemsPath", Kind: "string", MaxLen: widgetMaxPathLen},
 	},
-	WidgetTypeSonarr:          arrWidgetFields(),
-	WidgetTypeRadarr:          arrWidgetFields(),
-	WidgetTypeQBittorrent:     downloadWidgetFields(),
-	WidgetTypeSABnzbd:         downloadWidgetFields(),
-	WidgetTypeBeszel:          beszelFieldsFor(WidgetTypeBeszel),
-	WidgetTypeBeszelSystem:    beszelFieldsFor(WidgetTypeBeszelSystem),
+	WidgetTypeSonarr:       arrWidgetFields(),
+	WidgetTypeRadarr:       arrWidgetFields(),
+	WidgetTypeQBittorrent:  downloadWidgetFields(),
+	WidgetTypeSABnzbd:      downloadWidgetFields(),
+	WidgetTypeBeszel:       beszelFieldsFor(WidgetTypeBeszel),
+	WidgetTypeBeszelSystem: beszelFieldsFor(WidgetTypeBeszelSystem),
+	WidgetTypeGlances: {
+		// The host's id; empty is the first. Meters or the processor graph.
+		{Key: "host", Kind: "string"},
+		{Key: "style", Kind: "string", Allowed: []string{"meters", "graph"}},
+		{Key: "refreshSeconds", Kind: "int", Min: 15, Max: 3600},
+	},
 	WidgetTypeBeszelAttention: beszelFieldsFor(WidgetTypeBeszelAttention),
 	WidgetTypeBeszelStorage:   beszelFieldsFor(WidgetTypeBeszelStorage),
 	WidgetTypeHomeAssistant: {
@@ -686,6 +692,7 @@ func widgetTypeNames() []string {
 		WidgetTypeJellyfin, WidgetTypeJellyfinPlaying, WidgetTypeEmby, WidgetTypeEmbyPlaying, WidgetTypePlex, WidgetTypePlexPlaying, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr,
 		WidgetTypeQBittorrent, WidgetTypeSABnzbd, WidgetTypeHomeAssistant,
 		WidgetTypeBeszel, WidgetTypeBeszelSystem, WidgetTypeBeszelAttention, WidgetTypeBeszelStorage,
+		WidgetTypeGlances,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone
 		// to build by hand what is two entries above it.

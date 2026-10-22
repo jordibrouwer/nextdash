@@ -159,6 +159,9 @@ const (
 	WidgetTypeBeszelSystem    WidgetType = "beszel-system"
 	WidgetTypeBeszelAttention WidgetType = "beszel-attention"
 	WidgetTypeBeszelStorage   WidgetType = "beszel-storage"
+	// WidgetTypeGlances is one Glances host from nextDash's own record of it:
+	// meters or the processor's last hour, opening the Glances page.
+	WidgetTypeGlances WidgetType = "glances"
 	// WidgetTypeHomeAssistant shows chosen entities per room and switches a
 	// safe few of them.
 	WidgetTypeHomeAssistant WidgetType = "homeassistant"
@@ -223,6 +226,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeBeszelSystem:    {},
 	WidgetTypeBeszelAttention: {},
 	WidgetTypeBeszelStorage:   {},
+	WidgetTypeGlances:         {},
 
 	WidgetTypeUnraid:              {},
 	WidgetTypeUnraidArray:         {},

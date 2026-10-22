@@ -66,6 +66,7 @@
         'beszel-system': { rows: [['nas', ''], ['temp', '54°']], bars: [['cpu', 0.23], ['mem', 0.61], ['disk', 0.88, 'warn']] },
         'beszel-attention': { rows: [['nas', 'disk 88%', 'warn'], ['pihole', 'down', 'bad']] },
         'beszel-storage': { bars: [['nas /', 0.88, 'warn'], ['htpc /', 0.41]] },
+        glances: { rows: [['Home', 'healthy']], bars: [['cpu', 0.22], ['mem', 0.61], ['disk', 0.83, 'warn']] },
         custom: { rows: [['queued', '7'], ['paused', '2']] },
     };
 

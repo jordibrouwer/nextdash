@@ -2538,8 +2538,9 @@
                  * needs nothing new to read it.
                  */
                 const hint = field.hint ? this.t(field.hint[0], field.hint[1]) : '';
-                const current = String(config[field.key] || field.options[0][0]);
-                const choices = field.options.map(([value, text]) =>
+                const optionList = typeof field.options === 'function' ? field.options(this) : field.options;
+                const current = String(config[field.key] || optionList[0][0]);
+                const choices = optionList.map(([value, text]) =>
                     `<option value="${esc(value)}" ${value === current ? 'selected' : ''}>${
                         esc(this.t(text[0], text[1]))}</option>`).join('');
                 return `

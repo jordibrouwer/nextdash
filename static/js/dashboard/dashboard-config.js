@@ -3669,6 +3669,7 @@ class DashboardConfig {
         { tab: 'glances', titleKey: 'config.helpGlancesHostsTitle', fallback: 'Several hosts' },
         { tab: 'glances', titleKey: 'config.helpGlancesContainersTitle', fallback: 'Glances and the Containers view' },
         { tab: 'glances', titleKey: 'config.helpGlancesNoticesTitle', fallback: 'Notices and commands' },
+        { tab: 'glances', titleKey: 'config.helpGlancesMoreTitle', fallback: 'Compare, forecast and the widget' },
         { tab: 'search', titleKey: 'config.helpSearchTitle', fallback: 'Searching your bookmarks' },
         { tab: 'search', titleKey: 'config.helpFindersTitle', fallback: 'Finders' },
         { tab: 'search', titleKey: 'config.helpCommandsTitle', fallback: 'Commands' },
@@ -18791,7 +18792,7 @@ class DashboardConfig {
         ['links', ['health', 'uptime', 'certs', 'trend']],
         ['incoming', ['inbox', 'unsorted', 'feeds', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
-        ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage']],
+        ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'glances', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'notes']],
         ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
@@ -20990,7 +20991,7 @@ class DashboardConfig {
     /** The types a reader may add. Mirrors the server's register. */
     static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'glances', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -21524,6 +21525,23 @@ class DashboardConfig {
                   ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
                   ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
               ] },
+        ],
+        // One host from the Glances page, as meters or as the processor's last hour.
+        glances: [
+            { key: 'host', kind: 'choice',
+              label: ['config.widgetGlancesHost', 'Host'],
+              options: (config) => [
+                  ['', ['config.widgetGlancesFirstHost', 'The first host']],
+                  ...((config.dash.glancesStatus?.hosts || []).map((h) => [h.id, [`config.widgetGlancesHost.${h.id}`, h.name]])),
+              ] },
+            { key: 'style', kind: 'choice',
+              label: ['config.widgetGlancesStyle', 'Look'],
+              options: [
+                  ['meters', ['config.widgetGlancesStyleMeters', 'Three meters']],
+                  ['graph', ['config.widgetGlancesStyleGraph', 'Processor graph']],
+              ] },
+            { key: 'refreshSeconds', kind: 'int', min: 15, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
         ],
         unraidUps: [
             { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
@@ -30169,7 +30187,8 @@ class DashboardConfig {
             + this.helpPanel('config.helpGlancesRecordTitle', 'What nextDash records', 'config.helpGlancesRecordBody', '')
             + this.helpPanel('config.helpGlancesHostsTitle', 'Several hosts', 'config.helpGlancesHostsBody', '')
             + this.helpPanel('config.helpGlancesContainersTitle', 'Glances and the Containers view', 'config.helpGlancesContainersBody', '')
-            + this.helpPanel('config.helpGlancesNoticesTitle', 'Notices and commands', 'config.helpGlancesNoticesBody', '');
+            + this.helpPanel('config.helpGlancesNoticesTitle', 'Notices and commands', 'config.helpGlancesNoticesBody', '')
+            + this.helpPanel('config.helpGlancesMoreTitle', 'Compare, forecast and the widget', 'config.helpGlancesMoreBody', '');
     }
 
     renderHelpSearch() {
