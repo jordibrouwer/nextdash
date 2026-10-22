@@ -7,7 +7,6 @@ import (
 	"math"
 	"net/http"
 	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -39,10 +38,11 @@ const (
 	// glancesKeep is a day of coarse points.
 	glancesKeep = 2880
 	// glancesLongEvery is how many coarse points one long point averages: a
-	// point every quarter of an hour, and glancesLongKeep of them are thirty days.
+	// point every quarter of an hour; how many are kept is the retention (7, 30 or 90 days).
 	glancesLongEvery = 30
-	glancesLongKeep  = 2880
-	glancesMaxSeries = 96
+	// glancesLongPerDay is long points in a day.
+	glancesLongPerDay = 96
+	glancesMaxSeries  = 96
 	// glancesMaxConsumers is how many processes and containers have their own series.
 	glancesMaxConsumers = 60
 	// glancesTopProcesses and glancesTopContainers are how many of the busiest get a point per beat.
@@ -91,7 +91,7 @@ var (
 
 // glancesFlushCoarse files the pending coarse bucket as a point at the start of
 // its slot, and feeds it to the long bucket, which files itself the same way.
-func (r *glancesRing) flushCoarse() {
+func (r *glancesRing) flushCoarse(longCap int) {
 	if r.count == 0 {
 		return
 	}
@@ -100,7 +100,7 @@ func (r *glancesRing) flushCoarse() {
 	r.sum, r.count = 0, 0
 	slot := (r.bucket * glancesCoarseMs) / glancesLongMs
 	if r.longCount > 0 && slot != r.longBucket {
-		r.Long = capPoints(append(r.Long, glancesPoint{float64(r.longBucket * glancesLongMs), r.longSum / float64(r.longCount)}), glancesLongKeep)
+		r.Long = capPoints(append(r.Long, glancesPoint{float64(r.longBucket * glancesLongMs), r.longSum / float64(r.longCount)}), longCap)
 		r.longSum, r.longCount = 0, 0
 	}
 	r.longBucket = slot
@@ -122,12 +122,10 @@ func glancesTier(age int64) string {
 	return "long"
 }
 
-var glancesRings = struct {
-	sync.Mutex
-	series map[string]*glancesRing
-}{series: map[string]*glancesRing{}}
-
-func glancesHistoryPath() string { return filepath.Join(ResolveDataDir(), "glances-history.json") }
+// glancesHistoryVersion is the layout of glances-history.json. 1: series of
+// fine, coarse and long points on the shared clock grid. A change that older
+// files cannot be read as raises it, with a conversion here.
+const glancesHistoryVersion = 1
 
 func capPoints(points []glancesPoint, limit int) []glancesPoint {
 	if len(points) > limit {
@@ -138,27 +136,27 @@ func capPoints(points []glancesPoint, limit int) []glancesPoint {
 
 // glancesRecord appends one reading to each named series. A series past the
 // limit is not started; one that exists is always kept up.
-func glancesRecord(at int64, readings map[string]float64) {
-	glancesRings.Lock()
-	defer glancesRings.Unlock()
+func (hs *glancesHost) record(at int64, readings map[string]float64) {
+	hs.rings.Lock()
+	defer hs.rings.Unlock()
 	for name, value := range readings {
 		if math.IsNaN(value) || math.IsInf(value, 0) {
 			continue
 		}
 		// Two decimals are all a graph can show, and a month of them is smaller.
 		value = math.Round(value*100) / 100
-		ring := glancesRings.series[name]
+		ring := hs.rings.series[name]
 		if ring == nil {
-			if !glancesRoomFor(name, at) {
+			if !hs.roomFor(name, at) {
 				continue
 			}
 			ring = &glancesRing{}
-			glancesRings.series[name] = ring
+			hs.rings.series[name] = ring
 		}
 		ring.Fine = capPoints(append(ring.Fine, glancesPoint{float64(at), value}), glancesFineKeep)
 		slot := at / glancesCoarseMs
 		if ring.count > 0 && slot != ring.bucket {
-			ring.flushCoarse()
+			ring.flushCoarse(hs.longCap())
 		}
 		ring.bucket = slot
 		ring.sum += value
@@ -166,14 +164,10 @@ func glancesRecord(at int64, readings map[string]float64) {
 	}
 }
 
-// glancesTrackedNow is the processes and containers being recorded, as the
-// sampler last saw Config. Guarded by glancesRings.
-var glancesTrackedNow = map[string]bool{}
-
-func glancesSetTracked(tracked map[string]bool) {
-	glancesRings.Lock()
-	glancesTrackedNow = tracked
-	glancesRings.Unlock()
+func (hs *glancesHost) setTracked(tracked map[string]bool) {
+	hs.rings.Lock()
+	hs.rings.tracked = tracked
+	hs.rings.Unlock()
 }
 
 // glancesItemOf is "proc:name" or "ct:name" from one of its series, "proc:name:cpu".
@@ -195,9 +189,9 @@ the processes and containers have a limit each. A full set of consumers makes
 room by dropping the one that has been silent longest, if it has been silent a
 day: a container that was removed does not hold its place for a month.
 */
-func glancesRoomFor(name string, at int64) bool {
+func (hs *glancesHost) roomFor(name string, at int64) bool {
 	consumers, base := 0, 0
-	for existing := range glancesRings.series {
+	for existing := range hs.rings.series {
 		if glancesIsConsumer(existing) {
 			consumers++
 		} else {
@@ -214,7 +208,7 @@ func glancesRoomFor(name string, at int64) bool {
 	// of them), then from one that has been silent a day.
 	oldest, oldestAt := "", int64(math.MaxInt64)
 	untracked, untrackedAt := "", int64(math.MaxInt64)
-	for existing, ring := range glancesRings.series {
+	for existing, ring := range hs.rings.series {
 		if !glancesIsConsumer(existing) || len(ring.Fine) == 0 {
 			continue
 		}
@@ -222,16 +216,16 @@ func glancesRoomFor(name string, at int64) bool {
 		if last < oldestAt {
 			oldest, oldestAt = existing, last
 		}
-		if !glancesTrackedNow[glancesItemOf(existing)] && last < untrackedAt {
+		if !hs.rings.tracked[glancesItemOf(existing)] && last < untrackedAt {
 			untracked, untrackedAt = existing, last
 		}
 	}
 	if untracked != "" {
-		delete(glancesRings.series, untracked)
+		delete(hs.rings.series, untracked)
 		return true
 	}
 	if oldest != "" && at-oldestAt > 24*3600*1000 {
-		delete(glancesRings.series, oldest)
+		delete(hs.rings.series, oldest)
 		return true
 	}
 	return false
@@ -239,23 +233,30 @@ func glancesRoomFor(name string, at int64) bool {
 
 // glancesWipe forgets everything recorded: the graphs, the incidents, and the
 // files that keep them.
-func glancesWipe() {
-	glancesSaveMu.Lock()
-	defer glancesSaveMu.Unlock()
-	glancesRings.Lock()
-	glancesRings.series = map[string]*glancesRing{}
-	glancesRings.Unlock()
-	glancesIncidentsReset()
-	for _, path := range []string{glancesHistoryPath(), glancesIncidentsPath()} {
+// remove forgets a host for good: what it recorded goes, and a beat that was
+// on its way when it was removed writes nothing back.
+func (hs *glancesHost) remove() {
+	hs.removed.Store(true)
+	hs.wipe()
+}
+
+func (hs *glancesHost) wipe() {
+	hs.saveMu.Lock()
+	defer hs.saveMu.Unlock()
+	hs.rings.Lock()
+	hs.rings.series = map[string]*glancesRing{}
+	hs.rings.Unlock()
+	hs.incidentsReset()
+	for _, path := range []string{hs.historyPath(), hs.incidentsPath()} {
 		_ = os.Remove(path)
 	}
 }
 
 // glancesCollected is what has been recorded, for Config to show.
-func glancesCollected() (series, points int, since int64) {
-	glancesRings.Lock()
-	defer glancesRings.Unlock()
-	for _, ring := range glancesRings.series {
+func (hs *glancesHost) collected() (series, points int, since int64) {
+	hs.rings.Lock()
+	defer hs.rings.Unlock()
+	for _, ring := range hs.rings.series {
 		series++
 		points += len(ring.Fine) + len(ring.Coarse) + len(ring.Long)
 		for _, source := range [][]glancesPoint{ring.Long, ring.Coarse, ring.Fine} {
@@ -270,11 +271,11 @@ func glancesCollected() (series, points int, since int64) {
 	return series, points, since
 }
 
-func glancesSeriesNames() []string {
-	glancesRings.Lock()
-	defer glancesRings.Unlock()
-	names := make([]string, 0, len(glancesRings.series))
-	for name := range glancesRings.series {
+func (hs *glancesHost) seriesNames() []string {
+	hs.rings.Lock()
+	defer hs.rings.Unlock()
+	names := make([]string, 0, len(hs.rings.series))
+	for name := range hs.rings.series {
 		names = append(names, name)
 	}
 	sort.Strings(names)
@@ -287,23 +288,23 @@ so that a day of points does not travel whole to draw a graph a few hundred
 pixels wide. A step with no points is left out, which is what keeps a gap a gap.
 A question is answered from the finest ring that reaches back far enough.
 */
-func glancesQuery(names []string, since int64, step time.Duration, now time.Time) map[string][]glancesPoint {
-	return glancesQueryWindow(names, since, 0, step, now)
+func (hs *glancesHost) query(names []string, since int64, step time.Duration, now time.Time) map[string][]glancesPoint {
+	return hs.queryWindow(names, since, 0, step, now)
 }
 
 // glancesQueryWindow is glancesQuery for a window that ends at until (0: now),
 // which is how yesterday is drawn behind today.
-func glancesQueryWindow(names []string, since, until int64, step time.Duration, now time.Time) map[string][]glancesPoint {
+func (hs *glancesHost) queryWindow(names []string, since, until int64, step time.Duration, now time.Time) map[string][]glancesPoint {
 	stepMs := step.Milliseconds()
 	if stepMs < 1000 {
 		stepMs = 1000
 	}
 	tier := glancesTier(now.UnixMilli() - since)
-	glancesRings.Lock()
-	defer glancesRings.Unlock()
+	hs.rings.Lock()
+	defer hs.rings.Unlock()
 	out := map[string][]glancesPoint{}
 	for _, name := range names {
-		ring := glancesRings.series[name]
+		ring := hs.rings.series[name]
 		if ring == nil {
 			continue
 		}
@@ -345,18 +346,31 @@ func glancesQueryWindow(names []string, since, until int64, step time.Duration, 
 
 // ---- keeping it across a restart ----
 
-func loadGlancesHistory() {
-	glancesRings.Lock()
-	defer glancesRings.Unlock()
-	glancesRings.series = map[string]*glancesRing{}
-	data, err := os.ReadFile(glancesHistoryPath())
+func (hs *glancesHost) loadHistory() {
+	cfg, _ := loadGlancesConfigFor(hs.id)
+	hs.applyRetention(cfg)
+	hs.rings.Lock()
+	defer hs.rings.Unlock()
+	hs.rings.series = map[string]*glancesRing{}
+	data, err := os.ReadFile(hs.historyPath())
 	if err != nil {
 		return
 	}
 	var stored struct {
-		Series map[string]*glancesRing `json:"series"`
+		Version int                     `json:"version"`
+		Series  map[string]*glancesRing `json:"series"`
 	}
 	if json.Unmarshal(data, &stored) != nil {
+		return
+	}
+	// A file from a newer nextDash is not read as this one's: it is set aside,
+	// whole, and the record starts empty, rather than being half understood and
+	// then overwritten.
+	if stored.Version > glancesHistoryVersion {
+		backup := hs.historyPath() + ".v" + strconv.Itoa(stored.Version) + ".bak"
+		if err := os.Rename(hs.historyPath(), backup); err != nil {
+			logWarn(logComponentWidgets, "Glances history of a newer version could not be set aside: %v", err)
+		}
 		return
 	}
 	// The machine's own series and the processes and containers have a limit
@@ -381,55 +395,47 @@ func loadGlancesHistory() {
 		}
 		ring.Fine = capPoints(ring.Fine, glancesFineKeep)
 		ring.Coarse = capPoints(ring.Coarse, glancesKeep)
-		ring.Long = capPoints(ring.Long, glancesLongKeep)
-		glancesRings.series[name] = ring
+		ring.Long = capPoints(ring.Long, hs.longCap())
+		hs.rings.series[name] = ring
 	}
 }
 
-// glancesSaveMu serialises saving and wiping, so a wipe is not undone by a save
-// that began before it.
-var glancesSaveMu sync.Mutex
-
-func saveGlancesHistory() {
-	glancesSaveMu.Lock()
-	defer glancesSaveMu.Unlock()
+func (hs *glancesHost) saveHistory() {
+	hs.saveMu.Lock()
+	defer hs.saveMu.Unlock()
+	if hs.removed.Load() {
+		return
+	}
 	// A snapshot of the slice headers, taken under the lock: appends only write
 	// past a slice's length and a cap makes a new slice, so encoding them later,
 	// without the lock, does not race the sampler and does not block it.
-	glancesRings.Lock()
-	snapshot := make(map[string]glancesRing, len(glancesRings.series))
-	for name, ring := range glancesRings.series {
+	hs.rings.Lock()
+	snapshot := make(map[string]glancesRing, len(hs.rings.series))
+	for name, ring := range hs.rings.series {
 		snapshot[name] = glancesRing{Fine: ring.Fine, Coarse: ring.Coarse, Long: ring.Long}
 	}
-	glancesRings.Unlock()
-	data, err := json.Marshal(map[string]any{"series": snapshot})
+	hs.rings.Unlock()
+	data, err := json.Marshal(map[string]any{"version": glancesHistoryVersion, "series": snapshot})
 	if err != nil {
 		return
 	}
-	if err := writeFileAtomic(glancesHistoryPath(), data, 0644); err != nil {
+	if err := writeFileAtomic(hs.historyPath(), data, 0644); err != nil {
 		logWarn(logComponentWidgets, "Glances history could not be saved: %v", err)
 	}
-	glancesIncidents.Lock()
-	saveGlancesIncidentsLocked()
-	glancesIncidents.Unlock()
+	hs.incidents.Lock()
+	hs.saveIncidentsLocked()
+	hs.incidents.Unlock()
 }
 
 // ---- how the machine is, as one word ----
 
-// glancesState is the latest reading's verdict: ok, warn or bad over the
+// hs.state is the latest reading's verdict: ok, warn or bad over the
 // thresholds, or unknown while the machine does not answer.
-var glancesState = struct {
-	sync.Mutex
-	at    int64
-	ok    bool
-	level string
-	err   string
-}{level: "unknown"}
 
-func setGlancesState(at int64, ok bool, level, err string) {
-	glancesState.Lock()
-	glancesState.at, glancesState.ok, glancesState.level, glancesState.err = at, ok, level, err
-	glancesState.Unlock()
+func (hs *glancesHost) setState(at int64, ok bool, level, err string) {
+	hs.state.Lock()
+	hs.state.at, hs.state.ok, hs.state.level, hs.state.err = at, ok, level, err
+	hs.state.Unlock()
 }
 
 func glancesLevelRank(level string) int {
@@ -505,18 +511,18 @@ func glancesLevel(cfg GlancesConfig, quick glancesQuicklook, fs []glancesFS, sen
 
 // ---- the sampler ----
 
-// StartGlancesSampler runs the sampler until stop closes. It reads the settings
-// on every beat: switched off, without an address, or in the public demo it does
-// nothing, and not one request goes out. A panic in one beat is logged and the
-// next one goes on: this runs for the life of the process.
+// StartGlancesSampler runs a sampler for every host until stop closes. Each
+// reads its settings on every beat: switched off, without an address, or in
+// the public demo it does nothing, and not one request goes out. A panic in one
+// beat is logged and the next one goes on: this runs for the life of the
+// process. Hosts added or removed in Config start or stop theirs
+// (glancesWakeSampler).
 func (h *Handlers) StartGlancesSampler(stop <-chan struct{}) <-chan struct{} {
 	finished := make(chan struct{})
 	if demoMode() {
 		close(finished)
 		return finished
 	}
-	loadGlancesHistory()
-	loadGlancesIncidents()
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		<-stop
@@ -524,40 +530,112 @@ func (h *Handlers) StartGlancesSampler(stop <-chan struct{}) <-chan struct{} {
 	}()
 	go func() {
 		defer close(finished)
-		lastSave := time.Now()
-		// A first reading at once: at an hour a beat nobody waits an hour to see data.
-		h.glancesSampleBeat(ctx)
+		running := map[string]context.CancelFunc{}
+		exited := make(chan string, glancesMaxHosts*2)
+		var all sync.WaitGroup
+		reconcile := func() {
+			want := map[string]bool{}
+			for _, c := range glancesHostConfigs() {
+				want[c.ID] = true
+				if _, ok := running[c.ID]; ok {
+					continue
+				}
+				hostCtx, stopHost := context.WithCancel(ctx)
+				running[c.ID] = stopHost
+				hs := glancesHostByID(c.ID)
+				hs.loadHistory()
+				hs.loadIncidents()
+				all.Add(1)
+				go func() {
+					defer all.Done()
+					h.glancesRunHost(hostCtx, hs)
+					// A host that was removed (and maybe added again under the
+					// same name) is started afresh by the next reconcile.
+					select {
+					case exited <- hs.id:
+					default:
+					}
+				}()
+			}
+			for id, stopHost := range running {
+				if !want[id] {
+					stopHost()
+					delete(running, id)
+				}
+			}
+		}
+		reconcile()
+		// Also once a minute: a restore of glances.json brings hosts without anyone waking us.
+		tick := time.NewTicker(time.Minute)
+		defer tick.Stop()
 		for {
-			// The pace is read from Config before every wait, and a change of it
-			// (glancesRecordWake) ends the wait: from an hour to thirty seconds
-			// does not take an hour to notice.
-			timer := time.NewTimer(loadGlancesConfig().recordInterval())
 			select {
 			case <-ctx.Done():
-				timer.Stop()
-				saveGlancesHistory()
+				all.Wait()
 				return
-			case <-glancesRecordWake:
-				timer.Stop()
-			case <-timer.C:
-			}
-			h.glancesSampleBeat(ctx)
-			if time.Since(lastSave) >= glancesSaveEvery {
-				saveGlancesHistory()
-				lastSave = time.Now()
+			case <-glancesHostsChanged:
+				reconcile()
+			case <-tick.C:
+				reconcile()
+			case id := <-exited:
+				if stopHost, ok := running[id]; ok {
+					stopHost()
+					delete(running, id)
+				}
+				reconcile()
 			}
 		}
 	}()
 	return finished
 }
 
-func (h *Handlers) glancesSampleBeat(ctx context.Context) {
+// glancesRunHost is one host's loop.
+func (h *Handlers) glancesRunHost(ctx context.Context, hs *glancesHost) {
+	lastSave := time.Now()
+	// A first reading at once: at an hour a beat nobody waits an hour to see data.
+	h.glancesSampleBeat(ctx, hs)
+	for {
+		// The pace is read from Config before every wait, and a change of it
+		// (hs.wake) ends the wait: from an hour to thirty seconds does not take
+		// an hour to notice.
+		cfg, known := loadGlancesConfigFor(hs.id)
+		if !known {
+			return
+		}
+		timer := time.NewTimer(cfg.recordInterval())
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			// A host that was removed does not write its files back.
+			if _, still := loadGlancesConfigFor(hs.id); still {
+				hs.saveHistory()
+			}
+			return
+		case <-hs.wake:
+			timer.Stop()
+		case <-timer.C:
+		}
+		if _, still := loadGlancesConfigFor(hs.id); !still {
+			return
+		}
+		h.glancesSampleBeat(ctx, hs)
+		if _, still := loadGlancesConfigFor(hs.id); !still {
+			return
+		}
+		if time.Since(lastSave) >= glancesSaveEvery {
+			hs.saveHistory()
+			lastSave = time.Now()
+		}
+	}
+}
+
+func (h *Handlers) glancesSampleBeat(ctx context.Context, hs *glancesHost) {
 	defer func() {
 		if p := recover(); p != nil {
 			logWarn(logComponentWidgets, "Glances sampler panicked: %v", p)
 		}
 	}()
-	h.glancesSampleOnce(ctx)
+	h.glancesSampleHost(ctx, hs)
 }
 
 // glancesAsk reads one path into out; an off plugin is simply not there.
@@ -569,14 +647,19 @@ func (h *Handlers) glancesAsk(ctx context.Context, cfg GlancesConfig, path strin
 	return json.Unmarshal(data, out)
 }
 
-// glancesSampleOnce takes one reading and files it.
-func (h *Handlers) glancesSampleOnce(ctx context.Context) {
-	cfg := loadGlancesConfig()
-	setGlancesBeat(cfg.recordInterval())
+// glancesSampleHost takes one reading of one host and files it.
+func (h *Handlers) glancesSampleHost(ctx context.Context, hs *glancesHost) {
+	cfg, known := loadGlancesConfigFor(hs.id)
+	if !known || hs.removed.Load() {
+		// Removed while the beat was on its way: nothing of the first host's is read into it.
+		return
+	}
+	hs.setBeat(cfg.recordInterval())
+	hs.applyRetention(cfg)
 	if !cfg.connected() {
-		setGlancesState(0, false, "unknown", "")
+		hs.setState(0, false, "unknown", "")
 		// Nothing is read now, so an incident that was open ends where it was seen.
-		glancesObserve(time.Now().UnixMilli(), nil)
+		hs.observe(time.Now().UnixMilli(), nil)
 		return
 	}
 	now := time.Now().UnixMilli()
@@ -591,9 +674,9 @@ func (h *Handlers) glancesSampleOnce(ctx context.Context) {
 	if err != nil {
 		// A host that does not answer is a point at 0 on "up", so how long it was
 		// away is drawn, and an incident of its own.
-		glancesRecord(now, map[string]float64{"up": 0})
-		glancesObserve(now, []glancesObservation{{Kind: "down", Bad: true}})
-		setGlancesState(now, false, "unknown", mediaErrorCode(err))
+		hs.record(now, map[string]float64{"up": 0})
+		h.glancesNotify(ctx, cfg, hs.observe(now, []glancesObservation{{Kind: "down", Bad: true}}))
+		hs.setState(now, false, "unknown", mediaErrorCode(err))
 		return
 	}
 	var (
@@ -615,7 +698,7 @@ func (h *Handlers) glancesSampleOnce(ctx context.Context) {
 	// Processes and containers are read only when the reader asked for the
 	// history of at least one: it is the costly part of a beat.
 	tracked := cfg.tracked()
-	glancesSetTracked(tracked)
+	hs.setTracked(tracked)
 	wantProcs, wantContainers := false, false
 	for key := range tracked {
 		wantProcs = wantProcs || strings.HasPrefix(key, "proc:")
@@ -628,13 +711,10 @@ func (h *Handlers) glancesSampleOnce(ctx context.Context) {
 		_ = h.glancesAsk(ctx, cfg, "containers", &containers)
 	}
 	_ = h.glancesAsk(ctx, cfg, "network", &net)
-	_ = h.glancesAsk(ctx, cfg, "diskio", &disks)
-	_ = h.glancesAsk(ctx, cfg, "sensors", &sensors)
-	if data, err := h.glancesRead(ctx, cfg, "fs"); err == nil {
-		if cleaned, err := glancesCleanFS(data, cfg); err == nil {
-			_ = json.Unmarshal(cleaned, &fs)
-		}
-	}
+	// Disks, sensors and file systems change slowly and cost Glances the most to
+	// read: they are asked once a minute, and the beats between repeat the last
+	// answer.
+	disks, sensors, fs = h.glancesSlowReads(ctx, cfg)
 
 	readings := map[string]float64{}
 	put := func(name string, v *float64) {
@@ -701,12 +781,53 @@ func (h *Handlers) glancesSampleOnce(ctx context.Context) {
 		put("fs:"+f.MntPoint, f.Percent)
 	}
 	glancesConsumers(readings, procs, containers, tracked)
-	glancesRecord(now, readings)
-	glancesObserve(now, glancesObservations(cfg, quick, fs, sensors))
-	setGlancesState(now, true, glancesLevel(cfg, quick, fs, sensors), "")
+	hs.record(now, readings)
+	h.glancesNotify(ctx, cfg, hs.observe(now, glancesObservations(cfg, quick, fs, sensors)))
+	hs.setState(now, true, glancesLevel(cfg, quick, fs, sensors), "")
 }
 
 func glancesPtr(v float64) *float64 { return &v }
+
+// glancesSlowEvery is how often the slow plugins (diskio, sensors, fs) are read.
+// A test that shortens the beat gets every beat read, so nothing there waits a minute.
+func glancesSlowEvery() time.Duration {
+	if glancesSampleEvery != 5*time.Second {
+		return 0
+	}
+	return time.Minute
+}
+
+// glancesSlowReads returns the slow plugins' readings, asking Glances only when
+// the last ask is older than glancesSlowEvery or the host changed.
+func (h *Handlers) glancesSlowReads(ctx context.Context, cfg GlancesConfig) ([]glancesDiskIO, []glancesSensor, []glancesFS) {
+	hs := glancesHostByID(cfg.ID)
+	key := cfg.Server + "|" + cfg.User
+	hs.slow.Lock()
+	if hs.slow.key == key && !hs.slow.at.IsZero() && time.Since(hs.slow.at) < glancesSlowEvery() {
+		d, s, f := hs.slow.disks, hs.slow.sensors, hs.slow.fs
+		hs.slow.Unlock()
+		return d, s, f
+	}
+	hs.slow.Unlock()
+
+	var (
+		disks   []glancesDiskIO
+		sensors []glancesSensor
+		fs      []glancesFS
+	)
+	_ = h.glancesAsk(ctx, cfg, "diskio", &disks)
+	_ = h.glancesAsk(ctx, cfg, "sensors", &sensors)
+	if data, err := h.glancesRead(ctx, cfg, "fs"); err == nil {
+		if cleaned, err := glancesCleanFS(data, cfg); err == nil {
+			_ = json.Unmarshal(cleaned, &fs)
+		}
+	}
+	hs.slow.Lock()
+	hs.slow.key, hs.slow.at = key, time.Now()
+	hs.slow.disks, hs.slow.sensors, hs.slow.fs = disks, sensors, fs
+	hs.slow.Unlock()
+	return disks, sensors, fs
+}
 
 // glancesMem is the parts of /mem the history keeps.
 type glancesMem struct {
@@ -857,25 +978,36 @@ func (h *Handlers) glancesStatusHandler(w http.ResponseWriter, r *http.Request) 
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
-	cfg := loadGlancesConfig()
+	cfg, hs := glancesResolve(r)
+	hosts := glancesHostSummaries()
 	if demoMode() {
 		// Glances is not part of the demo: nothing is set up, whatever a data folder holds.
-		cfg = defaultGlancesConfig()
+		cfg, hosts = defaultGlancesConfig(), []glancesHostSummary{}
 	}
-	glancesState.Lock()
+	// The page and its icon exist when Glances is on and any host has an address.
+	anySetUp := false
+	for _, host := range hosts {
+		anySetUp = anySetUp || host.Configured
+	}
+	hs.state.Lock()
 	answer := map[string]any{
-		"enabled":      cfg.Enabled,
-		"configured":   cfg.configured(),
-		"paused":       cfg.Paused,
-		"recordEvery":  normalizeGlancesRecord(cfg.RecordEvery),
-		"refresh":      cfg.Refresh,
-		"hiddenBlocks": cfg.HiddenBlocks,
-		"thresholds":   cfg.Thresholds,
-		"level":        glancesState.level,
-		"ok":           glancesState.ok,
-		"at":           glancesState.at,
+		"id":             cfg.ID,
+		"name":           glancesHostName(cfg),
+		"hosts":          hosts,
+		"enabled":        cfg.Enabled,
+		"configured":     anySetUp,
+		"hostConfigured": cfg.configured(),
+		"paused":         cfg.Paused,
+		"recordEvery":    normalizeGlancesRecord(cfg.RecordEvery),
+		"retentionDays":  normalizeGlancesRetention(cfg.RetentionDays),
+		"refresh":        cfg.Refresh,
+		"hiddenBlocks":   cfg.HiddenBlocks,
+		"thresholds":     cfg.Thresholds,
+		"level":          hs.state.level,
+		"ok":             hs.state.ok,
+		"at":             hs.state.at,
 	}
-	glancesState.Unlock()
+	hs.state.Unlock()
 	if !cfg.connected() {
 		answer["level"], answer["ok"], answer["at"] = "unknown", false, 0
 	}
@@ -891,11 +1023,12 @@ func (h *Handlers) glancesHistoryHandler(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
+	cfg, hs := glancesResolve(r)
 	query := r.URL.Query()
 	now := time.Now()
 	since := now.Add(-time.Hour).UnixMilli()
 	if v, err := strconv.ParseInt(query.Get("since"), 10, 64); err == nil {
-		since = max(v, now.Add(-glancesLongKeep*glancesLongEvery*glancesCoarseEvery*glancesSampleEvery).UnixMilli())
+		since = max(v, now.Add(-hs.retentionSpan()).UnixMilli())
 	}
 	// until ends the window earlier than now: yesterday drawn behind today.
 	var until int64
@@ -919,13 +1052,13 @@ func (h *Handlers) glancesHistoryHandler(w http.ResponseWriter, r *http.Request)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{
-		"names":  glancesSeriesNames(),
-		"series": glancesQueryWindow(names, since, until, step, now),
+		"names":  hs.seriesNames(),
+		"series": hs.queryWindow(names, since, until, step, now),
 		"step":   int(step.Seconds()),
 		"now":    now.UnixMilli(),
 		// What went past a red line in this window, for the bands over a graph.
-		"incidents": glancesIncidentsBetween(since, end),
-		"restarts":  h.glancesRestartsAsked(r, since),
+		"incidents": hs.incidentsBetween(since, end),
+		"restarts":  h.glancesRestartsAsked(r, cfg, since),
 	})
 }
 
@@ -974,8 +1107,8 @@ func (h *Handlers) glancesConnectHandler(w http.ResponseWriter, r *http.Request)
 	var credential HealthCredential
 	if user := strings.TrimSpace(body.User); user != "" {
 		credential = HealthCredential{BasicUser: user, BasicPassword: body.Password}
-		if body.Password == "" && user == loadGlancesConfig().User {
-			credential = glancesCredential(loadGlancesConfig())
+		if saved, _ := glancesResolve(r); body.Password == "" && user == saved.User {
+			credential = glancesCredential(saved)
 		}
 	}
 
@@ -999,16 +1132,6 @@ func (h *Handlers) glancesConnectHandler(w http.ResponseWriter, r *http.Request)
 // does not wait for a beat.
 var glancesSampleEvery = 5 * time.Second
 
-// glancesRecordWake tells the sampler its pace changed.
-var glancesRecordWake = make(chan struct{}, 1)
-
-func glancesWakeSampler() {
-	select {
-	case glancesRecordWake <- struct{}{}:
-	default:
-	}
-}
-
 func sortedKeys(m map[string]*glancesRing) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
@@ -1016,4 +1139,25 @@ func sortedKeys(m map[string]*glancesRing) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+// glancesHostsChanged tells the sampler the list of hosts changed.
+var glancesHostsChanged = make(chan struct{}, 1)
+
+// glancesWakeSampler makes every sampler read its settings again at once, and
+// starts or stops the ones for hosts that came or went.
+func glancesWakeSampler() {
+	select {
+	case glancesHostsChanged <- struct{}{}:
+	default:
+	}
+	glancesHosts.Lock()
+	hosts := make([]*glancesHost, 0, len(glancesHosts.byID))
+	for _, hs := range glancesHosts.byID {
+		hosts = append(hosts, hs)
+	}
+	glancesHosts.Unlock()
+	for _, hs := range hosts {
+		hs.wakeSampler()
+	}
 }

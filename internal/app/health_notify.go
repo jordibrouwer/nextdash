@@ -81,6 +81,8 @@ type monitorNotification struct {
 	// Kind names a separate problem on the same container ("usage" for the CPU
 	// and memory alerts), so its "up" does not close another kind's "down".
 	Kind string `json:"kind,omitempty"`
+	// Host is the Glances host a notice is about (its id).
+	Host string `json:"host,omitempty"`
 }
 
 // certExpiryNotifications turns crossed thresholds into notifications, reusing

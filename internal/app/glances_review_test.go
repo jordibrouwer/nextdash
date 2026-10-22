@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -408,7 +409,7 @@ func TestGlancesSamplerReadsAtOnceAndWakesOnAChange(t *testing.T) {
 	// A sampler left over from an earlier test may be finishing its last beat.
 	time.Sleep(200 * time.Millisecond)
 	select { // and a wake left by an earlier save
-	case <-glancesRecordWake:
+	case <-mainHost().wake:
 	default:
 	}
 	glancesWipe()
@@ -522,7 +523,7 @@ func TestGlancesResetRemovesSettingsLoginAndRecord(t *testing.T) {
 	if rec := do(""); rec.Code != http.StatusUnauthorized {
 		t.Fatalf("reset without the token: %d", rec.Code)
 	}
-	if !loadGlancesConfig().Enabled || !glancesHasPassword() {
+	if !loadGlancesConfig().Enabled || !glancesHasPassword(glancesMainID) {
 		t.Fatal("a refused reset changed something")
 	}
 	rec := do("tok")
@@ -530,10 +531,10 @@ func TestGlancesResetRemovesSettingsLoginAndRecord(t *testing.T) {
 		t.Fatalf("reset: %d", rec.Code)
 	}
 	cfg := loadGlancesConfig()
-	if cfg.Enabled || cfg.Server != "" || cfg.User != "" || cfg.RecordEvery != 0 || len(cfg.TrackedHistory) != 0 || cfg.Refresh != glancesDefaultRefresh {
+	if cfg.Enabled || cfg.Server != "" || cfg.User != "" || cfg.RecordEvery != glancesDefaultRecord || len(cfg.TrackedHistory) != 0 || cfg.Refresh != glancesDefaultRefresh {
 		t.Errorf("settings after the reset: %+v", cfg)
 	}
-	if glancesHasPassword() {
+	if glancesHasPassword(glancesMainID) {
 		t.Error("the password survived the reset")
 	}
 	if series, points, _ := glancesCollected(); series != 0 || points != 0 {
@@ -592,5 +593,136 @@ func TestGlancesIsNotPartOfTheDemo(t *testing.T) {
 	}
 	if rec.Code != http.StatusOK || status.Enabled || status.Configured {
 		t.Errorf("status in the demo: %d %+v", rec.Code, status)
+	}
+}
+
+// A history file from a newer nextDash is set aside, not half read and overwritten.
+func TestGlancesHistoryFileVersion(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	glancesWipe()
+	glancesRecord(time.Now().UnixMilli(), map[string]float64{"cpu": 10})
+	saveGlancesHistory()
+	raw, err := os.ReadFile(glancesHistoryPath())
+	if err != nil || !strings.Contains(string(raw), `"version":1`) {
+		t.Fatalf("the file does not say its version: %v %.80s", err, raw)
+	}
+	loadGlancesHistory()
+	if finePoints("cpu") != 1 {
+		t.Fatal("a file of this version did not load")
+	}
+	// One written by a later nextDash.
+	if err := os.WriteFile(glancesHistoryPath(), []byte(`{"version":99,"series":{"cpu":{"fine":[[1,2]]}}}`), 0644); err != nil {
+		t.Fatal(err)
+	}
+	loadGlancesHistory()
+	if finePoints("cpu") != 0 {
+		t.Error("a newer file was read as this one")
+	}
+	if _, err := os.Stat(glancesHistoryPath() + ".v99.bak"); err != nil {
+		t.Errorf("the newer file was not set aside: %v", err)
+	}
+	// And one from before versions were written still loads.
+	if err := os.WriteFile(glancesHistoryPath(), []byte(`{"series":{"mem":{"fine":[[1000,5]]}}}`), 0644); err != nil {
+		t.Fatal(err)
+	}
+	loadGlancesHistory()
+	if finePoints("mem") != 1 {
+		t.Error("an unversioned file did not load")
+	}
+}
+
+// An incident raises one event when it opens and one when it closes, however
+// many beats it lasts: the hysteresis of the incident log is the notice's.
+func TestGlancesIncidentEventsOpenOnceAndCloseOnce(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	glancesWipe()
+	t0 := time.Now().UnixMilli()
+	bad := []glancesObservation{{Kind: "cpu", Value: 95, Bad: true}}
+	good := []glancesObservation{{Kind: "cpu", Value: 10}}
+	var opened, closed int
+	count := func(events []GlancesIncidentEvent) {
+		for _, ev := range events {
+			if ev.Opened {
+				opened++
+			} else {
+				closed++
+			}
+		}
+	}
+	// One bad beat is noise; a run of them is an incident, announced once.
+	count(glancesObserve(t0, bad))
+	if opened != 0 {
+		t.Fatalf("one beat opened an incident")
+	}
+	for i := int64(1); i < 10; i++ {
+		count(glancesObserve(t0+i*5000, bad))
+	}
+	if opened != 1 || closed != 0 {
+		t.Fatalf("after a long bad run: opened %d, closed %d", opened, closed)
+	}
+	for i := int64(10); i < 30; i++ {
+		count(glancesObserve(t0+i*5000, good))
+	}
+	if opened != 1 || closed != 1 {
+		t.Errorf("after recovery: opened %d, closed %d", opened, closed)
+	}
+}
+
+// Every kind starts off; a kind that is on sends, and swap is part of memory.
+func TestGlancesNoticesArePerKindAndOffByDefault(t *testing.T) {
+	h := quietHandlers(t, "")
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	if got := normalizeGlancesNotify([]string{"CPU", "cpu", "bogus", " disk "}); len(got) != 2 || got[0] != "cpu" || got[1] != "disk" {
+		t.Errorf("normalized: %v", got)
+	}
+	cfg := normalizeGlancesConfig(GlancesConfig{Enabled: true, Server: "http://nas.lan:61208"})
+	if len(cfg.Notify) != 0 {
+		t.Fatalf("a new setup notifies: %v", cfg.Notify)
+	}
+	open := GlancesIncidentEvent{Opened: true, Incident: GlancesIncident{Kind: "cpu", Start: time.Now().UnixMilli(), Peak: 95}}
+	h.glancesNotify(context.Background(), cfg, []GlancesIncidentEvent{open})
+	if got := len(readHeldFile().Held); got != 0 {
+		t.Fatalf("off, yet %d notices were held", got)
+	}
+	cfg.Notify = []string{"cpu", "mem"}
+	h.glancesNotify(context.Background(), cfg, []GlancesIncidentEvent{open,
+		{Opened: true, Incident: GlancesIncident{Kind: "swap", Start: open.Incident.Start}},
+		{Opened: true, Incident: GlancesIncident{Kind: "disk", Subject: "/mnt/x", Start: open.Incident.Start}}})
+	held := readHeldFile().Held
+	if len(held) != 2 {
+		t.Fatalf("%d notices held, want cpu and swap (as memory) only", len(held))
+	}
+	if held[0].Source != noticeSourceGlances || !strings.Contains(held[0].Notice.Title, "Glances") || !strings.Contains(held[0].Notice.Title, "Processor") {
+		t.Errorf("notice: %+v", held[0])
+	}
+	closing := glancesNoticeFor(cfg, GlancesIncidentEvent{Incident: GlancesIncident{Kind: "cpu", Start: 1000, End: 61000}})
+	if closing.Event != "up" || !strings.Contains(closing.Title, "back to normal") {
+		t.Errorf("closing notice: %+v", closing)
+	}
+}
+
+// Notices are saved through the same PUT as the rest: a list replaces the list
+// (an empty one switches them all off), and a save that does not mention them leaves them.
+func TestGlancesNotifySettingSurvivesPartialSaves(t *testing.T) {
+	h := newTestHandlers(t)
+	t.Setenv("NEXTDASH_WRITE_TOKEN", "tok")
+	put := func(body string) {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodPut, "/api/glances/config", strings.NewReader(body))
+		req.Header.Set("X-NextDash-Token", "tok")
+		rec := httptest.NewRecorder()
+		h.glancesConfigHandler(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("PUT %s: %d %s", body, rec.Code, rec.Body.String())
+		}
+	}
+	put(`{"notify":["cpu","disk"]}`)
+	put(`{"recordEvery":60}`)
+	if got := loadGlancesConfig().Notify; len(got) != 2 {
+		t.Fatalf("a save that did not mention them: %v", got)
+	}
+	put(`{"notify":[]}`)
+	if got := loadGlancesConfig().Notify; len(got) != 0 {
+		t.Errorf("an empty list: %v", got)
 	}
 }

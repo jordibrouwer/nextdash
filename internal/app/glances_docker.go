@@ -53,6 +53,7 @@ type glancesLinkMatch struct {
 
 // glancesDockerLinkAnswer is what the page and the Containers view read.
 type glancesDockerLinkAnswer struct {
+	HostID      string             `json:"hostId,omitempty"`
 	Mode        string             `json:"mode"`
 	Same        bool               `json:"same"`
 	Reason      string             `json:"reason"` // why not, or how it was decided
@@ -65,12 +66,17 @@ type glancesDockerLinkAnswer struct {
 	ByName      int                `json:"byName"`
 }
 
-var glancesLinkCache = struct {
-	sync.Mutex
+type glancesLinkEntry struct {
 	key    string
 	at     time.Time
 	answer glancesDockerLinkAnswer
-}{}
+}
+
+// glancesLinkCache keeps each host's answer a few seconds.
+var glancesLinkCache = struct {
+	sync.Mutex
+	byHost map[string]glancesLinkEntry
+}{byHost: map[string]glancesLinkEntry{}}
 
 var glancesComposeIndexRe = regexp.MustCompile(`[-_]\d+$`)
 
@@ -280,22 +286,47 @@ func (h *Handlers) glancesComputeDockerLink(ctx context.Context, cfg GlancesConf
 	return answer
 }
 
-// glancesDockerLink is the answer, kept a few seconds: two views ask for it.
-func (h *Handlers) glancesDockerLink(ctx context.Context) glancesDockerLinkAnswer {
-	cfg := loadGlancesConfig()
+// glancesDockerLinkFor is one host's answer, kept a few seconds: two views ask for it.
+func (h *Handlers) glancesDockerLinkFor(ctx context.Context, cfg GlancesConfig) glancesDockerLinkAnswer {
 	key := cfg.Server + "|" + normalizeGlancesLink(cfg.DockerLink) + "|" + boolWord(cfg.connected())
 	glancesLinkCache.Lock()
-	if glancesLinkCache.key == key && time.Since(glancesLinkCache.at) < glancesLinkTTL {
-		answer := glancesLinkCache.answer
+	if e, ok := glancesLinkCache.byHost[cfg.ID]; ok && e.key == key && time.Since(e.at) < glancesLinkTTL {
 		glancesLinkCache.Unlock()
-		return answer
+		return e.answer
 	}
 	glancesLinkCache.Unlock()
 	answer := h.glancesComputeDockerLink(ctx, cfg)
 	glancesLinkCache.Lock()
-	glancesLinkCache.key, glancesLinkCache.at, glancesLinkCache.answer = key, time.Now(), answer
+	glancesLinkCache.byHost[cfg.ID] = glancesLinkEntry{key: key, at: time.Now(), answer: answer}
 	glancesLinkCache.Unlock()
 	return answer
+}
+
+// glancesDockerLink is the answer for the host that is the Docker host: the
+// first one the two views agree is the same machine, else the first host's.
+// Only one host can be the Docker host, so the Containers view asks without
+// naming one.
+func (h *Handlers) glancesDockerLink(ctx context.Context) glancesDockerLinkAnswer {
+	cfgs := glancesHostConfigs()
+	var first, matched glancesDockerLinkAnswer
+	for i, cfg := range cfgs {
+		answer := h.glancesDockerLinkFor(ctx, cfg)
+		answer.HostID = cfg.ID
+		// One that was chosen (Yes) wins over one that only looks like it (Auto).
+		if answer.Same && answer.Reason == "chosen" {
+			return answer
+		}
+		if answer.Same && matched.HostID == "" {
+			matched = answer
+		}
+		if i == 0 {
+			first = answer
+		}
+	}
+	if matched.HostID != "" {
+		return matched
+	}
+	return first
 }
 
 func boolWord(b bool) string {
@@ -307,7 +338,7 @@ func boolWord(b bool) string {
 
 func glancesLinkForget() {
 	glancesLinkCache.Lock()
-	glancesLinkCache.key = ""
+	glancesLinkCache.byHost = map[string]glancesLinkEntry{}
 	glancesLinkCache.Unlock()
 }
 
@@ -318,6 +349,14 @@ func (h *Handlers) glancesDockerLinkHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+	// ?host=<id> asks about one host; without it, the Docker host.
+	if id := strings.TrimSpace(r.URL.Query().Get("host")); id != "" {
+		cfg, _ := glancesResolve(r)
+		answer := h.glancesDockerLinkFor(r.Context(), cfg)
+		answer.HostID = cfg.ID
+		_ = json.NewEncoder(w).Encode(answer)
+		return
+	}
 	_ = json.NewEncoder(w).Encode(h.glancesDockerLink(r.Context()))
 }
 
@@ -336,22 +375,41 @@ func glancesContainerRestarts(name string, since int64) []int64 {
 
 // glancesRestartsAsked answers ?restarts=<container>: when the container
 // restarted in the window, from the Containers view's timeline. A name from
-// either side will do; nothing comes back unless the two views are one machine.
-func (h *Handlers) glancesRestartsAsked(r *http.Request, since int64) []int64 {
-	name := strings.TrimSpace(r.URL.Query().Get("restarts"))
-	if name == "" {
-		return []int64{}
-	}
-	link := h.glancesDockerLink(r.Context())
-	if !link.Same {
-		return []int64{}
-	}
-	docker := name
-	for _, m := range link.Matches {
-		if strings.EqualFold(m.Glances, name) {
-			docker = m.Docker
-			break
+// either side will do (several, separated by commas); nothing comes back unless the two views are one machine.
+func (h *Handlers) glancesRestartsAsked(r *http.Request, cfg GlancesConfig, since int64) []int64 {
+	// One name, or several separated by commas (at most glancesMaxTracked): the
+	// restarts of all of them, in order.
+	var names []string
+	for _, name := range strings.Split(r.URL.Query().Get("restarts"), ",") {
+		if name = strings.TrimSpace(name); name != "" && len(names) < glancesMaxTracked {
+			names = append(names, name)
 		}
 	}
-	return glancesContainerRestarts(docker, since)
+	if len(names) == 0 {
+		return []int64{}
+	}
+	// Only the Docker host has restarts to show.
+	link := h.glancesDockerLink(r.Context())
+	if !link.Same || link.HostID != cfg.ID {
+		return []int64{}
+	}
+	seen := map[int64]bool{}
+	out := []int64{}
+	for _, name := range names {
+		docker := name
+		for _, m := range link.Matches {
+			if strings.EqualFold(m.Glances, name) {
+				docker = m.Docker
+				break
+			}
+		}
+		for _, at := range glancesContainerRestarts(docker, since) {
+			if !seen[at] {
+				seen[at] = true
+				out = append(out, at)
+			}
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
+	return out
 }

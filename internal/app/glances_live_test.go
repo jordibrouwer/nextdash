@@ -72,7 +72,7 @@ func TestGlancesConfigPasswordIsKeptApart(t *testing.T) {
 	if _, err := saveGlancesConfig(cfg, nil); err != nil {
 		t.Fatal(err)
 	}
-	if !glancesHasPassword() {
+	if !glancesHasPassword(glancesMainID) {
 		t.Error("a save without a password dropped it")
 	}
 	// No user: nothing to send it as, so it goes.
@@ -80,7 +80,7 @@ func TestGlancesConfigPasswordIsKeptApart(t *testing.T) {
 	if _, err := saveGlancesConfig(cfg, nil); err != nil {
 		t.Fatal(err)
 	}
-	if glancesHasPassword() || glancesCredential(cfg).BasicUser != "" {
+	if glancesHasPassword(glancesMainID) || glancesCredential(cfg).BasicUser != "" {
 		t.Error("the password outlived the user")
 	}
 }
@@ -120,12 +120,12 @@ func TestGlancesConfigHandler(t *testing.T) {
 	}
 	// A field the request leaves out stays as it was.
 	do(http.MethodPut, `{"refresh":10}`, "tok")
-	if cfg := loadGlancesConfig(); cfg.Refresh != 10 || cfg.Server != "http://nas:61208" || !glancesHasPassword() {
+	if cfg := loadGlancesConfig(); cfg.Refresh != 10 || cfg.Server != "http://nas:61208" || !glancesHasPassword(glancesMainID) {
 		t.Errorf("partial save: %+v", cfg)
 	}
 	// Remove the login: user and password go together.
 	do(http.MethodPut, `{"clearLogin":true}`, "tok")
-	if cfg := loadGlancesConfig(); cfg.User != "" || glancesHasPassword() {
+	if cfg := loadGlancesConfig(); cfg.User != "" || glancesHasPassword(glancesMainID) {
 		t.Errorf("clearLogin: %+v", cfg)
 	}
 }
@@ -315,6 +315,47 @@ func TestGlancesSampleOnceFiles(t *testing.T) {
 	if ok || level != "unknown" || finePoints("cpu") != before {
 		t.Errorf("unreachable: ok=%v level=%s points %d -> %d", ok, level, before, finePoints("cpu"))
 	}
+}
+
+// Disks, sensors and file systems are read once a minute; the other plugins
+// every beat. The beats between repeat the last answer, so their series go on.
+func TestGlancesSlowPluginsAreReadOncePerMinute(t *testing.T) {
+	h, fake, _ := glancesViewSetup(t)
+	loadGlancesHistory()
+	for i := 0; i < 3; i++ {
+		glancesViewForgetAll()
+		h.glancesSampleOnce(context.Background())
+	}
+	for _, path := range []string{"diskio", "sensors", "fs"} {
+		if got := fake.hitsFor(path); got != 1 {
+			t.Errorf("%s asked %d times in three beats, want 1", path, got)
+		}
+	}
+	if got := fake.hitsFor("network"); got != 3 {
+		t.Errorf("network asked %d times in three beats, want 3", got)
+	}
+	if got := finePoints("temp:" + strings.TrimPrefix(firstWith(glancesSeriesNames(), "temp:"), "temp:")); got != 3 {
+		t.Errorf("a temperature series has %d points after three beats, want 3", got)
+	}
+
+	// A minute later the slow ones are asked again.
+	glancesSlow.Lock()
+	glancesSlow.at = time.Now().Add(-61 * time.Second)
+	glancesSlow.Unlock()
+	glancesViewForgetAll()
+	h.glancesSampleOnce(context.Background())
+	if got := fake.hitsFor("sensors"); got != 2 {
+		t.Errorf("sensors asked %d times after a minute, want 2", got)
+	}
+}
+
+func firstWith(names []string, prefix string) string {
+	for _, n := range names {
+		if strings.HasPrefix(n, prefix) {
+			return n
+		}
+	}
+	return ""
 }
 
 func TestGlancesSamplerDoesNothingWhenOff(t *testing.T) {
@@ -538,5 +579,43 @@ func TestGlancesHistoryLoadKeepsBaseSeriesBesideManyConsumers(t *testing.T) {
 	}
 	if consumers != glancesMaxConsumers {
 		t.Errorf("consumers kept = %d, want %d", consumers, glancesMaxConsumers)
+	}
+}
+
+// The retention is 7, 30 or 90 days: the long ring and the incident log follow it,
+// and an install from before the setting keeps its thirty days.
+func TestGlancesRetentionSizesTheLongRing(t *testing.T) {
+	newTestHandlers(t)
+	t.Cleanup(func() { mainHost().retention.Store(0) })
+
+	if got := normalizeGlancesRetention(0); got != 30 {
+		t.Errorf("no setting reads as %d days, want 30", got)
+	}
+	if got := normalizeGlancesRetention(45); got != 30 {
+		t.Errorf("45 reads as %d days, want 30", got)
+	}
+	for _, days := range []int{7, 30, 90} {
+		if _, err := saveGlancesConfig(GlancesConfig{RetentionDays: days}, nil); err != nil {
+			t.Fatal(err)
+		}
+		if glancesLongCap() != days*96 || glancesRetention() != time.Duration(days)*24*time.Hour {
+			t.Fatalf("%d days: cap %d, span %v", days, glancesLongCap(), glancesRetention())
+		}
+		loadGlancesHistory()
+		every := glancesLongMs
+		n := int64(days*96 + 50)
+		for i := int64(0); i < n; i++ {
+			glancesRecord((i+1)*every, map[string]float64{"cpu": 1})
+		}
+		ring := glancesRings.series["cpu"]
+		if len(ring.Long) != glancesLongCap() {
+			t.Errorf("%d days: %d long points, want %d", days, len(ring.Long), glancesLongCap())
+		}
+	}
+
+	// A config with no retention (from before the setting) is thirty days.
+	glancesApplyRetention(GlancesConfig{})
+	if glancesRetentionDays() != 30 {
+		t.Errorf("migrated install keeps %d days", glancesRetentionDays())
 	}
 }

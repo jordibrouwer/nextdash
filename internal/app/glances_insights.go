@@ -22,11 +22,11 @@ is left out rather than guessed.
 
 type glancesSnap struct{ Fine, Coarse, Long []glancesPoint }
 
-func glancesSnapshot() map[string]glancesSnap {
-	glancesRings.Lock()
-	defer glancesRings.Unlock()
-	out := make(map[string]glancesSnap, len(glancesRings.series))
-	for name, ring := range glancesRings.series {
+func (hs *glancesHost) snapshot() map[string]glancesSnap {
+	hs.rings.Lock()
+	defer hs.rings.Unlock()
+	out := make(map[string]glancesSnap, len(hs.rings.series))
+	for name, ring := range hs.rings.series {
 		out[name] = glancesSnap{Fine: ring.Fine, Coarse: ring.Coarse, Long: ring.Long}
 	}
 	return out
@@ -284,12 +284,13 @@ func glancesComputeInsights(cfg GlancesConfig, rangeID string, heat string, loc 
 	if !ok {
 		rangeID, span = "24h", 24*time.Hour
 	}
-	snaps := glancesSnapshot()
+	hs := glancesHostByID(cfg.ID)
+	snaps := hs.snapshot()
 	t := cfg.Thresholds
 	nowMs := now.UnixMilli()
 	since := now.Add(-span).UnixMilli()
 	out := glancesInsights{At: nowMs, Range: rangeID, Since: since, Stats: map[string]glancesStats{}}
-	out.Incidents.Ongoing, out.Incidents.Past = glancesIncidentList()
+	out.Incidents.Ongoing, out.Incidents.Past = hs.incidentList()
 	if out.Incidents.Ongoing == nil {
 		out.Incidents.Ongoing = []GlancesIncident{}
 	}

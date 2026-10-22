@@ -79,6 +79,9 @@ func glancesViewSetup(t *testing.T) (*Handlers, *glancesViewFake, GlancesConfig)
 	h := newTestHandlers(t)
 	allowLocalForTest(t, h, true)
 	glancesViewForgetAll()
+	glancesSlow.Lock()
+	glancesSlow.at = time.Time{}
+	glancesSlow.Unlock()
 	fake := newGlancesViewFake(t)
 	cfg, err := saveGlancesConfig(GlancesConfig{Enabled: true, Server: fake.URL, Refresh: 2}, nil)
 	if err != nil {

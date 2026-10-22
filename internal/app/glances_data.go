@@ -46,7 +46,8 @@ func glancesInsightsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil || q.Get("tz") == "" {
 		loc = time.UTC
 	}
-	key := rangeID + "|" + heat + "|" + loc.String()
+	cfg, _ := glancesResolve(r)
+	key := cfg.ID + "|" + rangeID + "|" + heat + "|" + loc.String()
 	w.Header().Set("Content-Type", "application/json")
 	glancesInsightsCache.Lock()
 	if e, ok := glancesInsightsCache.entries[key]; ok && time.Since(e.at) < glancesInsightsTTL {
@@ -55,7 +56,7 @@ func glancesInsightsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	glancesInsightsCache.Unlock()
-	body, err := json.Marshal(glancesComputeInsights(loadGlancesConfig(), rangeID, heat, loc, time.Now()))
+	body, err := json.Marshal(glancesComputeInsights(cfg, rangeID, heat, loc, time.Now()))
 	if err != nil {
 		http.Error(w, "Could not compute", http.StatusInternalServerError)
 		return
@@ -71,11 +72,12 @@ func glancesInsightsHandler(w http.ResponseWriter, r *http.Request) {
 
 // glancesHistoryCSV is the recorded series of a range, one row per moment.
 func glancesHistoryCSV(w http.ResponseWriter, r *http.Request) {
+	_, hs := glancesResolve(r)
 	q := r.URL.Query()
 	now := time.Now()
 	since := now.Add(-24 * time.Hour).UnixMilli()
 	if v, err := strconv.ParseInt(q.Get("since"), 10, 64); err == nil {
-		since = max(v, now.Add(-glancesIncidentMaxAge).UnixMilli())
+		since = max(v, now.Add(-hs.retentionSpan()).UnixMilli())
 	}
 	var names []string
 	for _, name := range strings.Split(q.Get("series"), ",") {
@@ -84,11 +86,11 @@ func glancesHistoryCSV(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if len(names) == 0 {
-		names = glancesSeriesNames()
+		names = hs.seriesNames()
 	}
 	span := time.Duration(now.UnixMilli()-since) * time.Millisecond
 	step := max(glancesSampleEvery, span/glancesMaxPoints)
-	series := glancesQuery(names, since, step, now)
+	series := hs.query(names, since, step, now)
 	sort.Strings(names)
 	byTime := map[int64]map[string]float64{}
 	for name, points := range series {
@@ -132,12 +134,12 @@ type glancesCollectedAnswer struct {
 	KeepDays  int   `json:"keepDays"`
 }
 
-func glancesCollectedView() glancesCollectedAnswer {
-	series, points, since := glancesCollected()
-	glancesIncidents.Lock()
-	incidents := len(glancesIncidents.log)
-	glancesIncidents.Unlock()
-	return glancesCollectedAnswer{Series: series, Points: points, Since: since, Incidents: incidents, KeepDays: int(glancesIncidentMaxAge / (24 * time.Hour))}
+func (hs *glancesHost) collectedView() glancesCollectedAnswer {
+	series, points, since := hs.collected()
+	hs.incidents.Lock()
+	incidents := len(hs.incidents.log)
+	hs.incidents.Unlock()
+	return glancesCollectedAnswer{Series: series, Points: points, Since: since, Incidents: incidents, KeepDays: hs.retentionDays()}
 }
 
 // glancesWipeHandler forgets everything recorded. Behind the write token.
@@ -150,10 +152,14 @@ func (h *Handlers) glancesWipeHandler(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
-	glancesWipe()
+	cfg, hs, ok := glancesResolveStrict(w, r)
+	if !ok {
+		return
+	}
+	hs.wipe()
 	glancesInsightsCache.Lock()
 	glancesInsightsCache.entries = map[string]glancesInsightsEntry{}
 	glancesInsightsCache.Unlock()
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(glancesCollectedView())
+	_ = json.NewEncoder(w).Encode(glancesHostByID(cfg.ID).collectedView())
 }

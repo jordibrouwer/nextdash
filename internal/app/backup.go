@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -214,8 +215,15 @@ var dataFiles = map[string]dataFilePolicy{
 	"server.log":                 dataNever,
 }
 
+// glancesHostFileRe is the record of a Glances host other than the first
+// (glances_host.go): of this install, like the first one's.
+var glancesHostFileRe = regexp.MustCompile(`^glances-(history|incidents)-[a-z0-9-]+\.json$`)
+
 func dataFilePolicyOf(relPath string) (dataFilePolicy, bool) {
 	policy, ok := dataFiles[relPath]
+	if !ok && glancesHostFileRe.MatchString(relPath) {
+		return dataKeep, true
+	}
 	return policy, ok
 }
 

@@ -40,6 +40,7 @@ const (
 	noticeSourceContainer = "container"
 	noticeSourceUnraid    = "unraid"
 	noticeSourceBackup    = "backup"
+	noticeSourceGlances   = "glances"
 
 	// quietHeldMax bounds the file. Past it the oldest entry for a name is
 	// dropped, which loses a repeat and never the last word on a name.
@@ -336,7 +337,7 @@ func sinkFlags(source string, s Settings) (push, webhook bool) {
 		push = s.PushNotifyEnabled && s.PushNotifyMonitor
 	case noticeSourceContainer:
 		push = s.PushNotifyEnabled && s.PushNotifyContainers
-	case noticeSourceUnraid:
+	case noticeSourceUnraid, noticeSourceGlances:
 		push = s.PushNotifyEnabled
 	case noticeSourceBackup:
 		push = s.PushNotifyEnabled && s.PushNotifyBackup
@@ -599,6 +600,8 @@ func (h *Handlers) pushNoticeDirect(ctx context.Context, source string, n monito
 		msg.Tag, msg.URL = "nextdash-container-"+n.Name, "/#docker"
 	case noticeSourceUnraid:
 		msg.Tag, msg.URL = unraidPushTag(n), "/#docker"
+	case noticeSourceGlances:
+		msg.Tag, msg.URL = glancesPushTag(n), glancesPushURL(n)
 	case noticeSourceBackup:
 		msg.Tag, msg.URL = "nextdash-backup", "/config"
 	}

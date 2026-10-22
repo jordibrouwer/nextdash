@@ -143,13 +143,20 @@ func TestGlancesHistoryCarriesContainerRestarts(t *testing.T) {
 	dockerTimelines.add("app-docker", dockerTimelineEntry{At: now - 3500000, Kind: "start"})
 	ask := func(name string) []int64 {
 		req := httptest.NewRequest(http.MethodGet, "/api/glances/history?series=cpu&restarts="+name+"&since="+strconv.FormatInt(now-86400000, 10), nil)
-		return h.glancesRestartsAsked(req, now-86400000)
+		return h.glancesRestartsAsked(req, loadGlancesConfig(), now-86400000)
 	}
 	// Asked by either name; the first start on record is not a restart.
 	for _, name := range []string{"app-glances", "app-docker"} {
 		if got := ask(name); len(got) != 1 || got[0] != now-3500000 {
 			t.Errorf("%s: %v", name, got)
 		}
+	}
+	// Several names at once: every restart of each, once and in order.
+	dockerTimelines.add("other", dockerTimelineEntry{At: now - 5400000, Kind: "start"})
+	dockerTimelines.add("other", dockerTimelineEntry{At: now - 5000000, Kind: "exit"})
+	dockerTimelines.add("other", dockerTimelineEntry{At: now - 4900000, Kind: "start"})
+	if got := ask("other,app-glances,app-docker"); len(got) != 2 || got[0] != now-4900000 || got[1] != now-3500000 {
+		t.Errorf("several names: %v", got)
 	}
 	// Another machine: nothing.
 	cfg := loadGlancesConfig()

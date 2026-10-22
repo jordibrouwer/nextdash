@@ -424,7 +424,7 @@ func (h *Handlers) glancesViewHandler(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": mediaErrorCode(err)})
 	}
 
-	cfg := loadGlancesConfig()
+	cfg, _ := glancesResolve(r)
 	if !cfg.configured() {
 		fail(errMediaNotSetUp)
 		return

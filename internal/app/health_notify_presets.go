@@ -307,6 +307,8 @@ func formatNtfyJSONNotification(n monitorNotification, topic, dashboardURL strin
 		switch n.Source {
 		case "container":
 			target, label = dash+"/#docker/"+url.PathEscape(n.Name), "Containers"
+		case "glances":
+			target, label = dash+glancesPushURL(n), "Glances"
 		case "unraid":
 			// Not about a bookmark and with no view of its own: a tap opens the
 			// dashboard, and there is no button to name a place it is not.
