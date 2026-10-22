@@ -476,7 +476,7 @@
             });
             this.shell.toolbarRow.hidden = true;
             const Info = window.DashboardGlancesInfo;
-            this.shell.headerActions?.append(...[this._buildTourButton(), Info?.helpButton(this), this._buildHostPick(), this._buildRecordPick(), this._buildConnectionSwitch()].filter(Boolean));
+            this.shell.headerActions?.append(...[this._buildHostPick(), this._buildRecordPick(), this._buildTourButton(), Info?.helpButton(this), this._buildConnectionSwitch()].filter(Boolean));
             this.bodyEl = document.createElement('div');
             this.bodyEl.className = 'glances-section';
             this.bodyEl.setAttribute('data-glances-body', '');
@@ -726,6 +726,8 @@
                 input.checked = on;
                 text.textContent = on ? this.t('dashboard.glancesConnectionOn', 'Connected') : this.t('dashboard.glancesConnectionOff', 'Connection off');
                 label.setAttribute('data-state', on ? 'on' : 'off');
+                // No word beside the switch: its state is its colour, and its name is for readers who cannot see it.
+                label.title = text.textContent;
             };
             paint();
             this._paintConnection = paint;

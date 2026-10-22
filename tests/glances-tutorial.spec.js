@@ -140,7 +140,7 @@ test.describe('glances page tour', () => {
         expect(requested).toEqual([]);
     });
 
-    test('Tour in the header opens it again, seen or not, first among the header buttons', async ({ page }) => {
+    test('Tour in the header opens it again, seen or not, at the end of the header with the ℹ after it', async ({ page }) => {
         await mockGlances(page);
         await markWhatsNewSeen(page);
         await page.goto('/');
@@ -150,9 +150,15 @@ test.describe('glances page tour', () => {
         await expect(page.locator('#dashboard-layout.glances-layout [data-glances-body]')).toBeVisible();
         const tour = page.locator('[data-glances-tour]');
         await expect(tour).toHaveText('Tour');
-        // The same place as the Containers and Bookmarks views: the first button of the header band.
-        const first = page.locator('.lvs-header-actions').first().locator('button, a').first();
-        await expect(first).toHaveAttribute('data-glances-tour', '');
+        // The same place as the Containers and Bookmarks views: the end of the header band, the ℹ last.
+        const buttons = page.locator('.lvs-header-actions').first().locator(':scope > button, :scope > a');
+        const count = await buttons.count();
+        await expect(buttons.nth(count - 2)).toHaveAttribute('data-glances-tour', '');
+        await expect(buttons.nth(count - 1)).toHaveClass(/view-help-btn/);
+        // The connection switch comes after them, with no word beside it.
+        const order = await page.evaluate(() => [...document.querySelector('.lvs-header-actions').children].map((c) => c.getAttribute('data-glances-tour') !== null ? 'tour' : (c.matches('.view-help-btn') ? 'help' : (c.querySelector('[data-glances-connection]') ? 'switch' : 'other'))));
+        expect(order.slice(-3)).toEqual(['tour', 'help', 'switch']);
+        expect(await page.locator('.glances-switch-text').evaluate((el) => el.getBoundingClientRect().width)).toBeLessThanOrEqual(1);
         await tour.click();
         await expect(modal(page)).toBeVisible();
         await page.keyboard.press('Escape');

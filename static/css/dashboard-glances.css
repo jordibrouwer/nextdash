@@ -1081,7 +1081,14 @@ button.glances-row-link {
 .glances-switch input:checked + .glances-switch-track::after { transform: translateX(1.05rem); }
 .glances-switch input:focus-visible + .glances-switch-track { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
 .glances-switch input:disabled + .glances-switch-track { opacity: 0.6; }
-.glances-switch[data-state="off"] .glances-switch-text { color: var(--text-secondary); }
+.glances-switch-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
 
 @media (prefers-reduced-motion: reduce) {
     .glances-switch-track, .glances-switch-track::after { transition: none; }
