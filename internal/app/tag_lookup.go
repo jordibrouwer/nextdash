@@ -448,6 +448,9 @@ func (h *Handlers) TagLookup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	var body struct {
 		Hosts []string `json:"hosts"`
 	}

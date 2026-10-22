@@ -245,7 +245,7 @@
     async function askLookup(hosts) {
         let data = null;
         try {
-            const response = await fetch('/api/tags/lookup', {
+            const response = await (typeof global.nextDashFetch === 'function' ? global.nextDashFetch : fetch)('/api/tags/lookup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ hosts }),

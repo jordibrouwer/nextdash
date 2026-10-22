@@ -62,3 +62,13 @@ func TestGetServerLogNeedsTheToken(t *testing.T) {
 		t.Fatalf("status = %d, want 401 like download and clear", rec.Code)
 	}
 }
+
+func TestTagLookupNeedsTheToken(t *testing.T) {
+	t.Setenv("NEXTDASH_WRITE_TOKEN", "tok")
+	h := newTestHandlers(t)
+	rec := httptest.NewRecorder()
+	h.TagLookup(rec, httptest.NewRequest(http.MethodPost, "/api/tags/lookup", strings.NewReader(`{"hosts":["example.com"]}`)))
+	if rec.Code != http.StatusForbidden && rec.Code != http.StatusUnauthorized {
+		t.Fatalf("lookup without the token = %d", rec.Code)
+	}
+}
