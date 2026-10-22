@@ -203,6 +203,12 @@ class DashboardConfig {
      */
     static NEW_SECTIONS = ['widgets', 'monitoring', 'status-page'];
 
+    /** The sections that open a named group in the rail. */
+    static NAV_GROUP_LABELS = {
+        containers: { key: 'config.navGroupServices', text: 'Services' },
+        stats: { key: 'config.navGroupInfo', text: 'Info' },
+    };
+
     static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
 
     /**
@@ -4427,7 +4433,14 @@ class DashboardConfig {
             // section's name for readers, keys and searches.
             const newBadge = DashboardConfig.NEW_SECTIONS.includes(section)
                 ? ` data-config-new="${esc(this.t('config.sectionNewBadge', 'new'))}"` : '';
-            return `
+            // A label above the first row of each group the rail turns at.
+            // aria-hidden: the tablist admits tabs only, and the rows already
+            // carry their own names.
+            const groupLabel = DashboardConfig.NAV_GROUP_LABELS[section];
+            const groupHead = groupLabel
+                ? `<span class="config-nav-group-label" aria-hidden="true">${esc(this.t(groupLabel.key, groupLabel.text))}</span>`
+                : '';
+            return `${groupHead}
                 <button type="button" class="config-nav-item${active ? ' is-active' : ''}${isNew ? ' config-nav-item--animated' : ''}"
                         role="tab" aria-selected="${active ? 'true' : 'false'}"
                         tabindex="${active ? '0' : '-1'}"
@@ -4452,12 +4465,6 @@ class DashboardConfig {
                 -->
                 <div class="config-nav-column">
                 <div class="lvs-group">
-                    <span class="lvs-group-title" id="config-nav-heading">${esc(this.t('config.sectionsNavAria', 'Config sections'))}</span>
-                    <nav class="config-nav lvs-group-list" role="tablist" aria-labelledby="config-nav-heading">
-                        ${nav}
-                    </nav>
-                </div>
-                <div class="lvs-group">
                     <button type="button" class="config-nav-item config-nav-search"
                             data-config-action="settings-jump"
                             data-config-setting-promo-anchor="settingsJump"
@@ -4467,6 +4474,12 @@ class DashboardConfig {
                         ${esc(searchLabel)}
                         <span class="config-nav-search-shortcut">${esc(searchShortcut)}</span>
                     </button>
+                </div>
+                <div class="lvs-group">
+                    <span class="lvs-group-title" id="config-nav-heading">${esc(this.t('config.sectionsNavAria', 'Config sections'))}</span>
+                    <nav class="config-nav lvs-group-list" role="tablist" aria-labelledby="config-nav-heading">
+                        ${nav}
+                    </nav>
                 </div>
                 </div>
                 <!--
@@ -4928,7 +4941,12 @@ class DashboardConfig {
             tone: bad ? 'crit' : (n('contentCount') ? 'warn' : (checked ? 'good' : '')),
             go: { view: 'health' },
             body,
-            note: esc(this.t('config.overviewHealthMonitored', '{n} monitored').replace('{n}', String(n('monitoredCount')))),
+            // "Checked" is what the ring counts; "monitored" is the separate,
+            // continuous watch. Printed alone, "0 monitored" under a 100% ring
+            // read as the ring contradicting itself.
+            note: esc(this.t('config.overviewHealthChecked', '{checked} checked · {n} monitored')
+                .replace('{checked}', String(checked))
+                .replace('{n}', String(n('monitoredCount')))),
             alert: bad
                 ? esc(this.t('config.overviewHealthNotAnswering', '{n} not answering').replace('{n}', String(bad)))
                 : '',
@@ -5931,7 +5949,8 @@ class DashboardConfig {
         nav.dataset.navBound = 'true';
         const buttons = [...container.querySelectorAll('[data-config-section]')];
         const searchBtn = container.querySelector('[data-config-action="settings-jump"]');
-        const focusables = searchBtn ? [...buttons, searchBtn] : buttons;
+        // Document order: the search button sits above the list.
+        const focusables = searchBtn ? [searchBtn, ...buttons] : buttons;
 
         const moveFocus = (fromEl, key) => {
             const idx = focusables.indexOf(fromEl);
@@ -17190,7 +17209,7 @@ class DashboardConfig {
     renderMonitoring() {
         const esc = (v) => this.dash.escapeHtml(v);
         return `
-            <p class="config-view-intro">${esc(this.t('config.monitoringIntro', 'How bookmarks are checked, how you hear when one goes down, and when to keep quiet. Every change applies immediately and is saved.'))}</p>
+            <p class="config-view-intro">${esc(this.t('config.monitoringIntro', 'How bookmarks are checked and how you hear when one goes down.'))}</p>
             ${this.renderSectionTabStrip('monitoring')}
             <div class="config-tabpage">
                 <div class="config-tabpage-main">
@@ -17256,7 +17275,7 @@ class DashboardConfig {
                 <span class="config-changed-count">${esc(label)}</span>
                 <input type="search" class="config-text config-settings-filter"
                        data-settings-filter="${esc(section)}"
-                       placeholder="${esc(this.t('config.settingsFilterPlaceholder', 'Filter settings…'))}"
+                       placeholder="${esc(this.t('config.settingsFilterPlaceholder', 'Filter this tab…'))}"
                        aria-label="${esc(this.t('config.settingsFilterLabel', 'Filter the settings on this tab'))}"
                        value="${esc(this.settingsFilter || '')}">
             </div>`;
@@ -18766,12 +18785,15 @@ class DashboardConfig {
     }
 
     renderPtTab() {
+        // The sub-tab strip names the tab for sighted readers; this names the
+        // panel for a heading list, which the editors below do not carry.
+        const heading = `<h3 class="sr-only">${this.dash.escapeHtml(this.ptTabLabel(this.ptTab))}</h3>`;
         switch (this.ptTab) {
-            case 'finders': return this.renderFinders();
-            case 'collections': return this.renderCollections();
-            case 'pages': return this.renderPagesEditor();
-            case 'categories': return this.renderCategoriesEditor();
-            case 'widgets': return this.renderWidgetsEditor?.() || '';
+            case 'finders': return heading + this.renderFinders();
+            case 'collections': return heading + this.renderCollections();
+            case 'pages': return heading + this.renderPagesEditor();
+            case 'categories': return heading + this.renderCategoriesEditor();
+            case 'widgets': return heading + (this.renderWidgetsEditor?.() || '');
             default: return '';
         }
     }
@@ -18840,7 +18862,7 @@ class DashboardConfig {
         return `
             <div class="config-crud-toolbar">
                 <input type="search" class="config-text" data-pt-search="${esc(o.tab)}"
-                       placeholder="${esc(o.placeholder)}" value="${esc(query)}">
+                       placeholder="${esc(o.placeholder)}" aria-label="${esc(o.placeholder)}" value="${esc(query)}">
                 <select class="config-select" data-pt-sort="${esc(o.tab)}"
                         aria-label="${esc(this.t('config.sortLabel', 'Sort'))}">${sortOptions}</select>
                 ${o.extra || ''}
@@ -21782,7 +21804,7 @@ class DashboardConfig {
                 return `
                 <li class="config-crud-row" data-cat-row="${i}" data-cat-page="${esc(g.key)}" data-cat-id="${esc(c.id)}">
                     <div class="config-crud-fields">
-                        <input type="text" class="config-text" data-cat="name" data-index="${i}" value="${esc(c.name || '')}">
+                        <input type="text" class="config-text" data-cat="name" data-index="${i}" aria-label="${esc(this.t('config.categoryNameLabel', 'Category name'))}" value="${esc(c.name || '')}">
                         <span class="structure-num">${esc(String(n))}</span>
                         ${bad ? `<span class="structure-num structure-num--bad">${esc(String(bad))}</span>` : '<span class="structure-num">–</span>'}
                     </div>
@@ -22552,7 +22574,7 @@ class DashboardConfig {
             `;
         }
         return `
-            <p class="config-view-intro">${esc(this.t('config.bookmarksSettingsIntro', 'How the Bookmarks view looks, your tags and the rules around them. The list itself is the Bookmarks view.'))}</p>
+            <p class="config-view-intro">${esc(this.t('config.bookmarksSettingsIntro', 'How the Bookmarks view looks, your tags and their rules.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
             ${this.renderSectionTabNote('bookmarks', this.bmTab)}
             <div id="config-bm-body" role="tabpanel" tabindex="0">${this.renderBmTab()}</div>

@@ -493,6 +493,7 @@
             <div class="config-crud-toolbar config-crud-toolbar--view">
                 <input type="search" class="config-text" id="config-widget-search"
                     placeholder="${esc(this.t('config.searchWidgets', 'Search widgets…'))}"
+                    aria-label="${esc(this.t('config.searchWidgets', 'Search widgets…'))}"
                     value="${esc(this.widgetQuery || '')}">
                 ${pagePicker}
                 <select class="config-select" data-widget-sort aria-label="${

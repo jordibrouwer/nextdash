@@ -116,11 +116,14 @@
     border-bottom: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
 }
 
-.config-nav .config-nav-item:is([data-config-section="containers"], [data-config-section="stats"]) {
+.config-nav-group-label {
     margin-top: var(--space-2, 0.5rem);
-    padding-top: calc(var(--space-1) + var(--space-2, 0.5rem));
+    padding: var(--space-2, 0.5rem) var(--space-2) var(--space-1);
     border-top: 1px solid var(--border-secondary, color-mix(in srgb, var(--border-primary) 55%, transparent));
-    border-radius: 0 0 var(--layout-radius-sm) var(--layout-radius-sm);
+    font-size: var(--font-size-small, 0.72rem);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-muted, var(--text-secondary));
 }
 
 .config-nav-column {
@@ -175,6 +178,10 @@
     /* In the strip the rule falls between two buttons side by side, so it is a
        left edge rather than a top one -- as a top border it pushed that button
        onto a second line. */
+    .config-nav-group-label {
+        display: none;
+    }
+
     .config-nav .config-nav-item:is([data-config-section="containers"], [data-config-section="stats"]) {
         margin-top: 0;
         padding-top: var(--space-1);
@@ -291,7 +298,7 @@
 }
 
 .config-nav-search {
-    margin-top: 14px;
+    margin-top: 0;
     font-weight: 500;
 }
 
@@ -306,7 +313,7 @@
 
 @media (max-width: 720px) {
     .config-nav-search {
-        margin-top: 10px;
+        margin-top: 0;
         flex-basis: 100%;
     }
 }
@@ -4274,12 +4281,10 @@ body.no-animations .config-new-features-panel-star {
 }
 
 /*
- * One line, always there, so the band is the same height in every section.
- *
- * Wrapped, a long line (Bookmarks) made the band a line taller, and a section
- * without one (none rendered yet) made it a line shorter -- the rail and the
- * sub-tab strip below jumped up and down as you walked the sections. Cut to
- * one line instead; the whole sentence is the line's title.
+ * Up to two lines, so the band can grow by one in a section with a long line.
+ * Kept to two because the band is sticky; the old rule was one line so the band
+ * was the same height in every section; the intros are short enough now that
+ * few reach the second line. The whole sentence is still the line's title.
  */
 .config-view-head .lvs-header-text {
     min-width: 0;
@@ -4291,9 +4296,13 @@ body.no-animations .config-new-features-panel-star {
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
     min-height: 1lh;
-    white-space: nowrap;
+    /* A long line wraps to a second rather than losing its end; two is the
+       most the band gives it, and the whole sentence is still the title. */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
     overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .config-view-head-breadcrumb[hidden] {
@@ -10153,3 +10162,46 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
 .config-about-licence-list a { color: inherit; text-underline-offset: 2px; }
 .config-about-licence-version { color: var(--text-secondary); }
 .config-about-licence-id { margin-left: auto; color: var(--text-secondary); white-space: nowrap; }
+
+/*
+ * Pointer targets of at least 24px.
+ *
+ * The round info and reset buttons were 20px, the widget links and the
+ * structure chips 14 to 22px tall. A pseudo-element carries the hit area past
+ * the drawn edge where growing the control would move the layout; the
+ * round buttons are simply 24px, which the field rows (35px) have room for.
+ * Inline text links are left alone: a link inside a sentence is its own target.
+ */
+.config-info-btn,
+.config-reset-btn {
+    width: 24px;
+    height: 24px;
+}
+
+.config-widget-go,
+.config-widget-step,
+.config-widget-link,
+#config-pt-body .structure-chip,
+#config-pt-body .structure-group-toggle {
+    position: relative;
+}
+
+.config-widget-go::after,
+.config-widget-step::after,
+.config-widget-link::after,
+#config-pt-body .structure-chip::after,
+#config-pt-body .structure-group-toggle::after {
+    content: "";
+    position: absolute;
+    inset: 50% 0 auto 0;
+    min-height: 24px;
+    transform: translateY(-50%);
+}
+
+/* A finger, not a pointer: the bare checkboxes grow with the rest. */
+@media (pointer: coarse) {
+    .config-view input[type="checkbox"]:not(.config-bm-tick) {
+        width: 24px;
+        height: 24px;
+    }
+}
