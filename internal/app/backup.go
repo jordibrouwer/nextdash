@@ -1027,14 +1027,9 @@ func (h *Handlers) importFromZipUpload(w http.ResponseWriter, r *http.Request, d
 		http.Error(w, "Failed to open file", http.StatusInternalServerError)
 		return
 	}
-	data, err := io.ReadAll(f)
-	closeErr := f.Close()
-	if err != nil || closeErr != nil {
-		http.Error(w, "Failed to read file", http.StatusInternalServerError)
-		return
-	}
+	defer f.Close()
 
-	staged, err := h.stagedFilesFromZip(data)
+	staged, err := h.stagedFilesFromZipReader(f, fh.Size)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

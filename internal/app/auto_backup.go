@@ -596,7 +596,28 @@ ceiling is there.
 var importEntryLimit int64 = 64 << 20
 
 func (h *Handlers) stagedFilesFromZip(data []byte) ([]stagedImportFile, error) {
-	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	return h.stagedFilesFromZipReader(bytes.NewReader(data), int64(len(data)))
+}
+
+/*
+importTotalLimit and importEntryCountLimit bound a whole archive, where
+importEntryLimit bounds one file in it.
+
+Every staged file is held in memory until the apply step, so a ceiling per
+entry alone leaves the total at entries x ceiling: a few thousand entries that
+each compress to nothing are small on the wire and gigabytes once unpacked.
+Vars so a test can lower them.
+*/
+var (
+	importTotalLimit      int64 = 1 << 30
+	importEntryCountLimit       = 50000
+)
+
+// stagedFilesFromZipReader is stagedFilesFromZip for an archive that is read
+// in place -- the uploaded temp file or the stored backup -- so the whole
+// archive is not copied into memory on top of what it unpacks to.
+func (h *Handlers) stagedFilesFromZipReader(ra io.ReaderAt, size int64) ([]stagedImportFile, error) {
+	zr, err := zip.NewReader(ra, size)
 	if err != nil {
 		return nil, fmt.Errorf("could not read backup archive: %w", err)
 	}
@@ -607,6 +628,10 @@ func (h *Handlers) stagedFilesFromZip(data []byte) ([]stagedImportFile, error) {
 	// Strip the prefix when the whole archive shares one.
 	prefix := commonZipPrefix(zr.File)
 
+	if len(zr.File) > importEntryCountLimit {
+		return nil, fmt.Errorf("backup holds too many files to restore (%d)", len(zr.File))
+	}
+	var total int64
 	staged := make([]stagedImportFile, 0, len(zr.File))
 	for _, f := range zr.File {
 		if f.FileInfo().IsDir() || macResourceFork(f.Name) {
@@ -642,6 +667,16 @@ func (h *Handlers) stagedFilesFromZip(data []byte) ([]stagedImportFile, error) {
 		if int64(len(content)) > importEntryLimit {
 			return nil, fmt.Errorf("%s is too large to restore from this backup", filename)
 		}
+		// Captures are left out of the total: nextDash writes them itself, a
+		// backup carries every one by default, and a hundred of them is a
+		// gigabyte -- so counting them would refuse its own backups. Each is
+		// still held to importEntryLimit, and the count to importEntryCountLimit.
+		if !strings.HasPrefix(filename, archiveDirName+"/") {
+			total += int64(len(content))
+		}
+		if total > importTotalLimit {
+			return nil, fmt.Errorf("backup is too large to restore (more than %d MB unpacked)", importTotalLimit>>20)
+		}
 		if strings.HasSuffix(filename, ".json") && !json.Valid(content) {
 			return nil, fmt.Errorf("invalid JSON in backup file: %s", filename)
 		}
@@ -666,7 +701,7 @@ func (h *Handlers) RestoreAutoBackup(w http.ResponseWriter, r *http.Request) {
 
 	// Serialize against writes/rotation so the archive can't be pruned mid-read.
 	h.autoBackupMu.Lock()
-	data, err := os.ReadFile(path)
+	file, err := os.Open(path)
 	h.autoBackupMu.Unlock()
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -678,7 +713,14 @@ func (h *Handlers) RestoreAutoBackup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	staged, err := h.stagedFilesFromZip(data)
+	defer file.Close()
+	info, err := file.Stat()
+	if err != nil {
+		logError(logComponentBackup, "the backup %q could not be read, so nothing was restored: %v", name, err)
+		http.Error(w, "Failed to read backup", http.StatusInternalServerError)
+		return
+	}
+	staged, err := h.stagedFilesFromZipReader(file, info.Size())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
