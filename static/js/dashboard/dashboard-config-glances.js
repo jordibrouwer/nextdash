@@ -169,6 +169,7 @@
                             </select>
                         </div>
                         <p class="config-field-hint" data-glances-link-state aria-live="polite"></p>
+                        <p class="config-field-hint" data-glances-link-docker-host aria-live="polite"></p>
                         <details class="glances-link-lists" data-glances-link-lists hidden>
                             <summary>${t('glancesLinkWhat', 'What matched')}</summary>
                             <p class="config-field-hint" data-glances-link-only></p>
@@ -378,13 +379,30 @@
             }
             linkState.textContent = text;
         };
+        // Only one host is the Docker host: which one it is, said under this host's own link state.
+        const dockerHostEl = root.querySelector('[data-glances-link-docker-host]');
+        const paintDockerHost = (global) => {
+            if (!dockerHostEl) return;
+            dockerHostEl.textContent = '';
+            const hosts = current?.hosts || [];
+            if (!global || !global.same || !global.hostId || hosts.length < 2) return;
+            const name = (hosts.find((h) => h.id === global.hostId) || {}).name || global.hostId;
+            dockerHostEl.textContent = global.hostId === hostId
+                ? t('glancesLinkIsDockerHost', 'This is the Docker host: the Containers view is linked to this host.')
+                : t('glancesLinkOtherDockerHost', 'The Containers view is linked to {name}. Only one host can be the Docker host.').replace('{name}', name);
+        };
         const refreshLink = async () => {
             if (!linkState) return;
             try {
-                const res = await fetch(Host.url('/api/glances/docker-link', hostId || ''), { credentials: 'same-origin', cache: 'no-store' });
+                const [res, all] = await Promise.all([
+                    fetch(Host.url('/api/glances/docker-link', hostId || ''), { credentials: 'same-origin', cache: 'no-store' }),
+                    fetch('/api/glances/docker-link', { credentials: 'same-origin', cache: 'no-store' }),
+                ]);
                 paintLink(res.ok ? await res.json() : null);
+                paintDockerHost(all.ok ? await all.json() : null);
             } catch {
                 paintLink(null);
+                paintDockerHost(null);
             }
         };
 
