@@ -54,7 +54,7 @@ test.describe('FULL_CONTAINER_VIEWS table covers every known view', () => {
             };
         });
 
-        expect(results.names.sort()).toEqual(['config', 'docker', 'inbox', 'library', 'tags']);
+        expect(results.names.sort()).toEqual(['config', 'docker', 'glances', 'inbox', 'library', 'tags']);
         expect(results.tagHash).toBe(true);
         expect(results.tagLayoutClass).toBe('tag-view-layout');
         expect(results.libraryHash).toBe(true);
