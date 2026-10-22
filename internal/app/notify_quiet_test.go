@@ -331,3 +331,21 @@ func TestRemindersStopForWhatIsNoLongerWatched(t *testing.T) {
 		t.Fatalf("a muted bookmark kept its alert: %+v", open)
 	}
 }
+
+// A usage "back to normal" must not close the unhealthy alert of the same
+// container, or its reminders stop while the problem is still there.
+func TestAUsageUpDoesNotCloseAnUnhealthyAlert(t *testing.T) {
+	h := quietHandlers(t, "")
+	health := containerNotice("down", "foo", "foo is unhealthy", "", quietNight)
+	h.trackOpenAlerts(noticeSourceContainer, []monitorNotification{health})
+	usageUp := containerNotice("up", "foo", "foo is back to normal use", "", quietNight)
+	usageUp.Kind = "usage"
+	h.trackOpenAlerts(noticeSourceContainer, []monitorNotification{usageUp})
+	if o := readOpenFile().Open; len(o) != 1 {
+		t.Fatalf("a usage up closed the health alert: %+v", o)
+	}
+	h.trackOpenAlerts(noticeSourceContainer, []monitorNotification{containerNotice("up", "foo", "foo is healthy", "", quietNight)})
+	if o := readOpenFile().Open; len(o) != 0 {
+		t.Errorf("a health up left the alert open: %+v", o)
+	}
+}

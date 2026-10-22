@@ -104,12 +104,16 @@ func (h *Handlers) checkDockerUsage(list []dockerContainerSummary, now time.Time
 			if over == "mem" {
 				what, line = "memory", settings.DockerMemAlertPercent
 			}
-			out = append(out, containerNotice("down", name,
+			n := containerNotice("down", name,
 				fmt.Sprintf("%s uses %.0f %% %s", name, peak, what),
-				fmt.Sprintf("above %d %% for %d minutes", line, settings.DockerUsageAlertMinutes), now))
+				fmt.Sprintf("above %d %% for %d minutes", line, settings.DockerUsageAlertMinutes), now)
+			n.Kind = "usage"
+			out = append(out, n)
 		case under && w.hot[name]:
 			delete(w.hot, name)
-			out = append(out, containerNotice("up", name, name+" is back to normal use", "", now))
+			n := containerNotice("up", name, name+" is back to normal use", "", now)
+			n.Kind = "usage"
+			out = append(out, n)
 		}
 	}
 	// A container that stopped or went away ends its spell without a notice:

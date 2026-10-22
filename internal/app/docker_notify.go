@@ -270,6 +270,39 @@ func (n *containerNotifier) event(ev dockerEvent, now time.Time, allowed func(na
 	return out
 }
 
+// reconcile settles what a dropped event stream left open. A container that
+// started while no one listened never sent its start or healthy to us, and
+// the next real crash would be swallowed as "already told". The listed
+// containers are fed through event() as the events they stand for, so the
+// notice text and state changes stay in one place.
+func (n *containerNotifier) reconcile(list []dockerContainerSummary, now time.Time, allowed func(name, id string) bool) []monitorNotification {
+	var out []monitorNotification
+	for _, c := range list {
+		name := c.name()
+		if name == "" || c.State != "running" || c.Labels[dockerBindMeasureLabel] == "1" {
+			continue
+		}
+		n.mu.Lock()
+		w := n.watch[name]
+		told, toldHealth := w != nil && w.toldStop, w != nil && w.toldHealth
+		n.mu.Unlock()
+		feed := func(action string) {
+			var ev dockerEvent
+			ev.Type, ev.Action = "container", action
+			ev.Actor.ID = c.ID
+			ev.Actor.Attributes = map[string]string{"name": name}
+			out = append(out, n.event(ev, now, allowed)...)
+		}
+		if told {
+			feed("start")
+		}
+		if toldHealth && strings.Contains(c.Status, "(healthy)") {
+			feed("health_status: healthy")
+		}
+	}
+	return out
+}
+
 // tick settles what only time can: a die that no start followed, and a loop
 // that has gone quiet.
 func (n *containerNotifier) tick(now time.Time, allowed func(name, id string) bool) []monitorNotification {
@@ -438,6 +471,11 @@ func (h *Handlers) watchDockerEventsOnce(ctx context.Context, api *dockerAPI, n 
 			}
 		}
 	}()
+	// Events from a gap are gone (no since=: a replay would tell old crashes
+	// again), so look at what runs now before following the stream.
+	if list, err := api.listContainers(ctx); err == nil {
+		h.dispatchContainerNotices(ctx, n.reconcile(list, time.Now(), h.dockerNotifyAllowed))
+	}
 	return api.streamEvents(ctx, func(ev dockerEvent) {
 		h.dispatchContainerNotices(ctx, n.event(ev, time.Now(), h.dockerNotifyAllowed))
 	})

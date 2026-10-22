@@ -361,3 +361,17 @@ func TestContainerNotifierOwnStopSignal(t *testing.T) {
 		t.Fatalf("timeline = %s", got)
 	}
 }
+
+// A container that came back while the event stream was down never sent its
+// start; the reconnect's listing must clear what was told, or the next crash
+// is swallowed.
+func TestContainerNotifierReconcileAfterAGap(t *testing.T) {
+	r := newNotifierRun(t)
+	r.ev("die", "web", "exitCode", "137").at(80 * time.Second).tick()
+	r.want("web stopped unexpectedly")
+	list := []dockerContainerSummary{{ID: strings.Repeat("e", 64), Names: []string{"/web"}, State: "running", Status: "Up 5 seconds"}}
+	r.out = append(r.out, r.n.reconcile(list, r.now, r.ok)...)
+	r.want("web stopped unexpectedly", "web is running again")
+	r.at(time.Minute).ev("die", "web", "exitCode", "1").at(80 * time.Second).tick()
+	r.want("web stopped unexpectedly", "web is running again", "web stopped unexpectedly")
+}

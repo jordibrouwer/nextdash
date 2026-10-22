@@ -272,7 +272,13 @@ func noticeKey(source string, n monitorNotification) string {
 			return source + ":" + key
 		}
 	}
-	return source + ":" + strings.TrimSpace(n.Name)
+	key := source + ":" + strings.TrimSpace(n.Name)
+	// A container can have two problems at once (unhealthy and over its CPU
+	// line): each is its own alert, or one "up" would end the other's reminders.
+	if source == noticeSourceContainer && n.Kind != "" {
+		key += "#" + n.Kind
+	}
+	return key
 }
 
 // quietGate decides what of a round's notices goes out now. The rest is held

@@ -78,6 +78,9 @@ type monitorNotification struct {
 	// Source says where it came from for a receiver reading the raw JSON.
 	Title  string `json:"title,omitempty"`
 	Source string `json:"source,omitempty"`
+	// Kind names a separate problem on the same container ("usage" for the CPU
+	// and memory alerts), so its "up" does not close another kind's "down".
+	Kind string `json:"kind,omitempty"`
 }
 
 // certExpiryNotifications turns crossed thresholds into notifications, reusing
