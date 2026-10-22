@@ -1207,7 +1207,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     padding: var(--space-1, 0.2rem) var(--space-1, 0.3rem);
     outline: none;
 }
-.page-tab-popover-icon:focus { border-color: var(--accent-primary); }
+.page-tab-popover-icon:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 45%, transparent); }
 
 .page-tab-popover-name {
     flex: 1;
@@ -1220,7 +1220,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     padding: var(--space-1, 0.2rem) var(--space-1-5, 0.4rem);
     outline: none;
 }
-.page-tab-popover-name:focus { border-color: var(--accent-primary); }
+.page-tab-popover-name:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 45%, transparent); }
 
 .page-tab-color-swatches {
     display: flex;
@@ -3258,6 +3258,7 @@ body.no-animations .category-chevron {
 
 .category-rename-input:focus {
     border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 45%, transparent);
 }
 
 /* Bookmarks */

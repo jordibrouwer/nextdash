@@ -401,6 +401,7 @@
 .color-input-wrapper input[type="color"]:focus {
     outline: none;
     border-bottom-color: var(--text-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 45%, transparent);
 }
 
 .color-text-input {
@@ -431,6 +432,7 @@
 .color-text-input-full:focus {
     outline: none;
     border-color: var(--text-secondary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 45%, transparent);
 }
 
 .color-text-input:hover,

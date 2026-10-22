@@ -354,6 +354,7 @@
 .health-expect-input:focus-visible {
     outline: none;
     border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 45%, transparent);
 }
 
 .health-expect-note {
