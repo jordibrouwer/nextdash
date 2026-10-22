@@ -265,6 +265,9 @@ class DragReorder {
     }
 
     touchStart(e) {
+        // A second finger must not reset an active drag: its touchEnd would
+        // then skip the scroll-lock release.
+        if (this.touchDragActive || (e.touches && e.touches.length > 1)) return;
         const touch = e.touches && e.touches[0] ? e.touches[0] : null;
         this.touchSourceElement = e.currentTarget || e.target;
         this.touchStartPoint = touch ? { x: touch.clientX, y: touch.clientY } : null;
@@ -325,6 +328,10 @@ class DragReorder {
         }
         const activeSelected = this.getSelectedItem();
         if (!activeSelected) {
+            // Selected item vanished mid-drag: still release the lock.
+            this.enablePageScroll();
+            this.touchDragActive = false;
+            document.body.classList.remove('bookmark-dragging');
             this.cancelTouchPress();
             return;
         }

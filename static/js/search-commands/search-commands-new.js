@@ -31,6 +31,7 @@ class SearchCommandNew {
         this.modal = null;
         this.currentPageId = null;
         this.categories = [];
+        this._catSeq = 0;
         this.pages = [];
         this._mouseDownTarget = null;
         this.pendingIcon = '';
@@ -775,10 +776,14 @@ class SearchCommandNew {
     }
 
     async updateCategoriesForPage(pageId) {
+        // Late responses for an earlier page must not overwrite a newer list.
+        const seq = ++this._catSeq;
         try {
             const response = await fetch(`/api/categories?page=${pageId}`);
+            if (seq !== this._catSeq) return;
             if (!response.ok) return;
             const categories = await response.json();
+            if (seq !== this._catSeq) return;
             this.categories = categories.map(cat => ({
                 ...cat,
                 name: this.language ? this.language.t(cat.name) || cat.name : cat.name
@@ -786,6 +791,7 @@ class SearchCommandNew {
             const categorySelect = document.getElementById('new-bookmark-category');
             if (!categorySelect) return;
             const currentValue = categorySelect.value;
+            const old = categorySelect.__customSelectInstance;
             if (categorySelect.__customSelectInstance) {
                 try {
                     categorySelect.__customSelectInstance.destroy();
@@ -807,6 +813,7 @@ class SearchCommandNew {
                 const instance = new CustomSelect(categorySelect);
                 categorySelect.__customSelectInstance = instance;
                 categorySelect.dataset.customSelectInit = 'true';
+                this._trackModalCustomSelect(old, instance);
             }
         } catch (error) {
             console.error('Error loading categories for page:', error);
@@ -821,11 +828,19 @@ class SearchCommandNew {
             : { select: 'new-bookmark-category', box: 'new-category-create', input: 'new-category-create-input', ok: 'new-category-create-ok', cancel: 'new-category-create-cancel' };
     }
 
+    // Keep closeModal's cleanup list pointing at the live instance.
+    _trackModalCustomSelect(old, instance) {
+        if (!this._modalCustomSelects) return;
+        this._modalCustomSelects = this._modalCustomSelects.filter((cs) => cs !== old);
+        this._modalCustomSelects.push(instance);
+    }
+
     // Re-select a native select value and refresh its CustomSelect skin.
     _setSelectValue(selectEl, value) {
         if (!selectEl) return;
         selectEl.value = value;
         if (typeof CustomSelect !== 'undefined') {
+            const old = selectEl.__customSelectInstance;
             if (selectEl.__customSelectInstance) {
                 try { selectEl.__customSelectInstance.destroy(); } catch (e) { /* ignore */ }
                 selectEl.__customSelectInstance = null;
@@ -834,6 +849,7 @@ class SearchCommandNew {
             const instance = new CustomSelect(selectEl);
             selectEl.__customSelectInstance = instance;
             selectEl.dataset.customSelectInit = 'true';
+            this._trackModalCustomSelect(old, instance);
         }
     }
 
