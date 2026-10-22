@@ -78,21 +78,23 @@
             ? this.t('config.glancesEveryMinutes', 'Every {n} min').replace('{n}', String(s / 60))
             : this.t('config.glancesEverySeconds', 'Every {n} s').replace('{n}', String(s)));
         const refresh = REFRESH.map((s) => `<option value="${s}">${esc(everyLabel(s))}</option>`).join('');
+        const tabs = global.DashboardConfig.GLANCES_TABS.map((tab) => {
+            const on = tab === (this.glancesTab || 'connection');
+            return `<button type="button" class="config-subtab${on ? ' is-active' : ''}" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="config-glances-panels" data-glances-tab="${esc(tab)}">${esc(this.glancesTabLabel(tab))}</button>`;
+        }).join('');
         return `
             <p class="config-view-intro">${t('glancesIntro',
                 'Show one Glances host as a page of its own: live statistics, graphs and processes. Glances 4 only; nextDash reads, it never changes anything there.')}</p>
             <div class="config-tabpage">
                 <div class="config-tabpage-main" id="config-glances-body">
                     ${window.DemoLock?.unraidNote?.() || ''}
-                    <div class="config-panel" data-glances-section data-glances-hosts-panel>
-                        <h3 class="config-panel-title">${t('glancesHostsTitle', 'Hosts')}</h3>
-                        <p class="config-panel-note">${t('glancesHostsNote',
-                            'nextDash can watch up to five machines. Each has its own address, login, record, incidents and notices; how the page looks and the yellow and red lines are shared.')}</p>
+                    <div class="glances-hostbar" data-glances-hosts-panel>
                         <div class="config-actions" data-glances-host-tabs role="group" aria-label="${t('glancesHostsTitle', 'Hosts')}"></div>
                         <div class="config-actions" data-glances-host-actions>
                             <button type="button" class="config-btn" data-glances-host-add>${t('glancesHostAdd', 'Add a host')}</button>
                             <button type="button" class="config-btn config-btn--danger" data-glances-host-remove hidden>${t('glancesHostRemove', 'Remove this host…')}</button>
                         </div>
+                        <span class="glances-hostbar-status" data-glances-bar-status aria-live="polite"></span>
                         <div class="config-field config-field--inline" data-glances-host-new hidden>
                             <label class="config-field-label" for="config-glances-host-new-name">${t('glancesHostName', 'Name')}</label>
                             <input type="text" id="config-glances-host-new-name" class="config-text" maxlength="40" autocomplete="off" data-glances-host-new-name>
@@ -100,9 +102,13 @@
                             <button type="button" class="config-btn" data-glances-host-new-cancel>${t('glancesHostCancel', 'Cancel')}</button>
                         </div>
                     </div>
+                    <p class="config-panel-note glances-hostbar-note">${t('glancesHostsNote',
+                            'nextDash can watch up to five machines. Each has its own address, login, record, incidents and notices; how the page looks and the yellow and red lines are shared.')}</p>
 
-                    <div class="config-panel" data-glances-section>
-                        <h3 class="config-panel-title">${t('glancesTitle', 'Glances')}</h3>
+                    <div class="config-subtabs" role="tablist">${tabs}</div>
+                    <div class="glances-tabbody" id="config-glances-panels" role="tabpanel" tabindex="0">
+                    <div class="config-panel" data-glances-section data-glances-panel="connection"${this.glancesPanelHidden('connection')}>
+                        <h3 class="config-panel-title">${t('glancesTabConnection', 'Connection')}<span class="glances-scope glances-scope--host">${t('glancesBadgeHost', 'This host')}</span></h3>
                         <label class="config-toggle">
                             <input type="checkbox" data-glances-field="enabled">
                             <span>${t('glancesEnabled', 'Show Glances in the navigation')}</span>
@@ -145,8 +151,8 @@
                         <p class="config-field-hint" data-glances-result aria-live="polite" style="white-space: pre-line"></p>
                     </div>
 
-                    <div class="config-panel" data-glances-section>
-                        <h3 class="config-panel-title">${t('glancesPageTitle', 'The page')}</h3>
+                    <div class="config-panel" data-glances-section data-glances-panel="page"${this.glancesPanelHidden('page')}>
+                        <h3 class="config-panel-title">${t('glancesPageTitle', 'The page')}<span class="glances-scope glances-scope--all">${t('glancesBadgeAll', 'All hosts')}</span></h3>
                         <div class="config-field">
                             <label class="config-field-label" for="config-glances-refresh">${t('glancesRefresh', 'Refresh while the page is open')}</label>
                             <select id="config-glances-refresh" class="config-select" data-glances-field="refresh">${refresh}</select>
@@ -157,8 +163,68 @@
                         <div class="config-checkset" data-glances-blocks>${blocks}</div>
                     </div>
 
-                    <div class="config-panel" data-glances-section data-glances-link-panel>
-                        <h3 class="config-panel-title">${t('glancesLinkTitle', 'Containers')}</h3>
+                    <div class="config-panel" data-glances-section data-glances-panel="page"${this.glancesPanelHidden('page')}>
+                        <h3 class="config-panel-title">${t('glancesColoursTitle', 'Yellow and red')}<span class="glances-scope glances-scope--all">${t('glancesBadgeAll', 'All hosts')}</span></h3>
+                        <p class="config-panel-note">${t('glancesColoursNote',
+                            'When a reading changes colour, and the dot on the Glances icon. A temperature sensor that reports limits of its own uses those.')}</p>
+                        ${lines}
+                    </div>
+
+                    <div class="config-panel" data-glances-section data-glances-panel="page"${this.glancesPanelHidden('page')}>
+                        <h3 class="config-panel-title">${t('glancesDisksTitle', 'Which disks count')}<span class="glances-scope glances-scope--host">${t('glancesBadgeHost', 'This host')}</span></h3>
+                        <div class="config-field">
+                            <label class="config-field-label" for="config-glances-strip">${t('glancesStrip', 'Remove this from every mount point')}</label>
+                            <input type="text" id="config-glances-strip" class="config-text" data-glances-field="diskStrip"
+                                   autocomplete="off" spellcheck="false" placeholder="/rootfs">
+                        </div>
+                        <p class="config-field-hint">${t('glancesStripHint',
+                            'Glances in a container sees the host under a prefix such as /rootfs. Mounts outside it are the container\'s own and are hidden. Empty: no prefix.')}</p>
+                        <div class="config-field">
+                            <label class="config-field-label" for="config-glances-hide">${t('glancesHide', 'Hide mounts containing (one per line)')}</label>
+                            <textarea id="config-glances-hide" class="config-text" rows="3" data-glances-field="diskHide"
+                                      spellcheck="false" placeholder="/mnt/user"></textarea>
+                        </div>
+                        <p class="config-field-hint">${t('glancesHideHint',
+                            'Docker storage, squashfs, tmpfs and similar are always hidden.')}</p>
+                    </div>
+
+                    <div class="config-panel" data-glances-section data-glances-panel="recording"${this.glancesPanelHidden('recording')}>
+                        <h3 class="config-panel-title">${t('glancesAutoTitle', 'Processes and containers')}<span class="glances-scope glances-scope--host">${t('glancesBadgeHost', 'This host')}</span></h3>
+                        <p class="config-panel-note">${t('glancesAutoNote',
+                            'The history of a process or container is recorded when you switch it on in its side panel. Here nextDash can also record the busiest ones by itself.')}</p>
+                        <div class="config-field">
+                            <label class="config-field-label" for="config-glances-auto">${t('glancesAutoField', 'Record the busiest by itself')}</label>
+                            <select id="config-glances-auto" class="config-select" data-glances-field="autoRecord">
+                                <option value="0">${t('glancesAutoOff', 'Off')}</option>
+                                <option value="3">${t('glancesAuto3', 'The 3 busiest containers and processes')}</option>
+                                <option value="5">${t('glancesAuto5', 'The 5 busiest containers and processes')}</option>
+                            </select>
+                        </div>
+                        <p class="config-field-hint">${t('glancesAutoHint',
+                            'Which ones change with what is busy, so their lines have gaps where they were not. Those you chose yourself are always recorded. The host is read every beat while this is on.')}</p>
+                    </div>
+
+                    <div class="config-panel" data-glances-section data-glances-panel="recording"${this.glancesPanelHidden('recording')} data-glances-collected-panel>
+                        <h3 class="config-panel-title">${t('glancesCollectedTitle', 'Collected data')}<span class="glances-scope glances-scope--host">${t('glancesBadgeHost', 'This host')}</span></h3>
+                        <p class="config-panel-note">${t('glancesCollectedNote',
+                            'nextDash records the host at the pace you set on the Glances page (30 seconds to start with) and keeps 30 days: processor, memory, disks, network, temperatures, incidents and, for the processes and containers you switch on, their own history. Nothing leaves this server.')}</p>
+                        <p class="config-field-hint" data-glances-collected aria-live="polite"></p>
+                        <div class="config-actions">
+                            <a class="config-btn" data-glances-export href="/api/glances/history.csv?since=0" download="glances-history.csv">${t('glancesExport', 'Download as CSV')}</a>
+                            <button type="button" class="config-btn config-btn--danger" data-glances-wipe disabled>${t('glancesWipe', 'Delete collected data')}</button>
+                        </div>
+                        <p class="config-field-hint" data-glances-wiped aria-live="polite"></p>
+                    </div>
+
+                    <div class="config-panel" data-glances-section data-glances-panel="notices"${this.glancesPanelHidden('notices')} data-glances-notify-panel>
+                        <h3 class="config-panel-title">${t('glancesNotifyTitle', 'Notices')}<span class="glances-scope glances-scope--host">${t('glancesBadgeHost', 'This host')}</span></h3>
+                        <p class="config-panel-note">${t('glancesNotifyNote',
+                            'A notice goes out when such an incident has lasted a few readings, and another when it is over, not on every reading. They go to your alert channel, and to browser notifications when "Notify when a Glances host has an incident" is on in Config → Monitoring. All are off until you switch them on.')}</p>
+                        <div class="config-checkset" data-glances-notifies>${notify}</div>
+                    </div>
+
+                    <div class="config-panel" data-glances-section data-glances-panel="advanced"${this.glancesPanelHidden('advanced')} data-glances-link-panel>
+                        <h3 class="config-panel-title">${t('glancesLinkTitle', 'Containers')}<span class="glances-scope glances-scope--host">${t('glancesBadgeHost', 'This host')}</span></h3>
                         <p class="config-panel-note">${t('glancesLinkNote',
                             'When this Glances host is the machine whose Docker you manage in the Containers view, its containers are the same ones: each links to the other view, and the Containers view shows what Glances recorded about a container.')}</p>
                         <div class="config-field">
@@ -183,68 +249,8 @@
                         </details>
                     </div>
 
-                    <div class="config-panel" data-glances-section>
-                        <h3 class="config-panel-title">${t('glancesAutoTitle', 'Processes and containers')}</h3>
-                        <p class="config-panel-note">${t('glancesAutoNote',
-                            'The history of a process or container is recorded when you switch it on in its side panel. Here nextDash can also record the busiest ones by itself.')}</p>
-                        <div class="config-field">
-                            <label class="config-field-label" for="config-glances-auto">${t('glancesAutoField', 'Record the busiest by itself')}</label>
-                            <select id="config-glances-auto" class="config-select" data-glances-field="autoRecord">
-                                <option value="0">${t('glancesAutoOff', 'Off')}</option>
-                                <option value="3">${t('glancesAuto3', 'The 3 busiest containers and processes')}</option>
-                                <option value="5">${t('glancesAuto5', 'The 5 busiest containers and processes')}</option>
-                            </select>
-                        </div>
-                        <p class="config-field-hint">${t('glancesAutoHint',
-                            'Which ones change with what is busy, so their lines have gaps where they were not. Those you chose yourself are always recorded. The host is read every beat while this is on.')}</p>
-                    </div>
-
-                    <div class="config-panel" data-glances-section>
-                        <h3 class="config-panel-title">${t('glancesColoursTitle', 'Yellow and red')}</h3>
-                        <p class="config-panel-note">${t('glancesColoursNote',
-                            'When a reading changes colour, and the dot on the Glances icon. A temperature sensor that reports limits of its own uses those.')}</p>
-                        ${lines}
-                    </div>
-
-                    <div class="config-panel" data-glances-section data-glances-notify-panel>
-                        <h3 class="config-panel-title">${t('glancesNotifyTitle', 'Notices')}</h3>
-                        <p class="config-panel-note">${t('glancesNotifyNote',
-                            'A notice goes out when such an incident has lasted a few readings, and another when it is over, not on every reading. They go to your alert channel, and to browser notifications when "Notify when a Glances host has an incident" is on in Config → Monitoring. All are off until you switch them on.')}</p>
-                        <div class="config-checkset" data-glances-notifies>${notify}</div>
-                    </div>
-
-                    <div class="config-panel" data-glances-section>
-                        <h3 class="config-panel-title">${t('glancesDisksTitle', 'Which disks count')}</h3>
-                        <div class="config-field">
-                            <label class="config-field-label" for="config-glances-strip">${t('glancesStrip', 'Remove this from every mount point')}</label>
-                            <input type="text" id="config-glances-strip" class="config-text" data-glances-field="diskStrip"
-                                   autocomplete="off" spellcheck="false" placeholder="/rootfs">
-                        </div>
-                        <p class="config-field-hint">${t('glancesStripHint',
-                            'Glances in a container sees the host under a prefix such as /rootfs. Mounts outside it are the container\'s own and are hidden. Empty: no prefix.')}</p>
-                        <div class="config-field">
-                            <label class="config-field-label" for="config-glances-hide">${t('glancesHide', 'Hide mounts containing (one per line)')}</label>
-                            <textarea id="config-glances-hide" class="config-text" rows="3" data-glances-field="diskHide"
-                                      spellcheck="false" placeholder="/mnt/user"></textarea>
-                        </div>
-                        <p class="config-field-hint">${t('glancesHideHint',
-                            'Docker storage, squashfs, tmpfs and similar are always hidden.')}</p>
-                    </div>
-
-                    <div class="config-panel" data-glances-section data-glances-collected-panel>
-                        <h3 class="config-panel-title">${t('glancesCollectedTitle', 'Collected data')}</h3>
-                        <p class="config-panel-note">${t('glancesCollectedNote',
-                            'nextDash records the host at the pace you set on the Glances page (30 seconds to start with) and keeps 30 days: processor, memory, disks, network, temperatures, incidents and, for the processes and containers you switch on, their own history. Nothing leaves this server.')}</p>
-                        <p class="config-field-hint" data-glances-collected aria-live="polite"></p>
-                        <div class="config-actions">
-                            <a class="config-btn" data-glances-export href="/api/glances/history.csv?since=0" download="glances-history.csv">${t('glancesExport', 'Download as CSV')}</a>
-                            <button type="button" class="config-btn config-btn--danger" data-glances-wipe disabled>${t('glancesWipe', 'Delete collected data')}</button>
-                        </div>
-                        <p class="config-field-hint" data-glances-wiped aria-live="polite"></p>
-                    </div>
-
-                    <div class="config-panel" data-glances-section data-glances-reset-panel>
-                        <h3 class="config-panel-title">${t('glancesResetTitle', 'Reset Glances')}</h3>
+                    <div class="config-panel" data-glances-section data-glances-panel="advanced"${this.glancesPanelHidden('advanced')} data-glances-reset-panel>
+                        <h3 class="config-panel-title">${t('glancesResetTitle', 'Reset Glances')}<span class="glances-scope glances-scope--all">${t('glancesBadgeAll', 'All hosts')}</span></h3>
                         <p class="config-panel-note">${t('glancesResetNote',
                             'Removes the address, the login, the thresholds and every choice, together with everything recorded. Show Glances and the connection go off, and the Glances icon leaves the navigation until you set it up again.')}</p>
                         <div class="config-actions">
@@ -252,13 +258,48 @@
                         </div>
                         <p class="config-field-hint" data-glances-reset-result aria-live="polite"></p>
                     </div>
+                    </div>
 
                     <p class="config-field-hint" data-glances-saved aria-live="polite"></p>
                 </div>
             </div>`;
     },
 
+    glancesTabLabel(tab) {
+        const map = {
+            connection: ['config.glancesTabConnection', 'Connection'],
+            page: ['config.glancesTabPage', 'Page'],
+            recording: ['config.glancesTabRecording', 'Recording'],
+            notices: ['config.glancesTabNotices', 'Notices'],
+            advanced: ['config.glancesTabAdvanced', 'Advanced'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
+    },
+
+    /** ` hidden` for a panel that is not on the chosen tab. */
+    glancesPanelHidden(tab) {
+        return (this.glancesTab || 'connection') === tab ? '' : ' hidden';
+    },
+
+    /** Show the panels of the chosen tab without redrawing them: a half-typed address survives a switch. */
+    showGlancesTab(container) {
+        const tab = this.glancesTab || 'connection';
+        container.querySelectorAll('[data-glances-panel]').forEach((panel) => {
+            panel.hidden = panel.getAttribute('data-glances-panel') !== tab;
+        });
+    },
+
     async bindGlancesSection(container) {
+        if (container.querySelector('[data-glances-tab]')) {
+            this.bindSubTabStrip(container, 'data-glances-tab', (tab) => {
+                if (tab === this.glancesTab) return;
+                this.glancesTab = tab;
+                this.restoreConfigHash();
+                this.showGlancesTab(container);
+                this.syncSubTabStrip('data-glances-tab', this.glancesTab);
+            });
+        }
         const root = container.querySelector('#config-glances-body');
         if (!root) return;
         const t = (key, fallback) => this.t(`config.${key}`, fallback);
@@ -316,6 +357,19 @@
         const newName = root.querySelector('[data-glances-host-new-name]');
         let loadHost = async () => {};
         let settle = async () => {};
+        // How the host being edited is, beside the hosts: the dot is the page's own verdict.
+        const bar = root.querySelector('[data-glances-bar-status]');
+        const paintBar = () => {
+            const row = (this.dash.glancesStatus?.hosts || []).find((h) => h.id === hostId);
+            if (!bar || !row) return;
+            let key = ['glancesBarAway', 'Not answering'];
+            let tone = 'bad';
+            if (!row.configured) { key = ['glancesBarNoAddress', 'No address yet']; tone = 'muted'; }
+            else if (row.paused) { key = ['glancesBarOff', 'Connection off']; tone = 'muted'; }
+            else if (row.level === 'ok' || row.level === 'warn' || row.level === 'bad') { key = ['glancesBarConnected', 'Connected']; tone = 'good'; }
+            bar.setAttribute('data-tone', tone);
+            bar.textContent = t(key[0], key[1]);
+        };
         const paintHosts = (hosts) => {
             tabs.replaceChildren(...hosts.map((h) => {
                 const btn = document.createElement('button');
@@ -330,6 +384,7 @@
             }));
             removeBtn.hidden = hosts.length < 2;
             addBtn.hidden = hosts.length >= 5;
+            paintBar();
         };
 
         // `keepFocus`: the answer to a save comes back while someone may be typing in

@@ -9569,7 +9569,18 @@
     "helpGlancesMoreTitle": "Comparar, previsión y el widget",
     "helpGlancesMoreBody": "<p><strong>Comparar.</strong> Un gráfico puede poner <strong>Ayer</strong> o <strong>Semana pasada</strong> detrás de hoy, con línea discontinua, hasta donde llegue el registro. <strong>Guardar imagen</strong> en un gráfico lo da como PNG.</p><p><strong>Los más ocupados, solos.</strong> En Config → Glances, <em>Procesos y contenedores</em> puede registrar por sí mismo los 3 o 5 más ocupados. Lo que elegiste tú sigue registrado. Un incidente de CPU nombra quién estaba más ocupado en ese momento.</p><p><strong>Disco lleno.</strong> El aviso <em>Un disco estará lleno en menos de una semana</em> sale una sola vez cuando lo dice la previsión, y de nuevo solo después de que el disco se haya alejado claramente de ello.</p><p><strong>Franja de hosts y widget.</strong> Con varios hosts, el Overview empieza con un chip por host. El widget de <strong>Glances</strong> pone un host en el panel, como tres medidores o la última hora de la CPU, y un clic abre la página de ese host.</p>",
     "tipGlancesCompare": "Un gráfico de Glances puede mostrar la semana pasada detrás de hoy. Elige <em>Comparar con</em> encima, y <em>Guardar imagen</em> conserva el gráfico como imagen.",
-    "tipGlancesWidget": "El widget de <strong>Glances</strong> pone uno de tus hosts en el panel: tres medidores o la última hora de la CPU."
+    "tipGlancesWidget": "El widget de <strong>Glances</strong> pone uno de tus hosts en el panel: tres medidores o la última hora de la CPU.",
+    "glancesTabConnection": "Conexión",
+    "glancesTabPage": "Página",
+    "glancesTabRecording": "Registro",
+    "glancesTabNotices": "Avisos",
+    "glancesTabAdvanced": "Avanzado",
+    "glancesBadgeHost": "Este host",
+    "glancesBadgeAll": "Todos los hosts",
+    "glancesBarConnected": "Conectado",
+    "glancesBarAway": "No responde",
+    "glancesBarOff": "Conexión apagada",
+    "glancesBarNoAddress": "Aún sin dirección"
   },
   "colors": {
     "title": "personalización del tema",

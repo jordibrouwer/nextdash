@@ -290,6 +290,8 @@ class DashboardConfig {
         this._statusPageTab = DashboardConfig.readRememberedTab('status-page') || 'all';
         // Unraid sub-tab, remembered the same way.
         this._unraidTab = DashboardConfig.readRememberedTab('unraid') || 'connection';
+        // Glances sub-tab, remembered the same way.
+        this._glancesTab = DashboardConfig.readRememberedTab('glances') || 'connection';
         /**
          * Whether a settings tab is filtered to what differs from the default.
          * Not persisted: it is a way of looking at the page for a minute, not a
@@ -613,6 +615,7 @@ class DashboardConfig {
             containers: DashboardConfig.CONTAINERS_TABS,
             'status-page': DashboardConfig.STATUS_PAGE_TABS,
             unraid: DashboardConfig.UNRAID_TABS,
+            glances: DashboardConfig.GLANCES_TABS,
         };
     }
 
@@ -648,7 +651,7 @@ class DashboardConfig {
      */
     static REMEMBERED_TAB_KEY = 'nextdash:config-tab-v1';
 
-    static REMEMBERED_TAB_SECTIONS = ['appearance', 'behavior', 'monitoring', 'inbox', 'containers', 'status-page', 'unraid'];
+    static REMEMBERED_TAB_SECTIONS = ['appearance', 'behavior', 'monitoring', 'inbox', 'containers', 'status-page', 'unraid', 'glances'];
 
     static readRememberedTab(section) {
         try {
@@ -720,6 +723,7 @@ class DashboardConfig {
         containers: 'containersTab',
         'status-page': 'statusPageTab',
         unraid: 'unraidTab',
+        glances: 'glancesTab',
     };
 
     /**
@@ -743,6 +747,7 @@ class DashboardConfig {
         'data-containers-tab': 'containers',
         'data-sp-tab': 'status-page',
         'data-unraid-tab': 'unraid',
+        'data-glances-tab': 'glances',
     };
 
     /** data-* attribute on each section's sub-tab strip buttons. */
@@ -2256,6 +2261,7 @@ class DashboardConfig {
             case 'containers': return this.containersTabLabel?.(tab) || tab;
             case 'status-page': return this.statusPageTabLabel?.(tab) || tab;
             case 'unraid': return this.unraidTabLabel?.(tab) || tab;
+            case 'glances': return this.glancesTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -3725,6 +3731,7 @@ class DashboardConfig {
             case 'containers': return this.containersTabLabel?.(tab) || tab;
             case 'status-page': return this.statusPageTabLabel?.(tab) || tab;
             case 'unraid': return this.unraidTabLabel?.(tab) || tab;
+            case 'glances': return this.glancesTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -18064,6 +18071,13 @@ class DashboardConfig {
         DashboardConfig.rememberTab('status-page', tab);
     }
 
+    get glancesTab() { return this._glancesTab; }
+
+    set glancesTab(tab) {
+        this._glancesTab = tab;
+        DashboardConfig.rememberTab('glances', tab);
+    }
+
     get unraidTab() { return this._unraidTab; }
 
     set unraidTab(tab) {
@@ -20950,6 +20964,9 @@ class DashboardConfig {
 
     /** The Unraid section's sub-tabs; 'all' shows every card at once. */
     static UNRAID_TABS = ['connection', 'how'];
+
+    /** Config → Glances: where it is, how the page looks, what is recorded, the notices, the rest. */
+    static GLANCES_TABS = ['connection', 'page', 'recording', 'notices', 'advanced'];
 
     // Repeated from widgets-tutorial.js, which is checked before the script is
     // fetched at all. Both must agree.

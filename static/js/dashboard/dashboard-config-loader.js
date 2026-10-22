@@ -120,6 +120,7 @@ class DashboardConfigLoader {
         widgets: 'widgetsTab',
         inbox: 'inboxTab',
         containers: 'containersTab',
+        glances: 'glancesTab',
     };
 
     /** Mirrors DashboardConfig.loadLastConfigLocation for cold load on bare `#config`. */
@@ -173,6 +174,7 @@ class DashboardConfigLoader {
         'widgetsTab',
         'inboxTab',
         'containersTab',
+        'glancesTab',
         'aboutTab',
     ];
 

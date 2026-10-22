@@ -9569,7 +9569,18 @@
     "helpGlancesMoreTitle": "对比、预测与小组件",
     "helpGlancesMoreBody": "<p><strong>对比。</strong>图表可以将<strong>昨天</strong>或<strong>上周</strong>以虚线叠在今天之后，只要记录能追溯到那么久。图表上的<strong>保存图片</strong>会将其导出为 PNG。</p><p><strong>自动记录最繁忙的。</strong>在 Config → Glances 中，<em>进程和容器</em>可以自行记录最繁忙的 3 个或 5 个。你自己选的会一直被记录。CPU 事件会指出当时最繁忙的是谁。</p><p><strong>磁盘写满。</strong>当预测显示如此时，通知<em>有磁盘将在一周内写满</em>只会发出一次，只有在磁盘明显脱离该状态后才会再次发出。</p><p><strong>主机栏与小组件。</strong>有多个主机时，Overview 以每个主机一个标签开头。<strong>Glances</strong> 小组件将一个主机放到仪表板上，以三个仪表或 CPU 的最近一小时显示，点击即可打开该主机的页面。</p>",
     "tipGlancesCompare": "Glances 图表可以在今天之后显示上周。选择上方的<em>对比</em>，<em>保存图片</em>则将图表保存为图片。",
-    "tipGlancesWidget": "<strong>Glances</strong> 小组件将你的一个主机放到仪表板上：三个仪表，或 CPU 的最近一小时。"
+    "tipGlancesWidget": "<strong>Glances</strong> 小组件将你的一个主机放到仪表板上：三个仪表，或 CPU 的最近一小时。",
+    "glancesTabConnection": "连接",
+    "glancesTabPage": "页面",
+    "glancesTabRecording": "记录",
+    "glancesTabNotices": "通知",
+    "glancesTabAdvanced": "高级",
+    "glancesBadgeHost": "此主机",
+    "glancesBadgeAll": "所有主机",
+    "glancesBarConnected": "已连接",
+    "glancesBarAway": "无响应",
+    "glancesBarOff": "连接已关闭",
+    "glancesBarNoAddress": "尚无地址"
   },
   "colors": {
     "title": "主题自定义",

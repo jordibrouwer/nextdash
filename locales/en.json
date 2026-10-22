@@ -9569,7 +9569,18 @@
     "helpGlancesMoreTitle": "Compare, forecast and the widget",
     "helpGlancesMoreBody": "<p><strong>Compare.</strong> A graph can lay <strong>Yesterday</strong> or <strong>Last week</strong> behind today, dashed, where the record reaches back that far. <strong>Save image</strong> on a graph gives it as a PNG.</p><p><strong>Busiest by itself.</strong> In Config → Glances, <em>Processes and containers</em> can record the 3 or 5 busiest on its own. Those you chose yourself stay recorded. An incident on the processor names who was busiest at the time.</p><p><strong>Disk full.</strong> The notice <em>A disk is on its way to full within a week</em> goes out once when the forecast says so, and again only after the disk has moved well away from it.</p><p><strong>Hosts strip and widget.</strong> With several hosts the Overview starts with a chip per host. The <strong>Glances</strong> widget puts one host on the dashboard, as three meters or the processor's last hour, and a click opens the page on that host.</p>",
     "tipGlancesCompare": "A Glances graph can show last week behind today. Pick <em>Compare with</em> above it, and <em>Save image</em> keeps the graph as a picture.",
-    "tipGlancesWidget": "The <strong>Glances</strong> widget puts one of your hosts on the dashboard: three meters, or the processor's last hour."
+    "tipGlancesWidget": "The <strong>Glances</strong> widget puts one of your hosts on the dashboard: three meters, or the processor's last hour.",
+    "glancesTabConnection": "Connection",
+    "glancesTabPage": "Page",
+    "glancesTabRecording": "Recording",
+    "glancesTabNotices": "Notices",
+    "glancesTabAdvanced": "Advanced",
+    "glancesBadgeHost": "This host",
+    "glancesBadgeAll": "All hosts",
+    "glancesBarConnected": "Connected",
+    "glancesBarAway": "Not answering",
+    "glancesBarOff": "Connection off",
+    "glancesBarNoAddress": "No address yet"
   },
   "colors": {
     "title": "theme customization",

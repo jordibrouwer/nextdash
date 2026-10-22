@@ -9569,7 +9569,18 @@
     "helpGlancesMoreTitle": "Comparer, prévision et le widget",
     "helpGlancesMoreBody": "<p><strong>Comparer.</strong> Un graphique peut superposer <strong>Hier</strong> ou <strong>Semaine dernière</strong> derrière aujourd'hui, en pointillés, tant que l'enregistrement remonte aussi loin. <strong>Enregistrer l'image</strong> sur un graphique le fournit en PNG.</p><p><strong>Les plus sollicités, automatiquement.</strong> Dans Config → Glances, <em>Processus et conteneurs</em> peut enregistrer seul les 3 ou 5 plus sollicités. Ceux que tu as choisis restent enregistrés. Un incident sur le CPU nomme le plus sollicité à ce moment-là.</p><p><strong>Disque plein.</strong> L'alerte <em>Un disque sera plein d'ici une semaine</em> part une seule fois quand la prévision le dit, et de nouveau seulement après que le disque s'en est nettement éloigné.</p><p><strong>Bandeau d'hôtes et widget.</strong> Avec plusieurs hôtes, l'Overview commence par une puce par hôte. Le widget <strong>Glances</strong> place un hôte sur le tableau de bord, en trois jauges ou sur la dernière heure du CPU, et un clic ouvre la page sur cet hôte.</p>",
     "tipGlancesCompare": "Un graphique Glances peut montrer la semaine dernière derrière aujourd'hui. Choisis <em>Comparer avec</em> au-dessus, et <em>Enregistrer l'image</em> garde le graphique en image.",
-    "tipGlancesWidget": "Le widget <strong>Glances</strong> place l'un de tes hôtes sur le tableau de bord : trois jauges, ou la dernière heure du CPU."
+    "tipGlancesWidget": "Le widget <strong>Glances</strong> place l'un de tes hôtes sur le tableau de bord : trois jauges, ou la dernière heure du CPU.",
+    "glancesTabConnection": "Connexion",
+    "glancesTabPage": "Page",
+    "glancesTabRecording": "Enregistrement",
+    "glancesTabNotices": "Notifications",
+    "glancesTabAdvanced": "Avancé",
+    "glancesBadgeHost": "Cet hôte",
+    "glancesBadgeAll": "Tous les hôtes",
+    "glancesBarConnected": "Connecté",
+    "glancesBarAway": "Ne répond pas",
+    "glancesBarOff": "Connexion coupée",
+    "glancesBarNoAddress": "Pas encore d'adresse"
   },
   "colors": {
     "title": "personnalisation du thème",

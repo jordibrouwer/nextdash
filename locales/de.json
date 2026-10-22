@@ -9569,7 +9569,18 @@
     "helpGlancesMoreTitle": "Vergleichen, Prognose und das Widget",
     "helpGlancesMoreBody": "<p><strong>Vergleichen.</strong> Eine Grafik kann <strong>Gestern</strong> oder <strong>Letzte Woche</strong> gestrichelt hinter heute legen, soweit die Aufzeichnung zurückreicht. <strong>Bild speichern</strong> an einer Grafik liefert sie als PNG.</p><p><strong>Aktivste selbst aufzeichnen.</strong> In Config → Glances kann <em>Prozesse und Container</em> die 3 oder 5 aktivsten selbst aufzeichnen. Was du selbst gewählt hast, bleibt aufgezeichnet. Ein Vorfall bei der CPU nennt, wer zu der Zeit am aktivsten war.</p><p><strong>Datenträger voll.</strong> Die Meldung <em>Ein Datenträger ist innerhalb einer Woche voll</em> kommt einmal, wenn die Prognose das sagt, und erst wieder, nachdem sich der Datenträger deutlich davon entfernt hat.</p><p><strong>Host-Leiste und Widget.</strong> Bei mehreren Hosts beginnt die Overview mit einem Chip pro Host. Das <strong>Glances</strong>-Widget bringt einen Host aufs Dashboard, als drei Anzeigen oder die letzte Stunde der CPU, und ein Klick öffnet die Seite für diesen Host.</p>",
     "tipGlancesCompare": "Eine Glances-Grafik kann die letzte Woche hinter heute zeigen. Wähle darüber <em>Vergleichen mit</em>, und <em>Bild speichern</em> behält die Grafik als Bild.",
-    "tipGlancesWidget": "Das <strong>Glances</strong>-Widget bringt einen deiner Hosts aufs Dashboard: drei Anzeigen oder die letzte Stunde der CPU."
+    "tipGlancesWidget": "Das <strong>Glances</strong>-Widget bringt einen deiner Hosts aufs Dashboard: drei Anzeigen oder die letzte Stunde der CPU.",
+    "glancesTabConnection": "Verbindung",
+    "glancesTabPage": "Seite",
+    "glancesTabRecording": "Aufzeichnung",
+    "glancesTabNotices": "Meldungen",
+    "glancesTabAdvanced": "Erweitert",
+    "glancesBadgeHost": "Dieser Host",
+    "glancesBadgeAll": "Alle Hosts",
+    "glancesBarConnected": "Verbunden",
+    "glancesBarAway": "Antwortet nicht",
+    "glancesBarOff": "Verbindung aus",
+    "glancesBarNoAddress": "Noch keine Adresse"
   },
   "colors": {
     "title": "themenanpassung",

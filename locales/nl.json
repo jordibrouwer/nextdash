@@ -9569,7 +9569,18 @@
     "helpGlancesMoreTitle": "Vergelijken, voorspelling en de widget",
     "helpGlancesMoreBody": "<p><strong>Vergelijken.</strong> Een grafiek kan <strong>Gisteren</strong> of <strong>Vorige week</strong> gestippeld achter vandaag leggen, zover de opslag terugreikt. <strong>Afbeelding opslaan</strong> bij een grafiek geeft hem als PNG.</p><p><strong>Drukste zelf vastleggen.</strong> In Config → Glances kan <em>Processen en containers</em> de 3 of 5 drukste zelf vastleggen. Wat je zelf hebt gekozen blijft vastgelegd. Een incident op de CPU noemt wie op dat moment het drukst was.</p><p><strong>Schijf vol.</strong> De melding <em>Een schijf is binnen een week vol</em> gaat één keer uit als de voorspelling dat zegt, en pas opnieuw nadat de schijf er flink van is weggegaan.</p><p><strong>Hoststrook en widget.</strong> Bij meerdere hosts begint het Overview met een chip per host. De <strong>Glances</strong>-widget zet één host op het dashboard, als drie meters of het laatste uur van de CPU, en een klik opent de pagina op die host.</p>",
     "tipGlancesCompare": "Een Glances-grafiek kan vorige week achter vandaag tonen. Kies <em>Vergelijk met</em> erboven, en <em>Afbeelding opslaan</em> bewaart de grafiek als afbeelding.",
-    "tipGlancesWidget": "De <strong>Glances</strong>-widget zet een van je hosts op het dashboard: drie meters, of het laatste uur van de CPU."
+    "tipGlancesWidget": "De <strong>Glances</strong>-widget zet een van je hosts op het dashboard: drie meters, of het laatste uur van de CPU.",
+    "glancesTabConnection": "Verbinding",
+    "glancesTabPage": "Pagina",
+    "glancesTabRecording": "Opname",
+    "glancesTabNotices": "Meldingen",
+    "glancesTabAdvanced": "Geavanceerd",
+    "glancesBadgeHost": "Deze host",
+    "glancesBadgeAll": "Alle hosts",
+    "glancesBarConnected": "Verbonden",
+    "glancesBarAway": "Antwoordt niet",
+    "glancesBarOff": "Verbinding uit",
+    "glancesBarNoAddress": "Nog geen adres"
   },
   "colors": {
     "title": "thema-aanpassing",
