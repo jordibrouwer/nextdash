@@ -3011,15 +3011,18 @@ func (fs *FileStore) GetFinders() []Finder {
 	filePath := fmt.Sprintf("%s/finders.json", fs.dataDir)
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		fs.readCache.finders = []Finder{}
-		fs.readCache.findersOK = true
+		// Only a missing file is "no finders". A failed read is not cached:
+		// held as empty, the next save from a reader who saw it would replace
+		// the real list.
+		if os.IsNotExist(err) {
+			fs.readCache.finders = []Finder{}
+			fs.readCache.findersOK = true
+		}
 		return []Finder{}
 	}
 
 	var finders []Finder
 	if err := json.Unmarshal(data, &finders); err != nil {
-		fs.readCache.finders = []Finder{}
-		fs.readCache.findersOK = true
 		return []Finder{}
 	}
 
@@ -3132,13 +3135,16 @@ func (fs *FileStore) GetCategoriesByPage(pageID int) []Category {
 	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, pageID)
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		fs.readCache.categories[pageID] = []Category{}
+		// Same rule as GetBookmarksByPage: only a missing file is cached as
+		// empty, a failed read must not stick.
+		if os.IsNotExist(err) {
+			fs.readCache.categories[pageID] = []Category{}
+		}
 		return []Category{}
 	}
 
 	var pageWithBookmarks PageWithBookmarks
 	if err := json.Unmarshal(data, &pageWithBookmarks); err != nil {
-		fs.readCache.categories[pageID] = []Category{}
 		return []Category{}
 	}
 
@@ -3423,7 +3429,7 @@ func (fs *FileStore) getPages() []Page {
 	}
 
 	// Get the order from pages.json
-	order := fs.getPageOrder()
+	order, orderErr := fs.readPageOrder()
 
 	// If no order file exists, create default order
 	if len(order) == 0 {
@@ -3433,8 +3439,11 @@ func (fs *FileStore) getPages() []Page {
 		// By id: map order is random, and the tabs came back shuffled and
 		// were saved that way.
 		sort.Ints(order)
-		// Save the default order (best effort during read path)
-		_ = fs.savePageOrder(order)
+		// Save the default order (best effort during read path), but never
+		// over a pages.json that exists and could not be read.
+		if orderErr == nil {
+			_ = fs.savePageOrder(order)
+		}
 	}
 
 	// Build pages array in the specified order
@@ -3974,26 +3983,40 @@ func (fs *FileStore) GetPageOrder() []int {
 		return clonePageOrder(fs.readCache.pageOrder)
 	}
 
-	order := fs.getPageOrder()
-	fs.readCache.pageOrder = clonePageOrder(order)
-	fs.readCache.pageOrderOK = true
+	order, readErr := fs.readPageOrder()
+	if readErr == nil {
+		fs.readCache.pageOrder = clonePageOrder(order)
+		fs.readCache.pageOrderOK = true
+	}
 	return clonePageOrder(order)
 }
 
 func (fs *FileStore) getPageOrder() []int {
+	order, _ := fs.readPageOrder()
+	return order
+}
+
+// readPageOrder reads pages.json. The error is non-nil only when the file
+// exists but could not be read or parsed: a missing file is a normal empty
+// order, while a failed read must not be answered by writing a default order
+// over the real one.
+func (fs *FileStore) readPageOrder() ([]int, error) {
 	fs.ensureDataDir()
 
 	data, err := os.ReadFile(fs.pageOrderFile)
 	if err != nil {
-		return []int{}
+		if os.IsNotExist(err) {
+			return []int{}, nil
+		}
+		return []int{}, err
 	}
 
 	var pageOrder PageOrder
 	if err := json.Unmarshal(data, &pageOrder); err != nil {
-		return []int{}
+		return []int{}, err
 	}
 
-	return pageOrder.Order
+	return pageOrder.Order, nil
 }
 
 func (fs *FileStore) SavePageOrder(order []int) error {
@@ -6328,18 +6351,19 @@ func (fs *FileStore) GetColors() ColorTheme {
 
 	data, err := os.ReadFile(fs.colorsFile)
 	if err != nil {
+		// Defaults are cached only for a missing file; after a failed read
+		// they would hide the stored theme until restart.
 		colors := getDefaultColors()
-		fs.readCache.colors = colors
-		fs.readCache.colorsOK = true
+		if os.IsNotExist(err) {
+			fs.readCache.colors = colors
+			fs.readCache.colorsOK = true
+		}
 		return colors
 	}
 
 	var colors ColorTheme
 	if err := json.Unmarshal(data, &colors); err != nil {
-		colors := getDefaultColors()
-		fs.readCache.colors = colors
-		fs.readCache.colorsOK = true
-		return colors
+		return getDefaultColors()
 	}
 
 	// Ensure custom themes map is initialized
