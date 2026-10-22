@@ -26,7 +26,7 @@ func icsFixture(now time.Time) string {
 
 	// One line is folded (continued on the next with a leading space), one
 	// event has already ended, one is all-day, one carries a TZID, one has
-	// escaped text, and one has an RRULE but no expansion is expected.
+	// escaped text, and one has a weekly RRULE.
 	return "BEGIN:VCALENDAR\r\n" +
 		"BEGIN:VEVENT\r\n" +
 		"SUMMARY:Already happened\r\n" +
@@ -65,15 +65,248 @@ func TestParseICSKeepsWhatIsComingUp(t *testing.T) {
 	// "Already happened" is dropped; the rest survive, sorted by start.
 	want := []string{"Team standup, weekly", "Weekly sync", "Zoned meeting", "A long title that folds"}
 	// standup(+1h) < weeklySync(+2h) < zoned(+3h) < allDay(midnight the day
-	// after, which is +12h from a fixture anchored at noon).
-	if len(events) != len(want) {
-		t.Fatalf("got %d events, want %d: %v", len(events), len(want), titles)
+	// after, which is +12h from a fixture anchored at noon). The weekly sync
+	// then repeats, a week apart, after all four.
+	if len(events) < len(want) {
+		t.Fatalf("got %d events, want at least %d: %v", len(events), len(want), titles)
 	}
 	for i, title := range want {
 		if titles[i] != title {
 			t.Errorf("event %d = %q, want %q", i, titles[i], title)
 		}
 	}
+	for _, title := range titles[len(want):] {
+		if title != "Weekly sync" {
+			t.Errorf("after the first four, only the weekly sync repeats; got %v", titles)
+			break
+		}
+	}
+	if len(events) == len(want) || events[len(want)].Start != events[1].Start+7*24*60*60*1000 {
+		t.Errorf("weekly sync did not repeat a week later: %v", titles)
+	}
+}
+
+// --- Recurrence ---
+
+// calendarNow is a Tuesday, five days before Europe's clocks go back (25
+// October 2026), so a weekly event straddles the change.
+var calendarNow = time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC)
+
+// icsCalendar wraps VEVENT property lines (each event's lines separated by
+// "--") into a feed.
+func icsCalendar(lines ...string) []byte {
+	var b strings.Builder
+	b.WriteString("BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\n")
+	for _, line := range lines {
+		if line == "--" {
+			b.WriteString("END:VEVENT\r\nBEGIN:VEVENT\r\n")
+			continue
+		}
+		b.WriteString(line + "\r\n")
+	}
+	b.WriteString("END:VEVENT\r\nEND:VCALENDAR\r\n")
+	return []byte(b.String())
+}
+
+// calendarStarts lists the UTC starts of the events titled title.
+func calendarStarts(events []CalendarEvent, title string) []time.Time {
+	var out []time.Time
+	for _, e := range events {
+		if e.Title == title {
+			out = append(out, time.UnixMilli(e.Start).UTC())
+		}
+	}
+	return out
+}
+
+func assertCalendarStarts(t *testing.T, got []time.Time, want ...time.Time) {
+	t.Helper()
+	if len(got) != len(want) {
+		t.Fatalf("got %d starts %v, want %v", len(got), got, want)
+	}
+	for i := range want {
+		if !got[i].Equal(want[i]) {
+			t.Errorf("start %d = %v, want %v", i, got[i], want[i])
+		}
+	}
+}
+
+func utc(y int, m time.Month, d, h, min int) time.Time {
+	return time.Date(y, m, d, h, min, 0, 0, time.UTC)
+}
+
+func TestParseICSExpandsWeeklyByDay(t *testing.T) {
+	events := parseICS(icsCalendar(
+		"SUMMARY:Gym", "DTSTART:20261005T100000Z", "DTEND:20261005T110000Z",
+		"RRULE:FREQ=WEEKLY;BYDAY=MO,WE",
+	), calendarNow)
+	got := calendarStarts(events, "Gym")
+	if len(got) < 3 {
+		t.Fatalf("got %v", got)
+	}
+	assertCalendarStarts(t, got[:3], utc(2026, 10, 21, 10, 0), utc(2026, 10, 26, 10, 0), utc(2026, 10, 28, 10, 0))
+	if events[0].End-events[0].Start != int64(time.Hour/time.Millisecond) {
+		t.Errorf("occurrence lost the master's hour: %+v", events[0])
+	}
+}
+
+func TestParseICSExpandsDailyIntervalWithCount(t *testing.T) {
+	// 19, 21, 23, 25, 27 October; the 19th is over.
+	events := parseICS(icsCalendar(
+		"SUMMARY:Water plants", "DTSTART:20261019T080000Z", "RRULE:FREQ=DAILY;INTERVAL=2;COUNT=5",
+	), calendarNow)
+	assertCalendarStarts(t, calendarStarts(events, "Water plants"),
+		utc(2026, 10, 21, 8, 0), utc(2026, 10, 23, 8, 0), utc(2026, 10, 25, 8, 0), utc(2026, 10, 27, 8, 0))
+}
+
+func TestParseICSExpandsMonthlyByDayOrdinals(t *testing.T) {
+	events := parseICS(icsCalendar(
+		"SUMMARY:Drinks", "DTSTART:20260925T170000Z", "RRULE:FREQ=MONTHLY;BYDAY=-1FR",
+		"--",
+		"SUMMARY:Planning", "DTSTART:20260907T090000Z", "RRULE:FREQ=MONTHLY;BYDAY=1MO",
+	), calendarNow)
+	// The horizon (now + 91 days) ends on 19 January 2027.
+	assertCalendarStarts(t, calendarStarts(events, "Drinks"),
+		utc(2026, 10, 30, 17, 0), utc(2026, 11, 27, 17, 0), utc(2026, 12, 25, 17, 0))
+	assertCalendarStarts(t, calendarStarts(events, "Planning"),
+		utc(2026, 11, 2, 9, 0), utc(2026, 12, 7, 9, 0), utc(2027, 1, 4, 9, 0))
+}
+
+// RFC 5545: a month without the day has no occurrence, not one on its last day.
+func TestParseICSMonthlyThirtyFirstSkipsShortMonths(t *testing.T) {
+	events := parseICS(icsCalendar(
+		"SUMMARY:Invoices", "DTSTART:20260131T120000Z", "RRULE:FREQ=MONTHLY;BYMONTHDAY=31",
+	), calendarNow)
+	assertCalendarStarts(t, calendarStarts(events, "Invoices"), utc(2026, 10, 31, 12, 0), utc(2026, 12, 31, 12, 0))
+}
+
+func TestParseICSYearlyAllDayBirthday(t *testing.T) {
+	events := parseICS(icsCalendar(
+		"SUMMARY:Birthday", "DTSTART;VALUE=DATE:19901103", "DTEND;VALUE=DATE:19901104", "RRULE:FREQ=YEARLY",
+	), calendarNow)
+	assertCalendarStarts(t, calendarStarts(events, "Birthday"), utc(2026, 11, 3, 0, 0))
+	if !events[0].AllDay || events[0].End-events[0].Start != 24*60*60*1000 {
+		t.Errorf("birthday should stay one all-day day: %+v", events[0])
+	}
+}
+
+func TestParseICSUntilInBothForms(t *testing.T) {
+	// The 19th and 20th are over at noon on the 20th; UNTIL is inclusive.
+	want := []time.Time{utc(2026, 10, 21, 9, 0), utc(2026, 10, 22, 9, 0), utc(2026, 10, 23, 9, 0)}
+	for _, until := range []string{"20261023T090000Z", "20261023"} {
+		events := parseICS(icsCalendar(
+			"SUMMARY:Course", "DTSTART:20261019T090000Z", "RRULE:FREQ=DAILY;UNTIL="+until,
+		), calendarNow)
+		t.Run(until, func(t *testing.T) { assertCalendarStarts(t, calendarStarts(events, "Course"), want...) })
+	}
+	// A zoned DTSTART with a UTC UNTIL naming the same instant as its last
+	// occurrence (09:00 in Amsterdam is 07:00Z before the change).
+	events := parseICS(icsCalendar(
+		"SUMMARY:Course", "DTSTART;TZID=Europe/Amsterdam:20261019T090000", "RRULE:FREQ=DAILY;UNTIL=20261023T070000Z",
+	), calendarNow)
+	assertCalendarStarts(t, calendarStarts(events, "Course"),
+		utc(2026, 10, 21, 7, 0), utc(2026, 10, 22, 7, 0), utc(2026, 10, 23, 7, 0))
+}
+
+func TestParseICSExdateRemovesAndRdateAdds(t *testing.T) {
+	events := parseICS(icsCalendar(
+		"SUMMARY:Run", "DTSTART:20261021T090000Z", "RRULE:FREQ=DAILY;COUNT=5",
+		"EXDATE:20261022T090000Z,20261024T090000Z",
+		"EXDATE:20261025T090000Z",
+		"--",
+		"SUMMARY:Class", "DTSTART:20261021T090000Z", "RRULE:FREQ=WEEKLY;COUNT=2",
+		"RDATE:20261030T150000Z",
+	), calendarNow)
+	assertCalendarStarts(t, calendarStarts(events, "Run"), utc(2026, 10, 21, 9, 0), utc(2026, 10, 23, 9, 0))
+	assertCalendarStarts(t, calendarStarts(events, "Class"),
+		utc(2026, 10, 21, 9, 0), utc(2026, 10, 28, 9, 0), utc(2026, 10, 30, 15, 0))
+}
+
+func TestParseICSRecurrenceIDMovesAndCancels(t *testing.T) {
+	events := parseICS(icsCalendar(
+		"UID:series-1", "SUMMARY:Standup", "DTSTART:20261021T090000Z", "RRULE:FREQ=WEEKLY;COUNT=3",
+		"--",
+		// Listed after the master, moved a day and retitled.
+		"UID:series-1", "RECURRENCE-ID:20261028T090000Z", "SUMMARY:Standup (moved)", "DTSTART:20261029T140000Z",
+		"--",
+		"UID:series-1", "RECURRENCE-ID:20261104T090000Z", "SUMMARY:Standup", "DTSTART:20261104T090000Z", "STATUS:CANCELLED",
+	), calendarNow)
+	assertCalendarStarts(t, calendarStarts(events, "Standup"), utc(2026, 10, 21, 9, 0))
+	assertCalendarStarts(t, calendarStarts(events, "Standup (moved)"), utc(2026, 10, 29, 14, 0))
+	if len(events) != 2 {
+		t.Fatalf("events = %+v, want the first standup and the moved one", events)
+	}
+}
+
+// 09:00 in Amsterdam is 07:00Z in summer time and 08:00Z after 25 October.
+func TestParseICSKeepsWallClockAcrossDST(t *testing.T) {
+	if _, err := time.LoadLocation("Europe/Amsterdam"); err != nil {
+		t.Skip("no zone database")
+	}
+	events := parseICS(icsCalendar(
+		"SUMMARY:Review", "DTSTART;TZID=Europe/Amsterdam:20261007T090000", "RRULE:FREQ=WEEKLY",
+	), calendarNow)
+	got := calendarStarts(events, "Review")
+	if len(got) < 2 {
+		t.Fatalf("got %v", got)
+	}
+	assertCalendarStarts(t, got[:2], utc(2026, 10, 21, 7, 0), utc(2026, 10, 28, 8, 0))
+}
+
+// A daily event from 2015 with no end yields only what is coming up within the
+// horizon -- with and without a COUNT that is still running.
+func TestParseICSOldMasterStaysBounded(t *testing.T) {
+	for _, rule := range []string{"FREQ=DAILY", "FREQ=DAILY;COUNT=2000000000"} {
+		t.Run(rule, func(t *testing.T) {
+			events := parseICS(icsCalendar("SUMMARY:Pills", "DTSTART:20150101T090000Z", "RRULE:"+rule), calendarNow)
+			got := calendarStarts(events, "Pills")
+			if len(got) == 0 || len(got) > calendarMaxEvents {
+				t.Fatalf("got %d occurrences", len(got))
+			}
+			if !got[0].Equal(utc(2026, 10, 21, 9, 0)) {
+				t.Errorf("first = %v, want tomorrow 09:00", got[0])
+			}
+			horizon := calendarNow.Add(calendarRecurHorizon)
+			if last := got[len(got)-1]; last.After(horizon) || last.Before(horizon.Add(-48*time.Hour)) {
+				t.Errorf("last = %v, want just inside the horizon %v", last, horizon)
+			}
+		})
+	}
+}
+
+// A rule this does not read shows the event once, at its DTSTART, and nothing
+// a feed can write makes the parse panic or drop the event.
+func TestParseICSUnreadableRulesFallBackToDTSTART(t *testing.T) {
+	rules := []string{
+		"FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1",
+		"FREQ=DAILY;INTERVAL=0",
+		"FREQ=DAILY;INTERVAL=-3",
+		"FREQ=DAILY;INTERVAL=999999999999",
+		"FREQ=DAILY;COUNT=99999999999999999999",
+		"FREQ=DAILY;COUNT=0",
+		"FREQ=HOURLY",
+		"FREQ=WEEKLY;BYDAY=2MO",
+		"FREQ=MONTHLY;BYDAY=",
+		"FREQ=DAILY;UNTIL=nope",
+		"FREQ=YEARLY;BYWEEKNO=20",
+		"",
+		"garbage",
+		";;;=",
+	}
+	dtstart := calendarNow.Add(time.Hour)
+	for _, rule := range rules {
+		t.Run(rule, func(t *testing.T) {
+			events := parseICS(icsCalendar(
+				"SUMMARY:Thing", "DTSTART:"+dtstart.Format("20060102T150405Z"), "RRULE:"+rule,
+			), calendarNow)
+			assertCalendarStarts(t, calendarStarts(events, "Thing"), dtstart)
+		})
+	}
+	// Readable but never matching: DTSTART still counts as the first.
+	events := parseICS(icsCalendar(
+		"SUMMARY:Never", "DTSTART:"+dtstart.Format("20060102T150405Z"), "RRULE:FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=30",
+	), calendarNow)
+	assertCalendarStarts(t, calendarStarts(events, "Never"), dtstart)
 }
 
 func TestParseICSAllDayEventHasNoTime(t *testing.T) {

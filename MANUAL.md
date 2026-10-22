@@ -2820,7 +2820,7 @@ Widgets share one order with the categories and are moved on the dashboard: drag
 - The arrow keys walk through a widget's rows; `Enter` does what a click does. See [§7.4](#74-acting-on-a-category-or-widget).
 - Widgets that read something outside refresh on their own interval, and not at all while the tab is hidden.
 
-**Calendar** — your server fetches the feed (the private ICS address from your calendar app, not its web page), shares one copy between widgets and refreshes it every 15 minutes. A recurring event shows its first stated occurrence. Changing the address redraws the widgets at once.
+**Calendar** — your server fetches the feed (the private ICS address from your calendar app, not its web page), shares one copy between widgets and refreshes it every 15 minutes. A recurring event shows every occurrence that falls within the widget's look-ahead, at the same local time on both sides of a clock change; skipped, extra, moved and cancelled occurrences show as your calendar app set them. A repeat pattern the widget cannot read (such as *the last weekday of the month*) shows only its first occurrence. Changing the address redraws the widgets at once.
 
 **RSS** — your server fetches each feed and caches it for 15 minutes. A headline shows the feed's summary on hover or focus. Rows past the row count fold into a **more** row. A feed that fails does not empty the tile.
 
