@@ -3568,7 +3568,20 @@
     "glancesIncidentNote": "The recording from before to after the incident. The red band is the incident itself; a dashed line is a moment a container started again.",
     "glancesHost": "Host",
     "glancesHostNoAddress": "This host has no address yet. Add it in Config → Glances.",
-    "glancesHostLook": "Look at {name}"
+    "glancesHostLook": "Look at {name}",
+    "glancesSectionHosts": "Hosts",
+    "glancesHostsHost": "Host",
+    "glancesHostsDisk": "Fullest disk",
+    "glancesHostsTemp": "Temperature",
+    "glancesHostsRead": "Last reading",
+    "glancesHostNoAddressShort": "No address yet",
+    "glancesHostPaused": "Connection off",
+    "glancesHostAway": "Not answering since {time}",
+    "glancesHostStatusOk": "Healthy",
+    "glancesHostStatusWarn": "Warning",
+    "glancesHostStatusBad": "Critical",
+    "glancesHostStatusUnknown": "Unknown",
+    "glancesHostAwayNow": "Not answering"
   },
   "health": {
     "reloadPage": "Reload page",
@@ -9431,7 +9444,7 @@
     "glancesLinkOnlyDocker": "Only in the Containers view",
     "glancesOpenPage": "Open the Glances page",
     "glancesNotifyTitle": "Notices",
-    "glancesNotifyNote": "A notice goes out when such an incident has lasted a few readings, and another when it is over, not on every reading. They use your alert channel and browser notifications, and wait for the quiet hours. All are off until you switch them on.",
+    "glancesNotifyNote": "A notice goes out when such an incident has lasted a few readings, and another when it is over, not on every reading. They go to your alert channel, and to browser notifications when \"Notify when a Glances host has an incident\" is on in Config → Monitoring. All are off until you switch them on.",
     "glancesNotifyDown": "The host stops answering",
     "glancesNotifyCpu": "Processor goes past its red line",
     "glancesNotifyMem": "Memory or swap goes past its red line",
@@ -9449,7 +9462,10 @@
     "glancesHostRemoveConfirm": "Remove this host? Its address, login and everything recorded about it are deleted. This cannot be undone.",
     "glancesHostRemoveOk": "Remove",
     "glancesLinkIsDockerHost": "This is the Docker host: the Containers view is linked to this host.",
-    "glancesLinkOtherDockerHost": "The Containers view is linked to {name}. Only one host can be the Docker host."
+    "glancesLinkOtherDockerHost": "The Containers view is linked to {name}. Only one host can be the Docker host.",
+    "pushNotifyGlancesLabel": "Notify when a Glances host has an incident (kinds are chosen in Config → Glances)",
+    "glancesUseForContainers": "Use Glances for the CPU, memory and network in the Containers view",
+    "glancesUseForContainersHint": "When this host is the Docker host, Glances already reads every container: one request instead of one per container. Containers Glances does not know are still read from Docker."
   },
   "colors": {
     "title": "theme customization",

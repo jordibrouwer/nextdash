@@ -3568,7 +3568,20 @@
     "glancesIncidentNote": "El registro desde antes hasta después del incidente. La banda roja es el incidente en sí; una línea discontinua es un momento en que un contenedor volvió a arrancar.",
     "glancesHost": "Host",
     "glancesHostNoAddress": "Este host aún no tiene dirección. Añádela en Config → Glances.",
-    "glancesHostLook": "Ver {name}"
+    "glancesHostLook": "Ver {name}",
+    "glancesSectionHosts": "Hosts",
+    "glancesHostsHost": "Host",
+    "glancesHostsDisk": "Disco más lleno",
+    "glancesHostsTemp": "Temperatura",
+    "glancesHostsRead": "Última lectura",
+    "glancesHostNoAddressShort": "Aún sin dirección",
+    "glancesHostPaused": "Conexión apagada",
+    "glancesHostAway": "Sin respuesta desde {time}",
+    "glancesHostStatusOk": "Correcto",
+    "glancesHostStatusWarn": "Aviso",
+    "glancesHostStatusBad": "Crítico",
+    "glancesHostStatusUnknown": "Desconocido",
+    "glancesHostAwayNow": "Sin respuesta"
   },
   "health": {
     "reloadPage": "Recargar la página",
@@ -9431,7 +9444,7 @@
     "glancesLinkOnlyDocker": "Solo en la vista Contenedores",
     "glancesOpenPage": "Abrir la página Glances",
     "glancesNotifyTitle": "Avisos",
-    "glancesNotifyNote": "Se envía un aviso cuando un incidente así ha durado unas cuantas lecturas, y otro cuando termina, no en cada lectura. Usan tu canal de alertas y las notificaciones del navegador, y esperan a las horas de silencio. Todos están desactivados hasta que los actives.",
+    "glancesNotifyNote": "Se envía un aviso cuando un incidente así dura unas lecturas, y otro cuando termina, no en cada lectura. Van a tu canal de alertas, y a las notificaciones del navegador cuando \"Avisar cuando un host de Glances tenga un incidente\" está activado en Config → Monitoring. Todo está desactivado hasta que lo actives.",
     "glancesNotifyDown": "El host deja de responder",
     "glancesNotifyCpu": "El procesador pasa de su línea roja",
     "glancesNotifyMem": "La memoria o el swap pasan de su línea roja",
@@ -9449,7 +9462,10 @@
     "glancesHostRemoveConfirm": "¿Quitar este host? Se eliminan su dirección, su inicio de sesión y todo lo registrado sobre él. No se puede deshacer.",
     "glancesHostRemoveOk": "Quitar",
     "glancesLinkIsDockerHost": "Este es el host de Docker: la vista Contenedores está vinculada a este host.",
-    "glancesLinkOtherDockerHost": "La vista Contenedores está vinculada a {name}. Solo un host puede ser el host de Docker."
+    "glancesLinkOtherDockerHost": "La vista Contenedores está vinculada a {name}. Solo un host puede ser el host de Docker.",
+    "pushNotifyGlancesLabel": "Avisar cuando un host de Glances tenga un incidente (los tipos se eligen en Config → Glances)",
+    "glancesUseForContainers": "Usar Glances para la CPU, la memoria y la red en la vista Contenedores",
+    "glancesUseForContainersHint": "Cuando este host es el host de Docker, Glances ya lee cada contenedor: una petición en lugar de una por contenedor. Los contenedores que Glances no conoce se siguen leyendo de Docker."
   },
   "colors": {
     "title": "personalización del tema",

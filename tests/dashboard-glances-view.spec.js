@@ -146,6 +146,10 @@ async function mockGlances(page, overrides = {}) {
             body = { ...CONFIG, ...hostBits(), ...(state.reset ? { enabled: false, server: '', user: '', hiddenBlocks: [], hasPassword: false } : {}), trackedHistory: state.tracked, paused: state.paused, ...(state.wiped ? { collected: { series: 0, points: 0, incidents: 0, keepDays: 30 } } : {}) };
         } else if (rest === 'insights') {
             body = INSIGHTS;
+        } else if (rest === 'hosts') {
+            body = { hosts: (state.hosts || []).map((h, i) => (h.configured === false
+                ? { id: h.id, name: h.name, configured: false, paused: false, level: 'unknown', ok: false, at: 0, cpu: null, mem: null, disk: null, temp: null }
+                : { id: h.id, name: h.name, configured: true, paused: false, level: i ? 'warn' : 'ok', ok: true, at: Date.now(), cpu: i ? 84 : 22, mem: 48, disk: i ? 35 : 91, diskMount: '/mnt/disk1', temp: 54 })) };
         } else if (rest === 'docker-link') {
             body = state.link;
         } else if (rest === 'history') {
@@ -1550,6 +1554,18 @@ test.describe('several hosts', () => {
         await expect(page.locator('[data-glances-host-add]')).toBeHidden();
     });
 
+    test('Config: Glances readings for the Containers view are on, and keeping Docker\'s own is saved', async ({ page }) => {
+        const state = await mockGlances(page);
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances');
+        const box = page.locator('[data-glances-field="useForContainers"]');
+        await expect(box).toBeChecked();
+        await box.uncheck();
+        await expect.poll(() => state.saved && state.saved.keepDockerStats).toBe(true);
+        await box.check();
+        await expect.poll(() => state.saved.keepDockerStats).toBe(false);
+    });
+
     test('Config says which host the Containers view is linked to', async ({ page }) => {
         const state = await mockGlances(page);
         state.hosts = [{ id: 'main', name: 'Home' }, { id: 'nas', name: 'NAS' }];
@@ -1560,6 +1576,23 @@ test.describe('several hosts', () => {
         await expect(line).toContainText('linked to NAS');
         await page.locator('[data-glances-host-tab="nas"]').click();
         await expect(line).toContainText('This is the Docker host');
+    });
+
+    test('Hosts: a section only with several hosts, a row each, and a click opens that host', async ({ page }) => {
+        const state = await mockGlances(page);
+        await openView(page);
+        await expect(page.locator('[data-glances-section="hosts"]')).toHaveCount(0);
+        state.hosts = [{ id: 'main', name: 'Home' }, { id: 'nas', name: 'NAS' }, { id: 'pi', name: 'Pi', configured: false }];
+        await page.reload();
+        await page.locator('[data-glances-section="hosts"]').click();
+        await expect(page.locator('[data-glances-host-row]')).toHaveCount(3);
+        const nas = page.locator('[data-glances-host-row="nas"]');
+        await expect(nas).toContainText('84%');
+        await expect(nas.locator('.glances-hosts-dot')).toHaveAttribute('data-level', 'warn');
+        await expect(page.locator('[data-glances-host-row="pi"]')).toContainText('No address yet');
+        await nas.locator('[data-glances-host-open]').click();
+        await expect(page).toHaveURL(/#glances\/overview\?host=nas$/);
+        await expect(page.locator('[data-glances-host]')).toHaveValue('nas');
     });
 
     test('a host without an address says so and lets the reader go to another; Glances itself stays', async ({ page }) => {

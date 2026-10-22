@@ -3568,7 +3568,20 @@
     "glancesIncidentNote": "L’enregistrement d’avant à après l’incident. La bande rouge est l’incident lui-même ; une ligne en pointillés marque un moment où un conteneur a redémarré.",
     "glancesHost": "Hôte",
     "glancesHostNoAddress": "Cet hôte n’a pas encore d’adresse. Ajoutez-la dans Config → Glances.",
-    "glancesHostLook": "Voir {name}"
+    "glancesHostLook": "Voir {name}",
+    "glancesSectionHosts": "Hôtes",
+    "glancesHostsHost": "Hôte",
+    "glancesHostsDisk": "Disque le plus plein",
+    "glancesHostsTemp": "Température",
+    "glancesHostsRead": "Dernière mesure",
+    "glancesHostNoAddressShort": "Pas encore d’adresse",
+    "glancesHostPaused": "Connexion coupée",
+    "glancesHostAway": "Ne répond pas depuis {time}",
+    "glancesHostStatusOk": "Normal",
+    "glancesHostStatusWarn": "Avertissement",
+    "glancesHostStatusBad": "Critique",
+    "glancesHostStatusUnknown": "Inconnu",
+    "glancesHostAwayNow": "Ne répond pas"
   },
   "health": {
     "reloadPage": "Recharger la page",
@@ -9431,7 +9444,7 @@
     "glancesLinkOnlyDocker": "Uniquement dans la vue Conteneurs",
     "glancesOpenPage": "Ouvrir la page Glances",
     "glancesNotifyTitle": "Notifications",
-    "glancesNotifyNote": "Une notification est envoyée quand un tel incident a duré quelques mesures, et une autre quand il est terminé, pas à chaque mesure. Elles utilisent votre canal d’alerte et les notifications du navigateur, et attendent les heures calmes. Tout est désactivé tant que vous ne l’activez pas.",
+    "glancesNotifyNote": "Une notification part quand un tel incident dure quelques mesures, et une autre quand il est terminé, pas à chaque mesure. Elles vont à votre canal d’alerte, et aux notifications du navigateur quand « Notifier quand un hôte Glances a un incident » est activé dans Config → Monitoring. Tout est désactivé tant que vous ne l’activez pas.",
     "glancesNotifyDown": "L’hôte ne répond plus",
     "glancesNotifyCpu": "Le processeur dépasse sa limite rouge",
     "glancesNotifyMem": "La mémoire ou le swap dépasse sa limite rouge",
@@ -9449,7 +9462,10 @@
     "glancesHostRemoveConfirm": "Supprimer cet hôte ? Son adresse, son identifiant et tout ce qui a été enregistré à son sujet sont supprimés. Cette action est irréversible.",
     "glancesHostRemoveOk": "Supprimer",
     "glancesLinkIsDockerHost": "C’est l’hôte Docker : la vue Conteneurs est liée à cet hôte.",
-    "glancesLinkOtherDockerHost": "La vue Conteneurs est liée à {name}. Un seul hôte peut être l’hôte Docker."
+    "glancesLinkOtherDockerHost": "La vue Conteneurs est liée à {name}. Un seul hôte peut être l’hôte Docker.",
+    "pushNotifyGlancesLabel": "Notifier quand un hôte Glances a un incident (les types se choisissent dans Config → Glances)",
+    "glancesUseForContainers": "Utiliser Glances pour le processeur, la mémoire et le réseau dans la vue Conteneurs",
+    "glancesUseForContainersHint": "Quand cet hôte est l’hôte Docker, Glances lit déjà chaque conteneur : une requête au lieu d’une par conteneur. Les conteneurs que Glances ne connaît pas sont toujours lus depuis Docker."
   },
   "colors": {
     "title": "personnalisation du thème",

@@ -3568,7 +3568,20 @@
     "glancesIncidentNote": "从事件之前到之后的记录。红色区带是事件本身；虚线表示容器重新启动的时刻。",
     "glancesHost": "主机",
     "glancesHostNoAddress": "此主机还没有地址。请在 Config → Glances 中添加。",
-    "glancesHostLook": "查看 {name}"
+    "glancesHostLook": "查看 {name}",
+    "glancesSectionHosts": "主机",
+    "glancesHostsHost": "主机",
+    "glancesHostsDisk": "最满的磁盘",
+    "glancesHostsTemp": "温度",
+    "glancesHostsRead": "最近读数",
+    "glancesHostNoAddressShort": "还没有地址",
+    "glancesHostPaused": "连接已关闭",
+    "glancesHostAway": "自 {time} 起无响应",
+    "glancesHostStatusOk": "正常",
+    "glancesHostStatusWarn": "警告",
+    "glancesHostStatusBad": "严重",
+    "glancesHostStatusUnknown": "未知",
+    "glancesHostAwayNow": "无响应"
   },
   "health": {
     "reloadPage": "重新加载页面",
@@ -9431,7 +9444,7 @@
     "glancesLinkOnlyDocker": "仅在容器视图中",
     "glancesOpenPage": "打开 Glances 页面",
     "glancesNotifyTitle": "通知",
-    "glancesNotifyNote": "当此类事件持续数次读数后会发出一条通知，结束时再发一条，而不是每次读数都发。它们使用你的警报渠道和浏览器通知，并会等到免打扰时段结束。全部默认关闭，需你手动开启。",
+    "glancesNotifyNote": "此类事件持续几次读数后会发出一条通知，结束时再发一条，而不是每次读数都发。它们发送到你的警报渠道；如果在 Config → Monitoring 中开启了“Glances 主机出现事件时通知”，也会发送到浏览器通知。在你开启之前全部关闭。",
     "glancesNotifyDown": "主机不再响应",
     "glancesNotifyCpu": "处理器超过红线",
     "glancesNotifyMem": "内存或交换区超过红线",
@@ -9449,7 +9462,10 @@
     "glancesHostRemoveConfirm": "要移除此主机吗？它的地址、登录信息以及所有已记录的内容都会被删除。此操作无法撤销。",
     "glancesHostRemoveOk": "移除",
     "glancesLinkIsDockerHost": "这是 Docker 主机：容器视图已与此主机关联。",
-    "glancesLinkOtherDockerHost": "容器视图已与 {name} 关联。只有一台主机可以是 Docker 主机。"
+    "glancesLinkOtherDockerHost": "容器视图已与 {name} 关联。只有一台主机可以是 Docker 主机。",
+    "pushNotifyGlancesLabel": "Glances 主机出现事件时通知（类型在 Config → Glances 中选择）",
+    "glancesUseForContainers": "在容器视图中使用 Glances 的 CPU、内存和网络数据",
+    "glancesUseForContainersHint": "当此主机是 Docker 主机时，Glances 已经读取了每个容器：只需一次请求，而不是每个容器一次。Glances 不认识的容器仍从 Docker 读取。"
   },
   "colors": {
     "title": "主题自定义",

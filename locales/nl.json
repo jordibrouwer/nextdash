@@ -3568,7 +3568,20 @@
     "glancesIncidentNote": "De opname van vóór tot na het incident. De rode band is het incident zelf; een stippellijn is een moment waarop een container opnieuw startte.",
     "glancesHost": "Host",
     "glancesHostNoAddress": "Deze host heeft nog geen adres. Voeg het toe in Config → Glances.",
-    "glancesHostLook": "Bekijk {name}"
+    "glancesHostLook": "Bekijk {name}",
+    "glancesSectionHosts": "Hosts",
+    "glancesHostsHost": "Host",
+    "glancesHostsDisk": "Volste schijf",
+    "glancesHostsTemp": "Temperatuur",
+    "glancesHostsRead": "Laatste meting",
+    "glancesHostNoAddressShort": "Nog geen adres",
+    "glancesHostPaused": "Verbinding uit",
+    "glancesHostAway": "Antwoordt niet sinds {time}",
+    "glancesHostStatusOk": "In orde",
+    "glancesHostStatusWarn": "Waarschuwing",
+    "glancesHostStatusBad": "Kritiek",
+    "glancesHostStatusUnknown": "Onbekend",
+    "glancesHostAwayNow": "Antwoordt niet"
   },
   "health": {
     "reloadPage": "Pagina herladen",
@@ -9431,7 +9444,7 @@
     "glancesLinkOnlyDocker": "Alleen in de weergave Containers",
     "glancesOpenPage": "De Glances-pagina openen",
     "glancesNotifyTitle": "Berichten",
-    "glancesNotifyNote": "Er gaat een bericht uit als zo'n incident een paar metingen duurde, en nog een als het voorbij is, niet bij elke meting. Ze gebruiken je meldingskanaal en browsermeldingen, en wachten op de stille uren. Alles staat uit tot je het aanzet.",
+    "glancesNotifyNote": "Een melding gaat uit als zo'n incident een paar metingen duurt, en nog een als het voorbij is, niet bij elke meting. Ze gaan naar je alertkanaal, en naar browsermeldingen als \"Melden als een Glances-host een incident heeft\" aan staat in Config → Monitoring. Alles staat uit tot je het aanzet.",
     "glancesNotifyDown": "De host antwoordt niet meer",
     "glancesNotifyCpu": "De processor gaat over de rode lijn",
     "glancesNotifyMem": "Geheugen of swap gaat over de rode lijn",
@@ -9449,7 +9462,10 @@
     "glancesHostRemoveConfirm": "Deze host verwijderen? Het adres, de login en alles wat erover is vastgelegd worden verwijderd. Dit kan niet ongedaan worden gemaakt.",
     "glancesHostRemoveOk": "Verwijderen",
     "glancesLinkIsDockerHost": "Dit is de Docker-host: de Containers-weergave is aan deze host gekoppeld.",
-    "glancesLinkOtherDockerHost": "De Containers-weergave is gekoppeld aan {name}. Maar één host kan de Docker-host zijn."
+    "glancesLinkOtherDockerHost": "De Containers-weergave is gekoppeld aan {name}. Maar één host kan de Docker-host zijn.",
+    "pushNotifyGlancesLabel": "Melden als een Glances-host een incident heeft (de soorten kies je in Config → Glances)",
+    "glancesUseForContainers": "Glances gebruiken voor CPU, geheugen en netwerk in de Containers-weergave",
+    "glancesUseForContainersHint": "Als deze host de Docker-host is, leest Glances elke container al: één verzoek in plaats van één per container. Containers die Glances niet kent worden nog steeds uit Docker gelezen."
   },
   "colors": {
     "title": "thema-aanpassing",

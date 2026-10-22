@@ -3568,7 +3568,20 @@
     "glancesIncidentNote": "Die Aufzeichnung von vor bis nach dem Vorfall. Das rote Band ist der Vorfall selbst; eine gestrichelte Linie ist ein Moment, in dem ein Container neu gestartet wurde.",
     "glancesHost": "Host",
     "glancesHostNoAddress": "Dieser Host hat noch keine Adresse. Trage sie unter Config → Glances ein.",
-    "glancesHostLook": "{name} ansehen"
+    "glancesHostLook": "{name} ansehen",
+    "glancesSectionHosts": "Hosts",
+    "glancesHostsHost": "Host",
+    "glancesHostsDisk": "Vollste Platte",
+    "glancesHostsTemp": "Temperatur",
+    "glancesHostsRead": "Letzte Messung",
+    "glancesHostNoAddressShort": "Noch keine Adresse",
+    "glancesHostPaused": "Verbindung aus",
+    "glancesHostAway": "Antwortet nicht seit {time}",
+    "glancesHostStatusOk": "In Ordnung",
+    "glancesHostStatusWarn": "Warnung",
+    "glancesHostStatusBad": "Kritisch",
+    "glancesHostStatusUnknown": "Unbekannt",
+    "glancesHostAwayNow": "Antwortet nicht"
   },
   "health": {
     "reloadPage": "Seite neu laden",
@@ -9431,7 +9444,7 @@
     "glancesLinkOnlyDocker": "Nur in der Container-Ansicht",
     "glancesOpenPage": "Die Glances-Seite öffnen",
     "glancesNotifyTitle": "Benachrichtigungen",
-    "glancesNotifyNote": "Eine Benachrichtigung geht raus, wenn ein solcher Vorfall einige Messwerte lang angehalten hat, und eine weitere, wenn er vorbei ist, nicht bei jedem Messwert. Sie nutzen deinen Alarmkanal und Browser-Benachrichtigungen und warten auf die Ruhezeiten. Alle sind aus, bis du sie einschaltest.",
+    "glancesNotifyNote": "Eine Meldung geht hinaus, wenn ein solcher Vorfall einige Messungen angehalten hat, und eine weitere, wenn er vorbei ist, nicht bei jeder Messung. Sie gehen an deinen Alarmkanal und an Browser-Benachrichtigungen, wenn \"Melden, wenn ein Glances-Host einen Vorfall hat\" unter Config → Monitoring aktiv ist. Alles ist aus, bis du es einschaltest.",
     "glancesNotifyDown": "Der Host antwortet nicht mehr",
     "glancesNotifyCpu": "Der Prozessor überschreitet seine rote Linie",
     "glancesNotifyMem": "Speicher oder Swap überschreitet die rote Linie",
@@ -9449,7 +9462,10 @@
     "glancesHostRemoveConfirm": "Diesen Host entfernen? Seine Adresse, die Anmeldung und alles, was über ihn aufgezeichnet wurde, werden gelöscht. Das lässt sich nicht rückgängig machen.",
     "glancesHostRemoveOk": "Entfernen",
     "glancesLinkIsDockerHost": "Dies ist der Docker-Host: Die Container-Ansicht ist mit diesem Host verknüpft.",
-    "glancesLinkOtherDockerHost": "Die Container-Ansicht ist mit {name} verknüpft. Nur ein Host kann der Docker-Host sein."
+    "glancesLinkOtherDockerHost": "Die Container-Ansicht ist mit {name} verknüpft. Nur ein Host kann der Docker-Host sein.",
+    "pushNotifyGlancesLabel": "Melden, wenn ein Glances-Host einen Vorfall hat (die Arten wählst du unter Config → Glances)",
+    "glancesUseForContainers": "Glances für CPU, Speicher und Netzwerk in der Container-Ansicht verwenden",
+    "glancesUseForContainersHint": "Ist dieser Host der Docker-Host, liest Glances jeden Container ohnehin: eine Anfrage statt einer pro Container. Container, die Glances nicht kennt, werden weiter aus Docker gelesen."
   },
   "colors": {
     "title": "themenanpassung",
