@@ -87,6 +87,7 @@ func TestDemoKnowsEveryOutboundClient(t *testing.T) {
 		"handlers.go":        "newSSRFSafeTransport",
 		"unraid_client.go":   "newSSRFSafeTransportWithHeaderTimeout",
 		"discovery_probe.go": "newSSRFSafeTransport",
+		"health_domain.go":   "refuses at its source: the only caller, the scheduler, does not start in the demo",
 		"install_ping.go":    "refuses at its source",
 		"push_send.go":       "refuses at its source",
 		"system_docker.go":   "the local Docker socket, not another host",
