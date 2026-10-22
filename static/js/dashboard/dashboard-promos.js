@@ -198,13 +198,25 @@ class DashboardPromos {
      * throws — a private window, blocked site data — means the note is skipped
      * rather than shown on every load.
      */
-    maybeAnnounceSearchModeKey() {
+    maybeAnnounceSearchModeKey(attempt = 0) {
         const d = this.dash;
         if (window.DemoLock?.on) return; // no tips in the public demo
         const release = window.NEXTDASH_WHATS_NEW_RELEASE || '';
         const key = 'nextdash:search-mode-key-announced';
         try {
             if (localStorage.getItem(key) === release) return;
+        } catch {
+            return;
+        }
+        // One thing at a time: on the first load of a release the what's-new
+        // modal is open, and the tip stood in the corner under it. The tip
+        // waits (up to about a minute) and is only marked as announced when it
+        // is actually shown, so closing the tab meanwhile does not lose it.
+        if (document.querySelector('.whats-new-modal') || d.isModalOpen?.()) {
+            if (attempt < 40) setTimeout(() => this.maybeAnnounceSearchModeKey(attempt + 1), 1500);
+            return;
+        }
+        try {
             localStorage.setItem(key, release);
         } catch {
             return;

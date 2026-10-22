@@ -53,7 +53,9 @@ body[data-active-view="bookmarks"] .dashboard-section.section-content {
      * the default that is 0.717rem, which is where the hand-written fallbacks
      * already clustered.
      */
-    --font-size-small: calc(var(--font-size-text) * 0.82);
+    /* Never under 12px unless the reader chose a text size that small: then it
+       is the text size itself, so a small step is never bigger than the body. */
+    --font-size-small: max(calc(var(--font-size-text) * 0.82), min(0.75rem, var(--font-size-text)));
     
     /* Font Weight Variables - 4 core weights */
     --font-weight-normal: 400;         /* Normal text weight */
