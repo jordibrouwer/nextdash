@@ -133,6 +133,25 @@ func readBoundedBody(resp *http.Response) string {
 	return string(body)
 }
 
+// asciiLower lowercases A-Z only, so the result has the same byte length as s.
+// strings.ToLower rewrites invalid UTF-8 to U+FFFD and maps a few runes to a
+// different width (Kelvin sign, U+0130), which shifts every offset found in the
+// copy; slicing the original with those offsets panics or cuts the wrong text.
+func asciiLower(s string) string {
+	for i := 0; i < len(s); i++ {
+		if c := s[i]; c >= 'A' && c <= 'Z' {
+			b := []byte(s)
+			for j := i; j < len(b); j++ {
+				if b[j] >= 'A' && b[j] <= 'Z' {
+					b[j] += 'a' - 'A'
+				}
+			}
+			return string(b)
+		}
+	}
+	return s
+}
+
 // extractHTMLTitle pulls the <title> out of a page, whitespace collapsed.
 //
 // Deliberately not the preview pipeline's extractor: that one is a method on
@@ -140,7 +159,7 @@ func readBoundedBody(resp *http.Response) string {
 // one tag simple enough that a second small reader beats threading a dependency
 // into the check path.
 func extractHTMLTitle(body string) string {
-	lower := strings.ToLower(body)
+	lower := asciiLower(body)
 	open := strings.Index(lower, "<title")
 	if open < 0 {
 		return ""

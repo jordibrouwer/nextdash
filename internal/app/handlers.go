@@ -4795,7 +4795,7 @@ func extractDomain(url string) string {
 }
 
 func (h *Handlers) extractTitleFromHTML(htmlBody string) string {
-	lower := strings.ToLower(htmlBody)
+	lower := asciiLower(htmlBody)
 	titleOpen := strings.Index(lower, "<title")
 	if titleOpen < 0 {
 		return ""
@@ -4820,11 +4820,11 @@ func (h *Handlers) extractTitleFromHTML(htmlBody string) string {
 }
 
 func (h *Handlers) extractMetaFromHTML(htmlBody, attrName, attrValue string) string {
-	lower := strings.ToLower(htmlBody)
-	attrMatch := strings.ToLower(attrName) + "=\"" + strings.ToLower(attrValue) + "\""
+	lower := asciiLower(htmlBody)
+	attrMatch := asciiLower(attrName) + "=\"" + asciiLower(attrValue) + "\""
 	idx := strings.Index(lower, attrMatch)
 	if idx < 0 {
-		attrMatch = strings.ToLower(attrName) + "='" + strings.ToLower(attrValue) + "'"
+		attrMatch = asciiLower(attrName) + "='" + asciiLower(attrValue) + "'"
 		idx = strings.Index(lower, attrMatch)
 	}
 	if idx < 0 {
@@ -4840,7 +4840,7 @@ func (h *Handlers) extractMetaFromHTML(htmlBody, attrName, attrValue string) str
 		return ""
 	}
 	tag := htmlBody[tagStart : idx+tagEndRel]
-	tagLower := strings.ToLower(tag)
+	tagLower := asciiLower(tag)
 
 	contentPos := strings.Index(tagLower, "content=")
 	if contentPos < 0 {
@@ -4855,7 +4855,7 @@ func (h *Handlers) extractMetaFromHTML(htmlBody, attrName, attrValue string) str
 }
 
 func (h *Handlers) extractIconFromHTML(htmlBody string) string {
-	lower := strings.ToLower(htmlBody)
+	lower := asciiLower(htmlBody)
 	start := 0
 	for {
 		linkIdx := strings.Index(lower[start:], "<link")
@@ -4868,7 +4868,7 @@ func (h *Handlers) extractIconFromHTML(htmlBody string) string {
 			return ""
 		}
 		tag := htmlBody[linkIdx : linkIdx+endIdxRel+1]
-		tagLower := strings.ToLower(tag)
+		tagLower := asciiLower(tag)
 		if strings.Contains(tagLower, "rel=\"icon\"") ||
 			strings.Contains(tagLower, "rel='icon'") ||
 			strings.Contains(tagLower, "rel=\"shortcut icon\"") ||
@@ -6065,7 +6065,7 @@ func (h *Handlers) fetchPageTitleSafeCtx(ctx context.Context, urlStr string) str
 		return ""
 	}
 	html := string(body)
-	lower := strings.ToLower(html)
+	lower := asciiLower(html)
 	titleOpen := strings.Index(lower, "<title")
 	if titleOpen < 0 {
 		return ""
