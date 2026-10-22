@@ -2630,6 +2630,13 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
+		// securityHeaders caps the body; say so rather than calling a
+		// settings object that is too large malformed.
+		var tooLarge *http.MaxBytesError
+		if errors.As(err, &tooLarge) {
+			http.Error(w, "Request body too large", http.StatusRequestEntityTooLarge)
+			return
+		}
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
