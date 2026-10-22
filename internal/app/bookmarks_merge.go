@@ -51,7 +51,41 @@ func mergeOneBookmarkIntoKeeper(keeper *Bookmark, src Bookmark) {
 	}
 	if strings.TrimSpace(keeper.Icon) == "" && strings.TrimSpace(src.Icon) != "" {
 		keeper.Icon = sanitizeBookmarkIcon(src.Icon)
+		// An icon of its own always wins over the mode, but a stored "letter"
+		// on the keeper would still read as the user's wish for no icon.
+		if keeper.Icon != "" && keeper.IconMode == "letter" {
+			keeper.IconMode = ""
+		}
 	}
+	if keeper.IconMode == "" && strings.TrimSpace(keeper.Icon) == "" {
+		keeper.IconMode = src.IconMode
+	}
+
+	// Monitoring setup is per bookmark and the source is about to be deleted:
+	// without this the merged bookmark silently stops being checked the way
+	// the duplicate was. Fill-only, so the keeper's own setup always wins.
+	keeper.Monitor = keeper.Monitor || src.Monitor
+	keeper.WatchDrift = keeper.WatchDrift || src.WatchDrift
+	if keeper.MonitorIntervalMinutes == 0 {
+		keeper.MonitorIntervalMinutes = src.MonitorIntervalMinutes
+	}
+	if strings.TrimSpace(keeper.CheckURL) == "" && strings.TrimSpace(src.CheckURL) != "" {
+		keeper.CheckURL = strings.TrimSpace(src.CheckURL)
+		// The TLS exemption belongs to the host it was granted for.
+		keeper.AllowInsecureTLS = src.AllowInsecureTLS
+	}
+	if keeper.CredentialID == "" {
+		keeper.CredentialID = src.CredentialID
+	}
+	if strings.TrimSpace(keeper.ExpectStatus) == "" {
+		keeper.ExpectStatus = src.ExpectStatus
+	}
+	// Text and its polarity are one expectation: moved together or not at all.
+	if strings.TrimSpace(keeper.ExpectText) == "" && strings.TrimSpace(src.ExpectText) != "" {
+		keeper.ExpectText = src.ExpectText
+		keeper.ExpectTextAbsent = src.ExpectTextAbsent
+	}
+	keeper.HealthIgnored = mergeHealthIgnored(keeper.HealthIgnored, src.HealthIgnored)
 
 	appendBookmarkNote(keeper, src.Note)
 
@@ -97,4 +131,31 @@ func appendBookmarkNote(keeper *Bookmark, addition string) {
 		}
 	}
 	keeper.Note = existing + "\n" + addition
+}
+
+// mergeHealthIgnored unions two ignore lists by flag. When both silence the
+// same flag the longer silence wins (zero is "for good"), so merging never
+// brings a condition back that either copy had muted.
+func mergeHealthIgnored(a, b []HealthIgnore) []HealthIgnore {
+	if len(b) == 0 {
+		return a
+	}
+	out := append([]HealthIgnore{}, a...)
+	for _, add := range b {
+		found := false
+		for i := range out {
+			if out[i].Flag != add.Flag {
+				continue
+			}
+			found = true
+			if out[i].Until != 0 && (add.Until == 0 || add.Until > out[i].Until) {
+				out[i].Until = add.Until
+			}
+			break
+		}
+		if !found {
+			out = append(out, add)
+		}
+	}
+	return out
 }
