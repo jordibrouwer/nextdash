@@ -366,6 +366,10 @@ class DashboardDateWeather {
         }
 
         document.body.appendChild(pop);
+        pop.style.maxWidth = 'calc(100vw - 1rem)';
+        pop.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - pop.offsetWidth - 8))}px`;
+        pop.tabIndex = -1;
+        pop.focus({ preventScroll: true });
 
         const close = () => {
             pop.remove();

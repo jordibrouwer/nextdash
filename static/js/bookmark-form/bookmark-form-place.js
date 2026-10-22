@@ -23,7 +23,7 @@
         const trigger = document.createElement('button');
         trigger.type = 'button';
         trigger.className = 'bookmark-inline-input bookmark-form-place-value';
-        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.setAttribute('aria-haspopup', 'dialog');
         trigger.setAttribute('aria-expanded', 'false');
         const triggerText = document.createElement('span');
         triggerText.className = 'bookmark-form-place-text';
@@ -74,7 +74,8 @@
 
             pop = document.createElement('div');
             pop.className = 'move-popover bookmark-form-place-pop';
-            pop.setAttribute('role', 'listbox');
+            // A dialog, not a listbox: the filter and headings live beside the options.
+            pop.setAttribute('role', 'dialog');
             pop.setAttribute('aria-label', t('config.bookmarkPlaceLabel', 'Page › category'));
             // The form's Escape handler runs first, in the capture phase; it
             // closes this through the hook rather than the whole form.
@@ -98,6 +99,8 @@
             pop.appendChild(filter);
             const list = document.createElement('div');
             list.className = 'bookmark-form-place-items';
+            list.setAttribute('role', 'listbox');
+            list.setAttribute('aria-label', t('config.bookmarkPlaceLabel', 'Page › category'));
             pop.appendChild(list);
 
             let items = [];
@@ -148,8 +151,10 @@
                     if (!cats.length) return;
                     const divider = document.createElement('div');
                     divider.className = 'move-popover-divider';
+                    divider.setAttribute('role', 'presentation');
                     const label = document.createElement('div');
                     label.className = 'move-popover-section-label';
+                    label.setAttribute('role', 'presentation');
                     label.textContent = g.pageName;
                     list.append(divider, label);
                     cats.forEach((c) => {
@@ -168,6 +173,7 @@
                 if (q) {
                     const divider = document.createElement('div');
                     divider.className = 'move-popover-divider';
+                    divider.setAttribute('role', 'presentation');
                     list.appendChild(divider);
                     createRows(exact ? '' : q).forEach(([el, action]) => add(el, action));
                 }

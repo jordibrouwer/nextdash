@@ -35,7 +35,11 @@ const AppNotification = {
             <button type="button" class="app-notification-action" hidden></button>
             <button type="button" class="app-notification-close" aria-label="Dismiss"></button>
         `;
-        host.querySelector('.app-notification-close').addEventListener('click', () => this._advance());
+        const closeBtn = host.querySelector('.app-notification-close');
+        const langObj = window.dashboardInstance?.language || window.configManager?.language || window.healthLanguage;
+        const dismissLabel = langObj?.t ? langObj.t('quickstart.dismiss') : '';
+        if (dismissLabel && dismissLabel !== 'quickstart.dismiss') closeBtn.setAttribute('aria-label', dismissLabel);
+        closeBtn.addEventListener('click', () => this._advance());
         // Hovering holds the card (and its ring) so a long tip can be read.
         // Mouse only: a tap fires no reliable leave on touch screens.
         host.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') this._pause(host); });
