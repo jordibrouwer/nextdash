@@ -5573,8 +5573,8 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 func getDefaultLightTheme() ThemeColors {
 	return ThemeColors{
 		TextPrimary:         "#1F2937",
-		TextSecondary:       "#6B7280",
-		TextTertiary:        "#9CA3AF",
+		TextSecondary:       "#4B5563",
+		TextTertiary:        "#5F6672",
 		BackgroundPrimary:   "#F9FAFB",
 		BackgroundSecondary: "#F3F4F6",
 		BackgroundDots:      "#E5E7EB",
@@ -5590,8 +5590,8 @@ func getDefaultLightTheme() ThemeColors {
 func getDefaultDarkTheme() ThemeColors {
 	return ThemeColors{
 		TextPrimary:         "#E5E7EB",
-		TextSecondary:       "#9CA3AF",
-		TextTertiary:        "#6B7280",
+		TextSecondary:       "#D1D5DB",
+		TextTertiary:        "#9CA3AF",
 		BackgroundPrimary:   "#000",
 		BackgroundSecondary: "#1F2937",
 		BackgroundDots:      "#1F2937",
