@@ -3666,7 +3666,10 @@
     "glancesProcMatches": "Matches: {count}",
     "glancesCachedFrom": "Showing what was read at {time}. Updating…",
     "glancesSummaryStatus": "Status",
-    "glancesSummaryTemp": "Hottest sensor"
+    "glancesSummaryTemp": "Hottest sensor",
+    "dockerLinkNotRunning": "Not running",
+    "inboxLegendFewer": "Fewer keys",
+    "inboxLegendMore": "{count} more keys"
   },
   "health": {
     "reloadPage": "Reload page",
@@ -9616,7 +9619,10 @@
     "glancesBarConnected": "Connected",
     "glancesBarAway": "Not answering",
     "glancesBarOff": "Connection off",
-    "glancesBarNoAddress": "No address yet"
+    "glancesBarNoAddress": "No address yet",
+    "dockerSnippetSummary": "Compose lines",
+    "overviewHealthChecked": "{checked} checked · {n} monitored",
+    "categoryNameLabel": "Category name"
   },
   "colors": {
     "title": "theme customization",
