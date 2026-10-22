@@ -832,6 +832,12 @@
                     active.blur();
                     return;
                 }
+                // The side panel is the innermost thing on screen: the first Escape
+                // drops it and stays on the list, as the Containers view does.
+                if (this.detail?.isOpen?.()) {
+                    this.detail.close();
+                    return;
+                }
                 this.closeGlancesView();
             };
             document.addEventListener('keydown', this._escapeHandler, true);

@@ -577,6 +577,20 @@ test.describe('Glances page: tables, cards and keys', () => {
         await expect(card).toContainText('Cores');
     });
 
+    test('Escape closes the side panel and stays on the list; a second Escape leaves the view', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page, '#glances/processes');
+        await page.locator(`[data-glances-pid="${FIRST.pid}"]`).click();
+        const drawer = page.locator('[data-glances-drawer]');
+        await expect(drawer.first()).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(drawer).toHaveCount(0);
+        await expect(page.locator('[data-glances-open="processes"]')).toBeVisible();
+        expect(page.url()).toContain('#glances/processes');
+        await page.keyboard.press('Escape');
+        await expect(page.locator('[data-glances-open="processes"]')).toHaveCount(0);
+    });
+
     test('keys: sections by letter, [ and ] step, r reads now, / searches the processes', async ({ page }) => {
         const state = await mockGlances(page);
         await openView(page);
