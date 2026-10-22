@@ -258,6 +258,7 @@ func TestOnlyKnownFilesCallTheSinks(t *testing.T) {
 		"push_handlers.go":         true, // the push test button
 		"health_notify_presets.go": true,
 		"digest.go":                true, // scheduled, waits for quiet hours itself
+		"glances_notify.go":        true, // dispatchGlancesNotices goes through quietGate first
 	}
 	call := regexp.MustCompile(`\.(postMonitorTarget|sendWebPushNotification)\(`)
 	files, _ := filepath.Glob("*.go")
