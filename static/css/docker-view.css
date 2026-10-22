@@ -231,6 +231,13 @@
     text-decoration: underline;
 }
 
+/* The container is not running: the address answers nothing. */
+.docker-port.is-dormant {
+    color: var(--text-tertiary, var(--text-secondary));
+    pointer-events: none;
+    text-decoration: none;
+}
+
 /* Column headings: the shared .lvs-colhead (list-view-shell.css) on each
    cell, with the cells' own padding so the text sits over the column. A
    sortable one is the shared .lvs-colhead-sort, its arrow drawn from the
@@ -848,6 +855,7 @@
 .docker-tick {
     display: inline-flex;
     align-items: center;
+    position: relative;
     margin-right: var(--space-2, 0.5rem);
     vertical-align: middle;
     cursor: pointer;
@@ -860,6 +868,13 @@
     margin: 0;
     accent-color: var(--accent-primary);
     cursor: pointer;
+}
+
+/* 15px to look at, 24px to hit: the box grows the hit area, not the row. */
+.docker-tick::before {
+    content: "";
+    position: absolute;
+    inset: -5px;
 }
 
 .docker-row:hover .docker-tick,
@@ -1777,4 +1792,24 @@
     line-height: 1.5;
     white-space: pre-wrap;
     word-break: break-all;
+}
+
+/*
+ * Pointer targets of at least 24px: the column headings (14px tall) and the
+ * port links (17px) carry their hit area past the drawn edge, so the rows and
+ * the headings keep their height.
+ */
+.docker-table .lvs-colhead-sort,
+.docker-port {
+    position: relative;
+}
+
+/* ::before on the headings: the shared sort arrow is drawn by ::after. */
+.docker-table .lvs-colhead-sort::before,
+.docker-port::after {
+    content: "";
+    position: absolute;
+    inset: 50% 0 auto 0;
+    min-height: 24px;
+    transform: translateY(-50%);
 }

@@ -123,7 +123,17 @@ class DashboardDocker {
     /** Whether the list draws this column: switched on, and CPU/RAM only while sampled. */
     showsColumn(key) {
         if ((key === 'cpu' || key === 'mem') && !this.usageEnabled) return false;
+        // No reading for any container (none running, or the sampler has not
+        // ticked yet): the two columns would be a dash down every row. They
+        // come back with the first reading.
+        if ((key === 'cpu' || key === 'mem') && !this.hasUsageReadings()) return false;
         return !this.hiddenColumns?.has(key);
+    }
+
+    /** Whether any container has a CPU or memory reading to show. */
+    hasUsageReadings() {
+        return !this.containers?.length
+            || this.containers.some((c) => c.usage && (c.usage.cpu != null || c.usage.mem != null));
     }
 
     persistViewState() {
@@ -850,7 +860,7 @@ class DashboardDocker {
                 const text = document.createElement('span');
                 text.textContent = labels[key];
                 label.append(box, text);
-                if ((key === 'cpu' || key === 'mem') && !this.usageEnabled) {
+                if ((key === 'cpu' || key === 'mem') && (!this.usageEnabled || !this.hasUsageReadings())) {
                     label.title = this.t('dashboard.dockerColumnsNeedsStats', 'Shows while Config → Containers keeps the last hour of CPU and memory');
                     label.classList.add('is-idle');
                 }
@@ -1128,8 +1138,11 @@ class DashboardDocker {
         // stood), below it, or off -- the choices Bookmarks and Inbox offer.
         const legendAt = this.dash.settings?.dockerViewKeyLegend || 'above';
         const legend = legendAt === 'off' ? null : this.buildLegend({ control: this.status.control !== false });
-        if (this.status.control === false) body.appendChild(this.buildReadOnlyLine());
-        if (this.showsHostHint()) body.appendChild(this.buildHostHint());
+        // One bar when both notes apply: two stacked cost the list a row and a
+        // half before it said anything about a container.
+        const readOnly = this.status.control === false;
+        if (this.showsHostHint()) body.appendChild(this.buildHostHint({ readOnly }));
+        else if (readOnly) body.appendChild(this.buildReadOnlyLine());
         if (legend && legendAt !== 'below') body.appendChild(legend);
         body.appendChild(this.buildTable());
         if (legend && legendAt === 'below') {
@@ -1417,10 +1430,13 @@ class DashboardDocker {
             && (String(c.webui || '').includes('[IP]') || (!c.webui && DashboardDocker.portLink(c))));
     }
 
-    buildHostHint() {
+    buildHostHint({ readOnly = false } = {}) {
         const p = document.createElement('p');
         p.setAttribute('data-docker-host-hint', '');
         p.className = 'docker-readonly docker-host-hint';
+        const readOnlyNote = document.createElement('span');
+        readOnlyNote.setAttribute('data-docker-readonly', '');
+        readOnlyNote.textContent = this.readOnlyText();
         const text = document.createElement('span');
         text.textContent = this.t('dashboard.dockerHostHint',
             'Port links point at {host}. If your containers run on another address, set the Docker host address.',
@@ -1443,9 +1459,11 @@ class DashboardDocker {
             } catch {
                 // Kept for this visit only.
             }
-            p.remove();
+            // Dismissing the host note must not take the read-only one with it.
+            if (readOnly) p.replaceWith(this.buildReadOnlyLine());
+            else p.remove();
         });
-        p.append(text, set, dismiss);
+        p.append(...(readOnly ? [readOnlyNote] : []), text, set, dismiss);
         return p;
     }
 
@@ -1463,8 +1481,12 @@ class DashboardDocker {
         const p = document.createElement('p');
         p.setAttribute('data-docker-readonly', '');
         p.className = 'docker-readonly';
-        p.textContent = this.t('dashboard.dockerReadOnly', 'Read-only — set NEXTDASH_DOCKER_CONTROL=1 to manage containers.');
+        p.textContent = this.readOnlyText();
         return p;
+    }
+
+    readOnlyText() {
+        return this.t('dashboard.dockerReadOnly', 'Read-only — set NEXTDASH_DOCKER_CONTROL=1 to manage containers.');
     }
 
     buildTable() {
@@ -1531,6 +1553,21 @@ class DashboardDocker {
         this.logsModal = this.logsModal || new window.DockerLogsModal(this);
         this.logsModal.open(c);
         window.nextdashTrack?.('docker:logs-open');
+    }
+
+    /**
+     * The colour of the row's edge. Red says something is wrong: a container
+     * that crashed (exit code other than 0), is dead, or reports unhealthy.
+     * One that finished its job or was stopped on purpose is just not running,
+     * which is grey; eight red rows for eight idle containers drowned the one
+     * that mattered.
+     */
+    rowGlow(c, group) {
+        if (c.health === 'unhealthy') return 'bad';
+        if (group !== 'stopped') return { updates: 'info', running: 'good', paused: 'warn' }[group] || 'muted';
+        if (c.state === 'dead' || c.state === 'restarting') return 'bad';
+        const exit = /^Exited \((\d+)\)/.exec(String(c.status || ''));
+        return exit && exit[1] !== '0' ? 'bad' : 'muted';
     }
 
     /** Which status group a container belongs in; an update outranks its state. */
@@ -1838,7 +1875,7 @@ class DashboardDocker {
         // data-docker-* stay for the specs and the view's own rules.
         const group = this.statusGroup(c);
         tr.setAttribute('data-docker-status', group);
-        tr.setAttribute('data-lvs-status', { updates: 'info', running: 'good', paused: 'warn', stopped: 'bad' }[group] || 'muted');
+        tr.setAttribute('data-lvs-status', this.rowGlow(c, group));
         if (c.self) {
             tr.setAttribute('data-docker-self', '');
             tr.setAttribute('data-lvs-self', '');
@@ -1963,6 +2000,19 @@ class DashboardDocker {
         portsCell.className = 'docker-cell docker-cell--ports';
         this.fillPorts(portsCell, c);
         if (this.showsColumn('ports')) tr.appendChild(portsCell);
+
+        // A link to a container that is not running goes nowhere: shown, but
+        // greyed and out of the tab order, so it is not mistaken for one that
+        // works. The row itself still opens the side panel.
+        if (c.state !== 'running') {
+            const off = this.t('dashboard.dockerLinkNotRunning', 'Not running');
+            tr.querySelectorAll('a.docker-port').forEach((a) => {
+                a.classList.add('is-dormant');
+                a.setAttribute('aria-disabled', 'true');
+                a.tabIndex = -1;
+                a.title = `${off} · ${a.title || a.textContent}`;
+            });
+        }
 
         // Phone-width second line (image + the web UI, else the first public
         // port); CSS hides it at desktop and shows it, in place of the
