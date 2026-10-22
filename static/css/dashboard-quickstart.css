@@ -689,6 +689,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     z-index: 2000; /* the modal overlay's layer (modal.css) */
     display: flex;
     align-items: center;
@@ -706,6 +707,7 @@
 .app-discovery-card {
     width: min(34rem, 100%);
     max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
     display: flex;
     flex-direction: column;
     overflow: hidden;

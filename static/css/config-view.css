@@ -211,6 +211,9 @@
         padding: 3px;
         margin: -3px;
         scrollbar-width: none;
+        /* A hidden scrollbar says nothing about more tabs; fade the far edge. */
+        -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+        mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
     }
 
     .config-nav::-webkit-scrollbar {

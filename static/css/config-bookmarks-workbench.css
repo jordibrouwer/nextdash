@@ -1848,6 +1848,7 @@ html body .config-bm-more-menu .config-btn {
     max-width: min(52rem, calc(100vw - 2rem));
     width: 100%;
     max-height: calc(100vh - 4rem);
+    max-height: calc(100dvh - 4rem);
     overflow: auto;
     scrollbar-gutter: stable;
     display: flex;
@@ -2062,6 +2063,7 @@ html body .config-bm-more-menu .config-btn {
     max-width: min(40rem, calc(100vw - 2rem));
     width: 100%;
     max-height: calc(100vh - 4rem);
+    max-height: calc(100dvh - 4rem);
     overflow: auto;
     scrollbar-gutter: stable;
     display: flex;
