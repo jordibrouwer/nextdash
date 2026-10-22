@@ -25,6 +25,7 @@ const {
     test,
     prepare,
     settle,
+    shot,
     snap,
     crop,
     openDashboard,
@@ -145,6 +146,11 @@ async function mockGlances(page) {
  * weather place and the page badges): the card, and a side panel when one is open.
  */
 async function frame(page, name, withPanel = false) {
+    // nextdash.cc wants whole screens, like its other feature pictures.
+    if (process.env.SHOTS_FULL) {
+        await shot(page, name);
+        return;
+    }
     const view = page.locator('#dashboard-layout.glances-layout');
     const parts = withPanel ? [view, page.locator('[data-glances-drawer]').first()] : [view];
     await view.evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'instant' }));

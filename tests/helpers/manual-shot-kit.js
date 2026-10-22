@@ -23,7 +23,7 @@ const { mockDocker } = require('./docker-mock');
 const { markWhatsNewSeen } = require('../e2e-helpers');
 
 const ROOT = path.join(TESTS_DIR, '..');
-const OUT = path.join(ROOT, 'screenshots', 'manual.md');
+const OUT = process.env.SHOTS_OUT || path.join(ROOT, 'screenshots', 'manual.md');
 const FIX = path.join(TESTS_DIR, 'fixtures', 'manual-screenshots');
 const json = (name) => fs.readFileSync(path.join(FIX, name), 'utf8');
 const fixture = (name) => JSON.parse(json(name));
@@ -39,7 +39,7 @@ const DEMO_THEME = 'matrix-bluepill-dark';
  * Every manual screenshot is taken in this theme, whatever the demo data
  * says, so the pictures sit quietly on nextdash.cc and its docs.
  */
-const SHOT_THEME = 'gloss-liquid-chrome-dark';
+const SHOT_THEME = process.env.SHOT_THEME || 'gloss-liquid-chrome-dark';
 
 /** A port nothing else is on (never 8080: the OS hands out a free one). */
 function freePort() {
@@ -479,8 +479,12 @@ const BROKEN_HOSTS = ['gone.example', 'kitchen.reading.example', 'backup.lab.exa
 const test = base.test.extend({
     /** A change to the data for one shot only; see tidyDemoData. */
     dataPatch: ['', { option: true }],
+    /** A theme id for this test's server, instead of SHOT_THEME (null: the default). */
+    shotTheme: [null, { option: true }],
+    /** A function(dir) that changes this test's copy of the data after tidyDemoData (null: none). */
+    dataTweak: [null, { option: true }],
     /** This test's own server over its own copy of the demo data. */
-    server: async ({ dataPatch }, use) => {
+    server: async ({ dataPatch, shotTheme, dataTweak }, use) => {
         const source = process.env.NEXTDASH_DATA_DIR;
         if (!source || !fs.existsSync(path.join(source, 'settings.json'))) {
             throw new Error('NEXTDASH_DATA_DIR must point at a copy of data-demo');
@@ -490,8 +494,9 @@ const test = base.test.extend({
         if (dataPatch !== 'empty') {
             fs.cpSync(source, dir, { recursive: true });
             tidyDemoData(dir, dataPatch);
+            if (typeof dataTweak === 'function') dataTweak(dir);
             const settingsFile = path.join(dir, 'settings.json');
-            writeJSON(settingsFile, { ...readJSON(settingsFile), theme: SHOT_THEME });
+            writeJSON(settingsFile, { ...readJSON(settingsFile), theme: shotTheme || SHOT_THEME });
         }
         const port = await freePort();
         const baseURL = `http://localhost:${port}`;
