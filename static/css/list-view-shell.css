@@ -609,6 +609,16 @@ html[data-theme] body:not([data-depth="flat"]) .lvs-header {
         display: none;
     }
 
+    /* A line of figures, not a card: the theme's depth gives .lvs-summary its
+       shadows and wash, which drew a pill round "This week 10" that read as an
+       outline struck through the words. */
+    html[data-theme] body .lvs-header-text .lvs-summary {
+        box-shadow: none;
+        background-image: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
     /* Everything but the primary action and the ⋯ that holds the rest. */
     .lvs-header-actions .lvs-action:not(.lvs-action--primary):not(.lvs-action--overflow) {
         display: none;

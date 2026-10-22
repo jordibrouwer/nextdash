@@ -1171,15 +1171,33 @@ html[data-theme] body[data-depth="glass"] #dashboard-layout .inbox-item.feed-row
 
     .inbox-item-line1 .inbox-item-domain-btn {
         grid-row: 2;
-        grid-column: 3;
+        grid-column: 3 / -1;
     }
 
-    /* Tags share the second line with the site, at its end. */
+    /* Tags on a line of their own, under the site.
+       Beside it, in the last column, the tags set that column's width and
+       left the title about forty pixels -- "Aut...", "Pa...". Spanning both
+       columns, the title gets everything the row has beside the "when". */
     .inbox-item-tagcell {
-        grid-row: 2;
-        grid-column: 4;
-        justify-content: flex-end;
-        max-width: 50vw;
+        grid-row: 3;
+        grid-column: 3 / -1;
+        justify-content: flex-start;
+    }
+
+    /* A row with no tags or no site would otherwise keep its empty line and
+       the gap above it. */
+    .inbox-item-tagcell:empty {
+        display: none;
+    }
+
+    .inbox-item-line1 {
+        row-gap: var(--space-1, 0.25rem);
+    }
+
+    /* A found app: its two answers go on the third line like the tags. */
+    .inbox-item-line1 .inbox-item-discovery-actions {
+        grid-row: 3;
+        grid-column: 3 / -1;
     }
 
     .inbox-item .inbox-item-line2 {
@@ -1330,4 +1348,105 @@ html[data-theme] body[data-depth="glass"] #dashboard-layout .inbox-item.feed-row
     border-color: var(--accent-primary);
     color: var(--background-primary);
     font-weight: 600;
+}
+
+/* ── Legend: the first keys, the rest behind a button ───────────────────── */
+
+.inbox-legend-wrap:not(.is-open) .inbox-legend-extra {
+    display: none;
+}
+
+.inbox-legend-wrap .inbox-legend {
+    margin-bottom: var(--space-1, 0.25rem);
+}
+
+.inbox-legend-more {
+    padding: var(--space-1, 0.25rem) 0;
+    border: 0;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--text-xs, 0.75rem);
+    text-decoration: underline dotted;
+    text-underline-offset: 0.15em;
+    cursor: pointer;
+}
+
+.inbox-legend-more:hover,
+.inbox-legend-more:focus-visible {
+    color: var(--accent-primary);
+}
+
+/* ── One title, not two ─────────────────────────────────────────────────
+   The page already says "inbox" in large type; the band under it said
+   "Inbox" again. The band keeps its line of description and its actions, and
+   the heading stays for a heading list. When the band collapses on scroll it
+   is the title that stays. */
+.inbox-layout .lvs-header:not(.is-collapsed) .lvs-title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.inbox-layout .lvs-header:not(.is-collapsed) .lvs-description {
+    margin-top: 0;
+}
+
+/* ── Pointer targets of at least 24px ───────────────────────────────────
+   The tick, the site button, the column headings and the Add all link are
+   15 to 17px. The hit area runs past the drawn edge so the rows keep their
+   height; ::before, because the sort arrow is drawn by ::after. */
+.inbox-item-check,
+.inbox-colhead .lvs-colhead-sort,
+.inbox-layout .tag-offer-count-all {
+    position: relative;
+}
+
+.inbox-item-check::before {
+    content: "";
+    position: absolute;
+    inset: -5px;
+}
+
+/* The site button clips its own overflow, so a pseudo-element would be cut:
+   padding and an equal negative margin do the same job. */
+.inbox-item-line1 .inbox-item-domain-btn {
+    padding-block: 4px;
+    margin-block: -4px;
+}
+
+.inbox-colhead .lvs-colhead-sort::before,
+.inbox-layout .tag-offer-count-all::before {
+    content: "";
+    position: absolute;
+    inset: 50% 0 auto 0;
+    min-height: 24px;
+    transform: translateY(-50%);
+}
+
+/* On a phone the filter chips wrap instead of scrolling off the edge: the
+   last one ("With a tag suggestion") was cut mid-word with nothing to say it
+   could be scrolled to. */
+@media (max-width: 720px) {
+    .inbox-layout .lvs-group-list {
+        flex-wrap: wrap;
+        overflow: visible;
+    }
+}
+
+.inbox-legend-more {
+    min-height: 24px;
+}
+
+/* The refuse mark is already positioned (tag-offer.css); its hit area grows
+   up and down only, so it does not reach into the Add button beside it. */
+.inbox-layout .tag-offer-refuse::before {
+    content: "";
+    position: absolute;
+    inset: -5px 0;
 }
