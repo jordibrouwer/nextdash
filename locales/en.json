@@ -3633,7 +3633,13 @@
     "glancesSaveImageHint": "Save this graph as a picture",
     "glancesSaveImageFailed": "Could not save the picture",
     "widgetGlancesHostGone": "This host is not in Config → Glances.",
-    "glancesHostWaiting": "Waiting for the first reading"
+    "glancesHostWaiting": "Waiting for the first reading",
+    "glancesSearchClear": "Clear search",
+    "glancesCtSearch": "Search containers",
+    "glancesCtCount": "Containers: {count}",
+    "glancesCtShown": "Showing {shown} of {total}",
+    "glancesCtNoMatch": "No container matches.",
+    "glancesProcMatches": "Matches: {count}"
   },
   "health": {
     "reloadPage": "Reload page",

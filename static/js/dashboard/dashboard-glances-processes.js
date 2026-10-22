@@ -38,7 +38,7 @@
             this.rowNodes = new Map();
             this.rows = [];
             this.container = null;
-            this._searchTimer = null;
+            this.search = null;
         }
 
         path() {
@@ -51,37 +51,27 @@
         }
 
         destroy() {
-            clearTimeout(this._searchTimer);
-            this._searchTimer = null;
+            this.search?.stop();
+            this.search = null;
         }
 
         build(container) {
             const v = this.view;
             this.container = container;
             this.rowNodes = new Map();
-            const bar = el('div', 'glances-proc-bar');
-            const search = el('input', 'glances-proc-search');
-            search.type = 'search';
-            search.setAttribute('data-glances-search', '');
-            const label = v.t('dashboard.glancesProcSearch', 'Search processes');
-            search.placeholder = label;
-            search.setAttribute('aria-label', label);
-            search.autocomplete = 'off';
-            search.spellcheck = false;
-            search.addEventListener('input', () => {
-                clearTimeout(this._searchTimer);
-                this._searchTimer = setTimeout(() => {
-                    this._searchTimer = null;
-                    const next = search.value.trim();
-                    if (next === this.query) return;
+            this.search = window.DashboardGlancesDom.searchBar({
+                label: v.t('dashboard.glancesProcSearch', 'Search processes'),
+                clearLabel: v.t('dashboard.glancesSearchClear', 'Clear search'),
+                delay: SEARCH_DELAY_MS,
+                onChange: (next) => {
                     this.query = next;
                     void v.refresh({ force: true });
-                }, SEARCH_DELAY_MS);
+                },
             });
-            const note = el('span', 'glances-proc-note',
-                v.t('dashboard.glancesProcTopNote', 'The top {count} by the chosen sort', { count: LIMIT }));
-            note.setAttribute('data-glances-top-note', '');
-            bar.append(search, note);
+            this.search.input.value = this.query;
+            this.search.note.setAttribute('data-glances-top-note', '');
+            this.syncNote();
+            const bar = this.search.bar;
 
             this.message = el('p', 'glances-proc-message');
             this.message.hidden = true;
@@ -117,6 +107,14 @@
             container.replaceChildren(bar, this.message, scroll);
         }
 
+        /** The count beside the field: the top of the list, or how many the search found. */
+        syncNote() {
+            const v = this.view;
+            this.search.note.textContent = this.query
+                ? v.t('dashboard.glancesProcMatches', 'Matches: {count}', { count: this.rows.length })
+                : v.t('dashboard.glancesProcTopNote', 'The top {count} by the chosen sort', { count: LIMIT });
+        }
+
         sortBy(key) {
             if (key === this.sort) return;
             this.sort = key;
@@ -147,6 +145,7 @@
                 return;
             }
             this.rows = answer;
+            this.syncNote();
             this.view.detail?.update('process', answer);
             this.table.hidden = false;
             if (!answer.length) {

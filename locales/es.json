@@ -3633,7 +3633,13 @@
     "glancesSaveImageHint": "Guardar este gráfico como imagen",
     "glancesSaveImageFailed": "No se pudo guardar la imagen",
     "widgetGlancesHostGone": "Este host no está en Config → Glances.",
-    "glancesHostWaiting": "Esperando la primera lectura"
+    "glancesHostWaiting": "Esperando la primera lectura",
+    "glancesSearchClear": "Borrar búsqueda",
+    "glancesCtSearch": "Buscar contenedores",
+    "glancesCtCount": "Contenedores: {count}",
+    "glancesCtShown": "Mostrando {shown} de {total}",
+    "glancesCtNoMatch": "Ningún contenedor coincide.",
+    "glancesProcMatches": "Coincidencias: {count}"
   },
   "health": {
     "reloadPage": "Recargar la página",

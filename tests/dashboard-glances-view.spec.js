@@ -504,7 +504,30 @@ test.describe('Glances page: the sections', () => {
         await expect(page.locator('.glances-ct-row').first()).toBeVisible();
         await expect(page.locator('.glances-ct-row')).toHaveCount(fixture('containers').length);
         // The only control in a row is the ↗ to its twin in the Containers view, when there is one.
-        await expect(page.locator('[data-glances-open="containers"] button:not(.glances-proc-sort):not(.glances-ct-link)')).toHaveCount(0);
+        await expect(page.locator('[data-glances-open="containers"] button:not(.glances-proc-sort):not(.glances-ct-link):not(.glances-search-clear)')).toHaveCount(0);
+    });
+
+    test('containers: a search field in the same place as Processes, with a count and a clear button', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page, '#glances/containers');
+        const all = fixture('containers').length;
+        const field = page.locator('[data-glances-open="containers"] [data-glances-search]');
+        await expect(field).toHaveAttribute('placeholder', 'Search containers');
+        await expect(page.locator('[data-glances-ct-note]')).toHaveText(`Containers: ${all}`);
+        const name = String(fixture('containers')[0].name);
+        await field.fill(name.slice(1, 4).toUpperCase());
+        await expect(page.locator('.glances-ct-row').first()).toContainText(name.slice(1, 4), { ignoreCase: true });
+        await expect(page.locator('[data-glances-ct-note]')).toContainText('Showing');
+        await field.fill('zzz-no-such-container');
+        await expect(page.locator('.glances-ct-row')).toHaveCount(0);
+        await expect(page.locator('[data-glances-ct-message]')).toContainText('No container matches.');
+        await page.locator('.glances-search-clear').click();
+        await expect(field).toHaveValue('');
+        await expect(page.locator('.glances-ct-row')).toHaveCount(all);
+        // The / key reaches this field too.
+        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.keyboard.press('/');
+        await expect(field).toBeFocused();
     });
 
     test('alerts: an ongoing alert from the real log', async ({ page }) => {

@@ -48,6 +48,12 @@
             this.table = null;
             this.message = null;
             this.tbody = null;
+            this.query = '';
+            this.search = null;
+        }
+
+        destroy() {
+            this.search?.stop();
         }
 
         endpoints() {
@@ -74,6 +80,16 @@
 
         build(container) {
             const v = this.view;
+            this.search = window.DashboardGlancesDom.searchBar({
+                label: v.t('dashboard.glancesCtSearch', 'Search containers'),
+                clearLabel: v.t('dashboard.glancesSearchClear', 'Clear search'),
+                onChange: (next) => {
+                    this.query = next;
+                    if (this.tbody?.isConnected) this.drawRows();
+                },
+            });
+            this.search.input.value = this.query;
+            this.search.note.setAttribute('data-glances-ct-note', '');
             this.message = el('p', 'glances-ct-message');
             this.message.setAttribute('data-glances-ct-message', '');
             this.message.hidden = true;
@@ -99,7 +115,7 @@
             this.syncHeads();
             this.wrap = el('div', 'glances-ct-wrap');
             this.wrap.appendChild(this.table);
-            container.replaceChildren(this.message, this.wrap);
+            container.replaceChildren(this.search.bar, this.message, this.wrap);
         }
 
         sortBy(key) {
@@ -144,8 +160,6 @@
                 this.show(this.view.t('dashboard.glancesCtEmpty', 'No containers.'));
                 return;
             }
-            this.message.hidden = true;
-            this.wrap.hidden = false;
             this.drawRows();
         }
 
@@ -160,7 +174,21 @@
             const G = window.DashboardGlances;
             const col = COLUMNS.find((c) => c.key === this.sortKey) || COLUMNS[0];
             const dir = this.sortDir === 'ascending' ? 1 : -1;
-            const rows = this.rows.slice().sort((a, b) => {
+            const v = this.view;
+            const needle = this.query.toLowerCase();
+            const found = needle
+                ? this.rows.filter((r) => [r.name, r.image, r.status, r.command].some((x) => x.toLowerCase().includes(needle)))
+                : this.rows;
+            this.search.note.textContent = needle
+                ? v.t('dashboard.glancesCtShown', 'Showing {shown} of {total}', { shown: found.length, total: this.rows.length })
+                : v.t('dashboard.glancesCtCount', 'Containers: {count}', { count: this.rows.length });
+            if (!found.length) {
+                this.show(v.t('dashboard.glancesCtNoMatch', 'No container matches.'));
+                return;
+            }
+            this.message.hidden = true;
+            this.wrap.hidden = false;
+            const rows = found.slice().sort((a, b) => {
                 const x = col.sort(a);
                 const y = col.sort(b);
                 // A reading that is missing sorts last whichever way it runs.

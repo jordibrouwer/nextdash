@@ -3633,7 +3633,13 @@
     "glancesSaveImageHint": "Enregistrer ce graphique comme image",
     "glancesSaveImageFailed": "Impossible d'enregistrer l'image",
     "widgetGlancesHostGone": "Cet hôte n'est pas dans Config → Glances.",
-    "glancesHostWaiting": "En attente de la première mesure"
+    "glancesHostWaiting": "En attente de la première mesure",
+    "glancesSearchClear": "Effacer la recherche",
+    "glancesCtSearch": "Rechercher des conteneurs",
+    "glancesCtCount": "Conteneurs : {count}",
+    "glancesCtShown": "{shown} affichés sur {total}",
+    "glancesCtNoMatch": "Aucun conteneur ne correspond.",
+    "glancesProcMatches": "Correspondances : {count}"
   },
   "health": {
     "reloadPage": "Recharger la page",

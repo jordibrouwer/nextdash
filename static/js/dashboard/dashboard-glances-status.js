@@ -50,6 +50,66 @@
      * loaded after this file.
      */
     window.DashboardGlancesDom = {
+        /**
+         * The search bar of a list: a field with a magnifier, the / key as a hint,
+         * a clear button once something is typed, and a count beside it. The same
+         * bar stands above Processes and Containers. onChange gets the trimmed text
+         * after a pause, or at once when the field is cleared.
+         */
+        searchBar({ label, clearLabel, delay = 0, onChange }) {
+            const el = this.el;
+            const NS = 'http://www.w3.org/2000/svg';
+            const bar = el('div', 'glances-search-bar');
+            const field = el('div', 'glances-search-field');
+            const icon = document.createElementNS(NS, 'svg');
+            icon.setAttribute('class', 'glances-search-icon');
+            icon.setAttribute('viewBox', '0 0 16 16');
+            icon.setAttribute('aria-hidden', 'true');
+            icon.innerHTML = '<circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>';
+            const input = el('input', 'glances-search-input');
+            input.type = 'search';
+            input.setAttribute('data-glances-search', '');
+            input.placeholder = label;
+            input.setAttribute('aria-label', label);
+            input.autocomplete = 'off';
+            input.spellcheck = false;
+            const key = el('kbd', 'glances-search-key', '/');
+            key.setAttribute('aria-hidden', 'true');
+            const clear = el('button', 'glances-search-clear', '×');
+            clear.type = 'button';
+            clear.hidden = true;
+            clear.setAttribute('aria-label', clearLabel);
+            const note = el('span', 'glances-proc-note');
+            let timer = null;
+            let sent = '';
+            const send = () => {
+                timer = null;
+                const next = input.value.trim();
+                if (next === sent) return;
+                sent = next;
+                onChange(next);
+            };
+            const sync = () => {
+                clear.hidden = !input.value;
+                key.hidden = Boolean(input.value);
+            };
+            input.addEventListener('input', () => {
+                sync();
+                clearTimeout(timer);
+                timer = setTimeout(send, delay);
+            });
+            clear.addEventListener('click', () => {
+                input.value = '';
+                sync();
+                clearTimeout(timer);
+                send();
+                input.focus();
+            });
+            field.append(icon, input, key, clear);
+            bar.append(field, note);
+            return { bar, input, note, stop: () => clearTimeout(timer) };
+        },
+
         /** The reader's own time zone: days and hours are theirs, not the server's. */
         zone() {
             try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; }

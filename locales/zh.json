@@ -3633,7 +3633,13 @@
     "glancesSaveImageHint": "将此图表保存为图片",
     "glancesSaveImageFailed": "无法保存图片",
     "widgetGlancesHostGone": "此主机不在 Config → Glances 中。",
-    "glancesHostWaiting": "等待第一次读数"
+    "glancesHostWaiting": "等待第一次读数",
+    "glancesSearchClear": "清除搜索",
+    "glancesCtSearch": "搜索容器",
+    "glancesCtCount": "容器：{count}",
+    "glancesCtShown": "显示 {shown} / {total}",
+    "glancesCtNoMatch": "没有匹配的容器。",
+    "glancesProcMatches": "匹配：{count}"
   },
   "health": {
     "reloadPage": "重新加载页面",

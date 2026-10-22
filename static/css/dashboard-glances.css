@@ -132,25 +132,79 @@
 
 /* ── Processes ── */
 
-.glances-proc-bar {
+/* One search bar above Processes and Containers: field, count beside it. */
+.glances-search-bar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
-    margin-bottom: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-3, 0.75rem);
 }
 
-.glances-proc-search {
-    flex: 0 1 18rem;
-    min-width: 10rem;
-    padding: var(--space-1, 0.3rem) var(--space-2, 0.5rem);
+.glances-search-field {
+    display: flex;
+    flex: 0 1 21rem;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 11rem;
+    padding: 0 var(--space-2, 0.6rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 6px);
     background: var(--background-primary);
+    color: var(--text-tertiary, var(--text-secondary));
+}
+
+.glances-search-field:focus-within {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 25%, transparent);
+}
+
+.glances-search-icon { flex: none; width: 1rem; height: 1rem; }
+
+.glances-search-input {
+    flex: 1;
+    min-width: 0;
+    padding: var(--space-2, 0.45rem) 0;
+    border: 0;
+    background: transparent;
     color: var(--text-primary);
     font: inherit;
     font-size: var(--font-size-controls, inherit);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
 }
+
+.glances-search-input::-webkit-search-cancel-button { display: none; }
+.glances-search-input::placeholder { color: var(--text-tertiary, var(--text-secondary)); }
+
+.glances-search-key {
+    flex: none;
+    padding: 0 0.4rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    font: inherit;
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.glances-search-key[hidden],
+.glances-search-clear[hidden] { display: none; }
+
+.glances-search-clear {
+    flex: none;
+    padding: 0 0.3rem;
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.glances-search-clear:hover { color: var(--text-primary); }
+.glances-search-clear:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 1px; border-radius: 4px; }
 
 .glances-proc-note,
 .glances-proc-message {
