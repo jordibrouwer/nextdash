@@ -242,9 +242,38 @@ func listAutoBackupFiles() ([]string, error) {
 			names = append(names, entry.Name())
 		}
 	}
-	// Timestamp in the name is sortable, so reverse-lexicographic = newest first.
-	sort.Sort(sort.Reverse(sort.StringSlice(names)))
+	sortAutoBackupsNewestFirst(names)
 	return names, nil
+}
+
+// autoBackupOrderKey splits a valid name into its sortable timestamp and the
+// same-second counter; a name without a suffix is the first of its second.
+func autoBackupOrderKey(name string) (stamp string, n int) {
+	base := strings.TrimSuffix(name, ".zip")
+	i := strings.LastIndex(base, "Z")
+	if i < 0 {
+		return base, 1
+	}
+	stamp, rest := base[:i+1], base[i+1:]
+	n = 1
+	if v, err := strconv.Atoi(strings.TrimPrefix(rest, "-")); err == nil && rest != "" {
+		n = v
+	}
+	return stamp, n
+}
+
+// sortAutoBackupsNewestFirst orders by timestamp, then by the numeric counter.
+// Plain filename order got the counter wrong ("-" sorts before "." and "-10"
+// before "-2"), so a prune could delete the newer of two same-second files.
+func sortAutoBackupsNewestFirst(names []string) {
+	sort.Slice(names, func(i, j int) bool {
+		si, ni := autoBackupOrderKey(names[i])
+		sj, nj := autoBackupOrderKey(names[j])
+		if si != sj {
+			return si > sj
+		}
+		return ni > nj
+	})
 }
 
 // writeAutoBackup builds a fresh backup ZIP, writes it atomically into the

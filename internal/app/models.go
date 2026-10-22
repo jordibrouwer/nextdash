@@ -3453,18 +3453,21 @@ func (fs *FileStore) getPages() []Page {
 		}
 	}
 
-	// Add any pages that exist in files but not in order
-	for id, page := range pageMap {
-		found := false
-		for _, orderId := range order {
-			if orderId == id {
-				found = true
-				break
-			}
+	// Add any pages that exist in files but not in order. By id: ranging the
+	// map appended them in random order and the tabs reshuffled per load.
+	inOrder := make(map[int]bool, len(order))
+	for _, orderId := range order {
+		inOrder[orderId] = true
+	}
+	var missing []int
+	for id := range pageMap {
+		if !inOrder[id] {
+			missing = append(missing, id)
 		}
-		if !found {
-			pages = append(pages, page)
-		}
+	}
+	sort.Ints(missing)
+	for _, id := range missing {
+		pages = append(pages, pageMap[id])
 	}
 
 	return finalizePagesList(pages, pageMap)

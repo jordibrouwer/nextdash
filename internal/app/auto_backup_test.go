@@ -473,3 +473,21 @@ func TestRestoringTheOldestBackupKeepsIt(t *testing.T) {
 		t.Fatalf("the restored archive is gone: %v", err)
 	}
 }
+
+// The same-second counter must order numerically after the bare name; filename
+// order put "-2" before the bare name and "-10" before "-2".
+func TestAutoBackupOrderSameSecondCounter(t *testing.T) {
+	const p = "nextdash-auto-backup-2026-01-02T030405Z"
+	names := []string{p + "-2.zip", p + ".zip", "nextdash-auto-backup-2026-01-02T030406Z.zip", p + "-10.zip", "nextdash-auto-backup-2026-01-02T030404Z-3.zip"}
+	sortAutoBackupsNewestFirst(names)
+	want := []string{
+		"nextdash-auto-backup-2026-01-02T030406Z.zip",
+		p + "-10.zip", p + "-2.zip", p + ".zip",
+		"nextdash-auto-backup-2026-01-02T030404Z-3.zip",
+	}
+	for i := range want {
+		if names[i] != want[i] {
+			t.Fatalf("order = %v, want %v", names, want)
+		}
+	}
+}

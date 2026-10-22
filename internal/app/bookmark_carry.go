@@ -20,14 +20,25 @@ func carryServerOwnedBookmarkFields(next []Bookmark, stored []Bookmark) {
 	}
 	byURL := make(map[string]Bookmark, len(stored))
 	for _, bookmark := range stored {
+		// First wins on a legacy duplicate URL; the index match below picks
+		// the right twin when the position still lines up.
 		if key := canonicalBookmarkURLKey(bookmark.URL); key != "" {
-			byURL[key] = bookmark
+			if _, dup := byURL[key]; !dup {
+				byURL[key] = bookmark
+			}
 		}
 	}
 	for i := range next {
-		previous, ok := byURL[canonicalBookmarkURLKey(next[i].URL)]
+		key := canonicalBookmarkURLKey(next[i].URL)
+		previous, ok := byURL[key]
 		if !ok {
 			continue
+		}
+		// Stored rows that share a URL used to resolve to the last one, so a
+		// save that removed the newer twin gave the older its counts. The row
+		// at the same index is the one the tab was looking at.
+		if i < len(stored) && key != "" && canonicalBookmarkURLKey(stored[i].URL) == key {
+			previous = stored[i]
 		}
 		// A tab loaded before an open elsewhere sends the counts it loaded:
 		// non-zero, so they used to win, and the newer opens were lost. The

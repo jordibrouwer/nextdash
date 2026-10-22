@@ -120,3 +120,23 @@ func TestCarryKeepsDriftAndArchiveBookkeeping(t *testing.T) {
 		t.Fatalf("archive bookkeeping lost: %+v", got)
 	}
 }
+
+// Legacy stored pages can hold two rows with one URL. A save that removes the
+// newer twin must leave the older one its own history, not the twin's.
+func TestCarryKeepsOwnHistoryWhenStoredURLsCollide(t *testing.T) {
+	stored := []Bookmark{
+		{Name: "A", URL: "https://dup.example/", OpenCount: 3, LastOpened: 1000, OpenLog: []int64{1000}, LastChecked: 500, LastError: "timeout"},
+		{Name: "B", URL: "https://dup.example/", OpenCount: 40, LastOpened: 9000, OpenLog: []int64{8000, 9000}},
+	}
+	next := []Bookmark{{Name: "A", URL: "https://dup.example/"}}
+
+	carryServerOwnedBookmarkFields(next, stored)
+
+	got := next[0]
+	if got.OpenCount != 3 || got.LastOpened != 1000 || len(got.OpenLog) != 1 {
+		t.Fatalf("took the twin's opens: %d / %d / %v", got.OpenCount, got.LastOpened, got.OpenLog)
+	}
+	if got.LastChecked != 500 || got.LastError != "timeout" {
+		t.Fatalf("took the twin's check state: %d / %q", got.LastChecked, got.LastError)
+	}
+}

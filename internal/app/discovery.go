@@ -364,6 +364,7 @@ type discoveryEntry struct {
 	app     discoveredApp
 	carried bool // an app from the previous run, not probed this time
 	stopped bool // listed but not running: not probed this time
+	dup     bool // answered, but another container already owns this address
 }
 
 func (e *discoveryEntry) probeAll(ctx context.Context) {
@@ -547,7 +548,9 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 		}
 		key := canonicalBookmarkURLKey(e.app.URL)
 		if key == "" || byURL[key] {
-			e.ok = false
+			// Not e.ok = false: it did answer, and a false there read as a
+			// failed probe below (re-probed every run, withheld from Known).
+			e.dup = true
 			continue
 		}
 		byURL[key] = true
@@ -603,7 +606,7 @@ func (h *Handlers) runDiscovery(ctx context.Context, now time.Time) (discoveryRu
 			continue
 		}
 		newSeen[e.name] = e.c.ID
-		retrying := e.probe && !e.ok && now.Sub(time.Unix(e.c.Created, 0)) < discoveryRetryWindow
+		retrying := e.probe && !e.ok && !e.dup && now.Sub(time.Unix(e.c.Created, 0)) < discoveryRetryWindow
 		if retrying {
 			newRetry[e.name] = e.c.Created
 		}

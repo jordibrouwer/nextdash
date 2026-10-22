@@ -580,3 +580,30 @@ func TestDiscoveryUsesDefaultGatewayHostFallback(t *testing.T) {
 		t.Fatalf("host = %q", got)
 	}
 }
+
+// A container that answered but shares its address with an earlier one is not
+// a failed probe: it must not be queued for retry, and it counts as decided.
+func TestDiscoveryDuplicateAddressIsNotRetried(t *testing.T) {
+	r := newDiscoveryRig(t)
+	r.setSettings(func(s *Settings) { s.DiscoveryNewApps = "inbox" })
+	port, _ := htmlPort(t)
+	other, _ := htmlPort(t)
+	old := r.now.Add(-time.Hour)
+	r.containers(fxContainer("jellyfin", "id0", other, old))
+	r.run()
+	// Created two minutes ago: inside the retry window.
+	recent := r.now.Add(-2 * time.Minute)
+	r.containers(
+		fxContainer("jellyfin", "id0", other, old),
+		fxContainer("gluetun", "id1", port, recent),
+		fxContainer("qbittorrent", "id2", port, recent),
+	)
+	r.run()
+	st := r.state()
+	if _, ok := st.Retry["qbittorrent"]; ok {
+		t.Fatalf("duplicate address queued for retry: %+v", st.Retry)
+	}
+	if _, ok := st.Known["qbittorrent"]; !ok {
+		t.Fatalf("duplicate address withheld from Known: %+v", st.Known)
+	}
+}

@@ -870,8 +870,24 @@ func (h *Handlers) nextTemplatePageID() int {
 }
 
 // writePageTemplate writes a plan as a new page and appends it to the order.
-func (h *Handlers) writePageTemplate(plan pageTemplatePlan) (int, error) {
+func (h *Handlers) writePageTemplate(plan pageTemplatePlan) (newID int, err error) {
 	pageID := h.nextTemplatePageID()
+	var savedIcons []string
+	pageSaved := false
+	defer func() {
+		if err == nil {
+			return
+		}
+		// A failed write must not leave a page without its categories or
+		// bookmarks, or icon files nothing points at. The id is fresh (one
+		// past every page and trashed page, under pageTemplateImportMu), so
+		// the file removed here is only ever this call's own.
+		if pageSaved {
+			_ = h.store.DeletePage(pageID)
+		}
+		h.store.removeUnusedIconFiles(savedIcons)
+		newID = 0
+	}()
 	page := normalizePageMeta(plan.page, pageID)
 	page.ID = pageID
 	page.Name = plan.page.Name
@@ -879,11 +895,13 @@ func (h *Handlers) writePageTemplate(plan pageTemplatePlan) (int, error) {
 	for index, data := range plan.icons {
 		if file, err := saveIconBytes(data, templateIconMIME[templateSniffIcon(data)]); err == nil && file != "" {
 			plan.bookmarks[index].Icon = file
+			savedIcons = append(savedIcons, file)
 		}
 	}
 	if err := h.store.SavePage(page); err != nil {
 		return 0, err
 	}
+	pageSaved = true
 	categories := plan.categories
 	if categories == nil {
 		categories = []Category{}

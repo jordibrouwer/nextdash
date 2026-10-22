@@ -101,3 +101,21 @@ func TestMonitorStatsReportsCoveredSpan(t *testing.T) {
 		t.Fatalf("coveredMs = %d, expected less than the full window", stats.CoveredMs)
 	}
 }
+
+// The content sentences embed the user's keyword, so one that happens to be a
+// network word must still be a content failure.
+func TestFailureClassContentKeywordIsNotNetwork(t *testing.T) {
+	for detail, want := range map[string]string{
+		`Page is missing "timeout"`:   "content",
+		`Page contains "DNS"`:         "content",
+		`Page is missing "refused"`:   "content",
+		`Page is missing "tls cert"`:  "content",
+		`Page contains "redirect"`:    "content",
+		"Timeout":                     "timeout",
+		"Page says it does not exist": "gone",
+	} {
+		if got := failureClass(detail); got != want {
+			t.Fatalf("failureClass(%q) = %q, want %q", detail, got, want)
+		}
+	}
+}
