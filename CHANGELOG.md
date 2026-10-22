@@ -155,6 +155,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **fix — rejected saves and commands are caught,** the finder shortcut is escaped and search picks are flushed.
 - **fix — moving a widget saves what was typed first,** and `0` is the tenth page, not the Inbox.
 - **fix — collapsed categories and the theme migration** are guarded against bad browser storage.
+- **new — Add new bookmark in a category's right-click menu.** The first entry on a category header opens the add-bookmark form with that category already chosen, the same form the `+` button opens. Smart collections and the list of unfiled bookmarks do not show it (`dashboard-category-menu.js`).
 - **fix — the Calendar tile expands recurring events.**
 - **fix — widgets** keep no cached error from a closed tab, retry sooner, and Radarr shows its release day.
 
@@ -177,6 +178,12 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **fix — odd bytes cannot panic the HTML parsers** (length is kept when lowercasing).
 - **fix — small ones:** page order, backup prune order, a Config race and duplicate URLs.
 - **docs — the Docker build** drops the needless `-a` and `-installsuffix` flags.
+
+### Docs
+
+- **docs — translations.** The 35 strings for domain expiry, six that had no key in any locale file (Compose lines, the overview's checked count, Category name, a container link that is not running and the Inbox key legend's two labels) and the new category menu entry are in Dutch, German, French, Chinese and Spanish.
+- **docs — Dutch says bookmark.** All 829 strings in `locales/nl.json` that said *bladwijzer* now say *bookmark*, compounds included (*bookmarkformulier*), plus the no-JavaScript line in `templates/dashboard.html` and the two specs that matched the old word.
+- **docs — a test.** `tests/dashboard-category-menu-add-bookmark.spec.js` opens a category's menu, picks Add new bookmark and expects the form on that category.
 
 ---
 
