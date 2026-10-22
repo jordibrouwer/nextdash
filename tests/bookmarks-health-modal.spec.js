@@ -269,9 +269,11 @@ test('Monitors & trend: the course in any series, every monitor together, rememb
 
 /*
  * Smaller still: the Monitors card leaves the overview (it is whole on its own
- * tab), and in the narrow columns every figure stays inside its card.
+ * tab), and in the narrow columns every figure stays inside its card. 560 high:
+ * the text is Source Code Pro, wider than Inter was, and the last step needs
+ * about 545px to fit without scrolling; below that the modal scrolls.
  */
-test('at 1000x520 the Monitors card gives way, and nothing spills out of a card', async ({ page }) => {
+test('at 1000x560 the Monitors card gives way, and nothing spills out of a card', async ({ page }) => {
   await page.addInitScript(() => { try { localStorage.removeItem('nextdash.bm.healthModalTab'); } catch {} });
   await openBookmarksWithHealth(
     page,
@@ -293,7 +295,7 @@ test('at 1000x520 the Monitors card gives way, and nothing spills out of a card'
       }),
     },
   );
-  await page.setViewportSize({ width: 1000, height: 520 });
+  await page.setViewportSize({ width: 1000, height: 560 });
   await page.evaluate(() => window.dashboardInstance.config.openBmHealthModal());
   const body = page.locator('#app-modal.show .modal-body');
   await expect.poll(() => body.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1);
