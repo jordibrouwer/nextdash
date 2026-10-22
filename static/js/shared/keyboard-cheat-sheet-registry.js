@@ -330,7 +330,7 @@
             contextId: 'glances',
             when: (ctx) => ctx.glancesEnabled,
             rows: [
-                { keys: 'o / p / c / d / n / i / h / a', cheatKey: 'glSection', fallback: 'Open Overview, Processes, Containers, Disks, Network, Insights, History or Alerts' },
+                { keys: 'o / p / c / d / n / i / h / a / m', cheatKey: 'glSection', fallback: 'Open Overview, Processes, Containers, Disks, Network, Insights, History, Alerts or Hosts (m, with several hosts)', print: true, printFallback: 'Switch section (m: Hosts)' },
                 { keys: '[ / ]', cheatKey: 'glStep', fallback: 'The previous or next section' },
                 { keys: ', / .', cheatKey: 'glRange', fallback: 'On a graph under the pointer: a shorter or longer range' },
                 { keys: 'r', cheatKey: 'glRefresh', fallback: 'Read the host now' },
@@ -472,7 +472,7 @@
                 { keys: ':page new <name>', printOmit: true, cheatKey: 'cnPageNew', fallback: 'Create a page and go to it (n in the page overview does the same)' },
                 { keys: ':inbox', cheatKey: 'cnInbox', fallback: 'Open Inbox (Shift + I)', print: true },
                 { keys: ':docker [name]', cheatKey: 'cnDocker', fallback: 'Open Containers, or find a container and start, stop or update it from the palette' },
-                { keys: ':glances [section]', cheatKey: 'cnGlances', fallback: 'Open the Glances page or one of its sections; :glances record, pause, resume, track and untrack change what it records', when: (ctx) => ctx.glancesEnabled },
+                { keys: ':glances [section]', cheatKey: 'cnGlances', fallback: 'Open the Glances page or one of its sections; :glances host, record, pause, resume, track and untrack change what it shows or records', when: (ctx) => ctx.glancesEnabled },
                 { keys: ':inbox triage', printOmit: true, cheatKey: 'cnInboxTriage', fallback: 'Triage inbox items one by one' },
                 { keys: ':recent', cheatKey: 'cnRecent', fallback: 'Open recent bookmarks modal (same as *)' },
                 { keys: ':overview', printOmit: true, cheatKey: 'cnOverview', fallback: 'Open page overview with bookmark counts (same as ,)' },

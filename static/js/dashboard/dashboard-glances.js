@@ -990,7 +990,7 @@
         /** Section letters, [ and ] to step, , and . for a graph's range, r to read now, / to search. */
         _bindKeys() {
             this._unbindKeys();
-            const LETTERS = { o: 'overview', p: 'processes', c: 'containers', d: 'disks', n: 'network', h: 'history', a: 'alerts', i: 'insights' };
+            const LETTERS = { o: 'overview', p: 'processes', c: 'containers', d: 'disks', n: 'network', h: 'history', a: 'alerts', i: 'insights', m: 'hosts' };
             this._keyHandler = (e) => {
                 if (!this.isActiveView() || !this.shell) return;
                 if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
