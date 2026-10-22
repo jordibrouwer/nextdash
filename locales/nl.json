@@ -1468,7 +1468,7 @@
     "categorySpreadNeedsLimit": "Uitspreiden heeft een limiet op items per categorie nodig — die limiet bepaalt hoeveel kolommen een categorie inneemt. Stel er een in bij Config → Uiterlijk → Raster.",
     "categorySpreadNeedsLimitShort": "Heeft een itemlimiet nodig",
     "categoryMenuAdd": "Categorie toevoegen",
-    "categoryMenuAddBookmark": "Nieuwe bladwijzer toevoegen",
+    "categoryMenuAddBookmark": "Nieuwe bookmark toevoegen",
     "categoryMenuDelete": "Verwijderen",
     "healthReportAgeTitle": "Wanneer dit rapport is gemaakt. Gebruik \"Alles opnieuw testen\" om het te verversen.",
     "healthIntervalLabel": "Controle-interval",
