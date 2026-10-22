@@ -144,6 +144,8 @@
                 'tipGlancesHosts',
                 'tipGlancesContainers',
                 'tipGlancesCommands',
+                'tipGlancesCompare',
+                'tipGlancesWidget',
                 'tipTuneContainerList',
                 'tipHostHomelabPage',
             ],

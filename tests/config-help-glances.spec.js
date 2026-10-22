@@ -19,12 +19,12 @@ async function openHelp(page, hash) {
 }
 
 test.describe('Help: Glances', () => {
-    test('a Glances topic with its six panels, each with text under it', async ({ page }) => {
+    test('a Glances topic with its seven panels, each with text under it', async ({ page }) => {
         await openHelp(page, 'glances');
         await expect(page.locator('[data-help-tab="glances"], [data-help-more="glances"]').first()).toBeAttached();
         const panels = page.locator('#config-help-body [data-help-panel]');
-        await expect(panels).toHaveCount(6);
-        for (const title of ['Before it works: a Glances 4 host', 'The Glances page', 'What nextDash records', 'Several hosts', 'Glances and the Containers view', 'Notices and commands']) {
+        await expect(panels).toHaveCount(7);
+        for (const title of ['Before it works: a Glances 4 host', 'The Glances page', 'What nextDash records', 'Several hosts', 'Glances and the Containers view', 'Notices and commands', 'Compare, forecast and the widget']) {
             await expect(page.locator('#config-help-body').getByText(title, { exact: true }).first()).toBeAttached();
         }
         await expect(page.locator('#config-help-body .config-help-prose').first()).not.toHaveText('');
