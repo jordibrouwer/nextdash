@@ -9,7 +9,7 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * back to #search-button — so leaving search left the ring on a header icon
  * with nothing selected under it, and the next arrow key started again from the
  * top of the page. The row you were on is where you were; a reader who had not
- * picked one starts at the first row on the page.
+ * picked one gets no row and no ring, and the grid stays as it was.
  */
 async function openDashboard(page) {
     await page.setViewportSize({ width: 1500, height: 900 });
@@ -32,7 +32,7 @@ const focused = (page) => page.evaluate(() => {
     };
 });
 
-test('closing search with no row picked lands on the first one', async ({ page }) => {
+test('closing search with no row picked leaves the grid alone', async ({ page }) => {
     await openDashboard(page);
 
     await page.keyboard.press('>');
@@ -47,8 +47,10 @@ test('closing search with no row picked lands on the first one', async ({ page }
 
     const seen = await focused(page);
     expect(seen.inHeader, 'the ring stayed on the header').toBe(false);
-    expect(seen.selectedIndex, 'no row took the cursor').toBe(0);
-    expect(seen.rowIndex, 'focus is not on the row that is selected').toBe(0);
+    // A search that started with no row picked gives nothing back: a row the
+    // reader never chose would be lit, and j and k would be steps again.
+    expect(seen.selectedIndex, 'a row took the cursor').toBe(-1);
+    expect(seen.rowIndex, 'focus went to a row').toBe(-1);
 });
 
 test('closing search puts the cursor back on the row it was on', async ({ page }) => {
