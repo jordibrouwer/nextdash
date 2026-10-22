@@ -168,6 +168,12 @@
                                 <option value="no">${t('glancesLinkNo', 'No')}</option>
                             </select>
                         </div>
+                        <label class="config-toggle">
+                            <input type="checkbox" data-glances-field="useForContainers">
+                            <span>${t('glancesUseForContainers', 'Use Glances for the CPU, memory and network in the Containers view')}</span>
+                        </label>
+                        <p class="config-field-hint">${t('glancesUseForContainersHint',
+                            'When this host is the Docker host, Glances already reads every container: one request instead of one per container. Containers Glances does not know are still read from Docker.')}</p>
                         <p class="config-field-hint" data-glances-link-state aria-live="polite"></p>
                         <p class="config-field-hint" data-glances-link-docker-host aria-live="polite"></p>
                         <details class="glances-link-lists" data-glances-link-lists hidden>
@@ -186,7 +192,7 @@
                     <div class="config-panel" data-glances-section data-glances-notify-panel>
                         <h3 class="config-panel-title">${t('glancesNotifyTitle', 'Notices')}</h3>
                         <p class="config-panel-note">${t('glancesNotifyNote',
-                            'A notice goes out when such an incident has lasted a few readings, and another when it is over, not on every reading. They use your alert channel and browser notifications, and wait for the quiet hours. All are off until you switch them on.')}</p>
+                            'A notice goes out when such an incident has lasted a few readings, and another when it is over, not on every reading. They go to your alert channel, and to browser notifications when "Notify when a Glances host has an incident" is on in Config → Monitoring. All are off until you switch them on.')}</p>
                         <div class="config-checkset" data-glances-notifies>${notify}</div>
                     </div>
 
@@ -330,6 +336,7 @@
             clearLogin = false;
             field('refresh').value = String(cfg.refresh || 2);
             field('dockerLink').value = cfg.dockerLink || 'auto';
+            field('useForContainers').checked = cfg.keepDockerStats !== true;
             const hidden = new Set(cfg.hiddenBlocks || []);
             root.querySelectorAll('[data-glances-block]').forEach((box) => {
                 box.checked = !hidden.has(box.getAttribute('data-glances-block'));
@@ -439,6 +446,7 @@
                 user: clearLogin ? '' : field('user').value.trim(),
                 refresh: Number(field('refresh').value) || 2,
                 dockerLink: field('dockerLink').value || 'auto',
+                keepDockerStats: !field('useForContainers').checked,
                 hiddenBlocks,
                 notify,
                 thresholds,

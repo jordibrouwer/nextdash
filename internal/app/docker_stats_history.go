@@ -118,6 +118,26 @@ func (h *dockerStatsHistory) record(id string, now time.Time, t dockerStatsTotal
 	h.series[id] = append([]dockerStatsPoint(nil), series[drop:]...)
 }
 
+// recordPoint files a reading that already is rates and shares (Glances's),
+// and drops the running totals: a switch back to Docker's own readings starts
+// from a fresh pair, not from a difference across the gap.
+func (h *dockerStatsHistory) recordPoint(id string, now time.Time, point dockerStatsPoint) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	delete(h.prev, id)
+	delete(h.prevAt, id)
+	series := append(h.series[id], point)
+	cutoff := now.Add(-dockerStatsHistoryWindow).UnixMilli()
+	drop := 0
+	for drop < len(series) && series[drop].T < cutoff {
+		drop++
+	}
+	if len(series)-drop > dockerStatsHistoryMaxPoints {
+		drop = len(series) - dockerStatsHistoryMaxPoints
+	}
+	h.series[id] = append([]dockerStatsPoint(nil), series[drop:]...)
+}
+
 func (h *dockerStatsHistory) points(id string) []dockerStatsPoint {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -160,6 +180,12 @@ type dockerStatsSource interface {
 // sampleDockerStats reads every running container once, four at a time, and
 // hands back the list it read.
 func sampleDockerStats(ctx context.Context, src dockerStatsSource, hist *dockerStatsHistory, now time.Time) []dockerContainerSummary {
+	return sampleDockerStatsFrom(ctx, src, hist, now, nil)
+}
+
+// sampleDockerStatsFrom is sampleDockerStats with readings already taken
+// elsewhere (Glances) for some containers, by id: those are not asked of Docker.
+func sampleDockerStatsFrom(ctx context.Context, src dockerStatsSource, hist *dockerStatsHistory, now time.Time, ready map[string]dockerStatsPoint) []dockerContainerSummary {
 	list, err := src.listContainers(ctx)
 	if err != nil {
 		return nil
@@ -174,6 +200,10 @@ func sampleDockerStats(ctx context.Context, src dockerStatsSource, hist *dockerS
 	sem := make(chan struct{}, dockerStatsConcurrency)
 	var wg sync.WaitGroup
 	for id := range running {
+		if point, ok := ready[id]; ok {
+			hist.recordPoint(id, now, point)
+			continue
+		}
 		wg.Add(1)
 		sem <- struct{}{}
 		go func(id string) {
@@ -237,6 +267,6 @@ func (h *Handlers) sampleDockerStatsOnce() {
 	ctx, cancel := context.WithTimeout(context.Background(), dockerStatsInterval)
 	defer cancel()
 	now := time.Now()
-	list := sampleDockerStats(ctx, api, dockerStatsStore, now)
+	list := sampleDockerStatsFrom(ctx, api, dockerStatsStore, now, h.glancesPointsWithin(ctx, now, glancesStatsWait))
 	h.dispatchContainerNotices(ctx, h.checkDockerUsage(list, now))
 }

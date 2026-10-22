@@ -413,3 +413,116 @@ func (h *Handlers) glancesRestartsAsked(r *http.Request, cfg GlancesConfig, sinc
 	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
 	return out
 }
+
+/*
+The Containers view's CPU, memory and network, from Glances.
+
+When the Glances host is the Docker host, Glances already reads every container
+each beat: one request instead of one per container. The stats sampler
+(docker_stats_history.go) takes those readings for the containers the link
+matched, and asks Docker itself only for the rest, or for all of them when
+Glances does not answer. A host that keeps Docker's own readings says so in
+Config → Glances (KeepDockerStats).
+*/
+
+type glancesContainerReading struct {
+	Name           string   `json:"name"`
+	ID             string   `json:"id"`
+	CPUPercent     *float64 `json:"cpu_percent"`
+	CPULimit       *float64 `json:"cpu_limit"`
+	MemoryUsage    *float64 `json:"memory_usage"`
+	MemoryInactive *float64 `json:"memory_inactive_file"`
+	MemoryLimit    *float64 `json:"memory_limit"`
+	NetworkRX      *float64 `json:"network_rx"`
+	NetworkTX      *float64 `json:"network_tx"`
+	IORead         *float64 `json:"io_rx"`
+	IOWrite        *float64 `json:"io_wx"`
+}
+
+func glancesOr0(v *float64) float64 {
+	if v == nil {
+		return 0
+	}
+	return *v
+}
+
+// glancesStatsWait is how long the Docker stats sampler waits for Glances:
+// Docker's own readings never wait on a host that is slow or switched off.
+const glancesStatsWait = 4 * time.Second
+
+// glancesPointsWithin is glancesContainerPoints, given up on after wait (what
+// it was still asking is left to finish and is dropped). It asks nothing when
+// no host could be the Docker host with its readings on.
+func (h *Handlers) glancesPointsWithin(ctx context.Context, now time.Time, wait time.Duration) map[string]dockerStatsPoint {
+	if demoMode() {
+		return nil
+	}
+	wanted := false
+	for _, c := range glancesHostConfigs() {
+		if c.connected() && !c.KeepDockerStats && normalizeGlancesLink(c.DockerLink) != glancesLinkNo {
+			wanted = true
+		}
+	}
+	if !wanted {
+		return nil
+	}
+	done := make(chan map[string]dockerStatsPoint, 1)
+	go func() { done <- h.glancesContainerPoints(context.WithoutCancel(ctx), now) }()
+	select {
+	case points := <-done:
+		return points
+	case <-time.After(wait):
+		return nil
+	case <-ctx.Done():
+		return nil
+	}
+}
+
+// glancesContainerPoints are the newest readings of the containers Glances and
+// Docker share, as stats points keyed by Docker id. Nil when Glances is not the
+// Docker host, is off, or does not answer.
+func (h *Handlers) glancesContainerPoints(ctx context.Context, now time.Time) map[string]dockerStatsPoint {
+	link := h.glancesDockerLink(ctx)
+	if !link.Same || link.HostID == "" || len(link.Matches) == 0 {
+		return nil
+	}
+	cfg, known := loadGlancesConfigFor(link.HostID)
+	if !known || !cfg.connected() || cfg.KeepDockerStats {
+		return nil
+	}
+	var rows []glancesContainerReading
+	if err := h.glancesAsk(ctx, cfg, "containers", &rows); err != nil {
+		return nil
+	}
+	byName := make(map[string]glancesContainerReading, len(rows))
+	for _, r := range rows {
+		byName[r.Name] = r
+	}
+	out := map[string]dockerStatsPoint{}
+	for _, m := range link.Matches {
+		// Only a container that is the same one: by id or by name, not by a port it shares or a compose number.
+		if m.By != "id" && m.By != "name" {
+			continue
+		}
+		r, ok := byName[m.Glances]
+		// Without the number of cores the share of them is a guess: Docker reads those.
+		if !ok || m.DockerID == "" || r.CPUPercent == nil || r.CPULimit == nil || *r.CPULimit < 1 {
+			continue
+		}
+		used := glancesOr0(r.MemoryUsage)
+		if r.MemoryInactive != nil && *r.MemoryInactive < used {
+			used -= *r.MemoryInactive
+		}
+		p := dockerStatsPoint{
+			T: now.UnixMilli(), CPU: *r.CPUPercent, Mem: uint64(used),
+			NetIn: glancesOr0(r.NetworkRX), NetOut: glancesOr0(r.NetworkTX),
+			DiskRead: glancesOr0(r.IORead), DiskWrite: glancesOr0(r.IOWrite),
+		}
+		p.cpuShare = p.CPU / *r.CPULimit
+		if limit := glancesOr0(r.MemoryLimit); limit > 0 {
+			p.memShare = used / limit * 100
+		}
+		out[m.DockerID] = p
+	}
+	return out
+}

@@ -171,3 +171,105 @@ func TestGlancesHistoryCarriesContainerRestarts(t *testing.T) {
 }
 
 func stringsReader(s string) *strings.Reader { return strings.NewReader(s) }
+
+// Containers Glances has already read are not asked of Docker; the rest are.
+func TestStatsSamplerTakesReadyReadingsAndAsksDockerForTheRest(t *testing.T) {
+	src := &fakeStatsSource{list: []dockerContainerSummary{{ID: "a", State: "running"}, {ID: "b", State: "running"}}}
+	hist := newDockerStatsHistory()
+	now := time.Now()
+	ready := map[string]dockerStatsPoint{"a": {T: now.UnixMilli(), CPU: 50, Mem: 10}}
+	sampleDockerStatsFrom(context.Background(), src, hist, now, ready)
+	if len(src.asked) != 1 || src.asked[0] != "b" {
+		t.Errorf("Docker was asked for %v, want only b", src.asked)
+	}
+	if p, ok := hist.latest("a"); !ok || p.CPU != 50 {
+		t.Errorf("a: %+v %v", p, ok)
+	}
+}
+
+// The Docker host's containers read from Glances become stats points: CPU as
+// a share of the cores, memory without the page cache; and a host that keeps
+// Docker's own readings gives none.
+func TestGlancesContainerPointsFromTheDockerHost(t *testing.T) {
+	h, _, fake, cfg := linkSetup(t, "NAS.lan")
+	fake.mu.Lock()
+	fake.override["containers"] = []byte(`[{"name":"app-glances","id":"aaaaaaaaaaaa","status":"running","cpu_percent":60,"cpu_limit":12,"memory_usage":1000,"memory_inactive_file":200,"memory_limit":8000,"network_rx":5,"network_tx":6,"io_rx":7,"io_wx":8},{"name":"jellyfin","id":"bbbbbbbbbbbb","status":"running"}]`)
+	fake.mu.Unlock()
+	glancesViewForgetAll()
+	now := time.Now()
+	got := h.glancesContainerPoints(context.Background(), now)
+	p, ok := got["aaaaaaaaaaaa1111111111111111"]
+	if !ok || len(got) != 1 {
+		t.Fatalf("points: %+v", got)
+	}
+	if p.CPU != 60 || p.cpuShare != 5 || p.Mem != 800 || p.memShare != 10 || p.NetIn != 5 || p.NetOut != 6 || p.DiskRead != 7 || p.DiskWrite != 8 {
+		t.Errorf("point: %+v", p)
+	}
+	cfg.KeepDockerStats = true
+	if _, err := saveGlancesConfig(cfg, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := h.glancesContainerPoints(context.Background(), now); got != nil {
+		t.Errorf("a host that keeps Docker's own readings gave %+v", got)
+	}
+}
+
+// A container that only shares a port with a Glances one is not that container,
+// and a host that does not answer gives Docker its turn at once.
+func TestGlancesContainerPointsOnlyForTheSameContainer(t *testing.T) {
+	h, docker, fake, _ := linkSetup(t, "NAS.lan")
+	// "app-glances" pairs with "app-docker" by id in the fixture; add a pair that can only meet by port.
+	docker.add(fakeContainer{ID: "dddddddddddd4444444444444444", Name: "nginx", Image: "n", State: "running", Status: "Up", Ports: []map[string]any{{"PublicPort": 443, "PrivatePort": 443, "Type": "tcp"}}})
+	fake.mu.Lock()
+	fake.override["containers"] = []byte(`[{"name":"caddy","id":"eeeeeeeeeeee","status":"running","cpu_percent":50,"cpu_limit":4,"memory_usage":10,"memory_limit":100,"ports":["0.0.0.0:443->443/tcp"]}]`)
+	fake.mu.Unlock()
+	glancesLinkForget()
+	glancesViewForgetAll()
+	byPort := false
+	for _, m := range h.glancesDockerLink(context.Background()).Matches {
+		byPort = byPort || m.By == "port"
+	}
+	if !byPort {
+		t.Fatal("the fixture no longer pairs the two by port")
+	}
+	if got := h.glancesContainerPoints(context.Background(), time.Now()); len(got) != 0 {
+		t.Errorf("a port-only match took readings: %+v", got)
+	}
+	// No core count: left to Docker.
+	fake.mu.Lock()
+	fake.override["containers"] = []byte(`[{"name":"app-glances","id":"aaaaaaaaaaaa","status":"running","cpu_percent":50,"memory_usage":10,"memory_limit":100}]`)
+	fake.mu.Unlock()
+	glancesViewForgetAll()
+	if got := h.glancesContainerPoints(context.Background(), time.Now()); len(got) != 0 {
+		t.Errorf("a reading without cores was taken: %+v", got)
+	}
+	// Glances gone: nothing, and without waiting for it.
+	fake.Close()
+	glancesViewForgetAll()
+	glancesLinkForget()
+	start := time.Now()
+	if got := h.glancesPointsWithin(context.Background(), time.Now(), 3*time.Second); got != nil || time.Since(start) > 5*time.Second {
+		t.Errorf("an unreachable host: %v after %s", got, time.Since(start))
+	}
+}
+
+// A series that stopped is not a current reading, and "not answering since"
+// is when the host last answered.
+func TestGlancesHostRowsAreCurrentAndRememberTheLastAnswer(t *testing.T) {
+	hs := newGlancesHost("rows")
+	now := time.Now().UnixMilli()
+	hs.record(now-10*60*1000, map[string]float64{"fs:/usb": 95, "temp:old": 90})
+	hs.record(now, map[string]float64{"cpu": 10, "fs:/data": 40})
+	cpu, _, disk, mount, temp := hs.lastValues()
+	if cpu == nil || disk == nil || *disk != 40 || mount != "/data" || temp != nil {
+		t.Errorf("cpu %v disk %v (%s) temp %v", cpu, disk, mount, temp)
+	}
+	hs.setState(now, true, "ok", "")
+	hs.setState(now+5000, false, "unknown", "unreachable")
+	hs.state.Lock()
+	ok, okAt := hs.state.ok, hs.state.okAt
+	hs.state.Unlock()
+	if ok || okAt != now {
+		t.Errorf("ok %v, last answer %d want %d", ok, okAt, now)
+	}
+}

@@ -125,8 +125,11 @@ type GlancesConfig struct {
 	// DockerLink says whether this Glances host is the machine whose Docker the
 	// Containers view manages: auto, yes or no (glances_docker.go).
 	DockerLink string `json:"dockerLink,omitempty"`
-	Server     string `json:"server"`
-	User       string `json:"user,omitempty"`
+	// KeepDockerStats keeps the Containers view on Docker's own readings of CPU,
+	// memory and network even when this host is the Docker host (glances_docker.go).
+	KeepDockerStats bool   `json:"keepDockerStats,omitempty"`
+	Server          string `json:"server"`
+	User            string `json:"user,omitempty"`
 	// Refresh is the seconds between two reads while the page is open.
 	Refresh int `json:"refresh"`
 	// HiddenBlocks are Overview parts the reader switched off.
@@ -295,16 +298,17 @@ func glancesSecretsPath() string { return filepath.Join(ResolveDataDir(), "glanc
 
 // glancesHostRecord is what is stored for one host.
 type glancesHostRecord struct {
-	ID             string   `json:"id"`
-	Name           string   `json:"name,omitempty"`
-	Server         string   `json:"server"`
-	User           string   `json:"user,omitempty"`
-	Paused         bool     `json:"paused,omitempty"`
-	RecordEvery    int      `json:"recordEvery,omitempty"`
-	RetentionDays  int      `json:"retentionDays,omitempty"`
-	DockerLink     string   `json:"dockerLink,omitempty"`
-	Notify         []string `json:"notify,omitempty"`
-	TrackedHistory []string `json:"trackedHistory,omitempty"`
+	ID              string   `json:"id"`
+	Name            string   `json:"name,omitempty"`
+	Server          string   `json:"server"`
+	User            string   `json:"user,omitempty"`
+	Paused          bool     `json:"paused,omitempty"`
+	RecordEvery     int      `json:"recordEvery,omitempty"`
+	RetentionDays   int      `json:"retentionDays,omitempty"`
+	DockerLink      string   `json:"dockerLink,omitempty"`
+	KeepDockerStats bool     `json:"keepDockerStats,omitempty"`
+	Notify          []string `json:"notify,omitempty"`
+	TrackedHistory  []string `json:"trackedHistory,omitempty"`
 }
 
 // glancesFile is glances.json.
@@ -336,7 +340,7 @@ func (r glancesHostRecord) displayName() string {
 func (f glancesFile) config(r glancesHostRecord) GlancesConfig {
 	return GlancesConfig{
 		ID: r.ID, Name: r.Name, Enabled: f.Enabled, Paused: r.Paused, RecordEvery: r.RecordEvery, RetentionDays: r.RetentionDays,
-		DockerLink: r.DockerLink, Server: r.Server, User: r.User, Refresh: f.Refresh, HiddenBlocks: f.HiddenBlocks,
+		DockerLink: r.DockerLink, KeepDockerStats: r.KeepDockerStats, Server: r.Server, User: r.User, Refresh: f.Refresh, HiddenBlocks: f.HiddenBlocks,
 		Notify: r.Notify, Thresholds: f.Thresholds, DiskStrip: f.DiskStrip, DiskHide: f.DiskHide, TrackedHistory: r.TrackedHistory,
 	}
 }
@@ -344,7 +348,7 @@ func (f glancesFile) config(r glancesHostRecord) GlancesConfig {
 func (c GlancesConfig) record() glancesHostRecord {
 	return glancesHostRecord{
 		ID: c.ID, Name: c.Name, Server: c.Server, User: c.User, Paused: c.Paused, RecordEvery: c.RecordEvery,
-		RetentionDays: c.RetentionDays, DockerLink: c.DockerLink, Notify: c.Notify, TrackedHistory: c.TrackedHistory,
+		RetentionDays: c.RetentionDays, DockerLink: c.DockerLink, KeepDockerStats: c.KeepDockerStats, Notify: c.Notify, TrackedHistory: c.TrackedHistory,
 	}
 }
 
