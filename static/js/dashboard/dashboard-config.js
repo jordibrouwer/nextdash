@@ -3658,6 +3658,12 @@ class DashboardConfig {
         { tab: 'containers', titleKey: 'config.helpContainersDiscoveryTitle', fallback: 'Apps nextDash finds on its own' },
         { tab: 'containers', titleKey: 'config.helpContainersTitle', fallback: 'The Containers view' },
         { tab: 'containers', titleKey: 'config.helpContainersConfigTitle', fallback: 'Setting it up' },
+        { tab: 'glances', titleKey: 'config.helpGlancesSetupTitle', fallback: 'Before it works: a Glances 4 host' },
+        { tab: 'glances', titleKey: 'config.helpGlancesTitle', fallback: 'The Glances page' },
+        { tab: 'glances', titleKey: 'config.helpGlancesRecordTitle', fallback: 'What nextDash records' },
+        { tab: 'glances', titleKey: 'config.helpGlancesHostsTitle', fallback: 'Several hosts' },
+        { tab: 'glances', titleKey: 'config.helpGlancesContainersTitle', fallback: 'Glances and the Containers view' },
+        { tab: 'glances', titleKey: 'config.helpGlancesNoticesTitle', fallback: 'Notices and commands' },
         { tab: 'search', titleKey: 'config.helpSearchTitle', fallback: 'Searching your bookmarks' },
         { tab: 'search', titleKey: 'config.helpFindersTitle', fallback: 'Finders' },
         { tab: 'search', titleKey: 'config.helpCommandsTitle', fallback: 'Commands' },
@@ -18145,6 +18151,7 @@ class DashboardConfig {
             'bookmarks': ['config.helpNoteBookmarks', 'The Bookmarks view: the rail, the list, the side panel, and Collection health.'],
             'widgets': ['config.helpNoteWidgets', 'The blocks that hold something other than bookmarks, and what each one shows.'],
             'containers': ['config.helpNoteContainers', 'The Containers view: its connection, how often it refreshes, and what it leaves out.'],
+            'glances': ['config.helpNoteGlances', 'The Glances page: live figures and a record of your own machines, and what to set up first.'],
             'search': ['config.helpNoteSearch', 'Reaching anything from the keyboard: search, shortcuts, and the command line.'],
             'health': ['config.helpNoteHealth', 'How nextDash checks that your links still answer, and what to do with the ones that do not.'],
             'monitoring': ['config.helpNoteMonitoring', 'Watching a service rather than a link, and being told when it stops responding.'],
@@ -28839,7 +28846,7 @@ class DashboardConfig {
      * rendered nowhere in this config, while the Start tab showed eleven of
      * them under "Everyday keys" and the prose promised the rest were here.
      */
-    static HELP_TABS = ['start', 'tips', 'config', 'search', 'appearance', 'organizing', 'bookmarks', 'widgets', 'containers', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs'];
+    static HELP_TABS = ['start', 'tips', 'config', 'search', 'appearance', 'organizing', 'bookmarks', 'widgets', 'containers', 'glances', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs'];
 
     /*
      * Fifteen tabs on one scrolling line hid most of them past the edge, and
@@ -28849,7 +28856,7 @@ class DashboardConfig {
     static HELP_TAB_GROUPS = [
         { key: 'basics', label: ['config.helpGroupBasics', 'Basics'], tabs: ['start', 'tips', 'config', 'search'] },
         { key: 'dashboard', label: ['config.helpGroupDashboard', 'Dashboard'], tabs: ['appearance', 'organizing', 'bookmarks', 'widgets'] },
-        { key: 'status', label: ['config.helpGroupStatus', 'Status & checks'], tabs: ['containers', 'health', 'monitoring'] },
+        { key: 'status', label: ['config.helpGroupStatus', 'Status & checks'], tabs: ['containers', 'glances', 'health', 'monitoring'] },
         { key: 'data', label: ['config.helpGroupData', 'Data'], tabs: ['inbox', 'stats', 'data', 'logs'] },
     ];
 
@@ -28867,6 +28874,7 @@ class DashboardConfig {
             bookmarks: ['config.helpTabBookmarks', 'Bookmarks view'],
             widgets: ['config.helpTabWidgets', 'Widgets'],
             containers: ['config.helpTabContainers', 'Containers'],
+            glances: ['config.helpTabGlances', 'Glances'],
             search: ['config.helpTabSearch', 'Search & keyboard'],
             tips: ['config.helpTabTips', 'Tips'],
             // Health kept its checks and its walkthrough; the list it used to
@@ -29058,6 +29066,7 @@ class DashboardConfig {
             case 'bookmarks': return this.renderHelpBookmarks();
             case 'widgets': return this.renderHelpWidgets();
             case 'containers': return this.renderHelpContainers();
+            case 'glances': return this.renderHelpGlances();
             case 'search': return this.renderHelpSearch();
             case 'tips': return this.renderHelpTipsTab();
             case 'health': return this.renderHelpHealth();
@@ -30127,6 +30136,21 @@ class DashboardConfig {
             'config.helpContainersBody', '')
             + this.helpPanel('config.helpContainersConfigTitle', 'Setting it up',
                 'config.helpContainersConfigBody', '');
+    }
+
+    /** Glances: a page for machines you run, read from a Glances 4 host and kept in a record of its own. */
+    renderHelpGlances() {
+        const open = `<div class="config-actions">
+            <button type="button" class="config-btn" data-overview-go='{"section":"glances"}'>${
+    this.dash.escapeHtml(this.t('config.helpGlancesOpen', 'Open Config → Glances'))}</button>
+        </div>`;
+        return this.helpPanel('config.helpGlancesSetupTitle', 'Before it works: a Glances 4 host',
+            'config.helpGlancesSetupBody', '', open)
+            + this.helpPanel('config.helpGlancesTitle', 'The Glances page', 'config.helpGlancesBody', '')
+            + this.helpPanel('config.helpGlancesRecordTitle', 'What nextDash records', 'config.helpGlancesRecordBody', '')
+            + this.helpPanel('config.helpGlancesHostsTitle', 'Several hosts', 'config.helpGlancesHostsBody', '')
+            + this.helpPanel('config.helpGlancesContainersTitle', 'Glances and the Containers view', 'config.helpGlancesContainersBody', '')
+            + this.helpPanel('config.helpGlancesNoticesTitle', 'Notices and commands', 'config.helpGlancesNoticesBody', '');
     }
 
     renderHelpSearch() {

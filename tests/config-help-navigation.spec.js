@@ -120,7 +120,7 @@ test.describe('the Help strip is one row and a menu', () => {
         await toggle(page).click();
         await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true');
         await expect(menu(page).locator('.move-popover-section-label')).toHaveText(['Dashboard', 'Status & checks', 'Data']);
-        await expect(menu(page).locator('[data-help-more]')).toHaveCount(11);
+        await expect(menu(page).locator('[data-help-more]')).toHaveCount(12);
 
         // Picking a topic opens it and puts it on the row, marked.
         await menu(page).locator('[data-help-more="widgets"]').click();
