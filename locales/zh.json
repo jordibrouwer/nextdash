@@ -3337,7 +3337,7 @@
     "glancesMoreActions": "更多操作",
     "glancesActCopyName": "复制名称",
     "glancesActCopyPid": "复制 PID",
-    "glancesActShowContainers": "在容器部分中显示",
+    "glancesActShowContainers": "在 Glances 容器列表中显示",
     "glancesActShowProcesses": "在进程中搜索",
     "glancesTabOverview": "概览",
     "glancesTabHistory": "历史",
@@ -3616,7 +3616,11 @@
     "glancesTour6Body2": "当 Glances 运行在你的 Docker 主机上时，每个容器都会链接到容器视图中对应的容器，反之亦然。",
     "glancesTour6Alt": "一个列出三台机器的主机菜单，以及在 Glances 与容器视图之间相互链接的容器",
     "glancesTour6Up": "最多五台主机",
-    "glancesTourClosing": "ℹ 按钮会解释每个区块，上方的“导览”按钮可以重新播放这个导览。"
+    "glancesTourClosing": "ℹ 按钮会解释每个区块，上方的“导览”按钮可以重新播放这个导览。",
+    "glancesTrackEmptyTitle": "尚未记录历史",
+    "glancesTrackEmptyContainer": "nextDash 可以从现在起记录此容器的处理器、内存和网络，并在这里按时间显示。",
+    "glancesTrackEmptyProcess": "nextDash 可以从现在起记录此进程的处理器和内存，并在这里按时间显示。",
+    "glancesTrackNote": "按项目单独开启：每隔几秒读取一次会占用主机一些处理器。最多同时十五个。"
   },
   "health": {
     "reloadPage": "重新加载页面",

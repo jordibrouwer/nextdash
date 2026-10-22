@@ -152,7 +152,7 @@
             const more = [
                 { action: 'copy-name', label: this.t('dashboard.glancesActCopyName', 'Copy name') },
                 ...(!isContainer ? [{ action: 'copy-pid', label: this.t('dashboard.glancesActCopyPid', 'Copy PID') }] : []),
-                { action: 'show-in-list', label: isContainer ? this.t('dashboard.glancesActShowContainers', 'Show in Containers section') : this.t('dashboard.glancesActShowProcesses', 'Search in Processes') },
+                { action: 'show-in-list', label: isContainer ? this.t('dashboard.glancesActShowContainers', 'Show in the Glances containers list') : this.t('dashboard.glancesActShowProcesses', 'Search in Processes') },
             ];
             const head = L.head(esc, {
                 icon: `<span class="glances-drawer-icon" aria-hidden="true">${esc((name || '?').slice(0, 1).toUpperCase())}</span>`,
@@ -450,17 +450,26 @@
 
         _trackPrompt(key, state) {
             const box = el('div', 'glances-track');
-            box.appendChild(el('p', 'glances-note', this.t('dashboard.glancesTrackOff',
-                'History is not recorded for this one. Recording reads the processes and containers every few seconds, which costs the host some processor, so it is switched on per item.')));
+            // A drawn line that stops: the history this item does not have yet.
+            box.insertAdjacentHTML('beforeend', `<svg class="glances-track-art" viewBox="0 0 120 44" aria-hidden="true" focusable="false">
+                <path class="glances-track-art-line" d="M4,34 L22,28 L40,31 L58,18 L76,22"/>
+                <path class="glances-track-art-ghost" d="M76,22 L94,12 L116,16"/>
+            </svg>`);
+            box.appendChild(el('h4', 'glances-track-title', this.t('dashboard.glancesTrackEmptyTitle', 'No history recorded yet')));
+            box.appendChild(el('p', 'glances-track-text', this.item?.kind === 'container'
+                ? this.t('dashboard.glancesTrackEmptyContainer', 'nextDash can record this container\'s processor, memory and network from now on, and show them here over time.')
+                : this.t('dashboard.glancesTrackEmptyProcess', 'nextDash can record this process\'s processor and memory from now on, and show them here over time.')));
             if (state.denied) {
-                box.appendChild(el('p', 'glances-note', this.t('dashboard.glancesTrackNeedsWrite', 'Needs write access to switch on.')));
+                box.appendChild(el('p', 'glances-track-note', this.t('dashboard.glancesTrackNeedsWrite', 'Needs write access to switch on.')));
                 return box;
             }
-            const on = el('button', 'config-btn config-btn-primary glances-track-btn', this.t('dashboard.glancesTrackStart', 'Record history'));
+            const on = el('button', 'config-btn config-btn--primary glances-track-btn', this.t('dashboard.glancesTrackStart', 'Record history'));
             on.type = 'button';
             on.setAttribute('data-glances-track', 'on');
             on.addEventListener('click', () => { void this._setTracked(key, true); });
             box.appendChild(on);
+            box.appendChild(el('p', 'glances-track-note', this.t('dashboard.glancesTrackNote',
+                'Switched on per item: reading it every few seconds costs the host some processor. Up to fifteen at a time.')));
             return box;
         }
 

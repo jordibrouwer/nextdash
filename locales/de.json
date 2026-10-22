@@ -3337,7 +3337,7 @@
     "glancesMoreActions": "Weitere Aktionen",
     "glancesActCopyName": "Namen kopieren",
     "glancesActCopyPid": "PID kopieren",
-    "glancesActShowContainers": "Im Abschnitt Container anzeigen",
+    "glancesActShowContainers": "In der Glances-Containerliste zeigen",
     "glancesActShowProcesses": "In Prozesse suchen",
     "glancesTabOverview": "Übersicht",
     "glancesTabHistory": "Verlauf",
@@ -3616,7 +3616,11 @@
     "glancesTour6Body2": "Läuft Glances auf deinem Docker-Host, verlinkt jeder Container auf sein Gegenstück in der Container-Ansicht und zurück.",
     "glancesTour6Alt": "Ein Host-Menü mit drei Maschinen und ein Container, der zwischen Glances und der Container-Ansicht verknüpft ist",
     "glancesTour6Up": "bis zu fünf Hosts",
-    "glancesTourClosing": "Die ℹ-Knöpfe erklären jeden Block, und der Tour-Knopf oben holt diese Tour zurück."
+    "glancesTourClosing": "Die ℹ-Knöpfe erklären jeden Block, und der Tour-Knopf oben holt diese Tour zurück.",
+    "glancesTrackEmptyTitle": "Noch kein Verlauf aufgezeichnet",
+    "glancesTrackEmptyContainer": "nextDash kann ab jetzt Prozessor, Speicher und Netzwerk dieses Containers aufzeichnen und hier über die Zeit anzeigen.",
+    "glancesTrackEmptyProcess": "nextDash kann ab jetzt Prozessor und Speicher dieses Prozesses aufzeichnen und hier über die Zeit anzeigen.",
+    "glancesTrackNote": "Pro Eintrag einzuschalten: Alle paar Sekunden zu lesen kostet den Host etwas Prozessorleistung. Höchstens fünfzehn gleichzeitig."
   },
   "health": {
     "reloadPage": "Seite neu laden",

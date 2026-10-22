@@ -3337,7 +3337,7 @@
     "glancesMoreActions": "Meer acties",
     "glancesActCopyName": "Naam kopiëren",
     "glancesActCopyPid": "PID kopiëren",
-    "glancesActShowContainers": "Tonen in sectie Containers",
+    "glancesActShowContainers": "Toon in de Glances-containerlijst",
     "glancesActShowProcesses": "Zoeken in Processen",
     "glancesTabOverview": "Overzicht",
     "glancesTabHistory": "Geschiedenis",
@@ -3616,7 +3616,11 @@
     "glancesTour6Body2": "Draait Glances op je Docker-host, dan linkt elke container naar zijn tegenhanger in de weergave Containers, en terug.",
     "glancesTour6Alt": "Een hostmenu met drie machines, en een container die gekoppeld is tussen Glances en de weergave Containers",
     "glancesTour6Up": "tot vijf hosts",
-    "glancesTourClosing": "De ℹ-knoppen leggen elk blok uit, en de knop Rondleiding hierboven haalt deze rondleiding terug."
+    "glancesTourClosing": "De ℹ-knoppen leggen elk blok uit, en de knop Rondleiding hierboven haalt deze rondleiding terug.",
+    "glancesTrackEmptyTitle": "Nog geen geschiedenis vastgelegd",
+    "glancesTrackEmptyContainer": "nextDash kan vanaf nu de processor, het geheugen en het netwerk van deze container vastleggen en hier in de tijd tonen.",
+    "glancesTrackEmptyProcess": "nextDash kan vanaf nu de processor en het geheugen van dit proces vastleggen en hier in de tijd tonen.",
+    "glancesTrackNote": "Per item in te schakelen: elke paar seconden lezen kost de host wat processorkracht. Maximaal vijftien tegelijk."
   },
   "health": {
     "reloadPage": "Pagina herladen",

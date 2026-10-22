@@ -1063,6 +1063,29 @@ button.glances-row-link {
 
 [data-glances-host-new][hidden] { display: none; }
 
+/* ── The History tab of a side panel, before anything is recorded ── */
+.glances-track {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 1.4rem 1rem 1.2rem;
+    border: 1px dashed color-mix(in srgb, var(--text-primary) 22%, transparent);
+    border-radius: 0.6rem;
+    text-align: center;
+}
+
+.glances-track-art { width: 7.5rem; height: auto; margin-bottom: 0.2rem; }
+.glances-track-art-line,
+.glances-track-art-ghost { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.glances-track-art-line { stroke: var(--accent-primary); }
+.glances-track-art-ghost { stroke: var(--text-secondary); stroke-dasharray: 2 5; opacity: 0.6; }
+
+.glances-track-title { margin: 0; font-size: 1rem; color: var(--text-primary); }
+.glances-track-text { margin: 0; max-width: 24rem; color: var(--text-secondary); line-height: 1.5; }
+.glances-track-btn { margin-top: 0.3rem; }
+.glances-track-note { margin: 0.2rem 0 0; max-width: 24rem; font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; }
+
 /* ── Hosts: one row per host ── */
 .glances-hosts-name { white-space: nowrap; }
 .glances-hosts-dot { display: inline-block; width: 0.55rem; height: 0.55rem; margin-right: 0.6rem; border-radius: 50%; background: var(--text-muted); }
