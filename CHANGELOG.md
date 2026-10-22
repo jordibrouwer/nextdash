@@ -12,7 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
-- [v1.21.0 — 22 October 2026](#v1210--22-october-2026)
+- [v1.21.0 — 23 October 2026](#v1210--23-october-2026)
 - [v1.20.3 — 21 October 2026](#v1203--21-october-2026)
 - [v1.20.2 — 21 October 2026](#v1202--21-october-2026)
 - [v1.20.1 — 20 October 2026](#v1201--20-october-2026)
@@ -119,9 +119,9 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ---
 
-## v1.21.0 — 22 October 2026
+## v1.21.0 — 23 October 2026
 
-**Glances** arrives: a page for the hosts you run Glances on, with graphs, insights and incidents, a widget for the dashboard and notices for a disk that fills up. Next to it come domain expiry through RDAP, a round of accessibility and mobile fixes, and a hardening pass over uploads, backups and request handling.
+**Glances** arrives: a page for the hosts you run Glances on, with graphs, insights and incidents, a widget for the dashboard and notices for a disk that fills up. **Berry** is the default theme now, with a card that offers it to everyone who is not on it. Next to it come domain expiry through RDAP, a round of accessibility and mobile fixes, and a hardening pass over uploads, backups and request handling.
 
 ### Glances
 
@@ -187,6 +187,8 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **docs — translations.** The 35 strings for domain expiry, six that had no key in any locale file (Compose lines, the overview's checked count, Category name, a container link that is not running and the Inbox key legend's two labels) and the new category menu entry are in Dutch, German, French, Chinese and Spanish.
 - **docs — Dutch says bookmark.** All 829 strings in `locales/nl.json` that said *bladwijzer* now say *bookmark*, compounds included (*bookmarkformulier*), plus the no-JavaScript line in `templates/dashboard.html` and the two specs that matched the old word.
 - **docs — the manual.** A new §15A, *Glances*, with eight screenshots, and the Glances lines that belong elsewhere (the keys, §14 Containers, the widget kinds, Config's section table, troubleshooting, the glossary). `0` is described as the tenth page, the category menu's new entry, the Inbox key legend, the Containers row colours and dormant links, the Config rail's Services and Info groups and the restore limits are in. Six screenshots are retaken, in Gloss Chrome dark over the demo that nextDash seeds itself (`tests/manual-screenshots-v1-21.spec.js`) rather than over `data-demo`.
+- **docs — the README.** It names the Glances page and widget, domain expiry, the About tab and Copy diagnostics, 29 backdrops, forty-eight kinds of widget and seven webhook events, and opens with a picture of the dashboard in Berry. Its twenty pictures are taken again over the demo nextDash seeds itself, at 1920×1200, each in the theme its caption names, with two new ones for Glances; the captions say what the new pictures show (`tests/readme-screenshots.spec.js`). The Unraid template lists the two Glances pictures.
+- **docs — the shot kit.** `tests/helpers/manual-shot-kit.js` reads the theme and the output folder from `SHOT_THEME` and `SHOTS_OUT`, and a test can name its own theme and change its copy of the data.
 - **docs — a test.** `tests/dashboard-category-menu-add-bookmark.spec.js` opens a category's menu, picks Add new bookmark and expects the form on that category.
 
 ---
