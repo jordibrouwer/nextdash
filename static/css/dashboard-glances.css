@@ -1174,14 +1174,6 @@ button.glances-row-link {
 .glances-track-btn { margin-top: 0.3rem; }
 .glances-track-note { margin: 0.2rem 0 0; max-width: 24rem; font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; }
 
-/* ── The dashboard widget: one host ── */
-.dashboard-widget-glances-spark { display: block; width: 100%; height: 2.6rem; margin: 0.3rem 0; }
-.dashboard-widget-glances-spark-line { fill: none; stroke: var(--accent-primary); stroke-width: 1.6; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
-.dashboard-widget-glances-open { display: inline-block; margin-top: 0.4rem; font-size: var(--font-size-small); color: var(--text-secondary); text-decoration: none; }
-.dashboard-widget-glances-open:hover { color: var(--text-primary); text-decoration: underline; }
-.dashboard-widget-glances-open:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
-.dashboard-widget-glances--bad .dashboard-widget-headline-note { color: var(--accent-error); }
-.dashboard-widget-glances--warn .dashboard-widget-headline-note { color: var(--accent-warning); }
 
 /* ── The hosts strip above the Overview ── */
 .glances-host-strip { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 var(--space-3, 0.9rem); }

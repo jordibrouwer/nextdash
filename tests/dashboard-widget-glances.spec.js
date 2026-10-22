@@ -72,6 +72,15 @@ test.describe('the Glances widget', () => {
         await expect(tile.locator('a.dashboard-widget-glances-open')).toHaveAttribute('href', '#glances/overview');
     });
 
+    test('styled on a dashboard that never opened the Glances page', async ({ page }) => {
+        await open(page);
+        // The page's own sheet rides with the Glances view; the widget's does not.
+        await expect(page.locator('link[data-nextdash-view-css]')).toHaveCount(1);
+        const { tile } = await draw(page, { config: { style: 'graph' } });
+        await expect(tile.locator('a.dashboard-widget-glances-open')).toHaveCSS('text-decoration-line', 'none');
+        await expect(tile.locator('svg.dashboard-widget-glances-spark path')).toHaveCSS('fill', 'none');
+    });
+
     test('graph: the processor, with its last hour behind it', async ({ page }) => {
         await open(page);
         const { tile, calls } = await draw(page, { config: { style: 'graph' } });

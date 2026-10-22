@@ -156,6 +156,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - **fix — moving a widget saves what was typed first,** and `0` is the tenth page, not the Inbox.
 - **fix — collapsed categories and the theme migration** are guarded against bad browser storage.
 - **new — Add new bookmark in a category's right-click menu.** The first entry on a category header opens the add-bookmark form with that category already chosen, the same form the `+` button opens. Smart collections and the list of unfiled bookmarks do not show it (`dashboard-category-menu.js`).
+- **fix — the Glances widget is styled before the Glances page is opened.** Its rules sat in the Glances page's stylesheet, which only loads with that view, so a widget on a dashboard that had not opened the page drew a plain blue link and a black sparkline. They are in `dashboard-widget-glances.css` now, linked with the dashboard's own sheets.
 - **fix — the Calendar tile expands recurring events.**
 - **fix — widgets** keep no cached error from a closed tab, retry sooner, and Radarr shows its release day.
 
