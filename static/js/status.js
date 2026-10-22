@@ -445,14 +445,30 @@ class StatusMonitor {
         const send = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         for (const [pageId, results] of byPage) {
             try {
-                await send('/api/health/statuses', {
+                const res = await send('/api/health/statuses', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ pageId, results })
                 });
+                if (res && res.ok === false) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
             } catch (error) {
                 console.warn('Failed to persist bookmark statuses', error);
+                // Put them back for one more try; newer answers for a URL win.
+                if (!this._statusFlushRetried) {
+                    this._statusFlushRetried = true;
+                    if (!this._pendingStatuses) this._pendingStatuses = new Map();
+                    pending.forEach((entry, key) => {
+                        if (entry.pageId === pageId && !this._pendingStatuses.has(key)) {
+                            this._pendingStatuses.set(key, entry);
+                        }
+                    });
+                    this.scheduleStatusFlush(5000);
+                }
+                continue;
             }
+            this._statusFlushRetried = false;
         }
     }
 
