@@ -214,7 +214,11 @@
                     if (window.DeviceSettingsMerge?.saveDeviceLocalSettings) {
                         window.DeviceSettingsMerge.saveDeviceLocalSettings(parsedSettings);
                     } else {
-                        localStorage.setItem('dashboardSettings', JSON.stringify(parsedSettings));
+                        try {
+                            localStorage.setItem('dashboardSettings', JSON.stringify(parsedSettings));
+                        } catch (_error) {
+                            // Storage blocked or full: the migration is retried on the next load
+                        }
                     }
                 }
             }

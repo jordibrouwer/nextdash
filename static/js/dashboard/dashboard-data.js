@@ -495,7 +495,9 @@ class DashboardData {
         try {
             const stored = localStorage.getItem('collapsedCategories');
             if (stored) {
-                d.collapsedCategories = JSON.parse(stored);
+                const parsed = JSON.parse(stored);
+                // null or a string would make `key in collapsedCategories` throw and abort the render
+                d.collapsedCategories = (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
             }
         } catch {
             d.collapsedCategories = {};
