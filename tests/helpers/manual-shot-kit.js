@@ -351,6 +351,24 @@ function tidyDemoData(dir, patch) {
         });
     }
 
+    // One shot only: a page with the domains widget (the health report that
+    // feeds it is mocked) and no bookmarks.
+    if (patches.includes('domains')) {
+        const pages = readJSON(path.join(dir, 'pages.json'));
+        pages.order = [...(pages.order || []), 4];
+        writeJSON(path.join(dir, 'pages.json'), pages);
+        const widgets = [{ id: 'w_d00000000001', type: 'domains', config: {} }];
+        const settingsFile = path.join(dir, 'settings.json');
+        writeJSON(settingsFile, { ...readJSON(settingsFile), smartTodayPageIds: [1], smartFreshPageIds: [1] });
+        writeJSON(path.join(dir, 'bookmarks-4.json'), {
+            page: { id: 4, name: 'Domains' },
+            categories: [],
+            widgets,
+            blockOrder: widgets.map((w) => w.id),
+            bookmarks: [],
+        });
+    }
+
     // One shot only: a page with the Emby tile and the now playing tiles of
     // Jellyfin and Plex (their answers are mocked).
     if (patches.includes('media')) {
