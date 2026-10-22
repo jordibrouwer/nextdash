@@ -63,7 +63,7 @@ test.describe('the bookmark list loads with its section', () => {
 
         // A failure leaves the placeholder, which says the list is on its way —
         // better than an empty panel that reads as a library with nothing in it.
-        await expect(page.locator('#config-bm-list')).toContainText(/loading your bookmarks|bladwijzers laden/i, { timeout: 15_000 });
+        await expect(page.locator('#config-bm-list')).toContainText(/loading your bookmarks|bookmarks laden/i, { timeout: 15_000 });
         // And the rest of config is untouched: the toolbar above it still draws.
         await expect(page.locator('#config-bm-search')).toBeVisible();
     });

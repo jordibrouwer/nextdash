@@ -197,7 +197,7 @@ test.describe('what the section reports beyond bookmarks', () => {
     test('the things that are not bookmarks are counted', async ({ page }) => {
         await openStats(page, 'collection');
         await expect.poll(() => bodyText(page), { timeout: 15_000 })
-            .toMatch(/Beyond bookmarks|Naast bladwijzers/);
+            .toMatch(/Beyond bookmarks|Naast bookmarks/);
 
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.config._statsLibrary !== undefined), { timeout: 15_000 }).toBe(true);
