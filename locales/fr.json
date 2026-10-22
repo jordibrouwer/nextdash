@@ -9447,7 +9447,9 @@
     "glancesHostAdded": "Hôte ajouté. Renseignez son adresse.",
     "glancesHostRemoved": "Hôte supprimé.",
     "glancesHostRemoveConfirm": "Supprimer cet hôte ? Son adresse, son identifiant et tout ce qui a été enregistré à son sujet sont supprimés. Cette action est irréversible.",
-    "glancesHostRemoveOk": "Supprimer"
+    "glancesHostRemoveOk": "Supprimer",
+    "glancesLinkIsDockerHost": "C’est l’hôte Docker : la vue Conteneurs est liée à cet hôte.",
+    "glancesLinkOtherDockerHost": "La vue Conteneurs est liée à {name}. Un seul hôte peut être l’hôte Docker."
   },
   "colors": {
     "title": "personnalisation du thème",

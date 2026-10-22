@@ -9447,7 +9447,9 @@
     "glancesHostAdded": "主机已添加。请填写其地址。",
     "glancesHostRemoved": "主机已移除。",
     "glancesHostRemoveConfirm": "要移除此主机吗？它的地址、登录信息以及所有已记录的内容都会被删除。此操作无法撤销。",
-    "glancesHostRemoveOk": "移除"
+    "glancesHostRemoveOk": "移除",
+    "glancesLinkIsDockerHost": "这是 Docker 主机：容器视图已与此主机关联。",
+    "glancesLinkOtherDockerHost": "容器视图已与 {name} 关联。只有一台主机可以是 Docker 主机。"
   },
   "colors": {
     "title": "主题自定义",

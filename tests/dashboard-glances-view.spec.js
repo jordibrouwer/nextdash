@@ -1550,6 +1550,18 @@ test.describe('several hosts', () => {
         await expect(page.locator('[data-glances-host-add]')).toBeHidden();
     });
 
+    test('Config says which host the Containers view is linked to', async ({ page }) => {
+        const state = await mockGlances(page);
+        state.hosts = [{ id: 'main', name: 'Home' }, { id: 'nas', name: 'NAS' }];
+        state.link.hostId = 'nas';
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances');
+        const line = page.locator('[data-glances-link-docker-host]');
+        await expect(line).toContainText('linked to NAS');
+        await page.locator('[data-glances-host-tab="nas"]').click();
+        await expect(line).toContainText('This is the Docker host');
+    });
+
     test('a host without an address says so and lets the reader go to another; Glances itself stays', async ({ page }) => {
         const state = await mockGlances(page);
         state.hosts = [{ id: 'main', name: 'Home' }, { id: 'pi', name: 'Pi', configured: false }];

@@ -9447,7 +9447,9 @@
     "glancesHostAdded": "Host hinzugefügt. Trage seine Adresse ein.",
     "glancesHostRemoved": "Host entfernt.",
     "glancesHostRemoveConfirm": "Diesen Host entfernen? Seine Adresse, die Anmeldung und alles, was über ihn aufgezeichnet wurde, werden gelöscht. Das lässt sich nicht rückgängig machen.",
-    "glancesHostRemoveOk": "Entfernen"
+    "glancesHostRemoveOk": "Entfernen",
+    "glancesLinkIsDockerHost": "Dies ist der Docker-Host: Die Container-Ansicht ist mit diesem Host verknüpft.",
+    "glancesLinkOtherDockerHost": "Die Container-Ansicht ist mit {name} verknüpft. Nur ein Host kann der Docker-Host sein."
   },
   "colors": {
     "title": "themenanpassung",

@@ -9447,7 +9447,9 @@
     "glancesHostAdded": "Host toegevoegd. Vul het adres in.",
     "glancesHostRemoved": "Host verwijderd.",
     "glancesHostRemoveConfirm": "Deze host verwijderen? Het adres, de login en alles wat erover is vastgelegd worden verwijderd. Dit kan niet ongedaan worden gemaakt.",
-    "glancesHostRemoveOk": "Verwijderen"
+    "glancesHostRemoveOk": "Verwijderen",
+    "glancesLinkIsDockerHost": "Dit is de Docker-host: de Containers-weergave is aan deze host gekoppeld.",
+    "glancesLinkOtherDockerHost": "De Containers-weergave is gekoppeld aan {name}. Maar één host kan de Docker-host zijn."
   },
   "colors": {
     "title": "thema-aanpassing",
