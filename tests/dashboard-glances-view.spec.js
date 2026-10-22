@@ -96,15 +96,29 @@ function historyAnswer(url) {
  * value, a function of the URL, or { __status } for a bare HTTP status.
  */
 async function mockGlances(page, overrides = {}) {
-    const state = { calls: [], overrides, saved: null, tracked: [], wiped: false, paused: false, recordEvery: 30, reset: false, link: JSON.parse(JSON.stringify(LINK)) };
+    const state = { calls: [], overrides, saved: null, tracked: [], wiped: false, paused: false, recordEvery: 30, retentionDays: 30, reset: false, hosts: null, link: JSON.parse(JSON.stringify(LINK)) };
     await page.route('**/api/glances/**', async (route) => {
         const request = route.request();
         const url = new URL(request.url());
         const rest = url.pathname.replace(/^\/api\/glances\//, '');
-        state.calls.push({ range: url.searchParams.get('range'), heat: url.searchParams.get('heat'), path: rest, sort: url.searchParams.get('sort'), q: url.searchParams.get('q'), since: url.searchParams.get('since'), until: url.searchParams.get('until'), ghost: url.searchParams.get('ghost'), series: url.searchParams.get('series') });
+        state.calls.push({ range: url.searchParams.get('range'), heat: url.searchParams.get('heat'), path: rest, sort: url.searchParams.get('sort'), q: url.searchParams.get('q'), since: url.searchParams.get('since'), until: url.searchParams.get('until'), ghost: url.searchParams.get('ghost'), series: url.searchParams.get('series'), host: url.searchParams.get('host'), remove: url.searchParams.get('remove') });
+        const asked = url.searchParams.get('host');
+        const known = state.hosts && state.hosts.find((h) => h.id === asked);
+        const hostNow = state.hosts ? (known || state.hosts[0]) : null;
+        const summaries = () => state.hosts.map((h) => ({ id: h.id, name: h.name, configured: h.configured !== false, paused: false, level: 'ok', ok: true }));
+        const hostBits = () => (state.hosts ? { id: hostNow.id, name: hostNow.name, hostConfigured: hostNow.configured !== false, ...(hostNow.configured === false ? { server: '' } : {}), hosts: summaries() } : {});
         const has = Object.prototype.hasOwnProperty.call(state.overrides, rest);
         let body;
-        if (rest === 'config' && request.method() === 'DELETE') {
+        if (rest === 'config' && request.method() === 'DELETE' && url.searchParams.get('remove') === '1') {
+            state.hosts = state.hosts.filter((h) => h.id !== asked);
+            body = { ...CONFIG, id: state.hosts[0].id, name: state.hosts[0].name, hosts: state.hosts.map((h) => ({ id: h.id, name: h.name, configured: true, paused: false, level: 'ok', ok: true })) };
+        } else if (rest === 'config' && request.method() === 'PUT' && asked === 'new' && state.hosts) {
+            const sent = JSON.parse(request.postData() || '{}');
+            state.saved = sent;
+            const created = { id: String(sent.name || 'host').toLowerCase().replace(/[^a-z0-9]+/g, '-'), name: sent.name };
+            state.hosts.push(created);
+            body = { ...CONFIG, server: '', id: created.id, name: created.name, hosts: state.hosts.map((h) => ({ id: h.id, name: h.name, configured: true, paused: false, level: 'ok', ok: true })) };
+        } else if (rest === 'config' && request.method() === 'DELETE') {
             state.reset = true;
             state.tracked = [];
             state.paused = false;
@@ -117,7 +131,8 @@ async function mockGlances(page, overrides = {}) {
             if (Array.isArray(state.saved.trackedHistory)) state.tracked = state.saved.trackedHistory;
             if (typeof state.saved.paused === 'boolean') state.paused = state.saved.paused;
             if (typeof state.saved.recordEvery === 'number') state.recordEvery = state.saved.recordEvery;
-            body = { ...CONFIG, ...state.saved, trackedHistory: state.tracked, paused: state.paused };
+            if (typeof state.saved.retentionDays === 'number') state.retentionDays = state.saved.retentionDays;
+            body = { ...CONFIG, ...state.saved, ...hostBits(), trackedHistory: state.tracked, paused: state.paused };
         } else if (has) {
             const o = state.overrides[rest];
             body = typeof o === 'function' ? await o(url) : o;
@@ -126,9 +141,9 @@ async function mockGlances(page, overrides = {}) {
                 return;
             }
         } else if (rest === 'status') {
-            body = { ...STATUS, paused: state.paused, recordEvery: state.recordEvery };
+            body = { ...STATUS, ...hostBits(), paused: state.paused, recordEvery: state.recordEvery, retentionDays: state.retentionDays };
         } else if (rest === 'config') {
-            body = { ...CONFIG, ...(state.reset ? { enabled: false, server: '', user: '', hiddenBlocks: [], hasPassword: false } : {}), trackedHistory: state.tracked, paused: state.paused, ...(state.wiped ? { collected: { series: 0, points: 0, incidents: 0, keepDays: 30 } } : {}) };
+            body = { ...CONFIG, ...hostBits(), ...(state.reset ? { enabled: false, server: '', user: '', hiddenBlocks: [], hasPassword: false } : {}), trackedHistory: state.tracked, paused: state.paused, ...(state.wiped ? { collected: { series: 0, points: 0, incidents: 0, keepDays: 30 } } : {}) };
         } else if (rest === 'insights') {
             body = INSIGHTS;
         } else if (rest === 'docker-link') {
@@ -216,7 +231,7 @@ test.describe('Glances page: getting there', () => {
         await empty.locator('[data-glances-open-config]').click();
         await expect(page).toHaveURL(/#config\/glances/);
         // Nothing of Glances itself was asked.
-        expect(state.calls.filter((c) => !['status', 'config'].includes(c.path))).toEqual([]);
+        expect(state.calls.filter((c) => !['status', 'config', 'docker-link'].includes(c.path))).toEqual([]);
     });
 });
 
@@ -768,6 +783,27 @@ test.describe('graph extras: stacked memory, yesterday, incident bands', () => {
         await expect(page.locator('[data-glances-chart="load"] [data-glances-incident="down"]')).toHaveCount(1);
         await expect(page.locator('[data-glances-chart="cpu"] [data-glances-incident="cpu"]')).toHaveAttribute('title', /Processor/);
     });
+
+    test('a click on an incident opens the graphs around that moment in the side panel', async ({ page }) => {
+        const state = await mockGlances(page);
+        await openView(page, '#glances/history');
+        await page.locator('[data-glances-chart="cpu"] [data-glances-incident="cpu"]').click();
+        const drawer = page.locator('[data-glances-drawer="incident"]');
+        await expect(drawer).toBeVisible();
+        await expect(drawer).toContainText(/Processor/);
+        await expect(drawer.locator('[data-glances-chart="cpu"]')).toBeVisible();
+        await expect(drawer.locator('[data-glances-chart="memory"]')).toBeVisible();
+        // The incident is drawn on its own graph, and the window is a fixed one, not a range to pick.
+        await expect(drawer.locator('[data-glances-chart="cpu"] [data-glances-incident="cpu"]')).toHaveCount(1);
+        await expect(drawer.locator('[data-glances-range-select]')).toHaveCount(0);
+        const ask = state.calls.filter((c) => c.path === 'history' && c.until).pop();
+        expect(ask, 'a question with a window around the incident').toBeTruthy();
+        // From Insights the same incident opens it too.
+        await page.keyboard.press('Escape');
+        await openView(page, '#glances/insights');
+        await page.locator('[data-glances-incident-open]').first().click();
+        await expect(page.locator('[data-glances-drawer="incident"]')).toBeVisible();
+    });
 });
 
 test.describe('Glances in the navigation and the page overview', () => {
@@ -905,6 +941,27 @@ test.describe('graphs on a small screen', () => {
     });
 });
 
+test.describe('how long the history is kept', () => {
+    test('7, 30 or 90 days on the page; the range menu follows it', async ({ page }) => {
+        const state = await mockGlances(page);
+        await openView(page);
+        const pick = page.locator('[data-glances-retention]');
+        await expect(pick.locator('option')).toHaveText(['7 days', '30 days', '90 days']);
+        await expect(pick).toHaveValue('30');
+        const ranges = page.locator('[data-glances-range-select]').first();
+        await expect(ranges.locator('option').last()).toHaveText('30 days');
+        await pick.selectOption('90');
+        await expect.poll(() => state.retentionDays).toBe(90);
+        expect(state.saved).toEqual({ retentionDays: 90 });
+        await openView(page);
+        await expect(page.locator('[data-glances-range-select]').first().locator('option').last()).toHaveText('90 days');
+        await page.locator('[data-glances-retention]').selectOption('7');
+        await expect.poll(() => state.retentionDays).toBe(7);
+        await openView(page);
+        await expect(page.locator('[data-glances-range-select]').first().locator('option').last()).toHaveText('7 days');
+    });
+});
+
 test.describe('how often the host is recorded', () => {
     test('a choice on the page, from two seconds to an hour, kept on the server', async ({ page }) => {
         const state = await mockGlances(page);
@@ -972,6 +1029,23 @@ test.describe('the ℹ buttons', () => {
         await cores.click();
         await pop.locator('.glances-info-pop-more').click();
         await expect(page.locator('#app-modal .view-explain-modal')).toBeVisible();
+    });
+
+    test('from the keyboard: Enter opens it with focus inside, Escape closes it and gives the focus back', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page);
+        const cores = page.locator('[data-glances-info="cores"]');
+        await cores.focus();
+        await page.keyboard.press('Enter');
+        const pop = page.locator('[data-glances-info-pop]');
+        await expect(pop).toBeVisible();
+        await expect.poll(() => page.evaluate(() => Boolean(document.activeElement?.closest('[data-glances-info-pop]')))).toBe(true);
+        await expect(pop).toHaveAttribute('role', 'dialog');
+        await expect(pop).toHaveAttribute('aria-labelledby', /.+/);
+        await page.keyboard.press('Escape');
+        await expect(pop).toHaveCount(0);
+        await expect(cores).toBeFocused();
+        await expect(cores).toHaveAttribute('aria-expanded', 'false');
     });
 
     test('the settings, the graphs and the cryptic terms have theirs', async ({ page }) => {
@@ -1095,6 +1169,20 @@ test.describe('Config → Glances: every change is kept', () => {
         await expect.poll(() => state.saved.user).toBe('mar');
     });
 
+    test('notices per kind of incident: all off at first, each saved at once', async ({ page }) => {
+        const state = await mockGlances(page);
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances');
+        const boxes = page.locator('[data-glances-notify]');
+        await expect(boxes).toHaveCount(5);
+        for (let i = 0; i < 5; i += 1) await expect(boxes.nth(i)).not.toBeChecked();
+        await page.locator('[data-glances-notify="down"]').check();
+        await page.locator('[data-glances-notify="disk"]').check();
+        await expect.poll(() => state.saved && state.saved.notify && state.saved.notify.slice().sort().join(',')).toBe('disk,down');
+        await page.locator('[data-glances-notify="down"]').uncheck();
+        await expect.poll(() => state.saved.notify.join(',')).toBe('disk');
+    });
+
     test('Show Glances without an address says so and stays off', async ({ page }) => {
         const state = await mockGlances(page, { status: { ...STATUS, enabled: false, configured: false } });
         await page.route('**/api/glances/config', async (route) => {
@@ -1214,5 +1302,296 @@ test.describe('Glances and the Containers view: the same machine', () => {
         await expect.poll(() => state.saved && state.saved.dockerLink).toBe('no');
         await expect(info).toContainText('Different machines: Glances says nas, Docker says tower');
         await expect(page.locator('[data-glances-link-lists]')).toBeHidden();
+    });
+});
+
+test.describe('Config → Glances: from the address to the page', () => {
+    test('an address that was just left is tried, and the page is one click away', async ({ page }) => {
+        await mockGlances(page);
+        let connects = 0;
+        await page.route('**/api/glances/connect', async (route) => {
+            connects += 1;
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ connected: 'Glances 4.5.8', plugins: ['cpu', 'mem'] }) });
+        });
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances');
+        const open = page.locator('[data-glances-open-page]');
+        await expect(open).toBeVisible();
+        // Leaving the address field tries it without pressing Test connection.
+        const server = page.locator('[data-glances-field="server"]');
+        await server.fill('http://192.168.0.20:61208');
+        await server.blur();
+        await expect.poll(() => connects).toBeGreaterThan(0);
+        await expect(page.locator('[data-glances-result]')).toContainText('Glances 4.5.8');
+        await open.click();
+        await expect(page.locator('#dashboard-layout.glances-layout [data-glances-body]')).toBeVisible();
+    });
+
+    test('with Glances off there is no button to open it', async ({ page }) => {
+        await mockGlances(page, { status: { ...STATUS, enabled: false, configured: false } });
+        await page.route('**/api/glances/config', async (route) => {
+            if (route.request().method() === 'GET') {
+                await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ...CONFIG, enabled: false }) });
+            } else await route.fallback();
+        });
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances');
+        await expect(page.locator('[data-glances-field="server"]')).toHaveValue(CONFIG.server);
+        await expect(page.locator('[data-glances-open-page]')).toBeHidden();
+    });
+});
+
+test.describe(':glances in the command palette', () => {
+    async function openPalette(page, query) {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+        await page.keyboard.press('>');
+        await page.waitForSelector('.search-scope-rail', { timeout: 20_000 });
+        await page.keyboard.type(query);
+    }
+
+    test('a section opens; record and pause change the settings', async ({ page }) => {
+        const state = await mockGlances(page);
+        await openPalette(page, ':glances proc');
+        await page.locator('.search-match', { hasText: /Glances — Processes/ }).click();
+        await expect(page).toHaveURL(/#glances\/processes/);
+
+        await openPalette(page, ':glances record 15m');
+        await page.locator('.search-match', { hasText: /Record every 15m/ }).click();
+        await expect.poll(() => state.recordEvery).toBe(900);
+
+        await openPalette(page, ':glances pause');
+        await page.locator('.search-match', { hasText: /Pause the connection/ }).click();
+        await expect.poll(() => state.paused).toBe(true);
+    });
+
+    test('track and untrack offer the names Glances shows', async ({ page }) => {
+        const state = await mockGlances(page);
+        const name = fixture('containers')[0].name;
+        await openPalette(page, ':glances ');
+        // The names are read when :glances is typed.
+        await page.waitForTimeout(300);
+        await page.keyboard.type(`track ${name.slice(0, 4)}`);
+        await page.locator('.search-match', { hasText: new RegExp(`Record the history of container ${name}`) }).click();
+        await expect.poll(() => state.tracked).toContain(`ct:${name}`);
+    });
+
+    test('nothing is offered while Glances is off', async ({ page }) => {
+        await mockGlances(page, { status: { ...STATUS, configured: false } });
+        await openPalette(page, ':glances');
+        await expect(page.locator('.search-match', { hasText: /Set up Glances/ })).toBeVisible();
+        await expect(page.locator('.search-match', { hasText: /Record every/ })).toHaveCount(0);
+    });
+});
+
+test.describe('Glances page: names, focus and contrast', () => {
+    const SECTIONS = ['overview', 'processes', 'containers', 'disks', 'network', 'insights', 'history', 'alerts'];
+
+    /** What a screen reader would be missing, and the text a reader could not read, in the theme shown. */
+    async function audit(page) {
+        return page.evaluate(() => {
+            const root = document.querySelector('#dashboard-layout.glances-layout');
+            const visible = (el) => {
+                const r = el.getBoundingClientRect();
+                const cs = getComputedStyle(el);
+                return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none';
+            };
+            const nameOf = (el) => {
+                const label = el.getAttribute('aria-label') || '';
+                if (label.trim()) return label;
+                const by = el.getAttribute('aria-labelledby');
+                if (by && by.split(/\s+/).some((id) => document.getElementById(id)?.textContent.trim())) return 'labelled';
+                if ((el.textContent || '').trim()) return 'text';
+                if (el.getAttribute('title')) return 'title';
+                if (el.id && document.querySelector(`label[for="${el.id}"]`)) return 'label';
+                if (el.closest('label')?.textContent.trim()) return 'label';
+                return '';
+            };
+            const unnamed = [...root.querySelectorAll('button, a[href], select, input:not([type=hidden]), textarea, [role=button], [role=switch]')]
+                .filter(visible).filter((el) => !nameOf(el)).map((el) => `${el.tagName.toLowerCase()}.${el.className}`);
+            const hiddenFocusable = [...root.querySelectorAll('[aria-hidden="true"]')]
+                .flatMap((h) => [...h.querySelectorAll('button, a[href], select, input, textarea, [tabindex]:not([tabindex="-1"])')])
+                .filter((el) => !el.disabled).map((el) => `${el.tagName.toLowerCase()}.${el.className}`);
+
+            const parse = (c) => {
+                const m = c.match(/rgba?\(([^)]+)\)/);
+                if (!m) return null;
+                const [r, g, b, a = 1] = m[1].split(/[ ,/]+/).filter(Boolean).map(Number);
+                return { r, g, b, a };
+            };
+            const over = (top, under) => ({
+                r: top.r * top.a + under.r * (1 - top.a), g: top.g * top.a + under.g * (1 - top.a), b: top.b * top.a + under.b * (1 - top.a), a: 1,
+            });
+            const backdrop = (el) => {
+                const stack = [];
+                for (let n = el; n; n = n.parentElement) {
+                    const bg = parse(getComputedStyle(n).backgroundColor);
+                    if (bg && bg.a > 0) stack.push(bg);
+                    if (bg && bg.a >= 1) break;
+                }
+                return stack.reverse().reduce((acc, c) => over(c, acc), { r: 255, g: 255, b: 255, a: 1 });
+            };
+            const lum = ({ r, g, b }) => {
+                const f = (v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
+                return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+            };
+            const weak = [];
+            root.querySelectorAll('*').forEach((el) => {
+                if (!visible(el)) return;
+                const own = [...el.childNodes].filter((n) => n.nodeType === 3 && n.textContent.trim()).map((n) => n.textContent.trim()).join(' ');
+                if (!own) return;
+                const cs = getComputedStyle(el);
+                if (Number(cs.opacity) < 1) return;
+                const fg = parse(cs.color);
+                if (!fg) return;
+                const bg = backdrop(el);
+                const text = over(fg, bg);
+                const a = lum(text); const b = lum(bg);
+                const ratio = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+                if (ratio < 3) weak.push(`${ratio.toFixed(2)} ${el.tagName.toLowerCase()}.${el.className} "${own.slice(0, 24)}"`);
+            });
+            return { unnamed: [...new Set(unnamed)], hiddenFocusable: [...new Set(hiddenFocusable)], weak: [...new Set(weak)].slice(0, 12) };
+        });
+    }
+
+    for (const theme of [null, 'paper-ink-light']) {
+        test(`every section has names on its controls, no focus in hidden parts and readable text (${theme || 'default theme'})`, async ({ page }) => {
+            await mockGlances(page);
+            for (const id of SECTIONS) {
+                await openView(page, `#glances/${id}`);
+                if (theme) await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
+                await page.waitForTimeout(400);
+                const result = await audit(page);
+                expect(result, `section ${id}`).toEqual({ unnamed: [], hiddenFocusable: [], weak: [] });
+            }
+        });
+    }
+});
+
+test.describe('several hosts', () => {
+    const TWO = () => [{ id: 'main', name: 'Home' }, { id: 'nas', name: 'NAS' }];
+
+    test('one host: no menu. Several: a menu in the header, the address carries the host, and every read follows it', async ({ page }) => {
+        const state = await mockGlances(page);
+        await openView(page);
+        await expect(page.locator('[data-glances-host]')).toHaveCount(0);
+
+        state.hosts = TWO();
+        await page.reload();
+        const pick = page.locator('[data-glances-host]');
+        await expect(pick.locator('option')).toHaveText(['Home', 'NAS']);
+        await expect(pick).toHaveValue('main');
+        // The first host's address names no host.
+        await expect(page).toHaveURL(/#glances\/overview$/);
+        await pick.selectOption('nas');
+        await expect(page).toHaveURL(/#glances\/overview\?host=nas$/);
+        await expect.poll(() => state.calls.some((c) => c.path === 'pluginslist' && c.host === 'nas')).toBe(true);
+        await expect.poll(() => state.calls.some((c) => c.path === 'status' && c.host === 'nas')).toBe(true);
+        // Remembered here, and an address with a host opens on it.
+        state.calls.length = 0;
+        await page.goto('/#glances/history');
+        await page.reload();
+        await expect(page.locator('[data-glances-host]')).toHaveValue('nas');
+        await expect.poll(() => state.calls.some((c) => c.path === 'history' && c.host === 'nas')).toBe(true);
+        await pick.selectOption('main');
+        await expect(page).toHaveURL(/#glances\/history$/);
+    });
+
+    test('the pace and the retention chosen on the page are saved for the host shown', async ({ page }) => {
+        const state = await mockGlances(page);
+        state.hosts = TWO();
+        await openView(page, '#glances/overview?host=nas');
+        await page.locator('[data-glances-record]').selectOption('900');
+        await expect.poll(() => state.calls.some((c) => c.path === 'config' && c.host === 'nas')).toBe(true);
+        expect(state.saved).toEqual({ recordEvery: 900 });
+    });
+
+    test('Config: a button per host, add one by name, edit it, remove it', async ({ page }) => {
+        const state = await mockGlances(page);
+        state.hosts = TWO();
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances');
+        const tabs = page.locator('[data-glances-host-tab]');
+        await expect(tabs).toHaveText(['Home', 'NAS']);
+        await expect(page.locator('[data-glances-host-tab="main"]')).toHaveAttribute('aria-pressed', 'true');
+
+        await page.locator('[data-glances-host-tab="nas"]').click();
+        await expect(page.locator('[data-glances-host-tab="nas"]')).toHaveAttribute('aria-pressed', 'true');
+        await expect(page.locator('[data-glances-field="name"]')).toHaveValue('NAS');
+        await expect.poll(() => state.calls.some((c) => c.path === 'config' && c.host === 'nas')).toBe(true);
+        // A change is saved for that host.
+        await page.locator('[data-glances-field="dockerLink"]').selectOption('no');
+        await expect.poll(() => state.calls.some((c) => c.path === 'config' && c.host === 'nas' && state.saved && state.saved.dockerLink === 'no')).toBe(true);
+
+        await page.locator('[data-glances-host-add]').click();
+        await page.locator('[data-glances-host-new-name]').fill('Pi');
+        await page.locator('[data-glances-host-new-ok]').click();
+        await expect(page.locator('[data-glances-host-tab="pi"]')).toHaveAttribute('aria-pressed', 'true');
+        expect(state.saved).toEqual({ name: 'Pi' });
+        await expect(tabs).toHaveText(['Home', 'NAS', 'Pi']);
+
+        await page.locator('[data-glances-host-remove]').click();
+        await page.getByRole('button', { name: 'Remove', exact: true }).click();
+        await expect(tabs).toHaveText(['Home', 'NAS']);
+        expect(state.calls.some((c) => c.path === 'config' && c.host === 'pi' && c.remove === '1')).toBe(true);
+    });
+
+    test('with one host there is nothing to remove, and five is the most', async ({ page }) => {
+        const state = await mockGlances(page);
+        state.hosts = [{ id: 'main', name: 'Home' }];
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances');
+        await expect(page.locator('[data-glances-host-tab]')).toHaveCount(1);
+        await expect(page.locator('[data-glances-host-remove]')).toBeHidden();
+        state.hosts = ['a', 'b', 'c', 'd', 'e'].map((id) => ({ id, name: id.toUpperCase() }));
+        await page.reload();
+        await expect(page.locator('[data-glances-host-tab]')).toHaveCount(5);
+        await expect(page.locator('[data-glances-host-add]')).toBeHidden();
+    });
+
+    test('a host without an address says so and lets the reader go to another; Glances itself stays', async ({ page }) => {
+        const state = await mockGlances(page);
+        state.hosts = [{ id: 'main', name: 'Home' }, { id: 'pi', name: 'Pi', configured: false }];
+        await markWhatsNewSeen(page);
+        await page.goto('/#glances/overview?host=pi');
+        const empty = page.locator('[data-glances-empty="host"]');
+        await expect(empty).toContainText('no address yet', { timeout: 15_000 });
+        // The icon is still there: another host is set up.
+        await expect(page.locator('#page-nav-glances-link')).toBeVisible();
+        await empty.locator('[data-glances-host-switch="main"]').click();
+        await expect(page.locator('#dashboard-layout.glances-layout [data-glances-body]')).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('[data-glances-host]')).toHaveValue('main');
+    });
+
+    test('Config: a host without an address does not switch Glances off, and a typed change is kept when another host is picked', async ({ page }) => {
+        const state = await mockGlances(page);
+        state.hosts = [{ id: 'main', name: 'Home' }, { id: 'pi', name: 'Pi', configured: false }];
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances');
+        await page.locator('[data-glances-host-tab="pi"]').click();
+        await expect(page.locator('[data-glances-field="name"]')).toHaveValue('Pi');
+        await page.locator('[data-glances-notify="cpu"]').check();
+        await expect.poll(() => state.saved && state.saved.notify && state.saved.notify.join(',')).toBe('cpu');
+        expect(state.saved.enabled).toBe(true);
+        // Typed, not yet left: picking the other host still saves it, for the host it was typed for.
+        const calls = state.calls.length;
+        await page.locator('[data-glances-field="user"]').fill('someone');
+        await page.locator('[data-glances-host-tab="main"]').click();
+        await expect.poll(() => state.calls.slice(calls).some((c) => c.path === 'config' && c.host === 'pi' && state.saved.user === 'someone')).toBe(true);
+    });
+
+    test(':glances host moves the page to another host', async ({ page }) => {
+        const state = await mockGlances(page);
+        state.hosts = TWO();
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+        await page.keyboard.press('>');
+        await page.waitForSelector('.search-scope-rail', { timeout: 20_000 });
+        await page.keyboard.type(':glances host na');
+        await page.locator('.search-match', { hasText: /Look at NAS/ }).click();
+        await expect(page.locator('#dashboard-layout.glances-layout [data-glances-body]')).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('[data-glances-host]')).toHaveValue('nas');
     });
 });
