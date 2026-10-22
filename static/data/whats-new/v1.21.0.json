@@ -1,0 +1,87 @@
+{
+  "tag": "v1.21.0",
+  "date": "23 October 2026",
+  "releasedAt": "2026-10-23",
+  "modalLead": "<strong>Glances</strong> arrives: a page for the hosts you run it on, and a widget for the dashboard. <strong>Berry</strong> is the default theme, and a domain's expiry date is one more thing nextDash watches for you.",
+  "sections": [
+    {
+      "title": "Glances",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A Glances page.</strong> Overview, Processes, Containers, Disks, Network, History and more for every host you run Glances on. Click a process or a container for its side panel, open an incident to see its cause, compare with last week and save a graph as an image. Press Shift+G to open it.",
+          "highlight": true,
+          "title": "A Glances view for your hosts",
+          "link": "#glances",
+          "linkLabel": "Open Glances",
+          "media": {
+            "image": "media/v1.21.0-glances-view.jpg",
+            "video": "media/v1.21.0-glances-view.webm",
+            "alt": "The Glances page: the overview of a host, then the Processes tab with the side panel of one process open"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A Glances widget.</strong> One host on the dashboard, as meters or as the processor graph over the last hour. It links to the page for that host.",
+          "highlight": true,
+          "title": "One host on your dashboard",
+          "media": {
+            "image": "media/v1.21.0-glances-widget.jpg",
+            "alt": "Two Glances tiles on the dashboard: one host as meters, another as a processor graph, beside the processor and memory tiles"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Several hosts, and notices.</strong> Pick the host you look at, or see them all in one table. A notice warns when a disk is filling up, and the Containers view reads CPU, memory and network from Glances on your Docker host."
+        }
+      ]
+    },
+    {
+      "title": "Domains",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Domain expiry.</strong> A widget, a badge in Bookmarks and an alert tell you when a domain registration runs out. Registries that publish no date are named in a group of their own, so a quiet list never looks like a clean one.",
+          "highlight": true,
+          "title": "Know before a domain expires",
+          "link": "#health",
+          "linkLabel": "Open Health",
+          "media": {
+            "image": "media/v1.21.0-domains-widget.jpg",
+            "alt": "The Domains widget listing the registrations that run out soon, with the days left, and a quiet group of domains whose registry shows no date"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Look",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Berry is the default theme.</strong> A new install starts on Berry. If you are on another theme, a card offers it once, and Go back undoes it. Your own theme stays as it is."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Easier to read.</strong> Secondary text in the default themes has more contrast, inputs show a clear focus ring, and six backdrops are refreshed."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Add new bookmark from a category.</strong> Right-click a category's header and the first entry opens the add-bookmark form with that category already chosen."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Search keeps your letters.</strong> The first letter you type stays as you typed it, and Escape in the bookmark grid leaves the grid, so j and k are letters for the search again. Cancelling a search no longer puts the cursor on the first row."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Better on a phone.</strong> Bigger tap targets, overlays that fit the screen and Config tabs that fade at the edge."
+        }
+      ]
+    }
+  ]
+}
