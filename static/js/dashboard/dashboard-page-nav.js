@@ -190,6 +190,8 @@ class DashboardPageNav {
                 displayName = this.t('dashboard.libraryView', 'Bookmarks').toLowerCase();
             } else if (d.activeView === 'tags') {
                 displayName = this.t('dashboard.tagViewPageTitle', 'Tags').toLowerCase();
+            } else if (d.activeView === 'glances') {
+                displayName = this.t('dashboard.glancesView', 'Glances').toLowerCase();
             } else {
                 const defaultTitle = d.language.t('dashboard.defaultPageTitle');
                 displayName = pageName || (defaultTitle !== 'dashboard.defaultPageTitle' ? defaultTitle : '');
@@ -230,7 +232,8 @@ class DashboardPageNav {
             ? this.inboxPageLabel()
             : (d.activeView === 'config' ? this.configPageLabel()
                 : (d.activeView === 'docker' ? this.t('dashboard.dockerView', 'Containers')
-                    : (d.activeView === 'library' ? this.t('dashboard.libraryView', 'Bookmarks') : '')));
+                    : (d.activeView === 'library' ? this.t('dashboard.libraryView', 'Bookmarks')
+                        : (d.activeView === 'glances' ? this.t('dashboard.glancesView', 'Glances') : ''))));
         if (viewName) {
             if (d.settings?.enableCustomTitle) {
                 const base = (d.settings.customTitle || '').trim();

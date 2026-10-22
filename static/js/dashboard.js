@@ -55,7 +55,7 @@ const _sessionTags = new Set();
 
 class Dashboard {
     /** The views that rise in on arrival; see playViewEntrance. */
-    static ENTRANCE_VIEWS = new Set(['tags', 'library', 'inbox', 'docker']);
+    static ENTRANCE_VIEWS = new Set(['tags', 'library', 'inbox', 'docker', 'glances']);
 
     /** Kept in step with --enter-scale in list-view-shell.css. */
     static ENTRANCE_SCALE = { slow: 1, normal: 0.5, fast: 0.25 };
