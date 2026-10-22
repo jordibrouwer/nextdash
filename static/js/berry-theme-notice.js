@@ -1,18 +1,18 @@
 /**
- * One-time invitation to try Confetti, the default theme for new installs.
+ * One-time invitation to try Berry, the default theme for new installs.
  *
  * Someone who already has a dashboard keeps the theme they have; this asks once
- * whether to switch. "Try Confetti" always applies the dark half, whatever
+ * whether to switch. "Try Berry" always applies the dark half, whatever
  * theme they are on now, then offers to go back; "Not interested" is a final answer.
  *
  * The card itself (markup, transition, corner etiquette, retry loop) comes from
  * NoticeCard.
  */
-(function initConfettiThemeNotice(global) {
+(function initBerryThemeNotice(global) {
     'use strict';
 
-    const PROMO_ID = 'confetti-theme-try-v1';
-    const DARK = 'look-confetti-dark';
+    const PROMO_ID = 'berry-theme-try-v1';
+    const DARK = 'look-berry-dark';
     // After the theme browser invitation; the corner holds one card at a time.
     const SHOW_DELAY_MS = 16000;
 
@@ -42,7 +42,7 @@
     const escape = window.NextDashHtml.escapeHtml;
 
     /**
-     * Switch, and keep the card: it turns into "Go back" and "Keep Confetti",
+     * Switch, and keep the card: it turns into "Go back" and "Keep Berry",
      * so trying it costs one click to undo. `previous` is the theme the reader
      * had, as stored.
      */
@@ -55,14 +55,14 @@
         if (!el) return;
         el.classList.add('is-applied');
         const title = el.querySelector('.quickstart-title');
-        if (title) title.textContent = t('dashboard.confettiNoticeAppliedTitle', 'Confetti is on');
+        if (title) title.textContent = t('dashboard.berryNoticeAppliedTitle', 'Berry is on');
         const body = el.querySelector('.notice-card-text');
-        if (body) body.textContent = t('dashboard.confettiNoticeAppliedBody', 'Not what you expected? Go back to the theme you had.');
+        if (body) body.textContent = t('dashboard.berryNoticeAppliedBody', 'Not what you expected? Go back to the theme you had.');
         const actions = el.querySelector('.notice-card-actions');
         if (!actions) return;
         actions.innerHTML = `
-            <button type="button" class="quickstart-btn quickstart-btn-ghost" data-ct-action="back">${escape(t('dashboard.confettiNoticeBack', 'Go back'))}</button>
-            <button type="button" class="quickstart-btn quickstart-btn-primary" data-ct-action="keep">${escape(t('dashboard.confettiNoticeKeep', 'Keep Confetti'))}</button>`;
+            <button type="button" class="quickstart-btn quickstart-btn-ghost" data-ct-action="back">${escape(t('dashboard.berryNoticeBack', 'Go back'))}</button>
+            <button type="button" class="quickstart-btn quickstart-btn-primary" data-ct-action="keep">${escape(t('dashboard.berryNoticeKeep', 'Keep Berry'))}</button>`;
         actions.querySelector('[data-ct-action="back"]')?.addEventListener('click', () => {
             card.close();
             if (previous) void dash()?.config?.setTheme?.(previous);
@@ -71,17 +71,17 @@
     }
 
     const card = global.NoticeCard.define({
-        id: 'confetti-theme-notice',
+        id: 'berry-theme-notice',
         showDelayMs: SHOW_DELAY_MS,
-        title: () => t('dashboard.confettiNoticeTitle', 'Try the new default theme?'),
-        body: () => t('dashboard.confettiNoticeBody',
-            'New installs start on Confetti, with glass panes and a colourful backdrop. Switch to it now, and change back any time under Config → Appearance.'),
-        dismissLabel: () => t('dashboard.confettiNoticeDismiss', 'Dismiss'),
+        title: () => t('dashboard.berryNoticeTitle', 'Try the new default theme?'),
+        body: () => t('dashboard.berryNoticeBody',
+            'New installs start on Berry, with lime and raspberry light spilling in from the edge of the frame. Switch to it now, and change back any time under Config → Appearance.'),
+        dismissLabel: () => t('dashboard.berryNoticeDismiss', 'Dismiss'),
         dismissName: 'dismiss',
-        // Already on Confetti, or a random theme rotating, means nothing to offer.
+        // Already on Berry, or a random theme rotating, means nothing to offer.
         canShow: () => {
             if (hasAnswered()) return false;
-            if (/^look-confetti-(dark|light)$/.test(currentTheme())) return false;
+            if (/^look-berry-(dark|light)$/.test(currentTheme())) return false;
             const mode = dash()?.settings?.randomThemeMode;
             return !mode || mode === 'off';
         },
@@ -90,13 +90,13 @@
         actions: [
             {
                 name: 'try',
-                label: () => t('dashboard.confettiNoticeTry', 'Try Confetti'),
+                label: () => t('dashboard.berryNoticeTry', 'Try Berry'),
                 primary: true,
                 onClick: tryIt,
             },
             {
                 name: 'dismiss',
-                label: () => t('dashboard.confettiNoticeNo', 'Not interested'),
+                label: () => t('dashboard.berryNoticeNo', 'Not interested'),
                 onClick: (c) => { markAnswered(); c.close(); },
             },
         ],
@@ -108,7 +108,7 @@
         card.autoStart();
     }
 
-    global.DashboardConfettiNotice = {
+    global.DashboardBerryNotice = {
         render: card.renderSync,
         shouldShow: card.shouldShowSync,
         dismiss: () => { markAnswered(); card.close(); },

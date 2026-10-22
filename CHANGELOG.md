@@ -141,6 +141,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ### Look
 
+- **new — Berry is the default theme.** A fresh install starts on **Berry [dark]** (`look-berry-dark`, with `look-berry-light` for auto dark mode) in place of Confetti. Installs keep the theme they have. The one-time corner card that offered Confetti now offers Berry and is shown again to everyone who is not already on Berry, in either half, including those who answered the Confetti card: its id is `berry-theme-try-v1` (`berry-theme-notice.js`), and a fresh install starts with it answered. *Try Berry* applies the dark half and can be undone with *Go back*. The card's strings are `dashboard.berryNotice*` in all six languages.
 - **fix — tertiary text reaches 4.5:1.** The default themes had tertiary text under the WCAG AA ratio.
 - **fix — a visible focus ring on inputs.** Inputs that only changed their border colour on focus now draw a ring.
 - **fix — no-animations no longer moves centred elements.**

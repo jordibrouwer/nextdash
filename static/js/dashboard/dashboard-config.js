@@ -11919,7 +11919,7 @@ class DashboardConfig {
         const storedGone = this.dash.settings?.theme === id;
         const wasActive = storedGone || shownBefore === id;
         if (storedGone) {
-            this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'look-confetti-dark';
+            this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'look-berry-dark';
         }
         if (storedGone || rowsLeft) void this.saveSettingsWithFeedback();
         this.repaintAppearanceBody();
@@ -13431,7 +13431,7 @@ class DashboardConfig {
         bookmarkArchiveUrl: { info: ['bookmarkArchiveUrlInfoTitle', 'bookmarkArchiveUrlInfoMessage'], def: 'https://web.archive.org/web/*/{url}' },
         pasteDestination: { hint: 'pasteDestinationHint', def: 'ask' },
         monitorEmphasis: { hint: 'monitorEmphasisHint', def: 'problems' },
-        theme: { def: 'look-confetti-dark' },
+        theme: { def: 'look-berry-dark' },
         // Appearance → Theme: the three Surfaces answers and the two Backdrop
         // ones. Without a `def` renderFieldAffordances draws no ↺ at all, which
         // is why these five were the only controls on the page without one.

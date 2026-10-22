@@ -36,7 +36,7 @@ function serverDefaults() {
     }
 
     const named = {
-        defaultThemeID: 'look-confetti-dark',
+        defaultThemeID: 'look-berry-dark',
         defaultThemeDepth: 'glass',
         defaultGlowStrength: 'soft',
         defaultHealthAutoRecheckIntervalHours: 24,

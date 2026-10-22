@@ -3510,7 +3510,7 @@ Each group's label stands in front of its tabs. The strip is one line from about
 
 ### 16.1 Themes
 
-nextDash ships **188 theme families**, each with a light and a dark half — 376 themes in all. A fresh install starts on **Confetti**, a colour-burst theme on panes of glass, with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made. The same goes for the room between categories and between columns (both airy on Confetti) and for the category header (clean). An install that already has a theme keeps it; a one-time card in the corner offers Confetti, and *Try Confetti* can be undone with *Go back* on the same card.
+nextDash ships **188 theme families**, each with a light and a dark half — 376 themes in all. A fresh install starts on **Berry**, a colour-burst theme of lime and raspberry light spilling in from the edge, with depth, glow and effects on **Follow the theme**, so the theme draws itself the way it was made. The same goes for the room between categories and between columns (balanced on Berry, airy on Confetti) and for the category header. An install that already has a theme keeps it; a one-time card in the corner offers Berry to everyone who is not on it already, and *Try Berry* can be undone with *Go back* on the same card.
 
 **Theme** on the Theme tab lists every theme by name. Beside it:
 

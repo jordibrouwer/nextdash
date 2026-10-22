@@ -2,29 +2,29 @@ package app
 
 import "testing"
 
-func hasConfettiPromo(s Settings) bool {
+func hasBerryPromo(s Settings) bool {
 	if s.DiscoverabilityState == nil {
 		return false
 	}
 	for _, id := range s.DiscoverabilityState.SeenSettingPromos {
-		if id == confettiThemePromoID {
+		if id == berryThemePromoID {
 			return true
 		}
 	}
 	return false
 }
 
-// The invitation to try Confetti is for installs that already existed. A fresh
-// install starts on Confetti and is not asked.
-func TestConfettiInvitationIsNotForAFreshInstall(t *testing.T) {
-	if got := gridSettings(t, nil); !hasConfettiPromo(got) {
-		t.Errorf("a fresh install has not answered the Confetti invitation: %+v", got.DiscoverabilityState)
+// The invitation to try Berry is for installs that already existed. A fresh
+// install starts on Berry and is not asked.
+func TestBerryInvitationIsNotForAFreshInstall(t *testing.T) {
+	if got := gridSettings(t, nil); !hasBerryPromo(got) {
+		t.Errorf("a fresh install has not answered the Berry invitation: %+v", got.DiscoverabilityState)
 	}
 }
 
-func TestConfettiInvitationStaysOpenForAnExistingInstall(t *testing.T) {
+func TestBerryInvitationStaysOpenForAnExistingInstall(t *testing.T) {
 	got := gridSettings(t, gridFile(map[string]any{"theme": "slate-dark"}))
-	if hasConfettiPromo(got) {
+	if hasBerryPromo(got) {
 		t.Error("an existing install was marked as having answered the invitation")
 	}
 }
@@ -39,7 +39,7 @@ func TestFreshInstallStartsWithTheGuideOverlapAnswered(t *testing.T) {
 	if state == nil {
 		t.Fatal("no discoverability state on a fresh install")
 	}
-	for _, id := range []string{"confetti-theme-try-v1", "clock-weather-v1", "theme-browser-try-v1"} {
+	for _, id := range []string{"berry-theme-try-v1", "clock-weather-v1", "theme-browser-try-v1"} {
 		found := false
 		for _, seen := range state.SeenSettingPromos {
 			found = found || seen == id
