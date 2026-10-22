@@ -1504,6 +1504,7 @@
     "categorySpreadNeedsLimit": "Spreading needs a limit on items per category — that limit is what decides how many columns a category takes. Set one in Config → Appearance → Grid.",
     "categorySpreadNeedsLimitShort": "Needs an items-per-category limit",
     "categoryMenuAdd": "Add category",
+    "categoryMenuAddBookmark": "Add new bookmark",
     "categoryMenuDelete": "Delete",
     "healthReportAgeTitle": "When this report was generated. Use Retest all to refresh it.",
     "healthIntervalLabel": "Check interval",

@@ -1468,6 +1468,7 @@
     "categorySpreadNeedsLimit": "La répartition exige une limite d’éléments par catégorie — c’est elle qui décide du nombre de colonnes. Réglez-la dans Configuration → Apparence → Grille.",
     "categorySpreadNeedsLimitShort": "Exige une limite d’éléments",
     "categoryMenuAdd": "Ajouter une catégorie",
+    "categoryMenuAddBookmark": "Ajouter un nouveau favori",
     "categoryMenuDelete": "Supprimer",
     "healthReportAgeTitle": "Date de génération de ce rapport. Utilisez « Tout retester » pour l'actualiser.",
     "healthIntervalLabel": "Intervalle de vérification",

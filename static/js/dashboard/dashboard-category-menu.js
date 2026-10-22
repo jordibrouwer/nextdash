@@ -535,6 +535,12 @@ class DashboardCategoryMenu {
             && (this.dash.categories || []).some((cat) => String(cat.id) === String(category.id));
         const asTiles = category.view === 'tiles';
         const actions = [
+            // Only for a stored category: the form files the bookmark under its id.
+            ...(stored ? [{
+                id: 'add-bookmark',
+                label: this.t('categoryMenuAddBookmark', 'Add new bookmark'),
+                icon: '+',
+            }] : []),
             { id: 'rename', label: this.t('categoryMenuRename', 'Rename'), icon: '✎', key: 'F2' },
             ...(stored ? [{
                 id: 'view',
@@ -943,6 +949,17 @@ class DashboardCategoryMenu {
 
         if (action === 'add') {
             d.categoryAdd?.open();
+            return;
+        }
+
+        if (action === 'add-bookmark') {
+            // The same form the + button opens, with this category already chosen.
+            void d.openBookmarkFormModal?.({
+                mode: 'create',
+                category: String(category.id),
+                pageId: d.currentPageId,
+                source: 'category-menu',
+            });
             return;
         }
 

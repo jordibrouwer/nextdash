@@ -1468,6 +1468,7 @@
     "categorySpreadNeedsLimit": "Verteilen braucht ein Limit für Einträge pro Kategorie — dieses Limit entscheidet, wie viele Spalten eine Kategorie einnimmt. Unter Konfiguration → Erscheinungsbild → Raster einstellen.",
     "categorySpreadNeedsLimitShort": "Braucht ein Eintragslimit",
     "categoryMenuAdd": "Kategorie hinzufügen",
+    "categoryMenuAddBookmark": "Neues Lesezeichen hinzufügen",
     "categoryMenuDelete": "Löschen",
     "healthReportAgeTitle": "Wann dieser Bericht erstellt wurde. Mit \"Alle neu testen\" aktualisieren.",
     "healthIntervalLabel": "Prüfintervall",

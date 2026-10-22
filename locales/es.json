@@ -1468,6 +1468,7 @@
     "categorySpreadNeedsLimit": "Repartir necesita un límite de elementos por categoría: ese límite es lo que decide cuántas columnas ocupa una categoría. Ponlo en Configuración → Apariencia → Cuadrícula.",
     "categorySpreadNeedsLimitShort": "Hace falta un límite de elementos por categoría",
     "categoryMenuAdd": "Añadir una categoría",
+    "categoryMenuAddBookmark": "Añadir un marcador nuevo",
     "categoryMenuDelete": "Eliminar",
     "healthReportAgeTitle": "Cuándo se generó este informe. Usa Volver a probar todo para actualizarlo.",
     "healthIntervalLabel": "Intervalo de comprobación",

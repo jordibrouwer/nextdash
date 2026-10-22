@@ -1468,6 +1468,7 @@
     "categorySpreadNeedsLimit": "横跨需要给每个分类设定条目上限——正是这个上限决定了一个分类占几列。请在 配置 → 外观 → 网格 中设置。",
     "categorySpreadNeedsLimitShort": "需要设定每个分类的条目上限",
     "categoryMenuAdd": "添加分类",
+    "categoryMenuAddBookmark": "添加新书签",
     "categoryMenuDelete": "删除",
     "healthReportAgeTitle": "这份报告是什么时候生成的。用「全部重测」可以刷新它。",
     "healthIntervalLabel": "检查间隔",
