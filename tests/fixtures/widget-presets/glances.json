@@ -1,0 +1,17 @@
+{
+  "_source": "Glances 4 REST API, GET /api/4/quicklook (glances/plugins/quicklook); the answer is the plugin's own stats, cpu, mem, swap and load as percentages",
+  "auth": {},
+  "body": {
+    "cpu_name": "AMD Ryzen 7 5700G",
+    "cpu_hz_current": 3800000000,
+    "cpu_hz": 3800000000,
+    "cpu": 33,
+    "mem": 58.4,
+    "swap": 3.1,
+    "cpu_log_core": 8,
+    "cpu_phys_core": 8,
+    "load": 41,
+    "gpu_mem": 0,
+    "gpu_proc": 0
+  }
+}
