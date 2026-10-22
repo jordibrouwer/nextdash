@@ -3571,6 +3571,8 @@ func backdropScrimFloor(recipe string) string {
 		return "0.22"
 	case "leak":
 		return "0.2"
+	case "hexagons", "blueprint", "prism", "chevron", "sunset", "mountains":
+		return "0.16"
 	}
 	return "0"
 }
@@ -3812,22 +3814,31 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 			{"radial-gradient(1.5px 1.5px at 40% 60%, " + veil(accent, 80) + ", transparent)", px(210) + " " + px(190), off(5)},
 			{"linear-gradient(180deg, " + wash(accent, 8) + ", " + bg + " 70%)", "", ""},
 		}
-	case "sunset": // een zon op de horizon
+	case "sunset": // een zon met gloed boven een gelaagde hemel en een lichtspoor op het water
+		sun := pct(46 + pick(7, 12))
 		layers = plain(
-			"radial-gradient(circle at 50% 64%, "+veil(second, 60)+" 0, "+veil(second, 60)+" "+scaled(8, "%")+
-				", transparent calc(8% * var(--bd-scale, 1) + .3%))",
-			"linear-gradient(180deg, "+wash(accent, 14)+" 0%, "+wash(second, 22)+" 60%, "+bg+" 64.5%, "+wash(accent, 8)+" 100%)")
+			"radial-gradient(circle at "+sun+" 58%, "+veil(warm, 80)+" 0, "+veil(warm, 74)+" "+scaled(7, "%")+
+				", transparent calc(7% * var(--bd-scale, 1) + .3%))",
+			"radial-gradient(70% 55% at "+sun+" 58%, "+veil(warm, 52)+" 0%, "+veil(second, 34)+" 45%, transparent 100%)",
+			"radial-gradient(16% 36% at "+sun+" 82%, "+veil(warm, 42)+", transparent 100%)",
+			"linear-gradient(180deg, "+wash(accent, 40)+" 0%, "+wash(second, 46)+" 34%, "+wash(warm, 44)+" 58%, "+bg+" 58.4%, "+wash(accent, 18)+" 100%)")
 	case "dunes": // drie duinruggen
 		layers = plain(
 			"radial-gradient(140% 60% at 15% 115%, "+wash(accent, 20)+" 60%, transparent 60.4%)",
 			"radial-gradient(130% 55% at 85% 120%, "+wash(second, 16)+" 62%, transparent 62.4%)",
 			"radial-gradient(160% 70% at 50% 135%, "+wash(accent, 10)+" 62%, transparent 62.4%)", base)
-	case "mountains": // twee bergruggen en een maan
-		layers = plain(
-			"linear-gradient("+strconv.Itoa(150+x1/3)+"deg, transparent 58%, "+wash(accent, 14)+" 58.3%)",
-			"linear-gradient("+strconv.Itoa(210-x2/5)+"deg, transparent 62%, "+wash(second, 12)+" 62.3%)",
-			"radial-gradient(40% 30% at "+pct(x2)+" 25%, "+veil(second, 26)+", transparent 70%)",
-			"linear-gradient(180deg, "+wash(accent, 12)+", "+bg+" 75%)")
+	case "mountains": // drie rijen toppen in drie kleuren, een gloeiende maan en een kleurige lucht
+		peak := func(colour string, half, apex int) string {
+			return "conic-gradient(from " + strconv.Itoa(180-half) + "deg at 50% " + pct(apex) + ", " +
+				colour + " 0deg " + strconv.Itoa(2*half) + "deg, transparent calc(" + strconv.Itoa(2*half) + "deg + .5deg))"
+		}
+		layers = []backdropLayer{
+			{"radial-gradient(30% 24% at " + pct(x2) + " 22%, " + veil(warm, 66) + " 0%, " + veil(warm, 24) + " 45%, transparent 100%)", "", ""},
+			{peak(wash(cool, 26), 50, 72), "38% 100%", pct(pick(5, 40)) + " 0"},
+			{peak(wash(second, 32), 47, 58), "54% 100%", pct(20+pick(9, 40)) + " 0"},
+			{peak(wash(accent, 40), 45, 42), "78% 100%", pct(pick(3, 60)) + " 0"},
+			{"linear-gradient(180deg, " + wash(accent, 24) + ", " + wash(second, 14) + " 55%, " + bg + " 85%)", "", ""},
+		}
 	case "waves": // golven die van onderaf aanrollen
 		layers = plain(
 			"repeating-radial-gradient(ellipse 140% 60% at 50% 135%, "+veil(accent, 14)+" 0 2px, transparent 2px "+px(28)+")", base)
@@ -3841,27 +3852,30 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 			"linear-gradient(180deg, "+bg+" 55%, transparent 55%)",
 			"repeating-conic-gradient(from 90deg at 50% 55%, "+veil(accent, 26)+" 0 .6deg, transparent .6deg "+scaled(8, "deg")+")",
 			"repeating-linear-gradient(180deg, "+veil(accent, 18)+" 0 1px, transparent 1px "+px(24)+")", solid)
-	case "blueprint": // millimeterpapier: een groot en een fijn raster
-		major, minor := veil(accent, 16), veil(accent, 7)
+	case "blueprint": // millimeterpapier onder een koel licht, met een gloeiende hoek en een ring
+		major, minor := veil(accent, 28), veil(accent, 10)
 		layers = []backdropLayer{
 			{"linear-gradient(" + major + " 1px, transparent 1px)", tile(100), ""},
 			{"linear-gradient(90deg, " + major + " 1px, transparent 1px)", tile(100), ""},
 			{"linear-gradient(" + minor + " 1px, transparent 1px)", tile(20), ""},
 			{"linear-gradient(90deg, " + minor + " 1px, transparent 1px)", tile(20), ""},
+			{"radial-gradient(circle at " + pct(x2) + " " + pct(y2+30) + ", transparent 0, transparent 16%, " + veil(cool, 44) + " 17%, transparent 18.2%)", "", ""},
+			{"radial-gradient(75% 65% at 0% 0%, " + veil(accent, 50) + ", transparent 72%)", "", ""},
+			{"radial-gradient(65% 60% at 100% 100%, " + veil(cool, 40) + ", transparent 72%)", "", ""},
 			{base, "", ""},
 		}
 	case "pinstripe": // krijtstreep met een lichtval
 		layers = plain(
 			"repeating-linear-gradient(90deg, "+veil(accent, 9)+" 0 1px, transparent 1px "+px(9)+")",
 			"radial-gradient(90% 70% at "+pct(x1)+" 0%, "+veil(accent, 16)+", transparent 70%)", base)
-	case "hexagons": // honingraat van zes verschoven lagen
-		a, b := veil(accent, 9), veil(second, 6)
+	case "hexagons": // honingraat met een zachte gloed per cel, onder drie kleurvelden
+		a, b := veil(accent, 22), veil(warm, 12)
 		cell := px(56) + " " + px(98)
 		half := px(28) + " " + px(49)
 		edge := func(deg int, colour string) string {
-			return "linear-gradient(" + strconv.Itoa(deg) + "deg, " + colour + " 12%, transparent 12.5%, transparent 87%, " + colour + " 87.5%)"
+			return "linear-gradient(" + strconv.Itoa(deg) + "deg, " + colour + " 12%, transparent 13.5%, transparent 86%, " + colour + " 87.5%)"
 		}
-		slant := "linear-gradient(60deg, " + b + " 25%, transparent 25.5%, transparent 75%, " + b + " 75%)"
+		slant := "linear-gradient(60deg, " + b + " 25%, transparent 27%, transparent 74%, " + b + " 75.5%)"
 		layers = []backdropLayer{
 			{edge(30, a), cell, "0 0"},
 			{edge(150, a), cell, "0 0"},
@@ -3869,6 +3883,9 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 			{edge(150, a), cell, half},
 			{slant, cell, "0 0"},
 			{slant, cell, half},
+			{"radial-gradient(70% 60% at " + pct(x1+8) + " " + pct(y1+10) + ", " + veil(accent, 46) + ", transparent 72%)", "", ""},
+			{"radial-gradient(65% 55% at " + pct(x2) + " " + pct(y2+30) + ", " + veil(second, 40) + ", transparent 72%)", "", ""},
+			{"radial-gradient(55% 45% at 50% 100%, " + veil(cool, 34) + ", transparent 72%)", "", ""},
 			{base, "", ""},
 		}
 	case "halftone": // rasterpunten die naar een hoek vervagen
@@ -3877,11 +3894,14 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 			{"radial-gradient(circle, " + veil(accent, 22) + " 1.4px, transparent 1.6px)", tile(10), ""},
 			{base, "", ""},
 		}
-	case "prism": // gebroken licht vanuit een punt
+	case "prism": // gebroken licht: heldere stralen in vier kleuren met een zachte rand, vanuit een punt
 		layers = plain(
-			"conic-gradient(from "+strconv.Itoa(angle)+"deg at "+pct(x1+20)+" "+pct(y1+20)+", "+
-				veil(accent, 18)+" 0deg 40deg, transparent 40deg 95deg, "+veil(second, 14)+" 95deg 130deg, transparent 130deg 210deg, "+
-				veil(accent, 10)+" 210deg 250deg, transparent 250deg)", base)
+			"conic-gradient(from "+strconv.Itoa(angle)+"deg at "+pct(x1+16)+" "+pct(y1+8)+", "+
+				veil(accent, 54)+" 0deg 34deg, transparent 44deg 62deg, "+veil(warm, 46)+" 70deg 88deg, transparent 98deg 124deg, "+
+				veil(second, 48)+" 132deg 152deg, transparent 164deg 204deg, "+veil(cool, 42)+" 212deg 234deg, transparent 246deg 330deg, "+veil(accent, 54)+" 350deg)",
+			"conic-gradient(from "+strconv.Itoa(angle+180)+"deg at 100% 100%, "+
+				veil(accent, 26)+" 0deg 20deg, transparent 30deg 50deg, "+veil(second, 22)+" 58deg 70deg, transparent 82deg)",
+			"radial-gradient(120% 100% at 50% 50%, transparent 45%, "+veil(bg, 55)+" 100%)", base)
 	case "burst": // een kleurexplosie: de kleuren van het theme in een waaier rond één punt
 		layers = plain(
 			"conic-gradient(from "+strconv.Itoa(angle)+"deg at "+pct(46+pick(7, 28))+" "+pct(30+pick(11, 30))+", "+
@@ -3897,10 +3917,16 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 		layers = plain(
 			"linear-gradient("+strconv.Itoa(96+pick(3, 14))+"deg, "+veil(warm, 60)+" 0%, "+veil(second, 50)+" 22%, transparent 56%)",
 			"radial-gradient(60% 60% at 100% 100%, "+veil(accent, 50)+", transparent 70%)", base)
-	case "chevron": // een zigzag van schuine vlakken
+	case "chevron": // zigzagbanden met een zachte rand, in twee kleuren over een kleurverloop
+		zig := func(colour string, deg int) string {
+			return "linear-gradient(" + strconv.Itoa(deg) + "deg, " + colour + " 24%, transparent 27%)"
+		}
 		layers = []backdropLayer{
-			{"linear-gradient(135deg, " + veil(accent, 8) + " 25%, transparent 25%)", tile(36), ""},
-			{"linear-gradient(225deg, " + veil(accent, 8) + " 25%, transparent 25%)", tile(36), ""},
+			{zig(veil(accent, 32), 135), tile(84), ""},
+			{zig(veil(accent, 32), 225), tile(84), ""},
+			{zig(veil(warm, 24), 135), tile(84), px(42) + " " + px(42)},
+			{zig(veil(warm, 24), 225), tile(84), px(42) + " " + px(42)},
+			{"linear-gradient(" + strconv.Itoa(110+pick(3, 40)) + "deg, " + veil(second, 36) + " 0%, transparent 46%, " + veil(cool, 32) + " 100%)", "", ""},
 			{base, "", ""},
 		}
 	default: // horizon: een lichte band met een donkere grond
