@@ -23,6 +23,7 @@ class DashboardGlancesLoader {
         ['js/dashboard/dashboard-glances-insights.js', 'dashboardGlancesInsights', 'insights'],
         ['js/dashboard/dashboard-glances-history.js', 'dashboardGlancesHistory', 'history'],
         ['js/dashboard/dashboard-glances-alerts.js', 'dashboardGlancesAlerts', 'alerts'],
+        ['js/dashboard/dashboard-glances-hosts.js', 'dashboardGlancesHosts', 'hosts'],
     ];
 
     constructor(dashboard) {

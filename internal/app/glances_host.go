@@ -1,8 +1,11 @@
 package app
 
 import (
+	"encoding/json"
+	"net/http"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -46,6 +49,8 @@ type glancesStateStore struct {
 	ok    bool
 	level string
 	err   string
+	// okAt is the last beat that was answered.
+	okAt int64
 }
 
 // glancesSlowStore keeps the last answer of the slow plugins between minutes.
@@ -121,6 +126,13 @@ func glancesHostByID(id string) *glancesHost {
 	return hs
 }
 
+// glancesHostIfKnown is a host's state if it has one: a lookup that makes none.
+func glancesHostIfKnown(id string) *glancesHost {
+	glancesHosts.Lock()
+	defer glancesHosts.Unlock()
+	return glancesHosts.byID[id]
+}
+
 func glancesForgetHost(id string) {
 	glancesHosts.Lock()
 	delete(glancesHosts.byID, id)
@@ -145,4 +157,94 @@ func (hs *glancesHost) wakeSampler() {
 	case hs.wake <- struct{}{}:
 	default:
 	}
+}
+
+// glancesHostRow is one host in the hosts overview: the last readings nextDash
+// recorded, so showing every host costs the hosts nothing.
+type glancesHostRow struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Configured bool   `json:"configured"`
+	Paused     bool   `json:"paused"`
+	Level      string `json:"level"`
+	OK         bool   `json:"ok"`
+	At         int64  `json:"at"`
+	// LastOK is the last time the host answered, for "not answering since".
+	LastOK    int64    `json:"lastOk"`
+	CPU       *float64 `json:"cpu"`
+	Mem       *float64 `json:"mem"`
+	Disk      *float64 `json:"disk"`
+	DiskMount string   `json:"diskMount,omitempty"`
+	Temp      *float64 `json:"temp"`
+}
+
+// lastValues are the newest points of the series a row needs.
+func (hs *glancesHost) lastValues() (cpu, mem, disk *float64, diskMount string, temp *float64) {
+	hs.beat.Lock()
+	every := hs.beat.every
+	hs.beat.Unlock()
+	// A series that stopped (an unplugged disk, a sensor that left) is not a current reading.
+	fresh := time.Now().Add(-max(3*every, 3*time.Minute)).UnixMilli()
+	hs.rings.Lock()
+	defer hs.rings.Unlock()
+	last := func(name string) *float64 {
+		ring := hs.rings.series[name]
+		if ring == nil || len(ring.Fine) == 0 {
+			return nil
+		}
+		point := ring.Fine[len(ring.Fine)-1]
+		if int64(point[0]) < fresh {
+			return nil
+		}
+		v := point[1]
+		return &v
+	}
+	cpu, mem = last("cpu"), last("mem")
+	for name := range hs.rings.series {
+		switch {
+		case strings.HasPrefix(name, "fs:"):
+			if v := last(name); v != nil && (disk == nil || *v > *disk) {
+				disk, diskMount = v, strings.TrimPrefix(name, "fs:")
+			}
+		case strings.HasPrefix(name, "temp:"):
+			if v := last(name); v != nil && (temp == nil || *v > *temp) {
+				temp = v
+			}
+		}
+	}
+	return cpu, mem, disk, diskMount, temp
+}
+
+func glancesHostRows() []glancesHostRow {
+	var rows []glancesHostRow
+	for _, c := range glancesHostConfigs() {
+		hs := glancesHostIfKnown(c.ID)
+		if hs == nil {
+			rows = append(rows, glancesHostRow{ID: c.ID, Name: glancesHostName(c), Configured: c.configured(), Paused: c.Paused, Level: "unknown"})
+			continue
+		}
+		hs.state.Lock()
+		level, ok, at, lastOK := hs.state.level, hs.state.ok, hs.state.at, hs.state.okAt
+		hs.state.Unlock()
+		if !c.connected() {
+			level, ok = "unknown", false
+		}
+		cpu, mem, disk, mount, temp := hs.lastValues()
+		rows = append(rows, glancesHostRow{
+			ID: c.ID, Name: glancesHostName(c), Configured: c.configured(), Paused: c.Paused, Level: level, OK: ok, At: at, LastOK: lastOK,
+			CPU: cpu, Mem: mem, Disk: disk, DiskMount: mount, Temp: temp,
+		})
+	}
+	return rows
+}
+
+// glancesHostsHandler answers the hosts overview.
+func (h *Handlers) glancesHostsHandler(w http.ResponseWriter, r *http.Request) {
+	h.setCORSHeaders(w, r)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{"hosts": glancesHostRows()})
 }

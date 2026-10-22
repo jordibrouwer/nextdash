@@ -352,3 +352,32 @@ func TestGlancesStatusConfiguredIsForAnyHost(t *testing.T) {
 		t.Errorf("status of the host without an address: %s", rec.Body)
 	}
 }
+
+// The hosts overview is made of what was recorded: the last readings of each
+// host, the fullest disk and the hottest sensor, with no request to a host.
+func TestGlancesHostsOverviewFromTheRecord(t *testing.T) {
+	h := hostsSetup(t)
+	hostsDo(h, http.MethodPut, "/api/glances/config", `{"enabled":true,"server":"http://a.lan:61208","name":"Home"}`)
+	hostsDo(h, http.MethodPut, "/api/glances/config?host=new", `{"name":"NAS","server":"http://nas.lan:61208"}`)
+	now := time.Now().UnixMilli()
+	mainHost().record(now, map[string]float64{"cpu": 20, "mem": 40, "fs:/a": 50, "fs:/b": 91, "temp:x": 50, "temp:y": 61})
+	rec := httptest.NewRecorder()
+	h.glancesHostsHandler(rec, httptest.NewRequest(http.MethodGet, "/api/glances/hosts", nil))
+	var got struct {
+		Hosts []glancesHostRow `json:"hosts"`
+	}
+	_ = json.Unmarshal(rec.Body.Bytes(), &got)
+	if len(got.Hosts) != 2 || got.Hosts[0].Name != "Home" || got.Hosts[1].Name != "NAS" {
+		t.Fatalf("rows: %s", rec.Body)
+	}
+	home := got.Hosts[0]
+	if home.CPU == nil || *home.CPU != 20 || home.Disk == nil || *home.Disk != 91 || home.DiskMount != "/b" || home.Temp == nil || *home.Temp != 61 {
+		t.Errorf("home: %+v", home)
+	}
+	if got.Hosts[1].CPU != nil || got.Hosts[1].Disk != nil {
+		t.Errorf("a host with no record has readings: %+v", got.Hosts[1])
+	}
+	if strings.Contains(rec.Body.String(), "a.lan") {
+		t.Errorf("an address in the overview: %s", rec.Body)
+	}
+}

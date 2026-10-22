@@ -230,6 +230,7 @@ var lazyLoadedAssets = []string{
 	"js/dashboard/dashboard-glances-insights.js",
 	"js/dashboard/dashboard-glances-history.js",
 	"js/dashboard/dashboard-glances-alerts.js",
+	"js/dashboard/dashboard-glances-hosts.js",
 	"js/dashboard/dashboard-inbox-triage.js",
 	"js/dashboard/dashboard-inbox-drawer.js",
 	"js/dashboard/dashboard-inbox.js",

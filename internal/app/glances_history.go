@@ -435,6 +435,9 @@ func (hs *glancesHost) saveHistory() {
 func (hs *glancesHost) setState(at int64, ok bool, level, err string) {
 	hs.state.Lock()
 	hs.state.at, hs.state.ok, hs.state.level, hs.state.err = at, ok, level, err
+	if ok {
+		hs.state.okAt = at
+	}
 	hs.state.Unlock()
 }
 

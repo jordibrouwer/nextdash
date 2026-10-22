@@ -1063,6 +1063,23 @@ button.glances-row-link {
 
 [data-glances-host-new][hidden] { display: none; }
 
+/* ── Hosts: one row per host ── */
+.glances-hosts-name { white-space: nowrap; }
+.glances-hosts-dot { display: inline-block; width: 0.55rem; height: 0.55rem; margin-right: 0.6rem; border-radius: 50%; background: var(--text-muted); }
+.glances-hosts-dot[data-level="ok"] { background: var(--accent-success, #4caf50); }
+.glances-hosts-dot[data-level="warn"] { background: var(--accent-warning); }
+.glances-hosts-dot[data-level="bad"] { background: var(--accent-error); }
+.glances-hosts-cell { white-space: nowrap; }
+.glances-hosts-bar { display: inline-block; width: 5rem; height: 0.4rem; margin-right: 0.5rem; border-radius: 0.2rem; background: color-mix(in srgb, var(--text-primary) 10%, transparent); vertical-align: middle; overflow: hidden; }
+.glances-hosts-bar i { display: block; height: 100%; background: var(--accent-primary); }
+.glances-hosts-bar i[data-tone="warn"] { background: var(--accent-warning); }
+.glances-hosts-bar i[data-tone="bad"] { background: var(--accent-error); }
+.glances-hosts-num { font-variant-numeric: tabular-nums; }
+.glances-hosts-cell[data-tone="warn"] { color: var(--accent-warning); }
+.glances-hosts-cell[data-tone="bad"] { color: var(--accent-error); }
+.glances-hosts-note { color: var(--text-secondary); }
+.glances-hosts-note--bad { color: var(--accent-error); }
+
 .glances-incident-layer { position: absolute; inset: 0; pointer-events: none; }
 
 /* A moment a container started again: a thin dashed line, with its time as the title. */

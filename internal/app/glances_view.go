@@ -364,6 +364,7 @@ func registerGlancesViewRoutes(r *mux.Router, h *Handlers) {
 	r.HandleFunc("/api/glances/config", glancesNotInDemo(h.glancesConfigHandler)).Methods("GET", "PUT", "DELETE", "OPTIONS")
 	r.HandleFunc("/api/glances/connect", glancesNotInDemo(h.glancesConnectHandler)).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/glances/status", h.glancesStatusHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/glances/hosts", glancesNotInDemo(h.glancesHostsHandler)).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/glances/history", glancesNotInDemo(h.glancesHistoryHandler)).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/glances/docker-link", glancesNotInDemo(h.glancesDockerLinkHandler)).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/glances/history.csv", glancesNotInDemo(glancesHistoryCSV)).Methods("GET")

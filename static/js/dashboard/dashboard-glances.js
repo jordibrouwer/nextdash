@@ -64,7 +64,7 @@
         paused: ['dashboard.glancesErrPaused', 'The connection is off. Switch it on to read the host again.'],
     };
     /** Paths nextDash answers from its own record: they work with the connection off. */
-    const LOCAL_PATH = /^(history|insights)(\?|$)/;
+    const LOCAL_PATH = /^(history|insights|hosts)(\?|$)/;
 
     class DashboardGlances {
         static VIEW = 'glances';
@@ -388,7 +388,9 @@
 
         /** Sections the host runs, in menu order. Unknown plugins (no probe) leave all in. */
         availableSections() {
-            return Sections.list().filter((def) => !def.plugin || !this.plugins || this.plugins.has(def.plugin));
+            return Sections.list()
+                .filter((def) => !def.plugin || !this.plugins || this.plugins.has(def.plugin))
+                .filter((def) => typeof def.visible !== 'function' || def.visible(this));
         }
 
         sectionLabel(def) {
@@ -476,14 +478,14 @@
         }
 
         /** Look at another host: its record, its settings, its sections. */
-        async switchHost(id) {
+        async switchHost(id, section = this.section) {
             const Host = window.DashboardGlancesHost;
             if (!Host) return;
             const first = this.dash.glancesStatus?.hosts?.[0]?.id;
             Host.set(id === first ? '' : id);
             this.detail?.close?.();
             this.seriesNames = [];
-            await this.openGlancesView({ section: this.section, reload: true });
+            await this.openGlancesView({ section, reload: true });
             this.writeHash();
         }
 
