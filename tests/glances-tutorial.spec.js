@@ -121,6 +121,7 @@ test.describe('glances page tour', () => {
         }, TIP);
         await page.evaluate(() => window.dashboardInstance.glances.openGlancesView({}));
         await expect(page.locator('#dashboard-layout.glances-layout [data-glances-body]')).toBeVisible();
+        // Checks that no tour opens: it would open within this time, and a check that ran at once would pass either way.
         await page.waitForTimeout(700);
         await expect(modal(page)).toHaveCount(0);
     });
@@ -136,6 +137,7 @@ test.describe('glances page tour', () => {
         await prepareDashboardInteraction(page);
         await page.evaluate(() => window.dashboardInstance.glances.openGlancesView({}));
         await expect(page.locator('#dashboard-layout.glances-layout [data-glances-body]')).toBeVisible();
+        // Checks that nothing is requested: a request would be sent within this time, and a check that ran at once would pass either way.
         await page.waitForTimeout(700);
         expect(requested).toEqual([]);
     });

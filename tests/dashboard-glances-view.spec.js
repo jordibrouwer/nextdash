@@ -891,6 +891,7 @@ test.describe('the connection switch', () => {
         await expect(page.locator('[data-glances-status="stale"]')).toContainText('connection is off');
         await expect(page.locator('[data-glances-card="cpu"] .glances-card-value')).toBeVisible();
         const quick1 = count(state, 'quicklook');
+        // The test is about time: with the connection off nothing may be read, and the wait is longer than a refresh interval.
         await page.waitForTimeout(2500);
         expect(count(state, 'quicklook')).toBe(quick1);
         expect(quick1).toBeGreaterThanOrEqual(quick0);
@@ -1451,10 +1452,12 @@ test.describe('the public demo has no Glances', () => {
         await expect(page.locator('#page-nav-glances-link')).toHaveCount(0);
         await page.locator('body').click({ position: { x: 5, y: 5 } });
         await page.keyboard.press('Shift+G');
+        // Checks that nothing happens: the key must not open the view, and a check that ran at once would pass either way.
         await page.waitForTimeout(400);
         expect(await page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
 
         await page.goto('/#glances');
+        // Checks that nothing happens: the route must not open the view, and a check that ran at once would pass either way.
         await page.waitForTimeout(800);
         await expect(page.locator('#dashboard-layout.glances-layout')).toHaveCount(0);
 
@@ -1686,6 +1689,7 @@ test.describe('Glances page: names, focus and contrast', () => {
             for (const id of SECTIONS) {
                 await openView(page, `#glances/${id}`);
                 if (theme) await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
+                // The theme attribute has no event to wait on; its repaint takes a frame or two.
                 await page.waitForTimeout(400);
                 // The view rises in on arrival; text is read once it has settled.
                 await expect(page.locator('body')).not.toHaveAttribute('data-view-entering', /.+/);

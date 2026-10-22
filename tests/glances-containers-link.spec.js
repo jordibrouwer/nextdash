@@ -74,6 +74,7 @@ test.describe('Glances in the Containers view', () => {
         await mockGlancesLink(page, { link: { ...LINK, same: false, reason: 'different-name', matches: [] } });
         await openResources(page);
         await expect(page.locator('[data-docker-cpu]')).toBeVisible();
+        // Checks that nothing is drawn: the embed would appear within this time, and a check that ran at once would pass either way.
         await page.waitForTimeout(600);
         await expect(page.locator('[data-glances-embed]')).toHaveCount(0);
         await expect(page.locator('.docker-glances')).toBeHidden();

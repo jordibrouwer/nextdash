@@ -46,6 +46,7 @@ test.describe('the first letter of a search', () => {
         await open(page);
         await page.keyboard.press('ArrowDown');
         await page.keyboard.press('j');
+        // The test is about time: the stray j came from a key pressed a moment after the walk, so the pause stands for that gap.
         await page.waitForTimeout(120);
         await page.keyboard.type('immich', { delay: 60 });
         await expect(query(page)).toHaveText('immich');
@@ -56,6 +57,7 @@ test.describe('the first letter of a search', () => {
         await page.keyboard.press('ArrowDown');
         const before = await page.evaluate(() => window.dashboardInstance.keyboardNavigation.currentIndex);
         await page.keyboard.press('j');
+        // Checks that nothing opens: a search that a lone j started would show within this time.
         await page.waitForTimeout(600);
         const after = await page.evaluate(() => window.dashboardInstance.keyboardNavigation.currentIndex);
         expect(after).toBe(before + 1);

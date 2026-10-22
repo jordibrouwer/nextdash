@@ -32,6 +32,9 @@ const EXEMPT = new Map([
     // Only runs with MANUAL_SHOTS set and never in CI; the sleeps let the page
     // settle visually before a screenshot for the manual is taken.
     ['manual-screenshots.spec.js', 'screenshots for the manual, never run in CI'],
+    ['manual-screenshots-glances.spec.js', 'screenshots for the manual, never run in CI'],
+    ['manual-screenshots-v1-21.spec.js', 'screenshots for the manual, never run in CI'],
+    ['readme-screenshots.spec.js', 'screenshots for the README, never run in CI'],
 ]);
 
 const SLEEP = /\bwaitForTimeout\s*\(/;

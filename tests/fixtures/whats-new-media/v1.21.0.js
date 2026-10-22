@@ -19,15 +19,19 @@ module.exports = {
                 // The tour is offered once on a first visit; settle closes it with Escape, as a reader would.
                 await page.waitForTimeout(1_500);
                 await settle(page);
+                // Pacing for the capture, not a condition: the frame is taken after the page has had time to draw.
                 await page.waitForTimeout(800);
             },
             async act(page) {
+                // Pacing for the capture, not a condition: the frame is taken after the page has had time to draw.
                 await page.waitForTimeout(1_200);
                 await page.locator('[data-glances-section="processes"]').click();
                 await page.locator('[data-glances-pid]').first().waitFor();
+                // Pacing for the capture, not a condition: the frame is taken after the page has had time to draw.
                 await page.waitForTimeout(900);
                 await page.locator('[data-glances-pid]', { hasText: 'jellyfin' }).first().click();
                 await page.locator('[data-glances-drawer]').first().waitFor({ state: 'visible' });
+                // Pacing for the capture, not a condition: the frame is taken after the page has had time to draw.
                 await page.waitForTimeout(2_000);
             },
         },
@@ -54,6 +58,7 @@ module.exports = {
                 const last = await page.evaluate(() => window.dashboardInstance.pages.length);
                 await openDashboard(page, `#${last}`);
                 await page.locator('[data-widget-type="domains"] .dashboard-widget-row').first().waitFor();
+                // Pacing for the capture, not a condition: the frame is taken after the page has had time to draw.
                 await page.waitForTimeout(800);
                 await settle(page);
             },
@@ -79,6 +84,7 @@ module.exports = {
                 const last = await page.evaluate(() => window.dashboardInstance.pages.length);
                 await openDashboard(page, `#${last}`);
                 await page.locator('[data-widget-type="glances"] svg.dashboard-widget-glances-spark path').waitFor();
+                // Pacing for the capture, not a condition: the frame is taken after the page has had time to draw.
                 await page.waitForTimeout(1_000);
                 await settle(page);
             },
