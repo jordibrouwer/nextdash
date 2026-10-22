@@ -90,6 +90,11 @@ type glancesHost struct {
 	removed atomic.Bool
 	// notices remembers what was announced, so a reading hovering at its red line is not a stream of notices.
 	notices glancesNoticeMemory
+	// forecast remembers which disks were announced as filling up.
+	forecast glancesForecastMemory
+	// autoSeen is when each item last was among the busiest, so automatic picks stay recorded for hours.
+	autoMu   sync.Mutex
+	autoSeen map[string]int64
 	// wake tells this host's sampler its pace or settings changed.
 	wake chan struct{}
 }
@@ -170,7 +175,9 @@ type glancesHostRow struct {
 	OK         bool   `json:"ok"`
 	At         int64  `json:"at"`
 	// LastOK is the last time the host answered, for "not answering since".
-	LastOK    int64    `json:"lastOk"`
+	LastOK int64 `json:"lastOk"`
+	// Every is how often the host is recorded, in milliseconds: a reading is as old as that and no older.
+	Every     int64    `json:"every,omitempty"`
 	CPU       *float64 `json:"cpu"`
 	Mem       *float64 `json:"mem"`
 	Disk      *float64 `json:"disk"`
@@ -230,8 +237,11 @@ func glancesHostRows() []glancesHostRow {
 			level, ok = "unknown", false
 		}
 		cpu, mem, disk, mount, temp := hs.lastValues()
+		hs.beat.Lock()
+		every := hs.beat.every.Milliseconds()
+		hs.beat.Unlock()
 		rows = append(rows, glancesHostRow{
-			ID: c.ID, Name: glancesHostName(c), Configured: c.configured(), Paused: c.Paused, Level: level, OK: ok, At: at, LastOK: lastOK,
+			ID: c.ID, Name: glancesHostName(c), Configured: c.configured(), Paused: c.Paused, Level: level, OK: ok, At: at, LastOK: lastOK, Every: every,
 			CPU: cpu, Mem: mem, Disk: disk, DiskMount: mount, Temp: temp,
 		})
 	}

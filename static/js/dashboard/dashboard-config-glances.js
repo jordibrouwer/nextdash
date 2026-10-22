@@ -46,6 +46,7 @@
         ['mem', 'config.glancesNotifyMem', 'Memory or swap goes past its red line'],
         ['disk', 'config.glancesNotifyDisk', 'A disk goes past its red line'],
         ['temp', 'config.glancesNotifyTemp', 'A temperature goes past its red line'],
+        ['full', 'config.glancesNotifyFull', 'A disk is on its way to full within a week'],
     ];
 
     Object.assign(global.DashboardConfig.prototype, {
@@ -180,6 +181,22 @@
                             <summary>${t('glancesLinkWhat', 'What matched')}</summary>
                             <p class="config-field-hint" data-glances-link-only></p>
                         </details>
+                    </div>
+
+                    <div class="config-panel" data-glances-section>
+                        <h3 class="config-panel-title">${t('glancesAutoTitle', 'Processes and containers')}</h3>
+                        <p class="config-panel-note">${t('glancesAutoNote',
+                            'The history of a process or container is recorded when you switch it on in its side panel. Here nextDash can also record the busiest ones by itself.')}</p>
+                        <div class="config-field">
+                            <label class="config-field-label" for="config-glances-auto">${t('glancesAutoField', 'Record the busiest by itself')}</label>
+                            <select id="config-glances-auto" class="config-select" data-glances-field="autoRecord">
+                                <option value="0">${t('glancesAutoOff', 'Off')}</option>
+                                <option value="3">${t('glancesAuto3', 'The 3 busiest containers and processes')}</option>
+                                <option value="5">${t('glancesAuto5', 'The 5 busiest containers and processes')}</option>
+                            </select>
+                        </div>
+                        <p class="config-field-hint">${t('glancesAutoHint',
+                            'Which ones change with what is busy, so their lines have gaps where they were not. Those you chose yourself are always recorded. The host is read every beat while this is on.')}</p>
                     </div>
 
                     <div class="config-panel" data-glances-section>
@@ -337,6 +354,7 @@
             field('refresh').value = String(cfg.refresh || 2);
             field('dockerLink').value = cfg.dockerLink || 'auto';
             field('useForContainers').checked = cfg.keepDockerStats !== true;
+            field('autoRecord').value = String(cfg.autoRecord || 0);
             const hidden = new Set(cfg.hiddenBlocks || []);
             root.querySelectorAll('[data-glances-block]').forEach((box) => {
                 box.checked = !hidden.has(box.getAttribute('data-glances-block'));
@@ -447,6 +465,7 @@
                 refresh: Number(field('refresh').value) || 2,
                 dockerLink: field('dockerLink').value || 'auto',
                 keepDockerStats: !field('useForContainers').checked,
+                autoRecord: Number(field('autoRecord').value) || 0,
                 hiddenBlocks,
                 notify,
                 thresholds,

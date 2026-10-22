@@ -726,3 +726,61 @@ func TestGlancesNotifySettingSurvivesPartialSaves(t *testing.T) {
 		t.Errorf("an empty list: %v", got)
 	}
 }
+
+// The busiest are recorded on top of the ones chosen: three of each kind, by CPU, and no stopped container.
+func TestGlancesWithBusiestAddsTheTopOnes(t *testing.T) {
+	f := func(v float64) *float64 { return &v }
+	procs := []glancesProc{{Name: "a", CPU: f(5)}, {Name: "a", CPU: f(30)}, {Name: "b", CPU: f(20)}, {Name: "c", CPU: f(2)}, {Name: "d", CPU: f(1)}}
+	cts := []glancesContainer{
+		{Name: "x", Status: "running", CPUPercent: f(1)}, {Name: "y", Status: "running", CPUPercent: f(9)},
+		{Name: "z", Status: "exited", CPUPercent: f(99)}, {Name: "w", Status: "running", CPUPercent: f(4)}, {Name: "v", Status: "running", CPUPercent: f(3)},
+	}
+	got := glancesWithBusiest(map[string]bool{"ct:mine": true}, procs, cts, 3)
+	for _, want := range []string{"ct:mine", "proc:a", "proc:b", "proc:c", "ct:y", "ct:w", "ct:v"} {
+		if !got[want] {
+			t.Errorf("%s is not recorded: %v", want, got)
+		}
+	}
+	for _, not := range []string{"proc:d", "ct:x", "ct:z"} {
+		if got[not] {
+			t.Errorf("%s was recorded: %v", not, got)
+		}
+	}
+	if normalizeGlancesConfig(GlancesConfig{AutoRecord: 4}).AutoRecord != 0 || normalizeGlancesConfig(GlancesConfig{AutoRecord: 5}).AutoRecord != 5 {
+		t.Error("only 3 and 5 are offered")
+	}
+}
+
+func TestGlancesAutoPicksStayRecordedForHours(t *testing.T) {
+	hs := newGlancesHost("auto")
+	f := func(v float64) *float64 { return &v }
+	now := time.Now().UnixMilli()
+	first := hs.withStickyBusiest(map[string]bool{"ct:mine": true}, []glancesProc{{Name: "a", CPU: f(50)}}, nil, 3, now)
+	if !first["proc:a"] || !first["ct:mine"] {
+		t.Fatalf("first beat: %v", first)
+	}
+	// Another process is busiest an hour later: the first is still recorded.
+	later := hs.withStickyBusiest(map[string]bool{}, []glancesProc{{Name: "b", CPU: f(50)}}, nil, 3, now+3600*1000)
+	if !later["proc:a"] || !later["proc:b"] {
+		t.Errorf("an hour later: %v", later)
+	}
+	// Seven hours on, the first has been quiet too long.
+	gone := hs.withStickyBusiest(map[string]bool{}, []glancesProc{{Name: "c", CPU: f(50)}}, nil, 3, now+7*3600*1000)
+	if gone["proc:a"] || !gone["proc:c"] {
+		t.Errorf("seven hours on: %v", gone)
+	}
+}
+
+func TestGlancesForecastIsNotClearAtAFullDisk(t *testing.T) {
+	hs := newGlancesHost("full")
+	hs.forecast.sent = map[string]bool{"/mnt/disk1": true}
+	now := time.Now()
+	start := now.Add(-3 * 24 * time.Hour)
+	steps := int(now.Sub(start) / (30 * time.Second))
+	for i := 0; i <= steps; i++ {
+		hs.record(start.Add(time.Duration(i)*30*time.Second).UnixMilli(), map[string]float64{"fs:/mnt/disk1": 100})
+	}
+	if got := hs.forecastNotices(GlancesConfig{ID: "full", Name: "NAS"}, now); len(got) != 0 {
+		t.Errorf("a disk at 100%% said it was no longer filling up: %+v", got)
+	}
+}

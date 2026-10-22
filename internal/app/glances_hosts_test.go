@@ -381,3 +381,40 @@ func TestGlancesHostsOverviewFromTheRecord(t *testing.T) {
 		t.Errorf("an address in the overview: %s", rec.Body)
 	}
 }
+
+// A disk filling up within a week is announced once, and again as clear when it stops.
+func TestGlancesForecastNoticesAreOnceAndHourly(t *testing.T) {
+	hs := newGlancesHost("fc")
+	cfg := GlancesConfig{ID: "fc", Name: "NAS", Notify: []string{"full"}}
+	now := time.Now()
+	start := now.Add(-3 * 24 * time.Hour)
+	// 70% three days ago to 88% now: six points a day, so full in about two days.
+	steps := int(now.Sub(start) / (30 * time.Second))
+	for i := 0; i <= steps; i++ {
+		at := start.Add(time.Duration(i) * 30 * time.Second)
+		hs.record(at.UnixMilli(), map[string]float64{"fs:/mnt/disk1": 70 + 18*float64(i)/float64(steps)})
+	}
+	got := hs.forecastNotices(cfg, now)
+	if len(got) != 1 || got[0].Event != "down" || !strings.Contains(got[0].Title, "/mnt/disk1 will be full in about") || got[0].Host != "fc" {
+		t.Fatalf("first look: %+v", got)
+	}
+	if again := hs.forecastNotices(cfg, now.Add(10*time.Minute)); again != nil {
+		t.Errorf("a second look within the hour: %+v", again)
+	}
+	if later := hs.forecastNotices(cfg, now.Add(2*time.Hour)); len(later) != 0 {
+		t.Errorf("announced again while it still fills: %+v", later)
+	}
+	if !cfg.notifies("full") || (GlancesConfig{}).notifies("full") {
+		t.Error("the kind is off unless chosen")
+	}
+	// A disk that no longer fills is announced as clear.
+	flat := newGlancesHost("flat")
+	flat.forecast.sent = map[string]bool{"/mnt/disk1": true}
+	for i := 0; i <= steps; i++ {
+		at := start.Add(time.Duration(i) * 30 * time.Second)
+		flat.record(at.UnixMilli(), map[string]float64{"fs:/mnt/disk1": 50})
+	}
+	if clear := flat.forecastNotices(GlancesConfig{ID: "flat", Name: "NAS"}, now); len(clear) != 1 || clear[0].Event != "up" {
+		t.Errorf("clear: %+v", clear)
+	}
+}

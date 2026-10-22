@@ -125,6 +125,9 @@ type GlancesConfig struct {
 	// DockerLink says whether this Glances host is the machine whose Docker the
 	// Containers view manages: auto, yes or no (glances_docker.go).
 	DockerLink string `json:"dockerLink,omitempty"`
+	// AutoRecord is how many of the busiest containers and processes are recorded on top of the
+	// ones chosen by hand: 0 (off), 3 or 5. They change with what is busy.
+	AutoRecord int `json:"autoRecord,omitempty"`
 	// KeepDockerStats keeps the Containers view on Docker's own readings of CPU,
 	// memory and network even when this host is the Docker host (glances_docker.go).
 	KeepDockerStats bool   `json:"keepDockerStats,omitempty"`
@@ -220,6 +223,9 @@ func normalizeGlancesConfig(c GlancesConfig) GlancesConfig {
 	}
 	c.RecordEvery = normalizeGlancesRecord(c.RecordEvery)
 	c.RetentionDays = normalizeGlancesRetention(c.RetentionDays)
+	if c.AutoRecord != 3 && c.AutoRecord != 5 {
+		c.AutoRecord = 0
+	}
 	c.DockerLink = normalizeGlancesLink(c.DockerLink)
 
 	known := map[string]bool{}
@@ -307,6 +313,7 @@ type glancesHostRecord struct {
 	RetentionDays   int      `json:"retentionDays,omitempty"`
 	DockerLink      string   `json:"dockerLink,omitempty"`
 	KeepDockerStats bool     `json:"keepDockerStats,omitempty"`
+	AutoRecord      int      `json:"autoRecord,omitempty"`
 	Notify          []string `json:"notify,omitempty"`
 	TrackedHistory  []string `json:"trackedHistory,omitempty"`
 }
@@ -340,7 +347,7 @@ func (r glancesHostRecord) displayName() string {
 func (f glancesFile) config(r glancesHostRecord) GlancesConfig {
 	return GlancesConfig{
 		ID: r.ID, Name: r.Name, Enabled: f.Enabled, Paused: r.Paused, RecordEvery: r.RecordEvery, RetentionDays: r.RetentionDays,
-		DockerLink: r.DockerLink, KeepDockerStats: r.KeepDockerStats, Server: r.Server, User: r.User, Refresh: f.Refresh, HiddenBlocks: f.HiddenBlocks,
+		DockerLink: r.DockerLink, KeepDockerStats: r.KeepDockerStats, AutoRecord: r.AutoRecord, Server: r.Server, User: r.User, Refresh: f.Refresh, HiddenBlocks: f.HiddenBlocks,
 		Notify: r.Notify, Thresholds: f.Thresholds, DiskStrip: f.DiskStrip, DiskHide: f.DiskHide, TrackedHistory: r.TrackedHistory,
 	}
 }
@@ -348,7 +355,7 @@ func (f glancesFile) config(r glancesHostRecord) GlancesConfig {
 func (c GlancesConfig) record() glancesHostRecord {
 	return glancesHostRecord{
 		ID: c.ID, Name: c.Name, Server: c.Server, User: c.User, Paused: c.Paused, RecordEvery: c.RecordEvery,
-		RetentionDays: c.RetentionDays, DockerLink: c.DockerLink, KeepDockerStats: c.KeepDockerStats, Notify: c.Notify, TrackedHistory: c.TrackedHistory,
+		RetentionDays: c.RetentionDays, DockerLink: c.DockerLink, KeepDockerStats: c.KeepDockerStats, AutoRecord: c.AutoRecord, Notify: c.Notify, TrackedHistory: c.TrackedHistory,
 	}
 }
 

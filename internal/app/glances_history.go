@@ -707,6 +707,10 @@ func (h *Handlers) glancesSampleHost(ctx context.Context, hs *glancesHost) {
 		wantProcs = wantProcs || strings.HasPrefix(key, "proc:")
 		wantContainers = wantContainers || strings.HasPrefix(key, "ct:")
 	}
+	// The busiest are recorded as well, when asked for, so both are read.
+	if cfg.AutoRecord > 0 {
+		wantProcs, wantContainers = true, true
+	}
 	if wantProcs {
 		_ = h.glancesAsk(ctx, cfg, "processlist/top/"+strconv.Itoa(glancesTrackedScan), &procs)
 	}
@@ -783,9 +787,14 @@ func (h *Handlers) glancesSampleHost(ctx context.Context, hs *glancesHost) {
 		}
 		put("fs:"+f.MntPoint, f.Percent)
 	}
+	if cfg.AutoRecord > 0 {
+		tracked = hs.withStickyBusiest(tracked, procs, containers, cfg.AutoRecord, now)
+		hs.setTracked(tracked)
+	}
 	glancesConsumers(readings, procs, containers, tracked)
 	hs.record(now, readings)
 	h.glancesNotify(ctx, cfg, hs.observe(now, glancesObservations(cfg, quick, fs, sensors)))
+	h.glancesNotifyForecast(ctx, cfg, hs)
 	hs.setState(now, true, glancesLevel(cfg, quick, fs, sensors), "")
 }
 
@@ -944,6 +953,87 @@ func glancesConsumers(readings map[string]float64, procs []glancesProc, containe
 			readings["ct:"+c.Name+":tx"] = *c.NetworkTX
 		}
 	}
+}
+
+// glancesAutoKeep is how long an item that was once among the busiest stays
+// recorded: its line lives hours, not one beat, and room is made from items
+// that are neither chosen nor recent.
+const glancesAutoKeep = 6 * 3600 * 1000
+
+// withStickyBusiest is tracked plus this beat's busiest, and those that were
+// among the busiest within glancesAutoKeep (at most three times n, the newest).
+func (hs *glancesHost) withStickyBusiest(tracked map[string]bool, procs []glancesProc, containers []glancesContainer, n int, now int64) map[string]bool {
+	hs.autoMu.Lock()
+	defer hs.autoMu.Unlock()
+	if hs.autoSeen == nil {
+		hs.autoSeen = map[string]int64{}
+	}
+	for key := range glancesWithBusiest(nil, procs, containers, n) {
+		hs.autoSeen[key] = now
+	}
+	keys := make([]string, 0, len(hs.autoSeen))
+	for key, at := range hs.autoSeen {
+		if now-at > glancesAutoKeep {
+			delete(hs.autoSeen, key)
+			continue
+		}
+		keys = append(keys, key)
+	}
+	sort.Slice(keys, func(i, j int) bool { return hs.autoSeen[keys[i]] > hs.autoSeen[keys[j]] })
+	if len(keys) > 3*n {
+		for _, key := range keys[3*n:] {
+			delete(hs.autoSeen, key)
+		}
+		keys = keys[:3*n]
+	}
+	out := make(map[string]bool, len(tracked)+len(keys))
+	for key := range tracked {
+		out[key] = true
+	}
+	for _, key := range keys {
+		out[key] = true
+	}
+	return out
+}
+
+// glancesWithBusiest adds the n busiest running containers and the n busiest
+// process names of this beat to the items that are recorded.
+func glancesWithBusiest(tracked map[string]bool, procs []glancesProc, containers []glancesContainer, n int) map[string]bool {
+	out := make(map[string]bool, len(tracked)+2*n)
+	for key := range tracked {
+		out[key] = true
+	}
+	byName := map[string]float64{}
+	for _, p := range procs {
+		if p.Name != "" && p.CPU != nil {
+			byName[p.Name] += *p.CPU
+		}
+	}
+	names := make([]string, 0, len(byName))
+	for name := range byName {
+		names = append(names, name)
+	}
+	sort.Slice(names, func(i, j int) bool { return byName[names[i]] > byName[names[j]] })
+	for i, name := range names {
+		if i >= n {
+			break
+		}
+		out["proc:"+name] = true
+	}
+	running := make([]glancesContainer, 0, len(containers))
+	for _, c := range containers {
+		if c.Name != "" && strings.EqualFold(c.Status, "running") && c.CPUPercent != nil {
+			running = append(running, c)
+		}
+	}
+	sort.Slice(running, func(i, j int) bool { return *running[i].CPUPercent > *running[j].CPUPercent })
+	for i, c := range running {
+		if i >= n {
+			break
+		}
+		out["ct:"+c.Name] = true
+	}
+	return out
 }
 
 // glancesObservations are this beat's readings against the red lines.

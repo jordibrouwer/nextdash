@@ -21,7 +21,8 @@ source "glances".
 
 // glancesNotifyKinds are the incident kinds a notice can be switched on for.
 // A swap incident is part of "mem".
-var glancesNotifyKinds = []string{"down", "cpu", "mem", "disk", "temp"}
+// "full" is not an incident: a disk that is on its way to full within a week.
+var glancesNotifyKinds = []string{"down", "cpu", "mem", "disk", "temp", "full"}
 
 func normalizeGlancesNotify(kinds []string) []string {
 	known := map[string]bool{}
@@ -197,4 +198,90 @@ func glancesPushURL(n monitorNotification) string {
 		return "/#glances/insights"
 	}
 	return "/#glances/insights?host=" + n.Host
+}
+
+/*
+Disks on their way to full.
+
+Insights already works out, from the last week of a disk, when it will be full.
+A notice for that is sent when the answer is within a week, once per disk, and
+another when it no longer is: sooner than an incident, and before there is
+anything to clean up in a hurry. It is looked at once an hour, and only when
+the kind is switched on.
+*/
+
+const (
+	glancesForecastEvery = time.Hour
+	// glancesForecastDays is how near "full" has to be to be announced; a disk
+	// is announced as clear again only beyond glancesForecastClear.
+	glancesForecastDays  = 7
+	glancesForecastClear = 10
+	// glancesForecastMinHours is how much of a disk's record a slope needs to be believed.
+	glancesForecastMinHours = 24
+)
+
+// glancesForecastMemory is the disks announced as filling up.
+type glancesForecastMemory struct {
+	sync.Mutex
+	last time.Time
+	sent map[string]bool
+}
+
+// forecastNotices are the notices a look at the disks brings, and none until an hour has passed.
+func (hs *glancesHost) forecastNotices(cfg GlancesConfig, now time.Time) []monitorNotification {
+	hs.forecast.Lock()
+	defer hs.forecast.Unlock()
+	if !hs.forecast.last.IsZero() && now.Sub(hs.forecast.last) < glancesForecastEvery {
+		return nil
+	}
+	hs.forecast.last = now
+	if hs.forecast.sent == nil {
+		hs.forecast.sent = map[string]bool{}
+	}
+	host := glancesNoticeHost(cfg)
+	var out []monitorNotification
+	forecasts := glancesComputeForecast(hs.snapshot(), now)
+	// A disk that left the forecast (unplugged, wiped) is forgotten, not announced.
+	listed := map[string]bool{}
+	for _, f := range forecasts {
+		listed[f.Mount] = true
+	}
+	for mount := range hs.forecast.sent {
+		if !listed[mount] {
+			delete(hs.forecast.sent, mount)
+		}
+	}
+	for _, f := range forecasts {
+		near := f.DaysToFull != nil && *f.DaysToFull <= glancesForecastDays && f.Hours >= glancesForecastMinHours
+		// A disk at its limit has no days to full left: that is not the all-clear.
+		clear := (f.DaysToFull == nil && f.Percent < 95) || (f.DaysToFull != nil && *f.DaysToFull > glancesForecastClear)
+		switch {
+		case near && !hs.forecast.sent[f.Mount]:
+			hs.forecast.sent[f.Mount] = true
+			out = append(out, monitorNotification{
+				Event: "down", Status: "warning", Source: noticeSourceGlances, Host: cfg.ID, At: now.UnixMilli(),
+				Name:  host + " " + f.Mount + " forecast",
+				Title: fmt.Sprintf("%s: %s will be full in about %d days", host, f.Mount, *f.DaysToFull),
+				Error: fmt.Sprintf("now %d%%, %+.1f%% a day", int(f.Percent+0.5), f.SlopeDay),
+			})
+		case clear && hs.forecast.sent[f.Mount]:
+			delete(hs.forecast.sent, f.Mount)
+			out = append(out, monitorNotification{
+				Event: "up", Status: "online", Source: noticeSourceGlances, Host: cfg.ID, At: now.UnixMilli(),
+				Name:  host + " " + f.Mount + " forecast",
+				Title: fmt.Sprintf("%s: %s is no longer filling up", host, f.Mount),
+			})
+		}
+	}
+	return out
+}
+
+// glancesNotifyForecast sends what the disks' forecast brings, when that kind is on.
+func (h *Handlers) glancesNotifyForecast(ctx context.Context, cfg GlancesConfig, hs *glancesHost) {
+	if !cfg.notifies("full") {
+		return
+	}
+	if notices := hs.forecastNotices(cfg, time.Now()); len(notices) > 0 {
+		h.dispatchGlancesNotices(ctx, notices)
+	}
 }
