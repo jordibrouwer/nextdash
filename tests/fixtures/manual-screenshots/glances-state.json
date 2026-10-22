@@ -1,0 +1,694 @@
+{
+ "config": {
+  "enabled": true,
+  "server": "http://192.168.1.10:61208",
+  "user": "",
+  "refresh": 2,
+  "hiddenBlocks": [],
+  "thresholds": {
+   "cpuWarn": 80,
+   "cpuBad": 90,
+   "memWarn": 80,
+   "memBad": 90,
+   "swapWarn": 80,
+   "swapBad": 90,
+   "diskWarn": 80,
+   "diskBad": 90,
+   "tempWarn": 70,
+   "tempBad": 85
+  },
+  "diskStrip": "",
+  "diskHide": [],
+  "hasPassword": false,
+  "blocks": [
+   "system",
+   "figures",
+   "cores",
+   "temps",
+   "network",
+   "diskio",
+   "disks",
+   "smart",
+   "processes",
+   "containers",
+   "alerts"
+  ],
+  "collected": {
+   "series": 64,
+   "points": 412800,
+   "since": 0,
+   "incidents": 3,
+   "keepDays": 30
+  },
+  "trackedHistory": [],
+  "autoRecord": 0,
+  "dockerLink": "auto",
+  "useForContainers": true,
+  "notify": [
+   "down",
+   "cpu",
+   "disk",
+   "full"
+  ]
+ },
+ "hosts": [
+  {
+   "id": "main",
+   "name": "homelab",
+   "server": "http://192.168.1.10:61208",
+   "cpu": 33,
+   "mem": 58,
+   "disk": 89,
+   "diskMount": "/mnt/media",
+   "temp": 58,
+   "level": "warn",
+   "ok": true
+  },
+  {
+   "id": "vps",
+   "name": "vps",
+   "server": "http://10.0.0.2:61208",
+   "cpu": 9,
+   "mem": 34,
+   "disk": 41,
+   "diskMount": "/",
+   "temp": null,
+   "level": "ok",
+   "ok": true
+  },
+  {
+   "id": "pi",
+   "name": "pi-garage",
+   "server": "http://192.168.1.31:61208",
+   "cpu": 4,
+   "mem": 22,
+   "disk": 17,
+   "diskMount": "/",
+   "temp": 49,
+   "level": "ok",
+   "ok": true
+  }
+ ],
+ "link": {
+  "mode": "auto",
+  "same": true,
+  "reason": "same-name",
+  "glancesHost": "homelab",
+  "dockerHost": "homelab",
+  "matches": [
+   {
+    "glances": "jellyfin",
+    "docker": "jellyfin",
+    "dockerId": "000000000000",
+    "by": "id"
+   },
+   {
+    "glances": "sonarr",
+    "docker": "sonarr",
+    "dockerId": "000000000001",
+    "by": "id"
+   },
+   {
+    "glances": "radarr",
+    "docker": "radarr",
+    "dockerId": "000000000002",
+    "by": "id"
+   },
+   {
+    "glances": "paperless",
+    "docker": "paperless",
+    "dockerId": "000000000003",
+    "by": "id"
+   },
+   {
+    "glances": "vaultwarden",
+    "docker": "vaultwarden",
+    "dockerId": "000000000004",
+    "by": "id"
+   },
+   {
+    "glances": "immich-server",
+    "docker": "immich-server",
+    "dockerId": "000000000005",
+    "by": "name"
+   }
+  ],
+  "onlyGlances": [
+   "qbittorrent",
+   "adguard"
+  ],
+  "onlyDocker": [
+   "nextdash"
+  ],
+  "byId": 5,
+  "byName": 1
+ },
+ "insights": {
+  "range": "24h",
+  "health": {
+   "score": 84,
+   "level": "good",
+   "factors": [
+    {
+     "key": "disk",
+     "value": 88.6,
+     "penalty": 9
+    },
+    {
+     "key": "cpu",
+     "value": 34,
+     "penalty": 4
+    }
+   ],
+   "trendCpu": 2.1
+  },
+  "forecast": [
+   {
+    "mount": "/mnt/media",
+    "percent": 88.6,
+    "slopePerDay": 0.35,
+    "daysToFull": 32,
+    "hours": 160
+   },
+   {
+    "mount": "/mnt/data",
+    "percent": 71.3,
+    "slopePerDay": 0.1,
+    "hours": 160
+   },
+   {
+    "mount": "/",
+    "percent": 38.2,
+    "slopePerDay": 0,
+    "hours": 160
+   }
+  ],
+  "memory": {
+   "slopePerDay": 0.2,
+   "r2": 0.3,
+   "leak": false
+  },
+  "stats": {
+   "cpu": {
+    "avg": 31,
+    "p50": 28,
+    "p95": 62,
+    "p99": 79,
+    "max": 93,
+    "n": 2880
+   },
+   "mem": {
+    "avg": 56,
+    "p50": 56,
+    "p95": 61,
+    "p99": 63,
+    "max": 66,
+    "n": 2880
+   }
+  },
+  "baseline": [
+   {
+    "key": "cpu",
+    "now": 34,
+    "typical": 30,
+    "ratio": 1.1
+   }
+  ],
+  "heatmap": {
+   "metric": "cpu",
+   "unit": "%",
+   "max": 70,
+   "days": [
+    {
+     "date": "2026-10-01",
+     "hours": [
+      24,
+      35,
+      51,
+      60,
+      51,
+      35,
+      24,
+      21,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      21,
+      22,
+      24,
+      27,
+      29,
+      30,
+      29,
+      27,
+      24
+     ]
+    },
+    {
+     "date": "2026-10-02",
+     "hours": [
+      24,
+      35,
+      51,
+      60,
+      51,
+      35,
+      24,
+      21,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      21,
+      22,
+      24,
+      27,
+      29,
+      30,
+      29,
+      27,
+      24
+     ]
+    },
+    {
+     "date": "2026-10-03",
+     "hours": [
+      24,
+      35,
+      51,
+      60,
+      51,
+      35,
+      24,
+      21,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      21,
+      22,
+      24,
+      27,
+      29,
+      30,
+      29,
+      27,
+      24
+     ]
+    },
+    {
+     "date": "2026-10-04",
+     "hours": [
+      24,
+      35,
+      51,
+      60,
+      51,
+      35,
+      24,
+      21,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      21,
+      22,
+      24,
+      27,
+      29,
+      30,
+      29,
+      27,
+      24
+     ]
+    },
+    {
+     "date": "2026-10-05",
+     "hours": [
+      24,
+      35,
+      51,
+      60,
+      51,
+      35,
+      24,
+      21,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      21,
+      22,
+      24,
+      27,
+      29,
+      30,
+      29,
+      27,
+      24
+     ]
+    },
+    {
+     "date": "2026-10-06",
+     "hours": [
+      24,
+      35,
+      51,
+      60,
+      51,
+      35,
+      24,
+      21,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      21,
+      22,
+      24,
+      27,
+      29,
+      30,
+      29,
+      27,
+      24
+     ]
+    },
+    {
+     "date": "2026-10-07",
+     "hours": [
+      24,
+      35,
+      51,
+      60,
+      51,
+      35,
+      24,
+      21,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      21,
+      22,
+      24,
+      27,
+      29,
+      30,
+      29,
+      27,
+      24
+     ]
+    }
+   ]
+  },
+  "network": {
+   "days": [
+    {
+     "date": "2026-10-01",
+     "rx": 2684354560,
+     "tx": 536870912
+    },
+    {
+     "date": "2026-10-02",
+     "rx": 3087007744,
+     "tx": 536870912
+    },
+    {
+     "date": "2026-10-03",
+     "rx": 3489660928,
+     "tx": 536870912
+    },
+    {
+     "date": "2026-10-04",
+     "rx": 3892314112,
+     "tx": 536870912
+    },
+    {
+     "date": "2026-10-05",
+     "rx": 4294967296,
+     "tx": 536870912
+    },
+    {
+     "date": "2026-10-06",
+     "rx": 4697620480,
+     "tx": 536870912
+    },
+    {
+     "date": "2026-10-07",
+     "rx": 5100273664,
+     "tx": 536870912
+    }
+   ],
+   "peakRx": 9000000,
+   "peakTx": 1200000,
+   "p95": 3000000,
+   "totalRx": 25501368320,
+   "totalTx": 3758096384
+  },
+  "availability": {
+   "since": 1,
+   "day": 100,
+   "week": 99.9,
+   "timeline": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  "incidents": {
+   "ongoing": [],
+   "past": []
+  },
+  "consumers": [
+   {
+    "name": "immich-server",
+    "kind": "container",
+    "avgCpu": 22,
+    "maxCpu": 58,
+    "avgMem": 2362232012.8,
+    "share": 46
+   },
+   {
+    "name": "jellyfin",
+    "kind": "container",
+    "avgCpu": 14,
+    "maxCpu": 41,
+    "avgMem": 1932735283.2,
+    "share": 31
+   }
+  ],
+  "temperature": {
+   "max": 71,
+   "avg": 56,
+   "hoursWarn": 0,
+   "hoursBad": 0,
+   "correlationCpu": 0.7
+  }
+ },
+ "history": {
+  "stepSeconds": 120,
+  "series": {
+   "cpu": {
+    "base": 26,
+    "amp": 14,
+    "peakHour": 3,
+    "noise": 6
+   },
+   "mem": {
+    "base": 57,
+    "amp": 3,
+    "peakHour": 15,
+    "noise": 1
+   },
+   "swap": {
+    "base": 3,
+    "amp": 0.5,
+    "peakHour": 15,
+    "noise": 0.2
+   },
+   "load1": {
+    "base": 2.1,
+    "amp": 1,
+    "peakHour": 3,
+    "noise": 0.5
+   },
+   "load5": {
+    "base": 2,
+    "amp": 0.8,
+    "peakHour": 3,
+    "noise": 0.2
+   },
+   "load15": {
+    "base": 1.9,
+    "amp": 0.6,
+    "peakHour": 3,
+    "noise": 0.1
+   },
+   "net:eth0:rx": {
+    "base": 900000,
+    "amp": 700000,
+    "peakHour": 21,
+    "noise": 250000
+   },
+   "net:eth0:tx": {
+    "base": 200000,
+    "amp": 150000,
+    "peakHour": 21,
+    "noise": 60000
+   },
+   "temp:Package id 0": {
+    "base": 52,
+    "amp": 6,
+    "peakHour": 3,
+    "noise": 1.5
+   },
+   "memc:used": {
+    "base": 40,
+    "amp": 2,
+    "peakHour": 15,
+    "noise": 0.5
+   },
+   "memc:cache": {
+    "base": 30,
+    "amp": 1,
+    "peakHour": 15,
+    "noise": 0.5
+   },
+   "memc:free": {
+    "base": 30,
+    "amp": 1,
+    "peakHour": 3,
+    "noise": 0.5
+   }
+  },
+  "incident": {
+   "kind": "cpu",
+   "hoursAgo": 0.75,
+   "minutes": 24,
+   "peak": 96,
+   "series": [
+    "cpu",
+    "load1",
+    "load5",
+    "temp:Package id 0"
+   ],
+   "culprit": "immich-server"
+  }
+ }
+}

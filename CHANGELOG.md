@@ -184,6 +184,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 - **docs — translations.** The 35 strings for domain expiry, six that had no key in any locale file (Compose lines, the overview's checked count, Category name, a container link that is not running and the Inbox key legend's two labels) and the new category menu entry are in Dutch, German, French, Chinese and Spanish.
 - **docs — Dutch says bookmark.** All 829 strings in `locales/nl.json` that said *bladwijzer* now say *bookmark*, compounds included (*bookmarkformulier*), plus the no-JavaScript line in `templates/dashboard.html` and the two specs that matched the old word.
+- **docs — the manual.** A new §15A, *Glances*, with eight screenshots, and the Glances lines that belong elsewhere (the keys, §14 Containers, the widget kinds, Config's section table, troubleshooting, the glossary). `0` is described as the tenth page, the category menu's new entry, the Inbox key legend, the Containers row colours and dormant links, the Config rail's Services and Info groups and the restore limits are in. Six screenshots are retaken, in Gloss Chrome dark over the demo that nextDash seeds itself (`tests/manual-screenshots-v1-21.spec.js`) rather than over `data-demo`.
 - **docs — a test.** `tests/dashboard-category-menu-add-bookmark.spec.js` opens a category's menu, picks Add new bookmark and expects the form on that category.
 
 ---

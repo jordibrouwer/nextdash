@@ -246,6 +246,24 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 </details>
 
 <details>
+<summary><b>15A.</b> <a href="#15a-glances">Glances</a></summary>
+
+- [Opening it](#15a1-opening-it)
+- [What it needs](#15a2-what-it-needs)
+- [The sections](#15a3-the-sections)
+- [The record, History and incidents](#15a4-the-record)
+- [Several hosts](#15a5-several-hosts)
+- [The Docker host](#15a6-the-docker-host)
+- [The widget](#15a7-the-widget)
+- [Notices](#15a8-notices)
+- [The tour](#15a9-the-tour)
+- [Config → Glances](#15a10-config-glances)
+- [Keys](#15a11-keys)
+- [When something is wrong](#15a12-troubleshooting)
+
+</details>
+
+<details>
 <summary><b>16.</b> <a href="#16-appearance">Appearance</a></summary>
 
 - [Themes](#161-themes)
@@ -399,13 +417,14 @@ This guide shows how the pieces fit together. Each part links to the chapter wit
 | Question | Where you see the answer |
 |---|---|
 | *Is everything running?* | The **Containers view** (`Shift + Y`): every container with a status glow, CPU, RAM, healthcheck, restarts and an orange **↑** for an update waiting ([§14](#14-containers)) |
+| *How is a machine doing over time?* | The **Glances page** (`Shift + G`): processor, memory, disks, processes and containers of a Glances 4 host, with a record of thirty days, graphs, incidents and a forecast for filling disks ([§15A](#15a-glances)) |
 | *Can I actually reach it?* | The bookmark of its web UI, set to **Monitor**: checked by the server, with uptime, response time and certificate ([§12](#12-checks-health)) |
 | *Which link belongs to which container?* | The bookmark mark on a container's row, in the colour of that bookmark's checks — and the cube after the bookmark's name in the Bookmarks view, in the container's state, with **Runs in** on its side panel ([§14.2](#142-the-list)) |
 | *What went wrong, and when?* | The container's **Timeline** (crashes with exit code, out-of-memory kills, health changes, updates, rollbacks) and the bookmark's **Health in large** (every check, every outage) |
 | *Will I hear about it?* | One set of alert channels and push notifications for sites going down, certificates running out and containers stopping, restarting, turning unhealthy or running hot ([§12.4](#124-alerts), [§14.9](#149-notices)) |
 | *Is it up to date?* | Image update checks with release notes, skip and hold, a history, a rollback, and optional nightly updates that roll themselves back on failure ([§14.5](#145-actions-and-updates)) |
 | *Where did my disk go?* | The **Disk** tab: images, volumes, build cache and bind mounts, biggest first, with clean-ups that say what they free ([§14.7](#147-disk)) |
-| *How is the machine?* | The **Processor**, **Memory**, **Disks**, **Containers** and **Container list** widgets on the dashboard ([§15.4](#154-system-widgets-and-what-they-need)) — and, for your other machines, the four **Beszel** widgets ([§15.1](#151-the-kinds)) |
+| *How is the machine?* | The **Processor**, **Memory**, **Disks**, **Containers** and **Container list** widgets on the dashboard ([§15.4](#154-system-widgets-and-what-they-need)) — and, for your other machines, the four **Beszel** widgets ([§15.1](#151-the-kinds)) and the **Glances** widget |
 
 The difference with separate tools is in the links between those rows. A container that keeps restarting is a red glow in the Containers view, a problem on its Container list row, a notice on your phone — and, because its web UI stops answering, a red mark on its bookmark, an outage in that bookmark's history and a downtime alert. Each place leads to the others with a click.
 
@@ -599,6 +618,7 @@ What a check of your setup can look like, all from the keyboard:
 | Key or command | Does |
 |---|---|
 | <kbd>Shift</kbd> + <kbd>Y</kbd> | Open the Containers view |
+| <kbd>Shift</kbd> + <kbd>G</kbd> | Open the Glances page |
 | `:docker <name>` | Find a container from anywhere; add `open`, `logs`, `start`, `stop`, `restart`, `pause`, `update` or `remove` |
 | <kbd>s</kbd> · <kbd>r</kbd> · <kbd>p</kbd> · <kbd>u</kbd> | Start or stop, restart, pause, update the selected container |
 | <kbd>l</kbd> · <kbd>m</kbd> · <kbd>d</kbd> | Logs window, mute notices, Disk |
@@ -776,7 +796,7 @@ Data is stored in `./data` next to the binary. `NEXTDASH_DATA_DIR` points it els
 
 ### 3.1 Pages
 
-A **page** is a separate set of categories and bookmarks — Work, Home, a project. Each page has a name, an optional emoji and an optional colour dot. Switch with **`1`–`9`**, **`Shift + ←/→`**, the page switcher in the header, or the pages panel (**`,`**). A page remembers where you were scrolled.
+A **page** is a separate set of categories and bookmarks — Work, Home, a project. Each page has a name, an optional emoji and an optional colour dot. Switch with **`1`–`9`** (and **`0`** for a tenth page), **`Shift + ←/→`**, the page switcher in the header, or the pages panel (**`,`**). A page remembers where you were scrolled.
 
 <a id="32-categories"></a>
 
@@ -812,7 +832,7 @@ The **inbox** holds links you want to keep before you know where they belong. It
 
 ### 3.5 Views
 
-The dashboard has five views: the **dashboard grid**, the **Bookmarks view**, the **inbox**, the **Containers view** and **config**. They are all part of one page — switching never reloads. **`Escape`** backs out to the dashboard grid, and the browser's **Back** button returns to the view you came from. Changing a filter inside a view is not a history step.
+The dashboard has up to six views: the **dashboard grid**, the **Bookmarks view**, the **inbox**, the **Containers view**, the **Glances page** (once it is set up) and **config**. They are all part of one page — switching never reloads. **`Escape`** backs out to the dashboard grid, and the browser's **Back** button returns to the view you came from. Changing a filter inside a view is not a history step.
 
 This manual calls the page of categories and widgets the **dashboard grid**, to keep it apart from the **Bookmarks view** — the library of every bookmark, with its own rail, list and side panel ([§11](#11-the-bookmarks-view)).
 
@@ -1090,7 +1110,7 @@ The form, quick add and the extension all ask. Imports skip duplicates and say h
 | Hover a bookmark | The preview card |
 | Click a category header | Folds or unfolds it |
 | Long-press or double-click a category header | Renames it |
-| Right-click a category header | Rename, spread, add, icon, delete |
+| Right-click a category header | Add a bookmark, rename, tiles, spread, icon, move, add, delete |
 | Drag the `//` in a category or widget title | Moves it: the page holds still and a dashed box shows where it lands. Drop it on the line between two columns to make it wide |
 | Double-click a page tab | Renames the page, sets its emoji and colour |
 | `Alt`-click / `Shift`-click | Adds to, or extends, a selection |
@@ -1177,12 +1197,13 @@ Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to 
 
 | Keys | Action |
 |------|--------|
-| `1`–`9` | Go to a page |
+| `1`–`9`, `0` | Go to a page (`0` is the tenth) |
 | `Shift + ←` / `Shift + →` | Previous / next page |
 | `Shift + I` | Inbox |
 | `Shift + H` | The Bookmarks view, the whole list |
 | `Shift + U` | The Bookmarks view, on Unsorted |
 | `Shift + Y` | Containers |
+| `Shift + G` | Glances (once it is set up in Config) |
 | `Shift + S` or `<` | Config (and back) |
 | `Shift + A` | The theme browser |
 | `>` `:` `?` | Search, commands, finders — from every view |
@@ -1201,7 +1222,7 @@ Every action on a bookmark is **`Shift` plus a letter**. Bare letters belong to 
 | `Shift + Q` | Switch whether letters search names or shortcuts |
 | `Esc` | Close the panel; on a bare grid, go to the first page; on the first page, open search |
 
-The Containers view opens with `Shift + Y`, its header icon or `:docker`.
+The Containers view opens with `Shift + Y`, its header icon or `:docker`. The Glances page opens with `Shift + G`, its header icon or `:glances`; its own keys are in [§15A.11](#15a11-keys).
 
 `>` `:` `?` and `*` work in every view — the Bookmarks view, the inbox, Containers and config too — not only on the dashboard. A view that uses one of these keys for itself keeps it. Quick add (`&`) and the full form (`+`) stay with the bookmark grid.
 
@@ -1296,7 +1317,7 @@ A toolbar appears with **Move**, **Tags**, **Pin**, **Checking**, **Open**, **Co
 
 ### 7.6 The cheat sheet
 
-**`!`** or **`F1`** opens the cheat sheet with a filter box. It opens on the section for the view you are in, and lists more than 200 keys and commands across Navigation, Bookmarks, Widgets, Selecting several, the **Bookmarks view**, the **Tag view**, the **Inbox view** and **Inbox triage**, the **Containers view**, the Config view, search modes and every command. The sections stand in two columns (one on a narrow window), the section of the view you are in leads at full width, and a row of topic chips — Navigation, Bookmarks, Views, Search and commands, Other — narrows the sheet. The filter also finds a key or a section name and ignores spaces, so `shift + y` finds Shift+Y; `/` or Ctrl/Cmd+F jumps to it. A printable version is linked at the top of Config → Help and at the top of this manual. Keys cannot be rebound.
+**`!`** or **`F1`** opens the cheat sheet with a filter box. It opens on the section for the view you are in, and lists more than 200 keys and commands across Navigation, Bookmarks, Widgets, Selecting several, the **Bookmarks view**, the **Tag view**, the **Inbox view** and **Inbox triage**, the **Containers view**, the **Glances view**, the Config view, search modes and every command. The sections stand in two columns (one on a narrow window), the section of the view you are in leads at full width, and a row of topic chips — Navigation, Bookmarks, Views, Search and commands, Other — narrows the sheet. The filter also finds a key or a section name and ignores spaces, so `shift + y` finds Shift+Y; `/` or Ctrl/Cmd+F jumps to it. A printable version is linked at the top of Config → Help and at the top of this manual. Keys cannot be rebound.
 
 While a panel is open, the grid behind it does not react. `Tab` stays inside the panel, and `Escape` closes it and puts focus back where it was.
 
@@ -1490,6 +1511,7 @@ With that setting on (it is by default), a search that matches nothing lists you
 ### 9.1 Pages
 
 - **Create** — **New page** in the pages panel (`,`, then `n`), `:page new`, **Structure → Pages**, or **New page…** in the bookmark form.
+- **Add a bookmark** — right-click the header → **Add new bookmark** opens the add-bookmark form ([§5.2](#52-the-full-form-shift-b-ctrl-shift-a)) with this category already chosen. It is not offered on a smart collection or the list of unfiled bookmarks.
 - **Rename, emoji, colour** — double-click the page tab, or use Structure → Pages.
 - **Reorder** — drag a row in Structure → Pages, or `↑`/`↓` on a focused row.
 - **Delete** — the × in the pages panel (asks twice) or Structure → Pages. The page goes to the trash with its categories and bookmarks.
@@ -1509,7 +1531,7 @@ Page names are unique. Each row in Structure → Pages shows how many bookmarks 
 
 ### 9.2 Categories
 
-<img src="screenshots/manual.md/09-category-menu.jpg" alt="The right-click menu on a category header: Rename, Spread across columns, Icon, Add category and Delete, with their keys" width="281" align="right">
+<img src="screenshots/manual.md/09-category-menu.jpg" alt="The right-click menu on a category header: Add new bookmark, Rename, Show as tiles, Spread across columns, Insert icon, Move to page, Add category and Delete, with their keys" width="281" align="right">
 
 - **Create** — the **+** in a category header or **`Shift + N`** (on the page you are on), `:category new`, **New category…** in the bookmark form, or **Structure → Categories**.
 - **Rename** — `F2`, a long press or double-click on the header, the right-click menu, or Structure → Categories.
@@ -2257,12 +2279,13 @@ Open it with **`Shift + I`**, the inbox icon or `:inbox`. The icon's tooltip say
 </p>
 <p align="center"><sub>The inbox: links you have not filed yet, with the selected link's details on the right.</sub></p>
 
-- **A rail of filters** on the left, each with its count: **All**, **Unread**, **Snoozed** and **With note** (the last two only when they hold something) — it can fold behind a **Filters** button (Config → Inbox → Panel & clicks). *This week* is a readout above them.
+- **A rail of filters** on the left, each with its count: **All**, **Unread**, **Snoozed** and **With note** (Unread only when it differs from All, that is when some links are read; Snoozed and With note only when they hold something) — it can fold behind a **Filters** button (Config → Inbox → Panel & clicks). *This week* is a readout above them.
 - **Narrowing** — by site, by tag (click a tag chip) and by search. Every count follows what is shown, and *Mark all read* becomes *Mark shown read*.
 - **Sort** — newest first (default), oldest first, title or site. The column headings sort too: **Title** and **Site** A to Z, a second click Z to A; **Added** switches between newest and oldest first. Under Snoozed, which keeps its wake order, the headings do not sort.
 - **Rows** are one line each and follow the app-wide density; the header stays in place. There are no tabs — a kept link goes straight to Bookmarks → Unsorted, not to a second list here ([§13.5](#135-keeping-a-link-unsorted-and-promote)).
 - **The side panel**, in the same style as the Bookmarks view's, shows the link in focus: Open, Promote, Keep, note, tags — suggested tag chips live in its Tags section — details and delete.
 - **The address** keeps filter, sort, site, tag and search (`ib_filter`, `ib_sort`, `ib_dir`, `ib_domain`, `ib_tag`, `ib_q`); filter, sort and site also return next time.
+- **A key legend** under the list shows the first six keys. **N more keys** opens the rest and **Fewer keys** closes them again; the choice is kept in this browser. The legend is for the mouse: the button is not a tab stop.
 - The **ℹ** explains the inbox; a sentence under the toolbar explains the active filter.
 
 <a id="133-acting-on-links"></a>
@@ -2369,7 +2392,7 @@ The first visit plays a four-step tour: the waiting room the inbox is, reading, 
 > [!NOTE]
 > **In short:** the Containers view shows the Docker containers on this machine, with logs, updates and disk use. Looking needs the Docker socket; acting needs `NEXTDASH_DOCKER_CONTROL=1`, and a write token as well if you set one.
 
-The **Containers view** shows the Docker containers on the machine nextDash runs on — the same connection the Containers widget and system widgets use. It needs the Docker socket ([§14.6](#146-what-it-needs)).
+The **Containers view** shows the Docker containers on the machine nextDash runs on — the same connection the Containers widget and system widgets use. It needs the Docker socket ([§14.6](#146-what-it-needs)). When a Glances host runs on the same machine, the two views link to each other and the view can read CPU, memory and network from Glances instead of from Docker ([§15A.6](#15a6-the-docker-host)).
 
 > [!IMPORTANT]
 > It needs setting up first: the Docker socket, `NEXTDASH_DOCKER_CONTROL=1` for actions, a write token, and on some hosts `NEXTDASH_RUN_AS_ROOT=1`. See [§14.6](#146-what-it-needs).
@@ -2400,10 +2423,14 @@ Open it with **`Shift + Y`**, the Containers icon in the header, `:docker`, or `
 
 Each row shows the container's app icon, its name, image, status, **CPU** and **RAM**, its **Size** — what the container wrote, with the size including its image on hover — a link to its web UI and its ports. The icon comes from the app icon sets, matched by the image and the name ([§19.4](#194-icons-previews)); a container the sets do not know — or an icon that fails to load — shows its first letter, and nextDash's own container shows the nextDash logo. A container with an update waiting has an orange **↑** in front of its name. Name and image stay on one line, cut short with the whole text on hover, and the image drops its registry host and a `:latest` tag (`lscr.io/linuxserver/sonarr:latest` reads `linuxserver/sonarr`). The first three published ports show in the row; more go behind **+N**, which opens a list of all of them with the port inside the container and tcp or udp. A port published for both counts once in the row. Sizes are measured in the background every half hour (the Docker daemon takes a while to work them out) and when Disk is refreshed; a container not measured yet shows —. CPU and RAM are the last reading, taken every 30 seconds; they are there while **Config → Containers → Keep the last hour of CPU and memory** is on. On a narrower screen the Image column goes first (below 1100 pixels), then CPU, RAM and Size (below 900). Click **Name**, **Status**, **CPU**, **RAM**, **Size** or **Restarts** to sort, and again to turn the order round; the sort menu also offers uptime, CPU, memory, size and restarts, highest first. A container without a figure — stopped, or not measured yet — goes last either way.
 
+When **Config → Glances** says the Glances host is this machine, and **Use Glances for the CPU, memory and network in the Containers view** is on (it is by default), CPU, RAM and network come from Glances instead, in one request; containers Glances does not know are still read from Docker.
+
 <p align="center"><img src="screenshots/manual.md/14-container-row.jpg" alt="One row of the Containers view: an orange update arrow, the icon and the name sonarr, its image, Up 6 days (healthy), CPU, RAM, size and its port links" width="860"></p>
 <p align="center"><sub>A container row; the orange ↑ says an update is waiting.</sub></p>
 
-**Columns** in the toolbar ticks which columns show: Image, Status, CPU, RAM, Size, **Restarts** (off at first: how often the container started again in the last 24 hours, from its timeline), Web UI and Ports. Name always shows. The choice is kept in this browser; **Reset columns** puts them back. CPU and RAM show only while the stats history is on, ticked or not.
+**Columns** in the toolbar ticks which columns show: Image, Status, CPU, RAM, Size, **Restarts** (off at first: how often the container started again in the last 24 hours, from its timeline), Web UI and Ports. Name always shows. The choice is kept in this browser; **Reset columns** puts them back. CPU and RAM show only while the stats history is on, ticked or not, and only once a container has a reading; with none running they stay away instead of showing a dash on every row.
+
+**Row colours.** The coloured edge of a row is red only when something is wrong: a container that exited with a code other than 0, is dead or restarting, or reports unhealthy. A container that finished its job or was stopped on purpose is grey, so a few idle ones no longer drown the one that failed. A port link or web UI link on a container that is not running is greyed and out of the tab order, with *Not running* in its tooltip; the row itself still opens the side panel.
 
 The web UI link is the address you set in the side panel's **Custom** section, else the one the container's own labels offer (Unraid's template), else its first published TCP port. A local address shows as its port (`:8123`), another as its host. A port link goes to the host you opened nextDash on unless **Config → Containers → Docker host address** names the server — its LAN address or name only, without `http://` or a port, for example `192.168.1.10` or `tower.local`, so port 8080 opens `http://192.168.1.10:8080`. A line under the field checks what you type and cuts a full `http://…:8080` down to its host when it is saved; opened through a domain — a reverse proxy — that is rarely right. While the address is empty the view says where port links point, above the list, with a button to that setting and one to dismiss the note; an address of your own has a dot in front of it, and a long one is cut short, with the whole address on hover.
 
@@ -2430,6 +2457,7 @@ The **✎** on the icon in the panel's head chooses what the container shows: **
 
 - **Overview** — an accordion of **Details**, **Health**, **Updates**, **Timeline**, **Network**, **Custom**, **Bookmark**, **Volumes** and **Environment**. **Health**, for a container with a healthcheck, shows its status, how many checks failed in a row, the check it runs, and the last five checks — each a mark and a time, a failed one with its exit code and output. **Volumes** lists each mount by where it appears in the container, with where it comes from under it and a tag for its kind (bind, volume) and for read-only. **Updates** is [§14.5](#145-actions-and-updates). **Timeline** is what happened to the container, newest first: starts and stops (by you or by nextDash), crashes with their exit code, out-of-memory kills, a run of crashes as one *Kept restarting* line, health changes, pauses, updates and rollbacks. nextDash writes these down from Docker's own events, whatever the notices are set to — a hundred per container, for thirty days, from the moment this version runs. **Details** also gives its size (written, and with its image) and says whether its notices are on, muted or off. **Custom** holds the container's **Web UI address**: an `http://` or `https://` address of your own, where `[IP]` stands for this server. Empty uses the container's default. The address is used everywhere the web UI opens: the list, the Container list widget and `:docker <name> open`. **Back to the default** removes it. **Bookmark** shows the bookmark of its web UI — name, address, what its checks say and how it was found — with **Open in Bookmarks**, and **Linked bookmark** to choose: *Automatic* (naming what it found), *No bookmark*, or any bookmark by hand.
 - **Resources** — CPU, memory, size, **Network** (in and out) and **Disk I/O** (read and written), with four charts under them: CPU, memory, network and disk I/O over the last hour — one cursor across the four, a tooltip, a drag to zoom (double-click or `0` back), and the arrow keys to walk the points with the value read out. Network and disk are rates between two samples, so they show a dash until there are two. nextDash samples the running containers every 30 seconds and keeps the samples in memory, so a restart starts the charts again. **Config → Containers → Keep the last hour of CPU and memory** switches the sampling and the charts off.
+- **From Glances** — for a container the linked Glances host knows: what Glances recorded about it, with **Open in Glances ↗**; the moments it restarted are marked on the Glances graphs ([§15A.6](#15a6-the-docker-host)).
 - **Logs** — the last lines, with **Refresh** and **Open logs window** ([§14.8](#148-the-logs-window)).
 - **What’s new** — the release notes behind an available update.
 
@@ -2731,6 +2759,7 @@ Those five report on the machine nextDash runs on. Four more read the other mach
 | **Beszel system** | One system: processor, memory and disk as bars, with its temperature and uptime; wide, the processor's last hour beside them, with the load and the network |
 | **Beszel attention** | Only the systems that need a look — down, waiting or paused, or running hot or full — under a count of how many are up and down; wide, with the reason, and since when for a system that is not up. When none do, one line says all are fine |
 | **Beszel storage** | The disks of every system, the fullest first: the root disk and every extra disk the agent watches. Wide, grouped per system |
+| **Glances** | One host of the Glances page: *Healthy*, *Warning* or *Critical*, and three meters or the processor's last hour; a host that does not answer says since when, never its old figures |
 
 A system that is down shows that it is down and since when, never a figure: the readings Beszel keeps for it are from before it went down. A reading turns amber at 80 % and red at 90 % (a temperature at 70 °C and 85 °C).
 
@@ -2774,7 +2803,7 @@ These read one server, set once under Config → Unraid ([§15.6](#156-unraid-wi
 | **Jellyfin** | What was added to your Jellyfin server lately, with the posters from your own library: a film or series with its poster, an episode under its series' poster. Four layouts — **list**, **strip** (a tab per library), **hero** (the newest large on its backdrop) and **grid**. See below |
 | **Emby**, **Plex** | What was added to your Emby server lately, or to Plex (read through Tautulli), with the same four layouts as Jellyfin. See below |
 | **Jellyfin — now playing**, **Emby — now playing**, **Plex — now playing** | Who is watching what right now, and how far along they are. It refreshes every 10 seconds by default |
-| **Sonarr**, **Radarr** | The episodes and films coming up in the next days (a week unless you choose up to 30), and what is downloading, with posters. The same four layouts; in the strip, *Upcoming* and *Queue* are the tabs |
+| **Sonarr**, **Radarr** | The episodes and films coming up in the next days (a week unless you choose up to 30), a film released today staying on the list until the day is over, and what is downloading, with posters. The same four layouts; in the strip, *Upcoming* and *Queue* are the tabs |
 | **Seerr** | Requests in Overseerr or Jellyseerr, under *Pending*, *Approved* and *Available*, with who asked and the poster. Show every request or one state, films, series or both, from everyone or one person |
 | **qBittorrent**, **SABnzbd** | What is downloading, paused and finished, with progress, speed and time left, and the client's speeds and counts on top. As one list or a tab per part (*Downloading*, *Paused*, *Done*). Without posters, and in the order you choose |
 
@@ -2854,7 +2883,7 @@ Then the settings of the kind. Sonarr and Radarr: **Show** (what is coming, what
 
 ### 15.4 System widgets and what they need
 
-Processor, Memory, Disks, Containers and Container list report on the machine nextDash runs on. The Containers view shares the same connection. Running the binary directly needs no setup. In a container:
+Processor, Memory, Disks, Containers and Container list report on the machine nextDash runs on. The Containers view shares the same connection. The Glances widget is not one of them: it needs a Glances 4 server and its address in Config → Glances, not the Docker socket ([§15A.2](#15a2-what-it-needs)). Running the binary directly needs no setup. In a container:
 
 <p align="center"><img src="screenshots/manual.md/15-system.jpg" alt="The Processor, Memory and Disks tiles side by side: 14 % in use, 11.4 of 32.0 GiB in use, and 5.1 TiB free of 13.7 TiB over the array and the cache" width="860"></p>
 <p align="center"><sub>Processor, Memory and Disks.</sub></p>
@@ -3108,7 +3137,7 @@ Under **Reads** are the figures' labels, in order; **Sign-in** is what to choose
 | Service | Sample address | Reads | Sign-in | Where the key is |
 |---|---|---|---|---|
 | Proxmox VE | `https://proxmox.local:8006` + `/api2/json/nodes/YOUR_NODE/status` | uptime · cpu · ram used | API key, header `Authorization` (`PVEAPIToken=<key>`) | An API token. Replace `YOUR_NODE` in the address with your node's name — it is in the left-hand tree of the Proxmox web interface. |
-| Glances | `http://glances.local:61208` + `/api/4/quicklook` | cpu · memory · swap · load | None | No credential unless the web server was started with a password; then choose basic auth under Sign-in. |
+| Glances | `http://glances.local:61208` + `/api/4/quicklook` | cpu · memory · swap · load | None | No credential unless the web server was started with a password; then choose basic auth under Sign-in. Or use the dedicated **Glances** widget ([§15A.7](#15a7-the-widget)), which reads nextDash's own record. |
 | Syncthing | `http://syncthing.local:8384` + `/rest/db/completion` | in sync · to sync · to transfer | API key, header `X-API-Key` | Actions → Settings → API Key. |
 | Duplicati | `http://duplicati.local:8200` + `/api/v1/serverstate` | state · status · error | Session: password only, signed in by nextDash | The password of the Duplicati web interface. |
 
@@ -3199,6 +3228,255 @@ Seven widgets read an Unraid server through its API: **Unraid**, **Unraid array*
 <p align="center"><img src="screenshots/manual.md/17-unraid.jpg" alt="Config, Unraid on its Connection tab: the connection panel with the address, a saved API key, its three switches and the answer to Test connection naming the server, its Unraid and API versions and yes for every area, then a Widgets panel with the seven kinds as chips, each with an Add button" width="860"></p>
 
 </details>
+
+<sub>[↑ Contents](#table-of-contents)</sub>
+
+---
+<a id="15a-glances"></a>
+
+## 15A. 📈 Glances
+
+> [!NOTE]
+> **In short:** the Glances page shows a machine as a Glances 4 server sees it — processor, memory, disks, processes, containers — and keeps a record of its own, with graphs, incidents and a forecast for filling disks. nextDash only reads. Set it up in Config → Glances.
+
+The **Glances page** shows one machine at a time: how busy it is right now, what runs on it, and how it looked an hour, a day or a month ago. The figures come from a [Glances](https://nicolargo.github.io/glances/) server that runs on that machine; nextDash reads from it and never changes anything there. Because Glances itself forgets quickly, nextDash writes down what it reads and keeps thirty days of it, on the server, whether or not the page is open.
+
+> [!IMPORTANT]
+> It needs a Glances server that is already running — nextDash does not install or start one. See [§15A.2](#15a2-what-it-needs).
+
+<p align="center">
+  <img src="screenshots/manual.md/15a-glances-overview.jpg" alt="The Glances page on Overview: a status card with CPU, RAM and the fullest disk, a strip of three hosts, the machine and its uptime, four big figures for processor, memory, swap and load, and the load of each of eight cores" width="860">
+</p>
+<p align="center"><sub>The Glances page on Overview: the machine as it is now.</sub></p>
+
+<a id="15a1-opening-it"></a>
+
+### 15A.1 Opening it
+
+Once it is set up, a **Glances** icon sits in the header before Config, with a small dot for how the machine is: green, yellow or red. Click it, press **`Shift + G`**, or open `/#glances`. **`:glances`** in the command palette opens the page too; `:glances processes` (or any section name) opens that section, and `:glances host <name>` another host. Until Glances is switched on in Config, there is no icon, the key does nothing, and nothing about Glances runs.
+
+A page that is not set up yet says so, with a button to Config → Glances.
+
+The head of the page has, from the left: the **Host** menu (with more than one host, [§15A.5](#15a5-several-hosts)), **Record every** and **Keep** ([§15A.4](#15a4-the-record)), **Tour**, an **ℹ** that explains the page, and the **connection switch**. The **ℹ** buttons beside each block explain it in a few lines and, for the cryptic ones, link to a longer explanation. The card at the top left sums the machine up: **Status**, **CPU**, **RAM**, **Fullest disk**, **Hottest sensor** and **Alerts**.
+
+<a id="15a2-what-it-needs"></a>
+
+### 15A.2 What it needs
+
+| What | Why |
+|---|---|
+| A **Glances 4** server, run in web mode (`glances -w`, or the Glances container, which serves on port `61208`) | nextDash reads its JSON API under `/api/4`. Glances 3 answers differently and is refused: *This view needs Glances 4* |
+| Its **address** in Config → Glances, for example `http://192.168.1.10:61208` | **Test connection** says what answered, or why not |
+| **Allow localhost & private-network bookmarks** switched on in Config → Behavior | A machine on your own network is refused until it is. The error says so in words |
+| The **write token**, if the install has one | Saving settings, the command line of a process, recording a process or container, deleting what was recorded, and the `:glances` commands that change something ask for it. Looking does not |
+
+A **login** is only for a Glances server that has a password; the password is kept on the server and never sent back to the page. nextDash asks Glances only for what it shows: the sections in the menu are the ones the host can answer, so a host without the containers plugin has no Containers section.
+
+<a id="15a3-the-sections"></a>
+
+### 15A.3 The sections
+
+The menu on the left has one section per screen. Each has a key:
+
+| Section | Key | Shows |
+|---|---|---|
+| **Overview** | `o` | The whole machine at a glance: **Machine** and uptime, **Right now** (processor, memory, swap, load), the load of each core, temperatures, network, disk activity, disks, disk health (SMART), the busiest processes, containers and alerts |
+| **Processes** | `p` | Every process, with search and sort |
+| **Containers** | `c` | The containers Glances sees: status, uptime, CPU, RAM, disk and network |
+| **Disks** | `d` | Usage by role — array, cache and pools, system — with when each is full, disk I/O, SMART and RAID |
+| **Network** | `n` | Speed in and out per interface, connections and Wi-Fi |
+| **Insights** | `i` | What nextDash works out itself, from its record |
+| **History** | `h` | The graphs |
+| **Alerts** | `a` | The alerts Glances itself raised, ongoing and recent |
+| **Hosts** | `m` | Every host in one table; only with more than one host |
+
+Which blocks the Overview draws is a choice in Config → Glances → Page (**Overview shows**). A block the host cannot fill is left out. Colour follows two lines, **Yellow from** and **Red from**, which Config sets for the processor, memory, swap, disks and temperature; a sensor that reports limits of its own uses those. They colour the page, the dot on the icon and the incidents.
+
+**Processes** has a search bar (`/`), and a click on a heading sorts by it. A row opens a side panel with two tabs:
+
+- **Overview** — its details (PID, user, status, threads, CPU, memory, resident and virtual size, CPU time), and its **Command line**. The command line is read on request and behind the write token, since it can hold a secret.
+- **History** — its graph, recorded only when you switch **Record history** on: reading every process and container costs the host some processor. At most **fifteen** at a time. All processes with one name are recorded together. **Stop recording history** turns it off.
+
+The **⋯** in the panel's head copies the name or the PID, and for a container shows it in the Glances list or **Open in Containers** ([§15A.6](#15a6-the-docker-host)).
+
+<p align="center">
+  <img src="screenshots/manual.md/15a-glances-processes.jpg" alt="The Glances page on Processes: twelve processes sorted by CPU, immich-server and jellyfin on top, and the side panel of jellyfin on Overview with its details and a closed Command line" width="860">
+</p>
+<p align="center"><sub>Processes, with a side panel: its details here, its history one tab over.</sub></p>
+
+**Containers** lists the containers Glances sees; a **↗** opens the same container in the Containers view when nextDash manages that machine's Docker ([§15A.6](#15a6-the-docker-host)). A container's side panel has the same two tabs.
+
+**Insights** has a **Range** (24 hours, 7 or 30 days) and **Download CSV**, and answers in blocks: a **Health** score out of 100, from how close each reading is to its red line, ongoing incidents and availability (85 and up is good); **Disks: when full**, a straight line through the last week of each disk's use; **Typical and peak** (average, median, 95th and 99th percentile); **Busy hours**, one square per hour of each day; **Network per day**; **Availability**, a block per quarter of an hour; **Incidents**; and **Who used the most**, over the processes and containers whose history you recorded.
+
+<p align="center">
+  <img src="screenshots/manual.md/15a-glances-insights.jpg" alt="The Glances page on Insights: a health score of 84, good, a table of disks with when each is full, and a table of typical and peak readings for memory and processor" width="860">
+</p>
+<p align="center"><sub>Insights: the health score, and the disk that is filling.</sub></p>
+
+<a id="15a4-the-record"></a>
+
+### 15A.4 The record, History and incidents
+
+**Record every**, at the top of the page, picks how often nextDash reads the host: 2, 5, 10 or 30 seconds, 1, 5, 15 or 30 minutes, or an hour — 30 seconds to start with. Longer asks the host less and fills the record more slowly; a very long pace leaves the short graphs empty. **Keep** picks how long it is kept: 7, 30 or 90 days. Recent minutes are kept as they were, a day is averaged, older is averaged more, so a month stays small. The record keeps going with the page closed. A host that did not answer leaves a gap, not a line down to zero.
+
+**History** draws a graph per kind of reading: processor, memory (and swap), memory in parts, load, network, disk I/O, disk usage and temperatures. Each graph has its own range, from a minute up to the retention, and **`,`** and **`.`** make the one under the pointer shorter or longer.
+
+- **Compare** — **Compare with** lays **Yesterday** or **Last week** behind today as a dashed line, where the record reaches back that far (yesterday for a range of a day or less, last week for a week or less).
+- **Save image** keeps the graph as a PNG. It is made in the browser; nothing is sent anywhere.
+- **Red bands** are incidents: moments a reading stayed past its red line for a few readings in a row. The processor, memory, swap, a disk, a temperature, or the host not answering each opens one, and each ends when the reading is back. A dashed line is a moment a container started again.
+
+<p align="center">
+  <img src="screenshots/manual.md/15a-glances-history.jpg" alt="The Glances page on History: four graphs, the processor with a red band where it passed its red line, memory, memory in parts and load, each with its own range and a Save image button" width="860">
+</p>
+<p align="center"><sub>History: a graph per reading, with its own range; the red band is an incident.</sub></p>
+
+A click on a band opens the incident in a side panel: the graphs from before to after it, the containers and processes whose history is recorded beside them, and any container restarts. An incident on the processor names who was busiest at the time. **Insights** lists them all ([§15A.3](#15a3-the-sections)); they are kept for thirty days.
+
+<details>
+<summary>📷 Screenshot — an incident, in its side panel</summary>
+
+<p align="center"><img src="screenshots/manual.md/15a-glances-incident.jpg" alt="The History page with the side panel of a processor incident: the processor, load and memory around the moment, each with its red band" width="860"></p>
+
+</details>
+
+**Processes and containers are recorded only when you ask**, from their side panels. **Config → Glances → Recording → Record the busiest by itself** can also record the 3 or 5 busiest by itself; the ones you chose stay recorded, and the host is then read on every beat.
+
+<a id="15a5-several-hosts"></a>
+
+### 15A.5 Several hosts
+
+nextDash watches up to **five** machines. In Config → Glances there is a button per host, **Add a host** and **Remove this host…**; removing one deletes what was recorded about it. Each host has its own address, login, record, retention, incidents and notices. How the page looks and the yellow and red lines are shared.
+
+With more than one host:
+
+- the head of the page has a **Host** menu, and the address carries the choice: `/#glances/overview?host=nas`;
+- the Overview starts with a strip with a chip for each host;
+- the **Hosts** section (`m`) lists every host in one table — how it is, processor, memory, the fullest disk, temperature and when it was last read. It comes from the record, so it costs the hosts nothing. A click on a row opens that host; `:glances host <name>` does the same;
+- a host without an address is a row that says so; the others keep working.
+
+<p align="center">
+  <img src="screenshots/manual.md/15a-glances-hosts.jpg" alt="The Hosts section of the Glances page: three hosts in one table with processor, memory, fullest disk, temperature and last reading, the first one amber for its disk at 89 %" width="860">
+</p>
+<p align="center"><sub>Hosts: three machines side by side.</sub></p>
+
+<a id="15a6-the-docker-host"></a>
+
+### 15A.6 The Docker host
+
+When a Glances host runs on the same machine as the Docker host the Containers view manages ([§14](#14-containers)), their containers are the same ones. Config → Glances → Advanced has **Same machine as the Containers view**: **Auto** compares the host names, **Yes** and **No** decide by hand, and a line says what was detected and what matched (by id first, then by name or port). **What matched** lists the containers only one side knows. Only one host can be the Docker host; **Yes** on one releases the others.
+
+Then the two views meet:
+
+- a **↗** in the Glances Containers section opens the container in the Containers view, and the Containers side panel opens it back — it has a **From Glances** part with what Glances recorded about it;
+- the moments a container restarted are marked on the Glances graphs;
+- **Use Glances for the CPU, memory and network in the Containers view** (on by default) lets the Containers view ask Glances once for every container instead of asking Docker for each. Containers Glances does not know — or does not give a core count for — are still read from Docker, and so is everything when Glances does not answer within a few seconds.
+
+<a id="15a7-the-widget"></a>
+
+### 15A.7 The widget
+
+The **Glances** widget puts one host on the dashboard, from nextDash's own record — it asks nothing of the host. It has two looks, chosen in its settings, with the host to show (*The first host* until you pick one) and how often it redraws:
+
+| Look | Shows |
+|---|---|
+| **Three meters** | How the host is (*Healthy*, *Warning*, *Critical*), then processor, memory and the fullest disk as bars, amber and red by the lines in Config → Glances |
+| **Processor graph** | The processor as a number, with its last hour behind it |
+
+A click on **Open Glances ↗** opens the page on that host. A host that does not answer says so and since when, and never prints the figures it had before it went away; a host without an address, one that is not in Config any more, and no Glances at all each say so too ([§15.1](#151-the-kinds)).
+
+<p align="center"><img src="screenshots/manual.md/15a-glances-widget.jpg" alt="Two Glances tiles beside the Processor and Memory tiles: homelab in Warning with three bars for processor, memory and the fullest disk, amber at 89 %, and vps, healthy, at 9 % with its last hour as a line" width="760"></p>
+<p align="center"><sub>The Glances widget in both looks: three meters, and the processor graph.</sub></p>
+
+<a id="15a8-notices"></a>
+
+### 15A.8 Notices
+
+Notices are **off until you switch them on**, one kind at a time, in Config → Glances → **Notices**, for each host: the host stops answering; the processor goes past its red line; memory or swap does; a disk does; a temperature does; and **A disk is on its way to full within a week**.
+
+One notice goes out when an incident opens and one when it ends, not one per reading, and a reading that keeps swinging is announced at most once in ten minutes. They go to your alert channel ([§17.5](#monitoring)) and, with **Notify when a Glances host has an incident** switched on in Config → Monitoring, to browser notifications. Quiet hours hold them like the others.
+
+The disk notice goes out once when the forecast says so, and again only after the disk has moved well away from it.
+
+<a id="15a9-the-tour"></a>
+
+### 15A.9 The tour
+
+**Tour**, in the head of the page, plays a six-step walkthrough with moving drawings: the page at a glance, the keys, the side panel, the record, incidents, and several hosts and the Containers view. It is offered once on your first visit; finishing, skipping and `Esc` all count as seen. It comes back from the **Tour** button on the page and on Config → Glances, from the **Play the Glances tour** button in Config → Help → Glances, and from Config → Behavior → Privacy & sync → Onboarding ([§17.5](#175-behavior)).
+
+<a id="15a10-config-glances"></a>
+
+### 15A.10 Config → Glances
+
+The top of the section is a bar with a button per host, **Add a host** and **Remove this host…**, and how that host is: *Connected*, *Not answering*, *Connection off* or *No address yet*. Below it, five tabs. Each panel carries a badge: **This host** for what belongs to the host chosen above, **All hosts** for what is shared.
+
+| Tab | What lives there | Scope |
+|---|---|---|
+| **Connection** | **Show Glances in the navigation** · the **Connection to Glances** switch (the same one as on the page) · **Name** · **Address** · login · **Test connection**, **Open the Glances page**, **Remove the login** | This host |
+| **Page** | **Refresh while the page is open** (1 s to 15 min) · **Overview shows** · **Yellow and red** per reading | All hosts |
+| | **Which disks count**: a prefix to remove from every mount point (`/rootfs`, when Glances runs in a container) and mounts to hide, one per line. Docker storage, squashfs, tmpfs and the like are always hidden | This host |
+| **Recording** | **Record the busiest by itself** (off, 3 or 5) · **Collected data**: how many series, points and incidents are held and since when, **Download as CSV**, **Delete collected data** | This host |
+| **Notices** | One tick per kind of notice ([§15A.8](#15a8-notices)) | This host |
+| **Advanced** | **Same machine as the Containers view**, **Use Glances for the CPU, memory and network in the Containers view** ([§15A.6](#15a6-the-docker-host)) | This host |
+| | **Reset Glances…**: removes every host, the logins, the lines, every choice and everything recorded, and switches Glances off | All hosts |
+
+Changes are saved as you make them, a moment after you stop; **Saved.** appears beside the bar. A change to the address or the login also tests the connection at once, so a wrong one is said so. **Refresh while the page is open** is how often an open page reads the host for the figures you see; how often the record is written is **Record every**, on the page.
+
+<p align="center">
+  <img src="screenshots/manual.md/15a-glances-config.jpg" alt="Config, Glances, Connection: a bar with three hosts, Add a host and Remove this host, five tabs, and the connection panel with the switches, the name, the address and the login fields" width="700">
+</p>
+<p align="center"><sub>Config → Glances: the host bar, five tabs, and the connection.</sub></p>
+
+<a id="15a11-keys"></a>
+
+### 15A.11 Keys
+
+| Key | Action |
+|---|---|
+| `Shift + G` | Open the Glances page, from anywhere |
+| `o` `p` `c` `d` `n` `i` `h` `a` | Overview, Processes, Containers, Disks, Network, Insights, History, Alerts |
+| `m` | Hosts (with more than one host) |
+| `[` / `]` | The previous or next section |
+| `,` / `.` | On the graph under the pointer: a shorter or longer range |
+| `r` | Read the host now |
+| `/` | Search the processes |
+| `Esc` | Close the side panel, then leave the view |
+
+A legend along the foot of the page names them. The commands, behind `:`:
+
+| Command | Does |
+|---|---|
+| `:glances` | Opens the page; `:glances processes` (or any section) opens one section |
+| `:glances host <name>` | Looks at another host |
+| `:glances record 10s` | Sets how often the host is recorded |
+| `:glances pause` · `:glances resume` | Switches the connection off or on |
+| `:glances track <name>` · `:glances untrack <name>` | Records or stops recording the history of a container or process |
+| `:glances incidents` | Opens the incidents |
+| `:glances config` | Opens Config → Glances |
+
+The ones that change something need the write token.
+
+<a id="15a12-troubleshooting"></a>
+
+### 15A.12 When something is wrong
+
+| You see | Why, and what to do |
+|---|---|
+| No Glances icon, and `Shift + G` does nothing | Glances is off. Switch **Show Glances in the navigation** on in Config → Glances |
+| *Fill in the address first.* / *Glances could not be reached at that address.* | Nothing answers there. Check the address and the port (`61208`), and that `glances -w` runs |
+| *That address is not allowed here.* | The address is on your own network. Switch on **Allow localhost & private-network bookmarks** in Config → Behavior |
+| *Glances 4 is needed; this server answers like version 3.* | Update Glances on that machine |
+| *Glances refused that login.* | The server has a password. Fill in the username and the password in Config → Glances |
+| *Not allowed: the write token is missing or wrong.* | The setting, the command line or the recording asks for the write token, and this browser has none |
+| *The connection is off. Showing the last data, from …* | The connection switch is off. The page and the record stay; switch it on again, on the page or in Config |
+| *No answer from Glances just now. Showing the last data, from …* | The host stopped answering. The page keeps what it read last, and the record shows a gap |
+| *Too many requests, retrying* | The host or a proxy in front of it limits requests. Lengthen **Refresh while the page is open** |
+| A section is missing from the menu | The host does not run that Glances plugin; the menu lists only what it can answer |
+| A graph says *Not enough data for this range yet* | The record has not reached that far back yet; it fills at the pace of **Record every** |
+| *Nothing to show* on the Overview | Every block is switched off in Config → Glances → Page → **Overview shows** |
+| No **Hosts** section, no Host menu | There is only one host |
+| A process has no command line | It needs the write token, and a process can have ended since the list was read |
+
+<sub>[↑ Contents](#table-of-contents)</sub>
 
 <sub>[↑ Contents](#table-of-contents)</sub>
 
@@ -3529,7 +3807,7 @@ Config is a **view inside the dashboard**: same tab, no page load.
 
 | To open | To leave |
 |---------|----------|
-| **`Shift + S`**, **`<`**, the gear, or `/#config` | **`Escape`** (when nothing is open on top and you are not typing), **`Shift + S`**, **`<`**, `0`–`9`, or the browser's Back button |
+| **`Shift + S`**, **`<`**, the gear, or `/#config` | **`Escape`** (when nothing is open on top and you are not typing), **`Shift + S`**, **`<`**, `0`–`9` (`0` is the tenth page), or the browser's Back button |
 
 Config reopens on the section and tab you left, for five minutes after you leave. Each section keeps its tab the same way: back within five minutes, it shows the tab you had open there; later, it opens on its first tab. A link like `/#config/appearance/layout` opens a section and tab directly and wins over the remembered place; `/#config/bookmarks/<pageId>` opens Bookmarks for one page. Moving between sections is not a browser history step.
 
@@ -3550,11 +3828,14 @@ Config reopens on the section and tab you left, for five minutes after you leave
 | **Widgets** | Your widgets · Catalogue · Custom widget ([§15.2](#152-adding-and-arranging)) |
 | **Containers** | Connection · View · Updates · Alerts ([§17.7](#177-config-containers)) |
 | **Unraid** | Connection · How it works — the one Unraid server the Unraid widgets read ([§15.6](#156-unraid-widgets)) |
+| **Glances** | Connection · Page · Recording · Notices · Advanced, for up to five hosts — the Glances page and the Glances widget ([§15A.10](#15a10-config-glances)) |
 | **Status page** | The read-only page for the people who use your services: its link, its top, groups and services, and linked maintenance ([§12.8](#128-the-status-page)) |
 | **Statistics** | Summary · Usage · Collection · Inbox · Health · Server ([§18](#18-statistics)) |
 | **Help** | The in-app guide |
 | **Logs** | Server logs · Activity trail ([§20](#20-logs)) |
-| **About** | About nextDash · News & features |
+| **About** | Project · Install · News & features ([§17.8](#178-overview-help-and-about)) |
+
+In the rail the Containers row opens a group labelled **Services** (Containers, Unraid, Glances, Monitoring, Status page) and Statistics one labelled **Info** (Statistics, Help, Logs, About); the labels are headings for the eye, not tabs.
 
 Old addresses still land in the right place — for example `/#config/pages-tags` opens Structure, `/#config/data-backups/logs` opens Logs, `/#config/behavior/fresh` opens Behavior → Fresh, and `/#config/behavior/status` — Status & alerts, before it became a section of its own — opens Monitoring → Checks. The tab ids in addresses did not always change when tabs were renamed: Look is `general`, Grid `layout`, Rows `display`, Action bar `buttonbar`.
 
@@ -3580,9 +3861,9 @@ Bookmarks and Inbox each have a view of their own, and the way to it is the same
 
 - A short line under a setting says what it does. **ℹ** beside it opens the longer explanation where there is more to say, and is left out where it would only repeat that line.
 - **↺** puts one setting back to its default; **Reset panel** puts a whole group back (it asks first).
-- **Only changed** hides settings that are still on their default; the filter beside it narrows the tab by label, hint or option. Both name the other tabs of the section where they find something, and a click goes there.
+- **Only changed** hides settings that are still on their default; the **Filter this tab** field beside it narrows the tab by label, hint or option. Both name the other tabs of the section where they find something, and a click goes there.
 
-<p align="center"><img src="screenshots/manual.md/17-only-changed.jpg" alt="The head of a config section: its name and line, Only changed, a note that everything on the tab is at its default, and the Filter settings field" width="860"></p>
+<p align="center"><img src="screenshots/manual.md/17-only-changed.jpg" alt="The head of a config section: its name and line, Only changed, a note that everything on the tab is at its default, and the Filter this tab field" width="860"></p>
 <p align="center"><sub>Only changed and the filter, at the head of the section.</sub></p>
 
 <a id="173-finding-a-setting"></a>
@@ -3648,7 +3929,7 @@ Paste-to-quick-add, the inbox and how a kept link is filed moved to **Config →
 | Tab | Settings |
 |---|---|
 | **Checks** | Checks in this browser, checks on the server, how monitored bookmarks stand out ([§12.1](#121-availability-modes)) |
-| **Notifications** | Downtime alerts, browser notifications, reminders, the weekly digest ([§12.4](#124-alerts)) |
+| **Notifications** | Downtime alerts, browser notifications, reminders, the weekly digest, and browser notifications for Glances incidents (which kinds is chosen per host in Config → Glances → Notices, [§15A.8](#15a8-notices)) ([§12.4](#124-alerts)) |
 | **Schedules** | Maintenance windows and quiet hours ([§12.5](#125-maintenance-windows)) |
 
 <a id="176-config-inbox"></a>
@@ -3753,7 +4034,7 @@ A release opens with a one-line summary, then its **highlight** in a spotlight: 
 | Keys | Action |
 |------|--------|
 | `Shift + S` or `<` | Toggle config |
-| `0`–`9` | Leave for the inbox or a page |
+| `0`–`9` | Leave for a page (`0` is the tenth; the Inbox is `Shift + I`) |
 | `j` / `k` | Previous / next section |
 | `g` / `G` | First / last section |
 | Arrows, `Home` / `End` (section rail focused) | Move between sections |
@@ -3854,7 +4135,7 @@ Every tab opens with a line on what it is about and a row of **six figures**. Be
 - **Restore → Stored backups** — each with its age, size and contents (*1.7 MB · 412 bookmarks on 5 pages*), and **Download**, **Restore** and **Delete**. **Download all** saves them all.
 - **Restore → From a file** → **Import backup…** — restores a ZIP.
 
-**Restoring** replaces all current data. First, nextDash checks the archive and writes a backup of the current data, so a restore can be undone. An archive without any bookmark page is refused. The import is atomic. A ZIP without `finders.json` or `health-history.json` leaves your current ones in place. Bookmarks with an invalid address are skipped and counted; the imported `settings.json` decides whether local addresses are allowed.
+**Restoring** replaces all current data. First, nextDash checks the archive and writes a backup of the current data, so a restore can be undone. An archive without any bookmark page is refused. So is one over 1 GiB in total, with a file over 64 MB or with more than 50,000 entries (the page captures nextDash writes itself do not count towards the total). The import is atomic. A ZIP without `finders.json` or `health-history.json` leaves your current ones in place. Bookmarks with an invalid address are skipped and counted; the imported `settings.json` decides whether local addresses are allowed.
 
 > In Docker, keep `data/` on a mounted volume, or automatic backups are lost with the container.
 
@@ -4561,6 +4842,10 @@ They need HTTPS in Safari and on iPhone and iPad, and nextDash on the home scree
 
 <sub>[↑ Contents](#table-of-contents)</sub>
 
+### The Glances page is missing or shows nothing
+
+See [§15A.12](#15a12-troubleshooting): the page needs a Glances 4 server, its address in Config → Glances and, on a private network, **Allow localhost & private-network bookmarks** switched on.
+
 ---
 
 <a id="25-quick-reference"></a>
@@ -4592,6 +4877,7 @@ They need HTTPS in Safari and on iPhone and iPad, and nextDash on the home scree
 | <kbd>Shift</kbd> + <kbd>U</kbd> | Bookmarks view (Unsorted) |
 | <kbd>Shift</kbd> + <kbd>I</kbd> | Inbox |
 | <kbd>Shift</kbd> + <kbd>Y</kbd> | Containers |
+| <kbd>Shift</kbd> + <kbd>G</kbd> | Glances |
 | <kbd>Shift</kbd> + <kbd>S</kbd> | Config |
 | <kbd>Shift</kbd> + <kbd>A</kbd> | Themes |
 
@@ -4725,6 +5011,8 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 | Filter | A way to narrow what is shown: `tag:`, `category:`, `status:` and more in search, and the rail's groups in the Bookmarks view. | [§8.2](#82-filters) |
 | Finder (`?`) | A shortcut that sends a query to another site, as in `?g nextdash`. | [§8.6](#86-finders) |
 | Fresh | Shows whether a bookmarked site has published something since you last opened it, through its RSS or Atom feed. | [§12.6](#126-fresh) |
+| Glances | A server that reports one machine's processor, memory, disks, processes and containers. nextDash reads a Glances 4 host for its Glances page and widget. | [§15A](#15a-glances) |
+| Glances page | The view for one Glances host, opened with `Shift + G` or `:glances`, with Overview, Processes, Containers, Disks, Network, Insights, History, Alerts and Hosts sections. | [§15A.1](#15a1-opening-it) |
 
 <a id="glossary-h"></a>
 
@@ -4734,6 +5022,7 @@ Docker: the mounted volume (for example `./data`, mounted at `/app/data`). Binar
 |---|---|---|
 | Header | The top of the dashboard: clock, weather and view name on the left, the page switcher in the middle, the destinations on the right. | [§4](#the-header) |
 | Hypr mode | A click opens the bookmark in a new browser tab and then closes the installed app's window. | [§6](#hypr-mode) |
+| Incident (Glances) | A moment a reading stayed past its red line for a few readings in a row, drawn as a red band on the graphs. | [§15A.4](#15a4-the-record) |
 
 <a id="glossary-i"></a>
 
