@@ -501,7 +501,10 @@ class Modal {
         this._onHideCallback = null;
         this.hide();
         try {
-            handler();
+            const out = typeof handler === 'function' ? handler() : undefined;
+            if (out && typeof out.then === 'function') {
+                out.catch((error) => console.error('Modal handler failed', error));
+            }
         } finally {
             if (typeof onHideCallback === 'function') onHideCallback({ reason });
         }

@@ -475,19 +475,24 @@
      */
     let surfaceMeta = null;
     let surfaceMetaPromise = null;
+    let surfaceMetaGen = 0;
 
     function loadSurfaceMeta() {
         if (surfaceMeta) return Promise.resolve(surfaceMeta);
         if (surfaceMetaPromise) return surfaceMetaPromise;
-        surfaceMetaPromise = fetch('/api/themes/meta')
+        const gen = surfaceMetaGen;
+        const promise = fetch('/api/themes/meta')
             .then((r) => (r.ok ? r.json() : null))
             .then((data) => {
+                // A refresh since this request started makes its answer stale.
+                if (gen !== surfaceMetaGen) return surfaceMeta;
                 surfaceMeta = data && data.themes ? data : null;
                 return surfaceMeta;
             })
             .catch(() => null)
-            .finally(() => { surfaceMetaPromise = null; });
-        return surfaceMetaPromise;
+            .finally(() => { if (surfaceMetaPromise === promise) surfaceMetaPromise = null; });
+        surfaceMetaPromise = promise;
+        return promise;
     }
 
     /** What the theme answers when nothing overrides it, once the meta is in; else null. */
@@ -498,6 +503,8 @@
     /** Forget the cache, for when a theme's character has just been edited. */
     function refreshSurfaceMeta() {
         surfaceMeta = null;
+        surfaceMetaGen += 1;
+        surfaceMetaPromise = null;
         return loadSurfaceMeta();
     }
 

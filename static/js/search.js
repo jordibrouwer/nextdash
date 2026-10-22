@@ -1931,7 +1931,20 @@ class SearchComponent {
         if (!d?.settings) return;
         d.settings.searchPicks = this.searchPicks;
         clearTimeout(this._searchPicksTimer);
-        this._searchPicksTimer = setTimeout(() => { void d.saveSettings?.(); }, 2000);
+        this._searchPicksTimer = setTimeout(() => {
+            this._searchPicksTimer = null;
+            void d.saveSettings?.();
+        }, 2000);
+        if (!this._searchPicksFlushBound) {
+            this._searchPicksFlushBound = true;
+            // A pick made in the last two seconds before the tab goes still saves.
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState !== 'hidden' || !this._searchPicksTimer) return;
+                clearTimeout(this._searchPicksTimer);
+                this._searchPicksTimer = null;
+                void window.dashboardInstance?.saveSettings?.();
+            });
+        }
     }
 
     /** Settings first — it is the copy that travels. */
@@ -3548,10 +3561,11 @@ class SearchComponent {
                         .slice(0, 3);
                     topFinders.forEach((finder) => {
                         const finderShortcut = finder.shortcut.toUpperCase();
+                        const finderShortcutHtml = this._escHtml(finderShortcut);
                         const finderHint = document.createElement('div');
                         finderHint.className = 'search-match search-hint-entry';
                         finderHint.innerHTML = `
-                            <span class="search-match-shortcut search-hint-shortcut">?${finderShortcut}</span>
+                            <span class="search-match-shortcut search-hint-shortcut">?${finderShortcutHtml}</span>
                             <span class="search-match-name search-hint-name">${t('dashboard.hintSearchFinder', 'Search on')} ${this._escHtml(finder.name || finderShortcut)}</span>
                         `;
                         const hintFinderAction = () => {
@@ -4570,7 +4584,11 @@ class SearchComponent {
         this._trackCommandUse(queryBefore);
         const result = match.action();
         if (result && typeof result.then === 'function') {
-            result.then((resolved) => this._finishCommandInvoke(queryBefore, match, resolved));
+            result.then((resolved) => this._finishCommandInvoke(queryBefore, match, resolved))
+                .catch((error) => {
+                    console.warn('Command failed', error);
+                    window.dashboardInstance?.showErrorNotification?.(error?.message || 'Command failed');
+                });
             return;
         }
         this._finishCommandInvoke(queryBefore, match, result);
