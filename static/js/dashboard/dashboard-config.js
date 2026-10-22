@@ -2328,6 +2328,10 @@ class DashboardConfig {
         const containersTour = this.section === 'containers'
             ? `<button type="button" class="lvs-action" data-containers-tour title="${this.dash.escapeHtml(this.t('config.containersTourHint', 'A tour of the Containers view'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
             : '';
+        // Glances the same: its tour, a click away from the settings that feed it.
+        const glancesTour = this.section === 'glances'
+            ? `<button type="button" class="lvs-action" data-glances-config-tour title="${this.dash.escapeHtml(this.t('config.glancesTourHint', 'A tour of the Glances page'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
+            : '';
         // Bookmarks and Inbox each have a view of their own: the way to it
         // is the same place in both, at the band's right edge, not a button
         // drawn into the body of one tab.
@@ -2340,7 +2344,7 @@ class DashboardConfig {
             ? this.renderChangedFilterBar(context.section, context.tab)
             : (this.section === 'bookmarks'
                 ? `${healthButton}<span class="config-bm-header-badge">${this.dash.escapeHtml(String(this.configBookmarkPool().length))}</span>`
-                : '')) + viewLink + widgetsTour + containersTour;
+                : '')) + viewLink + widgetsTour + containersTour + glancesTour;
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
         }
@@ -2366,6 +2370,7 @@ class DashboardConfig {
                     }
                 } else if (e.target.closest('[data-widgets-tour]')) void this.openWidgetsTour?.();
                 else if (e.target.closest('[data-containers-tour]')) void this.playViewTour('containersTutorialV3');
+                else if (e.target.closest('[data-glances-config-tour]')) void this.playViewTour('glancesTutorialV1');
                 else if (e.target.closest('[data-bm-open-health-modal]')) this.openBmHealthModal?.();
                 else if (e.target.closest('[data-bm-open-structure]')) this.openStructureModal?.('pages');
                 else this.handleLibraryHeaderClick?.(e);
@@ -5788,6 +5793,11 @@ class DashboardConfig {
         try {
             target = JSON.parse(btn.getAttribute('data-overview-go') || '{}');
         } catch {
+            return;
+        }
+        // A button that plays a tour, as Help's Glances topic has.
+        if (target.tour) {
+            void this.playViewTour(target.tour);
             return;
         }
         if (target.section) {
@@ -17591,7 +17601,7 @@ class DashboardConfig {
             : window.DiscoverabilityState?.hasSeenTip?.(id) === true);
 
         // The view tours play on request, so their buttons never wait.
-        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'widgetsTutorialV1']);
+        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'glancesTutorialV1', 'widgetsTutorialV1']);
         const buttons = DashboardConfig.GUIDED_TOURS.map((tour) => {
             const replayable = onRequest.has(tour.id) || seen(tour.id);
             const label = esc(this.t(tour.labelKey, tour.label));
@@ -17795,6 +17805,11 @@ class DashboardConfig {
                 this.closeConfigView();
                 if ((await d.docker?.openDockerView?.()) === false) return true;
                 await d.docker?.instance?.openTour?.();
+                return true;
+            case 'glancesTutorialV1':
+                this.closeConfigView();
+                if ((await d.glances?.openGlancesView?.({})) === false) return true;
+                await d.glances?.instance?.openTour?.();
                 return true;
             case 'widgetsTutorialV1':
                 await this.openConfigView('widgets');
@@ -20966,6 +20981,8 @@ class DashboardConfig {
           whereKey: 'config.tourWhereBookmarks', where: 'the next time you open the Bookmarks view' },
         { id: 'containersTutorialV3', labelKey: 'config.tourContainers', label: 'Containers',
           whereKey: 'config.tourWhereContainers', where: 'the next time you open the Containers view' },
+        { id: 'glancesTutorialV1', labelKey: 'config.tourGlances', label: 'Glances',
+          whereKey: 'config.tourWhereGlances', where: 'the next time you open the Glances page' },
         { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets',
           whereKey: 'config.tourWhereWidgets', where: 'the next time you open Config → Widgets' },
     ];
@@ -30143,6 +30160,8 @@ class DashboardConfig {
         const open = `<div class="config-actions">
             <button type="button" class="config-btn" data-overview-go='{"section":"glances"}'>${
     this.dash.escapeHtml(this.t('config.helpGlancesOpen', 'Open Config → Glances'))}</button>
+            <button type="button" class="config-btn" data-overview-go='{"tour":"glancesTutorialV1"}'>${
+    this.dash.escapeHtml(this.t('config.helpGlancesTour', 'Play the Glances tour'))}</button>
         </div>`;
         return this.helpPanel('config.helpGlancesSetupTitle', 'Before it works: a Glances 4 host',
             'config.helpGlancesSetupBody', '', open)

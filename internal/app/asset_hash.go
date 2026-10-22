@@ -239,6 +239,7 @@ var lazyLoadedAssets = []string{
 	"js/inbox-tutorial.js",
 	"js/bookmarks-tutorial.js",
 	"js/containers-tutorial.js",
+	"js/glances-tutorial.js",
 	"js/dashboard-tutorial.js",
 	// The start guide, before the start guide bar on a fresh install.
 	"js/first-start-templates.js",

@@ -14,6 +14,7 @@ class SearchCommandsComponent {
         { id: 'inboxTutorialV3', labelKey: 'config.tourInbox', label: 'Inbox' },
         { id: 'bookmarksTutorialV1', labelKey: 'config.tourBookmarks', label: 'Bookmarks view' },
         { id: 'containersTutorialV3', labelKey: 'config.tourContainers', label: 'Containers' },
+        { id: 'glancesTutorialV1', labelKey: 'config.tourGlances', label: 'Glances' },
         { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets' },
     ];
 

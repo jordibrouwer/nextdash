@@ -72,6 +72,8 @@
         /** The tile's own reads plus the alert log: cheap, and enough for the dots. */
         static BADGE_PATHS = ['quicklook', 'fs', 'sensors', 'alert'];
         static DASH = '–';
+        /** The one-time tour's tip id, repeated from glances-tutorial.js so the page can skip fetching it once seen. Both must agree. */
+        static TUTORIAL_TIP_ID = 'glancesTutorialV1';
 
         constructor(dashboard) {
             this.dash = dashboard;
@@ -314,6 +316,8 @@
             this._bindVisibility();
             this._bindKeys();
             this.startBadges();
+            // Not awaited: the page is already usable, and a slow script fetch must not hold up the navigation.
+            void this.maybeShowTutorial();
             return true;
         }
 
@@ -423,7 +427,7 @@
             });
             this.shell.toolbarRow.hidden = true;
             const Info = window.DashboardGlancesInfo;
-            this.shell.headerActions?.append(...[Info?.helpButton(this), this._buildHostPick(), this._buildRecordPick(), this._buildConnectionSwitch()].filter(Boolean));
+            this.shell.headerActions?.append(...[this._buildTourButton(), Info?.helpButton(this), this._buildHostPick(), this._buildRecordPick(), this._buildConnectionSwitch()].filter(Boolean));
             this.bodyEl = document.createElement('div');
             this.bodyEl.className = 'glances-section';
             this.bodyEl.setAttribute('data-glances-body', '');
@@ -451,6 +455,50 @@
             });
             this.bodyEl.addEventListener('pointerleave', () => { this._hoverChart = null; });
             return this.shell;
+        }
+
+        /** The band's own button: the tour, seen or not. Where the Containers and Bookmarks views have theirs. */
+        _buildTourButton() {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'lvs-action';
+            button.setAttribute('data-glances-tour', '');
+            button.title = this.t('dashboard.glancesTourHint', 'A tour of the Glances page');
+            button.textContent = this.t('dashboard.inboxTour', 'Tour');
+            button.addEventListener('click', () => { void this.openTour(); });
+            return button;
+        }
+
+        /**
+         * The tour's script, fetched on demand: a reader who has done the tour
+         * never pays for it again.
+         */
+        async loadTutorial() {
+            if (typeof window.GlancesTutorial !== 'undefined') return true;
+            try {
+                await window.LazyScript.loadScriptOnce('js/glances-tutorial.js', 'glancesTutorialModule',
+                    () => typeof window.GlancesTutorial !== 'undefined');
+                return true;
+            } catch {
+                // A tour that cannot be fetched is not worth an error toast.
+                return false;
+            }
+        }
+
+        /** First visit: the tour, once. Checked before the script is fetched at all. */
+        async maybeShowTutorial() {
+            if (window.DiscoverabilityState?.hasSeenTip?.(DashboardGlances.TUTORIAL_TIP_ID)) return;
+            if (this.dash.settings?.enableSessionTips === false) return;
+            if (!(await this.loadTutorial())) return;
+            // The reader may have left while the script came in.
+            if (!this.isActiveView()) return;
+            window.GlancesTutorial?.maybeShow?.();
+        }
+
+        /** The Tour button, and Config's replay: seen or not. */
+        async openTour() {
+            if (!(await this.loadTutorial())) return;
+            window.GlancesTutorial?.open?.();
         }
 
         /** The host menu: only when there is more than one to pick from. */
