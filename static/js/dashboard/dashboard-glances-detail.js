@@ -17,12 +17,7 @@
     const GROUP = 'glances';
     const SECTIONS_KEY = 'nextdash.glances.sections';
 
-    function el(tag, className, text) {
-        const node = document.createElement(tag);
-        if (className) node.className = className;
-        if (text !== undefined) node.textContent = text;
-        return node;
-    }
+    const { el } = window.DashboardGlancesDom;
 
 
     /**
@@ -311,9 +306,51 @@
                 }
             }
             const figures = results.map(({ def, answer }) => Chart.panel(this.view, def, answer, { fixed: { from, to } }));
+            const cause = this._incidentCause(incident, results);
             const note = el('p', 'glances-note', this.t('dashboard.glancesIncidentNote',
                 'The recording from before to after the incident. The red band is the incident itself; a dashed line is a moment a container started again.'));
-            Chart.keepFocus(host, () => host.replaceChildren(note, ...figures));
+            Chart.keepFocus(host, () => host.replaceChildren(...(cause ? [cause] : []), note, ...figures));
+        }
+
+        /**
+         * Who was busiest while a processor incident lasted, from the recorded
+         * containers and processes: the one with the highest average over the
+         * incident, when it is a real share and there are enough points. Nothing
+         * is said when nothing was recorded for the moment.
+         */
+        _incidentCause(incident, results) {
+            if (incident.kind !== 'cpu') return null;
+            const answer = results.find(({ def }) => def.id === 'incident-consumers')?.answer;
+            const series = answer && answer.series && typeof answer.series === 'object' ? answer.series : {};
+            const from = incident.start;
+            const to = incident.end || Date.now();
+            let best = null;
+            Object.entries(series).forEach(([name, points]) => {
+                const m = /^(ct|proc):(.+):cpu$/.exec(name);
+                if (!m || !Array.isArray(points)) return;
+                const inside = points.filter((p) => Array.isArray(p) && p[0] >= from && p[0] <= to && Number.isFinite(p[1]));
+                if (inside.length < 3) return;
+                const avg = inside.reduce((sum, p) => sum + p[1], 0) / inside.length;
+                if (!best || avg > best.avg) best = { kind: m[1] === 'ct' ? 'container' : 'process', name: m[2], avg };
+            });
+            if (!best || best.avg < 5) return null;
+            const box = el('p', 'glances-incident-cause');
+            box.setAttribute('data-glances-incident-cause', best.name);
+            box.append(document.createTextNode(this.t('dashboard.glancesIncidentCause', 'Busiest at the time: {name}, {value}% of the processor on average.',
+                { name: best.name, value: Math.round(best.avg) })));
+            const show = el('button', 'glances-row-link', this.t('dashboard.glancesIncidentCauseShow', 'Show'));
+            show.type = 'button';
+            show.addEventListener('click', () => {
+                this.close();
+                this.view.openSection(best.kind === 'container' ? 'containers' : 'processes');
+                const field = this.view.hostEl?.querySelector('[data-glances-search]');
+                if (field) {
+                    field.value = best.name;
+                    field.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            });
+            box.append(' ', show);
+            return box;
         }
 
         /** Live numbers: the section hands the row of the latest beat, so the panel follows. */

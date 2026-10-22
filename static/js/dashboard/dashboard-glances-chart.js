@@ -89,12 +89,7 @@
         return node;
     }
 
-    function el(tag, className, text) {
-        const node = document.createElement(tag);
-        if (className) node.className = className;
-        if (text !== undefined) node.textContent = text;
-        return node;
-    }
+    const { el } = window.DashboardGlancesDom;
 
     /** [[t, v], ...] -> { t, v } with finite numbers only, oldest first. */
     function clean(points) {
@@ -254,27 +249,43 @@
         }
     }
 
-    function compareOn(chartId) {
-        return readCompare()[chartId] === true;
+    /** What a graph is compared with: '' (nothing), 'day' (yesterday) or 'week' (the same time last week). An old `true` is yesterday. */
+    function compareMode(chartId) {
+        const v = readCompare()[chartId];
+        return v === true ? 'day' : (v === 'day' || v === 'week' ? v : '');
     }
 
-    function setCompare(chartId, on) {
+    function setCompare(chartId, mode) {
+        const value = mode === 'day' || mode === 'week' ? mode : '';
         try {
-            localStorage.setItem(COMPARE_STORE, JSON.stringify({ ...readCompare(), [chartId]: Boolean(on) }));
+            localStorage.setItem(COMPARE_STORE, JSON.stringify({ ...readCompare(), [chartId]: value }));
         } catch { /* a private window: the choice lasts until the page is left */ }
-        compareMemory[chartId] = Boolean(on);
+        compareMemory[chartId] = value;
     }
 
     const compareMemory = {};
 
-    /** Yesterday behind today only makes sense for a window of a day or less. */
-    function compareAllowed(def) {
+    const COMPARE_OFFSET = { day: DAY, week: 7 * DAY };
+
+    /**
+     * Yesterday behind today makes sense for a window of a day or less; last week
+     * for one of a week or less, when the record reaches back that far.
+     */
+    function compareAllowed(def, mode = 'day') {
         const range = RANGES.find((r) => r.id === currentRange(def.id));
-        return Boolean(def.compare && range && range.ms <= DAY);
+        if (!def.compare || !range) return false;
+        const offset = COMPARE_OFFSET[mode] || DAY;
+        return range.ms <= (mode === 'week' ? 7 * DAY : DAY) && (keepDays * DAY) >= range.ms + offset;
     }
 
+    /** The mode in force for a graph: this session's choice, else the remembered one, when its window allows it. */
     function compareActive(def) {
-        return compareAllowed(def) && (compareMemory[def.id] ?? compareOn(def.id));
+        const mode = compareMemory[def.id] ?? compareMode(def.id);
+        return mode && compareAllowed(def, mode) ? mode : '';
+    }
+
+    function compareLabel(mode, t) {
+        return mode === 'week' ? t('dashboard.glancesCompareLastWeek', 'Last week') : t('dashboard.glancesCompareYesterday', 'Yesterday');
     }
 
     /** The range a graph shows right now: this session's choice, else the remembered one. */
@@ -342,12 +353,14 @@
      * comparing. `ghost=1` keeps its answer apart from today's in the page's cache.
      */
     function ghostPathFor(def, allNames) {
-        if (!compareActive(def)) return '';
+        const mode = compareActive(def);
+        if (!mode) return '';
         const names = namesFor(def, allNames);
         if (!names.length) return '';
         const range = RANGES.find((r) => r.id === currentRange(def.id));
         const now = Date.now();
-        return `history?series=${names.map(encodeURIComponent).join(',')}&since=${now - range.ms - DAY}&until=${now - DAY}&ghost=1`;
+        const offset = COMPARE_OFFSET[mode];
+        return `history?series=${names.map(encodeURIComponent).join(',')}&since=${now - range.ms - offset}&until=${now - offset}&ghost=1`;
     }
 
     function format(def, value) {
@@ -368,6 +381,127 @@
             avg: values.reduce((a, b) => a + b, 0) / values.length,
             max: Math.max(...values),
         };
+    }
+
+    /*
+     * A graph as a picture.
+     *
+     * The graph is HTML and SVG together (the lines are SVG, the axes, the
+     * incident bands and the figures are not), so the picture is composed again
+     * as one SVG from what is on screen, with the colours it has now written
+     * into it, and drawn on a canvas for the PNG. Nothing is sent anywhere.
+     */
+    const SNAP_W = 760;
+
+    /** The colours of the live nodes written onto their clones; a clone outside the page has no computed style. */
+    function inlineStyles(live, copy) {
+        const cs = getComputedStyle(live);
+        ['fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap', 'stroke-linejoin', 'opacity']
+            .forEach((p) => copy.style.setProperty(p, cs.getPropertyValue(p)));
+        [...live.children].forEach((child, i) => { if (copy.children[i]) inlineStyles(child, copy.children[i]); });
+    }
+
+    function snapText(x, y, text, { size = 12, anchor = 'start', fill = 'var(--c-text)', weight = 400 } = {}) {
+        return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${size}" font-weight="${weight}" fill="${fill}">${esc(text)}</text>`;
+    }
+
+    function esc(text) {
+        return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /** The picture as an SVG string, or '' when the graph has nothing drawn. */
+    function snapshotSvg(figure, view) {
+        const plot = figure.querySelector('.glances-chart-plot');
+        const lines = plot?.querySelector('svg');
+        if (!plot || !lines) return '';
+        const root = getComputedStyle(document.body);
+        const color = (v, fallback) => (root.getPropertyValue(v).trim() || fallback);
+        const bg = color('--background-primary', '#ffffff');
+        const text = color('--text-primary', '#111111');
+        const muted = color('--text-secondary', '#666666');
+        const grid = color('--border-primary', '#cccccc');
+        const bad = color('--accent-error', '#d33');
+
+        const title = [...figure.querySelector('.glances-chart-title')?.childNodes || []].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('').trim();
+        const range = figure.querySelector('.glances-chart-span')?.textContent.trim() || '';
+        const left = 72;
+        const top = 64;
+        const pw = SNAP_W - left - 24;
+        const ph = 200;
+        const clone = lines.cloneNode(true);
+        inlineStyles(lines, clone);
+        // Written onto the clone in the page's own units, drawn into the plot's box.
+        const inner = new XMLSerializer().serializeToString(clone)
+            .replace(/<svg /, `<svg x="${left}" y="${top}" width="${pw}" height="${ph}" `)
+            .replace(/ xmlns="[^"]*"/, '');
+
+        const bands = [...plot.querySelectorAll('.glances-chart-incident')].map((b) => {
+            const l = parseFloat(b.style.left) || 0;
+            const w = parseFloat(b.style.width) || 0;
+            return `<rect x="${(left + (l / 100) * pw).toFixed(1)}" y="${top}" width="${Math.max(2, (w / 100) * pw).toFixed(1)}" height="${ph}" fill="${bad}" fill-opacity="0.22" stroke="${bad}" stroke-width="1"/>`;
+        }).join('');
+        const restarts = [...plot.querySelectorAll('.glances-chart-restart')].map((m) => {
+            const l = parseFloat(m.style.left) || 0;
+            const x = (left + (l / 100) * pw).toFixed(1);
+            return `<line x1="${x}" y1="${top}" x2="${x}" y2="${top + ph}" stroke="${bad}" stroke-dasharray="3 3"/>`;
+        }).join('');
+
+        const yTicks = [...figure.querySelectorAll('.glances-axis-y .glances-axis-tick')];
+        const ys = yTicks.map((tick, i) => snapText(left - 8, top + (i * ph) / Math.max(1, yTicks.length - 1) + 4, tick.textContent, { size: 11, anchor: 'end', fill: muted })).join('');
+        const xTicks = [...figure.querySelectorAll('.glances-axis-x .glances-axis-tick')].filter((tick) => getComputedStyle(tick).display !== 'none');
+        const xs = xTicks.map((tick, i) => {
+            const anchor = i === 0 ? 'start' : i === xTicks.length - 1 ? 'end' : 'middle';
+            const x = left + (i * pw) / Math.max(1, xTicks.length - 1);
+            return snapText(x, top + ph + 18, tick.textContent, { size: 11, anchor, fill: muted });
+        }).join('');
+
+        const legend = figure.querySelector('.glances-chart-legend')?.textContent.replace(/\s+/g, ' ').trim() || '';
+        const stats = [...figure.querySelectorAll('.glances-chart-stat')].map((s) => `${s.querySelector('dt')?.textContent}: ${s.querySelector('dd')?.textContent}`).join('   ');
+        const host = view.dash.glancesStatus?.state?.name || 'Glances';
+        const footer = `nextDash · ${host} · ${new Date().toLocaleString()}`;
+        const H = top + ph + 96;
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="${SNAP_W}" height="${H}" viewBox="0 0 ${SNAP_W} ${H}" font-family="system-ui, sans-serif" style="--c-text:${text}">
+            <rect width="${SNAP_W}" height="${H}" fill="${bg}"/>
+            ${snapText(24, 30, title, { size: 18, weight: 700 })}
+            ${snapText(24, 50, range, { size: 11, fill: muted })}
+            <rect x="${left}" y="${top}" width="${pw}" height="${ph}" fill="none" stroke="${grid}"/>
+            ${bands}${inner}${restarts}${ys}${xs}
+            ${snapText(left, top + ph + 42, legend, { size: 11, fill: muted })}
+            ${snapText(left, top + ph + 60, stats, { size: 11 })}
+            ${snapText(24, H - 12, footer, { size: 10, fill: muted })}
+        </svg>`;
+    }
+
+    /** Draw the picture and hand it over as a download. */
+    async function snapshot(figure, view, def, button) {
+        const t = (k, f, p) => view.t(k, f, p);
+        const markup = snapshotSvg(figure, view);
+        if (!markup) return;
+        try {
+            const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+            const image = new Image();
+            await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = reject; image.src = url; });
+            const scale = 2;
+            const canvas = document.createElement('canvas');
+            canvas.width = image.width * scale;
+            canvas.height = image.height * scale;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(scale, scale);
+            ctx.drawImage(image, 0, 0);
+            const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+            if (!blob) throw new Error('empty');
+            const host = String(view.dash.glancesStatus?.hostId || 'host').replace(/[^a-z0-9-]/gi, '');
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `glances-${host}-${def.id}-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}.png`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(link.href), 10000);
+        } catch {
+            view.dash.showNotification?.(t('dashboard.glancesSaveImageFailed', 'Could not save the picture'), 'error');
+            button?.focus();
+        }
     }
 
     /**
@@ -395,31 +529,46 @@
         if (titleInfo) titleRow.appendChild(titleInfo);
         head.appendChild(titleRow);
         const controls = el('span', 'glances-chart-controls');
-        if (!fixed && compareAllowed(def)) {
+        if (!fixed && (compareAllowed(def, 'day') || compareAllowed(def, 'week'))) {
             const label = el('label', 'glances-compare');
-            const box = el('input');
-            box.type = 'checkbox';
-            box.checked = compareActive(def);
-            box.setAttribute('data-glances-compare', def.id);
-            box.addEventListener('change', () => {
-                setCompare(def.id, box.checked);
+            const pick = el('select', 'config-select glances-compare-select');
+            pick.setAttribute('data-glances-compare', def.id);
+            pick.setAttribute('aria-label', t('dashboard.glancesCompareWith', 'Compare with'));
+            [['', t('dashboard.glancesCompareOff', 'Compare: off')],
+                ...(compareAllowed(def, 'day') ? [['day', t('dashboard.glancesCompareYesterday', 'Yesterday')]] : []),
+                ...(compareAllowed(def, 'week') ? [['week', t('dashboard.glancesCompareLastWeek', 'Last week')]] : [])]
+                .forEach(([value, text]) => {
+                    const option = el('option', '', text);
+                    option.value = value;
+                    pick.appendChild(option);
+                });
+            pick.value = compareActive(def);
+            pick.addEventListener('change', () => {
+                setCompare(def.id, pick.value);
                 (onRange || (() => {}))();
             });
-            label.append(box, el('span', '', t('dashboard.glancesCompareYesterday', 'Yesterday')));
+            label.appendChild(pick);
             controls.appendChild(label);
             const yesterdayInfo = window.DashboardGlancesInfo?.button(view, 'yesterday');
             if (yesterdayInfo) controls.appendChild(yesterdayInfo);
         }
         if (!fixed) controls.appendChild(rangeBar(def.id, t, onRange || (() => {})));
+        const save = el('button', 'glances-chart-save', t('dashboard.glancesSaveImage', 'Save image'));
+        save.type = 'button';
+        save.setAttribute('data-glances-snapshot', def.id);
+        save.title = t('dashboard.glancesSaveImageHint', 'Save this graph as a picture');
+        save.addEventListener('click', () => { void snapshot(figure, view, def, save); });
+        controls.appendChild(save);
         head.appendChild(controls);
         figure.appendChild(head);
 
-        // Yesterday behind today: the same series a day earlier, moved forward a day, dashed.
+        // Yesterday (or last week) behind today: the same series earlier, moved forward, dashed.
         const ghostSeries = [];
-        if (!def.stacked && compareActive(def) && ghost && ghost.series) {
+        const mode = compareActive(def);
+        if (!def.stacked && mode && ghost && ghost.series) {
             found.slice(0, 2).forEach((s, i) => {
                 const earlier = clean(ghost.series[s.name]);
-                if (earlier.length >= 2) ghostSeries.push({ name: `${s.name}:ghost`, ghost: true, ref: i, points: earlier.map((p) => ({ t: p.t + DAY, v: p.v })) });
+                if (earlier.length >= 2) ghostSeries.push({ name: `${s.name}:ghost`, ghost: true, ref: i, points: earlier.map((p) => ({ t: p.t + COMPARE_OFFSET[mode], v: p.v })) });
             });
         }
         const drawn = found.length
@@ -530,7 +679,7 @@
                 const item = el('span', 'glances-legend-item');
                 const swatch = el('i', 'glances-swatch glances-swatch--ghost');
                 swatch.setAttribute('aria-hidden', 'true');
-                item.append(swatch, document.createTextNode(t('dashboard.glancesCompareYesterday', 'Yesterday')));
+                item.append(swatch, document.createTextNode(compareLabel(mode, t)));
                 legend.appendChild(item);
             }
             figure.appendChild(legend);
@@ -567,7 +716,7 @@
 
     const Chart = {
         draw, spanLabel, clean, el, svgEl, keepFocus,
-        RANGES, available, setKeep, GROUPS, group, namesFor, pathFor, ghostPathFor, compareActive, panel, rangeBar, rangeFor, setRange, currentRange, stepRange, sinceFor, format, stats,
+        RANGES, available, setKeep, snapshotSvg, GROUPS, group, namesFor, pathFor, ghostPathFor, compareActive, panel, rangeBar, rangeFor, setRange, currentRange, stepRange, sinceFor, format, stats,
     };
     window.DashboardGlancesChart = Chart;
 }());

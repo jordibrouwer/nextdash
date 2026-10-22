@@ -15,12 +15,7 @@
     const PSEUDO_FS = new Set(['tmpfs', 'devtmpfs', 'overlay', 'squashfs', 'proc', 'sysfs', 'cgroup', 'cgroup2', 'devpts', 'ramfs']);
     const PSEUDO_MOUNTS = ['/snap', '/run', '/sys', '/proc', '/dev'];
 
-    function el(tag, className, content) {
-        const node = document.createElement(tag);
-        if (className) node.className = className;
-        if (content !== undefined) node.textContent = content;
-        return node;
-    }
+    const { el } = window.DashboardGlancesDom;
 
     function str(value) {
         return typeof value === 'string' || typeof value === 'number' ? String(value) : '';

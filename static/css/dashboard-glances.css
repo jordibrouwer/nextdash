@@ -1037,6 +1037,33 @@ button.glances-row-link {
 
 .glances-chart-controls { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-3, 0.9rem); }
 
+.glances-chart-save {
+    padding: 0.15rem 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.4rem;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+.glances-chart-save:hover { color: var(--text-primary); background: color-mix(in srgb, var(--text-primary) 7%, transparent); }
+.glances-chart-save:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+
+.glances-compare-select {
+    min-width: 7.5rem;
+    padding: 0.2rem 1.6rem 0.2rem 0.6rem;
+    font-size: var(--font-size-small);
+}
+
+.glances-incident-cause {
+    margin: 0 0 var(--space-3, 0.9rem);
+    padding: 0.5rem 0.7rem;
+    border-left: 3px solid var(--accent-error);
+    background: color-mix(in srgb, var(--accent-error) 8%, transparent);
+    color: var(--text-primary);
+}
+
 .glances-compare {
     display: inline-flex;
     align-items: center;
@@ -1085,6 +1112,36 @@ button.glances-row-link {
 .glances-track-text { margin: 0; max-width: 24rem; color: var(--text-secondary); line-height: 1.5; }
 .glances-track-btn { margin-top: 0.3rem; }
 .glances-track-note { margin: 0.2rem 0 0; max-width: 24rem; font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; }
+
+/* ── The dashboard widget: one host ── */
+.dashboard-widget-glances-spark { display: block; width: 100%; height: 2.6rem; margin: 0.3rem 0; }
+.dashboard-widget-glances-spark-line { fill: none; stroke: var(--accent-primary); stroke-width: 1.6; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.dashboard-widget-glances-open { display: inline-block; margin-top: 0.4rem; font-size: var(--font-size-small); color: var(--text-secondary); text-decoration: none; }
+.dashboard-widget-glances-open:hover { color: var(--text-primary); text-decoration: underline; }
+.dashboard-widget-glances-open:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.dashboard-widget-glances--bad .dashboard-widget-headline-note { color: var(--accent-error); }
+.dashboard-widget-glances--warn .dashboard-widget-headline-note { color: var(--accent-warning); }
+
+/* ── The hosts strip above the Overview ── */
+.glances-host-strip { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 var(--space-3, 0.9rem); }
+.glances-host-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+.glances-host-chip:hover { background: color-mix(in srgb, var(--text-primary) 7%, transparent); }
+.glances-host-chip[aria-pressed="true"] { border-color: var(--accent-primary); background: color-mix(in srgb, var(--accent-primary) 14%, transparent); }
+.glances-host-chip:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.glances-host-chip .glances-hosts-dot { margin-right: 0; }
+.glances-host-chip-detail { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 
 /* ── Hosts: one row per host ── */
 .glances-hosts-name { white-space: nowrap; }

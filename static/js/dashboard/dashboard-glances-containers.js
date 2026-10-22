@@ -23,12 +23,7 @@
         return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
     }
 
-    function el(tag, className, content) {
-        const node = document.createElement(tag);
-        if (className) node.className = className;
-        if (content !== undefined) node.textContent = content;
-        return node;
-    }
+    const { el } = window.DashboardGlancesDom;
 
     /** The columns: what a row sorts on (null sorts last), numbers lead with the biggest. */
     const COLUMNS = [

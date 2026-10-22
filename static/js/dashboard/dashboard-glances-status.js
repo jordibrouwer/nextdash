@@ -44,6 +44,24 @@
     Host.load();
     window.DashboardGlancesHost = Host;
 
+    /**
+     * The one element helper of the Glances sections: a tag, a class, and text
+     * (set as text, never as markup). Loaded here because every section is
+     * loaded after this file.
+     */
+    window.DashboardGlancesDom = {
+        /** The reader's own time zone: days and hours are theirs, not the server's. */
+        zone() {
+            try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; }
+        },
+        el(tag, className, text) {
+            const node = document.createElement(tag);
+            if (className) node.className = className;
+            if (text !== undefined) node.textContent = text;
+            return node;
+        },
+    };
+
     class DashboardGlancesStatus {
         static POLL_MS = 30000;
 

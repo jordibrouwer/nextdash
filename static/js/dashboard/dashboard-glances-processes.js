@@ -22,12 +22,7 @@
         { key: 'threads', label: ['dashboard.glancesProcThreads', 'Threads'] },
     ];
 
-    function el(tag, className, text) {
-        const node = document.createElement(tag);
-        if (className) node.className = className;
-        if (text !== undefined) node.textContent = text;
-        return node;
-    }
+    const { el } = window.DashboardGlancesDom;
 
     class GlancesProcesses {
         constructor(view) {

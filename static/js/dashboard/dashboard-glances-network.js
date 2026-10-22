@@ -11,12 +11,7 @@
     /** The connection counters worth a line, in this order. */
     const CONNECTION_KEYS = ['ESTABLISHED', 'LISTEN', 'SYN_SENT', 'SYN_RECV', 'initiated', 'terminated'];
 
-    function el(tag, className, content) {
-        const node = document.createElement(tag);
-        if (className) node.className = className;
-        if (content !== undefined) node.textContent = content;
-        return node;
-    }
+    const { el } = window.DashboardGlancesDom;
 
     function str(value) {
         return typeof value === 'string' || typeof value === 'number' ? String(value) : '';

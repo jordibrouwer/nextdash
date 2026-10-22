@@ -20,12 +20,7 @@
 
     const state = new Map();
 
-    function el(tag, className, text) {
-        const node = document.createElement(tag);
-        if (className) node.className = className;
-        if (text !== undefined) node.textContent = text;
-        return node;
-    }
+    const { el } = window.DashboardGlancesDom;
 
     function compare(a, b, dir) {
         const missing = (x) => x === null || x === undefined || x === '' || (typeof x === 'number' && !Number.isFinite(x));

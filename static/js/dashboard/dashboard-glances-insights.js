@@ -40,12 +40,7 @@
         temp: ['dashboard.glancesInsKindTemp', 'Temperature'],
     };
 
-    function el(tag, className, text) {
-        const node = document.createElement(tag);
-        if (className) node.className = className;
-        if (text !== undefined) node.textContent = text;
-        return node;
-    }
+    const { el } = window.DashboardGlancesDom;
 
     function readChoice() {
         try {
@@ -70,16 +65,11 @@
         }
 
         endpoints() {
-            return [`insights?range=${this.choice.range}&heat=${this.choice.heat}&tz=${encodeURIComponent(this.zone())}`];
+            return [`insights?range=${this.choice.range}&heat=${this.choice.heat}&tz=${encodeURIComponent(window.DashboardGlancesDom.zone())}`];
         }
 
         t(key, fallback, params) {
             return this.view.t(key, fallback, params);
-        }
-
-        /** The reader's own time zone: days and hours are theirs, not the server's. */
-        zone() {
-            try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; }
         }
 
         tl(pair) {

@@ -14,12 +14,7 @@
 (function () {
     'use strict';
 
-    function el(tag, className, text) {
-        const node = document.createElement(tag);
-        if (className) node.className = className;
-        if (text !== undefined) node.textContent = text;
-        return node;
-    }
+    const { el } = window.DashboardGlancesDom;
 
     async function ensureModules() {
         const load = window.LazyScript?.loadScriptOnce;

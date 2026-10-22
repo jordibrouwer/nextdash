@@ -90,12 +90,7 @@
 
     window.DashboardGlancesSpecs = SPEC;
 
-    function el(tag, className, text) {
-        const node = document.createElement(tag);
-        if (className) node.className = className;
-        if (text !== undefined) node.textContent = text;
-        return node;
-    }
+    const { el } = window.DashboardGlancesDom;
 
     /** A sensor group: "Core 11" and "Core 0" are one "Core", the hottest of them. */
     function sensorGroup(label) {
@@ -112,10 +107,6 @@
             this._forecastPath = '';
         }
 
-        zone() {
-            try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; }
-        }
-
         /** Whether the host runs a plugin; unknown (no probe) counts as yes. */
         has(plugin) {
             const plugins = this.view.plugins;
@@ -128,6 +119,8 @@
 
         endpoints() {
             const list = new Set();
+            // With several hosts, a strip of them above the blocks: from the record, so it costs the hosts nothing.
+            if ((this.view.dash.glancesStatus?.hosts || []).length > 1) list.add('hosts');
             const need = (path, plugin) => { if (this.has(plugin || path)) list.add(path); };
             if (this.shown('system')) {
                 need('system');
@@ -175,7 +168,7 @@
                 need('fs');
                 need('diskio');
                 // When a disk will be full: what nextDash worked out from its record (cached half a minute).
-                this._forecastPath = `insights?range=24h&heat=cpu&tz=${encodeURIComponent(this.zone())}`;
+                this._forecastPath = `insights?range=24h&heat=cpu&tz=${encodeURIComponent(window.DashboardGlancesDom.zone())}`;
                 list.add(this._forecastPath);
             }
             if (this.shown('smart')) need('smart');
@@ -198,9 +191,46 @@
             } else {
                 grid.append(...parts);
             }
+            const strip = this.hostStrip(data);
             window.DashboardGlancesTable.keepSortFocus(container, () => {
-                window.DashboardGlancesChart.keepFocus(container, () => container.replaceChildren(grid));
+                window.DashboardGlancesChart.keepFocus(container, () => container.replaceChildren(...(strip ? [strip] : []), grid));
             });
+        }
+
+        /** The other hosts as chips: how each is and two figures; a click looks at that host. */
+        hostStrip(data) {
+            const G = window.DashboardGlances;
+            const answer = G.usable(data.hosts);
+            const rows = answer && Array.isArray(answer.hosts) ? answer.hosts : [];
+            if (rows.length < 2) return null;
+            const v = this.view;
+            const here = v.dash.glancesStatus?.hostId;
+            const strip = el('div', 'glances-host-strip');
+            strip.setAttribute('data-glances-host-strip', '');
+            strip.setAttribute('role', 'group');
+            strip.setAttribute('aria-label', v.t('dashboard.glancesSectionHosts', 'Hosts'));
+            rows.forEach((row) => {
+                const chip = el('button', 'glances-host-chip');
+                chip.type = 'button';
+                chip.setAttribute('data-glances-host-chip', row.id);
+                if (row.id === here) chip.setAttribute('aria-pressed', 'true');
+                else chip.setAttribute('aria-pressed', 'false');
+                const level = row.configured && !row.paused ? row.level : 'unknown';
+                const dot = el('i', 'glances-hosts-dot');
+                dot.setAttribute('data-level', level);
+                dot.setAttribute('aria-hidden', 'true');
+                chip.append(dot, el('span', 'glances-host-chip-name', row.name));
+                const num = (x) => (typeof x === 'number' && Number.isFinite(x) ? `${Math.round(x)}%` : null);
+                let detail = '';
+                if (!row.configured) detail = v.t('dashboard.glancesHostNoAddressShort', 'No address yet');
+                else if (row.paused) detail = v.t('dashboard.glancesHostPaused', 'Connection off');
+                else if (!row.ok && row.level === 'unknown' && row.at) detail = v.t('dashboard.glancesHostAwayNow', 'Not answering');
+                else detail = [num(row.cpu), num(row.mem)].filter(Boolean).join(' · ');
+                if (detail) chip.appendChild(el('span', 'glances-host-chip-detail', detail));
+                chip.addEventListener('click', () => { if (row.id !== here) void v.switchHost(row.id, v.section); });
+                strip.appendChild(chip);
+            });
+            return strip;
         }
 
         /** The card of one of the four big figures: its parts, from what the host sent. */

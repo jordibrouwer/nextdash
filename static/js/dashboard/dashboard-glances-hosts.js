@@ -11,12 +11,7 @@
 (function () {
     'use strict';
 
-    function el(tag, className, text) {
-        const node = document.createElement(tag);
-        if (className) node.className = className;
-        if (text !== undefined) node.textContent = text;
-        return node;
-    }
+    const { el } = window.DashboardGlancesDom;
 
     /** A meter: the value as a bar and as a number, yellow and red from the page's lines. */
     function meter(view, value, kind) {

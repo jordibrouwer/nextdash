@@ -74,8 +74,8 @@ function processes(url) {
 }
 
 /** What the server's own record answers: points for the series asked. */
-function historyAnswer(url) {
-    const names = ['cpu', 'mem', 'swap', 'load1', 'load5', 'load15', 'net:eth0:rx', 'net:eth0:tx', 'temp:Core', 'memc:used', 'memc:cache', 'memc:free', ...Array.from({ length: 12 }, (_, i) => `core:${i}`)];
+function historyAnswer(url, extra = []) {
+    const names = [...extra, 'cpu', 'mem', 'swap', 'load1', 'load5', 'load15', 'net:eth0:rx', 'net:eth0:tx', 'temp:Core', 'memc:used', 'memc:cache', 'memc:free', ...Array.from({ length: 12 }, (_, i) => `core:${i}`)];
     const asked = (url.searchParams.get('series') || '').split(',').filter(Boolean);
     const since = Number(url.searchParams.get('since')) || Date.now() - 3600 * 1000;
     const series = {};
@@ -96,7 +96,7 @@ function historyAnswer(url) {
  * value, a function of the URL, or { __status } for a bare HTTP status.
  */
 async function mockGlances(page, overrides = {}) {
-    const state = { calls: [], overrides, saved: null, tracked: [], wiped: false, paused: false, recordEvery: 30, retentionDays: 30, reset: false, hosts: null, link: JSON.parse(JSON.stringify(LINK)) };
+    const state = { calls: [], overrides, saved: null, tracked: [], wiped: false, paused: false, recordEvery: 30, retentionDays: 30, reset: false, hosts: null, extraNames: [], link: JSON.parse(JSON.stringify(LINK)) };
     await page.route('**/api/glances/**', async (route) => {
         const request = route.request();
         const url = new URL(request.url());
@@ -153,7 +153,7 @@ async function mockGlances(page, overrides = {}) {
         } else if (rest === 'docker-link') {
             body = state.link;
         } else if (rest === 'history') {
-            body = historyAnswer(url);
+            body = historyAnswer(url, state.extraNames);
         } else if (rest === 'processlist') {
             body = processes(url);
         } else if (rest.startsWith('processes/')) {
@@ -762,7 +762,7 @@ test.describe('graph extras: stacked memory, yesterday, incident bands', () => {
         const chart = page.locator('[data-glances-chart="cpu"]');
         await expect(chart).toBeVisible();
         await expect(chart.locator('.glances-chart-line--ghost')).toHaveCount(0);
-        await chart.locator('[data-glances-compare="cpu"]').check();
+        await chart.locator('[data-glances-compare="cpu"]').selectOption('day');
         await expect(chart.locator('.glances-chart-line--ghost')).toHaveCount(1);
         await expect(chart.locator('.glances-chart-legend')).toContainText('Yesterday');
         const ask = state.calls.find((c) => c.path === 'history' && c.ghost === '1');
@@ -770,11 +770,45 @@ test.describe('graph extras: stacked memory, yesterday, incident bands', () => {
         expect(Number(ask.until) - Number(ask.since)).toBeGreaterThan(3000 * 1000);
         expect(Date.now() - Number(ask.until)).toBeGreaterThan(23 * 3600 * 1000);
         // The choice is remembered, and off again takes the line away.
-        await chart.locator('[data-glances-compare="cpu"]').uncheck();
+        await chart.locator('[data-glances-compare="cpu"]').selectOption('');
         await expect(chart.locator('.glances-chart-line--ghost')).toHaveCount(0);
-        // A week is longer than a day: nothing to put behind it.
+        // Last week behind today, with its own question a week back.
+        await chart.locator('[data-glances-compare="cpu"]').selectOption('week');
+        await expect(chart.locator('.glances-chart-line--ghost')).toHaveCount(1);
+        await expect(chart.locator('.glances-chart-legend')).toContainText('Last week');
+        const weekAsk = state.calls.filter((c) => c.path === 'history' && c.ghost === '1').pop();
+        expect(Date.now() - Number(weekAsk.until)).toBeGreaterThan(6.9 * 24 * 3600 * 1000);
+        // A week of window has only last week to be compared with, not yesterday.
         await chart.locator('[data-glances-range-select]').selectOption('7d');
+        await expect(chart.locator('[data-glances-compare="cpu"] option')).toHaveText(['Compare: off', 'Last week']);
+        // A month has nothing to put behind it.
+        await chart.locator('[data-glances-range-select]').selectOption('30d');
         await expect(chart.locator('[data-glances-compare]')).toHaveCount(0);
+    });
+
+    test('Save image gives the graph as a PNG, from the history and from an incident', async ({ page }) => {
+        await mockGlances(page);
+        await openView(page, '#glances/history');
+        const chart = page.locator('[data-glances-chart="cpu"]');
+        await expect(chart).toBeVisible();
+        const [download] = await Promise.all([
+            page.waitForEvent('download'),
+            chart.locator('[data-glances-snapshot="cpu"]').click(),
+        ]);
+        expect(download.suggestedFilename()).toMatch(/^glances-.*-cpu-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}\.png$/);
+        const fs = require('fs');
+        const bytes = fs.readFileSync(await download.path());
+        expect(bytes.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
+        expect(bytes.length).toBeGreaterThan(4000);
+        // The lines carry their own colours: a picture has no stylesheet, and without them every line is a black shape.
+        const svg = await page.evaluate(() => window.DashboardGlancesChart.snapshotSvg(document.querySelector('[data-glances-chart="cpu"]'), { dash: window.dashboardInstance }));
+        expect(svg).toMatch(/stroke:\s*rgb|stroke:\s*#/);
+        expect(svg).not.toMatch(/<polyline[^>]*style="[^"]*stroke:\s*;/);
+
+        // The same button on the graphs around an incident.
+        await chart.locator('[data-glances-incident="cpu"]').click();
+        const drawer = page.locator('[data-glances-drawer="incident"]');
+        await expect(drawer.locator('[data-glances-snapshot="cpu"]')).toBeVisible();
     });
 
     test('what went past a red line is a band on the graph it belongs to', async ({ page }) => {
@@ -786,6 +820,23 @@ test.describe('graph extras: stacked memory, yesterday, incident bands', () => {
         await expect(page.locator('[data-glances-chart="cpu"] [data-glances-incident="down"]')).toHaveCount(1);
         await expect(page.locator('[data-glances-chart="load"] [data-glances-incident="down"]')).toHaveCount(1);
         await expect(page.locator('[data-glances-chart="cpu"] [data-glances-incident="cpu"]')).toHaveAttribute('title', /Processor/);
+    });
+
+    test('a processor incident names who was busiest, from what is recorded', async ({ page }) => {
+        const state = await mockGlances(page);
+        state.extraNames = ['ct:app-1:cpu'];
+        await openView(page, '#glances/history');
+        await page.locator('[data-glances-chart="cpu"] [data-glances-incident="cpu"]').click();
+        const cause = page.locator('[data-glances-incident-cause]');
+        await expect(cause).toHaveAttribute('data-glances-incident-cause', 'app-1');
+        await expect(cause).toContainText('Busiest at the time: app-1');
+        // Nothing recorded, nothing said.
+        state.extraNames = [];
+        await page.reload();
+        await expect(page.locator('[data-glances-chart="cpu"]')).toBeVisible({ timeout: 15_000 });
+        await page.locator('[data-glances-chart="cpu"] [data-glances-incident="cpu"]').click();
+        await expect(page.locator('[data-glances-drawer="incident"]')).toBeVisible();
+        await expect(page.locator('[data-glances-incident-cause]')).toHaveCount(0);
     });
 
     test('a click on an incident opens the graphs around that moment in the side panel', async ({ page }) => {
@@ -1178,8 +1229,8 @@ test.describe('Config → Glances: every change is kept', () => {
         await markWhatsNewSeen(page);
         await page.goto('/#config/glances');
         const boxes = page.locator('[data-glances-notify]');
-        await expect(boxes).toHaveCount(5);
-        for (let i = 0; i < 5; i += 1) await expect(boxes.nth(i)).not.toBeChecked();
+        await expect(boxes).toHaveCount(6);
+        for (let i = 0; i < 6; i += 1) await expect(boxes.nth(i)).not.toBeChecked();
         await page.locator('[data-glances-notify="down"]').check();
         await page.locator('[data-glances-notify="disk"]').check();
         await expect.poll(() => state.saved && state.saved.notify && state.saved.notify.slice().sort().join(',')).toBe('disk,down');
@@ -1593,6 +1644,22 @@ test.describe('several hosts', () => {
         await nas.locator('[data-glances-host-open]').click();
         await expect(page).toHaveURL(/#glances\/overview\?host=nas$/);
         await expect(page.locator('[data-glances-host]')).toHaveValue('nas');
+    });
+
+    test('the Overview has a strip of the hosts, and a chip looks at that host', async ({ page }) => {
+        const state = await mockGlances(page);
+        await openView(page);
+        await expect(page.locator('[data-glances-host-strip]')).toHaveCount(0);
+        state.hosts = [{ id: 'main', name: 'Home' }, { id: 'nas', name: 'NAS' }];
+        await page.reload();
+        const strip = page.locator('[data-glances-host-strip]');
+        await expect(strip.locator('[data-glances-host-chip]')).toHaveCount(2);
+        await expect(strip.locator('[data-glances-host-chip="main"]')).toHaveAttribute('aria-pressed', 'true');
+        await expect(strip.locator('[data-glances-host-chip="nas"]')).toContainText('84%');
+        await strip.locator('[data-glances-host-chip="nas"]').click();
+        await expect(page).toHaveURL(/#glances\/overview\?host=nas$/);
+        await expect(page.locator('[data-glances-host]')).toHaveValue('nas');
+        await expect(page.locator('[data-glances-host-chip="nas"]')).toHaveAttribute('aria-pressed', 'true');
     });
 
     test('a host without an address says so and lets the reader go to another; Glances itself stays', async ({ page }) => {
