@@ -1497,7 +1497,10 @@ func (h *Handlers) CustomWidgetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := h.fetchCustomWidget(r.Context(), spec)
+	// Not cancelled with the request: a reader leaving mid-fetch made it fail,
+	// and the failure was cached for every other viewer. customWidgetTimeout
+	// still bounds it.
+	result := h.fetchCustomWidget(context.WithoutCancel(r.Context()), spec)
 	// A failure is cached for a short while too, so a service that is down does
 	// not turn an open dashboard into a retry loop against it.
 	ttl := time.Duration(spec.TTL) * time.Second

@@ -283,6 +283,10 @@ func (h *Handlers) arrUpcoming(ctx context.Context, kind arrKind, spec arrSpec, 
 			items = append(items, item)
 		}
 	} else {
+		// Release dates are date-only (midnight UTC): from "now" a film out today
+		// would drop off after 00:00 UTC, so the window starts at the day.
+		start = now.UTC().Truncate(24 * time.Hour)
+		query.Set("start", start.Format(time.RFC3339))
 		var movies []arrMovie
 		if err := h.arrGet(ctx, spec, credential, "/api/v3/calendar", query, &movies); err != nil {
 			return nil, err

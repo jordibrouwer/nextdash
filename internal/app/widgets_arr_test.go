@@ -274,3 +274,17 @@ func TestArrRefusedKey(t *testing.T) {
 		t.Fatalf("code = %q (%v)", mediaErrorCode(err), err)
 	}
 }
+
+// Radarr dates are date-only midnight UTC: a film out today must still be in
+// the window later the same day.
+func TestRadarrDateKeepsAFilmReleasingToday(t *testing.T) {
+	now := time.Date(2026, 10, 22, 15, 0, 0, 0, time.UTC)
+	movie := arrMovie{DigitalRelease: "2026-10-22T00:00:00Z"}
+	end := now.AddDate(0, 0, 7)
+	if !radarrDate(movie, now, end).IsZero() {
+		t.Fatal("precondition: a window starting at now drops today's film")
+	}
+	if radarrDate(movie, now.Truncate(24*time.Hour), end).IsZero() {
+		t.Error("a window starting at the day dropped today's film")
+	}
+}

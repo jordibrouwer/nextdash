@@ -339,6 +339,11 @@ func (h *Handlers) mediaAnswer(ctx context.Context, pageID int, widgetID string,
 		next.answer = result
 	} else {
 		logWarn(logComponentWidgets, "%s widget %s: %v", spec.Service, widgetID, err)
+		// Asked for again soon, like a half answer: a failure should not pin
+		// the tile in error for the whole TTL.
+		if spec.TTL > mediaPartialRetry {
+			next.expires = now.Add(mediaPartialRetry)
+		}
 		next.answer = MediaResult{
 			Items: []MediaItem{}, Libraries: result.Libraries,
 			FetchedAt: result.FetchedAt, Error: mediaErrorCode(err),

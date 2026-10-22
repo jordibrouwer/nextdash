@@ -137,3 +137,38 @@ func TestMediaMetersKeepAZeroAndDropTheUnknown(t *testing.T) {
 		t.Errorf("meters: %s", raw)
 	}
 }
+
+// A failed fetch is asked for again soon, whether or not an older good answer
+// is kept to show, instead of pinning the tile for the whole TTL.
+func TestMediaFailureIsRetriedSoonAndKeepsTheGoodAnswer(t *testing.T) {
+	mediaForgetAll()
+	h := newTestHandlers(t)
+	spec := mediaSpec{Service: "sonarr", Server: "http://x", CredentialID: "c", Fingerprint: "f", TTL: time.Hour}
+	fail := func(context.Context, func(mediaImageRef) string) (MediaResult, map[mediaImageRef]bool, error) {
+		return MediaResult{}, nil, errors.New("down")
+	}
+	entry := func() *mediaCacheEntry {
+		mediaWidgetCache.Lock()
+		defer mediaWidgetCache.Unlock()
+		for _, e := range mediaWidgetCache.at {
+			return e
+		}
+		return nil
+	}
+	h.mediaAnswer(context.Background(), 1, "w_000000000001", spec, fail, false)
+	if e := entry(); e == nil || time.Until(e.expires) > mediaPartialRetry {
+		t.Fatalf("a failure with no good answer is kept too long: %+v", e)
+	}
+	good := func(context.Context, func(mediaImageRef) string) (MediaResult, map[mediaImageRef]bool, error) {
+		return MediaResult{Items: []MediaItem{{ID: "a", Title: "a"}}}, nil, nil
+	}
+	h.mediaAnswer(context.Background(), 1, "w_000000000001", spec, good, true)
+	if e := entry(); e == nil || time.Until(e.expires) < 30*time.Minute {
+		t.Fatalf("a good answer should keep the TTL: %+v", e)
+	}
+	got := h.mediaAnswer(context.Background(), 1, "w_000000000001", spec, fail, true)
+	e := entry()
+	if e == nil || e.good == nil || time.Until(e.expires) > mediaPartialRetry || !got.Stale {
+		t.Fatalf("a failure after a good answer: stale=%v entry=%+v", got.Stale, e)
+	}
+}
