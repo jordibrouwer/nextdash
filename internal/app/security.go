@@ -2,6 +2,7 @@ package app
 
 import (
 	"crypto/subtle"
+	"html"
 	"math"
 	"net/http"
 	"os"
@@ -87,12 +88,53 @@ var svgScriptPattern = regexp.MustCompile(
 var svgForeignObjectPattern = regexp.MustCompile(`(?i)<foreignObject[\s\S]*?</foreignObject>`)
 var svgDataHrefPattern = regexp.MustCompile(`(?i)\b(?:xlink:)?href\s*=\s*(?:"data:[^"]*"|'data:[^']*'|data:[^\s>]*)`)
 
-// sanitizeSVGContent removes <script> elements and event-handler attributes from SVG.
+// svgHrefPattern matches any href / xlink:href attribute, quoted or not, so its
+// value can be decoded before it is judged.
+var svgHrefPattern = regexp.MustCompile(`(?i)\b(?:xlink:)?href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]*))`)
+
+// svgUnsafeHref reports whether an href, once its character references are
+// decoded the way a browser decodes them, is a script-carrying address.
+func svgUnsafeHref(value string) bool {
+	v := strings.ToLower(html.UnescapeString(value))
+	v = strings.Map(func(r rune) rune {
+		if r <= ' ' || r == 0x7f {
+			return -1
+		}
+		return r
+	}, v)
+	return strings.HasPrefix(v, "javascript:") || strings.HasPrefix(v, "vbscript:") || strings.HasPrefix(v, "data:")
+}
+
+/*
+sanitizeSVGContent removes <script> elements, event-handler attributes and
+script-carrying hrefs from SVG.
+
+One pass is not enough: removing a match can join the text on either side of it
+into a new one, so "<scr<script></script>ipt>" comes out of a single pass as
+"<script>". It is run until a pass changes nothing. Character references in an
+href are decoded before it is judged, since the browser decodes them too.
+*/
 func sanitizeSVGContent(data []byte) []byte {
-	out := svgScriptPattern.ReplaceAll(data, nil)
-	out = svgForeignObjectPattern.ReplaceAll(out, nil)
-	out = svgDataHrefPattern.ReplaceAll(out, nil)
-	return out
+	out := data
+	// Every pass that changes anything makes the text shorter, so this ends.
+	for {
+		next := svgScriptPattern.ReplaceAll(out, nil)
+		next = svgForeignObjectPattern.ReplaceAll(next, nil)
+		next = svgDataHrefPattern.ReplaceAll(next, nil)
+		next = svgHrefPattern.ReplaceAllFunc(next, func(m []byte) []byte {
+			sub := svgHrefPattern.FindSubmatch(m)
+			for _, g := range sub[1:] {
+				if len(g) > 0 && svgUnsafeHref(string(g)) {
+					return nil
+				}
+			}
+			return m
+		})
+		if len(next) == len(out) {
+			return next
+		}
+		out = next
+	}
 }
 
 // validCSSColor matches safe CSS color values: hex, rgb/rgba, hsl/hsla, named colors,

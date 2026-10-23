@@ -86,6 +86,11 @@ func dataFileHandler(dataDir string) http.HandlerFunc {
 			http.NotFound(w, req)
 			return
 		}
+		// An SVG here is a picture. Sandboxed, a script that got past the
+		// sanitizer still has no origin to run in when the file is opened directly.
+		if strings.HasSuffix(strings.ToLower(rel), ".svg") {
+			w.Header().Set("Content-Security-Policy", "sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src data:")
+		}
 		fileServer.ServeHTTP(w, req)
 	}
 }
