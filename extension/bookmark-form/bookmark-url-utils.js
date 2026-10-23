@@ -7,6 +7,8 @@
     function ensureHttpUrl(raw) {
         const trimmed = String(raw || '').trim();
         if (!trimmed) return '';
+        // host:port (localhost:3000, nas:8080) reads as a scheme but is not one.
+        if (/^[^/\s:@]+:\d+(?:[/?#]|$)/.test(trimmed)) return `https://${trimmed}`;
         if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed;
         return `https://${trimmed}`;
     }
