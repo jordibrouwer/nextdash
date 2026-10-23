@@ -121,11 +121,6 @@ func TestEveryChoiceComesFromThePoolOfItsMaterial(t *testing.T) {
 	themes := getDefaultBuiltInThemes()
 	for key, recipe := range themeBackdropChoice {
 		for _, id := range []string{key, strings.TrimSuffix(key, "-light") + "-dark"} {
-			// A theme that names a recipe of its own (the neutrals, until they are
-			// redrawn) is not drawn from the pool.
-			if themes[id].Backdrop != "" {
-				continue
-			}
 			material := materialAttr(themes[id])
 			if !themeBackdropInPool(material, recipe) {
 				t.Errorf("%s (%s) is drawn behind %q, which is not in the pool of %s", id, material, recipe, material)

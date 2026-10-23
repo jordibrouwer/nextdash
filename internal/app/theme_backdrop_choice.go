@@ -9,8 +9,7 @@ from the theme's name, its palette and its archetype, and was reviewed one pair
 at a time in docs/backdrop-assignments.html; it is not a hash, and it does not
 move when the list of recipes grows. It is also held to the theme's material:
 the recipe comes from that material's pool (theme_backdrop_pools.go), and the
-entries marked "uit het ...-pakket" are the ones that were moved there. A theme
-that names a recipe of its own (the neutrals) is left as it is.
+entries marked "uit het ...-pakket" are the ones that were moved there.
 
 The order a backdrop is looked up in, in themeBackdropSeeded: a recipe the
 theme names itself (ThemeColors.Backdrop, which is how a custom theme chooses
@@ -80,7 +79,7 @@ var themeBackdropChoice = map[string]string{
 	"gloss-ultraviolet-light":     "prism",       // uv en breking
 	"graphite-prism-light":        "haze",        // uit het frost-pakket (was prism)
 	"graphite-twill-light":        "crosshatch",  // keper
-	"gray-light":                  "mountains",   // verre heuvels in blauwgrijs
+	"gray-light":                  "haze",        // laaghangende mist
 	"great-wave-light":            "sunset",      // uit het lacquer-pakket (was waves)
 	"gunmetal-bronze-light":       "ruled",       // uit het brushed-pakket (was hexagons)
 	"harbour-fog-light":           "caustics",    // uit het frost-pakket (was horizon)
@@ -113,7 +112,7 @@ var themeBackdropChoice = map[string]string{
 	"mulberry-silk-light":         "blooms",      // zijde
 	"nebula-nursery-light":        "nebula",      // naam; nebula past beter dan rings
 	"neon-grid-light":             "perspective", // neonraster
-	"neutral-light":               "bokeh",       // lichtpunten uit focus
+	"neutral-light":               "stars",       // sterren, rustig grijs
 	"nocturne-ink-light":          "stars",       // nachtstuk
 	"nordic-frost-light":          "rings",       // uit het frost-pakket (was mountains)
 	"obsidian-gold-light":         "band",        // een streep goud
@@ -186,5 +185,8 @@ var themeBackdropChoice = map[string]string{
 	"wheat-field-light":           "dunes",       // golvend graan
 	"winter-ember-light":          "stars",       // uit het frost-pakket (was glow)
 	"zen-ember-light":             "ruled",       // uit het paper-pakket (was rings)
-	"zinc-light":                  "mesh",        // zachte wolken in neutraal grijs
+	"zinc-light":                  "dotgrid",     // fijn stippenraster
+	"chalk-light":                 "ruled",       // schriftlijnen op kalk
+	"concrete-light":              "horizon",     // een lage horizon boven beton
+	"black-light":                 "stars",       // sterren op zwart
 }
