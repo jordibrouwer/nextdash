@@ -553,7 +553,8 @@
         // The quiet centre is per theme too, unless every theme is forced to one
         // answer; otherwise the install-wide slider is the answer.
         const tuningCalm = num((s.backdropTuning || {}).calm);
-        const calm = (!s.themeSurfacesForceAll && num(prefs.calm) !== null) ? num(prefs.calm) : (tuningCalm !== null ? tuningCalm : 0.5);
+        const rawCalm = (!s.themeSurfacesForceAll && num(prefs.calm) !== null) ? num(prefs.calm) : (tuningCalm !== null ? tuningCalm : 0.5);
+        const calm = Math.round(Math.min(1, Math.max(0, rawCalm)) * 100) / 100;
         return {
             glass: { alpha: num(glassSource.alpha), blur: num(glassSource.blur), border: glassSource.border === 'on' },
             depth: pick(s.themeDepth, prefs.depth, ideal.depth || 'soft'),
