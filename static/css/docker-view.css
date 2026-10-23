@@ -69,7 +69,10 @@
 
 .docker-cell--image {
     color: var(--text-secondary);
-    max-width: 16rem;
+    /* Capped by the list's own width too (docker-list container): at a
+       narrow list two 16rem columns plus the rest outgrew the pane, and the
+       table ran past its right edge in Chrome. */
+    max-width: min(16rem, 16cqw);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -81,7 +84,7 @@
 
 .docker-name {
     display: inline-block;
-    max-width: 16rem;
+    max-width: min(16rem, 20cqw);
     vertical-align: bottom;
     white-space: nowrap;
     overflow: hidden;
