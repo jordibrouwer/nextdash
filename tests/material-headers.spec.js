@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { WRITE_TOKEN, markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 /**
  * The category header under a material's signature.
@@ -63,6 +63,11 @@ const grip = (page) => page.evaluate(() => {
 });
 
 test.describe('the header under a material', () => {
+    test.afterEach(async ({ request }) => {
+        // One store behind the worker: the theme is put back for the next test.
+        await request.post('/api/settings', { data: { theme: 'look-berry-dark' }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
+    });
+
     test('every material draws its mark where the // was, and keeps the grip', async ({ page }) => {
         await openDashboard(page);
         for (const material of MATERIALS) {
@@ -96,7 +101,7 @@ test.describe('the header under a material', () => {
         const label = () => page.evaluate(() => {
             const el = document.querySelector('.dashboard-grid .category:not(.dashboard-widget) .category-title-label');
             const cs = getComputedStyle(el);
-            return { transform: cs.textTransform, flex: cs.flexGrow, clip: cs.clipPath };
+            return { transform: cs.textTransform, flex: cs.flexGrow, weight: cs.fontWeight };
         });
 
         await under(page, 'neon');
@@ -106,13 +111,31 @@ test.describe('the header under a material', () => {
         expect((await label()).transform, 'a chosen style left the neon header on').not.toBe('uppercase');
 
         await under(page, 'carbon');
-        expect((await label()).clip, 'carbon draws its tab with a cut corner').not.toBe('none');
+        expect((await label()).transform, 'carbon draws its name in capitals').toBe('uppercase');
 
         // Classic draws none of it.
         await page.evaluate(() => {
             [document.documentElement, document.body].forEach((el) => el.setAttribute('data-material-style', 'classic'));
         });
-        expect((await label()).clip, 'classic drew the carbon tab').toBe('none');
+        expect((await label()).transform, 'classic drew the carbon header').not.toBe('uppercase');
+    });
+
+    test('a theme brings its material and its header by itself, through the settings', async ({ page, request }) => {
+        // Neon material, set the way a reader sets it: the theme, and nothing by hand.
+        await request.post('/api/settings', { data: { theme: 'cold-cathode-dark', materialStyle: 'signature', categoryHeaderStyle: 'theme' }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
+        await openDashboard(page);
+        await page.reload();
+        await page.waitForSelector('.dashboard-grid .category .bookmark-link', { timeout: 20_000 });
+        await page.evaluate(() => {
+            const grid = document.querySelector('.dashboard-grid');
+            grid.classList.remove('layout-terminal', 'layout-launcher');
+            grid.classList.add('layout-masonry');
+        });
+        expect(await page.evaluate(() => document.body.getAttribute('data-material')), 'the theme brought no material').toBe('neon');
+        const g = await grip(page);
+        expect(g.marked, 'the real page drew no mark where the // was').toBe(true);
+        const transform = await page.evaluate(() => getComputedStyle(document.querySelector('.dashboard-grid .category:not(.dashboard-widget) .category-title-label')).textTransform);
+        expect(transform, 'the real page drew no neon header').toBe('uppercase');
     });
 
     test('a widget takes the same header, and its mark stands where the // does', async ({ page }) => {
