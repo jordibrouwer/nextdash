@@ -243,7 +243,7 @@
         statsBlock(a) {
             const keys = Object.keys(a.stats || {});
             if (!keys.length) return null;
-            const block = this.block('stats', 'dashboard.glancesInsStats', 'Typical and peak');
+            const block = this.block('stats', 'dashboard.glancesInsStats', 'Typical and peak', true);
             const names = { cpu: 'Processor', mem: 'Memory', swap: 'Swap', load1: 'Load' };
             const rows = keys.map((k) => ({ key: k, name: names[k] || k, ...a.stats[k] }));
             const unit = (r, v) => (r.key === 'load1' ? v.toFixed(2) : `${Math.round(v)}%`);

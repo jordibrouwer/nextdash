@@ -162,7 +162,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/dashboard/dashboard-glances-history.js":              "7d66bb097189",
 	"js/dashboard/dashboard-glances-hosts.js":                "7aeb57bb40f5",
 	"js/dashboard/dashboard-glances-info.js":                 "c2352c6d4749",
-	"js/dashboard/dashboard-glances-insights.js":             "ebd88bc8df57",
+	"js/dashboard/dashboard-glances-insights.js":             "32e0117ae1b2",
 	"js/dashboard/dashboard-glances-loader.js":               "4de2effd208a",
 	"js/dashboard/dashboard-glances-network.js":              "107a8a26fed8",
 	"js/dashboard/dashboard-glances-overview.js":             "af427f0b90b5",
