@@ -1505,7 +1505,9 @@ class DashboardPageNav {
     _startPageTabRename(btn, page, index) {
         const d = this.dash;
         if (!this.allowsPageTabInlineEdit()) return;
-        if (btn.querySelector('.page-tab-popover')) return;
+        // The popover lives on <body>, not inside the tab, so one is open when
+        // any is: a second start would leave the first behind with its handlers.
+        if (btn.querySelector('.page-tab-popover') || document.querySelector('.page-tab-popover')) return;
 
         const PAGE_COLORS = [
             null,
