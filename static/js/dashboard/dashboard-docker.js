@@ -1119,6 +1119,8 @@ class DashboardDocker {
         // go with it rather than outliving the row.
         this._renderAfterPortsPop = false;
         this._portsPopClose?.();
+        // Scrolled down, a poll's redraw threw the reader back to the top.
+        this.shell.holdHeight?.();
         body.replaceChildren();
         this.syncTabs();
         if (this.tabsEl) this.tabsEl.hidden = !this.status?.socket;

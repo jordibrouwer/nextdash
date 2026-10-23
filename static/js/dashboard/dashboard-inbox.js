@@ -5185,6 +5185,8 @@ class DashboardInbox {
         this.renderBulkBar();
 
         const body = this._ownBody || shell.body;
+        // Scrolled down, a redraw threw the reader back to the top.
+        shell.holdHeight?.();
         body.innerHTML = '';
 
         // What the active filter selects, in a sentence. Rendered before the
