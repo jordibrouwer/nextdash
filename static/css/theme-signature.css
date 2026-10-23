@@ -202,11 +202,77 @@ html[data-theme] body[data-material-style="signature"][data-material="ink"]:not(
    De "//" blijft altijd staan, op elke kop: hij is de greep om een categorie te
    verslepen en het teken waaraan je nextDash herkent. De regels raken de naam
    en de rand eromheen en laten het "//" en zijn greep (category-reorder-handle)
-   met rust. Widgets houden hun eigen kopstrook, en de terminal- en
-   launcher-layouts hun eigen ontwerp. */
+   met rust. Een widget krijgt dezelfde kop (zie hieronder), en de terminal- en
+   launcher-layouts houden hun eigen ontwerp. */
+
+/* ── Het merk van een categorie ──────────────────────────────────────────
+   Onder signatuur zijn de twee strepen van het "//" twee gevulde, schuine blokjes.
+   De tekst "//" blijft in de greep staan, onzichtbaar: de greep, de focus en de
+   schermlezer zien dezelfde knop als altijd. Wie zelf een koppenstijl koos, of op
+   classic staat, houdt het "//". */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-reorder-glyph {
+    position: relative;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+}
+
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-reorder-glyph::before,
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-reorder-glyph::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0.2em;
+    width: calc((100% - 0.4em) * 0.34);
+    height: 0.8em;
+    transform: translateY(-50%) skewX(-20deg);
+    border-radius: 0.06em;
+    background: var(--head-mark-color, var(--text-primary));
+    opacity: 0.62;
+}
+
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-reorder-glyph::after {
+    left: calc(0.2em + (100% - 0.4em) * 0.56);
+    opacity: 0.4;
+}
+
+/* ── De kop van een widget ───────────────────────────────────────────────
+   Een widget is een categorie met een eigen kopstrook (Widget background).
+   Onder signatuur heeft hij dezelfde kop als de categorieën van zijn
+   materiaal, en dat is dezelfde kaart: de strook geeft zijn vulling, zijn
+   lijn en zijn dwarsloop op. Het enige verschil is het teken vooraan: een
+   categorie heeft "//", een widget zijn paneeltje (category-reorder-glyph--widget),
+   dat zowel de greep als het merk van een widget is. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .dashboard-widget .category-title,
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .dashboard-widget .category-title:hover {
+    background-color: transparent;
+    border-bottom: 0;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+}
+
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .dashboard-widget .dashboard-widget-body {
+    padding: 0;
+    margin: 0;
+}
+
+/* Het merk van een widget: drie balkjes, de rijen van een lijst, in de kleur van de kop.
+   Het paneeltje met de accentkleur was het enige gevulde ding in een kop die verder in
+   tekstkleur is getekend. De balkjes erven de dekking van de greep, net als het "//". */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .dashboard-widget .category-title .category-reorder-glyph--widget::before {
+    left: 0.2em;
+    right: 0.2em;
+    height: 0.8em;
+    border: 0;
+    border-radius: 0;
+    background:
+        linear-gradient(var(--head-mark-color, var(--text-primary)), var(--head-mark-color, var(--text-primary))) 0 0 / 100% 2px no-repeat,
+        linear-gradient(var(--head-mark-color, var(--text-primary)), var(--head-mark-color, var(--text-primary))) 0 50% / 72% 2px no-repeat,
+        linear-gradient(var(--head-mark-color, var(--text-primary)), var(--head-mark-color, var(--text-primary))) 0 100% / 88% 2px no-repeat;
+}
 
 /* Lak: de naam op een glanzende tab, met het licht van boven. */
-html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="lacquer"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label {
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="lacquer"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category .category-title .category-title-label {
     flex: 0 1 auto;
     padding: 0.3em 0.9em;
     border-radius: calc(9px * var(--theme-radius-applied, 1)) calc(9px * var(--theme-radius-applied, 1)) 0 0;
@@ -216,7 +282,7 @@ html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][da
 }
 
 /* Glas: een zwevende chip van glas, zonder lijn eronder. */
-html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="glass"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label {
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="glass"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category .category-title .category-title-label {
     flex: 0 1 auto;
     padding: 0.25em 0.9em;
     border-radius: 999px;
@@ -229,7 +295,7 @@ html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][da
 }
 
 /* Berijpt glas: een dunne koele lijn onder de naam. */
-html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="frost"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title {
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="frost"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category .category-title {
     padding-bottom: 0.4em;
     margin-bottom: 0.4em;
     border-bottom: 1px solid rgba(190, 225, 255, 0.35);
@@ -238,7 +304,7 @@ html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][da
 }
 
 /* Aurora: de naam in het verloop van twee accentkleuren. */
-html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="aurora"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label {
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="aurora"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category .category-title .category-title-label {
     flex: 0 1 auto;
     background-image: linear-gradient(90deg, var(--accent-primary), var(--accent-error, var(--accent-primary)));
     -webkit-background-clip: text;
@@ -246,33 +312,39 @@ html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][da
     -webkit-text-fill-color: transparent;
     color: transparent;
 }
-html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="aurora"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label .category-reorder-handle {
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="aurora"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category .category-title .category-title-label .category-reorder-handle {
     /* De greep is een eigen laag (hij staat op een opacity), dus het verloop van de naam bereikt hem niet. */
     -webkit-text-fill-color: var(--accent-primary);
     color: var(--accent-primary);
 }
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="aurora"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category .category-title .category-title-label .category-reorder-glyph--widget {
+    /* Het merk van een widget is een getekend paneeltje; de twee schuine strepen eronder blijven onzichtbaar. */
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
 
 /* Neon: de naam tussen haken, in hoofdletters en met gloed. */
-html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="neon"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label {
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="neon"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category .category-title .category-title-label {
     flex: 0 1 auto;
+    --head-mark-color: var(--accent-primary);
     text-transform: uppercase;
     letter-spacing: 0.14em;
     color: var(--accent-primary);
     text-shadow: 0 0 8px color-mix(in srgb, var(--accent-primary) 70%, transparent), 0 0 18px color-mix(in srgb, var(--accent-primary) 40%, transparent);
 }
-html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="neon"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label::before {
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="neon"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category .category-title .category-title-label::before {
     content: "[";
     margin-right: 0.45em;
     opacity: 0.8;
 }
-html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="neon"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label::after {
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="neon"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category .category-title .category-title-label::after {
     content: "]";
     margin-left: 0.45em;
     opacity: 0.8;
 }
 
 /* Fluweel: een grotere, zachte naam zonder lijnen. */
-html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="velvet"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title {
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="velvet"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category .category-title {
     font-size: calc(var(--font-size-category) * 1.2);
     font-weight: 600;
     letter-spacing: 0;
@@ -280,7 +352,7 @@ html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][da
 }
 
 /* Email: de naam in een pil met een rand in het accent. */
-html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="enamel"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label {
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="enamel"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category .category-title .category-title-label {
     flex: 0 1 auto;
     padding: 0.25em 1em;
     border-radius: 999px;
@@ -291,7 +363,7 @@ html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][da
 }
 
 /* Geborsteld metaal: de naam gegraveerd op een plaatje. */
-html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="brushed"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label {
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="brushed"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category .category-title .category-title-label {
     flex: 0 1 auto;
     padding: 0.25em 0.8em;
     border-radius: calc(4px * var(--theme-radius-applied, 1));
@@ -304,7 +376,7 @@ html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][da
 }
 
 /* Koolstof: de naam op een tab met een afgeschuinde rand. */
-html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="carbon"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label {
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="carbon"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category .category-title .category-title-label {
     flex: 0 1 auto;
     padding: 0.3em 1.7em 0.3em 0.8em;
     background-color: color-mix(in srgb, var(--accent-primary) 26%, transparent);
@@ -317,7 +389,7 @@ html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][da
 }
 
 /* Papier: kleine kapitalen boven een dubbele lijn, als drukwerk. */
-html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="paper"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title {
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="paper"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category .category-title {
     padding-bottom: 0.3em;
     margin-bottom: 0.45em;
     border-bottom: 4px double color-mix(in srgb, var(--text-primary) 75%, transparent);
@@ -328,14 +400,14 @@ html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][da
 }
 
 /* Terminal: de naam boven een gestippelde lijn in het accent. */
-html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="terminal"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title {
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="terminal"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category .category-title {
     padding-bottom: 0.3em;
     margin-bottom: 0.4em;
     border-bottom: 1px dashed color-mix(in srgb, var(--accent-primary) 55%, transparent);
 }
 
 /* Inkt: een dikke bovenlijn boven een grotere naam, als een krantenkop. */
-html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="ink"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title {
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="ink"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category .category-title {
     padding-top: 0.35em;
     border-top: 5px solid var(--text-primary);
     font-size: calc(var(--font-size-category) * 1.05);
