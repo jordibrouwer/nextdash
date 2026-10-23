@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Put origin/dev's tree on main as one commit, strip dev-only paths, tag, push, and publish a GitHub Release.
 # dev's history is not merged in, so tests/, docs/ and site/ never enter main's history.
-# Run it on dev; local dev may be ahead of origin/dev by site/ commits only, which stay local.
+# Run it on dev, with every dev commit pushed: the release is origin/dev, and CI ran on it.
 # Usage: ./scripts/release-to-main.sh v1.19.0 [--skip-scan] [--skip-ci]
 #   --skip-scan  skip the local govulncheck + Trivy preflight (emergencies only)
 #   --skip-ci    release without a green CI run on dev's HEAD (emergencies only)
@@ -47,21 +47,13 @@ if [[ ! "$TAG" =~ ^v[0-9] ]]; then
   exit 1
 fi
 
-# What main receives is origin/dev, not the local dev. The local dev may carry
-# site/ commits that never go to origin; merging the local branch would put
-# them in main's history even though the prune below removes the files. So the
-# release is origin/dev, and the local dev may only be ahead of it by commits
-# that touch site/ alone.
+# What main receives is origin/dev, and the local dev has to be exactly that:
+# the CI check below looks at origin/dev's tip, so a local commit that was never
+# pushed would be released without a CI run, or silently left out.
 git fetch --quiet origin dev
 RELEASE_REF="origin/dev"
-if ! git merge-base --is-ancestor "$RELEASE_REF" HEAD; then
-  echo "origin/dev has commits that local dev lacks; rebase or pull dev first." >&2
-  exit 1
-fi
-unpushed="$(git log --format='%h %s' "${RELEASE_REF}..HEAD" -- . ':(exclude)site')"
-if [[ -n "$unpushed" ]]; then
-  echo "Local dev has commits outside site/ that are not on origin/dev; push them first:" >&2
-  echo "$unpushed" >&2
+if [[ "$(git rev-parse HEAD)" != "$(git rev-parse "$RELEASE_REF")" ]]; then
+  echo "Local dev and origin/dev differ; push dev (or pull) and let CI run first." >&2
   exit 1
 fi
 
