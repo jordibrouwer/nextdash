@@ -35,7 +35,7 @@ test.describe('config section rail follows the ARIA tabs pattern', () => {
 
         await tabs.first().focus();
         await page.keyboard.press('ArrowUp');
-        // The settings-jump button sits after Help in the rail focus order.
+        // The settings-jump button sits above the first section in the rail focus order.
         await expect(searchJump).toBeFocused();
     });
 
@@ -46,10 +46,13 @@ test.describe('config section rail follows the ARIA tabs pattern', () => {
 
         await tabs.nth(6).focus();
         await page.keyboard.press('End');
-        await expect(searchJump).toBeFocused();
+        // Find settings sits above the sections now, so the last stop is the last section.
+        await expect(tabs.last()).toHaveAttribute('aria-selected', 'true');
+        await expect(tabs.last()).toBeFocused();
 
         await page.keyboard.press('Home');
-        await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
+        // ...and the first stop is the search item at the top of the rail.
+        await expect(searchJump).toBeFocused();
     });
 
     test('only the active section is in the page tab order', async ({ page }) => {

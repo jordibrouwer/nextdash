@@ -1,12 +1,15 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel, openHelpTab } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel, openHelpTab, markConfigSettingPromosSeen } = require('./e2e-helpers');
 
 async function loadDashboard(page) {
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // The setting promos arrive 500ms after a section opens, switch sub-tabs and
+    // sit over nearby controls: a race for any click that follows.
+    await markConfigSettingPromosSeen(page);
 }
 
 async function openSection(page, section) {

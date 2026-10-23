@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, openConfigPanel, markConfigSettingPromosSeen } = require('./e2e-helpers');
 
 /**
  * Start from no custom themes.
@@ -41,6 +41,9 @@ async function openCustomThemes(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // The random-theme promo arrives 500ms after the section opens, switches
+    // to General and sits over the button below it: a race on a slow runner.
+    await markConfigSettingPromosSeen(page);
     await page.evaluate(() => (window.dashboardInstance.config.appearanceTab = window.dashboardInstance.config.appearanceTab || 'general', window.dashboardInstance.config).openConfigView('appearance'));
     await page.locator('[data-appearance-goto="custom-themes"]').click();
     await expect(page.locator('[data-theme-add]')).toBeVisible();

@@ -87,12 +87,14 @@ test.describe('structure tabs in the list-view look', () => {
     await openStructure(page, 'categories');
     const m = await page.evaluate(() => {
       const top = (sel) => document.querySelector(sel).getBoundingClientRect();
-      return { tabs: top('#config-view-body .config-subtabs'), nav: top('#config-nav-heading'), body: top('#config-view-body') };
+      return { tabs: top('#config-view-body .config-subtabs'), nav: top('#config-nav-heading'), rail: top('.config-nav-column'), body: top('#config-view-body') };
     });
     // To the right of the list of sections, not below it...
     expect(m.tabs.left).toBeGreaterThan(m.nav.right - 1);
-    // ...and at its height: only the one-sentence intro stands above the strip.
-    expect(Math.abs(m.tabs.top - m.nav.top)).toBeLessThanOrEqual(32);
+    // ...and at the height of the rail: only the one-sentence intro stands above
+    // the strip. The rail opens with the Find settings item now, so the
+    // "Config sections" heading sits one group lower than the strip.
+    expect(Math.abs(m.tabs.top - m.rail.top)).toBeLessThanOrEqual(32);
     expect(m.tabs.top - m.body.top).toBeLessThanOrEqual(32);
   });
 
