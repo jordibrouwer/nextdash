@@ -80,6 +80,15 @@ test.describe('Glances in the Containers view', () => {
         await expect(page.locator('.docker-glances')).toBeHidden();
     });
 
+    test('linked, but nothing could be paired: the Containers view says so', async ({ page }) => {
+        await mockGlancesLink(page, { link: { ...LINK, matches: [], problem: 'none-matched', glancesCount: 4, dockerCount: 6 } });
+        await openResources(page);
+        const note = page.locator('[data-glances-embed-problem="none-matched"]');
+        await expect(note).toBeVisible();
+        await expect(note).toContainText('no container could be paired');
+        await expect(page.locator('[data-glances-embed-open]')).toHaveCount(0);
+    });
+
     test('a container Glances has no record of yet offers to start recording it', async ({ page }) => {
         const state = await mockGlancesLink(page, { recorded: false });
         await openResources(page);

@@ -798,6 +798,24 @@ test.describe('Glances page: recording, insights and the data kept', () => {
         await expect(drawer.locator('[data-glances-track="on"]')).toBeVisible();
     });
 
+    test('Insights: the typical and peak table fits its panel, with no sideways scrollbar', async ({ page }) => {
+        await page.setViewportSize({ width: 1400, height: 900 });
+        await mockGlances(page);
+        await openView(page, '#glances/insights');
+        const block = page.locator('[data-glances-insight="stats"]');
+        await expect(block.locator('tbody tr').first()).toBeVisible();
+        // Six columns do not fit half a row: the panel takes the whole row, as the busy hours do.
+        await expect(block).toHaveClass(/glances-ov-block--wide/);
+        const overflow = await block.evaluate((el) => [el, ...el.querySelectorAll('*')]
+            .filter((n) => n.scrollWidth > n.clientWidth + 1 && ['auto', 'scroll'].includes(getComputedStyle(n).overflowX))
+            .map((n) => n.className));
+        expect(overflow).toEqual([]);
+        // Every column is visible: the last one ends inside the panel.
+        const box = await block.boundingBox();
+        const last = await block.locator('thead th').last().boundingBox();
+        expect(last.x + last.width).toBeLessThanOrEqual(box.x + box.width);
+    });
+
     test('Insights: health, forecast, busy hours, incidents, with a range of its own', async ({ page }) => {
         const state = await mockGlances(page);
         await openView(page, '#glances/insights');
@@ -1507,6 +1525,20 @@ test.describe('Glances and the Containers view: the same machine', () => {
         await openView(page, '#glances/insights');
         // The sample ranking has a container named app-1.
         await expect(page.locator('[data-glances-insight="consumers"] [data-glances-consumer-link="app-1-docker"]')).toBeVisible();
+    });
+
+    test('Config → Glances says why a link that is on paired nothing', async ({ page }) => {
+        const state = await mockGlances(page);
+        state.link = { ...state.link, matches: [], onlyGlances: [], onlyDocker: [], byId: 0, byName: 0, problem: 'none-matched', glancesCount: 4, dockerCount: 6 };
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/glances/advanced');
+        const info = page.locator('[data-glances-link-state]');
+        await expect(info).toContainText('0 containers matched');
+        await expect(info).toContainText('Glances has 4 containers and Docker has 6, but none belong together');
+        await expect(info).toHaveAttribute('data-glances-link-problem', 'none-matched');
+        state.link = { ...state.link, problem: 'glances-unreadable' };
+        await page.reload();
+        await expect(page.locator('[data-glances-link-state]')).toContainText('could not be read from Glances');
     });
 
     test('Config → Glances: Auto, Yes or No, with what was detected and what matched', async ({ page }) => {
