@@ -102,3 +102,17 @@ func TestBackdropBareLightAndDarkStayDifferent(t *testing.T) {
 		t.Error(`"light" and "dark" produced the same backdrop; they are separate themes, not a pair`)
 	}
 }
+
+// A dark page takes more of its colour than a light one: the backdrop of a dark
+// theme carries stronger fields, and a third one.
+func TestDarkBackdropsCarryMoreColour(t *testing.T) {
+	dark := themeBackdropSeeded("tint-dark", ThemeColors{Backdrop: "mesh", AccentPrimary: "#6aa6ff", BackgroundPrimary: "#0f1420"}, 0)
+	light := themeBackdropSeeded("tint-light", ThemeColors{Backdrop: "mesh", AccentPrimary: "#2563eb", BackgroundPrimary: "#f4f6fb"}, 0)
+	layers := func(l backdropLook) int { return len(splitBackdropList(l.Image)) }
+	if layers(dark) != layers(light)+1 {
+		t.Errorf("a dark backdrop has %d layers and a light one %d, want one more", layers(dark), layers(light))
+	}
+	if !strings.Contains(dark.Image, "calc(56% * var(--bd-strength") || strings.Contains(light.Image, "calc(56% * var(--bd-strength") {
+		t.Error("only the dark backdrop should carry the stronger field")
+	}
+}

@@ -3785,8 +3785,18 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 	angle := 15 + pick(3, 150)
 	x1, y1 := 4+pick(7, 34), pick(11, 22)
 	x2, y2 := 62+pick(13, 34), pick(17, 26)
+	// A dark page takes colour better than a light one: the same share of an accent
+	// is a glow on black and a smudge on white. So the dark pages get more of it.
+	dark := false
+	if lum, ok := hexLuminance(tc.BackgroundPrimary); ok && lum < 0.4 {
+		dark = true
+	}
+	baseShare := 6
+	if dark {
+		baseShare = 12
+	}
 	base := "linear-gradient(" + strconv.Itoa(160+pick(19, 40)) + "deg, " +
-		wash(accent, 6) + " 0%, " + bg + " 68%)"
+		wash(accent, baseShare) + " 0%, " + bg + " 68%)"
 
 	var layers []backdropLayer
 	switch themeBackdropRecipes[recipe] {
@@ -4047,11 +4057,21 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 	// of the theme's own colours sit just above the last layer, in every recipe,
 	// so the page has the colour of its theme whichever shape is on it.
 	if n := len(layers); n > 0 {
-		glowA := backdropLayer{image: "radial-gradient(85% 70% at " + pct(x1+10) + " " + pct(y1+8) + ", " + veil(accent, 36) + ", transparent 72%)"}
-		glowB := backdropLayer{image: "radial-gradient(80% 65% at " + pct(x2) + " " + pct(y2+40) + ", " + veil(second, 28) + ", transparent 72%)"}
-		with := make([]backdropLayer, 0, n+2)
+		shareA, shareB := 36, 28
+		if dark {
+			shareA, shareB = 56, 44
+		}
+		glowA := backdropLayer{image: "radial-gradient(85% 70% at " + pct(x1+10) + " " + pct(y1+8) + ", " + veil(accent, shareA) + ", transparent 72%)"}
+		glowB := backdropLayer{image: "radial-gradient(80% 65% at " + pct(x2) + " " + pct(y2+40) + ", " + veil(second, shareB) + ", transparent 72%)"}
+		with := make([]backdropLayer, 0, n+3)
 		with = append(with, layers[:n-1]...)
-		with = append(with, glowA, glowB, layers[n-1])
+		with = append(with, glowA, glowB)
+		if dark {
+			// A third field in the theme's cool colour, low in the page, so the dark
+			// pages are not two colours and a black.
+			with = append(with, backdropLayer{image: "radial-gradient(70% 55% at " + pct(20+pick(7, 50)) + " 100%, " + veil(cool, 34) + ", transparent 72%)"})
+		}
+		with = append(with, layers[n-1])
 		layers = with
 	}
 	layers = append([]backdropLayer{themeBackdropCalmLayer()}, layers...)
