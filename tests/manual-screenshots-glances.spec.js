@@ -118,6 +118,15 @@ test('15a glances insights, the blocks further down', async ({ page }) => {
     await crop(page, [day], '15a-glances-insights-more.jpg', 6);
 });
 
+test('15a glances insights, the whole tab (site)', async ({ page }) => {
+    test.skip(!process.env.SHOTS_FULL, 'only for nextdash.cc');
+    await page.setViewportSize({ width: 1440, height: 3400 });
+    await openGlances(page, 'insights');
+    await page.locator('[data-glances-insight="day"]').waitFor();
+    await page.waitForTimeout(800);
+    await frame(page, '15a-glances-insights-full.jpg');
+});
+
 test('15a glances hosts', async ({ page }) => {
     await openGlances(page, 'hosts');
     await page.locator('[data-glances-host-row]').first().waitFor();

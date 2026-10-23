@@ -359,6 +359,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 <summary><b>24.</b> <a href="#24-troubleshooting">Troubleshooting</a></summary>
 
 - [The dashboard is empty after install](#the-dashboard-is-empty-after-install)
+- [The dashboard says "Host not allowed"](#host-not-allowed)
 - [The dashboard does not load](#the-dashboard-does-not-load)
 - [A change in another tab does not show](#a-change-in-another-tab-does-not-show)
 - [A shortcut does not open its bookmark](#a-shortcut-does-not-open-its-bookmark)
@@ -4560,6 +4561,12 @@ Read-only routes (bookmarks, settings, the health list, ping) stay open, with tw
 
 `NEXTDASH_CAPTURE_TOKEN` opens only the two capture routes ([§21.2](#212-capture-without-the-extension)).
 
+**Which names may open it.** With a write token set, nextDash also refuses a request that names a host it does not know, since a page on another domain could otherwise point its own name at your address and hand itself the token. An IP address, `localhost`, a name without dots and the private endings `.local`, `.lan`, `.home.arpa`, `.internal` and `.ts.net` always pass. For a public name — your domain behind a reverse proxy — list it in `NEXTDASH_ALLOWED_HOSTS`, comma-separated; `*.example.com` allows every subdomain and `*` turns the check off. A request that is refused gets *Host not allowed* (status 421) and the reason is in the log. Status pages under `/s/` are not checked, and without a write token nothing is.
+
+```bash
+NEXTDASH_ALLOWED_HOSTS=dash.example.com, *.example.org
+```
+
 <a id="233-local-addresses-and-outgoing-requests"></a>
 
 ### 23.3 Local addresses and outgoing requests
@@ -4732,6 +4739,12 @@ location /               { return 404; }
 ### The dashboard is empty after install
 
 The example bookmarks may have been removed. Add bookmarks with **&** or **+**, or import a browser file under Config → Data & backups.
+
+<a id="host-not-allowed"></a>
+
+### The dashboard says "Host not allowed"
+
+A write token is set and the address you opened is a public name nextDash does not know. Add the name to `NEXTDASH_ALLOWED_HOSTS` ([§23.2](#232-the-write-token)) and restart, or open nextDash by its IP address or a private name instead.
 
 <a id="the-dashboard-does-not-load"></a>
 

@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.21.1 — 23 October 2026](#v1211--23-october-2026)
 - [v1.21.0 — 23 October 2026](#v1210--23-october-2026)
 - [v1.20.3 — 21 October 2026](#v1203--21-october-2026)
 - [v1.20.2 — 21 October 2026](#v1202--21-october-2026)
@@ -116,6 +117,44 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.21.1 — 23 October 2026
+
+**Glances** Insights answers more of what you ask a machine: nine new blocks, an info button on every title, and the Containers view says why no container could be paired. A write token now also refuses host names nextDash does not know, icons are served more safely, and a handful of small click and save problems are gone.
+
+### Glances
+
+- **new — nine more Insights blocks.** *Compared with before* sets the range against the one just before it, *A typical day* draws the average of each hour, *Peaks and rhythm* names the busiest and quietest hour and the readings far above their usual level, *Load and cores* sets the load against the number of cores and shows how evenly they share the work, *Memory and swap* splits the memory into in use, cache and free, *Temperature per sensor*, *Disk space over time*, *Disk activity* and *Network per interface* (with the containers behind the traffic) complete it. `internal/app/glances_insights_more.go` computes them from the record next to the first set, `dashboard-glances-insights.js` draws them, and a block with too little behind it is left out.
+- **new — an info button on every Insights title.** `dashboard-glances-info.js` has nine more texts that say what a block shows in two or three sentences. The page's blocks also fill two columns now: one left alone on its row takes the whole row, and the Insights panels hide their scrollbars.
+- **new — the link with Containers says why nothing paired.** When Config → Glances says the host is the Docker host but no container could be matched, `/api/glances/docker-link` carries a `problem` (`glances-unreadable`, `docker-unreadable` or `none-matched`, with both counts). Config → Glances → Advanced and the side panel in the Containers view say which one, covered by `tests/glances-containers-link.spec.js`.
+- **fix — containers did not pair on Glances 4.** A container's ports are read as the one string Glances 4 sends, so the containers pair up.
+- **fix — the typical-and-peak table needed a scrollbar.** It takes the whole row now.
+
+### Security
+
+- **new — unknown host names are refused when a write token is set.** `host_guard.go` answers *Host not allowed* (421) to a request that names a host nextDash does not know, so a page on another domain cannot point its own name at your address and take the token. IP addresses, `localhost`, names without dots and the private endings `.local`, `.lan`, `.home.arpa`, `.internal` and `.ts.net` always pass; `NEXTDASH_ALLOWED_HOSTS` adds public names (`*.example.com`, or `*` to turn the check off). Status pages under `/s/` are not checked.
+- **fix — the SVG sanitizer is stricter and served icons are sandboxed.**
+- **fix — the host check logs through the log helper.** `host_guard.go` called `log.Printf` directly, which `TestNoDirectPrintfOutsideLogx` refuses; it uses `logInfo` now.
+
+### Bookmarks and the dashboard
+
+- **fix — `localhost:3000` is a web address.** A bookmark URL such as `localhost:3000` got `https://` in front of it instead of being read as a scheme.
+- **fix — a double click or Enter saves a bookmark once.**
+- **fix — creating a page or a category no longer overwrites the list when reading it failed.**
+- **fix — Restore commits the leftover categories with the rest.**
+- **fix — polling.** Widget beats do not stack, the health facts share one read, and hidden tabs skip the status checks.
+- **fix — a second page-tab rename cannot start while a popover is open.**
+- **fix — a view's entrance waits for its rows,** so a slow load still rises in.
+- **fix — row checkboxes sit above their 24px hit-area overlay,** so a click lands on them; the 24px targets keep the layout they had in the field notes, the Appearance control column and the category +. The note box shows a focus ring.
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.21.1.json` and its index entry**; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v349` and `DASHBOARD_RELEASE` to v1.21.1. `go generate` refreshed `asset_hashes_gen.go`.
+- **docs — the manual.** §15A.3 lists every Insights block and the info buttons, §15A.6 the three link messages, §23.2 which host names may open a server with a write token, and §24 has a *Host not allowed* entry. The two Insights screenshots are new; the Glances shots for nextdash.cc come from the same fixture.
+- **docs — the What's new pictures.** `tests/fixtures/whats-new-media/v1.21.1.js` takes the Insights and the link-message images.
+- **docs — release script.** `release-to-main.sh` puts the tree of `origin/dev` on main as one commit and stops when the local dev differs from `origin/dev` by more than `site/`.
 
 ---
 
