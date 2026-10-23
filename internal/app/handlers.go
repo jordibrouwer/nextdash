@@ -3616,8 +3616,8 @@ the reader's tint. --bd-calm is its strength (BackdropTuning.Calm): at 0 it is
 transparent and the recipe is drawn edge to edge, as it was before this layer.
 */
 func themeBackdropCalmLayer() backdropLayer {
-	centre := "color-mix(in srgb, var(--background-primary) calc(var(--bd-calm, 0.5) * 90%), transparent)"
-	middle := "color-mix(in srgb, var(--background-primary) calc(var(--bd-calm, 0.5) * 55%), transparent)"
+	centre := "color-mix(in srgb, var(--background-primary) calc(var(--bd-calm, 0.5) * 60%), transparent)"
+	middle := "color-mix(in srgb, var(--background-primary) calc(var(--bd-calm, 0.5) * 35%), transparent)"
 	return backdropLayer{
 		image: "radial-gradient(ellipse 62% 58% at 50% 50%, " + centre + " 0%, " + middle + " 55%, transparent 100%)",
 	}
@@ -3961,14 +3961,14 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 			"radial-gradient(130% 110% at 50% 50%, transparent 40%, "+veil(bg, 70)+" 100%)", base)
 	case "splash": // vier grote zachte vlekken in vier kleuren
 		layers = plain(
-			"radial-gradient(circle at "+pct(x1+10)+" "+pct(y1+18)+", "+veil(accent, 33)+" 0, "+veil(accent, 22)+" 14%, transparent 30%)",
-			"radial-gradient(circle at "+pct(x2)+" "+pct(y2+12)+", "+veil(second, 32)+" 0, "+veil(second, 21)+" 16%, transparent 34%)",
-			"radial-gradient(circle at "+pct(30+pick(5, 30))+" "+pct(66+pick(9, 20))+", "+veil(cool, 30)+" 0, "+veil(cool, 19)+" 15%, transparent 32%)",
-			"radial-gradient(circle at "+pct(86+pick(3, 10))+" "+pct(84+pick(15, 10))+", "+veil(warm, 29)+" 0, "+veil(warm, 17)+" 9%, transparent 22%)", base)
+			"radial-gradient(circle at "+pct(x1+10)+" "+pct(y1+18)+", "+veil(accent, 60)+" 0, "+veil(accent, 40)+" 14%, transparent 30%)",
+			"radial-gradient(circle at "+pct(x2)+" "+pct(y2+12)+", "+veil(second, 58)+" 0, "+veil(second, 38)+" 16%, transparent 34%)",
+			"radial-gradient(circle at "+pct(30+pick(5, 30))+" "+pct(66+pick(9, 20))+", "+veil(cool, 54)+" 0, "+veil(cool, 34)+" 15%, transparent 32%)",
+			"radial-gradient(circle at "+pct(86+pick(3, 10))+" "+pct(84+pick(15, 10))+", "+veil(warm, 52)+" 0, "+veil(warm, 30)+" 9%, transparent 22%)", base)
 	case "leak": // een lichtlek vanaf de rand, met een tweede bloem in de hoek
 		layers = plain(
-			"linear-gradient("+strconv.Itoa(96+pick(3, 14))+"deg, "+veil(warm, 34)+" 0%, "+veil(second, 28)+" 22%, transparent 56%)",
-			"radial-gradient(60% 60% at 100% 100%, "+veil(accent, 28)+", transparent 70%)", base)
+			"linear-gradient("+strconv.Itoa(96+pick(3, 14))+"deg, "+veil(warm, 60)+" 0%, "+veil(second, 50)+" 22%, transparent 56%)",
+			"radial-gradient(60% 60% at 100% 100%, "+veil(accent, 50)+", transparent 70%)", base)
 	case "chevron": // fijne zigzaghaarlijnen, met een zachte kleur die naar boven uitloopt
 		// One line, a pixel and a half wide, where the band used to be twenty.
 		zig := func(colour string, deg int) string {
@@ -4041,6 +4041,18 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 		layers = plain(
 			"linear-gradient("+strconv.Itoa(178+pick(2, 6))+"deg, "+veil(accent, 16)+" 0%, transparent "+pct(34+pick(5, 16))+")",
 			"radial-gradient(140% 60% at "+pct(x2)+" 100%, "+veil(second, 18)+" 0%, transparent 58%)", base)
+	}
+	// Colour. The recipes are drawn calm -- hairlines, soft shapes, a quiet
+	// centre -- and a calm recipe on a flat page reads as grey. Two soft fields
+	// of the theme's own colours sit just above the last layer, in every recipe,
+	// so the page has the colour of its theme whichever shape is on it.
+	if n := len(layers); n > 0 {
+		glowA := backdropLayer{image: "radial-gradient(85% 70% at " + pct(x1+10) + " " + pct(y1+8) + ", " + veil(accent, 36) + ", transparent 72%)"}
+		glowB := backdropLayer{image: "radial-gradient(80% 65% at " + pct(x2) + " " + pct(y2+40) + ", " + veil(second, 28) + ", transparent 72%)"}
+		with := make([]backdropLayer, 0, n+2)
+		with = append(with, layers[:n-1]...)
+		with = append(with, glowA, glowB, layers[n-1])
+		layers = with
 	}
 	layers = append([]backdropLayer{themeBackdropCalmLayer()}, layers...)
 	look := joinBackdropLayers(layers)
