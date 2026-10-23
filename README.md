@@ -379,6 +379,7 @@ Every variable is listed in the reference table below.
 | `PORT` | `8080` | HTTP port (1–65535) |
 | `NEXTDASH_DATA_DIR` | `./data` | Where pages, bookmarks, settings and uploads live |
 | `NEXTDASH_WRITE_TOKEN` | *(unset)* | Require `X-NextDash-Token` on writes |
+| `NEXTDASH_ALLOWED_HOSTS` | *(unset)* | With a write token set: extra host names the dashboard may be opened by, comma-separated (`*.example.com` allowed, `*` turns the check off). IPs, `localhost` and private names (`.local`, `.lan`, `.ts.net`, no dots) always pass |
 | `NEXTDASH_CAPTURE_TOKEN` | *(unset)* | A token that opens only `/add` and the share target |
 | `NEXTDASH_CORS_ORIGINS` | *(unset)* | Extra origins allowed to use the API, comma-separated; `*` for all. Extensions are always allowed. |
 | `NEXTDASH_CSP` | on | `off` disables the Content-Security-Policy header |
