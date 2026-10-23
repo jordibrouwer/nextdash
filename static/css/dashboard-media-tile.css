@@ -151,6 +151,7 @@
 .media-detail {
     width: min(32rem, calc(100vw - 2rem));
     max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
     margin: auto;
     padding: 0;
     overflow: auto;

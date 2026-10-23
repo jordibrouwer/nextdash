@@ -4419,8 +4419,17 @@ class DashboardInbox {
      * Keyboard cheatsheet under the feed, mirroring the health view. One copy at the
      * bottom; hidden from assistive tech since the actions it describes are the row
      * buttons a screen reader already reaches.
+     *
+     * The first few keys stand; the rest open behind a button. Twenty chips
+     * under every list was more legend than list on a short screen.
      */
+    static LEGEND_SHOWN = 6;
+
+    static LEGEND_OPEN_KEY = 'nextdash.inbox.legendOpen';
+
     renderLegend() {
+        const wrap = document.createElement('div');
+        wrap.className = 'inbox-legend-wrap';
         const legend = document.createElement('p');
         legend.className = 'inbox-legend';
         legend.setAttribute('aria-hidden', 'true');
@@ -4443,10 +4452,40 @@ class DashboardInbox {
                 ? this.t('dashboard.inboxKeyNote', 'note')
                 : this.t('dashboard.inboxKeyDblClick', 'open')]);
         }
+        // One key more than the limit is not worth a button of its own.
+        const shown = keys.length <= DashboardInbox.LEGEND_SHOWN + 1 ? keys.length : DashboardInbox.LEGEND_SHOWN;
         legend.innerHTML = keys
-            .map(([k, label]) => `<span><kbd>${this.escape(k)}</kbd> ${this.escape(label)}</span>`)
+            .map(([k, label], i) => `<span${i >= shown ? ' class="inbox-legend-extra"' : ''}><kbd>${this.escape(k)}</kbd> ${this.escape(label)}</span>`)
             .join('');
-        return legend;
+        wrap.appendChild(legend);
+        const more = keys.length - shown;
+        if (more <= 0) return wrap;
+        let open = false;
+        try { open = localStorage.getItem(DashboardInbox.LEGEND_OPEN_KEY) === '1'; } catch { /* closed */ }
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'inbox-legend-more';
+        toggle.setAttribute('data-inbox-legend-more', '');
+        // The legend is hidden from assistive tech and the row keys would
+        // swallow Enter on a focused toggle: it is a mouse control, as the
+        // legend it opens is a sighted one.
+        toggle.tabIndex = -1;
+        toggle.setAttribute('aria-hidden', 'true');
+        const paint = () => {
+            wrap.classList.toggle('is-open', open);
+            toggle.setAttribute('aria-expanded', String(open));
+            toggle.textContent = open
+                ? this.t('dashboard.inboxLegendFewer', 'Fewer keys')
+                : this.t('dashboard.inboxLegendMore', '{count} more keys', { count: more });
+        };
+        toggle.addEventListener('click', () => {
+            open = !open;
+            try { localStorage.setItem(DashboardInbox.LEGEND_OPEN_KEY, open ? '1' : '0'); } catch { /* this visit only */ }
+            paint();
+        });
+        paint();
+        wrap.appendChild(toggle);
+        return wrap;
     }
 
     _teardownLoadMoreObserver() {
@@ -5019,7 +5058,9 @@ class DashboardInbox {
         if (!rail) return;
         const show = {
             all: true,
-            unread: true,
+            // Unread says nothing All does not while every link is unread:
+            // two rows with the same number. It stays when it is the filter.
+            unread: this.filterCount('unread') !== this.filterCount('all') || this.filter === 'unread',
             snoozed: this.snoozedCount() > 0 || this.filter === 'snoozed',
             noted: this.filterCount('noted') > 0 || this.filter === 'noted',
             suggested: this.filterCount('suggested') > 0 || this.filter === 'suggested',

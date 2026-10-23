@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.21.0 — 23 October 2026](#v1210--23-october-2026)
 - [v1.20.3 — 21 October 2026](#v1203--21-october-2026)
 - [v1.20.2 — 21 October 2026](#v1202--21-october-2026)
 - [v1.20.1 — 20 October 2026](#v1201--20-october-2026)
@@ -115,6 +116,84 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.21.0 — 23 October 2026
+
+**Glances** arrives: a page for the hosts you run Glances on, with graphs, insights and incidents, a widget for the dashboard and notices for a disk that fills up. **Berry** is the default theme now, with a card that offers it to everyone who is not on it. Next to it come domain expiry through RDAP, a round of accessibility and mobile fixes, and a hardening pass over uploads, backups and request handling.
+
+### Glances
+
+- **new — a Glances page.** Overview, Processes and Containers sections with graphs, insights, tabs and a side panel, recording of its own history, and a connection switch. It has a navigation icon, `Shift+G`, info buttons and works in demo mode.
+- **new — several hosts.** A Hosts section lists every host in one table; a host menu and a list in Config pick the one you look at. Config → Glances has a host bar and five tabs, split into what is per host and what is shared, and saves as you change it, with no Save button.
+- **new — incidents and notices.** An incident panel gives the cause, `:glances` commands sit behind write access, and a notice warns about a disk that is filling up and records the busiest process by itself. Glances notices have their own browser-notification switch.
+- **new — compare and export.** Compare with last week, save a graph as an image, a hosts strip, per-core series, a record pace you set and a reset.
+- **new — a Glances widget.** One host on the dashboard as meters or the processor graph, with a sparkline, following the meter settings.
+- **new — links with Containers.** The Containers view reads CPU, memory and network from Glances on the Docker host and shows restart marks; Config says which host is the Docker host, and both views link to each other.
+- **new — a page tour.** Six animated steps, a Tour button in the header and a replay from Config and Help. Help has a Glances topic with seven tips; the cheat sheet and its PDF list the Glances keys.
+- **fix — keys and focus.** Escape closes the side panel first and stays on the list; one search bar sits above Processes and Containers with a count and a clear button; the view returns at once from the last read and rises in like the other list views.
+- **docs — specs and translations.** Specs cover hosts, commands, the incident panel and accessibility; the new strings are in all six languages.
+
+### Domains
+
+- **new — domain expiry through RDAP.** A widget, a badge in Bookmarks and alerts show when a domain runs out.
+
+### Look
+
+- **new — Berry is the default theme.** A fresh install starts on **Berry [dark]** (`look-berry-dark`, with `look-berry-light` for auto dark mode) in place of Confetti. Installs keep the theme they have. The one-time corner card that offered Confetti now offers Berry and is shown again to everyone who is not already on Berry, in either half, including those who answered the Confetti card: its id is `berry-theme-try-v1` (`berry-theme-notice.js`), and a fresh install starts with it answered. *Try Berry* applies the dark half and can be undone with *Go back*. The card's strings are `dashboard.berryNotice*` in all six languages.
+- **fix — tertiary text reaches 4.5:1.** The default themes had tertiary text under the WCAG AA ratio.
+- **fix — a visible focus ring on inputs.** Inputs that only changed their border colour on focus now draw a ring.
+- **fix — no-animations no longer moves centred elements.**
+- **new — refreshed backdrops.** Hexagons, blueprint, prism, chevron, sunset and mountains.
+
+### Dashboard
+
+- **fix — 24 px targets and a 12 px text floor.** Layer tokens replace loose z-index values, and the tip waits for a modal to close.
+- **fix — Mobile.** Overlays use `dvh`, tap targets are bigger and the Config tabs fade at the edge.
+- **fix — touch drag lock, a category race, Escape in modals and status and weather glitches.**
+- **fix — a search opens on the letter you typed.** The first letter went into the search line in the upper-case reading the key checks use, so *immich* showed as *Immich*. It goes in as typed now (`search.js`; `tests/search-first-letter.spec.js`). **j** and **k** walk the grid only while the cursor is in it, and outside it a letter opens the search, as before.
+- **fix — Escape in the bookmark grid leaves it.** The cursor was cleared, but the row's link kept DOM focus, so the row stayed lit and the grid still felt like the place the keys went. Escape now lets go of that focus too: no row is marked, and **j** and **k** are letters for the search again (`keyboard-navigation.js`; `tests/grid-escape-leaves-grid.spec.js`).
+- **fix — cancelling a search typed from nowhere leaves the grid alone.** Escape handed focus back to the grid, and with no row picked it put the cursor on the first row, lit it, and made **j** and **k** steps through the rows again. A search that started with no row picked and no control that opened it now gives no focus back; one opened from a row still brings that row back (`search.js`; `tests/grid-escape-leaves-grid.spec.js`).
+- **fix — the date popover stays on screen,** the place picker uses valid ARIA and the dismiss label is translated.
+- **fix — rejected saves and commands are caught,** the finder shortcut is escaped and search picks are flushed.
+- **fix — moving a widget saves what was typed first,** and `0` is the tenth page, not the Inbox.
+- **fix — collapsed categories and the theme migration** are guarded against bad browser storage.
+- **new — Add new bookmark in a category's right-click menu.** The first entry on a category header opens the add-bookmark form with that category already chosen, the same form the `+` button opens. Smart collections and the list of unfiled bookmarks do not show it (`dashboard-category-menu.js`).
+- **fix — the Glances widget is styled before the Glances page is opened.** Its rules sat in the Glances page's stylesheet, which only loads with that view, so a widget on a dashboard that had not opened the page drew a plain blue link and a black sparkline. They are in `dashboard-widget-glances.css` now, linked with the dashboard's own sheets.
+- **fix — the Calendar tile expands recurring events.**
+- **fix — widgets** keep no cached error from a closed tab, retry sooner, and Radarr shows its release day.
+
+### Inbox, Containers and Config
+
+- **fix — Inbox.** Roomier rows on mobile, one title and a collapsible key legend.
+- **fix — Containers.** Red only for failures, dormant links and one note bar. Container alerts stay apart by kind and resync after a gap in events.
+- **fix — Config.** Clearer labels, a grouped menu, a sticky Bookmarks preview and 24 px targets.
+- **fix — Health.** Results stay on their page and a failed save is retried.
+
+### Server
+
+- **fix — uploaded SVGs are served under a sandboxed policy.**
+- **fix — a backup zip is restored without copying it into memory first,** and its size is capped.
+- **fix — a settings body that is too large answers 413,** and only a plausible `X-Request-ID` from the client is accepted.
+- **fix — PATCH preflights** are allowed on the bookmark and Inbox routes.
+- **fix — tag lookup asks for the write token.**
+- **fix — an empty list is not cached after a failed read,** and health and runtime caches reset when an import fails halfway.
+- **fix — merging duplicate bookmarks carries the monitoring setup over.**
+- **fix — odd bytes cannot panic the HTML parsers** (length is kept when lowercasing).
+- **fix — small ones:** page order, backup prune order, a Config race and duplicate URLs.
+- **docs — the Docker build** drops the needless `-a` and `-installsuffix` flags.
+
+### Docs
+
+- **docs — translations.** The 35 strings for domain expiry, six that had no key in any locale file (Compose lines, the overview's checked count, Category name, a container link that is not running and the Inbox key legend's two labels) and the new category menu entry are in Dutch, German, French, Chinese and Spanish.
+- **docs — Dutch says bookmark.** All 829 strings in `locales/nl.json` that said *bladwijzer* now say *bookmark*, compounds included (*bookmarkformulier*), plus the no-JavaScript line in `templates/dashboard.html` and the two specs that matched the old word.
+- **docs — the manual.** A new §15A, *Glances*, with eight screenshots, and the Glances lines that belong elsewhere (the keys, §14 Containers, the widget kinds, Config's section table, troubleshooting, the glossary). `0` is described as the tenth page, the category menu's new entry, the Inbox key legend, the Containers row colours and dormant links, the Config rail's Services and Info groups and the restore limits are in. Six screenshots are retaken, in Gloss Chrome dark over the demo that nextDash seeds itself (`tests/manual-screenshots-v1-21.spec.js`) rather than over `data-demo`.
+- **docs — the README.** It names the Glances page and widget, domain expiry, the About tab and Copy diagnostics, 29 backdrops, forty-eight kinds of widget and seven webhook events, and opens with a picture of the dashboard in Berry. Its twenty pictures are taken again over the demo nextDash seeds itself, at 1920×1200, each in the theme its caption names, with two new ones for Glances; the captions say what the new pictures show (`tests/readme-screenshots.spec.js`). The Unraid template lists the two Glances pictures.
+- **docs — nextdash.cc.** A Glances page among the features, and the sentences that were out of date on ten others: the number of widget kinds (forty-eight), the Beszel, Glances and Domains tiles, domain expiry under Health and Alerts, the Theme tab and the two typefaces under Appearance, About and Copy diagnostics under Config, the Containers colours and links, the Inbox key legend, `0` for the tenth page, the category menu and the Server tab of Statistics. The homepage hero opens on Berry, Beszel and Glances are under *Works with*, and the theme gallery (463 pictures) and the stills of the feature pages are taken again in Berry over the demo nextDash seeds itself. The docs splitter takes chapter 15A, so the manual's Glances chapter builds. The same branch also lands the earlier site work: a Contact page and form in the footer, a Developer link to jordibrw.nl, the Theme studio counts of v1.20 with all 29 backdrops, the Quick start guide on Install, and a gallery of every theme with a note that they are examples (`site/`).
+- **docs — the shot kit.** `tests/helpers/manual-shot-kit.js` reads the theme and the output folder from `SHOT_THEME` and `SHOTS_OUT`, and a test can name its own theme and change its copy of the data.
+- **docs — the What's new window.** v1.21.0 leads it, with a recording of the Glances page and pictures of the Domains and Glances widgets taken over the neutral demo. The Glances answers the shots need moved from the manual spec to `tests/helpers/glances-mock.js`, and the shot kit has a `domains` patch. The Dutch, German, French, Spanish and Chinese cheat sheet lines for Glances are translated.
+- **docs — a test.** `tests/dashboard-category-menu-add-bookmark.spec.js` opens a category's menu, picks Add new bookmark and expects the form on that category.
 
 ---
 

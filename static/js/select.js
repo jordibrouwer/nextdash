@@ -284,6 +284,9 @@ class CustomSelect {
                         this.selectOption(currentIndex);
                         break;
                     case 'Escape':
+                        // Close only the dropdown; a modal's document handler must not see it.
+                        e.preventDefault();
+                        e.stopPropagation();
                         this.close();
                         break;
                 }

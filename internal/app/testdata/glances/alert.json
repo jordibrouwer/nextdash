@@ -1,0 +1,17 @@
+[
+  {
+    "begin": 1792587051,
+    "state": "WARNING",
+    "type": "LOAD",
+    "min": 1.001953125,
+    "max": 2.3115234375,
+    "sum": 113.3046875,
+    "count": 87,
+    "avg": 1.3023527298850575,
+    "top": [],
+    "desc": "",
+    "sort": "cpu_percent",
+    "global_msg": "System overloaded in the last 5 minutes",
+    "end": -1
+  }
+]

@@ -336,7 +336,7 @@ func (h *Handlers) discoverFeedForURL(ctx context.Context, rawURL string) string
 // considers primary first, which is the convention this relies on rather than
 // trying to be clever about titles.
 func extractFeedFromHTML(htmlBody string) string {
-	lower := strings.ToLower(htmlBody)
+	lower := asciiLower(htmlBody)
 	start := 0
 	for {
 		linkIdx := strings.Index(lower[start:], "<link")
@@ -367,7 +367,7 @@ func extractFeedFromHTML(htmlBody string) string {
 
 // extractAttributeValue reads one attribute out of a tag, quoted either way.
 func extractAttributeValue(tag, attribute string) string {
-	lower := strings.ToLower(tag)
+	lower := asciiLower(tag)
 	needle := attribute + "="
 	idx := strings.Index(lower, needle)
 	if idx < 0 {

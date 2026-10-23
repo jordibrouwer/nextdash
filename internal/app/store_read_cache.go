@@ -56,6 +56,9 @@ func (fs *FileStore) ReplaceDataFiles(write func() error) error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 	defer fs.invalidateReadCache()
+	// The files change under the generation counter's feet; without the bump a
+	// cache keyed on it (the health report) keeps serving pre-restore data.
+	fs.dataGeneration++
 	return write()
 }
 

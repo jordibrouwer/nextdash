@@ -96,6 +96,9 @@
      * go without. This keeps the four facts worth carrying and drops the rest.
      */
     let healthCertificates = {};
+    /** Registrations by domain, and what the lookups found beside them. */
+    let healthDomains = {};
+    let healthDomainSummary = null;
     const healthFacts = new Map();
     let healthFactsAt = 0;
     /** When the server built the report these facts came from. */
@@ -161,6 +164,8 @@
          * anywhere -- and that needs the map itself.
          */
         healthCertificates = certificates;
+        healthDomains = report?.domains || {};
+        healthDomainSummary = report?.domainSummary || null;
         healthFacts.clear();
         (rows || issues).forEach((entry) => {
             const key = factsKey(entry?.url);
@@ -273,6 +278,10 @@
         remember: rememberHealthFacts,
         /** Certificates by host, as the last report described them. */
         get certificates() { return healthCertificates; },
+        /** Domain registrations by registrable domain, with a date to count down to. */
+        get domains() { return healthDomains; },
+        /** {enabled, watched, noDate} from the last report, or null before one arrived. */
+        get domainSummary() { return healthDomainSummary; },
         get size() { return healthFacts.size; },
         get updatedAt() { return healthFactsAt; },
         get generatedAt() { return healthFactsGeneratedAt; },

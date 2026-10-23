@@ -34,8 +34,6 @@
             contextId: 'bookmarks',
             rows: [
                 { keys: '1–9', cheatKey: 'navPageTab', fallback: 'Switch to bookmark page', print: true, printKeys: '1–9' },
-                // '0' still opens the Inbox but is deliberately undocumented: Shift+I
-                // replaces it, and listing both would teach a shortcut that is going away.
                 {
                     keys: 'Shift + I',
                     cheatKey: 'navInboxView',
@@ -43,6 +41,14 @@
                     when: (ctx) => ctx.inboxEnabled && ctx.inboxInPageTabs,
                     print: true,
                     printFallback: 'Open Inbox',
+                },
+                {
+                    keys: 'Shift + G',
+                    cheatKey: 'navGlancesView',
+                    fallback: 'Open Glances — the host\'s live statistics and history',
+                    when: (ctx) => ctx.glancesEnabled,
+                    print: true,
+                    printFallback: 'Open Glances',
                 },
                 {
                     keys: 'Shift + H',
@@ -318,13 +324,28 @@
             ],
         },
         {
+            id: 'sectionGlancesView',
+            titleKey: 'sectionGlancesView',
+            titleFallback: 'Glances view',
+            contextId: 'glances',
+            when: (ctx) => ctx.glancesEnabled,
+            rows: [
+                { keys: 'o / p / c / d / n / i / h / a / m', cheatKey: 'glSection', fallback: 'Open Overview, Processes, Containers, Disks, Network, Insights, History, Alerts or Hosts (m, with several hosts)', print: true, printFallback: 'Switch section (m: Hosts)' },
+                { keys: '[ / ]', cheatKey: 'glStep', fallback: 'The previous or next section' },
+                { keys: ', / .', cheatKey: 'glRange', fallback: 'On a graph under the pointer: a shorter or longer range' },
+                { keys: 'r', cheatKey: 'glRefresh', fallback: 'Read the host now' },
+                { keys: '/', cheatKey: 'glSearch', fallback: 'Search the processes' },
+                { keys: 'Esc', cheatKey: 'glEsc', fallback: 'Close the side panel, then leave the view' },
+            ],
+        },
+        {
             id: 'sectionConfigView',
             titleKey: 'sectionConfigView',
             titleFallback: 'Config view',
             contextId: 'config',
             when: (ctx) => ctx.configEnabled,
             rows: [
-                { keys: '0–9', cheatKey: 'cvSectionJump', fallback: 'Switch to Inbox (0) or a bookmark page (1–9)' },
+                { keys: '1–9', cheatKey: 'cvSectionJump', fallback: 'Switch to a bookmark page (1–9)' },
                 { keys: 'j / k', cheatKey: 'cvSectionJk', fallback: 'Previous / next section in the left rail', print: true, printFallback: 'Previous / next section' },
                 { keys: 'g / G', cheatKey: 'cvSectionFirstLast', fallback: 'Jump to the first / last section' },
                 { keys: '← / → (section rail)', cheatKey: 'cvSectionRail', fallback: 'Move between sections when the section rail is focused (↑ / ↓ on desktop)' },
@@ -451,6 +472,7 @@
                 { keys: ':page new <name>', printOmit: true, cheatKey: 'cnPageNew', fallback: 'Create a page and go to it (n in the page overview does the same)' },
                 { keys: ':inbox', cheatKey: 'cnInbox', fallback: 'Open Inbox (Shift + I)', print: true },
                 { keys: ':docker [name]', cheatKey: 'cnDocker', fallback: 'Open Containers, or find a container and start, stop or update it from the palette' },
+                { keys: ':glances [section]', cheatKey: 'cnGlances', fallback: 'Open the Glances page or one of its sections; :glances host, record, pause, resume, track and untrack change what it shows or records', when: (ctx) => ctx.glancesEnabled },
                 { keys: ':inbox triage', printOmit: true, cheatKey: 'cnInboxTriage', fallback: 'Triage inbox items one by one' },
                 { keys: ':recent', cheatKey: 'cnRecent', fallback: 'Open recent bookmarks modal (same as *)' },
                 { keys: ':overview', printOmit: true, cheatKey: 'cnOverview', fallback: 'Open page overview with bookmark counts (same as ,)' },
@@ -522,6 +544,7 @@
             inboxInPageTabs: d.settings?.inboxShowInPageTabs !== false,
             healthEnabled: Boolean(d.health?.isEnabled?.()),
             dockerEnabled: Boolean(d.docker?.isEnabled?.()),
+            glancesEnabled: Boolean(d.glances?.isEnabled?.()),
             configEnabled: Boolean(d.config?.isEnabled?.()),
             webSearchOn: ['searxng', 'brave'].includes(d.settings?.webSearchEngine),
             tagCloudShortcutVisible: Boolean(d.isTagCloudDesktopShortcutVisible?.()),
@@ -536,6 +559,7 @@
         if (ctx.activeView === 'library') return 'library';
         if (ctx.activeView === 'tags') return 'tag-view';
         if (ctx.activeView === 'docker') return 'docker';
+        if (ctx.activeView === 'glances') return 'glances';
         if (ctx.activeView === 'config') return 'config';
         return 'bookmarks';
     }

@@ -28,15 +28,16 @@ show behind the button that opened it. The certificates are the report's too,
 for the same reason (the reader's warning days).
 */
 type digestInput struct {
-	Now           time.Time
-	Settings      Settings
-	Issues        []HealthIssue
-	StaleDays     int        // the report's "not opened for" threshold, in days
-	Bookmarks     []Bookmark // for the open log only: what was opened this week
-	InboxCount    int
-	Updates       map[string]*dockerImageUpdate // nil when Docker is not in use
-	CertsExpiring []string                      // "host (5 days)" lines, already formatted
-	Releases      []whatsNewRelease             // nextDash's own recent releases, newest first
+	Now             time.Time
+	Settings        Settings
+	Issues          []HealthIssue
+	StaleDays       int        // the report's "not opened for" threshold, in days
+	Bookmarks       []Bookmark // for the open log only: what was opened this week
+	InboxCount      int
+	Updates         map[string]*dockerImageUpdate // nil when Docker is not in use
+	CertsExpiring   []string                      // "host (5 days)" lines, already formatted
+	DomainsExpiring []string                      // "domain (5 days)" lines, already formatted
+	Releases        []whatsNewRelease             // nextDash's own recent releases, newest first
 }
 type digestSnapshot struct {
 	DueKey      string         `json:"dueKey"`
@@ -51,6 +52,7 @@ type digestHealth struct {
 	StillBroken      int      `json:"stillBroken,omitempty"`
 	StillBrokenNames []string `json:"stillBrokenNames,omitempty"`
 	CertsExpiring    []string `json:"certsExpiring,omitempty"`
+	DomainsExpiring  []string `json:"domainsExpiring,omitempty"`
 }
 type digestUpdates struct {
 	Available []string `json:"available"`
@@ -95,7 +97,7 @@ func buildDigest(in digestInput) digestSnapshot {
 	snap := digestSnapshot{GeneratedAt: now}
 
 	if in.Settings.DigestHealth {
-		h := &digestHealth{CertsExpiring: in.CertsExpiring}
+		h := &digestHealth{CertsExpiring: in.CertsExpiring, DomainsExpiring: in.DomainsExpiring}
 		since := in.Now.Add(-digestNewWindow).UnixMilli()
 		for _, issue := range in.Issues {
 			if !issueHasFlag(issue, "broken") {
@@ -112,7 +114,7 @@ func buildDigest(in digestInput) digestSnapshot {
 		}
 		sort.Strings(h.NewlyBroken)
 		h.StillBrokenNames = digestSample(h.StillBrokenNames)
-		if len(h.NewlyBroken) > 0 || h.StillBroken > 0 || len(h.CertsExpiring) > 0 {
+		if len(h.NewlyBroken) > 0 || h.StillBroken > 0 || len(h.CertsExpiring) > 0 || len(h.DomainsExpiring) > 0 {
 			snap.Health = h
 		}
 	}
@@ -229,6 +231,9 @@ func digestNotice(d digestSnapshot) monitorNotification {
 		if n := len(h.CertsExpiring); n > 0 {
 			first(digestCount(n, "certificate runs out soon", "certificates run out soon"))
 		}
+		if n := len(h.DomainsExpiring); n > 0 {
+			first(digestCount(n, "domain runs out soon", "domains run out soon"))
+		}
 	}
 	if u := d.Updates; u != nil {
 		first(digestCount(len(u.Available), "container update", "container updates"))
@@ -240,6 +245,9 @@ func digestNotice(d digestSnapshot) monitorNotification {
 		}
 		if len(h.CertsExpiring) > 0 {
 			lines = append(lines, "Certificates running out: "+joinCapped(h.CertsExpiring, digestListCap)+".")
+		}
+		if len(h.DomainsExpiring) > 0 {
+			lines = append(lines, "Domains running out: "+joinCapped(h.DomainsExpiring, digestListCap)+".")
 		}
 	}
 	if u := d.Updates; u != nil {

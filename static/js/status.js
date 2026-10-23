@@ -354,12 +354,13 @@ class StatusMonitor {
      * Outside a round -- a single row rechecked by hand -- there is nothing to
      * batch, so it flushes immediately and the reader sees the write land.
      */
-    async persistBookmarkStatus(bookmark, status, errorDetail = '') {
+    async persistBookmarkStatus(bookmark, status, errorDetail = '', startPageId = undefined) {
         const url = String(bookmark?.url || '').trim();
         if (!url) {
             return;
         }
-        const pageId = Number(window.dashboardInstance?.currentPageId);
+        // The page the check started on, not the one showing when the ping ends.
+        const pageId = Number(bookmark?.pageId ?? startPageId ?? window.dashboardInstance?.currentPageId);
         if (!Number.isFinite(pageId) || pageId <= 0) {
             return;
         }
@@ -444,14 +445,30 @@ class StatusMonitor {
         const send = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         for (const [pageId, results] of byPage) {
             try {
-                await send('/api/health/statuses', {
+                const res = await send('/api/health/statuses', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ pageId, results })
                 });
+                if (res && res.ok === false) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
             } catch (error) {
                 console.warn('Failed to persist bookmark statuses', error);
+                // Put them back for one more try; newer answers for a URL win.
+                if (!this._statusFlushRetried) {
+                    this._statusFlushRetried = true;
+                    if (!this._pendingStatuses) this._pendingStatuses = new Map();
+                    pending.forEach((entry, key) => {
+                        if (entry.pageId === pageId && !this._pendingStatuses.has(key)) {
+                            this._pendingStatuses.set(key, entry);
+                        }
+                    });
+                    this.scheduleStatusFlush(5000);
+                }
+                continue;
             }
+            this._statusFlushRetried = false;
         }
     }
 
@@ -523,6 +540,7 @@ class StatusMonitor {
             return null;
         }
         this._inFlightPings.add(cacheKey);
+        const startPageId = window.dashboardInstance?.currentPageId;
 
         let resolvedIndex = bookmarkIndex;
         if (!Number.isFinite(resolvedIndex) && window.dashboardInstance?.bookmarks) {
@@ -547,11 +565,7 @@ class StatusMonitor {
         try {
         for (let attempt = 1; attempt <= this.offlineRetryCount; attempt += 1) {
             lastResult = await this.pingBookmarkOnce(bookmark);
-            if (lastResult.status === 'rate_limited') {
-                this.setBookmarkStatus(bookmarkElement, 'checking', '', bookmark.url);
-                return null;
-            }
-            if (lastResult.status === 'unknown') {
+            if (lastResult.status === 'rate_limited' || lastResult.status === 'unknown') {
                 // Back to what the row said before this round, if anything.
                 if (cached?.status === 'online' || cached?.status === 'offline') {
                     this.setBookmarkStatus(bookmarkElement, cached.status, '', bookmark.url);
@@ -569,7 +583,7 @@ class StatusMonitor {
                 });
                 const pingText = this.settings.showPing && lastResult.ping ? `${lastResult.ping}ms` : '';
                 this.setBookmarkStatus(bookmarkElement, 'online', pingText, bookmark.url);
-                await this.persistBookmarkStatus(bookmark, 'online');
+                await this.persistBookmarkStatus(bookmark, 'online', '', startPageId);
                 return { status: 'online', ping: lastResult.ping };
             }
 
@@ -587,7 +601,7 @@ class StatusMonitor {
             errorDetail: lastResult.errorDetail
         });
         this.setBookmarkStatus(bookmarkElement, 'offline', '', bookmark.url);
-        await this.persistBookmarkStatus(bookmark, 'offline', lastResult.errorDetail);
+        await this.persistBookmarkStatus(bookmark, 'offline', lastResult.errorDetail, startPageId);
         return { status: 'offline', ping: null };
         } finally {
             this._inFlightPings.delete(cacheKey);

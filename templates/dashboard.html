@@ -135,6 +135,7 @@
     <link rel="stylesheet" href="{{asset "css/dashboard-inline-edit-surface.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-media-tile.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-widget-beszel.css"}}">
+    <link rel="stylesheet" href="{{asset "css/dashboard-widget-glances.css"}}">
     <!-- Last: overrides the !important animation rules the sheets above declare. -->
     <link rel="stylesheet" href="{{asset "css/reduced-motion.css"}}">
     <link rel="stylesheet" href="{{asset "css/fonts.css"}}">
@@ -144,9 +145,11 @@
     <link rel="stylesheet" href="{{asset "css/inbox-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/bookmarks-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/containers-tutorial.css"}}">
+    <link rel="stylesheet" href="{{asset "css/glances-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/widgets-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/health-view.css"}}">
     <link rel="stylesheet" href="{{asset "css/docker-view.css"}}">
+    <link rel="stylesheet" href="{{asset "css/dashboard-glances.css"}}">
     <link rel="stylesheet" href="{{asset "css/tag-view.css"}}">
     <link rel="stylesheet" href="{{asset "vendor/uplot/1.6.32/uPlot.min.css"}}">
     <link rel="stylesheet" href="{{asset "css/nd-chart.css"}}">
@@ -187,7 +190,7 @@
         <div class="dashboard-noscript" role="alert">
             {{if eq .Language "nl"}}
             <h1>JavaScript is nodig</h1>
-            <p>Dit dashboard heeft JavaScript nodig om je bladwijzers te laden. Schakel JavaScript in en herlaad de pagina.</p>
+            <p>Dit dashboard heeft JavaScript nodig om je bookmarks te laden. Schakel JavaScript in en herlaad de pagina.</p>
             {{else if eq .Language "de"}}
             <h1>JavaScript erforderlich</h1>
             <p>Dieses Dashboard benötigt JavaScript, um deine Lesezeichen zu laden. Bitte aktiviere JavaScript und lade die Seite neu.</p>
@@ -356,6 +359,8 @@
                     </div>
                     <div id="page-nav-inbox-host" class="page-nav-inbox-host"></div>
                     <div id="page-nav-docker-host" class="page-nav-docker-host"></div>
+                    <!-- Glances: an icon of its own, before Config, once Config → Glances has it on; JS fills it. -->
+                    <div id="page-nav-glances-host" class="page-nav-glances-host"></div>
                     {{if .ShowConfigButton}}<div class="config-link config-link--icon">
                         <a href="/#config" class="config-link-anchor" data-i18n-aria="dashboard.config" data-i18n-tooltip="dashboard.config" aria-label="config" title="config">
                             <svg class="config-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -583,7 +588,7 @@
     <script src="{{asset "js/clock-weather-notice.js"}}" defer></script>
     <script src="{{asset "js/changes-tour.js"}}" defer></script>
     <script src="{{asset "js/theme-browser-notice.js"}}" defer></script>
-    <script src="{{asset "js/confetti-theme-notice.js"}}" defer></script>
+    <script src="{{asset "js/berry-theme-notice.js"}}" defer></script>
     <script src="{{asset "js/theme-studio-notice.js"}}" defer></script>
     <script src="{{asset "js/health-review-notice.js"}}" defer></script>
     <script src="{{asset "js/digest-notice.js"}}" defer></script>
@@ -631,6 +636,7 @@
     <script src="{{asset "js/dashboard/dashboard-widget-sources.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-feeds.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-certs.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-domains.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-uptime.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-trend.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-inbox.js"}}" defer></script>
@@ -650,6 +656,7 @@
     <script src="{{asset "js/dashboard/dashboard-widget-custom.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-system.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-cpu.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-widget-glances.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-disks.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-memory.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-widget-unraid.js"}}" defer></script>
@@ -694,6 +701,8 @@
     <script src="{{asset "js/dashboard/dashboard-config-loader.js"}}" defer></script>
     <script src="{{asset "js/dashboard/docker-search-index.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-docker-loader.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-glances-status.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-glances-loader.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-tag-view-loader.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-paste-choice.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-page-nav.js"}}" defer></script>

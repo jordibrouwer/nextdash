@@ -46,6 +46,8 @@ class DashboardRenderCore {
         'beszel-system': { configKey: 'ttl', floor: 30, fallback: 60 },
         'beszel-attention': { configKey: 'ttl', floor: 30, fallback: 60 },
         'beszel-storage': { configKey: 'ttl', floor: 30, fallback: 60 },
+        // nextDash's own record: a beat is as old as its pace, so a half minute is fresh enough.
+        glances: { configKey: 'refreshSeconds', floor: 15, fallback: 30 },
         'jellyfin-playing': { configKey: 'ttl', floor: 5, fallback: 10 },
         'emby-playing': { configKey: 'ttl', floor: 5, fallback: 10 },
         'plex-playing': { configKey: 'ttl', floor: 5, fallback: 10 },
@@ -969,6 +971,7 @@ class DashboardRenderCore {
         'beszel-system': 'Beszel system',
         'beszel-attention': 'Beszel attention',
         'beszel-storage': 'Beszel storage',
+        glances: 'Glances',
         'jellyfin-playing': 'Jellyfin — now playing',
         'emby-playing': 'Emby — now playing',
         'plex-playing': 'Plex — now playing',

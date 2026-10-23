@@ -275,6 +275,14 @@ func normalizeHealthCacheFile(cache HealthScanCacheFile) HealthScanCacheFile {
 			delete(cache.Certificates, host)
 		}
 	}
+	if cache.Domains == nil {
+		cache.Domains = map[string]HostDomain{}
+	}
+	for name := range cache.Domains {
+		if strings.TrimSpace(name) == "" {
+			delete(cache.Domains, name)
+		}
+	}
 	if len(cache.Cache) == 0 {
 		cache.Cache = map[string]HealthScanCache{}
 		return cache

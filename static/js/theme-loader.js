@@ -16,7 +16,7 @@
      * missing: a device with device-specific settings on and no theme in them,
      * or a shell served without the data-theme attribute filled in.
      */
-    const DEFAULT_THEME = 'look-confetti-dark';
+    const DEFAULT_THEME = 'look-berry-dark';
 
     const LEGACY_THEME_MAP = {
         aurora: 'midnight-neon-dark',
@@ -214,7 +214,11 @@
                     if (window.DeviceSettingsMerge?.saveDeviceLocalSettings) {
                         window.DeviceSettingsMerge.saveDeviceLocalSettings(parsedSettings);
                     } else {
-                        localStorage.setItem('dashboardSettings', JSON.stringify(parsedSettings));
+                        try {
+                            localStorage.setItem('dashboardSettings', JSON.stringify(parsedSettings));
+                        } catch (_error) {
+                            // Storage blocked or full: the migration is retried on the next load
+                        }
                     }
                 }
             }
@@ -471,19 +475,24 @@
      */
     let surfaceMeta = null;
     let surfaceMetaPromise = null;
+    let surfaceMetaGen = 0;
 
     function loadSurfaceMeta() {
         if (surfaceMeta) return Promise.resolve(surfaceMeta);
         if (surfaceMetaPromise) return surfaceMetaPromise;
-        surfaceMetaPromise = fetch('/api/themes/meta')
+        const gen = surfaceMetaGen;
+        const promise = fetch('/api/themes/meta')
             .then((r) => (r.ok ? r.json() : null))
             .then((data) => {
+                // A refresh since this request started makes its answer stale.
+                if (gen !== surfaceMetaGen) return surfaceMeta;
                 surfaceMeta = data && data.themes ? data : null;
                 return surfaceMeta;
             })
             .catch(() => null)
-            .finally(() => { surfaceMetaPromise = null; });
-        return surfaceMetaPromise;
+            .finally(() => { if (surfaceMetaPromise === promise) surfaceMetaPromise = null; });
+        surfaceMetaPromise = promise;
+        return promise;
     }
 
     /** What the theme answers when nothing overrides it, once the meta is in; else null. */
@@ -494,6 +503,8 @@
     /** Forget the cache, for when a theme's character has just been edited. */
     function refreshSurfaceMeta() {
         surfaceMeta = null;
+        surfaceMetaGen += 1;
+        surfaceMetaPromise = null;
         return loadSurfaceMeta();
     }
 

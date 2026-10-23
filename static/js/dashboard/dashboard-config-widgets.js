@@ -493,6 +493,7 @@
             <div class="config-crud-toolbar config-crud-toolbar--view">
                 <input type="search" class="config-text" id="config-widget-search"
                     placeholder="${esc(this.t('config.searchWidgets', 'Search widgets…'))}"
+                    aria-label="${esc(this.t('config.searchWidgets', 'Search widgets…'))}"
                     value="${esc(this.widgetQuery || '')}">
                 ${pagePicker}
                 <select class="config-select" data-widget-sort aria-label="${
@@ -841,28 +842,40 @@
     /*
      * Move one widget from its settings panel.
      *
-     * An unsaved draft would not travel: the move carries what is stored, and
-     * the panel closes behind it. So that is asked first, and a refusal puts
-     * the select back where the widget still is.
+     * The move carries what is stored, and the panel closes behind it, so an
+     * unsaved draft would be lost. It used to be dropped on a "Move anyway";
+     * the widget then turned up on the other page empty and read as deleted.
+     * Now the draft is saved first, and if that cannot be done the widget
+     * stays where it is, with the select put back, and the save bar says why.
      */
     async moveOneWidgetToPage(index, select) {
         const block = (this._widgetBlocks || [])[index];
         const previous = select.getAttribute('data-widget-current-page');
-        if (!block?.isWidget || !select.value || select.value === previous) return;
+        const target = select.value;
+        if (!block?.isWidget || !target || target === previous) return;
 
         if (this.widgetDraftDirty(index)) {
             const ok = await this.confirmAction(
                 this.t('config.widgetMoveDiscardBody',
-                    'This widget has unsaved changes. Moving it keeps what is saved and drops the rest.'),
+                    'This widget has unsaved changes. They are saved first, then the widget moves.'),
                 {
-                    title: this.t('config.widgetsDiscardDraftsTitle', 'Discard unsaved changes?'),
-                    confirmLabel: this.t('config.widgetMoveDiscardOk', 'Move anyway'),
+                    title: this.t('config.widgetMoveSaveTitle', 'Save before moving?'),
+                    confirmLabel: this.t('config.widgetMoveDiscardOk', 'Save and move'),
                 });
             if (!ok) { select.value = previous; return; }
+            await this.saveWidgetDraft(index);
+            // A save that went through leaves nothing unsaved (the panel is
+            // redrawn from what is stored); one that did not leaves the draft
+            // as it was, and the save bar has said why.
+            const now = (this._widgetBlocks || []).findIndex((row) => row.id === block.id);
+            if (now < 0 || this.widgetDraftDirty(now)) {
+                if (select.isConnected) select.value = previous;
+                return;
+            }
         }
         this.stopCustomProbeLive();
         delete (this._widgetDrafts || {})[block.id];
-        await this.moveWidgetsToPage(select.value, [block.id]);
+        await this.moveWidgetsToPage(target, [block.id]);
         // A failed move leaves the widget where it was; say so in the select too.
         if (select.isConnected) select.value = previous;
     },
@@ -1314,6 +1327,15 @@
         const now = draft.auth || {};
         // A secret that was typed is a change even when nothing else moved.
         if (String(now.secret || '')) return true;
+        /*
+         * A media panel opens on its service's own kind of sign-in (a key in a
+         * header, a login) whether or not anything is filed, so a widget with no
+         * credential reads as changed the moment its panel is drawn. With
+         * nothing typed that is no change at all: moving such a widget asked
+         * "unsaved changes?" about nothing.
+         */
+        if (DashboardConfig.MEDIA_SERVICES?.[block.type] && before.kind === 'none'
+            && now.kind !== 'shared' && !String(now.basicUser || '')) return false;
         return before.kind !== now.kind
             || String(before.headerName || '') !== String(now.headerName || '')
             || String(before.queryName || '') !== String(now.queryName || '')
@@ -2516,8 +2538,9 @@
                  * needs nothing new to read it.
                  */
                 const hint = field.hint ? this.t(field.hint[0], field.hint[1]) : '';
-                const current = String(config[field.key] || field.options[0][0]);
-                const choices = field.options.map(([value, text]) =>
+                const optionList = typeof field.options === 'function' ? field.options(this) : field.options;
+                const current = String(config[field.key] || optionList[0][0]);
+                const choices = optionList.map(([value, text]) =>
                     `<option value="${esc(value)}" ${value === current ? 'selected' : ''}>${
                         esc(this.t(text[0], text[1]))}</option>`).join('');
                 return `
@@ -2986,6 +3009,7 @@
             health: 'How many bookmarks are broken, down, changed or fine — each figure opens its own filter.',
             uptime: 'The bookmarks you monitor, worst first, with uptime over the last week.',
             certs: 'Certificates about to expire, grouped by host rather than by bookmark.',
+            domains: 'Domain names about to expire, by registered domain rather than by host.',
             trend: 'The health view\'s summary: the score and its direction over time, what is broken, and the monitors\' last day.',
             inbox: 'How much is waiting to be filed, and how long the oldest has waited.',
             unsorted: 'Bookmarks kept from the inbox without picking a category — most recent, at random, or by tag.',

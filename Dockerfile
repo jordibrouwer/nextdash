@@ -19,7 +19,7 @@ ARG TARGETOS
 ARG TARGETARCH
 ARG VERSION=dev
 ARG COMMIT=unknown
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -installsuffix cgo \
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build \
     -ldflags "-s -w -X github.com/jordibrouwer/nextDash/internal/app.buildVersion=${VERSION} -X github.com/jordibrouwer/nextDash/internal/app.buildCommit=${COMMIT}" \
     -o main .
 

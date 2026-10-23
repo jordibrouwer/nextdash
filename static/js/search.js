@@ -1293,18 +1293,9 @@ class SearchComponent {
             return;
         }
 
-        // 0 opens Inbox when enabled (never feeds into search)
+        // 0 is page 0 (dashboard-setup.js); it never feeds into search.
         if (e.key === '0' && !this.searchActive) {
-            const dash = window.dashboardInstance;
-            if (dash?.inbox?.isEnabled?.() && dash.settings?.inboxShowInPageTabs !== false) {
-                if (dash.keyboardNavigation?.isGChordActive?.()) {
-                    return;
-                }
-                e.preventDefault();
-                e.stopPropagation();
-                void dash.inbox.openInboxView();
-                return;
-            }
+            return;
         }
 
         // Handle space key for commands, finders, global search, and normal-search filters
@@ -1339,7 +1330,7 @@ class SearchComponent {
          * Which characters may start a query, and which may join one.
          *
          * A digit never starts one. 0-9 belong to the pages: 1-9 switch to the
-         * page they number and 0 opens the inbox, and the ones with no page
+         * page they number and 0 opens page 0 (Glances), and the ones with no page
          * behind them stay reserved rather than falling through to this palette
          * -- a key that switches pages on one install and opens a search box on
          * the next is a key you cannot learn. They are still typed *into* a
@@ -1362,6 +1353,13 @@ class SearchComponent {
         }
 
         e.preventDefault();
+        // The first letter goes in as typed. `key` is the upper-case reading the
+        // checks above want, and appended as is it made every search open on a
+        // capital -- "Immich" -- while the letters after it stayed as typed.
+        if (this.currentQuery === '' && /^[A-Z]$/.test(key) && e.key.length === 1) {
+            this.addToQuery(e.key);
+            return;
+        }
         this.addToQuery(key);
     }
 
@@ -1940,7 +1938,20 @@ class SearchComponent {
         if (!d?.settings) return;
         d.settings.searchPicks = this.searchPicks;
         clearTimeout(this._searchPicksTimer);
-        this._searchPicksTimer = setTimeout(() => { void d.saveSettings?.(); }, 2000);
+        this._searchPicksTimer = setTimeout(() => {
+            this._searchPicksTimer = null;
+            void d.saveSettings?.();
+        }, 2000);
+        if (!this._searchPicksFlushBound) {
+            this._searchPicksFlushBound = true;
+            // A pick made in the last two seconds before the tab goes still saves.
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState !== 'hidden' || !this._searchPicksTimer) return;
+                clearTimeout(this._searchPicksTimer);
+                this._searchPicksTimer = null;
+                void window.dashboardInstance?.saveSettings?.();
+            });
+        }
     }
 
     /** Settings first — it is the copy that travels. */
@@ -3251,6 +3262,22 @@ class SearchComponent {
          */
         const cursor = this._gridCursorBeforeSearch;
         this._gridCursorBeforeSearch = -1;
+        /*
+         * A search typed from nowhere gives nothing back.
+         *
+         * With no row picked and no control that opened the panel -- the reader
+         * just started typing -- there is no focus to restore. Putting the cursor
+         * on the first row after Escape marked a row the reader never chose and
+         * turned j and k into steps through the grid again. Focus stays off the
+         * grid, as it was.
+         */
+        if (cursor < 0 && (!opener || opener === document.body)) {
+            const active = document.activeElement;
+            if (active && active !== document.body && active.closest?.('#shortcut-search')) {
+                active.blur();
+            }
+            return;
+        }
         const nav = window.dashboardInstance?.keyboardNavigation;
         if (
             window.dashboardInstance?.isBookmarksView?.() === true
@@ -3557,10 +3584,11 @@ class SearchComponent {
                         .slice(0, 3);
                     topFinders.forEach((finder) => {
                         const finderShortcut = finder.shortcut.toUpperCase();
+                        const finderShortcutHtml = this._escHtml(finderShortcut);
                         const finderHint = document.createElement('div');
                         finderHint.className = 'search-match search-hint-entry';
                         finderHint.innerHTML = `
-                            <span class="search-match-shortcut search-hint-shortcut">?${finderShortcut}</span>
+                            <span class="search-match-shortcut search-hint-shortcut">?${finderShortcutHtml}</span>
                             <span class="search-match-name search-hint-name">${t('dashboard.hintSearchFinder', 'Search on')} ${this._escHtml(finder.name || finderShortcut)}</span>
                         `;
                         const hintFinderAction = () => {
@@ -4579,7 +4607,11 @@ class SearchComponent {
         this._trackCommandUse(queryBefore);
         const result = match.action();
         if (result && typeof result.then === 'function') {
-            result.then((resolved) => this._finishCommandInvoke(queryBefore, match, resolved));
+            result.then((resolved) => this._finishCommandInvoke(queryBefore, match, resolved))
+                .catch((error) => {
+                    console.warn('Command failed', error);
+                    window.dashboardInstance?.showErrorNotification?.(error?.message || 'Command failed');
+                });
             return;
         }
         this._finishCommandInvoke(queryBefore, match, result);

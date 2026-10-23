@@ -4,6 +4,7 @@
 class DashboardDateWeather {
     constructor(dashboard) {
         this.dash = dashboard;
+        this._weatherSeq = 0;
     }
 
     /**
@@ -294,8 +295,13 @@ class DashboardDateWeather {
             const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
             tmp.setUTCDate(tmp.getUTCDate() + 4 - (tmp.getUTCDay() || 7));
             const jan1 = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
-            return Math.ceil((((tmp - jan1) / 86400000) + 1) / 7);
+            return {
+                week: Math.ceil((((tmp - jan1) / 86400000) + 1) / 7),
+                // The ISO year can differ from the calendar year around New Year.
+                year: tmp.getUTCFullYear()
+            };
         };
+        const iso = isoWeek(now);
 
         const weekStart = new Date(now);
         weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7));
@@ -324,7 +330,7 @@ class DashboardDateWeather {
 
         const weekLabel = document.createElement('div');
         weekLabel.className = 'date-popover-week-label';
-        weekLabel.textContent = `${t('dashboard.weekLabel', 'Week')} ${isoWeek(now)}  ·  ${now.getFullYear()}`;
+        weekLabel.textContent = `${t('dashboard.weekLabel', 'Week')} ${iso.week}  ·  ${iso.year}`;
         pop.appendChild(weekLabel);
 
         const grid = document.createElement('div');
@@ -360,6 +366,10 @@ class DashboardDateWeather {
         }
 
         document.body.appendChild(pop);
+        pop.style.maxWidth = 'calc(100vw - 1rem)';
+        pop.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - pop.offsetWidth - 8))}px`;
+        pop.tabIndex = -1;
+        pop.focus({ preventScroll: true });
 
         const close = () => {
             pop.remove();
@@ -482,6 +492,8 @@ class DashboardDateWeather {
 
     async refreshWeather(forceRefresh = false) {
         const d = this.dash;
+        // Taken before the early returns too, so a disable also voids a pending fetch.
+        const seq = ++this._weatherSeq;
         if (!d.shouldRenderDateBlock() || !d.settings.showWeatherWithDate || !d.weatherService) {
             d.weatherData = null;
             this.renderDateWeatherLine();
@@ -494,12 +506,19 @@ class DashboardDateWeather {
             return;
         }
 
+        // fetchWeather caches under getCacheKey(settings), so hand it a snapshot:
+        // the live object may already point at a new location when it resolves.
+        const settingsSnapshot = { ...d.settings };
         try {
-            d.weatherData = await d.weatherService.fetchWeather(d.settings, {
+            const data = await d.weatherService.fetchWeather(settingsSnapshot, {
                 useCache: !forceRefresh
             });
-            d.weatherLastError = d.weatherService.lastFetchError || null;
+            const fetchError = d.weatherService.lastFetchError || null;
+            if (seq !== this._weatherSeq) return;
+            d.weatherData = data;
+            d.weatherLastError = fetchError;
         } catch (error) {
+            if (seq !== this._weatherSeq) return;
             d.weatherData = null;
             d.weatherLastError = 'weather_fetch_failed';
         }

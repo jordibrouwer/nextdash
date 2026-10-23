@@ -84,6 +84,7 @@
         const parts = [];
         if (h.newlyBroken?.length) parts.push(count(h.newlyBroken.length, 'dashboard.digestLeadBroken', '1 link broke this week', '{count} links broke this week'));
         if (h.certsExpiring?.length) parts.push(count(h.certsExpiring.length, 'dashboard.digestLeadCerts', '1 certificate runs out soon', '{count} certificates run out soon'));
+        if (h.domainsExpiring?.length) parts.push(count(h.domainsExpiring.length, 'dashboard.digestLeadDomains', '1 domain runs out soon', '{count} domains run out soon'));
         if (u.available?.length) parts.push(count(u.available.length, 'dashboard.digestLeadUpdates', '1 container update', '{count} container updates'));
         if (h.stillBroken) parts.push(count(h.stillBroken, 'dashboard.digestLeadStillBroken', '1 link still broken', '{count} links still broken'));
         if (g.neverOpened) parts.push(count(g.neverOpened, 'dashboard.digestLeadNever', '1 bookmark never opened', '{count} bookmarks never opened'));
@@ -191,6 +192,13 @@
                 id: 'certificates', icon: '🔒', title: t('dashboard.digestCertsTitle', 'Certificates'),
                 note: t('dashboard.digestCertsNote', 'When a certificate runs out, the browser shows a warning instead of the site.'),
                 names: h.certsExpiring, action: t('dashboard.digestOpenBookmarks', 'Open in Bookmarks'), target: 'certificates',
+            });
+        }
+        if (h.domainsExpiring?.length) {
+            out.push({
+                id: 'domains', icon: '🌐', title: t('dashboard.digestDomainsTitle', 'Domains'),
+                note: t('dashboard.digestDomainsNote', 'When a domain runs out, the site, its certificate and its mail go with it.'),
+                names: h.domainsExpiring, action: t('dashboard.digestOpenBookmarks', 'Open in Bookmarks'), target: 'domains',
             });
         }
         if (u.available?.length) {

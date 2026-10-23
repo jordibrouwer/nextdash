@@ -27,8 +27,10 @@
    their neighbours, to read as deliberate rather than accidental. */
 
 :root {
-    --text-2xs: 0.65rem;
-    --text-xs: 0.72rem;
+    /* 12px at the root size is the floor for text that is read, not just
+       seen: the two smallest steps used to be 10.4px and 11.5px. */
+    --text-2xs: 0.75rem;
+    --text-xs: 0.75rem;
     --text-sm: 0.8rem;
     --text-base: 0.9rem;
     --text-md: 1rem;

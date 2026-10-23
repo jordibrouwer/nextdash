@@ -14,6 +14,7 @@ class SearchCommandsComponent {
         { id: 'inboxTutorialV3', labelKey: 'config.tourInbox', label: 'Inbox' },
         { id: 'bookmarksTutorialV1', labelKey: 'config.tourBookmarks', label: 'Bookmarks view' },
         { id: 'containersTutorialV3', labelKey: 'config.tourContainers', label: 'Containers' },
+        { id: 'glancesTutorialV1', labelKey: 'config.tourGlances', label: 'Glances' },
         { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets' },
     ];
 
@@ -79,7 +80,7 @@ class SearchCommandsComponent {
                 id: 'settings-tools',
                 label: 'Settings & tools',
                 labelKey: 'commands.groupSettingsTools',
-                commands: ['config', 'backup', 'trash', 'export', 'import', 'share', 'tour', 'metadata', 'health', 'docker', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'changes', 'telemetry'],
+                commands: ['config', 'backup', 'trash', 'export', 'import', 'share', 'tour', 'metadata', 'health', 'docker', 'glances', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'changes', 'telemetry'],
             },
         ];
         // Which groups are open. None is, until the reader opens one: the
@@ -167,6 +168,7 @@ class SearchCommandsComponent {
             'find': this.handleFindCommand.bind(this),
             'health': this.handleHealthCommand.bind(this),
             'docker': this.handleDockerCommand.bind(this),
+            'glances': this.handleGlancesCommand.bind(this),
             'dark': this.handleDarkCommand.bind(this),
             'title': this.handleTitleCommand.bind(this),
             'lang': this.handleLangCommand.bind(this),
@@ -327,6 +329,7 @@ class SearchCommandsComponent {
         { id: 'widgets', labelKey: 'commands.configWidgets', fallback: 'Widgets' },
         { id: 'containers', labelKey: 'commands.configContainers', fallback: 'Containers' },
         { id: 'unraid', labelKey: 'commands.configUnraid', fallback: 'Unraid' },
+        ...(document.querySelector('meta[name="nextdash-demo"]') ? [] : [{ id: 'glances', labelKey: 'commands.configGlances', fallback: 'Glances' }]),
         { id: 'monitoring', labelKey: 'commands.configMonitoring', fallback: 'Monitoring' },
         { id: 'status-page', labelKey: 'commands.configStatusPage', fallback: 'Status page' },
         { id: 'stats', labelKey: 'commands.configStats', fallback: 'Statistics' },
@@ -798,6 +801,8 @@ class SearchCommandsComponent {
             });
             if (isExpanded) {
                 for (const cmd of group.commands) {
+                    // Glances is not part of the demo.
+                    if (cmd === 'glances' && document.querySelector('meta[name="nextdash-demo"]')) continue;
                     if (Object.prototype.hasOwnProperty.call(this.availableCommands, cmd)) {
                         const useCtx = ctxName && bookmarkContextCmds.has(cmd);
                         result.push({
@@ -4136,6 +4141,192 @@ class SearchCommandsComponent {
                     return { navigate: true };
                 },
             }));
+    }
+
+    /**
+     * :glances, :glances <section>, :glances record <pace>, :glances pause|resume,
+     * :glances track|untrack <name>, :glances incidents, :glances config.
+     *
+     * Nothing is offered in the demo, or when Glances is off (then the one row
+     * leads to where it is set up). The writing ones go through the same
+     * /api/glances/config the page and Config use, so the write token applies.
+     */
+    handleGlancesCommand(args) {
+        const dash = window.dashboardInstance;
+        const status = dash?.glancesStatus;
+        if (!dash || !status || document.querySelector('meta[name="nextdash-demo"]')) return [];
+        const t = (key, fallback, params) => {
+            const text = this._t(`commands.${key}`, fallback);
+            return params ? Object.entries(params).reduce((acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)), text) : text;
+        };
+        const row = (name, completionOrAction, extra = {}) => (typeof completionOrAction === 'string'
+            ? { name, shortcut: ':GLANCES', completion: completionOrAction, type: 'command-completion', ...extra }
+            : { name, shortcut: ':GLANCES', type: 'command', action: completionOrAction, ...extra });
+        const open = (hash) => () => {
+            this._closeCommandPalette();
+            void dash.glances?.openGlancesView?.({ hash });
+            return { navigate: true };
+        };
+
+        if (!status.configured) {
+            return [row(t('glancesSetUp', 'Set up Glances'), () => {
+                this._closeCommandPalette();
+                void status.openGlancesPage();
+                return { navigate: true };
+            })];
+        }
+
+        this._glancesWarm();
+        const Host = window.DashboardGlancesHost;
+        const hosts = status.hosts || [];
+        const sub = String(args[0] || '').toLowerCase();
+        const rest = args.slice(1).join(' ').trim();
+        const SECTIONS = [
+            ['overview', 'Overview'], ['processes', 'Processes'], ['containers', 'Containers'], ['disks', 'Disks'],
+            ['network', 'Network'], ['insights', 'Insights'], ['history', 'History'], ['alerts', 'Alerts'],
+        ];
+        const save = async (body, done) => {
+            this._closeCommandPalette();
+            try {
+                const res = await window.nextDashFetch(Host.url('/api/glances/config', status.hostId), {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+                });
+                if (!res.ok) throw new Error(String(res.status));
+                await status.refresh?.({ force: true });
+                dash.showNotification?.(done, 'success');
+            } catch (err) {
+                const full = String(err && err.message) === '400' && body.trackedHistory;
+                dash.showNotification?.(full
+                    ? t('glancesTrackFull', 'Too many items are recorded (at most 15). Stop recording another one first.')
+                    : t('glancesFailed', 'Glances could not be changed'), 'error');
+            }
+            return { navigate: false };
+        };
+
+        // Look at another host: the page opens on it (or moves there when it is open).
+        const lookAt = (host) => () => {
+            this._closeCommandPalette();
+            Host.set(host.id === hosts[0]?.id ? '' : host.id);
+            void status.refresh().then(() => {
+                if (dash.glances?.isActiveView?.()) void dash.glances.switchHost(host.id);
+                else void dash.glances?.openGlancesView?.({});
+            });
+            return { navigate: true };
+        };
+        if (sub === 'host') {
+            const want = rest.toLowerCase();
+            return hosts.filter((h) => h.name.toLowerCase().includes(want))
+                .map((h) => row(t('glancesHostRow', 'Look at {name}', { name: h.name }), lookAt(h),
+                    { stateId: h.id === status.hostId ? `glances:host:${h.id}` : undefined }));
+        }
+
+        if (!sub) {
+            return [
+                row(t('glancesOpen', 'Open the Glances page'), open('#glances')),
+                ...(hosts.length > 1 ? [row(t('glancesHostPick', 'Look at another host …'), ':glances host ')] : []),
+                ...SECTIONS.map(([id, label]) => row(`${label}`, `:glances ${id}`)),
+                row(t('glancesRecordRow', 'Record every …'), ':glances record '),
+                status.paused
+                    ? row(t('glancesResumeRow', 'Resume the connection'), () => save({ paused: false }, t('glancesResumed', 'Glances connected')))
+                    : row(t('glancesPauseRow', 'Pause the connection'), () => save({ paused: true }, t('glancesPaused', 'Glances paused'))),
+                row(t('glancesTrackRow', 'Record the history of a container or process …'), ':glances track '),
+                row(t('glancesConfigRow', 'Open Config → Glances'), () => {
+                    this._closeCommandPalette();
+                    void dash.config?.openConfigView?.('glances');
+                    return { navigate: true };
+                }),
+            ];
+        }
+
+        if (sub === 'pause' || sub === 'resume') {
+            const pause = sub === 'pause';
+            return [row(pause ? t('glancesPauseRow', 'Pause the connection') : t('glancesResumeRow', 'Resume the connection'),
+                () => save({ paused: pause }, pause ? t('glancesPaused', 'Glances paused') : t('glancesResumed', 'Glances connected')))];
+        }
+
+        if (sub === 'record') {
+            const PACES = [['2s', 2], ['5s', 5], ['10s', 10], ['30s', 30], ['1m', 60], ['5m', 300], ['15m', 900], ['30m', 1800], ['1h', 3600]];
+            const want = rest.toLowerCase().replace(/\s+/g, '');
+            return PACES.filter(([label]) => label.startsWith(want))
+                .map(([label, seconds]) => row(t('glancesRecordSet', 'Record every {pace}', { pace: label }),
+                    () => save({ recordEvery: seconds }, t('glancesRecordDone', 'Recording every {pace}', { pace: label })),
+                    { stateId: seconds === Number(status.state?.recordEvery) ? `glances:record:${seconds}` : undefined }));
+        }
+
+        if (sub === 'track' || sub === 'untrack') {
+            return this._glancesTrackRows(sub === 'track', rest, row, save, t);
+        }
+
+        if (sub === 'incidents') return [row(t('glancesIncidents', 'Open the incidents'), open('#glances/insights'))];
+        if (sub === 'config') {
+            return [row(t('glancesConfigRow', 'Open Config → Glances'), () => {
+                this._closeCommandPalette();
+                void dash.config?.openConfigView?.('glances');
+                return { navigate: true };
+            })];
+        }
+
+        const hits = SECTIONS.filter(([id, label]) => id.startsWith(sub) || label.toLowerCase().startsWith(sub));
+        const out = hits.map(([id, label]) => row(t('glancesOpenSection', 'Open Glances — {section}', { section: label }), open(`#glances/${id}`)));
+        for (const word of ['host', 'record', 'pause', 'resume', 'track', 'untrack', 'incidents', 'config']) {
+            if (word === 'host' && hosts.length < 2) continue;
+            if (word.startsWith(sub) && word !== sub) out.push(row('', `:glances ${word} `));
+        }
+        return out;
+    }
+
+    /**
+     * The containers and processes Glances shows, and the ones already recorded,
+     * asked at most every twenty seconds when `:glances` is typed, so the names
+     * are there by the time `track` or `untrack` is.
+     */
+    _glancesWarm() {
+        const Host = window.DashboardGlancesHost;
+        const status = window.dashboardInstance?.glancesStatus;
+        const hostId = status?.hostId || '';
+        let cache = this._glancesNames;
+        // Another host has other containers and other recordings.
+        if (!cache || cache.host !== hostId) cache = this._glancesNames = { host: hostId, at: 0, names: [], tracked: [], loading: false };
+        if (cache.loading || Date.now() - cache.at < 20000) return cache;
+        cache.loading = true;
+        void (async () => {
+            try {
+                const [cts, procs, cfg] = await Promise.all([
+                    fetch(Host.url('/api/glances/containers', hostId)).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+                    fetch(Host.url('/api/glances/processlist', hostId)).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+                    window.nextDashFetch(Host.url('/api/glances/config', hostId)).then((r) => (r.ok ? r.json() : {})).catch(() => ({})),
+                ]);
+                const names = new Set();
+                (Array.isArray(cts) ? cts : []).forEach((c) => c?.name && names.add(`ct:${c.name}`));
+                (Array.isArray(procs) ? procs : []).slice(0, 60).forEach((p) => p?.name && names.add(`proc:${p.name}`));
+                cache.names = [...names];
+                cache.tracked = Array.isArray(cfg.trackedHistory) ? cfg.trackedHistory : [];
+                cache.at = Date.now();
+            } finally {
+                cache.loading = false;
+            }
+        })();
+        return cache;
+    }
+
+    _glancesTrackRows(adding, query, row, save, t) {
+        const cache = this._glancesWarm();
+        const pool = adding ? cache.names.filter((k) => !cache.tracked.includes(k)) : cache.tracked;
+        const want = query.toLowerCase();
+        return pool.filter((k) => k.slice(k.indexOf(':') + 1).toLowerCase().includes(want)).slice(0, 10).map((key) => {
+            const name = key.slice(key.indexOf(':') + 1);
+            const kind = key.startsWith('ct:') ? t('glancesKindContainer', 'container') : t('glancesKindProcess', 'process');
+            const next = adding ? [...cache.tracked, key] : cache.tracked.filter((k) => k !== key);
+            return row(adding
+                ? t('glancesTrackOne', 'Record the history of {kind} {name}', { kind, name })
+                : t('glancesUntrackOne', 'Stop recording {kind} {name}', { kind, name }),
+            () => {
+                cache.tracked = next;
+                return save({ trackedHistory: next }, adding
+                    ? t('glancesTracked', 'Recording {name}', { name })
+                    : t('glancesUntracked', 'Stopped recording {name}', { name }));
+            });
+        });
     }
 
     handleHealthCommand(args, fullQuery) {

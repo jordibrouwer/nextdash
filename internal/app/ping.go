@@ -368,6 +368,16 @@ func failureClass(detail string) string {
 	switch {
 	case d == "":
 		return ""
+	// The fixed content sentences first: they embed the user's own keyword, so
+	// a rule like `Page is missing "timeout"` used to hit the substring cases
+	// below and was stored as a network failure.
+	case strings.HasPrefix(d, "page says it does not exist"):
+		// Its own class rather than "content": the page answered, and what it
+		// answered with is a not-found template. Grouping it with a failed
+		// keyword rule would hide the one failure a rot report is looking for.
+		return "gone"
+	case strings.HasPrefix(d, "page is missing"), strings.HasPrefix(d, "page contains"):
+		return "content"
 	case strings.Contains(d, "dns"):
 		return "dns"
 	case strings.Contains(d, "timeout"):
@@ -378,13 +388,7 @@ func failureClass(detail string) string {
 		return "tls"
 	case strings.Contains(d, "redirect"):
 		return "redirect"
-	case strings.HasPrefix(d, "page says it does not exist"):
-		// Its own class rather than "content": the page answered, and what it
-		// answered with is a not-found template. Grouping it with a failed
-		// keyword rule would hide the one failure a rot report is looking for.
-		return "gone"
-	case strings.HasPrefix(d, "page is missing"), strings.HasPrefix(d, "page contains"),
-		strings.Contains(d, "unexpected content"):
+	case strings.Contains(d, "unexpected content"):
 		return "content"
 	case strings.HasPrefix(d, "http "):
 		return "http"

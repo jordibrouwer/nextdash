@@ -1,0 +1,10 @@
+/* The Glances widget on the dashboard. Linked with the dashboard's own sheets,
+ * not with the Glances page's, so a widget on a dashboard that never opened
+ * the page is styled. */
+.dashboard-widget-glances-spark { display: block; width: 100%; height: 2.6rem; margin: 0.3rem 0; }
+.dashboard-widget-glances-spark-line { fill: none; stroke: var(--accent-primary); stroke-width: 1.6; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.dashboard-widget-glances-open { display: inline-block; margin-top: 0.4rem; font-size: var(--font-size-small); color: var(--text-secondary); text-decoration: none; }
+.dashboard-widget-glances-open:hover { color: var(--text-primary); text-decoration: underline; }
+.dashboard-widget-glances-open:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.dashboard-widget-glances--bad .dashboard-widget-headline-note { color: var(--accent-error); }
+.dashboard-widget-glances--warn .dashboard-widget-headline-note { color: var(--accent-warning); }

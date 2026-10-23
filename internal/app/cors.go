@@ -120,7 +120,7 @@ func isBrowserExtensionOrigin(origin string) bool {
 func applyCORSHeaders(w http.ResponseWriter, r *http.Request) {
 	corsConfigOnce.Do(initCORSConfig)
 
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 	// If-None-Match has to be allowed or a cross-origin caller cannot make a
 	// conditional request at all, and ETag has to be exposed or its JS cannot
 	// read the validator to send back. Without both, the API's ETags would work

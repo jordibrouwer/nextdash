@@ -1,0 +1,227 @@
+[
+  {
+    "label": "Composite",
+    "unit": "C",
+    "value": 46,
+    "warning": 84,
+    "critical": 94,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "Composite 1",
+    "unit": "C",
+    "value": 45,
+    "warning": 83,
+    "critical": 87,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "Core 0",
+    "unit": "C",
+    "value": 56,
+    "warning": 100,
+    "critical": 100,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "Core 4",
+    "unit": "C",
+    "value": 55,
+    "warning": 100,
+    "critical": 100,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "Core 8",
+    "unit": "C",
+    "value": 57,
+    "warning": 100,
+    "critical": 100,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "Core 9",
+    "unit": "C",
+    "value": 55,
+    "warning": 100,
+    "critical": 100,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "Core 10",
+    "unit": "C",
+    "value": 55,
+    "warning": 100,
+    "critical": 100,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "Core 11",
+    "unit": "C",
+    "value": 57,
+    "warning": 100,
+    "critical": 100,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "Core 12",
+    "unit": "C",
+    "value": 54,
+    "warning": 100,
+    "critical": 100,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "Core 13",
+    "unit": "C",
+    "value": 53,
+    "warning": 100,
+    "critical": 100,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "Core 14",
+    "unit": "C",
+    "value": 53,
+    "warning": 100,
+    "critical": 100,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "Core 15",
+    "unit": "C",
+    "value": 52,
+    "warning": 100,
+    "critical": 100,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "MAC Temperature",
+    "unit": "C",
+    "value": 57,
+    "warning": null,
+    "critical": null,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "MAC Temperature 2",
+    "unit": "C",
+    "value": 55,
+    "warning": null,
+    "critical": null,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "PHY Temperature",
+    "unit": "C",
+    "value": 57,
+    "warning": null,
+    "critical": null,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "PHY Temperature 1",
+    "unit": "C",
+    "value": 55,
+    "warning": null,
+    "critical": null,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "Package id 0",
+    "unit": "C",
+    "value": 65,
+    "warning": 100,
+    "critical": 100,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "Sensor 1",
+    "unit": "C",
+    "value": 46,
+    "warning": 65261,
+    "critical": 65261,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "Sensor 1 2",
+    "unit": "C",
+    "value": 66,
+    "warning": 65261,
+    "critical": 65261,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "Sensor 2",
+    "unit": "C",
+    "value": 62,
+    "warning": 65261,
+    "critical": 65261,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "Sensor 2 3",
+    "unit": "C",
+    "value": 42,
+    "warning": 65261,
+    "critical": 65261,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "Sensor 8",
+    "unit": "C",
+    "value": 46,
+    "warning": 65261,
+    "critical": 65261,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "acpitz 0",
+    "unit": "C",
+    "value": 27,
+    "warning": null,
+    "critical": null,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "spd5118 0",
+    "unit": "C",
+    "value": 48,
+    "warning": 55,
+    "critical": 85,
+    "type": "temperature_core",
+    "key": "label"
+  },
+  {
+    "label": "spd5118 1",
+    "unit": "C",
+    "value": 46,
+    "warning": 55,
+    "critical": 85,
+    "type": "temperature_core",
+    "key": "label"
+  }
+]

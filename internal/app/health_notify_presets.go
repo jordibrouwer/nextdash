@@ -96,7 +96,7 @@ func notifyColor(n monitorNotification) (hex string, decimal int) {
 	switch n.Event {
 	case "up":
 		return "#2eb886", 3066502 // green
-	case "cert-expiring":
+	case "cert-expiring", "domain-expiring":
 		return "#daa038", 14329912 // amber
 	default:
 		return "#e01e5a", 14431333 // red — "down" and anything unrecognised
@@ -307,6 +307,8 @@ func formatNtfyJSONNotification(n monitorNotification, topic, dashboardURL strin
 		switch n.Source {
 		case "container":
 			target, label = dash+"/#docker/"+url.PathEscape(n.Name), "Containers"
+		case "glances":
+			target, label = dash+glancesPushURL(n), "Glances"
 		case "unraid":
 			// Not about a bookmark and with no view of its own: a tap opens the
 			// dashboard, and there is no button to name a place it is not.

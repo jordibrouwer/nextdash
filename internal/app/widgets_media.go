@@ -49,7 +49,16 @@ var (
 	errMediaNoLibraries = errors.New("no libraries")
 	errMediaNoEntities  = errors.New("no entities")
 	errMediaSystemGone  = errors.New("system gone")
+	// errMediaLogin is a login a service refused; only Glances says so apart
+	// from a key (see glancesGet).
+	errMediaLogin = errors.New("login refused")
 )
+
+// mediaHTTPError is the status of an answer that was not a 200, kept so a
+// service can tell a 404 from a 500. It reads as before: "HTTP 404".
+type mediaHTTPError struct{ Status int }
+
+func (e *mediaHTTPError) Error() string { return fmt.Sprintf("HTTP %d", e.Status) }
 
 /*
 mediaSignInError says what a failed sign-in was.
@@ -71,7 +80,7 @@ func mediaSignInError(err error) error {
 // mediaErrorCode is what the tile is told: a short code it can word, never
 // the wrapped detail, which may name an internal address.
 func mediaErrorCode(err error) string {
-	for _, known := range []error{errMediaNotSetUp, errMediaNotAllowed, errMediaRefused, errMediaNoLibraries, errMediaNoEntities, errMediaSystemGone} {
+	for _, known := range []error{errMediaNotSetUp, errMediaNotAllowed, errMediaRefused, errMediaNoLibraries, errMediaNoEntities, errMediaSystemGone, errMediaLogin, errGlancesNotFound, errGlancesNeedsV4} {
 		if errors.Is(err, known) {
 			return known.Error()
 		}
@@ -339,6 +348,11 @@ func (h *Handlers) mediaAnswer(ctx context.Context, pageID int, widgetID string,
 		next.answer = result
 	} else {
 		logWarn(logComponentWidgets, "%s widget %s: %v", spec.Service, widgetID, err)
+		// Asked for again soon, like a half answer: a failure should not pin
+		// the tile in error for the whole TTL.
+		if spec.TTL > mediaPartialRetry {
+			next.expires = now.Add(mediaPartialRetry)
+		}
 		next.answer = MediaResult{
 			Items: []MediaItem{}, Libraries: result.Libraries,
 			FetchedAt: result.FetchedAt, Error: mediaErrorCode(err),
@@ -459,7 +473,7 @@ func (h *Handlers) mediaSend(ctx context.Context, method, server string, credent
 		sent = cookie
 		req.Header.Set(sessionHeaderName(credential.Session), cookie)
 	}
-	client := h.outboundHTTPClient(mediaRequestTimeout, 3)
+	client := newOutboundHTTPClientLimited(h.allowLocalBookmarks(), mediaRequestTimeout, 3, outboundLimiterFrom(ctx))
 	// A key stored for this host does not follow a redirect to another.
 	client.CheckRedirect = credentialRedirectCheck(credential, client.CheckRedirect)
 	resp, err := client.Do(req)
@@ -487,7 +501,22 @@ func (h *Handlers) mediaSend(ctx context.Context, method, server string, credent
 		return nil, fmt.Errorf("%w: HTTP %d from %s", errMediaRefused, resp.StatusCode, path)
 	case resp.StatusCode != http.StatusOK:
 		resp.Body.Close()
-		return nil, fmt.Errorf("%w: HTTP %d", errMediaUnreachable, resp.StatusCode)
+		return nil, fmt.Errorf("%w: %w", errMediaUnreachable, &mediaHTTPError{Status: resp.StatusCode})
 	}
 	return resp, nil
+}
+
+type outboundLimiterKey struct{}
+
+// withOutboundLimiter makes the requests made under ctx count against limiter
+// instead of the shared outbound limit.
+func withOutboundLimiter(ctx context.Context, limiter *slidingWindowLimiter) context.Context {
+	return context.WithValue(ctx, outboundLimiterKey{}, limiter)
+}
+
+func outboundLimiterFrom(ctx context.Context) *slidingWindowLimiter {
+	if limiter, ok := ctx.Value(outboundLimiterKey{}).(*slidingWindowLimiter); ok && limiter != nil {
+		return limiter
+	}
+	return globalOutboundLimiter
 }

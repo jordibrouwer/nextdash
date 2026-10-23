@@ -67,15 +67,16 @@ func (h *Handlers) collectDigestInput(now time.Time) digestInput {
 	settings := h.store.GetSettings()
 	report := h.loadBookmarkHealthReport(false)
 	return digestInput{
-		Now:           now,
-		Settings:      settings,
-		Issues:        report.Issues,
-		StaleDays:     int(staleOpenThreshold(settings) / (24 * time.Hour)),
-		Bookmarks:     h.store.GetAllBookmarks(),
-		InboxCount:    len(h.store.GetInboxItems()),
-		Updates:       h.dockerUpdateSnapshot(),
-		CertsExpiring: digestCertLines(report.Certificates, now),
-		Releases:      readRecentWhatsNewReleases(now),
+		Now:             now,
+		Settings:        settings,
+		Issues:          report.Issues,
+		StaleDays:       int(staleOpenThreshold(settings) / (24 * time.Hour)),
+		Bookmarks:       h.store.GetAllBookmarks(),
+		InboxCount:      len(h.store.GetInboxItems()),
+		Updates:         h.dockerUpdateSnapshot(),
+		CertsExpiring:   digestCertLines(report.Certificates, now),
+		DomainsExpiring: digestDomainLines(report.Domains, now),
+		Releases:        readRecentWhatsNewReleases(now),
 	}
 }
 
@@ -205,4 +206,19 @@ func (h *Handlers) DigestTest(w http.ResponseWriter, r *http.Request) {
 	digestDeliver(h, r.Context(), digestNotice(snap))
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(snap)
+}
+
+// digestDomainLines formats the report's domains as "domain (N days)", sorted by
+// name.
+func digestDomainLines(domains map[string]HostDomain, now time.Time) []string {
+	names := make([]string, 0, len(domains))
+	for name := range domains {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	lines := make([]string, 0, len(names))
+	for _, name := range names {
+		lines = append(lines, fmt.Sprintf("%s (%d days)", name, certDaysLeft(domains[name].ExpiresAt, now)))
+	}
+	return lines
 }

@@ -83,10 +83,12 @@ func heartbeatStates(buckets []HeartbeatBucket) string {
 
 // HealthFactsReport is the badge's and the preview card's half of the report.
 type HealthFactsReport struct {
-	GeneratedAt  int64                      `json:"generatedAt"`
-	Summary      HealthSummary              `json:"summary"`
-	Rows         []HealthFactsRow           `json:"rows,omitempty"`
-	Certificates map[string]HostCertificate `json:"certificates,omitempty"`
+	GeneratedAt   int64                      `json:"generatedAt"`
+	Summary       HealthSummary              `json:"summary"`
+	Rows          []HealthFactsRow           `json:"rows,omitempty"`
+	Certificates  map[string]HostCertificate `json:"certificates,omitempty"`
+	Domains       map[string]HostDomain      `json:"domains,omitempty"`
+	DomainSummary DomainSummary              `json:"domainSummary"`
 }
 
 // buildHealthFactsReport keeps the rows that say something and drops the rest.
@@ -96,9 +98,11 @@ type HealthFactsReport struct {
 // this view exists.
 func buildHealthFactsReport(report BookmarkHealthReport) HealthFactsReport {
 	out := HealthFactsReport{
-		GeneratedAt:  report.GeneratedAt,
-		Summary:      report.Summary,
-		Certificates: report.Certificates,
+		GeneratedAt:   report.GeneratedAt,
+		Summary:       report.Summary,
+		Certificates:  report.Certificates,
+		Domains:       report.Domains,
+		DomainSummary: report.DomainSummary,
 	}
 	for _, issue := range report.Issues {
 		row := HealthFactsRow{

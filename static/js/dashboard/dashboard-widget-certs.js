@@ -48,6 +48,16 @@
         })).filter((entry) => entry.expiry > 0);
     }
 
+    /**
+     * The second group, when the widget was asked for it: the domains that run
+     * out inside the same window, under the hosts. Added by the domains widget
+     * file so the two keep one way of drawing a registration.
+     */
+    function appendDomains(wrap, dash, config, withinDays, rows) {
+        if (config.showDomains !== true) return;
+        window.DashboardWidgetDomains?.appendGroup(wrap, dash, { withinDays, rows });
+    }
+
     function render(body, widget, dash) {
         const utils = window.DashboardWidgetUtils;
         // The container-query root: the rows pair and the expiry dates appear
@@ -79,6 +89,7 @@
             empty.textContent = label(dash, 'dashboard.widgetCertsNone',
                 'No certificate expires within {n} days.').replace('{n}', String(withinDays));
             wrap.appendChild(empty);
+            appendDomains(wrap, dash, config, withinDays, rows);
             return;
         }
 
@@ -152,6 +163,7 @@
         window.DashboardWidgetUtils?.appendOverflowRow(
             list, dash, expiring.length - rows, () => { window.DashboardWidgetUtils?.openHealthFiltered(dash, 'certificates'); });
         wrap.appendChild(list);
+        appendDomains(wrap, dash, config, withinDays, rows);
     }
 
     window.DashboardWidgets = window.DashboardWidgets || {};

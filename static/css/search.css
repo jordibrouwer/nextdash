@@ -1175,6 +1175,13 @@ body.no-animations .search-history-remove {
     cursor: pointer;
 }
 
+@media (pointer: coarse) {
+    .search-clear {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+
 .search-clear:hover,
 .search-clear:focus-visible {
     color: var(--accent-error);

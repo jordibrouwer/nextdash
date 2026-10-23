@@ -92,7 +92,7 @@ class DashboardHealthLoader {
         const params = new URLSearchParams(search || '');
         const path = String(hash || '').replace(/^#/, '');
         const known = window.DashboardConfig?.HEALTH_FILTER_KEYS
-            || ['broken', 'content', 'duplicate', 'stale', 'unused', 'unchecked', 'monitored', 'certificates', 'healthy',
+            || ['broken', 'content', 'duplicate', 'stale', 'unused', 'unchecked', 'monitored', 'certificates', 'domains', 'healthy',
                 'drift', 'missing-preview', 'shortcut-conflict', 'orphaned-category', 'ignored'];
         const filter = path === 'health/monitors' ? 'monitored' : ((params.get('hv_filter') || 'broken').toLowerCase());
         const out = new URLSearchParams();

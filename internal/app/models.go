@@ -795,10 +795,12 @@ type Settings struct {
 	ShowShortcutTooltips     bool   `json:"showShortcutTooltips"`     // Keyboard-shortcut popovers on toolbar and header icons (default OFF since the shortcutTooltipsOffMigrated migration; opt-in in Config → Behavior or `:shortcuts on`)
 	ShowGridKeyLegend        bool   `json:"showGridKeyLegend"`
 	ShortcutOpenMode         string `json:"shortcutOpenMode,omitempty"`
-	RememberScrollPosition   bool   `json:"rememberScrollPosition"` // Return to where you were on a page instead of the top, after a page switch or a trip through Health, Inbox or config
-	UptimeBadges             bool   `json:"uptimeBadges"`           // Serve /badge/uptime.svg for monitored addresses to anyone who asks; off by default because it tells the web whether a host answers
-	DetectSoftNotFound       bool   `json:"detectSoftNotFound"`     // Judge whether a monitored page answering 200 is really a "page not found" template. Costs one bounded body read per check, which is why it is a choice
-	CertWarnDays             int    `json:"certWarnDays,omitempty"` // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save. The two tighter marks follow it // What typing a bookmark shortcut does: "instant" (default, opens the moment it matches), "delay" (opens after a short pause with no further key), "enter" (Enter opens). Empty reads as "instant"; installs carrying the v1.2.0 default are moved once, see migrateShortcutOpenModeDefaultInstant
+	RememberScrollPosition   bool   `json:"rememberScrollPosition"`   // Return to where you were on a page instead of the top, after a page switch or a trip through Health, Inbox or config
+	UptimeBadges             bool   `json:"uptimeBadges"`             // Serve /badge/uptime.svg for monitored addresses to anyone who asks; off by default because it tells the web whether a host answers
+	DetectSoftNotFound       bool   `json:"detectSoftNotFound"`       // Judge whether a monitored page answering 200 is really a "page not found" template. Costs one bounded body read per check, which is why it is a choice
+	DomainExpiry             bool   `json:"domainExpiry"`             // Look up when the domains of checked bookmarks expire, through the registries' public RDAP service. On by default; each lookup sends one domain name to the registry of its extension.
+	DomainWarnDays           int    `json:"domainWarnDays,omitempty"` // How many days before expiry a domain starts warning. 0 means the built-in 60; clamped to 8–180 on save. A week and three days follow.
+	CertWarnDays             int    `json:"certWarnDays,omitempty"`   // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save. The two tighter marks follow it // What typing a bookmark shortcut does: "instant" (default, opens the moment it matches), "delay" (opens after a short pause with no further key), "enter" (Enter opens). Empty reads as "instant"; installs carrying the v1.2.0 default are moved once, see migrateShortcutOpenModeDefaultInstant
 	// HealthCheckTimeoutSeconds is how long one availability check may take.
 	// 0 means the built-in default (3s), which is what every install had before
 	// this was a choice. Clamped to 2–30 on save.
@@ -1055,6 +1057,7 @@ type Settings struct {
 	PushNotifyMonitor    bool                  `json:"pushNotifyMonitor"`              // Push when a monitored bookmark goes down/recovers
 	PushNotifyBackup     bool                  `json:"pushNotifyBackup"`               // Push when an automatic backup succeeds or fails
 	PushNotifyContainers bool                  `json:"pushNotifyContainers"`           // Push when a container stops, keeps restarting or turns unhealthy
+	PushNotifyGlances    bool                  `json:"pushNotifyGlances"`              // Push when a Glances host has an incident of a kind switched on in Config -> Glances
 	PushNotifyRelease    bool                  `json:"pushNotifyRelease"`              // Deprecated: release updates use in-app toast only
 	UpdateCheckEnabled   bool                  `json:"updateCheckEnabled"`             // Poll GitHub for newer releases (on by default)
 	InstallPingEnabled   bool                  `json:"installPingEnabled"`             // Daily anonymous install count: random id + version (on by default, separate from analyticsOptIn)
@@ -1135,18 +1138,20 @@ type SearchPick struct {
 	At    int64  `json:"at"` // Unix milliseconds of the most recent pick
 }
 
-// confettiThemePromoID is the one-time card that asks an install which already
-// existed whether to try Confetti. A fresh install starts on Confetti, so it
-// begins with the question answered.
-const confettiThemePromoID = "confetti-theme-try-v1"
+// berryThemePromoID is the one-time card that asks an install which already
+// existed whether to try Berry. A fresh install starts on Berry, so it begins
+// with the question answered. It replaced the Confetti card, whose id
+// (confetti-theme-try-v1) is left in the files of the installs that answered
+// it: a new id is what puts the question to them again.
+const berryThemePromoID = "berry-theme-try-v1"
 
 // freshDiscoverabilityState is what a new install starts with.
 func freshDiscoverabilityState() *DiscoverabilityState {
 	return &DiscoverabilityState{
-		// The cards the start guide makes redundant: Confetti is the theme a
+		// The cards the start guide makes redundant: Berry is the theme a
 		// new install begins on, the guide asks for the weather and offers the
 		// theme studio, and the dashboard tour is one of its steps.
-		SeenSettingPromos: []string{confettiThemePromoID, "clock-weather-v1", "theme-browser-try-v1"},
+		SeenSettingPromos: []string{berryThemePromoID, "clock-weather-v1", "theme-browser-try-v1"},
 		SeenTips:          []string{"dashboardTutorialV3"},
 	}
 }
@@ -1186,10 +1191,10 @@ const defaultNotesWidgetID = "w_000000000002"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
-const defaultThemeID = "look-confetti-dark"
+const defaultThemeID = "look-berry-dark"
 
 // defaultThemeLightID is the light counterpart auto dark mode switches to.
-const defaultThemeLightID = "look-confetti-light"
+const defaultThemeLightID = "look-berry-light"
 
 /*
 The fallback depth and glow.
@@ -1730,6 +1735,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShortcutOpenMode:          "instant",
 			RememberScrollPosition:    true,
 			DetectSoftNotFound:        true,
+			DomainExpiry:              true,
 			TagLookupOnline:           true,
 			ColumnsPerRow:             3,
 			FontSize:                  "m",
@@ -3011,15 +3017,18 @@ func (fs *FileStore) GetFinders() []Finder {
 	filePath := fmt.Sprintf("%s/finders.json", fs.dataDir)
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		fs.readCache.finders = []Finder{}
-		fs.readCache.findersOK = true
+		// Only a missing file is "no finders". A failed read is not cached:
+		// held as empty, the next save from a reader who saw it would replace
+		// the real list.
+		if os.IsNotExist(err) {
+			fs.readCache.finders = []Finder{}
+			fs.readCache.findersOK = true
+		}
 		return []Finder{}
 	}
 
 	var finders []Finder
 	if err := json.Unmarshal(data, &finders); err != nil {
-		fs.readCache.finders = []Finder{}
-		fs.readCache.findersOK = true
 		return []Finder{}
 	}
 
@@ -3132,13 +3141,16 @@ func (fs *FileStore) GetCategoriesByPage(pageID int) []Category {
 	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, pageID)
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		fs.readCache.categories[pageID] = []Category{}
+		// Same rule as GetBookmarksByPage: only a missing file is cached as
+		// empty, a failed read must not stick.
+		if os.IsNotExist(err) {
+			fs.readCache.categories[pageID] = []Category{}
+		}
 		return []Category{}
 	}
 
 	var pageWithBookmarks PageWithBookmarks
 	if err := json.Unmarshal(data, &pageWithBookmarks); err != nil {
-		fs.readCache.categories[pageID] = []Category{}
 		return []Category{}
 	}
 
@@ -3423,7 +3435,7 @@ func (fs *FileStore) getPages() []Page {
 	}
 
 	// Get the order from pages.json
-	order := fs.getPageOrder()
+	order, orderErr := fs.readPageOrder()
 
 	// If no order file exists, create default order
 	if len(order) == 0 {
@@ -3433,8 +3445,11 @@ func (fs *FileStore) getPages() []Page {
 		// By id: map order is random, and the tabs came back shuffled and
 		// were saved that way.
 		sort.Ints(order)
-		// Save the default order (best effort during read path)
-		_ = fs.savePageOrder(order)
+		// Save the default order (best effort during read path), but never
+		// over a pages.json that exists and could not be read.
+		if orderErr == nil {
+			_ = fs.savePageOrder(order)
+		}
 	}
 
 	// Build pages array in the specified order
@@ -3444,18 +3459,21 @@ func (fs *FileStore) getPages() []Page {
 		}
 	}
 
-	// Add any pages that exist in files but not in order
-	for id, page := range pageMap {
-		found := false
-		for _, orderId := range order {
-			if orderId == id {
-				found = true
-				break
-			}
+	// Add any pages that exist in files but not in order. By id: ranging the
+	// map appended them in random order and the tabs reshuffled per load.
+	inOrder := make(map[int]bool, len(order))
+	for _, orderId := range order {
+		inOrder[orderId] = true
+	}
+	var missing []int
+	for id := range pageMap {
+		if !inOrder[id] {
+			missing = append(missing, id)
 		}
-		if !found {
-			pages = append(pages, page)
-		}
+	}
+	sort.Ints(missing)
+	for _, id := range missing {
+		pages = append(pages, pageMap[id])
 	}
 
 	return finalizePagesList(pages, pageMap)
@@ -3974,26 +3992,40 @@ func (fs *FileStore) GetPageOrder() []int {
 		return clonePageOrder(fs.readCache.pageOrder)
 	}
 
-	order := fs.getPageOrder()
-	fs.readCache.pageOrder = clonePageOrder(order)
-	fs.readCache.pageOrderOK = true
+	order, readErr := fs.readPageOrder()
+	if readErr == nil {
+		fs.readCache.pageOrder = clonePageOrder(order)
+		fs.readCache.pageOrderOK = true
+	}
 	return clonePageOrder(order)
 }
 
 func (fs *FileStore) getPageOrder() []int {
+	order, _ := fs.readPageOrder()
+	return order
+}
+
+// readPageOrder reads pages.json. The error is non-nil only when the file
+// exists but could not be read or parsed: a missing file is a normal empty
+// order, while a failed read must not be answered by writing a default order
+// over the real one.
+func (fs *FileStore) readPageOrder() ([]int, error) {
 	fs.ensureDataDir()
 
 	data, err := os.ReadFile(fs.pageOrderFile)
 	if err != nil {
-		return []int{}
+		if os.IsNotExist(err) {
+			return []int{}, nil
+		}
+		return []int{}, err
 	}
 
 	var pageOrder PageOrder
 	if err := json.Unmarshal(data, &pageOrder); err != nil {
-		return []int{}
+		return []int{}, err
 	}
 
-	return pageOrder.Order
+	return pageOrder.Order, nil
 }
 
 func (fs *FileStore) SavePageOrder(order []int) error {
@@ -4328,6 +4360,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShortcutOpenMode:                "instant",
 			RememberScrollPosition:          true,
 			DetectSoftNotFound:              true,
+			DomainExpiry:                    true,
 			TagLookupOnline:                 true,
 			ColumnsPerRow:                   3,
 			FontSize:                        "m",
@@ -4571,6 +4604,8 @@ func (fs *FileStore) GetSettings() Settings {
 			// And two from 17-08 that shipped without an entry here.
 			"rememberScrollPosition": &settings.RememberScrollPosition,
 			"detectSoftNotFound":     &settings.DetectSoftNotFound,
+			// Domain expiry lookups, on since they were built.
+			"domainExpiry": &settings.DomainExpiry,
 			// Looking up unknown sites for tag suggestions, on since it was built.
 			"tagLookupOnline": &settings.TagLookupOnline,
 			// Background re-checks, on since 5 October 2026.
@@ -5430,6 +5465,14 @@ func (fs *FileStore) GetSettings() Settings {
 			settings.CertWarnDays = certWarnDaysMax
 		}
 	}
+	if settings.DomainWarnDays != 0 {
+		if settings.DomainWarnDays < domainWarnDaysMin {
+			settings.DomainWarnDays = domainWarnDaysMin
+		}
+		if settings.DomainWarnDays > domainWarnDaysMax {
+			settings.DomainWarnDays = domainWarnDaysMax
+		}
+	}
 	settings.ServerLogRetentionHours = clampServerLogRetentionHours(settings.ServerLogRetentionHours)
 	settings.ServerLogRetentionMode = clampServerLogRetentionMode(settings.ServerLogRetentionMode)
 	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
@@ -5532,8 +5575,8 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 func getDefaultLightTheme() ThemeColors {
 	return ThemeColors{
 		TextPrimary:         "#1F2937",
-		TextSecondary:       "#6B7280",
-		TextTertiary:        "#9CA3AF",
+		TextSecondary:       "#4B5563",
+		TextTertiary:        "#5F6672",
 		BackgroundPrimary:   "#F9FAFB",
 		BackgroundSecondary: "#F3F4F6",
 		BackgroundDots:      "#E5E7EB",
@@ -5549,8 +5592,8 @@ func getDefaultLightTheme() ThemeColors {
 func getDefaultDarkTheme() ThemeColors {
 	return ThemeColors{
 		TextPrimary:         "#E5E7EB",
-		TextSecondary:       "#9CA3AF",
-		TextTertiary:        "#6B7280",
+		TextSecondary:       "#D1D5DB",
+		TextTertiary:        "#9CA3AF",
 		BackgroundPrimary:   "#000",
 		BackgroundSecondary: "#1F2937",
 		BackgroundDots:      "#1F2937",
@@ -6328,18 +6371,19 @@ func (fs *FileStore) GetColors() ColorTheme {
 
 	data, err := os.ReadFile(fs.colorsFile)
 	if err != nil {
+		// Defaults are cached only for a missing file; after a failed read
+		// they would hide the stored theme until restart.
 		colors := getDefaultColors()
-		fs.readCache.colors = colors
-		fs.readCache.colorsOK = true
+		if os.IsNotExist(err) {
+			fs.readCache.colors = colors
+			fs.readCache.colorsOK = true
+		}
 		return colors
 	}
 
 	var colors ColorTheme
 	if err := json.Unmarshal(data, &colors); err != nil {
-		colors := getDefaultColors()
-		fs.readCache.colors = colors
-		fs.readCache.colorsOK = true
-		return colors
+		return getDefaultColors()
 	}
 
 	// Ensure custom themes map is initialized
@@ -6625,6 +6669,9 @@ type HealthIssue struct {
 	// post-redirect host a check actually saw, which can differ from this
 	// bookmark's own URL. Empty until a check has recorded one.
 	CertHost string `json:"certHost,omitempty"`
+	// Domain is the registrable domain of this bookmark's own address, the key
+	// into the report's domains map. Empty for addresses and private names.
+	Domain string `json:"domain,omitempty"`
 	/*
 	 * How this bookmark is reached, so the panel can show and edit it.
 	 *
@@ -6657,6 +6704,26 @@ type BookmarkHealthReport struct {
 	// issue because that is what a certificate belongs to — the rows look
 	// themselves up by hostname.
 	Certificates map[string]HostCertificate `json:"certificates,omitempty"`
+	// Domains are the registrations that have a date, keyed by registrable domain,
+	// and DomainSummary says what else the lookups found. Both stay empty while
+	// domain expiry is switched off.
+	Domains       map[string]HostDomain `json:"domains,omitempty"`
+	DomainSummary DomainSummary         `json:"domainSummary"`
+}
+
+// DomainSummary is the part of the domain picture that is not an expiry:
+// whether the lookups are on, how many domains they cover, and the ones the
+// registry gave no date for.
+type DomainSummary struct {
+	Enabled bool           `json:"enabled"`
+	Watched int            `json:"watched"`
+	NoDate  []DomainNoDate `json:"noDate,omitempty"`
+}
+
+// DomainNoDate names a domain with nothing to count down to, and why.
+type DomainNoDate struct {
+	Domain string `json:"domain"`
+	State  string `json:"state"` // hidden | unsupported
 }
 
 type DuplicateWarning struct {
@@ -6718,6 +6785,27 @@ type HealthScanCacheFile struct {
 	// its own file because it is written by the same pass that writes the cache
 	// and is worthless without it.
 	Certificates map[string]HostCertificate `json:"certificates,omitempty"`
+	// Domains looked up through RDAP, keyed by registrable domain. Same file and
+	// same reason as the certificates: one pass writes both.
+	Domains map[string]HostDomain `json:"domains,omitempty"`
+}
+
+// HostDomain is what a registry says about one registered domain name.
+//
+// Kept per registrable domain (example.com), not per host: nas.example.com and
+// www.example.com are one registration and one renewal.
+type HostDomain struct {
+	Domain    string `json:"domain"`
+	ExpiresAt int64  `json:"expiresAt,omitempty"` // Unix ms; 0 when the registry gives no date
+	// State is ok, hidden (the registry answers but publishes no expiry date, as
+	// .nl does), unsupported (the extension has no RDAP service) or error (the
+	// last lookup failed and will be tried again).
+	State     string   `json:"state"`
+	Status    []string `json:"status,omitempty"` // EPP status codes, e.g. "client transfer prohibited"
+	CheckedAt int64    `json:"checkedAt"`
+	// NotifiedDays records the thresholds already alerted on; reset when the
+	// expiry moves later, which is a renewal.
+	NotifiedDays []int `json:"notifiedDays,omitempty"`
 }
 
 // HealthSample is one recorded reachability check for a monitored bookmark.

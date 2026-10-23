@@ -151,6 +151,14 @@ func (h *Handlers) seedDemoHealth(now time.Time) error {
 	for host, days := range map[string]int{"www.home-assistant.io": 9, "github.com": 71, "news.ycombinator.com": 54, "tailscale.com": 83, "jellyfin.org": 47} {
 		cache.Certificates[host] = HostCertificate{Host: host, ExpiresAt: now.Add(time.Duration(days) * 24 * time.Hour).UnixMilli(), SeenAt: now.Add(-30 * time.Minute).UnixMilli()}
 	}
+	// The registrations behind them: one inside the week, one in the window, the
+	// rest far off, and .io, which has no RDAP service to ask.
+	cache.Domains = map[string]HostDomain{}
+	for domain, days := range map[string]int{"jellyfin.org": 6, "ycombinator.com": 41, "tailscale.com": 212, "github.com": 700} {
+		cache.Domains[domain] = HostDomain{Domain: domain, State: domainStateOK, CheckedAt: now.Add(-2 * time.Hour).UnixMilli(),
+			ExpiresAt: now.Add(time.Duration(days) * 24 * time.Hour).UnixMilli()}
+	}
+	cache.Domains["home-assistant.io"] = HostDomain{Domain: "home-assistant.io", State: domainStateUnsupported, CheckedAt: now.Add(-2 * time.Hour).UnixMilli()}
 	cache.LastAutoRecheck = now.Add(-3 * time.Hour).UnixMilli()
 	if err := writeHealthHistoryFile(history); err != nil {
 		return err

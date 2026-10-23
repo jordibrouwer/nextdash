@@ -55,7 +55,7 @@ const _sessionTags = new Set();
 
 class Dashboard {
     /** The views that rise in on arrival; see playViewEntrance. */
-    static ENTRANCE_VIEWS = new Set(['tags', 'library', 'inbox', 'docker']);
+    static ENTRANCE_VIEWS = new Set(['tags', 'library', 'inbox', 'docker', 'glances']);
 
     /** Kept in step with --enter-scale in list-view-shell.css. */
     static ENTRANCE_SCALE = { slow: 1, normal: 0.5, fast: 0.25 };
@@ -79,7 +79,7 @@ class Dashboard {
         this.pinnedEmptyCategoryId = null;
         this.settings = {
             currentPage: 'default',
-            theme: 'look-confetti-dark',
+            theme: 'look-berry-dark',
             openInNewTab: true,
             showGridKeyLegend: true,
             columnsPerRow: 3,
@@ -267,6 +267,13 @@ class Dashboard {
         this.docker = typeof window.createDashboardDockerLoader === 'function'
             ? window.createDashboardDockerLoader(this)
             : null;
+        // Whether page 0 exists and how the machine is: small, always there.
+        this.glancesStatus = typeof window.DashboardGlancesStatus === 'function'
+            ? new window.DashboardGlancesStatus(this)
+            : null;
+        this.glances = typeof window.createDashboardGlancesLoader === 'function'
+            ? window.createDashboardGlancesLoader(this)
+            : null;
         this.tagView = typeof window.createDashboardTagViewLoader === 'function'
             ? window.createDashboardTagViewLoader(this)
             : null;
@@ -352,6 +359,8 @@ class Dashboard {
             this.setupPasteToQuickAdd();
             this.inbox.setupEscapeShortcut();
             this.docker?.setupEscapeShortcut();
+            this.glances?.setupEscapeShortcut();
+            this.glancesStatus?.start();
             this.config?.setupEscapeShortcut();
             void this.docker?.renderNavButton?.();
             if (typeof QuickAddWidget === 'function') {
@@ -505,6 +514,9 @@ class Dashboard {
                     ? new URLSearchParams(bootHash.slice('docker?'.length)).get('filter')
                     : null;
                 await this.docker?.openDockerView?.({ select, filter });
+            } else if ((bootHash === 'glances' || bootHash.startsWith('glances/') || bootHash.startsWith('glances?'))
+                && this.activeView !== 'glances') {
+                await this.glances?.openGlancesView?.({ hash: `#${bootHash}` });
             } else if ((bootHash === 'bookmarks' || bootHash.startsWith('bookmarks/') || bootHash.startsWith('bookmarks?'))
                 && this.activeView !== 'library' && this.config?.isEnabled?.()) {
                 await this.config.openLibraryView();
@@ -1129,6 +1141,11 @@ class Dashboard {
                 if (filter) this.docker?.applyFilter?.(filter);
                 return;
             }
+            // The Glances view: a new section or widget while it is open is
+            // followed in place; the view parses its own address.
+            if (hash === 'glances' || hash.startsWith('glances/') || hash.startsWith('glances?')) {
+                return this.glances?.openGlancesView?.({ hash: `#${hash}` });
+            }
             // The Bookmarks view: its filters ride in the query, so a change
             // while it is open is a change of filters, not a new view.
             if (hash === 'bookmarks' || hash.startsWith('bookmarks/') || hash.startsWith('bookmarks?')) {
@@ -1240,6 +1257,10 @@ class Dashboard {
         if (previous === 'docker' && view !== 'docker') {
             this.docker?.instance?.onLeave?.();
         }
+        // Its polling timers stop with it, whichever route took the layout.
+        if (previous === 'glances' && view !== 'glances') {
+            this.glances?.instance?.onLeave?.();
+        }
         // The preview card belongs to the grid row under the pointer. A view
         // that replaces the grid takes that row away without a mouseleave, and
         // the card stayed over the new view until something else closed it.
@@ -1279,7 +1300,38 @@ class Dashboard {
         body.dataset.viewEntering = view;
         // Long enough for the last row to land at the chosen pace.
         const scale = Dashboard.ENTRANCE_SCALE[body.dataset.animationSpeed] ?? Dashboard.ENTRANCE_SCALE.normal;
-        this._viewEntranceTimer = setTimeout(() => { delete body.dataset.viewEntering; }, Math.round(900 * scale) + 100);
+        const hold = Math.round(900 * scale) + 100;
+        /*
+         * A view that loads its code on first use, or a slow machine, paints its
+         * header and rows after the switch. Ending the window on the clock alone
+         * let it close before anything was there and the view just appeared; so
+         * while no view content is on screen yet, the window stays open (for at
+         * most 5 seconds).
+         */
+        const painted = '.lvs-header, .config-bm-row, .inbox-item, .docker-row, .glances-card, .tag-view-row';
+        const giveUpAt = Date.now() + 5000;
+        let waited = false;
+        const close = () => {
+            if (body.dataset.viewEntering !== view) return;
+            if (!document.querySelector(painted) && Date.now() < giveUpAt) {
+                waited = true;
+                this._viewEntranceTimer = setTimeout(close, 50);
+                return;
+            }
+            if (waited) {
+                // It has just arrived: give it the whole window from here.
+                waited = false;
+                this._viewEntranceTimer = setTimeout(close, hold);
+                return;
+            }
+            // The rows may have been painted in the same busy stretch that ran
+            // this timer: let two frames pass first, so the browser has styled
+            // them while the attribute still stands and the animation starts.
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                if (body.dataset.viewEntering === view) delete body.dataset.viewEntering;
+            }));
+        };
+        this._viewEntranceTimer = setTimeout(close, hold);
     }
 
     /**

@@ -176,6 +176,15 @@ var widgetFields = map[WidgetType][]widgetField{
 		// one domain are one line. The threshold is the whole question.
 		{Key: "withinDays", Kind: "int", Min: 1, Max: widgetMaxDays},
 		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
+		// A second group under the hosts: the domains that run out inside the same
+		// window. Off for every widget saved before it existed.
+		{Key: "showDomains", Kind: "bool"},
+	},
+	WidgetTypeDomains: {
+		// A registration is renewed less often and further ahead than a
+		// certificate, so its window is its own and wider by default.
+		{Key: "withinDays", Kind: "int", Min: 1, Max: widgetMaxDays},
+		{Key: "rows", Kind: "int", Min: widgetMinRows, Max: widgetMaxRows},
 	},
 	WidgetTypeTrend: {
 		// One line over everything. Filtering it would make the line mean
@@ -293,12 +302,18 @@ var widgetFields = map[WidgetType][]widgetField{
 		{Key: "ttl", Kind: "int", Min: customWidgetMinTTL, Max: customWidgetMaxTTL},
 		{Key: "itemsPath", Kind: "string", MaxLen: widgetMaxPathLen},
 	},
-	WidgetTypeSonarr:          arrWidgetFields(),
-	WidgetTypeRadarr:          arrWidgetFields(),
-	WidgetTypeQBittorrent:     downloadWidgetFields(),
-	WidgetTypeSABnzbd:         downloadWidgetFields(),
-	WidgetTypeBeszel:          beszelFieldsFor(WidgetTypeBeszel),
-	WidgetTypeBeszelSystem:    beszelFieldsFor(WidgetTypeBeszelSystem),
+	WidgetTypeSonarr:       arrWidgetFields(),
+	WidgetTypeRadarr:       arrWidgetFields(),
+	WidgetTypeQBittorrent:  downloadWidgetFields(),
+	WidgetTypeSABnzbd:      downloadWidgetFields(),
+	WidgetTypeBeszel:       beszelFieldsFor(WidgetTypeBeszel),
+	WidgetTypeBeszelSystem: beszelFieldsFor(WidgetTypeBeszelSystem),
+	WidgetTypeGlances: {
+		// The host's id; empty is the first. Meters or the processor graph.
+		{Key: "host", Kind: "string"},
+		{Key: "style", Kind: "string", Allowed: []string{"meters", "graph"}},
+		{Key: "refreshSeconds", Kind: "int", Min: 15, Max: 3600},
+	},
 	WidgetTypeBeszelAttention: beszelFieldsFor(WidgetTypeBeszelAttention),
 	WidgetTypeBeszelStorage:   beszelFieldsFor(WidgetTypeBeszelStorage),
 	WidgetTypeHomeAssistant: {
@@ -675,7 +690,7 @@ func widgetValueAllowed(value string, allowed []string) bool {
 // to present the types rather than dispatch on them.
 func widgetTypeNames() []string {
 	ordered := []WidgetType{
-		WidgetTypeHealth, WidgetTypeUptime, WidgetTypeCerts, WidgetTypeTrend,
+		WidgetTypeHealth, WidgetTypeUptime, WidgetTypeCerts, WidgetTypeDomains, WidgetTypeTrend,
 		WidgetTypeInbox, WidgetTypeUnsorted, WidgetTypeFeeds, WidgetTypeSources, WidgetTypeNeglected,
 		WidgetTypeArchive, WidgetTypeUnchecked, WidgetTypeDuplicates,
 		WidgetTypeTrash, WidgetTypeBackups,
@@ -686,6 +701,7 @@ func widgetTypeNames() []string {
 		WidgetTypeJellyfin, WidgetTypeJellyfinPlaying, WidgetTypeEmby, WidgetTypeEmbyPlaying, WidgetTypePlex, WidgetTypePlexPlaying, WidgetTypeSonarr, WidgetTypeRadarr, WidgetTypeSeerr,
 		WidgetTypeQBittorrent, WidgetTypeSABnzbd, WidgetTypeHomeAssistant,
 		WidgetTypeBeszel, WidgetTypeBeszelSystem, WidgetTypeBeszelAttention, WidgetTypeBeszelStorage,
+		WidgetTypeGlances,
 		// Custom stays last: it is the escape hatch for a service with no
 		// widget of its own, and a list that offers it first invites someone
 		// to build by hand what is two entries above it.

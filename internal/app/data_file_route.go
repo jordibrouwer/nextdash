@@ -33,6 +33,19 @@ func dataFileHandler(dataDir string) http.HandlerFunc {
 			http.NotFound(w, req)
 			return
 		}
+		if strings.HasSuffix(strings.ToLower(rel), ".svg") {
+			/*
+			 * An uploaded SVG is a document, not a picture, once somebody opens
+			 * its address: it can carry script. sanitizeSVGContent strips the
+			 * obvious forms and is a pattern match, which entity-encoded
+			 * attributes get past. This policy is what actually holds: no
+			 * script, no network, and a sandbox without allow-same-origin, so
+			 * whatever is in the file has no reach into the dashboard. Shown as
+			 * an <img> it renders exactly as before.
+			 */
+			w.Header().Set("Content-Security-Policy",
+				"default-src 'none'; style-src 'unsafe-inline'; img-src data:; sandbox")
+		}
 		switch {
 		case isBareFileUnder(rel, "icons/"):
 			/*

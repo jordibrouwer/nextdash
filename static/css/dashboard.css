@@ -192,7 +192,7 @@ body[data-side-margin="airy"] .dashboard-grid {
 /* ─── Date popover ───────────────────────────────────────────── */
 .date-popover {
     position: fixed;
-    z-index: 9000;
+    z-index: var(--layer-popover);
     background: var(--background-secondary);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-7, 12px);
@@ -275,7 +275,7 @@ body[data-side-margin="airy"] .dashboard-grid {
    (10050) and its confirm dialogs, since it can be opened from either. */
 .field-popover {
     position: fixed;
-    z-index: 10160;
+    z-index: var(--layer-popover-field);
     max-width: min(19rem, calc(100vw - 1rem));
     padding: var(--space-1-5, 0.4rem) var(--space-2, 0.6rem);
     border-radius: var(--radius-5, 0.5rem);
@@ -302,7 +302,7 @@ body[data-side-margin="airy"] .dashboard-grid {
 
 .move-popover {
     position: fixed;
-    z-index: 9000;
+    z-index: var(--layer-popover);
     background: var(--background-secondary);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-5, 8px);
@@ -1056,6 +1056,22 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     display: none;
 }
 
+/* Glances: an icon in the main navigation, before Config. */
+.page-nav-glances-host {
+    display: flex;
+    align-items: center;
+}
+
+.page-nav-glances-host:empty {
+    display: none;
+}
+
+.page-nav-glances-host .glances-link-icon {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex-shrink: 0;
+}
+
 /*
  * Docker's nav icon renders into this host from JS (renderNavButton in
  * dashboard-docker-loader.js) only once a socket is known, so its styling
@@ -1161,7 +1177,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
 /* Page-tab edit popover (top/left set in JS from anchor + viewport) */
 .page-tab-popover {
     position: fixed;
-    z-index: 1100;
+    z-index: var(--layer-page-popover);
     background: var(--background-secondary);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-6, 0.65rem);
@@ -1191,7 +1207,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     padding: var(--space-1, 0.2rem) var(--space-1, 0.3rem);
     outline: none;
 }
-.page-tab-popover-icon:focus { border-color: var(--accent-primary); }
+.page-tab-popover-icon:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 45%, transparent); }
 
 .page-tab-popover-name {
     flex: 1;
@@ -1204,7 +1220,7 @@ body[data-show-cheatsheet-button="false"] .header-shortcuts .help-button {
     padding: var(--space-1, 0.2rem) var(--space-1-5, 0.4rem);
     outline: none;
 }
-.page-tab-popover-name:focus { border-color: var(--accent-primary); }
+.page-tab-popover-name:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 45%, transparent); }
 
 .page-tab-color-swatches {
     display: flex;
@@ -1468,7 +1484,7 @@ body.no-animations .library-link.is-health-alert .library-link-anchor {
    is usually drawn within a frame, and 200 ms of fade and slide on top of that
    was most of what made Bookmarks feel slow to open. Half the time, no
    movement; page switches on the dashboard keep the slide. */
-#dashboard-layout.page-transition:is(.config-layout, .library-layout, .inbox-layout, .docker-layout) {
+#dashboard-layout.page-transition:is(.config-layout, .library-layout, .inbox-layout, .docker-layout, .glances-layout) {
     animation: dashboardViewFade 100ms ease-out;
 }
 
@@ -1953,7 +1969,7 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
 /* Tag autocomplete dropdown (appended to body by tag-autocomplete.js) */
 .tag-ac-dropdown {
     position: fixed;
-    z-index: 9999;
+    z-index: var(--layer-dropdown);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -2313,7 +2329,7 @@ body[data-launcher-icon-size="large"] .layout-launcher .bookmark-icon { width: 6
        and the actions it belongs beside all sit at the right end of the bar. */
     right: var(--corner-fab-edge);
     left: auto;
-    z-index: 1001;
+    z-index: var(--layer-chrome-tooltip);
     padding: var(--space-2, 0.62rem) var(--space-3, 0.72rem);
     border: none;
     /* Opaque, and in both layout versions: this FAB floats over the grid with
@@ -2414,7 +2430,7 @@ body.no-animations .whats-new-btn-update-dot {
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.15s ease, visibility 0.15s ease;
-    z-index: 1001;
+    z-index: var(--layer-chrome-tooltip);
 }
 .whats-new-btn[data-tooltip]:hover::after {
     opacity: 1;
@@ -2742,7 +2758,7 @@ body.is-moving-block-by-pointer { cursor: grabbing; }
     background: repeating-linear-gradient(0deg, color-mix(in srgb, var(--accent-primary) 16%, transparent) 0 6px, transparent 6px 12px);
 }
 .block-drag-chip {
-    position: fixed; left: 0; top: 0; z-index: 1000; pointer-events: none;
+    position: fixed; left: 0; top: 0; z-index: var(--layer-drag); pointer-events: none;
     padding: 6px 10px; border: 1px solid var(--accent-primary); background: var(--background-secondary);
     color: var(--accent-primary); font: 600 12px var(--font-mono, monospace);
     box-shadow: 0 10px 30px rgb(0 0 0 / .45);
@@ -2751,7 +2767,7 @@ body.is-moving-block-by-pointer { cursor: grabbing; }
    the block until "Got it". Fixed, so it can stay inside the viewport. It takes no
    pointer events while carried (never the target of a drop). */
 .block-move-coach {
-    position: fixed; left: 0; top: 0; z-index: 900; box-sizing: border-box;
+    position: fixed; left: 0; top: 0; z-index: var(--layer-floating-chrome); box-sizing: border-box;
     width: min(22rem, calc(100vw - 16px)); padding: 15px 16px;
     border: 2px solid var(--accent-primary); border-radius: var(--radius-3, 6px);
     background: var(--background-secondary); color: var(--text-secondary);
@@ -2893,7 +2909,7 @@ body.is-moving-block-by-pointer { cursor: grabbing; }
 
 .category-sort-menu-btn {
     font: inherit;
-    font-size: 0.68em;
+    font-size: 0.8em;
     line-height: 1;
     min-height: 1.45em;
     min-width: 1.45em;
@@ -2931,7 +2947,7 @@ body.is-moving-block-by-pointer { cursor: grabbing; }
 
 .category-sort-menu-item {
     font: inherit;
-    font-size: 0.68em;
+    font-size: 0.8em;
     text-align: left;
     padding: 0.3em 0.5em;
     border: 0;
@@ -2959,7 +2975,7 @@ body.is-moving-block-by-pointer { cursor: grabbing; }
 
 .category-sort-btn {
     font: inherit;
-    font-size: 0.68em;
+    font-size: 0.8em;
     font-weight: var(--font-weight-semibold);
     letter-spacing: 0.02em;
     line-height: 1.2;
@@ -3167,7 +3183,7 @@ body.no-animations .category-chevron {
 
 .smart-collection-why-popover {
     position: fixed;
-    z-index: 200000;
+    z-index: var(--layer-tooltip-top);
     margin: 0;
     padding: var(--space-2, 0.5rem) var(--space-3, 0.65rem);
     max-width: min(22rem, calc(100vw - 1rem));
@@ -3242,6 +3258,7 @@ body.no-animations .category-chevron {
 
 .category-rename-input:focus {
     border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 45%, transparent);
 }
 
 /* Bookmarks */
@@ -3823,7 +3840,7 @@ body.bookmark-inline-edit-active .bookmark-inline-form {
 }
 
 body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
-    z-index: 10050;
+    z-index: var(--layer-modal-inline-edit);
 }
 
 .bookmark-inline-form {
@@ -4225,12 +4242,12 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
    the A–Z/Rec chips because it holds a single glyph. */
 .category-add-inline-btn {
     font: inherit;
-    font-size: 0.68em;
+    font-size: 0.8em;
     font-weight: var(--font-weight-semibold);
-    line-height: 1.2;
+    line-height: 1;
     min-height: 1.45em;
     min-width: 1.45em;
-    padding: 0.15em 0.3em;
+    padding: 0.1em 0.3em;
     margin-left: 0.25em;
     border: 1px solid color-mix(in srgb, var(--text-tertiary) 28%, transparent);
     border-radius: var(--radius-2, 3px);
@@ -4445,7 +4462,7 @@ body.no-animations .bookmarks-list.reorder-container::after {
  */
 .bookmark-preview-card {
     position: fixed;
-    z-index: 2000;
+    z-index: var(--layer-preview-card);
     display: none;
     width: min(360px, calc(100vw - 24px));
     border-radius: var(--radius-7, 12px);
@@ -5652,7 +5669,7 @@ body.no-animations .bookmark-move-out {
 .omnibox-overlay {
     position: fixed;
     inset: 0;
-    z-index: 1200;
+    z-index: var(--layer-omnibox);
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -6185,7 +6202,7 @@ body[data-grid-keys="shown"] .dashboard-legend-line-more {
    as unstyled markup: the URL overlapping the question, both options collapsed
    into one line. It belongs with the view that shows it. */
 .paste-choice-overlay {
-    z-index: 12050;
+    z-index: var(--layer-paste-choice);
 }
 
 .paste-choice-modal {
@@ -6618,7 +6635,7 @@ body[data-grid-keys="shown"] .dashboard-legend-line-more {
 .notes-slash-hint { color: var(--text-tertiary); }
 
 /* The notes widget, large: toolbar, editor and live preview. */
-.notes-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 2100; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.5); }
+.notes-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: var(--layer-notes-modal); display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.5); }
 .notes-modal { display: flex; flex-direction: column; width: min(64rem, calc(100vw - 2rem)); height: min(40rem, calc(100vh - 2rem)); border: 1px solid var(--border-primary); border-radius: var(--radius-8, 12px); background: var(--background-primary); overflow: hidden; }
 .notes-modal-toolbar { display: flex; align-items: center; gap: 0.25rem; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border-primary); flex-wrap: wrap; }
 .notes-modal-tool, .notes-modal-close, .notes-modal-tab { min-width: 2rem; padding: 0.25rem 0.5rem; border: none; border-radius: 6px; background: none; color: var(--text-secondary); font: inherit; cursor: pointer; }
@@ -6797,6 +6814,30 @@ button.dashboard-widget-row.keyboard-selected {
 
 .dashboard-widget-row--warn .dashboard-widget-row-detail {
     color: var(--accent-warning);
+}
+
+/* A heading between two groups of rows in one tile: the domains under the
+   certificates, the registrations with no date under the ones that have one. */
+.dashboard-widget-group-label {
+    margin: 0.6rem 0 0.15rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+/* A row that is information, not a task: nothing to click, nothing to fix. */
+.dashboard-widget-row--quiet {
+    cursor: default;
+}
+
+.dashboard-widget-row--quiet .dashboard-widget-row-name,
+.dashboard-widget-row--quiet .dashboard-widget-row-detail {
+    color: var(--text-tertiary);
+}
+
+.dashboard-widget-row--quiet .dashboard-widget-row-detail {
+    min-width: 0;
 }
 
 /* Off is not a problem: a sleeping disk, a stopped VM. Grey, name and all. */
@@ -8321,7 +8362,7 @@ body[data-page-switcher="segmented"] .header-track .page-nav-btn.active {
    destinations use, so "you are here" is said the same way in both halves of
    the band. */
 body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-navigation {
-    gap: 1.1rem;
+    gap: 0.85rem;
     overflow: visible;
 }
 
@@ -8337,8 +8378,10 @@ body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-tra
 body:is([data-page-switcher="text"], [data-page-switcher="classic"]) .header-track .page-nav-overflow {
     position: relative;
     height: 32px;
-    min-width: 0;
-    padding: 0 0.15rem;
+    /* A page tab named by one digit was 14px wide: 24px is the least a
+       pointer should have to hit, and the gap gives back the width. */
+    min-width: 1.5rem;
+    padding: 0 0.2rem;
     border: none;
     border-radius: 0;
     background: transparent;
@@ -8629,6 +8672,7 @@ body[data-action-bar-size="xl"] { --action-button-size: 44px; --action-glyph-siz
  */
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
 .dashboard-section.section-controls .header-actions .docker-link-anchor,
+.dashboard-section.section-controls .header-actions .glances-link-anchor,
 .dashboard-section.section-controls .header-actions .library-link-anchor,
 .dashboard-section.section-controls .header-actions .config-link-anchor,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
@@ -8649,6 +8693,7 @@ body[data-action-bar-size="xl"] { --action-button-size: 44px; --action-glyph-siz
 
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .docker-link-anchor:hover,
+.dashboard-section.section-controls .header-actions .glances-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .library-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .config-link-anchor:hover,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox:hover {
@@ -8765,6 +8810,7 @@ body[data-action-bar-size="xl"] { --action-button-size: 44px; --action-glyph-siz
 .header-track .page-nav-overflow,
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
 .dashboard-section.section-controls .header-actions .docker-link-anchor,
+.dashboard-section.section-controls .header-actions .glances-link-anchor,
 .dashboard-section.section-controls .header-actions .library-link-anchor,
 .dashboard-section.section-controls .header-actions .config-link-anchor,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
@@ -8790,6 +8836,7 @@ body[data-action-bar-size="xl"] { --action-button-size: 44px; --action-glyph-siz
 .header-track .page-nav-overflow:active,
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor:active,
 .dashboard-section.section-controls .header-actions .docker-link-anchor:active,
+.dashboard-section.section-controls .header-actions .glances-link-anchor:active,
 .dashboard-section.section-controls .header-actions .library-link-anchor:active,
 .dashboard-section.section-controls .header-actions .config-link-anchor:active {
     box-shadow:
@@ -8958,6 +9005,7 @@ body[data-show-tag-cloud-button="true"] .header-shortcuts #tag-cloud-toggle-btn:
  */
 .dashboard-section.section-controls .header-actions .dashboard-link-anchor.active,
 .dashboard-section.section-controls .header-actions .docker-link-anchor.active,
+.dashboard-section.section-controls .header-actions .glances-link-anchor.active,
 .dashboard-section.section-controls .header-actions .library-link-anchor.active,
 .dashboard-section.section-controls .header-actions .config-link-anchor.active,
 .dashboard-section.section-controls .header-actions .page-nav-btn--inbox.active {
@@ -9061,6 +9109,7 @@ body[data-header-buttons="plain"] .header-track .page-nav-overflow,
 body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .docker-link-anchor,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .glances-link-anchor,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .library-link-anchor,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox {
@@ -9079,6 +9128,7 @@ body[data-header-buttons="plain"] .header-track .page-nav-overflow:hover,
 body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .docker-link-anchor:hover,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .glances-link-anchor:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .library-link-anchor:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor:hover,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox:hover {
@@ -9092,6 +9142,7 @@ body[data-header-buttons="plain"] .dashboard-section.section-controls .header-ac
 body[data-header-buttons="plain"] .header-track .page-nav-btn.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .docker-link-anchor.active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .glances-link-anchor.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .library-link-anchor.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor.active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .page-nav-btn--inbox.active {
@@ -9105,6 +9156,7 @@ body[data-header-buttons="plain"] .dashboard-section.section-controls .header-ac
 body[data-header-buttons="plain"] .header-actions .header-shortcuts .search-button:active,
 body[data-header-buttons="plain"] .header-track .page-nav-btn:active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .docker-link-anchor:active,
+body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .glances-link-anchor:active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .library-link-anchor:active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .config-link-anchor:active,
 body[data-header-buttons="plain"] .dashboard-section.section-controls .header-actions .dashboard-link-anchor:active {
@@ -9438,7 +9490,7 @@ body[data-action-bar="bottom"] .dashboard-section.section-controls .header-short
 body[data-action-bar="left"] .dashboard-section.section-controls .header-shortcuts,
 body[data-action-bar="right"] .dashboard-section.section-controls .header-shortcuts {
     position: fixed;
-    z-index: 900;
+    z-index: var(--layer-floating-chrome);
     height: auto;
     padding: 6px;
     gap: 6px;
@@ -9484,7 +9536,7 @@ body[data-action-keys="off"] .header-action-item-key {
  */
 .action-key-hint {
     position: fixed;
-    z-index: 1002;
+    z-index: var(--layer-chrome-hint);
     padding: var(--space-1, 0.25rem);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-4, 7px);
@@ -9879,7 +9931,7 @@ body[data-action-bar="bottom"] #dashboard-layout {
  */
 .keep-flight {
     position: fixed;
-    z-index: 13000;
+    z-index: var(--layer-flight);
     pointer-events: none;
     display: flex;
     align-items: center;
@@ -9920,3 +9972,43 @@ body[data-action-bar="bottom"] #dashboard-layout {
     color: var(--text-secondary);
 }
 
+
+/*
+ * Pointer targets of at least 24px.
+ *
+ * The bookmark rows are 19px tall, the ⋮ menu 15px, the "why" mark 11px and
+ * the reorder grip 19px. Padding them out would make the dashboard looser, so
+ * the hit area runs past the drawn edge instead. ::before on the rows and the
+ * buttons whose ::after is already drawn (tooltip, shortcut chip), ::after on
+ * the grip, whose ::before is the glyph.
+ */
+.bookmarks-list .bookmark-open,
+.category-sort-menu-btn,
+.smart-collection-why-btn,
+.category-reorder-handle {
+    position: relative;
+}
+
+.bookmarks-list .bookmark-open::before {
+    content: "";
+    position: absolute;
+    inset: -3px 0;
+}
+
+.category-sort-menu-btn::before {
+    content: "";
+    position: absolute;
+    inset: -5px;
+}
+
+.smart-collection-why-btn::before {
+    content: "";
+    position: absolute;
+    inset: -7px;
+}
+
+.category-reorder-handle::after {
+    content: "";
+    position: absolute;
+    inset: -3px;
+}

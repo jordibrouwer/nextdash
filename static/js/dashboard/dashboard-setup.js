@@ -532,21 +532,15 @@ class DashboardSetup {
             }
 
             // Check if a number key (1-9) was pressed
-            // Legacy inbox shortcut. Superseded by Shift+I and no longer documented
-            // in the cheat sheet, but kept working so it does not break the habit of
-            // anyone already using it.
+            // 0 is no page's key. It used to open the Inbox (Shift+I now) and
+            // is swallowed so it does not reach the shortcut palette -- see the
+            // digit branch below.
             if (key === '0') {
                 if (d.keyboardNavigation?.isGChordActive?.()) {
                     return;
                 }
-                // Swallowed either way: with the inbox off there is nothing for
-                // 0 to open, and letting it through put the shortcut palette on
-                // screen instead -- see the digit branch below.
                 e.preventDefault();
                 e.stopPropagation();
-                if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
-                    void d.inbox.openInboxView();
-                }
                 return;
             }
 
@@ -589,6 +583,22 @@ class DashboardSetup {
                 e.stopPropagation();
                 window.nextdashRecordKey?.('Shift + Z');
                 void d.toggleGridKeyLegend?.();
+                return;
+            }
+
+            // Shift+G opens Glances, when Config → Glances has it on. Inside the
+            // Inbox, Config and the Bookmarks view G is "last item" (End does the
+            // same), so it stays that there.
+            if (e.shiftKey && e.code === 'KeyG' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                if (['inbox', 'config', 'library'].includes(d.activeView)) {
+                    return;
+                }
+                if (d.glancesStatus?.configured) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.nextdashRecordKey?.('Shift + G');
+                    void d.glancesStatus.openGlancesPage();
+                }
                 return;
             }
 

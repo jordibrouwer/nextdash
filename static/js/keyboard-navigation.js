@@ -1657,6 +1657,11 @@ class KeyboardNavigation {
                     // focus to the first row instead puts it straight back,
                     // because focusin moves the cursor to whatever takes focus.
                     this.clearSelection({ restoreFocus: false });
+                    // The row's link still holds DOM focus, and the row stays lit
+                    // by it (:focus-within). Let go of it, so the cursor is
+                    // really off the grid: no row marked, and j and k are letters
+                    // for the search again.
+                    this._releaseGridFocus();
                     break;
                 }
                 this.clearSelection({ restoreFocus: false });
@@ -2486,6 +2491,15 @@ class KeyboardNavigation {
             this.currentIndex = 0;
         }
         this.highlightCurrentElement({ keyboardNav: true });
+    }
+
+    /** Blur whatever grid row or link still has DOM focus. */
+    _releaseGridFocus() {
+        const active = document.activeElement;
+        if (active && active !== document.body && typeof active.blur === 'function'
+            && active.closest?.('.bookmark-link, .category-title, [data-bookmark-index]')) {
+            active.blur();
+        }
     }
 
     clearSelection(options = {}) {

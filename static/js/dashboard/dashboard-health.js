@@ -439,6 +439,8 @@ class DashboardHealth {
         // is answered from the report's certificate map instead of from the
         // row's own flags -- certFor() already does that lookup for the badge.
         if (filter === 'certificates') return Boolean(this.certFor(issue));
+        // Same for a registration, which the report keys by registrable domain.
+        if (filter === 'domains') return Boolean(this.domainFor(issue));
         // Ignored is answered from what the report hid rather than from flags:
         // the whole point is that those conditions are no longer in flags.
         if (filter === 'ignored') return this.ignoredFlagsOf(issue).length > 0;
@@ -2034,6 +2036,7 @@ class DashboardHealth {
             'orphaned-category': this.t('dashboard.healthFilterOrphanedCategory', 'Missing category'),
             'missing-preview': this.t('dashboard.healthFilterMissingPreview', 'Missing preview'),
             certificates: this.t('dashboard.healthFilterCertificates', 'Certificates'),
+            domains: this.t('dashboard.healthFilterDomains', 'Domains'),
             healthy: this.t('dashboard.healthFilterHealthy', 'Healthy'),
             all: this.t('dashboard.healthFilterAll', 'All'),
             // Monitor-group headings, distinct from the link-hygiene labels
@@ -2963,6 +2966,41 @@ class DashboardHealth {
             return null;
         }
         return certs[host] || null;
+    }
+
+    /**
+     * The registration behind this row, when it is close enough to matter.
+     *
+     * The report carries every domain that has a date, because the widget's
+     * window is its own setting; the row only speaks up inside the warning
+     * lead time, the same one the server alerts on. Looked up by the issue's
+     * registrable domain, which the server works out with the public suffix
+     * list: ten bookmarks on one domain share one renewal.
+     */
+    domainFor(issue) {
+        if (this.dash.settings?.domainExpiry === false) return null;
+        const domains = this.report?.domains;
+        const name = String(issue?.domain || '').toLowerCase();
+        if (!domains || !name) return null;
+        const entry = domains[name];
+        if (!entry || !(Number(entry.expiresAt) > 0)) return null;
+        const lead = Number(this.dash.settings?.domainWarnDays) || 60;
+        return this.certDaysLeft(entry) <= lead ? entry : null;
+    }
+
+    /** The badge for the registration, drawn like the certificate's. */
+    renderDomainBadge(issue) {
+        const entry = this.domainFor(issue);
+        if (!entry) return '';
+        const days = this.certDaysLeft(entry);
+        const label = days < 0
+            ? this.t('dashboard.healthDomainExpired', 'Domain expired')
+            : this.t('dashboard.healthDomainExpiring', 'Domain: {days}d', { days });
+        const title = days < 0
+            ? this.t('dashboard.healthDomainExpiredHint', 'The registration of {domain} has expired', { domain: entry.domain })
+            : this.t('dashboard.healthDomainExpiringHint', 'The registration of {domain} expires in {days} days', { domain: entry.domain, days });
+        const tone = days < 0 ? 'expired' : (days <= 3 ? 'urgent' : 'warn');
+        return `<span class="health-cert-badge health-domain-badge is-${tone}" title="${this.escape(title)}">${this.escape(label)}</span>`;
     }
 
     /** Whole days until a certificate expires; negative once past. */

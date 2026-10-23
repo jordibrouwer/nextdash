@@ -94,6 +94,8 @@ const (
 	 * to be noticed by opening the dashboard on the day.
 	 */
 	webhookEventHealthCertExpiring = "health.cert-expiring"
+	// The registration behind the host, on the same ladder as the certificate.
+	webhookEventHealthDomainExpiring = "health.domain-expiring"
 )
 
 // webhookEventNames is every event that can be subscribed to, in the order the
@@ -105,6 +107,7 @@ var webhookEventNames = []string{
 	webhookEventHealthDown,
 	webhookEventHealthUp,
 	webhookEventHealthCertExpiring,
+	webhookEventHealthDomainExpiring,
 }
 
 /*
@@ -587,6 +590,9 @@ func monitorNotificationFields(n monitorNotification) map[string]any {
 	}
 	if n.Error != "" {
 		fields["error"] = n.Error
+	}
+	if n.Event == "cert-expiring" || n.Event == "domain-expiring" {
+		fields["daysLeft"] = n.DaysLeft
 	}
 	if n.Failures > 0 {
 		fields["failures"] = n.Failures

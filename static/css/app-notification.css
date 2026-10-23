@@ -269,10 +269,10 @@
 
 .app-notification-close {
     position: absolute;
-    top: 0.2rem;
-    right: 0.25rem;
-    width: 1.35rem;
-    height: 1.35rem;
+    top: 0.1rem;
+    right: 0.15rem;
+    width: 1.75rem;
+    height: 1.75rem;
     display: grid;
     place-items: center;
     padding: 0;

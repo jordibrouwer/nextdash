@@ -1,0 +1,1598 @@
+/* ─── Glances view (#glances) ─────────────────────────────────────────────
+   Mounts on the shared shell (list-view-shell.css) like the Containers view;
+   the rail's filter list is the section menu. Only what the sections draw
+   lives here: the number cards, the cpu chart, the process table, the
+   status and error lines and the menu's warning dot.
+   ------------------------------------------------------------------------- */
+
+.glances-layout {
+    outline: none;
+}
+
+.glances-wait,
+.glances-empty {
+    margin: var(--space-4, 1.5rem) auto;
+    max-width: 32rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.glances-empty p { margin: 0 0 var(--space-2, 0.5rem); }
+.glances-empty-link { color: var(--accent-primary); }
+
+/* The menu: a dot beside a section in warning, before its count. */
+.glances-menu-item.has-warn .lvs-filter-label::after {
+    content: '';
+    display: inline-block;
+    width: 0.45em;
+    height: 0.45em;
+    margin-left: 0.45em;
+    vertical-align: middle;
+    border-radius: 50%;
+    background: var(--accent-warning);
+}
+
+.glances-menu-item.has-warn[data-glances-warn="bad"] .lvs-filter-label::after { background: var(--accent-error); }
+
+.glances-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 1rem);
+    container: glances-section / inline-size;
+}
+
+.glances-section-host[hidden],
+.glances-status[hidden],
+.glances-error[hidden] {
+    display: none;
+}
+
+.glances-status,
+.glances-error {
+    margin: 0;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border-radius: var(--layout-radius-sm, 6px);
+    background: var(--background-secondary);
+    font-size: var(--font-size-small);
+}
+
+.glances-status { color: var(--text-secondary); }
+.glances-error { color: var(--accent-error); }
+
+/* ── Overview ── */
+
+.glances-cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-3, 0.75rem);
+}
+
+@container glances-section (max-width: 560px) {
+    .glances-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.glances-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+    padding: var(--space-3, 0.75rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 6px);
+}
+
+.glances-card-label,
+.glances-card-sub {
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.glances-card-value {
+    font-size: 1.6em;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+.glances-card[data-tone="warn"] .glances-card-value { color: var(--accent-warning); }
+.glances-card[data-tone="bad"] .glances-card-value { color: var(--accent-error); }
+
+.glances-chart {
+    margin: 0;
+    padding: var(--space-3, 0.75rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 6px);
+}
+
+.glances-chart-caption {
+    margin-bottom: var(--space-2, 0.5rem);
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+}
+
+.glances-chart svg {
+    display: block;
+    width: 100%;
+    height: 6rem;
+}
+
+.glances-chart-line {
+    fill: none;
+    stroke: var(--accent-primary);
+    stroke-width: 1.5;
+}
+
+.glances-chart-area {
+    fill: var(--accent-primary);
+    opacity: 0.12;
+}
+
+/* ── Processes ── */
+
+/* One search bar above Processes and Containers: field, count beside it. */
+.glances-search-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    margin-bottom: var(--space-3, 0.75rem);
+}
+
+.glances-search-field {
+    display: flex;
+    flex: 0 1 21rem;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 11rem;
+    padding: 0 var(--space-2, 0.6rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 6px);
+    background: var(--background-primary);
+    color: var(--text-tertiary, var(--text-secondary));
+}
+
+.glances-search-field:focus-within {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 25%, transparent);
+}
+
+.glances-search-icon { flex: none; width: 1rem; height: 1rem; }
+
+.glances-search-input {
+    flex: 1;
+    min-width: 0;
+    padding: var(--space-2, 0.45rem) 0;
+    border: 0;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-controls, inherit);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.glances-search-input::-webkit-search-cancel-button { display: none; }
+.glances-search-input::placeholder { color: var(--text-tertiary, var(--text-secondary)); }
+
+.glances-search-key {
+    flex: none;
+    padding: 0 0.4rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    font: inherit;
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.glances-search-key[hidden],
+.glances-search-clear[hidden] { display: none; }
+
+.glances-search-clear {
+    flex: none;
+    padding: 0 0.3rem;
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.glances-search-clear:hover { color: var(--text-primary); }
+.glances-search-clear:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 1px; border-radius: 4px; }
+
+.glances-proc-note,
+.glances-proc-message {
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+}
+
+.glances-proc-message { margin: 0 0 var(--space-2, 0.5rem); }
+.glances-proc-message[hidden],
+.glances-proc-table[hidden] { display: none; }
+
+.glances-proc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+
+.glances-proc-table th,
+.glances-proc-table td {
+    padding: var(--space-1, 0.3rem) var(--space-2, 0.5rem);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.glances-proc-table th {
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: var(--font-size-small);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.glances-proc-head--cpu,
+.glances-proc-head--mem,
+.glances-proc-head--pid,
+.glances-proc-head--threads,
+.glances-proc-cell--cpu,
+.glances-proc-cell--mem,
+.glances-proc-cell--pid,
+.glances-proc-cell--threads {
+    text-align: right;
+}
+
+.glances-proc-table th[data-glances-sort] { cursor: pointer; }
+
+.glances-proc-sort {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.glances-proc-table th[aria-sort] { color: var(--accent-primary); }
+.glances-proc-table th[aria-sort="ascending"] .glances-proc-sort::after { content: ' ▲'; }
+.glances-proc-table th[aria-sort="descending"] .glances-proc-sort::after { content: ' ▼'; }
+
+.glances-proc-row { border-bottom: 1px solid var(--border-primary); }
+.glances-proc-row:hover { background: var(--background-secondary); }
+
+.glances-proc-cell--name {
+    max-width: 20rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.glances-proc-expand {
+    width: 1.4em;
+    margin-right: 0.3em;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.glances-proc-cmd td {
+    padding-top: 0;
+    white-space: normal;
+}
+
+.glances-proc-cmdline {
+    display: block;
+    padding: var(--space-2, 0.5rem);
+    border-radius: var(--layout-radius-sm, 6px);
+    background: var(--background-secondary);
+    font-size: var(--font-size-small);
+    overflow-wrap: anywhere;
+}
+
+.glances-proc-wait {
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+}
+
+@container glances-section (max-width: 640px) {
+    .glances-proc-head--user,
+    .glances-proc-cell--user,
+    .glances-proc-head--status,
+    .glances-proc-cell--status,
+    .glances-proc-head--threads,
+    .glances-proc-cell--threads {
+        display: none;
+    }
+}
+
+/* ── Containers ── */
+
+.glances-ct-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.glances-ct-wrap[hidden] { display: none; }
+
+.glances-ct-message,
+.glances-note {
+    margin: 0;
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+}
+
+.glances-ct-table,
+.glances-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+
+.glances-ct-table th,
+.glances-ct-table td,
+.glances-table th,
+.glances-table td {
+    padding: var(--space-1, 0.3rem) var(--space-2, 0.5rem);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.glances-ct-table th,
+.glances-table th {
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: var(--font-size-small);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.glances-ct-table th[aria-sort] { color: var(--accent-primary); }
+.glances-ct-table th[aria-sort="ascending"] .glances-proc-sort::after { content: ' ▲'; }
+.glances-ct-table th[aria-sort="descending"] .glances-proc-sort::after { content: ' ▼'; }
+
+.glances-ct-row { border-bottom: 1px solid var(--border-primary); }
+.glances-ct-row:hover { background: var(--background-secondary); }
+.glances-ct-row[data-state="stopped"] { color: var(--text-tertiary, var(--text-secondary)); }
+
+/* A long value is cut to its cell; the whole of it is in the title. */
+.glances-ct-cell--name,
+.glances-ct-cell--image,
+.glances-ct-cell--command {
+    max-width: 16rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.glances-ct-cell--cpu,
+.glances-ct-cell--mem { text-align: right; }
+
+/* ── Disks, Network, shared blocks ── */
+
+.glances-block { margin: 0 0 var(--space-4, 1.25rem); }
+
+.glances-block-title {
+    margin: 0 0 var(--space-2, 0.5rem);
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+    font-weight: 600;
+}
+
+.glances-disk { margin-bottom: var(--space-3, 0.75rem); }
+
+.glances-disk-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+    min-width: 0;
+}
+
+.glances-disk-mount {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.glances-disk-meta,
+.glances-disk-sizes {
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+}
+
+.glances-disk-meta {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.glances-disk-value {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+}
+
+.glances-disk-bar {
+    height: 0.5rem;
+    margin: 0.25rem 0;
+    border-radius: 999px;
+    background: var(--background-secondary);
+    overflow: hidden;
+}
+
+.glances-disk-fill {
+    display: block;
+    height: 100%;
+    background: var(--accent-primary);
+}
+
+.glances-disk-bar[data-tone="warn"] .glances-disk-fill { background: var(--accent-warning); }
+.glances-disk-bar[data-tone="bad"] .glances-disk-fill { background: var(--accent-error); }
+
+.glances-smart > summary { cursor: pointer; padding: var(--space-1, 0.3rem) 0; }
+.glances-raid { margin: 0 0 var(--space-1, 0.3rem); }
+
+.glances-pairs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem) var(--space-4, 1.25rem);
+    margin: 0;
+}
+
+.glances-pair { display: flex; gap: 0.4em; }
+.glances-pair dt { color: var(--text-secondary); }
+.glances-pair dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+/* ── History ── */
+
+.glances-charts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3, 0.75rem);
+}
+
+@container glances-section (max-width: 560px) {
+    .glances-charts { grid-template-columns: minmax(0, 1fr); }
+}
+
+.glances-chart-caption {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+}
+
+.glances-chart-line--1 { stroke: var(--accent-warning); }
+.glances-chart-line--2 { stroke: var(--text-secondary); }
+.glances-chart-line--3 { stroke: var(--accent-error); }
+
+.glances-chart-legend {
+    margin: var(--space-1, 0.3rem) 0 0;
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+    overflow-wrap: anywhere;
+}
+
+/* ── Alerts ── */
+
+.glances-al-row { border-bottom: 1px solid var(--border-primary); }
+.glances-al-row[data-state="critical"] .glances-al-cell--state { color: var(--accent-error); }
+.glances-al-row[data-state="warning"] .glances-al-cell--state { color: var(--accent-warning); }
+.glances-al-cell--max { text-align: right; }
+
+.glances-limits { margin: 0; }
+
+.glances-limit-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.3rem) var(--space-3, 0.75rem);
+    padding: var(--space-1, 0.3rem) 0;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.glances-limit-row dt { min-width: 10rem; color: var(--text-secondary); }
+.glances-limit-row dd { display: flex; flex-wrap: wrap; gap: var(--space-2, 0.5rem); margin: 0; }
+.glances-limit { font-variant-numeric: tabular-nums; }
+.glances-limit[data-level="warning"] { color: var(--accent-warning); }
+.glances-limit[data-level="critical"] { color: var(--accent-error); }
+
+/* ── Page 0: the Overview's blocks ── */
+
+.glances-blocks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    gap: var(--space-3, 0.75rem);
+    align-items: start;
+}
+
+.glances-ov-block {
+    min-width: 0;
+    margin: 0;
+    padding: var(--space-3, 0.75rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 6px);
+}
+
+.glances-ov-block--wide { grid-column: 1 / -1; }
+
+.glances-ov-block .glances-block-title { margin-bottom: var(--space-2, 0.5rem); }
+
+.glances-ov-host {
+    margin: 0;
+    font-size: 1.3em;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.glances-spark svg {
+    display: block;
+    width: 100%;
+    height: 2.4rem;
+    margin-top: 0.3rem;
+}
+
+.glances-ov-span { margin: var(--space-2, 0.5rem) 0 0; }
+
+.glances-cores {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+}
+
+.glances-core { min-width: 0; }
+
+.glances-temps {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    gap: 0.25rem var(--space-3, 0.75rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.glances-temp {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-width: 0;
+    font-size: var(--font-size-small);
+}
+
+.glances-temp-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-secondary);
+}
+
+.glances-temp-value { font-variant-numeric: tabular-nums; }
+.glances-temp[data-tone="warn"] .glances-temp-value { color: var(--accent-warning); }
+.glances-temp[data-tone="bad"] .glances-temp-value { color: var(--accent-error); }
+
+.glances-alerts { margin: 0; padding: 0; list-style: none; }
+.glances-alert { font-size: var(--font-size-small); }
+.glances-alert[data-tone="warn"] strong { color: var(--accent-warning); }
+.glances-alert[data-tone="bad"] strong { color: var(--accent-error); }
+
+.glances-ov-block tr[data-state="stopped"] td:first-child { color: var(--text-tertiary, var(--text-secondary)); }
+
+/* ── The 0 tab ── */
+
+.glances-link-anchor { position: relative; }
+
+.glances-link-dot {
+    position: absolute;
+    top: 0.2rem;
+    right: 0.2rem;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--text-tertiary, var(--text-secondary));
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.glances-link-dot[data-level="ok"] { background: var(--accent-success, #4caf50); opacity: 1; }
+.glances-link-dot[data-level="warn"] { background: var(--accent-warning); opacity: 1; }
+.glances-link-dot[data-level="bad"] { background: var(--accent-error); opacity: 1; }
+
+/* ── Panels ──
+   The page is one pane (category-surface.css), and inside it each block keeps
+   a faint tint and a hairline, as config's blocks do: a block shows where it
+   starts and ends without glass inside glass, and its text sits on the pane,
+   not on the wallpaper. */
+.glances-ov-block,
+.glances-card,
+.glances-chart,
+.glances-ct-wrap,
+.glances-proc-table,
+.glances-section-host > .glances-table {
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    border-color: color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+
+.glances-card { background: color-mix(in srgb, var(--text-primary) 5%, transparent); }
+
+.glances-card-label,
+.glances-card-sub,
+.glances-note,
+.glances-temp-name,
+.glances-table th {
+    color: var(--text-secondary);
+}
+
+.glances-ov-block .glances-block-title {
+    color: var(--text-primary);
+    letter-spacing: 0.03em;
+}
+
+/* ── Graphs: range, plot, figures, legend ── */
+
+.glances-charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+    gap: var(--space-3, 0.75rem);
+}
+
+.glances-chart-caption {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+}
+
+.glances-chart-title {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.glances-chart-plot {
+    position: relative;
+    cursor: crosshair;
+}
+
+.glances-crosshair {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: color-mix(in srgb, var(--text-primary) 45%, transparent);
+    pointer-events: none;
+}
+
+.glances-crosshair[hidden] { display: none; }
+
+.glances-chart-span {
+    margin: 0.25rem 0 0;
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+}
+
+.glances-chart-empty { margin: var(--space-2, 0.5rem) 0 0; }
+
+.glances-chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.9rem;
+    margin: 0.4rem 0 0;
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.glances-legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
+
+.glances-swatch {
+    display: inline-block;
+    width: 0.7rem;
+    height: 0.2rem;
+    border-radius: 2px;
+    background: var(--accent-primary);
+}
+
+.glances-swatch--1 { background: var(--accent-warning); }
+.glances-swatch--2 { background: var(--text-secondary); }
+.glances-swatch--3 { background: var(--accent-error); }
+
+.glances-chart-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-2, 0.5rem);
+    margin: var(--space-2, 0.5rem) 0 0;
+}
+
+.glances-chart-stat dt {
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--font-size-small);
+}
+
+.glances-chart-stat dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+/* ── Hover card ── */
+
+.glances-tip {
+    position: fixed;
+    z-index: 3000;
+    max-width: 22rem;
+    padding: var(--space-3, 0.75rem);
+    border-radius: var(--layout-radius-sm, 8px);
+    border: 1px solid color-mix(in srgb, var(--text-primary) 16%, transparent);
+    background: var(--background-modal, var(--background-secondary));
+    color: var(--text-primary);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+    font-size: var(--font-size-small);
+    pointer-events: none;
+}
+
+.glances-tip-title {
+    margin: 0 0 0.4rem;
+    font-weight: 600;
+    word-break: break-word;
+}
+
+.glances-tip-rows { margin: 0; }
+
+.glances-tip-rows > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.1rem 0;
+}
+
+.glances-tip-rows dt { color: var(--text-secondary); }
+
+.glances-tip-rows dd {
+    margin: 0;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    word-break: break-word;
+}
+
+.glances-tip-note {
+    margin: 0.5rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.92em;
+}
+
+[data-glances-tip] { cursor: default; }
+
+/* ── The key legend ── */
+
+.glances-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem 1.1rem;
+    margin-top: var(--space-3, 1rem);
+    padding-top: var(--space-3, 0.75rem);
+    border-top: 1px solid color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
+.glances-legend-key { display: inline-flex; align-items: center; gap: 0.4rem; }
+
+.glances-legend kbd {
+    padding: 0.05rem 0.4rem;
+    border-radius: 5px;
+    border: 1px solid color-mix(in srgb, var(--text-primary) 22%, transparent);
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    color: var(--text-primary);
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.92em;
+}
+
+/* ── Sortable headings and clickable rows ── */
+
+.glances-sort-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: inherit;
+    cursor: pointer;
+}
+
+.glances-sort-btn:hover { color: var(--text-primary); }
+.glances-sort-btn:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; border-radius: 3px; }
+
+.glances-sort-mark {
+    display: inline-block;
+    min-width: 0.8em;
+    color: var(--accent-primary);
+    font-size: 0.75em;
+}
+
+.glances-row-link { cursor: pointer; }
+.glances-row-link:hover { background: color-mix(in srgb, var(--text-primary) 7%, transparent); }
+.glances-row-link:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: -2px; }
+
+/* A name that is a button (an incident in Insights): reads as text, underlined as a link. */
+button.glances-row-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    text-decoration: underline dotted;
+    text-underline-offset: 3px;
+}
+
+/* ── Range dropdown ── */
+
+.glances-range-pick { display: inline-flex; margin: 0; }
+
+.glances-range-select {
+    min-width: 7.5rem;
+    padding: 0.2rem 1.6rem 0.2rem 0.6rem;
+    font-size: var(--font-size-small);
+}
+
+.glances-ov-block > .glances-range-pick { margin-bottom: var(--space-2, 0.5rem); }
+
+/* Graph axes: values on the left, moments underneath. */
+.glances-chart-frame {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 0.4rem;
+}
+
+.glances-axis-y {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-align: right;
+}
+
+.glances-axis-x {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.2rem;
+}
+
+.glances-axis-tick {
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.glances-chart-range {
+    color: var(--text-primary);
+}
+
+/* A new range says so: the plot fades in and the range name lights up. */
+.glances-chart-frame--fresh .glances-chart-plot {
+    animation: glances-range-change 0.7s ease-out;
+}
+
+@keyframes glances-range-change {
+    from { opacity: 0.15; transform: scaleX(0.96); transform-origin: right; }
+    to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .glances-chart-frame--fresh .glances-chart-plot { animation: none; }
+}
+
+.glances-ct-link {
+    margin-left: 0.4rem;
+    padding: 0 0.35rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm, 4px);
+    background: transparent;
+    color: var(--accent-color, var(--text-primary));
+    font: inherit;
+    cursor: pointer;
+}
+
+.glances-ct-link:hover,
+.glances-ct-link:focus-visible {
+    background: color-mix(in srgb, var(--accent-color, var(--text-primary)) 14%, transparent);
+}
+
+/* ── Air: blocks, tiles, graphs and text get room to breathe ── */
+
+.glances-blocks { gap: var(--space-4, 1.25rem); }
+
+.glances-ov-block { padding: var(--space-4, 1.25rem); }
+
+.glances-ov-block .glances-block-title { margin-bottom: var(--space-3, 0.9rem); }
+
+.glances-cards { gap: var(--space-4, 1.25rem); }
+
+.glances-card {
+    gap: 0.4rem;
+    padding: var(--space-4, 1.1rem) var(--space-4, 1.25rem);
+}
+
+.glances-spark { margin-top: 0.5rem; }
+
+.glances-ov-span { margin-top: var(--space-3, 0.9rem); }
+
+.glances-cores { gap: var(--space-3, 0.9rem) var(--space-4, 1.25rem); }
+
+.glances-temps { gap: 0.4rem var(--space-4, 1.25rem); }
+
+.glances-temp { line-height: 1.5; }
+
+/* A graph inside a block sits clear of the table or list above it. */
+.glances-ov-block > .glances-chart,
+.glances-ov-block > .glances-charts {
+    margin-top: var(--space-5, 1.5rem);
+}
+
+.glances-chart { padding: var(--space-4, 1.1rem) var(--space-4, 1.25rem); }
+
+.glances-chart-caption { margin-bottom: var(--space-3, 0.9rem); }
+
+.glances-chart-span { margin-top: 0.75rem; line-height: 1.5; }
+
+.glances-chart-legend { margin-top: 0.75rem; gap: 0.4rem 1rem; }
+
+.glances-chart-stats { margin-top: var(--space-4, 1.1rem); gap: var(--space-3, 0.9rem); }
+
+.glances-axis-x { margin-top: 0.5rem; }
+
+.glances-chart-frame { column-gap: 0.7rem; }
+
+/* Text and panels never touch: tables and lists inside a block keep clear of its edges and of what follows. */
+.glances-ov-block table th,
+.glances-ov-block table td { padding-block: 0.45rem; }
+
+.glances-ov-block > :is(table, .glances-table, .glances-ct-wrap, ul, dl, p) + :is(.glances-chart, .glances-charts) {
+    margin-top: var(--space-5, 1.5rem);
+}
+
+.glances-section { gap: var(--space-4, 1.25rem); }
+
+.glances-note { line-height: 1.5; }
+
+/* ── Insights ── */
+
+.glances-insights { display: flex; flex-direction: column; gap: var(--space-4, 1.25rem); }
+
+.glances-ins-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3, 0.9rem); }
+
+.glances-ins-pick-label { margin-right: 0.5rem; color: var(--text-secondary); font-size: var(--font-size-small); }
+
+.glances-ins-csv { text-decoration: none; }
+
+.glances-ins-sub { margin: var(--space-4, 1.25rem) 0 var(--space-2, 0.5rem); color: var(--text-primary); font-size: var(--font-size-small); letter-spacing: 0.03em; }
+
+.glances-ins-health { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4, 1.25rem); }
+
+.glances-ins-score {
+    min-width: 5rem;
+    font-size: 3rem;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent-success, var(--text-primary));
+}
+
+.glances-ins-score[data-tone="warn"] { color: var(--accent-warning); }
+.glances-ins-score[data-tone="bad"] { color: var(--accent-error); }
+
+.glances-ins-score-side { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; flex: 1 1 16rem; }
+
+.glances-ins-factors { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 0.4rem var(--space-4, 1.25rem); margin: var(--space-3, 0.9rem) 0 0; padding: 0; list-style: none; }
+
+.glances-ins-factor { display: flex; justify-content: space-between; gap: 0.5rem; font-size: var(--font-size-small); }
+
+.glances-ins-factor-value { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+
+.glances-ins-figures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3, 0.9rem); }
+
+.glances-ins-figure { display: flex; flex-direction: column; gap: 0.25rem; }
+
+.glances-avail { display: grid; grid-template-columns: repeat(96, minmax(0, 1fr)); gap: 1px; margin-top: var(--space-3, 0.9rem); }
+
+.glances-avail-cell { height: 1.2rem; border-radius: 1px; background: color-mix(in srgb, var(--text-primary) 10%, transparent); }
+.glances-avail-cell[data-state="up"] { background: var(--accent-success, #3fb950); }
+.glances-avail-cell[data-state="partial"] { background: var(--accent-warning); }
+.glances-avail-cell[data-state="down"] { background: var(--accent-error); }
+
+.glances-heat { display: flex; flex-direction: column; gap: 2px; margin-top: var(--space-3, 0.9rem); overflow-x: auto; }
+
+.glances-heat-row { display: grid; grid-template-columns: 4.5rem repeat(24, minmax(0.6rem, 1fr)); gap: 2px; align-items: center; }
+
+.glances-heat-day, .glances-heat-hour { color: var(--text-secondary); font-size: var(--font-size-small); white-space: nowrap; }
+
+.glances-heat-cell {
+    height: 1.2rem;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--accent-primary) calc(var(--heat, 0) * 100%), transparent);
+}
+
+.glances-heat-cell.is-empty { background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
+
+.glances-vol { display: flex; align-items: stretch; gap: 2px; height: 8rem; margin-top: var(--space-3, 0.9rem); }
+
+.glances-vol-col { display: flex; flex: 1 1 0; min-width: 0; flex-direction: column; justify-content: flex-end; gap: 0.25rem; }
+
+.glances-vol-stack { display: flex; flex: 1; flex-direction: column; justify-content: flex-end; }
+
+.glances-vol-rx { background: var(--accent-primary); min-height: 1px; }
+.glances-vol-tx { background: var(--accent-warning); min-height: 1px; }
+
+.glances-vol-label { color: var(--text-secondary); font-size: 0.7rem; text-align: center; }
+
+@media (max-width: 560px) {
+    .glances-ins-figures { grid-template-columns: 1fr; }
+}
+
+/* ── The connection switch (page 0's header; Config → Glances has the same) ── */
+
+.glances-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: var(--font-size-small);
+    user-select: none;
+}
+
+.glances-switch input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+}
+
+.glances-switch-track {
+    position: relative;
+    width: 2.4rem;
+    height: 1.35rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-primary) 22%, transparent);
+    transition: background 0.2s ease;
+}
+
+.glances-switch-track::after {
+    content: '';
+    position: absolute;
+    top: 0.15rem;
+    left: 0.15rem;
+    width: 1.05rem;
+    height: 1.05rem;
+    border-radius: 50%;
+    background: var(--text-primary);
+    transition: transform 0.2s ease;
+}
+
+.glances-switch input:checked + .glances-switch-track { background: var(--accent-success, #3fb950); }
+.glances-switch input:checked + .glances-switch-track::after { transform: translateX(1.05rem); }
+.glances-switch input:focus-visible + .glances-switch-track { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.glances-switch input:disabled + .glances-switch-track { opacity: 0.6; }
+.glances-switch-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .glances-switch-track, .glances-switch-track::after { transition: none; }
+}
+
+/* ── Graph extras: yesterday behind today, stacked memory, incident bands ── */
+
+.glances-chart-controls { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-3, 0.9rem); }
+
+.glances-chart-save {
+    padding: 0.15rem 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.4rem;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+.glances-chart-save:hover { color: var(--text-primary); background: color-mix(in srgb, var(--text-primary) 7%, transparent); }
+.glances-chart-save:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+
+.glances-compare-select {
+    min-width: 7.5rem;
+    padding: 0.2rem 1.6rem 0.2rem 0.6rem;
+    font-size: var(--font-size-small);
+}
+
+.glances-incident-cause {
+    margin: 0 0 var(--space-3, 0.9rem);
+    padding: 0.5rem 0.7rem;
+    border-left: 3px solid var(--accent-error);
+    background: color-mix(in srgb, var(--accent-error) 8%, transparent);
+    color: var(--text-primary);
+}
+
+.glances-compare {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+
+.glances-chart-line--ghost {
+    stroke-dasharray: 4 3;
+    stroke-width: 1.2;
+    opacity: 0.55;
+}
+
+.glances-swatch--ghost {
+    background: repeating-linear-gradient(90deg, var(--text-secondary) 0 3px, transparent 3px 6px);
+}
+
+.glances-chart-layer { stroke: none; }
+.glances-chart-layer--0 { fill: color-mix(in srgb, var(--accent-primary) 80%, transparent); }
+.glances-chart-layer--1 { fill: color-mix(in srgb, var(--accent-warning) 55%, transparent); }
+.glances-chart-layer--2 { fill: color-mix(in srgb, var(--text-primary) 14%, transparent); }
+
+[data-glances-host-new][hidden] { display: none; }
+
+/* ── The History tab of a side panel, before anything is recorded ── */
+.glances-track {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 1.4rem 1rem 1.2rem;
+    border: 1px dashed color-mix(in srgb, var(--text-primary) 22%, transparent);
+    border-radius: 0.6rem;
+    text-align: center;
+}
+
+.glances-track-art { width: 7.5rem; height: auto; margin-bottom: 0.2rem; }
+.glances-track-art-line,
+.glances-track-art-ghost { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.glances-track-art-line { stroke: var(--accent-primary); }
+.glances-track-art-ghost { stroke: var(--text-secondary); stroke-dasharray: 2 5; opacity: 0.6; }
+
+.glances-track-title { margin: 0; font-size: 1rem; color: var(--text-primary); }
+.glances-track-text { margin: 0; max-width: 24rem; color: var(--text-secondary); line-height: 1.5; }
+.glances-track-btn { margin-top: 0.3rem; }
+.glances-track-note { margin: 0.2rem 0 0; max-width: 24rem; font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; }
+
+
+/* ── The hosts strip above the Overview ── */
+.glances-host-strip { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 var(--space-3, 0.9rem); }
+.glances-host-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+.glances-host-chip:hover { background: color-mix(in srgb, var(--text-primary) 7%, transparent); }
+.glances-host-chip[aria-pressed="true"] { border-color: var(--accent-primary); background: color-mix(in srgb, var(--accent-primary) 14%, transparent); }
+.glances-host-chip:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.glances-host-chip .glances-hosts-dot { margin-right: 0; }
+.glances-host-chip-detail { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+
+/* ── Hosts: one row per host ── */
+.glances-hosts-name { white-space: nowrap; }
+.glances-hosts-dot { display: inline-block; width: 0.55rem; height: 0.55rem; margin-right: 0.6rem; border-radius: 50%; background: var(--text-muted); }
+.glances-hosts-dot[data-level="ok"] { background: var(--accent-success, #4caf50); }
+.glances-hosts-dot[data-level="warn"] { background: var(--accent-warning); }
+.glances-hosts-dot[data-level="bad"] { background: var(--accent-error); }
+.glances-hosts-cell { white-space: nowrap; }
+.glances-hosts-bar { display: inline-block; width: 5rem; height: 0.4rem; margin-right: 0.5rem; border-radius: 0.2rem; background: color-mix(in srgb, var(--text-primary) 10%, transparent); vertical-align: middle; overflow: hidden; }
+.glances-hosts-bar i { display: block; height: 100%; background: var(--accent-primary); }
+.glances-hosts-bar i[data-tone="warn"] { background: var(--accent-warning); }
+.glances-hosts-bar i[data-tone="bad"] { background: var(--accent-error); }
+.glances-hosts-num { font-variant-numeric: tabular-nums; }
+.glances-hosts-cell[data-tone="warn"] { color: var(--accent-warning); }
+.glances-hosts-cell[data-tone="bad"] { color: var(--accent-error); }
+.glances-hosts-note { color: var(--text-secondary); }
+.glances-hosts-note--bad { color: var(--accent-error); }
+
+.glances-incident-layer { position: absolute; inset: 0; pointer-events: none; }
+
+/* A moment a container started again: a thin dashed line, with its time as the title. */
+.glances-chart-restart {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    border-left: 1px dashed var(--accent-warning);
+    pointer-events: auto;
+}
+
+.glances-chart-incident {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    padding: 0;
+    border: 0;
+    background: color-mix(in srgb, var(--accent-error) 22%, transparent);
+    border-left: 1px solid color-mix(in srgb, var(--accent-error) 60%, transparent);
+    pointer-events: auto;
+}
+
+button.glances-chart-incident { cursor: pointer; }
+
+button.glances-chart-incident:hover,
+button.glances-chart-incident:focus-visible {
+    background: color-mix(in srgb, var(--accent-error) 38%, transparent);
+    outline: 2px solid var(--accent-primary);
+    outline-offset: -2px;
+}
+
+.glances-chart-incident[data-glances-incident="down"] {
+    background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--accent-error) 18%, transparent) 0 4px, transparent 4px 8px);
+}
+
+/* ── Tables as the Bookmarks view draws them ──
+   Rows touch with a hairline between them and no slab of their own; the heading
+   is a caption in small capitals; a row is as tall as a bookmark's, lights on
+   hover, and a state is a pill. */
+
+.glances-ct-wrap,
+.glances-proc-table,
+.glances-section-host > .glances-table,
+.glances-table {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+}
+
+.glances-ct-table,
+.glances-proc-table,
+.glances-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: var(--font-size-controls, 0.9rem);
+}
+
+.glances-ct-table th,
+.glances-proc-table th,
+.glances-table th {
+    height: var(--bm-head-h, 32px);
+    padding: 0 var(--space-3, 0.75rem);
+    background: none;
+    border-bottom: 1px solid var(--border-primary);
+    font-size: var(--text-xs, 0.72rem);
+    font-weight: var(--font-weight-semibold, 600);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-tertiary, var(--text-secondary));
+}
+
+.glances-ct-table th[aria-sort]:not([aria-sort="none"]),
+.glances-proc-table th[aria-sort]:not([aria-sort="none"]),
+.glances-table th[aria-sort]:not([aria-sort="none"]) {
+    color: var(--accent-primary);
+}
+
+.glances-ct-table td,
+.glances-proc-table td,
+.glances-table td {
+    height: var(--bm-row-h, 38px);
+    padding: 0 var(--space-3, 0.75rem);
+    border-bottom: 1px solid var(--border-primary);
+    background-color: transparent;
+    color: var(--text-primary);
+    vertical-align: middle;
+}
+
+/* The first column is the name, as a bookmark's title is. */
+.glances-ct-table td:first-child,
+.glances-proc-table td:first-child,
+.glances-table td:first-child {
+    font-weight: 600;
+}
+
+.glances-ct-row,
+.glances-proc-row,
+.glances-table tbody tr { border-bottom: 0; background: none; }
+
+.glances-ct-row:hover td,
+.glances-proc-row:hover td,
+.glances-table tbody tr:hover td,
+.glances-row-link:hover td {
+    background-color: var(--background-secondary);
+}
+
+.glances-row-link:hover { background: none; }
+
+.glances-ct-row[data-state="stopped"] td { color: var(--text-tertiary, var(--text-secondary)); }
+
+.glances-status-pill { text-transform: none; letter-spacing: 0; }
+
+/* ── Small screens: wide tables scroll sideways, whole ── */
+
+.glances-proc-scroll,
+.glances-ct-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.glances-proc-table { min-width: 34rem; }
+.glances-ct-table { min-width: 52rem; }
+
+/* A table inside an Overview block keeps its columns and scrolls within the block. */
+.glances-ov-block { overflow-x: auto; }
+.glances-ov-block .glances-table { min-width: 22rem; }
+
+.glances-proc-cell--name { max-width: 16rem; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Cores: a tile per core with the last minute behind its number ── */
+
+.glances-cores {
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: var(--space-3, 0.9rem);
+}
+
+.glances-core {
+    padding: var(--space-2, 0.6rem) var(--space-3, 0.8rem);
+    border: 1px solid color-mix(in srgb, var(--text-primary) 12%, transparent);
+    border-radius: var(--layout-radius-sm, 6px);
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+}
+
+.glances-core-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+.glances-core-name { color: var(--text-secondary); font-size: var(--font-size-small); }
+.glances-core-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+.glances-core[data-tone="warn"] .glances-core-value { color: var(--accent-warning); }
+.glances-core[data-tone="bad"] .glances-core-value { color: var(--accent-error); }
+
+.glances-core-trace { margin-top: 0.4rem; }
+.glances-core-trace svg { display: block; width: 100%; height: 1.75rem; }
+.glances-core-trace .glances-chart-line--0 { stroke-width: 1.4; }
+.glances-core[data-tone="warn"] .glances-chart-line--0 { stroke: var(--accent-warning); }
+.glances-core[data-tone="bad"] .glances-chart-line--0 { stroke: var(--accent-error); }
+
+/* ── Disks: grouped by role, with outlook and activity ── */
+
+.glances-disk-group + .glances-disk-group { margin-top: var(--space-3, 0.9rem); }
+
+.glances-disk-group-title {
+    margin: 0 0 var(--space-2, 0.5rem);
+    color: var(--text-tertiary, var(--text-secondary));
+    font-size: var(--text-xs, 0.72rem);
+    font-weight: var(--font-weight-semibold, 600);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.glances-disk-sizes-inline { margin-right: 0.4rem; color: var(--text-secondary); font-weight: 400; font-size: var(--font-size-small); }
+
+.glances-disk-foot {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.4rem 0.75rem;
+    margin-top: 0.3rem;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
+.glances-disk-pills { display: inline-flex; flex-wrap: wrap; gap: 0.4rem; }
+
+.glances-pill {
+    padding: 0.05rem 0.55rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+    white-space: nowrap;
+}
+
+.glances-pill[data-tone="warn"] { color: var(--accent-warning); border-color: color-mix(in srgb, var(--accent-warning) 45%, transparent); }
+.glances-pill[data-tone="bad"] { color: var(--accent-error); border-color: color-mix(in srgb, var(--accent-error) 45%, transparent); }
+.glances-pill[data-glances-activity="busy"] { color: var(--text-primary); }
+
+/* ── A graph stays inside its panel, whatever the width ── */
+
+.glances-chart {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    container-type: inline-size;
+}
+
+.glances-chart-frame { grid-template-columns: auto minmax(0, 1fr); }
+.glances-chart-frame > * { min-width: 0; }
+.glances-axis-x { overflow: hidden; gap: 0.5rem; }
+.glances-axis-tick { overflow: hidden; text-overflow: clip; }
+.glances-chart-legend, .glances-chart-span, .glances-chart-stats { min-width: 0; }
+.glances-chart-stat dd { overflow-wrap: anywhere; }
+
+/* Narrow: every other time label goes, so none runs into its neighbour. */
+@container (max-width: 30rem) {
+    .glances-axis-tick--minor { display: none; }
+    .glances-chart-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ── How often the host is recorded: in the page's header, beside the connection switch ── */
+
+.lvs-header-actions:has(.glances-record) { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3, 0.9rem); }
+
+.glances-record {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+}
+
+.glances-record-select { min-width: 7.5rem; }
+
+/* ── ℹ buttons and their popover ── */
+
+.glances-info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-left: 0.4rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-muted, var(--text-secondary));
+    font-size: 0.85rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    line-height: 1;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+.glances-info-btn:hover,
+.glances-info-btn[aria-expanded="true"] {
+    background: var(--accent-soft, color-mix(in srgb, var(--text-primary) 14%, transparent));
+    color: var(--accent-color, var(--text-primary));
+}
+
+.glances-info-btn:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 1px; }
+
+.glances-ins-sub .glances-info-btn,
+.glances-ins-score-side .glances-info-btn { margin-left: 0.3rem; }
+
+.glances-record-wrap,
+.glances-switch-wrap { display: inline-flex; align-items: center; }
+
+.glances-info-pop {
+    position: fixed;
+    z-index: 1200;
+    width: min(20rem, calc(100vw - 1rem));
+    padding: var(--space-3, 0.8rem) var(--space-4, 1rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--background-modal, var(--background-primary, #1d1b22));
+    color: var(--text-primary);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+    font-size: var(--font-size-small, 0.85rem);
+    line-height: 1.5;
+}
+
+.glances-info-pop-title { display: block; margin-bottom: 0.25rem; font-weight: 600; }
+.glances-info-pop-body { margin: 0; color: var(--text-secondary); }
+
+.glances-info-pop-more {
+    margin: 0.6rem 0 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-primary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.glances-info-pop-more:hover { text-decoration: underline; }
+
+/* The ℹ sits right beside its title, ringed so it reads as a button. */
+.glances-block-title { display: flex; align-items: center; gap: 0.45rem; }
+.glances-block-title .glances-info-btn,
+.glances-chart-title .glances-info-btn { margin-left: 0; }
+.glances-chart-title { display: inline-flex; align-items: center; gap: 0.45rem; }
+
+.glances-info-btn {
+    border: 1px solid color-mix(in srgb, var(--text-primary) 28%, transparent);
+    width: 1.1rem;
+    height: 1.1rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-family: var(--font-family-mono, ui-monospace, monospace);
+}
+
+/* ── Narrow screens: the header's controls wrap under the title instead of leaving the screen ── */
+
+.glances-layout .lvs-header { flex-wrap: wrap; row-gap: var(--space-2, 0.5rem); }
+.glances-layout .lvs-header-text { flex: 1 1 11rem; min-width: 0; }
+.glances-layout .lvs-header-actions { flex: 0 1 auto; flex-shrink: 1; flex-wrap: wrap; justify-content: flex-end; min-width: 0; max-width: 100%; }
+
+@media (max-width: 640px) {
+    .glances-layout .lvs-header-actions { flex: 1 1 100%; justify-content: flex-start; gap: var(--space-2, 0.5rem) var(--space-3, 0.9rem); }
+    .glances-layout .glances-record-select { min-width: 0; }
+}
+
+/* ── Glances inside the Containers view's side panel ── */
+
+.glances-embed { margin-top: var(--space-4, 1.25rem); padding-top: var(--space-3, 0.9rem); border-top: 1px solid var(--border-primary); }
+.glances-embed-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3, 0.9rem); margin-bottom: var(--space-3, 0.9rem); }
+.glances-embed-title { margin: 0; font-size: var(--font-size-small); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary); }
+.glances-embed-body { display: flex; flex-direction: column; gap: var(--space-3, 0.9rem); }
+.glances-embed-empty { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2, 0.5rem); }
+
+/* ── Config → Glances: the host bar, the tabs and which settings are whose ── */
+.glances-hostbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.glances-hostbar .config-actions { margin: 0; }
+
+.glances-hostbar [data-glances-host-new] { flex-basis: 100%; }
+
+.glances-hostbar-status {
+    margin-left: auto;
+    font-size: var(--font-size-small);
+    color: var(--text-secondary);
+}
+
+.glances-hostbar-status::before {
+    content: '';
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-right: 0.4rem;
+    border-radius: 50%;
+    background: var(--text-tertiary, var(--text-secondary));
+}
+
+.glances-hostbar-status[data-tone="good"]::before { background: var(--accent-success, #4caf50); }
+.glances-hostbar-status[data-tone="bad"]::before { background: var(--accent-error); }
+
+.glances-hostbar-note { margin: 0 0 var(--space-3, 0.75rem); }
+
+.glances-scope {
+    margin-left: 0.6rem;
+    padding: 0.05rem 0.55rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    color: var(--text-secondary);
+    font-size: var(--font-size-small);
+    font-weight: 400;
+    vertical-align: middle;
+}
+
+.glances-scope--host {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    color: var(--accent-primary);
+}

@@ -495,7 +495,9 @@ class DashboardData {
         try {
             const stored = localStorage.getItem('collapsedCategories');
             if (stored) {
-                d.collapsedCategories = JSON.parse(stored);
+                const parsed = JSON.parse(stored);
+                // null or a string would make `key in collapsedCategories` throw and abort the render
+                d.collapsedCategories = (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
             }
         } catch {
             d.collapsedCategories = {};
@@ -881,6 +883,13 @@ class DashboardData {
             // control env vars the view itself checks, not something this
             // table can see — so always true, same as health's would be with
             // no setting behind it.
+            isEnabled: () => true,
+        },
+        {
+            // One machine through a Glances widget: #glances/<section>?w=&p=.
+            view: 'glances',
+            layoutClass: 'glances-layout',
+            matchesHash: (hash) => hash === '#glances' || hash.startsWith('#glances/') || hash.startsWith('#glances?'),
             isEnabled: () => true,
         },
         {

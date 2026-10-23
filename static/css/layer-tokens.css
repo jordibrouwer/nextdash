@@ -35,3 +35,33 @@
     --layer-sticky-band: 5;
     --layer-row-raised: 6;
 }
+
+/* The overlay scale: popovers, drop-downs, floating chrome and the dialogs
+   that sit outside a view's own column. The values are what dashboard.css
+   carried as bare numbers, kept exactly so nothing moves in front of or behind
+   anything it did not before; the names say which is which, and what has to
+   stay above what is now written in one place instead of inferred from ten.
+
+   900-1100   the dashboard's own floating chrome (drag chip, coach, action bar, page-tab
+              popover, what's-new button, action-key hint)
+   2000-2100  previews and the notes dialog
+   9000-10160 popovers and drop-downs that open from a field
+   10050      the app modal while a bookmark is being edited inline
+   12050+     the paste choice, the keep animation, the "why" popover */
+:root {
+    --layer-floating-chrome: 900;
+    --layer-drag: 1000;
+    --layer-page-popover: 1100;
+    --layer-chrome-tooltip: 1001;
+    --layer-chrome-hint: 1002;
+    --layer-omnibox: 1200;
+    --layer-preview-card: 2000;
+    --layer-notes-modal: 2100;
+    --layer-popover: 9000;
+    --layer-dropdown: 9999;
+    --layer-modal-inline-edit: 10050;
+    --layer-popover-field: 10160;
+    --layer-paste-choice: 12050;
+    --layer-flight: 13000;
+    --layer-tooltip-top: 200000;
+}

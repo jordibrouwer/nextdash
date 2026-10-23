@@ -138,7 +138,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/bookmarks", handlers.GetBookmarks).Methods("GET")
 	r.HandleFunc("/api/bookmarks", handlers.SaveBookmarks).Methods("POST")
 	r.HandleFunc("/api/bookmarks", handlers.DeleteBookmark).Methods("DELETE")
-	r.HandleFunc("/api/bookmarks", handlers.PatchBookmarks).Methods("PATCH")
+	r.HandleFunc("/api/bookmarks", handlers.PatchBookmarks).Methods("PATCH", "OPTIONS")
 	r.HandleFunc("/api/bookmarks/add", handlers.AddBookmark).Methods("POST")
 	r.HandleFunc("/api/bookmarks/move", handlers.MoveBookmarks).Methods("POST")
 	r.HandleFunc("/api/bookmarks/delete", handlers.DeleteHealthBookmarksBulk).Methods("POST")
@@ -334,6 +334,7 @@ func Run(files assetFS) {
 		r.HandleFunc("/api/widgets/"+string(beszelType), handlers.beszelWidgetHandler(beszelType)).Methods("GET", "OPTIONS")
 	}
 	r.HandleFunc("/api/widgets/beszel/setup", handlers.beszelSetupHandler).Methods("POST", "OPTIONS")
+	registerGlancesViewRoutes(r, handlers)
 	r.HandleFunc("/api/widgets/homeassistant", handlers.homeAssistantWidgetHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/widgets/homeassistant/setup", handlers.homeAssistantSetupHandler).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/widgets/homeassistant/action", handlers.homeAssistantActionHandler).Methods("POST", "OPTIONS")
@@ -389,7 +390,7 @@ func Run(files assetFS) {
 	r.HandleFunc("/api/inbox", handlers.GetInbox).Methods("GET")
 	r.HandleFunc("/api/inbox", handlers.AddInboxItem).Methods("POST")
 	r.HandleFunc("/api/inbox", handlers.DeleteInboxItem).Methods("DELETE")
-	r.HandleFunc("/api/inbox", handlers.PatchInboxItem).Methods("PATCH")
+	r.HandleFunc("/api/inbox", handlers.PatchInboxItem).Methods("PATCH", "OPTIONS")
 	r.HandleFunc("/api/inbox", handlers.PutInboxItem).Methods("PUT")
 	r.HandleFunc("/api/inbox/batch", handlers.BatchInbox).Methods("POST")
 	r.HandleFunc("/api/inbox-stats", handlers.GetInboxStats).Methods("GET")
@@ -474,6 +475,8 @@ func Run(files assetFS) {
 	handlers.StartDockerAutoUpdater(schedulerStop)
 	handlers.StartDockerNotifier(schedulerStop)
 	handlers.StartUnraidWatcher(schedulerStop)
+	// The history of the Glances host, a day of it, while the feature is on.
+	handlers.StartGlancesSampler(schedulerStop)
 	// Looks through the containers for web apps, every few minutes.
 	handlers.StartDiscoveryScheduler(schedulerStop)
 	// Ends the quiet hours with one summary, and sends the reminders.
@@ -482,6 +485,7 @@ func Run(files assetFS) {
 	handlers.StartDigestScheduler(schedulerStop)
 	// Uptime monitoring for bookmarks opted into the faster monitor tier.
 	handlers.StartHealthMonitorScheduler(schedulerStop)
+	handlers.StartDomainExpiryScheduler(schedulerStop)
 	// Feed polling for bookmarks whose page advertises one (opt-in, same cadence
 	// as the background recheck).
 	handlers.StartFeedPollScheduler(schedulerStop)

@@ -26,7 +26,7 @@
      * be filtered by.
      */
     const KIND_FILTERS = ['broken', 'drift', 'duplicate', 'stale', 'unused',
-        'missing-preview', 'shortcut-conflict', 'orphaned-category', 'certificates'];
+        'missing-preview', 'shortcut-conflict', 'orphaned-category', 'certificates', 'domains'];
 
     const PAGES_SHOWN = 5;
 
@@ -217,6 +217,7 @@
                 this.renderBmHealthModalCoverageCard(health),
                 this.renderBmHealthModalMonitorsCard(health),
                 this.renderBmHealthModalCertsCard(health),
+                this.renderBmHealthModalDomainsCard(health),
                 this.renderBmHealthModalFixFirstCard(health),
                 this.renderBmHealthModalFreshnessCard(health),
                 this.renderBmHealthModalUsageCard(health),
@@ -1159,6 +1160,28 @@
                 )}</span></div>`).join('');
             return this.bmHealthModalCard('certificates',
                 this.t('config.bmHealthModalCertsTitle', 'Certificates expiring within 30 days'), body);
+        },
+
+        /** 8b. Domains -- only while a registration runs out inside the warning lead time. */
+        renderBmHealthModalDomainsCard(health) {
+            const domains = health.report?.domains;
+            if (!domains || this.dash.settings?.domainExpiry === false) return '';
+            const esc = (v) => this.dash.escapeHtml(v);
+            const lead = Number(this.dash.settings?.domainWarnDays) || 60;
+            const rows = Object.values(domains)
+                .map((entry) => ({ entry, days: health.certDaysLeft(entry) }))
+                .filter((row) => row.days <= lead)
+                .sort((a, b) => a.days - b.days);
+            if (!rows.length) return '';
+            const body = rows.map((row) => `<div class="bm-health-modal-kv">
+                <span>${esc(row.entry.domain)}</span>
+                <span class="${row.days < 0 ? 'is-bad' : 'is-warn'}" data-bm-health-modal-count="domain-${esc(row.entry.domain)}">${esc(
+                    row.days < 0
+                        ? health.t('dashboard.healthDomainExpired', 'Domain expired')
+                        : this.t('config.bmHealthModalDaysLeft', '{days} days').replace('{days}', String(row.days))
+                )}</span></div>`).join('');
+            return this.bmHealthModalCard('domains',
+                this.t('config.bmHealthModalDomainsTitle', 'Domains expiring within {days} days').replace('{days}', String(lead)), body);
         },
 
         /** 9. Footer -- the rot report, Health settings, and a refresh. */

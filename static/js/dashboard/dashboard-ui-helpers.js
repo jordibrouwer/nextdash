@@ -927,6 +927,7 @@ class DashboardUiHelpers {
 
         const remove = this._setupPageOverviewDelete(pages, listRoot);
 
+
         /*
          * Filtering hides rows; it does not renumber them.
          *

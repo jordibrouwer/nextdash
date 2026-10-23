@@ -134,12 +134,14 @@ to record is a different question from whether the trail goes to disk, and
 answering the first should not silently answer the second.
 */
 func setActivityChannelsForRuntime(enabled map[string]bool) {
+	activityCfgMu.Lock()
+	defer activityCfgMu.Unlock()
+	// Read under the lock: a copy taken before it lost the other setter's
+	// change when two saves overlapped.
 	cfg := activityConfig()
 	cfg.enabled = enabled
 	// A channel list that was asked for is an answer to "off", too.
 	cfg.disabled = false
-	activityCfgMu.Lock()
-	defer activityCfgMu.Unlock()
 	if activityCfgTest.Load() != nil {
 		activityCfgTest.Store(&cfg)
 		return
@@ -154,10 +156,10 @@ same way setActivityChannelsForRuntime replaces which channels are on —
 persistence and the channel list are left exactly as they were.
 */
 func setActivityOpenDetailForRuntime(level string) {
-	cfg := activityConfig()
-	cfg.openDetail = level
 	activityCfgMu.Lock()
 	defer activityCfgMu.Unlock()
+	cfg := activityConfig()
+	cfg.openDetail = level
 	if activityCfgTest.Load() != nil {
 		activityCfgTest.Store(&cfg)
 		return

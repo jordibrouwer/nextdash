@@ -108,9 +108,11 @@ body.no-animations .tag-cloud-toggle-btn .search-button-icon {
 .tag-cloud-modal-close {
     border: 1px solid transparent;
     background: transparent;
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     font-size: var(--text-xl, 1.25rem);
     line-height: 1;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
     cursor: pointer;
     padding: var(--space-hairline, 0.15rem) var(--space-1-5, 0.35rem);
     border-radius: var(--radius-4, 0.35rem);

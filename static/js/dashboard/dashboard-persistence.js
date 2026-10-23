@@ -65,7 +65,7 @@ class DashboardPersistence {
                     headers,
                     body: JSON.stringify({ order: pendingBlocks.order }),
                     keepalive: true
-                });
+                }).catch(() => {});
             } catch (_error) {
                 // Best-effort on tab close; ignore network errors.
             }
@@ -98,7 +98,7 @@ class DashboardPersistence {
                     headers,
                     body: JSON.stringify(categoryPayload),
                     keepalive: true
-                });
+                }).catch(() => {});
             } catch (_error) {
                 // Best-effort on tab close; ignore network errors.
             }

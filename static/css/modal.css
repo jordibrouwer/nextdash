@@ -146,6 +146,7 @@ body.no-view-animations .modal-overlay.show .modal.from-origin {
    two-column key table that needs the width. */
 .modal.whats-new-modal {
     max-height: 90vh;
+    max-height: 90dvh;
     max-width: min(36rem, calc(100vw - 2.5rem));
     width: min(36rem, calc(100vw - 2.5rem));
     overflow: hidden;
@@ -175,6 +176,7 @@ body:has(#config-main) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
     max-width: 100%;
     margin: 0;
     max-height: min(70vh, calc(100vh - 4rem));
+    max-height: min(70dvh, calc(100dvh - 4rem));
     transform: var(--modal-enter-from);
     transition: var(--modal-enter-transition);
 }
@@ -2083,10 +2085,12 @@ body:not([data-depth="flat"]) .wn-earlier {
     flex-shrink: 0;
     border: none;
     background: transparent;
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     font-family: inherit;
     font-size: var(--font-size-small, 0.72rem);
-    opacity: 0.5;
+    opacity: 0.8;
+    padding: 0.4rem 0.6rem;
+    min-height: 2.75rem;
     cursor: pointer;
 }
 

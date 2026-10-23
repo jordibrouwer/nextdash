@@ -1,0 +1,22 @@
+[
+  {
+    "interface_name": "eth0",
+    "bytes_recv": 91234567890,
+    "bytes_sent": 12345678901,
+    "bytes_all": 103580246791,
+    "speed": 1000000000,
+    "is_up": true,
+    "time_since_update": 2.0,
+    "key": "interface_name"
+  },
+  {
+    "interface_name": "docker0",
+    "bytes_recv": 1234567,
+    "bytes_sent": 2345678,
+    "bytes_all": 3580245,
+    "speed": 1000000000,
+    "is_up": true,
+    "time_since_update": 2.0,
+    "key": "interface_name"
+  }
+]

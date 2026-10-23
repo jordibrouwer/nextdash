@@ -190,6 +190,8 @@ class DashboardPageNav {
                 displayName = this.t('dashboard.libraryView', 'Bookmarks').toLowerCase();
             } else if (d.activeView === 'tags') {
                 displayName = this.t('dashboard.tagViewPageTitle', 'Tags').toLowerCase();
+            } else if (d.activeView === 'glances') {
+                displayName = this.t('dashboard.glancesView', 'Glances').toLowerCase();
             } else {
                 const defaultTitle = d.language.t('dashboard.defaultPageTitle');
                 displayName = pageName || (defaultTitle !== 'dashboard.defaultPageTitle' ? defaultTitle : '');
@@ -230,7 +232,8 @@ class DashboardPageNav {
             ? this.inboxPageLabel()
             : (d.activeView === 'config' ? this.configPageLabel()
                 : (d.activeView === 'docker' ? this.t('dashboard.dockerView', 'Containers')
-                    : (d.activeView === 'library' ? this.t('dashboard.libraryView', 'Bookmarks') : '')));
+                    : (d.activeView === 'library' ? this.t('dashboard.libraryView', 'Bookmarks')
+                        : (d.activeView === 'glances' ? this.t('dashboard.glancesView', 'Glances') : ''))));
         if (viewName) {
             if (d.settings?.enableCustomTitle) {
                 const base = (d.settings.customTitle || '').trim();
@@ -294,6 +297,14 @@ class DashboardPageNav {
         // again here -- without it, navigating to a folded-away page left the
         // strip showing the first few and no sign of where you actually were.
         this.fitPageTabs();
+
+        const glancesLink = document.getElementById('page-nav-glances-link');
+        if (glancesLink) {
+            const glancesSelected = d.activeView === 'glances';
+            glancesLink.classList.toggle('active', glancesSelected);
+            if (glancesSelected) glancesLink.setAttribute('aria-current', 'page');
+            else glancesLink.removeAttribute('aria-current');
+        }
 
         const inboxBtn = document.getElementById('page-nav-inbox-btn');
         if (inboxBtn) {
@@ -869,6 +880,10 @@ class DashboardPageNav {
         if (inboxHost) {
             inboxHost.innerHTML = '';
         }
+        const glancesHost = document.getElementById('page-nav-glances-host');
+        if (glancesHost) {
+            glancesHost.innerHTML = '';
+        }
 
         container.innerHTML = '';
         container.setAttribute('role', 'tablist');
@@ -927,6 +942,33 @@ class DashboardPageNav {
             });
             container.appendChild(pageBtn);
         });
+
+        // Glances: an icon in the main navigation, before Config, once Config →
+        // Glances has it on. The sampler's verdict is a dot on its corner.
+        if (glancesHost && d.glancesStatus?.configured) {
+            const glancesName = this.t('dashboard.glancesTab', 'Glances');
+            const link = document.createElement('a');
+            link.href = '/#glances';
+            link.id = 'page-nav-glances-link';
+            link.className = 'glances-link-anchor';
+            link.setAttribute('aria-label', glancesName);
+            link.setAttribute('aria-keyshortcuts', 'Shift+G');
+            link.title = `${glancesName} (Shift+G)`;
+            if (d.activeView === 'glances') {
+                link.classList.add('active');
+                link.setAttribute('aria-current', 'page');
+            }
+            // A pulse line: the thing a monitor shows. Drawn like the other header icons.
+            link.innerHTML = `
+                <svg class="glances-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                <span class="glances-link-dot" data-level="${d.escapeHtml(String(d.glancesStatus.level || 'unknown'))}" aria-hidden="true"></span>`;
+            link.addEventListener('click', (e) => {
+                if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                e.preventDefault();
+                void d.glancesStatus?.openGlancesPage?.();
+            });
+            glancesHost.appendChild(link);
+        }
 
         if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
             const inboxBtn = document.createElement('button');
@@ -1463,7 +1505,9 @@ class DashboardPageNav {
     _startPageTabRename(btn, page, index) {
         const d = this.dash;
         if (!this.allowsPageTabInlineEdit()) return;
-        if (btn.querySelector('.page-tab-popover')) return;
+        // The popover lives on <body>, not inside the tab, so one is open when
+        // any is: a second start would leave the first behind with its handlers.
+        if (btn.querySelector('.page-tab-popover') || document.querySelector('.page-tab-popover')) return;
 
         const PAGE_COLORS = [
             null,

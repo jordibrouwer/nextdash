@@ -214,6 +214,8 @@ class Modal {
         this.focusTrapHandler = (e) => {
             if (this.modal && this.modal.classList.contains('show')) {
                 if (e.key === 'Escape') {
+                    // Escape that cancels an IME composition is not a close request.
+                    if (e.isComposing || e.keyCode === 229) return;
                     e.preventDefault();
                     e.stopPropagation();
                     this.hide();
@@ -388,7 +390,8 @@ class Modal {
         this._setBackgroundInert();
         
         // Store the element that triggered the modal so we can return focus
-        this.previouslyFocusedElement = document.activeElement;
+        // (show() over an already-open modal must not overwrite it with an element inside)
+        if (!this.modal.contains(document.activeElement)) this.previouslyFocusedElement = document.activeElement;
         
         // Prevent body scroll. Reusing the existing token when the overlay is
         // already open matters: show() over an open modal shares this one
@@ -498,7 +501,10 @@ class Modal {
         this._onHideCallback = null;
         this.hide();
         try {
-            handler();
+            const out = typeof handler === 'function' ? handler() : undefined;
+            if (out && typeof out.then === 'function') {
+                out.catch((error) => console.error('Modal handler failed', error));
+            }
         } finally {
             if (typeof onHideCallback === 'function') onHideCallback({ reason });
         }

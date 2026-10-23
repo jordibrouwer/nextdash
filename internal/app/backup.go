@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -175,8 +176,13 @@ var dataFiles = map[string]dataFilePolicy{
 	"notify-held.json": dataKeep,
 	"notify-open.json": dataKeep,
 	// Which images are held, and which update was skipped.
-	"docker-updates.json": dataKeep,
-	"status-page.json":    dataKeep,
+	// Glances: the settings travel with a restore; the recorded history and the
+	// incident log are of this install and take a month to earn back.
+	"glances.json":           dataReplace,
+	"glances-history.json":   dataKeep,
+	"glances-incidents.json": dataKeep,
+	"docker-updates.json":    dataKeep,
+	"status-page.json":       dataKeep,
 
 	/*
 	 * Credentials, at the owner's explicit instruction.
@@ -193,6 +199,7 @@ var dataFiles = map[string]dataFilePolicy{
 	"docker-secrets.json":     dataSecret,
 	"web-search-secrets.json": dataSecret,
 	"unraid-secrets.json":     dataSecret,
+	"glances-secrets.json":    dataSecret,
 
 	"preview-cache.json":    dataCache,
 	"health-cache.json":     dataCache,
@@ -208,8 +215,15 @@ var dataFiles = map[string]dataFilePolicy{
 	"server.log":                 dataNever,
 }
 
+// glancesHostFileRe is the record of a Glances host other than the first
+// (glances_host.go): of this install, like the first one's.
+var glancesHostFileRe = regexp.MustCompile(`^glances-(history|incidents)-[a-z0-9-]+\.json$`)
+
 func dataFilePolicyOf(relPath string) (dataFilePolicy, bool) {
 	policy, ok := dataFiles[relPath]
+	if !ok && glancesHostFileRe.MatchString(relPath) {
+		return dataKeep, true
+	}
 	return policy, ok
 }
 
@@ -751,6 +765,15 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 	}
 
 	before := h.store.GetSettings()
+	// Deferred so the early returns below run it too: a commit that failed
+	// halfway has still replaced some files, and the caches derived from them
+	// (health report, runtime settings, Unraid answers) would otherwise keep
+	// describing the old data. Each step is a harmless reset when nothing changed.
+	defer func() {
+		h.invalidateHealthReportCache()
+		applyRuntimeSettings(h.store.GetSettings())
+		h.forgetUnraidAfterRestore(before, preparedHasRelPath(prepared, "unraid-secrets.json"))
+	}()
 	// Under the store lock, so no bookmark write lands between the files.
 	if err := h.store.ReplaceDataFiles(func() error { return commitPreparedImport(dataDir, prepared) }); err != nil {
 		return 0, &importError{msg: fmt.Sprintf("commit failed: %v", err), code: http.StatusInternalServerError}
@@ -769,9 +792,6 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 		}
 	}
 
-	h.invalidateHealthReportCache()
-	applyRuntimeSettings(h.store.GetSettings())
-	h.forgetUnraidAfterRestore(before, preparedHasRelPath(prepared, "unraid-secrets.json"))
 	return skippedBookmarks, nil
 }
 
@@ -1021,14 +1041,9 @@ func (h *Handlers) importFromZipUpload(w http.ResponseWriter, r *http.Request, d
 		http.Error(w, "Failed to open file", http.StatusInternalServerError)
 		return
 	}
-	data, err := io.ReadAll(f)
-	closeErr := f.Close()
-	if err != nil || closeErr != nil {
-		http.Error(w, "Failed to read file", http.StatusInternalServerError)
-		return
-	}
+	defer f.Close()
 
-	staged, err := h.stagedFilesFromZip(data)
+	staged, err := h.stagedFilesFromZipReader(f, fh.Size)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

@@ -318,7 +318,10 @@ func (h *Handlers) RSSWidgetHandler(w http.ResponseWriter, r *http.Request) {
 	merged := make([]RSSItem, 0, rssMaxItems)
 	lastError := ""
 	for _, url := range urls {
-		items, errText := h.rssFeed(r.Context(), url, forced)
+		// Not cancelled with the request: a reader leaving mid-loop failed every
+		// remaining feed, and each failure was cached for minutes.
+		// rssFetchTimeout still bounds it.
+		items, errText := h.rssFeed(context.WithoutCancel(r.Context()), url, forced)
 		if errText != "" {
 			lastError = errText
 			continue

@@ -40,6 +40,7 @@ const (
 	noticeSourceContainer = "container"
 	noticeSourceUnraid    = "unraid"
 	noticeSourceBackup    = "backup"
+	noticeSourceGlances   = "glances"
 
 	// quietHeldMax bounds the file. Past it the oldest entry for a name is
 	// dropped, which loses a repeat and never the last word on a name.
@@ -162,7 +163,7 @@ func quietAllowSet(s Settings) map[string]bool {
 // what it raises.
 func noticeKinds(n monitorNotification) []string {
 	var kinds []string
-	if n.Event == "cert-expiring" && n.DaysLeft <= 0 {
+	if (n.Event == "cert-expiring" || n.Event == "domain-expiring") && n.DaysLeft <= 0 {
 		kinds = append(kinds, quietKindCertExpired)
 	}
 	if n.Source == noticeSourceBackup && n.Event == "backup-failed" {
@@ -272,7 +273,13 @@ func noticeKey(source string, n monitorNotification) string {
 			return source + ":" + key
 		}
 	}
-	return source + ":" + strings.TrimSpace(n.Name)
+	key := source + ":" + strings.TrimSpace(n.Name)
+	// A container can have two problems at once (unhealthy and over its CPU
+	// line): each is its own alert, or one "up" would end the other's reminders.
+	if source == noticeSourceContainer && n.Kind != "" {
+		key += "#" + n.Kind
+	}
+	return key
 }
 
 // quietGate decides what of a round's notices goes out now. The rest is held
@@ -332,6 +339,8 @@ func sinkFlags(source string, s Settings) (push, webhook bool) {
 		push = s.PushNotifyEnabled && s.PushNotifyContainers
 	case noticeSourceUnraid:
 		push = s.PushNotifyEnabled
+	case noticeSourceGlances:
+		push = s.PushNotifyEnabled && s.PushNotifyGlances
 	case noticeSourceBackup:
 		push = s.PushNotifyEnabled && s.PushNotifyBackup
 	}
@@ -593,6 +602,8 @@ func (h *Handlers) pushNoticeDirect(ctx context.Context, source string, n monito
 		msg.Tag, msg.URL = "nextdash-container-"+n.Name, "/#docker"
 	case noticeSourceUnraid:
 		msg.Tag, msg.URL = unraidPushTag(n), "/#docker"
+	case noticeSourceGlances:
+		msg.Tag, msg.URL = glancesPushTag(n), glancesPushURL(n)
 	case noticeSourceBackup:
 		msg.Tag, msg.URL = "nextdash-backup", "/config"
 	}

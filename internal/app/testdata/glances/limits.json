@@ -1,0 +1,171 @@
+{
+  "alert": {
+    "history_size": 28800.0
+  },
+  "amps": {
+    "history_size": 28800.0
+  },
+  "cloud": {
+    "history_size": 28800.0
+  },
+  "connections": {
+    "history_size": 28800.0
+  },
+  "containers": {
+    "history_size": 28800.0
+  },
+  "core": {
+    "history_size": 28800.0
+  },
+  "cpu": {
+    "history_size": 28800.0,
+    "cpu_user_careful": 50.0,
+    "cpu_user_warning": 70.0,
+    "cpu_user_critical": 90.0,
+    "cpu_system_careful": 50.0,
+    "cpu_system_warning": 70.0,
+    "cpu_system_critical": 90.0,
+    "cpu_steal_careful": 50.0,
+    "cpu_steal_warning": 70.0,
+    "cpu_steal_critical": 90.0,
+    "cpu_iowait_careful": 50.0,
+    "cpu_iowait_warning": 70.0,
+    "cpu_iowait_critical": 90.0,
+    "cpu_ctx_switches_careful": 40000.0,
+    "cpu_ctx_switches_warning": 45000.0,
+    "cpu_ctx_switches_critical": 50000.0
+  },
+  "diskio": {
+    "history_size": 28800.0
+  },
+  "folders": {
+    "history_size": 28800.0
+  },
+  "fs": {
+    "history_size": 28800.0,
+    "fs_careful": 50.0,
+    "fs_warning": 70.0,
+    "fs_critical": 90.0
+  },
+  "gpu": {
+    "history_size": 28800.0
+  },
+  "help": {
+    "history_size": 28800.0
+  },
+  "ip": {
+    "history_size": 28800.0
+  },
+  "irq": {
+    "history_size": 28800.0
+  },
+  "load": {
+    "history_size": 28800.0,
+    "load_careful": 0.7,
+    "load_warning": 1.0,
+    "load_critical": 5.0
+  },
+  "mem": {
+    "history_size": 28800.0,
+    "mem_careful": 50.0,
+    "mem_warning": 70.0,
+    "mem_critical": 90.0
+  },
+  "memswap": {
+    "history_size": 28800.0,
+    "memswap_careful": 50.0,
+    "memswap_warning": 70.0,
+    "memswap_critical": 90.0
+  },
+  "mpp": {
+    "history_size": 28800.0
+  },
+  "network": {
+    "history_size": 28800.0,
+    "network_rx_careful": 50.0,
+    "network_rx_warning": 70.0,
+    "network_rx_critical": 90.0,
+    "network_tx_careful": 50.0,
+    "network_tx_warning": 70.0,
+    "network_tx_critical": 90.0
+  },
+  "now": {
+    "history_size": 28800.0
+  },
+  "npu": {
+    "history_size": 28800.0
+  },
+  "percpu": {
+    "history_size": 28800.0,
+    "percpu_user_careful": 50.0,
+    "percpu_user_warning": 70.0,
+    "percpu_user_critical": 90.0,
+    "percpu_system_careful": 50.0,
+    "percpu_system_warning": 70.0,
+    "percpu_system_critical": 90.0
+  },
+  "ports": {
+    "history_size": 28800.0
+  },
+  "processcount": {
+    "history_size": 28800.0
+  },
+  "processlist": {
+    "history_size": 28800.0,
+    "processlist_cpu_careful": 50.0,
+    "processlist_cpu_warning": 70.0,
+    "processlist_cpu_critical": 90.0,
+    "processlist_mem_careful": 50.0,
+    "processlist_mem_warning": 70.0,
+    "processlist_mem_critical": 90.0
+  },
+  "programlist": {
+    "history_size": 28800.0
+  },
+  "psutilversion": {
+    "history_size": 28800.0
+  },
+  "quicklook": {
+    "history_size": 28800.0,
+    "quicklook_cpu_careful": 50.0,
+    "quicklook_cpu_warning": 70.0,
+    "quicklook_cpu_critical": 90.0,
+    "quicklook_mem_careful": 50.0,
+    "quicklook_mem_warning": 70.0,
+    "quicklook_mem_critical": 90.0,
+    "quicklook_swap_careful": 50.0,
+    "quicklook_swap_warning": 70.0,
+    "quicklook_swap_critical": 90.0
+  },
+  "raid": {
+    "history_size": 28800.0
+  },
+  "sensors": {
+    "history_size": 28800.0,
+    "sensors_temperature_hdd_careful": 45.0,
+    "sensors_temperature_hdd_warning": 52.0,
+    "sensors_temperature_hdd_critical": 60.0,
+    "sensors_battery_careful": 70.0,
+    "sensors_battery_warning": 80.0,
+    "sensors_battery_critical": 90.0
+  },
+  "smart": {
+    "history_size": 28800.0
+  },
+  "system": {
+    "history_size": 28800.0,
+    "system_refresh": 60
+  },
+  "uptime": {
+    "history_size": 28800.0
+  },
+  "version": {
+    "history_size": 28800.0
+  },
+  "vms": {
+    "history_size": 28800.0
+  },
+  "wifi": {
+    "history_size": 28800.0
+  }
+}

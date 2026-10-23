@@ -1,0 +1,19 @@
+{
+  "net_connections_enabled": true,
+  "nf_conntrack_enabled": true,
+  "LISTEN": 1,
+  "ESTABLISHED": 1,
+  "SYN_SENT": 0,
+  "SYN_RECV": 0,
+  "initiated": 0,
+  "FIN_WAIT1": 0,
+  "FIN_WAIT2": 0,
+  "TIME_WAIT": 0,
+  "CLOSE": 0,
+  "CLOSE_WAIT": 0,
+  "LAST_ACK": 0,
+  "terminated": 0,
+  "nf_conntrack_count": 0.0,
+  "nf_conntrack_max": 262144.0,
+  "nf_conntrack_percent": 0.0
+}

@@ -41,6 +41,9 @@ const (
 	// bookmarks on one domain are one line, because expiry is a property of the
 	// host and not of any one bookmark.
 	WidgetTypeCerts WidgetType = "certs"
+	// WidgetTypeDomains is the same list for the registrations behind the hosts:
+	// which domain names run out, by registrable domain.
+	WidgetTypeDomains WidgetType = "domains"
 	// WidgetTypeTrend draws broken links over time. One number cannot say
 	// whether things are getting better; the line can.
 	WidgetTypeTrend WidgetType = "trend"
@@ -159,6 +162,9 @@ const (
 	WidgetTypeBeszelSystem    WidgetType = "beszel-system"
 	WidgetTypeBeszelAttention WidgetType = "beszel-attention"
 	WidgetTypeBeszelStorage   WidgetType = "beszel-storage"
+	// WidgetTypeGlances is one Glances host from nextDash's own record of it:
+	// meters or the processor's last hour, opening the Glances page.
+	WidgetTypeGlances WidgetType = "glances"
 	// WidgetTypeHomeAssistant shows chosen entities per room and switches a
 	// safe few of them.
 	WidgetTypeHomeAssistant WidgetType = "homeassistant"
@@ -186,6 +192,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeHealth:          {},
 	WidgetTypeUptime:          {},
 	WidgetTypeCerts:           {},
+	WidgetTypeDomains:         {},
 	WidgetTypeTrend:           {},
 	WidgetTypeInbox:           {},
 	WidgetTypeUnsorted:        {},
@@ -223,6 +230,7 @@ var knownWidgetTypes = map[WidgetType]struct{}{
 	WidgetTypeBeszelSystem:    {},
 	WidgetTypeBeszelAttention: {},
 	WidgetTypeBeszelStorage:   {},
+	WidgetTypeGlances:         {},
 
 	WidgetTypeUnraid:              {},
 	WidgetTypeUnraidArray:         {},

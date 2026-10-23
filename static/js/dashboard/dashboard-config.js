@@ -63,6 +63,7 @@ class DashboardConfig {
         'widgets',
         'containers',
         'unraid',
+        'glances',
         'monitoring',
         'status-page',
         'stats',
@@ -95,6 +96,11 @@ class DashboardConfig {
             file: 'js/dashboard/dashboard-config-unraid.js',
             datasetKey: 'dashboardConfigUnraid',
             ready: () => window.DashboardConfigUnraidReady === true,
+        },
+        glances: {
+            file: 'js/dashboard/dashboard-config-glances.js',
+            datasetKey: 'dashboardConfigGlances',
+            ready: () => window.DashboardConfigGlancesReady === true,
         },
         'status-page': {
             file: 'js/dashboard/dashboard-config-status-page.js',
@@ -201,7 +207,13 @@ class DashboardConfig {
      * be worth a second look. Cleared when the release is no longer recent,
      * for the same reason as the twinkle above.
      */
-    static NEW_SECTIONS = ['widgets', 'monitoring', 'status-page'];
+    static NEW_SECTIONS = ['widgets', 'status-page', 'glances'];
+
+    /** The sections that open a named group in the rail. */
+    static NAV_GROUP_LABELS = {
+        containers: { key: 'config.navGroupServices', text: 'Services' },
+        stats: { key: 'config.navGroupInfo', text: 'Info' },
+    };
 
     static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
 
@@ -278,6 +290,8 @@ class DashboardConfig {
         this._statusPageTab = DashboardConfig.readRememberedTab('status-page') || 'all';
         // Unraid sub-tab, remembered the same way.
         this._unraidTab = DashboardConfig.readRememberedTab('unraid') || 'connection';
+        // Glances sub-tab, remembered the same way.
+        this._glancesTab = DashboardConfig.readRememberedTab('glances') || 'connection';
         /**
          * Whether a settings tab is filtered to what differs from the default.
          * Not persisted: it is a way of looking at the page for a minute, not a
@@ -601,6 +615,7 @@ class DashboardConfig {
             containers: DashboardConfig.CONTAINERS_TABS,
             'status-page': DashboardConfig.STATUS_PAGE_TABS,
             unraid: DashboardConfig.UNRAID_TABS,
+            glances: DashboardConfig.GLANCES_TABS,
         };
     }
 
@@ -636,7 +651,7 @@ class DashboardConfig {
      */
     static REMEMBERED_TAB_KEY = 'nextdash:config-tab-v1';
 
-    static REMEMBERED_TAB_SECTIONS = ['appearance', 'behavior', 'monitoring', 'inbox', 'containers', 'status-page', 'unraid'];
+    static REMEMBERED_TAB_SECTIONS = ['appearance', 'behavior', 'monitoring', 'inbox', 'containers', 'status-page', 'unraid', 'glances'];
 
     static readRememberedTab(section) {
         try {
@@ -708,6 +723,7 @@ class DashboardConfig {
         containers: 'containersTab',
         'status-page': 'statusPageTab',
         unraid: 'unraidTab',
+        glances: 'glancesTab',
     };
 
     /**
@@ -731,6 +747,7 @@ class DashboardConfig {
         'data-containers-tab': 'containers',
         'data-sp-tab': 'status-page',
         'data-unraid-tab': 'unraid',
+        'data-glances-tab': 'glances',
     };
 
     /** data-* attribute on each section's sub-tab strip buttons. */
@@ -1924,7 +1941,7 @@ class DashboardConfig {
     }
 
     /**
-     * Page tabs (1–9) and Inbox (0) work from config too — same as on the
+     * Page tabs (1–9) and page 0 (Glances) work from config too — same as on the
      * bookmark grid — so you can leave without Esc first. These remember where
      * you were, the same as every other way out.
      */
@@ -1934,17 +1951,6 @@ class DashboardConfig {
         if (d.keyboardNavigation?.isGChordActive?.()) return false;
 
         const key = e.key;
-        if (key === '0') {
-            if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                this.saveLastConfigLocation();
-                void d.inbox.openInboxView();
-                return true;
-            }
-            return false;
-        }
-
         if (key >= '1' && key <= '9') {
             const pageIndex = parseInt(key, 10) - 1;
             if (pageIndex >= d.pages.length) return false;
@@ -2205,6 +2211,7 @@ class DashboardConfig {
             widgets: ['config.sectionWidgets', 'Widgets'],
             containers: ['config.sectionContainers', 'Containers'],
             unraid: ['config.sectionUnraid', 'Unraid'],
+            glances: ['config.sectionGlances', 'Glances'],
             'status-page': ['config.sectionStatusPage', 'Status page'],
             stats: ['config.sectionStats', 'Statistics'],
             help: ['config.sectionHelp', 'Help'],
@@ -2254,6 +2261,7 @@ class DashboardConfig {
             case 'containers': return this.containersTabLabel?.(tab) || tab;
             case 'status-page': return this.statusPageTabLabel?.(tab) || tab;
             case 'unraid': return this.unraidTabLabel?.(tab) || tab;
+            case 'glances': return this.glancesTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -2326,6 +2334,10 @@ class DashboardConfig {
         const containersTour = this.section === 'containers'
             ? `<button type="button" class="lvs-action" data-containers-tour title="${this.dash.escapeHtml(this.t('config.containersTourHint', 'A tour of the Containers view'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
             : '';
+        // Glances the same: its tour, a click away from the settings that feed it.
+        const glancesTour = this.section === 'glances'
+            ? `<button type="button" class="lvs-action" data-glances-config-tour title="${this.dash.escapeHtml(this.t('config.glancesTourHint', 'A tour of the Glances page'))}">${this.dash.escapeHtml(this.t('dashboard.inboxTour', 'Tour'))}</button>`
+            : '';
         // Bookmarks and Inbox each have a view of their own: the way to it
         // is the same place in both, at the band's right edge, not a button
         // drawn into the body of one tab.
@@ -2338,7 +2350,7 @@ class DashboardConfig {
             ? this.renderChangedFilterBar(context.section, context.tab)
             : (this.section === 'bookmarks'
                 ? `${healthButton}<span class="config-bm-header-badge">${this.dash.escapeHtml(String(this.configBookmarkPool().length))}</span>`
-                : '')) + viewLink + widgetsTour + containersTour;
+                : '')) + viewLink + widgetsTour + containersTour + glancesTour;
         if (actions && actions.innerHTML.trim() !== markup.trim()) {
             actions.innerHTML = markup;
         }
@@ -2364,6 +2376,7 @@ class DashboardConfig {
                     }
                 } else if (e.target.closest('[data-widgets-tour]')) void this.openWidgetsTour?.();
                 else if (e.target.closest('[data-containers-tour]')) void this.playViewTour('containersTutorialV3');
+                else if (e.target.closest('[data-glances-config-tour]')) void this.playViewTour('glancesTutorialV1');
                 else if (e.target.closest('[data-bm-open-health-modal]')) this.openBmHealthModal?.();
                 else if (e.target.closest('[data-bm-open-structure]')) this.openStructureModal?.('pages');
                 else this.handleLibraryHeaderClick?.(e);
@@ -2585,6 +2598,8 @@ class DashboardConfig {
             this.bindContainersSection(container);
         } else if (this.section === 'unraid') {
             void this.bindUnraidSection?.(container);
+        } else if (this.section === 'glances') {
+            void this.bindGlancesSection?.(container);
         } else if (this.section === 'status-page') {
             void this.bindStatusPageSection?.(container);
         } else if (this.section === 'inbox') {
@@ -3654,6 +3669,13 @@ class DashboardConfig {
         { tab: 'containers', titleKey: 'config.helpContainersDiscoveryTitle', fallback: 'Apps nextDash finds on its own' },
         { tab: 'containers', titleKey: 'config.helpContainersTitle', fallback: 'The Containers view' },
         { tab: 'containers', titleKey: 'config.helpContainersConfigTitle', fallback: 'Setting it up' },
+        { tab: 'glances', titleKey: 'config.helpGlancesSetupTitle', fallback: 'Before it works: a Glances 4 host' },
+        { tab: 'glances', titleKey: 'config.helpGlancesTitle', fallback: 'The Glances page' },
+        { tab: 'glances', titleKey: 'config.helpGlancesRecordTitle', fallback: 'What nextDash records' },
+        { tab: 'glances', titleKey: 'config.helpGlancesHostsTitle', fallback: 'Several hosts' },
+        { tab: 'glances', titleKey: 'config.helpGlancesContainersTitle', fallback: 'Glances and the Containers view' },
+        { tab: 'glances', titleKey: 'config.helpGlancesNoticesTitle', fallback: 'Notices and commands' },
+        { tab: 'glances', titleKey: 'config.helpGlancesMoreTitle', fallback: 'Compare, forecast and the widget' },
         { tab: 'search', titleKey: 'config.helpSearchTitle', fallback: 'Searching your bookmarks' },
         { tab: 'search', titleKey: 'config.helpFindersTitle', fallback: 'Finders' },
         { tab: 'search', titleKey: 'config.helpCommandsTitle', fallback: 'Commands' },
@@ -3709,6 +3731,7 @@ class DashboardConfig {
             case 'containers': return this.containersTabLabel?.(tab) || tab;
             case 'status-page': return this.statusPageTabLabel?.(tab) || tab;
             case 'unraid': return this.unraidTabLabel?.(tab) || tab;
+            case 'glances': return this.glancesTabLabel?.(tab) || tab;
             default: return tab;
         }
     }
@@ -3787,6 +3810,7 @@ class DashboardConfig {
         pushNotifyEnabled: ['push', 'notification', 'alert', 'browser'],
         pushNotifyMonitor: ['push', 'notification', 'downtime', 'uptime'],
         pushNotifyBackup: ['push', 'notification', 'backup'],
+        pushNotifyGlances: ['push', 'notification', 'glances', 'host', 'incident'],
         pushNotifyContainers: ['push', 'notification', 'docker', 'containers', 'crash', 'unhealthy'],
         pushNotifySubject: ['push', 'vapid', 'contact', 'email'],
         healthAutoRecheckEnabled: ['uptime', 'monitor', 'health', 'background', 'server'],
@@ -3837,6 +3861,8 @@ class DashboardConfig {
         language: ['language', 'locale', 'translation', 'nederlands', 'deutsch', 'français'],
         deviceSpecificSettings: ['device', 'sync', 'local'],
         detectSoftNotFound: ['404', 'not found', 'rot', 'gone', 'dead'],
+        domainExpiry: ['domain', 'expiry', 'registration', 'rdap', 'whois', 'renew'],
+        domainWarnDays: ['domain', 'expiry', 'warn', 'renew'],
         pasteDestination: ['paste', 'clipboard', 'inbox'],
         pasteUrlQuickAdd: ['paste', 'clipboard', 'quick add'],
         columnsPerRow: ['columns', 'grid', 'layout'],
@@ -4427,7 +4453,14 @@ class DashboardConfig {
             // section's name for readers, keys and searches.
             const newBadge = DashboardConfig.NEW_SECTIONS.includes(section)
                 ? ` data-config-new="${esc(this.t('config.sectionNewBadge', 'new'))}"` : '';
-            return `
+            // A label above the first row of each group the rail turns at.
+            // aria-hidden: the tablist admits tabs only, and the rows already
+            // carry their own names.
+            const groupLabel = DashboardConfig.NAV_GROUP_LABELS[section];
+            const groupHead = groupLabel
+                ? `<span class="config-nav-group-label" aria-hidden="true">${esc(this.t(groupLabel.key, groupLabel.text))}</span>`
+                : '';
+            return `${groupHead}
                 <button type="button" class="config-nav-item${active ? ' is-active' : ''}${isNew ? ' config-nav-item--animated' : ''}"
                         role="tab" aria-selected="${active ? 'true' : 'false'}"
                         tabindex="${active ? '0' : '-1'}"
@@ -4452,12 +4485,6 @@ class DashboardConfig {
                 -->
                 <div class="config-nav-column">
                 <div class="lvs-group">
-                    <span class="lvs-group-title" id="config-nav-heading">${esc(this.t('config.sectionsNavAria', 'Config sections'))}</span>
-                    <nav class="config-nav lvs-group-list" role="tablist" aria-labelledby="config-nav-heading">
-                        ${nav}
-                    </nav>
-                </div>
-                <div class="lvs-group">
                     <button type="button" class="config-nav-item config-nav-search"
                             data-config-action="settings-jump"
                             data-config-setting-promo-anchor="settingsJump"
@@ -4467,6 +4494,12 @@ class DashboardConfig {
                         ${esc(searchLabel)}
                         <span class="config-nav-search-shortcut">${esc(searchShortcut)}</span>
                     </button>
+                </div>
+                <div class="lvs-group">
+                    <span class="lvs-group-title" id="config-nav-heading">${esc(this.t('config.sectionsNavAria', 'Config sections'))}</span>
+                    <nav class="config-nav lvs-group-list" role="tablist" aria-labelledby="config-nav-heading">
+                        ${nav}
+                    </nav>
                 </div>
                 </div>
                 <!--
@@ -4562,6 +4595,9 @@ class DashboardConfig {
         }
         if (this.section === 'unraid') {
             return this.renderUnraidSection();
+        }
+        if (this.section === 'glances') {
+            return this.renderGlancesSection();
         }
         if (this.section === 'status-page') {
             return this.renderStatusPageSection();
@@ -4928,7 +4964,12 @@ class DashboardConfig {
             tone: bad ? 'crit' : (n('contentCount') ? 'warn' : (checked ? 'good' : '')),
             go: { view: 'health' },
             body,
-            note: esc(this.t('config.overviewHealthMonitored', '{n} monitored').replace('{n}', String(n('monitoredCount')))),
+            // "Checked" is what the ring counts; "monitored" is the separate,
+            // continuous watch. Printed alone, "0 monitored" under a 100% ring
+            // read as the ring contradicting itself.
+            note: esc(this.t('config.overviewHealthChecked', '{checked} checked · {n} monitored')
+                .replace('{checked}', String(checked))
+                .replace('{n}', String(n('monitoredCount')))),
             alert: bad
                 ? esc(this.t('config.overviewHealthNotAnswering', '{n} not answering').replace('{n}', String(bad)))
                 : '',
@@ -5764,6 +5805,11 @@ class DashboardConfig {
         } catch {
             return;
         }
+        // A button that plays a tour, as Help's Glances topic has.
+        if (target.tour) {
+            void this.playViewTour(target.tour);
+            return;
+        }
         if (target.section) {
             if (target.bmPageFilter != null) {
                 this.bmPageFilter = String(target.bmPageFilter);
@@ -5931,7 +5977,8 @@ class DashboardConfig {
         nav.dataset.navBound = 'true';
         const buttons = [...container.querySelectorAll('[data-config-section]')];
         const searchBtn = container.querySelector('[data-config-action="settings-jump"]');
-        const focusables = searchBtn ? [...buttons, searchBtn] : buttons;
+        // Document order: the search button sits above the list.
+        const focusables = searchBtn ? [searchBtn, ...buttons] : buttons;
 
         const moveFocus = (fromEl, key) => {
             const idx = focusables.indexOf(fromEl);
@@ -6528,6 +6575,8 @@ class DashboardConfig {
             'health.up': this.t('config.webhookEventHealthUp', 'A monitored bookmark comes back'),
             'health.cert-expiring': this.t('config.webhookEventHealthCertExpiring',
                 'A TLS certificate is about to expire'),
+            'health.domain-expiring': this.t('config.webhookEventHealthDomainExpiring',
+                'A domain registration is about to expire'),
         };
         const boxes = (this._webhookEvents || Object.keys(labels)).map((name) => `
             <label class="config-check">
@@ -11870,7 +11919,7 @@ class DashboardConfig {
         const storedGone = this.dash.settings?.theme === id;
         const wasActive = storedGone || shownBefore === id;
         if (storedGone) {
-            this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'look-confetti-dark';
+            this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'look-berry-dark';
         }
         if (storedGone || rowsLeft) void this.saveSettingsWithFeedback();
         this.repaintAppearanceBody();
@@ -13275,6 +13324,8 @@ class DashboardConfig {
         rememberScrollPosition: { info: ['rememberScrollPositionInfoTitle', 'rememberScrollPositionInfoMessage'], def: true },
         detectSoftNotFound: { info: ['detectSoftNotFoundInfoTitle', 'detectSoftNotFoundInfoMessage'], def: true },
         certWarnDays: { info: ['certWarnDaysInfoTitle', 'certWarnDaysInfoMessage'], def: 0 },
+        domainExpiry: { info: ['domainExpiryInfoTitle', 'domainExpiryInfoMessage'], def: true },
+        domainWarnDays: { info: ['domainWarnDaysInfoTitle', 'domainWarnDaysInfoMessage'], def: 0 },
         includeFindersInSearch: { info: ['includeFindersInSearchInfoTitle', 'includeFindersInSearchInfoMessage'], def: true },
         searchUnsorted: { info: ['searchUnsortedInfoTitle', 'searchUnsortedInfoMessage'], def: true },
         webSearchEngine: { info: ['webSearchEngineInfoTitle', 'webSearchEngineInfoMessage'], def: 'off' },
@@ -13380,7 +13431,7 @@ class DashboardConfig {
         bookmarkArchiveUrl: { info: ['bookmarkArchiveUrlInfoTitle', 'bookmarkArchiveUrlInfoMessage'], def: 'https://web.archive.org/web/*/{url}' },
         pasteDestination: { hint: 'pasteDestinationHint', def: 'ask' },
         monitorEmphasis: { hint: 'monitorEmphasisHint', def: 'problems' },
-        theme: { def: 'look-confetti-dark' },
+        theme: { def: 'look-berry-dark' },
         // Appearance → Theme: the three Surfaces answers and the two Backdrop
         // ones. Without a `def` renderFieldAffordances draws no ↺ at all, which
         // is why these five were the only controls on the page without one.
@@ -13449,6 +13500,7 @@ class DashboardConfig {
         pushNotifyMonitor: { hint: 'pushNotifyMonitorHint', def: false },
         pushNotifyBackup: { hint: 'pushNotifyBackupHint', def: false },
         pushNotifyContainers: { def: false },
+        pushNotifyGlances: { def: false },
         pushNotifySubject: { hint: 'pushNotifySubjectHint', def: '' },
         // Toolbar & chrome
         showRecentButton: { info: ['showRecentButtonInfoTitle', 'showRecentButtonInfoMessage'], def: true },
@@ -15014,6 +15066,15 @@ class DashboardConfig {
                         opt(60, t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', '60')),
                         opt(90, t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', '90')),
                     ] },
+                    // A registration, not a certificate: looked up through the registries'
+                    // public RDAP service, so it is a switch and says what it sends.
+                    bool('domainExpiry', 'config.domainExpiryLabel', 'Look up when my domains expire'),
+                    { field: 'domainWarnDays', type: 'select', label: t('config.domainWarnDaysLabel', 'Warn about domains'), numeric: true, options: [
+                        opt(0, t('config.domainWarnDaysDefault', 'Default (60 days ahead)')),
+                        opt(30, t('config.domainWarnDaysAhead', '{n} days ahead').replace('{n}', '30')),
+                        opt(90, t('config.domainWarnDaysAhead', '{n} days ahead').replace('{n}', '90')),
+                        opt(120, t('config.domainWarnDaysAhead', '{n} days ahead').replace('{n}', '120')),
+                    ] },
                 ],
             },
             {
@@ -15078,6 +15139,7 @@ class DashboardConfig {
                     bool('pushNotifyMonitor', 'config.pushNotifyMonitorLabel', 'Notify on downtime and recovery'),
                     bool('pushNotifyBackup', 'config.pushNotifyBackupLabel', 'Notify on automatic backups'),
                     bool('pushNotifyContainers', 'config.pushNotifyContainersLabel', 'Notify when a container stops, keeps restarting or turns unhealthy'),
+                    bool('pushNotifyGlances', 'config.pushNotifyGlancesLabel', 'Notify when a Glances host has an incident (kinds are chosen in Config → Glances)'),
                     { field: 'pushNotifySubject', type: 'text', label: t('config.pushNotifySubjectLabel', 'Contact address for push services') },
                     { type: 'pushDevice' },
                 ],
@@ -17190,7 +17252,7 @@ class DashboardConfig {
     renderMonitoring() {
         const esc = (v) => this.dash.escapeHtml(v);
         return `
-            <p class="config-view-intro">${esc(this.t('config.monitoringIntro', 'How bookmarks are checked, how you hear when one goes down, and when to keep quiet. Every change applies immediately and is saved.'))}</p>
+            <p class="config-view-intro">${esc(this.t('config.monitoringIntro', 'How bookmarks are checked and how you hear when one goes down.'))}</p>
             ${this.renderSectionTabStrip('monitoring')}
             <div class="config-tabpage">
                 <div class="config-tabpage-main">
@@ -17256,7 +17318,7 @@ class DashboardConfig {
                 <span class="config-changed-count">${esc(label)}</span>
                 <input type="search" class="config-text config-settings-filter"
                        data-settings-filter="${esc(section)}"
-                       placeholder="${esc(this.t('config.settingsFilterPlaceholder', 'Filter settings…'))}"
+                       placeholder="${esc(this.t('config.settingsFilterPlaceholder', 'Filter this tab…'))}"
                        aria-label="${esc(this.t('config.settingsFilterLabel', 'Filter the settings on this tab'))}"
                        value="${esc(this.settingsFilter || '')}">
             </div>`;
@@ -17562,7 +17624,7 @@ class DashboardConfig {
             : window.DiscoverabilityState?.hasSeenTip?.(id) === true);
 
         // The view tours play on request, so their buttons never wait.
-        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'widgetsTutorialV1']);
+        const onRequest = new Set(['inboxTutorialV3', 'bookmarksTutorialV1', 'containersTutorialV3', 'glancesTutorialV1', 'widgetsTutorialV1']);
         const buttons = DashboardConfig.GUIDED_TOURS.map((tour) => {
             const replayable = onRequest.has(tour.id) || seen(tour.id);
             const label = esc(this.t(tour.labelKey, tour.label));
@@ -17766,6 +17828,11 @@ class DashboardConfig {
                 this.closeConfigView();
                 if ((await d.docker?.openDockerView?.()) === false) return true;
                 await d.docker?.instance?.openTour?.();
+                return true;
+            case 'glancesTutorialV1':
+                this.closeConfigView();
+                if ((await d.glances?.openGlancesView?.({})) === false) return true;
+                await d.glances?.instance?.openTour?.();
                 return true;
             case 'widgetsTutorialV1':
                 await this.openConfigView('widgets');
@@ -18019,6 +18086,13 @@ class DashboardConfig {
         DashboardConfig.rememberTab('status-page', tab);
     }
 
+    get glancesTab() { return this._glancesTab; }
+
+    set glancesTab(tab) {
+        this._glancesTab = tab;
+        DashboardConfig.rememberTab('glances', tab);
+    }
+
     get unraidTab() { return this._unraidTab; }
 
     set unraidTab(tab) {
@@ -18122,6 +18196,7 @@ class DashboardConfig {
             'bookmarks': ['config.helpNoteBookmarks', 'The Bookmarks view: the rail, the list, the side panel, and Collection health.'],
             'widgets': ['config.helpNoteWidgets', 'The blocks that hold something other than bookmarks, and what each one shows.'],
             'containers': ['config.helpNoteContainers', 'The Containers view: its connection, how often it refreshes, and what it leaves out.'],
+            'glances': ['config.helpNoteGlances', 'The Glances page: live figures and a record of your own machines, and what to set up first.'],
             'search': ['config.helpNoteSearch', 'Reaching anything from the keyboard: search, shortcuts, and the command line.'],
             'health': ['config.helpNoteHealth', 'How nextDash checks that your links still answer, and what to do with the ones that do not.'],
             'monitoring': ['config.helpNoteMonitoring', 'Watching a service rather than a link, and being told when it stops responding.'],
@@ -18743,10 +18818,10 @@ class DashboardConfig {
      * is the way to build a tile nobody has written.
      */
     static WIDGET_TYPE_GROUPS = [
-        ['links', ['health', 'uptime', 'certs', 'trend']],
+        ['links', ['health', 'uptime', 'certs', 'domains', 'trend']],
         ['incoming', ['inbox', 'unsorted', 'feeds', 'sources']],
         ['upkeep', ['neglected', 'unchecked', 'duplicates', 'archive', 'trash', 'backups']],
-        ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage']],
+        ['system', ['cpu', 'memory', 'disks', 'docker', 'containers', 'glances', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage']],
         ['unraid', ['unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications']],
         ['ambient', ['weather', 'calendar', 'rss', 'notes']],
         ['media', ['jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant']],
@@ -18766,12 +18841,15 @@ class DashboardConfig {
     }
 
     renderPtTab() {
+        // The sub-tab strip names the tab for sighted readers; this names the
+        // panel for a heading list, which the editors below do not carry.
+        const heading = `<h3 class="sr-only">${this.dash.escapeHtml(this.ptTabLabel(this.ptTab))}</h3>`;
         switch (this.ptTab) {
-            case 'finders': return this.renderFinders();
-            case 'collections': return this.renderCollections();
-            case 'pages': return this.renderPagesEditor();
-            case 'categories': return this.renderCategoriesEditor();
-            case 'widgets': return this.renderWidgetsEditor?.() || '';
+            case 'finders': return heading + this.renderFinders();
+            case 'collections': return heading + this.renderCollections();
+            case 'pages': return heading + this.renderPagesEditor();
+            case 'categories': return heading + this.renderCategoriesEditor();
+            case 'widgets': return heading + (this.renderWidgetsEditor?.() || '');
             default: return '';
         }
     }
@@ -18840,7 +18918,7 @@ class DashboardConfig {
         return `
             <div class="config-crud-toolbar">
                 <input type="search" class="config-text" data-pt-search="${esc(o.tab)}"
-                       placeholder="${esc(o.placeholder)}" value="${esc(query)}">
+                       placeholder="${esc(o.placeholder)}" aria-label="${esc(o.placeholder)}" value="${esc(query)}">
                 <select class="config-select" data-pt-sort="${esc(o.tab)}"
                         aria-label="${esc(this.t('config.sortLabel', 'Sort'))}">${sortOptions}</select>
                 ${o.extra || ''}
@@ -20902,6 +20980,9 @@ class DashboardConfig {
     /** The Unraid section's sub-tabs; 'all' shows every card at once. */
     static UNRAID_TABS = ['connection', 'how'];
 
+    /** Config → Glances: where it is, how the page looks, what is recorded, the notices, the rest. */
+    static GLANCES_TABS = ['connection', 'page', 'recording', 'notices', 'advanced'];
+
     // Repeated from widgets-tutorial.js, which is checked before the script is
     // fetched at all. Both must agree.
     static WIDGETS_TUTORIAL_TIP_ID = 'widgetsTutorialV1';
@@ -20933,14 +21014,16 @@ class DashboardConfig {
           whereKey: 'config.tourWhereBookmarks', where: 'the next time you open the Bookmarks view' },
         { id: 'containersTutorialV3', labelKey: 'config.tourContainers', label: 'Containers',
           whereKey: 'config.tourWhereContainers', where: 'the next time you open the Containers view' },
+        { id: 'glancesTutorialV1', labelKey: 'config.tourGlances', label: 'Glances',
+          whereKey: 'config.tourWhereGlances', where: 'the next time you open the Glances page' },
         { id: 'widgetsTutorialV1', labelKey: 'config.tourWidgets', label: 'Widgets',
           whereKey: 'config.tourWhereWidgets', where: 'the next time you open Config → Widgets' },
     ];
 
     /** The types a reader may add. Mirrors the server's register. */
-    static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
+    static WIDGET_TYPES = ['health', 'uptime', 'certs', 'domains', 'trend', 'inbox', 'unsorted', 'feeds', 'sources',
         'neglected', 'archive', 'unchecked', 'duplicates', 'trash', 'backups',
-        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'custom',
+        'cpu', 'memory', 'disks', 'docker', 'containers', 'weather', 'calendar', 'rss', 'notes', 'jellyfin', 'jellyfin-playing', 'emby', 'emby-playing', 'plex', 'plex-playing', 'sonarr', 'radarr', 'seerr', 'qbittorrent', 'sabnzbd', 'homeassistant', 'beszel', 'beszel-system', 'beszel-attention', 'beszel-storage', 'glances', 'custom',
         'unraid', 'unraidArray', 'unraidParity', 'unraidShares', 'unraidVms', 'unraidUps', 'unraidNotifications'];
 
     /** Sonarr's and Radarr's settings, mirroring arrWidgetFields in widgets_config.go. */
@@ -21249,6 +21332,12 @@ class DashboardConfig {
             { key: 'withinDays', kind: 'int', min: 1, max: 730,
               label: ['config.widgetWithinDays', 'Expiring within (days)'] },
             { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+            { key: 'showDomains', kind: 'bool', label: ['config.widgetCertsShowDomains', 'Also list domains that expire in this window'] },
+        ],
+        domains: [
+            { key: 'withinDays', kind: 'int', min: 1, max: 730,
+              label: ['config.widgetWithinDays', 'Expiring within (days)'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
         trend: [
             { key: 'days', kind: 'int', min: 7, max: 90, label: ['config.widgetTrendDays', 'Days to plot'] },
@@ -21474,6 +21563,23 @@ class DashboardConfig {
                   ['unraid', ['config.widgetUnraidClickUnraid', 'Opens the page in Unraid']],
                   ['none', ['config.widgetUnraidClickNone', 'Does nothing']],
               ] },
+        ],
+        // One host from the Glances page, as meters or as the processor's last hour.
+        glances: [
+            { key: 'host', kind: 'choice',
+              label: ['config.widgetGlancesHost', 'Host'],
+              options: (config) => [
+                  ['', ['config.widgetGlancesFirstHost', 'The first host']],
+                  ...((config.dash.glancesStatus?.hosts || []).map((h) => [h.id, [`config.widgetGlancesHost.${h.id}`, h.name]])),
+              ] },
+            { key: 'style', kind: 'choice',
+              label: ['config.widgetGlancesStyle', 'Look'],
+              options: [
+                  ['meters', ['config.widgetGlancesStyleMeters', 'Three meters']],
+                  ['graph', ['config.widgetGlancesStyleGraph', 'Processor graph']],
+              ] },
+            { key: 'refreshSeconds', kind: 'int', min: 15, max: 3600,
+              label: ['config.widgetRefreshSeconds', 'Refresh every (seconds)'] },
         ],
         unraidUps: [
             { key: 'refreshSeconds', kind: 'int', min: 30, max: 3600,
@@ -21782,7 +21888,7 @@ class DashboardConfig {
                 return `
                 <li class="config-crud-row" data-cat-row="${i}" data-cat-page="${esc(g.key)}" data-cat-id="${esc(c.id)}">
                     <div class="config-crud-fields">
-                        <input type="text" class="config-text" data-cat="name" data-index="${i}" value="${esc(c.name || '')}">
+                        <input type="text" class="config-text" data-cat="name" data-index="${i}" aria-label="${esc(this.t('config.categoryNameLabel', 'Category name'))}" value="${esc(c.name || '')}">
                         <span class="structure-num">${esc(String(n))}</span>
                         ${bad ? `<span class="structure-num structure-num--bad">${esc(String(bad))}</span>` : '<span class="structure-num">–</span>'}
                     </div>
@@ -22552,7 +22658,7 @@ class DashboardConfig {
             `;
         }
         return `
-            <p class="config-view-intro">${esc(this.t('config.bookmarksSettingsIntro', 'How the Bookmarks view looks, your tags and the rules around them. The list itself is the Bookmarks view.'))}</p>
+            <p class="config-view-intro">${esc(this.t('config.bookmarksSettingsIntro', 'How the Bookmarks view looks, your tags and their rules.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
             ${this.renderSectionTabNote('bookmarks', this.bmTab)}
             <div id="config-bm-body" role="tabpanel" tabindex="0">${this.renderBmTab()}</div>
@@ -24270,7 +24376,7 @@ class DashboardConfig {
     static HEALTH_STATES = ['healthy', 'broken', 'down', 'unchecked'];
 
     /** The Health filters, with the Health module's meaning (matchesFilter). */
-    static HEALTH_FILTERS = ['broken', 'content', 'duplicate', 'stale', 'unused', 'unchecked', 'monitored', 'certificates', 'healthy'];
+    static HEALTH_FILTERS = ['broken', 'content', 'duplicate', 'stale', 'unused', 'unchecked', 'monitored', 'certificates', 'domains', 'healthy'];
 
     /**
      * Every health filter the list can be narrowed by: the rail's nine, and the
@@ -28813,7 +28919,7 @@ class DashboardConfig {
      * rendered nowhere in this config, while the Start tab showed eleven of
      * them under "Everyday keys" and the prose promised the rest were here.
      */
-    static HELP_TABS = ['start', 'tips', 'config', 'search', 'appearance', 'organizing', 'bookmarks', 'widgets', 'containers', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs'];
+    static HELP_TABS = ['start', 'tips', 'config', 'search', 'appearance', 'organizing', 'bookmarks', 'widgets', 'containers', 'glances', 'health', 'monitoring', 'inbox', 'stats', 'data', 'logs'];
 
     /*
      * Fifteen tabs on one scrolling line hid most of them past the edge, and
@@ -28823,7 +28929,7 @@ class DashboardConfig {
     static HELP_TAB_GROUPS = [
         { key: 'basics', label: ['config.helpGroupBasics', 'Basics'], tabs: ['start', 'tips', 'config', 'search'] },
         { key: 'dashboard', label: ['config.helpGroupDashboard', 'Dashboard'], tabs: ['appearance', 'organizing', 'bookmarks', 'widgets'] },
-        { key: 'status', label: ['config.helpGroupStatus', 'Status & checks'], tabs: ['containers', 'health', 'monitoring'] },
+        { key: 'status', label: ['config.helpGroupStatus', 'Status & checks'], tabs: ['containers', 'glances', 'health', 'monitoring'] },
         { key: 'data', label: ['config.helpGroupData', 'Data'], tabs: ['inbox', 'stats', 'data', 'logs'] },
     ];
 
@@ -28841,6 +28947,7 @@ class DashboardConfig {
             bookmarks: ['config.helpTabBookmarks', 'Bookmarks view'],
             widgets: ['config.helpTabWidgets', 'Widgets'],
             containers: ['config.helpTabContainers', 'Containers'],
+            glances: ['config.helpTabGlances', 'Glances'],
             search: ['config.helpTabSearch', 'Search & keyboard'],
             tips: ['config.helpTabTips', 'Tips'],
             // Health kept its checks and its walkthrough; the list it used to
@@ -29032,6 +29139,7 @@ class DashboardConfig {
             case 'bookmarks': return this.renderHelpBookmarks();
             case 'widgets': return this.renderHelpWidgets();
             case 'containers': return this.renderHelpContainers();
+            case 'glances': return this.renderHelpGlances();
             case 'search': return this.renderHelpSearch();
             case 'tips': return this.renderHelpTipsTab();
             case 'health': return this.renderHelpHealth();
@@ -30101,6 +30209,24 @@ class DashboardConfig {
             'config.helpContainersBody', '')
             + this.helpPanel('config.helpContainersConfigTitle', 'Setting it up',
                 'config.helpContainersConfigBody', '');
+    }
+
+    /** Glances: a page for machines you run, read from a Glances 4 host and kept in a record of its own. */
+    renderHelpGlances() {
+        const open = `<div class="config-actions">
+            <button type="button" class="config-btn" data-overview-go='{"section":"glances"}'>${
+    this.dash.escapeHtml(this.t('config.helpGlancesOpen', 'Open Config → Glances'))}</button>
+            <button type="button" class="config-btn" data-overview-go='{"tour":"glancesTutorialV1"}'>${
+    this.dash.escapeHtml(this.t('config.helpGlancesTour', 'Play the Glances tour'))}</button>
+        </div>`;
+        return this.helpPanel('config.helpGlancesSetupTitle', 'Before it works: a Glances 4 host',
+            'config.helpGlancesSetupBody', '', open)
+            + this.helpPanel('config.helpGlancesTitle', 'The Glances page', 'config.helpGlancesBody', '')
+            + this.helpPanel('config.helpGlancesRecordTitle', 'What nextDash records', 'config.helpGlancesRecordBody', '')
+            + this.helpPanel('config.helpGlancesHostsTitle', 'Several hosts', 'config.helpGlancesHostsBody', '')
+            + this.helpPanel('config.helpGlancesContainersTitle', 'Glances and the Containers view', 'config.helpGlancesContainersBody', '')
+            + this.helpPanel('config.helpGlancesNoticesTitle', 'Notices and commands', 'config.helpGlancesNoticesBody', '')
+            + this.helpPanel('config.helpGlancesMoreTitle', 'Compare, forecast and the widget', 'config.helpGlancesMoreBody', '');
     }
 
     renderHelpSearch() {
@@ -31226,4 +31352,8 @@ class DashboardConfig {
     }
 }
 
+// Glances is not part of the demo: the section is not there to open or to jump to.
+if (document.querySelector('meta[name="nextdash-demo"]')) {
+    DashboardConfig.SECTIONS = DashboardConfig.SECTIONS.filter((section) => section !== 'glances');
+}
 window.DashboardConfig = DashboardConfig;

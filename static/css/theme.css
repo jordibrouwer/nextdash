@@ -156,5 +156,4 @@ a:focus-visible,
 body.no-animations * {
     animation: none !important;
     transition: none !important;
-    transform: none !important;
 }
