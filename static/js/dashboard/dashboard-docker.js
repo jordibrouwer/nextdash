@@ -1103,6 +1103,21 @@ class DashboardDocker {
 
     render() {
         if (!this.shell) return;
+        /*
+         * A poll redraws the list under a reader who may be scrolled far down,
+         * and the redraw must leave them there. Building the body before it is
+         * swapped in (below) is enough for Chromium; WebKit still lost the
+         * place whenever the list was swapped while the rail's figures above it
+         * had just changed, and moved the scroll to the top. So the place is
+         * read before and put back after, in the same task: nothing is painted
+         * in between, so nothing moves on screen.
+         */
+        const y = window.scrollY;
+        this._draw();
+        if (Math.abs(window.scrollY - y) > 1) window.scrollTo({ top: y, behavior: 'instant' });
+    }
+
+    _draw() {
         this.shell.setActive(this.filter);
         this.shell.setSummary?.(this.shellSummary());
         this.shell.setCounts({
@@ -1119,21 +1134,28 @@ class DashboardDocker {
         // go with it rather than outliving the row.
         this._renderAfterPortsPop = false;
         this._portsPopClose?.();
-        // Scrolled down, a poll's redraw threw the reader back to the top.
-        this.shell.holdHeight?.();
-        body.replaceChildren();
         this.syncTabs();
         if (this.tabsEl) this.tabsEl.hidden = !this.status?.socket;
+        /*
+         * The new body is built first and put in place in one go. Emptied
+         * first and built after, the list stood empty while the rows were made
+         * -- and a row's icon asks the theme whether it is dark, which laid the
+         * page out without the list: shorter than where the reader had
+         * scrolled, so every poll threw a scrolled reader back to the top.
+         */
+        const parts = [];
         if (!this.status?.socket) {
-            body.appendChild(this.buildSetupCard());
+            parts.push(this.buildSetupCard());
+            body.replaceChildren(...parts);
             return;
         }
         // Disk: the same element each time, so a poll's render keeps its scroll
         // and what it has measured.
         this.shell.toolbar.hidden = this.tab === 'disk';
         if (this.tab === 'disk' && this.disk) {
-            if (this.status.control === false) body.appendChild(this.buildReadOnlyLine());
-            body.appendChild(this.disk.element());
+            if (this.status.control === false) parts.push(this.buildReadOnlyLine());
+            parts.push(this.disk.element());
+            body.replaceChildren(...parts);
             return;
         }
         // Config → Containers: the key legend above the list (where it always
@@ -1143,14 +1165,15 @@ class DashboardDocker {
         // One bar when both notes apply: two stacked cost the list a row and a
         // half before it said anything about a container.
         const readOnly = this.status.control === false;
-        if (this.showsHostHint()) body.appendChild(this.buildHostHint({ readOnly }));
-        else if (readOnly) body.appendChild(this.buildReadOnlyLine());
-        if (legend && legendAt !== 'below') body.appendChild(legend);
-        body.appendChild(this.buildTable());
+        if (this.showsHostHint()) parts.push(this.buildHostHint({ readOnly }));
+        else if (readOnly) parts.push(this.buildReadOnlyLine());
+        if (legend && legendAt !== 'below') parts.push(legend);
+        parts.push(this.buildTable());
         if (legend && legendAt === 'below') {
             legend.classList.add('is-below');
-            body.appendChild(legend);
+            parts.push(legend);
         }
+        body.replaceChildren(...parts);
     }
 
     /** The row keys, as <kbd> chips; the keys stay untranslated, the labels do not. */
