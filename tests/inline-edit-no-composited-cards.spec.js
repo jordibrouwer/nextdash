@@ -30,6 +30,8 @@ async function dashboard(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate(() => {
+        // The glass depth step is the subject here, drawn by the classic surface.
+        [document.documentElement, document.body].forEach((el) => el.setAttribute('data-material-style', 'classic'));
         const d = window.dashboardInstance;
         d.settings.themeDepth = 'glass';
         d.settings.layoutPreset = 'cards';
@@ -72,5 +74,23 @@ test.describe('an open inline form', () => {
         await page.evaluate(() => document.body.classList.remove('bookmark-inline-edit-active'));
 
         expect(await blurred(page), 'the dashboard lost its glass for good').toBeGreaterThan(0);
+    });
+
+    test('a signature glass card stops blurring while a form is open, and blurs again after', async ({ page }) => {
+        await dashboard(page);
+        // The signature of the glass material blurs on its own, whatever the depth.
+        await page.evaluate(() => {
+            [document.documentElement, document.body].forEach((el) => {
+                el.setAttribute('data-material-style', 'signature');
+                el.setAttribute('data-material', 'glass');
+            });
+        });
+        expect(await blurred(page), 'the signature of glass drew no blur').toBeGreaterThan(0);
+
+        await page.evaluate(() => document.body.classList.add('bookmark-inline-edit-active'));
+        expect(await blurred(page), 'a signature card still composites over the form').toBe(0);
+
+        await page.evaluate(() => document.body.classList.remove('bookmark-inline-edit-active'));
+        expect(await blurred(page)).toBeGreaterThan(0);
     });
 });

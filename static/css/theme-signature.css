@@ -1,0 +1,195 @@
+/* Signatuur — elk materiaal een eigen constructie.
+
+   Een materiaal was een rij getallen (theme_archetype.go): iets meer of minder
+   doorzichtig, iets ronder, iets wazig. Daarom leken glas, berijpt glas en
+   aurora op dezelfde ruit in drie kleuren. Signatuur tekent elk materiaal met
+   een eigen opbouw van vlak, rand en schaduw.
+
+   Twee attributen op <body> (en <html>) sturen het:
+
+     data-material        het materiaal van het theme: lacquer, glass, frost,
+                          aurora, neon, velvet, enamel, brushed, carbon, paper,
+                          terminal of ink. Leeg bij een theme zonder materiaal.
+     data-material-style  signature of classic (Settings.MaterialStyle). Een
+                          nieuwe installatie begint op signature, een bestaande
+                          blijft op classic; zonder dit attribuut op signature
+                          verandert er niets.
+
+   Alleen de categorie wordt hier getekend, op dezelfde plek als
+   category-surface.css en met dezelfde uitzonderingen: open tekent geen vlak,
+   en de terminal- en launcher-layouts houden hun eigen ontwerp. De regels zijn
+   specifieker dan die van category-surface.css, dus ze winnen zonder !important.
+
+   De rand van de categorie is een inset-schaduw en geen border: een border
+   schuift de binnenkolommen van het raster (zie category-surface.css). */
+
+/* Lak: een diepe, volle kleur met één lichtband bovenin en een binnenrand die het licht vangt. Geen blur: lak is ondoorzichtig. */
+html[data-theme] body[data-material-style="signature"][data-material="lacquer"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: calc(12px * var(--theme-radius-applied, 1));
+    background-color: color-mix(in srgb, var(--accent-primary) 10%, var(--surface-2, var(--background-secondary)));
+    background-image:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 42%),
+        linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 16%, transparent), transparent 55%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.32),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 16%, transparent),
+        0 10px 20px -8px rgba(0, 0, 0, 0.7);
+}
+
+/* Glas: je kijkt erdoorheen. Weinig dekking, veel blur en een dubbele rand, licht binnen en donker buiten. */
+html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: calc(20px * var(--theme-radius-applied, 1));
+    background-color: color-mix(in srgb, var(--surface-2, var(--background-secondary)) 42%, transparent);
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 45%);
+    backdrop-filter: blur(18px) saturate(1.5) brightness(1.04);
+    -webkit-backdrop-filter: blur(18px) saturate(1.5) brightness(1.04);
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.26),
+        0 0 0 1px rgba(0, 0, 0, 0.35),
+        0 14px 30px -12px rgba(0, 0, 0, 0.6);
+}
+
+/* Berijpt glas: het blurt maar is niet meer helder. Mat, met een fijne korrel en een koele haarlijn, zonder gloed. */
+html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: calc(14px * var(--theme-radius-applied, 1));
+    background-color: color-mix(in srgb, color-mix(in srgb, var(--surface-2, var(--background-secondary)) 88%, #bcd8f0) 60%, transparent);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+    backdrop-filter: blur(24px) saturate(1.1);
+    -webkit-backdrop-filter: blur(24px) saturate(1.1);
+    box-shadow:
+        inset 0 0 0 1px rgba(190, 225, 255, 0.22),
+        0 10px 24px -14px rgba(0, 0, 0, 0.5);
+}
+
+/* Aurora: het vlak is bijna onzichtbaar en de rand draagt het. Een verloopstreep bovenin in twee accentkleuren. */
+html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: calc(18px * var(--theme-radius-applied, 1));
+    background-color: color-mix(in srgb, var(--surface-2, var(--background-secondary)) 30%, transparent);
+    background-image: linear-gradient(90deg, var(--accent-primary), var(--accent-error, var(--accent-primary)));
+    background-size: 100% 2px;
+    background-repeat: no-repeat;
+    background-position: 0 0;
+    backdrop-filter: blur(10px) saturate(1.3);
+    -webkit-backdrop-filter: blur(10px) saturate(1.3);
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 38%, transparent),
+        0 0 28px -10px color-mix(in srgb, var(--accent-primary) 55%, transparent);
+}
+
+/* Neon: een donker vlak met een lijn van 1px in het accent en een halo eromheen. Het licht komt van het vlak zelf. */
+html[data-theme] body[data-material-style="signature"][data-material="neon"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: calc(8px * var(--theme-radius-applied, 1));
+    background-color: color-mix(in srgb, var(--background-primary) 94%, transparent);
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow:
+        inset 0 0 0 1px var(--accent-primary),
+        0 0 0 1px color-mix(in srgb, var(--accent-primary) 25%, transparent),
+        0 0 22px color-mix(in srgb, var(--accent-primary) 45%, transparent),
+        inset 0 0 16px color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+/* Fluweel: geen rand, alleen zachte schaduwen naar binnen, een grote radius en een suède korrel. */
+html[data-theme] body[data-material-style="signature"][data-material="velvet"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: calc(26px * var(--theme-radius-applied, 1));
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='1.4' numOctaves='1'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='90' height='90' filter='url(%23n)'/%3E%3C/svg%3E");
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow:
+        inset 0 3px 18px rgba(0, 0, 0, 0.5),
+        0 10px 26px rgba(0, 0, 0, 0.45);
+}
+
+/* Email: een dikke rand in het accent, een bolle highlight en een harde onderrand, als een sticker. */
+html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: calc(24px * var(--theme-radius-applied, 1));
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image:
+        radial-gradient(60% 40% at 18% 0%, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0) 70%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow:
+        inset 0 0 0 3px var(--accent-primary),
+        0 4px 0 color-mix(in srgb, var(--accent-primary) 55%, #000);
+}
+
+/* Geborsteld metaal: horizontale microlijnen en een rand die boven licht en onder donker is. */
+html[data-theme] body[data-material-style="signature"][data-material="brushed"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: calc(8px * var(--theme-radius-applied, 1));
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image:
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 3px),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.12));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.7),
+        0 8px 16px -8px rgba(0, 0, 0, 0.7);
+}
+
+/* Koolstof: een weefsel in twee richtingen, afgeschuinde hoeken en een accentstreep links. */
+html[data-theme] body[data-material-style="signature"][data-material="carbon"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: 0;
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image:
+        linear-gradient(var(--accent-primary), var(--accent-primary)),
+        repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 4px),
+        repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.3) 0 2px, transparent 2px 4px);
+    background-size: 3px 100%, auto, auto;
+    background-repeat: no-repeat, repeat, repeat;
+    background-position: 0 0, 0 0, 0 0;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+    box-shadow: none;
+}
+
+/* Papier: ondoorzichtig, met een harde offset-schaduw als drukwerk en een vezelkorrel. */
+html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: calc(2px * var(--theme-radius-applied, 1));
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.04 0.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.32 0 0 0 0 0.2 0 0 0 0.4 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 70%, transparent),
+        5px 5px 0 color-mix(in srgb, var(--text-primary) 38%, transparent);
+}
+
+/* Terminal: radius 0, een rand van 1px in het accent, geen schaduw en geen gloed. */
+html[data-theme] body[data-material-style="signature"][data-material="terminal"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: 0;
+    background-color: var(--surface-2, var(--background-secondary));
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 70%, transparent);
+}
+
+/* Inkt: geen vlak, alleen een haarlijn boven en onder, zoals een krant. Geen schaduw en geen blur. */
+html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+    border-radius: 0;
+    background-color: transparent;
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow:
+        inset 0 1px 0 var(--text-primary),
+        inset 0 -1px 0 color-mix(in srgb, var(--text-primary) 55%, transparent);
+}
+
+/* Geen blur zonder transparantie: wie dat vraagt krijgt een massief vlak. */
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+    html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+    html[data-theme] body[data-material-style="signature"][data-material="aurora"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
+        background-color: var(--surface-2, var(--background-secondary));
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}

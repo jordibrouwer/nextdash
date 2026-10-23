@@ -16,6 +16,9 @@ async function openDashboard(page) {
     await page.waitForSelector('.dashboard-grid .category .bookmark-link', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // These measure the surface the stylesheets draw on their own. A material's
+    // signature is another drawing, tested where it is chosen.
+    await page.evaluate(() => [document.documentElement, document.body].forEach((el) => el.setAttribute('data-material-style', 'classic')));
 }
 
 /** The pane a category draws: its background alpha and its backdrop-filter. */

@@ -25,6 +25,9 @@ async function dashboard(page) {
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // These measure the surface the stylesheets draw on their own. A material's
+    // signature is another drawing, tested where it is chosen.
+    await page.evaluate(() => [document.documentElement, document.body].forEach((el) => el.setAttribute('data-material-style', 'classic')));
 }
 
 /** A raised card's ground and the blur behind it, at a given depth. */
