@@ -77,6 +77,13 @@ test('the filters live in the rail and still answer to their data attributes', a
     const railFilters = page.locator('.lvs-rail [data-inbox-filter]');
     await expect(railFilters).not.toHaveCount(0);
 
+    // Unread is only offered while it differs from All (every link unread: two
+    // rows with the same number), so one link has to have been read first.
+    await page.evaluate(async () => {
+        const inbox = window.dashboardInstance.inbox;
+        await inbox.markRead(inbox.items[0].id);
+        inbox.render();
+    });
     // The old selectors still resolve — this is the contract the other specs rely on.
     await page.locator('[data-inbox-filter="unread"]').click();
     await expect(page.locator('.lvs-rail [data-inbox-filter="unread"]')).toHaveClass(/is-active/);
@@ -298,12 +305,11 @@ test('below 720px the rail is a strip and the summary folds into the header', as
     expect(narrow.summaryInRail, 'the summary is still in the strip').toBe(false);
     expect(narrow.railDirection).toBe('row');
     expect(narrow.listDirection, 'the filters are still stacked inside the strip').toBe('row');
-    expect(narrow.listOverflowX, 'the strip does not scroll sideways').toBe('auto');
-    expect(narrow.filterTops.length, 'the filters are on more than one line').toBe(1);
-    // 81px was the height of the broken strip: a horizontal scroller with a
-    // column of filters and the summary block still inside it.
-    expect(narrow.railHeight, 'the strip is more than one row tall').toBeLessThan(60);
-    // The strip scrolls, never the page.
+    // The inbox's chips wrap instead of scrolling off the edge (the last one was
+    // cut mid-word with nothing to say it could be scrolled to), so the strip
+    // may take more than one line: what must hold is that nothing scrolls.
+    expect(narrow.listOverflowX, 'the chips are clipped or scrolled instead of wrapping').toBe('visible');
+    // Nothing pushes the page sideways.
     expect(narrow.pageScrollWidth).toBeLessThanOrEqual(narrow.viewport);
 
     // And on a phone, which arrives narrow rather than being resized into it:

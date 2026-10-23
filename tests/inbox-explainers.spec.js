@@ -68,6 +68,13 @@ test.describe('inbox view explanations', () => {
     test('All has no note, as in Health; a narrowed filter has one', async ({ page }) => {
         await openInbox(page);
         await seed(page, 2);
+        // Unread is only offered while it differs from All (every link unread: two
+        // rows with the same number), so one link has to have been read first.
+        await page.evaluate(async () => {
+            const inbox = window.dashboardInstance.inbox;
+            await inbox.markRead(inbox.items[0].id);
+            inbox.render();
+        });
 
         await expect(page.locator('.inbox-filter-note')).toHaveCount(0);
         await page.locator('[data-inbox-filter="unread"]').click();
@@ -77,6 +84,13 @@ test.describe('inbox view explanations', () => {
     test('the note changes with the filter', async ({ page }) => {
         await openInbox(page);
         await seed(page, 2);
+        // Unread is only offered while it differs from All (every link unread: two
+        // rows with the same number), so one link has to have been read first.
+        await page.evaluate(async () => {
+            const inbox = window.dashboardInstance.inbox;
+            await inbox.markRead(inbox.items[0].id);
+            inbox.render();
+        });
 
         const note = page.locator('.inbox-filter-note');
         await page.locator('[data-inbox-filter="unread"]').click();

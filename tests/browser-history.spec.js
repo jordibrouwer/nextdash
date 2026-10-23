@@ -26,6 +26,29 @@ async function openDashboard(page) {
     await page.evaluate(() => { window.dashboardInstance.settings.inboxEnabled = true; });
 }
 
+/**
+ * Unread is only offered in the rail while it differs from All, so a filter
+ * test needs one link read and one not.
+ */
+async function seedReadAndUnread(page) {
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const stamp = Date.now();
+        for (const title of ['History read', 'History unread']) {
+            await api('/api/inbox', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: `https://history-${title.split(' ')[1]}-${stamp}.example.com`, title }),
+            });
+        }
+        const inbox = window.dashboardInstance.inbox;
+        await inbox.loadAndRender({ refresh: true });
+        const read = inbox.items.find((item) => item.title === 'History read');
+        await inbox.markRead(read.id);
+        inbox.render();
+    });
+}
+
 test('the history module pushes once and suppresses pushes while restoring', async ({ page }) => {
     await openDashboard(page);
 
@@ -85,6 +108,7 @@ test('a filter click is not a history step', async ({ page }) => {
     await openDashboard(page);
     await page.locator('#page-nav-inbox-btn').click();
     await expect(page.locator('.inbox-layout')).toBeVisible();
+    await seedReadAndUnread(page);
 
     const before = await page.evaluate(() => history.length);
     await page.locator('[data-inbox-filter="unread"]').click();
@@ -142,6 +166,7 @@ test('Back walks views, not the filters set inside them', async ({ page }) => {
 
     await page.locator('#page-nav-inbox-btn').click();
     await expect(page.locator('.inbox-layout')).toBeVisible();
+    await seedReadAndUnread(page);
     for (const f of ['unread', 'all', 'unread']) {
         await page.locator(`[data-inbox-filter="${f}"]`).click();
         await expect(page.locator(`[data-inbox-filter="${f}"]`)).toHaveClass(/is-active/);

@@ -1,6 +1,7 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays,
+    markInboxTutorialSeen } = require('./e2e-helpers');
 
 /**
  * Keep: a link leaves the queue and waits in Bookmarks → Unsorted.
@@ -22,6 +23,7 @@ async function bootstrap(page, { kept = KEPT, settings = {} } = {}) {
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    await markInboxTutorialSeen(page);
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
 
     await page.evaluate(async ({ rows, patch }) => {
@@ -233,7 +235,7 @@ test('Escape from the queue returns to the dashboard page last on screen', async
 
     await page.evaluate(() => window.dashboardInstance.inbox.openInboxView());
     await expect(page.locator('.inbox-layout')).toBeVisible();
-    await page.locator('.inbox-layout .lvs-title').click();
+    await page.locator('.inbox-layout .lvs-description').click();
     await page.keyboard.press('Escape');
 
     await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView)).toBe('bookmarks');
@@ -256,7 +258,7 @@ test('Escape on the queue clears its ticks before it leaves', async ({ page }) =
     await page.locator('.inbox-item-check-input').first().check();
     await expect(page.locator('.inbox-selection-bar')).toBeVisible();
 
-    await page.locator('.inbox-layout .lvs-title').click();
+    await page.locator('.inbox-layout .lvs-description').click();
     await page.keyboard.press('Escape');
     await expect(page.locator('.inbox-selection-bar')).toHaveCount(0);
     expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('inbox');

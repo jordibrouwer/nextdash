@@ -28,12 +28,28 @@ test.describe('inbox summary tiles and added date', () => {
             });
         }, seedUrl);
 
+        // A second link, read, so Unread differs from All and keeps its row in the rail.
+        await page.evaluate(async () => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            await api('/api/inbox', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: `https://tiles-read-${Date.now()}.example.com`, title: 'Tiles read seed' }),
+            });
+        });
+
         await page.locator('#page-nav-inbox-btn').click();
         await expect(page.locator('.inbox-layout')).toBeVisible();
         // The view may have rendered before the seed POST landed; reload rather
         // than waiting on a render that has already happened.
         await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
         await page.waitForSelector('.inbox-item', { timeout: 15_000 });
+        await page.evaluate(async () => {
+            const inbox = window.dashboardInstance.inbox;
+            const read = inbox.items.find((item) => item.title === 'Tiles read seed');
+            await inbox.markRead(read.id);
+            inbox.render();
+        });
 
         // Three merged tile rows in the rail — All, Unread, Snoozed — plus
         // "This week" as a summary readout with no filter behind it. The tile
