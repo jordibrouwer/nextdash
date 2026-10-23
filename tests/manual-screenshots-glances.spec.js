@@ -62,10 +62,10 @@ async function openGlances(page, section = 'overview') {
     await openDashboard(page);
     await page.locator('#page-nav-glances-link').click();
     await page.locator('#dashboard-layout.glances-layout [data-glances-body]').waitFor();
-    if (section !== 'overview') await page.locator(`[data-glances-section="${section}"]`).click();
     // The tour is offered once on a first visit; settle closes it with Escape, as a reader would.
     await page.waitForTimeout(1_500);
     await settle(page);
+    if (section !== 'overview') await page.locator(`[data-glances-section="${section}"]`).click();
     await page.waitForTimeout(800);
 }
 
@@ -105,6 +105,17 @@ test('15a glances insights', async ({ page }) => {
     await openGlances(page, 'insights');
     await page.waitForTimeout(800);
     await frame(page, '15a-glances-insights.jpg');
+});
+
+test('15a glances insights, the blocks further down', async ({ page }) => {
+    await openGlances(page, 'insights');
+    const day = page.locator('[data-glances-insight="day"]');
+    await day.waitFor();
+    await day.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
+    await page.waitForTimeout(300);
+    await page.mouse.move(5, 895);
+    await page.waitForTimeout(300);
+    await crop(page, [day], '15a-glances-insights-more.jpg', 6);
 });
 
 test('15a glances hosts', async ({ page }) => {

@@ -599,7 +599,292 @@
    "hoursWarn": 0,
    "hoursBad": 0,
    "correlationCpu": 0.7
-  }
+  },
+  "load": {
+   "cores": 8,
+   "avg1": 1.84,
+   "avg5": 1.71,
+   "avg15": 1.52,
+   "peak1": 6.9,
+   "overShare": 3
+  },
+  "cores": [
+   {
+    "core": 0,
+    "avg": 31,
+    "max": 82
+   },
+   {
+    "core": 1,
+    "avg": 28,
+    "max": 77
+   },
+   {
+    "core": 2,
+    "avg": 26,
+    "max": 74
+   },
+   {
+    "core": 3,
+    "avg": 24,
+    "max": 70
+   },
+   {
+    "core": 4,
+    "avg": 22,
+    "max": 66
+   },
+   {
+    "core": 5,
+    "avg": 21,
+    "max": 64
+   },
+   {
+    "core": 6,
+    "avg": 19,
+    "max": 61
+   },
+   {
+    "core": 7,
+    "avg": 18,
+    "max": 58
+   }
+  ],
+  "memBreakdown": {
+   "used": 41,
+   "cache": 37,
+   "free": 22,
+   "swapAvg": 2,
+   "swapHours": 0
+  },
+  "compare": [
+   {
+    "key": "cpu",
+    "now": 24,
+    "before": 21,
+    "change": 14
+   },
+   {
+    "key": "mem",
+    "now": 58,
+    "before": 57,
+    "change": 1
+   },
+   {
+    "key": "net",
+    "now": 2100000.0,
+    "before": 3400000.0,
+    "change": -38
+   },
+   {
+    "key": "disk",
+    "now": 5200000.0,
+    "before": 5000000.0,
+    "change": 4
+   },
+   {
+    "key": "temp",
+    "now": 56,
+    "before": 55,
+    "change": 2
+   }
+  ],
+  "rhythm": [
+   {
+    "key": "cpu",
+    "busyHour": 19,
+    "busyAvg": 38,
+    "quietHour": 4,
+    "quietAvg": 9
+   },
+   {
+    "key": "net",
+    "busyHour": 21,
+    "busyAvg": 6400000.0,
+    "quietHour": 5,
+    "quietAvg": 310000.0
+   }
+  ],
+  "spikes": [],
+  "profile": [
+   {
+    "key": "cpu",
+    "hours": [
+     27.9,
+     24.0,
+     20.1,
+     16.5,
+     13.4,
+     11.0,
+     9.5,
+     9.0,
+     9.5,
+     11.0,
+     13.4,
+     16.5,
+     20.1,
+     24.0,
+     27.9,
+     31.5,
+     34.6,
+     37.0,
+     38.5,
+     39.0,
+     38.5,
+     37.0,
+     34.6,
+     31.5
+    ],
+    "max": 39.0
+   },
+   {
+    "key": "mem",
+    "hours": [
+     59.0,
+     58.0,
+     57.0,
+     56.0,
+     55.2,
+     54.5,
+     54.1,
+     54.0,
+     54.1,
+     54.5,
+     55.2,
+     56.0,
+     57.0,
+     58.0,
+     59.0,
+     60.0,
+     60.8,
+     61.5,
+     61.9,
+     62.0,
+     61.9,
+     61.5,
+     60.8,
+     60.0
+    ],
+    "max": 62.0
+   },
+   {
+    "key": "net",
+    "hours": [
+     4055634.9,
+     3600000.0,
+     3069401.9,
+     2500000.0,
+     1930598.1,
+     1400000.0,
+     944365.1,
+     594744.1,
+     374963.2,
+     300000.0,
+     374963.2,
+     594744.1,
+     944365.1,
+     1400000.0,
+     1930598.1,
+     2500000.0,
+     3069401.9,
+     3600000.0,
+     4055634.9,
+     4405255.9,
+     4625036.8,
+     4700000.0,
+     4625036.8,
+     4405255.9
+    ],
+    "max": 4700000.0
+   }
+  ],
+  "sensors": [
+   {
+    "name": "CPU Package",
+    "avg": 56,
+    "max": 71,
+    "hoursWarn": 0,
+    "hoursBad": 0
+   },
+   {
+    "name": "Core 0",
+    "avg": 54,
+    "max": 69,
+    "hoursWarn": 0,
+    "hoursBad": 0
+   },
+   {
+    "name": "nvme0 Composite",
+    "avg": 41,
+    "max": 48,
+    "hoursWarn": 0,
+    "hoursBad": 0
+   }
+  ],
+  "filesystems": [
+   {
+    "mount": "/mnt/media",
+    "now": 88.6,
+    "min": 86.9,
+    "max": 88.6,
+    "change": 1.7
+   },
+   {
+    "mount": "/mnt/data",
+    "now": 71.3,
+    "min": 70.8,
+    "max": 71.3,
+    "change": 0.5
+   },
+   {
+    "mount": "/",
+    "now": 38.2,
+    "min": 38.2,
+    "max": 38.2,
+    "change": 0
+   }
+  ],
+  "disks": [
+   {
+    "name": "sda",
+    "avgRead": 1200000.0,
+    "avgWrite": 3400000.0,
+    "peakRead": 98000000.0,
+    "peakWrite": 71000000.0,
+    "busyHour": 3
+   },
+   {
+    "name": "nvme0n1",
+    "avgRead": 2600000.0,
+    "avgWrite": 1900000.0,
+    "peakRead": 240000000.0,
+    "peakWrite": 110000000.0,
+    "busyHour": 19
+   }
+  ],
+  "interfaces": [
+   {
+    "name": "eth0",
+    "avgRx": 2100000.0,
+    "avgTx": 840000.0,
+    "peakRx": 42000000.0,
+    "peakTx": 11000000.0,
+    "totalRx": 180000000000.0,
+    "totalTx": 72000000000.0
+   }
+  ],
+  "traffic": [
+   {
+    "name": "jellyfin",
+    "rx": 12000000000.0,
+    "tx": 41000000000.0
+   },
+   {
+    "name": "immich-server",
+    "rx": 22000000000.0,
+    "tx": 3100000000.0
+   }
+  ]
  },
  "history": {
   "stepSeconds": 120,
