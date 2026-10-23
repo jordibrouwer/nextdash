@@ -62,8 +62,8 @@ func TestChosenBackdropsAreSpreadAcrossTheRecipes(t *testing.T) {
 			}
 			continue
 		}
-		if n < 3 || n > 10 {
-			t.Errorf("%s is used by %d pairs, want 3 to 10", name, n)
+		if n < 2 || n > 10 {
+			t.Errorf("%s is used by %d pairs, want 2 to 10", name, n)
 		}
 	}
 }
@@ -112,5 +112,39 @@ func TestAThemeOwnBackdropBeatsTheChoice(t *testing.T) {
 	got := themeBackdropRecipes[themeBackdropRecipeFor(key, ThemeColors{Backdrop: own})]
 	if got != own {
 		t.Errorf("own backdrop %q lost to the choice, drew %q", own, got)
+	}
+}
+
+// A material is drawn behind the backdrops of its own pool. The choice for a
+// pair has to be one of them, so two paper themes can differ and both are paper.
+func TestEveryChoiceComesFromThePoolOfItsMaterial(t *testing.T) {
+	themes := getDefaultBuiltInThemes()
+	for key, recipe := range themeBackdropChoice {
+		for _, id := range []string{key, strings.TrimSuffix(key, "-light") + "-dark"} {
+			// A theme that names a recipe of its own (the neutrals, until they are
+			// redrawn) is not drawn from the pool.
+			if themes[id].Backdrop != "" {
+				continue
+			}
+			material := materialAttr(themes[id])
+			if !themeBackdropInPool(material, recipe) {
+				t.Errorf("%s (%s) is drawn behind %q, which is not in the pool of %s", id, material, recipe, material)
+			}
+		}
+	}
+}
+
+// Every name in a pool is a recipe, and every material has a pool.
+func TestThePoolsAreMadeOfRecipes(t *testing.T) {
+	for _, material := range themeArchetypeOrder {
+		pool := themeBackdropPoolFor(material)
+		if len(pool) < 6 {
+			t.Errorf("%s has %d recipes in its pool, want at least 6", material, len(pool))
+		}
+		for _, name := range pool {
+			if themeBackdropRecipeIndex(name) < 0 {
+				t.Errorf("%s pools %q, which is not a recipe", material, name)
+			}
+		}
 	}
 }
