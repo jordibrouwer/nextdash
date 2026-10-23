@@ -119,7 +119,9 @@ test('a new tab gets a pulse, not a wait', async ({ page }) => {
 test('opening from search marks the row it came from', async ({ page }) => {
     await openDashboard(page);
 
-    const name = await page.evaluate(() => {
+    const name = await page.evaluate(async () => {
+        // The search is its own lazy bundle: wait until it is built.
+        await window.SearchLoader?.ensureReady?.();
         const bookmark = window.dashboardInstance.bookmarks?.[0]
             || window.dashboardInstance.allBookmarks?.[0];
         window.dashboardInstance.searchComponent.openBookmark(bookmark);

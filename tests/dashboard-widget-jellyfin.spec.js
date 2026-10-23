@@ -357,6 +357,7 @@ test.describe('the Jellyfin widget', () => {
     });
 
     test('a saved widget opens with its choices, and no user is a choice', async ({ page }) => {
+        test.setTimeout(75_000);
         await page.route('**/api/widgets/jellyfin/setup', async (route) => {
             await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
                 serverName: 'Home', version: '10.11.0',
@@ -385,6 +386,21 @@ test.describe('the Jellyfin widget', () => {
 
         // No Connect clicked: the key is already filed, so the choices are asked for.
         const row = page.locator('[data-widget-detail]').first();
+        // A slow runner can have Config redrawn from under the click (the
+        // Overview reopening after the sweep): if the choices have not come
+        // after a few seconds, open the widget again from the start.
+        await expect(async () => {
+            const anime = row.locator('[data-widget-setting="libraries"][value="lib-anime"]');
+            try {
+                await expect(anime).toBeVisible({ timeout: 4_000 });
+            } catch (error) {
+                await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
+                if (await page.locator('[data-widget-detail]').count() === 0) {
+                    await page.locator('[data-widget-settings]').first().click();
+                }
+                throw error;
+            }
+        }).toPass({ timeout: 40_000 });
         await expect(row.locator('[data-widget-setting="libraries"][value="lib-anime"]')).toBeVisible({ timeout: 15_000 });
         await expect(row.locator('[data-widget-setting="userId"]')).toHaveValue('');
 

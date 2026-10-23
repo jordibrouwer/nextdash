@@ -263,7 +263,9 @@ test.describe('web search in the search panel', () => {
         const host = new URL(bookmark.url).hostname;
         stubResults = [{ url: `https://${host}/some/page`, title: 'On your site', content: 'x' }];
 
-        await page.evaluate(() => {
+        await page.evaluate(async () => {
+            // The search is its own lazy bundle: wait until it is built.
+            await window.SearchLoader?.ensureReady?.();
             window.__openedBookmarks = [];
             const s = window.dashboardInstance.searchComponent;
             s.openBookmark = (b) => { window.__openedBookmarks.push(b.url); };

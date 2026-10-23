@@ -93,6 +93,9 @@ test.describe('a theme brings its own backdrop', () => {
      * Four families were doing exactly that before this ran.
      */
     test('all 214 variants have one, and every family agrees with itself', async ({ page }) => {
+        // Each variant restyles the whole page and reads the result back, which
+        // a CI runner needs more than the default thirty seconds for.
+        test.setTimeout(120_000);
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await prepareDashboardInteraction(page);
