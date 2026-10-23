@@ -3,8 +3,8 @@ const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
 
 /**
- * Config → Help has a Glances topic: what to set up first, the page, what is
- * recorded, several hosts, the link with the Containers view, notices and
+ * Config → Help has a Glances topic: what to set up first, the page, Insights,
+ * what is recorded, several hosts, the link with the Containers view, notices and
  * commands. The Tips carry the Glances keys too.
  */
 
@@ -19,12 +19,12 @@ async function openHelp(page, hash) {
 }
 
 test.describe('Help: Glances', () => {
-    test('a Glances topic with its seven panels, each with text under it', async ({ page }) => {
+    test('a Glances topic with its eight panels, each with text under it', async ({ page }) => {
         await openHelp(page, 'glances');
         await expect(page.locator('[data-help-tab="glances"], [data-help-more="glances"]').first()).toBeAttached();
         const panels = page.locator('#config-help-body [data-help-panel]');
-        await expect(panels).toHaveCount(7);
-        for (const title of ['Before it works: a Glances 4 host', 'The Glances page', 'What nextDash records', 'Several hosts', 'Glances and the Containers view', 'Notices and commands', 'Compare, forecast and the widget']) {
+        await expect(panels).toHaveCount(8);
+        for (const title of ['Before it works: a Glances 4 host', 'The Glances page', 'Insights', 'What nextDash records', 'Several hosts', 'Glances and the Containers view', 'Notices and commands', 'Compare, forecast and the widget']) {
             await expect(page.locator('#config-help-body').getByText(title, { exact: true }).first()).toBeAttached();
         }
         await expect(page.locator('#config-help-body .config-help-prose').first()).not.toHaveText('');
