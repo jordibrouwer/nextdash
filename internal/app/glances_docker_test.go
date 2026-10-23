@@ -273,3 +273,45 @@ func TestGlancesHostRowsAreCurrentAndRememberTheLastAnswer(t *testing.T) {
 		t.Errorf("ok %v, last answer %d want %d", ok, okAt, now)
 	}
 }
+
+// Glances 4 sends a container's ports as one string, not a list. A list that
+// cannot be read must never end the whole pairing.
+func TestGlancesDockerLinkReadsPortsAsOneString(t *testing.T) {
+	h, _, fake, cfg := linkSetup(t, "NAS.lan")
+	fake.mu.Lock()
+	fake.override["containers"] = []byte(`[` +
+		`{"name":"app-glances","id":"aaaaaaaaaaaa","status":"running","ports":"1900->1900/udp,8096->8096/tcp"},` +
+		`{"name":"jellyfin","id":"bbbbbbbbbbbb","status":"running","ports":"61208->61208/tcp,61209/tcp"},` +
+		`{"name":"glances-only","id":"999999999999","status":"running","ports":""}]`)
+	fake.mu.Unlock()
+	glancesLinkForget()
+	answer := h.glancesComputeDockerLink(context.Background(), cfg)
+	if answer.ByID != 2 || len(answer.Matches) != 2 || len(answer.OnlyGlances) != 1 {
+		t.Fatalf("string ports ended the pairing: %+v", answer)
+	}
+}
+
+func TestGlancesPortsOfReadsEveryShape(t *testing.T) {
+	cases := map[string][]int{
+		`"1900->1900/udp,7359->7359/udp,8096->8096/tcp"`: {1900, 7359, 8096},
+		`"61208->61208/tcp,61209/tcp"`:                   {61208},
+		`"0.0.0.0:8080->80/tcp"`:                         {8080},
+		`""`:                                             nil,
+		`["0.0.0.0:8080->80/tcp","443->443/tcp"]`:        {8080, 443},
+		`[{"PublicPort":9000},{"host_port":9001}]`:       {9000, 9001},
+		`null`:                    nil,
+		`{"unexpected":"object"}`: nil,
+	}
+	for in, want := range cases {
+		got := glancesPortsOf([]byte(in))
+		if len(got) != len(want) {
+			t.Errorf("%s: %v, want %v", in, got, want)
+			continue
+		}
+		for i := range want {
+			if got[i] != want[i] {
+				t.Errorf("%s: %v, want %v", in, got, want)
+			}
+		}
+	}
+}

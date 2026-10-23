@@ -170,20 +170,37 @@ func matchGlancesContainers(glances, docker []glancesLinkSide) ([]glancesLinkMat
 }
 
 // glancesPortsOf reads the host ports a Glances container publishes, whichever
-// shape this version of Glances uses ("0.0.0.0:8080->80/tcp", or objects).
-func glancesPortsOf(raw []json.RawMessage) []int {
-	var out []int
+// shape this version of Glances uses: one string ("1900->1900/udp,8096->8096/tcp",
+// as Glances 4 sends it), a list of such strings, or a list of objects. A port
+// that is only exposed ("61209/tcp") has no host port and is left out.
+func glancesPortsOf(raw json.RawMessage) []int {
 	re := regexp.MustCompile(`(?:^|:)(\d{1,5})->`)
-	for _, item := range raw {
-		var text string
-		if json.Unmarshal(item, &text) == nil {
-			if m := re.FindStringSubmatch(text); m != nil {
+	fromText := func(text string) []int {
+		var found []int
+		for _, part := range strings.Split(text, ",") {
+			if m := re.FindStringSubmatch(strings.TrimSpace(part)); m != nil {
 				n := 0
 				for _, c := range m[1] {
 					n = n*10 + int(c-'0')
 				}
-				out = append(out, n)
+				found = append(found, n)
 			}
+		}
+		return found
+	}
+	var one string
+	if json.Unmarshal(raw, &one) == nil {
+		return fromText(one)
+	}
+	var items []json.RawMessage
+	if json.Unmarshal(raw, &items) != nil {
+		return nil
+	}
+	var out []int
+	for _, item := range items {
+		var text string
+		if json.Unmarshal(item, &text) == nil {
+			out = append(out, fromText(text)...)
 			continue
 		}
 		var obj map[string]any
@@ -243,9 +260,9 @@ func (h *Handlers) glancesComputeDockerLink(ctx context.Context, cfg GlancesConf
 	}
 
 	var gl []struct {
-		Name  string            `json:"name"`
-		ID    string            `json:"id"`
-		Ports []json.RawMessage `json:"ports"`
+		Name  string          `json:"name"`
+		ID    string          `json:"id"`
+		Ports json.RawMessage `json:"ports"`
 	}
 	if err := h.glancesAsk(ctx, cfg, "containers", &gl); err != nil {
 		return answer
