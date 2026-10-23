@@ -1,7 +1,6 @@
 package app
 
 import (
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -32,7 +31,7 @@ func hostGuard(next http.Handler) http.Handler {
 	if extra.all {
 		return next
 	}
-	log.Printf("write token set: requests must use an IP, localhost, a private name or a host in NEXTDASH_ALLOWED_HOSTS")
+	logInfo("auth", "write token set: requests must use an IP, localhost, a private name or a host in NEXTDASH_ALLOWED_HOSTS")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/s/") || hostAllowed(r.Host, extra) {
 			next.ServeHTTP(w, r)
