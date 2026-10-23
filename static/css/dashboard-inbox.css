@@ -620,6 +620,8 @@ body.inbox-triage-active {
     margin: 0;
     accent-color: var(--accent-primary);
     cursor: pointer;
+    position: relative;
+    z-index: 1;
 }
 
 .inbox-item:hover .inbox-item-check,

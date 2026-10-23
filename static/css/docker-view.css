@@ -868,6 +868,8 @@
     margin: 0;
     accent-color: var(--accent-primary);
     cursor: pointer;
+    position: relative;
+    z-index: 1;
 }
 
 /* 15px to look at, 24px to hit: the box grows the hit area, not the row. */
