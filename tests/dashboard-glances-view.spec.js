@@ -579,11 +579,22 @@ test.describe('Glances page: tables, cards and keys', () => {
 
     test('the Glances view rises in like the other list views, then holds still', async ({ page }) => {
         await mockGlances(page);
+        // A rise lasts about 300 ms, and a slow runner is still waiting for the
+        // view when it has run its course: polling document.getAnimations() after
+        // the view is up can miss all of it. The start of each rise is recorded
+        // from the page's first moment instead, and counted afterwards.
+        await page.addInitScript(() => {
+            window.__lvsRises = [];
+            document.addEventListener('animationstart', (e) => {
+                if (e.animationName === 'lvsRise') window.__lvsRises.push(String(e.target.className));
+            }, true);
+        });
         await openView(page);
+        const rose = (pattern) => page.evaluate((source) => window.__lvsRises.filter((c) => new RegExp(source).test(c)).length, pattern);
         const rising = (sel) => page.evaluate((q) => document.getAnimations()
             .filter((x) => x.animationName === 'lvsRise' && x.effect?.target?.matches?.(q)).length, sel);
-        await expect.poll(() => rising('.lvs-header'), { timeout: 3000, intervals: [20] }).toBeGreaterThan(0);
-        await expect.poll(() => rising('.glances-ov-block, .glances-card'), { timeout: 3000, intervals: [20] }).toBeGreaterThan(1);
+        await expect.poll(() => rose('lvs-header'), { timeout: 3000, intervals: [20] }).toBeGreaterThan(0);
+        await expect.poll(() => rose('glances-ov-block|glances-card'), { timeout: 3000, intervals: [20] }).toBeGreaterThan(1);
         await expect.poll(() => rising('.lvs-header, .glances-ov-block, .glances-card'), { timeout: 3000 }).toBe(0);
         await expect(page.locator('body')).not.toHaveAttribute('data-view-entering', /.+/);
     });
