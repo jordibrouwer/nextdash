@@ -4244,10 +4244,10 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     font: inherit;
     font-size: 0.8em;
     font-weight: var(--font-weight-semibold);
-    line-height: 1.2;
+    line-height: 1;
     min-height: 1.45em;
     min-width: 1.45em;
-    padding: 0.15em 0.3em;
+    padding: 0.1em 0.3em;
     margin-left: 0.25em;
     border: 1px solid color-mix(in srgb, var(--text-tertiary) 28%, transparent);
     border-radius: var(--radius-2, 3px);

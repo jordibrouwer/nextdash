@@ -544,7 +544,8 @@
        them, or a field without an ℹ pushes its control right of its
        neighbours' and the control column stops being one edge. */
     #config-appearance-body :is(.config-field, .config-field-row) > .config-field-affordances {
-        min-width: 44px;
+        /* Two 24px buttons and the 2px gap between them. */
+        min-width: 50px;
     }
 
     #config-appearance-body .config-field > :is(.config-select, .config-text, .config-range) {

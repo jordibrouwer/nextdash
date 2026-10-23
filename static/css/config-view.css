@@ -10181,6 +10181,13 @@ body.no-animations .unraid-wire-run { transform: translateX(50%); }
     height: 24px;
 }
 
+/* The 24px round buttons are taller than a slider or a select, so on a field
+   with a note under it they would push the note 4px further away than the
+   token says. The extra height is hit area, not layout: let it overhang. */
+.config-view .config-field:has(> .config-field-hint, > .config-field-warning, > .config-panel-note) > .config-field-affordances {
+    margin-block: -4px;
+}
+
 .config-widget-go,
 .config-widget-step,
 .config-widget-link,
