@@ -13,6 +13,10 @@ async function load(page, theme) {
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    // The server's settings replace what the page remembers about promos when
+    // they arrive: a fresh install starts with this card answered. Reset it
+    // before that and the answer comes back, which a slow first load showed.
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate(({ id, theme }) => {
