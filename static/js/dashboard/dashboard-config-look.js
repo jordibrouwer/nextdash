@@ -22,7 +22,7 @@
 (function (global) {
     'use strict';
 
-    const DEFAULT_TUNING = { strength: 1, scale: 1, seed: 0, blur: 0, brightness: 1, saturate: 1, tint: 0 };
+    const DEFAULT_TUNING = { strength: 1, scale: 1, seed: 0, blur: 0, brightness: 1, saturate: 1, tint: 0, calm: 0.5 };
 
     /** The sliders: [key, label key, fallback label, min, max, step, unit]. */
     const TUNING_SLIDERS = [
@@ -33,6 +33,7 @@
         ['brightness', 'config.backdropBrightness', 'Brightness', 0.3, 1.4, 0.05],
         ['saturate', 'config.backdropSaturate', 'Saturation', 0, 2, 0.05],
         ['tint', 'config.backdropTint', 'Theme tint', 0, 0.9, 0.05],
+        ['calm', 'config.backdropCalm', 'Quiet centre', 0, 1, 0.05],
     ];
 
     /** The CSS variable each slider drives on <html>; the seed has none. */
@@ -43,6 +44,7 @@
         brightness: ['--bd-brightness', (v) => String(v)],
         saturate: ['--bd-saturate', (v) => String(v)],
         tint: ['--bd-tint', (v) => String(v)],
+        calm: ['--bd-calm', (v) => String(v)],
     };
 
     const HEAD_PREVIEW_CLASS = 'config-pv-cat';

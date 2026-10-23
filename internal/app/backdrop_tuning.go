@@ -26,6 +26,9 @@ type BackdropTuning struct {
 	Brightness float64 `json:"brightness"`
 	Saturate   float64 `json:"saturate"`
 	Tint       float64 `json:"tint"`
+	// Calm is how far the recipe fades toward the page colour behind the bookmarks;
+	// see themeBackdropCalmLayer. 0 draws the recipe edge to edge, as it was.
+	Calm float64 `json:"calm"`
 }
 
 // The ranges the sliders offer. A hand-edited settings file is held to them so
@@ -40,13 +43,18 @@ const (
 	backdropBrightnessMax = 1.4
 	backdropSaturateMax   = 2
 	backdropTintMax       = 0.9
+	backdropCalmMax       = 1
 )
+
+// defaultBackdropCalm is the quiet centre a backdrop is drawn with unless the
+// reader turns it down: half, so every recipe leaves the bookmarks a calm page.
+const defaultBackdropCalm = 0.5
 
 // defaultBackdropTuning is the backdrop as it was drawn before it could be
 // tuned: full strength, natural size, the id's own roll, nothing done to a
 // background image.
 func defaultBackdropTuning() BackdropTuning {
-	return BackdropTuning{Strength: 1, Scale: 1, Seed: 0, Blur: 0, Brightness: 1, Saturate: 1, Tint: 0}
+	return BackdropTuning{Strength: 1, Scale: 1, Seed: 0, Blur: 0, Brightness: 1, Saturate: 1, Tint: 0, Calm: defaultBackdropCalm}
 }
 
 // normalizeBackdropTuning clamps every field to its slider and rounds it to
@@ -66,6 +74,7 @@ func normalizeBackdropTuning(t BackdropTuning) BackdropTuning {
 	t.Brightness = clamp(t.Brightness, backdropBrightnessMin, backdropBrightnessMax, def.Brightness)
 	t.Saturate = clamp(t.Saturate, 0, backdropSaturateMax, def.Saturate)
 	t.Tint = clamp(t.Tint, 0, backdropTintMax, def.Tint)
+	t.Calm = clamp(t.Calm, 0, backdropCalmMax, def.Calm)
 	if t.Seed < 0 {
 		t.Seed = 0
 	}
@@ -99,5 +108,8 @@ func fillMissingBackdropTuning(t *BackdropTuning, raw json.RawMessage) {
 	}
 	if _, ok := keys["saturate"]; !ok {
 		t.Saturate = def.Saturate
+	}
+	if _, ok := keys["calm"]; !ok {
+		t.Calm = def.Calm
 	}
 }

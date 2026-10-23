@@ -18,7 +18,7 @@
 (function (global) {
     'use strict';
 
-    const DEFAULT_TUNING = { strength: 1, scale: 1, seed: 0, blur: 0, brightness: 1, saturate: 1, tint: 0 };
+    const DEFAULT_TUNING = { strength: 1, scale: 1, seed: 0, blur: 0, brightness: 1, saturate: 1, tint: 0, calm: 0.5 };
 
     const HEAD_FIELDS = ['categoryHeaderStyle', 'categoryHeaderSize', 'showCategoryIcon',
         'showCategoryCount', 'categoryHeaderAccentLine'];

@@ -3598,6 +3598,23 @@ func backdropScrimFloor(recipe string) string {
 	return "0"
 }
 
+/*
+themeBackdropCalmLayer is the quiet centre every recipe is drawn under: the page
+colour, strongest where the bookmarks sit and gone at the edges, so a pattern
+or a scene stays at the rim of the window and not behind the text.
+
+It is the first layer, so it sits on top of the recipe and under nothing but
+the reader's tint. --bd-calm is its strength (BackdropTuning.Calm): at 0 it is
+transparent and the recipe is drawn edge to edge, as it was before this layer.
+*/
+func themeBackdropCalmLayer() backdropLayer {
+	centre := "color-mix(in srgb, var(--background-primary) calc(var(--bd-calm, 0.5) * 90%), transparent)"
+	middle := "color-mix(in srgb, var(--background-primary) calc(var(--bd-calm, 0.5) * 55%), transparent)"
+	return backdropLayer{
+		image: "radial-gradient(ellipse 62% 58% at 50% 50%, " + centre + " 0%, " + middle + " 55%, transparent 100%)",
+	}
+}
+
 func joinBackdropLayers(layers []backdropLayer) backdropLook {
 	images := make([]string, len(layers))
 	sizes := make([]string, len(layers))
@@ -3955,6 +3972,7 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 			"linear-gradient("+strconv.Itoa(178+pick(2, 6))+"deg, "+veil(accent, 16)+" 0%, transparent "+pct(34+pick(5, 16))+")",
 			"radial-gradient(140% 60% at "+pct(x2)+" 100%, "+veil(second, 18)+" 0%, transparent 58%)", base)
 	}
+	layers = append([]backdropLayer{themeBackdropCalmLayer()}, layers...)
 	look := joinBackdropLayers(layers)
 	look.Scrim = backdropScrimFloor(themeBackdropRecipes[recipe])
 	return look

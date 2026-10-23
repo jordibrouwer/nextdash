@@ -151,3 +151,40 @@ func TestBackdropOverrideCSSHasARulePerRecipe(t *testing.T) {
 		t.Error("the seed did not reach the override rules")
 	}
 }
+
+// The quiet centre is a number with its own range, a default that is not zero,
+// and a stored 0 that is kept: 0 is "draw the recipe edge to edge", a real answer.
+func TestBackdropCalmTuning(t *testing.T) {
+	if got := defaultBackdropTuning().Calm; got != 0.5 {
+		t.Errorf("default calm %v, want 0.5", got)
+	}
+	for in, want := range map[float64]float64{-1: 0, 0: 0, 0.333: 0.33, 1: 1, 7: 1, math.NaN(): 0.5} {
+		tuning := defaultBackdropTuning()
+		tuning.Calm = in
+		if got := normalizeBackdropTuning(tuning).Calm; got != want {
+			t.Errorf("calm %v normalizes to %v, want %v", in, got, want)
+		}
+	}
+	var kept BackdropTuning
+	fillMissingBackdropTuning(&kept, []byte(`{"strength":1,"scale":1,"brightness":1,"saturate":1,"calm":0}`))
+	if kept.Calm != 0 {
+		t.Errorf("a stored calm of 0 became %v", kept.Calm)
+	}
+	var older BackdropTuning
+	fillMissingBackdropTuning(&older, []byte(`{"strength":1,"scale":1,"brightness":1,"saturate":1}`))
+	if older.Calm != 0.5 {
+		t.Errorf("settings from before calm read %v, want 0.5", older.Calm)
+	}
+}
+
+// Every recipe is drawn under the quiet centre, and the reader's number is the
+// one it reads.
+func TestEveryRecipeCarriesTheCalmLayer(t *testing.T) {
+	for _, name := range themeBackdropRecipes {
+		look := themeBackdropSeeded("recipe:"+name, ThemeColors{Backdrop: name, AccentPrimary: "#39FF6A"}, 0)
+		first := splitBackdropList(look.Image)[0]
+		if !strings.Contains(first, "var(--bd-calm") || !strings.HasPrefix(first, "radial-gradient(") {
+			t.Errorf("%s: the first layer is not the calm layer: %.80s", name, first)
+		}
+	}
+}

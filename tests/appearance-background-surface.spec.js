@@ -122,6 +122,25 @@ test.describe('the Background and Surface tabs', () => {
         await expect.poll(async () => (await stored(page)).backdropTuning?.strength, { timeout: 5_000 }).toBe(1);
     });
 
+    test('the quiet centre starts at half, is live, and 0 is kept', async ({ page }) => {
+        await openTab(page, 'background');
+        await openConfigPanel(page, 'Backdrop');
+        await openFine(page, 'backdrop');
+
+        expect(await rootVar(page, '--bd-calm')).toBe('0.5');
+        await page.locator('[data-backdrop-tuning="calm"]').fill('0');
+        await expect.poll(() => rootVar(page, '--bd-calm')).toBe('0');
+        await expect.poll(async () => (await stored(page)).backdropTuning?.calm, { timeout: 5_000 }).toBe(0);
+
+        await reloadDashboard(page);
+        expect(await rootVar(page, '--bd-calm')).toBe('0');
+
+        await openTab(page, 'background');
+        await openFine(page, 'backdrop');
+        await page.locator('[data-backdrop-reset]').click();
+        await expect.poll(() => rootVar(page, '--bd-calm')).toBe('0.5');
+    });
+
     test('a new variant is saved and fetches the stylesheet again', async ({ page }) => {
         await openTab(page, 'background');
         await openConfigPanel(page, 'Backdrop');
