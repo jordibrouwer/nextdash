@@ -1233,7 +1233,7 @@ class SearchCommandNew {
         });
 
         document.getElementById('new-bookmark-create')?.addEventListener('click', () => this.submitBookmark());
-        document.getElementById('new-bookmark-create-another')?.addEventListener('click', () => this.createBookmark({ keepOpen: true }));
+        document.getElementById('new-bookmark-create-another')?.addEventListener('click', () => this.guardSubmit(() => this.createBookmark({ keepOpen: true })));
         document.getElementById('new-bookmark-cancel')?.addEventListener('click', () => this.closeModal());
         document.getElementById('new-bookmark-cancel-header')?.addEventListener('click', () => this.closeModal());
 
@@ -1404,7 +1404,18 @@ class SearchCommandNew {
 
     /** Route the primary button to the right save: add a bookmark, or update one. */
     submitBookmark() {
-        return this.isEditMode() ? this.updateBookmark() : this.createBookmark();
+        return this.guardSubmit(() => (this.isEditMode() ? this.updateBookmark() : this.createBookmark()));
+    }
+
+    /** One save at a time: a double click or Enter must not post twice. */
+    async guardSubmit(run) {
+        if (this._submitting) return { ok: false };
+        this._submitting = true;
+        try {
+            return await run();
+        } finally {
+            this._submitting = false;
+        }
     }
 
     /**
