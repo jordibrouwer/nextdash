@@ -31,8 +31,8 @@ func splitBackdropList(list string) []string {
 // a valid background-image), and size and position carry exactly one entry per
 // layer, because theme-backdrop.css hands them out by index.
 func TestEveryBackdropRecipeIsWellFormed(t *testing.T) {
-	if len(themeBackdropRecipes) != 29 {
-		t.Fatalf("%d recipes, want 29", len(themeBackdropRecipes))
+	if len(themeBackdropRecipes) != 39 {
+		t.Fatalf("%d recipes, want 39", len(themeBackdropRecipes))
 	}
 	for _, name := range themeBackdropRecipes {
 		t.Run(name, func(t *testing.T) {

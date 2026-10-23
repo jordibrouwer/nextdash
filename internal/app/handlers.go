@@ -3982,6 +3982,61 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 			{"linear-gradient(" + strconv.Itoa(170+pick(3, 20)) + "deg, " + veil(second, 7) + " 0%, transparent 50%)", "", ""},
 			{base, "", ""},
 		}
+	case "haze": // laaghangende mist: banden die van onderaf in de pagina optrekken
+		layers = plain(
+			"radial-gradient(160% 16% at "+pct(20+pick(3, 30))+" 94%, "+veil(second, 10)+", transparent 70%)",
+			"radial-gradient(150% 14% at "+pct(60+pick(5, 30))+" 82%, "+veil(accent, 9)+", transparent 70%)",
+			"linear-gradient(180deg, transparent 55%, "+veil(accent, 9)+" 100%)", base)
+	case "veil": // een gordijn van licht: brede verticale plooien die naar onder wegvallen
+		layers = plain(
+			"linear-gradient(180deg, transparent 0%, transparent 55%, "+bg+" 100%)",
+			"repeating-linear-gradient(90deg, "+veil(accent, 4)+" 0, transparent "+scaled(7, "%")+", "+veil(accent, 7)+" "+scaled(13, "%")+", transparent "+scaled(22, "%")+")",
+			"linear-gradient(180deg, "+veil(accent, 10)+" 0%, transparent 50%)", base)
+	case "spotlight": // één lichtkegel van boven, met een vignet eromheen
+		layers = plain(
+			"radial-gradient(120% 120% at 50% 50%, transparent 50%, "+veil(bg, 40)+" 100%)",
+			"conic-gradient(from 180deg at "+pct(30+pick(3, 40))+" -8%, transparent 152deg, "+veil(accent, 13)+" 168deg, "+veil(accent, 13)+" 192deg, transparent 208deg)", base)
+	case "silk": // lange zachte plooien die schuin over de pagina vallen
+		layers = plain(
+			"linear-gradient("+strconv.Itoa(112+pick(3, 20))+"deg, transparent 0%, "+veil(accent, 9)+" 22%, transparent 36%, "+veil(second, 7)+" 54%, transparent 70%, "+veil(accent, 6)+" 86%, transparent 100%)",
+			"linear-gradient("+strconv.Itoa(64+pick(5, 20))+"deg, transparent 10%, "+veil(second, 6)+" 40%, transparent 62%)", base)
+	case "caustics": // waterlicht: langgerekte lichtvlekken die zacht door elkaar lopen
+		layers = plain(
+			"radial-gradient(40% 9% at "+pct(18+pick(3, 20))+" 24%, "+veil(cool, 9)+", transparent 70%)",
+			"radial-gradient(34% 8% at "+pct(66+pick(5, 20))+" 38%, "+veil(accent, 8)+", transparent 70%)",
+			"radial-gradient(46% 9% at "+pct(30+pick(7, 20))+" 62%, "+veil(cool, 7)+", transparent 70%)",
+			"radial-gradient(30% 7% at "+pct(76+pick(9, 14))+" 82%, "+veil(accent, 7)+", transparent 70%)", base)
+	case "dawn": // een ochtend die in banden boven de horizon optrekt
+		layers = plain(
+			"linear-gradient(180deg, transparent 60%, "+veil(second, 7)+" 76%, "+veil(warm, 10)+" 90%, "+veil(warm, 14)+" 100%)",
+			"radial-gradient(90% 30% at "+pct(30+pick(3, 40))+" 100%, "+veil(warm, 12)+", transparent 70%)", base)
+	case "linen": // linnen: een fijn weefsel in twee richtingen
+		layers = plain(
+			"repeating-linear-gradient(0deg, "+veil(accent, 2)+" 0 1px, transparent 1px "+px(7)+")",
+			"repeating-linear-gradient(90deg, "+veil(accent, 2)+" 0 1px, transparent 1px "+px(6)+")",
+			"radial-gradient(70% 50% at 100% 0%, "+veil(accent, 8)+", transparent 72%)", base)
+	case "dotgrid": // een fijn stippenraster
+		layers = []backdropLayer{
+			{"radial-gradient(circle, " + veil(accent, 11) + " 1px, transparent 1.3px)", tile(24), ""},
+			{"radial-gradient(60% 50% at 0% 0%, " + veil(accent, 8) + ", transparent 72%)", "", ""},
+			{base, "", ""},
+		}
+	case "ruled": // schriftlijnen met een kantlijn
+		layers = []backdropLayer{
+			{"linear-gradient(90deg, transparent calc(" + pct(7+pick(3, 4)) + " - 1px), " + veil(second, 9) + " " + pct(7+pick(3, 4)) + ", transparent calc(" + pct(7+pick(3, 4)) + " + 1px))", "", ""},
+			{"repeating-linear-gradient(180deg, " + veil(accent, 6) + " 0 1px, transparent 1px " + px(28) + ")", "", ""},
+			{base, "", ""},
+		}
+	case "grain": // fijne korrel: stippen van één pixel, in vijf lagen die elkaar niet herhalen
+		dot := func(n, size int, strength int) backdropLayer {
+			at := pct(rnd(40+n, 100)) + " " + pct(rnd(50+n, 100))
+			return backdropLayer{"radial-gradient(1px 1px at " + at + ", " + veil(accent, strength) + ", transparent)", tile(size), ""}
+		}
+		layers = []backdropLayer{
+			dot(0, 53, 12), dot(1, 71, 10), dot(2, 89, 9), dot(3, 113, 11), dot(4, 137, 8),
+			{"radial-gradient(60% 50% at " + pct(x2) + " 0%, " + veil(accent, 7) + ", transparent 72%)", "", ""},
+			{base, "", ""},
+		}
 	default: // horizon: een lichte band met een donkere grond
 		layers = plain(
 			"linear-gradient("+strconv.Itoa(178+pick(2, 6))+"deg, "+veil(accent, 16)+" 0%, transparent "+pct(34+pick(5, 16))+")",
@@ -4002,6 +4057,7 @@ var themeBackdropRecipes = []string{
 	"mesh", "aurora", "bokeh", "nebula", "stars", "sunset", "dunes", "mountains", "waves", "topo",
 	"perspective", "blueprint", "pinstripe", "hexagons", "halftone", "prism", "chevron",
 	"burst", "splash", "leak",
+	"haze", "veil", "spotlight", "silk", "caustics", "dawn", "linen", "dotgrid", "ruled", "grain",
 }
 
 // themeBackdropHashedRecipes is how many recipes a theme's id can hash to: the
