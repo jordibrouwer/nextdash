@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Merge dev into main, strip dev-only paths, tag, push, and publish a GitHub Release.
+# Put origin/dev's tree on main as one commit, strip dev-only paths, tag, push, and publish a GitHub Release.
+# dev's history is not merged in, so tests/, docs/ and site/ never enter main's history.
+# Run it on dev; local dev may be ahead of origin/dev by site/ commits only, which stay local.
 # Usage: ./scripts/release-to-main.sh v1.19.0 [--skip-scan] [--skip-ci]
 #   --skip-scan  skip the local govulncheck + Trivy preflight (emergencies only)
 #   --skip-ci    release without a green CI run on dev's HEAD (emergencies only)
@@ -45,8 +47,26 @@ if [[ ! "$TAG" =~ ^v[0-9] ]]; then
   exit 1
 fi
 
+# What main receives is origin/dev, not the local dev. The local dev may carry
+# site/ commits that never go to origin; merging the local branch would put
+# them in main's history even though the prune below removes the files. So the
+# release is origin/dev, and the local dev may only be ahead of it by commits
+# that touch site/ alone.
+git fetch --quiet origin dev
+RELEASE_REF="origin/dev"
+if ! git merge-base --is-ancestor "$RELEASE_REF" HEAD; then
+  echo "origin/dev has commits that local dev lacks; rebase or pull dev first." >&2
+  exit 1
+fi
+unpushed="$(git log --format='%h %s' "${RELEASE_REF}..HEAD" -- . ':(exclude)site')"
+if [[ -n "$unpushed" ]]; then
+  echo "Local dev has commits outside site/ that are not on origin/dev; push them first:" >&2
+  echo "$unpushed" >&2
+  exit 1
+fi
+
 # CI has to have passed on the exact commit being released. Nothing else in
-# this script runs the tests, the validators or go vet, so a dev HEAD whose
+# this script runs the tests, the validators or go vet, so a dev tip whose
 # CI run was red -- or never finished, or never started because dev was not
 # pushed -- would otherwise go to main as it is.
 if [[ "$SKIP_CI" -eq 1 ]]; then
@@ -56,12 +76,7 @@ else
     echo "gh is needed to check CI on dev (or pass --skip-ci)." >&2
     exit 1
   fi
-  head_sha="$(git rev-parse HEAD)"
-  git fetch --quiet origin dev
-  if [[ "$(git rev-parse origin/dev)" != "$head_sha" ]]; then
-    echo "Local dev and origin/dev differ; push dev (or pull) and let CI run first." >&2
-    exit 1
-  fi
+  head_sha="$(git rev-parse "$RELEASE_REF")"
   ci_run="$(gh run list --workflow ci.yml --branch dev --commit "$head_sha" --limit 1 \
     --json status,conclusion,url --jq '.[0] | "\(.status)|\(.conclusion)|\(.url)"')"
   if [[ -z "$ci_run" ]]; then
@@ -203,25 +218,10 @@ publish_github_release() {
 # Files that must exist on main regardless of PRUNE_DIRS — the Dockerfile
 # needs the two scripts/ entries to build at all, and docker-publish.yml is
 # the workflow that builds and publishes that same image on every release.
-#
-# Defined here (before the merge) rather than down by PRUNE_DIRS because a
-# file deleted on main in an earlier release and left untouched on dev since
-# is resolved by git as a clean, silent delete — not a conflict. It never
-# shows up in the modify/delete conflict loop below, so it's already gone
-# from the merged tree by the time PRUNE_DIRS would otherwise have spared
-# it. These have to be restored explicitly after the merge, every time.
 KEEP_FILES=(
   scripts/docker-entrypoint.sh
   scripts/gen-asset-hashes.go
   .github/workflows/docker-publish.yml
-)
-
-# Files main takes from dev whole, every release. main's copy is never edited
-# on purpose, but a line added there by hand once (a "latest release" blurb)
-# survived every merge since: dev never touched that line, so git kept it.
-# Taking dev's copy outright means what main shows is what dev has.
-MIRROR_FILES=(
-  README.md
 )
 
 is_kept() {
@@ -233,90 +233,15 @@ is_kept() {
   return 1
 }
 
-git config merge.ours.driver true
-
+# main gets one commit per release: the tree of RELEASE_REF with the dev-only
+# paths pruned, on top of main's own history. dev is not merged in, so the
+# tests, docs and site/ commits never become part of main's history. The tree
+# is taken whole, so what main ships is what dev has: CHANGELOG.md, static/data
+# and asset_hashes_gen.go come along, files dev dropped are dropped here too,
+# and nothing hand-edited on main survives a release.
 git checkout main
-if ! git merge dev --no-edit; then
-  # A content conflict in a mirrored file is settled by dev's copy.
-  for f in "${MIRROR_FILES[@]}"; do
-    if git diff --name-only --diff-filter=U | grep -qx -- "$f"; then
-      git checkout --theirs -- "$f" 2>/dev/null || true
-      git add -- "$f" 2>/dev/null || true
-    fi
-  done
-  echo "Resolving modify/delete conflicts for dev-only paths on main..."
-  while IFS= read -r path; do
-    [[ -n "$path" ]] || continue
-    # Paths that belong on main and must survive a modify/delete conflict.
-    #
-    # The catch-all below deletes anything not listed here, on the assumption
-    # that a file main does not have is a dev-only file. That held while the
-    # list covered only code and translations, but it silently took three
-    # things with it that main needs:
-    #
-    #   CHANGELOG.md          — and with it the release notes, because
-    #                           extract_changelog_notes runs on main and
-    #                           returns 1 when the file is absent, which is
-    #                           why published releases kept reading
-    #                           "Release <tag>" with an empty body
-    #   static/data/*         — the What's new manifest lives here; without
-    #                           index.json the modal and the version shown in
-    #                           Config → Overview have nothing to read, even
-    #                           though all 131 release files ship
-    #   internal/app/asset_hashes_gen.go
-    #                         — generated, but committed, and main has no
-    #                           scripts/ to regenerate it, so without it main
-    #                           does not compile at all. The path is matched
-    #                           literally, so it moves whenever the package
-    #                           does.
-    #
-    # None of these were in PRUNE_DIRS or the explicit git rm list, so they
-    # were never deliberately dropped — they just fell through this case.
-    if is_kept "$path"; then
-      git checkout --theirs -- "$path" 2>/dev/null || true
-      git add -- "$path" 2>/dev/null || true
-      continue
-    fi
-    case "$path" in
-      static/js/*|static/css/*|static/data/*|templates/*|locales/*|CHANGELOG.md|internal/app/asset_hashes_gen.go)
-        git checkout --theirs -- "$path" 2>/dev/null || true
-        git add -- "$path" 2>/dev/null || true
-        ;;
-      *)
-        git rm -f "$path" >/dev/null 2>&1 || true
-        ;;
-    esac
-  done < <(git diff --name-only --diff-filter=UD)
+git read-tree --reset -u "$RELEASE_REF"
 
-  if git diff --name-only --diff-filter=U | grep -q .; then
-    echo "Unresolved merge conflicts remain. Fix manually, then commit on main." >&2
-    exit 1
-  fi
-
-  git commit --no-edit
-fi
-
-# Belt-and-braces: restore any KEEP_FILES entry that the merge silently
-# dropped (no conflict shown, because it was unchanged on dev since main
-# deleted it in an earlier release). Safe to run even when the file was
-# never touched by the merge at all — checkout + add is a no-op then.
-for f in "${KEEP_FILES[@]}"; do
-  if git cat-file -e "dev:${f}" 2>/dev/null; then
-    git checkout dev -- "$f" 2>/dev/null || true
-    git add -- "$f" 2>/dev/null || true
-  fi
-done
-
-# And outside a conflict: a merge that went clean still keeps main-only lines.
-for f in "${MIRROR_FILES[@]}"; do
-  if git cat-file -e "dev:${f}" 2>/dev/null; then
-    git checkout dev -- "$f" 2>/dev/null || true
-    git add -- "$f" 2>/dev/null || true
-  fi
-done
-if ! git diff --cached --quiet -- "${MIRROR_FILES[@]}"; then
-  git commit -m "Take ${MIRROR_FILES[*]} from dev." -- "${MIRROR_FILES[@]}"
-fi
 
 PRUNE_DIRS=(
   tests
@@ -337,7 +262,9 @@ for dir in "${PRUNE_DIRS[@]}"; do
   done < <(git ls-files "$dir")
 done
 
-git rm --ignore-unmatch \
+# -f on every git rm below: the index now differs from main's HEAD (it holds
+# dev's tree), and without -f git refuses and the || true hides the refusal.
+git rm -f --ignore-unmatch \
   .github/pull_request_template.md \
   Makefile \
   package.json \
@@ -349,11 +276,26 @@ git rm --ignore-unmatch \
   >/dev/null 2>&1 || true
 
 while IFS= read -r file; do
-  [[ -n "$file" ]] && git rm --ignore-unmatch "$file" >/dev/null 2>&1 || true
+  [[ -n "$file" ]] && git rm -f --ignore-unmatch "$file" >/dev/null 2>&1 || true
 done < <(git ls-files '*_test.go')
 
+# The rm calls above swallow their errors, so check the result: nothing of the
+# dev-only paths may reach main, history aside, and a refusal must not pass.
+leftover="$(git ls-files tests site docs test-results playwright-report node_modules Makefile package.json '*_test.go' | head -n 5)"
+if [[ -n "$leftover" ]]; then
+  echo "The prune left dev-only files in the release; stopping before the commit:" >&2
+  echo "$leftover" >&2
+  exit 1
+fi
+for f in "${KEEP_FILES[@]}"; do
+  if ! git cat-file -e ":${f}" 2>/dev/null; then
+    echo "${f} is missing from the release tree (it must exist on dev); stopping before the commit." >&2
+    exit 1
+  fi
+done
+
 if ! git diff --cached --quiet; then
-  git commit -m "Prune dev-only files after merge from dev."
+  git commit -m "Release ${TAG} (dev $(git rev-parse --short "$RELEASE_REF"))"
 fi
 
 ensure_release_tag "$TAG"
