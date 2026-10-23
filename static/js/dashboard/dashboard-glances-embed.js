@@ -41,6 +41,14 @@
             link = null;
         }
         if (!link || !link.same) return;
+        // Linked on purpose or by detection, yet nothing could be paired: say so here, where it is missed.
+        if (link.problem && host.isConnected) {
+            host.hidden = false;
+            host.classList.add('glances-embed');
+            host.setAttribute('data-glances-embed-problem', link.problem);
+            host.replaceChildren(el('p', 'glances-embed-note', t('dashboard.glancesEmbedProblem', 'Linked to Glances, but no container could be paired. See Config → Glances → Advanced.')));
+            return;
+        }
         const match = (link.matches || []).find((m) => m.docker === dockerName);
         // The Docker host's own record, whichever host the page was last looking at.
         const Host = window.DashboardGlancesHost;

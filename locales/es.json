@@ -3669,7 +3669,8 @@
     "dockerLinkNotRunning": "Detenido",
     "inboxLegendFewer": "Menos teclas",
     "inboxLegendMore": "{count} teclas más",
-    "widgetType.domains": "Dominios"
+    "widgetType.domains": "Dominios",
+    "glancesEmbedProblem": "Vinculado a Glances, pero no se pudo emparejar ningún contenedor. Consulta Config → Glances → Advanced."
   },
   "health": {
     "reloadPage": "Recargar la página",
@@ -9622,7 +9623,10 @@
     "dockerSnippetSummary": "Líneas de Compose",
     "overviewHealthChecked": "{checked} comprobados · {n} monitorizados",
     "categoryNameLabel": "Nombre de la categoría",
-    "widgetAbout.domains": "Nombres de dominio a punto de caducar, agrupados por dominio registrado en lugar de por host."
+    "widgetAbout.domains": "Nombres de dominio a punto de caducar, agrupados por dominio registrado en lugar de por host.",
+    "glancesLinkProblemGlances": "No se pudieron leer los contenedores de Glances, así que no se empareja nada.",
+    "glancesLinkProblemDocker": "No se pudieron leer los contenedores de Docker, así que no se empareja nada.",
+    "glancesLinkProblemNone": "Glances tiene {glances} contenedores y Docker {docker}, pero ninguno coincide. Comprueba que este Glances se ejecuta en la máquina cuyo Docker lee la vista de Contenedores."
   },
   "colors": {
     "title": "personalización del tema",

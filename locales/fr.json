@@ -3669,7 +3669,8 @@
     "dockerLinkNotRunning": "Arrêté",
     "inboxLegendFewer": "Moins de touches",
     "inboxLegendMore": "{count} touches de plus",
-    "widgetType.domains": "Domaines"
+    "widgetType.domains": "Domaines",
+    "glancesEmbedProblem": "Lié à Glances, mais aucun conteneur n'a pu être associé. Voir Config → Glances → Advanced."
   },
   "health": {
     "reloadPage": "Recharger la page",
@@ -9622,7 +9623,10 @@
     "dockerSnippetSummary": "Lignes Compose",
     "overviewHealthChecked": "{checked} vérifiés · {n} surveillés",
     "categoryNameLabel": "Nom de la catégorie",
-    "widgetAbout.domains": "Noms de domaine sur le point d’expirer, regroupés par domaine enregistré plutôt que par hôte."
+    "widgetAbout.domains": "Noms de domaine sur le point d’expirer, regroupés par domaine enregistré plutôt que par hôte.",
+    "glancesLinkProblemGlances": "Les conteneurs n'ont pas pu être lus depuis Glances, rien n'est donc associé.",
+    "glancesLinkProblemDocker": "Les conteneurs n'ont pas pu être lus depuis Docker, rien n'est donc associé.",
+    "glancesLinkProblemNone": "Glances compte {glances} conteneurs et Docker {docker}, mais aucun ne correspond. Vérifie que ce Glances tourne sur la machine dont la vue Conteneurs lit Docker."
   },
   "colors": {
     "title": "personnalisation du thème",

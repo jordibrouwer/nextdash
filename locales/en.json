@@ -3669,7 +3669,8 @@
     "glancesSummaryTemp": "Hottest sensor",
     "dockerLinkNotRunning": "Not running",
     "inboxLegendFewer": "Fewer keys",
-    "inboxLegendMore": "{count} more keys"
+    "inboxLegendMore": "{count} more keys",
+    "glancesEmbedProblem": "Linked to Glances, but no container could be paired. See Config → Glances → Advanced."
   },
   "health": {
     "reloadPage": "Reload page",
@@ -9622,7 +9623,10 @@
     "glancesBarNoAddress": "No address yet",
     "dockerSnippetSummary": "Compose lines",
     "overviewHealthChecked": "{checked} checked · {n} monitored",
-    "categoryNameLabel": "Category name"
+    "categoryNameLabel": "Category name",
+    "glancesLinkProblemGlances": "The containers could not be read from Glances, so nothing is paired.",
+    "glancesLinkProblemDocker": "The containers could not be read from Docker, so nothing is paired.",
+    "glancesLinkProblemNone": "Glances has {glances} containers and Docker has {docker}, but none belong together. Check that this Glances runs on the machine whose Docker the Containers view reads."
   },
   "colors": {
     "title": "theme customization",

@@ -3669,7 +3669,8 @@
     "dockerLinkNotRunning": "Läuft nicht",
     "inboxLegendFewer": "Weniger Tasten",
     "inboxLegendMore": "{count} weitere Tasten",
-    "widgetType.domains": "Domains"
+    "widgetType.domains": "Domains",
+    "glancesEmbedProblem": "Mit Glances verknüpft, aber es konnte kein Container zugeordnet werden. Siehe Config → Glances → Advanced."
   },
   "health": {
     "reloadPage": "Seite neu laden",
@@ -9622,7 +9623,10 @@
     "dockerSnippetSummary": "Compose-Zeilen",
     "overviewHealthChecked": "{checked} geprüft · {n} überwacht",
     "categoryNameLabel": "Kategoriename",
-    "widgetAbout.domains": "Domainnamen, die bald ablaufen, nach registrierter Domain statt nach Host gruppiert."
+    "widgetAbout.domains": "Domainnamen, die bald ablaufen, nach registrierter Domain statt nach Host gruppiert.",
+    "glancesLinkProblemGlances": "Die Container konnten nicht aus Glances gelesen werden, daher wird nichts zugeordnet.",
+    "glancesLinkProblemDocker": "Die Container konnten nicht aus Docker gelesen werden, daher wird nichts zugeordnet.",
+    "glancesLinkProblemNone": "Glances hat {glances} Container und Docker {docker}, aber keiner gehört zusammen. Prüfe, ob dieses Glances auf der Maschine läuft, deren Docker die Container-Ansicht liest."
   },
   "colors": {
     "title": "themenanpassung",

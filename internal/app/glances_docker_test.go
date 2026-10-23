@@ -315,3 +315,34 @@ func TestGlancesPortsOfReadsEveryShape(t *testing.T) {
 		}
 	}
 }
+
+// A link that pairs nothing says why, so the page can tell the reader instead of showing a bare zero.
+func TestGlancesDockerLinkSaysWhyNothingPaired(t *testing.T) {
+	h, _, fake, cfg := linkSetup(t, "NAS.lan")
+	ask := func() glancesDockerLinkAnswer {
+		glancesLinkForget()
+		glancesViewForgetAll()
+		return h.glancesComputeDockerLink(context.Background(), cfg)
+	}
+	if a := ask(); a.Problem != "" || a.GlancesCount != 3 || a.DockerCount != 3 {
+		t.Errorf("a good pairing has no problem: %+v", a)
+	}
+	fake.mu.Lock()
+	fake.override["containers"] = []byte(`not json`)
+	fake.mu.Unlock()
+	if a := ask(); a.Problem != "glances-unreadable" {
+		t.Errorf("unreadable list: %+v", a)
+	}
+	fake.mu.Lock()
+	fake.override["containers"] = []byte(`[{"name":"x","id":"123456789abc","status":"running"}]`)
+	fake.mu.Unlock()
+	if a := ask(); a.Problem != "none-matched" || len(a.Matches) != 0 {
+		t.Errorf("both sides have containers, none alike: %+v", a)
+	}
+	fake.mu.Lock()
+	fake.override["containers"] = []byte(`[]`)
+	fake.mu.Unlock()
+	if a := ask(); a.Problem != "" {
+		t.Errorf("an empty Glances list is not a failed pairing: %+v", a)
+	}
+}

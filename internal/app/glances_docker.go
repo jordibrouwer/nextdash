@@ -64,6 +64,12 @@ type glancesDockerLinkAnswer struct {
 	OnlyDocker  []string           `json:"onlyDocker"`
 	ByID        int                `json:"byId"`
 	ByName      int                `json:"byName"`
+	// Problem says why a chosen or detected link paired nothing: "glances-unreadable"
+	// and "docker-unreadable" when a list could not be read, "none-matched" when both
+	// lists have containers and no two belong together. Empty when all is well.
+	Problem      string `json:"problem,omitempty"`
+	GlancesCount int    `json:"glancesCount,omitempty"`
+	DockerCount  int    `json:"dockerCount,omitempty"`
 }
 
 type glancesLinkEntry struct {
@@ -265,10 +271,12 @@ func (h *Handlers) glancesComputeDockerLink(ctx context.Context, cfg GlancesConf
 		Ports json.RawMessage `json:"ports"`
 	}
 	if err := h.glancesAsk(ctx, cfg, "containers", &gl); err != nil {
+		answer.Problem = "glances-unreadable"
 		return answer
 	}
 	list, err := api.listContainers(ctx)
 	if err != nil {
+		answer.Problem = "docker-unreadable"
 		return answer
 	}
 	hidden := dockerHiddenSet()
@@ -292,6 +300,10 @@ func (h *Handlers) glancesComputeDockerLink(ctx context.Context, cfg GlancesConf
 		dSide = append(dSide, glancesLinkSide{Name: name, ID: c.ID, Ports: ports})
 	}
 	answer.Matches, answer.OnlyGlances, answer.OnlyDocker = matchGlancesContainers(gSide, dSide)
+	answer.GlancesCount, answer.DockerCount = len(gSide), len(dSide)
+	if len(answer.Matches) == 0 && len(gSide) > 0 && len(dSide) > 0 {
+		answer.Problem = "none-matched"
+	}
 	for _, m := range answer.Matches {
 		switch m.By {
 		case "id":

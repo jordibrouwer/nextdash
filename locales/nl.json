@@ -3669,7 +3669,8 @@
     "dockerLinkNotRunning": "Niet actief",
     "inboxLegendFewer": "Minder toetsen",
     "inboxLegendMore": "{count} toetsen meer",
-    "widgetType.domains": "Domeinen"
+    "widgetType.domains": "Domeinen",
+    "glancesEmbedProblem": "Gekoppeld aan Glances, maar er kon geen container worden gekoppeld. Zie Config → Glances → Advanced."
   },
   "health": {
     "reloadPage": "Pagina herladen",
@@ -9622,7 +9623,10 @@
     "dockerSnippetSummary": "Compose-regels",
     "overviewHealthChecked": "{checked} gecontroleerd · {n} bewaakt",
     "categoryNameLabel": "Categorienaam",
-    "widgetAbout.domains": "Domeinnamen die bijna verlopen, gegroepeerd per geregistreerd domein in plaats van per host."
+    "widgetAbout.domains": "Domeinnamen die bijna verlopen, gegroepeerd per geregistreerd domein in plaats van per host.",
+    "glancesLinkProblemGlances": "De containers konden niet uit Glances worden gelezen, dus er is niets gekoppeld.",
+    "glancesLinkProblemDocker": "De containers konden niet uit Docker worden gelezen, dus er is niets gekoppeld.",
+    "glancesLinkProblemNone": "Glances heeft {glances} containers en Docker {docker}, maar geen daarvan hoort bij elkaar. Controleer of deze Glances draait op de machine waarvan de Containers-view Docker leest."
   },
   "colors": {
     "title": "thema-aanpassing",

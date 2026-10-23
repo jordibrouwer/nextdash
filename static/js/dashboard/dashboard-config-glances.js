@@ -462,7 +462,16 @@
                 const d = (a.onlyDocker || []).join(', ') || '—';
                 linkOnly.textContent = `${t('glancesLinkOnlyGlances', 'Only in Glances')}: ${g}. ${t('glancesLinkOnlyDocker', 'Only in the Containers view')}: ${d}.`;
             }
+            // Why a link that is on paired nothing, in words, instead of a bare zero.
+            const problem = {
+                'glances-unreadable': t('glancesLinkProblemGlances', 'The containers could not be read from Glances, so nothing is paired.'),
+                'docker-unreadable': t('glancesLinkProblemDocker', 'The containers could not be read from Docker, so nothing is paired.'),
+                'none-matched': t('glancesLinkProblemNone', 'Glances has {glances} containers and Docker has {docker}, but none belong together. Check that this Glances runs on the machine whose Docker the Containers view reads.')
+                    .replace('{glances}', String(a.glancesCount || 0)).replace('{docker}', String(a.dockerCount || 0)),
+            }[a.problem];
+            if (problem) text += ` ${problem}`;
             linkState.textContent = text;
+            linkState.setAttribute('data-glances-link-problem', problem ? a.problem : '');
         };
         // Only one host is the Docker host: which one it is, said under this host's own link state.
         const dockerHostEl = root.querySelector('[data-glances-link-docker-host]');

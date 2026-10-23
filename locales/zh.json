@@ -3669,7 +3669,8 @@
     "dockerLinkNotRunning": "未运行",
     "inboxLegendFewer": "收起按键",
     "inboxLegendMore": "另外 {count} 个按键",
-    "widgetType.domains": "域名"
+    "widgetType.domains": "域名",
+    "glancesEmbedProblem": "已与 Glances 关联，但没有容器能够配对。请查看 Config → Glances → Advanced。"
   },
   "health": {
     "reloadPage": "重新加载页面",
@@ -9622,7 +9623,10 @@
     "dockerSnippetSummary": "Compose 行",
     "overviewHealthChecked": "已检查 {checked} · 监控中 {n}",
     "categoryNameLabel": "分类名称",
-    "widgetAbout.domains": "即将到期的域名，按注册域名而不是按主机分组。"
+    "widgetAbout.domains": "即将到期的域名，按注册域名而不是按主机分组。",
+    "glancesLinkProblemGlances": "无法从 Glances 读取容器，因此没有任何配对。",
+    "glancesLinkProblemDocker": "无法从 Docker 读取容器，因此没有任何配对。",
+    "glancesLinkProblemNone": "Glances 有 {glances} 个容器，Docker 有 {docker} 个，但没有一个对得上。请确认此 Glances 运行在容器视图所读取 Docker 的同一台机器上。"
   },
   "colors": {
     "title": "主题自定义",
