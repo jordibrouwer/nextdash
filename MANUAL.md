@@ -3306,12 +3306,35 @@ The **⋯** in the panel's head copies the name or the PID, and for a container 
 
 **Containers** lists the containers Glances sees; a **↗** opens the same container in the Containers view when nextDash manages that machine's Docker ([§15A.6](#15a6-the-docker-host)). A container's side panel has the same two tabs.
 
-**Insights** has a **Range** (24 hours, 7 or 30 days) and **Download CSV**, and answers in blocks: a **Health** score out of 100, from how close each reading is to its red line, ongoing incidents and availability (85 and up is good); **Disks: when full**, a straight line through the last week of each disk's use; **Typical and peak** (average, median, 95th and 99th percentile); **Busy hours**, one square per hour of each day; **Network per day**; **Availability**, a block per quarter of an hour; **Incidents**; and **Who used the most**, over the processes and containers whose history you recorded.
+**Insights** has a **Range** (24 hours, 7 or 30 days) and **Download CSV**, and answers in blocks. Each block has an **ⓘ** beside its title that says in two or three sentences what it shows. The blocks are:
+
+- **Health** — a score out of 100, from how close each reading is to its red line, ongoing incidents and availability (85 and up is good);
+- **Disks: when full** — a straight line through the last week of each disk's use;
+- **Typical and peak** — average, median, 95th and 99th percentile;
+- **Compared with before** — the average of each reading over the range, set against the same length of time right before it, with the change in percent; it needs twice the range of record;
+- **Busy hours** — one square per hour of each day;
+- **A typical day** — the average for each hour of the day, one bar per hour, with the highest hour on the right; it shows when the machine is busy or quiet;
+- **Peaks and rhythm** — the busiest and the quietest hour of the day, and the moments a reading rose far above its usual level, with the busiest process or container of that moment when its history is recorded;
+- **Load and cores** — the 1, 5 and 15 minute load against the number of cores, and each core's average with its peak as a tick;
+- **Memory and swap** — where the memory goes on average (in use, cache, free), how long the swap was in use, and who used the most memory;
+- **Temperature per sensor** — every recorded sensor, hottest first, with the time it spent over the yellow line;
+- **Disk space over time** and **Disk activity** — how much each disk filled up over the range, and what it read and wrote per second;
+- **Network per day** and **Network per interface** — what the network carried, and the containers with the most traffic;
+- **Availability** — a block per quarter of an hour, with the outages of the range counted underneath;
+- **Incidents** — with a summary line per kind;
+- **Who used the most** — over the processes and containers whose history you recorded.
+
+A block with too little behind it is left out.
 
 <p align="center">
-  <img src="screenshots/manual.md/15a-glances-insights.jpg" alt="The Glances page on Insights: a health score of 84, good, a table of disks with when each is full, and a table of typical and peak readings for memory and processor" width="860">
+  <img src="screenshots/manual.md/15a-glances-insights.jpg" alt="The Glances page on Insights: a health score of 84, good, a table of disks with when each is full, a table of typical and peak readings for memory and processor, and the start of Compared with before" width="860">
 </p>
 <p align="center"><sub>Insights: the health score, and the disk that is filling.</sub></p>
+
+<p align="center">
+  <img src="screenshots/manual.md/15a-glances-insights-more.jpg" alt="The Insights block A typical day: a row of 24 bars per hour for processor, memory and network, with the highest hour on the right and an ⓘ beside the title" width="860">
+</p>
+<p align="center"><sub>Further down: a typical day, with an ⓘ beside every title.</sub></p>
 
 <a id="15a4-the-record"></a>
 
@@ -3369,6 +3392,7 @@ Then the two views meet:
 
 - a **↗** in the Glances Containers section opens the container in the Containers view, and the Containers side panel opens it back — it has a **From Glances** part with what Glances recorded about it;
 - the moments a container restarted are marked on the Glances graphs;
+- when the two are linked but not one container could be paired, Config → Glances → Advanced and the Containers view say why: the containers could not be read from Glances, they could not be read from Docker, or both lists have containers and none belong together (check that this Glances runs on the machine whose Docker the Containers view reads);
 - **Use Glances for the CPU, memory and network in the Containers view** (on by default) lets the Containers view ask Glances once for every container instead of asking Docker for each. Containers Glances does not know — or does not give a core count for — are still read from Docker, and so is everything when Glances does not answer within a few seconds.
 
 <a id="15a7-the-widget"></a>
