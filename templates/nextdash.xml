@@ -28,9 +28,10 @@ Key features:
 • Inbox to collect new links fast: triage them, or keep them under Bookmarks → Unsorted and file whole groups later
 • Bookmarks view with Health built in: finds broken, stale and duplicate links, with uptime monitoring and downtime alerts
 • Video bookmarks marked in the list, and played in the hover card without leaving the dashboard
-• Widgets beside your bookmarks: 36 built-in kinds (uptime, feeds, weather, calendar, disks, containers and more) plus a Custom widget for any JSON API
+• Widgets beside your bookmarks: 48 built-in kinds (uptime, feeds, weather, calendar, disks, containers and more) plus a Custom widget for any JSON API
 • Your media stack on the dashboard: Jellyfin, Sonarr, Radarr, Seerr, qBittorrent and SABnzbd, with the posters from your own library
 • Finds the web apps in your Docker containers and offers them as bookmarks, with an icon and a status check (needs the Docker socket below)
+• Glances on the dashboard: a page for the hosts you run Glances on, with processes, containers, graphs and incidents, and a widget for one host
 • Your Unraid server on the dashboard: seven widgets for the array, parity, shares, VMs, the UPS and notifications, with alerts
 • Web search in the search panel through your own SearXNG or the Brave Search API
 • Six interface languages: English, Dutch, German, French, Spanish and Chinese
@@ -51,6 +52,13 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.21.0 (2026-10-23)
+- Glances: a page for the hosts you run Glances on, with processes, containers, graphs, incidents and a Hosts table, and a widget that shows one host on the dashboard
+- Domains: a widget, a badge in Bookmarks and alerts show when a domain registration runs out
+- Appearance: Berry is the default theme for a new install, and a card offers it once to everyone on another theme
+- Dashboard: right-click a category's header to add a bookmark to it, a search keeps the letter you typed, and Escape leaves the bookmark grid
+- Fixes: row checkboxes can be clicked again in Containers and the Inbox, entrance animations no longer stall on a slow load, and uploaded SVGs are served under a sandboxed policy
+
 ### v1.20.3 (2026-10-21)
 - Appearance: the dashboard is set in your font preset, Source Code Pro by default, and Config and the other views read in Inter
 - Config: About has Project, Install and News &amp; features tabs, with the version, counts, uptime and a Copy diagnostics button for bug reports
@@ -74,34 +82,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - Dashboard: widget titles are plain titles over their card again, and the // is in one place for categories and widgets
 - Fixes: a title no longer jumps when you point at it
 
-### v1.19.10 (2026-10-18)
-- Dashboard: category and widget titles keep their size, line up with the bookmarks under them and stand out from them; a widget's title is the head of its card
-- Fixes: a short category name no longer shrinks below the bookmarks, and the Open button on Status page has no underline
-
-### v1.19.9 (2026-10-17)
-- Containers: nextDash finds the web apps in your Docker containers and offers them as bookmarks; a container that turns up later is asked about first
-- Containers: the labels nextdash.url, nextdash.name, nextdash.category, nextdash.icon and nextdash.hide steer what is found
-- First start: a fresh install starts with 98 example links on two pages, or empty if you choose, on the new Slate theme
-- Import: an import asks whether the bookmarks go onto the dashboard or into the inbox first
-- Appearance: code, addresses and shortcuts use Source Code Pro
-- Fixes: clicking the search hint runs that search, and read and unread in the inbox follow the server across devices
-
-### v1.19.8 (2026-10-15)
-- Widgets: now playing tiles for Jellyfin, Emby and Plex, and Emby and Plex tiles of what was added lately (Plex is read through Tautulli)
-- Tags: Shift + T opens the tag view of every bookmark, with a Without tags filter
-- Tag suggestions: Find tags works in the inbox, what you turned down is easy to find again, and self-hosted apps are recognised by name
-- Tag suggestions: thousands more sites and dozens of new subjects in the catalogue
-- Dashboard: the page filter stays at the top on a phone
-- Fixes: Keep settings on this device only keeps them on this device, and media tiles refresh without the Loading line
-
-### v1.19.7 (2026-10-14)
-- Appearance: nine tabs in three groups (Look, Bookmarks, Header &amp; bars), with link previews on a tab of their own
-- Appearance: panels fold to one line that says what they are set to, and long tabs list their panels
-- Appearance: runs of show/hide switches are one row of chips, and rarely used sliders sit under Fine-tune
-- Action bar: five button sizes, from extra small to extra large; the header destinations grow with them
-- Tags: subjects in a tree, and new links are looked up on Wikidata quietly, offered as a chip and never written
-- Fixes: a docked action bar no longer slides into place on a load, and a tab reached through Find settings stays put
-
   </Changes>
 
   <Category>Tools: Productivity: Network:Web</Category>
@@ -109,7 +89,7 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   <!-- Repository points to Docker Hub (foobar1452/nextdash) rather than GHCR
        so Unraid CA can show Last Update / download stats — GHCR doesn't
        expose the public registry metadata CA relies on for that. -->
-  <Date>2026-10-21</Date>
+  <Date>2026-10-23</Date>
 
   <Config Name="WebUI Port"
           Target="8080"

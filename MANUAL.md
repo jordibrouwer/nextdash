@@ -359,6 +359,7 @@ This manual describes nextDash as it is now. It follows the same topics as Confi
 <summary><b>24.</b> <a href="#24-troubleshooting">Troubleshooting</a></summary>
 
 - [The dashboard is empty after install](#the-dashboard-is-empty-after-install)
+- [The dashboard says "Host not allowed"](#host-not-allowed)
 - [The dashboard does not load](#the-dashboard-does-not-load)
 - [A change in another tab does not show](#a-change-in-another-tab-does-not-show)
 - [A shortcut does not open its bookmark](#a-shortcut-does-not-open-its-bookmark)
@@ -1491,7 +1492,7 @@ A lone **`:`** lists every command in five groups — Bookmarks, Search & naviga
 <p align="center"><img src="screenshots/manual.md/08-finders.jpg" alt="The search panel on its finders tab: a question mark typed, and the two finders Brave Search and DuckDuckGo with their shortcuts" width="840"></p>
 <p align="center"><sub><kbd>?</kbd> lists the finders with their shortcuts.</sub></p>
 
-**Structure → Finders** manages them: a name, a shortcut and a URL with `%s` where the query goes (for example `https://github.com/search?q=%s`). Names and shortcuts must be unique. Rows can be dragged or moved with `↑`/`↓`, carry tags, and show how often each finder was used. **Include finders in search** (Behavior → Keyboard & search) shows them among ordinary results.
+**Structure → Finders** manages them: a name, a shortcut and a URL with `%s` where the query goes (for example `https://github.com/search?q=%s`). Names and shortcuts must be unique. Rows can be dragged or moved with `↑`/`↓`, carry tags, and show how often each finder was used; the ones you use most are suggested first. **Include finders in search** (Behavior → Keyboard & search) shows them among ordinary results.
 
 With that setting on (it is by default), a search that matches nothing lists your three most-used finders under the *no matches* line — **Search on …**, with what you typed already filled in. Click one, or reach it with `↓`, to ask that site instead.
 
@@ -3306,12 +3307,35 @@ The **⋯** in the panel's head copies the name or the PID, and for a container 
 
 **Containers** lists the containers Glances sees; a **↗** opens the same container in the Containers view when nextDash manages that machine's Docker ([§15A.6](#15a6-the-docker-host)). A container's side panel has the same two tabs.
 
-**Insights** has a **Range** (24 hours, 7 or 30 days) and **Download CSV**, and answers in blocks: a **Health** score out of 100, from how close each reading is to its red line, ongoing incidents and availability (85 and up is good); **Disks: when full**, a straight line through the last week of each disk's use; **Typical and peak** (average, median, 95th and 99th percentile); **Busy hours**, one square per hour of each day; **Network per day**; **Availability**, a block per quarter of an hour; **Incidents**; and **Who used the most**, over the processes and containers whose history you recorded.
+**Insights** has a **Range** (24 hours, 7 or 30 days) and **Download CSV**, and answers in blocks. Each block has an **ⓘ** beside its title that says in two or three sentences what it shows. The blocks are:
+
+- **Health** — a score out of 100, from how close each reading is to its red line, ongoing incidents and availability (85 and up is good);
+- **Disks: when full** — a straight line through the last week of each disk's use;
+- **Typical and peak** — average, median, 95th and 99th percentile;
+- **Compared with before** — the average of each reading over the range, set against the same length of time right before it, with the change in percent; it needs twice the range of record;
+- **Busy hours** — one square per hour of each day;
+- **A typical day** — the average for each hour of the day, one bar per hour, with the highest hour on the right; it shows when the machine is busy or quiet;
+- **Peaks and rhythm** — the busiest and the quietest hour of the day, and the moments a reading rose far above its usual level, with the busiest process or container of that moment when its history is recorded;
+- **Load and cores** — the 1, 5 and 15 minute load against the number of cores, and each core's average with its peak as a tick;
+- **Memory and swap** — where the memory goes on average (in use, cache, free), how long the swap was in use, and who used the most memory;
+- **Temperature per sensor** — every recorded sensor, hottest first, with the time it spent over the yellow line;
+- **Disk space over time** and **Disk activity** — how much each disk filled up over the range, and what it read and wrote per second;
+- **Network per day** and **Network per interface** — what the network carried, and the containers with the most traffic;
+- **Availability** — a block per quarter of an hour, with the outages of the range counted underneath;
+- **Incidents** — with a summary line per kind;
+- **Who used the most** — over the processes and containers whose history you recorded.
+
+A block with too little behind it is left out.
 
 <p align="center">
-  <img src="screenshots/manual.md/15a-glances-insights.jpg" alt="The Glances page on Insights: a health score of 84, good, a table of disks with when each is full, and a table of typical and peak readings for memory and processor" width="860">
+  <img src="screenshots/manual.md/15a-glances-insights.jpg" alt="The Glances page on Insights: a health score of 84, good, a table of disks with when each is full, a table of typical and peak readings for memory and processor, and the start of Compared with before" width="860">
 </p>
 <p align="center"><sub>Insights: the health score, and the disk that is filling.</sub></p>
+
+<p align="center">
+  <img src="screenshots/manual.md/15a-glances-insights-more.jpg" alt="The Insights block A typical day: a row of 24 bars per hour for processor, memory and network, with the highest hour on the right and an ⓘ beside the title" width="860">
+</p>
+<p align="center"><sub>Further down: a typical day, with an ⓘ beside every title.</sub></p>
 
 <a id="15a4-the-record"></a>
 
@@ -3369,6 +3393,7 @@ Then the two views meet:
 
 - a **↗** in the Glances Containers section opens the container in the Containers view, and the Containers side panel opens it back — it has a **From Glances** part with what Glances recorded about it;
 - the moments a container restarted are marked on the Glances graphs;
+- when the two are linked but not one container could be paired, Config → Glances → Advanced and the Containers view say why: the containers could not be read from Glances, they could not be read from Docker, or both lists have containers and none belong together (check that this Glances runs on the machine whose Docker the Containers view reads);
 - **Use Glances for the CPU, memory and network in the Containers view** (on by default) lets the Containers view ask Glances once for every container instead of asking Docker for each. Containers Glances does not know — or does not give a core count for — are still read from Docker, and so is everything when Glances does not answer within a few seconds.
 
 <a id="15a7-the-widget"></a>
@@ -4536,6 +4561,12 @@ Read-only routes (bookmarks, settings, the health list, ping) stay open, with tw
 
 `NEXTDASH_CAPTURE_TOKEN` opens only the two capture routes ([§21.2](#212-capture-without-the-extension)).
 
+**Which names may open it.** With a write token set, nextDash also refuses a request that names a host it does not know, since a page on another domain could otherwise point its own name at your address and hand itself the token. An IP address, `localhost`, a name without dots and the private endings `.local`, `.lan`, `.home.arpa`, `.internal` and `.ts.net` always pass. For a public name — your domain behind a reverse proxy — list it in `NEXTDASH_ALLOWED_HOSTS`, comma-separated; `*.example.com` allows every subdomain and `*` turns the check off. A request that is refused gets *Host not allowed* (status 421) and the reason is in the log. Status pages under `/s/` are not checked, and without a write token nothing is.
+
+```bash
+NEXTDASH_ALLOWED_HOSTS=dash.example.com, *.example.org
+```
+
 <a id="233-local-addresses-and-outgoing-requests"></a>
 
 ### 23.3 Local addresses and outgoing requests
@@ -4708,6 +4739,12 @@ location /               { return 404; }
 ### The dashboard is empty after install
 
 The example bookmarks may have been removed. Add bookmarks with **&** or **+**, or import a browser file under Config → Data & backups.
+
+<a id="host-not-allowed"></a>
+
+### The dashboard says "Host not allowed"
+
+A write token is set and the address you opened is a public name nextDash does not know. Add the name to `NEXTDASH_ALLOWED_HOSTS` ([§23.2](#232-the-write-token)) and restart, or open nextDash by its IP address or a private name instead.
 
 <a id="the-dashboard-does-not-load"></a>
 

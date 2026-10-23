@@ -1085,3 +1085,40 @@
     border-radius: var(--radius-2, 0.18rem);
     background: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
 }
+
+/* Help → Glances → Insights: the bars of "a typical day" rise one after the other, once. */
+@media (prefers-reduced-motion: no-preference) {
+    [data-help-panel="glances-insights"] .setting-art-bar-col {
+        transform-origin: bottom;
+        animation: setting-art-bar-rise 0.7s ease-out both;
+    }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(1) { animation-delay: 0ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(2) { animation-delay: 45ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(3) { animation-delay: 90ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(4) { animation-delay: 135ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(5) { animation-delay: 180ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(6) { animation-delay: 225ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(7) { animation-delay: 270ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(8) { animation-delay: 315ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(9) { animation-delay: 360ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(10) { animation-delay: 405ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(11) { animation-delay: 450ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(12) { animation-delay: 495ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(13) { animation-delay: 540ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(14) { animation-delay: 585ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(15) { animation-delay: 630ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(16) { animation-delay: 675ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(17) { animation-delay: 720ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(18) { animation-delay: 765ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(19) { animation-delay: 810ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(20) { animation-delay: 855ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(21) { animation-delay: 900ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(22) { animation-delay: 945ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(23) { animation-delay: 990ms; }
+    [data-help-panel="glances-insights"] .setting-art-bar-col:nth-child(24) { animation-delay: 1035ms; }
+}
+
+@keyframes setting-art-bar-rise {
+    from { transform: scaleY(0.08); opacity: 0.4; }
+    to { transform: scaleY(1); opacity: 1; }
+}

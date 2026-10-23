@@ -1,0 +1,75 @@
+{
+  "tag": "v1.21.1",
+  "date": "23 October 2026",
+  "releasedAt": "2026-10-23",
+  "modalLead": "<strong>Glances Insights</strong> shows where the load goes, with nine new blocks and an info button on every title. The Containers view tells you why it cannot link to Glances, and a write token now keeps out host names it does not know.",
+  "sections": [
+    {
+      "title": "Glances",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Insights shows where the load goes.</strong> A typical day with a bar for every hour, the load against the cores, where the memory goes, every temperature sensor, and how this range compares with the one before it. An info button beside each title says what the block shows.",
+          "highlight": true,
+          "title": "Insights shows where the load goes",
+          "link": "#glances/insights",
+          "linkLabel": "Open Insights",
+          "media": {
+            "image": "media/v1.21.1-glances-insights.jpg",
+            "alt": "The Glances Insights tab: a typical day with a bar for every hour, the load against the cores, and where the memory goes"
+          }
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The link with Containers says why it does not pair.</strong> When Glances is on your Docker host but no container could be matched, Config and the Containers view now say whether Glances or Docker could not be read, or that none of the containers belong together.",
+          "highlight": true,
+          "title": "Glances link says why nothing paired",
+          "link": "#docker",
+          "linkLabel": "Open Containers",
+          "media": {
+            "image": "media/v1.21.1-glances-link-problem.jpg",
+            "alt": "The side panel of a container in the Containers view, saying that it is linked to Glances but that no container could be paired"
+          }
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Containers pair up on Glances 4.</strong> The ports a container reports are read the way Glances 4 sends them, and the typical-and-peak table no longer needs a scrollbar."
+        }
+      ]
+    },
+    {
+      "title": "Security",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Unknown host names are refused when a write token is set.</strong> Add your own domain to NEXTDASH_ALLOWED_HOSTS if you open nextDash by a public name; IP addresses, localhost and private names always work."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Icons are served more safely.</strong> The SVG sanitizer is stricter and served icons are sandboxed."
+        }
+      ]
+    },
+    {
+      "title": "Everyday fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Bookmarks.</strong> A URL like localhost:3000 opens as a web address, and a double click or Enter saves a bookmark once."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Pages and categories.</strong> Creating one no longer overwrites your list when reading it failed, a second tab rename cannot start while a popover is open, and Restore keeps the leftover categories."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Calmer polling.</strong> Widgets no longer stack their refreshes, and a hidden tab skips the status checks."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Clicks and focus.</strong> Row checkboxes sit above their hit area, small targets keep their layout, and the note box shows a focus ring."
+        }
+      ]
+    }
+  ]
+}

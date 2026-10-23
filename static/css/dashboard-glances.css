@@ -1037,6 +1037,41 @@ button.glances-row-link {
     .glances-ins-figures { grid-template-columns: 1fr; }
 }
 
+/* Cores: one bar each, the average filled and the peak ticked. */
+.glances-ins-cores { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 0.35rem var(--space-4, 1.25rem); margin-top: var(--space-3, 0.9rem); }
+
+/* Insights blocks in a row share their height, so the page has no ragged gaps. */
+.glances-insights .glances-blocks { align-items: stretch; }
+
+/* A typical day: one bar per hour, a row per reading. */
+.glances-ins-day { display: grid; gap: 0.6rem; }
+.glances-ins-day-row { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr) 4.5rem; align-items: end; gap: 0.75rem; font-size: var(--font-size-small); }
+.glances-ins-day-name { color: var(--text-secondary); }
+.glances-ins-day-peak { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.glances-ins-day-bars { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 2px; height: 2.6rem; align-items: end; }
+.glances-ins-day-head .glances-ins-day-bars { height: auto; align-items: center; }
+.glances-ins-day-tick { color: var(--text-secondary); font-size: 0.7rem; }
+.glances-ins-day-bar { display: block; min-height: 2px; border-radius: 2px 2px 0 0; background: var(--accent-primary); }
+.glances-ins-day-bar.is-empty { height: 2px; background: color-mix(in srgb, var(--text-primary) 15%, transparent); }
+@media (max-width: 560px) {
+    .glances-ins-day-row { grid-template-columns: 5rem minmax(0, 1fr) 3.5rem; gap: 0.5rem; }
+}
+.glances-ins-core { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr) 3rem; align-items: center; gap: 0.5rem; font-size: var(--font-size-small); }
+.glances-ins-core-name, .glances-ins-core-value { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.glances-ins-core-value { text-align: right; }
+.glances-ins-core-bar { position: relative; height: 0.5rem; border-radius: 0.25rem; background: color-mix(in srgb, var(--text-primary) 10%, transparent); }
+.glances-ins-core-fill { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--accent-primary); }
+.glances-ins-core-peak { position: absolute; top: -0.15rem; bottom: -0.15rem; width: 2px; margin-left: -1px; background: var(--accent-warning); }
+
+/* Memory: in use, cache and free as one bar. */
+.glances-ins-stack { display: flex; height: 0.9rem; margin-top: var(--space-3, 0.9rem); border-radius: 0.3rem; overflow: hidden; background: color-mix(in srgb, var(--text-primary) 10%, transparent); }
+.glances-ins-seg--used { background: var(--accent-primary); }
+.glances-ins-seg--cache { background: var(--accent-warning); }
+.glances-ins-seg--free { background: color-mix(in srgb, var(--text-primary) 25%, transparent); }
+.glances-ins-legend { display: flex; flex-wrap: wrap; gap: 0.25rem var(--space-3, 0.9rem); margin-top: 0.5rem; font-size: var(--font-size-small); color: var(--text-secondary); }
+.glances-ins-legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
+.glances-ins-swatch { width: 0.6rem; height: 0.6rem; border-radius: 2px; }
+
 /* ── The connection switch (page 0's header; Config → Glances has the same) ── */
 
 .glances-switch {
@@ -1340,6 +1375,20 @@ button.glances-chart-incident:focus-visible {
 
 /* A table inside an Overview block keeps its columns and scrolls within the block. */
 .glances-ov-block { overflow-x: auto; }
+
+/* Panels still scroll sideways when needed; the bar itself stays hidden. */
+.glances-ov-block,
+.glances-proc-scroll,
+.glances-ct-wrap,
+.glances-heat {
+    scrollbar-width: none;
+}
+.glances-ov-block::-webkit-scrollbar,
+.glances-proc-scroll::-webkit-scrollbar,
+.glances-ct-wrap::-webkit-scrollbar,
+.glances-heat::-webkit-scrollbar {
+    display: none;
+}
 .glances-ov-block .glances-table { min-width: 22rem; }
 
 .glances-proc-cell--name { max-width: 16rem; overflow: hidden; text-overflow: ellipsis; }
@@ -1596,3 +1645,5 @@ button.glances-chart-incident:focus-visible {
     border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
     color: var(--accent-primary);
 }
+
+.glances-embed-note { margin: 0; color: var(--text-secondary); font-size: var(--font-size-small); }

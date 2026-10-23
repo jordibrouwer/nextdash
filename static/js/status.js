@@ -731,6 +731,8 @@ class StatusMonitor {
             );
             this.recheckIntervalMinutes = minutes;
             this.checkInterval = setInterval(() => {
+                // A hidden tab checks nothing; the next tick after it returns catches up.
+                if (document.visibilityState !== 'visible') return;
                 if (window.dashboardInstance && window.dashboardInstance.bookmarks) {
                     this.checkAllBookmarks(window.dashboardInstance.bookmarks, { full: false });
                 }

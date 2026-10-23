@@ -258,6 +258,7 @@ type glancesInsights struct {
 	} `json:"incidents"`
 	Consumers   []glancesConsumer `json:"consumers"`
 	Temperature *glancesTempStats `json:"temperature,omitempty"`
+	glancesMoreInsights
 }
 
 var glancesRanges = map[string]time.Duration{"24h": 24 * time.Hour, "7d": 7 * 24 * time.Hour, "30d": 30 * 24 * time.Hour}
@@ -330,6 +331,7 @@ func glancesComputeInsights(cfg GlancesConfig, rangeID string, heat string, loc 
 	out.Availability = glancesComputeAvailability(snaps, now)
 	out.Consumers = glancesComputeConsumers(snaps, span, now)
 	out.Temperature = glancesComputeTemperature(snaps, span, now, t)
+	out.glancesMoreInsights = glancesComputeMore(snaps, span, now, t)
 	return out
 }
 

@@ -64,6 +64,12 @@ type glancesDockerLinkAnswer struct {
 	OnlyDocker  []string           `json:"onlyDocker"`
 	ByID        int                `json:"byId"`
 	ByName      int                `json:"byName"`
+	// Problem says why a chosen or detected link paired nothing: "glances-unreadable"
+	// and "docker-unreadable" when a list could not be read, "none-matched" when both
+	// lists have containers and no two belong together. Empty when all is well.
+	Problem      string `json:"problem,omitempty"`
+	GlancesCount int    `json:"glancesCount,omitempty"`
+	DockerCount  int    `json:"dockerCount,omitempty"`
 }
 
 type glancesLinkEntry struct {
@@ -170,20 +176,37 @@ func matchGlancesContainers(glances, docker []glancesLinkSide) ([]glancesLinkMat
 }
 
 // glancesPortsOf reads the host ports a Glances container publishes, whichever
-// shape this version of Glances uses ("0.0.0.0:8080->80/tcp", or objects).
-func glancesPortsOf(raw []json.RawMessage) []int {
-	var out []int
+// shape this version of Glances uses: one string ("1900->1900/udp,8096->8096/tcp",
+// as Glances 4 sends it), a list of such strings, or a list of objects. A port
+// that is only exposed ("61209/tcp") has no host port and is left out.
+func glancesPortsOf(raw json.RawMessage) []int {
 	re := regexp.MustCompile(`(?:^|:)(\d{1,5})->`)
-	for _, item := range raw {
-		var text string
-		if json.Unmarshal(item, &text) == nil {
-			if m := re.FindStringSubmatch(text); m != nil {
+	fromText := func(text string) []int {
+		var found []int
+		for _, part := range strings.Split(text, ",") {
+			if m := re.FindStringSubmatch(strings.TrimSpace(part)); m != nil {
 				n := 0
 				for _, c := range m[1] {
 					n = n*10 + int(c-'0')
 				}
-				out = append(out, n)
+				found = append(found, n)
 			}
+		}
+		return found
+	}
+	var one string
+	if json.Unmarshal(raw, &one) == nil {
+		return fromText(one)
+	}
+	var items []json.RawMessage
+	if json.Unmarshal(raw, &items) != nil {
+		return nil
+	}
+	var out []int
+	for _, item := range items {
+		var text string
+		if json.Unmarshal(item, &text) == nil {
+			out = append(out, fromText(text)...)
 			continue
 		}
 		var obj map[string]any
@@ -243,15 +266,17 @@ func (h *Handlers) glancesComputeDockerLink(ctx context.Context, cfg GlancesConf
 	}
 
 	var gl []struct {
-		Name  string            `json:"name"`
-		ID    string            `json:"id"`
-		Ports []json.RawMessage `json:"ports"`
+		Name  string          `json:"name"`
+		ID    string          `json:"id"`
+		Ports json.RawMessage `json:"ports"`
 	}
 	if err := h.glancesAsk(ctx, cfg, "containers", &gl); err != nil {
+		answer.Problem = "glances-unreadable"
 		return answer
 	}
 	list, err := api.listContainers(ctx)
 	if err != nil {
+		answer.Problem = "docker-unreadable"
 		return answer
 	}
 	hidden := dockerHiddenSet()
@@ -275,6 +300,10 @@ func (h *Handlers) glancesComputeDockerLink(ctx context.Context, cfg GlancesConf
 		dSide = append(dSide, glancesLinkSide{Name: name, ID: c.ID, Ports: ports})
 	}
 	answer.Matches, answer.OnlyGlances, answer.OnlyDocker = matchGlancesContainers(gSide, dSide)
+	answer.GlancesCount, answer.DockerCount = len(gSide), len(dSide)
+	if len(answer.Matches) == 0 && len(gSide) > 0 && len(dSide) > 0 {
+		answer.Problem = "none-matched"
+	}
 	for _, m := range answer.Matches {
 		switch m.By {
 		case "id":

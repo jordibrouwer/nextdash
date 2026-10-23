@@ -3671,6 +3671,7 @@ class DashboardConfig {
         { tab: 'containers', titleKey: 'config.helpContainersConfigTitle', fallback: 'Setting it up' },
         { tab: 'glances', titleKey: 'config.helpGlancesSetupTitle', fallback: 'Before it works: a Glances 4 host' },
         { tab: 'glances', titleKey: 'config.helpGlancesTitle', fallback: 'The Glances page' },
+        { tab: 'glances', titleKey: 'config.helpGlancesInsightsTitle', fallback: 'Insights' },
         { tab: 'glances', titleKey: 'config.helpGlancesRecordTitle', fallback: 'What nextDash records' },
         { tab: 'glances', titleKey: 'config.helpGlancesHostsTitle', fallback: 'Several hosts' },
         { tab: 'glances', titleKey: 'config.helpGlancesContainersTitle', fallback: 'Glances and the Containers view' },
@@ -29958,6 +29959,21 @@ class DashboardConfig {
                 value: [{ k: 'config.helpArtOutLabel', d: 'nextDash' }, 'JSON', 'activity.log'],
             },
         ],
+        'config.helpGlancesInsightsTitle': [
+            {
+                kind: 'bars',
+                value: {
+                    values: [0.38, 0.32, 0.26, 0.2, 0.16, 0.12, 0.1, 0.1, 0.1, 0.12, 0.16, 0.2, 0.26, 0.34, 0.42, 0.5, 0.58, 0.68, 0.8, 0.9, 0.86, 0.74, 0.58, 0.44],
+                    mark: 19,
+                },
+                captionKey: 'config.helpArtInsDay', caption: 'A typical day',
+            },
+            {
+                kind: 'meter',
+                value: { fill: 0.3, mark: 0.8 },
+                captionKey: 'config.helpArtInsLoad', caption: 'Load against the cores',
+            },
+        ],
         'config.helpSelfHostingTitle': [
             {
                 kind: 'boundary',
@@ -30222,6 +30238,7 @@ class DashboardConfig {
         return this.helpPanel('config.helpGlancesSetupTitle', 'Before it works: a Glances 4 host',
             'config.helpGlancesSetupBody', '', open)
             + this.helpPanel('config.helpGlancesTitle', 'The Glances page', 'config.helpGlancesBody', '')
+            + this.helpPanel('config.helpGlancesInsightsTitle', 'Insights', 'config.helpGlancesInsightsBody', '')
             + this.helpPanel('config.helpGlancesRecordTitle', 'What nextDash records', 'config.helpGlancesRecordBody', '')
             + this.helpPanel('config.helpGlancesHostsTitle', 'Several hosts', 'config.helpGlancesHostsBody', '')
             + this.helpPanel('config.helpGlancesContainersTitle', 'Glances and the Containers view', 'config.helpGlancesContainersBody', '')
