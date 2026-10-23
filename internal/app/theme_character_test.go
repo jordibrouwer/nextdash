@@ -572,10 +572,10 @@ func TestVelvetAuroraThemesShipGlass(t *testing.T) {
 }
 
 // Lacquer themes ship on glass, with glass depth, at 35% opacity. The Looks
-// that use the character keep the 20% every Look has. Gloss Chrome and Gloss
-// Amber are the exception on the surface: they ship open, with glow off.
+// that use the character keep the 20% every Look has. Gloss Chrome and Gloss Amber
+// ship with glow off.
 func TestLacquerThemesShipGlassAt35(t *testing.T) {
-	open := map[string]bool{
+	glowOff := map[string]bool{
 		"gloss-liquid-chrome-dark": true, "gloss-liquid-chrome-light": true,
 		"gloss-amber-resin-dark": true, "gloss-amber-resin-light": true,
 	}
@@ -590,8 +590,7 @@ func TestLacquerThemesShipGlassAt35(t *testing.T) {
 			want = 0.2
 		}
 		surface := "glass"
-		if open[id] {
-			surface = "open"
+		if glowOff[id] {
 			if tc.Glow != "off" {
 				t.Errorf("%s: glow=%q, want off", id, tc.Glow)
 			}
@@ -602,5 +601,22 @@ func TestLacquerThemesShipGlassAt35(t *testing.T) {
 	}
 	if seen == 0 {
 		t.Fatal("no lacquer theme found")
+	}
+}
+
+// A stored Gloss Chrome or Gloss Amber that still says open is the old shipped value and moves
+// to glass; one the reader changed to anything else stays.
+func TestGlossThemesLeaveOpen(t *testing.T) {
+	for _, id := range []string{"gloss-liquid-chrome-dark", "gloss-amber-resin-light"} {
+		old := getDefaultBuiltInThemes()[id]
+		old.Surface = "open"
+		got := mergeBuiltInThemeDefaults(map[string]ThemeColors{id: old})[id]
+		if got.Surface != "glass" {
+			t.Errorf("%s: stored open became %q, want glass", id, got.Surface)
+		}
+		old.Surface = "card"
+		if got := mergeBuiltInThemeDefaults(map[string]ThemeColors{id: old})[id]; got.Surface != "card" {
+			t.Errorf("%s: a chosen card became %q", id, got.Surface)
+		}
 	}
 }
