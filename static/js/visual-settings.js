@@ -379,7 +379,12 @@
      */
     function reloadThemeCSS(options) {
         const seed = Number.isInteger(options?.seed) ? `&seed=${options.seed}` : '';
-        const url = `/api/theme.css?t=${Date.now()}${seed}`;
+        // The accent the neutral themes wear: the one asked for, or the one in the
+        // settings, which the studio may hold unsaved. The server holds it to six words.
+        const accentWord = String(options?.neutralAccent ?? window.dashboardInstance?.settings?.neutralAccent ?? '');
+        // "theme" is sent too: the saved setting may still be the colour the reader just left.
+        const accent = /^[a-z]{3,8}$/.test(accentWord) ? `&neutralAccent=${accentWord}` : '';
+        const url = `/api/theme.css?t=${Date.now()}${seed}${accent}`;
         // The page links the theme by a content hash. A refresh swaps that link
         // for one with a fresh query below. The inline form is still handled
         // for a page rendered before this change and left open in another tab.

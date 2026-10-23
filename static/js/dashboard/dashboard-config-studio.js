@@ -41,7 +41,7 @@
 
     /** Every setting the studio previews. Only these are gated and put back. */
     const LOOK_FIELDS = ['theme', 'themeBackdrop', 'themeSurfacePrefs', 'themeSurfacesForceAll',
-        'backdropTuning', 'backgroundPattern', 'cardGlass', 'materialStyle', 'themeDepth', 'glowStrength', 'themeEffects', 'categorySurface', 'widgetSurface', 'widgetOpacity',
+        'backdropTuning', 'backgroundPattern', 'cardGlass', 'materialStyle', 'neutralAccent', 'themeDepth', 'glowStrength', 'themeEffects', 'categorySurface', 'widgetSurface', 'widgetOpacity',
         ...HEAD_FIELDS, ...BAR_FIELDS, ...TEXT_FIELDS, ...GRID_FIELDS];
 
     /*
@@ -51,7 +51,7 @@
     const TAB_FIELDS = {
         themes: { fields: ['theme'], prefs: [] },
         backdrop: { fields: ['themeBackdrop', 'backdropTuning', 'backgroundPattern'], prefs: ['backdrop', 'calm'] },
-        surface: { fields: ['materialStyle', 'themeDepth', 'glowStrength', 'themeEffects', 'categorySurface', 'widgetSurface', 'widgetOpacity', 'cardGlass'],
+        surface: { fields: ['materialStyle', 'neutralAccent', 'themeDepth', 'glowStrength', 'themeEffects', 'categorySurface', 'widgetSurface', 'widgetOpacity', 'cardGlass'],
             prefs: ['depth', 'glow', 'effects', 'catSurface', 'alpha', 'blur', 'border'] },
         heads: { fields: [...HEAD_FIELDS, ...BAR_FIELDS], prefs: [] },
         layout: { fields: [...TEXT_FIELDS, ...GRID_FIELDS], prefs: [] },
@@ -327,6 +327,11 @@
 
         applyStudioLook({ theme = true, redraw = false } = {}) {
             const settings = this.dash.settings;
+            // The accent of the neutrals is drawn into theme.css: a held change, and
+            // Compare, Cancel and Reset putting it back, fetch the stylesheet again.
+            const accentNow = settings?.neutralAccent || 'theme';
+            if (this._drawnNeutralAccent !== undefined && this._drawnNeutralAccent !== accentNow) this.reloadThemeCSS?.();
+            this._drawnNeutralAccent = accentNow;
             if (theme) {
                 this.clearThemePreview();
                 this.applyThemeLive();

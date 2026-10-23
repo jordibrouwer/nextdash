@@ -399,6 +399,14 @@
                         ${this.infoAff('materialStyle')}
                         <p class="config-panel-note">${e(t('config.materialStyleNote', 'How a theme\'s material is drawn. Signature gives each material a surface of its own: glass, frost and aurora stop looking alike. Classic is the surface as it was.'))}</p>
                     </div>
+                    <div class="config-field">
+                        <span class="config-field-label">${e(t('config.neutralAccentLabel', 'Accent of the neutrals'))}</span>
+                        <select class="config-select" data-appearance-select="neutralAccent">
+                            ${[['theme', 'The theme\'s own'], ['blue', 'Blue'], ['teal', 'Teal'], ['green', 'Green'], ['amber', 'Amber'], ['rose', 'Rose'], ['violet', 'Violet']].map(([option, text]) => `<option value="${option}"${(this.dash.settings?.neutralAccent || 'theme') === option ? ' selected' : ''}>${e(t('config.neutralAccent' + cap(option), text))}</option>`).join('')}
+                        </select>
+                        ${this.infoAff('neutralAccent')}
+                        <p class="config-panel-note">${e(t('config.neutralAccentNote', 'The one colour of the neutral themes (Neutral, Stone, Gray, Zinc, Slate, Chalk, Concrete, Black). Every colour reads on every base, light and dark. Other themes keep their own accent.'))}</p>
+                    </div>
                     ${select('themeDepth', 'config.themeDepthLabel', 'Depth',
                         [['flat', 'Flat'], ['soft', 'Soft'], ['rich', 'Rich'], ['vivid', 'Vivid'], ['glass', 'Glass']], 'config.themeDepth',
                         'config.themeDepthNote', 'How much of the theme is drawn behind the content: the tint in its greys, the raised surfaces, the wash behind the page. Follow the theme lets each theme bring its own.')}

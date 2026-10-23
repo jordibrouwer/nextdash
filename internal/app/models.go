@@ -696,6 +696,12 @@ type Settings struct {
 	MaterialStyle string `json:"materialStyle"`
 
 	/*
+	 * NeutralAccent is the accent the neutral themes wear: theme (each base's own)
+	 * or one of six colour words. See neutral_accent.go.
+	 */
+	NeutralAccent string `json:"neutralAccent"`
+
+	/*
 	 * CardGlass is the card glass when every theme is forced to one answer
 	 * (ThemeSurfacesForceAll); otherwise it lives per theme in
 	 * ThemeSurfacePrefs. Empty fields are the theme's own.
@@ -1830,6 +1836,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			SortMethod:                      "order",
 			LayoutPreset:                    "masonry",
 			MaterialStyle:                   materialSignature,
+			NeutralAccent:                   neutralAccentTheme,
 			ThemeDepth:                      surfaceFollow,
 			GlowStrength:                    surfaceFollow,
 			ThemeEffects:                    surfaceFollow,
@@ -4489,6 +4496,7 @@ func (fs *FileStore) GetSettings() Settings {
 			BookmarkArchiveUrl:              defaultBookmarkArchiveUrl,
 			LayoutPreset:                    "masonry",
 			MaterialStyle:                   materialSignature,
+			NeutralAccent:                   neutralAccentTheme,
 			ThemeDepth:                      surfaceFollow,
 			GlowStrength:                    surfaceFollow,
 			ThemeEffects:                    surfaceFollow,
@@ -4680,6 +4688,9 @@ func (fs *FileStore) GetSettings() Settings {
 		// the signature like everyone else; classic is a choice, not a default.
 		if _, ok := rawSettings["materialStyle"]; !ok {
 			settings.MaterialStyle = materialSignature
+		}
+		if _, ok := rawSettings["neutralAccent"]; !ok {
+			settings.NeutralAccent = neutralAccentTheme
 		}
 		// A missing object is the default tuning; a partial one keeps what it
 		// has and takes the default for the rest. See fillMissingBackdropTuning.
@@ -5019,6 +5030,7 @@ func (fs *FileStore) GetSettings() Settings {
 		settings.InkGap = normalizeInkGap(settings.InkGap)
 		settings.ThemeBackdrop = normalizeThemeBackdrop(settings.ThemeBackdrop)
 		settings.MaterialStyle = normalizeMaterialStyle(settings.MaterialStyle)
+		settings.NeutralAccent = normalizeNeutralAccent(settings.NeutralAccent)
 		settings.BackdropTuning = normalizeBackdropTuning(settings.BackdropTuning)
 		settings.CategoryHeaderStyle = normalizeCategoryHeaderStyle(settings.CategoryHeaderStyle)
 		settings.CategoryHeaderSize = normalizeCategoryHeaderSize(settings.CategoryHeaderSize)

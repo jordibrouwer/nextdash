@@ -3775,6 +3775,7 @@ class DashboardConfig {
         { field: 'glowStrength', labelKey: 'glowStrengthLabel', fallback: 'Glow', section: 'appearance', subTab: 'surface' },
         { field: 'themeEffects', labelKey: 'themeEffectsLabel', fallback: 'Effects', section: 'appearance', subTab: 'surface' },
         { field: 'categorySurface', labelKey: 'categorySurfaceLabel', fallback: 'Category surface', section: 'appearance', subTab: 'surface' },
+        { field: 'neutralAccent', labelKey: 'neutralAccentLabel', fallback: 'Accent of the neutrals', section: 'appearance', subTab: 'surface' },
         { field: 'materialStyle', labelKey: 'materialStyleLabel', fallback: 'Material style', section: 'appearance', subTab: 'surface' },
         { field: 'widgetSurface', labelKey: 'widgetSurfaceLabel', fallback: 'Widget background', section: 'appearance', subTab: 'surface' },
         { field: 'widgetOpacity', labelKey: 'widgetOpacityLabel', fallback: 'Widget opacity', section: 'appearance', subTab: 'surface' },
@@ -13060,6 +13061,7 @@ class DashboardConfig {
         }
         if (name === 'widgetSurface') this.setWidgetSurface(value);
         if (name === 'materialStyle') this.setMaterialStyle(value);
+        if (name === 'neutralAccent') this.setNeutralAccent(value);
     }
 
     /**
@@ -13077,6 +13079,20 @@ class DashboardConfig {
             if (out) out.textContent = `${percent}%`;
         });
         range.addEventListener('change', () => this.persistAppearance());
+    }
+
+    /**
+     * Accent of the neutrals: one of six colour words, or the theme's own. It is
+     * drawn into theme.css, which is fetched again with the word asked for.
+     */
+    setNeutralAccent(value) {
+        if (!this.dash.settings) return;
+        const words = ['theme', 'blue', 'teal', 'green', 'amber', 'rose', 'violet'];
+        this.dash.settings.neutralAccent = words.includes(value) ? value : 'theme';
+        this._drawnNeutralAccent = this.dash.settings.neutralAccent;
+        this.persistAppearance();
+        // The accent is drawn into theme.css, so it is fetched again.
+        this.reloadThemeCSS();
     }
 
     /**
@@ -13465,6 +13481,8 @@ class DashboardConfig {
         glowStrength: { info: ['glowStrengthInfoTitle', 'glowStrengthInfoMessage'], def: 'follow' },
         themeEffects: { info: ['themeEffectsInfoTitle', 'themeEffectsInfoMessage'], def: 'follow' },
         categorySurface: { info: ['categorySurfaceInfoTitle', 'categorySurfaceInfoMessage'], def: 'follow' },
+        neutralAccent: { info: ['neutralAccentInfoTitle', 'neutralAccentInfoMessage',
+            'Accent of the neutrals', 'The neutral themes are drawn in greys, and the accent is the one colour left. Pick one of six, or leave it with the theme: each base keeps the accent it was drawn with. Other themes are not touched.'], def: 'theme' },
         materialStyle: { info: ['materialStyleInfoTitle', 'materialStyleInfoMessage',
             'Material style', 'Signature draws each material with a surface of its own, so glass, frost and aurora no longer look like the same pane. Classic is the surface as it was before. Signature is the default; Classic stays available.'], def: 'signature' },
         themeSurfacesForceAll: { info: ['themeSurfacesForceAllInfoTitle', 'themeSurfacesForceAllInfoMessage'], def: false },

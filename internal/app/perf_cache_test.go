@@ -86,9 +86,9 @@ func TestThemeCSSSameThemesSameBytes(t *testing.T) {
 	if err := h.store.SaveColors(colors); err != nil {
 		t.Fatal(err)
 	}
-	first := h.renderThemeCSS(1)
+	first := h.renderThemeCSS(1, neutralAccentTheme)
 	for i := 0; i < 20; i++ {
-		if h.renderThemeCSS(1) != first {
+		if h.renderThemeCSS(1, neutralAccentTheme) != first {
 			t.Fatal("the same themes rendered to different bytes, so the hashed address keeps moving")
 		}
 	}

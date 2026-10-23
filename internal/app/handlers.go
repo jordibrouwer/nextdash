@@ -4258,7 +4258,13 @@ func (h *Handlers) CustomThemeCSS(w http.ResponseWriter, r *http.Request) {
 			seed = normalizeBackdropTuning(BackdropTuning{Strength: 1, Scale: 1, Brightness: 1, Saturate: 1, Seed: n}).Seed
 		}
 	}
-	css := h.customThemeCSSSeeded(seed)
+	// The accent of the neutrals is the saved one, or the one a preview asks for,
+	// as the seed is: the studio shows it before it is applied.
+	accent := normalizeNeutralAccent(h.store.GetSettings().NeutralAccent)
+	if raw := strings.TrimSpace(r.URL.Query().Get("neutralAccent")); raw != "" {
+		accent = normalizeNeutralAccent(raw)
+	}
+	css := h.customThemeCSSSeeded(seed, accent)
 	// The page links this file by the hash of its content. A request that
 	// carries exactly that hash can never see different bytes under it, so it
 	// may be kept for good. Anything else -- a refresh after a theme change, a
@@ -4287,7 +4293,8 @@ func (h *Handlers) themeCSSURL() string {
 // The endpoint stays: switching a theme reloads it, and it is the one path that
 // must not depend on a page render.
 func (h *Handlers) customThemeCSS() string {
-	return h.customThemeCSSSeeded(normalizeBackdropTuning(h.store.GetSettings().BackdropTuning).Seed)
+	settings := h.store.GetSettings()
+	return h.customThemeCSSSeeded(normalizeBackdropTuning(settings.BackdropTuning).Seed, normalizeNeutralAccent(settings.NeutralAccent))
 }
 
 // themeCSSMemo keeps the last rendered theme stylesheet. Rendering it walks
@@ -4301,20 +4308,20 @@ type themeCSSMemo struct {
 	css string
 }
 
-func (h *Handlers) customThemeCSSSeeded(seed int) string {
-	key := h.store.GetDataRevision() + "|" + strconv.Itoa(seed)
+func (h *Handlers) customThemeCSSSeeded(seed int, accent string) string {
+	key := h.store.GetDataRevision() + "|" + strconv.Itoa(seed) + "|" + accent
 	h.themeCSSMemo.mu.Lock()
 	defer h.themeCSSMemo.mu.Unlock()
 	if h.themeCSSMemo.key == key && h.themeCSSMemo.css != "" {
 		return h.themeCSSMemo.css
 	}
-	css := h.renderThemeCSS(seed)
+	css := h.renderThemeCSS(seed, accent)
 	h.themeCSSMemo.key = key
 	h.themeCSSMemo.css = css
 	return css
 }
 
-func (h *Handlers) renderThemeCSS(seed int) string {
+func (h *Handlers) renderThemeCSS(seed int, neutralAccent string) string {
 	colors := h.store.GetColors()
 
 	// Built with a Builder: this renders ~150 theme blocks and the += version
@@ -4365,7 +4372,7 @@ func (h *Handlers) renderThemeCSS(seed int) string {
 		b.WriteString("/* Built-in Theme: ")
 		b.WriteString(safeID)
 		b.WriteString(" */\n")
-		b.WriteString(renderThemeCSSBlockSeeded(safeID, colors.BuiltIn[themeID], seed))
+		b.WriteString(renderThemeCSSBlockSeeded(safeID, applyNeutralAccent(colors.BuiltIn[themeID], neutralAccent), seed))
 		b.WriteString("\n")
 	}
 
