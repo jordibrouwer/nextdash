@@ -1,0 +1,21 @@
+{
+  "tag": "v1.21.2",
+  "date": "23 October 2026",
+  "releasedAt": "2026-10-23",
+  "modalLead": "A list view keeps its place when it refreshes, and the <strong>Containers</strong> table fits a narrow list.",
+  "sections": [
+    {
+      "title": "Lists and Containers",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A refresh no longer scrolls a list back to the top.</strong> Containers, Glances and the Inbox stay where you scrolled to when they update."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The Containers table fits a narrow list.</strong> The Name and Image columns give way to the width of the list instead of running past its right edge."
+        }
+      ]
+    }
+  ]
+}
