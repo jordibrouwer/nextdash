@@ -55,6 +55,11 @@ type ThemeSurfacePref struct {
 	Alpha  *float64 `json:"alpha,omitempty"`
 	Blur   *float64 `json:"blur,omitempty"`
 	Border string   `json:"border,omitempty"`
+
+	// Calm is the quiet centre of the backdrop for this theme: how far the
+	// recipe fades toward the page colour behind the bookmarks. nil is the
+	// install-wide answer, BackdropTuning.Calm.
+	Calm *float64 `json:"calm,omitempty"`
 }
 
 // The ranges the card glass sliders offer.
@@ -63,6 +68,16 @@ const (
 	glassAlphaMax = 1.0
 	glassBlurMax  = 30.0
 )
+
+// cleanCalm holds a per-theme quiet centre to its slider, or drops it when it is
+// not a number.
+func cleanCalm(v *float64) *float64 {
+	if v == nil || math.IsNaN(*v) || math.IsInf(*v, 0) {
+		return nil
+	}
+	out := math.Round(math.Min(backdropCalmMax, math.Max(0, *v))*100) / 100
+	return &out
+}
 
 // cleanGlass clamps the glass part of a pref to its sliders and rounds it to
 // the step they offer. Anything that is not a number is the theme's own.
@@ -107,6 +122,10 @@ type ResolvedSurfaces struct {
 	GlassAlpha  string
 	GlassBlur   string
 	GlassBorder string
+
+	// Calm is the quiet centre as text: this theme's own when it has one and the
+	// reader did not force one answer, otherwise the install-wide number.
+	Calm string
 }
 
 /*
@@ -162,6 +181,11 @@ func resolveSurfaces(settings Settings, themeID string, tc ThemeColors) Resolved
 		resolved.GlassBlur = formatFloat(*blur)
 	}
 	resolved.GlassBorder = border
+	calm := normalizeBackdropTuning(settings.BackdropTuning).Calm
+	if own := cleanCalm(pref.Calm); own != nil && !settings.ThemeSurfacesForceAll {
+		calm = *own
+	}
+	resolved.Calm = formatFloat(calm)
 	return resolved
 }
 
@@ -223,6 +247,7 @@ func sanitizeSurfacePrefs(prefs map[string]ThemeSurfacePref, known map[string]bo
 			Alpha:      alpha,
 			Blur:       blur,
 			Border:     border,
+			Calm:       cleanCalm(pref.Calm),
 		}
 		// An entry with nothing left in it is not a preference.
 		if clean == (ThemeSurfacePref{}) {

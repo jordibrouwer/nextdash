@@ -50,7 +50,7 @@
      */
     const TAB_FIELDS = {
         themes: { fields: ['theme'], prefs: [] },
-        backdrop: { fields: ['themeBackdrop', 'backdropTuning', 'backgroundPattern'], prefs: ['backdrop'] },
+        backdrop: { fields: ['themeBackdrop', 'backdropTuning', 'backgroundPattern'], prefs: ['backdrop', 'calm'] },
         surface: { fields: ['themeDepth', 'glowStrength', 'themeEffects', 'categorySurface', 'widgetSurface', 'widgetOpacity', 'cardGlass'],
             prefs: ['depth', 'glow', 'effects', 'catSurface', 'alpha', 'blur', 'border'] },
         heads: { fields: [...HEAD_FIELDS, ...BAR_FIELDS], prefs: [] },

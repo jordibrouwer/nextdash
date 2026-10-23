@@ -535,6 +535,10 @@
         // theme's own.
         const glassSource = s.themeSurfacesForceAll ? (s.cardGlass || {}) : prefs;
         const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+        // The quiet centre is per theme too, unless every theme is forced to one
+        // answer; otherwise the install-wide slider is the answer.
+        const tuningCalm = num((s.backdropTuning || {}).calm);
+        const calm = (!s.themeSurfacesForceAll && num(prefs.calm) !== null) ? num(prefs.calm) : (tuningCalm !== null ? tuningCalm : 0.5);
         return {
             glass: { alpha: num(glassSource.alpha), blur: num(glassSource.blur), border: glassSource.border === 'on' },
             depth: pick(s.themeDepth, prefs.depth, ideal.depth || 'soft'),
@@ -545,6 +549,7 @@
                 // A reader who asked for flat did not ask to see through things.
                 return pick(s.categorySurface, prefs.catSurface, depth === 'flat' ? 'open' : (ideal.catSurface || 'glass'));
             })(),
+            calm: calm,
             backdrop: backdrop === 'off' ? 'off' : 'on',
             backdropRecipe: backdrop === 'off' || backdrop === 'follow' ? '' : backdrop,
         };
@@ -669,6 +674,7 @@
             applyColumnSpacing(settings && settings.columnSpacing, theme);
             applyCategorySpacing(settings && settings.categorySpacing, theme);
             applyThemeBackdrop(resolved.backdrop === 'off' ? 'off' : (resolved.backdropRecipe || 'follow'));
+            document.documentElement.style.setProperty('--bd-calm', String(resolved.calm));
             applyCardGlass(resolved.glass);
             return resolved;
         });

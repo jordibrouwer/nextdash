@@ -44,7 +44,6 @@
         brightness: ['--bd-brightness', (v) => String(v)],
         saturate: ['--bd-saturate', (v) => String(v)],
         tint: ['--bd-tint', (v) => String(v)],
-        calm: ['--bd-calm', (v) => String(v)],
     };
 
     const HEAD_PREVIEW_CLASS = 'config-pv-cat';
@@ -86,6 +85,31 @@
             const own = settings.themeSurfacePrefs?.[this.currentThemeId()]?.backdrop;
             if (forced !== 'follow' && forced !== 'on') return forced;
             return own || 'follow';
+        },
+
+        /**
+         * The quiet centre the slider shows: install-wide when the scope is every
+         * theme, otherwise this theme's own, falling back to the install-wide one.
+         */
+        calmValue() {
+            const settings = this.dash.settings || {};
+            const own = settings.themeSurfacePrefs?.[this.currentThemeId()]?.calm;
+            if (this.surfaceScope() !== 'global' && typeof own === 'number') return own;
+            return tuningOf(this).calm;
+        },
+
+        /** Store the quiet centre where the scope says it belongs, and draw it. */
+        setCalm(value) {
+            const settings = this.dash.settings;
+            if (!settings) return;
+            if (this.surfaceScope() === 'global') {
+                settings.backdropTuning = { ...tuningOf(this), calm: value };
+            } else {
+                const prefs = settings.themeSurfacePrefs || (settings.themeSurfacePrefs = {});
+                const entry = prefs[this.currentThemeId()] || (prefs[this.currentThemeId()] = {});
+                entry.calm = value;
+            }
+            void this.applyResolvedSurfaces();
         },
 
         /** Store a backdrop choice where the scope says it belongs, and draw it. */
@@ -265,11 +289,12 @@
         backdropTuningRows(tuning) {
             const t = (k, f) => this.t(k, f);
             const e = (v) => esc(this, v);
+            const shown = (key) => (key === 'calm' ? this.calmValue() : tuning[key]);
             return TUNING_SLIDERS.map(([key, labelKey, fallback, min, max, step]) => `
-                <div class="config-field config-field--slider" data-tuning-row="${key}"${tuning[key] !== DEFAULT_TUNING[key] ? ' data-fine-changed' : ''}>
+                <div class="config-field config-field--slider" data-tuning-row="${key}"${shown(key) !== DEFAULT_TUNING[key] ? ' data-fine-changed' : ''}>
                     <span class="config-field-label">${e(t(labelKey, fallback))}</span>
-                    <input type="range" class="config-range" data-backdrop-tuning="${key}" min="${min}" max="${max}" step="${step}" value="${tuning[key]}">
-                    <span class="config-range-value" data-tuning-out="${key}">${e(formatTuning(key, tuning[key]))}</span>
+                    <input type="range" class="config-range" data-backdrop-tuning="${key}" min="${min}" max="${max}" step="${step}" value="${shown(key)}">
+                    <span class="config-range-value" data-tuning-out="${key}">${e(formatTuning(key, shown(key)))}</span>
                     ${key === 'seed' ? `<button type="button" class="config-btn config-btn--small" data-backdrop-roll aria-label="${e(t('config.backdropRoll', 'Roll a new variant'))}" title="${e(t('config.backdropRoll', 'Roll a new variant'))}">🎲</button>` : ''}
                     ${this.infoAff(`backdrop${key[0].toUpperCase()}${key.slice(1)}`)}
                 </div>`).join('');
@@ -656,6 +681,14 @@
                 input.addEventListener('input', () => {
                     const value = Number(input.value);
                     if (out) out.textContent = formatTuning(key, value);
+                    if (key === 'calm') {
+                        // Per theme or install-wide as the scope says; drawn by the
+                        // resolved surfaces, not by the tuning variables.
+                        this.setCalm(value);
+                        input.closest('.config-field')?.toggleAttribute('data-fine-changed', value !== DEFAULT_TUNING.calm);
+                        this.refreshFineSummary(input);
+                        return;
+                    }
                     const tuning = { ...tuningOf(this), [key]: value };
                     this.dash.settings.backdropTuning = tuning;
                     input.closest('.config-field')?.toggleAttribute('data-fine-changed', value !== DEFAULT_TUNING[key]);
@@ -692,6 +725,14 @@
                     const wasSeed = tuningOf(this).seed;
                     this.dash.settings.backdropTuning = { ...DEFAULT_TUNING };
                     this.applyBackdropTuning(DEFAULT_TUNING);
+                    // The quiet centre goes back too, for this theme as well.
+                    const resetPrefs = this.dash.settings.themeSurfacePrefs || {};
+                    const resetId = this.currentThemeId();
+                    if (resetPrefs[resetId] && 'calm' in resetPrefs[resetId]) {
+                        delete resetPrefs[resetId].calm;
+                        if (!Object.keys(resetPrefs[resetId]).length) delete resetPrefs[resetId];
+                    }
+                    void this.applyResolvedSurfaces();
                     await this.saveSettingsWithFeedback();
                     if (wasSeed !== 0) this.reloadThemeCSS();
                     // In the theme browser the tab is drawn again by its own

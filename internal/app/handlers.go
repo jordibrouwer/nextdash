@@ -1288,6 +1288,10 @@ type htmlPageData struct {
 	// BackdropRecipe is the recipe the reader put behind this theme, written
 	// to <body> for the first paint. Empty when the theme's own stands.
 	BackdropRecipe string `json:"-"`
+
+	// BackdropCalm is the quiet centre for the theme on screen, as the stylesheet
+	// reads it: this theme's own, or the install-wide number.
+	BackdropCalm string `json:"-"`
 	// The card glass for the first paint: numbers as text, empty for the
 	// theme's own. See ResolvedSurfaces.
 	SurfaceAlpha string `json:"-"`
@@ -1376,6 +1380,7 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	return htmlPageData{
 		Settings:               settings,
 		BackdropRecipe:         surfaces.Recipe,
+		BackdropCalm:           surfaces.Calm,
 		SurfaceAlpha:           surfaces.GlassAlpha,
 		SurfaceBlur:            surfaces.GlassBlur,
 		CardBorder:             surfaces.GlassBorder,

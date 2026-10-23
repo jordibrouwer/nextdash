@@ -188,3 +188,40 @@ func TestEveryRecipeCarriesTheCalmLayer(t *testing.T) {
 		}
 	}
 }
+
+// The quiet centre can belong to one theme. The theme's own number wins over
+// the install-wide one, except when every theme is forced to one answer, and a
+// stored 0 is an answer like any other.
+func TestResolveSurfacesCarriesTheThemesOwnCalm(t *testing.T) {
+	zero, high := 0.0, 0.9
+	settings := Settings{
+		BackdropTuning:    BackdropTuning{Strength: 1, Scale: 1, Brightness: 1, Saturate: 1, Calm: 0.3},
+		ThemeSurfacePrefs: map[string]ThemeSurfacePref{"a": {Calm: &zero}, "b": {Calm: &high}},
+	}
+	tc := ThemeColors{}
+	for id, want := range map[string]string{"a": "0", "b": "0.9", "c": "0.3"} {
+		if got := resolveSurfaces(settings, id, tc).Calm; got != want {
+			t.Errorf("theme %s resolves calm %q, want %q", id, got, want)
+		}
+	}
+	settings.ThemeSurfacesForceAll = true
+	if got := resolveSurfaces(settings, "a", tc).Calm; got != "0.3" {
+		t.Errorf("a forced install still lets the theme answer: %q", got)
+	}
+}
+
+func TestSurfacePrefsKeepAndClampCalm(t *testing.T) {
+	zero, over, nan := 0.0, 7.0, math.NaN()
+	got := sanitizeSurfacePrefs(map[string]ThemeSurfacePref{
+		"zero": {Calm: &zero}, "over": {Calm: &over}, "nan": {Calm: &nan},
+	}, nil)
+	if got["zero"].Calm == nil || *got["zero"].Calm != 0 {
+		t.Errorf("a calm of 0 was not kept: %+v", got["zero"])
+	}
+	if got["over"].Calm == nil || *got["over"].Calm != 1 {
+		t.Errorf("a calm of 7 was not held to 1: %+v", got["over"])
+	}
+	if _, ok := got["nan"]; ok {
+		t.Errorf("a calm that is not a number left an entry: %+v", got["nan"])
+	}
+}
