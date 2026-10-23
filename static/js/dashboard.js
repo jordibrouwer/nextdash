@@ -1300,7 +1300,38 @@ class Dashboard {
         body.dataset.viewEntering = view;
         // Long enough for the last row to land at the chosen pace.
         const scale = Dashboard.ENTRANCE_SCALE[body.dataset.animationSpeed] ?? Dashboard.ENTRANCE_SCALE.normal;
-        this._viewEntranceTimer = setTimeout(() => { delete body.dataset.viewEntering; }, Math.round(900 * scale) + 100);
+        const hold = Math.round(900 * scale) + 100;
+        /*
+         * A view that loads its code on first use, or a slow machine, paints its
+         * header and rows after the switch. Ending the window on the clock alone
+         * let it close before anything was there and the view just appeared; so
+         * while no view content is on screen yet, the window stays open (for at
+         * most 5 seconds).
+         */
+        const painted = '.lvs-header, .config-bm-row, .inbox-item, .docker-row, .glances-card, .tag-view-row';
+        const giveUpAt = Date.now() + 5000;
+        let waited = false;
+        const close = () => {
+            if (body.dataset.viewEntering !== view) return;
+            if (!document.querySelector(painted) && Date.now() < giveUpAt) {
+                waited = true;
+                this._viewEntranceTimer = setTimeout(close, 50);
+                return;
+            }
+            if (waited) {
+                // It has just arrived: give it the whole window from here.
+                waited = false;
+                this._viewEntranceTimer = setTimeout(close, hold);
+                return;
+            }
+            // The rows may have been painted in the same busy stretch that ran
+            // this timer: let two frames pass first, so the browser has styled
+            // them while the attribute still stands and the animation starts.
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                if (body.dataset.viewEntering === view) delete body.dataset.viewEntering;
+            }));
+        };
+        this._viewEntranceTimer = setTimeout(close, hold);
     }
 
     /**
