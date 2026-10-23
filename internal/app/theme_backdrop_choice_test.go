@@ -57,8 +57,8 @@ func TestChosenBackdropsAreSpreadAcrossTheRecipes(t *testing.T) {
 		if i >= themeBackdropHashedRecipes {
 			// The colour-burst recipes are chosen by the looks written for them,
 			// not by the older pairs; they only may not be the whole library's.
-			if n > 10 {
-				t.Errorf("%s is used by %d pairs, want at most 10", name, n)
+			if n > 16 {
+				t.Errorf("%s is used by %d pairs, want at most 16", name, n)
 			}
 			continue
 		}

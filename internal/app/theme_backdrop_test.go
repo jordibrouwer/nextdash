@@ -106,13 +106,31 @@ func TestBackdropBareLightAndDarkStayDifferent(t *testing.T) {
 // A dark page takes more of its colour than a light one: the backdrop of a dark
 // theme carries stronger fields, and a third one.
 func TestDarkBackdropsCarryMoreColour(t *testing.T) {
-	dark := themeBackdropSeeded("tint-dark", ThemeColors{Backdrop: "mesh", AccentPrimary: "#6aa6ff", BackgroundPrimary: "#0f1420"}, 0)
-	light := themeBackdropSeeded("tint-light", ThemeColors{Backdrop: "mesh", AccentPrimary: "#2563eb", BackgroundPrimary: "#f4f6fb"}, 0)
+	dark := themeBackdropSeeded("tint-dark", ThemeColors{Backdrop: "haze", AccentPrimary: "#6aa6ff", BackgroundPrimary: "#0f1420"}, 0)
+	light := themeBackdropSeeded("tint-light", ThemeColors{Backdrop: "haze", AccentPrimary: "#2563eb", BackgroundPrimary: "#f4f6fb"}, 0)
 	layers := func(l backdropLook) int { return len(splitBackdropList(l.Image)) }
 	if layers(dark) != layers(light)+1 {
 		t.Errorf("a dark backdrop has %d layers and a light one %d, want one more", layers(dark), layers(light))
 	}
 	if !strings.Contains(dark.Image, "calc(56% * var(--bd-strength") || strings.Contains(light.Image, "calc(56% * var(--bd-strength") {
 		t.Error("only the dark backdrop should carry the stronger field")
+	}
+}
+
+// A recipe that was there before the redesign is drawn as it always was: no quiet centre and
+// no colour fields over it.
+func TestOriginalBackdropsAreNotAltered(t *testing.T) {
+	for _, name := range []string{"mesh", "aurora", "blooms", "stars", "leak"} {
+		look := themeBackdropSeeded("tint-dark", ThemeColors{Backdrop: name, AccentPrimary: "#6aa6ff", BackgroundPrimary: "#0f1420"}, 0)
+		if strings.Contains(look.Image, "--bd-calm") {
+			t.Errorf("%s: the quiet centre is laid over an original backdrop", name)
+		}
+		if strings.Contains(look.Image, "calc(56% * var(--bd-strength") {
+			t.Errorf("%s: a colour field is laid over an original backdrop", name)
+		}
+	}
+	redrawn := themeBackdropSeeded("tint-dark", ThemeColors{Backdrop: "hexagons", AccentPrimary: "#6aa6ff", BackgroundPrimary: "#0f1420"}, 0)
+	if !strings.Contains(redrawn.Image, "--bd-calm") {
+		t.Error("a redrawn backdrop lost its quiet centre")
 	}
 }

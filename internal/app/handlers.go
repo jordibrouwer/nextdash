@@ -3602,6 +3602,8 @@ func backdropScrimFloor(recipe string) string {
 		return "0.22"
 	case "leak":
 		return "0.2"
+	case "flare", "spectrum", "inkdrop", "sunburst", "tide", "confetti", "ember":
+		return "0.18"
 	}
 	return "0"
 }
@@ -3718,6 +3720,13 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 	id := themeBackdropHashID(themeID)
 	h := fnv32(id)
 	recipe := themeBackdropRecipeFor(id, tc)
+	// The recipes that were there before the redesign are drawn without the quiet centre. The
+	// ones that already have colour keep it that way; a texture (lines, dots, rings) gets the
+	// colour fields, or a dark page is a dark texture on black. The soft colour recipes carry
+	// their own colour.
+	name := themeBackdropRecipes[recipe]
+	original := themeBackdropOriginalRecipes[name]
+	ownColour := original && themeBackdropColourRecipes[name] || themeBackdropNewColourRecipes[name]
 	// The recipe is settled; the seed only moves the numbers it draws with.
 	if seed != 0 {
 		h = fnv32(id + ":" + strconv.Itoa(seed))
@@ -3770,6 +3779,18 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 		return "color-mix(in srgb, " + color + " " + strength(p) + ", transparent)"
 	}
 
+	// m is a share for a colour that sits on the page: a light page takes less of it.
+	m := func(p int) int { return p }
+	flareCore := "0.5"
+	// soft is a colour that fades out in five steps, so a blob has no edge.
+	soft := func(color string, p int) string {
+		return veil(color, p) + " 0, " + veil(color, p*62/100) + " 22%, " + veil(color, p*28/100) + " 48%, " +
+			veil(color, p*8/100) + " 74%, transparent 100%"
+	}
+	blob := func(x, y, w, h int, color string, p int) string {
+		return "radial-gradient(ellipse " + pct(w) + " " + pct(h) + " at " + pct(x) + " " + pct(y) + ", " + soft(color, p) + ")"
+	}
+
 	// plain is a recipe whose layers all fill the page.
 	plain := func(images ...string) []backdropLayer {
 		layers := make([]backdropLayer, len(images))
@@ -3794,6 +3815,9 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 	baseShare := 6
 	if dark {
 		baseShare = 12
+	} else {
+		m = func(p int) int { return p * 85 / 100 }
+		flareCore = "0.7"
 	}
 	base := "linear-gradient(" + strconv.Itoa(160+pick(19, 40)) + "deg, " +
 		wash(accent, baseShare) + " 0%, " + bg + " 68%)"
@@ -3979,6 +4003,62 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 		layers = plain(
 			"linear-gradient("+strconv.Itoa(96+pick(3, 14))+"deg, "+veil(warm, 60)+" 0%, "+veil(second, 50)+" 22%, transparent 56%)",
 			"radial-gradient(60% 60% at 100% 100%, "+veil(accent, 50)+", transparent 70%)", base)
+	// The colour recipes below are soft all the way out: a blob fades in five steps and
+	// the bands overlap, so nothing in them has an edge. A light page takes a little less
+	// of each colour than a dark one.
+	case "flare": // lensflare: een felle kern met brede zachte ringen en een lichtstreep
+		fx, fy := 24+pick(7, 52), 16+pick(11, 30)
+		layers = plain(
+			"radial-gradient(circle at "+pct(fx)+" "+pct(fy)+", rgba(255, 255, 255, "+flareCore+") 0, "+soft(warm, 70)+")",
+			"radial-gradient(circle at "+pct(100-fx)+" "+pct(100-fy)+", transparent 14%, "+veil(accent, m(34))+" 24%, "+veil(cool, m(20))+" 34%, transparent 52%)",
+			"linear-gradient("+strconv.Itoa(150+pick(3, 40))+"deg, transparent 30%, "+veil(accent, m(26))+" 49%, transparent 68%)",
+			blob(100-fx, 100, 70, 55, cool, 44), base)
+	case "spectrum": // een brede zachte kleurband van vier kleuren, schuin door de pagina
+		sa := 108 + pick(3, 40)
+		layers = plain(
+			"linear-gradient("+strconv.Itoa(sa)+"deg, transparent 8%, "+veil(accent, m(52))+" 28%, "+veil(warm, m(48))+" 42%, "+
+				veil(second, m(50))+" 56%, "+veil(cool, m(46))+" 70%, transparent 92%)",
+			blob(10+pick(5, 80), 100, 80, 60, accent, 34), base)
+	case "inkdrop": // grote overlappende kleurvlekken zonder rand
+		layers = plain(
+			blob(20+pick(3, 20), 24+pick(5, 16), 44, 52, accent, 66),
+			blob(70+pick(7, 20), 30+pick(9, 20), 42, 50, second, 60),
+			blob(44+pick(11, 22), 74+pick(13, 14), 44, 52, cool, 60),
+			blob(92, 92, 34, 36, warm, 52), base)
+	case "sunburst": // zachte gekleurde stralen vanuit een hoek, met een warme gloed op het middelpunt
+		sx, sy := 0, 0
+		if pick(3, 2) == 1 {
+			sx = 100
+		}
+		if pick(5, 2) == 1 {
+			sy = 100
+		}
+		layers = plain(
+			"repeating-conic-gradient(from "+strconv.Itoa(pick(7, 40))+"deg at "+pct(sx)+" "+pct(sy)+", "+"transparent 0deg, "+veil(accent, m(46))+" 7deg, transparent 17deg, "+
+				veil(warm, m(40))+" 27deg, transparent 38deg, "+veil(second, m(42))+" 48deg, transparent 58deg)",
+			blob(sx, sy, 70, 70, warm, 60),
+			"radial-gradient(110% 100% at "+pct(100-sx)+" "+pct(100-sy)+", transparent 20%, "+veil(bg, 64)+" 100%)", base)
+	case "tide": // brede kleurbanden die in elkaar overlopen en van onderaf in de pagina staan
+		layers = plain(
+			"linear-gradient(180deg, transparent 22%, "+veil(accent, m(34))+" 52%, transparent 74%)",
+			"linear-gradient(180deg, transparent 40%, "+veil(cool, m(40))+" 68%, transparent 86%)",
+			"linear-gradient(180deg, transparent 58%, "+veil(warm, m(46))+" 82%, transparent 98%)",
+			"linear-gradient(180deg, transparent 74%, "+veil(second, m(54))+" 100%)",
+			blob(20+pick(3, 60), 0, 80, 55, accent, 34), base)
+	case "confetti": // veel zachte gekleurde vlekken in vier kleuren, als bokeh met meer kleur
+		dots := []string{accent, second, warm, cool}
+		layers = make([]backdropLayer, 0, 9)
+		for i := 0; i < 8; i++ {
+			size := 14 + rnd(10+i, 14)
+			layers = append(layers, backdropLayer{image: blob(rnd(20+i, 100), rnd(40+i, 100), size, size, dots[i%4], 60)})
+		}
+		layers = append(layers, backdropLayer{image: base})
+	case "ember": // warme gloed onderin met een koele lichtval bovenin
+		layers = plain(
+			blob(10+pick(3, 80), 100, 70, 50, warm, 64),
+			blob(10+pick(5, 80), 96, 50, 40, second, 56),
+			blob(10+pick(7, 80), 0, 70, 48, accent, 50),
+			"linear-gradient(180deg, "+veil(cool, m(18))+", transparent 40%)", base)
 	case "chevron": // fijne zigzaghaarlijnen, met een zachte kleur die naar boven uitloopt
 		// One line, a pixel and a half wide, where the band used to be twenty.
 		zig := func(colour string, deg int) string {
@@ -4056,7 +4136,7 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 	// centre -- and a calm recipe on a flat page reads as grey. Two soft fields
 	// of the theme's own colours sit just above the last layer, in every recipe,
 	// so the page has the colour of its theme whichever shape is on it.
-	if n := len(layers); n > 0 {
+	if n := len(layers); n > 0 && !ownColour {
 		shareA, shareB := 36, 28
 		if dark {
 			shareA, shareB = 56, 44
@@ -4074,10 +4154,31 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 		with = append(with, layers[n-1])
 		layers = with
 	}
-	layers = append([]backdropLayer{themeBackdropCalmLayer()}, layers...)
+	if !original {
+		layers = append([]backdropLayer{themeBackdropCalmLayer()}, layers...)
+	}
 	look := joinBackdropLayers(layers)
 	look.Scrim = backdropScrimFloor(themeBackdropRecipes[recipe])
 	return look
+}
+
+// themeBackdropOriginalRecipes are the recipes that were not redrawn: they keep their original
+// look, with nothing laid over them.
+var themeBackdropColourRecipes = map[string]bool{
+	"blooms": true, "mesh": true, "aurora": true, "nebula": true, "glow": true, "bokeh": true,
+	"stars": true, "burst": true, "splash": true, "leak": true,
+}
+
+// themeBackdropNewColourRecipes are the soft colour recipes added with the colour round.
+var themeBackdropNewColourRecipes = map[string]bool{
+	"flare": true, "spectrum": true, "inkdrop": true, "sunburst": true, "tide": true, "confetti": true, "ember": true,
+}
+
+var themeBackdropOriginalRecipes = map[string]bool{
+	"blooms": true, "sweep": true, "wireframe": true, "glow": true, "band": true, "rings": true,
+	"scanlines": true, "crosshatch": true, "horizon": true, "mesh": true, "aurora": true,
+	"bokeh": true, "nebula": true, "stars": true, "waves": true, "topo": true, "perspective": true,
+	"pinstripe": true, "halftone": true, "burst": true, "splash": true, "leak": true,
 }
 
 // themeBackdropRecipes names the recipes above, in their switch order, so a
@@ -4090,6 +4191,7 @@ var themeBackdropRecipes = []string{
 	"perspective", "blueprint", "pinstripe", "hexagons", "halftone", "prism", "chevron",
 	"burst", "splash", "leak",
 	"haze", "veil", "spotlight", "silk", "caustics", "dawn", "linen", "dotgrid", "ruled", "grain",
+	"flare", "spectrum", "inkdrop", "sunburst", "tide", "confetti", "ember",
 }
 
 // themeBackdropHashedRecipes is how many recipes a theme's id can hash to: the
