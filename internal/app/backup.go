@@ -365,6 +365,47 @@ func mergeImportCategoriesIntoPrepared(prepared []preparedImportFile, categories
 	return prepared, remaining
 }
 
+/*
+withLeftoverCategoryPages turns the categories that found no bookmark file to
+join into a page file of their own, as SaveCategoriesByPage makes one: named
+"Page N", with no bookmarks.
+
+A page whose file is in the archive but could not be read is left out. A fresh
+file over it would drop its bookmarks; the store refused it as well.
+*/
+func withLeftoverCategoryPages(prepared []preparedImportFile, leftover map[int][]Category) []preparedImportFile {
+	for pageID, cats := range leftover {
+		if len(cats) == 0 || importHasPageFile(prepared, pageID) {
+			continue
+		}
+		for i := range cats {
+			cats[i] = foldCategoryIcon(cats[i])
+			cats[i].Name = clampEntityName(cats[i].Name)
+			cats[i].View = normalizeCategoryView(cats[i].View)
+		}
+		data, err := json.MarshalIndent(PageWithBookmarks{
+			Page:       Page{ID: pageID, Name: fmt.Sprintf("Page %d", pageID)},
+			Categories: cats,
+			Bookmarks:  []Bookmark{},
+		}, "", "  ")
+		if err != nil {
+			logWarn(logComponentImport, "the categories of page %d could not be written (%v); they were left out", pageID, err)
+			continue
+		}
+		prepared = append(prepared, preparedImportFile{relPath: fmt.Sprintf("bookmarks-%d.json", pageID), content: data})
+	}
+	return prepared
+}
+
+func importHasPageFile(prepared []preparedImportFile, pageID int) bool {
+	for _, file := range prepared {
+		if id, ok := parseBookmarkPageIDFromFilename(filepath.Base(file.relPath)); ok && id == pageID {
+			return true
+		}
+	}
+	return false
+}
+
 func importIconBasenames(prepared []preparedImportFile) map[string]bool {
 	names := make(map[string]bool)
 	for _, file := range prepared {
@@ -749,6 +790,11 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 		return 0, &importError{msg: "archive contains no bookmark pages", code: http.StatusBadRequest}
 	}
 
+	// Categories for a page the archive carries no bookmark file for travel in
+	// the same commit as everything else. Saved afterwards, one that failed
+	// answered 500 over data that had already been replaced.
+	prepared = withLeftoverCategoryPages(prepared, importedCategoriesByPage)
+
 	// A copy of what is about to be replaced, taken here because this is the one
 	// path both the ZIP import and the auto-backup restore commit through.
 	//
@@ -783,12 +829,6 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 	if after := h.store.GetSettings(); keepSettingsSecrets(&after, before) {
 		if err := h.store.SaveSettings(after); err != nil {
 			logWarn(logComponentImport, "the alert and archive secrets could not be kept (%v); set them again in Config", err)
-		}
-	}
-
-	for pageID, categories := range importedCategoriesByPage {
-		if err := h.store.SaveCategoriesByPage(pageID, categories); err != nil {
-			return 0, &importError{msg: fmt.Sprintf("save categories for page %d failed: %v", pageID, err), code: http.StatusInternalServerError}
 		}
 	}
 
