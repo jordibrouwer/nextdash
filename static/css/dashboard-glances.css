@@ -1340,6 +1340,20 @@ button.glances-chart-incident:focus-visible {
 
 /* A table inside an Overview block keeps its columns and scrolls within the block. */
 .glances-ov-block { overflow-x: auto; }
+
+/* Panels still scroll sideways when needed; the bar itself stays hidden. */
+.glances-ov-block,
+.glances-proc-scroll,
+.glances-ct-wrap,
+.glances-heat {
+    scrollbar-width: none;
+}
+.glances-ov-block::-webkit-scrollbar,
+.glances-proc-scroll::-webkit-scrollbar,
+.glances-ct-wrap::-webkit-scrollbar,
+.glances-heat::-webkit-scrollbar {
+    display: none;
+}
 .glances-ov-block .glances-table { min-width: 22rem; }
 
 .glances-proc-cell--name { max-width: 16rem; overflow: hidden; text-overflow: ellipsis; }
