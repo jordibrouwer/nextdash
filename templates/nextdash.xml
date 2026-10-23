@@ -52,6 +52,11 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
   </Overview>
 
   <Changes>
+### v1.21.1 (2026-10-23)
+- Glances: Insights has nine more blocks, among them a typical day, the load against the cores and where the memory goes, with an info button on every title; the Containers view says why no container could be paired
+- Security: with a write token set, nextDash refuses host names it does not know. Open it by a public name? Add it to Allowed hosts below
+- Fixes: a URL such as localhost:3000 opens as a web address, a double click saves a bookmark once, creating a page no longer overwrites the list when reading failed, and hidden tabs skip status checks
+
 ### v1.21.0 (2026-10-23)
 - Glances: a page for the hosts you run Glances on, with processes, containers, graphs, incidents and a Hosts table, and a widget that shows one host on the dashboard
 - Domains: a widget, a badge in Bookmarks and alerts show when a domain registration runs out
@@ -77,10 +82,6 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
 - First start: a Quick start guide replaces the first-start card and checklist, and a new Inbox holds ten links to try
 - Config: Backups &amp; data reads top to bottom, and the keyboard shortcuts sheet has topic chips and a filter
 - Fixes: app discovery keeps a Remove on the ignored list, Undo on its notice can be retried, and its question opens once
-
-### v1.19.11 (2026-10-18)
-- Dashboard: widget titles are plain titles over their card again, and the // is in one place for categories and widgets
-- Fixes: a title no longer jumps when you point at it
 
   </Changes>
 
@@ -131,6 +132,16 @@ Support: open an issue on GitHub via the Support link above. Bug reports and fea
           Default=""
           Mode=""
           Description="Optional. Addresses and CIDR ranges whose X-Forwarded-For header is believed, comma-separated — set this if nextDash sits behind a reverse proxy, so rate limits count per visitor instead of per proxy. Left empty the header is ignored."
+          Type="Variable"
+          Display="advanced"
+          Required="false"
+          Mask="false" />
+
+  <Config Name="Allowed hosts"
+          Target="NEXTDASH_ALLOWED_HOSTS"
+          Default=""
+          Mode=""
+          Description="Optional. Only with a write token: public host names the dashboard may be opened by, comma-separated (*.example.com allowed, * turns the check off). IP addresses, localhost and private names (.local, .lan) always work. Needed when you open nextDash by your own domain."
           Type="Variable"
           Display="advanced"
           Required="false"
