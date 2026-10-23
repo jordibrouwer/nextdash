@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.21.3 — 23 October 2026](#v1213--23-october-2026)
 - [v1.21.2 — 23 October 2026](#v1212--23-october-2026)
 - [v1.21.1 — 23 October 2026](#v1211--23-october-2026)
 - [v1.21.0 — 23 October 2026](#v1210--23-october-2026)
@@ -118,6 +119,20 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.21.3 — 23 October 2026
+
+The Containers view keeps its scroll position in Safari as well — held back from the What's new window (`hideFromModal`) like v1.21.2, so v1.21.1 keeps leading it.
+
+### Containers
+
+- **fix — a poll no longer throws a scrolled Safari reader to the top.** v1.21.2 held the list's height while a redraw emptied and refilled it, which was enough in Chromium. WebKit still lost the place whenever the list was swapped while the rail's figures above it had just changed, with nothing read in between. `render()` in `dashboard-docker.js` now builds the new body before it is put in place in one go, and reads the scroll position before the redraw and puts it back in the same task, so nothing moves on screen. `tests/list-view-redraw-scroll.spec.js` has a second test that moves the page to the top half-way through a redraw, as WebKit did; it fails without the fix.
+
+### Docs
+
+- **docs — `static/data/whats-new/v1.21.3.json` and its index entry**, held back like v1.21.2; `whats-new-stub.js`'s `NEXTDASH_WHATS_NEW_DATA_VERSION` moved to `whats-new-v351`. `go generate` refreshed `asset_hashes_gen.go`.
 
 ---
 

@@ -1,0 +1,17 @@
+{
+  "tag": "v1.21.3",
+  "date": "23 October 2026",
+  "releasedAt": "2026-10-23",
+  "modalLead": "The <strong>Containers</strong> view keeps its place in Safari too when it refreshes.",
+  "sections": [
+    {
+      "title": "Containers",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A refresh no longer scrolls Containers back to the top in Safari.</strong> The list stays where you scrolled to when it updates, in Safari as well as in Chrome."
+        }
+      ]
+    }
+  ]
+}
