@@ -81,6 +81,189 @@ test.describe('the header under a material', () => {
         }
     });
 
+    test('ink, velvet and terminal columns carry a panel, ink a folio and terminal a prompt, even on an open surface', async ({ page }) => {
+        await openDashboard(page);
+        await page.evaluate(() => document.body.setAttribute('data-cat-surface', 'open'));
+        const panel = () => page.evaluate(() => {
+            const cat = document.querySelector('.dashboard-grid .category:not(.dashboard-widget)');
+            const cs = getComputedStyle(cat);
+            const folio = getComputedStyle(cat.querySelector('.category-title'), '::after').content;
+            const m = cs.backgroundColor.match(/[\d.]+/g) || [];
+            return { alpha: m.length > 3 ? Number(m[3]) : 1, layers: cs.backgroundImage, folio };
+        });
+        for (const material of ['ink', 'velvet', 'terminal']) {
+            await under(page, material);
+            const p = await panel();
+            const drawn = p.alpha > 0 || p.layers !== 'none';
+            expect(drawn, material + ': an open column has no panel').toBe(true);
+        }
+        await under(page, 'ink');
+        expect((await panel()).folio, 'ink: no folio number').toContain('№');
+        await under(page, 'terminal');
+        const prompt = await page.evaluate(() => getComputedStyle(document.querySelector('.dashboard-grid .category:not(.dashboard-widget) .category-title-name'), '::before').content);
+        expect(prompt, 'terminal: no $ prompt before the name').toContain('$');
+        await under(page, 'lacquer');
+        expect((await panel()).folio, 'lacquer: carries the ink folio').not.toContain('№');
+    });
+
+    test('pointing at a header does not move its name, on a category or a widget', async ({ page }) => {
+        test.setTimeout(180_000);
+        await openDashboard(page);
+        // Every signature, then classic under each header style, with the widget strip on and off.
+        const setups = [];
+        for (const m of MATERIALS) setups.push({ name: m, style: 'signature', material: m, head: 'theme' });
+        for (const head of ['theme', 'clean', 'underlined', 'boxed', 'label', 'group']) {
+            setups.push({ name: 'classic/' + head, style: 'classic', material: 'lacquer', head });
+        }
+        const blocks = { category: '.category:not(.dashboard-widget)', widget: '.dashboard-widget' };
+        for (const strip of ['background', 'off']) {
+            for (const su of setups) {
+                await page.evaluate((x) => {
+                    [document.documentElement, document.body].forEach((el) => {
+                        el.setAttribute('data-material-style', x.style);
+                        el.setAttribute('data-material', x.material);
+                    });
+                    document.body.setAttribute('data-cat-head', x.head);
+                    document.body.setAttribute('data-widget-bg', x.strip);
+                }, { ...su, strip });
+                for (const [kind, sel] of Object.entries(blocks)) {
+                    const block = page.locator('.dashboard-grid ' + sel).first();
+                    if (!(await block.count())) continue;
+                    const title = block.locator('.category-title-name').first();
+                    const offset = async () => {
+                        const [t, b] = await Promise.all([title.boundingBox(), block.boundingBox()]);
+                        return { x: t.x - b.x, y: t.y - b.y };
+                    };
+                    const where = su.name + ' ' + kind + ' (strip ' + strip + ')';
+                    await page.mouse.move(0, 0);
+                    await block.scrollIntoViewIfNeeded();
+                    const rest = await offset();
+                    await block.locator('.category-title').first().hover({ position: { x: 150, y: 8 } });
+                    await page.waitForTimeout(220);
+                    const hot = await offset();
+                    expect.soft(Math.abs(hot.y - rest.y), where + ': the name jumps vertically on hover').toBeLessThan(1);
+                    expect.soft(Math.abs(hot.x - rest.x), where + ': the name jumps sideways on hover').toBeLessThan(1);
+                }
+            }
+        }
+    });
+
+    test('a widget is drawn like a category of the same material', async ({ page }) => {
+        test.setTimeout(120_000);
+        await openDashboard(page);
+        const look = (sel) => page.evaluate((q) => {
+            const el = document.querySelector('.dashboard-grid ' + q);
+            if (!el) return null;
+            const cs = getComputedStyle(el);
+            const bg = cs.backgroundColor.replace(/\s+/g, '');
+            return {
+                bg, image: cs.backgroundImage.replace(/\s+/g, '').slice(0, 60), shadow: cs.boxShadow.replace(/\s+/g, ''),
+                border: cs.borderTopWidth + cs.borderTopStyle, radius: cs.borderTopLeftRadius, blur: cs.backdropFilter,
+                pad: cs.paddingTop + '/' + cs.paddingLeft,
+            };
+        }, sel);
+        for (const strip of ['background', 'off']) {
+            for (const surface of ['glass', 'card', 'open']) {
+                for (const material of MATERIALS) {
+                    await under(page, material);
+                    await page.evaluate(([st, su]) => {
+                        document.body.setAttribute('data-widget-bg', st);
+                        document.body.setAttribute('data-cat-surface', su);
+                    }, [strip, surface]);
+                    const cat = await look('.category:not(.dashboard-widget)');
+                    const wid = await look('.dashboard-widget');
+                    // An open surface with the widget background on is the reader's own panel for widgets.
+                    if (!cat || !wid || (surface === 'open' && strip === 'background' && !['ink', 'velvet', 'terminal'].includes(material))) continue;
+                    expect.soft(wid, material + '/' + surface + ' (strip ' + strip + '): the widget is not drawn like a category').toEqual(cat);
+                }
+            }
+        }
+    });
+
+    test('lacquer, glass and frost shine differently per column, and the same way every time', async ({ page }) => {
+        await openDashboard(page);
+        const read = () => page.evaluate(() => [...document.querySelectorAll('.dashboard-grid .category[data-category-id]')].slice(0, 6).map((el) => ({
+            id: el.getAttribute('data-category-id'),
+            a: el.style.getPropertyValue('--sh-a'),
+            w: el.style.getPropertyValue('--sh-w'),
+            layer: getComputedStyle(el, '::before').content,
+            image: getComputedStyle(el, '::before').backgroundImage.length,
+        })));
+        for (const material of ['lacquer', 'glass', 'frost']) {
+            await under(page, material);
+            await page.evaluate(() => document.body.setAttribute('data-cat-surface', 'glass'));
+            const first = await read();
+            expect(first.length, material + ': too few columns to compare').toBeGreaterThan(2);
+            for (const c of first) {
+                expect(c.a, material + ': a column has no seed').not.toBe('');
+                expect(c.layer, material + ': no shine layer on ' + c.id).not.toBe('none');
+                expect(c.image, material + ': the shine layer draws nothing').toBeGreaterThan(20);
+            }
+            expect(new Set(first.map((c) => c.a + '/' + c.w)).size, material + ': the columns shine alike').toBeGreaterThan(1);
+        }
+        await page.reload();
+        await page.waitForSelector('.dashboard-grid .category[data-category-id]');
+        const again = await read();
+        await under(page, 'lacquer');
+        expect(again.map((c) => c.a), 'the seed moved between loads').toEqual((await read()).map((c) => c.a));
+    });
+
+    test('every material keeps the grip, the controls and the badges inside its edge', async ({ page }) => {
+        await openDashboard(page);
+        for (const material of MATERIALS) {
+            await under(page, material);
+            await page.evaluate(() => document.body.setAttribute('data-cat-surface', 'glass'));
+            const inset = await page.evaluate(() => {
+                const out = [];
+                for (const card of document.querySelectorAll('.dashboard-grid .category')) {
+                    const c = card.getBoundingClientRect();
+                    const radius = parseFloat(getComputedStyle(card).borderTopLeftRadius) || 0;
+                    const grip = card.querySelector('.category-reorder-glyph, .category-reorder-handle');
+                    const trail = card.querySelector('.category-title-trailing');
+                    if (grip) out.push({ what: 'grip', gap: grip.getBoundingClientRect().left - c.left, radius });
+                    if (trail) out.push({ what: 'controls', gap: c.right - trail.getBoundingClientRect().right, radius });
+                    for (const badge of card.querySelectorAll('.bookmark-shortcut, .status-text.bookmark-superscript-badge')) {
+                        const r = badge.getBoundingClientRect();
+                        if (r.width) out.push({ what: 'badge', gap: c.right - r.right, radius });
+                    }
+                    const foot = card.querySelector('.dashboard-widget-footer, .widget-actions, .notes-actions');
+                    if (foot) out.push({ what: 'footer', gap: foot.getBoundingClientRect().left - c.left, radius });
+                }
+                return out;
+            });
+            expect(inset.length, material + ': too little to measure').toBeGreaterThan(2);
+            // Velvet: past the curve of the corner. Enamel: past its 7px rim, with room to spare.
+            const need = material === 'enamel' ? 11 : null;
+            for (const i of inset) {
+                expect.soft(i.gap, material + ': the ' + i.what + ' sits on the edge').toBeGreaterThanOrEqual(need ?? Math.min(i.radius * 0.5, 14));
+            }
+        }
+    });
+
+    test('a widget panel on an open surface does not hold its content against the edge', async ({ page }) => {
+        await openDashboard(page);
+        for (const material of MATERIALS) {
+            await under(page, material);
+            await page.evaluate(() => {
+                document.body.setAttribute('data-cat-surface', 'open');
+                document.body.setAttribute('data-widget-bg', 'background');
+            });
+            const gap = await page.evaluate(() => {
+                const card = document.querySelector('.dashboard-grid .dashboard-widget');
+                if (!card) return null;
+                const c = card.getBoundingClientRect();
+                let bottom = 0;
+                for (const el of card.querySelectorAll('*')) {
+                    const r = el.getBoundingClientRect();
+                    if (r.width && r.height) bottom = Math.max(bottom, r.bottom);
+                }
+                return c.bottom - bottom;
+            });
+            if (gap === null) continue;
+            expect.soft(gap, material + ': the widget content lies on the bottom edge of its panel').toBeGreaterThanOrEqual(6);
+        }
+    });
+
     test('classic and a chosen header style keep the //', async ({ page }) => {
         await openDashboard(page);
         await under(page, 'neon');
