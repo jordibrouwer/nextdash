@@ -370,6 +370,23 @@ class ListViewShell {
             toolbarRow: toolbar,
             toolbar: toolbarSlot,
             body,
+            /**
+             * Keeps the body as tall as it is while it is redrawn.
+             *
+             * A redraw empties the body and fills it again in one go, which
+             * nobody sees -- unless something in between reads a style or a
+             * size (an app icon asks the theme whether it is dark). That read
+             * lays the page out with the body empty, the page is then shorter
+             * than where the reader had scrolled to, and the browser moves the
+             * scroll to the top; filling the body again does not move it back.
+             * So the body keeps its height until the redraw is over.
+             */
+            holdHeight() {
+                const height = body.offsetHeight;
+                if (!height) return;
+                body.style.minHeight = `${height}px`;
+                queueMicrotask(() => { body.style.minHeight = ''; });
+            },
             setSummary(entries) {
                 summaryHost.replaceChildren(...buildSummary(entries).childNodes);
             },

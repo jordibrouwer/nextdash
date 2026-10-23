@@ -1019,6 +1019,8 @@
         }
 
         applyResults(inst, endpoints, results) {
+            // A section that redraws its rows must not throw a scrolled reader to the top.
+            this.shell?.holdHeight?.();
             // Over the budget: what is on screen stays, and the next tick retries.
             if (results.some((r) => r.kind === 'limited')) {
                 this._showStatus('limited', this.t('dashboard.glancesLimited', 'Too many requests, retrying'));

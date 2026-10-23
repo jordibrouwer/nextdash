@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.21.2 — 23 October 2026](#v1212--23-october-2026)
 - [v1.21.1 — 23 October 2026](#v1211--23-october-2026)
 - [v1.21.0 — 23 October 2026](#v1210--23-october-2026)
 - [v1.20.3 — 21 October 2026](#v1203--21-october-2026)
@@ -117,6 +118,17 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.21.2 — 23 October 2026
+
+A list view keeps its scroll position when a poll redraws it, and the Containers table no longer runs past the right edge of a narrow list.
+
+### Lists and Containers
+
+- **fix — a poll's redraw no longer throws a scrolled list view to the top.** A redraw empties the list body and fills it again, and a read in between (an app icon asks the theme whether it is dark) laid the page out with the body empty, so the browser moved the scroll to the top. `ListViewShell` has a `holdHeight()` that keeps the body as tall as it was until the redraw is over; the Containers, Glances and Inbox views call it. Covered by `tests/list-view-redraw-scroll.spec.js`.
+- **fix — the Name and Image columns in Containers give way to the list width.** At a narrow list two 16rem columns plus the rest outgrew the pane and the table ran past its right edge in Chrome. Both columns are capped by the width of the list as well (`docker-view.css`).
 
 ---
 
