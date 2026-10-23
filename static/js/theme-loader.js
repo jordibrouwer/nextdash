@@ -287,6 +287,21 @@
      * moment it changes and for the device-specific path, where the server's
      * copy is not the one that counts.
      */
+    /**
+     * The theme's material and which drawing of it the reader has: <html> and
+     * <body> both, as for the depth above, so a signature rule matches on the
+     * first paint and again after a theme switch.
+     */
+    function applyMaterial(material, style) {
+        const word = String(material || '');
+        const drawing = style === 'signature' ? 'signature' : 'classic';
+        [document.documentElement, document.body].forEach((el) => {
+            if (!el) return;
+            el.setAttribute('data-material', word);
+            el.setAttribute('data-material-style', drawing);
+        });
+    }
+
     function applyThemeDepth(depth) {
         const value = ['flat', 'soft', 'rich', 'vivid', 'glass'].includes(depth) ? depth : 'flat';
         document.documentElement.setAttribute('data-depth', value);
@@ -550,6 +565,8 @@
                 return pick(s.categorySurface, prefs.catSurface, depth === 'flat' ? 'open' : (ideal.catSurface || 'glass'));
             })(),
             calm: calm,
+            material: String(ideal.character || ''),
+            materialStyle: s.materialStyle === 'signature' ? 'signature' : 'classic',
             backdrop: backdrop === 'off' ? 'off' : 'on',
             backdropRecipe: backdrop === 'off' || backdrop === 'follow' ? '' : backdrop,
         };
@@ -675,6 +692,7 @@
             applyCategorySpacing(settings && settings.categorySpacing, theme);
             applyThemeBackdrop(resolved.backdrop === 'off' ? 'off' : (resolved.backdropRecipe || 'follow'));
             document.documentElement.style.setProperty('--bd-calm', String(resolved.calm));
+            applyMaterial(resolved.material, resolved.materialStyle);
             applyCardGlass(resolved.glass);
             return resolved;
         });

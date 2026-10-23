@@ -391,6 +391,14 @@
                 <div class="config-panel">
                     <h3 class="config-panel-title">${e(t('config.appearanceSurfacesTitle', 'Surfaces'))}</h3>
                     <p class="config-panel-note">${e(t('config.appearanceSurfacesNote', 'How a theme is drawn, rather than which theme it is. Both apply to whichever one is on.'))}</p>
+                    <div class="config-field">
+                        <span class="config-field-label">${e(t('config.materialStyleLabel', 'Material style'))}</span>
+                        <select class="config-select" data-appearance-select="materialStyle">
+                            ${[['signature', 'Signature'], ['classic', 'Classic']].map(([option, text]) => `<option value="${option}"${(this.dash.settings?.materialStyle === 'signature' ? 'signature' : 'classic') === option ? ' selected' : ''}>${e(t('config.materialStyle' + cap(option), text))}</option>`).join('')}
+                        </select>
+                        ${this.infoAff('materialStyle')}
+                        <p class="config-panel-note">${e(t('config.materialStyleNote', 'How a theme\'s material is drawn. Signature gives each material a surface of its own: glass, frost and aurora stop looking alike. Classic is the surface as it was.'))}</p>
+                    </div>
                     ${select('themeDepth', 'config.themeDepthLabel', 'Depth',
                         [['flat', 'Flat'], ['soft', 'Soft'], ['rich', 'Rich'], ['vivid', 'Vivid'], ['glass', 'Glass']], 'config.themeDepth',
                         'config.themeDepthNote', 'How much of the theme is drawn behind the content: the tint in its greys, the raised surfaces, the wash behind the page. Follow the theme lets each theme bring its own.')}

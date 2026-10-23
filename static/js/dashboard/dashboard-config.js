@@ -3775,6 +3775,7 @@ class DashboardConfig {
         { field: 'glowStrength', labelKey: 'glowStrengthLabel', fallback: 'Glow', section: 'appearance', subTab: 'surface' },
         { field: 'themeEffects', labelKey: 'themeEffectsLabel', fallback: 'Effects', section: 'appearance', subTab: 'surface' },
         { field: 'categorySurface', labelKey: 'categorySurfaceLabel', fallback: 'Category surface', section: 'appearance', subTab: 'surface' },
+        { field: 'materialStyle', labelKey: 'materialStyleLabel', fallback: 'Material style', section: 'appearance', subTab: 'surface' },
         { field: 'widgetSurface', labelKey: 'widgetSurfaceLabel', fallback: 'Widget background', section: 'appearance', subTab: 'surface' },
         { field: 'widgetOpacity', labelKey: 'widgetOpacityLabel', fallback: 'Widget opacity', section: 'appearance', subTab: 'surface' },
         { field: 'themeSurfacesForceAll', labelKey: 'themeSurfacesForceAllLabel', fallback: 'Use these for every theme', section: 'appearance', subTab: 'surface' },
@@ -13058,6 +13059,7 @@ class DashboardConfig {
             this.setSurface(name, surfaces[name].includes(value) ? value : 'follow');
         }
         if (name === 'widgetSurface') this.setWidgetSurface(value);
+        if (name === 'materialStyle') this.setMaterialStyle(value);
     }
 
     /**
@@ -13075,6 +13077,17 @@ class DashboardConfig {
             if (out) out.textContent = `${percent}%`;
         });
         range.addEventListener('change', () => this.persistAppearance());
+    }
+
+    /**
+     * Material style: signature or classic, install-wide. The theme's material
+     * is the same either way; this picks which drawing of it the page gets.
+     */
+    setMaterialStyle(value) {
+        if (!this.dash.settings) return;
+        this.dash.settings.materialStyle = value === 'signature' ? 'signature' : 'classic';
+        void this.applyResolvedSurfaces();
+        this.persistAppearance();
     }
 
     /**
@@ -13452,6 +13465,8 @@ class DashboardConfig {
         glowStrength: { info: ['glowStrengthInfoTitle', 'glowStrengthInfoMessage'], def: 'follow' },
         themeEffects: { info: ['themeEffectsInfoTitle', 'themeEffectsInfoMessage'], def: 'follow' },
         categorySurface: { info: ['categorySurfaceInfoTitle', 'categorySurfaceInfoMessage'], def: 'follow' },
+        materialStyle: { info: ['materialStyleInfoTitle', 'materialStyleInfoMessage',
+            'Material style', 'Signature draws each material with a surface of its own, so glass, frost and aurora no longer look like the same pane. Classic is the surface as it was before. New installs start on Signature; an existing one stays on Classic until you choose.'], def: 'signature' },
         themeSurfacesForceAll: { info: ['themeSurfacesForceAllInfoTitle', 'themeSurfacesForceAllInfoMessage'], def: false },
         inkGap: { info: ['inkGapInfoTitle', 'inkGapInfoMessage'], def: 0.47 },
         themeBackdrop: { info: ['themeBackdropInfoTitle', 'themeBackdropInfoMessage'], def: 'follow' },

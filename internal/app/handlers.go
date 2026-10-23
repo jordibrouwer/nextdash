@@ -1289,6 +1289,10 @@ type htmlPageData struct {
 	// to <body> for the first paint. Empty when the theme's own stands.
 	BackdropRecipe string `json:"-"`
 
+	// Material is the theme's material word for <body data-material>, empty when it
+	// names none. MaterialStyle in the settings says signature or classic.
+	Material string `json:"-"`
+
 	// BackdropCalm is the quiet centre for the theme on screen, as the stylesheet
 	// reads it: this theme's own, or the install-wide number.
 	BackdropCalm string `json:"-"`
@@ -1381,6 +1385,7 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 		Settings:               settings,
 		BackdropRecipe:         surfaces.Recipe,
 		BackdropCalm:           surfaces.Calm,
+		Material:               materialAttr(themeColorsFor(themeID, colors)),
 		SurfaceAlpha:           surfaces.GlassAlpha,
 		SurfaceBlur:            surfaces.GlassBlur,
 		CardBorder:             surfaces.GlassBorder,

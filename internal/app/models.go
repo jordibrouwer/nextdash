@@ -688,6 +688,14 @@ type Settings struct {
 	ThemeBackdrop string `json:"themeBackdrop,omitempty"`
 
 	/*
+	 * MaterialStyle is how a theme's material is drawn: signature | classic.
+	 * Classic is the surface as it was before the materials had a signature of
+	 * their own. A fresh install starts on signature; a settings file without
+	 * the key is an install that predates it, and stays on classic.
+	 */
+	MaterialStyle string `json:"materialStyle"`
+
+	/*
 	 * CardGlass is the card glass when every theme is forced to one answer
 	 * (ThemeSurfacesForceAll); otherwise it lives per theme in
 	 * ThemeSurfacePrefs. Empty fields are the theme's own.
@@ -1821,6 +1829,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			IncludeFindersInSearch:          true,
 			SortMethod:                      "order",
 			LayoutPreset:                    "masonry",
+			MaterialStyle:                   materialSignature,
 			ThemeDepth:                      surfaceFollow,
 			GlowStrength:                    surfaceFollow,
 			ThemeEffects:                    surfaceFollow,
@@ -4479,6 +4488,7 @@ func (fs *FileStore) GetSettings() Settings {
 			BookmarkStaleDays:               defaultBookmarkStaleDays,
 			BookmarkArchiveUrl:              defaultBookmarkArchiveUrl,
 			LayoutPreset:                    "masonry",
+			MaterialStyle:                   materialSignature,
 			ThemeDepth:                      surfaceFollow,
 			GlowStrength:                    surfaceFollow,
 			ThemeEffects:                    surfaceFollow,
@@ -4665,6 +4675,11 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["themeBackdrop"]; !ok {
 			settings.ThemeBackdrop = surfaceFollow
+		}
+		// No key is an install from before materials had a signature: it keeps
+		// the surface it has. A fresh install gets signature from the constructors.
+		if _, ok := rawSettings["materialStyle"]; !ok {
+			settings.MaterialStyle = materialClassic
 		}
 		// A missing object is the default tuning; a partial one keeps what it
 		// has and takes the default for the rest. See fillMissingBackdropTuning.
@@ -5003,6 +5018,7 @@ func (fs *FileStore) GetSettings() Settings {
 		 */
 		settings.InkGap = normalizeInkGap(settings.InkGap)
 		settings.ThemeBackdrop = normalizeThemeBackdrop(settings.ThemeBackdrop)
+		settings.MaterialStyle = normalizeMaterialStyle(settings.MaterialStyle)
 		settings.BackdropTuning = normalizeBackdropTuning(settings.BackdropTuning)
 		settings.CategoryHeaderStyle = normalizeCategoryHeaderStyle(settings.CategoryHeaderStyle)
 		settings.CategoryHeaderSize = normalizeCategoryHeaderSize(settings.CategoryHeaderSize)

@@ -150,6 +150,29 @@ test.describe('the Background and Surface tabs', () => {
         }, { timeout: 5_000 }).toBe(null);
     });
 
+    test('material style is signature on a fresh install, switches the page, and comes back', async ({ page }) => {
+        await openTab(page, 'surface');
+        const select = page.locator('[data-appearance-select="materialStyle"]');
+        const bodyAttr = (name) => page.evaluate((n) => document.body.getAttribute(n), name);
+
+        const was = await select.inputValue();
+        const other = was === 'signature' ? 'classic' : 'signature';
+        await select.selectOption(other);
+        await expect.poll(() => bodyAttr('data-material-style')).toBe(other);
+        await expect.poll(async () => (await stored(page)).materialStyle, { timeout: 5_000 }).toBe(other);
+        // The material itself is the theme's, whichever drawing it gets.
+        const character = await bodyAttr('data-material');
+        expect(character).toMatch(/^[a-z]*$/);
+
+        await reloadDashboard(page);
+        expect(await bodyAttr('data-material-style')).toBe(other);
+        expect(await bodyAttr('data-material')).toBe(character);
+
+        await openTab(page, 'surface');
+        await select.selectOption(was);
+        await expect.poll(() => bodyAttr('data-material-style')).toBe(was);
+    });
+
     test('a new variant is saved and fetches the stylesheet again', async ({ page }) => {
         await openTab(page, 'background');
         await openConfigPanel(page, 'Backdrop');
