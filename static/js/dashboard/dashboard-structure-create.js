@@ -77,7 +77,10 @@ class DashboardStructureCreate {
         const cfg = (key, fb) => d.configLabel(key, fb);
         try {
             const res = await fetch('/api/pages');
-            const existing = res.ok ? await res.json() : [];
+            // A failed read is not an empty list: saving from it would replace
+            // everything that was there with just the new entry.
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const existing = await res.json();
             const list = Array.isArray(existing) ? existing : [];
             if (list.some((p) => String(p.name || '').trim().toLowerCase() === name.toLowerCase())) {
                 return { error: cfg('pageExists', 'That page already exists.') };
@@ -131,7 +134,10 @@ class DashboardStructureCreate {
         const cfg = (key, fb) => d.configLabel(key, fb);
         try {
             const res = await fetch(`/api/categories?page=${encodeURIComponent(pageId)}`);
-            const existing = res.ok ? await res.json() : [];
+            // A failed read is not an empty list: saving from it would replace
+            // everything that was there with just the new entry.
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const existing = await res.json();
             const list = Array.isArray(existing) ? existing : [];
             if (list.some((c) => String(c.name || '').trim().toLowerCase() === name.toLowerCase())) {
                 return { error: cfg('categoryExists', 'That category already exists.') };
