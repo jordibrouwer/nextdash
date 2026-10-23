@@ -247,7 +247,20 @@
         return key ? healthFacts.get(key) || null : null;
     }
 
-    async function fetchBookmarkHealthSummary() {
+    // Callers that ask while a read is in flight share it: one page load asked
+    // for the same facts from several places.
+    let healthSummaryInflight = null;
+
+    function fetchBookmarkHealthSummary() {
+        if (!healthSummaryInflight) {
+            healthSummaryInflight = loadBookmarkHealthSummary().finally(() => {
+                healthSummaryInflight = null;
+            });
+        }
+        return healthSummaryInflight;
+    }
+
+    async function loadBookmarkHealthSummary() {
         // The counts, plus the few bookmarks with something to report. The full
         // report is a row per bookmark — name, tags, score, reasons — and this
         // runs on every dashboard load, so on a large collection it was

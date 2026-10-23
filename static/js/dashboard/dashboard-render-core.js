@@ -740,6 +740,18 @@ class DashboardRenderCore {
      */
     async tickWidget(widget) {
         if (document.visibilityState !== 'visible') return;
+        // A slow service must not stack beats, or an old answer lands after a new one.
+        this._widgetTicking = this._widgetTicking || new Set();
+        if (this._widgetTicking.has(widget.id)) return;
+        this._widgetTicking.add(widget.id);
+        try {
+            await this.runWidgetTick(widget);
+        } finally {
+            this._widgetTicking.delete(widget.id);
+        }
+    }
+
+    async runWidgetTick(widget) {
         const d = this.dash;
         const pageId = Number(d?.currentPageId) || Number(d?.pages?.[0]?.id) || 1;
         if (d._widgetCustom) delete d._widgetCustom[`${pageId}:${widget.id}`];
