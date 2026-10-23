@@ -193,3 +193,152 @@ html[data-theme] body[data-material-style="signature"][data-material="ink"]:not(
         -webkit-backdrop-filter: none;
     }
 }
+
+/* ── De kop ──────────────────────────────────────────────────────────────
+   Wat `theme` bij de categoriekop betekent: bij signatuur tekent elk materiaal
+   zijn eigen kop. De regels hangen aan data-cat-head="theme", dus wie zelf een
+   stijl koos (clean, underlined, boxed, label, group) houdt die.
+
+   De "//" blijft altijd staan, op elke kop: hij is de greep om een categorie te
+   verslepen en het teken waaraan je nextDash herkent. De regels raken de naam
+   en de rand eromheen en laten het "//" en zijn greep (category-reorder-handle)
+   met rust. Widgets houden hun eigen kopstrook, en de terminal- en
+   launcher-layouts hun eigen ontwerp. */
+
+/* Lak: de naam op een glanzende tab, met het licht van boven. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="lacquer"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label {
+    flex: 0 1 auto;
+    padding: 0.3em 0.9em;
+    border-radius: calc(9px * var(--theme-radius-applied, 1)) calc(9px * var(--theme-radius-applied, 1)) 0 0;
+    background-image: linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 30%, transparent), color-mix(in srgb, var(--accent-primary) 8%, transparent));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 25%, transparent);
+    color: var(--text-primary);
+}
+
+/* Glas: een zwevende chip van glas, zonder lijn eronder. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="glass"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label {
+    flex: 0 1 auto;
+    padding: 0.25em 0.9em;
+    border-radius: 999px;
+    background-color: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.24);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--text-primary);
+    font-weight: 550;
+}
+
+/* Berijpt glas: een dunne koele lijn onder de naam. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="frost"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title {
+    padding-bottom: 0.4em;
+    margin-bottom: 0.4em;
+    border-bottom: 1px solid rgba(190, 225, 255, 0.35);
+    letter-spacing: 0.04em;
+    font-weight: 500;
+}
+
+/* Aurora: de naam in het verloop van twee accentkleuren. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="aurora"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label {
+    flex: 0 1 auto;
+    background-image: linear-gradient(90deg, var(--accent-primary), var(--accent-error, var(--accent-primary)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="aurora"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label .category-reorder-handle {
+    /* De greep is een eigen laag (hij staat op een opacity), dus het verloop van de naam bereikt hem niet. */
+    -webkit-text-fill-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+/* Neon: de naam tussen haken, in hoofdletters en met gloed. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="neon"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label {
+    flex: 0 1 auto;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--accent-primary);
+    text-shadow: 0 0 8px color-mix(in srgb, var(--accent-primary) 70%, transparent), 0 0 18px color-mix(in srgb, var(--accent-primary) 40%, transparent);
+}
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="neon"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label::before {
+    content: "[";
+    margin-right: 0.45em;
+    opacity: 0.8;
+}
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="neon"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label::after {
+    content: "]";
+    margin-left: 0.45em;
+    opacity: 0.8;
+}
+
+/* Fluweel: een grotere, zachte naam zonder lijnen. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="velvet"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title {
+    font-size: calc(var(--font-size-category) * 1.2);
+    font-weight: 600;
+    letter-spacing: 0;
+    color: var(--text-primary);
+}
+
+/* Email: de naam in een pil met een rand in het accent. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="enamel"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label {
+    flex: 0 1 auto;
+    padding: 0.25em 1em;
+    border-radius: 999px;
+    background-color: color-mix(in srgb, var(--accent-primary) 20%, transparent);
+    box-shadow: inset 0 0 0 2px var(--accent-primary), inset 0 2px 0 rgba(255, 255, 255, 0.35);
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+/* Geborsteld metaal: de naam gegraveerd op een plaatje. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="brushed"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label {
+    flex: 0 1 auto;
+    padding: 0.25em 0.8em;
+    border-radius: calc(4px * var(--theme-radius-applied, 1));
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.14));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), inset 0 -1px 0 rgba(0, 0, 0, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.86em;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.18), 0 -1px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Koolstof: de naam op een tab met een afgeschuinde rand. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="carbon"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title .category-title-label {
+    flex: 0 1 auto;
+    padding: 0.3em 1.7em 0.3em 0.8em;
+    background-color: color-mix(in srgb, var(--accent-primary) 26%, transparent);
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 100%, 0 100%);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.86em;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Papier: kleine kapitalen boven een dubbele lijn, als drukwerk. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="paper"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title {
+    padding-bottom: 0.3em;
+    margin-bottom: 0.45em;
+    border-bottom: 4px double color-mix(in srgb, var(--text-primary) 75%, transparent);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: calc(var(--font-size-category) * 0.85);
+    font-weight: 700;
+}
+
+/* Terminal: de naam boven een gestippelde lijn in het accent. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="terminal"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title {
+    padding-bottom: 0.3em;
+    margin-bottom: 0.4em;
+    border-bottom: 1px dashed color-mix(in srgb, var(--accent-primary) 55%, transparent);
+}
+
+/* Inkt: een dikke bovenlijn boven een grotere naam, als een krantenkop. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="ink"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category:not(.dashboard-widget) .category-title {
+    padding-top: 0.35em;
+    border-top: 5px solid var(--text-primary);
+    font-size: calc(var(--font-size-category) * 1.05);
+    font-weight: 700;
+    color: var(--text-primary);
+}
