@@ -13,8 +13,8 @@ func TestNormalizeMaterialStyle(t *testing.T) {
 	}
 }
 
-// A fresh install starts on signature; a settings file from before the setting
-// has no key and stays on classic, so nobody's dashboard changes under them.
+// Everyone starts on signature, a settings file from before the setting
+// included: it has no key, and no key is signature. Classic is a choice.
 func TestMaterialStyleDefaults(t *testing.T) {
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	t.Chdir(t.TempDir())
@@ -27,18 +27,18 @@ func TestMaterialStyleDefaults(t *testing.T) {
 	writeSurfaceSettingsFile(t, map[string]any{
 		"theme": "dark", "surfaceDefaultsMigrated": true, "depthDefaultFlatMigrated": true, "surfaceFollowMigrated": true,
 	})
-	if got := NewStore().GetSettings().MaterialStyle; got != "classic" {
-		t.Errorf("an install from before the setting reads %q, want classic", got)
+	if got := NewStore().GetSettings().MaterialStyle; got != "signature" {
+		t.Errorf("an install from before the setting reads %q, want signature", got)
 	}
 
 	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
 	t.Chdir(t.TempDir())
 	writeSurfaceSettingsFile(t, map[string]any{
-		"theme": "dark", "materialStyle": "signature",
+		"theme": "dark", "materialStyle": "classic",
 		"surfaceDefaultsMigrated": true, "depthDefaultFlatMigrated": true, "surfaceFollowMigrated": true,
 	})
-	if got := NewStore().GetSettings().MaterialStyle; got != "signature" {
-		t.Errorf("a stored signature reads %q", got)
+	if got := NewStore().GetSettings().MaterialStyle; got != "classic" {
+		t.Errorf("a stored classic reads %q", got)
 	}
 }
 

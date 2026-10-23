@@ -13466,7 +13466,7 @@ class DashboardConfig {
         themeEffects: { info: ['themeEffectsInfoTitle', 'themeEffectsInfoMessage'], def: 'follow' },
         categorySurface: { info: ['categorySurfaceInfoTitle', 'categorySurfaceInfoMessage'], def: 'follow' },
         materialStyle: { info: ['materialStyleInfoTitle', 'materialStyleInfoMessage',
-            'Material style', 'Signature draws each material with a surface of its own, so glass, frost and aurora no longer look like the same pane. Classic is the surface as it was before. New installs start on Signature; an existing one stays on Classic until you choose.'], def: 'signature' },
+            'Material style', 'Signature draws each material with a surface of its own, so glass, frost and aurora no longer look like the same pane. Classic is the surface as it was before. Signature is the default; Classic stays available.'], def: 'signature' },
         themeSurfacesForceAll: { info: ['themeSurfacesForceAllInfoTitle', 'themeSurfacesForceAllInfoMessage'], def: false },
         inkGap: { info: ['inkGapInfoTitle', 'inkGapInfoMessage'], def: 0.47 },
         themeBackdrop: { info: ['themeBackdropInfoTitle', 'themeBackdropInfoMessage'], def: 'follow' },

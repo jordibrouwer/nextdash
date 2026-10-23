@@ -690,8 +690,8 @@ type Settings struct {
 	/*
 	 * MaterialStyle is how a theme's material is drawn: signature | classic.
 	 * Classic is the surface as it was before the materials had a signature of
-	 * their own. A fresh install starts on signature; a settings file without
-	 * the key is an install that predates it, and stays on classic.
+	 * their own, and stays available as a choice. Everyone starts on signature,
+	 * a settings file without the key included.
 	 */
 	MaterialStyle string `json:"materialStyle"`
 
@@ -4676,10 +4676,10 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["themeBackdrop"]; !ok {
 			settings.ThemeBackdrop = surfaceFollow
 		}
-		// No key is an install from before materials had a signature: it keeps
-		// the surface it has. A fresh install gets signature from the constructors.
+		// No key is an install from before materials had a signature, and it gets
+		// the signature like everyone else; classic is a choice, not a default.
 		if _, ok := rawSettings["materialStyle"]; !ok {
-			settings.MaterialStyle = materialClassic
+			settings.MaterialStyle = materialSignature
 		}
 		// A missing object is the default tuning; a partial one keeps what it
 		// has and takes the default for the rest. See fillMissingBackdropTuning.

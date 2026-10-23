@@ -11,9 +11,9 @@ glass, frost and aurora read as the same pane in three colours. Signature
 draws each material with a construction of its own -- edge, surface, header --
 and classic is the surface as it was.
 
-A fresh install starts on signature. An install from before the setting
-existed has no key and reads classic (GetSettings), so nobody's dashboard
-changes under them; they choose.
+Everyone starts on signature, an install from before the setting existed
+included (it has no key, and GetSettings reads that as signature). Classic stays
+available as a choice for whoever prefers the surface as it was.
 */
 const (
 	materialSignature = "signature"

@@ -10,10 +10,10 @@
      data-material        het materiaal van het theme: lacquer, glass, frost,
                           aurora, neon, velvet, enamel, brushed, carbon, paper,
                           terminal of ink. Leeg bij een theme zonder materiaal.
-     data-material-style  signature of classic (Settings.MaterialStyle). Een
-                          nieuwe installatie begint op signature, een bestaande
-                          blijft op classic; zonder dit attribuut op signature
-                          verandert er niets.
+     data-material-style  signature of classic (Settings.MaterialStyle).
+                          Iedereen begint op signature, ook een
+                          installatie van voor de instelling; classic is een
+                          keuze. Zonder signature verandert er niets.
 
    Alleen de categorie wordt hier getekend, op dezelfde plek als
    category-surface.css en met dezelfde uitzonderingen: open tekent geen vlak,
