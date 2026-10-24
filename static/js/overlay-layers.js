@@ -87,7 +87,7 @@
         return mutations.some((mutation) => {
             if (mutation.type === 'attributes') {
                 const target = /** @type {Element} */ (mutation.target);
-                return target.matches?.(ROOT_SELECTOR) === true;
+                return target.matches?.(ROOT_SELECTOR) === true || target.matches?.(ARROW_SELECTOR) === true;
             }
             const touched = Array.from(mutation.addedNodes).concat(Array.from(mutation.removedNodes));
             return touched.some((node) => node.nodeType === Node.ELEMENT_NODE
@@ -129,31 +129,48 @@
         if (event.key === 'Enter' || event.key === ' ') rememberTrigger(event);
     }, true);
 
+    /** How far a trigger may lie from the popover and still be what opened it. */
+    const ARROW_REACH = 48;
+
     function arrowAnchor(pop) {
-        if (lastTrigger && lastTrigger.isConnected && !pop.contains(lastTrigger) && lastTrigger.getBoundingClientRect().width > 0) return lastTrigger;
         const pr = pop.getBoundingClientRect();
-        // What can have opened a popover: a control that says it is expanded or opens a popup, and the
-        // one that has the focus. The nearest to the popover is the one.
-        const candidates = Array.from(document.querySelectorAll('[aria-expanded="true"], [aria-haspopup]:not([aria-haspopup="false"])'));
-        if (document.activeElement && document.activeElement !== document.body) candidates.push(document.activeElement);
         const gap = (el) => {
             const r = el.getBoundingClientRect();
             const dx = Math.max(r.left - pr.right, pr.left - r.right, 0);
             const dy = Math.max(r.top - pr.bottom, pr.top - r.bottom, 0);
             return Math.hypot(dx, dy);
         };
-        const visible = candidates.filter((el) => !pop.contains(el) && el.getBoundingClientRect().width > 0);
-        if (!visible.length) return null;
-        return visible.sort((a, b) => gap(a) - gap(b))[0];
+        // Seen, and close: a last click far away, or on something hidden, did not open this popover.
+        // Nor did a control the popover lies on top of: it is beside its trigger, not over it.
+        const overlaps = (el) => {
+            const r = el.getBoundingClientRect();
+            return r.left < pr.right && r.right > pr.left && r.top < pr.bottom && r.bottom > pr.top;
+        };
+        const usable = (el) => el.isConnected && !pop.contains(el) && el.checkVisibility?.() !== false
+            && el.getBoundingClientRect().width > 0 && gap(el) <= ARROW_REACH && !overlaps(el);
+        // A bubble opens on hover: the control under the pointer. Otherwise the control last pressed.
+        const hovered = Array.from(document.querySelectorAll(':hover')).pop();
+        const hoveredTrigger = hovered ? hovered.closest(TRIGGER_SELECTOR) : null;
+        if (hoveredTrigger && usable(hoveredTrigger)) return hoveredTrigger;
+        if (lastTrigger && usable(lastTrigger)) return lastTrigger;
+        // What else can have opened a popover: a control that says it is expanded or opens a popup, and
+        // the one that has the focus. The nearest to the popover is the one.
+        const candidates = Array.from(document.querySelectorAll('[aria-expanded="true"], [aria-haspopup]:not([aria-haspopup="false"])'));
+        if (document.activeElement && document.activeElement !== document.body) candidates.push(document.activeElement);
+        // A section title that is expanded opens its section, not a popover.
+        const near = candidates.filter((el) => usable(el) && !el.matches('h1, h2, h3, h4, h5, h6, [role="rowheader"], [role="heading"]'));
+        if (!near.length) return null;
+        return near.sort((x, y) => gap(x) - gap(y))[0];
     }
 
     function placeArrow(pop) {
         if (!pop.isConnected) return;
-        const anchor = arrowAnchor(pop);
         const clear = () => {
             pop.removeAttribute('data-ov-arrow');
             pop.style.removeProperty('--ov-arrow-x');
         };
+        if (pop.hidden) return clear();
+        const anchor = arrowAnchor(pop);
         if (!anchor) return clear();
         const pr = pop.getBoundingClientRect();
         const ar = anchor.getBoundingClientRect();
