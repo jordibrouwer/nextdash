@@ -6458,6 +6458,12 @@ func mergeBuiltInThemeDefaults(stored map[string]ThemeColors) map[string]ThemeCo
 			stored[themeID] = defaults
 			continue
 		}
+		// The Unraid themes were redrawn as a server UI; a copy that still has the first drawing's
+		// fingerprint (flat and square, neon glass, full-strength sheen) becomes the new one.
+		if isShippedOldUnraid(themeID, current) {
+			stored[themeID] = defaults
+			continue
+		}
 		// The neutrals were redrawn: an untouched old one becomes the new one.
 		if isShippedOldNeutral(themeID, current) {
 			stored[themeID] = defaults
@@ -6476,6 +6482,21 @@ func mergeBuiltInThemeDefaults(stored map[string]ThemeColors) map[string]ThemeCo
 		stored[themeID] = fillThemeCharacter(current, defaults)
 	}
 	return stored
+}
+
+// isShippedOldUnraid recognises the first Unraid drawing in a stored theme: Black and Azure were
+// flat with radius 0.15 (so no category card at all), Ember was neon at radius 1.2, Blaze had a
+// full-strength sheen.
+func isShippedOldUnraid(themeID string, current ThemeColors) bool {
+	switch {
+	case strings.HasPrefix(themeID, "unraid-black-"), strings.HasPrefix(themeID, "unraid-azure-"):
+		return current.Depth == "flat" && current.RadiusScale == 0.15
+	case strings.HasPrefix(themeID, "unraid-ember-"):
+		return current.Character == "neon" && current.RadiusScale == 1.2
+	case strings.HasPrefix(themeID, "unraid-blaze-"):
+		return current.Sheen >= 0.8
+	}
+	return false
 }
 
 var shippedOpenThemes = map[string]bool{

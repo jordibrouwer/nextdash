@@ -648,8 +648,8 @@ func TestUnraidThemesHaveACardAndTheirOwnColours(t *testing.T) {
 			} else if hue > 35 && hue < 340 || hue < 0 {
 				t.Errorf("%s: accent %s has hue %.0f, want orange or red", id, tc.AccentPrimary, hue)
 			}
-			if got := themeBackdropRecipes[themeBackdropRecipeFor(themeBackdropHashID(id), tc)]; got != "rack" {
-				t.Errorf("%s: backdrop %q, want rack", id, got)
+			if got := themeBackdropRecipes[themeBackdropRecipeFor(themeBackdropHashID(id), tc)]; got != unraidBackdrops[id] {
+				t.Errorf("%s: backdrop %q, want %q", id, got, unraidBackdrops[id])
 			}
 		}
 	}
@@ -669,6 +669,22 @@ func TestUnraidBlackAndAzureLeaveOpen(t *testing.T) {
 		old.Surface = "glass"
 		if got := mergeBuiltInThemeDefaults(map[string]ThemeColors{id: old})[id]; got.Surface != "glass" {
 			t.Errorf("%s: a chosen glass became %q", id, got.Surface)
+		}
+	}
+}
+
+func TestOldUnraidCopiesBecomeTheNewDrawing(t *testing.T) {
+	for _, id := range []string{"unraid-black-dark", "unraid-azure-light"} {
+		old := getDefaultBuiltInThemes()[id]
+		old.Depth, old.RadiusScale, old.Surface, old.AccentPrimary = "flat", 0.15, "", "#123456"
+		got := mergeBuiltInThemeDefaults(map[string]ThemeColors{id: old})[id]
+		if got.Surface != "card" || got.Depth == "flat" || got.AccentPrimary == "#123456" {
+			t.Errorf("%s: old flat copy stayed: %+v", id, got)
+		}
+		kept := getDefaultBuiltInThemes()[id]
+		kept.AccentPrimary = "#123456"
+		if got := mergeBuiltInThemeDefaults(map[string]ThemeColors{id: kept})[id]; got.AccentPrimary != "#123456" {
+			t.Errorf("%s: an edited new copy was overwritten", id)
 		}
 	}
 }
@@ -699,4 +715,12 @@ func hexHue(t *testing.T, hex string) float64 {
 		h += 360
 	}
 	return h
+}
+
+// Each Unraid family has its own backdrop, drawn from a terminal and not from the shared pools.
+var unraidBackdrops = map[string]string{
+	"unraid-black-dark": "digirain", "unraid-black-light": "digirain",
+	"unraid-azure-dark": "cellgrid", "unraid-azure-light": "cellgrid",
+	"unraid-ember-dark": "bootlog", "unraid-ember-light": "bootlog",
+	"unraid-blaze-dark": "crt", "unraid-blaze-light": "crt",
 }
