@@ -818,3 +818,18 @@ html[data-theme] body :is([class$="-tutorial-dot"], .changes-tour-dot):is(.is-ac
     background: var(--accent-primary);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 30%, transparent);
 }
+
+
+/* ── The input of quick add and of the palette fills the line; the box around it shows the focus ─── */
+html[data-theme] body :is(.omnibox-input, #shortcut-search input):is(:focus, :focus-visible) {
+    outline: none;
+    box-shadow: none;
+}
+
+
+/* ── Quick add: one line on the page, so the quiet ring of a small layer and no bar ────────────────── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .omnibox-box,
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="neon"] .omnibox-box:not([data-ov-covered]),
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .omnibox-box {
+    box-shadow: var(--edge-light, 0 0 0 0 transparent), var(--ov-edge, 0 0 0 0 transparent), var(--ov-cast, 0 0 0 0 transparent), 0 18px 36px -18px color-mix(in srgb, black 55%, transparent), 0 0 0 1px color-mix(in srgb, var(--accent-primary) 28%, transparent);
+}
