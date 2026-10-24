@@ -117,16 +117,34 @@
      */
     const ARROW_SELECTOR = '.date-popover, .page-tab-popover, .field-popover';
 
+    /** The control the reader last pressed: a popover is opened by it, whatever else could be. */
+    let lastTrigger = null;
+    const TRIGGER_SELECTOR = 'button, a, [role="button"], [tabindex], input, select, summary';
+    function rememberTrigger(event) {
+        const target = event.target instanceof Element ? event.target.closest(TRIGGER_SELECTOR) : null;
+        if (target) lastTrigger = target;
+    }
+    document.addEventListener('pointerdown', rememberTrigger, true);
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') rememberTrigger(event);
+    }, true);
+
     function arrowAnchor(pop) {
-        const open = Array.from(document.querySelectorAll('[aria-expanded="true"]')).filter((el) => !pop.contains(el));
+        if (lastTrigger && lastTrigger.isConnected && !pop.contains(lastTrigger) && lastTrigger.getBoundingClientRect().width > 0) return lastTrigger;
         const pr = pop.getBoundingClientRect();
-        const distance = (el) => {
+        // What can have opened a popover: a control that says it is expanded or opens a popup, and the
+        // one that has the focus. The nearest to the popover is the one.
+        const candidates = Array.from(document.querySelectorAll('[aria-expanded="true"], [aria-haspopup]:not([aria-haspopup="false"])'));
+        if (document.activeElement && document.activeElement !== document.body) candidates.push(document.activeElement);
+        const gap = (el) => {
             const r = el.getBoundingClientRect();
-            return Math.hypot(r.left + r.width / 2 - (pr.left + pr.width / 2), r.top + r.height / 2 - (pr.top + pr.height / 2));
+            const dx = Math.max(r.left - pr.right, pr.left - r.right, 0);
+            const dy = Math.max(r.top - pr.bottom, pr.top - r.bottom, 0);
+            return Math.hypot(dx, dy);
         };
-        if (open.length) return open.sort((a, b) => distance(a) - distance(b))[0];
-        const active = document.activeElement;
-        return active && active !== document.body && !pop.contains(active) ? active : null;
+        const visible = candidates.filter((el) => !pop.contains(el) && el.getBoundingClientRect().width > 0);
+        if (!visible.length) return null;
+        return visible.sort((a, b) => gap(a) - gap(b))[0];
     }
 
     function placeArrow(pop) {
