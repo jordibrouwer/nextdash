@@ -22,6 +22,8 @@ async function openMenu(page, depth) {
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+    // This spec pins the flat Classic surface; the Signature overlays are covered by overlay-surfaces.spec.js.
+    await page.evaluate(() => document.body.setAttribute('data-material-style', 'classic'));
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate((d) => document.body.setAttribute('data-depth', d), depth);

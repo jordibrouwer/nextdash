@@ -21,6 +21,8 @@ async function openCommands(page, query = 'theme') {
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
+    // This spec pins the flat Classic surface; the Signature overlays are covered by overlay-surfaces.spec.js.
+    await page.evaluate(() => document.body.setAttribute('data-material-style', 'classic'));
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.keyboard.press('Shift+Semicolon');
@@ -74,9 +76,9 @@ test.describe('the command surface', () => {
         expect(surface.borderRadius, 'the sheet has a card corner')
             .toBe(await radiusPx(page, '--radius-5'));
         expect(surface.backdropFilter).toContain('blur(8px)');
-        // Lifted off the page, not resting on it: the spec draws 0 24px 64px.
+        // Lifted off the page, not resting on it: the third elevation level (theme-overlays.css).
         expect(surface.boxShadow, `no deep drop under the sheet: ${surface.boxShadow}`)
-            .toMatch(/0px 24px 64px/);
+            .toMatch(/0px 44px 80px/);
     });
 
     test('the prompt is ruled off from what it answers', async ({ page }) => {

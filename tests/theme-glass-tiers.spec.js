@@ -26,6 +26,8 @@ async function openGlass(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate(() => document.body.setAttribute('data-depth', 'glass'));
+    // This spec pins the flat Classic surface; the Signature overlays are covered by overlay-surfaces.spec.js.
+    await page.evaluate(() => document.body.setAttribute('data-material-style', 'classic'));
 }
 
 /** Paints the token on a throwaway element so color-mix actually resolves. */
