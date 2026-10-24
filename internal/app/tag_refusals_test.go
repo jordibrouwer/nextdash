@@ -7,7 +7,38 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
+	"time"
 )
+
+// A refusal writes the whole settings back, so it waits for a settings save in
+// flight: while SaveSettings holds settingsMu, the refusal must not land, or
+// one of the two writes is lost.
+func TestRefusalWaitsForTheSettingsLock(t *testing.T) {
+	h, store := patchTestHandlers(t)
+	saveTestPage(t, h, []map[string]any{
+		{"name": "Tube", "url": "https://www.youtube.com/watch?v=1", "category": "x", "tags": []string{"video"}},
+	})
+
+	h.settingsMu.Lock()
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		saveTestPage(t, h, []map[string]any{
+			{"name": "Tube", "url": "https://www.youtube.com/watch?v=1", "category": "x", "tags": []string{}},
+		})
+	}()
+	time.Sleep(200 * time.Millisecond)
+	if got := store.GetSettings().DismissedTagSuggestions; len(got) != 0 {
+		h.settingsMu.Unlock()
+		<-done
+		t.Fatalf("the refusal was written while a settings save held the lock: %v", got)
+	}
+	h.settingsMu.Unlock()
+	<-done
+	if got := store.GetSettings().DismissedTagSuggestions; !reflect.DeepEqual(got, []string{"youtube.com|video"}) {
+		t.Errorf("after the lock was released: %v", got)
+	}
+}
 
 func saveTestPage(t *testing.T, h *Handlers, rows []map[string]any) *httptest.ResponseRecorder {
 	t.Helper()
