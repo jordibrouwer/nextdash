@@ -1666,16 +1666,6 @@ body[data-dashboard-stack-categories="true"] .dashboard-grid .category.category-
         var(--wide-shortcut-col);
 }
 
-/* A status row is inset 4px further than the rest (dashboard-bookmark-row.css),
-   and in a plain category the shared lead track grows to take that in, so the
-   names still line up. Rows that lay out their own tracks have nothing shared
-   to grow: give the rows without the inset the same 4px after the icon, and
-   the names start at one place down the column again. */
-.dashboard-grid .category--wide .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]):has(> .bookmark-link:is(.status-online, .status-offline, .status-checking):not(.bookmark-inline-editing))
-    > .bookmark-link:not(:is(.status-online, .status-offline, .status-checking):not(.bookmark-inline-editing)) > .bookmark-lead {
-    padding-inline-end: 4px;
-}
-
 /* The "+ N more" toggle and the empty-category placeholders are not bookmarks:
    they belong under the whole list, not in the first column of it. */
 .dashboard-grid .category--wide .bookmarks-list > .category-show-more,

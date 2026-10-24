@@ -147,9 +147,8 @@ for (const columns of [2, 3, 4]) {
                         expect(row.needed, row.text).toBeLessThanOrEqual(row.width + 0.01);
                     }
                 }
-                // Each row lays out its own tracks now, and a status row is
-                // inset a little further than the others: the names still
-                // start at one place in every column.
+                // Each row lays out its own tracks now, and every row takes the
+                // same inset: the names start at one place in every column.
                 expect(new Set(spread.map((row) => row.offset)).size).toBe(1);
             });
         }

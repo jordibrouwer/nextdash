@@ -92,9 +92,13 @@ body.no-animations .bookmark-link:not(.bookmark-inline-editing) {
     transition: none;
 }
 
-/* Status rows: keep extra inset so the left status bar does not crowd favicons. */
-.bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):not(.bookmark-inline-editing) {
+/* Every row takes the same inset, with a status or without: the icons of a column stand on one line.
+   A row that has a ping used to take 4px more than the rest, and its icon stood out of line. */
+.bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:not(.bookmark-inline-editing) {
     padding-left: calc(var(--bookmark-row-start-pad, 6px) + 4px);
+}
+
+.bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):not(.bookmark-inline-editing) {
     border-radius: var(--layout-radius-sm, 8px);
 }
 
