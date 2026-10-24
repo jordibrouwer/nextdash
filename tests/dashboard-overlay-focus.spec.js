@@ -146,7 +146,7 @@ test.describe('dashboard overlay focus', () => {
         const row = page.locator('#app-modal.show .cheat-sheet-row').nth(1);
         await row.focus();
         await page.keyboard.press('Space');
-        await expect(row).toHaveAttribute('aria-pressed', 'true');
+        await expect(row).toHaveAttribute('aria-current', 'true');
         await expect(page.locator('#cheat-sheet-dock .keyboard-cheat-sheet-keys')).toBeVisible();
     });
 

@@ -221,7 +221,7 @@ class DashboardUiHelpers {
                             ${section.items.map((shortcut, j) => {
                                 const id = `${i}-${j}`;
                                 shortcutById.set(id, shortcut);
-                                return `<button type="button" class="cheat-sheet-row" data-shortcut-id="${id}" aria-pressed="false" title="${esc(shortcut.description)}" data-search="${esc(squash(`${shortcut.description}${keysText(shortcut.keys)}`))}"><span class="cheat-sheet-row-text">${esc(shortcut.description)}</span></button>`;
+                                return `<button type="button" class="cheat-sheet-row" data-shortcut-id="${id}" title="${esc(shortcut.description)}" data-search="${esc(squash(`${shortcut.description}${keysText(shortcut.keys)}`))}"><span class="cheat-sheet-row-text">${esc(shortcut.description)}</span><span class="sr-only"> \u2014 ${esc(keysText(shortcut.keys))}</span></button>`;
                             }).join('')}
                         </div>
                     </section>`;
@@ -284,12 +284,9 @@ class DashboardUiHelpers {
 
         const dock = document.getElementById('cheat-sheet-dock');
         const allRows = () => Array.from(document.querySelectorAll('.keyboard-cheat-sheet .cheat-sheet-row'));
-        const selectRow = (row) => {
-            allRows().forEach((other) => {
-                const on = other === row;
-                other.classList.toggle('is-selected', on);
-                other.setAttribute('aria-pressed', String(on));
-            });
+        // The dock shows one shortcut: the focused row, else the selected one.
+        let selectedRow = null;
+        const renderDock = (row) => {
             if (!dock) return;
             const shortcut = row ? shortcutById.get(row.dataset.shortcutId) : null;
             dock.classList.toggle('has-selection', Boolean(shortcut));
@@ -297,9 +294,24 @@ class DashboardUiHelpers {
                 ? `<span class="cheat-sheet-dock-keys keyboard-cheat-sheet-keys">${formatKeys(shortcut.keys)}</span><span class="cheat-sheet-dock-text">${esc(shortcut.description)}</span>`
                 : `<span class="cheat-sheet-dock-hint">${esc(dockHint)}</span>`;
         };
+        const selectRow = (row) => {
+            selectedRow = row;
+            allRows().forEach((other) => {
+                const on = other === row;
+                other.classList.toggle('is-selected', on);
+                if (on) other.setAttribute('aria-current', 'true');
+                else other.removeAttribute('aria-current');
+            });
+            renderDock(row);
+        };
         document.querySelector('.keyboard-cheat-sheet .cheat-sheet-groups')?.addEventListener('click', (event) => {
             const row = event.target instanceof Element ? event.target.closest('.cheat-sheet-row') : null;
             if (row) selectRow(row);
+        });
+        // The dock follows focus without selecting; off the rows it shows the selection.
+        document.querySelector('.keyboard-cheat-sheet')?.addEventListener('focusin', (event) => {
+            const row = event.target instanceof Element ? event.target.closest('.cheat-sheet-row') : null;
+            renderDock(row || selectedRow);
         });
         // One pass over every column at once; a column with nothing left hides.
         const applyView = () => {

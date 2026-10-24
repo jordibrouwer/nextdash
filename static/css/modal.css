@@ -1739,6 +1739,7 @@ body.no-animations .modal-button.danger.selected {
 }
 
 .cheat-sheet-row {
+    position: relative;
     display: block;
     width: 100%;
     box-sizing: border-box;
@@ -1874,9 +1875,10 @@ body.no-animations .modal-button.danger.selected {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 24%, transparent);
 }
 
+/* Focus is a ring, selection is a fill and a bar; one row can have both. */
 .keyboard-cheat-sheet-modal .cheat-sheet-row:focus-visible {
-    outline: none;
-    box-shadow: inset 2px 0 0 var(--accent-primary);
+    outline: 2px solid var(--accent-primary);
+    outline-offset: -2px;
     background: var(--ov-hot, color-mix(in srgb, var(--accent-primary) 14%, transparent));
     color: var(--text-primary);
 }

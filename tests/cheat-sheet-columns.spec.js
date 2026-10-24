@@ -41,9 +41,9 @@ test.describe('cheat sheet columns', () => {
     test('clicking a row shows its keys and description in the dock', async ({ page }) => {
         await openSheet(page);
         const row = page.locator('.cheat-sheet-row').nth(2);
-        const text = ((await row.textContent()) || '').trim();
+        const text = ((await row.locator('.cheat-sheet-row-text').textContent()) || '').trim();
         await row.click();
-        await expect(row).toHaveAttribute('aria-pressed', 'true');
+        await expect(row).toHaveAttribute('aria-current', 'true');
         const dock = page.locator('#cheat-sheet-dock');
         await expect(dock).toHaveAttribute('aria-live', 'polite');
         await expect(dock.locator('.cheat-sheet-dock-text')).toHaveText(text);
@@ -53,10 +53,10 @@ test.describe('cheat sheet columns', () => {
     test('Enter on a focused row does the same', async ({ page }) => {
         await openSheet(page);
         const row = page.locator('.cheat-sheet-row').nth(3);
-        const text = ((await row.textContent()) || '').trim();
+        const text = ((await row.locator('.cheat-sheet-row-text').textContent()) || '').trim();
         await row.focus();
         await page.keyboard.press('Enter');
-        await expect(row).toHaveAttribute('aria-pressed', 'true');
+        await expect(row).toHaveAttribute('aria-current', 'true');
         await expect(page.locator('#cheat-sheet-dock .cheat-sheet-dock-text')).toHaveText(text);
         await expect(page.locator('#cheat-sheet-dock .keyboard-cheat-sheet-keys')).toBeVisible();
     });
@@ -71,6 +71,76 @@ test.describe('cheat sheet columns', () => {
         await page.keyboard.press('ArrowDown');
         const id2 = await page.evaluate(() => document.activeElement?.getAttribute('data-shortcut-id'));
         expect(id2).not.toBe(id1);
+    });
+
+    test('arrowing onto a row shows its keys in the dock without selecting it', async ({ page }) => {
+        await openSheet(page);
+        await page.locator('#cheat-sheet-filter').focus();
+        await page.keyboard.press('ArrowDown');
+        const row = page.locator('.cheat-sheet-row:focus');
+        await expect(row).toHaveCount(1);
+        const text = ((await row.locator('.cheat-sheet-row-text').textContent()) || '').trim();
+        const dock = page.locator('#cheat-sheet-dock');
+        await expect(dock.locator('.cheat-sheet-dock-text')).toHaveText(text);
+        expect(await dock.locator('.keyboard-cheat-sheet-keys').innerText()).toMatch(/\S/);
+        await expect(row).not.toHaveClass(/is-selected/);
+        await expect(page.locator('.cheat-sheet-row.is-selected')).toHaveCount(0);
+        // Back to the filter with nothing selected: the hint returns.
+        await page.keyboard.press('ArrowUp');
+        await expect(dock.locator('.cheat-sheet-dock-hint')).toBeVisible();
+        // With a selection, leaving the rows shows that one.
+        const chosen = page.locator('.cheat-sheet-row').nth(2);
+        const chosenText = ((await chosen.locator('.cheat-sheet-row-text').textContent()) || '').trim();
+        await chosen.click();
+        await page.locator('.cheat-sheet-row').nth(4).focus();
+        await expect(dock.locator('.cheat-sheet-dock-text')).not.toHaveText(chosenText);
+        await page.locator('#cheat-sheet-filter').focus();
+        await expect(dock.locator('.cheat-sheet-dock-text')).toHaveText(chosenText);
+    });
+
+    test('a row\'s accessible name carries its keys without showing them', async ({ page }) => {
+        await openSheet(page);
+        const row = page.locator('.cheat-sheet-row').nth(1);
+        const text = ((await row.locator('.cheat-sheet-row-text').textContent()) || '').trim();
+        const dockKeys = await (async () => {
+            await row.click();
+            return (await page.locator('#cheat-sheet-dock .keyboard-cheat-sheet-keys').innerText()).replace(/\s+/g, '');
+        })();
+        const name = (await row.evaluate((el) => el.textContent)) || '';
+        expect(name).toContain(text);
+        const alnum = (v) => v.toLowerCase().replace(/[^a-z0-9]/g, '');
+        expect(alnum(name)).toContain(alnum(dockKeys));
+        expect(alnum(dockKeys).length).toBeGreaterThan(0);
+        // Visually hidden: the row shows no more than its description.
+        const box = await row.locator('.sr-only').boundingBox();
+        expect(box === null || box.width <= 1).toBeTruthy();
+        await expect(row).not.toHaveAttribute('aria-pressed', /.*/);
+    });
+
+    test('a focused row and a selected row look different, and both show together', async ({ page }) => {
+        await openSheet(page);
+        const a = page.locator('.cheat-sheet-row').nth(1);
+        const b = page.locator('.cheat-sheet-row').nth(3);
+        await a.click();
+        await page.keyboard.press('Tab'); // keyboard modality so :focus-visible applies
+        await a.focus();
+        const style = (loc) => loc.evaluate((el) => {
+            const cs = getComputedStyle(el);
+            return { outline: cs.outlineStyle + ' ' + cs.outlineWidth, shadow: cs.boxShadow };
+        });
+        await page.keyboard.press('ArrowDown'); // focus moves on; a stays selected only
+        await b.focus();
+        const selectedOnly = await style(a);
+        const focusedOnly = await style(b);
+        expect(focusedOnly.outline).toMatch(/solid 2px/);
+        expect(selectedOnly.outline).not.toMatch(/solid 2px/);
+        expect(selectedOnly.shadow).not.toBe('none');
+        expect(focusedOnly.shadow).toBe('none');
+        // Both on one row.
+        await a.focus();
+        const both = await style(a);
+        expect(both.outline).toMatch(/solid 2px/);
+        expect(both.shadow).not.toBe('none');
     });
 
     test('typing filters across all columns and hides empty ones', async ({ page }) => {
