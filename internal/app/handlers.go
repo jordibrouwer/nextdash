@@ -3721,6 +3721,13 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 	h := fnv32(id)
 	recipe := themeBackdropRecipeFor(id, tc)
 	name := themeBackdropRecipes[recipe]
+	// Dots are the page as the first release drew it: plain, with no quiet centre over them and
+	// no colour layers under them.
+	if name == "dots" {
+		look := themeBackdropDots()
+		look.Scrim = backdropScrimFloor(name)
+		return look
+	}
 	// The recipe is settled; the seed only moves the numbers it draws with.
 	if seed != 0 {
 		h = fnv32(id + ":" + strconv.Itoa(seed))
@@ -3816,6 +3823,7 @@ var themeBackdropRecipes = []string{
 	"burst", "splash", "leak",
 	"haze", "veil", "spotlight", "silk", "caustics", "dawn", "linen", "dotgrid", "ruled", "grain",
 	"flare", "spectrum", "inkdrop", "sunburst", "tide", "confetti", "ember",
+	"dots",
 }
 
 // themeBackdropHashedRecipes is how many recipes a theme's id can hash to: the

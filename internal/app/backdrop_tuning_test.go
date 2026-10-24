@@ -181,6 +181,10 @@ func TestBackdropCalmTuning(t *testing.T) {
 // one it reads.
 func TestEveryRecipeCarriesTheCalmLayer(t *testing.T) {
 	for _, name := range themeBackdropRecipes {
+		// Dots are the first release's page, plain and edge to edge; see themeBackdropDots.
+		if name == "dots" {
+			continue
+		}
 		look := themeBackdropSeeded("recipe:"+name, ThemeColors{Backdrop: name, AccentPrimary: "#39FF6A"}, 0)
 		first := splitBackdropList(look.Image)[0]
 		if !strings.Contains(first, "var(--bd-calm") || !strings.HasPrefix(first, "radial-gradient(") {

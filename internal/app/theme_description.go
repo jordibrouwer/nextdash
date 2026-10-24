@@ -216,6 +216,9 @@ var themeDescriptions = map[string]string{
 	"volcanic-ash":          "Fallen ash with the heat only just gone out",
 	"wheat-field":           "A crop in flat light, waiting for the weather",
 	"zen-ember":             "One warm point in a room kept deliberately empty",
+
+	// The first release, brought back as a theme of its own.
+	"thinkdashboard-classic": "The first page nextDash ever drew: flat, with a grid of dots",
 }
 
 // themeFamilySuffix strips the half a theme id names, so both halves of a

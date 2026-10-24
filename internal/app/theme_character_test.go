@@ -192,6 +192,7 @@ func TestDerivedGlowFollowsThePalette(t *testing.T) {
 		"paper-ink-dark": true, "paper-ink-light": true,
 		"bone-china-dark": true, "bone-china-light": true,
 		"salt-flat-dark": true, "salt-flat-light": true,
+		"thinkdashboard-classic-dark": true, "thinkdashboard-classic-light": true,
 	}
 	for id, tc := range getDefaultBuiltInThemes() {
 		got := glowOf(tc)

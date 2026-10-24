@@ -240,3 +240,20 @@ func themeBackdropColourLayers(name string, k backdropKit) []backdropLayer {
 	layers = append(layers, body...)
 	return append(layers, backdropLayer{image: "linear-gradient(" + D + ", " + D + ")"})
 }
+
+/*
+themeBackdropDots is the page the first release drew: the palette's own colour,
+which the body already is, and a grid of dots in the palette's dot colour, one
+pixel wide on a 15 pixel tile.
+
+It is the one recipe that is not drawn in the accent colours and not under the
+quiet centre: it is plain on purpose, edge to edge, and it keeps the dot colour
+the palette chose. --bd-scale stretches the tile like it does for every other
+recipe; strength, which is a share of an accent, has nothing to scale here.
+*/
+func themeBackdropDots() backdropLook {
+	return joinBackdropLayers([]backdropLayer{{
+		image: "radial-gradient(var(--background-dots) 1px, transparent 1px)",
+		size:  "calc(15px * var(--bd-scale, 1)) calc(15px * var(--bd-scale, 1))",
+	}})
+}

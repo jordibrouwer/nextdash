@@ -111,6 +111,11 @@ func TestEveryRecipeIsDrawnInColourOnADeeperGround(t *testing.T) {
 	for _, name := range themeBackdropRecipes {
 		tc.Backdrop = name
 		look := themeBackdropSeeded("tint-dark", tc, 0)
+		if name == "dots" {
+			// Plain on purpose: the dot colour of the palette, and nothing else (themeBackdropDots).
+			seen[look.Image] = name
+			continue
+		}
 		if !strings.Contains(look.Image, "--bd-calm") {
 			t.Errorf("%s: no quiet centre", name)
 		}
