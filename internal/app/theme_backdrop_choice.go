@@ -70,7 +70,7 @@ var themeBackdropChoice = map[string]string{
 	"gloss-cinnabar-light":        "glow",        // gloed van onderaf
 	"gloss-emerald-enamel-light":  "burst",       // kleurrijk (was band)
 	"gloss-jade-light":            "tide",        // kleurrijk (was sweep)
-	"gloss-liquid-chrome-light":   "sunburst",    // kleurrijk (was band)
+	"gloss-liquid-chrome-light":   "band",        // chroom, een felle band (teruggezet)
 	"gloss-neon-tide-light":       "waves",       // (blijft waves)
 	"gloss-obsidian-mirror-light": "confetti",    // kleurrijk (was dawn)
 	"gloss-pearl-light":           "rings",       // (blijft rings)
@@ -79,7 +79,7 @@ var themeBackdropChoice = map[string]string{
 	"gloss-ultraviolet-light":     "prism",       // (blijft prism)
 	"graphite-prism-light":        "spectrum",    // kleurrijk (was haze)
 	"graphite-twill-light":        "crosshatch",  // keper
-	"gray-light":                  "inkdrop",     // kleurrijk (was haze)
+	"gray-light":                  "haze",        // (blijft haze)
 	"great-wave-light":            "sunset",      // (blijft sunset)
 	"gunmetal-bronze-light":       "ruled",       // uit het brushed-pakket (was hexagons)
 	"harbour-fog-light":           "sunburst",    // kleurrijk (was caustics)

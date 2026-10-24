@@ -103,34 +103,40 @@ func TestBackdropBareLightAndDarkStayDifferent(t *testing.T) {
 	}
 }
 
-// A dark page takes more of its colour than a light one: the backdrop of a dark
-// theme carries stronger fields, and a third one.
-func TestDarkBackdropsCarryMoreColour(t *testing.T) {
-	dark := themeBackdropSeeded("tint-dark", ThemeColors{Backdrop: "haze", AccentPrimary: "#6aa6ff", BackgroundPrimary: "#0f1420"}, 0)
-	light := themeBackdropSeeded("tint-light", ThemeColors{Backdrop: "haze", AccentPrimary: "#2563eb", BackgroundPrimary: "#f4f6fb"}, 0)
-	layers := func(l backdropLook) int { return len(splitBackdropList(l.Image)) }
-	if layers(dark) != layers(light)+1 {
-		t.Errorf("a dark backdrop has %d layers and a light one %d, want one more", layers(dark), layers(light))
-	}
-	if !strings.Contains(dark.Image, "calc(56% * var(--bd-strength") || strings.Contains(light.Image, "calc(56% * var(--bd-strength") {
-		t.Error("only the dark backdrop should carry the stronger field")
+// Every recipe is drawn with all four colours of the theme on a deeper ground, with a quiet centre on top, and
+// no two recipes draw the same thing.
+func TestEveryRecipeIsDrawnInColourOnADeeperGround(t *testing.T) {
+	tc := ThemeColors{AccentPrimary: "#6aa6ff", AccentError: "#ff5577", AccentWarning: "#ffb347", AccentSuccess: "#3ddc97", BackgroundPrimary: "#0f1420"}
+	seen := map[string]string{}
+	for _, name := range themeBackdropRecipes {
+		tc.Backdrop = name
+		look := themeBackdropSeeded("tint-dark", tc, 0)
+		if !strings.Contains(look.Image, "--bd-calm") {
+			t.Errorf("%s: no quiet centre", name)
+		}
+		for _, colour := range []string{"--accent-primary", "--accent-error", "--accent-warning", "--accent-success"} {
+			if !strings.Contains(look.Image, colour) {
+				t.Errorf("%s: does not draw with %s", name, colour)
+			}
+		}
+		if !strings.Contains(look.Image, "#000") {
+			t.Errorf("%s: no deeper ground", name)
+		}
+		if other, ok := seen[look.Image]; ok {
+			t.Errorf("%s draws exactly what %s draws", name, other)
+		}
+		seen[look.Image] = name
 	}
 }
 
-// A recipe that was there before the redesign is drawn as it always was: no quiet centre and
-// no colour fields over it.
-func TestOriginalBackdropsAreNotAltered(t *testing.T) {
-	for _, name := range []string{"mesh", "aurora", "blooms", "stars", "leak"} {
-		look := themeBackdropSeeded("tint-dark", ThemeColors{Backdrop: name, AccentPrimary: "#6aa6ff", BackgroundPrimary: "#0f1420"}, 0)
-		if strings.Contains(look.Image, "--bd-calm") {
-			t.Errorf("%s: the quiet centre is laid over an original backdrop", name)
-		}
-		if strings.Contains(look.Image, "calc(56% * var(--bd-strength") {
-			t.Errorf("%s: a colour field is laid over an original backdrop", name)
-		}
+// A light page gets a lighter ground, a dark one a deeper one.
+func TestTheGroundFollowsThePage(t *testing.T) {
+	dark := themeBackdropSeeded("x-dark", ThemeColors{Backdrop: "mesh", AccentPrimary: "#6aa6ff", BackgroundPrimary: "#0f1420"}, 0)
+	light := themeBackdropSeeded("x-light", ThemeColors{Backdrop: "mesh", AccentPrimary: "#2563eb", BackgroundPrimary: "#f4f6fb"}, 0)
+	if !strings.Contains(dark.Image, "#000") || strings.Contains(dark.Image, "#fff") {
+		t.Error("a dark page should be drawn on a deeper ground")
 	}
-	redrawn := themeBackdropSeeded("tint-dark", ThemeColors{Backdrop: "hexagons", AccentPrimary: "#6aa6ff", BackgroundPrimary: "#0f1420"}, 0)
-	if !strings.Contains(redrawn.Image, "--bd-calm") {
-		t.Error("a redrawn backdrop lost its quiet centre")
+	if !strings.Contains(light.Image, "#fff") {
+		t.Error("a light page should be drawn on a lighter ground")
 	}
 }
