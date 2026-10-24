@@ -180,7 +180,7 @@ test.describe('the header under a material', () => {
         }
     });
 
-    test('lacquer, glass and frost shine differently per column, and the same way every time', async ({ page }) => {
+    test('lacquer, glass, frost and brushed shine differently per column, and the same way every time', async ({ page }) => {
         await openDashboard(page);
         const read = () => page.evaluate(() => [...document.querySelectorAll('.dashboard-grid .category[data-category-id]')].slice(0, 6).map((el) => ({
             id: el.getAttribute('data-category-id'),
@@ -189,7 +189,7 @@ test.describe('the header under a material', () => {
             layer: getComputedStyle(el, '::before').content,
             image: getComputedStyle(el, '::before').backgroundImage.length,
         })));
-        for (const material of ['lacquer', 'glass', 'frost']) {
+        for (const material of ['lacquer', 'glass', 'frost', 'brushed']) {
             await under(page, material);
             await page.evaluate(() => document.body.setAttribute('data-cat-surface', 'glass'));
             const first = await read();

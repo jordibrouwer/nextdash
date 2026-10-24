@@ -478,14 +478,14 @@ html[data-theme] body[data-material-style="signature"][data-material="brushed"]:
         radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--text-primary) 70%, transparent), color-mix(in srgb, var(--text-primary) 15%, transparent)),
         radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--text-primary) 70%, transparent), color-mix(in srgb, var(--text-primary) 15%, transparent)),
         repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 3px),
-        linear-gradient(100deg, color-mix(in srgb, var(--text-primary) 6%, transparent), color-mix(in srgb, var(--text-primary) 16%, transparent) 30%, color-mix(in srgb, var(--text-primary) 5%, transparent) 55%, color-mix(in srgb, var(--text-primary) 14%, transparent) 80%, color-mix(in srgb, var(--text-primary) 5%, transparent));
+        linear-gradient(100deg, color-mix(in srgb, var(--text-primary) 7%, transparent), color-mix(in srgb, var(--text-primary) 10%, transparent) 40%, color-mix(in srgb, var(--text-primary) 6%, transparent) 100%);
     background-size: 5px 5px, 5px 5px, auto, auto;
     background-position: 8px 7px, calc(100% - 8px) 7px, 0 0, 0 0;
     background-repeat: no-repeat, no-repeat, repeat, no-repeat;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
         inset 0 -1px 0 rgba(0, 0, 0, 0.55),
         0 10px 18px -10px rgba(0, 0, 0, 0.7);
 }
@@ -523,12 +523,13 @@ html[data-theme] body[data-material-style="signature"][data-material="brushed"] 
 
 /* Email: een dubbele rand als een bord, een glanzende vlek en alle elementen als
    emaille knopjes en pillen in het accent. */
-html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
-    border-radius: calc(26px * var(--theme-radius-applied, 1));
-    /* Ruimte voor de rand: boven en onder, niet opzij (een brede categorie rekent zijn kolommen op de zijpadding). */
-    /* The rim is 7px thick and the side padding was 8px: the grip, the badges and the controls
-       ran across it. The side padding clears the rim, and the header's bleed follows. */
-    --category-inline-pad: 1.25rem;
+html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="enamel"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="enamel"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme] body[data-material-style="signature"][data-material="enamel"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+    border-radius: calc(16px * var(--theme-radius-applied, 1));
+    /* A glazed tile: the thickness is only at the bottom, so the sides and the content stay clear. */
+    --category-inline-pad: 1rem;
     padding-inline: var(--category-inline-pad);
     padding-block: calc(var(--space-3, 0.75rem) + 5px);
     background-color: color-mix(in srgb, var(--accent-primary) 8%, var(--surface-2, var(--background-secondary)));
@@ -820,7 +821,7 @@ html[data-theme] body[data-material-style="signature"][data-material="terminal"]
     }
 }
 
-/* De glans van lacquer, glass en frost. Elke kolom en widget heeft vier vaste, willekeurige
+/* De glans van lacquer, glass, frost en geborsteld metaal. Elke kolom en widget heeft vier vaste, willekeurige
    waarden uit zijn eigen id (theme-loader.js, NDShine): --sh-a de plek langs de bovenrand
    in procenten, --sh-w de breedte, --sh-g de sterkte en --sh-ang de hoek van een ijle baan
    over het glas. Een korte, zachte lichtvlek rust op de rand, zonder lijn; de baan erachter is een
@@ -828,7 +829,8 @@ html[data-theme] body[data-material-style="signature"][data-material="terminal"]
    glans; een ander id een andere. */
 html[data-theme] body[data-material-style="signature"][data-material="lacquer"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category::before,
 html[data-theme] body[data-material-style="signature"][data-material="glass"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category::before,
-html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category::before {
+html[data-theme] body[data-material-style="signature"][data-material="frost"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category::before,
+html[data-theme] body[data-material-style="signature"][data-material="brushed"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category::before {
     content: "";
     position: absolute;
     inset: 0;
