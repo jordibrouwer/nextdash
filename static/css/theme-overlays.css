@@ -180,7 +180,7 @@ html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :no
 html[data-theme] body[data-material-style="signature"][data-material="glass"] {
     --ov-radius: calc(22px * var(--theme-radius-applied, 1));
     --ov-alpha: 0.8;
-    --ov-alpha-small: max(var(--ov-alpha), 0.9);
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
     --ov-fill: color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--ov-alpha) * 100%), transparent);
     --ov-fill-small: color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--ov-alpha-small) * 100%), transparent);
     --ov-image: linear-gradient(135deg, color-mix(in srgb, var(--text-primary) 16%, transparent), color-mix(in srgb, var(--text-primary) 5%, transparent) 55%);
@@ -199,7 +199,7 @@ html[data-theme] body[data-material-style="signature"][data-material="glass"] {
 html[data-theme] body[data-material-style="signature"][data-material="frost"] {
     --ov-radius: calc(16px * var(--theme-radius-applied, 1));
     --ov-alpha: 0.8;
-    --ov-alpha-small: max(var(--ov-alpha), 0.9);
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
     --ov-fill: color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--ov-alpha) * 100%), transparent);
     --ov-fill-small: color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--ov-alpha-small) * 100%), transparent);
     --ov-image: linear-gradient(180deg, color-mix(in srgb, var(--text-primary) 16%, transparent), color-mix(in srgb, var(--text-primary) 5%, transparent));
@@ -218,7 +218,7 @@ html[data-theme] body[data-material-style="signature"][data-material="frost"] {
 html[data-theme] body[data-material-style="signature"][data-material="aurora"] {
     --ov-radius: calc(20px * var(--theme-radius-applied, 1));
     --ov-alpha: 0.8;
-    --ov-alpha-small: max(var(--ov-alpha), 0.9);
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
     --ov-fill: color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--ov-alpha) * 100%), transparent);
     --ov-fill-small: color-mix(in srgb, var(--surface-2, var(--background-secondary)) calc(var(--ov-alpha-small) * 100%), transparent);
     --ov-image: none;
@@ -237,7 +237,7 @@ html[data-theme] body[data-material-style="signature"][data-material="aurora"] {
 html[data-theme] body[data-material-style="signature"][data-material="lacquer"] {
     --ov-radius: calc(14px * var(--theme-radius-applied, 1));
     --ov-alpha: 1;
-    --ov-alpha-small: max(var(--ov-alpha), 0.9);
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
     --ov-fill: color-mix(in srgb, var(--accent-primary) 14%, var(--background-primary));
     --ov-fill-small: color-mix(in srgb, var(--accent-primary) 14%, var(--background-primary));
     --ov-image: linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 30%, var(--background-primary)), color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary)));
@@ -256,7 +256,7 @@ html[data-theme] body[data-material-style="signature"][data-material="lacquer"] 
 html[data-theme] body[data-material-style="signature"][data-material="neon"] {
     --ov-radius: calc(10px * var(--theme-radius-applied, 1));
     --ov-alpha: 0.8;
-    --ov-alpha-small: max(var(--ov-alpha), 0.9);
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
     --ov-fill: color-mix(in srgb, var(--background-primary) calc(var(--ov-alpha) * 100%), transparent);
     --ov-fill-small: color-mix(in srgb, var(--background-primary) calc(var(--ov-alpha-small) * 100%), transparent);
     --ov-image: linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 20%, transparent), transparent 38%);
@@ -275,7 +275,7 @@ html[data-theme] body[data-material-style="signature"][data-material="neon"] {
 html[data-theme] body[data-material-style="signature"][data-material="velvet"] {
     --ov-radius: calc(28px * var(--theme-radius-applied, 1));
     --ov-alpha: 1;
-    --ov-alpha-small: max(var(--ov-alpha), 0.9);
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
     --ov-fill: var(--surface-2, var(--background-secondary));
     --ov-fill-small: var(--surface-2, var(--background-secondary));
     --ov-image: none;
@@ -294,7 +294,7 @@ html[data-theme] body[data-material-style="signature"][data-material="velvet"] {
 html[data-theme] body[data-material-style="signature"][data-material="enamel"] {
     --ov-radius: calc(16px * var(--theme-radius-applied, 1));
     --ov-alpha: 1;
-    --ov-alpha-small: max(var(--ov-alpha), 0.9);
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
     --ov-fill: color-mix(in srgb, var(--accent-primary) 8%, var(--surface-2, var(--background-secondary)));
     --ov-fill-small: color-mix(in srgb, var(--accent-primary) 8%, var(--surface-2, var(--background-secondary)));
     --ov-image: none;
@@ -313,7 +313,7 @@ html[data-theme] body[data-material-style="signature"][data-material="enamel"] {
 html[data-theme] body[data-material-style="signature"][data-material="brushed"] {
     --ov-radius: calc(6px * var(--theme-radius-applied, 1));
     --ov-alpha: 1;
-    --ov-alpha-small: max(var(--ov-alpha), 0.9);
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
     --ov-fill: var(--surface-2, var(--background-secondary));
     --ov-fill-small: var(--surface-2, var(--background-secondary));
     --ov-image: linear-gradient(100deg, color-mix(in srgb, var(--text-primary) 7%, transparent), color-mix(in srgb, var(--text-primary) 10%, transparent) 40%, color-mix(in srgb, var(--text-primary) 6%, transparent));
@@ -332,7 +332,7 @@ html[data-theme] body[data-material-style="signature"][data-material="brushed"] 
 html[data-theme] body[data-material-style="signature"][data-material="carbon"] {
     --ov-radius: calc(3px * var(--theme-radius-applied, 1));
     --ov-alpha: 1;
-    --ov-alpha-small: max(var(--ov-alpha), 0.9);
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
     --ov-fill: var(--surface-2, var(--background-secondary));
     --ov-fill-small: var(--surface-2, var(--background-secondary));
     --ov-image: linear-gradient(var(--accent-primary), var(--accent-primary));
@@ -351,7 +351,7 @@ html[data-theme] body[data-material-style="signature"][data-material="carbon"] {
 html[data-theme] body[data-material-style="signature"][data-material="paper"] {
     --ov-radius: calc(3px * var(--theme-radius-applied, 1));
     --ov-alpha: 1;
-    --ov-alpha-small: max(var(--ov-alpha), 0.9);
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
     --ov-fill: var(--surface-2, var(--background-secondary));
     --ov-fill-small: var(--surface-2, var(--background-secondary));
     --ov-image: none;
@@ -370,7 +370,7 @@ html[data-theme] body[data-material-style="signature"][data-material="paper"] {
 html[data-theme] body[data-material-style="signature"][data-material="terminal"] {
     --ov-radius: calc(3px * var(--theme-radius-applied, 1));
     --ov-alpha: 0.85;
-    --ov-alpha-small: max(var(--ov-alpha), 0.9);
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
     --ov-fill: color-mix(in srgb, var(--background-primary) calc(var(--ov-alpha) * 100%), transparent);
     --ov-fill-small: color-mix(in srgb, var(--background-primary) calc(var(--ov-alpha-small) * 100%), transparent);
     --ov-image: none;
@@ -389,7 +389,7 @@ html[data-theme] body[data-material-style="signature"][data-material="terminal"]
 html[data-theme] body[data-material-style="signature"][data-material="ink"] {
     --ov-radius: calc(4px * var(--theme-radius-applied, 1));
     --ov-alpha: 0.88;
-    --ov-alpha-small: max(var(--ov-alpha), 0.9);
+    --ov-alpha-small: max(var(--ov-alpha), 0.96);
     --ov-fill: color-mix(in srgb, var(--background-primary) calc(var(--ov-alpha) * 100%), transparent);
     --ov-fill-small: color-mix(in srgb, var(--background-primary) calc(var(--ov-alpha-small) * 100%), transparent);
     --ov-image: none;
@@ -768,7 +768,15 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 }
 
 /* Controls take the corner and the rule of the material. */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-text, .config-select, .config-choices) {
+/* A native select lists its options on its own background: a see-through one shows the page through the list. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(select, .config-select) {
+    background-color: var(--background-secondary);
+    border-color: transparent;
+    border-radius: var(--ov-r-control);
+    box-shadow: inset 0 0 0 1px var(--ov-rule);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.config-layout:not(.library-layout) > .config-view :is(.config-text, .config-choices) {
     border-color: transparent;
     border-radius: var(--ov-r-control);
     background-color: var(--ov-fill-small);
@@ -796,4 +804,17 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .config-settings-jump-result:is(:hover, .is-active) {
     background: var(--ov-hot);
     border-radius: var(--ov-r-item);
+}
+
+
+/* ── The dots of a tutorial: the ones not yet reached have to show on the surface ──────────────── */
+html[data-theme] body :is([class$="-tutorial-dot"], .changes-tour-dot) {
+    width: 0.5rem;
+    height: 0.5rem;
+    background: color-mix(in srgb, var(--text-primary) 38%, transparent);
+}
+
+html[data-theme] body :is([class$="-tutorial-dot"], .changes-tour-dot):is(.is-active, [aria-current="step"]) {
+    background: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 30%, transparent);
 }
