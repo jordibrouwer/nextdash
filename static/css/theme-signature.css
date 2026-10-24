@@ -776,8 +776,12 @@ html[data-theme] body[data-material-style="signature"][data-material="ink"][data
 html[data-theme] body[data-material-style="signature"][data-material="ink"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
 html[data-theme] body[data-material-style="signature"][data-material="ink"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
     border-radius: calc(4px * var(--theme-radius-applied, 1));
+    --category-inline-pad: 1rem;
+    padding-inline: var(--category-inline-pad);
     padding-block: var(--space-3, 0.75rem);
-    background-color: color-mix(in srgb, var(--text-primary) 5%, transparent);
+    background-color: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     --surface-sheen:
         linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)), linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)),
         linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)), linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)),
