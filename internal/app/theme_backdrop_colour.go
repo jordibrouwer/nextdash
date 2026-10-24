@@ -27,6 +27,11 @@ type backdropKit struct {
 // recipe leaves empty, so a recipe is a shape in colour and not a shape on black. The name
 // decides the motif: a name with a line has real lines, a soft name has soft edges.
 func themeBackdropColourLayers(name string, k backdropKit) []backdropLayer {
+	// A server rack is drawn on its own, without the colour fields every other recipe leaves
+	// behind it: it is rails, three status LEDs and one glow, and that is all it should be.
+	if name == "rack" {
+		return themeBackdropRack(k)
+	}
 	// A theme swaps two of its colours between roles, so two themes drawn with one recipe differ.
 	A, E, W, C := k.accent, k.second, k.warm, k.cool
 	switch k.rnd(900, 3) {
@@ -56,8 +61,10 @@ func themeBackdropColourLayers(name string, k backdropKit) []backdropLayer {
 	case "glow":
 		plain(blob(50, -10, 90, 70, A, 76), blob(50, 112, 100, 80, W, 80), blob(100, 50, 36, 56, E, 60), blob(0, 50, 30, 50, C, 50))
 	case "band":
-		plain("linear-gradient(112deg, transparent 14%, "+v(A, 62)+" 18%, transparent 26%, transparent 40%, "+v(E, 56)+" 44%, transparent 52%, transparent 66%, "+v(W, 52)+" 70%, transparent 78%)",
-			"linear-gradient(180deg, "+v(C, 22)+", transparent 60%)")
+		// One wide soft band across the page, not three: the calmer drawing it was given when
+		// the Unraid themes left it for rack.
+		plain("linear-gradient(112deg, transparent 26%, "+v(A, 44)+" 36%, "+v(E, 34)+" 46%, transparent 58%)",
+			"linear-gradient(180deg, "+v(C, 16)+", transparent 60%)")
 	case "rings":
 		plain("repeating-radial-gradient(circle at 80% 90%, "+v(A, 56)+" 0 "+k.px(6)+", transparent "+k.px(6)+" "+k.px(14)+", "+v(E, 44)+" "+k.px(14)+" "+k.px(18)+", transparent "+k.px(18)+" "+k.px(34)+")",
 			blob(80, 90, 40, 50, W, 56), blob(10, 10, 40, 40, C, 40))
@@ -256,4 +263,37 @@ func themeBackdropDots() backdropLook {
 		image: "radial-gradient(var(--background-dots) 1px, transparent 1px)",
 		size:  "calc(15px * var(--bd-scale, 1)) calc(15px * var(--bd-scale, 1))",
 	}})
+}
+
+/*
+themeBackdropRack is the page behind the Unraid themes: the inside of a server cabinet seen from
+a distance, and quiet on purpose.
+
+Fine horizontal rails a rack unit apart (44 pixels), a perforated rail down each side, the three
+status LEDs of a drive bay (green, orange, red) low in the left corner with one soft glow of the
+accent under them. Nothing else: the accent is the only colour that spreads, the LEDs are a few
+pixels each, and the rails are a share of the accent so low that they read as texture.
+
+It does not use the colour fields and the diagonal wash that the other recipes leave behind them;
+that is what made the Unraid pages busy.
+*/
+func themeBackdropRack(k backdropKit) []backdropLayer {
+	v := k.veil
+	ledAt := func(x int, color string) string {
+		return "radial-gradient(circle at " + k.px(x) + " calc(100% - " + k.px(26) + "), " + v(color, 95) + " 0, " + v(color, 95) + " " + k.px(3) + ", transparent " + k.px(4) + ")"
+	}
+	hole := func(edge string) string {
+		return "radial-gradient(circle at " + edge + " " + k.px(22) + ", " + v(k.accent, 26) + " 0, " + v(k.accent, 26) + " " + k.px(2) + ", transparent " + k.px(3) + ")"
+	}
+	return []backdropLayer{
+		{image: ledAt(34, k.cool)},
+		{image: ledAt(52, k.warm)},
+		{image: ledAt(70, k.second)},
+		{image: k.blob(0, 100, 62, 56, k.accent, 30)},
+		{image: hole(k.px(11)), size: "100% " + k.px(44)},
+		{image: hole("calc(100% - " + k.px(11) + ")"), size: "100% " + k.px(44)},
+		{image: "linear-gradient(90deg, " + v(k.accent, 7) + " 0 " + k.px(22) + ", transparent " + k.px(22) + " calc(100% - " + k.px(22) + "), " + v(k.accent, 7) + " calc(100% - " + k.px(22) + "))"},
+		{image: "repeating-linear-gradient(180deg, " + v(k.accent, 9) + " 0 1px, transparent 1px " + k.px(44) + ")"},
+		{image: "linear-gradient(" + k.ground + ", " + k.ground + ")"},
+	}
 }
