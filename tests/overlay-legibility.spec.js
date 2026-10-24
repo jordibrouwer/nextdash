@@ -51,7 +51,7 @@ const alphaOf = (color) => {
 
 test.describe('legibility on the layers', () => {
     test.afterEach(async ({ request }) => {
-        await setTheme(request, 'look-berry-dark');
+        await setTheme(request, 'look-ocean-dark');
     });
 
     test('a select in the config view lists its options on a closed background, in every material', async ({ page, request }) => {

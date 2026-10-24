@@ -96,7 +96,7 @@ const ALPHA_FN = `(colour) => {
 
 test.describe('overlay parts', () => {
     test.afterEach(async ({ request }) => {
-        await request.post('/api/settings', { data: { theme: 'look-berry-dark', materialStyle: 'signature' }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
+        await request.post('/api/settings', { data: { theme: 'look-ocean-dark', materialStyle: 'signature' }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
     });
 
     // ── 1. The light on the glass ─────────────────────────────────────────────────────────────────

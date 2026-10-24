@@ -106,7 +106,7 @@ async function switchTo(page, material, extra) {
 
 test.describe('view plates per material', () => {
     test.afterEach(async ({ request }) => {
-        await request.post('/api/settings', { data: { theme: 'look-berry-dark', materialStyle: 'signature' }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
+        await request.post('/api/settings', { data: { theme: 'look-ocean-dark', materialStyle: 'signature' }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
     });
 
     test('every material gives the inbox plate a fill, a surface layer and its corner', async ({ page, request }) => {

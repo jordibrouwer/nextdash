@@ -47,7 +47,7 @@ const attrs = (page, selector) => page.evaluate((sel) => {
 
 test.describe('overlay elevation', () => {
     test.afterEach(async ({ request }) => {
-        await request.post('/api/settings', { data: { theme: 'look-berry-dark', materialStyle: 'signature' }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
+        await request.post('/api/settings', { data: { theme: 'look-ocean-dark', materialStyle: 'signature' }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
     });
 
     test('a single confirm has no level mark and carries the accent bar', async ({ page, request }) => {
