@@ -18,6 +18,7 @@ type backdropKit struct {
 	blob                       func(x, y, w, h int, color string, p int) string
 	line                       func(color string, p, deg, gap int) string
 	rnd                        func(n, span int) int
+	dark                       bool
 	px                         func(n int) string
 	tile                       func(n int) string
 }
@@ -29,8 +30,17 @@ type backdropKit struct {
 func themeBackdropColourLayers(name string, k backdropKit) []backdropLayer {
 	// A server rack is drawn on its own, without the colour fields every other recipe leaves
 	// behind it: it is rails, three status LEDs and one glow, and that is all it should be.
-	if name == "rack" {
+	switch name {
+	case "rack":
 		return themeBackdropRack(k)
+	case "digirain":
+		return themeBackdropDigiRain(k)
+	case "cellgrid":
+		return themeBackdropCellGrid(k)
+	case "bootlog":
+		return themeBackdropBootLog(k)
+	case "crt":
+		return themeBackdropCRT(k)
 	}
 	// A theme swaps two of its colours between roles, so two themes drawn with one recipe differ.
 	A, E, W, C := k.accent, k.second, k.warm, k.cool
@@ -84,12 +94,15 @@ func themeBackdropColourLayers(name string, k backdropKit) []backdropLayer {
 		plain(blob(20, 24, 30, 60, C, 60), blob(46, 20, 30, 60, A, 66), blob(72, 26, 30, 60, E, 58), blob(92, 30, 24, 50, W, 48),
 			"linear-gradient(180deg, transparent 50%, "+v(D, 60)+")")
 	case "bokeh":
-		for i := 0; i < 10; i++ {
-			s := float64(9 + k.rnd(10+i, 10))
-			c := cs[i%4]
-			plain(f("radial-gradient(circle at %d%% %d%%, %s 0, %s %.1f%%, %s %.1f%%, transparent %.1f%%)",
-				k.rnd(20+i, 100), k.rnd(40+i, 100), v(c, 70), v(c, 36), s*0.7, v(c, 74), s*0.78, s*0.82))
+		// Bokeh is a small honeycomb now: fine hexagon outlines over a slow diagonal run of the
+		// theme's colours. The id stays so a stored choice still finds its recipe.
+		ink, share := "white", "0.10"
+		if !k.dark {
+			ink, share = "black", "0.08"
 		}
+		hex := "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cpath fill='" + ink + "' fill-opacity='" + share + "' fill-rule='evenodd' d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/svg%3E\")"
+		body = append(body, backdropLayer{hex, k.px(24) + " " + k.px(42), ""})
+		plain("linear-gradient(125deg, " + v(A, 56) + " 0%, " + v(E, 48) + " 36%, " + v(W, 40) + " 66%, " + v(C, 50) + " 100%)")
 	case "nebula":
 		plain(blob(24, 40, 46, 50, E, 66), blob(58, 30, 40, 50, A, 66), blob(76, 70, 40, 40, C, 56), blob(40, 80, 34, 34, W, 50))
 		for i := 0; i < 16; i++ {
@@ -294,6 +307,129 @@ func themeBackdropRack(k backdropKit) []backdropLayer {
 		{image: hole("calc(100% - " + k.px(11) + ")"), size: "100% " + k.px(44)},
 		{image: "linear-gradient(90deg, " + v(k.accent, 7) + " 0 " + k.px(22) + ", transparent " + k.px(22) + " calc(100% - " + k.px(22) + "), " + v(k.accent, 7) + " calc(100% - " + k.px(22) + "))"},
 		{image: "repeating-linear-gradient(180deg, " + v(k.accent, 9) + " 0 1px, transparent 1px " + k.px(44) + ")"},
+		{image: "linear-gradient(" + k.ground + ", " + k.ground + ")"},
+	}
+}
+
+/*
+The four Unraid backdrops are drawn from the machine behind the web UI: a terminal, and the
+green rain of the film that made one famous. Each is its own picture and none of them uses the
+colour fields and diagonal wash of the generic recipes; the accent of the theme is the only
+colour that spreads, so a page stays calm and the cards stay readable.
+
+themeBackdropDigiRain is Unraid Black: columns of falling characters, drawn as thin streaks that
+taper upward from a bright head. Five tiles of unrelated widths and heights, so the columns do
+not line up into a pattern.
+
+themeBackdropCellGrid is Unraid Azure: the character grid of a terminal, ten by twenty pixels a
+cell, with scanlines and the glow of a prompt low in the corner.
+
+themeBackdropBootLog is Unraid Ember: the lines of a boot log scrolling by. Each line is a streak
+fading to the right, a gutter rail on the left, and a green OK at the start of every third line.
+
+themeBackdropCRT is Unraid Blaze: a red phosphor screen with scanlines, one rolling band, two
+glitch bars and a dark vignette.
+*/
+func themeBackdropDigiRain(k backdropKit) []backdropLayer {
+	v := k.veil
+	// One column per tile, so no two columns share a row of heads: the tile is wide and the
+	// position moves the head to a height of its own.
+	col := func(w, h, x, dy int, color string, p int) []backdropLayer {
+		return []backdropLayer{
+			{
+				image: "radial-gradient(circle at " + k.px(x) + " calc(100% - " + k.px(3) + "), " + v("#fff", p+16) + " 0, " + v(k.accent, p+10) + " " + k.px(2) + ", transparent " + k.px(4) + ")",
+				size:  k.px(w) + " " + k.px(h),
+				pos:   "0 " + k.px(dy),
+			},
+			{
+				image: "radial-gradient(ellipse " + k.px(2) + " " + k.px(h*9/10) + " at " + k.px(x) + " 100%, " + v(color, p) + " 0, " + v(color, p*62/100) + " 35%, " + v(color, p*22/100) + " 72%, transparent 100%)",
+				size:  k.px(w) + " " + k.px(h),
+				pos:   "0 " + k.px(dy),
+			},
+		}
+	}
+	var out []backdropLayer
+	spec := []struct {
+		w, h, x, dy int
+		c           string
+		p           int
+	}{
+		{97, 210, 11, 0, k.accent, 40}, {113, 150, 52, 37, k.accent, 36}, {127, 260, 23, 91, k.accent, 38},
+		{139, 180, 77, 12, k.second, 32}, {151, 320, 34, 140, k.accent, 36}, {163, 130, 90, 55, k.accent, 34},
+		{173, 240, 15, 18, k.warm, 28}, {181, 200, 120, 77, k.accent, 36}, {191, 290, 66, 160, k.accent, 34},
+		{199, 170, 8, 100, k.cool, 24}, {211, 230, 140, 29, k.accent, 36}, {223, 140, 100, 66, k.second, 30},
+	}
+	for _, c := range spec {
+		out = append(out, col(c.w, c.h, c.x, c.dy, c.c, c.p)...)
+	}
+	out = append(out,
+		backdropLayer{image: k.blob(50, 112, 90, 40, k.accent, 22)},
+		backdropLayer{image: "linear-gradient(" + k.ground + ", " + k.ground + ")"})
+	return out
+}
+
+func themeBackdropCellGrid(k backdropKit) []backdropLayer {
+	v := k.veil
+	return []backdropLayer{
+		{image: "linear-gradient(90deg, " + v(k.accent, 17) + " 0 1px, transparent 1px)", size: k.px(10) + " " + k.px(20)},
+		{image: "linear-gradient(180deg, " + v(k.accent, 13) + " 0 1px, transparent 1px)", size: k.px(10) + " " + k.px(20)},
+		{image: "repeating-linear-gradient(180deg, " + v("#000", 14) + " 0 1px, transparent 1px " + k.px(3) + ")"},
+		{image: k.blob(0, 100, 56, 48, k.accent, 34)},
+		{image: k.blob(8, 96, 6, 4, k.cool, 50)},
+		{image: k.blob(13, 96, 6, 4, k.warm, 46)},
+		{image: "linear-gradient(180deg, " + v(k.second, 12) + ", transparent 38%)"},
+		{image: "linear-gradient(" + k.ground + ", " + k.ground + ")"},
+	}
+}
+
+func themeBackdropBootLog(k backdropKit) []backdropLayer {
+	v := k.veil
+	// A line is a short streak: words, not a rule. The tile is wider than the streak, so a row
+	// reads as a few words and a gap, and the rows of different layers differ in length.
+	line := func(w, h, x, y, reach int, color string, p int) backdropLayer {
+		return backdropLayer{
+			image: "radial-gradient(ellipse " + k.px(reach) + " " + k.px(1) + " at 0 " + k.px(y) + ", " + v(color, p) + " 0, " + v(color, p*70/100) + " 55%, transparent 100%)",
+			size:  k.px(w) + " " + k.px(h),
+			pos:   k.px(x) + " 0",
+		}
+	}
+	ok := func(w, h, x, y int) backdropLayer {
+		return backdropLayer{
+			image: "radial-gradient(ellipse " + k.px(6) + " " + k.px(2) + " at " + k.px(x) + " " + k.px(y) + ", " + v(k.cool, 70) + " 0, " + v(k.cool, 34) + " 60%, transparent 100%)",
+			size:  k.px(w) + " " + k.px(h),
+		}
+	}
+	return []backdropLayer{
+		ok(900, 57, 28, 10), ok(900, 95, 28, 48),
+		line(520, 19, 44, 10, 120, k.accent, 36),
+		line(610, 38, 70, 29, 200, k.accent, 30),
+		line(460, 57, 44, 48, 90, k.warm, 28),
+		line(700, 76, 90, 67, 260, k.accent, 26),
+		line(390, 95, 44, 86, 140, k.second, 22),
+		line(850, 133, 60, 124, 320, k.accent, 24),
+		{image: "linear-gradient(90deg, transparent " + k.px(33) + ", " + v(k.accent, 18) + " " + k.px(33) + " " + k.px(34) + ", transparent " + k.px(34) + ")"},
+		{image: k.blob(100, 100, 52, 50, k.accent, 22)},
+		{image: "linear-gradient(" + k.ground + ", " + k.ground + ")"},
+	}
+}
+
+func themeBackdropCRT(k backdropKit) []backdropLayer {
+	v := k.veil
+	glitch := func(w, h, x, y, rx int, p int) backdropLayer {
+		return backdropLayer{
+			image: "radial-gradient(ellipse " + k.px(rx) + " " + k.px(4) + " at " + k.px(x) + " " + k.px(y) + ", " + v(k.accent, p) + " 0, " + v(k.accent, p*50/100) + " 70%, transparent 100%)",
+			size:  k.px(w) + " " + k.px(h),
+		}
+	}
+	return []backdropLayer{
+		glitch(700, 230, 160, 70, 130, 70),
+		glitch(520, 310, 380, 210, 90, 56),
+		glitch(910, 170, 600, 120, 60, 48),
+		{image: "repeating-linear-gradient(180deg, " + v("#000", 40) + " 0 1px, transparent 1px " + k.px(3) + ")"},
+		{image: "linear-gradient(180deg, transparent 30%, " + v(k.accent, 30) + " 46%, " + v(k.second, 18) + " 52%, transparent 66%)"},
+		{image: "radial-gradient(ellipse at 50% 50%, transparent 52%, " + v(k.ground, 70) + " 100%)"},
+		{image: "linear-gradient(90deg, " + v(k.cool, 8) + ", transparent 6%, transparent 94%, " + v(k.warm, 8) + ")"},
+		{image: k.blob(50, 0, 80, 40, k.accent, 24)},
 		{image: "linear-gradient(" + k.ground + ", " + k.ground + ")"},
 	}
 }

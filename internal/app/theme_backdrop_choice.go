@@ -172,10 +172,10 @@ var themeBackdropChoice = map[string]string{
 	"tomorrow-dusk-light":         "confetti",    // kleurrijk (was dawn)
 	"tyrian-light":                "blooms",      // purperen vlakken
 	"ultraviolet-light":           "flare",       // kleurrijk (was prism)
-	"unraid-azure-light":          "rack",        // serverkast: rails en een LED-gloed
-	"unraid-black-light":          "rack",        // serverkast: rails en een LED-gloed
-	"unraid-blaze-light":          "rack",        // serverkast: rails en een LED-gloed
-	"unraid-ember-light":          "rack",        // serverkast: rails en een LED-gloed
+	"unraid-azure-light":          "cellgrid",    // het tekenraster van een terminal
+	"unraid-black-light":          "digirain",    // de groene regen uit The Matrix, hier in het accent
+	"unraid-blaze-light":          "crt",         // rood fosfor: scanlines en een rollende band
+	"unraid-ember-light":          "bootlog",     // een bootlog die voorbij scrolt
 	"vampire-castle-light":        "flare",       // kleurrijk (was stars)
 	"velocity-ink-light":          "mountains",   // uit het ink-pakket (was chevron)
 	"vermilion-seal-light":        "halftone",    // stempel

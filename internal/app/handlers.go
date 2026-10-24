@@ -3797,7 +3797,7 @@ func themeBackdropSeeded(themeID string, tc ThemeColors, seed int) backdropLook 
 	}
 	layers := themeBackdropColourLayers(name, backdropKit{
 		accent: accent, second: second, warm: warm, cool: cool, ground: deep,
-		veil: veil, soft: soft, blob: blob, line: line, rnd: rnd, px: px, tile: tile,
+		veil: veil, soft: soft, blob: blob, line: line, rnd: rnd, px: px, tile: tile, dark: dark,
 	})
 	// Chrome keeps its grey page with one soft diagonal sheen, as it had before the colour recipes.
 	if strings.HasPrefix(themeID, "gloss-liquid-chrome") {
@@ -3823,7 +3823,7 @@ var themeBackdropRecipes = []string{
 	"burst", "splash", "leak",
 	"haze", "veil", "spotlight", "silk", "caustics", "dawn", "linen", "dotgrid", "ruled", "grain",
 	"flare", "spectrum", "inkdrop", "sunburst", "tide", "confetti", "ember",
-	"dots", "rack",
+	"dots", "rack", "digirain", "cellgrid", "bootlog", "crt",
 }
 
 // themeBackdropHashedRecipes is how many recipes a theme's id can hash to: the

@@ -31,8 +31,8 @@ func splitBackdropList(list string) []string {
 // a valid background-image), and size and position carry exactly one entry per
 // layer, because theme-backdrop.css hands them out by index.
 func TestEveryBackdropRecipeIsWellFormed(t *testing.T) {
-	if len(themeBackdropRecipes) != 48 {
-		t.Fatalf("%d recipes, want 48", len(themeBackdropRecipes))
+	if len(themeBackdropRecipes) != 52 {
+		t.Fatalf("%d recipes, want 52", len(themeBackdropRecipes))
 	}
 	for _, name := range themeBackdropRecipes {
 		t.Run(name, func(t *testing.T) {
@@ -43,7 +43,7 @@ func TestEveryBackdropRecipeIsWellFormed(t *testing.T) {
 			}
 			images := splitBackdropList(look.Image)
 			for _, layer := range images {
-				if !strings.Contains(layer, "gradient(") || strings.HasPrefix(layer, "var(") || strings.HasPrefix(layer, "#") {
+				if !(strings.Contains(layer, "gradient(") || strings.HasPrefix(layer, "url(")) || strings.HasPrefix(layer, "var(") || strings.HasPrefix(layer, "#") {
 					t.Errorf("layer is not an image: %q", layer)
 				}
 			}
