@@ -1278,3 +1278,29 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)::after {
     content: none;
 }
+
+
+/* The Bookmarks plate carries a pseudo-element with a blur of its own (category-surface.css); the plate
+   blurs by itself under the signature, so the second layer only made this one frostier than the others. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #dashboard-layout.library-layout > .config-view--library::before {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+
+/* The row in force is lit from its edge, as in the rail of Inbox, Containers and Tags. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .config-view--library .config-bm-rail-item.is-on {
+    background: var(--ov-hot);
+    border-radius: var(--ov-r-item);
+    box-shadow: inset 2px 0 0 var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .config-view--library .config-bm-rail-item:not(.is-on):hover {
+    background: color-mix(in srgb, var(--ov-hot) 60%, transparent);
+    border-radius: var(--ov-r-item);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .config-view--library .config-bm-rail-item {
+    border-radius: var(--ov-r-item);
+}
