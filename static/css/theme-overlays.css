@@ -1069,3 +1069,66 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal .wn-foot {
     border-top-color: var(--ov-rule);
 }
+
+
+/* ── The views: what stands on the plate ───────────────────────────────────────────────────────────── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .lvs :is(.lvs-summary, .glances-ov-block, .glances-card, .glances-core, .glances-chart, .glances-ct-wrap, .docker-setup, .tag-view-offer, .inbox-empty-state, .inbox-legend, .glances-legend) {
+    background-color: color-mix(in srgb, black calc(14% * var(--ov-k) + 4%), transparent);
+    background-image: none;
+    border: 0;
+    border-radius: min(var(--ov-radius), 14px);
+    box-shadow: inset 0 0 0 1px var(--ov-rule);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .lvs .docker-setup pre {
+    border-radius: var(--ov-r-item);
+    background: color-mix(in srgb, black calc(30% * var(--ov-k) + 6%), transparent);
+    box-shadow: inset 0 0 0 1px var(--ov-rule);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .lvs :is(input[type="search"], input[type="text"], .inbox-search-input, .tag-view-search) {
+    border: 0;
+    border-radius: var(--ov-r-control);
+    background-color: color-mix(in srgb, black calc(16% * var(--ov-k) + 4%), transparent);
+    box-shadow: inset 0 0 0 1px var(--ov-rule);
+}
+
+/* A native select lists its options on its own background, so that stays closed. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .lvs select {
+    border: 0;
+    border-radius: var(--ov-r-control);
+    background-color: var(--background-secondary);
+    box-shadow: inset 0 0 0 1px var(--ov-rule);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .lvs :is(input[type="search"], input[type="text"], .inbox-search-input, .tag-view-search, select):focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--accent-primary);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .lvs .lvs-action {
+    border: 0;
+    border-radius: var(--ov-r-control);
+    box-shadow: inset 0 0 0 1px var(--ov-rule);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .lvs .lvs-action--primary {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 70%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .lvs .lvs-action:is(:hover, :focus-visible) {
+    background: var(--ov-hot);
+}
+
+/* The head of a table is solid, because rows pass under it, and sits on the plate like a rail row. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .lvs .lvs-colhead {
+    background-color: color-mix(in srgb, var(--text-primary) 9%, var(--surface-2, var(--background-secondary)));
+    border-bottom: 1px solid var(--ov-rule);
+    border-radius: var(--ov-r-item) var(--ov-r-item) 0 0;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .lvs .glances-pill {
+    border: 0;
+    border-radius: var(--ov-r-item);
+    box-shadow: inset 0 0 0 1px var(--ov-rule);
+}

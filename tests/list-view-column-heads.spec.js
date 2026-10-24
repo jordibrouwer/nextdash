@@ -74,6 +74,14 @@ test.describe('column headings over the list views', () => {
     });
 
     test('one style, in the theme colours, in all three views', async ({ page }) => {
+        // The contract is the Classic head; the signature head sits on the plate of its material (overlay-views).
+        await page.addInitScript(() => {
+            const hold = () => {
+                const body = document.body;
+                if (body && body.getAttribute('data-material-style') !== 'classic') body.setAttribute('data-material-style', 'classic');
+            };
+            new MutationObserver(hold).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-material-style'] });
+        });
         await openInboxWith(page);
         const inbox = await headStyle(page.locator('.inbox-colhead'));
 
