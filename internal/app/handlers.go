@@ -2356,6 +2356,12 @@ func (h *Handlers) SavePages(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "That page id is reserved", http.StatusBadRequest)
 			return
 		}
+		// Page ids start at 1. A 0 or a negative one was written as
+		// bookmarks-0.json, which no page list ever reads back.
+		if page.ID < 1 {
+			http.Error(w, "Invalid page ID", http.StatusBadRequest)
+			return
+		}
 	}
 
 	// A list from a tab that has not heard of a delete still names that page.

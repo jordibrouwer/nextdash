@@ -525,3 +525,20 @@ func TestImportRowsLeavesAnInvalidRowOut(t *testing.T) {
 		t.Fatalf("imported = %+v, want Mail alone", got)
 	}
 }
+
+// Page ids start at 1. A 0 was saved as bookmarks-0.json, which no page list
+// reads back, and stayed in pages.json.
+func TestSavePagesRefusesAnIDBelowOne(t *testing.T) {
+	for _, id := range []string{"0", "-3"} {
+		h, dir := newPageDeleteFixture(t, `{"page":{"id":2,"name":"Work"},"bookmarks":[]}`)
+		rec := httptest.NewRecorder()
+		h.SavePages(rec, httptest.NewRequest(http.MethodPost, "/api/pages",
+			strings.NewReader(`[{"id":1,"name":"Main"},{"id":`+id+`,"name":"Ghost"}]`)))
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("id %s: status = %d, want 400", id, rec.Code)
+		}
+		if _, err := os.Stat(filepath.Join(dir, "bookmarks-"+id+".json")); !os.IsNotExist(err) {
+			t.Errorf("id %s: bookmarks-%s.json was written (err %v)", id, id, err)
+		}
+	}
+}
