@@ -353,6 +353,13 @@
                     <span class="config-backdrop-name">${esc(this, name)}${isOwn ? ` <em>${esc(this, this.t('config.backdropThemeMark', 'theme'))}</em>` : ''}</span>
                 </button>`;
             }).join('');
+            const restore = this._backdropRestore;
+            this._backdropRestore = null;
+            if (restore) {
+                const pane = grid.closest('[data-studio-pane]');
+                if (pane && restore.top !== null) pane.scrollTop = restore.top;
+                grid.querySelector(`[data-backdrop-recipe="${CSS.escape(restore.recipe)}"]`)?.focus({ preventScroll: true });
+            }
         },
 
         /**
@@ -698,6 +705,9 @@
                     const btn = event.target.closest('[data-backdrop-recipe]');
                     if (!btn) return;
                     this._lastBackdropPick = btn.getAttribute('data-backdrop-recipe');
+                    // The tab is painted again and its grid fills in after a fetch: remember where
+                    // the reader was, so the chosen thumbnail keeps the focus and the scroll.
+                    this._backdropRestore = { recipe: this._lastBackdropPick, top: grid.closest('[data-studio-pane]')?.scrollTop ?? null };
                     this.setBackdropChoice(this._lastBackdropPick);
                 });
             });
