@@ -22033,6 +22033,7 @@ class DashboardConfig {
                 if (r.status === 'fulfilled') {
                     map.set(key, r.value);
                     this.noteCategoriesSeen(key, r.value);
+                    this.noteCategoriesOnServer(key, r.value);
                     failed.delete(key);
                 } else {
                     // See loadFinders: an empty list here is a write
@@ -22111,7 +22112,19 @@ class DashboardConfig {
         this._catFailedPages = null;
         this._catLoadedFor = null;
         this._catSeen = null;
+        this._catOnServer = null;
         this._catGeneration = (this._catGeneration || 0) + 1;
+    }
+
+    /**
+     * Remember which categories the server last said a page has: read from
+     * it, or written to it by a save here. One of these missing from a later
+     * read was deleted elsewhere; one this tab added and has not saved yet was
+     * never in it.
+     */
+    noteCategoriesOnServer(pageId, list) {
+        if (!this._catOnServer) this._catOnServer = new Map();
+        this._catOnServer.set(String(pageId), new Set((list || []).map((c) => String(c.id))));
     }
 
     /** Remember which categories this tab has had for a page. */
@@ -22130,7 +22143,9 @@ class DashboardConfig {
      * a category made on another device since this tab read the list went
      * with the next edit here -- and its bookmarks were left pointing at
      * nothing. One this tab saw and no longer lists was deleted here, and
-     * stays deleted. A failed read leaves the list as it is.
+     * stays deleted. The other way round too: one the server had and has no
+     * longer was deleted elsewhere, and the next save here put it back, so it
+     * leaves this list. A failed read leaves the list as it is.
      */
     async addCategoriesMadeElsewhere(pageId, list) {
         // Without a record of what this tab read, a delete made here cannot
@@ -22146,11 +22161,25 @@ class DashboardConfig {
             return false;
         }
         if (!Array.isArray(server)) return false;
+        const onServer = new Set(server.map((c) => String(c.id)));
+        const hadOnServer = this._catOnServer?.get(String(pageId));
+        let dropped = 0;
+        if (hadOnServer) {
+            // In place: callers hold the array.
+            for (let i = list.length - 1; i >= 0; i -= 1) {
+                const id = String(list[i].id);
+                if (hadOnServer.has(id) && !onServer.has(id)) {
+                    list.splice(i, 1);
+                    dropped += 1;
+                }
+            }
+        }
         const have = new Set(list.map((c) => String(c.id)));
         const extra = server.filter((c) => !have.has(String(c.id)) && !seen.has(String(c.id)));
         list.push(...extra);
         this.noteCategoriesSeen(pageId, list);
-        return extra.length > 0;
+        this.noteCategoriesOnServer(pageId, server);
+        return extra.length > 0 || dropped > 0;
     }
 
     bindCategoriesEditor(container) {
@@ -22406,6 +22435,10 @@ class DashboardConfig {
                 body: payload,
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            // What was sent is what the server has now. Without this a
+            // category deleted here still counted as on the server, and the
+            // undo of that delete took it out again.
+            this.noteCategoriesOnServer(pageId, JSON.parse(payload));
             this.dash.renderDashboard?.({ animate: false });
             this.invalidateBookmarkCategoriesCache(pageId);
             // Tell the other tabs; without this they show stale categories

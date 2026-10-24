@@ -66,4 +66,21 @@ test.describe('Structure review fixes', () => {
         const trash = await (await page.request.get('/api/trash', { headers: auth })).json();
         expect((trash.items || []).filter((item) => item.kind === 'page' && String(item.pageName || '').startsWith(`${name} copy`))).toEqual([]);
     });
+
+    test('a category deleted elsewhere stays deleted after an edit here', async ({ page }) => {
+        const id = await newPage(page, `Gone elsewhere ${Date.now()}`, [{ id: 'alpha', name: 'Alpha' }, { id: 'beta', name: 'Beta' }]);
+        await openStructureTab(page, 'categories');
+        await page.waitForSelector(`#config-pt-body [data-cat-row][data-cat-page="${id}"][data-cat-id="beta"]`, { timeout: 15_000 });
+
+        await page.request.post(`/api/categories?page=${id}`, { data: [{ id: 'alpha', name: 'Alpha' }], headers: auth });
+
+        const saved = page.waitForResponse((r) => r.url().includes(`/api/categories?page=${id}`) && r.request().method() === 'POST');
+        await page.locator(`[data-cat-row][data-cat-page="${id}"][data-cat-id="alpha"] [data-cat-duplicate]`).click();
+        expect((await saved).ok()).toBe(true);
+
+        const ids = (await (await page.request.get(`/api/categories?page=${id}`)).json()).map((c) => c.id);
+        expect(ids).toContain('alpha');
+        expect(ids).not.toContain('beta');
+        expect(ids.length).toBe(2);
+    });
 });
