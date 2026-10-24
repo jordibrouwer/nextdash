@@ -59,3 +59,45 @@ test('a category save stores the translation key, not the translated name', asyn
     });
     expect(posted.find((c) => c.id === 'review-others').name).toBe('Renamed');
 });
+
+/*
+ * The poll reads a settings change against the settings revision it holds,
+ * and nothing set one at load -- so the first change made on another device
+ * was taken as the starting point and never shown.
+ */
+test('the first settings change from another device is applied', async ({ page }) => {
+    await openDashboard(page);
+    // Opened twice, the second time without the overlay helpers: a first load
+    // on fresh data runs the category sort migration, and dismissing the
+    // onboarding saves settings too. Either save sets the revision and hides
+    // the gap; an install opened before loads with neither.
+    await page.waitForFunction(() => window.dashboardInstance.settings.categorySortModesMigrated === true);
+    await page.reload();
+    await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
+    const location = `Elsewhere ${Date.now()}`;
+    await page.evaluate(async (value) => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const current = await (await api('/api/settings')).json();
+        current.weatherLocation = value;
+        await api('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(current),
+        });
+    }, location);
+
+    await page.evaluate(() => window.dashboardInstance.data.refreshIfDataRevisionChanged());
+    expect(await page.evaluate(() => window.dashboardInstance.settings.weatherLocation)).toBe(location);
+});
+
+test('a revision check asked for while one runs joins it', async ({ page }) => {
+    await openDashboard(page);
+    const same = await page.evaluate(async () => {
+        const data = window.dashboardInstance.data;
+        const first = data.refreshIfDataRevisionChanged();
+        const second = data.refreshIfDataRevisionChanged();
+        await first;
+        return first === second;
+    });
+    expect(same).toBe(true);
+});

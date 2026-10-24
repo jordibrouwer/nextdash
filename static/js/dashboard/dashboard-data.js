@@ -648,6 +648,13 @@ class DashboardData {
         if (revision) {
             this.dash._serverDataRevision = revision;
         }
+        // Seeded once, from the load: the poll only reads a settings change
+        // against a revision it already holds, and nothing else set one until a
+        // save here -- so the first change made on another device was taken as
+        // the starting point and never applied.
+        if (!this.dash._serverSettingsRevision && this._lastSettingsRevision) {
+            this.dash._serverSettingsRevision = this._lastSettingsRevision;
+        }
         return revision;
     }
 
@@ -670,7 +677,19 @@ class DashboardData {
         return changed;
     }
 
-    async refreshIfDataRevisionChanged() {
+    /*
+     * One at a time. Focus and visibilitychange are throttled to one call per
+     * half second, and on a slow server a refresh outlasts that: the second
+     * call ran a whole loadData and render alongside the first.
+     */
+    refreshIfDataRevisionChanged() {
+        if (this._revisionRefresh) return this._revisionRefresh;
+        this._revisionRefresh = this._refreshIfDataRevisionChangedOnce()
+            .finally(() => { this._revisionRefresh = null; });
+        return this._revisionRefresh;
+    }
+
+    async _refreshIfDataRevisionChangedOnce() {
         const d = this.dash;
         if (!d._bookmarksReady || d.isInlineEditActive?.()) {
             return false;
