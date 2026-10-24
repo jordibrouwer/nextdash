@@ -4329,8 +4329,58 @@ body.no-animations .config-new-features-panel-star {
     gap: var(--space-2, 0.5rem);
 }
 
+/*
+ * Every tab puts the same control in the same place. The band's right edge is
+ * anchored on a slot for the view link: Bookmarks and Inbox fill it, the rest
+ * leave it empty, so the button, the count and the filter do not move when
+ * the link comes or goes. The button and the count have a fixed width for the
+ * same reason -- the count's text changes with the tab and the language.
+ */
+.config-view-head .lvs-header-actions:has(.config-changed-bar) {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-2, 0.5rem);
+}
+
+.config-view-head .lvs-header-actions:has(.config-changed-bar):not(:has([data-inbox-open-view], [data-bm-open-view]))::after {
+    content: '';
+    flex: 0 0 var(--config-view-link-slot);
+}
+
+.config-view-head .lvs-header-actions [data-inbox-open-view],
+.config-view-head .lvs-header-actions [data-bm-open-view] {
+    flex: 0 0 var(--config-view-link-slot);
+    inline-size: var(--config-view-link-slot);
+    box-sizing: border-box;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.config-view-head {
+    --config-view-link-slot: 13rem;
+}
+
+.config-view-head .lvs-header-actions .config-changed-bar > .config-btn {
+    flex: 0 0 6.5rem;
+    inline-size: 6.5rem;
+    justify-content: center;
+}
+
+.config-view-head .lvs-header-actions .config-changed-count {
+    flex: 0 0 14rem;
+    inline-size: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .config-view-head .lvs-header-actions .config-settings-filter {
-    max-width: 14rem;
+    flex: 0 0 13rem;
+    inline-size: 13rem;
+    max-width: 13rem;
+    margin-left: 0;
 }
 
 .config-view-head .lvs-header-actions .config-btn,
