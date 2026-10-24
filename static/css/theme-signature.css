@@ -601,19 +601,43 @@ html[data-theme] body[data-material-style="signature"][data-material="paper"][da
     padding-top: calc(var(--space-3, 0.75rem) + 6px);
     padding-bottom: var(--space-3, 0.75rem);
     background-color: var(--surface-2, var(--background-secondary));
-    background-image:
-        linear-gradient(90deg, transparent calc(var(--category-inline-pad, 0.5rem) + 1.7rem), color-mix(in srgb, #e0505a 55%, transparent) calc(var(--category-inline-pad, 0.5rem) + 1.7rem) calc(var(--category-inline-pad, 0.5rem) + 1.7rem + 1px), transparent calc(var(--category-inline-pad, 0.5rem) + 1.7rem + 1px)),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.04 0.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.32 0 0 0 0 0.2 0 0 0 0.4 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.04 0.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.32 0 0 0 0 0.2 0 0 0 0.12 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    box-shadow: 3px 3px 0 color-mix(in srgb, var(--text-primary) 25%, transparent);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 6px 12px -8px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category::before,
+html[data-theme] body[data-material-style="signature"][data-material="paper"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 6px;
+    height: 4px;
+    border-top: 1px solid color-mix(in srgb, var(--text-primary) 55%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 55%, transparent);
+    pointer-events: none;
 }
 
 html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="paper"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category .category-title {
     border-bottom: 0;
+    font-variant: small-caps;
     font-size: calc(var(--font-size-category) * 1.05 * var(--cat-head-scale, 1));
     font-weight: 700;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.06em;
+    padding-bottom: 0.4em;
+    margin-bottom: 0.4em;
+    background-image: linear-gradient(color-mix(in srgb, #e0505a 70%, transparent), color-mix(in srgb, #e0505a 70%, transparent));
+    background-size: 100% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+}
+
+/* The hover tint pulls the title out to the card's edge; the red line stays between the sides. */
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"][data-material="paper"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards, .layout-list, .layout-widgets) .category:not(.dashboard-widget) .category-title:hover {
+    background-size: calc(100% - 2 * var(--category-inline-pad, 1rem)) 1px;
+    background-position: var(--category-inline-pad, 1rem) 100%;
 }
 
 html[data-theme] body[data-material-style="signature"][data-material="paper"] .dashboard-grid:not(.layout-terminal):not(.layout-launcher) .bookmark-link {

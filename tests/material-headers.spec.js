@@ -91,7 +91,7 @@ test.describe('the header under a material', () => {
             const m = cs.backgroundColor.match(/[\d.]+/g) || [];
             return { alpha: m.length > 3 ? Number(m[3]) : 1, layers: cs.backgroundImage, folio };
         });
-        for (const material of ['ink', 'velvet', 'terminal']) {
+        for (const material of ['ink', 'velvet', 'terminal', 'paper']) {
             await under(page, material);
             const p = await panel();
             const drawn = p.alpha > 0 || p.layers !== 'none';
@@ -173,7 +173,7 @@ test.describe('the header under a material', () => {
                     const cat = await look('.category:not(.dashboard-widget)');
                     const wid = await look('.dashboard-widget');
                     // An open surface with the widget background on is the reader's own panel for widgets.
-                    if (!cat || !wid || (surface === 'open' && strip === 'background' && !['ink', 'velvet', 'terminal'].includes(material))) continue;
+                    if (!cat || !wid || (surface === 'open' && strip === 'background' && !['ink', 'velvet', 'terminal', 'paper'].includes(material))) continue;
                     expect.soft(wid, material + '/' + surface + ' (strip ' + strip + '): the widget is not drawn like a category').toEqual(cat);
                 }
             }
