@@ -88,6 +88,23 @@
         },
 
         /**
+         * The drawing the Material style select shows: install-wide when the scope is every theme,
+         * otherwise this theme's own choice, or "follow" when it has none (a look from before the
+         * redesign ships classic, and says so here).
+         */
+        materialStyleValue() {
+            const settings = this.dash.settings || {};
+            if (this.surfaceScope() === 'global') return settings.materialStyle === 'signature' ? 'signature' : 'classic';
+            const own = settings.themeSurfacePrefs?.[this.currentThemeId()]?.materialStyle;
+            return own === 'signature' || own === 'classic' ? own : 'follow';
+        },
+
+        materialStyleOptions() {
+            const base = [['signature', 'Signature'], ['classic', 'Classic']];
+            return this.surfaceScope() === 'global' ? base : [['follow', 'Follow the theme'], ...base];
+        },
+
+        /**
          * The quiet centre the slider shows: install-wide when the scope is every
          * theme, otherwise this theme's own, falling back to the install-wide one.
          */
@@ -394,7 +411,7 @@
                     <div class="config-field">
                         <span class="config-field-label">${e(t('config.materialStyleLabel', 'Material style'))}</span>
                         <select class="config-select" data-appearance-select="materialStyle">
-                            ${[['signature', 'Signature'], ['classic', 'Classic']].map(([option, text]) => `<option value="${option}"${(this.dash.settings?.materialStyle === 'signature' ? 'signature' : 'classic') === option ? ' selected' : ''}>${e(t('config.materialStyle' + cap(option), text))}</option>`).join('')}
+                            ${this.materialStyleOptions().map(([option, text]) => `<option value="${option}"${this.materialStyleValue() === option ? ' selected' : ''}>${e(t('config.materialStyle' + cap(option), text))}</option>`).join('')}
                         </select>
                         ${this.infoAff('materialStyle')}
                         <p class="config-panel-note">${e(t('config.materialStyleNote', 'How a theme\'s material is drawn. Signature gives each material a surface of its own: glass, frost and aurora stop looking alike. Classic is the surface as it was.'))}</p>

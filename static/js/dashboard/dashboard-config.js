@@ -11922,7 +11922,7 @@ class DashboardConfig {
         const storedGone = this.dash.settings?.theme === id;
         const wasActive = storedGone || shownBefore === id;
         if (storedGone) {
-            this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'look-berry-dark';
+            this.dash.settings.theme = window.ThemeLoader?.DEFAULT_THEME || 'look-ocean-dark';
         }
         if (storedGone || rowsLeft) void this.saveSettingsWithFeedback();
         this.repaintAppearanceBody();
@@ -11989,6 +11989,9 @@ class DashboardConfig {
         document.documentElement.setAttribute('data-theme', id);
         style.textContent = `html[data-theme="${CSS.escape(id)}"] { ${vars} }`;
         document.head.appendChild(style);
+        // The colours are not the look: the material, the depth and the card surface are the
+        // candidate's own too, or a hover over a neon theme shows neon colours on classic cards.
+        void window.ThemeLoader?.applySurfacesForTheme?.(id, this.dash.settings, id);
     }
 
     clearThemePreview() {
@@ -12003,6 +12006,8 @@ class DashboardConfig {
             } else {
                 document.documentElement.setAttribute('data-theme', previous);
             }
+            // And the look of the theme that was on screen.
+            void this.applyResolvedSurfaces();
         }
     }
 
@@ -13461,7 +13466,7 @@ class DashboardConfig {
         bookmarkArchiveUrl: { info: ['bookmarkArchiveUrlInfoTitle', 'bookmarkArchiveUrlInfoMessage'], def: 'https://web.archive.org/web/*/{url}' },
         pasteDestination: { hint: 'pasteDestinationHint', def: 'ask' },
         monitorEmphasis: { hint: 'monitorEmphasisHint', def: 'problems' },
-        theme: { def: 'look-berry-dark' },
+        theme: { def: 'look-ocean-dark' },
         // Appearance → Theme: the three Surfaces answers and the two Backdrop
         // ones. Without a `def` renderFieldAffordances draws no ↺ at all, which
         // is why these five were the only controls on the page without one.

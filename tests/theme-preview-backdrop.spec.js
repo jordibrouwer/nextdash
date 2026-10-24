@@ -142,3 +142,20 @@ test('Escape closes the theme picker on the first press', async ({ page }) => {
     await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute('data-theme')),
         { message: 'the previewed theme was left applied' }).toBe(before);
 });
+
+test('previewing a theme shows its material, and leaving puts the old one back', async ({ page }) => {
+    await openAppearance(page);
+    const material = () => page.evaluate(() => document.body.getAttribute('data-material'));
+
+    await page.evaluate(() => window.dashboardInstance.config.applyThemeChoice('gloss-candy-lacquer-dark'));
+    await expect.poll(material, { timeout: 10_000 }).toBe('lacquer');
+
+    await preview(page, 'cold-cathode-dark');
+    await expect.poll(material, { timeout: 10_000 }).toBe('neon');
+
+    await page.evaluate(() => {
+        const cfg = window.dashboardInstance.config.instance || window.dashboardInstance.config;
+        cfg.clearThemePreview();
+    });
+    await expect.poll(material, { timeout: 10_000 }).toBe('lacquer');
+});

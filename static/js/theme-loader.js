@@ -16,7 +16,7 @@
      * missing: a device with device-specific settings on and no theme in them,
      * or a shell served without the data-theme attribute filled in.
      */
-    const DEFAULT_THEME = 'look-berry-dark';
+    const DEFAULT_THEME = 'look-ocean-dark';
 
     const LEGACY_THEME_MAP = {
         aurora: 'midnight-neon-dark',
@@ -590,7 +590,13 @@
             })(),
             calm: calm,
             material: String(ideal.character || ''),
-            materialStyle: s.materialStyle === 'signature' ? 'signature' : 'classic',
+            // The reader's choice for this theme, then the theme's own, then the install-wide one
+            // (Go: resolveMaterialStyle).
+            materialStyle: (function () {
+                const word = (v) => (v === 'signature' || v === 'classic' ? v : '');
+                if (s.themeSurfacesForceAll) return s.materialStyle === 'signature' ? 'signature' : 'classic';
+                return word(prefs.materialStyle) || word(ideal.materialStyle) || (s.materialStyle === 'signature' ? 'signature' : 'classic');
+            })(),
             backdrop: backdrop === 'off' ? 'off' : 'on',
             backdropRecipe: backdrop === 'off' || backdrop === 'follow' ? '' : backdrop,
         };

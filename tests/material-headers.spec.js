@@ -159,7 +159,6 @@ test.describe('the header under a material', () => {
             return {
                 bg, image: cs.backgroundImage.replace(/\s+/g, '').slice(0, 60), shadow: cs.boxShadow.replace(/\s+/g, ''),
                 border: cs.borderTopWidth + cs.borderTopStyle, radius: cs.borderTopLeftRadius, blur: cs.backdropFilter,
-                pad: cs.paddingTop + '/' + cs.paddingLeft,
             };
         }, sel);
         for (const strip of ['background', 'off']) {
@@ -261,6 +260,39 @@ test.describe('the header under a material', () => {
             });
             if (gap === null) continue;
             expect.soft(gap, material + ': the widget content lies on the bottom edge of its panel').toBeGreaterThanOrEqual(6);
+        }
+    });
+
+    test('the text of a widget starts a little way inside its edge, on every side', async ({ page }) => {
+        test.setTimeout(120_000);
+        await openDashboard(page);
+        for (const style of ['signature', 'classic']) {
+            for (const material of MATERIALS) {
+                for (const surface of ['glass', 'open']) {
+                    await under(page, material);
+                    await page.evaluate(([st, su]) => {
+                        [document.documentElement, document.body].forEach((el) => el.setAttribute('data-material-style', st));
+                        document.body.setAttribute('data-cat-surface', su);
+                        document.body.setAttribute('data-widget-bg', 'background');
+                    }, [style, surface]);
+                    const gaps = await page.evaluate(() => [...document.querySelectorAll('.dashboard-grid .dashboard-widget')].map((w) => {
+                        const c = w.getBoundingClientRect();
+                        let l = 1e9, r = 1e9, t = 1e9, b = 1e9;
+                        for (const el of w.querySelectorAll('*')) {
+                            const box = el.getBoundingClientRect();
+                            if (!box.width || !box.height) continue;
+                            const text = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+                            if (!text && !['INPUT', 'BUTTON', 'IMG', 'SVG', 'CANVAS'].includes(el.tagName)) continue;
+                            l = Math.min(l, box.left - c.left); r = Math.min(r, c.right - box.right);
+                            t = Math.min(t, box.top - c.top); b = Math.min(b, c.bottom - box.bottom);
+                        }
+                        return { type: w.dataset.widgetType, min: Math.min(l, r, t, b) };
+                    }));
+                    for (const g of gaps) {
+                        expect.soft(g.min, style + '/' + material + '/' + surface + ': the ' + g.type + ' widget text sits against its edge').toBeGreaterThanOrEqual(8);
+                    }
+                }
+            }
         }
     });
 

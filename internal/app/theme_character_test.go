@@ -293,8 +293,8 @@ func TestTheFourCharacterThemesShip(t *testing.T) {
 	if crt := themes["retro-crt-mk2-dark"]; crt.RadiusScale > 0.2 || crt.LabelTransform != "uppercase" {
 		t.Errorf("Retro CRT Mk II lost its shape: radius %v, transform %q", crt.RadiusScale, crt.LabelTransform)
 	}
-	// The default theme is Berry; a new theme does not change it by accident.
-	if defaultThemeID != "look-berry-dark" {
+	// The default theme is Ocean; a new theme does not change it by accident.
+	if defaultThemeID != "look-ocean-dark" {
 		t.Errorf("a new theme changed what a fresh install starts on: %q", defaultThemeID)
 	}
 }
@@ -607,7 +607,7 @@ func TestLacquerThemesShipGlassAt35(t *testing.T) {
 // A stored Gloss Chrome or Gloss Amber that still says open is the old shipped value and moves
 // to glass; one the reader changed to anything else stays.
 func TestGlossThemesLeaveOpen(t *testing.T) {
-	for _, id := range []string{"gloss-liquid-chrome-dark", "gloss-amber-resin-light"} {
+	for _, id := range []string{"gloss-liquid-chrome-dark", "gloss-amber-resin-light", "slate-dark", "slate-light"} {
 		old := getDefaultBuiltInThemes()[id]
 		old.Surface = "open"
 		got := mergeBuiltInThemeDefaults(map[string]ThemeColors{id: old})[id]

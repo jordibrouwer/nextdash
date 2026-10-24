@@ -2,10 +2,10 @@ package app
 
 import "testing"
 
-// Berry is the theme a fresh install starts on, with its light half for auto
+// Ocean is the theme a fresh install starts on, with its light half for auto
 // dark mode. An install that already has a theme keeps it.
-func TestBerryIsTheDefaultTheme(t *testing.T) {
-	if defaultThemeID != "look-berry-dark" || defaultThemeLightID != "look-berry-light" {
+func TestOceanIsTheDefaultTheme(t *testing.T) {
+	if defaultThemeID != "look-ocean-dark" || defaultThemeLightID != "look-ocean-light" {
 		t.Fatalf("defaults are %q / %q", defaultThemeID, defaultThemeLightID)
 	}
 	themes := getDefaultBuiltInThemes()

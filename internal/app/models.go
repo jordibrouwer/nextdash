@@ -1205,10 +1205,10 @@ const defaultNotesWidgetID = "w_000000000002"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
-const defaultThemeID = "look-berry-dark"
+const defaultThemeID = "look-ocean-dark"
 
 // defaultThemeLightID is the light counterpart auto dark mode switches to.
-const defaultThemeLightID = "look-berry-light"
+const defaultThemeLightID = "look-ocean-light"
 
 /*
 The fallback depth and glow.
@@ -1487,6 +1487,10 @@ type ThemeColors struct {
 	// built-in theme, and to the archetype and then the hash of its id for any
 	// other. A custom theme sets it to choose a recipe of its own.
 	Backdrop string `json:"backdrop,omitempty"`
+
+	// MaterialStyle is how this theme is drawn: "classic" or "signature", or empty for the
+	// install-wide choice. The reader can set it per theme.
+	MaterialStyle string `json:"materialStyle,omitempty"`
 
 	// Collection names the set a theme belongs to, for the browser's
 	// collection chip. Empty is no collection: the older themes, and any
@@ -6213,8 +6217,8 @@ func getDefaultBuiltInThemes() map[string]ThemeColors {
 		"gray-light":     {Name: "Gray [light]", TextPrimary: "#161B20", TextSecondary: "#3E4349", TextTertiary: "#595E64", BackgroundPrimary: "#EEF4FB", BackgroundSecondary: "#F4FBFF", BackgroundDots: "#E2E9F0", BackgroundModal: "rgba(238, 244, 251, 0.92)", BorderPrimary: "#CBD2D9", BorderSecondary: "#DBE2E9", AccentPrimary: "#2063B0", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#1D4ED8", Character: "frost", Collection: "neutrals", Backdrop: "haze"},
 		"zinc-dark":      {Name: "Zinc [dark]", TextPrimary: "#E7E7ED", TextSecondary: "#BDBDC3", TextTertiary: "#97989D", BackgroundPrimary: "#0F0F13", BackgroundSecondary: "#18181C", BackgroundDots: "#212125", BackgroundModal: "rgba(15, 15, 19, 0.9)", BorderPrimary: "#303034", BorderSecondary: "#212125", AccentPrimary: "#B59BFD", AccentSuccess: "#6EE7A8", AccentWarning: "#F2C265", AccentError: "#F58A8A", AccentInfo: "#6CAAF9", Character: "carbon", Collection: "neutrals", Backdrop: "dotgrid"},
 		"zinc-light":     {Name: "Zinc [light]", TextPrimary: "#1A1A1E", TextSecondary: "#424247", TextTertiary: "#5D5D62", BackgroundPrimary: "#F3F3F9", BackgroundSecondary: "#F9F9FF", BackgroundDots: "#E7E7ED", BackgroundModal: "rgba(243, 243, 249, 0.92)", BorderPrimary: "#D0D0D6", BorderSecondary: "#E0E1E6", AccentPrimary: "#6A4FA9", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#1D4ED8", Character: "carbon", Collection: "neutrals", Backdrop: "dotgrid"},
-		"slate-dark":     {Name: "Slate [dark]", TextPrimary: "#DCEAF4", TextSecondary: "#B3C0CA", TextTertiary: "#8E9AA4", BackgroundPrimary: "#071117", BackgroundSecondary: "#101A21", BackgroundDots: "#19232A", BackgroundModal: "rgba(7, 17, 23, 0.9)", BorderPrimary: "#27323A", BorderSecondary: "#19232A", AccentPrimary: "#3CBBF9", AccentSuccess: "#6EE7A8", AccentWarning: "#F2C265", AccentError: "#F58A8A", AccentInfo: "#6CAAF9", SurfaceAlpha: 0.55, SurfaceBlur: 12, RadiusScale: 1.3, LabelWeight: 700, Character: "glass", Depth: "rich", Surface: "open", Collection: "neutrals", Backdrop: "aurora"},
-		"slate-light":    {Name: "Slate [light]", TextPrimary: "#121C23", TextSecondary: "#39444C", TextTertiary: "#545F68", BackgroundPrimary: "#E8F6FF", BackgroundSecondary: "#EFFCFF", BackgroundDots: "#DCEAF4", BackgroundModal: "rgba(232, 246, 255, 0.92)", BorderPrimary: "#C6D3DD", BorderSecondary: "#D6E3EE", AccentPrimary: "#006DA6", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#1D4ED8", SurfaceAlpha: 0.55, SurfaceBlur: 12, RadiusScale: 1.3, LabelWeight: 700, Character: "glass", Depth: "rich", Surface: "open", Collection: "neutrals", Backdrop: "aurora"},
+		"slate-dark":     {Name: "Slate [dark]", TextPrimary: "#DCEAF4", TextSecondary: "#B3C0CA", TextTertiary: "#8E9AA4", BackgroundPrimary: "#071117", BackgroundSecondary: "#101A21", BackgroundDots: "#19232A", BackgroundModal: "rgba(7, 17, 23, 0.9)", BorderPrimary: "#27323A", BorderSecondary: "#19232A", AccentPrimary: "#3CBBF9", AccentSuccess: "#6EE7A8", AccentWarning: "#F2C265", AccentError: "#F58A8A", AccentInfo: "#6CAAF9", SurfaceAlpha: 0.55, SurfaceBlur: 12, RadiusScale: 1.3, LabelWeight: 700, Character: "glass", Depth: "rich", Surface: "glass", Collection: "neutrals", Backdrop: "aurora"},
+		"slate-light":    {Name: "Slate [light]", TextPrimary: "#121C23", TextSecondary: "#39444C", TextTertiary: "#545F68", BackgroundPrimary: "#E8F6FF", BackgroundSecondary: "#EFFCFF", BackgroundDots: "#DCEAF4", BackgroundModal: "rgba(232, 246, 255, 0.92)", BorderPrimary: "#C6D3DD", BorderSecondary: "#D6E3EE", AccentPrimary: "#006DA6", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#1D4ED8", SurfaceAlpha: 0.55, SurfaceBlur: 12, RadiusScale: 1.3, LabelWeight: 700, Character: "glass", Depth: "rich", Surface: "glass", Collection: "neutrals", Backdrop: "aurora"},
 		"chalk-dark":     {Name: "Chalk [dark]", TextPrimary: "#E9E8E3", TextSecondary: "#BFBEB9", TextTertiary: "#999894", BackgroundPrimary: "#100F0C", BackgroundSecondary: "#191815", BackgroundDots: "#22221E", BackgroundModal: "rgba(16, 15, 12, 0.9)", BorderPrimary: "#31302D", BorderSecondary: "#22221E", AccentPrimary: "#F98B6F", AccentSuccess: "#6EE7A8", AccentWarning: "#F2C265", AccentError: "#F58A8A", AccentInfo: "#6CAAF9", Character: "paper", Collection: "neutrals", Backdrop: "ruled"},
 		"chalk-light":    {Name: "Chalk [light]", TextPrimary: "#1B1B17", TextSecondary: "#43423F", TextTertiary: "#5F5E5A", BackgroundPrimary: "#F8F7F2", BackgroundSecondary: "#FDFCF7", BackgroundDots: "#ECEBE7", BackgroundModal: "rgba(248, 247, 242, 0.92)", BorderPrimary: "#D8D7D3", BorderSecondary: "#E6E4E0", AccentPrimary: "#A33E25", AccentSuccess: "#15803D", AccentWarning: "#92600A", AccentError: "#B42323", AccentInfo: "#1D4ED8", Character: "paper", Collection: "neutrals", Backdrop: "ruled"},
 		"concrete-dark":  {Name: "Concrete [dark]", TextPrimary: "#EDEAE8", TextSecondary: "#C6C3C1", TextTertiary: "#A09E9C", BackgroundPrimary: "#232120", BackgroundSecondary: "#2D2B29", BackgroundDots: "#373533", BackgroundModal: "rgba(35, 33, 32, 0.9)", BorderPrimary: "#494745", BorderSecondary: "#373533", AccentPrimary: "#F49752", AccentSuccess: "#6EE7A8", AccentWarning: "#F2C265", AccentError: "#F58A8A", AccentInfo: "#6CAAF9", Character: "brushed", Collection: "neutrals", Backdrop: "horizon"},
@@ -6461,19 +6465,25 @@ func mergeBuiltInThemeDefaults(stored map[string]ThemeColors) map[string]ThemeCo
 			stored[themeID] = defaults
 			continue
 		}
-		// Gloss Chrome and Gloss Amber shipped open and now ship on glass like the other lacquer
-		// themes; a stored copy that still says open is the old shipped value.
-		if glossShippedOpen[themeID] && current.Surface == "open" {
+		// Gloss Chrome, Gloss Amber and Slate shipped open and now ship on glass, so a column has
+		// a card; a stored copy that still says open is the old shipped value.
+		if shippedOpenThemes[themeID] && current.Surface == "open" {
 			current.Surface = defaults.Surface
+		}
+		// Berry briefly shipped classic and now follows the install like every other theme; a stored
+		// copy that still says classic is that value and not a choice.
+		if shippedClassicThemes[themeID] && current.MaterialStyle == "classic" && defaults.MaterialStyle == "" {
+			current.MaterialStyle = ""
 		}
 		stored[themeID] = fillThemeCharacter(current, defaults)
 	}
 	return stored
 }
 
-var glossShippedOpen = map[string]bool{
+var shippedOpenThemes = map[string]bool{
 	"gloss-liquid-chrome-dark": true, "gloss-liquid-chrome-light": true,
 	"gloss-amber-resin-dark": true, "gloss-amber-resin-light": true,
+	"slate-dark": true, "slate-light": true,
 }
 
 /*
@@ -6526,6 +6536,9 @@ func fillThemeCharacter(current, defaults ThemeColors) ThemeColors {
 	}
 	if strings.TrimSpace(current.Backdrop) == "" {
 		current.Backdrop = defaults.Backdrop
+	}
+	if strings.TrimSpace(current.MaterialStyle) == "" {
+		current.MaterialStyle = defaults.MaterialStyle
 	}
 	// The archetype and what it draws. Every built-in was written to disk on
 	// first run, so without this an install that has been going a week would
@@ -7178,3 +7191,7 @@ func (fs *FileStore) GetSettingsRevision() string {
 	sum := hash.Sum(nil)
 	return hex.EncodeToString(sum[:8])
 }
+
+// shippedClassicThemes are the themes that once shipped with materialStyle classic and now follow
+// the install-wide choice.
+var shippedClassicThemes = map[string]bool{"look-berry-dark": true, "look-berry-light": true}
