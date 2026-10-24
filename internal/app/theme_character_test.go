@@ -621,3 +621,82 @@ func TestGlossThemesLeaveOpen(t *testing.T) {
 		}
 	}
 }
+
+// The four Unraid families read as a server: a real card for categories and widgets, an
+// accent in the family of the logo (orange and red) or of Azure (blue), small corners, and
+// a rack for a backdrop instead of the busy diagonal bands.
+func TestUnraidThemesHaveACardAndTheirOwnColours(t *testing.T) {
+	themes := getDefaultBuiltInThemes()
+	for _, family := range []string{"black", "azure", "ember", "blaze"} {
+		for _, half := range []string{"dark", "light"} {
+			id := "unraid-" + family + "-" + half
+			tc, ok := themes[id]
+			if !ok {
+				t.Fatalf("%s is missing", id)
+			}
+			if tc.Surface != "card" && tc.Surface != "glass" {
+				t.Errorf("%s: surface %q, want a card or glass", id, tc.Surface)
+			}
+			if tc.RadiusScale > 0.7 {
+				t.Errorf("%s: radius %.2f is rounder than a server panel", id, tc.RadiusScale)
+			}
+			hue := hexHue(t, tc.AccentPrimary)
+			if family == "azure" {
+				if hue < 200 || hue > 230 {
+					t.Errorf("%s: accent %s has hue %.0f, want blue (200-230)", id, tc.AccentPrimary, hue)
+				}
+			} else if hue > 35 && hue < 340 || hue < 0 {
+				t.Errorf("%s: accent %s has hue %.0f, want orange or red", id, tc.AccentPrimary, hue)
+			}
+			if got := themeBackdropRecipes[themeBackdropRecipeFor(themeBackdropHashID(id), tc)]; got != "rack" {
+				t.Errorf("%s: backdrop %q, want rack", id, got)
+			}
+		}
+	}
+}
+
+// Black and Azure shipped without a surface, and Azure and Black may have stored "open" from
+// the editor: both move to the card the new build ships; a chosen glass stays.
+func TestUnraidBlackAndAzureLeaveOpen(t *testing.T) {
+	for _, id := range []string{"unraid-black-dark", "unraid-black-light", "unraid-azure-dark", "unraid-azure-light"} {
+		old := getDefaultBuiltInThemes()[id]
+		for _, was := range []string{"open", ""} {
+			old.Surface = was
+			if got := mergeBuiltInThemeDefaults(map[string]ThemeColors{id: old})[id]; got.Surface != "card" {
+				t.Errorf("%s: stored %q became %q, want card", id, was, got.Surface)
+			}
+		}
+		old.Surface = "glass"
+		if got := mergeBuiltInThemeDefaults(map[string]ThemeColors{id: old})[id]; got.Surface != "glass" {
+			t.Errorf("%s: a chosen glass became %q", id, got.Surface)
+		}
+	}
+}
+
+func hexHue(t *testing.T, hex string) float64 {
+	t.Helper()
+	var r, g, b int
+	if _, err := fmt.Sscanf(strings.TrimPrefix(hex, "#"), "%02x%02x%02x", &r, &g, &b); err != nil {
+		t.Fatalf("bad colour %q", hex)
+	}
+	fr, fg, fb := float64(r)/255, float64(g)/255, float64(b)/255
+	mx, mn := math.Max(fr, math.Max(fg, fb)), math.Min(fr, math.Min(fg, fb))
+	if mx == mn {
+		return -1
+	}
+	d := mx - mn
+	var h float64
+	switch mx {
+	case fr:
+		h = math.Mod((fg-fb)/d, 6)
+	case fg:
+		h = (fb-fr)/d + 2
+	default:
+		h = (fr-fg)/d + 4
+	}
+	h *= 60
+	if h < 0 {
+		h += 360
+	}
+	return h
+}
