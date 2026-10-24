@@ -83,4 +83,36 @@ test.describe('Structure review fixes', () => {
         expect(ids).not.toContain('beta');
         expect(ids.length).toBe(2);
     });
+
+    test('two quick toggles end on the second', async ({ page }) => {
+        const id = await newPage(page, `Toggle twice ${Date.now()}`, [{ id: 'alpha', name: 'Alpha' }]);
+        await openStructureTab(page, 'categories');
+        const toggle = page.locator(`[data-cat-row][data-cat-page="${id}"][data-cat-id="alpha"] [data-cat-spread]`);
+        await expect(toggle).toBeVisible({ timeout: 15_000 });
+
+        // The first save is slow on the wire; the second is not.
+        let posts = 0;
+        await page.route((url) => url.pathname === '/api/categories' && url.searchParams.get('page') === String(id), async (route) => {
+            if (route.request().method() !== 'POST') return route.continue();
+            posts += 1;
+            if (posts === 1) await new Promise((resolve) => setTimeout(resolve, 1_500));
+            return route.continue();
+        });
+
+        await toggle.click();
+        await expect.poll(() => posts, { timeout: 5_000 }).toBe(1);
+        await page.locator(`[data-cat-row][data-cat-page="${id}"][data-cat-id="alpha"] [data-cat-spread]`).click();
+        await expect.poll(() => posts, { timeout: 10_000 }).toBe(2);
+
+        const pressed = await page.locator(`[data-cat-row][data-cat-page="${id}"][data-cat-id="alpha"] [data-cat-spread]`).getAttribute('aria-pressed');
+        expect(pressed).toBe('false');
+        await expect.poll(async () => {
+            const cats = await (await page.request.get(`/api/categories?page=${id}`)).json();
+            return Boolean(cats.find((c) => c.id === 'alpha')?.spread);
+        }, { timeout: 5_000 }).toBe(false);
+        // Settled, not a moment before the slow one landed.
+        await page.waitForTimeout(2_000);
+        const cats = await (await page.request.get(`/api/categories?page=${id}`)).json();
+        expect(Boolean(cats.find((c) => c.id === 'alpha')?.spread)).toBe(false);
+    });
 });

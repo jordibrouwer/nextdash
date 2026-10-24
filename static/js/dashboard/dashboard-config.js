@@ -22412,15 +22412,31 @@ class DashboardConfig {
      * caller fires this without awaiting, and a press on another page's row
      * reassigns `_catPageId` synchronously, so reading it late sent one page's
      * categories to another.
+     *
+     * One save per page at a time. Two toggles in a row sent two whole
+     * lists at once, and the older one could land last: the server kept the
+     * first click while the button showed the second.
      */
-    async saveCategories(pageId = this._catPageId) {
+    saveCategories(pageId = this._catPageId) {
+        const key = String(pageId);
+        // Read now, for the same reason as the page id.
+        const fallback = this._categories;
+        if (!this._catSaveChains) this._catSaveChains = new Map();
+        const run = (this._catSaveChains.get(key) || Promise.resolve())
+            .catch(() => {})
+            .then(() => this.saveCategoriesNow(pageId, fallback));
+        this._catSaveChains.set(key, run);
+        return run;
+    }
+
+    async saveCategoriesNow(pageId, fallback) {
         // That page's own list from the table, whichever page the editor
         // points at by now; _categories only for a caller outside the table.
         // A table without this page refuses rather than send another page's
         // list, or none, in its place. No table and no list at all (the
         // table was just forgotten for a reload) refuses too: an empty
         // post would wipe the page's categories.
-        const list = this._catByPage ? this._catByPage.get(String(pageId)) : this._categories;
+        const list = this._catByPage ? this._catByPage.get(String(pageId)) : fallback;
         if (!Array.isArray(list) || (!this._catByPage && this._categoriesLoadFailed)) {
             this.notify(this.t('config.categoriesLoadFailed',
                 'Categories could not be loaded, so they will not be saved. Reload and try again.'), 'error');
