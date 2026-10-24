@@ -35,3 +35,29 @@ test('the icons and names of a column line up, with and without a ping', async (
     expect(m.icons, 'the icons start on different lines').toHaveLength(1);
     expect(m.names, 'the names start on different lines').toHaveLength(1);
 });
+
+/**
+ * The inset every row takes comes from one variable, so a layout with paddings of its own keeps them:
+ * in every layout the icons of a column still stand on one line, with a status or without.
+ */
+for (const layout of ['layout-cards', 'layout-list', 'layout-widgets', 'layout-compact', 'layout-masonry']) {
+    test(`the icons line up in ${layout}`, async ({ page }) => {
+        await page.setViewportSize({ width: 1400, height: 900 });
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForSelector('.category .bookmark-link', { timeout: 20_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        const m = await page.evaluate((cls) => {
+            const grid = document.querySelector('.dashboard-grid');
+            [...grid.classList].filter((c) => c.startsWith('layout-')).forEach((c) => grid.classList.remove(c));
+            grid.classList.add(cls);
+            const column = document.querySelector('.category:not(.dashboard-widget)');
+            const rows = [...column.querySelectorAll('.bookmark-link')].filter((r) => r.offsetParent !== null);
+            rows.forEach((row, i) => { if (i % 2 === 0) row.classList.add('status-online'); });
+            return { icons: [...new Set(rows.map((r) => Math.round(r.querySelector('.bookmark-icon-slot').getBoundingClientRect().left)))], count: rows.length };
+        }, layout);
+        test.skip(m.count < 2, 'no column with two rows in this layout');
+        expect(m.icons, `the icons start on different lines in ${layout}`).toHaveLength(1);
+    });
+}

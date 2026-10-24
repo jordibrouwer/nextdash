@@ -92,12 +92,8 @@ body.no-animations .bookmark-link:not(.bookmark-inline-editing) {
     transition: none;
 }
 
-/* Every row takes the same inset, with a status or without: the icons of a column stand on one line.
-   A row that has a ping used to take 4px more than the rest, and its icon stood out of line. */
-.bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:not(.bookmark-inline-editing) {
-    padding-left: calc(var(--bookmark-row-start-pad, 6px) + 4px);
-}
-
+/* Status rows keep the corner of the row. The inset every row takes comes from --bookmark-row-start-pad (dashboard.css), so
+   it follows the layouts that use that variable and leaves the cards, list, widgets and launcher their own paddings. */
 .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link:is(.status-online, .status-offline, .status-checking):not(.bookmark-inline-editing) {
     border-radius: var(--layout-radius-sm, 8px);
 }
