@@ -6,9 +6,9 @@ const { WRITE_TOKEN, markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlocki
  * The action bar under the signature is a handle on the edge of the screen: flush to it, rounded only on
  * the inside, with a line of the accent along the inside. Classic keeps its floating pill.
  */
-async function setStyle(request, theme, materialStyle) {
+async function setStyle(request, theme, materialStyle, actionBarPosition = 'right') {
     const response = await request.post('/api/settings', {
-        data: { theme, materialStyle },
+        data: { theme, materialStyle, actionBarPosition },
         headers: { 'X-NextDash-Token': WRITE_TOKEN },
     });
     expect(response.ok(), 'settings save failed').toBe(true);
@@ -37,8 +37,22 @@ async function bar(page) {
 
 test.describe('the action bar', () => {
     test.afterEach(async ({ request }) => {
-        await setStyle(request, 'look-berry-dark', 'signature');
+        await setStyle(request, 'look-berry-dark', 'signature', 'right');
     });
+
+    for (const theme of ['arctic-cyan-dark', 'candlelit-study-dark']) {
+        test(`blends into the navigation when it sits in the header: ${theme}`, async ({ page, request }) => {
+            await setStyle(request, theme, 'signature', 'header');
+            await bar(page);
+            const m = await page.evaluate(() => {
+                const cs = getComputedStyle(document.querySelector('.header-shortcuts'));
+                return { bg: cs.backgroundColor, shadow: cs.boxShadow, position: cs.position };
+            });
+            expect(m.position, 'the bar is lifted out of the header').toBe('static');
+            expect(m.shadow, 'the bar has a shadow of its own in the header').toBe('none');
+            expect(m.bg, 'the bar has a fill of its own in the header').toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+        });
+    }
 
     for (const theme of ['arctic-cyan-dark', 'candlelit-study-dark', 'retro-crt-mk2-dark']) {
         test(`sits on the edge of the screen under the signature: ${theme}`, async ({ page, request }) => {

@@ -836,7 +836,7 @@ html[data-theme] body:is([data-material-style="classic"], :not([data-material]),
 
 
 /* ── The action bar: a handle on the edge of the screen, with the surface of the material ─────────── */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .dashboard-section.section-controls .header-shortcuts {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:is([data-action-bar="right"], [data-action-bar="left"], [data-action-bar="bottom"]) .dashboard-section.section-controls .header-shortcuts {
     --ab-r: min(var(--ov-radius), 14px);
     border: 0;
     background-color: var(--ov-fill-small);
@@ -864,7 +864,31 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 }
 
 /* What is under the pointer or the focus is lit from the edge, like the rail of a view. */
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .dashboard-section.section-controls .header-shortcuts :is(button, a):is(:hover, :focus-visible) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:is([data-action-bar="right"], [data-action-bar="left"], [data-action-bar="bottom"]) .dashboard-section.section-controls .header-shortcuts :is(button, a):is(:hover, :focus-visible) {
     background: var(--ov-hot);
     border-radius: var(--ov-r-item);
+}
+
+
+/* The mark of a column head opens the bar, and a hairline in the rule of the material parts the groups. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:is([data-action-bar="right"], [data-action-bar="left"], [data-action-bar="bottom"]) .dashboard-section.section-controls .header-shortcuts::before {
+    content: "";
+    flex: none;
+    align-self: center;
+    width: 14px;
+    height: 8px;
+    margin: 2px 0 0;
+    transform: skewX(-20deg);
+    background: linear-gradient(var(--accent-primary), var(--accent-primary)) 6% 0 / 34% 100% no-repeat, linear-gradient(color-mix(in srgb, var(--accent-primary) 55%, transparent), color-mix(in srgb, var(--accent-primary) 55%, transparent)) 56% 0 / 34% 100% no-repeat;
+    pointer-events: none;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:is([data-action-bar="right"], [data-action-bar="left"]) .dashboard-section.section-controls .header-shortcuts > * + * {
+    border-top: 1px solid var(--ov-rule);
+    padding-top: 6px;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-action-bar="bottom"] .dashboard-section.section-controls .header-shortcuts > * + * {
+    border-left: 1px solid var(--ov-rule);
+    padding-left: 6px;
 }
