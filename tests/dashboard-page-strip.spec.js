@@ -226,8 +226,8 @@ async function setCap(page, n) {
     await layoutSettled(page, HEADER_BOXES);
 }
 
-test('the header draws five tabs by default, not every page that fits', async ({ page }) => {
-    // Wide enough that five tabs are a choice rather than what happens to fit:
+test('the header draws four tabs by default, not every page that fits', async ({ page }) => {
+    // Wide enough that four tabs are a choice rather than what happens to fit:
     // the header folds by measurement now, so a narrower window answers with
     // the width instead of the cap.
     await openWithPages(page, 14, 1800);
@@ -239,11 +239,11 @@ test('the header draws five tabs by default, not every page that fits', async ({
 
     /*
      * A ceiling, not a target. The header folds by measurement as well, so a
-     * window that cannot hold five shows fewer -- what the cap promises is
+     * window that cannot hold four shows fewer -- what the cap promises is
      * that it never shows more, and that the rest are counted rather than
      * dropped.
      */
-    expect(s.visible, 'the strip drew more than the default cap').toBeLessThanOrEqual(5);
+    expect(s.visible, 'the strip drew more than the default cap').toBeLessThanOrEqual(4);
     expect(s.visible, 'the strip folded to nothing').toBeGreaterThan(0);
     expect(Number(s.chip.slice(1)) + s.visible, 'the chip does not account for every page').toBe(14);
 });

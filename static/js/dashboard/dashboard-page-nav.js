@@ -662,7 +662,7 @@ class DashboardPageNav {
         // chip lists every page.
         if (window.matchMedia?.('(max-width: 767px)')?.matches) return 1;
         const raw = Math.round(Number(this.dash?.settings?.maxPageTabs));
-        if (!Number.isFinite(raw) || raw === 0) return 5;
+        if (!Number.isFinite(raw) || raw === 0) return 4;
         return Math.min(9, Math.max(3, raw));
     }
 
