@@ -1152,20 +1152,12 @@ type SearchPick struct {
 	At    int64  `json:"at"` // Unix milliseconds of the most recent pick
 }
 
-// berryThemePromoID is the one-time card that asks an install which already
-// existed whether to try Berry. A fresh install starts on Berry, so it begins
-// with the question answered. It replaced the Confetti card, whose id
-// (confetti-theme-try-v1) is left in the files of the installs that answered
-// it: a new id is what puts the question to them again.
-const berryThemePromoID = "berry-theme-try-v1"
-
 // freshDiscoverabilityState is what a new install starts with.
 func freshDiscoverabilityState() *DiscoverabilityState {
 	return &DiscoverabilityState{
-		// The cards the start guide makes redundant: Berry is the theme a
-		// new install begins on, the guide asks for the weather and offers the
-		// theme studio, and the dashboard tour is one of its steps.
-		SeenSettingPromos: []string{berryThemePromoID, "clock-weather-v1", "theme-browser-try-v1"},
+		// The cards the start guide makes redundant: the guide asks for the
+		// weather and offers the theme studio, and the dashboard tour is one of its steps.
+		SeenSettingPromos: []string{"clock-weather-v1", "theme-browser-try-v1"},
 		SeenTips:          []string{"dashboardTutorialV3"},
 	}
 }

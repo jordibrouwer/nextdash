@@ -2,33 +2,6 @@ package app
 
 import "testing"
 
-func hasBerryPromo(s Settings) bool {
-	if s.DiscoverabilityState == nil {
-		return false
-	}
-	for _, id := range s.DiscoverabilityState.SeenSettingPromos {
-		if id == berryThemePromoID {
-			return true
-		}
-	}
-	return false
-}
-
-// The invitation to try Berry is for installs that already existed. A fresh
-// install starts on Berry and is not asked.
-func TestBerryInvitationIsNotForAFreshInstall(t *testing.T) {
-	if got := gridSettings(t, nil); !hasBerryPromo(got) {
-		t.Errorf("a fresh install has not answered the Berry invitation: %+v", got.DiscoverabilityState)
-	}
-}
-
-func TestBerryInvitationStaysOpenForAnExistingInstall(t *testing.T) {
-	got := gridSettings(t, gridFile(map[string]any{"theme": "slate-dark"}))
-	if hasBerryPromo(got) {
-		t.Error("an existing install was marked as having answered the invitation")
-	}
-}
-
 // A fresh install is walked through setup by the start guide, which asks for
 // the weather and offers the theme studio itself, and has the dashboard tour as
 // a step. So the corner cards and the automatic tour that cover the same ground
@@ -39,7 +12,7 @@ func TestFreshInstallStartsWithTheGuideOverlapAnswered(t *testing.T) {
 	if state == nil {
 		t.Fatal("no discoverability state on a fresh install")
 	}
-	for _, id := range []string{"berry-theme-try-v1", "clock-weather-v1", "theme-browser-try-v1"} {
+	for _, id := range []string{"clock-weather-v1", "theme-browser-try-v1"} {
 		found := false
 		for _, seen := range state.SeenSettingPromos {
 			found = found || seen == id
