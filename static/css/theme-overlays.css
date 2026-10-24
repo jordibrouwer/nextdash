@@ -529,7 +529,7 @@ html[data-theme][data-effects="off"] body[data-material-style="signature"] {
 
 /* Reduced transparency: a closed fill and no blur. */
 @media (prefers-reduced-transparency: reduce) {
-    html[data-theme] body[data-material-style="signature"] {
+    html[data-theme] body[data-material-style="signature"][data-material][data-material][data-material][data-material] {
         --ov-alpha: 1;
         --ov-alpha-small: 1;
         --ov-blur: 0px;
@@ -617,8 +617,8 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     transition-duration: calc(var(--ov-ease-out) * var(--enter-scale, 0.5) / 0.5);
 }
 
-html[data-theme] body.no-animations :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .omnibox-box),
-html[data-theme] body.no-view-animations :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .omnibox-box) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material].no-animations :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .omnibox-box),
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material].no-view-animations :is(.date-popover, .page-tab-popover, .move-popover, .field-popover, .glances-tip, .glances-info-pop, .inbox-snooze-menu, .tag-offer-pop, .icon-set-picker, .notes-modal, .omnibox-box) {
     animation: none;
 }
 
@@ -850,16 +850,18 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     backdrop-filter: none;
 }
 
+@media (min-width: 701px) {
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-action-bar="right"] .dashboard-section.section-controls .header-shortcuts {
-    right: 0;
-    border-radius: var(--ab-r) 0 0 var(--ab-r);
-    box-shadow: var(--ov-edge), var(--ov-cast), var(--ov-e2), inset 3px 0 0 var(--accent-primary);
-}
-
-html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-action-bar="left"] .dashboard-section.section-controls .header-shortcuts {
-    left: 0;
-    border-radius: 0 var(--ab-r) var(--ab-r) 0;
-    box-shadow: var(--ov-edge), var(--ov-cast), var(--ov-e2), inset -3px 0 0 var(--accent-primary);
+        right: 0;
+        border-radius: var(--ab-r) 0 0 var(--ab-r);
+        box-shadow: var(--ov-edge), var(--ov-cast), var(--ov-e2), inset 3px 0 0 var(--accent-primary);
+    }
+    
+    html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-action-bar="left"] .dashboard-section.section-controls .header-shortcuts {
+        left: 0;
+        border-radius: 0 var(--ab-r) var(--ab-r) 0;
+        box-shadow: var(--ov-edge), var(--ov-cast), var(--ov-e2), inset -3px 0 0 var(--accent-primary);
+    }
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-action-bar="bottom"] .dashboard-section.section-controls .header-shortcuts {
@@ -888,14 +890,30 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     pointer-events: none;
 }
 
+@media (min-width: 701px) {
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:is([data-action-bar="right"], [data-action-bar="left"]) .dashboard-section.section-controls .header-shortcuts > * + * {
     border-top: 1px solid var(--ov-rule);
     padding-top: 6px;
+}
 }
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-action-bar="bottom"] .dashboard-section.section-controls .header-shortcuts > * + * {
     border-left: 1px solid var(--ov-rule);
     padding-left: 6px;
+}
+
+/* On a phone the side bars stand at the bottom centre (dashboard.css): they are the bottom handle there. */
+@media (max-width: 700px) {
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:is([data-action-bar="right"], [data-action-bar="left"]) .dashboard-section.section-controls .header-shortcuts {
+    border-radius: var(--ab-r) var(--ab-r) 0 0;
+    bottom: 0;
+    box-shadow: var(--ov-edge), var(--ov-cast), var(--ov-e2), inset 0 3px 0 var(--accent-primary);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:is([data-action-bar="right"], [data-action-bar="left"]) .dashboard-section.section-controls .header-shortcuts > * + * {
+    border-left: 1px solid var(--ov-rule);
+    padding-left: 6px;
+}
 }
 
 
@@ -1303,4 +1321,43 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .config-view--library .config-bm-rail-item {
     border-radius: var(--ov-r-item);
+}
+
+
+/* A toast and a preview card hold buttons and links: no blur on them, as on every small layer. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.app-notification, .bookmark-preview-card) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+/* The bookmark form is a big layer like the others: under another layer it drops back to the second level
+   without the bar, and the one on top of two takes the deepest lift. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-form-modal-dialog[data-ov-covered] {
+    background-image: var(--ov-shine, linear-gradient(transparent, transparent)), var(--ov-image-big, none), linear-gradient(var(--ov-lift-2), var(--ov-lift-2));
+    box-shadow: var(--ov-edge-big), var(--ov-cast), var(--ov-e2);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-form-modal-dialog[data-ov-level="4"] {
+    background-image: var(--ov-shine, linear-gradient(transparent, transparent)), var(--ov-image-big, none), linear-gradient(var(--ov-lift-4), var(--ov-lift-4));
+}
+
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .bookmark-form-modal-dialog:not([data-ov-covered]) {
+    box-shadow: var(--edge-light, 0 0 0 0 transparent), var(--edge-dark, 0 0 0 0 transparent), var(--ov-e3), var(--ov-bar);
+}
+
+html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .bookmark-form-modal-dialog[data-ov-covered] {
+    box-shadow: var(--edge-light, 0 0 0 0 transparent), var(--edge-dark, 0 0 0 0 transparent), var(--ov-e2);
+}
+
+/* Ink draws the bar above the head on the topmost layer only; a covered layer keeps the crop marks. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)[data-ov-covered]::after {
+    background:
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 0 0 / 11px 1px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 0 0 / 1px 11px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 100% 0 / 11px 1px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 100% 0 / 1px 11px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 0 100% / 11px 1px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 0 100% / 1px 11px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 100% 100% / 11px 1px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 100% 100% / 1px 11px no-repeat;
 }
