@@ -3601,13 +3601,12 @@ html body .config-bm-more-menu .config-btn {
 .config-bm-ctr:focus-visible svg { filter: brightness(1.25); }
 
 /*
- * The preview stays in view while the settings below it change.
+ * The preview scrolls with the page.
  *
- * Tall, it pushed the first setting under the fold and then scrolled away
- * just when it was needed. On a wide, tall window the panel's head sits beside
- * the rows instead of under them, which brings it to about half the height,
- * and the whole block holds under the band. Elsewhere it stays a plain block
- * at the top: a sticky block that size would leave a phone no room to read.
+ * On a wide, tall window the panel's head sits beside the rows instead of under
+ * them, which brings the preview to about half the height. It does not stay in
+ * view while the settings below it change: it is part of the page, like the
+ * rest.
  */
 @media (min-width: 1100px) and (min-height: 760px) {
     .config-bm-view-preview .config-bm-view-preview-body {
@@ -3617,26 +3616,5 @@ html body .config-bm-more-menu .config-btn {
 
     .config-bm-view-preview .config-bm-view-preview-list {
         flex: 1 1 0;
-    }
-
-    .config-bm-view-preview {
-        position: sticky;
-        top: calc(var(--lvs-header-height, 0px) + var(--space-2, 0.5rem));
-        z-index: 3;
-        /* Opaque: the settings scroll under it, and the panels' own wash lets
-           them show through. */
-        background: color-mix(in srgb, var(--background-secondary) 70%, var(--background-primary));
-        box-shadow: 0 6px 14px -8px rgba(0, 0, 0, 0.5);
-    }
-}
-
-/* The surface rule in category-surface.css tints every config block at 35%;
-   a block the settings scroll under needs the solid version of that tint,
-   and it takes the same selector to say so. */
-@media (min-width: 1100px) and (min-height: 760px) {
-    html[data-theme] body #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-panel.config-bm-view-preview,
-    html[data-theme] body[data-cat-surface="card"] #dashboard-layout.config-layout:not(.library-layout) > .config-view .config-panel.config-bm-view-preview {
-        background-color: color-mix(in srgb, var(--background-secondary) 70%, var(--background-primary));
-        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 8%, transparent), 0 8px 16px -10px rgba(0, 0, 0, 0.55);
     }
 }
