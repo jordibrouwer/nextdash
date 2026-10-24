@@ -20776,6 +20776,10 @@ class DashboardConfig {
             pages.map((p) => p.name)
         );
         const copy = { ...source, id: newId, name };
+        // Set once the copy is on the server, so a failure after that can take
+        // it back: it stayed as an empty page under a "could not duplicate"
+        // toast, and a retry made a second one.
+        let pageSaved = false;
 
         try {
             const [bmRes, catRes] = await Promise.all([
@@ -20794,6 +20798,7 @@ class DashboardConfig {
                 this.repaintPtBody();
                 return;
             }
+            pageSaved = true;
 
             const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             if (Array.isArray(sourceCategories) && sourceCategories.length) {
@@ -20838,6 +20843,7 @@ class DashboardConfig {
             }
             this.notify(this.t('config.pageDuplicated', 'Page duplicated'), 'success');
         } catch {
+            if (pageSaved) await this.discardDuplicatedPage(newId);
             this.notify(this.t('config.pageDuplicateFailed', 'Could not duplicate this page'), 'error');
         }
         // The copy was listed before its categories were written, so the
@@ -20846,6 +20852,21 @@ class DashboardConfig {
         this.forgetCategoryLists();
         this.repaintPtBody();
         void this.dash.data?.fetchAndStoreDataRevision?.();
+    }
+
+    /**
+     * Take back a copy whose categories could not be written. The server puts
+     * a deleted page in the trash; a copy that never worked does not belong
+     * there, so that entry goes too. Best-effort: a failed rollback leaves the
+     * empty copy, as before.
+     */
+    async discardDuplicatedPage(id) {
+        try {
+            const res = await this.writeFetch(`/api/pages/${encodeURIComponent(id)}`, { method: 'DELETE' });
+            if (!res.ok) return;
+            this.forgetUnsavedPage(id);
+            await this.dropTrashEntry((item) => item.kind === 'page' && Number(item.pageId) === Number(id));
+        } catch { /* the copy stays; the error toast still says it failed */ }
     }
 
     /**
