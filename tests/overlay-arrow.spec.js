@@ -8,7 +8,7 @@ const { WRITE_TOKEN, markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlocki
  * where the two ended up, so a popover beside its trigger has none.
  */
 test.afterEach(async ({ request }) => {
-    await request.post('/api/settings', { data: { theme: 'look-ocean-dark', materialStyle: 'signature' }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
+    await request.post('/api/settings', { data: { theme: 'aurora-glass-dark', materialStyle: 'signature' }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
 });
 
 async function openDatePopover(page, request) {

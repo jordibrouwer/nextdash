@@ -89,7 +89,7 @@ async function measure(page) {
 
 test.describe('overlay surfaces per material', () => {
     test.afterEach(async ({ request }) => {
-        await request.post('/api/settings', { data: { theme: 'look-ocean-dark', materialStyle: 'signature' }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
+        await request.post('/api/settings', { data: { theme: 'aurora-glass-dark', materialStyle: 'signature' }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
     });
 
     test('every material gives the modal its corner and a fill, and the popover a fill without blur', async ({ page, request }) => {

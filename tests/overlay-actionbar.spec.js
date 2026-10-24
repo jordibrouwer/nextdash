@@ -37,7 +37,7 @@ async function bar(page) {
 
 test.describe('the action bar', () => {
     test.afterEach(async ({ request }) => {
-        await setStyle(request, 'look-ocean-dark', 'signature', 'right');
+        await setStyle(request, 'aurora-glass-dark', 'signature', 'right');
     });
 
     for (const theme of ['arctic-cyan-dark', 'candlelit-study-dark']) {

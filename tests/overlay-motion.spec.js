@@ -36,7 +36,7 @@ async function openSheet(page, request, off) {
 }
 
 test.afterEach(async ({ request }) => {
-    await request.post('/api/settings', { data: { theme: 'look-ocean-dark', materialStyle: 'signature' }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
+    await request.post('/api/settings', { data: { theme: 'aurora-glass-dark', materialStyle: 'signature' }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
 });
 
 test('a modal rises a few pixels without a zoom under the signature', async ({ page, request }) => {

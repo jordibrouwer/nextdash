@@ -1205,10 +1205,10 @@ const defaultNotesWidgetID = "w_000000000002"
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
-const defaultThemeID = "look-ocean-dark"
+const defaultThemeID = "aurora-glass-dark"
 
 // defaultThemeLightID is the light counterpart auto dark mode switches to.
-const defaultThemeLightID = "look-ocean-light"
+const defaultThemeLightID = "aurora-glass-light"
 
 /*
 The fallback depth and glow.

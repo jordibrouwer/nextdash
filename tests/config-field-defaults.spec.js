@@ -36,7 +36,7 @@ function serverDefaults() {
     }
 
     const named = {
-        defaultThemeID: 'look-ocean-dark',
+        defaultThemeID: 'aurora-glass-dark',
         defaultThemeDepth: 'glass',
         defaultGlowStrength: 'soft',
         defaultHealthAutoRecheckIntervalHours: 24,

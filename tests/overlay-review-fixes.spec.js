@@ -30,7 +30,7 @@ const alphaOf = (color) => {
 };
 
 test.afterEach(async ({ request }) => {
-    await request.post('/api/settings', { data: { theme: 'look-ocean-dark', materialStyle: 'signature' }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
+    await request.post('/api/settings', { data: { theme: 'aurora-glass-dark', materialStyle: 'signature' }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
 });
 
 test('with reduced transparency a modal is closed and has no blur, in every glass material', async ({ page, request }) => {

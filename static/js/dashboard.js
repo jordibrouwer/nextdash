@@ -79,7 +79,7 @@ class Dashboard {
         this.pinnedEmptyCategoryId = null;
         this.settings = {
             currentPage: 'default',
-            theme: 'look-ocean-dark',
+            theme: 'aurora-glass-dark',
             openInNewTab: true,
             showGridKeyLegend: true,
             columnsPerRow: 3,

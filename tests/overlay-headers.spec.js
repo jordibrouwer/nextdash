@@ -52,7 +52,7 @@ async function head(page) {
 
 test.describe('the head of a modal under a material', () => {
     test.afterEach(async ({ request }) => {
-        await request.post('/api/settings', { data: { theme: 'look-ocean-dark', materialStyle: 'signature', categoryHeaderStyle: 'theme' }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
+        await request.post('/api/settings', { data: { theme: 'aurora-glass-dark', materialStyle: 'signature', categoryHeaderStyle: 'theme' }, headers: { 'X-NextDash-Token': WRITE_TOKEN } });
     });
 
     test('the theme header puts the mark before the title and a rule under the head', async ({ page, request }) => {
