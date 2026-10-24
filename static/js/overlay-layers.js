@@ -83,16 +83,25 @@
         global.requestAnimationFrame(sync);
     }
 
+    /**
+     * Whether a batch of DOM changes can open, close or move a layer. The grid of categories is re-rendered
+     * wholesale and holds none of them, so a change inside it is only looked at for a layer that was put there
+     * itself (one test per node); everywhere else the added and removed subtrees are searched as well.
+     */
     function relevant(mutations) {
+        const WATCHED_SELECTOR = ROOT_SELECTOR + ',' + ARROW_SELECTOR;
         return mutations.some((mutation) => {
+            const target = /** @type {Element} */ (mutation.target);
             if (mutation.type === 'attributes') {
-                const target = /** @type {Element} */ (mutation.target);
-                return target.matches?.(ROOT_SELECTOR) === true || target.matches?.(ARROW_SELECTOR) === true;
+                return target.matches?.(WATCHED_SELECTOR) === true;
             }
+            const inGrid = target.closest?.('#dashboard-layout') != null;
             const touched = Array.from(mutation.addedNodes).concat(Array.from(mutation.removedNodes));
-            return touched.some((node) => node.nodeType === Node.ELEMENT_NODE
-                && (/** @type {Element} */ (node).matches(ROOT_SELECTOR) || /** @type {Element} */ (node).querySelector(ROOT_SELECTOR)
-                    || /** @type {Element} */ (node).matches(ARROW_SELECTOR) || /** @type {Element} */ (node).querySelector(ARROW_SELECTOR)));
+            return touched.some((node) => {
+                if (node.nodeType !== Node.ELEMENT_NODE) return false;
+                const el = /** @type {Element} */ (node);
+                return el.matches(WATCHED_SELECTOR) || (!inGrid && el.querySelector(WATCHED_SELECTOR) != null);
+            });
         });
     }
 
