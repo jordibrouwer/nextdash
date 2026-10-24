@@ -51,25 +51,31 @@ test.describe('Shift+letter views', () => {
         const sheet = page.locator('.modal-overlay.show');
         await expect(sheet).toBeVisible();
 
-        // The rendered label collapses the spaces around '+'.
-        await expect(sheet).toContainText('Shift+I');
-        await expect(sheet).toContainText('Shift+H');
-        await expect(sheet).toContainText('1–9');
+        // Rows show only what they do, so the keys are found through the
+        // filter, which searches them too (spaces squashed, so 'Shift+I' works).
+        const filter = sheet.locator('#cheat-sheet-filter');
+        for (const keys of ['Shift+I', 'Shift+H', '1–9']) {
+            await filter.fill(keys);
+            await expect(sheet.locator('.cheat-sheet-row:not([hidden])').first(), `no row for ${keys}`).toBeVisible();
+        }
+        await filter.fill('');
         // '0' still works but is on the way out; documenting it would teach a
         // shortcut that is going away.
         await expect(sheet).not.toContainText('0 = Inbox');
+        const searchable = await sheet.locator('.cheat-sheet-row').evaluateAll((rows) => rows.map((r) => r.dataset.search || '').join('|'));
+        expect(searchable).not.toContain('0=inbox');
 
         // The Health view went; its section went with it.
-        await expect(sheet.locator('summary.cheat-sheet-group-title', { hasText: /Health view/i })).toHaveCount(0);
+        await expect(sheet.locator('h3.cheat-sheet-group-title', { hasText: /Health view/i })).toHaveCount(0);
 
         const inboxGroup = sheet.locator('.cheat-sheet-group').filter({
-            has: page.locator('summary.cheat-sheet-group-title', { hasText: /Inbox view/i }),
+            has: page.locator('h3.cheat-sheet-group-title', { hasText: /Inbox view/i }),
         });
         await expect(inboxGroup).toContainText(/triage/i);
         await expect(inboxGroup).toContainText(/snooze/i);
 
         const triageGroup = sheet.locator('.cheat-sheet-group').filter({
-            has: page.locator('summary.cheat-sheet-group-title', { hasText: /Inbox triage/i }),
+            has: page.locator('h3.cheat-sheet-group-title', { hasText: /Inbox triage/i }),
         });
         await expect(triageGroup).toContainText(/mark as read|Keep and mark/i);
     });

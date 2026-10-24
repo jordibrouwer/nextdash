@@ -867,10 +867,12 @@ test.describe('Shift+S opens config', () => {
         // the combo into separate <kbd> elements, so match the row by its
         // description and assert the keys cell mentions both Shift and S.
         await page.keyboard.press('!');
-        const row = page.locator('.keyboard-cheat-sheet-table tr')
+        // Rows show only what they do; the keys appear in the dock once chosen.
+        const row = page.locator('.cheat-sheet-row')
             .filter({ hasText: found[0] }).first();
         await expect(row).toBeVisible();
-        const keysText = await row.locator('.keyboard-cheat-sheet-keys').innerText();
+        await row.click();
+        const keysText = await page.locator('#cheat-sheet-dock .keyboard-cheat-sheet-keys').innerText();
         expect(keysText).toMatch(/Shift/i);
         expect(keysText).toMatch(/\bS\b/);
     });

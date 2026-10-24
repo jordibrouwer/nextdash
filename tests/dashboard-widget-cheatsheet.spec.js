@@ -22,16 +22,16 @@ test.describe('the cheat sheet covers widgets', () => {
         const sheet = page.locator('.keyboard-cheat-sheet');
         await expect(sheet).toBeVisible({ timeout: 15_000 });
 
-        // textContent, not innerText: the sheet keeps the groups outside the
-        // current context collapsed, and a closed <details> renders only its
-        // summary — the rows are in the document either way.
+        // textContent, not innerText: filtered-out rows are hidden but present.
         const text = await sheet.evaluate((el) => el.textContent.replace(/\s+/g, ' '));
         expect(text).toContain('Widgets on the page');
-        // The four that are a widget's own rather than a bookmark's.
-        expect(text).toContain('F2 on widget');
-        expect(text).toContain('Shift+W on widget');
-        expect(text).toContain('Delete on widget');
-        expect(text).toContain('Shift+F10 on row');
+        // The four that are a widget's own rather than a bookmark's. Rows show only
+        // their description, so the keys are found through the filter, which
+        // searches them too.
+        for (const keys of ['F2 on widget', 'Shift+W on widget', 'Delete on widget', 'Shift+F10 on row']) {
+            await page.locator('#cheat-sheet-filter').fill(keys);
+            await expect(page.locator('.cheat-sheet-row:not([hidden])').first(), `no row for ${keys}`).toBeVisible();
+        }
     });
 
     test('reads in Dutch when the dashboard does', async ({ page }) => {

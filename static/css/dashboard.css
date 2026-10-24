@@ -5388,6 +5388,15 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .moda
     width: min(36rem, calc(100vw - 2.5rem));
 }
 
+/* The cheat sheet is four columns of cards with a search above and a dock below,
+   so it is wide and tall at a fixed size: only the columns scroll. The settings
+   search borrows its class and keeps the narrow shell above. */
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.keyboard-cheat-sheet-modal:not(.config-settings-jump-modal)) .modal {
+    width: min(1040px, 94vw);
+    height: min(46rem, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem));
+    max-height: calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem);
+}
+
 /* The release notes themselves, as against the notices that borrow the shell:
    wide and tall at a fixed size, so new changes sit side by side as cards and
    the modal does not jump when the section menu narrows the list. Lines stay

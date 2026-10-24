@@ -43,7 +43,9 @@ const slabStyle = (page, className) => page.evaluate((name) => {
 /** Two inset lines in one declaration: one lighting the top, one shading the foot. */
 const insetCount = (shadow) => shadow.split(/,(?![^(]*\))/).filter((p) => p.includes('inset')).length;
 
-const SLABS = ['cheat-sheet-group', 'recent-bookmarks-modal-list', 'tag-cloud-modal-body'];
+// The cheat sheet's cards left this list: they are columns with a hairline ring now
+// (see cheat-sheet-columns.spec.js), not slabs with a lit and a shaded edge.
+const SLABS = ['recent-bookmarks-modal-list', 'tag-cloud-modal-body'];
 
 test.describe('overlay slabs', () => {
     for (const className of SLABS) {

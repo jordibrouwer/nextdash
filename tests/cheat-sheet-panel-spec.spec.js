@@ -11,12 +11,9 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * line saying Esc closes it: the third way of saying the same thing, on a
  * panel whose header said nothing at all.
  *
- * Now a row reads as a sentence ending in its key, the header carries the name
- * and the key that opens the sheet, and a pinned foot says how much is in it.
- *
- * The sections stay in one column. Two were tried and read worse: the open
- * section is twenty rows and the other fourteen are a line each, so whatever
- * the split, one side was a wall and the other was mostly empty.
+ * Now the sections are columns of cards, a row is only what it does, the keys
+ * show in a dock under the columns once a row is chosen, the header carries the
+ * name and the key that opens the sheet, and a foot says how much is in it.
  */
 
 async function openCheatSheet(page, depth) {
@@ -34,19 +31,20 @@ async function openCheatSheet(page, depth) {
 }
 
 test.describe('the cheat sheet panel', () => {
-    test('a row reads as a sentence and ends in its key', async ({ page }) => {
+    test('a row shows only what it does; the keys wait in the dock', async ({ page }) => {
         await openCheatSheet(page);
 
-        const order = await page.evaluate(() => {
-            const row = document.querySelector('.keyboard-cheat-sheet-table tr');
-            const cells = [...row.children].map((c) => c.className);
-            const keys = row.querySelector('.keyboard-cheat-sheet-keys').getBoundingClientRect();
-            const desc = row.querySelector('.keyboard-cheat-sheet-description').getBoundingClientRect();
-            return { first: cells[0], keyStartsRightOfDescription: keys.left > desc.left };
-        });
+        const row = page.locator('.cheat-sheet-row').first();
+        await expect(row.locator('kbd, .keyboard-cheat-sheet-keys'), 'a row shows its keys before it is chosen').toHaveCount(0);
+        await row.click();
 
-        expect(order.first, 'the key still opens the row').toContain('description');
-        expect(order.keyStartsRightOfDescription, 'the key is not at the end of the row').toBe(true);
+        const order = await page.evaluate(() => {
+            const dock = document.getElementById('cheat-sheet-dock');
+            const keys = dock.querySelector('.keyboard-cheat-sheet-keys').getBoundingClientRect();
+            const text = dock.querySelector('.cheat-sheet-dock-text').getBoundingClientRect();
+            return { keysFirst: keys.left < text.left };
+        });
+        expect(order.keysFirst, 'the dock does not lead with the keys').toBe(true);
     });
 
     test('the header names the key, and closes the sheet', async ({ page }) => {
@@ -59,41 +57,31 @@ test.describe('the cheat sheet panel', () => {
         await expect(page.locator('#app-modal.show .keyboard-cheat-sheet-modal')).toHaveCount(0);
     });
 
-    test('the foot stays in view and the wide Close button is gone', async ({ page }) => {
+    test('the dock and foot stay in view and the wide Close button is gone', async ({ page }) => {
         await openCheatSheet(page);
 
         const state = await page.evaluate(() => {
-            const foot = document.querySelector('.cheat-sheet-foot');
-            const rect = foot.getBoundingClientRect();
+            const panel = document.querySelector('.keyboard-cheat-sheet-modal').getBoundingClientRect();
+            const foot = document.querySelector('.cheat-sheet-foot').getBoundingClientRect();
+            const dock = document.querySelector('.cheat-sheet-dock').getBoundingClientRect();
             const actions = document.querySelector('.keyboard-cheat-sheet-modal .modal-actions');
             return {
-                position: window.getComputedStyle(foot).position,
-                inView: rect.top < window.innerHeight && rect.bottom > 0,
-                // Opaque, or the rows scroll through the line covering them.
-                opaque: !/\/\s*0?\.\d|,\s*0?\.\d+\)/.test(window.getComputedStyle(foot).backgroundColor),
+                footInPanel: foot.bottom <= panel.bottom && foot.top >= panel.top,
+                dockAboveFoot: dock.bottom <= foot.top + 1,
                 actions: actions ? window.getComputedStyle(actions).display : 'absent',
-                count: (foot.textContent || '').trim(),
+                count: (document.querySelector('.cheat-sheet-foot').textContent || '').trim(),
             };
         });
 
-        expect(state.position, 'the foot scrolls away under the sections').toBe('sticky');
-        expect(state.inView, 'the foot is off screen').toBe(true);
-        expect(state.opaque, 'the foot is see-through').toBe(true);
+        expect(state.footInPanel, 'the foot is outside the panel').toBe(true);
+        expect(state.dockAboveFoot, 'the dock overlaps the foot').toBe(true);
         expect(state.actions, 'the wide Close button is back').toBe('none');
         expect(state.count, 'the foot does not say how much is in the sheet').toMatch(/\d/);
     });
 
-    test('the sections still fold, and the slab still knows about flat', async ({ page }) => {
+    test('the cards keep their ring on flat too', async ({ page }) => {
         await openCheatSheet(page, 'flat');
-
-        // The accordion is behaviour, not decoration: the fold and the Space
-        // key that drives it survive the redraw.
-        const folds = await page.evaluate(() => {
-            const group = document.querySelectorAll('details.cheat-sheet-group')[1];
-            const before = group.open;
-            group.querySelector('.cheat-sheet-group-title').click();
-            return { before, after: group.open };
-        });
-        expect(folds.after, 'the sections no longer fold').toBe(!folds.before);
+        const shadow = await page.evaluate(() => window.getComputedStyle(document.querySelector('.cheat-sheet-group')).boxShadow);
+        expect(shadow, 'the card lost its ring').toContain('inset');
     });
 });

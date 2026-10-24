@@ -79,7 +79,7 @@ test.describe('dashboard overlay focus', () => {
         await page.evaluate(() => {
             window.DashboardFeaturePromos?.dismissOpen?.();
             const modal = document.querySelector('#app-modal.show .keyboard-cheat-sheet-modal');
-            const body = modal?.querySelector('.modal-body');
+            const body = modal?.querySelector('.cheat-sheet-scroller');
             if (body instanceof HTMLElement) {
                 body.scrollTop = 0;
             }
@@ -88,14 +88,14 @@ test.describe('dashboard overlay focus', () => {
         // Move focus off the filter input onto a non-typing element so PageDown
         // scrolls the modal body (the handler intentionally ignores scroll keys
         // while an input/textarea is focused). A single Tab lands back on the
-        // filter via the focus trap, so focus a group summary explicitly.
+        // filter via the focus trap, so focus a row explicitly. The columns scroll, not the modal body.
         const before = await page.evaluate(() => {
             const modal = document.querySelector('#app-modal.show .keyboard-cheat-sheet-modal');
-            const body = modal?.querySelector('.modal-body');
+            const body = modal?.querySelector('.cheat-sheet-scroller');
             if (!(body instanceof HTMLElement)) {
                 return null;
             }
-            const summary = modal.querySelector('.cheat-sheet-group-title');
+            const summary = modal.querySelector('.cheat-sheet-row');
             if (summary instanceof HTMLElement) {
                 summary.focus({ preventScroll: true });
             } else {
@@ -110,7 +110,7 @@ test.describe('dashboard overlay focus', () => {
         // position rather than asserting after a single fixed timeout.
         await expect.poll(async () => page.evaluate((prev) => {
             const modal = document.querySelector('#app-modal.show .keyboard-cheat-sheet-modal');
-            const body = modal?.querySelector('.modal-body');
+            const body = modal?.querySelector('.cheat-sheet-scroller');
             return body instanceof HTMLElement ? body.scrollTop > prev : false;
         }, before)).toBe(true);
 
@@ -135,7 +135,7 @@ test.describe('dashboard overlay focus', () => {
         await expect(page.locator('#cheat-sheet-no-results')).toBeHidden();
     });
 
-    test('cheat sheet toggles focused section with Space', async ({ page }) => {
+    test('cheat sheet selects the focused row with Space', async ({ page }) => {
         await closeDashboardOverlays(page);
         await page.keyboard.press('!');
         await expect(page.locator('#app-modal.show .keyboard-cheat-sheet-modal')).toBeVisible({ timeout: 5000 });
@@ -143,30 +143,11 @@ test.describe('dashboard overlay focus', () => {
             window.DashboardFeaturePromos?.dismissOpen?.();
         });
 
-        const state = await page.evaluate(() => {
-            const groups = Array.from(document.querySelectorAll(
-                '#app-modal.show .keyboard-cheat-sheet-modal details.cheat-sheet-group'
-            ));
-            if (groups.length < 2) {
-                return { ok: false };
-            }
-            const target = groups[1];
-            const summary = target.querySelector('.cheat-sheet-group-title');
-            if (!(summary instanceof HTMLElement)) {
-                return { ok: false };
-            }
-            summary.focus({ preventScroll: true });
-            const before = target.open;
-            document.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
-            const afterFirst = target.open;
-            document.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
-            const afterSecond = target.open;
-            return { ok: true, before, afterFirst, afterSecond };
-        });
-
-        expect(state.ok).toBe(true);
-        expect(state.afterFirst).toBe(!state.before);
-        expect(state.afterSecond).toBe(state.before);
+        const row = page.locator('#app-modal.show .cheat-sheet-row').nth(1);
+        await row.focus();
+        await page.keyboard.press('Space');
+        await expect(row).toHaveAttribute('aria-pressed', 'true');
+        await expect(page.locator('#cheat-sheet-dock .keyboard-cheat-sheet-keys')).toBeVisible();
     });
 
     test('recent bookmarks shortcut moves focus into modal', async ({ page }) => {
