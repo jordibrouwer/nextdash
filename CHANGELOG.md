@@ -12,6 +12,7 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 
 ## Table of contents
 
+- [v1.22.0](#v1220)
 - [v1.21.3 — 23 October 2026](#v1213--23-october-2026)
 - [v1.21.2 — 23 October 2026](#v1212--23-october-2026)
 - [v1.21.1 — 23 October 2026](#v1211--23-october-2026)
@@ -119,6 +120,21 @@ Releases before v1.0.0, on the old calendar numbering (up to v2026.09.09.3), are
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [Older releases (archive)](CHANGELOG-ARCHIVE.md)
 - [How releases are numbered](#how-releases-are-numbered)
+
+---
+
+## v1.22.0
+
+Not released yet.
+
+### Config
+
+- **fix — taking a tag off a bookmark no longer undoes a settings save.** `refuseRemovedTags` (`tag_refusals.go`) read the settings, added the refusal and wrote them all back without `settingsMu`, so a Config save landing in between was lost or put back. It now holds the same lock as `SaveSettings`. `TestRefusalWaitsForTheSettingsLock` fails without it.
+- **fix — `POST /api/pages` refuses a page id below 1.** A 0 or a negative id was written as `bookmarks-0.json`, which no page list reads back, and stayed in `pages.json`. Now `400 Invalid page ID`. Covered by `TestSavePagesRefusesAnIDBelowOne`.
+- **fix — a page delete that fails no longer leaves a trash entry.** `DeletePage` trashes the page before removing its file; when the removal failed, the entry stayed as a copy of a live page whose Restore answered 409. The entry is now taken back out. Covered by `TestDeletePageThatFailsLeavesNoTrashEntry`.
+- **fix — a duplicate whose categories fail leaves no empty page behind.** `duplicatePage` saved the copy first and, when the categories write failed, showed "Could not duplicate this page" over a page that did exist; a retry made a second one. `discardDuplicatedPage` deletes the copy and drops its trash entry.
+- **fix — a category deleted on another device stays deleted.** The categories editor sends the whole list, and `addCategoriesMadeElsewhere` only added what was new on the server, so the next edit here put a category deleted elsewhere back. `_catOnServer` remembers what the server last had; a category gone from it since leaves the list too.
+- **fix — category saves for one page go out one at a time.** Two quick toggles sent two whole lists at once and the older could land last, so the server kept the first click while the button showed the second. `saveCategories` now queues per page. The last three are covered by `tests/config-structure-review-fixes.spec.js`, each failing without its fix.
 
 ---
 
