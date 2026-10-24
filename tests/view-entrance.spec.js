@@ -197,6 +197,25 @@ function openTransition(page, selector) {
 }
 
 /**
+ * The 160ms rise below is the Classic contract; the signature one has its own spec (overlay-motion).
+ * The pin is there from the first frame, so the panels are never drawn in the signature first and
+ * left to transition to the Classic state.
+ */
+async function pinClassic(page) {
+    await page.addInitScript(() => {
+        const hold = () => {
+            const body = document.body;
+            if (body && body.getAttribute('data-material-style') !== 'classic') body.setAttribute('data-material-style', 'classic');
+        };
+        new MutationObserver(hold).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-material-style'] });
+    });
+    await page.reload();
+    await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
+    await page.waitForFunction(() => Boolean(window.dashboardInstance), null, { timeout: 20_000 });
+    await page.waitForTimeout(600);
+}
+
+/**
  * The pace a modal's panel opens at: the duration its transform transition (or
  * its modalRise keyframe) is set to, in ms, read from the style it opens with.
  *
@@ -242,6 +261,8 @@ test.describe('modals', () => {
     for (const modal of MODALS) {
         test(`${modal.name} rises in like the tag cloud, at the default pace`, async ({ page }) => {
             await openDashboard(page);
+            // The 160ms contract below is the Classic one; the signature rise has its own spec (overlay-motion).
+            await pinClassic(page);
             await page.locator('body').press(modal.key);
             await expect(page.locator(modal.panel).first()).toBeVisible({ timeout: 10_000 });
             // The cloud's 320ms at the Normal step.
@@ -321,6 +342,8 @@ test.describe('modals from the action bar move like the add-bookmark form', () =
     for (const position of ['header', 'right']) for (const b of BUTTONS) {
         test(`${b.name}, bar ${position}`, async ({ page }) => {
             await openDashboard(page);
+            // The 160ms contract below is the Classic one; the signature rise has its own spec (overlay-motion).
+            await pinClassic(page);
             await page.evaluate(async (pos) => {
                 const d = window.dashboardInstance;
                 Object.assign(d.settings, { actionBarPosition: pos, maxHeaderActions: 9 });

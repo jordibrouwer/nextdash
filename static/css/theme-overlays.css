@@ -892,3 +892,55 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     border-left: 1px solid var(--ov-rule);
     padding-left: 6px;
 }
+
+
+/* ── The preview card: with a picture, the picture stands on the left of the title and the text ───── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card.is-visible:has(.bookmark-preview-card-image-wrap:not([hidden])) {
+    display: grid;
+    grid-template-columns: 9.5rem minmax(0, 1fr);
+    width: min(520px, calc(100vw - 24px));
+    align-items: start;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card:has(.bookmark-preview-card-image-wrap:not([hidden])) .bookmark-preview-card-image-wrap {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    align-self: stretch;
+    width: auto;
+    max-height: none;
+    aspect-ratio: auto;
+    border: 0;
+    border-right: 1px solid var(--ov-rule);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card:has(.bookmark-preview-card-image-wrap:not([hidden])) .bookmark-preview-card-head {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card:has(.bookmark-preview-card-image-wrap:not([hidden])) :is(.bookmark-preview-card-description, .bookmark-preview-card-empty) {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card:has(.bookmark-preview-card-image-wrap:not([hidden])) .bookmark-preview-card-note {
+    grid-column: 2;
+    grid-row: 3;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-preview-card:has(.bookmark-preview-card-image-wrap:not([hidden])) :is(.bookmark-preview-card-tags, .bookmark-preview-card-facts, .bookmark-preview-card-embed) {
+    grid-column: 1 / -1;
+}
+
+
+/* A card with no scrim behind it lies straight on the page, so its fill is as closed as a list's. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.bookmark-preview-card, .app-notification, .app-discovery-card) {
+    background-color: var(--ov-fill-small);
+}
+
+
+/* Animations off (the site-wide one, or the one for views and modals): a layer is simply there. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material]:is(.no-animations, .no-view-animations) {
+    --modal-enter-from: none;
+    --modal-enter-transition: none;
+}
