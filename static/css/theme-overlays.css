@@ -944,3 +944,34 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     --modal-enter-from: none;
     --modal-enter-transition: none;
 }
+
+
+/* ── Save this link: the address, the preview and the two choices lie on the surface ───────────────── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.paste-choice-url, .paste-choice-preview, .paste-choice-card) {
+    background-color: color-mix(in srgb, black calc(14% * var(--ov-k) + 4%), transparent);
+    background-image: none;
+    border: 0;
+    border-radius: min(var(--ov-radius), 14px);
+    box-shadow: inset 0 0 0 1px var(--ov-rule);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .paste-choice-url {
+    border-radius: var(--ov-r-control);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .paste-choice-card:is(:hover, :focus-visible, .is-selected, [aria-selected="true"], [aria-pressed="true"]) {
+    background-color: var(--ov-hot);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 70%, transparent), inset 3px 0 0 var(--accent-primary);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .paste-choice-kbd {
+    border: 0;
+    border-radius: var(--ov-r-item);
+    box-shadow: inset 0 0 0 1px var(--ov-rule);
+    background: color-mix(in srgb, black calc(14% * var(--ov-k) + 4%), transparent);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .paste-choice-preview-thumb {
+    border-radius: var(--ov-r-item);
+    background: color-mix(in srgb, black calc(18% * var(--ov-k) + 6%), transparent);
+}
