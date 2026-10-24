@@ -833,3 +833,38 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 html[data-theme] body:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .omnibox-box {
     box-shadow: var(--edge-light, 0 0 0 0 transparent), var(--ov-edge, 0 0 0 0 transparent), var(--ov-cast, 0 0 0 0 transparent), 0 18px 36px -18px color-mix(in srgb, black 55%, transparent), 0 0 0 1px color-mix(in srgb, var(--accent-primary) 28%, transparent);
 }
+
+
+/* ── The action bar: a handle on the edge of the screen, with the surface of the material ─────────── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .dashboard-section.section-controls .header-shortcuts {
+    --ab-r: min(var(--ov-radius), 14px);
+    border: 0;
+    background-color: var(--ov-fill-small);
+    background-image: var(--ov-image, none);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-action-bar="right"] .dashboard-section.section-controls .header-shortcuts {
+    right: 0;
+    border-radius: var(--ab-r) 0 0 var(--ab-r);
+    box-shadow: var(--ov-edge), var(--ov-cast), var(--ov-e2), inset 3px 0 0 var(--accent-primary);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-action-bar="left"] .dashboard-section.section-controls .header-shortcuts {
+    left: 0;
+    border-radius: 0 var(--ab-r) var(--ab-r) 0;
+    box-shadow: var(--ov-edge), var(--ov-cast), var(--ov-e2), inset -3px 0 0 var(--accent-primary);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-action-bar="bottom"] .dashboard-section.section-controls .header-shortcuts {
+    bottom: 0;
+    border-radius: var(--ab-r) var(--ab-r) 0 0;
+    box-shadow: var(--ov-edge), var(--ov-cast), var(--ov-e2), inset 0 3px 0 var(--accent-primary);
+}
+
+/* What is under the pointer or the focus is lit from the edge, like the rail of a view. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .dashboard-section.section-controls .header-shortcuts :is(button, a):is(:hover, :focus-visible) {
+    background: var(--ov-hot);
+    border-radius: var(--ov-r-item);
+}
