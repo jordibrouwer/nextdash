@@ -61,6 +61,8 @@
 
     function sync() {
         scheduled = false;
+        // Two frames on: the code that opened a popover has placed it by then.
+        global.requestAnimationFrame(() => global.requestAnimationFrame(placeArrows));
         document.querySelectorAll('[data-ov-covered], [data-ov-level]').forEach(clear);
         const open = openLayers();
         open.forEach((layer, index) => {
@@ -89,7 +91,8 @@
             }
             const touched = Array.from(mutation.addedNodes).concat(Array.from(mutation.removedNodes));
             return touched.some((node) => node.nodeType === Node.ELEMENT_NODE
-                && (/** @type {Element} */ (node).matches(ROOT_SELECTOR) || /** @type {Element} */ (node).querySelector(ROOT_SELECTOR)));
+                && (/** @type {Element} */ (node).matches(ROOT_SELECTOR) || /** @type {Element} */ (node).querySelector(ROOT_SELECTOR)
+                    || /** @type {Element} */ (node).matches(ARROW_SELECTOR) || /** @type {Element} */ (node).querySelector(ARROW_SELECTOR)));
         });
     }
 
@@ -106,7 +109,51 @@
         schedule();
     }
 
-    global.OverlayLayers = { sync: schedule, syncNow: sync, openLayers };
+    /*
+     * The arrow of a popover: it points at what opened it. A popover is placed by the code that opens
+     * it, wherever it fits, so the arrow is read afterwards from where the popover and its trigger
+     * ended up, and left out when the popover sits beside the trigger or the trigger cannot be found.
+     * The list popover scrolls, so its arrow would be clipped: it has none.
+     */
+    const ARROW_SELECTOR = '.date-popover, .page-tab-popover, .field-popover';
+
+    function arrowAnchor(pop) {
+        const open = Array.from(document.querySelectorAll('[aria-expanded="true"]')).filter((el) => !pop.contains(el));
+        const pr = pop.getBoundingClientRect();
+        const distance = (el) => {
+            const r = el.getBoundingClientRect();
+            return Math.hypot(r.left + r.width / 2 - (pr.left + pr.width / 2), r.top + r.height / 2 - (pr.top + pr.height / 2));
+        };
+        if (open.length) return open.sort((a, b) => distance(a) - distance(b))[0];
+        const active = document.activeElement;
+        return active && active !== document.body && !pop.contains(active) ? active : null;
+    }
+
+    function placeArrow(pop) {
+        if (!pop.isConnected) return;
+        const anchor = arrowAnchor(pop);
+        const clear = () => {
+            pop.removeAttribute('data-ov-arrow');
+            pop.style.removeProperty('--ov-arrow-x');
+        };
+        if (!anchor) return clear();
+        const pr = pop.getBoundingClientRect();
+        const ar = anchor.getBoundingClientRect();
+        if (!pr.width || !ar.width) return clear();
+        let side = '';
+        if (pr.top >= ar.bottom - 2) side = 'top';
+        else if (pr.bottom <= ar.top + 2) side = 'bottom';
+        if (!side) return clear();
+        const x = Math.min(Math.max(ar.left + ar.width / 2 - pr.left, 16), pr.width - 16);
+        pop.style.setProperty('--ov-arrow-x', Math.round(x) + 'px');
+        pop.setAttribute('data-ov-arrow', side);
+    }
+
+    function placeArrows() {
+        document.querySelectorAll(ARROW_SELECTOR).forEach(placeArrow);
+    }
+
+    global.OverlayLayers = { sync: schedule, syncNow: sync, openLayers, placeArrows };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init, { once: true });

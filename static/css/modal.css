@@ -1868,8 +1868,6 @@ body.no-animations .modal-button.danger.selected {
 }
 
 /* Keyboard clarity: always show where focus is inside cheat sheet modal. */
-.keyboard-cheat-sheet-modal .cheat-sheet-filter:focus-visible,
-.keyboard-cheat-sheet-modal .cheat-sheet-row:focus-visible,
 .keyboard-cheat-sheet-modal .modal-button:focus-visible {
     outline: 2px solid color-mix(in srgb, var(--accent-primary) 82%, #fff 18%);
     outline-offset: 2px;
@@ -1877,7 +1875,8 @@ body.no-animations .modal-button.danger.selected {
 }
 
 .keyboard-cheat-sheet-modal .cheat-sheet-row:focus-visible {
-    outline-offset: -2px;
+    outline: none;
+    box-shadow: inset 2px 0 0 var(--accent-primary);
     background: var(--ov-hot, color-mix(in srgb, var(--accent-primary) 14%, transparent));
     color: var(--text-primary);
 }

@@ -72,7 +72,7 @@ async function readPlate(page, plate) {
         return {
             material: document.body.getAttribute('data-material'),
             bg: cs.backgroundColor,
-            image: cs.backgroundImage,
+            image: cs.backgroundImage.replace(/linear-gradient\(rgba\(0, 0, 0, 0\), rgba\(0, 0, 0, 0\)\)(, )?/g, '').replace(/, $/, '').trim() || 'none',
             radius: cs.borderTopLeftRadius,
             ovRadius,
             ovImageBig: bodyCs.getPropertyValue('--ov-image-big').trim(),
@@ -263,7 +263,7 @@ test.describe('view plates per material', () => {
                 const cs = getComputedStyle(document.querySelector('.lvs-drawer-frame'));
                 const out = {
                     bg: cs.backgroundColor,
-                    image: cs.backgroundImage,
+                    image: cs.backgroundImage.replace(/linear-gradient\(rgba\(0, 0, 0, 0\), rgba\(0, 0, 0, 0\)\)(, )?/g, '').replace(/, $/, '').trim() || 'none',
                     blur: cs.backdropFilter || cs.webkitBackdropFilter || 'none',
                 };
                 d.destroy();
