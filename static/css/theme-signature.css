@@ -23,18 +23,17 @@
    De rand van de categorie is een inset-schaduw en geen border: een border
    schuift de binnenkolommen van het raster (zie category-surface.css). */
 
-/* Neon: een donker vlak met een lijn van 1px in het accent en een halo eromheen. Het licht komt van het vlak zelf. */
+/* Neon: een donker vlak met alleen een lichtgevende bovenrand, waar het licht zacht naar beneden uitloopt. Geen rand rondom. */
 html[data-theme] body[data-material-style="signature"][data-material="neon"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
-    border-radius: calc(12px * var(--theme-radius-applied, 1));
+    border-radius: calc(10px * var(--theme-radius-applied, 1));
     background-color: color-mix(in srgb, var(--background-primary) 66%, transparent);
-    background-image: none;
+    background-image: linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 20%, transparent), transparent 38%);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     box-shadow:
-        inset 0 0 0 1px var(--accent-primary),
-        0 0 0 1px color-mix(in srgb, var(--accent-primary) 25%, transparent),
-        0 0 22px color-mix(in srgb, var(--accent-primary) 45%, transparent),
-        inset 0 0 26px color-mix(in srgb, var(--accent-primary) 8%, transparent);
+        0 -1px 0 var(--accent-primary),
+        0 -4px 14px -2px color-mix(in srgb, var(--accent-primary) 70%, transparent),
+        0 10px 20px -12px rgba(0, 0, 0, 0.8);
 }
 
 /* Koolstof: een weefsel in twee richtingen en een accentstreep links. */
