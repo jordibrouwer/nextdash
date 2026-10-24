@@ -939,6 +939,9 @@ class DashboardInlineEdit {
                 t: iconSetT,
                 notify: (msg, kind) => d.showNotification?.(msg, kind),
                 onPick: takeSetIcon,
+                // Not inside the dialog: its backdrop-filter makes it the containing block of
+                // fixed boxes and it clips them, so a picker from the right column was cut off.
+                container: document.body,
             });
         };
         // The app the sets match for the address, named for the picker's
@@ -2151,6 +2154,18 @@ class DashboardInlineEdit {
             if (document.querySelector('#app-modal.show, .bookmark-form-place-pop')) return;
             // The tag list takes Tab to complete what was typed.
             if (document.activeElement === tagsInput && document.querySelector('.tag-ac-dropdown .tag-ac-item-active')) return;
+            // The icon picker sits in the body, outside the form: Tab wraps inside it.
+            const pickerPop = document.activeElement?.closest?.('[data-icon-set-popover]');
+            if (pickerPop) {
+                const inner = [...pickerPop.querySelectorAll('input, button, [tabindex]')]
+                    .filter((el) => !el.disabled && el.tabIndex >= 0 && el.getClientRects().length > 0);
+                if (inner.length) {
+                    const i = inner.indexOf(document.activeElement);
+                    e.preventDefault();
+                    inner[(i + (e.shiftKey ? -1 : 1) + inner.length) % inner.length].focus();
+                }
+                return;
+            }
             const seenRadio = new Set();
             // The form, not the whole sheet: the header's × is for the mouse;
             // Escape is its key.

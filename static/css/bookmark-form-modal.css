@@ -763,8 +763,8 @@ body.bookmark-form-modal-open .tag-ac-dropdown {
 
 .icon-set-picker {
     position: fixed;
-    /* Above the container drawer's host (1405) when it opens from there. */
-    z-index: 1500;
+    /* In the body: above the bookmark sheet (10050) and the container drawer's host (1405). */
+    z-index: 10250;
     width: min(440px, calc(100vw - 16px));
     padding: 10px;
     border: 1px solid var(--border-primary);
