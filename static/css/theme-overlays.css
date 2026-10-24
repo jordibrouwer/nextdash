@@ -1227,7 +1227,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
         linear-gradient(var(--ink-tick), var(--ink-tick)) 0 100% / 1px 11px no-repeat,
         linear-gradient(var(--ink-tick), var(--ink-tick)) 100% 100% / 11px 1px no-repeat,
         linear-gradient(var(--ink-tick), var(--ink-tick)) 100% 100% / 1px 11px no-repeat,
-        linear-gradient(var(--text-primary), var(--text-primary)) 1.5rem 0.9rem / 2.25rem 4px no-repeat;
+        linear-gradient(var(--text-primary), var(--text-primary)) 1.5rem 6px / 2.25rem 4px no-repeat;
 }
 /* A small layer: the same tint and marks (9px, no bar) as background layers, so no pseudo-element is needed. */
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
