@@ -210,11 +210,11 @@ html[data-theme] body:not([data-depth="flat"]) .bookmark-form-modal-dialog {
  * leaves around 660px. Side by side the two groups come to roughly 350px, so
  * the dialog lands near 480px and the actions stay on screen.
  */
-@media (min-width: 860px) and (pointer: fine) {
-    /* One column now, so a narrower sheet: the fields are read top to
-       bottom, and a 900px line of them is a long way for the eye. */
+@media (min-width: 641px) {
+    /* Two columns: the fields on the left, the live preview and the options
+       on the right. The grid itself is in the block at the end of this file. */
     .bookmark-form-modal-dialog {
-        width: min(620px, 100%);
+        width: min(760px, 94vw);
     }
 }
 
@@ -876,4 +876,365 @@ body.bookmark-form-modal-open .tag-ac-dropdown {
     background: var(--background-secondary, rgba(128, 128, 128, 0.15));
     color: var(--text-tertiary);
     font-size: 0.8rem;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * The sheet in the look of the theme.
+ *
+ * Two columns: the fields on the left, and on the right the page as the
+ * dashboard will show it with the options stacked under it. The surface, the
+ * rule, the corners and the accent come from the material the same way the
+ * other layers take them. Those variables (--ov-*) exist only under Signature,
+ * so every use has a fallback and Classic keeps a plain, quiet form.
+ *
+ * Everything here is scoped with the modal's id: the form's fields are already
+ * painted from three places (the dashboard's inline form, the modal-open
+ * override above and the slab rules), and this has to win over all of them.
+ * ═════════════════════════════════════════════════════════════════════════ */
+
+#bookmark-form-modal .bookmark-form-modal-dialog {
+    --bf-rule: var(--ov-rule, color-mix(in srgb, var(--border-primary) 70%, transparent));
+    --bf-hot: var(--ov-hot, color-mix(in srgb, var(--accent-primary) 14%, transparent));
+    --bf-r-control: var(--ov-r-control, var(--radius-3, 6px));
+    --bf-r-item: var(--ov-r-item, var(--radius-3, 6px));
+    --bf-r-card: min(var(--ov-radius, 12px), 14px);
+    /* Cut back into the sheet: dark glass takes a darker well, a light page a lighter one. */
+    --bf-field: color-mix(in srgb, black calc(8% + 12% * var(--ov-k, 1)), transparent);
+}
+
+/*
+ * The panel. theme-overlays.css gives this surface to `.modal`, and this
+ * dialog is not one (it has its own class), so it is drawn here with the same
+ * variables: fill, sheen, rim, corner, the elevation of a layer and the accent
+ * bar along the top.
+ */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-form-modal-dialog {
+    background-color: var(--ov-fill);
+    background-image: var(--ov-image-big, none), linear-gradient(var(--ov-lift-3), var(--ov-lift-3));
+    border: 0;
+    border-radius: var(--ov-radius);
+    box-shadow: var(--ov-edge-big), var(--ov-cast), var(--ov-e3), var(--ov-bar);
+    -webkit-backdrop-filter: blur(var(--ov-blur)) saturate(1.3);
+    backdrop-filter: blur(var(--ov-blur)) saturate(1.3);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="neon"] .bookmark-form-modal-dialog {
+    box-shadow: var(--ov-edge-big), var(--ov-cast), var(--ov-e3), var(--ov-bar), 0 -4px 14px -2px color-mix(in srgb, var(--accent-primary) calc(70% * var(--ov-k)), transparent);
+}
+@media (prefers-reduced-transparency: reduce) {
+    html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-form-modal-dialog {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}
+
+/* The head: the mark of the category head, a rule under it. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-form-modal-header {
+    border-bottom-color: var(--ov-rule);
+}
+html[data-theme] body[data-cat-head="theme"][data-material-style="signature"]:not([data-material=""])[data-material] .bookmark-form-modal-title-group::before {
+    content: "";
+    display: inline-block;
+    flex: none;
+    width: 1em;
+    height: 0.7em;
+    transform: skewX(-20deg);
+    background: linear-gradient(var(--accent-primary), var(--accent-primary)) 6% 0 / 34% 100% no-repeat, linear-gradient(color-mix(in srgb, var(--accent-primary) 55%, transparent), color-mix(in srgb, var(--accent-primary) 55%, transparent)) 56% 0 / 34% 100% no-repeat;
+    opacity: 0.9;
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="terminal"] .bookmark-form-modal-header h2 {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] .bookmark-form-modal-header h2 {
+    text-transform: none;
+    font-variant: small-caps;
+    letter-spacing: 0.06em;
+}
+#bookmark-form-modal .bookmark-form-modal-key {
+    border-radius: var(--bf-r-item);
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--accent-primary);
+}
+#bookmark-form-modal .bookmark-form-modal-close {
+    border-radius: var(--bf-r-item);
+}
+#bookmark-form-modal .bookmark-form-modal-close:hover {
+    background: var(--bf-hot);
+}
+
+/* The body is the sheet itself, not a slab on it. */
+#bookmark-form-modal .bookmark-form-modal-body {
+    padding: 14px 20px 18px;
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-col {
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+/* ── Labels: small, spaced, quiet ───────────────────────────────────────── */
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-label,
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-form-card-label,
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-checkmode::before {
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    opacity: 1;
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-label {
+    display: flex;
+    align-items: center;
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-label .bookmark-form-info {
+    text-transform: none;
+    letter-spacing: 0;
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-field {
+    gap: 4px;
+}
+
+/* ── Fields: cut into the sheet, ringed in the material's rule ──────────── */
+#bookmark-form-modal .bookmark-form-modal-body :is(.bookmark-inline-input, .bookmark-inline-textarea) {
+    padding: 0.5rem 0.65rem;
+    border: 1px solid transparent;
+    border-radius: var(--bf-r-control);
+    background-color: var(--bf-field);
+    box-shadow: inset 0 0 0 1px var(--bf-rule);
+    transition: box-shadow 0.15s ease;
+}
+/* A native select lists its options on its own background: it keeps an opaque one. */
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-select {
+    border: 1px solid transparent;
+    border-radius: var(--bf-r-control);
+    background-color: var(--background-secondary);
+    box-shadow: inset 0 0 0 1px var(--bf-rule);
+}
+#bookmark-form-modal .bookmark-form-modal-body :is(.bookmark-inline-input, .bookmark-inline-textarea, .bookmark-inline-select):focus {
+    border-color: transparent;
+    box-shadow:
+        inset 0 0 0 1px var(--accent-primary),
+        0 0 0 3px color-mix(in srgb, var(--accent-primary) 22%, transparent),
+        0 0 14px color-mix(in srgb, var(--accent-primary) calc(24% * var(--theme-depth, 1)), transparent);
+}
+#bookmark-form-modal .bookmark-form-modal-body :is(.bookmark-inline-input, .bookmark-inline-textarea).input-error,
+#bookmark-form-modal .bookmark-form-modal-body :is(.bookmark-inline-input, .bookmark-inline-textarea).field-conflict {
+    box-shadow:
+        inset 0 0 0 1px var(--accent-error),
+        0 0 0 3px color-mix(in srgb, var(--accent-error) 20%, transparent);
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-textarea {
+    min-height: 3.2rem;
+    resize: vertical;
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-form-tags-suggest-refresh {
+    top: 1.45rem;
+}
+
+/* Suggested tags: the pill of a tag, drawn in the rule. */
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-form-tags-suggest .tag-suggest-chip {
+    border: 1px dashed var(--bf-rule);
+    border-radius: var(--bf-r-item);
+    background: transparent;
+}
+
+/* ── Chips: the check modes and Pinned ──────────────────────────────────── */
+#bookmark-form-modal .bookmark-form-modal-body :is(.bookmark-inline-checkmode-option, .bookmark-inline-toggle) {
+    padding: 0.28rem 0.7rem;
+    border: 0;
+    border-radius: var(--bf-r-item);
+    background-color: transparent;
+    box-shadow: inset 0 0 0 1px var(--bf-rule);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+#bookmark-form-modal .bookmark-form-modal-body :is(.bookmark-inline-checkmode-option, .bookmark-inline-toggle):hover {
+    background-color: color-mix(in srgb, var(--bf-hot) 60%, transparent);
+    color: var(--text-primary);
+}
+#bookmark-form-modal .bookmark-form-modal-body :is(.bookmark-inline-checkmode-input, .bookmark-inline-toggle-input):checked + :is(.bookmark-inline-checkmode-option, .bookmark-inline-toggle) {
+    background-color: var(--bf-hot);
+    box-shadow: inset 0 0 0 1px var(--accent-primary);
+    color: var(--accent-primary);
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-checkmode-info {
+    border: 0;
+    box-shadow: inset 0 0 0 1px var(--bf-rule);
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-checkmode {
+    gap: 6px;
+}
+/* The group has no visible label of its own; its accessible name is its caption. */
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-checkmode::before {
+    content: attr(aria-label);
+    flex: 0 0 100%;
+    margin-bottom: -2px;
+}
+
+/* ── The preview card: the page as the dashboard will show it ───────────── */
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-form-card-label {
+    margin: 2px 0 -6px;
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-form-card {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 84px auto;
+    gap: 0;
+    align-items: stretch;
+    padding: 0;
+    border: 0;
+    border-radius: var(--bf-r-card);
+    background: var(--bf-field);
+    box-shadow: inset 0 0 0 1px var(--bf-rule);
+}
+/* The picture area: the page's image over an accent-tinted gradient. */
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-form-card::before {
+    content: "";
+    grid-area: 1 / 1;
+    border-radius: var(--bf-r-card) var(--bf-r-card) 0 0;
+    background:
+        var(--ov-image, none),
+        linear-gradient(135deg,
+            color-mix(in srgb, var(--accent-primary) 42%, color-mix(in srgb, black calc(var(--ov-k, 1) * 100%), white)),
+            color-mix(in srgb, var(--accent-primary) 12%, color-mix(in srgb, black calc(var(--ov-k, 1) * 100%), white)));
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-form-card-image {
+    grid-area: 1 / 1;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--bf-r-card) var(--bf-r-card) 0 0;
+    object-fit: cover;
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-form-card-icon {
+    grid-area: 1 / 1;
+    z-index: 1;
+    justify-self: center;
+    align-self: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--bf-r-item);
+    background: color-mix(in srgb, var(--background-primary) 82%, transparent);
+    box-shadow: inset 0 0 0 1px var(--bf-rule), 0 2px 10px color-mix(in srgb, black 30%, transparent);
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-form-card.is-idle .bookmark-form-card-icon {
+    background: color-mix(in srgb, var(--background-primary) 55%, transparent);
+    border: 0;
+    box-shadow: inset 0 0 0 1px var(--bf-rule);
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-form-card-text {
+    grid-area: 2 / 1;
+    min-width: 0;
+    padding: 9px 12px 10px;
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-form-card-name {
+    font-size: var(--font-size-controls, 0.85rem);
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-form-card-name.is-page-title {
+    color: var(--text-secondary);
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-form-card-pencil {
+    border-radius: var(--bf-r-item);
+}
+
+/* ── Footer: the rule, the hint, buttons in the material's corner ───────── */
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-actions {
+    margin: var(--space-3, 0.75rem) -20px -18px;
+    padding: 12px 20px 16px;
+    border-top: 1px solid var(--bf-rule);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] #bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-actions {
+    background: var(--ov-fill);
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-hint kbd {
+    border: 0;
+    border-radius: var(--bf-r-item);
+    background: var(--bf-field);
+    box-shadow: inset 0 0 0 1px var(--bf-rule), 0 1px 0 var(--bf-rule);
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-actions .bookmark-inline-action-btn {
+    border: 0;
+    border-radius: var(--bf-r-item);
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--bf-rule);
+    color: var(--text-primary);
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-actions .bookmark-inline-action-btn:not(:disabled):not([aria-disabled="true"]):hover {
+    background: var(--bf-hot);
+}
+#bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-actions .bookmark-inline-save:not([aria-disabled="true"]):not(.bookmark-inline-save--invalid) {
+    background: var(--accent-primary);
+    box-shadow: none;
+    color: var(--on-accent, var(--background-primary));
+    font-weight: 700;
+}
+
+/* ── Two columns ────────────────────────────────────────────────────────────
+ * Explicit placement, by what a child is rather than where it sits. The place
+ * row and the flags row dissolve into the grid so Shortcut, the check modes
+ * and Pinned can each take their own cell in the right column.
+ *
+ *   left   url / name / tags / page › category / note
+ *   right  caption + preview card (beside url, name and tags),
+ *          shortcut / check mode / pinned (beside page › category and note)
+ *
+ * Under 641px none of this applies: the form is the single column it was.
+ */
+@media (min-width: 641px) {
+    #bookmark-form-modal .bookmark-form-modal-body .bookmark-form-col {
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+        column-gap: 22px;
+        row-gap: 12px;
+        align-items: start;
+    }
+    #bookmark-form-modal .bookmark-form-modal-body .bookmark-form-place,
+    #bookmark-form-modal .bookmark-form-modal-body .bookmark-form-flags-row {
+        display: contents;
+    }
+
+    #bookmark-form-modal .bookmark-form-col > .bookmark-inline-field:has([data-field="url"]) { grid-area: 1 / 1; }
+    #bookmark-form-modal .bookmark-form-col > .bookmark-inline-field:has([data-field="name"]) { grid-area: 2 / 1; }
+    #bookmark-form-modal .bookmark-form-col > .bookmark-inline-field:has([data-field="tags"]) { grid-area: 3 / 1; }
+    #bookmark-form-modal .bookmark-form-col .bookmark-form-place > .bookmark-inline-field:has(> .bookmark-form-place-field) { grid-area: 4 / 1; }
+    #bookmark-form-modal .bookmark-form-col > .bookmark-inline-field[data-field-block="note"] { grid-area: 5 / 1 / span 2; }
+
+    #bookmark-form-modal .bookmark-form-col > .bookmark-form-card-label { grid-area: 1 / 2; align-self: start; }
+    #bookmark-form-modal .bookmark-form-col > .bookmark-form-card {
+        grid-area: 1 / 2 / span 3;
+        /* Level with the top of the url field, under the caption. */
+        margin-top: 1.35rem;
+    }
+    #bookmark-form-modal .bookmark-form-col .bookmark-form-place > .bookmark-inline-field:has([data-field="shortcut"]) { grid-area: 4 / 2; }
+    #bookmark-form-modal .bookmark-form-col .bookmark-form-flags-row > .bookmark-inline-checkmode { grid-area: 5 / 2; }
+    #bookmark-form-modal .bookmark-form-col .bookmark-form-flags-row > .bookmark-inline-toggles { grid-area: 6 / 2; margin: 0; }
+
+    /* The options: rows with a hairline between them. */
+    #bookmark-form-modal .bookmark-form-col .bookmark-form-place > .bookmark-inline-field:has([data-field="shortcut"]),
+    #bookmark-form-modal .bookmark-form-col .bookmark-form-flags-row > .bookmark-inline-checkmode,
+    #bookmark-form-modal .bookmark-form-col .bookmark-form-flags-row > .bookmark-inline-toggles {
+        padding-top: 10px;
+        border-top: 1px solid var(--bf-rule);
+    }
+    #bookmark-form-modal .bookmark-form-col .bookmark-form-place > .bookmark-inline-field:has([data-field="shortcut"]) {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    #bookmark-form-modal .bookmark-form-col [data-field="shortcut"] {
+        width: 6.5rem;
+        text-transform: uppercase;
+        text-align: center;
+    }
+}
+
+/* A single column keeps the caption close to its card. */
+@media (max-width: 640px) {
+    #bookmark-form-modal .bookmark-form-modal-body .bookmark-form-card-label { margin: 4px 0 -8px; }
 }

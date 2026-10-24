@@ -780,6 +780,12 @@ class DashboardInlineEdit {
         // link's own title -- is the same: that name was chosen, and the page's
         // title is offered beside it.
         if (isCreate && nameInput.value.trim()) nameInput.dataset.touchedByReader = '1';
+        // The caption over the preview card, set in the form's own column so the
+        // two-column layout can put it above the card. Not a field label.
+        const cardLabel = document.createElement('div');
+        cardLabel.className = 'bookmark-form-card-label';
+        cardLabel.textContent = cfg('bookmarkPreviewLabel', 'Preview on the dashboard');
+        colWhat.appendChild(cardLabel);
         const cardHost = document.createElement('div');
         cardHost.className = 'bookmark-form-card';
         colWhat.appendChild(cardHost);
@@ -984,6 +990,8 @@ class DashboardInlineEdit {
         // the reader sees and acts on.
         iconWrap.hidden = true;
         cardHost.appendChild(iconWrap);
+        card.setName(nameInput.value);
+        nameInput.addEventListener('input', () => card.setName(nameInput.value));
         syncIconState();
         if (isCreate && !String(bookmark.url || '').trim()) card.setIdle();
         if (String(bookmark.url || '').trim()) void refreshIconSuggestions();
@@ -1224,6 +1232,7 @@ class DashboardInlineEdit {
         const shortcutInput = document.createElement('input');
         shortcutInput.type = 'text';
         shortcutInput.className = 'bookmark-inline-input';
+        shortcutInput.dataset.field = 'shortcut';
         shortcutInput.maxLength = 5;
         shortcutInput.value = (bookmark.shortcut || '').toUpperCase();
         // The warning about a letter appeared under the field as you typed and

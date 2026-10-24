@@ -14,7 +14,24 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * The ground stays near-opaque. It is the overlay tier of the glass tiers:
  * you type into this one, and what is behind it has no business showing
  * through.
+ *
+ * This is the Classic contract. Under the signature the sheet takes the
+ * material's own surface (corner, rim, elevation, blur) instead, and the form
+ * is a flat sheet with ringed fields rather than slabs; those are covered in
+ * bookmark-form-two-columns.spec.js. So these specs put the page in Classic,
+ * on the page only: a saved look would reach the specs running beside this one.
  */
+
+async function useClassic(page) {
+    await page.evaluate(async () => {
+        const theme = document.documentElement.getAttribute('data-theme');
+        await window.ThemeLoader.applySurfacesForTheme(theme, {
+            ...window.dashboardInstance.settings,
+            materialStyle: 'classic',
+            themeSurfacesForceAll: true,
+        });
+    });
+}
 
 async function openForm(page, depth = 'rich') {
     await page.setViewportSize({ width: 1500, height: 1000 });
@@ -23,6 +40,7 @@ async function openForm(page, depth = 'rich') {
     await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    await useClassic(page);
     await page.evaluate((d) => document.body.setAttribute('data-depth', d), depth);
     await page.keyboard.press('Shift+Equal');
     await page.waitForSelector('.bookmark-form-modal-dialog', { timeout: 20_000 });
@@ -91,7 +109,11 @@ test.describe('the bookmark form sheet', () => {
         // made -- and then choose the depth.
         await page.evaluate(async () => {
             window.ThemeLoader.applyTheme('tarnished-brass-dark');
-            await window.ThemeLoader.applySurfacesForTheme('tarnished-brass-dark', window.dashboardInstance.settings);
+            await window.ThemeLoader.applySurfacesForTheme('tarnished-brass-dark', {
+                ...window.dashboardInstance.settings,
+                materialStyle: 'classic',
+                themeSurfacesForceAll: true,
+            });
             document.body.setAttribute('data-depth', 'rich');
         });
         expect((await dialog(page, ['backdropFilter'])).backdropFilter,
@@ -151,6 +173,7 @@ const grounds = (page) => page.evaluate(() => {
         page: window.getComputedStyle(document.body).backgroundColor,
         sheet: bg('.bookmark-form-modal-dialog'),
         slab: bg('.bookmark-form-modal-body .bookmark-inline-col'),
+        slabShadow: window.getComputedStyle(document.querySelector('.bookmark-form-modal-body .bookmark-inline-col')).boxShadow,
         field: bg('.bookmark-form-modal-body .bookmark-inline-input'),
     };
 });
@@ -164,8 +187,10 @@ for (const depth of ['rich', 'flat']) {
         // is what a flat theme has left.
         expect(lum(g.sheet), `the sheet is the page colour at ${depth}`)
             .toBeGreaterThan(lum(g.page));
-        expect(lum(g.slab), 'the groups do not lift off the sheet')
-            .toBeGreaterThan(lum(g.sheet));
+        // The form is one flat sheet now, not a sheet with a slab on it: the
+        // column holds the fields without a ground or an edge of its own.
+        expect(g.slab, 'the column is a slab again').toBe('rgba(0, 0, 0, 0)');
+        expect(g.slabShadow, 'the column draws an edge again').toBe('none');
     });
 }
 
@@ -173,8 +198,6 @@ test('and the fields are cut into it, not stacked on it', async ({ page }) => {
     await openForm(page);
     const g = await grounds(page);
 
-    expect(lum(g.field), 'a field sits above the group holding it')
-        .toBeLessThan(lum(g.slab));
     expect(lum(g.field), 'a field sits above the sheet holding it')
         .toBeLessThan(lum(g.sheet));
 });
@@ -223,6 +246,7 @@ test('editing an existing bookmark gets the same sheet', async ({ page }) => {
     await page.waitForSelector('.bookmark-link', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    await useClassic(page);
 
     // Through the key someone presses, not through the renderer.
     await page.keyboard.press('ArrowDown');
@@ -234,8 +258,8 @@ test('editing an existing bookmark gets the same sheet', async ({ page }) => {
 
     const g = await grounds(page);
     expect(lum(g.sheet), 'the edit sheet is the page colour').toBeGreaterThan(lum(g.page));
-    expect(lum(g.slab), 'the edit groups do not lift off the sheet').toBeGreaterThan(lum(g.sheet));
-    expect(lum(g.field), 'an edit field sits above the group holding it').toBeLessThan(lum(g.slab));
+    expect(g.slab, 'the edit column is a slab again').toBe('rgba(0, 0, 0, 0)');
+    expect(lum(g.field), 'an edit field sits above the sheet holding it').toBeLessThan(lum(g.sheet));
 
     const boxes = await page.evaluate(() =>
         [...document.querySelectorAll('.bookmark-form-modal-body .bookmark-inline-col')]

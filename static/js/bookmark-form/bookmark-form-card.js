@@ -122,6 +122,18 @@
 
         const text = document.createElement('div');
         text.className = 'bookmark-form-card-text';
+        // The bookmark's name as the dashboard would print it: what is typed in
+        // the Name field, or the page's own title until something is typed.
+        const nameLine = document.createElement('div');
+        nameLine.className = 'bookmark-form-card-name';
+        nameLine.hidden = true;
+        let typedName = '';
+        let pageTitle = '';
+        const syncName = () => {
+            nameLine.textContent = typedName || pageTitle;
+            nameLine.hidden = !nameLine.textContent;
+            nameLine.classList.toggle('is-page-title', !typedName && Boolean(pageTitle));
+        };
         const hostLine = document.createElement('div');
         hostLine.className = 'bookmark-form-card-host';
         const desc = document.createElement('p');
@@ -143,7 +155,7 @@
         suggest.className = 'icon-set-suggest';
         suggest.setAttribute('data-icon-set-suggest', '');
         suggest.hidden = true;
-        text.append(hostLine, desc, suggest, retry);
+        text.append(nameLine, hostLine, desc, suggest, retry);
 
         const image = document.createElement('img');
         image.className = 'bookmark-form-card-image';
@@ -154,6 +166,11 @@
 
         return {
             suggestionsHost: suggest,
+            /** The name typed in the form; empty falls back to the page's own title. */
+            setName(value) {
+                typedName = String(value || '').trim();
+                syncName();
+            },
             /** The set icon shown while the bookmark has no icon of its own; null for none. */
             setAutoIcon(ref) {
                 autoRef = ref || null;
@@ -173,6 +190,8 @@
                 host.classList.remove('is-loading', 'is-empty');
                 hostLine.textContent = '';
                 currentHost = '';
+                pageTitle = '';
+                syncName();
                 desc.textContent = t('config.bookmarkPreviewIdle',
                     'The page’s own name, line and picture appear here once there is an address.');
                 image.hidden = true;
@@ -196,6 +215,8 @@
                 // A read that failed, or a page with nothing to say: the last
                 // page's preview is gone, and the card says why it is empty.
                 const said = ['title', 'description', 'image'].some((k) => String(preview?.[k] || '').trim());
+                pageTitle = String(preview?.title || '').trim();
+                syncName();
                 host.classList.toggle('is-empty', !said);
                 retry.hidden = said || !url;
                 hostLine.textContent = hostOf(url) || hostLine.textContent;
