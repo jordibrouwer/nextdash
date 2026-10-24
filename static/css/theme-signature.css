@@ -531,15 +531,20 @@ html[data-theme] body[data-material-style="signature"][data-material="enamel"][d
     /* A glazed tile: the thickness is only at the bottom, so the sides and the content stay clear. */
     --category-inline-pad: 1rem;
     padding-inline: var(--category-inline-pad);
-    padding-block: calc(var(--space-3, 0.75rem) + 5px);
+    padding-top: calc(var(--space-3, 0.75rem) + 2px);
+    padding-bottom: calc(var(--space-3, 0.75rem) + 8px);
     background-color: color-mix(in srgb, var(--accent-primary) 8%, var(--surface-2, var(--background-secondary)));
-    background-image: radial-gradient(50% 30% at 22% 0, rgba(255, 255, 255, 0.32), transparent 70%);
+    background-image: radial-gradient(closest-side, rgba(255, 255, 255, 0.55), transparent);
+    background-size: 46px 20px;
+    background-position: calc(100% - 64px) 5px;
+    background-repeat: no-repeat;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     box-shadow:
-        inset 0 0 0 3px var(--accent-primary),
-        inset 0 0 0 4px color-mix(in srgb, var(--text-primary) 38%, transparent),
-        0 6px 0 color-mix(in srgb, var(--accent-primary) 50%, #000);
+        inset 0 -6px 0 var(--accent-primary),
+        inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent),
+        inset 0 2px 0 rgba(255, 255, 255, 0.35),
+        0 10px 16px -8px rgba(0, 0, 0, 0.45);
 }
 
 /* Op licht is emaille helder: het bord is wit met een zweem accent, geen grijs. */
@@ -582,10 +587,19 @@ html[data-theme] body[data-material-style="signature"][data-material="enamel"] .
     border-radius: 99px;
 }
 
-/* Papier: een schriftblad: een rode kantlijn en regels waar de rijen op staan. Een
-   aangewezen rij wordt gemarkeerd met een markeerstift. */
-html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category {
-    border-radius: calc(2px * var(--theme-radius-applied, 1));
+/* Papier: een indexkaart. Een dubbele lijn boven, een zachte schaduw, kleine kapitalen met een
+   rode lijn onder de kop, en een aangewezen rij wordt gemarkeerd met een markeerstift. Ook bij
+   een open vlak en voor een widget: dat is dezelfde kaart. */
+html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="paper"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category,
+html[data-theme] body[data-material-style="signature"][data-material="paper"]:not([data-cat-surface="open"]) .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget,
+html[data-theme] body[data-material-style="signature"][data-material="paper"][data-cat-surface="open"] .dashboard-grid:is(.layout-default, .layout-compact, .layout-masonry, .layout-cards) .category.dashboard-widget {
+    position: relative;
+    border-radius: calc(3px * var(--theme-radius-applied, 1));
+    --category-inline-pad: 1rem;
+    padding-inline: var(--category-inline-pad);
+    padding-top: calc(var(--space-3, 0.75rem) + 6px);
+    padding-bottom: var(--space-3, 0.75rem);
     background-color: var(--surface-2, var(--background-secondary));
     background-image:
         linear-gradient(90deg, transparent calc(var(--category-inline-pad, 0.5rem) + 1.7rem), color-mix(in srgb, #e0505a 55%, transparent) calc(var(--category-inline-pad, 0.5rem) + 1.7rem) calc(var(--category-inline-pad, 0.5rem) + 1.7rem + 1px), transparent calc(var(--category-inline-pad, 0.5rem) + 1.7rem + 1px)),
