@@ -2458,7 +2458,10 @@ func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	widgets, blockOrder := h.store.GetPageBlocks(pageID)
+	// Named here so a delete that fails below can take its entry back out.
+	trashID := generateTrashID()
 	if err := h.store.AddTrashedBookmarks([]TrashedBookmark{{
+		ID:       trashID,
 		Kind:     TrashKindPage,
 		PageID:   pageID,
 		PageName: deleted.Name,
@@ -2478,6 +2481,9 @@ func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
 
 	// Delete the page file
 	if err := h.store.DeletePage(pageID); err != nil {
+		// The page is still there, so its trash entry would be a second copy
+		// of a live page, and restoring it answers 409 for good.
+		_ = h.store.DeleteTrashItem(trashID)
 		http.Error(w, "Error deleting page", http.StatusInternalServerError)
 		return
 	}

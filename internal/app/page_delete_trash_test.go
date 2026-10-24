@@ -526,6 +526,31 @@ func TestImportRowsLeavesAnInvalidRowOut(t *testing.T) {
 	}
 }
 
+// failingDeleteStore refuses to remove the page file, as a read-only or full
+// data dir does.
+type failingDeleteStore struct {
+	Store
+}
+
+func (s *failingDeleteStore) DeletePage(int) error {
+	return fmt.Errorf("remove bookmarks-2.json: permission denied")
+}
+
+// A delete that could not remove the page left its trash entry behind: a copy
+// of a page that is still live, whose Restore then answered 409 for good.
+func TestDeletePageThatFailsLeavesNoTrashEntry(t *testing.T) {
+	h, _ := newPageDeleteFixture(t, `{"page":{"id":2,"name":"Work"},"bookmarks":[{"name":"A","url":"https://a.example"}]}`)
+	h.store = &failingDeleteStore{Store: h.store}
+
+	rec := deletePageViaRouter(t, h, "2")
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500 (body %q)", rec.Code, rec.Body.String())
+	}
+	if items := h.store.GetTrashItems(); len(items) != 0 {
+		t.Fatalf("trash items = %d after a failed delete, want 0", len(items))
+	}
+}
+
 // Page ids start at 1. A 0 was saved as bookmarks-0.json, which no page list
 // reads back, and stayed in pages.json.
 func TestSavePagesRefusesAnIDBelowOne(t *testing.T) {
