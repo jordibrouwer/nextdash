@@ -1361,6 +1361,15 @@ html[data-theme] body:is([data-material-style="classic"], :not([data-material]),
     box-shadow: var(--edge-light, 0 0 0 0 transparent), var(--edge-dark, 0 0 0 0 transparent), var(--ov-e2);
 }
 
+/* A flat theme draws no edges: the form takes the elevation alone, as every other layer does. */
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .bookmark-form-modal-dialog:not([data-ov-covered]) {
+    box-shadow: var(--ov-e3), var(--ov-bar);
+}
+
+html[data-theme] body[data-depth="flat"]:is([data-material-style="classic"], :not([data-material]), [data-material=""]) .bookmark-form-modal-dialog[data-ov-covered] {
+    box-shadow: var(--ov-e2);
+}
+
 /* Ink draws the bar above the head on the topmost layer only; a covered layer keeps the crop marks. */
 html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)[data-ov-covered]::after {
     background:

@@ -79,7 +79,7 @@ test.describe('the bookmark form sheet', () => {
         expect(sheet.borderRadius, 'the sheet kept a card corner')
             .toBe(await radiusPx(page, '--radius-5'));
         expect(sheet.boxShadow, `no deep drop under the sheet: ${sheet.boxShadow}`)
-            .toMatch(/0px 24px 64px/);
+            .toMatch(/0px 44px 80px/);
     });
 
     test('and the two edges, once there is depth to draw them with', async ({ page }) => {
@@ -93,7 +93,7 @@ test.describe('the bookmark form sheet', () => {
         expect(insets(flat.boxShadow), 'flat drew edges').toBe(0);
         // The drop stays: flat is about the ladder, not about whether an
         // overlay floats.
-        expect(flat.boxShadow).toMatch(/0px 24px 64px/);
+        expect(flat.boxShadow).toMatch(/0px 44px 80px/);
     });
 
     test('the glass step reaches it, at the overlay tier', async ({ page }) => {

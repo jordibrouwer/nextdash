@@ -194,7 +194,7 @@ html[data-theme] body:not([data-depth="flat"]) .bookmark-form-modal-dialog {
 /*
  * Two columns once the window can hold them.
  *
- * 860px is where two columns of about 410 still hold a select, the icon row and
+ * 641px is where two columns still hold a select, the icon row and
  * the availability control without wrapping; the dialog itself is capped at 900
  * and simply uses what the window gives it below that. Under the breakpoint
  * nothing changes at all.
@@ -210,7 +210,7 @@ html[data-theme] body:not([data-depth="flat"]) .bookmark-form-modal-dialog {
  * leaves around 660px. Side by side the two groups come to roughly 350px, so
  * the dialog lands near 480px and the actions stay on screen.
  */
-@media (min-width: 641px) {
+@media (min-width: 641px) and (pointer: fine) {
     /* Two columns: the fields on the left, the live preview and the options
        on the right. The grid itself is in the block at the end of this file. */
     .bookmark-form-modal-dialog {
@@ -1070,6 +1070,7 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
 /* The group has no visible label of its own; its accessible name is its caption. */
 #bookmark-form-modal .bookmark-form-modal-body .bookmark-inline-checkmode::before {
     content: attr(aria-label);
+    content: attr(aria-label) / "";
     flex: 0 0 100%;
     margin-bottom: -2px;
 }
@@ -1184,11 +1185,13 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
  *   right  caption + preview card (beside url, name and tags),
  *          shortcut / check mode / pinned (beside page › category and note)
  *
- * Under 641px none of this applies: the form is the single column it was.
+ * Under 641px, or on a touch screen, none of this applies: the form is the single column it was.
  */
-@media (min-width: 641px) {
+@media (min-width: 641px) and (pointer: fine) {
     #bookmark-form-modal .bookmark-form-modal-body .bookmark-form-col {
         grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+        /* Tab goes down the left column, then down the right one, where the browser can read the grid that way. */
+        reading-flow: grid-columns;
         column-gap: 22px;
         row-gap: 12px;
         align-items: start;
