@@ -1132,3 +1132,149 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     border-radius: var(--ov-r-item);
     box-shadow: inset 0 0 0 1px var(--ov-rule);
 }
+
+
+/* ================================================================================================
+   Layer fidelity: layers cut from the same material as the column.
+   Placed after the Ink / Neon decoration blocks, so it may override them.
+   ================================================================================================ */
+
+/* ── Small layers, all materials: the column's texture (gloss band, scanlines, weave, blob) and a
+      layer that rests on the page: the material's rim and cast, not the accent ring of a level. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    background-image: var(--ov-shine, linear-gradient(transparent, transparent)), var(--ov-image-big, none), linear-gradient(var(--ov-lift-2), var(--ov-lift-2));
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .app-notification {
+    box-shadow: var(--ov-edge), var(--ov-cast), var(--ov-e2);
+}
+
+/* Glass: the rim of the column and a soft cast. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="glass"] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    /* Closed and without blur: these are read and pressed, and a blur on a pressable layer catches clicks in Safari. */
+    box-shadow: var(--ov-edge), 0 18px 36px -14px rgba(0, 0, 0, 0.55);
+}
+
+/* Lacquer: the lit top and the dark pooled bottom of the column, and its lip underneath. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="lacquer"] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    box-shadow: var(--ov-edge-big), 0 14px 26px -10px rgba(0, 0, 0, 0.6), 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Paper: the grain of the card, the double rule along its top, a soft cast and no ring. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog, .app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.04 0.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.32 0 0 0 0 0.2 0 0 0 0.12 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    background:
+        linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)) 0 5px / 100% 1px no-repeat,
+        linear-gradient(color-mix(in srgb, var(--text-primary) 55%, transparent), color-mix(in srgb, var(--text-primary) 55%, transparent)) 0 8px / 100% 1px no-repeat,
+        var(--paper-grain);
+    background-color: var(--ov-fill-small);
+    box-shadow: var(--ov-cast);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog):not([data-ov-covered]) {
+    background-image: var(--paper-grain), linear-gradient(var(--ov-lift-3), var(--ov-lift-3));
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)[data-ov-covered] {
+    background-image: var(--paper-grain), linear-gradient(var(--ov-lift-2), var(--ov-lift-2));
+}
+/* The rules of a big layer are the column's (text colour, not the red head rule). */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="paper"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card)::after {
+    top: 5px;
+    border-color: color-mix(in srgb, var(--text-primary) 55%, transparent);
+}
+
+/* Terminal: a screen with an inner glow and a rim in the accent. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="terminal"] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    box-shadow: var(--ov-edge-big), 0 0 0 0 transparent;
+}
+
+/* Enamel: the bar of the glaze along the bottom (a thinner one on a small layer) and the lit top edge. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="enamel"] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    box-shadow:
+        inset 0 -4px 0 var(--accent-primary),
+        inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 14%, transparent),
+        inset 0 2px 0 rgba(255, 255, 255, 0.35),
+        0 8px 14px -8px rgba(0, 0, 0, 0.45);
+}
+
+/* Carbon: the stripe at the left and the 1px rim, a soft cast and no ring. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="carbon"] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    box-shadow: var(--ov-edge), 0 10px 18px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Ink ───────────────────────────────────────────────────────────────────────────────────────── */
+/* A big layer: the column's warm tint, the long crop marks at all four corners, the bar above the head, no accent ring. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog) {
+    background-color: color-mix(in srgb, var(--text-primary) 8%, var(--ov-fill));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--text-primary) 16%, transparent), 0 40px 70px -22px rgba(0, 0, 0, 0.65);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)[data-ov-covered] {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--text-primary) 16%, transparent), 0 26px 50px -16px rgba(0, 0, 0, 0.6);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)::after {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    border-radius: inherit;
+    pointer-events: none;
+    --ink-tick: color-mix(in srgb, var(--text-primary) 55%, transparent);
+    background:
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 0 0 / 11px 1px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 0 0 / 1px 11px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 100% 0 / 11px 1px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 100% 0 / 1px 11px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 0 100% / 11px 1px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 0 100% / 1px 11px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 100% 100% / 11px 1px no-repeat,
+        linear-gradient(var(--ink-tick), var(--ink-tick)) 100% 100% / 1px 11px no-repeat,
+        linear-gradient(var(--text-primary), var(--text-primary)) 1.5rem 0.9rem / 2.25rem 4px no-repeat;
+}
+/* A small layer: the same tint and marks (9px, no bar) as background layers, so no pseudo-element is needed. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="ink"] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    --ink-tick: color-mix(in srgb, var(--text-primary) 55%, transparent);
+    background-color: color-mix(in srgb, var(--text-primary) 8%, var(--ov-fill-small));
+    background-image:
+        linear-gradient(var(--ink-tick), var(--ink-tick)), linear-gradient(var(--ink-tick), var(--ink-tick)),
+        linear-gradient(var(--ink-tick), var(--ink-tick)), linear-gradient(var(--ink-tick), var(--ink-tick)),
+        linear-gradient(var(--ink-tick), var(--ink-tick)), linear-gradient(var(--ink-tick), var(--ink-tick)),
+        linear-gradient(var(--ink-tick), var(--ink-tick)), linear-gradient(var(--ink-tick), var(--ink-tick)),
+        linear-gradient(var(--ov-lift-2), var(--ov-lift-2));
+    background-position: 3px 3px, 3px 3px, calc(100% - 3px) 3px, calc(100% - 3px) 3px, 3px calc(100% - 3px), 3px calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), 0 0;
+    background-size: 9px 1px, 1px 9px, 9px 1px, 1px 9px, 9px 1px, 1px 9px, 9px 1px, 1px 9px, auto;
+    background-repeat: no-repeat;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--text-primary) 16%, transparent), 0 26px 50px -18px rgba(0, 0, 0, 0.6);
+}
+
+/* ── Neon ──────────────────────────────────────────────────────────────────────────────────────── */
+/* A big layer: only the glowing top edge (the light fades down in the fill), no ring all round. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="neon"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog):not([data-ov-covered]) {
+    box-shadow:
+        0 -1px 0 var(--accent-primary),
+        0 -4px 14px -2px color-mix(in srgb, var(--accent-primary) calc(70% * var(--ov-k)), transparent),
+        0 40px 70px -22px rgba(0, 0, 0, 0.8);
+}
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="neon"] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)[data-ov-covered] {
+    box-shadow: 0 -1px 0 color-mix(in srgb, var(--accent-primary) 60%, transparent), 0 26px 50px -16px rgba(0, 0, 0, 0.7);
+}
+/* The head glows like the head of a column: capitals, accent, spaced, with a halo. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="neon"] :is(.modal-title, .tag-cloud-modal-title, .bookmark-preview-card-headtext) {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.9em;
+    color: var(--accent-primary);
+    text-shadow: 0 0 8px color-mix(in srgb, var(--accent-primary) calc(70% * var(--ov-k)), transparent), 0 0 18px color-mix(in srgb, var(--accent-primary) calc(40% * var(--ov-k)), transparent);
+}
+/* A small layer: the same dark fill, glowing top edge and fade. */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material="neon"] :is(.app-notification, .quickstart-card, .first-start-card, .lvs-drawer-frame) {
+    background-color: color-mix(in srgb, var(--background-primary) 66%, var(--ov-fill-small));
+    background-image: linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 20%, transparent), transparent 38%), linear-gradient(var(--ov-lift-2), var(--ov-lift-2));
+    box-shadow:
+        0 -1px 0 var(--accent-primary),
+        0 -4px 14px -2px color-mix(in srgb, var(--accent-primary) calc(70% * var(--ov-k)), transparent),
+        0 18px 32px -14px rgba(0, 0, 0, 0.8);
+}
+
+
+html[data-theme][data-effects="off"] body[data-material-style="signature"]:not([data-material=""])[data-material][data-material] :is(.modal, .search-container, .omnibox-box, .tag-cloud-modal, .notes-modal, .bookmark-preview-card, .app-discovery-card, .bookmark-form-modal-dialog)::after {
+    content: none;
+}
