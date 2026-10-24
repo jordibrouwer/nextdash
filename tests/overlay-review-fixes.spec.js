@@ -112,3 +112,50 @@ test('a layer on the bookmark form drops it back to the second level, without th
     const covered = await page.evaluate(() => getComputedStyle(document.querySelector('.bookmark-form-modal-dialog')).boxShadow);
     expect(covered, 'a covered form still has the bar').not.toMatch(/0px -3px 0px/);
 });
+
+// ── The lighter findings of the same review ──────────────────────────────────────────────────────
+
+test('the active dot of a tutorial is lit and the dots only change under the signature', async ({ page, request }) => {
+    const viewport = await setup(request, 'arctic-cyan-dark');
+    await open(page, viewport);
+    const read = () => page.evaluate(() => {
+        const make = (cls) => { const el = document.createElement('span'); el.className = cls; document.body.appendChild(el); const cs = getComputedStyle(el); const v = { w: cs.width, bg: cs.backgroundColor }; el.remove(); return v; };
+        return { idle: make('dashboard-tutorial-dot'), active: make('dashboard-tutorial-dot is-active') };
+    });
+    const signature = await read();
+    expect(signature.idle.w, 'an idle dot is not 8px').toBe('8px');
+    expect(signature.active.bg, 'the active dot is not lit').not.toBe(signature.idle.bg);
+    await page.evaluate(() => document.body.setAttribute('data-material-style', 'classic'));
+    const classic = await read();
+    expect(classic.idle.w, 'the dots changed in Classic').not.toBe('8px');
+});
+
+test('effects off are flat: no blur and no grain on a layer', async ({ page, request }) => {
+    const viewport = await setup(request, 'candlelit-study-dark');
+    await open(page, viewport);
+    await page.evaluate(() => [document.documentElement, document.body].forEach((el) => el.setAttribute('data-effects', 'off')));
+    await page.evaluate(() => { window.AppModal.show({ title: 'probe', message: 'probe', showCancel: false }); });
+    await expect(page.locator('.modal').first()).toBeVisible();
+    const m = await page.evaluate(() => { const cs = getComputedStyle(document.querySelector('.modal')); return { bf: cs.backdropFilter, img: cs.backgroundImage }; });
+    expect(m.bf, 'the layer blurs with effects off').toBe('none');
+    expect(m.img, 'the paper grain is drawn with effects off').not.toContain('data:image/svg+xml');
+});
+
+test('the terminal title marks are not part of the name', async ({ page, request }) => {
+    const viewport = await setup(request, 'retro-crt-mk2-dark');
+    await open(page, viewport);
+    await page.evaluate(() => { window.AppModal.show({ title: 'probe', message: 'probe', showCancel: false }); });
+    await expect(page.locator('.modal-title').first()).toBeVisible();
+    const content = await page.evaluate(() => getComputedStyle(document.querySelector('.modal-title'), '::before').content);
+    expect(content, 'the prompt mark has no empty alternative text').toMatch(/\/\s*""/);
+});
+
+test('quick add shows where the focus is on the box, not on the field', async ({ page, request }) => {
+    const viewport = await setup(request, 'arctic-cyan-dark');
+    await open(page, viewport);
+    await page.keyboard.press('Shift+Digit7');
+    await expect(page.locator('.omnibox-input')).toBeFocused();
+    const m = await page.evaluate(() => ({ field: getComputedStyle(document.querySelector('.omnibox-input')).outlineStyle, box: getComputedStyle(document.querySelector('.omnibox-box')).outlineWidth }));
+    expect(m.field).toBe('none');
+    expect(m.box, 'the box shows no focus').toBe('2px');
+});
