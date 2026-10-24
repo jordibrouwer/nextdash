@@ -3824,6 +3824,8 @@ var themeBackdropRecipes = []string{
 	"haze", "veil", "spotlight", "silk", "caustics", "dawn", "linen", "dotgrid", "ruled", "grain",
 	"flare", "spectrum", "inkdrop", "sunburst", "tide", "confetti", "ember",
 	"dots", "rack", "digirain", "cellgrid", "bootlog", "crt",
+	"scales", "seigaiha", "diamonds", "bricks", "checker", "zigzag", "isocube", "tartan", "rays",
+	"stitch", "moire", "deco", "terrazzo", "bauhaus", "circuit", "triangles", "dotsoff", "herring", "windows", "bubbles", "petals", "bamboo", "oceanblue",
 }
 
 // themeBackdropHashedRecipes is how many recipes a theme's id can hash to: the

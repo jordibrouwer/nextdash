@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 )
 
@@ -30,6 +31,21 @@ type backdropKit struct {
 func themeBackdropColourLayers(name string, k backdropKit) []backdropLayer {
 	// A server rack is drawn on its own, without the colour fields every other recipe leaves
 	// behind it: it is rails, three status LEDs and one glow, and that is all it should be.
+	switch name {
+	case "windows":
+		return themeBackdropWindows(k)
+	case "bubbles":
+		return themeBackdropBubbles(k)
+	case "petals":
+		return themeBackdropPetals(k)
+	case "bamboo":
+		return themeBackdropBamboo(k)
+	case "oceanblue":
+		return themeBackdropOceanBlue(k)
+	}
+	if themeBackdropIsPattern(name) {
+		return themeBackdropPattern(name, k)
+	}
 	switch name {
 	case "rack":
 		return themeBackdropRack(k)
@@ -94,15 +110,20 @@ func themeBackdropColourLayers(name string, k backdropKit) []backdropLayer {
 		plain(blob(20, 24, 30, 60, C, 60), blob(46, 20, 30, 60, A, 66), blob(72, 26, 30, 60, E, 58), blob(92, 30, 24, 50, W, 48),
 			"linear-gradient(180deg, transparent 50%, "+v(D, 60)+")")
 	case "bokeh":
-		// Bokeh is a small honeycomb now: fine hexagon outlines over a slow diagonal run of the
-		// theme's colours. The id stays so a stored choice still finds its recipe.
+		// Bokeh is a small honeycomb now: fine hexagon outlines, and in the gaps four small
+		// lights, one in each colour of the theme. The id stays so a stored choice still finds it.
 		ink, share := "white", "0.10"
 		if !k.dark {
 			ink, share = "black", "0.08"
 		}
 		hex := "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cpath fill='" + ink + "' fill-opacity='" + share + "' fill-rule='evenodd' d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/svg%3E\")"
 		body = append(body, backdropLayer{hex, k.px(24) + " " + k.px(42), ""})
-		plain("linear-gradient(125deg, " + v(A, 56) + " 0%, " + v(E, 48) + " 36%, " + v(W, 40) + " 66%, " + v(C, 50) + " 100%)")
+		for i, c := range cs {
+			w := []int{97, 113, 131, 149}[i]
+			plain(f("radial-gradient(circle at %dpx %dpx, %s 0, %s 3px, transparent 4px)", 10+i*23, 14+i*17, v(c, 60), v(c, 24)))
+			body[len(body)-1].size = k.px(w) + " " + k.px(w*9/10)
+		}
+		return append(body, backdropLayer{image: "linear-gradient(" + D + ", " + D + ")"})
 	case "nebula":
 		plain(blob(24, 40, 46, 50, E, 66), blob(58, 30, 40, 50, A, 66), blob(76, 70, 40, 40, C, 56), blob(40, 80, 34, 34, W, 50))
 		for i := 0; i < 16; i++ {
@@ -430,6 +451,261 @@ func themeBackdropCRT(k backdropKit) []backdropLayer {
 		{image: "radial-gradient(ellipse at 50% 50%, transparent 52%, " + v(k.ground, 70) + " 100%)"},
 		{image: "linear-gradient(90deg, " + v(k.cool, 8) + ", transparent 6%, transparent 94%, " + v(k.warm, 8) + ")"},
 		{image: k.blob(50, 0, 80, 40, k.accent, 24)},
+		{image: "linear-gradient(" + k.ground + ", " + k.ground + ")"},
+	}
+}
+
+/*
+The eighteen patterns replace the colour washes that all looked alike. A pattern is a fine drawing
+in a share of white (on a dark page) or black (on a light one), over a slow run of the theme's four
+colours and the deeper ground, so it is never grey on grey and never only a smudge of colour.
+*/
+var themeBackdropPatternNames = []string{
+	"scales", "seigaiha", "diamonds", "bricks", "checker", "zigzag", "isocube", "tartan", "rays",
+	"stitch", "moire", "deco", "terrazzo", "bauhaus", "circuit", "triangles", "dotsoff", "herring",
+}
+
+func themeBackdropIsPattern(name string) bool {
+	for _, n := range themeBackdropPatternNames {
+		if n == name {
+			return true
+		}
+	}
+	return false
+}
+
+func themeBackdropPattern(name string, k backdropKit) []backdropLayer {
+	v := k.veil
+	ink := "#fff"
+	if !k.dark {
+		ink = "#000"
+	}
+	tileOf := func(w, h int) string { return k.px(w) + " " + k.px(h) }
+	one := func(image string, w, h int) backdropLayer { return backdropLayer{image: image, size: tileOf(w, h)} }
+	// The drawing in one colour of the theme. It is drawn four times, once in each colour and a
+	// few pixels apart, like a print out of register; a tile that has a position of its own is
+	// not moved, so its copies lie on one another.
+	draw := func(c string, strong int) []backdropLayer {
+		line := "color-mix(in srgb, " + c + " 58%, " + ink + ")"
+		l, l2 := v(line, strong), v(line, strong*55/100)
+		var top []backdropLayer
+		switch name {
+		case "scales":
+			ring := func(at string) string {
+				return "radial-gradient(circle at " + at + ", transparent 22%, " + l + " 23% 26%, transparent 27%)"
+			}
+			top = []backdropLayer{one(ring("100% 150%"), 36, 18), one(ring("0 150%"), 36, 18), one(ring("50% 100%"), 36, 18)}
+		case "seigaiha":
+			top = []backdropLayer{one("repeating-radial-gradient(circle at 50% 100%, transparent 0 "+k.px(5)+", "+l+" "+k.px(5)+" "+k.px(6)+")", 40, 20),
+				{image: "repeating-radial-gradient(circle at 50% 100%, transparent 0 " + k.px(5) + ", " + l2 + " " + k.px(5) + " " + k.px(6) + ")", size: tileOf(40, 20), pos: k.px(20) + " " + k.px(10)}}
+		case "diamonds":
+			top = []backdropLayer{one("linear-gradient(45deg, transparent 48%, "+l+" 49% 51%, transparent 52%)", 28, 28), one("linear-gradient(-45deg, transparent 48%, "+l+" 49% 51%, transparent 52%)", 28, 28)}
+		case "bricks":
+			top = []backdropLayer{one("linear-gradient("+l+" 1px, transparent 1px)", 48, 18), one("linear-gradient(90deg, "+l+" 1px, transparent 1px)", 48, 36),
+				{image: "linear-gradient(90deg, " + l + " 1px, transparent 1px)", size: tileOf(48, 36), pos: k.px(24) + " " + k.px(18)}}
+		case "checker":
+			top = []backdropLayer{one("conic-gradient("+l2+" 25%, transparent 0 50%, "+l2+" 0 75%, transparent 0)", 32, 32)}
+		case "zigzag":
+			z := func(deg int, x string) backdropLayer {
+				return backdropLayer{image: "linear-gradient(" + fmt.Sprint(deg) + "deg, " + l + " 25%, transparent 25%)", size: tileOf(28, 28), pos: x + " 0"}
+			}
+			top = []backdropLayer{z(135, "-"+k.px(14)), z(225, "-"+k.px(14)), z(315, "0"), z(45, "0")}
+		case "isocube":
+			top = []backdropLayer{one("linear-gradient(30deg, "+l+" 12%, transparent 12.5%, transparent 87%, "+l+" 87.5%, "+l+")", 40, 70),
+				one("linear-gradient(150deg, "+l+" 12%, transparent 12.5%, transparent 87%, "+l+" 87.5%, "+l+")", 40, 70),
+				one("linear-gradient(90deg, "+l2+" 2px, transparent 2px)", 40, 70)}
+		case "tartan":
+			stripe := func(deg int) string {
+				return "repeating-linear-gradient(" + fmt.Sprint(deg) + "deg, " + l + " 0 " + k.px(6) + ", transparent " + k.px(6) + " " + k.px(22) + ", " + l2 + " " + k.px(22) + " " + k.px(24) + ", transparent " + k.px(24) + " " + k.px(40) + ")"
+			}
+			top = []backdropLayer{{image: stripe(0)}, {image: stripe(90)}}
+		case "rays":
+			top = []backdropLayer{{image: "repeating-conic-gradient(from 0deg at 50% 125%, " + l2 + " 0 1.2deg, transparent 1.2deg 7deg)"}}
+		case "stitch":
+			top = []backdropLayer{one("linear-gradient(45deg, transparent 45%, "+l+" 46% 54%, transparent 55%)", 10, 10), one("linear-gradient(-45deg, transparent 45%, "+l+" 46% 54%, transparent 55%)", 10, 10)}
+		case "moire":
+			ring := func(at string) string {
+				return "repeating-radial-gradient(circle at " + at + ", transparent 0 " + k.px(5) + ", " + l2 + " " + k.px(5) + " " + k.px(6) + ")"
+			}
+			top = []backdropLayer{{image: ring("30% 40%")}, {image: ring("70% 60%")}}
+		case "deco":
+			fan := func(at string) string {
+				s := "radial-gradient(circle at " + at + ", transparent 0 " + k.px(8)
+				for _, r := range []int{8, 16, 24} {
+					s += ", " + l + " " + k.px(r) + " " + k.px(r+1) + ", transparent " + k.px(r+1) + " " + k.px(r+8)
+				}
+				return s + ")"
+			}
+			top = []backdropLayer{one(fan("0 100%"), 50, 50), one(fan("100% 100%"), 50, 50)}
+		case "terrazzo":
+			dot := func(at string, r int, col string) string {
+				return "radial-gradient(circle at " + at + ", " + col + " 0 " + k.px(r) + ", transparent " + k.px(r+1) + ")"
+			}
+			top = []backdropLayer{one(dot("20% 30%", 3, l), 120, 90), one(dot("70% 60%", 2, l), 90, 120), one(dot("45% 85%", 4, l2), 60, 60), one(dot("88% 18%", 2, l2), 100, 80)}
+		case "bauhaus":
+			top = []backdropLayer{one("radial-gradient(circle at 22% 34%, "+l+" 0 "+k.px(14)+", transparent "+k.px(15)+")", 180, 140),
+				one("conic-gradient(from 90deg at 80% 72%, "+l2+" 0 90deg, transparent 0)", 180, 140),
+				one("linear-gradient(135deg, transparent 56%, "+l2+" 56% 58%, transparent 58%)", 180, 140)}
+		case "circuit":
+			top = []backdropLayer{one("radial-gradient(circle, "+l+" 0 2px, transparent 3px)", 40, 40), one("linear-gradient(90deg, "+l2+" 1px, transparent 1px)", 40, 40), one("linear-gradient("+l2+" 1px, transparent 1px)", 40, 40)}
+		case "triangles":
+			top = []backdropLayer{{image: "linear-gradient(135deg, " + l2 + " 25%, transparent 25%)", size: tileOf(40, 40), pos: "-" + k.px(20) + " 0"},
+				{image: "linear-gradient(225deg, " + l2 + " 25%, transparent 25%)", size: tileOf(40, 40), pos: "-" + k.px(20) + " 0"},
+				one("linear-gradient(315deg, transparent 75%, "+l2+" 75%)", 40, 40), one("linear-gradient(45deg, transparent 75%, "+l2+" 75%)", 40, 40)}
+		case "dotsoff":
+			dot := "radial-gradient(circle, " + l + " 0 1.6px, transparent 2px)"
+			top = []backdropLayer{one(dot, 14, 14), {image: dot, size: tileOf(14, 14), pos: k.px(7) + " " + k.px(7)}}
+		case "herring":
+			top = []backdropLayer{{image: "repeating-linear-gradient(45deg, " + l2 + " 0 2px, transparent 2px " + k.px(10) + ")"}, {image: "repeating-linear-gradient(-45deg, " + l2 + " 0 2px, transparent 2px " + k.px(10) + ")"}}
+		}
+		return top
+	}
+	var out []backdropLayer
+	echo := []struct {
+		c      string
+		strong int
+		dx, dy int
+	}{{k.accent, 24, 0, 0}, {k.cool, 12, 3, 2}, {k.second, 12, -3, 2}, {k.warm, 10, 0, -3}}
+	for _, e := range echo {
+		for _, layer := range draw(e.c, e.strong) {
+			if layer.pos == "" && (e.dx != 0 || e.dy != 0) {
+				layer.pos = fmt.Sprintf("%dpx %dpx", e.dx, e.dy)
+			}
+			out = append(out, layer)
+		}
+	}
+	return append(out, backdropLayer{image: "linear-gradient(" + k.ground + ", " + k.ground + ")"})
+}
+
+/*
+themeBackdropWindows is City Lights: the lit windows of a skyline seen from far away. Four lattices
+of small soft lights, one in each colour of the theme, on pitches that share no factor, so the
+colours drift in and out of step and no row of one colour lines up with another. Nothing else.
+*/
+func themeBackdropWindows(k backdropKit) []backdropLayer {
+	v := k.veil
+	lights := func(w, h, x, y, rx, ry int, c string, p int) backdropLayer {
+		return backdropLayer{
+			image: "radial-gradient(ellipse " + k.px(rx) + " " + k.px(ry) + " at " + k.px(x) + " " + k.px(y) + ", " + v(c, p) + " 0, " + v(c, p*55/100) + " 55%, transparent 100%)",
+			size:  k.px(w) + " " + k.px(h),
+		}
+	}
+	return []backdropLayer{
+		lights(34, 30, 9, 8, 3, 4, k.accent, 62),
+		lights(47, 41, 30, 26, 3, 4, k.warm, 54),
+		lights(61, 53, 14, 40, 3, 4, k.cool, 58),
+		lights(73, 67, 50, 17, 3, 4, k.second, 54),
+		{image: "linear-gradient(" + k.ground + ", " + k.ground + ")"},
+	}
+}
+
+/*
+themeBackdropBubbles is for the themes that are about water and fizz: champagne, soda, rain on a
+window, dew, the deep sea. Rings of different sizes, each on a pitch of its own, a fine outline and
+one small highlight; four colours, one per size, so they look like a glass of light and not a pattern.
+*/
+func themeBackdropBubbles(k backdropKit) []backdropLayer {
+	v := k.veil
+	ring := func(w, h, x, y, r int, c string, p int) []backdropLayer {
+		at := k.px(x) + " " + k.px(y)
+		return []backdropLayer{
+			{
+				image: "radial-gradient(circle at " + at + ", transparent " + k.px(r-1) + ", " + v(c, p) + " " + k.px(r) + ", " + v(c, p/3) + " " + k.px(r+1) + ", transparent " + k.px(r+2) + ")",
+				size:  k.px(w) + " " + k.px(h),
+			},
+			{
+				image: "radial-gradient(circle at " + k.px(x-r/3) + " " + k.px(y-r/3) + ", " + v("#fff", p) + " 0, transparent " + k.px(r/4+1) + ")",
+				size:  k.px(w) + " " + k.px(h),
+			},
+		}
+	}
+	var out []backdropLayer
+	out = append(out, ring(71, 83, 20, 26, 9, k.accent, 46)...)
+	out = append(out, ring(97, 109, 60, 70, 14, k.cool, 40)...)
+	out = append(out, ring(53, 59, 14, 40, 5, k.warm, 44)...)
+	out = append(out, ring(131, 113, 90, 30, 18, k.second, 34)...)
+	out = append(out, ring(43, 47, 30, 12, 3, k.accent, 40)...)
+	return append(out, backdropLayer{image: "linear-gradient(" + k.ground + ", " + k.ground + ")"})
+}
+
+/*
+themeBackdropPetals is for the cherry blossom and the meadow: five-petal flowers on two pitches
+and loose petals between them, all soft and small. The petals are the colours of the theme.
+*/
+func themeBackdropPetals(k backdropKit) []backdropLayer {
+	v := k.veil
+	flower := func(w, h, cx, cy, r int, c string, p int) []backdropLayer {
+		var out []backdropLayer
+		for i := 0; i < 5; i++ {
+			a := float64(i)*2*math.Pi/5 - math.Pi/2
+			x := cx + int(math.Round(float64(r)*math.Cos(a)))
+			y := cy + int(math.Round(float64(r)*math.Sin(a)))
+			out = append(out, backdropLayer{
+				image: "radial-gradient(ellipse " + k.px(r*7/10+1) + " " + k.px(r*6/10+1) + " at " + k.px(x) + " " + k.px(y) + ", " + v(c, p) + " 0, " + v(c, p*45/100) + " 60%, transparent 100%)",
+				size:  k.px(w) + " " + k.px(h),
+			})
+		}
+		out = append(out, backdropLayer{
+			image: "radial-gradient(circle at " + k.px(cx) + " " + k.px(cy) + ", " + v(k.warm, p+14) + " 0, " + v(k.warm, p/2) + " " + k.px(2) + ", transparent " + k.px(3) + ")",
+			size:  k.px(w) + " " + k.px(h),
+		})
+		return out
+	}
+	var out []backdropLayer
+	out = append(out, flower(131, 113, 40, 36, 7, k.accent, 40)...)
+	out = append(out, flower(173, 157, 110, 96, 9, k.second, 32)...)
+	out = append(out, flower(89, 97, 66, 22, 5, k.cool, 30)...)
+	out = append(out, backdropLayer{
+		image: "radial-gradient(ellipse " + k.px(4) + " " + k.px(2) + " at " + k.px(12) + " " + k.px(70) + ", " + v(k.accent, 34) + " 0, transparent 100%)",
+		size:  k.px(61) + " " + k.px(79),
+	})
+	return append(out, backdropLayer{image: "linear-gradient(" + k.ground + ", " + k.ground + ")"})
+}
+
+/*
+themeBackdropBamboo is for the bamboo grove: tall stems, thin and of unequal spacing, each with a
+node ellipse every so far. Four pitches of stem that share no factor, one in each colour.
+*/
+func themeBackdropBamboo(k backdropKit) []backdropLayer {
+	v := k.veil
+	stem := func(w, h, x, node int, c string, p int) []backdropLayer {
+		return []backdropLayer{
+			{
+				image: "linear-gradient(90deg, transparent " + k.px(x-2) + ", " + v(c, p) + " " + k.px(x-1) + " " + k.px(x+2) + ", transparent " + k.px(x+3) + ")",
+				size:  k.px(w) + " " + k.px(h),
+			},
+			{
+				image: "radial-gradient(ellipse " + k.px(6) + " " + k.px(2) + " at " + k.px(x) + " " + k.px(node) + ", " + v(c, p+14) + " 0, transparent 100%)",
+				size:  k.px(w) + " " + k.px(node*2+30),
+			},
+		}
+	}
+	var out []backdropLayer
+	out = append(out, stem(83, 400, 20, 40, k.accent, 30)...)
+	out = append(out, stem(109, 400, 70, 55, k.cool, 26)...)
+	out = append(out, stem(137, 400, 110, 34, k.warm, 22)...)
+	out = append(out, stem(61, 400, 44, 62, k.second, 22)...)
+	return append(out, backdropLayer{image: "linear-gradient(" + k.ground + ", " + k.ground + ")"})
+}
+
+/*
+themeBackdropOceanBlue is the sea seen from just under the surface, and blue is what it is made
+of: a column of light falling from the top, three swells of deeper blue rising from
+the bottom, and a few lights drifting in the water. The theme's blue
+(its warning colour) carries the picture; its cyan lights the surface, its violet is the deep
+and its green the few drifting lights. Nothing here is grey.
+*/
+func themeBackdropOceanBlue(k backdropKit) []backdropLayer {
+	v := k.veil
+	blue, cyan, deep, spark := k.warm, k.accent, k.second, k.cool
+	return []backdropLayer{
+		{image: "radial-gradient(circle, " + v(spark, 40) + " 0, " + v(spark, 14) + " " + k.px(2) + ", transparent " + k.px(4) + ")", size: k.px(211) + " " + k.px(179), pos: k.px(31) + " " + k.px(12)},
+		{image: "radial-gradient(ellipse 90% 30% at 14% 112%, " + v(blue, 58) + " 0 58%, transparent 60%)"},
+		{image: "radial-gradient(ellipse 80% 26% at 78% 114%, " + v(cyan, 38) + " 0 58%, transparent 60%)"},
+		{image: "radial-gradient(ellipse 70% 22% at 44% 118%, " + v(blue, 48) + " 0 58%, transparent 60%)"},
+		{image: "linear-gradient(180deg, " + v(cyan, 38) + ", " + v(blue, 26) + " 30%, transparent 68%)"},
+		{image: "radial-gradient(ellipse 60% 50% at 100% 0, " + v(deep, 12) + ", transparent 70%)"},
+		{image: "linear-gradient(180deg, " + v(blue, 34) + ", " + v(blue, 20) + " 100%)"},
 		{image: "linear-gradient(" + k.ground + ", " + k.ground + ")"},
 	}
 }

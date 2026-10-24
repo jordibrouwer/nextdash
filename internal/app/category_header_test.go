@@ -97,8 +97,8 @@ func TestCardGlassResolvesPerThemeOrForced(t *testing.T) {
 
 func TestThemeBackdropsEndpointAnswersEveryRecipe(t *testing.T) {
 	// The seed query reaches the recipes, and an unreadable one is ignored.
-	a := themeBackdropSeeded("recipe:bokeh", ThemeColors{Backdrop: "bokeh", AccentPrimary: "var"}, 0)
-	b := themeBackdropSeeded("recipe:bokeh", ThemeColors{Backdrop: "bokeh", AccentPrimary: "var"}, 9)
+	a := themeBackdropSeeded("recipe:aurora", ThemeColors{Backdrop: "aurora", AccentPrimary: "var"}, 0)
+	b := themeBackdropSeeded("recipe:aurora", ThemeColors{Backdrop: "aurora", AccentPrimary: "var"}, 9)
 	if a == b {
 		t.Fatal("the seed did not change the recipe's positions")
 	}
