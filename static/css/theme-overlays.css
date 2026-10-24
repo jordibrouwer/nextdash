@@ -1028,3 +1028,44 @@ html[data-theme] body[data-material-style="signature"]:not([data-material=""])[d
     content: "_";
     color: var(--accent-primary);
 }
+
+
+/* ── What's New: the spotlight, the lists, the earlier releases and the support block lie on the surface ── */
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal :is(.wn-entry--new, .wn-lines, .wn-fix-list, .wn-earlier, .wn-support) {
+    background-color: color-mix(in srgb, black calc(14% * var(--ov-k) + 4%), transparent);
+    background-image: none;
+    border: 0;
+    border-radius: min(var(--ov-radius), 14px);
+    box-shadow: inset 0 0 0 1px var(--ov-rule);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal .wn-entry--new {
+    box-shadow: inset 0 0 0 1px var(--ov-rule), inset 3px 0 0 var(--accent-primary);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal .wn-media {
+    border-radius: var(--ov-r-item);
+    box-shadow: inset 0 0 0 1px var(--ov-rule);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal .wn-chip {
+    border: 0;
+    border-radius: var(--ov-r-item);
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--ov-rule);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal .wn-chip:is(.is-active, [aria-pressed="true"]) {
+    background: var(--ov-hot);
+    box-shadow: inset 0 0 0 1px var(--accent-primary);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal .wn-go {
+    border-radius: var(--ov-r-control);
+    border: 0;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 60%, transparent);
+}
+
+html[data-theme] body[data-material-style="signature"]:not([data-material=""])[data-material] .whats-new-modal .wn-foot {
+    border-top-color: var(--ov-rule);
+}
