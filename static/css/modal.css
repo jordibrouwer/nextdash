@@ -1697,6 +1697,12 @@ body.no-animations .modal-button.danger.selected {
 
 .cheat-sheet-group {
     break-inside: avoid;
+    -webkit-column-break-inside: avoid;
+    /* WebKit fragments a block card across the columns and drops its ring on the third one; an inline-block
+       with the full width is kept whole. */
+    display: inline-block;
+    width: 100%;
+    box-sizing: border-box;
     margin: 0 0 var(--space-3, 0.75rem);
     padding: var(--space-2, 0.5rem) var(--space-1, 0.25rem) var(--space-1, 0.25rem);
     border-radius: min(var(--ov-radius, 10px), 14px);
