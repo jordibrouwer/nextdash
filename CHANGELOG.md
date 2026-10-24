@@ -136,6 +136,10 @@ Not released yet.
 - **fix — a category deleted on another device stays deleted.** The categories editor sends the whole list, and `addCategoriesMadeElsewhere` only added what was new on the server, so the next edit here put a category deleted elsewhere back. `_catOnServer` remembers what the server last had; a category gone from it since leaves the list too.
 - **fix — category saves for one page go out one at a time.** Two quick toggles sent two whole lists at once and the older could land last, so the server kept the first click while the button showed the second. `saveCategories` now queues per page. The last three are covered by `tests/config-structure-review-fixes.spec.js`, each failing without its fix.
 
+### Dashboard
+
+- **fix — a category save keeps the default category's name in every language.** A new page's default category is stored as the key `dashboard.others`; the dashboard held it translated ("Others", "Overig"), and a category drag or resize sent that back, so the name stayed in the language it was saved in. `clonePageCategories` keeps the stored name next to the drawn one and `DashboardData.storedCategory()` puts it back on save, unless the category was renamed since (`dashboard-render-core.js`, `dashboard-persistence.js`, `dashboard-block-page-move.js`). Covered by `tests/dashboard-review-fixes.spec.js`, which fails without it.
+
 ---
 
 ## v1.21.3 — 23 October 2026

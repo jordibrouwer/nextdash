@@ -2366,7 +2366,7 @@ class DashboardRenderCore {
         }
 
         const sourceCategories = Array.isArray(options.payload) ? options.payload : d.categories;
-        const payload = (sourceCategories || []).map((category) => ({ ...category, originalId: category.id }));
+        const payload = (sourceCategories || []).map((category) => ({ ...DashboardData.storedCategory(category), originalId: category.id }));
 
         if (payload.length === 0 && Array.isArray(d.bookmarks)) {
             const bookmarksStillReferenceCategories = d.bookmarks.some(

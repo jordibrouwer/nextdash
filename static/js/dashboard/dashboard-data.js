@@ -522,12 +522,30 @@ class DashboardData {
         return (Array.isArray(bookmarks) ? bookmarks : []).map((bookmark) => ({ ...bookmark }));
     }
 
+    /*
+     * A category's name is drawn translated, and saved as it was stored.
+     *
+     * A new page's default category is stored as the key "dashboard.others".
+     * The copy held here carried "Overig" in its place, and every category save
+     * sends that copy back -- so one drag stored the Dutch word, and switching
+     * to English left it Dutch for good. The stored name rides along, with the
+     * text it was shown as, and storedCategory() puts it back unless the name
+     * was changed since.
+     */
     clonePageCategories(categories) {
         const d = this.dash;
-        return (Array.isArray(categories) ? categories : []).map((cat) => ({
-            ...cat,
-            name: d.language.t(cat.name) || cat.name,
-        }));
+        return (Array.isArray(categories) ? categories : []).map((cat) => {
+            const shown = d.language.t(cat.name) || cat.name;
+            if (shown === cat.name) return { ...cat };
+            return { ...cat, name: shown, _storedName: cat.name, _shownName: shown };
+        });
+    }
+
+    /** A category as the server stores it: see clonePageCategories. */
+    static storedCategory(cat) {
+        const { _storedName, _shownName, ...row } = cat || {};
+        if (_storedName && row.name === _shownName) row.name = _storedName;
+        return row;
     }
 
     getCachedPageData(pageId) {
