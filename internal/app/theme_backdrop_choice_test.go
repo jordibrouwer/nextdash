@@ -62,6 +62,14 @@ func TestChosenBackdropsAreSpreadAcrossTheRecipes(t *testing.T) {
 			}
 			continue
 		}
+		// The colour washes the patterns replaced are no longer chosen for a theme; the Looks name
+		// them themselves, and the archetypes bind two.
+		if retiredColourWashes[name] {
+			if n > 10 {
+				t.Errorf("%s is used by %d pairs, want at most 10", name, n)
+			}
+			continue
+		}
 		if n < 2 || n > 10 {
 			t.Errorf("%s is used by %d pairs, want 2 to 10", name, n)
 		}
@@ -142,4 +150,10 @@ func TestThePoolsAreMadeOfRecipes(t *testing.T) {
 			}
 		}
 	}
+}
+
+var retiredColourWashes = map[string]bool{
+	"blooms": true, "sweep": true, "horizon": true, "tide": true, "burst": true, "splash": true,
+	"leak": true, "flare": true, "sunburst": true, "spectrum": true, "confetti": true, "inkdrop": true, "ember": true,
+	"band": true,
 }

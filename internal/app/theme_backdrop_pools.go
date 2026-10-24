@@ -16,16 +16,16 @@ one material from landing on the same one. A theme that names no material has
 no pool, and its choice stands as it was made.
 */
 var themeBackdropPools = map[string][]string{
-	"lacquer":  {"sweep", "band", "glow", "sunset", "blooms", "dawn", "veil", "burst", "splash", "leak", "flare", "spectrum", "inkdrop", "sunburst", "tide", "confetti", "ember", "rack"},
-	"glass":    {"mesh", "haze", "veil", "bokeh", "aurora", "caustics", "silk", "burst", "splash", "leak", "flare", "spectrum", "inkdrop", "sunburst", "tide", "confetti", "ember"},
-	"frost":    {"bokeh", "haze", "mesh", "stars", "rings", "caustics", "burst", "splash", "leak", "flare", "spectrum", "inkdrop", "sunburst", "tide", "confetti", "ember"},
-	"aurora":   {"aurora", "blooms", "veil", "silk", "nebula", "dawn", "horizon", "burst", "splash", "leak", "flare", "spectrum", "inkdrop", "sunburst", "tide", "confetti", "ember"},
-	"neon":     {"glow", "perspective", "spotlight", "wireframe", "prism", "waves", "grain", "burst", "splash", "leak", "flare", "spectrum", "inkdrop", "sunburst", "tide", "confetti", "ember", "rack"},
-	"velvet":   {"nebula", "blooms", "glow", "silk", "stars", "spotlight", "burst", "splash", "leak", "flare", "spectrum", "inkdrop", "sunburst", "tide", "confetti", "ember"},
-	"enamel":   {"dunes", "sunset", "splash", "burst", "leak", "rings", "band", "flare", "spectrum", "inkdrop", "sunburst", "tide", "confetti", "ember"},
-	"brushed":  {"pinstripe", "band", "linen", "horizon", "sweep", "ruled", "glow", "rack"},
-	"carbon":   {"hexagons", "dotgrid", "wireframe", "crosshatch", "pinstripe", "chevron", "linen", "rack"},
-	"paper":    {"topo", "linen", "ruled", "crosshatch", "halftone", "dunes", "mountains"},
+	"lacquer":  {"band", "glow", "sunset", "dawn", "rack", "checker", "deco", "diamonds", "scales", "seigaiha", "bokeh"},
+	"glass":    {"mesh", "haze", "bokeh", "aurora", "isocube", "moire", "seigaiha", "stitch", "triangles", "bubbles", "prism", "terrazzo"},
+	"frost":    {"bokeh", "haze", "mesh", "stars", "rings", "herring", "moire", "rays", "scales", "seigaiha", "stitch", "triangles", "zigzag", "chevron", "sunset", "waves"},
+	"aurora":   {"aurora", "nebula", "dawn", "bauhaus", "dotsoff", "moire", "rays", "seigaiha", "zigzag", "petals", "stars", "sunset", "waves", "bubbles"},
+	"neon":     {"glow", "perspective", "spotlight", "wireframe", "prism", "waves", "grain", "rack", "bauhaus", "circuit", "isocube", "moire", "terrazzo", "zigzag", "windows", "bubbles", "chevron"},
+	"velvet":   {"nebula", "glow", "stars", "spotlight", "checker", "deco", "diamonds", "herring", "moire", "scales", "stitch", "tartan", "pinstripe"},
+	"enamel":   {"dunes", "sunset", "rings", "band", "checker", "dotsoff", "scales", "seigaiha", "tartan", "terrazzo", "diamonds", "petals"},
+	"brushed":  {"pinstripe", "band", "linen", "ruled", "glow", "rack", "bricks", "herring", "circuit", "diamonds", "grain"},
+	"carbon":   {"hexagons", "dotgrid", "wireframe", "crosshatch", "pinstripe", "chevron", "linen", "rack", "grain", "herring", "waves", "bamboo"},
+	"paper":    {"topo", "linen", "ruled", "crosshatch", "halftone", "dunes", "mountains", "bamboo", "blueprint", "herring", "hexagons", "rings"},
 	"terminal": {"perspective", "scanlines", "dotgrid", "wireframe", "blueprint", "stars", "grain"},
 	"ink":      {"halftone", "crosshatch", "ruled", "pinstripe", "topo", "mountains", "stars"},
 }

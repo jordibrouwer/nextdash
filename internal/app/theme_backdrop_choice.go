@@ -23,170 +23,170 @@ none for a theme that is gone.
 */
 var themeBackdropChoice = map[string]string{
 	"absinthe-light":              "crosshatch",  // gegraveerd papier, absintprent
-	"aluminium-deck-light":        "pinstripe",   // geborsteld metaal, fijne lijnen
+	"aluminium-deck-light":        "diamonds",    // past bij het thema
 	"andromeda-drift-light":       "nebula",      // sterrenstelsel
-	"arctic-cyan-light":           "sunburst",    // kleurrijk (was haze)
+	"arctic-cyan-light":           "stitch",      // patroon in plaats van een kleurvlak
 	"aurora-glass-light":          "aurora",      // naam
-	"bamboo-panda-light":          "halftone",    // zwart-wit, rasterpunten
-	"bio-abyss-light":             "leak",        // kleurrijk (was grain)
-	"blueprint-light":             "linen",       // uit het paper-pakket (was blueprint)
+	"bamboo-panda-light":          "bamboo",      // past bij het thema
+	"bio-abyss-light":             "bubbles",     // past bij het thema
+	"blueprint-light":             "blueprint",   // past bij het thema
 	"bone-china-light":            "rings",       // (blijft rings)
 	"borealis-veil-light":         "aurora",      // noorderlicht; aurora past beter dan blooms
 	"candlelit-study-light":       "ruled",       // uit het paper-pakket (was glow)
-	"candy-pop-light":             "splash",      // uit het enamel-pakket (was chevron)
-	"cerulean-skylark-light":      "burst",       // kleurrijk (was horizon)
-	"champagne-flute-light":       "bokeh",       // bubbels; bokeh past beter dan rings
+	"candy-pop-light":             "dotsoff",     // patroon in plaats van een kleurvlak
+	"cerulean-skylark-light":      "rays",        // patroon in plaats van een kleurvlak
+	"champagne-flute-light":       "bubbles",     // past bij het thema
 	"chartreuse-static-light":     "dotgrid",     // uit het carbon-pakket (was halftone)
 	"cherry-graphite-light":       "pinstripe",   // krijtstreep op grafiet
-	"city-lights-light":           "flare",       // kleurrijk (was spotlight)
+	"city-lights-light":           "windows",     // de lichtjes van een skyline
 	"cobalt-ink-light":            "crosshatch",  // inktarcering
 	"cold-cathode-light":          "glow",        // gloeibuis
 	"commit-grey-light":           "blueprint",   // diff-raster, strak en grijs
-	"copper-circuit-light":        "linen",       // uit het brushed-pakket (was wireframe)
-	"coral-reef-light":            "burst",       // uit het enamel-pakket (was waves)
-	"cosmic-editor-light":         "splash",      // kleurrijk (was dawn)
-	"deep-lagoon-light":           "leak",        // kleurrijk (was veil)
+	"copper-circuit-light":        "circuit",     // past bij het thema
+	"coral-reef-light":            "scales",      // patroon in plaats van een kleurvlak
+	"cosmic-editor-light":         "stars",       // past bij het thema
+	"deep-lagoon-light":           "bubbles",     // past bij het thema
 	"denim-fade-light":            "crosshatch",  // keperstof
 	"desert-rose-light":           "dunes",       // woestijn
 	"desert-sand-light":           "dunes",       // woestijn
-	"dusk-horizon-light":          "flare",       // kleurrijk (was caustics)
+	"dusk-horizon-light":          "sunset",      // past bij het thema
 	"editor-default-light":        "blueprint",   // raster van een editor
 	"electric-orchid-light":       "prism",       // (blijft prism)
 	"ember-ash-light":             "glow",        // gloeiende kolen
 	"emerald-matrix-light":        "perspective", // (blijft perspective)
-	"forest-everglade-light":      "sunburst",    // kleurrijk (was silk)
+	"forest-everglade-light":      "herring",     // patroon in plaats van een kleurvlak
 	"forest-moss-light":           "dotgrid",     // uit het carbon-pakket (was topo)
 	"forged-titanium-light":       "hexagons",    // metaal, honingraat
-	"foundry-iron-light":          "band",        // gietijzer, een bundel hitte
-	"fox-night-light":             "tide",        // kleurrijk (was silk)
-	"frost-fern-light":            "mesh",        // zachte koude wolken
-	"frosted-juniper-light":       "bokeh",       // dauw op naalden
+	"foundry-iron-light":          "bricks",      // patroon in plaats van een kleurvlak
+	"fox-night-light":             "diamonds",    // patroon in plaats van een kleurvlak
+	"frost-fern-light":            "chevron",     // past bij het thema
+	"frosted-juniper-light":       "bubbles",     // past bij het thema
 	"frozen-lavender-light":       "mesh",        // zachte wolken in paars
-	"glacier-mint-light":          "tide",        // kleurrijk (was caustics)
-	"gloss-amber-resin-light":     "sweep",       // (blijft sweep)
-	"gloss-aubergine-light":       "blooms",      // donkere lak, twee wolken
+	"glacier-mint-light":          "triangles",   // patroon in plaats van een kleurvlak
+	"gloss-amber-resin-light":     "bokeh",       // patroon in plaats van een kleurvlak
+	"gloss-aubergine-light":       "diamonds",    // patroon in plaats van een kleurvlak
 	"gloss-butterscotch-light":    "sunset",      // (blijft sunset)
-	"gloss-candy-lacquer-light":   "sweep",       // (blijft sweep)
+	"gloss-candy-lacquer-light":   "checker",     // patroon in plaats van een kleurvlak
 	"gloss-cinnabar-light":        "glow",        // gloed van onderaf
-	"gloss-emerald-enamel-light":  "burst",       // kleurrijk (was band)
-	"gloss-jade-light":            "tide",        // kleurrijk (was sweep)
+	"gloss-emerald-enamel-light":  "diamonds",    // past bij het thema
+	"gloss-jade-light":            "seigaiha",    // patroon in plaats van een kleurvlak
 	"gloss-liquid-chrome-light":   "band",        // chroom, een felle band (teruggezet)
 	"gloss-neon-tide-light":       "waves",       // (blijft waves)
-	"gloss-obsidian-mirror-light": "confetti",    // kleurrijk (was dawn)
+	"gloss-obsidian-mirror-light": "deco",        // patroon in plaats van een kleurvlak
 	"gloss-pearl-light":           "rings",       // (blijft rings)
-	"gloss-rose-gold-light":       "blooms",      // zachte wolken in roze
+	"gloss-rose-gold-light":       "scales",      // patroon in plaats van een kleurvlak
 	"gloss-sapphire-night-light":  "glow",        // diepe gloed
 	"gloss-ultraviolet-light":     "prism",       // (blijft prism)
-	"graphite-prism-light":        "spectrum",    // kleurrijk (was haze)
+	"graphite-prism-light":        "triangles",   // patroon in plaats van een kleurvlak
 	"graphite-twill-light":        "crosshatch",  // keper
 	"gray-light":                  "haze",        // (blijft haze)
-	"great-wave-light":            "sunset",      // (blijft sunset)
+	"great-wave-light":            "seigaiha",    // past bij het thema
 	"gunmetal-bronze-light":       "ruled",       // uit het brushed-pakket (was hexagons)
-	"harbour-fog-light":           "sunburst",    // kleurrijk (was caustics)
-	"hermetic-teal-light":         "confetti",    // kleurrijk (was veil)
-	"hoarfrost-light":             "tide",        // kleurrijk (was stars)
-	"horizon-glow-light":          "flare",       // kleurrijk (was horizon)
-	"iceberg-drift-light":         "ember",       // kleurrijk (was haze)
+	"harbour-fog-light":           "haze",        // past bij het thema
+	"hermetic-teal-light":         "bokeh",       // patroon in plaats van een kleurvlak
+	"hoarfrost-light":             "moire",       // past bij het thema
+	"horizon-glow-light":          "rays",        // patroon in plaats van een kleurvlak
+	"iceberg-drift-light":         "triangles",   // patroon in plaats van een kleurvlak
 	"indigo-letterpress-light":    "pinstripe",   // drukwerk, fijne lijnen
-	"iris-meadow-light":           "blooms",      // weide met bloemen
+	"iris-meadow-light":           "petals",      // past bij het thema
 	"iron-gall-light":             "crosshatch",  // ijzergalinkt, arcering
-	"jungle-neon-light":           "confetti",    // kleurrijk (was spotlight)
-	"kelp-drift-light":            "chevron",     // uit het carbon-pakket (was waves)
-	"kevlar-weave-light":          "hexagons",    // weefsel
+	"jungle-neon-light":           "chevron",     // past bij het thema
+	"kelp-drift-light":            "bamboo",      // past bij het thema
+	"kevlar-weave-light":          "herring",     // past bij het thema
 	"lavender-mist-light":         "mesh",        // zachte wolken
-	"library-mahogany-light":      "confetti",    // kleurrijk (was silk)
+	"library-mahogany-light":      "tartan",      // patroon in plaats van een kleurvlak
 	"licorice-layer-light":        "nebula",      // uit het velvet-pakket (was band)
-	"lime-soda-light":             "bokeh",       // prik; bokeh past beter dan blooms
+	"lime-soda-light":             "bubbles",     // past bij het thema
 	"marigold-dusk-light":         "topo",        // uit het paper-pakket (was sunset)
 	"matrix-bluepill-light":       "scanlines",   // bestaande keuze
 	"matrix-construct-light":      "wireframe",   // bestaande keuze
 	"matrix-rain-light":           "scanlines",   // bestaande keuze
 	"matrix-redpill-light":        "scanlines",   // bestaande keuze
-	"midnight-firefly-light":      "ember",       // kleurrijk (was grain)
+	"midnight-firefly-light":      "terrazzo",    // patroon in plaats van een kleurvlak
 	"midnight-ink-light":          "stars",       // nachthemel
 	"midnight-neon-light":         "perspective", // (blijft perspective)
 	"mirage-sand-light":           "dunes",       // fata morgana
-	"monochrome-mist-light":       "confetti",    // kleurrijk (was caustics)
-	"moonlit-steel-light":         "ember",       // kleurrijk (was haze)
+	"monochrome-mist-light":       "moire",       // patroon in plaats van een kleurvlak
+	"moonlit-steel-light":         "rings",       // past bij het thema
 	"moss-stone-light":            "topo",        // landkaart
-	"mulberry-silk-light":         "blooms",      // zijde
+	"mulberry-silk-light":         "diamonds",    // patroon in plaats van een kleurvlak
 	"nebula-nursery-light":        "nebula",      // naam; nebula past beter dan rings
-	"neon-grid-light":             "splash",      // kleurrijk (was perspective)
+	"neon-grid-light":             "circuit",     // patroon in plaats van een kleurvlak
 	"neutral-light":               "stars",       // sterren, rustig grijs
 	"nocturne-ink-light":          "stars",       // nachtstuk
-	"nordic-frost-light":          "burst",       // kleurrijk (was rings)
-	"obsidian-gold-light":         "burst",       // kleurrijk (was band)
-	"ocean-depth-light":           "spectrum",    // kleurrijk (was veil)
-	"oceanic-steel-light":         "splash",      // kleurrijk (was haze)
+	"nordic-frost-light":          "zigzag",      // patroon in plaats van een kleurvlak
+	"obsidian-gold-light":         "deco",        // patroon in plaats van een kleurvlak
+	"ocean-depth-light":           "seigaiha",    // past bij het thema
+	"oceanic-steel-light":         "scales",      // patroon in plaats van een kleurvlak
 	"olive-drab-light":            "ruled",       // uit het paper-pakket (was chevron)
-	"owl-hours-light":             "ember",       // kleurrijk (was stars)
-	"oxblood-leather-light":       "burst",       // kleurrijk (was spotlight)
+	"owl-hours-light":             "scales",      // patroon in plaats van een kleurvlak
+	"oxblood-leather-light":       "stitch",      // patroon in plaats van een kleurvlak
 	"pale-night-light":            "aurora",      // uit het glass-pakket (was nebula)
 	"paper-ink-light":             "halftone",    // drukwerk
 	"pastel-mountain-light":       "mountains",   // naam
 	"patina-verdigris-light":      "linen",       // uit het brushed-pakket (was rings)
-	"peacock-light":               "leak",        // uit het enamel-pakket (was blooms)
-	"pistachio-cream-light":       "splash",      // uit het enamel-pakket (was mesh)
-	"polar-dawn-light":            "inkdrop",     // kleurrijk (was horizon)
+	"peacock-light":               "scales",      // patroon in plaats van een kleurvlak
+	"pistachio-cream-light":       "terrazzo",    // patroon in plaats van een kleurvlak
+	"polar-dawn-light":            "rays",        // patroon in plaats van een kleurvlak
 	"polar-night-light":           "mesh",        // uit het frost-pakket (was aurora)
-	"porcelain-blue-light":        "leak",        // kleurrijk (was rings)
-	"porcelain-light":             "burst",       // uit het enamel-pakket (was mesh)
-	"prism-veil-light":            "burst",       // kleurrijk (was veil)
+	"porcelain-blue-light":        "seigaiha",    // patroon in plaats van een kleurvlak
+	"porcelain-light":             "checker",     // patroon in plaats van een kleurvlak
+	"prism-veil-light":            "prism",       // past bij het thema
 	"race-livery-light":           "chevron",     // racestrepen
-	"rain-window-light":           "bokeh",       // regen op glas; bokeh past beter dan scanlines
+	"rain-window-light":           "bubbles",     // past bij het thema
 	"retro-crt-light":             "scanlines",   // beeldbuis
 	"retro-crt-mk2-light":         "scanlines",   // beeldbuis
 	"retro-groove-light":          "chevron",     // uit het carbon-pakket (was band)
-	"rhubarb-tart-light":          "leak",        // uit het enamel-pakket (was crosshatch)
-	"rose-pine-light":             "splash",      // kleurrijk (was silk)
+	"rhubarb-tart-light":          "tartan",      // patroon in plaats van een kleurvlak
+	"rose-pine-light":             "stitch",      // patroon in plaats van een kleurvlak
 	"rose-titanium-light":         "linen",       // uit het brushed-pakket (was mesh)
 	"rosewater-pane-light":        "aurora",      // uit het glass-pakket (was horizon)
-	"royal-amethyst-light":        "leak",        // kleurrijk (was spotlight)
-	"rusted-rail-light":           "horizon",     // uit het brushed-pakket (was perspective)
-	"saffron-robe-light":          "nebula",      // uit het velvet-pakket (was dunes)
-	"sakura-night-light":          "splash",      // uit het enamel-pakket (was blooms)
-	"salt-flat-light":             "topo",        // kale vlakte, kaartlijnen
+	"royal-amethyst-light":        "diamonds",    // patroon in plaats van een kleurvlak
+	"rusted-rail-light":           "herring",     // patroon in plaats van een kleurvlak
+	"saffron-robe-light":          "pinstripe",   // past bij het thema
+	"sakura-night-light":          "petals",      // past bij het thema
+	"salt-flat-light":             "hexagons",    // past bij het thema
 	"satin-nickel-light":          "pinstripe",   // geborsteld
-	"sea-glass-light":             "splash",      // kleurrijk (was caustics)
+	"sea-glass-light":             "terrazzo",    // past bij het thema
 	"signal-flare-light":          "glow",        // lichtkogel
 	"slate-light":                 "aurora",      // glas onder een zacht lichtgordijn
 	"slate-one-light":             "wireframe",   // editorlijnen
-	"smoked-plum-light":           "blooms",      // donkere vrucht
-	"solar-ember-light":           "sunburst",    // kleurrijk (was dawn)
+	"smoked-plum-light":           "deco",        // patroon in plaats van een kleurvlak
+	"solar-ember-light":           "rays",        // patroon in plaats van een kleurvlak
 	"solar-flats-light":           "ruled",       // uit het paper-pakket (was horizon)
-	"solar-wind-light":            "tide",        // kleurrijk (was dawn)
+	"solar-wind-light":            "zigzag",      // patroon in plaats van een kleurvlak
 	"squid-ink-light":             "halftone",    // uit het ink-pakket (was rings)
-	"static-noise-light":          "hexagons",    // uit het carbon-pakket (was halftone)
-	"steel-dawn-light":            "leak",        // kleurrijk (was rings)
+	"static-noise-light":          "grain",       // past bij het thema
+	"steel-dawn-light":            "herring",     // patroon in plaats van een kleurvlak
 	"stone-light":                 "dunes",       // zand en steen
-	"storm-petrel-light":          "flare",       // kleurrijk (was rings)
+	"storm-petrel-light":          "zigzag",      // past bij het thema
 	"sumi-ink-light":              "mountains",   // inktlandschap
 	"sunflower-ink-light":         "topo",        // uit het ink-pakket (was rings)
 	"synth-sunset-light":          "waves",       // (blijft waves)
-	"tarnished-brass-light":       "sweep",       // uit het brushed-pakket (was crosshatch)
+	"tarnished-brass-light":       "herring",     // patroon in plaats van een kleurvlak
 	"terminal-amber-light":        "scanlines",   // beeldbuis
 	"terracotta-studio-light":     "dunes",       // aarde
-	"thunderhead-light":           "bokeh",       // uit het frost-pakket (was glow)
-	"tidal-slate-light":           "spectrum",    // kleurrijk (was haze)
-	"tidepool-lens-light":         "leak",        // kleurrijk (was silk)
-	"tomorrow-dusk-light":         "confetti",    // kleurrijk (was dawn)
-	"tyrian-light":                "blooms",      // purperen vlakken
-	"ultraviolet-light":           "flare",       // kleurrijk (was prism)
+	"thunderhead-light":           "rays",        // past bij het thema
+	"tidal-slate-light":           "seigaiha",    // past bij het thema
+	"tidepool-lens-light":         "moire",       // patroon in plaats van een kleurvlak
+	"tomorrow-dusk-light":         "sunset",      // past bij het thema
+	"tyrian-light":                "deco",        // patroon in plaats van een kleurvlak
+	"ultraviolet-light":           "isocube",     // patroon in plaats van een kleurvlak
 	"unraid-azure-light":          "cellgrid",    // het tekenraster van een terminal
 	"unraid-black-light":          "digirain",    // de groene regen uit The Matrix, hier in het accent
 	"unraid-blaze-light":          "crt",         // rood fosfor: scanlines en een rollende band
 	"unraid-ember-light":          "bootlog",     // een bootlog die voorbij scrolt
-	"vampire-castle-light":        "flare",       // kleurrijk (was stars)
+	"vampire-castle-light":        "checker",     // patroon in plaats van een kleurvlak
 	"velocity-ink-light":          "mountains",   // uit het ink-pakket (was chevron)
 	"vermilion-seal-light":        "halftone",    // stempel
-	"violet-shades-light":         "spectrum",    // kleurrijk (was spotlight)
-	"vivid-hyper-light":           "inkdrop",     // kleurrijk (was perspective)
-	"volcanic-ash-light":          "linen",       // uit het brushed-pakket (was mountains)
-	"wheat-field-light":           "dunes",       // golvend graan
-	"winter-ember-light":          "inkdrop",     // kleurrijk (was stars)
-	"zen-ember-light":             "ruled",       // uit het paper-pakket (was rings)
+	"violet-shades-light":         "moire",       // patroon in plaats van een kleurvlak
+	"vivid-hyper-light":           "bauhaus",     // patroon in plaats van een kleurvlak
+	"volcanic-ash-light":          "grain",       // past bij het thema
+	"wheat-field-light":           "herring",     // past bij het thema
+	"winter-ember-light":          "stitch",      // patroon in plaats van een kleurvlak
+	"zen-ember-light":             "ruled",       // past bij het thema
 	"zinc-light":                  "dotgrid",     // fijn stippenraster
 	"chalk-light":                 "ruled",       // schriftlijnen op kalk
-	"concrete-light":              "horizon",     // een lage horizon boven beton
+	"concrete-light":              "bricks",      // patroon in plaats van een kleurvlak
 	"black-light":                 "stars",       // sterren op zwart
 }
