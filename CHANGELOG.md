@@ -149,6 +149,7 @@ Not released yet.
 ### Inbox
 
 - **fix — Undo after pasting the same link again keeps one row.** With "no duplicate URLs" on, `RestoreInboxLinkEvicting` (`inbox.go`) only compared ids, so deleting a link, pasting its URL again and then pressing Undo left two rows with the same address. It now answers with the item already there when the setting is on; `PutInboxItem` passes the setting in. Covered by `TestUndoKeepsOneRowWhenTheURLCameBack`.
+- **fix — cancelling Promote on a found app leaves no empty category.** `discoveryCategoryFor` makes the category the app's kind names so the form can preselect it, and closing the form without saving left it on the dashboard. The category is remembered (`_pendingDiscoveryCategory`) and `releaseDiscoveryCategory` takes it away again once the form closes with nothing in it, without a trash entry (`removeEmptyCategory` in `dashboard-structure-create.js`). Covered in `tests/app-discovery.spec.js`.
 
 ### Containers
 

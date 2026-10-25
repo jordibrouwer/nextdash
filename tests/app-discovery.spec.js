@@ -368,6 +368,27 @@ test('with Propose in the Inbox, a new container arrives in the Inbox and Promot
     }).toBe(0);
 });
 
+// The category a found app's kind names is made so the form can preselect it;
+// closing the form without saving took the bookmark away but left the category.
+test('Promote on a proposal and then cancelling leaves no empty category behind', async ({ page, request, workerServer }) => {
+    await afterFirstRun(request, workerServer, { newApps: 'inbox' });
+    await runDiscovery(request);
+    expect((await categories(request)).some((c) => c.name === 'Media management')).toBe(false);
+    await open(page);
+    await openInbox(page);
+
+    const row = page.locator('.inbox-item', { has: page.getByRole('heading', { name: 'New app: sonarr' }) });
+    await row.getByRole('button', { name: 'Promote' }).click();
+    const form = page.locator('#bookmark-form-modal');
+    await expect(form).toHaveClass(/show/);
+    expect((await categories(request)).some((c) => c.name === 'Media management')).toBe(true);
+    await form.locator('[data-field="name"]').press('Escape');
+    await expect(form).not.toHaveClass(/show/);
+
+    await expect.poll(async () => (await categories(request)).some((c) => c.name === 'Media management')).toBe(false);
+    await expect(row).toHaveCount(1);
+});
+
 test('Ignore on a proposal removes it and it never returns', async ({ page, request, workerServer }) => {
     await afterFirstRun(request, workerServer, { newApps: 'inbox' });
     await runDiscovery(request);

@@ -68,6 +68,7 @@ class DashboardInlineEdit {
         if (clearInboxPromote) {
             d._pendingInboxPromoteId = null;
             d._pendingDiscoveryLink = null;
+            void d.inbox?.releaseDiscoveryCategory?.();
             // The resume goes with it. Closing the form without saving is
             // someone stopping, and a flag left set would reopen triage on the
             // next unrelated bookmark they happen to create.
@@ -2511,6 +2512,8 @@ class DashboardInlineEdit {
             if (pendingInboxPromoteId && d.inbox) {
                 d._pendingInboxPromoteId = null;
                 await d.inbox.linkPromotedContainer?.(pageId, bookmark.url);
+                // Saved somewhere else, the category made for it stands empty.
+                await d.inbox.releaseDiscoveryCategory?.();
                 await d.inbox.completePromote(pendingInboxPromoteId);
                 if (bookmark.checkStatus === true || bookmark.monitor === true) {
                     d.inbox.triggerHealthCheckForUrl?.(bookmark.url);
