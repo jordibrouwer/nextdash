@@ -128,10 +128,15 @@ test.describe('the Sources tab', () => {
          * sub-tab buttons above them, which are .config-subtab and styled
          * differently on purpose. The reference has to be a control that was
          * already correct, or a wrong shared class would make both sides match.
+         *
+         * The plain Export bookmarks (CSV) button, not the first .config-btn on
+         * the page: that is the primary Back up now, and since v1.22.0 the
+         * Signature style gives plain buttons the material's control corner and
+         * leaves primary ones out (theme-overlays.css), so the two differ on
+         * purpose.
          */
         const readButton = () => page.evaluate(() => {
-            const el = [...document.querySelectorAll('.config-btn')]
-                .find((b) => !b.hasAttribute('data-source-action'));
+            const el = document.querySelector('.config-btn[data-backup-action="csv-export"]');
             if (!el) return 'MISSING';
             const c = getComputedStyle(el);
             return [c.padding, c.borderWidth, c.borderRadius, c.fontSize].join('|');
