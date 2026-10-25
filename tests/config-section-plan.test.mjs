@@ -151,6 +151,29 @@ test('a method body really is between its declaration and its end', () => {
     assert.ok(shell.lineCount > 20, `renderShell measured only ${shell.lineCount} lines`);
 });
 
+test('a static array of objects ends at its semicolon, not after the first object', () => {
+    // SOURCE_DEFS was cut after its first source, and the rest of the array was
+    // left in the core as a syntax error that --verify could not see.
+    const dir = mkdtempSync(join(tmpdir(), 'config-field-'));
+    const path = join(dir, 'field.js');
+    writeFileSync(path, [
+        'class DashboardConfig {',
+        '    static DEFS = [',
+        '        {',
+        "            id: 'a',",
+        '        },',
+        '        {',
+        "            id: 'b',",
+        '        },',
+        '    ];',
+        '}',
+    ].join('\n'));
+    const defs = indexMembers(path).byName.get('DEFS')?.[0];
+    rmSync(dir, { recursive: true, force: true });
+    assert.ok(defs, 'DEFS was not indexed');
+    assert.strictEqual(defs.end, 8, `DEFS ended at line ${defs.end + 1}, not on its \`];\``);
+});
+
 // ─── The planner, against the split that already happened ───────────────────
 
 console.log('planner (ground truth: the logs split)');

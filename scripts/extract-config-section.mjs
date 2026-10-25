@@ -199,6 +199,9 @@ function findMember(lines, name, scanLine) {
         throw new Error(`${name} is defined twice (lines ${at + 1} and ${again + 1}) — resolve that first`);
     }
 
+    // A field ends at its `;`: `static X = [ {…}, {…} ];` is back at depth zero
+    // after its first object. Same rule as indexMembers in lib/config-members.mjs.
+    const isField = /^ {4}static\s+[A-Za-z_]\w*\s*=/.test(lines[at]);
     let depth = 0;
     let seenBrace = false;
     let end = -1;
@@ -206,9 +209,9 @@ function findMember(lines, name, scanLine) {
         const before = depth;
         depth += scanLine(lines[i]);
         if (depth > 0 || (before > 0 && depth === 0)) seenBrace = true;
-        if (seenBrace && depth === 0) { end = i; break; }
-        // A static field with no braces at all: `static X = 'y';`
-        if (!seenBrace && depth === 0 && /;\s*(\/\/.*)?$/.test(lines[i])) { end = i; break; }
+        if (!isField && seenBrace && depth === 0) { end = i; break; }
+        // A static field, braces or not: `static X = 'y';`
+        if ((isField || !seenBrace) && depth === 0 && /;\s*(\/\/.*)?$/.test(lines[i])) { end = i; break; }
     }
     if (end < 0) throw new Error(`could not find the end of ${name} (starts at line ${at + 1})`);
     return { name, start: commentStartAbove(lines, at), declLine: at, end };

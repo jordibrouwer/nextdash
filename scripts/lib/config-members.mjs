@@ -147,12 +147,19 @@ export function indexMembers(file = CORE) {
         let depth = 0;
         let seenBrace = false;
         let end = -1;
+        /*
+         * A field ends at its `;`, not at the first brace that closes: in
+         * `static X = [ {…}, {…} ];` the depth is back to zero after the first
+         * object, and ending there left the rest of the array behind in the core
+         * when Data & backups' SOURCE_DEFS moved.
+         */
+        const isField = opener === '=';
         for (let j = i; j < lines.length; j += 1) {
             const before = depth;
             depth += scanLine(lines[j]);
             if (depth > 0 || (before > 0 && depth === 0)) seenBrace = true;
-            if (seenBrace && depth === 0) { end = j; break; }
-            if (!seenBrace && depth === 0 && /;\s*(\/\/.*)?$/.test(lines[j])) { end = j; break; }
+            if (!isField && seenBrace && depth === 0) { end = j; break; }
+            if ((isField || !seenBrace) && depth === 0 && /;\s*(\/\/.*)?$/.test(lines[j])) { end = j; break; }
         }
         if (end < 0) continue;
 
