@@ -37,6 +37,7 @@ test.describe('category spacing', () => {
         const set = (theme) => page.evaluate(async (t) => {
             const d = window.dashboardInstance;
             d.settings.categorySpacing = 'theme';
+            await d.config.ensureSection('appearance');   // setTheme lives in Appearance's file
             await d.config.setTheme(t);
             d.setupDOM();
             await d.renderDashboard({ animate: false });

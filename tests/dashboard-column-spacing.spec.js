@@ -57,6 +57,7 @@ test.describe('space between columns', () => {
         const use = (theme, v) => page.evaluate(async ([t, s]) => {
             const d = window.dashboardInstance;
             d.settings.columnSpacing = s;
+            await d.config.ensureSection('appearance');   // setTheme lives in Appearance's file
             await d.config.setTheme(t);
             d.setupDOM();
         }, [theme, v]);

@@ -25,6 +25,7 @@ async function use(page, theme, style) {
     await page.evaluate(async ([t, s]) => {
         const d = window.dashboardInstance;
         d.settings.categoryHeaderStyle = s;
+        await d.config.ensureSection('appearance');   // setTheme lives in Appearance's file
         await d.config.setTheme(t);
         d.setupDOM();
     }, [theme, style]);

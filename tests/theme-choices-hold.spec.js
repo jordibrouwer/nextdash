@@ -21,6 +21,7 @@ test('Automatic on a packaged theme writes the shipped value back', async ({ pag
     await open(page);
     const out = await page.evaluate(async () => {
         const cfg = window.dashboardInstance.config;
+        await cfg.ensureSection('appearance');   // the theme cards live in Appearance's file
         let id = null; let shipped;
         for (const key of Object.keys(cfg._colorsData.builtIn || {})) {
             const res = await (await fetch(`/api/themes/defaults?id=${encodeURIComponent(key)}`)).json();
@@ -91,6 +92,7 @@ test('a duplicate of a packaged theme is not filed under its collection', async 
     await open(page);
     const out = await page.evaluate(async () => {
         const cfg = window.dashboardInstance.config;
+        await cfg.ensureSection('appearance');   // the theme cards live in Appearance's file
         const builtIn = cfg._colorsData.builtIn || {};
         let id = Object.keys(builtIn).find((k) => builtIn[k]?.collection);
         if (!id) {

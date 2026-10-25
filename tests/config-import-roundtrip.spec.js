@@ -71,7 +71,7 @@ test.describe('theme import', () => {
      */
     test('an exported theme comes back as a new theme', async ({ page }) => {
         await openConfig(page);
-        const result = await page.evaluate(() => window.dashboardInstance.config.normalizeImportedTheme({
+        const result = await page.evaluate(async () => (await window.dashboardInstance.config.ensureSection('appearance')) && window.dashboardInstance.config.normalizeImportedTheme({
             name: 'Sunset',
             backgroundPrimary: '#101020',
             textPrimary: '#eeeeee',
@@ -81,7 +81,7 @@ test.describe('theme import', () => {
 
     test('the wrapped shape an export writes is read the same way', async ({ page }) => {
         await openConfig(page);
-        const result = await page.evaluate(() => window.dashboardInstance.config.normalizeImportedTheme({
+        const result = await page.evaluate(async () => (await window.dashboardInstance.config.ensureSection('appearance')) && window.dashboardInstance.config.normalizeImportedTheme({
             name: 'Sunset',
             colors: { backgroundPrimary: '#101020', textPrimary: '#eeeeee' },
         }));
@@ -90,8 +90,9 @@ test.describe('theme import', () => {
 
     test('a JSON file that is not a theme is refused', async ({ page }) => {
         await openConfig(page);
-        const rejected = await page.evaluate(() => {
+        const rejected = await page.evaluate(async () => {
             const c = window.dashboardInstance.config;
+            await c.ensureSection('appearance');   // the importer lives in Appearance's file
             return [
                 c.normalizeImportedTheme({ hello: 'world' }),
                 c.normalizeImportedTheme([1, 2, 3]),
