@@ -957,3 +957,123 @@
     font-size: var(--font-size-controls, 0.85rem);
     cursor: pointer;
 }
+
+/* The dialog that says why the dashboard looks different after the move to Aurora Glass. A
+   plain dialog, not the release notes' tall shell: it is short and should look it. */
+.look-migration-modal .modal-body {
+    overflow: visible;
+}
+
+.look-migration p {
+    margin: 0 0 var(--space-3, 0.75rem);
+    color: var(--text-secondary);
+    line-height: 1.55;
+}
+
+.look-migration .look-migration-sorry {
+    margin-bottom: var(--space-3, 0.9rem);
+    padding: var(--space-3, 0.7rem) var(--space-4, 0.9rem);
+    color: var(--text-primary);
+    font-weight: 600;
+    border-left: 3px solid var(--accent-primary);
+    border-radius: 0 var(--radius-4, 0.5rem) var(--radius-4, 0.5rem) 0;
+    background: color-mix(in srgb, var(--accent-primary) 9%, transparent);
+}
+
+.look-migration-cmp {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: var(--space-2, 0.6rem);
+    margin: var(--space-4, 1rem) 0;
+}
+
+.look-migration-theme {
+    display: grid;
+    gap: 0.1rem;
+    padding: var(--space-2, 0.6rem) var(--space-3, 0.75rem);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-4, 0.6rem);
+    font-size: var(--font-size-small, 0.8rem);
+    min-width: 0;
+}
+
+.look-migration-theme span {
+    color: var(--text-tertiary);
+}
+
+.look-migration-theme b {
+    color: var(--text-primary);
+    font-size: 0.95em;
+    overflow-wrap: anywhere;
+}
+
+.look-migration-theme--new {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+
+.look-migration-arrow {
+    color: var(--accent-primary);
+}
+
+.look-migration-list {
+    margin: 0 0 var(--space-3, 0.75rem);
+    padding-left: 1.2rem;
+    color: var(--text-secondary);
+}
+
+.look-migration-list li {
+    margin: 0.3rem 0;
+    line-height: 1.5;
+}
+
+.look-migration .look-migration-once {
+    margin: var(--space-2, 0.5rem) 0 0;
+    font-size: var(--font-size-small, 0.78rem);
+    color: var(--text-tertiary);
+}
+
+/* Three answers in the actions row: open the studio, go back, carry on. */
+.look-migration-modal .modal-actions {
+    flex-wrap: wrap;
+}
+
+.look-migration-modal .modal-actions .modal-button {
+    flex: 1 1 10rem;
+}
+
+/* "Got it" is the answer most readers want, so it carries the accent. */
+html body .look-migration-modal .modal-actions .modal-button:last-child {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: var(--on-accent, var(--background-primary));
+    font-weight: 700;
+}
+
+html body .look-migration-modal .modal-actions .modal-button:last-child:hover,
+html body .look-migration-modal .modal-actions .modal-button:last-child:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 88%, var(--text-primary));
+}
+
+/* The way back: a text link under the list, above the one-time note. */
+.look-migration .look-migration-back {
+    margin: var(--space-3, 0.75rem) 0 0;
+}
+
+.look-migration-backbtn {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-primary);
+    font: inherit;
+    font-size: var(--font-size-small, 0.85rem);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.look-migration-backbtn:hover,
+.look-migration-backbtn:focus-visible {
+    color: var(--text-primary);
+}
