@@ -196,8 +196,22 @@
 
     Object.assign(global.DashboardConfig.prototype, {
 
-        /** Open the studio, from config, the dashboard, Shift+A or the notice. */
-        async openLookStudio(options = {}) {
+        /**
+         * Open the studio, from config, the dashboard, Shift+A or the notice.
+         *
+         * One opening at a time. The loads below take a moment on a cold page,
+         * and a second Shift+A in that moment passed the isOpen check too: it
+         * took a new snapshot over the first, so Cancel no longer went back to
+         * the look from before, and config did not come back on close.
+         */
+        openLookStudio(options = {}) {
+            if (this._lookStudioOpening) return this._lookStudioOpening;
+            this._lookStudioOpening = this.openLookStudioNow(options)
+                .finally(() => { this._lookStudioOpening = null; });
+            return this._lookStudioOpening;
+        },
+
+        async openLookStudioNow(options = {}) {
             if (!window.ThemeBrowser?.open) return;
             if (window.ThemeBrowser.isOpen?.()) {
                 window.ThemeBrowser.open();
@@ -211,6 +225,10 @@
                 window.ThemeLoader?.loadSurfaceMeta?.(),
                 window.ViewStyles?.ensureViewStyles?.(),
             ]).then(([c, m]) => [c, m]);
+            if (window.ThemeBrowser.isOpen?.() || this._lookStudio) {
+                window.ThemeBrowser.open();
+                return;
+            }
             const palettes = studioPalettes(colors);
 
             // The studio docks beside the dashboard, so config steps aside

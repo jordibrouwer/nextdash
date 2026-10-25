@@ -76,3 +76,18 @@ test('Escape while Apply is saving waits for it: screen and server agree', async
     expect(await local(page, 'categoryHeaderStyle')).toBe('label');
     expect((await stored(page)).categoryHeaderStyle).toBe('label');
 });
+
+test('a second opening while the first loads is the same one: config comes back on close', async ({ page }) => {
+    await setup(page);
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.isActiveView())).toBe(true);
+    await page.evaluate(() => {
+        const cfg = window.dashboardInstance.config;
+        void cfg.openThemeBrowser();
+        void cfg.openThemeBrowser();
+    });
+    await expect(studio(page)).toBeVisible({ timeout: 15_000 });
+    await page.locator('[data-studio-cancel]').click();
+    await expect(studio(page)).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.isActiveView())).toBe(true);
+});
