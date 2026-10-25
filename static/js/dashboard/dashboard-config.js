@@ -1034,7 +1034,7 @@ class DashboardConfig {
             // the number is.
             this._statsTrend = [];
         }
-        if (this.isActiveView() && this.section === 'stats') this.repaintStatsBody();
+        if (this.isActiveView() && this.inSection('stats')) this.repaintStatsBody();
         return this._statsTrend;
     }
 
@@ -1621,7 +1621,7 @@ class DashboardConfig {
             b.setAttribute('aria-selected', on ? 'true' : 'false');
             b.setAttribute('tabindex', on ? '0' : '-1');
         });
-        if (attr === 'data-help-tab') this.repaintHelpStripIfNeeded();
+        if (attr === 'data-help-tab' && this.inSection('help')) this.repaintHelpStripIfNeeded();
     }
 
     /**
@@ -5563,7 +5563,7 @@ class DashboardConfig {
             this._newsUnread = news.unreadCount(this._newsStream, this._newsSeenAt);
             this.repaintNews();
             this.syncNewsBadge();
-            if (this.isActiveView() && this.section === 'about') {
+            if (this.isActiveView() && this.inSection('about')) {
                 // About → News & features draws the same stream, and without
                 // this it sat on "Loading…" until some other render happened to
                 // come along and redraw it.
@@ -5710,11 +5710,11 @@ class DashboardConfig {
      */
     repaintNews() {
         if (!this.isActiveView()) return;
-        if (this.section === 'overview') {
+        if (this.inSection('overview')) {
             this.repaintOverview();
             return;
         }
-        if (this.section !== 'about' || this.aboutTab !== 'news') return;
+        if (!this.inSection('about') || this.aboutTab !== 'news') return;
         const body = document.getElementById('config-view-body');
         if (!body) return;
         body.innerHTML = this.renderAbout();
@@ -5726,7 +5726,7 @@ class DashboardConfig {
     }
 
     repaintOverview() {
-        if (!this.isActiveView() || this.section !== 'overview') return;
+        if (!this.isActiveView() || !this.inSection('overview')) return;
         const body = document.getElementById('config-view-body');
         if (!body) return;
         body.innerHTML = this.renderOverview();
@@ -7340,13 +7340,14 @@ class DashboardConfig {
      * has its own body id and render/bind pair.
      */
     repaintDbTabBody() {
-        if (this.section === 'logs') {
+        if (this.inSection('logs')) {
             const body = document.getElementById('config-logs-body');
             if (!body) return;
             body.innerHTML = this.renderLogsTab();
             this.bindLogsTabContent(body);
             return;
         }
+        if (!this.inSection('data-backups')) return;
         const body = document.getElementById('config-db-body');
         if (!body) return;
         body.innerHTML = this.renderDbTab();
@@ -7730,9 +7731,7 @@ class DashboardConfig {
             this._trashData = { items: [], count: 0, retentionDays: 30 };
             this._trashLoadFailed = true;
         }
-        if (!repaint || this.dbTab !== 'trash') {
-            return;
-        }
+        if (!repaint || !this.inSection('data-backups') || this.dbTab !== 'trash') return;
         const body = document.getElementById('config-db-body');
         if (body) {
             body.innerHTML = this.renderDbTab();
@@ -7754,9 +7753,7 @@ class DashboardConfig {
      */
     refreshTrashIfVisible() {
         this._trashData = null;
-        if (this.section !== 'data-backups' || this.dbTab !== 'trash') {
-            return Promise.resolve();
-        }
+        if (!this.inSection('data-backups') || this.dbTab !== 'trash') return Promise.resolve();
         return this.loadTrash();
     }
 
@@ -8055,7 +8052,7 @@ class DashboardConfig {
      * replace whatever they opened instead.
      */
     repaintWebhooks() {
-        if (this.section !== 'data-backups' || this.dbTab !== 'webhooks') return;
+        if (!this.inSection('data-backups') || this.dbTab !== 'webhooks') return;
         const body = document.getElementById('config-db-body');
         if (!body) return;
         body.innerHTML = this.renderDbTab();
@@ -11115,7 +11112,7 @@ class DashboardConfig {
             this._lookStudio.ui?.repaint();
             return savePromise;
         }
-        if (this.isActiveView() && this.section === 'appearance') {
+        if (this.isActiveView() && this.inSection('appearance')) {
             /*
              * Capture before the save, restore after the repaint.
              *
@@ -11131,7 +11128,7 @@ class DashboardConfig {
              */
             const restoreFocus = this.captureControlPanelFocus();
             void savePromise.finally(() => {
-                if (!this.isActiveView() || this.section !== 'appearance') {
+                if (!this.isActiveView() || !this.inSection('appearance')) {
                     return;
                 }
                 const body = document.getElementById('config-view-body');
@@ -18402,7 +18399,7 @@ class DashboardConfig {
             btn.dataset.elsewhereBound = '1';
             btn.addEventListener('click', () => {
                 const tab = btn.dataset.filterElsewhere;
-                if (this.section === 'appearance') {
+                if (this.inSection('appearance')) {
                     void this.switchAppearanceTab(tab);
                 } else if (this.section === 'inbox') {
                     this.inboxTab = tab;
@@ -27672,6 +27669,25 @@ class DashboardConfig {
      * anything. A failure leaves the reader where they were with a line saying
      * so — an empty body would read as a section with nothing in it.
      */
+    /**
+     * Whether `id` is the open section and its file has run.
+     *
+     * `this.section === id` alone is true from the moment a hash route sets it,
+     * before the section's lazy file has arrived, so a call behind it can land
+     * on a method that is not there yet. Behind this one it cannot — which is
+     * also what lets scripts/config-section-plan.mjs treat what it guards as
+     * that section's own.
+     *
+     * An optional file in a chain does not count: ensureSection lets the
+     * section open without it, and so does this.
+     */
+    inSection(id) {
+        if (this.section !== id) return false;
+        const entry = DashboardConfig.SECTION_MODULES[id];
+        if (!entry) return true;
+        return (entry.chain || [entry]).every((s) => s.optional || s.ready());
+    }
+
     ensureSection(id) {
         const entry = DashboardConfig.SECTION_MODULES[id];
         if (!entry || entry.ready()) return Promise.resolve(true);
@@ -27740,7 +27756,7 @@ class DashboardConfig {
             .then(() => load('js/dashboard/dashboard-config-stats.js',
                 'dashboardConfigStats', () => window.DashboardConfigStatsReady === true))
             .then(() => {
-            if (this.isActiveView() && this.section === 'stats') this.repaintStatsBody();
+            if (this.isActiveView() && this.inSection('stats')) this.repaintStatsBody();
             return true;
         }).catch(() => false);
         return this._statsRenderersPromise;
@@ -27781,7 +27797,7 @@ class DashboardConfig {
         } catch {
             this._statsFinders = [];
         }
-        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'usage') {
+        if (this.isActiveView() && this.inSection('stats') && this.statsTab === 'usage') {
             const host = document.getElementById('config-stats-finders');
             if (host) host.innerHTML = this.renderStatsFinders();
         }
@@ -27853,7 +27869,7 @@ class DashboardConfig {
         };
         // The widget panels are drawn from it too, so the body is repainted
         // rather than only the library list.
-        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'collection') {
+        if (this.isActiveView() && this.inSection('stats') && this.statsTab === 'collection') {
             this.repaintStatsBody();
         }
     }
@@ -27887,7 +27903,7 @@ class DashboardConfig {
             unraid: unraid || null,
             backups: backups || null,
         };
-        if (this.isActiveView() && this.section === 'stats' && (this.statsTab === 'server' || this.statsTab === 'overview')) {
+        if (this.isActiveView() && this.inSection('stats') && (this.statsTab === 'server' || this.statsTab === 'overview')) {
             this.repaintStatsBody();
         }
     }
@@ -27910,7 +27926,7 @@ class DashboardConfig {
             get('/api/digest/latest'),
         ]);
         this._statsNotify = { quiet, push, webhooks, digest };
-        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'health') {
+        if (this.isActiveView() && this.inSection('stats') && this.statsTab === 'health') {
             this.repaintStatsBody();
         }
     }
@@ -28500,7 +28516,7 @@ class DashboardConfig {
         }
         // The inbox tab and the overview both draw from it; the whole body is
         // repainted so the tiles and the attention list pick it up together.
-        if (this.isActiveView() && this.section === 'stats' && (this.statsTab === 'inbox' || this.statsTab === 'overview')) {
+        if (this.isActiveView() && this.inSection('stats') && (this.statsTab === 'inbox' || this.statsTab === 'overview')) {
             this.repaintStatsBody();
         }
     }
@@ -28611,8 +28627,7 @@ class DashboardConfig {
          * panels, which sit beside it — and those render to nothing while the
          * fetch is in flight, so a partial repaint left them absent for good.
          */
-        if (this.isActiveView() && this.section === 'stats'
-            && ['health', 'overview', 'collection'].includes(this.statsTab)) {
+        if (this.isActiveView() && this.inSection('stats') && ['health', 'overview', 'collection'].includes(this.statsTab)) {
             this.repaintStatsBody();
         }
     }
