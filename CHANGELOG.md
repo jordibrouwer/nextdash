@@ -147,6 +147,7 @@ Not released yet.
 
 - **fix — Cancel while Apply is saving waits for the save.** Escape, the ×, Cancel or a click beside the panel during Apply put the old look on screen while the save stored the new one, and the next unrelated save sent the old one back; a second Apply posted the colours twice. `theme-browser.js` now ignores every way out while Apply runs.
 - **fix — a second Shift+A while the studio loads opens the same one.** `openLookStudio` checked `isOpen` before its loads, so a second call took a new snapshot over the first: Cancel no longer went back to the look from before, and config did not come back on close. One opening runs at a time (`_lookStudioOpening`), and the check runs again after the loads.
+- **fix — a settings change from another device no longer wipes the preview.** `refreshIfDataRevisionChanged` loaded the settings under the open studio, which replaced the previewed look with the stored one. It now leaves the settings revision as it was while the studio is open, so the first poll after it closes applies the change.
 - **fix — Reset all also resets the rest of the Surface tab.** `lookDefaults()` (`look_defaults.go`) left out `categorySurface`, `widgetSurface`, `widgetOpacity`, `materialStyle` and `neutralAccent`, and a forced value of those held for every theme after Reset all. Covered by `TestLookDefaultsCoverTheSurfaceTab`.
 
 ### Inbox

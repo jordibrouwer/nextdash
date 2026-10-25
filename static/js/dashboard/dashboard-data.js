@@ -695,10 +695,18 @@ class DashboardData {
             return false;
         }
         const changed = await this.syncDataRevision({ invalidateOnChange: true });
-        const settingsChanged = Boolean(this._lastSettingsRevision)
+        let settingsChanged = Boolean(this._lastSettingsRevision)
             && Boolean(d._serverSettingsRevision)
             && this._lastSettingsRevision !== d._serverSettingsRevision;
-        d._serverSettingsRevision = this._lastSettingsRevision || d._serverSettingsRevision;
+        // Not while the look studio is open: loading the settings replaced the
+        // preview with the stored look under the open panel, and Cancel then put
+        // the other device's change back. The revision is left where it was, so
+        // the first poll after the studio closes applies the change.
+        if (settingsChanged && d._lookStudioCommitted) {
+            settingsChanged = false;
+        } else {
+            d._serverSettingsRevision = this._lastSettingsRevision || d._serverSettingsRevision;
+        }
 
         // A config change on another device used to be invisible here: this poll
         // reloaded bookmarks, inbox and health and never settings, while the

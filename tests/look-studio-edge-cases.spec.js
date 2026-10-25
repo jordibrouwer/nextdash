@@ -91,3 +91,28 @@ test('a second opening while the first loads is the same one: config comes back 
     await expect(studio(page)).toHaveCount(0);
     await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.isActiveView())).toBe(true);
 });
+
+test('a settings change from another device waits until the studio closes', async ({ page, request }) => {
+    await setup(page);
+    await openStudio(page);
+    await useLook(page, 'terminal');
+    await expect.poll(() => local(page, 'categoryHeaderStyle')).toBe('label');
+    // The look's own saves first: each sends the whole settings back, and one
+    // landing after the other device's would put its value back.
+    await page.evaluate(() => window.dashboardInstance.config._settingsSaveChain);
+
+    const res = await request.post('/api/settings', {
+        data: { inboxViewUnreadMark: false },
+        headers: { 'X-NextDash-Token': WRITE_TOKEN },
+    });
+    expect(res.ok()).toBe(true);
+    await page.evaluate(() => window.dashboardInstance.data.refreshIfDataRevisionChanged());
+    expect(await local(page, 'categoryHeaderStyle'), 'the preview stays').toBe('label');
+    await expect(studio(page)).toBeVisible();
+
+    await page.locator('[data-studio-cancel]').click();
+    await expect(studio(page)).toHaveCount(0);
+    expect(await local(page, 'categoryHeaderStyle')).toBe('clean');
+    await page.evaluate(() => window.dashboardInstance.data.refreshIfDataRevisionChanged());
+    await expect.poll(() => local(page, 'inboxViewUnreadMark'), 'applied once the studio closed').toBe(false);
+});
