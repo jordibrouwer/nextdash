@@ -13253,7 +13253,8 @@ class DashboardConfig {
             this.dash.settings.fontPreset = 'custom';
             this.dash.settings.enableCustomFont = true;
             window.DashboardFont?.applyMainFont?.(this.dash.settings);
-            this.dash.saveSettings?.();
+            // Awaited: the toast below must not claim a font that was not saved.
+            if ((await this.saveSettingsWithFeedback()) === false) throw new Error('not saved');
             this.notify(this.t('config.fontUploadSuccess', 'Custom font applied.'), 'success');
             this.persistAppearance();
         } catch (err) {
@@ -13271,7 +13272,9 @@ class DashboardConfig {
             const body = await res.json().catch(() => ({}));
             if (body.path) this.dash.settings.customFaviconPath = body.path;
             this.dash.settings.enableCustomFavicon = true;
-            this.dash.saveSettings?.();
+            // Awaited before the reload below, or the reload could land first
+            // and leave the favicon uploaded but never switched on.
+            if ((await this.saveSettingsWithFeedback()) === false) throw new Error('not saved');
             this.notify(this.t('config.faviconUploadSuccess', 'Custom favicon applied. Reloading…'), 'success');
             setTimeout(() => window.location.reload(), 1000);
         } catch {
