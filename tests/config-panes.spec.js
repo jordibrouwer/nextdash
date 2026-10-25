@@ -25,14 +25,27 @@ async function open(page, hash) {
 
 const setSurface = (page, word) => page.evaluate((w) => window.ThemeLoader.applyCatSurface(w), word);
 
+/*
+ * Since v1.22.0 the default Material style is Signature: the views and Config take the
+ * surface of the material (theme-overlays.css), whatever the category surface says. The
+ * glass / card / open choice is the Classic drawing, so the tests of that choice put Classic
+ * on the page first -- without saving it, which would leak to the other specs on this server.
+ */
+const asClassic = (page) => page.evaluate(async () => {
+    await window.ThemeLoader.applySurfacesForTheme(window.dashboardInstance.settings.theme,
+        { ...window.dashboardInstance.settings, materialStyle: 'classic', themeSurfacesForceAll: true });
+});
+
 /** What a block is painted with: alpha of its fill, blur, radius, whether it has a hairline. */
 const paint = (page, selector) => page.evaluate((sel) => {
     const el = document.querySelector(sel);
     if (!el) return null;
     const cs = getComputedStyle(el);
-    // The bookmarks view blurs through a layer behind its content, so that it is not the
-    // containing block of the fixed sheets and modals inside it.
-    const layer = sel.includes('config-view--library') ? getComputedStyle(el, '::before') : cs;
+    // Under Classic the bookmarks view blurs through a layer behind its content, so that it is
+    // not the containing block of the fixed sheets and modals inside it; under Signature the
+    // plate blurs by itself and that layer has none (theme-overlays.css).
+    const ownBlur = cs.backdropFilter && cs.backdropFilter !== 'none';
+    const layer = sel.includes('config-view--library') && !ownBlur ? getComputedStyle(el, '::before') : cs;
     const slash = cs.backgroundColor.match(/\/\s*([\d.]+)\s*\)/);
     const comma = cs.backgroundColor.match(/rgba\(([^)]+)\)/);
     const alpha = slash ? parseFloat(slash[1]) : comma ? parseFloat(comma[1].split(',')[3]) : 1;
@@ -80,6 +93,17 @@ test.describe('config is one pane', () => {
         await open(page, '#config/appearance');
         await page.waitForSelector(view, { timeout: 20_000 });
 
+        // Signature, the default: one pane in the material -- on Aurora Glass a blurred,
+        // see-through plate with a round corner, whatever the category surface is.
+        await setSurface(page, 'card');
+        const signature = await paint(page, view);
+        expect(signature.blur).toBe('blur');
+        expect(signature.alpha).toBeGreaterThan(0);
+        expect(signature.alpha).toBeLessThan(1);
+        expect(parseFloat(signature.radius)).toBeGreaterThanOrEqual(8);
+
+        // Glass, card or a light frame is the Classic drawing.
+        await asClassic(page);
         await setSurface(page, 'glass');
         const glass = await paint(page, view);
         expect(glass.blur).toBe('blur');
@@ -111,24 +135,36 @@ test.describe('config is one pane', () => {
     });
 
     test('a block inside is tinted with a hairline, never a pane of its own', async ({ page }) => {
+        const readBlocks = () => page.evaluate((v) => [...document.querySelectorAll(`${v} :is(.config-panel, .config-widget, .config-crud-list--table):not(.config-panel--attention, .config-panel--danger)`)]
+            .filter((el) => !el.parentElement.closest('.config-panel, .config-widget, .config-crud-list--table'))
+            .map((el) => {
+                const cs = getComputedStyle(el);
+                const slash = cs.backgroundColor.match(/\/\s*([\d.]+)\s*\)/);
+                const comma = cs.backgroundColor.match(/rgba\(([^)]+)\)/);
+                const alpha = slash ? parseFloat(slash[1]) : comma ? parseFloat(comma[1].split(',')[3]) : 1;
+                return {
+                    alpha,
+                    blur: Boolean(cs.backdropFilter && cs.backdropFilter !== 'none'),
+                    hairline: /inset 0px 0px 0px 1px|0px 0px 0px 1px inset/.test(cs.boxShadow),
+                };
+            }), view);
         for (const hash of ['#config/overview', '#config/behavior', '#config/structure']) {
             await open(page, hash);
             await page.waitForSelector(`${view} :is(.config-panel, .config-widget, .config-crud-list--table)`, { timeout: 20_000 });
+            // Signature, the default: a block lies on the plate in the material's small fill
+            // (--ov-fill-small, nearly closed on glass) with a hairline, and never blurs again.
+            const onSignature = await readBlocks();
+            expect(onSignature.length, `${hash} signature`).toBeGreaterThan(0);
+            for (const block of onSignature) {
+                expect(block.blur, `${hash} signature`).toBe(false);
+                expect(block.alpha, `${hash} signature`).toBeGreaterThan(0);
+                expect(block.hairline, `${hash} signature`).toBe(true);
+            }
+            // The tint per category surface is the Classic drawing.
+            await asClassic(page);
             for (const surface of ['glass', 'card', 'open']) {
                 await setSurface(page, surface);
-                const blocks = await page.evaluate((v) => [...document.querySelectorAll(`${v} :is(.config-panel, .config-widget, .config-crud-list--table):not(.config-panel--attention, .config-panel--danger)`)]
-                    .filter((el) => !el.parentElement.closest('.config-panel, .config-widget, .config-crud-list--table'))
-                    .map((el) => {
-                        const cs = getComputedStyle(el);
-                        const slash = cs.backgroundColor.match(/\/\s*([\d.]+)\s*\)/);
-                        const comma = cs.backgroundColor.match(/rgba\(([^)]+)\)/);
-                        const alpha = slash ? parseFloat(slash[1]) : comma ? parseFloat(comma[1].split(',')[3]) : 1;
-                        return {
-                            alpha,
-                            blur: Boolean(cs.backdropFilter && cs.backdropFilter !== 'none'),
-                            hairline: /inset 0px 0px 0px 1px|0px 0px 0px 1px inset/.test(cs.boxShadow),
-                        };
-                    }), view);
+                const blocks = await readBlocks();
                 expect(blocks.length, `${hash} ${surface}`).toBeGreaterThan(0);
                 for (const block of blocks) {
                     expect(block.blur, `${hash} ${surface}`).toBe(false);
@@ -167,6 +203,17 @@ test.describe('a view is one pane', () => {
         test(`${name} is a single glass pane, and a light frame under open`, async ({ page }) => {
             await open(page, hash);
             await page.waitForSelector(selector, { timeout: 20_000 });
+            // Signature, the default: the view is one plate in the material, a blurred glass
+            // pane on Aurora Glass under any category surface.
+            await setSurface(page, 'open');
+            const signature = await paint(page, selector);
+            expect(signature.blur).toBe('blur');
+            expect(signature.alpha).toBeGreaterThan(0);
+            expect(signature.alpha).toBeLessThan(1);
+            expect(parseFloat(signature.radius)).toBeGreaterThanOrEqual(8);
+
+            // Glass against a light frame is the Classic drawing.
+            await asClassic(page);
             await setSurface(page, 'glass');
             const glass = await paint(page, selector);
             expect(glass.blur).toBe('blur');
