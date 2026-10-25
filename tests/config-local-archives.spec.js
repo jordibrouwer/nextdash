@@ -280,7 +280,11 @@ test.describe('progress on long config actions', () => {
             });
         });
 
-        await page.evaluate(() => { window.dashboardInstance.config.refreshAllPreviews(); });
+        await page.evaluate(async () => {
+            const c = window.dashboardInstance.config;
+            await c.ensureSection('data-backups');   // the button's own file
+            void c.refreshAllPreviews();
+        });
         const modal = page.locator('#config-confirm-modal');
         await modal.waitFor({ timeout: 10_000 });
         await modal.locator('[data-confirm="ok"]').click();
@@ -319,7 +323,11 @@ test.describe('progress on long config actions', () => {
             });
         });
 
-        await page.evaluate(() => { window.dashboardInstance.config.refreshAllPreviews(); });
+        await page.evaluate(async () => {
+            const c = window.dashboardInstance.config;
+            await c.ensureSection('data-backups');   // the button's own file
+            void c.refreshAllPreviews();
+        });
         const modal = page.locator('#config-confirm-modal');
         await modal.waitFor({ timeout: 10_000 });
         await modal.locator('[data-confirm="ok"]').click();

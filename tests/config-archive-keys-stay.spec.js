@@ -28,7 +28,11 @@ test('forgotten archive keys stay forgotten after another settings save', async 
     await page.reload();
     await page.waitForFunction(() => window.dashboardInstance?.settings != null, null, { timeout: 20_000 });
 
-    await page.evaluate(() => { void window.dashboardInstance.config.forgetArchiveKeys(); });
+    await page.evaluate(async () => {
+        const c = window.dashboardInstance.config;
+        await c.ensureSection('data-backups');   // the button's own file
+        void c.forgetArchiveKeys();
+    });
     await page.locator('#config-confirm-modal [data-confirm="ok"]').click();
     await expect.poll(async () => (await api('/api/health/archive-settings')).hasKeys).toBe(false);
 

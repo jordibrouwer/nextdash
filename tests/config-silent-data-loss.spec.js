@@ -184,8 +184,10 @@ test.describe('actions that could not work at all', () => {
             if (r.url().includes('prefetch-icons')) codes.push(r.status());
         });
 
-        await page.evaluate(() => {
+        await page.evaluate(async () => {
             const c = window.dashboardInstance.config;
+            // The button lives in Data & backups, which brings its own file.
+            await c.ensureSection('data-backups');
             c.confirmAction = async () => true;   // skip the dialog, not the work
             return c.refreshAllFavicons();
         });

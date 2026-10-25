@@ -174,6 +174,7 @@ var lazyLoadedAssets = []string{
 	"js/dashboard/dashboard-config-unraid.js",
 	"js/dashboard/dashboard-config-status-page.js",
 	"js/dashboard/dashboard-config-inbox.js",
+	"js/dashboard/dashboard-config-data-backups.js",
 	"js/dashboard/dashboard-config-widgets.js",
 	"js/dashboard/dashboard-config-widget-media.js",
 	"js/dashboard/dashboard-config-widget-catalogue.js",
