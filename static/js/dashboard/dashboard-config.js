@@ -4390,7 +4390,7 @@ class DashboardConfig {
         if (entry.subTab) {
             const prop = DashboardConfig.SUB_TAB_STATE[entry.section];
             if (prop && this[prop] !== entry.subTab) {
-                if (entry.section === 'appearance') {
+                if (this.inSection('appearance')) {
                     await this.switchAppearanceTab(entry.subTab);
                 } else if (entry.section === 'help') {
                     this.helpTab = entry.subTab;
