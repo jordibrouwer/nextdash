@@ -9977,7 +9977,15 @@ class DashboardConfig {
         const ok = await this.confirmAction(this.t('config.settingsImportConfirmMessage', 'This will overwrite your current settings. Continue?'), { confirmLabel: this.t('config.confirmImport', 'Import') });
         if (!ok) return;
         // Strip one-time migration markers so the destination runs its migrations.
-        const { tagCloudDefaultMigrated, linkPreviewCardsOffMigrated, hideEmptyCategoriesMigrated, showTipsOffMigrated, ...clean } = parsed;
+        // Every `...Migrated` flag, not a fixed few: the server only ever moves a
+        // marker false -> true, so one left in the file would mark a migration
+        // as done on a destination that never ran it.
+        const clean = {};
+        for (const [key, value] of Object.entries(parsed)) {
+            if (/Migrated$/.test(key) || key === 'showTipsOffMigrated'
+                || key === 'notesWidgetSeeded' || key === 'firstRunInstall' || key === 'firstRunAt') continue;
+            clean[key] = value;
+        }
         try {
             const res = await this.writeFetch('/api/settings', {
                 method: 'POST',
