@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -53,6 +54,16 @@ func parseClock(value string) (int, bool) {
 		return 0, false
 	}
 	return hours*60 + mins, true
+}
+
+// canonicalClock rewrites a value parseClock accepts as "HH:MM". A value it
+// does not accept is returned as it came.
+func canonicalClock(value string) string {
+	minutes, ok := parseClock(value)
+	if !ok {
+		return value
+	}
+	return fmt.Sprintf("%02d:%02d", minutes/60, minutes%60)
 }
 
 // covers reports whether the window is open at t.
@@ -131,6 +142,9 @@ func normalizeMaintenanceWindows(windows []MaintenanceWindow) []MaintenanceWindo
 			days = nil
 		}
 		w.Days = days
+		// "9:5" parses, but a time input cannot show it: store HH:MM.
+		w.Start = canonicalClock(w.Start)
+		w.End = canonicalClock(w.End)
 		w.Label = strings.TrimSpace(w.Label)
 		w.StatusGroups = normalizeStatusGroupIDs(w.StatusGroups)
 		out = append(out, w)

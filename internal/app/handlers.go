@@ -2771,6 +2771,9 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	settings.ServerLogRetentionHours = clampServerLogRetentionHours(settings.ServerLogRetentionHours)
 	settings.ServerLogRetentionMode = clampServerLogRetentionMode(settings.ServerLogRetentionMode)
 	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
+	// Counted before they are normalised, so a window with no usable times is
+	// reported rather than gone behind a plain "success".
+	windowsSent := len(settings.MaintenanceWindows) + len(settings.QuietHours)
 	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
 	settings.MaintenanceTimeZone = normalizeMaintenanceTimeZone(settings.MaintenanceTimeZone)
 	normalizeQuietSettings(&settings)
@@ -2788,6 +2791,9 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	response := map[string]any{"status": "success"}
 	if len(droppedCollections) > 0 {
 		response["droppedCollections"] = droppedCollections
+	}
+	if dropped := windowsSent - len(settings.MaintenanceWindows) - len(settings.QuietHours); dropped > 0 {
+		response["droppedWindows"] = dropped
 	}
 	// The clamps above can rewrite what was sent -- an archive URL without a
 	// {url} placeholder becomes the default, a count outside its range is
