@@ -135,6 +135,7 @@ Not released yet.
 - **fix — a duplicate whose categories fail leaves no empty page behind.** `duplicatePage` saved the copy first and, when the categories write failed, showed "Could not duplicate this page" over a page that did exist; a retry made a second one. `discardDuplicatedPage` deletes the copy and drops its trash entry.
 - **fix — a category deleted on another device stays deleted.** The categories editor sends the whole list, and `addCategoriesMadeElsewhere` only added what was new on the server, so the next edit here put a category deleted elsewhere back. `_catOnServer` remembers what the server last had; a category gone from it since leaves the list too.
 - **fix — category saves for one page go out one at a time.** Two quick toggles sent two whole lists at once and the older could land last, so the server kept the first click while the button showed the second. `saveCategories` now queues per page. The last three are covered by `tests/config-structure-review-fixes.spec.js`, each failing without its fix.
+- **fix — a settings save that leaves keys out of the backdrop tuning keeps their defaults.** `SaveSettings` decoded a missing `calm`, `scale` or `brightness` as 0 and clamped it, so a tab still running the page from before the quiet centre stored no quiet centre at all. It now fills the absent keys as a settings file does (`fillMissingBackdropTuning`); an explicit 0 stays. Covered by `TestSaveSettingsFillsMissingBackdropTuning`.
 
 ### Dashboard
 

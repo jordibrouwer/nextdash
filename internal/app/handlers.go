@@ -2754,6 +2754,15 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	clampBookmarkSettings(&settings)
 	clampCategoryLayoutSettings(&settings)
 	settings.ThemeBackdrop = normalizeThemeBackdrop(settings.ThemeBackdrop)
+	// A tuning that leaves keys out takes the default for them, as a settings
+	// file does: decoding reads an absent calm, scale or brightness as 0, and a
+	// page from before a slider existed would store that as the answer.
+	var sent map[string]json.RawMessage
+	if json.Unmarshal(body, &sent) == nil {
+		if raw, ok := sent["backdropTuning"]; ok {
+			fillMissingBackdropTuning(&settings.BackdropTuning, raw)
+		}
+	}
 	settings.BackdropTuning = normalizeBackdropTuning(settings.BackdropTuning)
 	settings.CategoryHeaderStyle = normalizeCategoryHeaderStyle(settings.CategoryHeaderStyle)
 	settings.CategoryHeaderSize = normalizeCategoryHeaderSize(settings.CategoryHeaderSize)
