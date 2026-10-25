@@ -132,8 +132,18 @@ test('with entries enough it hangs from the band and spans the header row', asyn
     expect(seen.gapToBand, 'the panel covers part of the band').toBeGreaterThanOrEqual(-2);
     expect(seen.mid, 'the panel is not centred on the header row').toBe(seen.rowMid);
     expect(seen.width, 'the panel does not span the page’s column').toBe(seen.rowWidth);
-    expect(seen.topRadius, 'the panel is rounded against the band').toBe(0);
+    // Since v1.22.0 the Signature style (the default) draws the panel as a layer
+    // of the material, round on every corner with the accent bar on top
+    // (theme-overlays.css); square where it meets the band is the Classic drawing.
     expect(seen.bottomRadius, 'the panel has square bottom corners').toBeGreaterThan(0);
+    expect(seen.topRadius, 'the panel is not drawn as a layer of the material').toBe(seen.bottomRadius);
+    await page.evaluate(async () => {
+        await window.ThemeLoader.applySurfacesForTheme(window.dashboardInstance.settings.theme,
+            { ...window.dashboardInstance.settings, materialStyle: 'classic', themeSurfacesForceAll: true });
+    });
+    const classic = await sheet(page);
+    expect(classic.topRadius, 'the panel is rounded against the band').toBe(0);
+    expect(classic.bottomRadius, 'the panel has square bottom corners').toBeGreaterThan(0);
     expect(seen.columns, `${seen.columns} columns of entries`).toBe(3);
     // The row the rest of the product draws, not a 27px line.
     expect(seen.rowHeight, `a row is ${seen.rowHeight}px tall`).toBeGreaterThanOrEqual(50);
