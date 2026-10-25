@@ -88,20 +88,16 @@
         },
 
         /**
-         * The drawing the Material style select shows: install-wide when the scope is every theme,
-         * otherwise this theme's own choice, or "follow" when it has none (a look from before the
-         * redesign ships classic, and says so here).
+         * The drawing the Material style select shows. Install-wide in every scope: it is stored
+         * in settings.materialStyle (setMaterialStyle), and the per-theme answers do not hold it.
+         * A "follow the theme" here would have nothing to follow, and chose classic when picked.
          */
         materialStyleValue() {
-            const settings = this.dash.settings || {};
-            if (this.surfaceScope() === 'global') return settings.materialStyle === 'signature' ? 'signature' : 'classic';
-            const own = settings.themeSurfacePrefs?.[this.currentThemeId()]?.materialStyle;
-            return own === 'signature' || own === 'classic' ? own : 'follow';
+            return this.dash.settings?.materialStyle === 'signature' ? 'signature' : 'classic';
         },
 
         materialStyleOptions() {
-            const base = [['signature', 'Signature'], ['classic', 'Classic']];
-            return this.surfaceScope() === 'global' ? base : [['follow', 'Follow the theme'], ...base];
+            return [['signature', 'Signature'], ['classic', 'Classic']];
         },
 
         /**
